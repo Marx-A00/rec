@@ -91,6 +91,14 @@ const album2: Album = {
   },
 };
 
+const recommendation1: recommendation = {
+  id: "1",
+  raitingOwner: "mr-x",
+  basisAlbum: album1,
+  recommendedAlbum: album2,
+  score: 7,
+};
+
 
 export default function Home() {
   return (
@@ -107,7 +115,7 @@ export default function Home() {
             {album2.title}
           </div>
         </div>
-        <div className="text-lg font-semibold">Score: 90</div>
+        <div className="text-lg font-semibold pt-5">Score: {recommendation1.score}/10</div>
       </div>
     </div>
   );
