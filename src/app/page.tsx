@@ -7,6 +7,14 @@ interface Track {
   trackNumber: number;
 }
 
+interface recommendation {
+  id: string;
+  raitingOwner: string;
+  basisAlbum: Album;
+  recommendedAlbum: Album;
+  score: number;
+}
+
 interface Album {
   id: string;
   title: string;
