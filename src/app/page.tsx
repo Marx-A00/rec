@@ -1,7 +1,7 @@
 import Link from 'next/link';
 export default function Home() {
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center min-h-screen bg-black">
       <div className="flex flex-row space-x-4">
         <Link href="/profile"
         className="text-white bg-red-500 hover:bg-red-700 font-bold py-4 px-8 rounded-full text-lg shadow-lg"

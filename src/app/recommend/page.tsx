@@ -100,7 +100,7 @@ const recommendation1: recommendation = {
 };
 export default function CreateRecommendationPage() {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black">
       <div className="flex flex-col gap-4 items-center">
           <Link href="/"
           className="text-white bg-red-500 hover:bg-red-700 font-bold mb-20 py-4 px-8 rounded-full text-lg shadow-lg"
