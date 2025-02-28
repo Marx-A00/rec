@@ -106,6 +106,11 @@ export default function CreateRecommendationPage() {
           className="text-white bg-red-500 hover:bg-red-700 font-bold mb-20 py-4 px-8 rounded-full text-lg shadow-lg"
           >home</Link>
         <h1 className="text-4xl font-bold text-center pb-10">Create Recommendation</h1>
+        <input 
+          type="text" 
+          placeholder="Search for an album" 
+          className="border-2 border-gray-300 p-2 rounded-lg w-full text-gray-800"
+        />
         <div className="flex gap-4">
           <div id="basis-album">
             <Image 
