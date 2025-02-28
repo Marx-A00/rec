@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      disconnect:
+        specifier: ^1.2.2
+        version: 1.2.2
       next:
         specifier: 15.1.4
         version: 15.1.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -620,6 +623,10 @@ packages:
   didyoumean@1.2.2:
     resolution: {integrity: sha512-gxtyfqMg7GKyhQmb056K7M3xszy/myH8w+B4RT+QXBQsvAOdc3XymqDDPHx1BgPgsdAA5SIifona89YtRATDzw==}
 
+  disconnect@1.2.2:
+    resolution: {integrity: sha512-0QWtdUdijooW0hUa4V5CYm6eQcWThKBh+1pnFk3C8gJo7zQQz+AX6Hs41df/DMjUeD6SN7UBQzdFwpxZv+Vdbw==}
+    engines: {node: '>= 0.12.0'}
+
   dlv@1.1.3:
     resolution: {integrity: sha512-+HlytyjlPKnIG8XuRG8WvmBP8xs8P71y+SKKS6ZXWoEgLuePxtDoUEiH7WkdePWrQ5JBpE6aoVqfZfJUQkjXwA==}
 
@@ -1194,6 +1201,9 @@ packages:
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
     engines: {node: '>=0.10.0'}
+
+  oauth-1.0a@2.2.6:
+    resolution: {integrity: sha512-6bkxv3N4Gu5lty4viIcIAnq5GbxECviMBeKR3WX/q87SPQ8E8aursPZUtsXDnxCs787af09WPRBLqYrf/lwoYQ==}
 
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
@@ -2235,6 +2245,10 @@ snapshots:
 
   didyoumean@1.2.2: {}
 
+  disconnect@1.2.2:
+    dependencies:
+      oauth-1.0a: 2.2.6
+
   dlv@1.1.3: {}
 
   doctrine@2.1.0:
@@ -2972,6 +2986,8 @@ snapshots:
       - babel-plugin-macros
 
   normalize-path@3.0.0: {}
+
+  oauth-1.0a@2.2.6: {}
 
   object-assign@4.1.1: {}
 
