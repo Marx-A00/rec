@@ -164,12 +164,6 @@ export default function CreateRecommendationPage() {
         setSearchResults([]);
     };
 
-    const toggleSearchMode = () => {
-        setIsSearchingForBasis(!isSearchingForBasis);
-        setSearchQuery('');
-        setSearchResults([]);
-    };
-
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         
@@ -194,6 +188,14 @@ export default function CreateRecommendationPage() {
         alert('Recommendation created! Check the console for details.');
     };
 
+    const switchAlbumType = (isBasis: boolean) => {
+        if (isBasis !== isSearchingForBasis) {
+            setIsSearchingForBasis(isBasis);
+            setSearchQuery('');
+            setSearchResults([]);
+        }
+    };
+
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
             <div className="flex flex-col gap-4 items-center max-w-4xl w-full">
@@ -212,15 +214,8 @@ export default function CreateRecommendationPage() {
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h2 className="text-xl font-semibold">
-                                {isSearchingForBasis ? "Search for Basis Album" : "Search for Recommended Album"}
+                                Search for {isSearchingForBasis ? "Basis" : "Recommended"} Album
                             </h2>
-                            <button 
-                                type="button"
-                                onClick={toggleSearchMode}
-                                className="text-blue-500 hover:text-blue-700"
-                            >
-                                Switch to {isSearchingForBasis ? "Recommended" : "Basis"} Album
-                            </button>
                         </div>
                         
                         <div className="relative">
@@ -250,9 +245,10 @@ export default function CreateRecommendationPage() {
                                             <Image 
                                                 src={album.image.url} 
                                                 alt={album.image.alt || ''} 
-                                                width={48}
-                                                height={48}
-                                                className="object-cover"
+                                                fill
+                                                sizes="48px"
+                                                style={{ objectFit: 'cover' }}
+                                                className="rounded"
                                             />
                                         </div>
                                         <div>
@@ -266,7 +262,10 @@ export default function CreateRecommendationPage() {
                     </div>
                     
                     <div className="flex flex-col md:flex-row gap-6 justify-center">
-                        <div className="flex-1 border p-4 rounded-lg">
+                        <div 
+                            className={`flex-1 border p-4 rounded-lg cursor-pointer transition-all ${isSearchingForBasis ? 'border-blue-500 border-2 shadow-lg' : 'hover:border-gray-400'}`}
+                            onClick={() => switchAlbumType(true)}
+                        >
                             <h3 className="text-lg font-medium mb-2">Basis Album</h3>
                             {selectedBasisAlbum ? (
                                 <div className="flex flex-col items-center">
@@ -274,9 +273,10 @@ export default function CreateRecommendationPage() {
                                         <Image 
                                             src={selectedBasisAlbum.image.url} 
                                             alt={selectedBasisAlbum.image.alt || ''} 
-                                            width={400}
-                                            height={400}
-                                            className="object-cover"
+                                            fill
+                                            sizes="(max-width: 768px) 100vw, 400px"
+                                            style={{ objectFit: 'cover' }}
+                                            className="rounded"
                                         />
                                     </div>
                                     <div className="text-center">
@@ -293,11 +293,16 @@ export default function CreateRecommendationPage() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-center text-gray-500 py-10">No album selected</div>
+                                <div className="text-center text-gray-500 py-10">
+                                    {isSearchingForBasis ? "Search for an album above" : "Click to search for a basis album"}
+                                </div>
                             )}
                         </div>
                         
-                        <div className="flex-1 border p-4 rounded-lg">
+                        <div 
+                            className={`flex-1 border p-4 rounded-lg cursor-pointer transition-all ${!isSearchingForBasis ? 'border-blue-500 border-2 shadow-lg' : 'hover:border-gray-400'}`}
+                            onClick={() => switchAlbumType(false)}
+                        >
                             <h3 className="text-lg font-medium mb-2">Recommended Album</h3>
                             {selectedRecommendedAlbum ? (
                                 <div className="flex flex-col items-center">
@@ -305,9 +310,10 @@ export default function CreateRecommendationPage() {
                                         <Image 
                                             src={selectedRecommendedAlbum.image.url} 
                                             alt={selectedRecommendedAlbum.image.alt || ''} 
-                                            width={400}
-                                            height={400}
-                                            className="object-cover"
+                                            fill
+                                            sizes="(max-width: 768px) 100vw, 400px"
+                                            style={{ objectFit: 'cover' }}
+                                            className="rounded"
                                         />
                                     </div>
                                     <div className="text-center">
@@ -324,7 +330,9 @@ export default function CreateRecommendationPage() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-center text-gray-500 py-10">No album selected</div>
+                                <div className="text-center text-gray-500 py-10">
+                                    {!isSearchingForBasis ? "Search for an album above" : "Click to search for a recommended album"}
+                                </div>
                             )}
                         </div>
                     </div>

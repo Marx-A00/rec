@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
 var Discogs = require('disconnect').Client;
 
-// Create a client with a user token for authentication
-// Using a personal access token is the simplest way to authenticate
-// For a real app, you would store this in an environment variable
+// Create a client with consumer key and secret from environment variables
 var db = new Discogs({
   userAgent: 'RecProject/1.0 +http://localhost:3000',
-  // This is a dummy token - Discogs will still rate limit but should allow basic search
-  userToken: 'QJRXBuUbvTQccgvYSRgKPPjJEPHAZoRJVkRQSRXW'
+  consumerKey: process.env.CONSUMER_KEY,
+  consumerSecret: process.env.CONSUMER_SECRET
 }).database();
 
 // Default placeholder image for albums without images
@@ -17,7 +15,8 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id;
+  // Ensure params is awaited before accessing properties
+  const { id } = await Promise.resolve(params);
 
   if (!id) {
     return NextResponse.json({ error: 'Album ID is required' }, { status: 400 });
@@ -57,6 +56,11 @@ export async function GET(
     // Calculate total duration
     const totalDuration = tracks.reduce((sum: number, track: any) => sum + (track.duration || 0), 0);
 
+    // Get the image URL from the album details
+    const imageUrl = albumDetails.images && albumDetails.images.length > 0
+      ? albumDetails.images[0].uri
+      : PLACEHOLDER_IMAGE;
+
     // Format the album data to match our Album interface
     const album = {
       id: id.toString(),
@@ -66,10 +70,10 @@ export async function GET(
       genre: albumDetails.genres || [],
       label: albumDetails.labels?.[0]?.name || '',
       image: {
-        url: albumDetails.images?.[0]?.uri || PLACEHOLDER_IMAGE,
-        width: 400,
-        height: 400,
-        alt: albumDetails.title,
+        url: imageUrl,
+        width: 400,  // Consistent width
+        height: 400, // Consistent height
+        alt: albumDetails.title || 'Album cover',
       },
       tracks,
       metadata: {

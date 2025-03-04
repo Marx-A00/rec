@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
 var Discogs = require('disconnect').Client;
 
-// Create a client with a user token for authentication
-// Using a personal access token is the simplest way to authenticate
-// For a real app, you would store this in an environment variable
+// Create a client with consumer key and secret from environment variables
 var db = new Discogs({
   userAgent: 'RecProject/1.0 +http://localhost:3000',
-  // This is a dummy token - Discogs will still rate limit but should allow basic search
-  userToken: 'QJRXBuUbvTQccgvYSRgKPPjJEPHAZoRJVkRQSRXW'
+  consumerKey: process.env.CONSUMER_KEY,
+  consumerSecret: process.env.CONSUMER_SECRET
 }).database();
 
 export async function GET() {
