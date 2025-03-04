@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from 'next/link';
+import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+
 interface Track {
   id: string;
   title: string;
@@ -7,7 +11,7 @@ interface Track {
   trackNumber: number;
 }
 
-interface recommendation {
+interface Recommendation {
   id: string;
   raitingOwner: string;
   basisAlbum: Album;
@@ -24,8 +28,8 @@ interface Album {
   label: string;
   image: {
     url: string;
-    width: 400;
-    height: 400;
+    width: number;
+    height: number;
     alt?: string;
   };
   tracks: Track[];
@@ -37,97 +41,338 @@ interface Album {
   };
 }
 
-const album1: Album = {
-  id: "1",
-  title: "BRAT",
-  artist: "Charli XCX",
-  releaseDate: "2023-06-16",
-  genre: ["Pop", "Electronic"],
-  label: "Atlantic Records",
+// Sample albums for initial state
+const defaultAlbum: Album = {
+  id: "",
+  title: "",
+  artist: "",
+  releaseDate: "",
+  genre: [],
+  label: "",
   image: {
-    url: "/Charli_XCX_-_Brat_(album_cover).png",
-    alt: "Charli XCX - BRAT album cover",
+    url: "https://via.placeholder.com/400x400?text=No+Image",
     width: 400,
     height: 400,
+    alt: "Album placeholder",
   },
-  tracks: [
-    { id: "1", title: "Lights Out", duration: 180, trackNumber: 1 },
-    { id: "2", title: "Used to Know Me", duration: 210, trackNumber: 2 },
-    { id: "3", title: "Beg for You", duration: 240, trackNumber: 3 },
-    // Add more tracks as needed
-  ],
+  tracks: [],
   metadata: {
-    totalDuration: 630, // Total duration in seconds
-    numberOfTracks: 3, // Number of tracks
-    format: "Digital", // Format of the album
-    barcode: "123456789012", // Barcode of the album
+    totalDuration: 0,
+    numberOfTracks: 0,
   },
 };
 
-const album2: Album = {
-  id: "2",
-  title: "Reflections",
-  artist: "Hannah Diamond",
-  releaseDate: "2019-11-22",
-  genre: ["Pop", "Electronic"],
-  label: "PC Music",
-  image: {
-    url: "/reflections-hannah-diamond.webp",
-    width: 400,
-    height: 400,
-    alt: "Hannah Diamond - Reflections album cover",
-  },
-  tracks: [
-    { id: "1", title: "Lights Out", duration: 180, trackNumber: 1 },
-    { id: "2", title: "Invisible", duration: 210, trackNumber: 2 },
-    { id: "3", title: "Love Goes On", duration: 240, trackNumber: 3 },
-    // Add more tracks as needed
-  ],
-  metadata: {
-    totalDuration: 861, // Total duration in seconds
-    numberOfTracks: 3, // Number of tracks
-    format: "Digital", // Format of the album
-    barcode: "123456789012", // Barcode of the album
-  },
-};
-
-const recommendation1: recommendation = {
-  id: "1",
-  raitingOwner: "mr-x",
-  basisAlbum: album1,
-  recommendedAlbum: album2,
-  score: 7,
-};
 export default function CreateRecommendationPage() {
+    const [searchQuery, setSearchQuery] = useState<string>('');
+    const [score, setScore] = useState<number>(7);
+    const [selectedBasisAlbum, setSelectedBasisAlbum] = useState<Album | null>(null);
+    const [selectedRecommendedAlbum, setSelectedRecommendedAlbum] = useState<Album | null>(null);
+    const [searchResults, setSearchResults] = useState<Album[]>([]);
+    const [isSearchingForBasis, setIsSearchingForBasis] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Debounced search function
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchQuery.trim().length > 2) {
+                searchAlbums(searchQuery);
+            } else {
+                setSearchResults([]);
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const searchAlbums = async (query: string) => {
+        setIsLoading(true);
+        setError(null);
+        
+        try {
+            console.log(`Searching for: ${query}`);
+            const response = await fetch(`/api/albums/search?query=${encodeURIComponent(query)}`);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to search albums');
+            }
+            
+            const data = await response.json();
+            console.log(`Found ${data.albums?.length || 0} albums`);
+            setSearchResults(data.albums || []);
+        } catch (err: any) {
+            console.error('Error searching albums:', err);
+            setError(`Failed to search albums: ${err.message}`);
+            setSearchResults([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchAlbumDetails = async (albumId: string): Promise<Album | null> => {
+        setIsLoading(true);
+        try {
+            console.log(`Fetching details for album ID: ${albumId}`);
+            const response = await fetch(`/api/albums/${albumId}`);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to fetch album details');
+            }
+            
+            const data = await response.json();
+            console.log(`Got details for: ${data.album?.title}`);
+            return data.album || null;
+        } catch (err: any) {
+            console.error('Error fetching album details:', err);
+            setError(`Failed to fetch album details: ${err.message}`);
+            return null;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value);
+    };
+
+    const handleScoreChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setScore(Number(e.target.value));
+    };
+
+    const handleAlbumSelect = async (album: Album) => {
+        // Fetch detailed album information
+        const detailedAlbum = await fetchAlbumDetails(album.id);
+        
+        if (detailedAlbum) {
+            if (isSearchingForBasis) {
+                setSelectedBasisAlbum(detailedAlbum);
+            } else {
+                setSelectedRecommendedAlbum(detailedAlbum);
+            }
+        } else {
+            // If we couldn't get detailed info, use the search result
+            if (isSearchingForBasis) {
+                setSelectedBasisAlbum(album);
+            } else {
+                setSelectedRecommendedAlbum(album);
+            }
+        }
+        
+        setSearchQuery('');
+        setSearchResults([]);
+    };
+
+    const handleSubmit = (e: FormEvent) => {
+        e.preventDefault();
+        
+        if (!selectedBasisAlbum || !selectedRecommendedAlbum) {
+            setError('Please select both a basis album and a recommended album');
+            return;
+        }
+        
+        // Create the recommendation object
+        const recommendation: Recommendation = {
+            id: Date.now().toString(), // Generate a temporary ID
+            raitingOwner: "current-user", // In a real app, this would be the logged-in user
+            basisAlbum: selectedBasisAlbum,
+            recommendedAlbum: selectedRecommendedAlbum,
+            score,
+        };
+        
+        // Log the recommendation data
+        console.log('Recommendation created:', recommendation);
+        
+        // In a real app, you would send this data to your backend
+        alert('Recommendation created! Check the console for details.');
+    };
+
+    const switchAlbumType = (isBasis: boolean) => {
+        if (isBasis !== isSearchingForBasis) {
+            setIsSearchingForBasis(isBasis);
+            setSearchQuery('');
+            setSearchResults([]);
+        }
+    };
+
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-      <div className="flex flex-col gap-4 items-center">
-          <Link href="/"
-          className="text-white bg-red-500 hover:bg-red-700 font-bold mb-20 py-4 px-8 rounded-full text-lg shadow-lg"
-          >home</Link>
-        <h1 className="text-4xl font-bold text-center pb-10">Create Recommendation</h1>
-        <div className="flex gap-4">
-          <div id="basis-album">
-            <Image 
-              src={album1.image.url} 
-              alt={album1.image.alt || ''} 
-              width={400} 
-              height={400} 
-            />
-            {album1.title}
-          </div>
-          <div id="recommended-album">
-            <Image 
-              src={album2.image.url} 
-              alt={album2.image.alt || ''} 
-              width={400} 
-              height={400}
-            />
-            {album2.title}
-          </div>
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+            <div className="flex flex-col gap-4 items-center max-w-4xl w-full">
+                <Link href="/"
+                    className="text-white bg-red-500 hover:bg-red-700 font-bold mb-10 py-4 px-8 rounded-full text-lg shadow-lg"
+                >home</Link>
+                <h1 className="text-4xl font-bold text-center pb-6">Create Recommendation</h1>
+                
+                {error && (
+                    <div className="w-full bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                        {error}
+                    </div>
+                )}
+                
+                <form onSubmit={handleSubmit} className="w-full space-y-6">
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xl font-semibold">
+                                Search for {isSearchingForBasis ? "Basis" : "Recommended"} Album
+                            </h2>
+                        </div>
+                        
+                        <div className="relative">
+                            <input 
+                                type="text" 
+                                value={searchQuery}
+                                onChange={handleSearchChange}
+                                placeholder="Search for an album by title or artist" 
+                                className="border-2 border-gray-300 p-2 rounded-lg w-full text-gray-800"
+                            />
+                            {isLoading && (
+                                <div className="absolute right-3 top-3">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+                                </div>
+                            )}
+                        </div>
+                        
+                        {searchResults.length > 0 && (
+                            <div className="border rounded-lg overflow-hidden max-h-60 overflow-y-auto">
+                                {searchResults.map(album => (
+                                    <div 
+                                        key={album.id}
+                                        onClick={() => handleAlbumSelect(album)}
+                                        className="flex items-center p-2 hover:bg-gray-100 cursor-pointer"
+                                    >
+                                        <div className="w-12 h-12 relative mr-3">
+                                            <Image 
+                                                src={album.image.url} 
+                                                alt={album.image.alt || ''} 
+                                                fill
+                                                sizes="48px"
+                                                style={{ objectFit: 'cover' }}
+                                                className="rounded"
+                                            />
+                                        </div>
+                                        <div>
+                                            <div className="font-medium">{album.title}</div>
+                                            <div className="text-sm text-gray-600">{album.artist}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="flex flex-col md:flex-row gap-6 justify-center">
+                        <div 
+                            className={`flex-1 border p-4 rounded-lg cursor-pointer transition-all ${isSearchingForBasis ? 'border-blue-500 border-2 shadow-lg' : 'hover:border-gray-400'}`}
+                            onClick={() => switchAlbumType(true)}
+                        >
+                            <h3 className="text-lg font-medium mb-2">Basis Album</h3>
+                            {selectedBasisAlbum ? (
+                                <div className="flex flex-col items-center">
+                                    <div className="relative w-full aspect-square mb-2">
+                                        <Image 
+                                            src={selectedBasisAlbum.image.url} 
+                                            alt={selectedBasisAlbum.image.alt || ''} 
+                                            fill
+                                            sizes="(max-width: 768px) 100vw, 400px"
+                                            style={{ objectFit: 'cover' }}
+                                            className="rounded"
+                                        />
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="font-bold">{selectedBasisAlbum.title}</div>
+                                        <div className="text-gray-600">{selectedBasisAlbum.artist}</div>
+                                        {selectedBasisAlbum.releaseDate && (
+                                            <div className="text-sm text-gray-500">{selectedBasisAlbum.releaseDate}</div>
+                                        )}
+                                        {selectedBasisAlbum.genre.length > 0 && (
+                                            <div className="text-sm text-gray-500 mt-1">
+                                                {selectedBasisAlbum.genre.join(', ')}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center text-gray-500 py-10">
+                                    {isSearchingForBasis ? "Search for an album above" : "Click to search for a basis album"}
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div 
+                            className={`flex-1 border p-4 rounded-lg cursor-pointer transition-all ${!isSearchingForBasis ? 'border-blue-500 border-2 shadow-lg' : 'hover:border-gray-400'}`}
+                            onClick={() => switchAlbumType(false)}
+                        >
+                            <h3 className="text-lg font-medium mb-2">Recommended Album</h3>
+                            {selectedRecommendedAlbum ? (
+                                <div className="flex flex-col items-center">
+                                    <div className="relative w-full aspect-square mb-2">
+                                        <Image 
+                                            src={selectedRecommendedAlbum.image.url} 
+                                            alt={selectedRecommendedAlbum.image.alt || ''} 
+                                            fill
+                                            sizes="(max-width: 768px) 100vw, 400px"
+                                            style={{ objectFit: 'cover' }}
+                                            className="rounded"
+                                        />
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="font-bold">{selectedRecommendedAlbum.title}</div>
+                                        <div className="text-gray-600">{selectedRecommendedAlbum.artist}</div>
+                                        {selectedRecommendedAlbum.releaseDate && (
+                                            <div className="text-sm text-gray-500">{selectedRecommendedAlbum.releaseDate}</div>
+                                        )}
+                                        {selectedRecommendedAlbum.genre.length > 0 && (
+                                            <div className="text-sm text-gray-500 mt-1">
+                                                {selectedRecommendedAlbum.genre.join(', ')}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center text-gray-500 py-10">
+                                    {!isSearchingForBasis ? "Search for an album above" : "Click to search for a recommended album"}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                        <label htmlFor="score" className="block text-lg font-semibold">
+                            Score: {score}/10
+                        </label>
+                        <input 
+                            type="range" 
+                            id="score"
+                            min="1" 
+                            max="10" 
+                            value={score}
+                            onChange={handleScoreChange}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div className="flex justify-between text-xs text-gray-600">
+                            <span>1</span>
+                            <span>2</span>
+                            <span>3</span>
+                            <span>4</span>
+                            <span>5</span>
+                            <span>6</span>
+                            <span>7</span>
+                            <span>8</span>
+                            <span>9</span>
+                            <span>10</span>
+                        </div>
+                    </div>
+                    
+                    <button 
+                        type="submit"
+                        className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors"
+                        disabled={!selectedBasisAlbum || !selectedRecommendedAlbum}
+                    >
+                        Create Recommendation
+                    </button>
+                </form>
+            </div>
         </div>
-        <div className="text-lg font-semibold pt-5">Score: {recommendation1.score}/10</div>
-      </div>
-    </div>
-    )
+    );
 }

@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 var Discogs = require('disconnect').Client;
 
-// Create the most basic client possible, similar to the curl request
-var db = new Discogs({ userAgent: 'RecProject/1.0 +http://localhost:3000' }).database();
+// Create a client with consumer key and secret from environment variables
+var db = new Discogs({
+  userAgent: 'RecProject/1.0 +http://localhost:3000',
+  consumerKey: process.env.CONSUMER_KEY,
+  consumerSecret: process.env.CONSUMER_SECRET
+}).database();
 
 export async function GET() {
   try {
