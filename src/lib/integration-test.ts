@@ -115,8 +115,8 @@ async function testDatabaseOperations() {
     })
     console.log('✅ Recommendation created successfully')
 
-    // Clean up all test data
-    // This deletes everything in reverse order of creation to respect foreign key constraints
+    // // Clean up all test data
+    // // This deletes everything in reverse order of creation to respect foreign key constraints
     console.log('\nCleaning up test data...')
     await prisma.recommendation.deleteMany({
       where: { userId: user.id },
