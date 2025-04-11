@@ -13,11 +13,17 @@
     "@types/bcryptjs": "^3.0.0",
     "bcryptjs": "^3.0.2",
     "disconnect": "^1.2.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.471.1",
     "next": "15.1.4",
     "next-auth": "5.0.0-beta.25",
     "pg": "^8.14.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7"
+    "disconnect": "^1.2.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
