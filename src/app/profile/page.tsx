@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 // import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -28,6 +29,10 @@ return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-8">
         <div className="max-w-4xl mx-auto">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-12">
+                <Avatar className="w-32 h-32">
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                </Avatar>
                 <div className="text-center md:text-left">
                     <h1 className="text-3xl font-bold mb-2">{user.name}</h1>
                     <p className="text-gray-400 mb-4">{user.username}</p>
