@@ -1,28 +1,45 @@
-# Music Recommendation Platform
+# Album Recommendation App
 
-A modern web application built with Next.js that allows users to discover and share music recommendations based on music comparisons.
+This application allows users to search for albums using the Discogs API and create recommendations by pairing albums together with a rating score.
 
 ## Features
 
-- **Profile System**: Personal user profiles with follower/following functionality
-- **Album Recommendations**: Create and share album recommendations with scoring
-- **Modern UI**: Clean, responsive interface built with Tailwind CSS and shadcn/ui
+- Search for albums using the Discogs API
+- View album details including cover art, artist, release date, and genre
+- Create album recommendations by selecting a basis album and a recommended album
+- Rate recommendations on a scale of 1-10
 
-## Tech Stack
+## Setup
 
-- Next.js 15
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Start the development server:
+   ```
+   npm run dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+
+## Usage
+
+1. Navigate to the recommendation page
+2. Search for an album by title or artist
+3. Select an album from the search results to set as the basis album
+4. Switch to "Recommended Album" mode and search for another album
+5. Select an album from the search results to set as the recommended album
+6. Adjust the score using the slider
+7. Click "Create Recommendation" to submit your recommendation
+
+## Technologies Used
+
+- Next.js
+- React
 - TypeScript
 - Tailwind CSS
-- shadcn/ui components
-
-
-## Features in Development
-
-- [ ] Album search functionality
-- [ ] User authentication
-- [ ] Social sharing capabilities
-- [ ] Expanded recommendation system
+- Discogs API (via Disconnect library)
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+MIT
