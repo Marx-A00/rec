@@ -8,7 +8,7 @@ export default function SignOutButton() {
     }}>
       <button
         type="submit"
-        className="text-white bg-red-500 hover:bg-red-700 font-bold py-4 px-8 rounded-full text-lg shadow-lg"
+        className="w-full text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 py-1.5 px-3 rounded-md font-normal"
       >
         Sign Out
       </button>

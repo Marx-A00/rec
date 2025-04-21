@@ -8,7 +8,7 @@ export default function SignInButton() {
     }}>
       <button
         type="submit"
-        className="text-white bg-red-500 hover:bg-red-700 font-bold py-4 px-8 rounded-full text-lg shadow-lg"
+        className="w-full text-white bg-red-500 hover:bg-red-600 text-xs font-medium py-2 px-3 rounded-md"
       >
         Sign In with Google
       </button>
