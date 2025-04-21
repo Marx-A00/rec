@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import SignInButton from '@/components/auth/SignInButton';
+import SignOutButton from '@/components/auth/SignOutButton';
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { auth, signOut, signIn } from '@/../auth';
+import { auth } from '@/../auth';
 
 export default async function Home() {
   const session = await auth();
@@ -56,17 +57,7 @@ export default async function Home() {
                 </div>
                 
                 <div className="pt-2 border-t border-zinc-800">
-                  <form action={async () => {
-                    'use server';
-                    await signOut();
-                  }}>
-                    <button 
-                      type="submit"
-                      className="w-full text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 py-1.5 px-3 rounded-md"
-                    >
-                      Sign Out
-                    </button>
-                  </form>
+                  <SignOutButton />
                 </div>
               </div>
             ) : (
@@ -74,17 +65,7 @@ export default async function Home() {
                 <h4 className="text-xs font-semibold text-zinc-100 mb-3 text-center">
                   Sign in to access your account
                 </h4>
-                <form action={async () => {
-                  'use server';
-                  await signIn('google');
-                }}>
-                  <button
-                    type="submit"
-                    className="w-full text-white bg-red-500 hover:bg-red-600 text-xs font-medium py-2 px-3 rounded-md"
-                  >
-                    Sign in with Google
-                  </button>
-                </form>
+                <SignInButton />
               </div>
             )}
           </HoverCardContent>
