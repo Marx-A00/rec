@@ -19,19 +19,16 @@ export default function Home() {
               </Avatar>
             </button>
           </HoverCardTrigger>
-          <HoverCardContent className="w-80">
-            <div className="flex justify-between space-x-4">
-              <Avatar>
-                <AvatarFallback>JD</AvatarFallback>
+          <HoverCardContent className="w-64 bg-zinc-900 border-zinc-800 text-white" side="right" align="start" sideOffset={12}>
+            <div className="flex space-x-3">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-zinc-800 text-zinc-200">JD</AvatarFallback>
               </Avatar>
               <div className="space-y-1">
-                <h4 className="text-sm font-semibold">John Doe</h4>
-                <p className="text-sm">
-                  Music lover with a passion for discovering new artists and hidden gems.
-                </p>
-                <div className="flex items-center pt-2">
-                  <span className="text-xs text-muted-foreground">
-                    Member since June 2023
+                <h4 className="text-xs font-semibold text-zinc-100">John Doe</h4>
+                <div className="flex items-center pt-1">
+                  <span className="text-xs text-zinc-400">
+                    Member since 2023
                   </span>
                 </div>
               </div>
