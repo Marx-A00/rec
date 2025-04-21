@@ -13,15 +13,17 @@ export default function Home() {
       <div className="absolute top-4 left-4">
         <HoverCard>
           <HoverCardTrigger asChild>
-            <button className="rounded-full h-8 w-8 overflow-hidden border-2 border-white">
+            <button className="rounded-full h-8 w-8 overflow-hidden">
               <Avatar className="h-full w-full">
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarImage src="/placeholder.svg?height=100&width=100" alt="User" />
+                <AvatarFallback className="bg-zinc-800 text-zinc-200">JD</AvatarFallback>
               </Avatar>
             </button>
           </HoverCardTrigger>
           <HoverCardContent className="w-64 bg-zinc-900 border-zinc-800 text-white" side="right" align="start" sideOffset={12}>
             <div className="flex space-x-3">
               <Avatar className="h-8 w-8">
+                <AvatarImage src="/placeholder.svg?height=100&width=100" alt="User" />
                 <AvatarFallback className="bg-zinc-800 text-zinc-200">JD</AvatarFallback>
               </Avatar>
               <div className="space-y-1">
