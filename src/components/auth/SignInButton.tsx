@@ -1,17 +1,14 @@
-import { signIn } from '@/../auth';
+import Link from 'next/link';
 
 export default function SignInButton() {
   return (
-    <form action={async () => {
-      'use server';
-      await signIn('google');
-    }}>
+    <Link href="/auth/signin">
       <button
-        type="submit"
-        className="w-full text-white bg-red-500 hover:bg-red-600 text-xs font-medium py-2 px-3 rounded-md"
+        type="button"
+        className="w-full text-white bg-blue-600 hover:bg-blue-700 text-xs font-medium py-2 px-3 rounded-md"
       >
-        Sign In with Google
+        Sign In
       </button>
-    </form>
+    </Link>
   );
 } 
