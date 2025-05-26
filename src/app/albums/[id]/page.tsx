@@ -7,6 +7,8 @@ import { ArrowLeft, Clock, Calendar, Tag, Building2, Music } from "lucide-react"
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Album } from "@/types/album";
+import AddToCollectionModal from "@/components/collections/AddToCollectionModal";
+import Toast, { useToast } from "@/components/ui/toast";
 
 export default function AlbumDetailsPage() {
   const params = useParams();
@@ -15,6 +17,8 @@ export default function AlbumDetailsPage() {
   const [album, setAlbum] = useState<Album | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     if (albumId) {
@@ -244,10 +248,13 @@ export default function AlbumDetailsPage() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 mb-8 justify-center lg:justify-start">
-          <button className="bg-dark-pastel-red hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+          <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
             Make Rec
           </button>
-          <button className="bg-emeraled-green hover:bg-zinc-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+          <button 
+            onClick={() => setShowCollectionModal(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+          >
             Add to Collection
           </button>
           <button className="bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
@@ -329,6 +336,27 @@ export default function AlbumDetailsPage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Add to Collection Modal */}
+        {album && (
+          <AddToCollectionModal
+            isOpen={showCollectionModal}
+            onClose={() => setShowCollectionModal(false)}
+            album={album}
+            onSuccess={(message) => {
+              setShowCollectionModal(false);
+              showToast(message, 'success');
+            }}
+          />
+        )}
+
+        {/* Toast Notification */}
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={hideToast}
+        />
       </div>
     </div>
   );
