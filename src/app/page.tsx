@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import SignInButton from '@/components/auth/SignInButton';
 import SignOutButton from '@/components/auth/SignOutButton';
+import AlbumSearch from '@/components/ui/AlbumSearch';
 import {
   HoverCard,
   HoverCardContent,
@@ -15,6 +16,13 @@ export default async function Home() {
   
   return (
     <div className="flex flex-col min-h-screen bg-black">
+      {/* Search Bar at the top */}
+      <div className="w-full px-4 pt-6 pb-4">
+        <div className="max-w-2xl mx-auto">
+          <AlbumSearch placeholder="Search for albums, artists, or genres..." />
+        </div>
+      </div>
+      
       <div className="absolute top-4 left-4">
         <HoverCard>
           <HoverCardTrigger asChild>
@@ -76,7 +84,7 @@ export default async function Home() {
           </HoverCardContent>
         </HoverCard>
       </div>
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center flex-1">
         <div className="flex flex-row space-x-4">
           <button className="text-white bg-red-500 hover:bg-red-700 font-bold py-4 px-8 rounded-full text-lg shadow-lg">
             Button 2
@@ -88,7 +96,7 @@ export default async function Home() {
             Button 4
           </button>
           <button className="text-white bg-red-500 hover:bg-red-700 font-bold py-4 px-8 rounded-full text-lg shadow-lg">
-            Search
+            Browse
           </button>
         </div>
       </div>
