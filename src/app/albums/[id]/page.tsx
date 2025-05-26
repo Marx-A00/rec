@@ -242,6 +242,19 @@ export default function AlbumDetailsPage() {
           </div>
         </div>
 
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-4 mb-8 justify-center lg:justify-start">
+          <button className="bg-dark-pastel-red hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+            Make Rec
+          </button>
+          <button className="bg-emeraled-green hover:bg-zinc-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+            Add to Collection
+          </button>
+          <button className="bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+            Other
+          </button>
+        </div>
+
         {/* Tabs Section */}
         <Tabs defaultValue="tracklist" className="w-full">
           <TabsList className="grid w-full grid-cols-4 bg-zinc-900">
