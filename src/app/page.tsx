@@ -92,9 +92,9 @@ export default async function Home() {
           <Link href="/recommend"
             className="text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg"
           >Recommend</Link>
-          <button className="text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg">
-            Browse
-          </button>
+          <Link href="/browse"
+            className="text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg"
+          >Browse</Link>
         </div>
       </div>
     </div>
