@@ -66,8 +66,8 @@ export default function AlbumSearch({
     if (onAlbumSelect) {
       onAlbumSelect(album);
     } else {
-      // Default behavior: navigate to album details or recommend page
-      router.push(`/recommend?album=${album.id}`);
+      // Default behavior: navigate to album details page
+      router.push(`/albums/${album.id}`);
     }
   };
 
