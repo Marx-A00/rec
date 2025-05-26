@@ -15,7 +15,7 @@ export default function SignIn() {
 
   const handleSpotifySignIn = async () => {
     setIsSpotifyLoading(true);
-    await signIn("spotify", { callbackUrl: "/" });
+    await signIn("spotify");
   };
 
   return (
