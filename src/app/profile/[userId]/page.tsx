@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 import Profile from '../profile';
+import { getSampleCollectionsByUserId } from '../../../../data/collections';
+import { getDetailedRecommendationsByUserId } from '../../../../data/index';
 
 interface User {
   id: string;
@@ -67,6 +69,12 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     notFound();
   }
   
+  // Get user's collections
+  const userCollections = getSampleCollectionsByUserId(params.userId);
+  
+  // Get user's recommendations
+  const userRecommendations = getDetailedRecommendationsByUserId(params.userId);
+  
   // Create a user object with the fetched data plus additional profile fields
   const user = {
     name: userData.name,
@@ -76,6 +84,8 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     bio: "Music enthusiast | Sharing vibes and discovering new sounds",
     followers: Math.floor(Math.random() * 1000) + 100, // Random followers for demo
     following: Math.floor(Math.random() * 500) + 50,   // Random following for demo
+    collections: userCollections,
+    recommendations: userRecommendations,
   };
   
   return <Profile user={user} />;

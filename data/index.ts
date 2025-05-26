@@ -35,6 +35,56 @@ export const getRecommendationsByUserId = (userId: string) => {
   return sampleRecommendations.filter(rec => rec.userId === userId);
 };
 
+// Get detailed recommendations with full album information
+export const getDetailedRecommendationsByUserId = (userId: string) => {
+  const userRecommendations = sampleRecommendations.filter(rec => rec.userId === userId);
+  
+  return userRecommendations
+    .map(rec => {
+      const basisAlbum = sampleAlbums.find(album => album.id === rec.basisAlbumId);
+      const recommendedAlbum = sampleAlbums.find(album => album.id === rec.recommendedAlbumId);
+      
+      if (!basisAlbum || !recommendedAlbum) {
+        return null;
+      }
+      
+      return {
+        id: rec.id,
+        score: rec.score,
+        createdAt: rec.createdAt.toISOString(),
+        basisAlbum: {
+          id: basisAlbum.id,
+          title: basisAlbum.title,
+          artist: basisAlbum.artist,
+          releaseDate: basisAlbum.releaseDate,
+          genre: basisAlbum.genre,
+          label: basisAlbum.label,
+          image: {
+            url: basisAlbum.imageUrl || '',
+            width: 400,
+            height: 400,
+            alt: `${basisAlbum.title} album cover`
+          }
+        },
+        recommendedAlbum: {
+          id: recommendedAlbum.id,
+          title: recommendedAlbum.title,
+          artist: recommendedAlbum.artist,
+          releaseDate: recommendedAlbum.releaseDate,
+          genre: recommendedAlbum.genre,
+          label: recommendedAlbum.label,
+          image: {
+            url: recommendedAlbum.imageUrl || '',
+            width: 400,
+            height: 400,
+            alt: `${recommendedAlbum.title} album cover`
+          }
+        }
+      };
+    })
+    .filter((rec): rec is NonNullable<typeof rec> => rec !== null); // Type-safe filter for non-null recommendations
+};
+
 export const getTracksByAlbumId = (albumId: string) => {
   return sampleTracks.filter(track => track.albumId === albumId);
 };

@@ -3,6 +3,64 @@
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+interface Album {
+  id: string;
+  title: string;
+  artist: string;
+  releaseDate?: string;
+  genre: string[];
+  label?: string;
+  image: {
+    url: string;
+    width: number;
+    height: number;
+    alt?: string;
+  };
+}
+
+interface CollectionAlbum {
+  id: string;
+  albumId: string;
+  album: Album;
+  addedAt: string;
+  addedBy: string; // userId (should be "owner" but keeping as is)
+  personalRating?: number;
+  personalNotes?: string;
+  position: number;
+}
+
+interface Collection {
+  id: string;
+  name: string;
+  description?: string;
+  userId: string;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+  albums: CollectionAlbum[];
+  metadata: {
+    totalAlbums: number;
+    totalDuration: number;
+    genres: string[];
+    averageRating?: number;
+  };
+  tags?: string[];
+  coverImage?: {
+    url: string;
+    width: number;
+    height: number;
+    alt?: string;
+  };
+}
+
+interface Recommendation {
+  id: string;
+  score: number;
+  createdAt: string;
+  basisAlbum: Album;
+  recommendedAlbum: Album;
+}
+
 interface User {
   name: string;
   email: string | null;
@@ -11,6 +69,8 @@ interface User {
   bio: string;
   followers: number;
   following: number;
+  collections: Collection[];
+  recommendations: Recommendation[];
 }
 
 interface ProfileClientProps {
@@ -55,13 +115,218 @@ export default function ProfileClient({ user }: ProfileClientProps) {
             </div>
           </div>
           
-          {/* Collection Section */}
+          {/* Collections Section */}
           <section className="border-t border-zinc-800 pt-8">
-            <h2 className="text-2xl font-semibold mb-6 text-cosmic-latte">Music Collection</h2>
-            <div className="text-center py-12">
-              <p className="text-zinc-400 mb-4">This user's collection will be displayed here.</p>
-              <p className="text-sm text-zinc-500">Feature coming soon!</p>
-            </div>
+            <h2 className="text-2xl font-semibold mb-6 text-cosmic-latte">Music Collections</h2>
+            {user.collections.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {user.collections.map((collection) => (
+                  <div 
+                    key={collection.id} 
+                    className="bg-zinc-900 rounded-lg p-6 border border-zinc-800 hover:border-zinc-700 transition-colors"
+                  >
+                    {/* Collection Header */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-white truncate">
+                          {collection.name}
+                        </h3>
+                        <div className="flex items-center space-x-2">
+                          {collection.isPublic ? (
+                            <span className="text-xs bg-emeraled-green text-black px-2 py-1 rounded-full">
+                              Public
+                            </span>
+                          ) : (
+                            <span className="text-xs bg-zinc-700 text-zinc-300 px-2 py-1 rounded-full">
+                              Private
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                                             {collection.description && (
+                         <p className="text-sm text-zinc-400 mb-3 overflow-hidden" style={{
+                           display: '-webkit-box',
+                           WebkitLineClamp: 2,
+                           WebkitBoxOrient: 'vertical'
+                         }}>
+                           {collection.description}
+                         </p>
+                       )}
+                    </div>
+
+                    {/* Collection Stats */}
+                    <div className="mb-4 text-xs text-zinc-500">
+                      <div className="flex justify-between items-center">
+                        <span>{collection.metadata.totalAlbums} albums</span>
+                        {collection.metadata.averageRating && (
+                          <span>★ {collection.metadata.averageRating}/10</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Album Grid */}
+                    {collection.albums.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-2 mb-4">
+                        {collection.albums.slice(0, 6).map((collectionAlbum) => (
+                          <div key={collectionAlbum.id} className="relative group">
+                            <img 
+                              src={collectionAlbum.album.image.url} 
+                              alt={collectionAlbum.album.title}
+                              className="w-full aspect-square rounded object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-200 rounded flex items-center justify-center">
+                              <div className="opacity-0 group-hover:opacity-100 text-white text-xs text-center p-1">
+                                <p className="font-medium truncate">{collectionAlbum.album.title}</p>
+                                <p className="text-zinc-300 truncate">{collectionAlbum.album.artist}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {collection.albums.length > 6 && (
+                          <div className="flex items-center justify-center bg-zinc-800 rounded aspect-square">
+                            <span className="text-zinc-400 text-xs">
+                              +{collection.albums.length - 6} more
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-zinc-500">
+                        <p className="text-sm">No albums in this collection yet</p>
+                      </div>
+                    )}
+
+                    {/* Tags */}
+                    {collection.tags && collection.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {collection.tags.slice(0, 3).map((tag) => (
+                          <span 
+                            key={tag} 
+                            className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                        {collection.tags.length > 3 && (
+                          <span className="text-xs text-zinc-500">
+                            +{collection.tags.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-zinc-400 mb-4">No collections created yet.</p>
+                <p className="text-sm text-zinc-500">This user hasn't shared any music collections.</p>
+              </div>
+            )}
+          </section>
+
+          {/* Recommendations Section */}
+          <section className="border-t border-zinc-800 pt-8 mt-8">
+            <h2 className="text-2xl font-semibold mb-6 text-cosmic-latte">Music Recommendations</h2>
+            {user.recommendations.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {user.recommendations.map((recommendation) => (
+                  <div 
+                    key={recommendation.id} 
+                    className="bg-zinc-900 rounded-lg p-6 border border-zinc-800 hover:border-zinc-700 transition-colors"
+                  >
+                    {/* Recommendation Header */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-white">
+                          Music Recommendation
+                        </h3>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm bg-emeraled-green text-black px-2 py-1 rounded-full font-medium">
+                            ★ {recommendation.score}/10
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-zinc-500">
+                        {new Date(recommendation.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+
+                    {/* Albums Comparison */}
+                    <div className="space-y-4">
+                      {/* Basis Album */}
+                      <div>
+                        <p className="text-xs text-zinc-400 mb-2 uppercase tracking-wide">If you like</p>
+                        <div className="flex items-center space-x-3 bg-zinc-800 rounded-lg p-3">
+                          <img 
+                            src={recommendation.basisAlbum.image.url} 
+                            alt={recommendation.basisAlbum.title}
+                            className="w-12 h-12 rounded object-cover"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-medium truncate">
+                              {recommendation.basisAlbum.title}
+                            </p>
+                            <p className="text-zinc-400 text-sm truncate">
+                              {recommendation.basisAlbum.artist}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Arrow */}
+                      <div className="flex justify-center">
+                        <div className="text-emeraled-green text-xl">↓</div>
+                      </div>
+
+                      {/* Recommended Album */}
+                      <div>
+                        <p className="text-xs text-zinc-400 mb-2 uppercase tracking-wide">Then try</p>
+                        <div className="flex items-center space-x-3 bg-zinc-800 rounded-lg p-3">
+                          <img 
+                            src={recommendation.recommendedAlbum.image.url} 
+                            alt={recommendation.recommendedAlbum.title}
+                            className="w-12 h-12 rounded object-cover"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-medium truncate">
+                              {recommendation.recommendedAlbum.title}
+                            </p>
+                            <p className="text-zinc-400 text-sm truncate">
+                              {recommendation.recommendedAlbum.artist}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Genre Tags */}
+                      {recommendation.recommendedAlbum.genre && recommendation.recommendedAlbum.genre.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-2">
+                          {recommendation.recommendedAlbum.genre.slice(0, 3).map((genre) => (
+                            <span 
+                              key={genre} 
+                              className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded"
+                            >
+                              {genre}
+                            </span>
+                          ))}
+                          {recommendation.recommendedAlbum.genre.length > 3 && (
+                            <span className="text-xs text-zinc-500">
+                              +{recommendation.recommendedAlbum.genre.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-zinc-400 mb-4">No recommendations created yet.</p>
+                <p className="text-sm text-zinc-500">This user hasn't shared any music recommendations.</p>
+              </div>
+            )}
           </section>
         </div>
       </div>
