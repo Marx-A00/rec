@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { auth } from "@/../auth";
 import prisma from "@/lib/prisma";
 
 export async function GET() {
@@ -36,7 +36,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     // Check for authentication
-    const session = await getServerSession();
+    const session = await auth();
     
     if (!session?.user?.id) {
       return NextResponse.json(
