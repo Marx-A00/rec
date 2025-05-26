@@ -123,18 +123,20 @@ export default async function BrowsePage() {
             {users.map((user) => (
               <HoverCard key={user.id}>
                 <HoverCardTrigger asChild>
-                  <div className="bg-zinc-900 rounded-lg p-4 hover:bg-zinc-800 transition-colors cursor-pointer border border-zinc-800">
-                    <div className="flex flex-col items-center text-center">
-                      <Avatar className="h-16 w-16 mb-3">
-                        <AvatarImage src={user.image} alt={user.name} />
-                        <AvatarFallback className="bg-zinc-700 text-zinc-200">
-                          {user.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <h3 className="font-medium text-white mb-1">{user.name}</h3>
-                      <p className="text-sm text-zinc-400">{user.email}</p>
+                  <Link href={`/profile/${user.id}`}>
+                    <div className="bg-zinc-900 rounded-lg p-4 hover:bg-zinc-800 transition-colors cursor-pointer border border-zinc-800">
+                      <div className="flex flex-col items-center text-center">
+                        <Avatar className="h-16 w-16 mb-3">
+                          <AvatarImage src={user.image} alt={user.name} />
+                          <AvatarFallback className="bg-zinc-700 text-zinc-200">
+                            {user.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <h3 className="font-medium text-white mb-1">{user.name}</h3>
+                        <p className="text-sm text-zinc-400">{user.email}</p>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 </HoverCardTrigger>
                 <HoverCardContent className="w-64 bg-zinc-900 border-zinc-800 text-white">
                   <div className="flex space-x-3">
@@ -155,6 +157,14 @@ export default async function BrowsePage() {
                         <span className="text-xs text-zinc-400">
                           Music enthusiast
                         </span>
+                      </div>
+                      <div className="mt-2">
+                        <Link 
+                          href={`/profile/${user.id}`} 
+                          className="text-xs text-blue-400 hover:text-blue-300 hover:underline inline-block"
+                        >
+                          View Profile
+                        </Link>
                       </div>
                     </div>
                   </div>
