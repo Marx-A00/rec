@@ -53,6 +53,11 @@ export default async function Home() {
                         Signed in with Google
                       </span>
                     </div>
+                    <div className="mt-2">
+                      <Link href="/profile" className="text-xs text-blue-400 hover:text-blue-300 hover:underline inline-block">
+                        View Profile
+                      </Link>
+                    </div>
                   </div>
                 </div>
                 
