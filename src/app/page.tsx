@@ -86,16 +86,13 @@ export default async function Home() {
       </div>
       <div className="flex items-center justify-center flex-1">
         <div className="flex flex-row space-x-4">
-          <button className="text-white bg-red-500 hover:bg-red-700 font-bold py-4 px-8 rounded-full text-lg shadow-lg">
-            Button 2
+          <button className="text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg">
+            Discover
           </button>
           <Link href="/recommend"
-            className="text-white bg-red-500 hover:bg-red-700 font-bold py-4 px-8 rounded-full text-lg shadow-lg"
+            className="text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg"
           >Recommend</Link>
-          <button className="text-white bg-red-500 hover:bg-red-700 font-bold py-4 px-8 rounded-full text-lg shadow-lg">
-            Button 4
-          </button>
-          <button className="text-white bg-red-500 hover:bg-red-700 font-bold py-4 px-8 rounded-full text-lg shadow-lg">
+          <button className="text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg">
             Browse
           </button>
         </div>
