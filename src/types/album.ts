@@ -9,6 +9,8 @@ export interface Album {
   id: string;
   title: string;
   artist: string;
+  subtitle?: string; // For general search results
+  type?: string; // For general search results (album, artist, label, etc.)
   releaseDate: string; // ISO 8601 format: "YYYY-MM-DD"
   genre: string[];
   label: string;

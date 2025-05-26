@@ -18,7 +18,25 @@ export default function AlbumDetailsPage() {
 
   useEffect(() => {
     if (albumId) {
-      fetchAlbumDetails(albumId);
+      // First try to get album data from sessionStorage
+      const storedAlbum = sessionStorage.getItem(`album-${albumId}`);
+      if (storedAlbum) {
+        try {
+          const albumData = JSON.parse(storedAlbum);
+          console.log('Using stored album data:', albumData.title);
+          setAlbum(albumData);
+          setIsLoading(false);
+          
+          // Optionally fetch detailed data in the background to get tracks
+          fetchDetailedAlbumData(albumId, albumData);
+        } catch (error) {
+          console.error('Error parsing stored album data:', error);
+          fetchAlbumDetails(albumId);
+        }
+      } else {
+        // Fallback to API fetch if no stored data
+        fetchAlbumDetails(albumId);
+      }
     }
   }, [albumId]);
 
@@ -43,6 +61,35 @@ export default function AlbumDetailsPage() {
       setError(`Failed to fetch album details: ${err.message}`);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchDetailedAlbumData = async (id: string, baseAlbum: Album) => {
+    try {
+      console.log(`Fetching detailed data for album ID: ${id}`);
+      const response = await fetch(`/api/albums/${id}`);
+      
+      if (!response.ok) {
+        console.log('Could not fetch detailed data, using base album data');
+        return;
+      }
+      
+      const data = await response.json();
+      if (data.album && data.album.tracks && data.album.tracks.length > 0) {
+        console.log(`Got detailed data with ${data.album.tracks.length} tracks`);
+        // Merge the detailed data with the base album data
+        setAlbum({
+          ...baseAlbum,
+          tracks: data.album.tracks,
+          metadata: {
+            ...baseAlbum.metadata,
+            ...data.album.metadata,
+          }
+        });
+      }
+    } catch (err: any) {
+      console.log('Error fetching detailed album data:', err);
+      // Continue with the base album data
     }
   };
 

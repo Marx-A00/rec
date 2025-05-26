@@ -19,7 +19,7 @@ export default function AlbumSearch({
   placeholder = "Search albums, artists, or genres...",
   showResults = true,
 }: AlbumSearchProps) {
-  const [searchResults, setSearchResults] = useState<Album[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showResultsDropdown, setShowResultsDropdown] = useState(false);
@@ -41,15 +41,17 @@ export default function AlbumSearch({
     setError(null);
 
     try {
-      const response = await fetch(`/api/albums/search?query=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/search?query=${encodeURIComponent(query)}&type=all`);
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to search albums");
+        throw new Error(errorData.error || "Failed to search");
       }
 
       const data = await response.json();
-      setSearchResults(data.albums || []);
+      // Show all result types
+      const allResults = data.results || [];
+      setSearchResults(allResults);
       setShowResultsDropdown(true);
     } catch (err: any) {
       console.error("Error searching albums:", err);
@@ -61,13 +63,29 @@ export default function AlbumSearch({
     }
   };
 
-  const handleAlbumSelect = (album: Album) => {
+  const handleResultSelect = (result: any) => {
     setShowResultsDropdown(false);
-    if (onAlbumSelect) {
-      onAlbumSelect(album);
+    
+    // Handle different result types
+    if (result.type === 'album') {
+      if (onAlbumSelect) {
+        onAlbumSelect(result);
+      } else {
+        // Store album data in sessionStorage and navigate to album details page
+        sessionStorage.setItem(`album-${result.id}`, JSON.stringify(result));
+        router.push(`/albums/${result.id}`);
+      }
+    } else if (result.type === 'artist') {
+      // Store artist data and navigate to artist page
+      sessionStorage.setItem(`artist-${result.id}`, JSON.stringify(result));
+      router.push(`/artists/${result.id}`);
+    } else if (result.type === 'label') {
+      // Store label data and navigate to label page
+      sessionStorage.setItem(`label-${result.id}`, JSON.stringify(result));
+      router.push(`/labels/${result.id}`);
     } else {
-      // Default behavior: navigate to album details page
-      router.push(`/albums/${album.id}`);
+      // For unknown types, try to handle as album for now
+      console.log('Unknown result type:', result.type, result);
     }
   };
 
@@ -112,7 +130,7 @@ export default function AlbumSearch({
           <SearchResults
             results={searchResults}
             isLoading={isLoading}
-            onAlbumSelect={handleAlbumSelect}
+            onAlbumSelect={handleResultSelect}
           />
         </div>
       )}
