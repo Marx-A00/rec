@@ -26,31 +26,6 @@ interface CollectionAlbum {
   addedBy: string; // userId (should be "owner" but keeping as is)
   personalRating?: number;
   personalNotes?: string;
-  position: number;
-}
-
-interface Collection {
-  id: string;
-  name: string;
-  description?: string;
-  userId: string;
-  isPublic: boolean;
-  createdAt: string;
-  updatedAt: string;
-  albums: CollectionAlbum[];
-  metadata: {
-    totalAlbums: number;
-    totalDuration: number;
-    genres: string[];
-    averageRating?: number;
-  };
-  tags?: string[];
-  coverImage?: {
-    url: string;
-    width: number;
-    height: number;
-    alt?: string;
-  };
 }
 
 interface Recommendation {
@@ -69,7 +44,7 @@ interface User {
   bio: string;
   followers: number;
   following: number;
-  collections: Collection[];
+  collection: CollectionAlbum[]; // Single collection - list of albums user owns
   recommendations: Recommendation[];
 }
 
@@ -115,112 +90,48 @@ export default function ProfileClient({ user }: ProfileClientProps) {
             </div>
           </div>
           
-          {/* Collections Section */}
+                    {/* Collection Section */}
           <section className="border-t border-zinc-800 pt-8">
-            <h2 className="text-2xl font-semibold mb-6 text-cosmic-latte">Music Collections</h2>
-            {user.collections.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {user.collections.map((collection) => (
-                  <div 
-                    key={collection.id} 
-                    className="bg-zinc-900 rounded-lg p-6 border border-zinc-800 hover:border-zinc-700 transition-colors"
-                  >
-                    {/* Collection Header */}
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-semibold text-white truncate">
-                          {collection.name}
-                        </h3>
-                        <div className="flex items-center space-x-2">
-                          {collection.isPublic ? (
-                            <span className="text-xs bg-emeraled-green text-black px-2 py-1 rounded-full">
-                              Public
-                            </span>
-                          ) : (
-                            <span className="text-xs bg-zinc-700 text-zinc-300 px-2 py-1 rounded-full">
-                              Private
-                            </span>
+            <h2 className="text-2xl font-semibold mb-6 text-cosmic-latte">Record Collection</h2>
+            {user.collection.length > 0 ? (
+              <div>
+                {/* Collection Stats */}
+                <div className="mb-6 text-sm text-zinc-400">
+                  <p>{user.collection.length} albums in collection</p>
+                </div>
+
+                {/* Album Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {user.collection.map((collectionAlbum) => (
+                    <div key={collectionAlbum.id} className="relative group">
+                      <img 
+                        src={collectionAlbum.album.image.url} 
+                        alt={collectionAlbum.album.title}
+                        className="w-full aspect-square rounded object-cover border border-zinc-800"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 rounded flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 text-cosmic-latte text-xs text-center p-2">
+                          <p className="font-medium truncate mb-1">{collectionAlbum.album.title}</p>
+                          <p className="text-zinc-300 truncate mb-1">{collectionAlbum.album.artist}</p>
+                          {collectionAlbum.personalRating && (
+                            <p className="text-emeraled-green text-xs">★ {collectionAlbum.personalRating}/10</p>
                           )}
                         </div>
                       </div>
-                                             {collection.description && (
-                         <p className="text-sm text-zinc-400 mb-3 overflow-hidden" style={{
-                           display: '-webkit-box',
-                           WebkitLineClamp: 2,
-                           WebkitBoxOrient: 'vertical'
-                         }}>
-                           {collection.description}
-                         </p>
-                       )}
-                    </div>
-
-                    {/* Collection Stats */}
-                    <div className="mb-4 text-xs text-zinc-500">
-                      <div className="flex justify-between items-center">
-                        <span>{collection.metadata.totalAlbums} albums</span>
-                        {collection.metadata.averageRating && (
-                          <span>★ {collection.metadata.averageRating}/10</span>
-                        )}
+                      {/* Added date indicator */}
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-xs bg-black bg-opacity-75 text-zinc-300 px-1 py-0.5 rounded">
+                          {new Date(collectionAlbum.addedAt).getFullYear()}
+                        </span>
                       </div>
                     </div>
-
-                    {/* Album Grid */}
-                    {collection.albums.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-2 mb-4">
-                        {collection.albums.slice(0, 6).map((collectionAlbum) => (
-                          <div key={collectionAlbum.id} className="relative group">
-                            <img 
-                              src={collectionAlbum.album.image.url} 
-                              alt={collectionAlbum.album.title}
-                              className="w-full aspect-square rounded object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-200 rounded flex items-center justify-center">
-                              <div className="opacity-0 group-hover:opacity-100 text-white text-xs text-center p-1">
-                                <p className="font-medium truncate">{collectionAlbum.album.title}</p>
-                                <p className="text-zinc-300 truncate">{collectionAlbum.album.artist}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        {collection.albums.length > 6 && (
-                          <div className="flex items-center justify-center bg-zinc-800 rounded aspect-square">
-                            <span className="text-zinc-400 text-xs">
-                              +{collection.albums.length - 6} more
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-zinc-500">
-                        <p className="text-sm">No albums in this collection yet</p>
-                      </div>
-                    )}
-
-                    {/* Tags */}
-                    {collection.tags && collection.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {collection.tags.slice(0, 3).map((tag) => (
-                          <span 
-                            key={tag} 
-                            className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                        {collection.tags.length > 3 && (
-                          <span className="text-xs text-zinc-500">
-                            +{collection.tags.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-zinc-400 mb-4">No collections created yet.</p>
-                <p className="text-sm text-zinc-500">This user hasn't shared any music collections.</p>
+                <p className="text-zinc-400 mb-4">No albums in collection yet.</p>
+                <p className="text-sm text-zinc-500">This user hasn't added any albums to their record collection.</p>
               </div>
             )}
           </section>
@@ -238,7 +149,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                     {/* Recommendation Header */}
                     <div className="mb-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-lg font-semibold text-white">
+                        <h3 className="text-lg font-semibold text-cosmic-latte">
                           Music Recommendation
                         </h3>
                         <div className="flex items-center space-x-2">
@@ -264,7 +175,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                             className="w-12 h-12 rounded object-cover"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="text-white font-medium truncate">
+                            <p className="text-cosmic-latte font-medium truncate">
                               {recommendation.basisAlbum.title}
                             </p>
                             <p className="text-zinc-400 text-sm truncate">
@@ -289,7 +200,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                             className="w-12 h-12 rounded object-cover"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="text-white font-medium truncate">
+                            <p className="text-cosmic-latte font-medium truncate">
                               {recommendation.recommendedAlbum.title}
                             </p>
                             <p className="text-zinc-400 text-sm truncate">

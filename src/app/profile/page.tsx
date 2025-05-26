@@ -1,6 +1,8 @@
 import { auth } from '@/../auth';
 import { redirect } from 'next/navigation';
 import Profile from './profile';
+import { sampleCollectionAlbums } from '../../../data/collections';
+import { getDetailedRecommendationsByUserId } from '../../../data/index';
 
 
 export default async function ProfilePage() {
@@ -11,6 +13,16 @@ export default async function ProfilePage() {
     redirect('/');
   }
   
+  // For the current user, we'll use a placeholder user ID to get their collection
+  // In a real app, you'd use the actual user ID from the session
+  const currentUserId = "user-1"; // Placeholder - in real app use userData.id
+  
+  // Get user's collection (albums they own)
+  const userCollection = sampleCollectionAlbums.filter(collectionAlbum => collectionAlbum.addedBy === currentUserId);
+  
+  // Get user's recommendations
+  const userRecommendations = getDetailedRecommendationsByUserId(currentUserId);
+  
   // Create a user object with auth data plus additional profile fields
   const user = {
     name: userData.name || "User",
@@ -19,7 +31,9 @@ export default async function ProfilePage() {
     username: userData.email ? `@${userData.email.split('@')[0]}` : '@user',
     bio: "Music enthusiast | Sharing vibes and discovering new sounds",
     followers: 0,
-    following: 0
+    following: 0,
+    collection: userCollection, // Single collection - list of albums user owns
+    recommendations: userRecommendations,
   };
   
   // Pass the user data to the client component

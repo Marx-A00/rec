@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Profile from '../profile';
-import { getSampleCollectionsByUserId } from '../../../../data/collections';
+import { sampleCollectionAlbums } from '../../../../data/collections';
 import { getDetailedRecommendationsByUserId } from '../../../../data/index';
 
 interface User {
@@ -69,8 +69,8 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     notFound();
   }
   
-  // Get user's collections
-  const userCollections = getSampleCollectionsByUserId(params.userId);
+  // Get user's collection (albums they own) - filter by addedBy (which should be "owner")
+  const userCollection = sampleCollectionAlbums.filter(collectionAlbum => collectionAlbum.addedBy === params.userId);
   
   // Get user's recommendations
   const userRecommendations = getDetailedRecommendationsByUserId(params.userId);
@@ -84,7 +84,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     bio: "Music enthusiast | Sharing vibes and discovering new sounds",
     followers: Math.floor(Math.random() * 1000) + 100, // Random followers for demo
     following: Math.floor(Math.random() * 500) + 50,   // Random following for demo
-    collections: userCollections,
+    collection: userCollection, // Single collection - list of albums user owns
     recommendations: userRecommendations,
   };
   
