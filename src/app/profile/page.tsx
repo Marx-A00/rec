@@ -1,27 +1,121 @@
 import { auth } from '@/../auth';
 import { redirect } from 'next/navigation';
 import Profile from './profile';
-import { sampleCollectionAlbums } from '../../../data/collections';
-import { getDetailedRecommendationsByUserId } from '../../../data/index';
+import prisma from '@/lib/prisma';
 
+async function getUserCollections(userId: string) {
+  try {
+    const collections = await prisma.collection.findMany({
+      where: { userId },
+      include: {
+        albums: {
+          include: {
+            album: {
+              include: {
+                tracks: true
+              }
+            }
+          },
+          orderBy: { addedAt: 'desc' }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
+    
+    // Flatten all albums from all collections into a single array
+    const allAlbums = collections.flatMap(collection => 
+      collection.albums.map(collectionAlbum => ({
+        id: collectionAlbum.id,
+        albumId: collectionAlbum.albumId,
+        album: {
+          id: collectionAlbum.album.id,
+          title: collectionAlbum.album.title,
+          artist: collectionAlbum.album.artist,
+          releaseDate: collectionAlbum.album.releaseDate,
+          genre: collectionAlbum.album.genre,
+          label: collectionAlbum.album.label,
+          image: {
+            url: collectionAlbum.album.imageUrl || '/placeholder.svg?height=400&width=400',
+            width: 400,
+            height: 400,
+            alt: `${collectionAlbum.album.title} cover`
+          }
+        },
+        addedAt: collectionAlbum.addedAt.toISOString(),
+        addedBy: collection.userId,
+        personalRating: collectionAlbum.personalRating,
+        personalNotes: collectionAlbum.personalNotes
+      }))
+    );
+    
+    return allAlbums;
+  } catch (error) {
+    console.error('Error fetching user collections:', error);
+    return [];
+  }
+}
+
+async function getUserRecommendations(userId: string) {
+  try {
+    const recommendations = await prisma.recommendation.findMany({
+      where: { userId },
+      include: {
+        basisAlbum: true,
+        recommendedAlbum: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    return recommendations.map(rec => ({
+      id: rec.id,
+      score: rec.score,
+      createdAt: rec.createdAt.toISOString(),
+              basisAlbum: {
+          id: rec.basisAlbum.id,
+          title: rec.basisAlbum.title,
+          artist: rec.basisAlbum.artist,
+          releaseDate: rec.basisAlbum.releaseDate || undefined,
+          genre: rec.basisAlbum.genre,
+          label: rec.basisAlbum.label || undefined,
+          image: {
+            url: rec.basisAlbum.imageUrl || '/placeholder.svg?height=400&width=400',
+            width: 400,
+            height: 400,
+            alt: `${rec.basisAlbum.title} cover`
+          }
+        },
+        recommendedAlbum: {
+          id: rec.recommendedAlbum.id,
+          title: rec.recommendedAlbum.title,
+          artist: rec.recommendedAlbum.artist,
+          releaseDate: rec.recommendedAlbum.releaseDate || undefined,
+          genre: rec.recommendedAlbum.genre,
+          label: rec.recommendedAlbum.label || undefined,
+          image: {
+            url: rec.recommendedAlbum.imageUrl || '/placeholder.svg?height=400&width=400',
+            width: 400,
+            height: 400,
+            alt: `${rec.recommendedAlbum.title} cover`
+          }
+        }
+    }));
+  } catch (error) {
+    console.error('Error fetching user recommendations:', error);
+    return [];
+  }
+}
 
 export default async function ProfilePage() {
   const session = await auth();
   const userData = session?.user;
 
-  if (!userData) {
+  if (!userData || !userData.id) {
     redirect('/');
   }
   
-  // For the current user, we'll use a placeholder user ID to get their collection
-  // In a real app, you'd use the actual user ID from the session
-  const currentUserId = "user-1"; // Placeholder - in real app use userData.id
-  
-  // Get user's collection (albums they own)
-  const userCollection = sampleCollectionAlbums.filter(collectionAlbum => collectionAlbum.addedBy === currentUserId);
-  
-  // Get user's recommendations
-  const userRecommendations = getDetailedRecommendationsByUserId(currentUserId);
+  // Get user's real collection and recommendations from database
+  const userCollection = await getUserCollections(userData.id);
+  const userRecommendations = await getUserRecommendations(userData.id);
   
   // Create a user object with auth data plus additional profile fields
   const user = {
@@ -32,8 +126,8 @@ export default async function ProfilePage() {
     bio: "Music enthusiast | Sharing vibes and discovering new sounds",
     followers: 0,
     following: 0,
-    collection: userCollection, // Single collection - list of albums user owns
-    recommendations: userRecommendations,
+    collection: userCollection, // Real collection from database
+    recommendations: userRecommendations, // Real recommendations from database
   };
   
   // Pass the user data to the client component

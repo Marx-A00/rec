@@ -7,7 +7,7 @@ import { ArrowLeft, Clock, Calendar, Tag, Building2, Music } from "lucide-react"
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Album } from "@/types/album";
-import AddToCollectionModal from "@/components/collections/AddToCollectionModal";
+import AddToCollectionButton from "@/components/collections/AddToCollectionButton";
 import Toast, { useToast } from "@/components/ui/toast";
 
 export default function AlbumDetailsPage() {
@@ -17,7 +17,7 @@ export default function AlbumDetailsPage() {
   const [album, setAlbum] = useState<Album | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showCollectionModal, setShowCollectionModal] = useState(false);
+
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
@@ -251,12 +251,11 @@ export default function AlbumDetailsPage() {
           <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
             Make Rec
           </button>
-          <button 
-            onClick={() => setShowCollectionModal(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-          >
-            Add to Collection
-          </button>
+          <AddToCollectionButton
+            album={album}
+            onSuccess={(message: string) => showToast(message, 'success')}
+            onError={(message: string) => showToast(message, 'error')}
+          />
           <button className="bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
             Other
           </button>
@@ -337,18 +336,7 @@ export default function AlbumDetailsPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Add to Collection Modal */}
-        {album && (
-          <AddToCollectionModal
-            isOpen={showCollectionModal}
-            onClose={() => setShowCollectionModal(false)}
-            album={album}
-            onSuccess={(message) => {
-              setShowCollectionModal(false);
-              showToast(message, 'success');
-            }}
-          />
-        )}
+
 
         {/* Toast Notification */}
         <Toast

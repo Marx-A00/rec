@@ -38,8 +38,29 @@ export async function POST(
       targetCollectionId = newCollection.id;
     }
     
+    // If no collection specified, find or create a default collection
     if (!targetCollectionId) {
-      return NextResponse.json({ error: 'Collection ID or new collection name is required' }, { status: 400 });
+      // Look for an existing default collection
+      let defaultCollection = await prisma.collection.findFirst({
+        where: {
+          userId: session.user.id,
+          name: 'My Collection'
+        }
+      });
+      
+      // Create default collection if it doesn't exist
+      if (!defaultCollection) {
+        defaultCollection = await prisma.collection.create({
+          data: {
+            name: 'My Collection',
+            description: 'My personal album collection',
+            userId: session.user.id,
+            isPublic: false
+          }
+        });
+      }
+      
+      targetCollectionId = defaultCollection.id;
     }
     
     // Verify collection ownership
