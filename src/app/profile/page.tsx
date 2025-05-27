@@ -31,9 +31,9 @@ async function getUserCollections(userId: string) {
           id: collectionAlbum.album.id,
           title: collectionAlbum.album.title,
           artist: collectionAlbum.album.artist,
-          releaseDate: collectionAlbum.album.releaseDate,
+          releaseDate: collectionAlbum.album.releaseDate || undefined,
           genre: collectionAlbum.album.genre,
-          label: collectionAlbum.album.label,
+          label: collectionAlbum.album.label || undefined,
           image: {
             url: collectionAlbum.album.imageUrl || '/placeholder.svg?height=400&width=400',
             width: 400,
@@ -43,8 +43,8 @@ async function getUserCollections(userId: string) {
         },
         addedAt: collectionAlbum.addedAt.toISOString(),
         addedBy: collection.userId,
-        personalRating: collectionAlbum.personalRating,
-        personalNotes: collectionAlbum.personalNotes
+        personalRating: collectionAlbum.personalRating || undefined,
+        personalNotes: collectionAlbum.personalNotes || undefined
       }))
     );
     

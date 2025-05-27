@@ -22,6 +22,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "disconnect": "^1.2.2",
+    "html2canvas": "^1.4.1",
     "lucide-react": "^0.471.1",
     "next": "15.1.4",
     "next-auth": "5.0.0-beta.25",
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@types/html2canvas": "^1.0.0",
     "@types/node": "^20",
     "@types/pg": "^8.11.11",
     "@types/react": "^19",

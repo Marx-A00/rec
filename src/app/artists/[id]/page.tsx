@@ -234,7 +234,7 @@ export default function ArtistDetailsPage() {
               Discography
             </TabsTrigger>
             <TabsTrigger value="biography" className="data-[state=active]:bg-zinc-700">
-              Biography
+              Recs
             </TabsTrigger>
             <TabsTrigger value="collaborations" className="data-[state=active]:bg-zinc-700">
               Collaborations
@@ -255,7 +255,7 @@ export default function ArtistDetailsPage() {
 
           <TabsContent value="biography" className="mt-6">
             <div className="bg-zinc-900 rounded-lg p-6">
-              <h3 className="text-xl font-semibold mb-4">Biography</h3>
+              <h3 className="text-xl font-semibold mb-4">Recs</h3>
               {artistDetails?.profile ? (
                 <div className="text-zinc-300 leading-relaxed">
                   {artistDetails.profile.split('\n').map((paragraph: string, index: number) => (
