@@ -31,12 +31,14 @@ export async function GET(
       // Try as a master release first
       albumDetails = await db.getMaster(id);
       console.log(`Found master release: ${albumDetails.title}`);
+      console.log(`Master artists:`, albumDetails.artists);
     } catch (masterError) {
       console.log(`Not a master release, trying as regular release`);
       try {
         // If not a master, try as a regular release
         albumDetails = await db.getRelease(id);
         console.log(`Found regular release: ${albumDetails.title}`);
+        console.log(`Release artists:`, albumDetails.artists);
       } catch (releaseError) {
         console.error('Error fetching album details:', releaseError);
         return NextResponse.json({ error: 'Album not found' }, { status: 404 });
@@ -61,11 +63,27 @@ export async function GET(
       ? albumDetails.images[0].uri
       : PLACEHOLDER_IMAGE;
 
+    // Extract title and artist properly
+    let title = albumDetails.title;
+    let artist = 'Unknown Artist';
+
+    // If we have artists array, use the first artist
+    if (albumDetails.artists && albumDetails.artists.length > 0) {
+      artist = albumDetails.artists[0].name;
+    } else if (albumDetails.title && albumDetails.title.includes(' - ')) {
+      // Fallback: try to parse from title if no artists array
+      const parts = albumDetails.title.split(' - ');
+      if (parts.length >= 2) {
+        artist = parts[0];
+        title = parts.slice(1).join(' - '); // In case there are multiple " - " in the title
+      }
+    }
+
     // Format the album data to match our Album interface
     const album = {
       id: id.toString(),
-      title: albumDetails.title.split(' - ')[1] || albumDetails.title,
-      artist: albumDetails.artists?.[0]?.name || albumDetails.title.split(' - ')[0] || 'Unknown Artist',
+      title: title,
+      artist: artist,
       releaseDate: albumDetails.released || albumDetails.year || '',
       genre: albumDetails.genres || [],
       label: albumDetails.labels?.[0]?.name || '',
@@ -73,7 +91,7 @@ export async function GET(
         url: imageUrl,
         width: 400,  // Consistent width
         height: 400, // Consistent height
-        alt: albumDetails.title || 'Album cover',
+        alt: title || 'Album cover',
       },
       tracks,
       metadata: {

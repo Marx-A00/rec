@@ -12,6 +12,10 @@ export default {
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
+  			'emeraled-green': '#317039',
+			'cosmic-latte': '#FFFBEB',
+			'maximum-yellow':'#F1BE49',
+			'dark-pastel-red': '#CC4B24',
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
