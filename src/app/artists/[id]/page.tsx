@@ -6,31 +6,14 @@ import Image from "next/image";
 import { ArrowLeft, User, Calendar, MapPin, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-interface Artist {
-  id: string;
-  title: string;
-  subtitle?: string;
-  type: string;
-  image: {
-    url: string;
-    width: number;
-    height: number;
-    alt?: string;
-  };
-  _discogs?: {
-    type: string;
-    uri: string;
-    resource_url: string;
-  };
-}
+import { Artist, ArtistDetails } from "@/types/artist";
 
 export default function ArtistDetailsPage() {
   const params = useParams();
   const artistId = params.id as string;
   
   const [artist, setArtist] = useState<Artist | null>(null);
-  const [artistDetails, setArtistDetails] = useState<any>(null);
+  const [artistDetails, setArtistDetails] = useState<ArtistDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
