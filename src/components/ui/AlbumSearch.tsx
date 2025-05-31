@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import SearchBar from "./SearchBar";
 import SearchResults from "./SearchResults";
@@ -23,13 +23,17 @@ export default function AlbumSearch({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showResultsDropdown, setShowResultsDropdown] = useState(false);
+  // New state for keyboard navigation
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const router = useRouter();
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const searchAlbums = async (query: string) => {
     // Clear results if query is empty
     if (!query.trim()) {
       setSearchResults([]);
       setShowResultsDropdown(false);
+      setHighlightedIndex(-1); // Reset highlight
       return;
     }
 
@@ -39,6 +43,7 @@ export default function AlbumSearch({
     console.log('Searching for:', query);
     setIsLoading(true);
     setError(null);
+    setHighlightedIndex(-1); // Reset highlight when search changes
 
     try {
       const response = await fetch(`/api/search?query=${encodeURIComponent(query)}&type=all`);
@@ -65,6 +70,7 @@ export default function AlbumSearch({
 
   const handleResultSelect = (result: any) => {
     setShowResultsDropdown(false);
+    setHighlightedIndex(-1);
     
     // Handle different result types
     if (result.type === 'album') {
@@ -93,6 +99,35 @@ export default function AlbumSearch({
     setSearchResults([]);
     setShowResultsDropdown(false);
     setError(null);
+    setHighlightedIndex(-1);
+  };
+
+  // Keyboard navigation handlers
+  const handleNavigate = (direction: 'up' | 'down') => {
+    if (searchResults.length === 0) return;
+    
+    setHighlightedIndex(current => {
+      if (direction === 'down') {
+        return current < searchResults.length - 1 ? current + 1 : 0;
+      } else {
+        return current > 0 ? current - 1 : searchResults.length - 1;
+      }
+    });
+  };
+
+  const handleSelectHighlighted = () => {
+    if (highlightedIndex >= 0 && searchResults[highlightedIndex]) {
+      handleResultSelect(searchResults[highlightedIndex]);
+    }
+  };
+
+  const handleEscape = () => {
+    setShowResultsDropdown(false);
+    setHighlightedIndex(-1);
+  };
+
+  const handleMouseEnter = (index: number) => {
+    setHighlightedIndex(index);
   };
 
   // Close results when clicking outside
@@ -101,6 +136,7 @@ export default function AlbumSearch({
       const target = event.target as Element;
       if (!target.closest('[data-search-container]')) {
         setShowResultsDropdown(false);
+        setHighlightedIndex(-1);
       }
     };
 
@@ -111,12 +147,21 @@ export default function AlbumSearch({
   }, [showResultsDropdown]);
 
   return (
-    <div className={`relative ${className}`} data-search-container>
+    <div 
+      ref={searchContainerRef}
+      className={`relative ${className}`} 
+      data-search-container
+    >
       <SearchBar
         placeholder={placeholder}
         onSearch={searchAlbums}
         onClear={handleClear}
         debounceMs={500}
+        resultsCount={searchResults.length}
+        highlightedIndex={highlightedIndex}
+        onNavigate={handleNavigate}
+        onSelectHighlighted={handleSelectHighlighted}
+        onEscape={handleEscape}
       />
       
       {error && (
@@ -131,6 +176,8 @@ export default function AlbumSearch({
             results={searchResults}
             isLoading={isLoading}
             onAlbumSelect={handleResultSelect}
+            highlightedIndex={highlightedIndex}
+            onMouseEnter={handleMouseEnter}
           />
         </div>
       )}
