@@ -95,7 +95,7 @@ export default function ArtistDetailsPage() {
       
       const data = await response.json();
       if (data.artist) {
-        console.log(`Got detailed artist data`);
+        console.log(`Got detailed artist data: `, data.artist);
         setArtistDetails(data.artist);
       }
     } catch (err: any) {

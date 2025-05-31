@@ -197,12 +197,12 @@ export default function CreateRecommendationPage() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-black">
             <div className="flex flex-col gap-4 items-center max-w-4xl w-full">
                 <Link href="/"
                     className="text-white bg-red-500 hover:bg-red-700 font-bold mb-10 py-4 px-8 rounded-full text-lg shadow-lg"
                 >home</Link>
-                <h1 className="text-4xl font-bold text-center pb-6">Create Recommendation</h1>
+                <h1 className="text-4xl font-bold text-center pb-6 text-cosmic-latte">Create Recommendation</h1>
                 
                 {error && (
                     <div className="w-full bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
@@ -366,7 +366,7 @@ export default function CreateRecommendationPage() {
                     
                     <button 
                         type="submit"
-                        className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors"
+                        className="w-full bg-emeraled-green hover:bg-emeraled-green text-white font-bold py-3 px-4 rounded-lg shadow transition-colors"
                         disabled={!selectedBasisAlbum || !selectedRecommendedAlbum}
                     >
                         Create Recommendation
