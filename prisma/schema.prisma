@@ -42,7 +42,7 @@ model User {
   image           String?
   hashedPassword  String?
   accounts        Account[]
-  recommendations Recommendation[] @relation("UserRecommendations")
+  recommendations Recommendation[]
   sessions        Session[]
   collections     Collection[]
 }
@@ -55,52 +55,32 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Album {
-  id                           String            @id @default(cuid())
-  discogsId                    String            @unique
-  title                        String
-  artist                       String
-  releaseDate                  String?
-  genre                        String[]
-  label                        String?
-  imageUrl                     String?
-  createdAt                    DateTime          @default(now())
-  updatedAt                    DateTime          @updatedAt
-  basisForRecommendations      Recommendation[]  @relation("BasisAlbum")
-  recommendedInRecommendations Recommendation[]  @relation("RecommendedAlbum")
-  tracks                       Track[]
-  collectionAlbums             CollectionAlbum[]
-
-  @@index([discogsId])
-  @@index([artist, title])
-}
-
-model Track {
-  id          String @id @default(cuid())
-  title       String
-  duration    Int?
-  trackNumber Int
-  albumId     String
-  album       Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
-
-  @@index([albumId])
-}
-
 model Recommendation {
-  id                 String   @id @default(cuid())
-  score              Int
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  userId             String
-  basisAlbumId       String
-  recommendedAlbumId String
-  basisAlbum         Album    @relation("BasisAlbum", fields: [basisAlbumId], references: [id])
-  recommendedAlbum   Album    @relation("RecommendedAlbum", fields: [recommendedAlbumId], references: [id])
-  user               User     @relation("UserRecommendations", fields: [userId], references: [id])
-
+  id        String   @id @default(cuid())
+  score     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  
+  // Discogs references (source of truth)
+  basisAlbumDiscogsId       String
+  recommendedAlbumDiscogsId String
+  
+  // Cached display data (to avoid API calls in lists)
+  basisAlbumTitle           String
+  basisAlbumArtist          String
+  basisAlbumImageUrl        String?
+  basisAlbumYear            String?
+  recommendedAlbumTitle     String
+  recommendedAlbumArtist    String
+  recommendedAlbumImageUrl  String?
+  recommendedAlbumYear      String?
+  
+  user User @relation(fields: [userId], references: [id])
+  
   @@index([userId])
-  @@index([basisAlbumId])
-  @@index([recommendedAlbumId])
+  @@index([basisAlbumDiscogsId])
+  @@index([recommendedAlbumDiscogsId])
 }
 
 model Collection {
@@ -122,16 +102,21 @@ model Collection {
 model CollectionAlbum {
   id             String     @id @default(cuid())
   collectionId   String
-  albumId        String
+  albumDiscogsId String     // Changed to store Discogs ID directly
   personalRating Int?
   personalNotes  String?
   position       Int        @default(0)
   addedAt        DateTime   @default(now())
   
-  collection     Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  album          Album      @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  // Cached display data
+  albumTitle     String
+  albumArtist    String
+  albumImageUrl  String?
+  albumYear      String?
   
-  @@unique([collectionId, albumId])
+  collection     Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  
+  @@unique([collectionId, albumDiscogsId])
   @@index([collectionId])
-  @@index([albumId])
+  @@index([albumDiscogsId])
 }

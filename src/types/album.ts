@@ -6,27 +6,22 @@ export interface Track {
 }
 
 export interface Album {
-  id: string;
+  id: string; // This is the Discogs ID
   title: string;
   artist: string;
   subtitle?: string; // For general search results
   type?: string; // For general search results (album, artist, label, etc.)
-  releaseDate: string; // ISO 8601 format: "YYYY-MM-DD"
-  genre: string[];
-  label: string;
+  releaseDate?: string; // ISO 8601 format: "YYYY-MM-DD"
+  year?: number;
+  genre?: string[];
+  label?: string;
   image: {
     url: string;
     width: number;
     height: number;
     alt?: string;
   };
-  tracks?: Track[];
-  metadata?: {
-    totalDuration: number; // in seconds
-    numberOfTracks: number;
-    format?: string; // e.g., "CD", "Vinyl", "Digital"
-    barcode?: string;
-  };
+  // Remove tracks, metadata - we don't store these
 }
 
 // A Release represents a specific physical or digital version of an album
@@ -78,12 +73,4 @@ export interface ReleasesResponse {
     };
   };
   success: boolean;
-}
-
-export interface Recommendation {
-  id: string;
-  raitingOwner: string;
-  basisAlbum: Album;
-  recommendedAlbum: Album;
-  score: number;
 } 
