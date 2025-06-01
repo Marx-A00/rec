@@ -10,6 +10,11 @@ interface SearchBarProps {
   className?: string;
   autoFocus?: boolean;
   debounceMs?: number;
+  resultsCount?: number;
+  highlightedIndex?: number;
+  onNavigate?: (direction: 'up' | 'down') => void;
+  onSelectHighlighted?: () => void;
+  onEscape?: () => void;
 }
 
 export default function SearchBar({
@@ -19,6 +24,11 @@ export default function SearchBar({
   className = "",
   autoFocus = false,
   debounceMs = 300,
+  resultsCount = 0,
+  highlightedIndex = -1,
+  onNavigate,
+  onSelectHighlighted,
+  onEscape,
 }: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -50,6 +60,18 @@ export default function SearchBar({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
       handleClear();
+      onEscape?.();
+    } else if (e.key === "ArrowDown" || (e.ctrlKey && e.key === "n") || (e.ctrlKey && e.key === "j")) {
+      e.preventDefault();
+      onNavigate?.('down');
+    } else if (e.key === "ArrowUp" || (e.ctrlKey && e.key === "p") || (e.ctrlKey && e.key === "k")) {
+      e.preventDefault();
+      onNavigate?.('up');
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (highlightedIndex >= 0 && resultsCount > 0) {
+        onSelectHighlighted?.();
+      }
     }
   };
 
@@ -77,6 +99,9 @@ export default function SearchBar({
           placeholder={placeholder}
           autoFocus={autoFocus}
           className="w-full pl-10 pr-10 py-3 bg-transparent text-white placeholder-zinc-400 focus:outline-none"
+          role="combobox"
+          aria-expanded={resultsCount > 0}
+          aria-activedescendant={highlightedIndex >= 0 ? `search-result-${highlightedIndex}` : undefined}
         />
         {query && (
           <button
@@ -88,6 +113,12 @@ export default function SearchBar({
           </button>
         )}
       </div>
+      {/* Keyboard navigation hint */}
+      {resultsCount > 0 && (
+        <div className="absolute top-full right-0 mt-1 text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded shadow-lg border border-zinc-600 z-50">
+          Use ↑↓, C-p/n, C-k/j to navigate, Enter to select, Esc to close
+        </div>
+      )}
     </div>
   );
 } 

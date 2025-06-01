@@ -87,6 +87,15 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                   <strong className="text-cosmic-latte">{user.following}</strong> Following
                 </span>
               </div>
+              
+              {/* Create Album Collage Button */}
+              <div className="mt-6">
+                <Link href="/profile/collage">
+                  <button className="bg-emeraled-green text-black hover:bg-emeraled-green/90 font-semibold py-2 px-4 rounded-md transition-colors">
+                    🎵 Create Album Collage
+                  </button>
+                </Link>
+              </div>
             </div>
           </div>
           

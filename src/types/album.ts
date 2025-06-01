@@ -29,6 +29,57 @@ export interface Album {
   };
 }
 
+// A Release represents a specific physical or digital version of an album
+// (e.g., different pressings, formats, etc. of the same album)
+export interface Release {
+  id: string;
+  title: string;
+  year?: number;
+  format?: string[];
+  label?: string[];
+  role?: string;
+  resource_url?: string;
+  artist?: string;
+  thumb?: string;
+  basic_information?: {
+    id: number;
+    title: string;
+    year: number;
+    resource_url: string;
+    thumb: string;
+    cover_image?: string;
+    formats?: Array<{
+      name: string;
+      qty: string;
+      descriptions?: string[];
+    }>;
+    labels?: Array<{
+      name: string;
+      catno: string;
+    }>;
+    artists?: Array<{
+      name: string;
+      role?: string;
+    }>;
+  };
+}
+
+// API response for fetching artist releases
+export interface ReleasesResponse {
+  releases: Release[];
+  pagination: {
+    pages: number;
+    page: number;
+    per_page: number;
+    items: number;
+    urls: {
+      last?: string;
+      next?: string;
+    };
+  };
+  success: boolean;
+}
+
 export interface Recommendation {
   id: string;
   raitingOwner: string;

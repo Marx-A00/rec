@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { Music, User, Building2, Tag } from "lucide-react";
 import { Album } from "@/types/album";
@@ -9,6 +10,9 @@ interface SearchResultsProps {
   isLoading: boolean;
   onAlbumSelect?: (result: any) => void;
   className?: string;
+  // New props for keyboard navigation
+  highlightedIndex?: number;
+  onMouseEnter?: (index: number) => void;
 }
 
 export default function SearchResults({
@@ -16,7 +20,10 @@ export default function SearchResults({
   isLoading,
   onAlbumSelect,
   className = "",
+  highlightedIndex = -1,
+  onMouseEnter,
 }: SearchResultsProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   
   const getResultIcon = (type: string) => {
     switch (type) {
@@ -43,6 +50,17 @@ export default function SearchResults({
         return 'bg-zinc-800 text-zinc-300';
     }
   };
+
+  // Auto-scroll highlighted item into view
+  useEffect(() => {
+    if (highlightedIndex >= 0 && containerRef.current) {
+      const element = containerRef.current.querySelector(`[data-result-index="${highlightedIndex}"]`);
+      if (element) {
+        element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+  }, [highlightedIndex]);
+
   if (isLoading) {
     return (
       <div className={`bg-zinc-900 border border-zinc-700 rounded-lg p-4 ${className}`}>
@@ -59,12 +77,30 @@ export default function SearchResults({
   }
 
   return (
-    <div className={`bg-zinc-900 border border-zinc-700 rounded-lg max-h-96 overflow-y-auto ${className}`}>
-      {results.map((result) => (
+    <div 
+      ref={containerRef}
+      className={`bg-zinc-900 border border-zinc-700 rounded-lg max-h-96 overflow-auto scrollbar-hide ${className}`}
+      role="listbox"
+      style={{
+        // Hide scrollbars while maintaining scroll functionality
+        scrollbarWidth: 'none', // Firefox
+        msOverflowStyle: 'none', // IE/Edge
+      }}
+    >
+      {results.map((result, index) => (
         <div
           key={result.id}
           onClick={() => onAlbumSelect?.(result)}
-          className="flex items-center space-x-3 p-3 hover:bg-zinc-800 cursor-pointer border-b border-zinc-800 last:border-b-0 transition-colors"
+          onMouseEnter={() => onMouseEnter?.(index)}
+          data-result-index={index}
+          className={`flex items-center space-x-3 p-3 cursor-pointer border-b border-zinc-800 last:border-b-0 transition-all duration-200 min-w-0 max-w-full ${
+            index === highlightedIndex 
+              ? 'bg-gradient-to-r from-zinc-700 to-zinc-800 border-l-4 border-l-green-500 shadow-lg' // Removed transform scale to prevent horizontal scroll
+              : 'hover:bg-zinc-800'
+          }`}
+          role="option"
+          aria-selected={index === highlightedIndex}
+          id={`search-result-${index}`}
         >
           <div className="relative w-12 h-12 flex-shrink-0">
             {result.image?.url ? (
@@ -89,7 +125,11 @@ export default function SearchResults({
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-white font-medium truncate">{result.title}</h3>
+            <h3 className={`font-medium truncate transition-colors ${
+              index === highlightedIndex ? 'text-green-300' : 'text-white'
+            }`}>
+              {result.title}
+            </h3>
             <p className="text-zinc-400 text-sm truncate">
               {result.subtitle || result.artist}
             </p>

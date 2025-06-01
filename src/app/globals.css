@@ -70,3 +70,17 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom utility to hide scrollbars */
+@layer utilities {
+  .scrollbar-hide {
+    /* Hide scrollbar for IE, Edge and Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
