@@ -9,6 +9,19 @@ interface CollageGridProps {
 }
 
 export default function CollageGrid({ selectedAlbums, onRemoveAlbum }: CollageGridProps) {
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.target as HTMLImageElement;
+    
+    // If the image has crossOrigin set, try removing it and reloading
+    if (target.crossOrigin) {
+      target.crossOrigin = '';
+      target.src = target.src; // Force reload without CORS
+    } else {
+      // If still failing, use placeholder
+      target.src = '/placeholder.svg?height=400&width=400';
+    }
+  };
+
   return (
     <div className="bg-zinc-900 rounded-lg p-6">
       <h3 className="text-xl font-semibold text-cosmic-latte mb-4">
@@ -32,7 +45,7 @@ export default function CollageGrid({ selectedAlbums, onRemoveAlbum }: CollageGr
                   src={album.image.url}
                   alt={`${album.artist} - ${album.title}`}
                   className="w-full h-full object-cover"
-                  crossOrigin="anonymous" // Important for canvas export
+                  onError={handleImageError}
                 />
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex items-center justify-center">
                   <Button
