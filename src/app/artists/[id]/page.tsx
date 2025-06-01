@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Artist, ArtistDetails } from "@/types/artist";
 import { useQuery } from "@tanstack/react-query";
+import DiscographyTab from "@/components/artistDetails/tabs/DiscographyTab";
 
 async function fetchArtistDetails(artistId: string): Promise<ArtistDetails> {
   const response = await fetch(`/api/artists/${artistId}`);
@@ -201,7 +202,7 @@ function ArtistTabsSection({
       </TabsList>
 
       <TabsContent value="discography">
-        <DiscographyTabContent artistId={artistId}/>
+        <DiscographyTab artistId={artistId}/>
         </TabsContent>
       <TabsContent value="recs">
         <RecsTabContent artistId={artistId}/>
@@ -216,22 +217,12 @@ function ArtistTabsSection({
     );
 }
 
-function DiscographyTabContent({ artistId }: { artistId: string }){
-  return (
-    <div className="bg-zinc-900 p-4 rounded-lg">
-      <h3 className="text-lg font-semibold mb-4">Albums & Releases</h3>
-      <p className="text-zinc-3 400">
-        Artist discography will appear here. This feature is coming soon!
-      </p>
-    </div>
-  );
-}
 
 function RecsTabContent({ artistId }: { artistId: string }){
   return (
     <div className="bg-zinc-900 p-4 rounded-lg">
       <h3 className="text-lg font-semibold mb-4">Recs</h3>
-      <p className="text-zinc-3 400">
+      <p className="text-zinc-400">
         Artist recs will appear here. This feature is coming soon!
       </p>
     </div>
@@ -242,8 +233,8 @@ function ChineseWisdomTabContent({ artistId }: { artistId: string }){
   return (
     <div className="bg-zinc-900 p-4 rounded-lg">
       <h3 className="text-lg font-semibold mb-4">Chinese Wisdom</h3>
-      <p className="text-zinc-3 400">
-      “One cannot have both the fish and the bear’s paw.”
+      <p className="text-zinc-400">
+      "One cannot have both the fish and the bear's paw."
       </p>
     </div>
   );
@@ -253,7 +244,7 @@ function SimilarArtistsTabContent({ artistId }: { artistId: string }){
   return (
     <div className="bg-zinc-900 p-4 rounded-lg">
       <h3 className="text-lg font-semibold mb-4">Similar Artists</h3>
-      <p className="text-zinc-3 400">
+      <p className="text-zinc-400">
         Similar artists will appear here. This feature is coming soon!
       </p>
     </div>
