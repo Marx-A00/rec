@@ -115,7 +115,7 @@ export default function SearchBar({
       </div>
       {/* Keyboard navigation hint */}
       {resultsCount > 0 && (
-        <div className="absolute top-full right-0 mt-1 text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded shadow">
+        <div className="absolute top-full right-0 mt-1 text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded shadow-lg border border-zinc-600 z-50">
           Use ↑↓, C-p/n, C-k/j to navigate, Enter to select, Esc to close
         </div>
       )}

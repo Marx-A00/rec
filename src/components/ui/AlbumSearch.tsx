@@ -108,9 +108,11 @@ export default function AlbumSearch({
     
     setHighlightedIndex(current => {
       if (direction === 'down') {
-        return current < searchResults.length - 1 ? current + 1 : 0;
+        // Stop at the last item, don't wrap to top
+        return current < searchResults.length - 1 ? current + 1 : current;
       } else {
-        return current > 0 ? current - 1 : searchResults.length - 1;
+        // Stop at the first item, don't wrap to bottom
+        return current > 0 ? current - 1 : current;
       }
     });
   };
