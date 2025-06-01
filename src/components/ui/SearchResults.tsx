@@ -79,8 +79,13 @@ export default function SearchResults({
   return (
     <div 
       ref={containerRef}
-      className={`bg-zinc-900 border border-zinc-700 rounded-lg max-h-96 overflow-y-auto ${className}`}
+      className={`bg-zinc-900 border border-zinc-700 rounded-lg max-h-96 overflow-auto scrollbar-hide ${className}`}
       role="listbox"
+      style={{
+        // Hide scrollbars while maintaining scroll functionality
+        scrollbarWidth: 'none', // Firefox
+        msOverflowStyle: 'none', // IE/Edge
+      }}
     >
       {results.map((result, index) => (
         <div
@@ -88,9 +93,9 @@ export default function SearchResults({
           onClick={() => onAlbumSelect?.(result)}
           onMouseEnter={() => onMouseEnter?.(index)}
           data-result-index={index}
-          className={`flex items-center space-x-3 p-3 cursor-pointer border-b border-zinc-800 last:border-b-0 transition-all duration-200 ${
+          className={`flex items-center space-x-3 p-3 cursor-pointer border-b border-zinc-800 last:border-b-0 transition-all duration-200 min-w-0 max-w-full ${
             index === highlightedIndex 
-              ? 'bg-gradient-to-r from-zinc-700 to-zinc-800 border-l-4 border-l-green-500 shadow-lg transform scale-[1.02]' // Enhanced highlighted state
+              ? 'bg-gradient-to-r from-zinc-700 to-zinc-800 border-l-4 border-l-green-500 shadow-lg' // Removed transform scale to prevent horizontal scroll
               : 'hover:bg-zinc-800'
           }`}
           role="option"
@@ -146,12 +151,6 @@ export default function SearchResults({
               </span>
             )}
           </div>
-          {/* Keyboard navigation indicator */}
-          {index === highlightedIndex && (
-            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            </div>
-          )}
         </div>
       ))}
     </div>
