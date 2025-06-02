@@ -2,16 +2,36 @@ import { auth } from '@/../auth';
 import { redirect } from 'next/navigation';
 import Profile from './profile';
 import prisma from '@/lib/prisma';
+import { CollectionAlbum } from '@/types/collection';
+import { Recommendation } from '@/types/recommendation';
 
-async function getUserRecommendations(userId: string) {
-  return await prisma.recommendation.findMany({
+async function getUserRecommendations(userId: string): Promise<Recommendation[]> {
+  const recs = await prisma.recommendation.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
-  })
+  });
+  
+  return recs.map(rec => ({
+    id: rec.id,
+    score: rec.score,
+    createdAt: rec.createdAt.toISOString(),
+    updatedAt: rec.updatedAt.toISOString(),
+    userId: rec.userId,
+    basisAlbumDiscogsId: rec.basisAlbumDiscogsId,
+    recommendedAlbumDiscogsId: rec.recommendedAlbumDiscogsId,
+    basisAlbumTitle: rec.basisAlbumTitle,
+    basisAlbumArtist: rec.basisAlbumArtist,
+    basisAlbumImageUrl: rec.basisAlbumImageUrl || undefined,
+    basisAlbumYear: rec.basisAlbumYear || undefined,
+    recommendedAlbumTitle: rec.recommendedAlbumTitle,
+    recommendedAlbumArtist: rec.recommendedAlbumArtist,
+    recommendedAlbumImageUrl: rec.recommendedAlbumImageUrl || undefined,
+    recommendedAlbumYear: rec.recommendedAlbumYear || undefined,
+  }));
 }
 
-async function getUserCollections(userId: string) {
-  return await prisma.collection.findMany({
+async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
+  const collections = await prisma.collection.findMany({
     where: { userId },
     include: {
       albums: {
@@ -20,6 +40,32 @@ async function getUserCollections(userId: string) {
     },
     orderBy: { updatedAt: 'desc' }
   });
+  
+  // Transform Prisma data to match CollectionAlbum type
+  return collections.flatMap(collection => 
+    collection.albums.map(album => ({
+      id: album.id,
+      albumId: album.albumDiscogsId,
+      album: {
+        id: album.albumDiscogsId,
+        title: album.albumTitle,
+        artist: album.albumArtist,
+        releaseDate: album.albumYear || undefined,
+        genre: [],
+        image: {
+          url: album.albumImageUrl || '/placeholder.svg?height=400&width=400',
+          width: 400,
+          height: 400,
+          alt: `${album.albumTitle} cover`
+        }
+      },
+      addedAt: album.addedAt.toISOString(),
+      addedBy: collection.userId,
+      personalRating: album.personalRating || undefined,
+      personalNotes: album.personalNotes || undefined,
+      position: album.position,
+    }))
+  );
 }
 
 export default async function ProfilePage() {
@@ -30,7 +76,7 @@ export default async function ProfilePage() {
     redirect('/');
   }
   
-  const [collections, recommendations] = await Promise.all([
+  const [collection, recommendations] = await Promise.all([
     getUserCollections(userData.id),
     getUserRecommendations(userData.id)
   ]);
@@ -44,6 +90,6 @@ export default async function ProfilePage() {
     bio: "Music enthusiast | Sharing vibes and discovering new sounds",
   };
   
-  return <Profile user={user} collections={collections} recommendations={recommendations} />;
+  return <Profile user={user} collection={collection} recommendations={recommendations} />;
 }
 

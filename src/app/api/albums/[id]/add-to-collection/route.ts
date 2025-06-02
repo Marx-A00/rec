@@ -12,16 +12,23 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const albumId = params.id;
-    const { collectionId, createNew, collectionName, personalRating, personalNotes } = await request.json();
-    
-    // Check if album exists
-    const album = await prisma.album.findUnique({
-      where: { id: albumId }
-    });
-    
-    if (!album) {
-      return NextResponse.json({ error: 'Album not found' }, { status: 404 });
+    const albumDiscogsId = params.id;
+
+    const { 
+      collectionId, 
+      createNew, 
+      collectionName, 
+      personalRating, 
+      personalNotes,
+      // Album data from Discogs API
+      albumTitle,
+      albumArtist,
+      albumImageUrl,
+      albumYear
+    } = await request.json();
+
+    if (!albumTitle || !albumArtist) {
+      return NextResponse.json({ error: 'Album title and artist are required' }, { status: 400 });
     }
     
     let targetCollectionId = collectionId;
@@ -76,9 +83,9 @@ export async function POST(
     // Check if album is already in collection
     const existingEntry = await prisma.collectionAlbum.findUnique({
       where: {
-        collectionId_albumId: {
+        collectionId_albumDiscogsId: {
           collectionId: targetCollectionId,
-          albumId
+          albumDiscogsId
         }
       }
     });
@@ -97,22 +104,27 @@ export async function POST(
     });
     const position = (lastAlbum?.position || 0) + 1;
     
+    // Create CollectionAlbum with cached display data
     const collectionAlbum = await prisma.collectionAlbum.create({
       data: {
         collectionId: targetCollectionId,
-        albumId,
+        albumDiscogsId,
         personalRating: personalRating ? Math.max(1, Math.min(10, personalRating)) : null,
         personalNotes: personalNotes?.trim(),
-        position
+        position,
+        // Cached display data from Discogs
+        albumTitle: albumTitle.trim(),
+        albumArtist: albumArtist.trim(),
+        albumImageUrl: albumImageUrl || null,
+        albumYear: albumYear || null
       },
       include: {
-        collection: { select: { name: true } },
-        album: { select: { title: true, artist: true } }
+        collection: { select: { name: true } }
       }
     });
     
     return NextResponse.json({ 
-      message: `Album "${album.title}" added to collection "${collection.name}"`,
+      message: `Album "${albumTitle}" added to collection "${collection.name}"`,
       collectionAlbum 
     }, { status: 201 });
   } catch (error) {

@@ -21,32 +21,20 @@ export default function AddToCollectionButton({
     setIsLoading(true);
 
     try {
-      // First, ensure the album is stored in our database
-      const storeResponse = await fetch('/api/albums/store', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ album }),
-      });
-
-      if (!storeResponse.ok) {
-        throw new Error('Failed to store album');
-      }
-
-      const { album: storedAlbum } = await storeResponse.json();
-
-      // Then add it to the user's default collection
-      const addResponse = await fetch(`/api/albums/${storedAlbum.id}/add-to-collection`, {
+      const addResponse = await fetch(`/api/albums/${album.id}/add-to-collection`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          createNew: false, // We'll let the backend handle creating a default collection if needed
+          createNew: false,
+          albumTitle: album.title,
+          albumArtist: album.artist,
+          albumImageUrl: album.image.url,
+          albumYear: album.year?.toString() || album.releaseDate?.substring(0, 4) || null,
         }),
-      });
-
+      })
+      
       const data = await addResponse.json();
 
       if (!addResponse.ok) {

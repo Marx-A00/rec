@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CollectionAlbum } from '@/types/collection';
+import { Recommendation } from '@/types/recommendation';
 
 interface ProfileClientProps {
   user: {
@@ -11,13 +13,13 @@ interface ProfileClientProps {
     username: string;
     bio: string;
   };
-  collections: any[]; // Raw Prisma data
-  recommendations: any[]; // Raw Prisma data
+  collection: CollectionAlbum[];
+  recommendations: Recommendation[];
 }
 
-export default function ProfileClient({ user, collections, recommendations }: ProfileClientProps) {
+export default function ProfileClient({ user, collection, recommendations }: ProfileClientProps) {
   // Flatten collections to get all albums
-  const allAlbums = collections.flatMap(collection => collection.albums);
+  const allAlbums = collection;
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -57,10 +59,11 @@ export default function ProfileClient({ user, collections, recommendations }: Pr
               {/* Create Album Collage Button */}
               <div className="mt-6">
                 <Link href="/profile/collage">
-                  <button className="bg-emeraled-green text-black hover:bg-emeraled-green/90 font-semibold py-2 px-4 rounded-md transition-colors">
+                  <button disabled className="bg-gray-500 text-black font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     🎵 Create Album Collage
                   </button>
                 </Link>
+                <p className="text-xs text-zinc-500 mt-1">* feature coming soon!</p>
               </div>
             </div>
           </div>
@@ -77,26 +80,26 @@ export default function ProfileClient({ user, collections, recommendations }: Pr
 
                 {/* Album Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {allAlbums.map((album: any) => (
-                    <div key={album.id} className="relative group">
+                  {allAlbums.map((collectionAlbum) => (
+                    <div key={collectionAlbum.id} className="relative group">
                       <img 
-                        src={album.albumImageUrl || '/placeholder.svg?height=400&width=400'} 
-                        alt={album.albumTitle}
+                        src={collectionAlbum.album.image.url} 
+                        alt={collectionAlbum.album.title}
                         className="w-full aspect-square rounded object-cover border border-zinc-800"
                       />
                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 rounded flex items-center justify-center">
                         <div className="opacity-0 group-hover:opacity-100 text-cosmic-latte text-xs text-center p-2">
-                          <p className="font-medium truncate mb-1">{album.albumTitle}</p>
-                          <p className="text-zinc-300 truncate mb-1">{album.albumArtist}</p>
-                          {album.personalRating && (
-                            <p className="text-emeraled-green text-xs">★ {album.personalRating}/10</p>
+                          <p className="font-medium truncate mb-1">{collectionAlbum.album.title}</p>
+                          <p className="text-zinc-300 truncate mb-1">{collectionAlbum.album.artist}</p>
+                          {collectionAlbum.personalRating && (
+                            <p className="text-emeraled-green text-xs">★ {collectionAlbum.personalRating}/10</p>
                           )}
                         </div>
                       </div>
                       {/* Added date indicator */}
                       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <span className="text-xs bg-black bg-opacity-75 text-zinc-300 px-1 py-0.5 rounded">
-                          {new Date(album.addedAt).getFullYear()}
+                          {new Date(collectionAlbum.addedAt).getFullYear()}
                         </span>
                       </div>
                     </div>
@@ -116,7 +119,7 @@ export default function ProfileClient({ user, collections, recommendations }: Pr
             <h2 className="text-2xl font-semibold mb-6 text-cosmic-latte">Music Recommendations</h2>
             {recommendations.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {recommendations.map((rec: any) => (
+                {recommendations.map((rec) => (
                   <div 
                     key={rec.id} 
                     className="bg-zinc-900 rounded-lg p-6 border border-zinc-800 hover:border-zinc-700 transition-colors"
