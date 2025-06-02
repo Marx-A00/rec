@@ -1,11 +1,13 @@
+import { Client } from 'disconnect';
 import { NextResponse } from 'next/server';
-var Discogs = require('disconnect').Client;
+
+import { Track } from '@/types/album';
 
 // Create a client with consumer key and secret from environment variables
-var db = new Discogs({
+const db = new Client({
   userAgent: 'RecProject/1.0 +http://localhost:3000',
   consumerKey: process.env.CONSUMER_KEY,
-  consumerSecret: process.env.CONSUMER_SECRET
+  consumerSecret: process.env.CONSUMER_SECRET,
 }).database();
 
 // Default placeholder image for albums without images
@@ -19,12 +21,15 @@ export async function GET(
   const { id } = await Promise.resolve(params);
 
   if (!id) {
-    return NextResponse.json({ error: 'Album ID is required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Album ID is required' },
+      { status: 400 }
+    );
   }
 
   try {
     console.log(`Fetching album details for ID: ${id}`);
-    
+
     // Try to get the release details
     let albumDetails;
     try {
@@ -32,7 +37,7 @@ export async function GET(
       albumDetails = await db.getMaster(id);
       console.log(`Found master release: ${albumDetails.title}`);
       console.log(`Master artists:`, albumDetails.artists);
-    } catch (masterError) {
+    } catch {
       console.log(`Not a master release, trying as regular release`);
       try {
         // If not a master, try as a regular release
@@ -46,8 +51,8 @@ export async function GET(
     }
 
     // Extract tracks if available
-    const tracks = albumDetails.tracklist 
-      ? albumDetails.tracklist.map((track: any, index: number) => ({
+    const tracks = albumDetails.tracklist
+      ? albumDetails.tracklist.map((track: Track, index: number) => ({
           id: `${id}-${index}`,
           title: track.title || `Track ${index + 1}`,
           duration: convertDurationToSeconds(track.duration),
@@ -56,12 +61,16 @@ export async function GET(
       : [];
 
     // Calculate total duration
-    const totalDuration = tracks.reduce((sum: number, track: any) => sum + (track.duration || 0), 0);
+    const totalDuration = tracks.reduce(
+      (sum: number, track: Track) => sum + (track.duration || 0),
+      0
+    );
 
     // Get the image URL from the album details
-    const imageUrl = albumDetails.images && albumDetails.images.length > 0
-      ? albumDetails.images[0].uri
-      : PLACEHOLDER_IMAGE;
+    const imageUrl =
+      albumDetails.images && albumDetails.images.length > 0
+        ? albumDetails.images[0].uri
+        : PLACEHOLDER_IMAGE;
 
     // Extract title and artist properly
     let title = albumDetails.title;
@@ -80,6 +89,7 @@ export async function GET(
     }
 
     // Format the album data to match our Album interface
+    // TODO: extend album type or change base type
     const album = {
       id: id.toString(),
       title: title,
@@ -89,7 +99,7 @@ export async function GET(
       label: albumDetails.labels?.[0]?.name || '',
       image: {
         url: imageUrl,
-        width: 400,  // Consistent width
+        width: 400, // Consistent width
         height: 400, // Consistent height
         alt: title || 'Album cover',
       },
@@ -98,26 +108,29 @@ export async function GET(
         totalDuration,
         numberOfTracks: tracks.length,
         format: albumDetails.formats?.[0]?.name || 'Digital',
-        barcode: albumDetails.identifiers?.find((id: any) => id.type === 'Barcode')?.value || '',
       },
     };
 
     return NextResponse.json({ album });
   } catch (error) {
     console.error('Error fetching album details:', error);
-    return NextResponse.json({ error: 'Failed to fetch album details' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch album details' },
+      { status: 500 }
+    );
   }
 }
 
 // Helper function to convert duration string (MM:SS) to seconds
-function convertDurationToSeconds(durationStr: string): number {
-  if (!durationStr) return 0;
-  
-  const parts = durationStr.split(':');
+function convertDurationToSeconds(duration: string | number): number {
+  if (typeof duration === 'number') return duration;
+  if (!duration) return 0;
+
+  const parts = duration.split(':');
   if (parts.length === 2) {
     const minutes = parseInt(parts[0], 10);
     const seconds = parseInt(parts[1], 10);
     return minutes * 60 + seconds;
   }
   return 0;
-} 
+}

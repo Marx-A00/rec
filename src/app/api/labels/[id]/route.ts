@@ -1,11 +1,11 @@
+import { Client, DiscogsImage } from 'disconnect';
 import { NextResponse } from 'next/server';
-var Discogs = require('disconnect').Client;
 
 // Create a client with consumer key and secret from environment variables
-var db = new Discogs({
+const db = new Client({
   userAgent: 'RecProject/1.0 +http://localhost:3000',
   consumerKey: process.env.CONSUMER_KEY,
-  consumerSecret: process.env.CONSUMER_SECRET
+  consumerSecret: process.env.CONSUMER_SECRET,
 }).database();
 
 // Default placeholder image for labels without images
@@ -19,7 +19,10 @@ export async function GET(
 
   if (!id) {
     console.log('Missing label ID parameter');
-    return NextResponse.json({ error: 'Label ID is required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Label ID is required' },
+      { status: 400 }
+    );
   }
 
   try {
@@ -41,12 +44,14 @@ export async function GET(
     let imageUrl = PLACEHOLDER_IMAGE;
     if (labelDetails.images && labelDetails.images.length > 0) {
       // Find the largest image or use the first one
-      const bestImage = labelDetails.images.reduce((best: any, current: any) => {
-        if (!best) return current;
-        const bestSize = (best.width || 0) * (best.height || 0);
-        const currentSize = (current.width || 0) * (current.height || 0);
-        return currentSize > bestSize ? current : best;
-      });
+      const bestImage = labelDetails.images.reduce(
+        (best: DiscogsImage, current: DiscogsImage) => {
+          if (!best) return current;
+          const bestSize = (best.width || 0) * (best.height || 0);
+          const currentSize = (current.width || 0) * (current.height || 0);
+          return currentSize > bestSize ? current : best;
+        }
+      );
       imageUrl = bestImage.uri || bestImage.uri150 || PLACEHOLDER_IMAGE;
     }
 
@@ -77,16 +82,18 @@ export async function GET(
 
     console.log(`Successfully formatted label: ${label.title}`);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       label,
-      success: true 
+      success: true,
     });
-
-  } catch (error: any) {
-    console.error('Unexpected error in label details API:', error);
+  } catch (error) {
+    console.error('Error fetching label:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      {
+        error: 'Failed to fetch label',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
-} 
+}

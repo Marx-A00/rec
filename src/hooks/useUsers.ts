@@ -16,4 +16,4 @@ export function useUsers() {
     queryFn: fetchUsers,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
-} 
+}

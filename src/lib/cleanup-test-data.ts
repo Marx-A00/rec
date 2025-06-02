@@ -1,58 +1,58 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function cleanupTestData() {
   try {
-    console.log('🧹 Starting cleanup of test data...')
+    console.log('🧹 Starting cleanup of test data...');
 
     // Delete recommendations for test user
-    console.log('Cleaning up recommendations...')
+    console.log('Cleaning up recommendations...');
     await prisma.recommendation.deleteMany({
-      where: { 
+      where: {
         user: {
-          email: 'test@example.com'
-        }
-      }
-    })
+          email: 'test@example.com',
+        },
+      },
+    });
 
     // Delete tracks from test albums
-    console.log('Cleaning up tracks...')
+    console.log('Cleaning up tracks...');
     await prisma.track.deleteMany({
       where: {
         album: {
           discogsId: {
-            in: ['test-123', 'test-456'] // The test album IDs from our test
-          }
-        }
-      }
-    })
+            in: ['test-123', 'test-456'], // The test album IDs from our test
+          },
+        },
+      },
+    });
 
     // Delete test albums
-    console.log('Cleaning up albums...')
+    console.log('Cleaning up albums...');
     await prisma.album.deleteMany({
       where: {
         discogsId: {
-          in: ['test-123', 'test-456']
-        }
-      }
-    })
+          in: ['test-123', 'test-456'],
+        },
+      },
+    });
 
     // Delete test user
-    console.log('Cleaning up test user...')
+    console.log('Cleaning up test user...');
     await prisma.user.deleteMany({
       where: {
-        email: 'test@example.com'
-      }
-    })
+        email: 'test@example.com',
+      },
+    });
 
-    console.log('✨ Cleanup completed successfully!')
+    console.log('✨ Cleanup completed successfully!');
   } catch (error) {
-    console.error('❌ Cleanup failed:', error)
+    console.error('❌ Cleanup failed:', error);
   } finally {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
 
 // Run the cleanup
-cleanupTestData()
+cleanupTestData();

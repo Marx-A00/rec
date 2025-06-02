@@ -1,5 +1,6 @@
-import { auth } from '@/../auth';
 import { redirect } from 'next/navigation';
+
+import { auth } from '@/../auth';
 import CollageCreator from '@/components/collage/CollageCreator';
 
 export default async function CollagePage() {
@@ -11,8 +12,8 @@ export default async function CollagePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className='min-h-screen bg-black text-white'>
       <CollageCreator />
     </div>
   );
-} 
+}

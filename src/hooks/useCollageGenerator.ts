@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+
 import { Album } from '@/types/album';
 
-interface CollageState {
-  selectedAlbums: (Album | null)[];
-  userCollection: Album[];
-  searchResults: Album[];
-  searchQuery: string;
-  isSearching: boolean;
-}
+// interface CollageState {
+//   selectedAlbums: (Album | null)[];
+//   userCollection: Album[];
+//   searchResults: Album[];
+//   searchQuery: string;
+//   isSearching: boolean;
+// }
 
 export const useCollageGenerator = () => {
   const [selectedAlbums, setSelectedAlbums] = useState<(Album | null)[]>(
@@ -51,6 +52,6 @@ export const useCollageGenerator = () => {
     setSearchQuery,
     setSearchResults,
     setIsSearching,
-    setUserCollection
+    setUserCollection,
   };
-}; 
+};

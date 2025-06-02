@@ -73,4 +73,4 @@ export interface ReleasesResponse {
     };
   };
   success: boolean;
-} 
+}

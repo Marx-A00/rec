@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
 import { Button } from '@/components/ui/button';
-import CollageGrid from './CollageGrid';
+import { useCollageGenerator } from '@/hooks/useCollageGenerator';
+
 import AlbumSelector from './AlbumSelector';
 import CollageDownloader from './CollageDownloader';
-import { useCollageGenerator } from '@/hooks/useCollageGenerator';
+import CollageGrid from './CollageGrid';
 
 export default function CollageCreator() {
   const router = useRouter();
@@ -22,23 +24,23 @@ export default function CollageCreator() {
     setSearchQuery,
     setSearchResults,
     setIsSearching,
-    setUserCollection
+    setUserCollection,
   } = useCollageGenerator();
 
   // Fetch user's collection on mount
   useEffect(() => {
-    fetchUserCollection();
-  }, []);
+    const fetchUserCollection = async () => {
+      try {
+        const response = await fetch('/api/collections/user/albums');
+        const data = await response.json();
+        setUserCollection(data.albums || []);
+      } catch (error) {
+        console.error('Error fetching user collection:', error);
+      }
+    };
 
-  const fetchUserCollection = async () => {
-    try {
-      const response = await fetch('/api/collections/user/albums');
-      const data = await response.json();
-      setUserCollection(data.albums || []);
-    } catch (error) {
-      console.error('Error fetching user collection:', error);
-    }
-  };
+    fetchUserCollection();
+  }, [setUserCollection]);
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
@@ -48,7 +50,9 @@ export default function CollageCreator() {
 
     setIsSearching(true);
     try {
-      const response = await fetch(`/api/albums/search?query=${encodeURIComponent(query)}`);
+      const response = await fetch(
+        `/api/albums/search?query=${encodeURIComponent(query)}`
+      );
       const data = await response.json();
       setSearchResults(data.albums || []);
     } catch (error) {
@@ -62,33 +66,35 @@ export default function CollageCreator() {
   const selectedCount = selectedAlbums.filter(album => album !== null).length;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className='container mx-auto px-4 py-8'>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
+      <div className='flex items-center justify-between mb-8'>
+        <div className='flex items-center gap-4'>
           <Button
-            variant="ghost"
+            variant='ghost'
             onClick={() => router.back()}
-            className="text-cosmic-latte hover:text-emeraled-green"
+            className='text-cosmic-latte hover:text-emeraled-green'
           >
             ← Back
           </Button>
-          <h1 className="text-3xl font-bold text-cosmic-latte">Create Album Collage</h1>
+          <h1 className='text-3xl font-bold text-cosmic-latte'>
+            Create Album Collage
+          </h1>
         </div>
-        
-        <div className="flex items-center gap-4">
-          <span className="text-zinc-400 text-sm">
+
+        <div className='flex items-center gap-4'>
+          <span className='text-zinc-400 text-sm'>
             {selectedCount}/25 albums selected
           </span>
           <Button
-            variant="outline"
+            variant='outline'
             onClick={clearGrid}
             disabled={selectedCount === 0}
-            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+            className='border-zinc-700 text-zinc-300 hover:bg-zinc-800'
           >
             Clear All
           </Button>
-          <CollageDownloader 
+          <CollageDownloader
             selectedAlbums={selectedAlbums}
             disabled={selectedCount === 0}
           />
@@ -96,9 +102,9 @@ export default function CollageCreator() {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+      <div className='grid grid-cols-1 lg:grid-cols-5 gap-8'>
         {/* Left Panel - Album Selection */}
-        <div className="lg:col-span-2">
+        <div className='lg:col-span-2'>
           <AlbumSelector
             userCollection={userCollection}
             searchResults={searchResults}
@@ -111,35 +117,39 @@ export default function CollageCreator() {
         </div>
 
         {/* Right Panel - Grid and List */}
-        <div className="lg:col-span-3">
+        <div className='lg:col-span-3'>
           <CollageGrid
             selectedAlbums={selectedAlbums}
             onRemoveAlbum={removeAlbumFromGrid}
           />
-          
+
           {/* Selected Albums List */}
-          <div className="mt-8">
-            <h3 className="text-xl font-semibold text-cosmic-latte mb-4">
+          <div className='mt-8'>
+            <h3 className='text-xl font-semibold text-cosmic-latte mb-4'>
               Selected Albums ({selectedCount}/25)
             </h3>
-            <div className="bg-zinc-900 rounded-lg p-4 max-h-64 overflow-y-auto">
+            <div className='bg-zinc-900 rounded-lg p-4 max-h-64 overflow-y-auto'>
               {selectedCount === 0 ? (
-                <p className="text-zinc-500 text-center py-4">
-                  No albums selected yet. Click on albums to add them to your collage.
+                <p className='text-zinc-500 text-center py-4'>
+                  No albums selected yet. Click on albums to add them to your
+                  collage.
                 </p>
               ) : (
-                <div className="space-y-2">
-                  {selectedAlbums.map((album, index) => 
+                <div className='space-y-2'>
+                  {selectedAlbums.map((album, index) =>
                     album ? (
-                      <div key={index} className="flex items-center justify-between text-sm">
-                        <span className="text-cosmic-latte">
+                      <div
+                        key={index}
+                        className='flex items-center justify-between text-sm'
+                      >
+                        <span className='text-cosmic-latte'>
                           {index + 1}. {album.artist} - {album.title}
                         </span>
                         <Button
-                          variant="ghost"
-                          size="sm"
+                          variant='ghost'
+                          size='sm'
                           onClick={() => removeAlbumFromGrid(index)}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                          className='text-red-400 hover:text-red-300 hover:bg-red-900/20'
                         >
                           ×
                         </Button>
@@ -154,4 +164,4 @@ export default function CollageCreator() {
       </div>
     </div>
   );
-} 
+}

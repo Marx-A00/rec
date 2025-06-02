@@ -11,12 +11,12 @@ interface ToastProps {
   duration?: number;
 }
 
-export default function Toast({ 
-  message, 
-  type, 
-  isVisible, 
-  onClose, 
-  duration = 5000 
+export default function Toast({
+  message,
+  type,
+  isVisible,
+  onClose,
+  duration = 5000,
 }: ToastProps) {
   useEffect(() => {
     if (isVisible && duration > 0) {
@@ -31,27 +31,30 @@ export default function Toast({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2">
-      <div className={`
+    <div className='fixed top-4 right-4 z-50 animate-in slide-in-from-top-2'>
+      <div
+        className={`
         flex items-center space-x-3 px-4 py-3 rounded-lg shadow-lg border max-w-md
-        ${type === 'success' 
-          ? 'bg-green-900/90 border-green-700 text-green-100' 
-          : 'bg-red-900/90 border-red-700 text-red-100'
+        ${
+          type === 'success'
+            ? 'bg-green-900/90 border-green-700 text-green-100'
+            : 'bg-red-900/90 border-red-700 text-red-100'
         }
-      `}>
+      `}
+      >
         {type === 'success' ? (
-          <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+          <CheckCircle className='h-5 w-5 text-green-400 flex-shrink-0' />
         ) : (
-          <XCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
+          <XCircle className='h-5 w-5 text-red-400 flex-shrink-0' />
         )}
-        
-        <p className="text-sm font-medium flex-1">{message}</p>
-        
+
+        <p className='text-sm font-medium flex-1'>{message}</p>
+
         <button
           onClick={onClose}
-          className="text-current hover:opacity-70 transition-opacity"
+          className='text-current hover:opacity-70 transition-opacity'
         >
-          <X className="h-4 w-4" />
+          <X className='h-4 w-4' />
         </button>
       </div>
     </div>
@@ -67,10 +70,13 @@ export function useToast() {
   }>({
     message: '',
     type: 'success',
-    isVisible: false
+    isVisible: false,
   });
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  const showToast = (
+    message: string,
+    type: 'success' | 'error' = 'success'
+  ) => {
     setToast({ message, type, isVisible: true });
   };
 
@@ -81,6 +87,6 @@ export function useToast() {
   return {
     toast,
     showToast,
-    hideToast
+    hideToast,
   };
-} 
+}

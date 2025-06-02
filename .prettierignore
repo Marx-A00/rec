@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Database
+prisma/migrations/
+
+# Auto-generated files
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# Lock files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Git
+.git/
+
+# IDE
+.vscode/
+.cursor/
+
+# Misc
+*.log 

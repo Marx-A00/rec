@@ -19,16 +19,22 @@ export const getSampleStats = () => {
 
 // Helper to check if we should use sample data
 export const shouldUseSampleData = () => {
-  return process.env.NODE_ENV === 'development' && process.env.USE_SAMPLE_DATA !== 'false';
+  return (
+    process.env.NODE_ENV === 'development' &&
+    process.env.USE_SAMPLE_DATA !== 'false'
+  );
 };
 
 // Mock API responses using sample data (useful for development)
-export const mockApiResponse = <T>(data: T, delay: number = 500): Promise<T> => {
+export const mockApiResponse = <T>(
+  data: T,
+  delay: number = 500
+): Promise<T> => {
   if (!useSampleData) {
     throw new Error('Mock API responses should only be used in development');
   }
-  
-  return new Promise((resolve) => {
+
+  return new Promise(resolve => {
     setTimeout(() => resolve(data), delay);
   });
-}; 
+};

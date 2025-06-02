@@ -1,16 +1,20 @@
-import { auth } from '@/../auth';
 import { redirect } from 'next/navigation';
-import Profile from './profile';
+
+import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
 
-async function getUserRecommendations(userId: string): Promise<Recommendation[]> {
+import Profile from './profile';
+
+async function getUserRecommendations(
+  userId: string
+): Promise<Recommendation[]> {
   const recs = await prisma.recommendation.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
   });
-  
+
   return recs.map(rec => ({
     id: rec.id,
     score: rec.score,
@@ -35,14 +39,14 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
     where: { userId },
     include: {
       albums: {
-        orderBy: { addedAt: 'desc' }
-      }
+        orderBy: { addedAt: 'desc' },
+      },
     },
-    orderBy: { updatedAt: 'desc' }
+    orderBy: { updatedAt: 'desc' },
   });
-  
+
   // Transform Prisma data to match CollectionAlbum type
-  return collections.flatMap(collection => 
+  return collections.flatMap(collection =>
     collection.albums.map(album => ({
       id: album.id,
       albumId: album.albumDiscogsId,
@@ -56,8 +60,8 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
           url: album.albumImageUrl || '/placeholder.svg?height=400&width=400',
           width: 400,
           height: 400,
-          alt: `${album.albumTitle} cover`
-        }
+          alt: `${album.albumTitle} cover`,
+        },
       },
       addedAt: album.addedAt.toISOString(),
       addedBy: collection.userId,
@@ -75,21 +79,26 @@ export default async function ProfilePage() {
   if (!userData || !userData.id) {
     redirect('/');
   }
-  
+
   const [collection, recommendations] = await Promise.all([
     getUserCollections(userData.id),
-    getUserRecommendations(userData.id)
+    getUserRecommendations(userData.id),
   ]);
-  
+
   // Minimal user object
   const user = {
-    name: userData.name || "User",
+    name: userData.name || 'User',
     email: userData.email || null,
-    image: userData.image || "/placeholder.svg?height=100&width=100",
+    image: userData.image || '/placeholder.svg?height=100&width=100',
     username: userData.email ? `@${userData.email.split('@')[0]}` : '@user',
-    bio: "Music enthusiast | Sharing vibes and discovering new sounds",
+    bio: 'Music enthusiast | Sharing vibes and discovering new sounds',
   };
-  
-  return <Profile user={user} collection={collection} recommendations={recommendations} />;
-}
 
+  return (
+    <Profile
+      user={user}
+      collection={collection}
+      recommendations={recommendations}
+    />
+  );
+}

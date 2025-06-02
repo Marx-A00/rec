@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface SearchBarProps {
   placeholder?: string;
@@ -18,10 +18,10 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({
-  placeholder = "Search albums, artists, or genres...",
+  placeholder = 'Search albums, artists, or genres...',
   onSearch,
   onClear,
-  className = "",
+  className = '',
   autoFocus = false,
   debounceMs = 300,
   resultsCount = 0,
@@ -30,7 +30,7 @@ export default function SearchBar({
   onSelectHighlighted,
   onEscape,
 }: SearchBarProps) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
 
   // Debounced search effect - only search when user stops typing
@@ -44,30 +44,38 @@ export default function SearchBar({
     }, debounceMs);
 
     return () => clearTimeout(timer);
-  }, [query]); // Remove onSearch and debounceMs from dependencies
+  }, [query, onSearch, debounceMs]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
   };
 
   const handleClear = () => {
-    setQuery("");
+    setQuery('');
     if (onClear) {
       onClear();
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       handleClear();
       onEscape?.();
-    } else if (e.key === "ArrowDown" || (e.ctrlKey && e.key === "n") || (e.ctrlKey && e.key === "j")) {
+    } else if (
+      e.key === 'ArrowDown' ||
+      (e.ctrlKey && e.key === 'n') ||
+      (e.ctrlKey && e.key === 'j')
+    ) {
       e.preventDefault();
       onNavigate?.('down');
-    } else if (e.key === "ArrowUp" || (e.ctrlKey && e.key === "p") || (e.ctrlKey && e.key === "k")) {
+    } else if (
+      e.key === 'ArrowUp' ||
+      (e.ctrlKey && e.key === 'p') ||
+      (e.ctrlKey && e.key === 'k')
+    ) {
       e.preventDefault();
       onNavigate?.('up');
-    } else if (e.key === "Enter") {
+    } else if (e.key === 'Enter') {
       e.preventDefault();
       if (highlightedIndex >= 0 && resultsCount > 0) {
         onSelectHighlighted?.();
@@ -79,18 +87,21 @@ export default function SearchBar({
     <div className={`relative ${className}`}>
       <div
         className={`relative flex items-center bg-zinc-900 border rounded-lg transition-all duration-200 ${
-          isFocused
-            ? "shadow-lg"
-            : "border-zinc-700 hover:border-zinc-600"
+          isFocused ? 'shadow-lg' : 'border-zinc-700 hover:border-zinc-600'
         }`}
-        style={isFocused ? {
-          borderColor: '#317039',
-          boxShadow: '0 10px 15px -3px rgba(49, 112, 57, 0.2), 0 4px 6px -2px rgba(49, 112, 57, 0.1)'
-        } : {}}
+        style={
+          isFocused
+            ? {
+                borderColor: '#317039',
+                boxShadow:
+                  '0 10px 15px -3px rgba(49, 112, 57, 0.2), 0 4px 6px -2px rgba(49, 112, 57, 0.1)',
+              }
+            : {}
+        }
       >
-        <Search className="absolute left-3 h-4 w-4 text-zinc-400" />
+        <Search className='absolute left-3 h-4 w-4 text-zinc-400' />
         <input
-          type="text"
+          type='text'
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -98,27 +109,32 @@ export default function SearchBar({
           onBlur={() => setIsFocused(false)}
           placeholder={placeholder}
           autoFocus={autoFocus}
-          className="w-full pl-10 pr-10 py-3 bg-transparent text-white placeholder-zinc-400 focus:outline-none"
-          role="combobox"
+          className='w-full pl-10 pr-10 py-3 bg-transparent text-white placeholder-zinc-400 focus:outline-none'
+          role='combobox'
           aria-expanded={resultsCount > 0}
-          aria-activedescendant={highlightedIndex >= 0 ? `search-result-${highlightedIndex}` : undefined}
+          aria-controls='search-results'
+          aria-activedescendant={
+            highlightedIndex >= 0
+              ? `search-result-${highlightedIndex}`
+              : undefined
+          }
         />
         {query && (
           <button
             onClick={handleClear}
-            className="absolute right-3 p-1 text-zinc-400 hover:text-white transition-colors"
-            type="button"
+            className='absolute right-3 p-1 text-zinc-400 hover:text-white transition-colors'
+            type='button'
           >
-            <X className="h-4 w-4" />
+            <X className='h-4 w-4' />
           </button>
         )}
       </div>
       {/* Keyboard navigation hint */}
       {resultsCount > 0 && (
-        <div className="absolute top-full right-0 mt-1 text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded shadow-lg border border-zinc-600 z-50">
+        <div className='absolute top-full right-0 mt-1 text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded shadow-lg border border-zinc-600 z-50'>
           Use ↑↓, C-p/n, C-k/j to navigate, Enter to select, Esc to close
         </div>
       )}
     </div>
   );
-} 
+}

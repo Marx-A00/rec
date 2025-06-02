@@ -5,11 +5,11 @@ export interface Recommendation {
   createdAt: string;
   updatedAt: string;
   userId: string;
-  
+
   // Discogs references
   basisAlbumDiscogsId: string;
   recommendedAlbumDiscogsId: string;
-  
+
   // Cached display data
   basisAlbumTitle: string;
   basisAlbumArtist: string;
@@ -19,7 +19,7 @@ export interface Recommendation {
   recommendedAlbumArtist: string;
   recommendedAlbumImageUrl?: string;
   recommendedAlbumYear?: string;
-  
+
   // Optional user info for browse views
   user?: {
     id: string;
@@ -33,7 +33,7 @@ export interface CreateRecommendationRequest {
   basisAlbumDiscogsId: string;
   recommendedAlbumDiscogsId: string;
   score: number;
-  
+
   // Cache these for display
   basisAlbumTitle: string;
   basisAlbumArtist: string;
@@ -60,4 +60,4 @@ export interface RecommendationsResponse {
     has_more: boolean;
   };
   success: boolean;
-} 
+}

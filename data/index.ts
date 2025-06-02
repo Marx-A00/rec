@@ -23,10 +23,12 @@ export const getAllSampleData = () => ({
 
 // Helper functions for cross-referencing data
 export const getAlbumsByUserId = (userId: string) => {
-  const userRecommendations = sampleRecommendations.filter(rec => rec.userId === userId);
+  const userRecommendations = sampleRecommendations.filter(
+    rec => rec.userId === userId
+  );
   const albumIds = new Set([
     ...userRecommendations.map(rec => rec.basisAlbumId),
-    ...userRecommendations.map(rec => rec.recommendedAlbumId)
+    ...userRecommendations.map(rec => rec.recommendedAlbumId),
   ]);
   return sampleAlbums.filter(album => albumIds.has(album.id));
 };
@@ -37,17 +39,23 @@ export const getRecommendationsByUserId = (userId: string) => {
 
 // Get detailed recommendations with full album information
 export const getDetailedRecommendationsByUserId = (userId: string) => {
-  const userRecommendations = sampleRecommendations.filter(rec => rec.userId === userId);
-  
+  const userRecommendations = sampleRecommendations.filter(
+    rec => rec.userId === userId
+  );
+
   return userRecommendations
     .map(rec => {
-      const basisAlbum = sampleAlbums.find(album => album.id === rec.basisAlbumId);
-      const recommendedAlbum = sampleAlbums.find(album => album.id === rec.recommendedAlbumId);
-      
+      const basisAlbum = sampleAlbums.find(
+        album => album.id === rec.basisAlbumId
+      );
+      const recommendedAlbum = sampleAlbums.find(
+        album => album.id === rec.recommendedAlbumId
+      );
+
       if (!basisAlbum || !recommendedAlbum) {
         return null;
       }
-      
+
       return {
         id: rec.id,
         score: rec.score,
@@ -63,8 +71,8 @@ export const getDetailedRecommendationsByUserId = (userId: string) => {
             url: basisAlbum.imageUrl || '',
             width: 400,
             height: 400,
-            alt: `${basisAlbum.title} album cover`
-          }
+            alt: `${basisAlbum.title} album cover`,
+          },
         },
         recommendedAlbum: {
           id: recommendedAlbum.id,
@@ -77,9 +85,9 @@ export const getDetailedRecommendationsByUserId = (userId: string) => {
             url: recommendedAlbum.imageUrl || '',
             width: 400,
             height: 400,
-            alt: `${recommendedAlbum.title} album cover`
-          }
-        }
+            alt: `${recommendedAlbum.title} album cover`,
+          },
+        },
       };
     })
     .filter((rec): rec is NonNullable<typeof rec> => rec !== null); // Type-safe filter for non-null recommendations
@@ -106,13 +114,17 @@ export const getSampleDataStats = () => {
     totalRecommendations: sampleRecommendations.length,
     totalCollections: sampleCollections.length,
     averageRecommendationScore: Math.round(
-      sampleRecommendations.reduce((sum, rec) => sum + rec.score, 0) / sampleRecommendations.length
+      sampleRecommendations.reduce((sum, rec) => sum + rec.score, 0) /
+        sampleRecommendations.length
     ),
-    genreDistribution: sampleAlbums.reduce((acc, album) => {
-      album.genre.forEach(genre => {
-        acc[genre] = (acc[genre] || 0) + 1;
-      });
-      return acc;
-    }, {} as Record<string, number>)
+    genreDistribution: sampleAlbums.reduce(
+      (acc, album) => {
+        album.genre.forEach(genre => {
+          acc[genre] = (acc[genre] || 0) + 1;
+        });
+        return acc;
+      },
+      {} as Record<string, number>
+    ),
   };
-}; 
+};

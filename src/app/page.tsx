@@ -1,4 +1,5 @@
 import Link from 'next/link';
+
 import SignInButton from '@/components/auth/SignInButton';
 import SignOutButton from '@/components/auth/SignOutButton';
 import AlbumSearch from '@/components/ui/AlbumSearch';
@@ -7,76 +8,93 @@ import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+} from '@/components/ui/hover-card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { auth } from '@/../auth';
 
 export default async function Home() {
   const session = await auth();
   const user = session?.user;
-  
+
   return (
-    <div className="flex flex-col min-h-screen bg-black">
+    <div className='flex flex-col min-h-screen bg-black'>
       {/* Search Bar at the top */}
-      <div className="w-full px-4 pt-6 pb-4">
-        <div className="max-w-2xl mx-auto">
-          <AlbumSearch placeholder="Search for albums, artists, or genres..." />
+      <div className='w-full px-4 pt-6 pb-4'>
+        <div className='max-w-2xl mx-auto'>
+          <AlbumSearch placeholder='Search for albums, artists, or genres...' />
         </div>
       </div>
-      
-      <div className="absolute top-4 left-4">
+
+      <div className='absolute top-4 left-4'>
         <HoverCard>
           <HoverCardTrigger asChild>
-            <button className="rounded-full h-8 w-8 overflow-hidden">
-              <Avatar className="h-full w-full">
+            <button className='rounded-full h-8 w-8 overflow-hidden'>
+              <Avatar className='h-full w-full'>
                 {user ? (
-                  <AvatarImage src={user.image || "/placeholder.svg?height=100&width=100"} alt={user.name || "User"} />
+                  <AvatarImage
+                    src={user.image || '/placeholder.svg?height=100&width=100'}
+                    alt={user.name || 'User'}
+                  />
                 ) : (
-                  <AvatarImage src="/placeholder.svg?height=100&width=100" alt="User" />
+                  <AvatarImage
+                    src='/placeholder.svg?height=100&width=100'
+                    alt='User'
+                  />
                 )}
-                <AvatarFallback className="bg-zinc-800 text-zinc-200">
-                  {user ? user.name?.charAt(0) || "U" : "?"}
+                <AvatarFallback className='bg-zinc-800 text-zinc-200'>
+                  {user ? user.name?.charAt(0) || 'U' : '?'}
                 </AvatarFallback>
               </Avatar>
             </button>
           </HoverCardTrigger>
-          <HoverCardContent className="w-64 bg-zinc-900 border-zinc-800 text-white" side="right" align="start" sideOffset={12}>
+          <HoverCardContent
+            className='w-64 bg-zinc-900 border-zinc-800 text-white'
+            side='right'
+            align='start'
+            sideOffset={12}
+          >
             {user ? (
-              <div className="flex flex-col space-y-3">
-                <div className="flex space-x-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.image || "/placeholder.svg?height=100&width=100"} alt={user.name || "User"} />
-                    <AvatarFallback className="bg-zinc-800 text-zinc-200">
-                      {user.name?.charAt(0) || "U"}
+              <div className='flex flex-col space-y-3'>
+                <div className='flex space-x-3'>
+                  <Avatar className='h-8 w-8'>
+                    <AvatarImage
+                      src={
+                        user.image || '/placeholder.svg?height=100&width=100'
+                      }
+                      alt={user.name || 'User'}
+                    />
+                    <AvatarFallback className='bg-zinc-800 text-zinc-200'>
+                      {user.name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-semibold text-zinc-100">
-                      {user.name || "Authenticated User"}
+                  <div className='space-y-1'>
+                    <h4 className='text-xs font-semibold text-zinc-100'>
+                      {user.name || 'Authenticated User'}
                     </h4>
-                    <p className="text-xs text-zinc-300">
-                      {user.email}
-                    </p>
-                    <div className="flex items-center pt-1">
-                      <span className="text-xs text-zinc-400">
+                    <p className='text-xs text-zinc-300'>{user.email}</p>
+                    <div className='flex items-center pt-1'>
+                      <span className='text-xs text-zinc-400'>
                         Signed in with Google
                       </span>
                     </div>
-                    <div className="mt-2">
-                      <Link href="/profile" className="text-xs text-blue-400 hover:text-blue-300 hover:underline inline-block">
+                    <div className='mt-2'>
+                      <Link
+                        href='/profile'
+                        className='text-xs text-blue-400 hover:text-blue-300 hover:underline inline-block'
+                      >
                         View Profile
                       </Link>
                     </div>
                   </div>
                 </div>
-                
-                <div className="pt-2 border-t border-zinc-800">
+
+                <div className='pt-2 border-t border-zinc-800'>
                   <SignOutButton />
                 </div>
               </div>
             ) : (
-              <div className="py-2">
-                <h4 className="text-xs font-semibold text-zinc-100 mb-3 text-center">
+              <div className='py-2'>
+                <h4 className='text-xs font-semibold text-zinc-100 mb-3 text-center'>
                   Sign in to access your account
                 </h4>
                 <SignInButton />
@@ -85,25 +103,31 @@ export default async function Home() {
           </HoverCardContent>
         </HoverCard>
       </div>
-      
+
       {/* Main Navigation */}
-      <div className="flex items-center justify-center py-8">
-        <div className="flex flex-row space-x-4">
-          <button className="text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg">
+      <div className='flex items-center justify-center py-8'>
+        <div className='flex flex-row space-x-4'>
+          <button className='text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg'>
             Discover
           </button>
-          <Link href="/recommend"
-            className="text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg"
-          >Recommend</Link>
-          <Link href="/browse"
-            className="text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg"
-          >Browse</Link>
+          <Link
+            href='/recommend'
+            className='text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg'
+          >
+            Recommend
+          </Link>
+          <Link
+            href='/browse'
+            className='text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg'
+          >
+            Browse
+          </Link>
         </div>
       </div>
 
       {/* Recommendations Section */}
-      <div className="flex-1 px-4 pb-8">
-        <div className="max-w-6xl mx-auto">
+      <div className='flex-1 px-4 pb-8'>
+        <div className='max-w-6xl mx-auto'>
           <RecommendationsList />
         </div>
       </div>

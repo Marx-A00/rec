@@ -1,21 +1,39 @@
+import { Client, DiscogsSearchResult } from 'disconnect';
 import { NextResponse } from 'next/server';
-var Discogs = require('disconnect').Client;
 
-// Create a client with consumer key and secret from environment variables
-var db = new Discogs({
-  userAgent: 'RecProject/1.0 +http://localhost:3000',
-  consumerKey: process.env.CONSUMER_KEY,
-  consumerSecret: process.env.CONSUMER_SECRET
-}).database();
-
+// Test endpoint to verify Discogs API connectivity
 export async function GET() {
   try {
-    // Test with the same release ID as your working curl request
-    const release = await db.getRelease(249504);
-    return NextResponse.json(release);
-  } catch (error: any) {
-    console.error('Discogs Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Create a Discogs client
+    const db = new Client({
+      userAgent: 'RecProject/1.0 +http://localhost:3000',
+      consumerKey: process.env.CONSUMER_KEY,
+      consumerSecret: process.env.CONSUMER_SECRET,
+    }).database();
+
+    // Test search to verify API connectivity
+    const searchResults = await db.search({
+      query: 'The Beatles Abbey Road',
+      per_page: 1,
+    });
+
+    const testData: DiscogsSearchResult = searchResults.results?.[0] || null;
+    console.log('Test search successful:', testData);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Discogs API connection successful',
+      testData,
+    });
+  } catch (error) {
+    console.error('Error in test route:', error);
+    return NextResponse.json(
+      {
+        error: 'Test failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 

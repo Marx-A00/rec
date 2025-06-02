@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/../auth";
-import prisma from "@/lib/prisma";
-import { CreateRecommendationRequest, Recommendation } from "@/types/recommendation";
+import { NextResponse } from 'next/server';
+
+import { auth } from '@/../auth';
+import prisma from '@/lib/prisma';
+import {
+  CreateRecommendationRequest,
+  Recommendation,
+} from '@/types/recommendation';
 
 export async function GET(request: Request) {
   try {
@@ -11,38 +15,40 @@ export async function GET(request: Request) {
     const userId = searchParams.get('user_id');
 
     const where = userId ? { userId } : {};
-    
+
     const [recommendations, total] = await Promise.all([
       prisma.recommendation.findMany({
         where,
         take: perPage,
         skip: (page - 1) * perPage,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         include: {
           user: { select: { id: true, name: true, image: true } },
         },
       }),
-      prisma.recommendation.count({ where })
+      prisma.recommendation.count({ where }),
     ]);
 
-    const formattedRecommendations: Recommendation[] = recommendations.map(rec => ({
-      id: rec.id,
-      score: rec.score,
-      createdAt: rec.createdAt.toISOString(),
-      updatedAt: rec.updatedAt.toISOString(),
-      userId: rec.userId,
-      basisAlbumDiscogsId: rec.basisAlbumDiscogsId,
-      recommendedAlbumDiscogsId: rec.recommendedAlbumDiscogsId,
-      basisAlbumTitle: rec.basisAlbumTitle,
-      basisAlbumArtist: rec.basisAlbumArtist,
-      basisAlbumImageUrl: rec.basisAlbumImageUrl,
-      basisAlbumYear: rec.basisAlbumYear,
-      recommendedAlbumTitle: rec.recommendedAlbumTitle,
-      recommendedAlbumArtist: rec.recommendedAlbumArtist,
-      recommendedAlbumImageUrl: rec.recommendedAlbumImageUrl,
-      recommendedAlbumYear: rec.recommendedAlbumYear,
-      user: rec.user
-    }));
+    const formattedRecommendations: Recommendation[] = recommendations.map(
+      rec => ({
+        id: rec.id,
+        score: rec.score,
+        createdAt: rec.createdAt.toISOString(),
+        updatedAt: rec.updatedAt.toISOString(),
+        userId: rec.userId,
+        basisAlbumDiscogsId: rec.basisAlbumDiscogsId,
+        recommendedAlbumDiscogsId: rec.recommendedAlbumDiscogsId,
+        basisAlbumTitle: rec.basisAlbumTitle,
+        basisAlbumArtist: rec.basisAlbumArtist,
+        basisAlbumImageUrl: rec.basisAlbumImageUrl,
+        basisAlbumYear: rec.basisAlbumYear,
+        recommendedAlbumTitle: rec.recommendedAlbumTitle,
+        recommendedAlbumArtist: rec.recommendedAlbumArtist,
+        recommendedAlbumImageUrl: rec.recommendedAlbumImageUrl,
+        recommendedAlbumYear: rec.recommendedAlbumYear,
+        user: rec.user,
+      })
+    );
 
     return NextResponse.json({
       recommendations: formattedRecommendations,
@@ -50,14 +56,17 @@ export async function GET(request: Request) {
         page,
         per_page: perPage,
         total,
-        has_more: page * perPage < total
+        has_more: page * perPage < total,
       },
-      success: true
+      success: true,
     });
-  } catch (error: any) {
-    console.error('Error fetching recommendations:', error);
+  } catch (error) {
+    console.error('Error fetching Spotify recommendations:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch recommendations', details: error.message },
+      {
+        error: 'Failed to fetch recommendations',
+        details: error?.message || 'Unknown error',
+      },
       { status: 500 }
     );
   }
@@ -66,19 +75,23 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
-        { error: "You must be signed in to create a recommendation" },
+        { error: 'You must be signed in to create a recommendation' },
         { status: 401 }
       );
     }
 
     const data: CreateRecommendationRequest = await request.json();
-    
-    if (!data.basisAlbumDiscogsId || !data.recommendedAlbumDiscogsId || !data.score) {
+
+    if (
+      !data.basisAlbumDiscogsId ||
+      !data.recommendedAlbumDiscogsId ||
+      !data.score
+    ) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: 'Missing required fields' },
         { status: 400 }
       );
     }
@@ -100,19 +113,25 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ 
-      recommendation: {
-        ...recommendation,
-        createdAt: recommendation.createdAt.toISOString(),
-        updatedAt: recommendation.updatedAt.toISOString(),
-      }, 
-      success: true 
-    }, { status: 201 });
-  } catch (error: any) {
-    console.error("Error creating recommendation:", error);
     return NextResponse.json(
-      { error: "Failed to create recommendation", details: error.message },
+      {
+        recommendation: {
+          ...recommendation,
+          createdAt: recommendation.createdAt.toISOString(),
+          updatedAt: recommendation.updatedAt.toISOString(),
+        },
+        success: true,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Error in recommendation route:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to get recommendations',
+        details: error?.message || 'Unknown error',
+      },
       { status: 500 }
     );
   }
-} 
+}

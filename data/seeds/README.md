@@ -5,11 +5,13 @@ This directory contains scripts to populate your database with sample data for d
 ## Usage
 
 ### Seed the database
+
 ```bash
 pnpm db:seed
 ```
 
 ### Reset and seed the database
+
 ```bash
 pnpm db:reset
 ```
@@ -25,13 +27,15 @@ pnpm db:reset
 ## Sample Data Overview
 
 ### Users
+
 - Alex Rodriguez (alex@example.com)
-- Sam Chen (sam@example.com) 
+- Sam Chen (sam@example.com)
 - Jordan Taylor (jordan@example.com)
 - Casey Morgan (casey@example.com)
 - Riley Park (riley@example.com)
 
 ### Albums Include
+
 - OK Computer - Radiohead
 - The Dark Side of the Moon - Pink Floyd
 - Kind of Blue - Miles Davis
@@ -44,6 +48,7 @@ pnpm db:reset
 - Rumours - Fleetwood Mac
 
 ### Collections Include
+
 - Essential Albums (public)
 - Late Night Vibes (private)
 - 90s Grunge Essentials (public)
@@ -63,4 +68,4 @@ pnpm db:reset
 - Use `pnpm db:reset` when you want to start fresh
 - The sample data is designed to be realistic and interconnected
 - You can modify the data files in `/data/` to customize the seed data
-- All data respects the Prisma schema foreign key constraints 
+- All data respects the Prisma schema foreign key constraints

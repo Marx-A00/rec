@@ -47,7 +47,7 @@ The app supports multiple authentication methods:
 3. Password requirements:
    - Minimum 8 characters
    - At least one uppercase letter
-   - At least one lowercase letter  
+   - At least one lowercase letter
    - At least one number
 4. After successful registration, you'll be automatically signed in
 

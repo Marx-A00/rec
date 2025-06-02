@@ -1,10 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import SearchBar from "./SearchBar";
-import SearchResults from "./SearchResults";
-import { Album } from "@/types/album";
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+
+import { Album } from '@/types/album';
+import { UnifiedSearchResult } from '@/types/search';
+
+import SearchBar from './SearchBar';
+import SearchResults from './SearchResults';
 
 interface AlbumSearchProps {
   className?: string;
@@ -14,12 +17,12 @@ interface AlbumSearchProps {
 }
 
 export default function AlbumSearch({
-  className = "",
+  className = '',
   onAlbumSelect,
-  placeholder = "Search albums, artists, or genres...",
+  placeholder = 'Search albums, artists, or genres...',
   showResults = true,
 }: AlbumSearchProps) {
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<UnifiedSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showResultsDropdown, setShowResultsDropdown] = useState(false);
@@ -46,11 +49,13 @@ export default function AlbumSearch({
     setHighlightedIndex(-1); // Reset highlight when search changes
 
     try {
-      const response = await fetch(`/api/search?query=${encodeURIComponent(query)}&type=all`);
+      const response = await fetch(
+        `/api/search?query=${encodeURIComponent(query)}&type=all`
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to search");
+        throw new Error(errorData.error || 'Failed to search');
       }
 
       const data = await response.json();
@@ -58,20 +63,18 @@ export default function AlbumSearch({
       const allResults = data.results || [];
       setSearchResults(allResults);
       setShowResultsDropdown(true);
-    } catch (err: any) {
-      console.error("Error searching albums:", err);
-      setError(`Failed to search albums: ${err.message}`);
-      setSearchResults([]);
-      setShowResultsDropdown(false);
+    } catch (err) {
+      console.error('Search error:', err);
+      setError(err instanceof Error ? err.message : 'Search failed');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResultSelect = (result: any) => {
+  const handleResultSelect = (result: UnifiedSearchResult) => {
     setShowResultsDropdown(false);
     setHighlightedIndex(-1);
-    
+
     // Handle different result types
     if (result.type === 'album') {
       if (onAlbumSelect) {
@@ -105,7 +108,7 @@ export default function AlbumSearch({
   // Keyboard navigation handlers
   const handleNavigate = (direction: 'up' | 'down') => {
     if (searchResults.length === 0) return;
-    
+
     setHighlightedIndex(current => {
       if (direction === 'down') {
         // Stop at the last item, don't wrap to top
@@ -144,14 +147,15 @@ export default function AlbumSearch({
 
     if (showResultsDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      return () =>
+        document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showResultsDropdown]);
 
   return (
-    <div 
+    <div
       ref={searchContainerRef}
-      className={`relative ${className}`} 
+      className={`relative ${className}`}
       data-search-container
     >
       <SearchBar
@@ -165,15 +169,15 @@ export default function AlbumSearch({
         onSelectHighlighted={handleSelectHighlighted}
         onEscape={handleEscape}
       />
-      
+
       {error && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-red-900 border border-red-700 rounded-lg p-3 text-red-200 text-sm z-50">
+        <div className='absolute top-full left-0 right-0 mt-2 bg-red-900 border border-red-700 rounded-lg p-3 text-red-200 text-sm z-50'>
           {error}
         </div>
       )}
 
       {showResults && showResultsDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-40">
+        <div className='absolute top-full left-0 right-0 mt-2 z-40'>
           <SearchResults
             results={searchResults}
             isLoading={isLoading}
@@ -185,4 +189,4 @@ export default function AlbumSearch({
       )}
     </div>
   );
-} 
+}
