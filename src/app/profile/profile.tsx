@@ -3,56 +3,22 @@
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-interface Album {
-  id: string;
-  title: string;
-  artist: string;
-  releaseDate?: string;
-  genre: string[];
-  label?: string;
-  image: {
-    url: string;
-    width: number;
-    height: number;
-    alt?: string;
-  };
-}
-
-interface CollectionAlbum {
-  id: string;
-  albumId: string;
-  album: Album;
-  addedAt: string;
-  addedBy: string; // userId (should be "owner" but keeping as is)
-  personalRating?: number;
-  personalNotes?: string;
-}
-
-interface Recommendation {
-  id: string;
-  score: number;
-  createdAt: string;
-  basisAlbum: Album;
-  recommendedAlbum: Album;
-}
-
-interface User {
-  name: string;
-  email: string | null;
-  image: string;
-  username: string;
-  bio: string;
-  followers: number;
-  following: number;
-  collection: CollectionAlbum[]; // Single collection - list of albums user owns
-  recommendations: Recommendation[];
-}
-
 interface ProfileClientProps {
-  user: User;
+  user: {
+    name: string;
+    email: string | null;
+    image: string;
+    username: string;
+    bio: string;
+  };
+  collections: any[]; // Raw Prisma data
+  recommendations: any[]; // Raw Prisma data
 }
 
-export default function ProfileClient({ user }: ProfileClientProps) {
+export default function ProfileClient({ user, collections, recommendations }: ProfileClientProps) {
+  // Flatten collections to get all albums
+  const allAlbums = collections.flatMap(collection => collection.albums);
+
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="container mx-auto px-4 py-8">
@@ -81,10 +47,10 @@ export default function ProfileClient({ user }: ProfileClientProps) {
               <p className="mb-6 max-w-md text-zinc-300">{user.bio}</p>
               <div className="flex justify-center md:justify-start gap-6 text-sm">
                 <span className="text-zinc-300">
-                  <strong className="text-cosmic-latte">{user.followers}</strong> Followers
+                  <strong className="text-cosmic-latte">0</strong> Followers
                 </span>
                 <span className="text-zinc-300">
-                  <strong className="text-cosmic-latte">{user.following}</strong> Following
+                  <strong className="text-cosmic-latte">0</strong> Following
                 </span>
               </div>
               
@@ -102,35 +68,35 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                     {/* Collection Section */}
           <section className="border-t border-zinc-800 pt-8">
             <h2 className="text-2xl font-semibold mb-6 text-cosmic-latte">Record Collection</h2>
-            {user.collection.length > 0 ? (
+            {allAlbums.length > 0 ? (
               <div>
                 {/* Collection Stats */}
                 <div className="mb-6 text-sm text-zinc-400">
-                  <p>{user.collection.length} albums in collection</p>
+                  <p>{allAlbums.length} albums in collection</p>
                 </div>
 
                 {/* Album Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {user.collection.map((collectionAlbum) => (
-                    <div key={collectionAlbum.id} className="relative group">
+                  {allAlbums.map((album: any) => (
+                    <div key={album.id} className="relative group">
                       <img 
-                        src={collectionAlbum.album.image.url} 
-                        alt={collectionAlbum.album.title}
+                        src={album.albumImageUrl || '/placeholder.svg?height=400&width=400'} 
+                        alt={album.albumTitle}
                         className="w-full aspect-square rounded object-cover border border-zinc-800"
                       />
                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 rounded flex items-center justify-center">
                         <div className="opacity-0 group-hover:opacity-100 text-cosmic-latte text-xs text-center p-2">
-                          <p className="font-medium truncate mb-1">{collectionAlbum.album.title}</p>
-                          <p className="text-zinc-300 truncate mb-1">{collectionAlbum.album.artist}</p>
-                          {collectionAlbum.personalRating && (
-                            <p className="text-emeraled-green text-xs">★ {collectionAlbum.personalRating}/10</p>
+                          <p className="font-medium truncate mb-1">{album.albumTitle}</p>
+                          <p className="text-zinc-300 truncate mb-1">{album.albumArtist}</p>
+                          {album.personalRating && (
+                            <p className="text-emeraled-green text-xs">★ {album.personalRating}/10</p>
                           )}
                         </div>
                       </div>
                       {/* Added date indicator */}
                       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <span className="text-xs bg-black bg-opacity-75 text-zinc-300 px-1 py-0.5 rounded">
-                          {new Date(collectionAlbum.addedAt).getFullYear()}
+                          {new Date(album.addedAt).getFullYear()}
                         </span>
                       </div>
                     </div>
@@ -148,11 +114,11 @@ export default function ProfileClient({ user }: ProfileClientProps) {
           {/* Recommendations Section */}
           <section className="border-t border-zinc-800 pt-8 mt-8">
             <h2 className="text-2xl font-semibold mb-6 text-cosmic-latte">Music Recommendations</h2>
-            {user.recommendations.length > 0 ? (
+            {recommendations.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {user.recommendations.map((recommendation) => (
+                {recommendations.map((rec: any) => (
                   <div 
-                    key={recommendation.id} 
+                    key={rec.id} 
                     className="bg-zinc-900 rounded-lg p-6 border border-zinc-800 hover:border-zinc-700 transition-colors"
                   >
                     {/* Recommendation Header */}
@@ -163,12 +129,12 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                         </h3>
                         <div className="flex items-center space-x-2">
                           <span className="text-sm bg-emeraled-green text-black px-2 py-1 rounded-full font-medium">
-                            ★ {recommendation.score}/10
+                            ★ {rec.score}/10
                           </span>
                         </div>
                       </div>
                       <p className="text-xs text-zinc-500">
-                        {new Date(recommendation.createdAt).toLocaleDateString()}
+                        {new Date(rec.createdAt).toLocaleDateString()}
                       </p>
                     </div>
 
@@ -179,16 +145,16 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                         <p className="text-xs text-zinc-400 mb-2 uppercase tracking-wide">If you like</p>
                         <div className="flex items-center space-x-3 bg-zinc-800 rounded-lg p-3">
                           <img 
-                            src={recommendation.basisAlbum.image.url} 
-                            alt={recommendation.basisAlbum.title}
+                            src={rec.basisAlbumImageUrl || '/placeholder.svg?height=400&width=400'} 
+                            alt={rec.basisAlbumTitle}
                             className="w-12 h-12 rounded object-cover"
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-cosmic-latte font-medium truncate">
-                              {recommendation.basisAlbum.title}
+                              {rec.basisAlbumTitle}
                             </p>
                             <p className="text-zinc-400 text-sm truncate">
-                              {recommendation.basisAlbum.artist}
+                              {rec.basisAlbumArtist}
                             </p>
                           </div>
                         </div>
@@ -204,39 +170,20 @@ export default function ProfileClient({ user }: ProfileClientProps) {
                         <p className="text-xs text-zinc-400 mb-2 uppercase tracking-wide">Then try</p>
                         <div className="flex items-center space-x-3 bg-zinc-800 rounded-lg p-3">
                           <img 
-                            src={recommendation.recommendedAlbum.image.url} 
-                            alt={recommendation.recommendedAlbum.title}
+                            src={rec.recommendedAlbumImageUrl || '/placeholder.svg?height=400&width=400'} 
+                            alt={rec.recommendedAlbumTitle}
                             className="w-12 h-12 rounded object-cover"
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-cosmic-latte font-medium truncate">
-                              {recommendation.recommendedAlbum.title}
+                              {rec.recommendedAlbumTitle}
                             </p>
                             <p className="text-zinc-400 text-sm truncate">
-                              {recommendation.recommendedAlbum.artist}
+                              {rec.recommendedAlbumArtist}
                             </p>
                           </div>
                         </div>
                       </div>
-
-                      {/* Genre Tags */}
-                      {recommendation.recommendedAlbum.genre && recommendation.recommendedAlbum.genre.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-2">
-                          {recommendation.recommendedAlbum.genre.slice(0, 3).map((genre) => (
-                            <span 
-                              key={genre} 
-                              className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded"
-                            >
-                              {genre}
-                            </span>
-                          ))}
-                          {recommendation.recommendedAlbum.genre.length > 3 && (
-                            <span className="text-xs text-zinc-500">
-                              +{recommendation.recommendedAlbum.genre.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
