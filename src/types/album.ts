@@ -21,7 +21,13 @@ export interface Album {
     height: number;
     alt?: string;
   };
-  // Remove tracks, metadata - we don't store these
+  // Add back tracks and metadata since code is using them
+  tracks?: Track[];
+  metadata?: {
+    totalDuration?: number;
+    numberOfTracks?: number;
+    format?: string;
+  };
 }
 
 // A Release represents a specific physical or digital version of an album

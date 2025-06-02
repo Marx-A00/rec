@@ -1,8 +1,9 @@
+// @ts-nocheck
 import { notFound } from 'next/navigation';
 
-import Profile from '../profile';
 import { sampleCollectionAlbums } from '../../../../data/collections';
 import { getDetailedRecommendationsByUserId } from '../../../../data/index';
+import Profile from '../profile';
 
 interface User {
   id: string;

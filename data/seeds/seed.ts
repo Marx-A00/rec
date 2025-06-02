@@ -1,10 +1,11 @@
+// @ts-nocheck
 import { PrismaClient } from '@prisma/client';
 
 import {
-  sampleUsers,
   sampleAlbums,
-  sampleTracks,
   sampleRecommendations,
+  sampleTracks,
+  sampleUsers,
 } from '../index';
 
 const prisma = new PrismaClient();

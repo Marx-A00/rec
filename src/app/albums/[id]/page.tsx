@@ -70,7 +70,7 @@ export default function AlbumDetailsPage() {
       setAlbum(data.album);
     } catch (err) {
       console.error('Error fetching album:', err);
-      setError(err?.message || 'Failed to load album');
+      setError(err instanceof Error ? err.message : 'Failed to load album');
     } finally {
       setIsLoading(false);
     }

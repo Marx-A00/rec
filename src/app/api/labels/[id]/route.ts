@@ -75,7 +75,7 @@ export async function GET(
       parent_label: labelDetails.parent_label || null,
       _discogs: {
         type: 'label',
-        uri: labelDetails.uri || '',
+        uri: labelDetails.resource_url || '',
         resource_url: labelDetails.resource_url || '',
       },
     };

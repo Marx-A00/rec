@@ -40,12 +40,12 @@ export async function GET(request: Request) {
         recommendedAlbumDiscogsId: rec.recommendedAlbumDiscogsId,
         basisAlbumTitle: rec.basisAlbumTitle,
         basisAlbumArtist: rec.basisAlbumArtist,
-        basisAlbumImageUrl: rec.basisAlbumImageUrl,
-        basisAlbumYear: rec.basisAlbumYear,
+        basisAlbumImageUrl: rec.basisAlbumImageUrl ?? undefined,
+        basisAlbumYear: rec.basisAlbumYear ?? undefined,
         recommendedAlbumTitle: rec.recommendedAlbumTitle,
         recommendedAlbumArtist: rec.recommendedAlbumArtist,
-        recommendedAlbumImageUrl: rec.recommendedAlbumImageUrl,
-        recommendedAlbumYear: rec.recommendedAlbumYear,
+        recommendedAlbumImageUrl: rec.recommendedAlbumImageUrl ?? undefined,
+        recommendedAlbumYear: rec.recommendedAlbumYear ?? undefined,
         user: rec.user,
       })
     );
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         error: 'Failed to fetch recommendations',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: 'Failed to get recommendations',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
