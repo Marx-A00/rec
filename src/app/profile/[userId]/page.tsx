@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { notFound } from 'next/navigation';
 
 import { sampleCollectionAlbums } from '../../../../data/collections';
