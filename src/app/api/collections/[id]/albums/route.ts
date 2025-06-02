@@ -37,21 +37,12 @@ export async function POST(
       );
     }
 
-    // Check if album exists
-    const album = await prisma.album.findUnique({
-      where: { id: albumId },
-    });
-
-    if (!album) {
-      return NextResponse.json({ error: 'Album not found' }, { status: 404 });
-    }
-
     // Check if album is already in collection
     const existingEntry = await prisma.collectionAlbum.findUnique({
       where: {
-        collectionId_albumId: {
+        collectionId_albumDiscogsId: {
           collectionId,
-          albumId,
+          albumDiscogsId: albumId,
         },
       },
     });
@@ -77,19 +68,14 @@ export async function POST(
     const collectionAlbum = await prisma.collectionAlbum.create({
       data: {
         collectionId,
-        albumId,
+        albumDiscogsId: albumId,
         personalRating: personalRating
           ? Math.max(1, Math.min(10, personalRating))
           : null,
         personalNotes: personalNotes?.trim(),
         position: finalPosition,
-      },
-      include: {
-        album: {
-          include: {
-            tracks: true,
-          },
-        },
+        albumTitle: 'Unknown Album',
+        albumArtist: 'Unknown Artist',
       },
     });
 

@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 
-import { sampleCollectionAlbums } from '../../../../data/collections';
-import { getDetailedRecommendationsByUserId } from '../../../../data/index';
+import { CollectionAlbum } from '@/types/collection';
+import { Recommendation } from '@/types/recommendation';
+
 import Profile from '../profile';
 
 interface User {
@@ -76,12 +77,12 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
   }
 
   // Get user's collection (albums they own) - filter by addedBy (which should be "owner")
-  const userCollection = sampleCollectionAlbums.filter(
-    collectionAlbum => collectionAlbum.addedBy === params.userId
-  );
+  // Note: Using empty array for now since sample data doesn't match current schema
+  const userCollection: CollectionAlbum[] = [];
 
   // Get user's recommendations
-  const userRecommendations = getDetailedRecommendationsByUserId(params.userId);
+  // Note: Using empty array for now since sample data doesn't match current schema
+  const userRecommendations: Recommendation[] = [];
 
   // Create a user object with the fetched data plus additional profile fields
   const user = {
@@ -90,11 +91,13 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     image: userData.image,
     username: userData.email ? `@${userData.email.split('@')[0]}` : '@user',
     bio: 'Music enthusiast | Sharing vibes and discovering new sounds',
-    followers: Math.floor(Math.random() * 1000) + 100, // Random followers for demo
-    following: Math.floor(Math.random() * 500) + 50, // Random following for demo
-    collection: userCollection, // Single collection - list of albums user owns
-    recommendations: userRecommendations,
   };
 
-  return <Profile user={user} />;
+  return (
+    <Profile
+      user={user}
+      collection={userCollection}
+      recommendations={userRecommendations}
+    />
+  );
 }

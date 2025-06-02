@@ -16,13 +16,6 @@ export async function GET(
       include: {
         user: { select: { id: true, name: true, image: true } },
         albums: {
-          include: {
-            album: {
-              include: {
-                tracks: true,
-              },
-            },
-          },
           orderBy: { position: 'asc' },
         },
       },
