@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CollectionAlbum } from '@/types/collection';
@@ -28,23 +28,75 @@ export default function ProfileClient({
   // Flatten collections to get all albums
   const allAlbums = collection;
 
-  // Add state for the selected album
+  // Add state for the selected album and exit animation
   const [selectedAlbum, setSelectedAlbum] = useState<CollectionAlbum | null>(
     null
   );
+  const [isExiting, setIsExiting] = useState(false);
+
+  const handleClose = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      setSelectedAlbum(null);
+      setIsExiting(false);
+    }, 300); // Match the animation duration
+  };
+
+  // Add escape key listener
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && selectedAlbum) {
+        handleClose();
+      }
+    };
+
+    if (selectedAlbum) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [selectedAlbum]);
 
   return (
     <div className='min-h-screen bg-black text-white'>
       {/* Album Modal/Overlay */}
       {selectedAlbum && (
         <div
-          className='fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4 animate-in fade-in duration-300'
-          onClick={() => setSelectedAlbum(null)}
+          className={`fixed inset-0 bg-black flex items-center justify-center z-50 p-4 transition-all duration-300 ${
+            isExiting ? 'bg-opacity-0' : 'bg-opacity-90'
+          }`}
+          onClick={handleClose}
         >
           <div
-            className='flex flex-col lg:flex-row items-center lg:items-start gap-8 max-w-4xl w-full animate-in zoom-in-95 slide-in-from-bottom-4 duration-300'
+            className={`flex flex-col lg:flex-row items-center lg:items-start gap-8 max-w-4xl w-full transition-all duration-300 relative ${
+              isExiting
+                ? 'opacity-0 scale-95 translate-y-4'
+                : 'opacity-100 scale-100 translate-y-0'
+            }`}
             onClick={e => e.stopPropagation()}
           >
+            {/* Close X button */}
+            <button
+              onClick={handleClose}
+              className='absolute -top-2 -right-2 z-60 text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110'
+            >
+              <svg
+                className='w-6 h-6'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M6 18L18 6M6 6l12 12'
+                />
+              </svg>
+            </button>
+
             {/* Zoomed Album Cover */}
             <div className='flex-shrink-0'>
               <Image
@@ -89,14 +141,6 @@ export default function ProfileClient({
                   </p>
                 )}
               </div>
-
-              {/* Close button */}
-              <button
-                onClick={() => setSelectedAlbum(null)}
-                className='bg-zinc-800 hover:bg-zinc-700 text-cosmic-latte px-6 py-2 rounded-lg transition-colors border border-zinc-600 hover:border-zinc-500'
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
