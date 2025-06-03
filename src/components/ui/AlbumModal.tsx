@@ -35,11 +35,9 @@ export default function AlbumModal({
     };
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
     }
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
   if (!isOpen || !data) return null;
@@ -145,6 +143,12 @@ export default function AlbumModal({
       className={`fixed inset-0 bg-black flex items-center justify-center z-50 p-4 transition-all duration-300 ${
         isExiting ? 'bg-opacity-0' : 'bg-opacity-90'
       }`}
+      style={{
+        backdropFilter: isExiting ? 'none' : 'blur(4px)',
+        transition: isExiting
+          ? 'background-color 300ms ease-out, backdrop-filter 0ms ease-out'
+          : 'background-color 300ms ease-out, backdrop-filter 150ms ease-out',
+      }}
       onClick={onClose}
     >
       <div
