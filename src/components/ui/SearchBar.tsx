@@ -1,7 +1,7 @@
 'use client';
 
 import { Search, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface SearchBarProps {
   placeholder?: string;
@@ -32,18 +32,39 @@ export default function SearchBar({
 }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const lastSearchedQuery = useRef('');
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Debounced search effect - only search when user stops typing
   useEffect(() => {
-    if (!onSearch || !query.trim()) return;
+    // Clear any existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
 
-    const timer = setTimeout(() => {
-      if (query.trim().length > 2) {
-        onSearch(query.trim());
+    if (!onSearch || !query.trim()) {
+      // If query is empty, clear the last searched query
+      if (!query.trim()) {
+        lastSearchedQuery.current = '';
       }
-    }, debounceMs);
+      return;
+    }
 
-    return () => clearTimeout(timer);
+    const trimmedQuery = query.trim();
+
+    // Only search if query is long enough and different from last search
+    if (trimmedQuery.length > 2 && trimmedQuery !== lastSearchedQuery.current) {
+      searchTimeoutRef.current = setTimeout(() => {
+        lastSearchedQuery.current = trimmedQuery;
+        onSearch(trimmedQuery);
+      }, debounceMs);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
   }, [query, onSearch, debounceMs]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,6 +73,10 @@ export default function SearchBar({
 
   const handleClear = () => {
     setQuery('');
+    lastSearchedQuery.current = '';
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
     if (onClear) {
       onClear();
     }
