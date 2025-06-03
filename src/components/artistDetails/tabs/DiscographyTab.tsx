@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import Image from 'next/image';
 import { Calendar, Disc } from 'lucide-react';
+import Image from 'next/image';
 
+import AlbumModal from '@/components/ui/AlbumModal';
+import { useAlbumModal } from '@/hooks/useAlbumModal';
 import { Release, ReleasesResponse } from '@/types/album';
 
 async function fetchArtistReleases(
@@ -19,6 +21,9 @@ async function fetchArtistReleases(
 }
 
 export default function DiscographyTab({ artistId }: { artistId: string }) {
+  const { selectedItem, isExiting, isOpen, openModal, closeModal } =
+    useAlbumModal();
+
   const {
     data: releasesData,
     isLoading,
@@ -58,27 +63,49 @@ export default function DiscographyTab({ artistId }: { artistId: string }) {
   }
 
   return (
-    <div className='bg-zinc-900 p-4 rounded-lg'>
-      <h3 className='text-lg font-semibold mb-4'>
-        Albums & Releases ({releasesData.releases.length})
-      </h3>
+    <>
+      <AlbumModal
+        isOpen={isOpen}
+        onClose={closeModal}
+        data={selectedItem}
+        isExiting={isExiting}
+      />
 
-      {releasesData.releases.length === 0 ? (
-        <p className='text-zinc-400'>No releases found for this artist.</p>
-      ) : (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-          {releasesData.releases.map(release => (
-            <ReleaseCard key={release.id} release={release} />
-          ))}
-        </div>
-      )}
-    </div>
+      <div className='bg-zinc-900 p-4 rounded-lg'>
+        <h3 className='text-lg font-semibold mb-4'>
+          Albums & Releases ({releasesData.releases.length})
+        </h3>
+
+        {releasesData.releases.length === 0 ? (
+          <p className='text-zinc-400'>No releases found for this artist.</p>
+        ) : (
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+            {releasesData.releases.map(release => (
+              <ReleaseCard
+                key={release.id}
+                release={release}
+                onClick={() => openModal(release)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
-function ReleaseCard({ release }: { release: Release }) {
+function ReleaseCard({
+  release,
+  onClick,
+}: {
+  release: Release;
+  onClick: () => void;
+}) {
   return (
-    <div className='bg-zinc-800 rounded-lg p-4 hover:bg-zinc-700 transition-colors'>
+    <div
+      className='bg-zinc-800 rounded-lg p-4 hover:bg-zinc-700 transition-all cursor-pointer transform hover:scale-105'
+      onClick={onClick}
+    >
       <div className='flex gap-3'>
         <div className='relative w-16 h-16 flex-shrink-0'>
           <Image
