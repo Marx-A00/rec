@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CollectionAlbum } from '@/types/collection';
@@ -27,8 +28,80 @@ export default function ProfileClient({
   // Flatten collections to get all albums
   const allAlbums = collection;
 
+  // Add state for the selected album
+  const [selectedAlbum, setSelectedAlbum] = useState<CollectionAlbum | null>(
+    null
+  );
+
   return (
     <div className='min-h-screen bg-black text-white'>
+      {/* Album Modal/Overlay */}
+      {selectedAlbum && (
+        <div
+          className='fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4 animate-in fade-in duration-300'
+          onClick={() => setSelectedAlbum(null)}
+        >
+          <div
+            className='flex flex-col lg:flex-row items-center lg:items-start gap-8 max-w-4xl w-full animate-in zoom-in-95 slide-in-from-bottom-4 duration-300'
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Zoomed Album Cover */}
+            <div className='flex-shrink-0'>
+              <Image
+                src={selectedAlbum.album.image.url}
+                alt={selectedAlbum.album.title}
+                width={400}
+                height={400}
+                className='w-80 h-80 lg:w-96 lg:h-96 rounded-lg object-cover border-2 border-zinc-700 shadow-2xl'
+              />
+            </div>
+
+            {/* Album Details */}
+            <div className='flex-1 text-center lg:text-left'>
+              <h2 className='text-3xl lg:text-4xl font-bold text-cosmic-latte mb-2'>
+                {selectedAlbum.album.title}
+              </h2>
+              <p className='text-xl text-zinc-300 mb-4'>
+                {selectedAlbum.album.artist}
+              </p>
+
+              <div className='space-y-3 mb-6'>
+                {selectedAlbum.album.releaseDate && (
+                  <p className='text-zinc-400'>
+                    <span className='text-cosmic-latte font-medium'>
+                      Released:
+                    </span>{' '}
+                    {new Date(selectedAlbum.album.releaseDate).getFullYear()}
+                  </p>
+                )}
+                <p className='text-zinc-400'>
+                  <span className='text-cosmic-latte font-medium'>Added:</span>{' '}
+                  {new Date(selectedAlbum.addedAt).toLocaleDateString()}
+                </p>
+                {selectedAlbum.personalRating && (
+                  <p className='text-zinc-400'>
+                    <span className='text-cosmic-latte font-medium'>
+                      Personal Rating:
+                    </span>
+                    <span className='text-emeraled-green ml-2'>
+                      ★ {selectedAlbum.personalRating}/10
+                    </span>
+                  </p>
+                )}
+              </div>
+
+              {/* Close button */}
+              <button
+                onClick={() => setSelectedAlbum(null)}
+                className='bg-zinc-800 hover:bg-zinc-700 text-cosmic-latte px-6 py-2 rounded-lg transition-colors border border-zinc-600 hover:border-zinc-500'
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className='container mx-auto px-4 py-8'>
         {/* Header with back navigation */}
         <div className='mb-8'>
@@ -96,16 +169,20 @@ export default function ProfileClient({
                 {/* Album Grid */}
                 <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
                   {allAlbums.map(collectionAlbum => (
-                    <div key={collectionAlbum.id} className='relative group'>
+                    <div
+                      key={collectionAlbum.id}
+                      className='relative group cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10'
+                      onClick={() => setSelectedAlbum(collectionAlbum)}
+                    >
                       <Image
                         src={collectionAlbum.album.image.url}
                         alt={collectionAlbum.album.title}
                         width={128}
                         height={128}
-                        className='w-full aspect-square rounded object-cover border border-zinc-800'
+                        className='w-full aspect-square rounded object-cover border border-zinc-800 group-hover:border-zinc-600 transition-colors'
                       />
                       <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 rounded flex items-center justify-center'>
-                        <div className='opacity-0 group-hover:opacity-100 text-cosmic-latte text-xs text-center p-2'>
+                        <div className='opacity-0 group-hover:opacity-100 text-cosmic-latte text-xs text-center p-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-200'>
                           <p className='font-medium truncate mb-1'>
                             {collectionAlbum.album.title}
                           </p>
@@ -117,6 +194,9 @@ export default function ProfileClient({
                               ★ {collectionAlbum.personalRating}/10
                             </p>
                           )}
+                          <p className='text-zinc-400 text-xs mt-1'>
+                            Click to view
+                          </p>
                         </div>
                       </div>
                       {/* Added date indicator */}
