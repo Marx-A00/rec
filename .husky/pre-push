@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+export PATH="/usr/local/bin:$PATH"
+# Load nvm if it exists
+[ -s "$HOME/.nvm/nvm.sh" ] && \. "$HOME/.nvm/nvm.sh"
 
 echo "🚀 Running pre-push checks..."
 
