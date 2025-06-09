@@ -1,16 +1,16 @@
 import Link from 'next/link';
 
+import { auth } from '@/../auth';
+import HomeContent from '@/components/HomeContent';
 import SignInButton from '@/components/auth/SignInButton';
 import SignOutButton from '@/components/auth/SignOutButton';
 import AlbumSearch from '@/components/ui/AlbumSearch';
-import RecommendationsList from '@/components/recommendations/RecommendationsList';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { auth } from '@/../auth';
 
 export default async function Home() {
   const session = await auth();
@@ -104,33 +104,7 @@ export default async function Home() {
         </HoverCard>
       </div>
 
-      {/* Main Navigation */}
-      <div className='flex items-center justify-center py-8'>
-        <div className='flex flex-row space-x-4'>
-          <button className='text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg'>
-            Discover
-          </button>
-          <Link
-            href='/recommend'
-            className='text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg'
-          >
-            Recommend
-          </Link>
-          <Link
-            href='/browse'
-            className='text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg'
-          >
-            Browse
-          </Link>
-        </div>
-      </div>
-
-      {/* Recommendations Section */}
-      <div className='flex-1 px-4 pb-8'>
-        <div className='max-w-6xl mx-auto'>
-          <RecommendationsList />
-        </div>
-      </div>
+      <HomeContent />
     </div>
   );
 }
