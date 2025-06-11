@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Album } from '@/types/album';
 import { UnifiedSearchResult } from '@/types/search';
@@ -30,6 +31,7 @@ export default function AlbumSearch({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const router = useRouter();
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   const searchAlbums = async (query: string) => {
     // Clear results if query is empty
@@ -75,15 +77,12 @@ export default function AlbumSearch({
     setShowResultsDropdown(false);
     setHighlightedIndex(-1);
 
-    // Handle different result types
     if (result.type === 'album') {
-      if (onAlbumSelect) {
-        onAlbumSelect(result);
-      } else {
-        // Store album data in sessionStorage and navigate to album details page
-        sessionStorage.setItem(`album-${result.id}`, JSON.stringify(result));
-        router.push(`/albums/${result.id}`);
-      }
+      // Pre-populate the cache with search result data
+      // queryClient.setQueryData(['album', result.id], result);
+
+      // Navigate to album page
+      router.push(`/albums/${result.id}`);
     } else if (result.type === 'artist') {
       // Store artist data and navigate to artist page
       sessionStorage.setItem(`artist-${result.id}`, JSON.stringify(result));

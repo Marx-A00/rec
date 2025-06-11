@@ -1,5 +1,8 @@
 import { Client, DiscogsSearchResult } from 'disconnect';
 import { NextResponse } from 'next/server';
+import chalk from 'chalk';
+
+const log = console.log;
 
 // Create a client with consumer key and secret from environment variables
 const db = new Client({
@@ -25,7 +28,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    console.log(`Searching Discogs for: "${query}" (type: ${type})`);
+    log(chalk.yellow('Searching Discogs for: '), `${query}" (type: ${type})`);
 
     // Search for content on Discogs with flexible parameters
     const searchResults = await db.search({

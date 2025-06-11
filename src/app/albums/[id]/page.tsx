@@ -17,96 +17,16 @@ import AddToCollectionButton from '@/components/collections/AddToCollectionButto
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Toast, { useToast } from '@/components/ui/toast';
 import { Album } from '@/types/album';
+import { useAlbumDetails } from '@/hooks/useAlbumDetails';
 
 export default function AlbumDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const albumId = params.id as string;
 
-  const [album, setAlbum] = useState<Album | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: album, isLoading, error, isError } = useAlbumDetails(albumId);
 
   const { toast, showToast, hideToast } = useToast();
-
-  useEffect(() => {
-    if (albumId) {
-      // First try to get album data from sessionStorage
-      const storedAlbum = sessionStorage.getItem(`album-${albumId}`);
-      if (storedAlbum) {
-        try {
-          const albumData = JSON.parse(storedAlbum);
-          console.log('Using stored album data:', albumData.title);
-          setAlbum(albumData);
-          setIsLoading(false);
-
-          // Optionally fetch detailed data in the background to get tracks
-          fetchDetailedAlbumData(albumId, albumData);
-        } catch (error) {
-          console.error('Error parsing stored album data:', error);
-          fetchAlbumDetails(albumId);
-        }
-      } else {
-        // Fallback to API fetch if no stored data
-        fetchAlbumDetails(albumId);
-      }
-    }
-  }, [albumId]);
-
-  const fetchAlbumDetails = async (id: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      console.log(`Fetching details for album ID: ${id}`);
-      const response = await fetch(`/api/albums/${id}`);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch album details');
-      }
-
-      const data = await response.json();
-      console.log(`Got details for: ${data.album?.title}`);
-      setAlbum(data.album);
-    } catch (err) {
-      console.error('Error fetching album:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load album');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchDetailedAlbumData = async (id: string, baseAlbum: Album) => {
-    try {
-      console.log(`Fetching detailed data for album ID: ${id}`);
-      const response = await fetch(`/api/albums/${id}`);
-
-      if (!response.ok) {
-        console.log('Could not fetch detailed data, using base album data');
-        return;
-      }
-
-      const data = await response.json();
-      if (data.album && data.album.tracks && data.album.tracks.length > 0) {
-        console.log(
-          `Got detailed data with ${data.album.tracks.length} tracks`
-        );
-        // Merge the detailed data with the base album data
-        setAlbum({
-          ...baseAlbum,
-          tracks: data.album.tracks,
-          metadata: {
-            ...baseAlbum.metadata,
-            ...data.album.metadata,
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching detailed album data:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load album');
-    }
-  };
 
   const formatDuration = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -124,32 +44,12 @@ export default function AlbumDetailsPage() {
     return `${minutes}m`;
   };
 
-  const handleArtistClick = async () => {
-    if (!album?.artist) return;
-
-    try {
-      // Search for the artist
-      const response = await fetch(
-        `/api/search?query=${encodeURIComponent(album.artist)}&type=artist`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const artists = data.grouped?.artists || [];
-
-        if (artists.length > 0) {
-          // Navigate to the first matching artist
-          router.push(`/artists/${artists[0].id}`);
-        } else {
-          showToast('Artist not found', 'error');
-        }
-      } else {
-        showToast('Error searching for artist', 'error');
-      }
-    } catch (error) {
-      console.error('Error searching for artist:', error);
-      showToast('Error searching for artist', 'error');
+  const handleArtistClick = async (artistId: string, artistName: string) => {
+    if (!artistId) {
+      showToast(`Artist ID not available for ${artistName}`, 'error');
+      return;
     }
+    router.push(`/artists/${artistId}`);
   };
 
   if (isLoading) {
@@ -165,7 +65,7 @@ export default function AlbumDetailsPage() {
     );
   }
 
-  if (error || !album) {
+  if (isError || !album) {
     return (
       <div className='min-h-screen bg-black text-white'>
         <div className='container mx-auto px-4 py-8'>
@@ -181,7 +81,9 @@ export default function AlbumDetailsPage() {
               Album Not Found
             </h1>
             <p className='text-zinc-400'>
-              {error || 'The requested album could not be found.'}
+              {error?.message ||
+                String(error) ||
+                'The requested album could not be found.'}
             </p>
           </div>
         </div>
@@ -227,12 +129,23 @@ export default function AlbumDetailsPage() {
           <div className='lg:col-span-2 space-y-6'>
             <div>
               <h1 className='text-4xl font-bold mb-2'>{album.title}</h1>
-              <button
-                onClick={handleArtistClick}
-                className='text-2xl text-zinc-300 mb-4 hover:text-white hover:underline transition-colors cursor-pointer text-left'
-              >
-                {album.artist}
-              </button>
+              <div className='flex flex-wrap items-center gap-2'>
+                {album.artists?.map((artist, index) => (
+                  <span key={artist.id || index}>
+                    <button
+                      onClick={() => handleArtistClick(artist.id, artist.name)}
+                      className='text-2xl text-zinc-300 hover:text-white hover:underline transition-colors cursor-pointer'
+                    >
+                      {artist.name}
+                    </button>
+                    {index < (album.artists?.length || 0) - 1 && (
+                      <span className='text-zinc-500 mx-1'>,</span>
+                    )}
+                  </span>
+                )) || (
+                  <span className='text-2xl text-zinc-300'>Unknown Artist</span>
+                )}
+              </div>
             </div>
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
