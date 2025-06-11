@@ -1,9 +1,10 @@
 import Link from 'next/link';
 
 import { auth } from '@/../auth';
-import HomeContent from '@/components/HomeContent';
+import NavigationButtons from '@/components/NavigationButtons';
 import SignInButton from '@/components/auth/SignInButton';
 import SignOutButton from '@/components/auth/SignOutButton';
+import RecommendationsList from '@/components/recommendations/RecommendationsList';
 import AlbumSearch from '@/components/ui/AlbumSearch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -104,7 +105,15 @@ export default async function Home() {
         </HoverCard>
       </div>
 
-      <HomeContent />
+      {/* Main Navigation */}
+      <NavigationButtons />
+
+      {/* Recommendations Section */}
+      <div className='flex-1 px-4 pb-8'>
+        <div className='max-w-6xl mx-auto'>
+          <RecommendationsList />
+        </div>
+      </div>
     </div>
   );
 }

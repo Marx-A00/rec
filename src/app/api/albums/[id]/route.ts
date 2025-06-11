@@ -78,6 +78,18 @@ export async function GET(
 
     // If we have artists array, use the first artist
     if (albumDetails.artists && albumDetails.artists.length > 0) {
+      // Add console.log to see the artist data structure
+      console.log('=== ARTIST DATA FROM DISCOGS ===');
+      console.log(
+        'Full artists array:',
+        JSON.stringify(albumDetails.artists, null, 2)
+      );
+      console.log(
+        'First artist object:',
+        JSON.stringify(albumDetails.artists[0], null, 2)
+      );
+      console.log('================================');
+
       artist = albumDetails.artists[0].name;
     } else if (albumDetails.title && albumDetails.title.includes(' - ')) {
       // Fallback: try to parse from title if no artists array

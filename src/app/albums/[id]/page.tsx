@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import AddToCollectionButton from '@/components/collections/AddToCollectionButton';
@@ -20,6 +20,7 @@ import { Album } from '@/types/album';
 
 export default function AlbumDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const albumId = params.id as string;
 
   const [album, setAlbum] = useState<Album | null>(null);
@@ -123,6 +124,34 @@ export default function AlbumDetailsPage() {
     return `${minutes}m`;
   };
 
+  const handleArtistClick = async () => {
+    if (!album?.artist) return;
+
+    try {
+      // Search for the artist
+      const response = await fetch(
+        `/api/search?query=${encodeURIComponent(album.artist)}&type=artist`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const artists = data.grouped?.artists || [];
+
+        if (artists.length > 0) {
+          // Navigate to the first matching artist
+          router.push(`/artists/${artists[0].id}`);
+        } else {
+          showToast('Artist not found', 'error');
+        }
+      } else {
+        showToast('Error searching for artist', 'error');
+      }
+    } catch (error) {
+      console.error('Error searching for artist:', error);
+      showToast('Error searching for artist', 'error');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className='min-h-screen bg-black text-white'>
@@ -198,7 +227,12 @@ export default function AlbumDetailsPage() {
           <div className='lg:col-span-2 space-y-6'>
             <div>
               <h1 className='text-4xl font-bold mb-2'>{album.title}</h1>
-              <h2 className='text-2xl text-zinc-300 mb-4'>{album.artist}</h2>
+              <button
+                onClick={handleArtistClick}
+                className='text-2xl text-zinc-300 mb-4 hover:text-white hover:underline transition-colors cursor-pointer text-left'
+              >
+                {album.artist}
+              </button>
             </div>
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
