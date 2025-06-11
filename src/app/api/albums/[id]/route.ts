@@ -1,7 +1,10 @@
 import { Client } from 'disconnect';
 import { NextResponse } from 'next/server';
 
-import { Track } from '@/types/album';
+import { mapDiscogsMasterToAlbum } from '@/lib/discogs/mappers';
+import { DiscogsMaster } from '@/types/discogs/master';
+
+const log = console.log;
 
 // Create a client with consumer key and secret from environment variables
 const db = new Client({
@@ -30,98 +33,35 @@ export async function GET(
   try {
     console.log(`Fetching album details for ID: ${id}`);
 
-    // Try to get the release details
-    let albumDetails;
+    // Try to get the master release details
+    let albumDetails: DiscogsMaster;
     try {
-      // Try as a master release first
       albumDetails = await db.getMaster(id);
       console.log(`Found master release: ${albumDetails.title}`);
-      console.log(`Master artists:`, albumDetails.artists);
+      console.log(
+        'Full Master Details: ',
+        JSON.stringify(albumDetails, null, 2)
+      );
     } catch {
       console.log(`Not a master release, trying as regular release`);
       try {
         // If not a master, try as a regular release
-        albumDetails = await db.getRelease(id);
-        console.log(`Found regular release: ${albumDetails.title}`);
-        console.log(`Release artists:`, albumDetails.artists);
+        // Note: This would need a separate mapper for releases
+        const releaseDetails = await db.getRelease(id);
+        console.log(`Found regular release: ${releaseDetails.title}`);
+        // For now, return error since we haven't implemented release mapping yet
+        return NextResponse.json(
+          { error: 'Release mapping not implemented yet' },
+          { status: 501 }
+        );
       } catch (releaseError) {
         console.error('Error fetching album details:', releaseError);
         return NextResponse.json({ error: 'Album not found' }, { status: 404 });
       }
     }
 
-    // Extract tracks if available
-    const tracks = albumDetails.tracklist
-      ? albumDetails.tracklist.map((track: Track, index: number) => ({
-          id: `${id}-${index}`,
-          title: track.title || `Track ${index + 1}`,
-          duration: convertDurationToSeconds(track.duration),
-          trackNumber: index + 1,
-        }))
-      : [];
-
-    // Calculate total duration
-    const totalDuration = tracks.reduce(
-      (sum: number, track: Track) => sum + (track.duration || 0),
-      0
-    );
-
-    // Get the image URL from the album details
-    const imageUrl =
-      albumDetails.images && albumDetails.images.length > 0
-        ? albumDetails.images[0].uri
-        : PLACEHOLDER_IMAGE;
-
-    // Extract title and artist properly
-    let title = albumDetails.title;
-    let artist = 'Unknown Artist';
-
-    // If we have artists array, use the first artist
-    if (albumDetails.artists && albumDetails.artists.length > 0) {
-      // Add console.log to see the artist data structure
-      console.log('=== ARTIST DATA FROM DISCOGS ===');
-      console.log(
-        'Full artists array:',
-        JSON.stringify(albumDetails.artists, null, 2)
-      );
-      console.log(
-        'First artist object:',
-        JSON.stringify(albumDetails.artists[0], null, 2)
-      );
-      console.log('================================');
-
-      artist = albumDetails.artists[0].name;
-    } else if (albumDetails.title && albumDetails.title.includes(' - ')) {
-      // Fallback: try to parse from title if no artists array
-      const parts = albumDetails.title.split(' - ');
-      if (parts.length >= 2) {
-        artist = parts[0];
-        title = parts.slice(1).join(' - '); // In case there are multiple " - " in the title
-      }
-    }
-
-    // Format the album data to match our Album interface
-    // TODO: extend album type or change base type
-    const album = {
-      id: id.toString(),
-      title: title,
-      artist: artist,
-      releaseDate: albumDetails.released || albumDetails.year || '',
-      genre: albumDetails.genres || [],
-      label: albumDetails.labels?.[0]?.name || '',
-      image: {
-        url: imageUrl,
-        width: 400, // Consistent width
-        height: 400, // Consistent height
-        alt: title || 'Album cover',
-      },
-      tracks,
-      metadata: {
-        totalDuration,
-        numberOfTracks: tracks.length,
-        format: albumDetails.formats?.[0]?.name || 'Digital',
-      },
-    };
+    // Use the mapper to convert DiscogsMaster to Album
+    const album = mapDiscogsMasterToAlbum(albumDetails);
 
     return NextResponse.json({ album });
   } catch (error) {

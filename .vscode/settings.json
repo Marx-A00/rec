@@ -4,8 +4,7 @@
   "editor.formatOnPaste": true,
   "editor.formatOnType": false,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit",
-    "source.organizeImports": "explicit"
+    "source.fixAll.eslint": "explicit"
   },
   "eslint.validate": [
     "javascript",
@@ -15,7 +14,7 @@
   ],
   "eslint.format.enable": false,
   "eslint.lintTask.enable": true,
-  "typescript.preferences.organizeImports": true,
+  "typescript.preferences.organizeImports": false,
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },

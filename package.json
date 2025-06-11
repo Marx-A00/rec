@@ -70,17 +70,5 @@
     "tailwindcss": "^3.4.1",
     "tsx": "^4.19.4",
     "typescript": "^5"
-  },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,yaml,yml}": [
-      "prettier --write"
-    ],
-    "*.{css,scss}": [
-      "prettier --write"
-    ]
   }
 }

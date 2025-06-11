@@ -7,6 +7,7 @@ declare module 'disconnect' {
   }
   import { Release } from './album';
   import { Artist } from './artist';
+  import { DiscogsMaster } from './discogs/master';
 
   export interface DiscogsImage {
     uri?: string;
@@ -140,7 +141,7 @@ declare module 'disconnect' {
 
   export class Database {
     search(options: SearchOptions): Promise<SearchResponse>;
-    getMaster(id: number | string): Promise<Release>;
+    getMaster(id: number | string): Promise<DiscogsMaster>;
     getRelease(id: number | string): Promise<Release>;
     getArtist(id: number | string): Promise<Artist>;
     getArtistReleases(

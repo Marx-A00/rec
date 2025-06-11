@@ -8,7 +8,15 @@ export interface Track {
 export interface Album {
   id: string; // This is the Discogs ID
   title: string;
-  artist: string;
+  artists: Array<{
+    id: string;
+    name: string;
+    anv?: string;
+    role?: string;
+    resource_url?: string;
+    thumbnail_url?: string;
+  }>;
+
   subtitle?: string; // For general search results
   type?: string; // For general search results (album, artist, label, etc.)
   releaseDate?: string; // ISO 8601 format: "YYYY-MM-DD"
