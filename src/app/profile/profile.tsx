@@ -18,12 +18,14 @@ interface ProfileClientProps {
   };
   collection: CollectionAlbum[];
   recommendations: Recommendation[];
+  isOwnProfile: boolean;
 }
 
 export default function ProfileClient({
   user,
   collection,
   recommendations,
+  isOwnProfile,
 }: ProfileClientProps) {
   // Flatten collections to get all albums
   const allAlbums = collection;
@@ -100,8 +102,8 @@ export default function ProfileClient({
             {/* Zoomed Album Cover */}
             <div className='flex-shrink-0'>
               <Image
-                src={selectedAlbum.album.image.url}
-                alt={selectedAlbum.album.title}
+                src={selectedAlbum.albumImageUrl || '/placeholder.svg'}
+                alt={selectedAlbum.albumTitle}
                 width={400}
                 height={400}
                 className='w-80 h-80 lg:w-96 lg:h-96 rounded-lg object-cover border-2 border-zinc-700 shadow-2xl'
@@ -111,19 +113,19 @@ export default function ProfileClient({
             {/* Album Details */}
             <div className='flex-1 text-center lg:text-left'>
               <h2 className='text-3xl lg:text-4xl font-bold text-cosmic-latte mb-2'>
-                {selectedAlbum.album.title}
+                {selectedAlbum.albumTitle}
               </h2>
               <p className='text-xl text-zinc-300 mb-4'>
-                {selectedAlbum.album.artist}
+                {selectedAlbum.albumArtist}
               </p>
 
               <div className='space-y-3 mb-6'>
-                {selectedAlbum.album.releaseDate && (
+                {selectedAlbum.albumYear && (
                   <p className='text-zinc-400'>
                     <span className='text-cosmic-latte font-medium'>
                       Released:
                     </span>{' '}
-                    {new Date(selectedAlbum.album.releaseDate).getFullYear()}
+                    {selectedAlbum.albumYear}
                   </p>
                 )}
                 <p className='text-zinc-400'>
@@ -171,6 +173,11 @@ export default function ProfileClient({
                 {user.name}
               </h1>
               <p className='text-zinc-400 mb-4 text-lg'>{user.username}</p>
+              {isOwnProfile && (
+                <div className='mb-4 px-3 py-1 bg-emeraled-green text-black text-sm font-medium rounded-full inline-block'>
+                  👋 This is your profile
+                </div>
+              )}
               <p className='mb-6 max-w-md text-zinc-300'>{user.bio}</p>
               <div className='flex justify-center md:justify-start gap-6 text-sm'>
                 <span className='text-zinc-300'>
@@ -219,8 +226,10 @@ export default function ProfileClient({
                       onClick={() => setSelectedAlbum(collectionAlbum)}
                     >
                       <Image
-                        src={collectionAlbum.album.image.url}
-                        alt={collectionAlbum.album.title}
+                        src={
+                          collectionAlbum.albumImageUrl || '/placeholder.svg'
+                        }
+                        alt={collectionAlbum.albumTitle}
                         width={128}
                         height={128}
                         className='w-full aspect-square rounded object-cover border border-zinc-800 group-hover:border-zinc-600 transition-colors'
@@ -228,10 +237,10 @@ export default function ProfileClient({
                       <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 rounded flex items-center justify-center'>
                         <div className='opacity-0 group-hover:opacity-100 text-cosmic-latte text-xs text-center p-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-200'>
                           <p className='font-medium truncate mb-1'>
-                            {collectionAlbum.album.title}
+                            {collectionAlbum.albumTitle}
                           </p>
                           <p className='text-zinc-300 truncate mb-1'>
-                            {collectionAlbum.album.artist}
+                            {collectionAlbum.albumArtist}
                           </p>
                           {collectionAlbum.personalRating && (
                             <p className='text-emeraled-green text-xs'>

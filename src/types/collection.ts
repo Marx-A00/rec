@@ -27,7 +27,12 @@ export interface Collection {
 export interface CollectionAlbum {
   id: string;
   albumId: string;
-  album: Album;
+
+  albumTitle: string;
+  albumArtist: string;
+  albumImageUrl?: string;
+  albumYear?: string;
+
   addedAt: string; // ISO 8601 format
   addedBy: string; // userId
   personalRating?: number; // 1-10 scale

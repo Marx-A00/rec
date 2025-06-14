@@ -1,66 +1,67 @@
 import { notFound } from 'next/navigation';
+import { auth } from '@/../auth';
+import prisma from '@/lib/prisma';
 
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
 
 import Profile from '../profile';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  image: string;
+// Helper function to get user recommendations
+async function getUserRecommendations(
+  userId: string
+): Promise<Recommendation[]> {
+  const recs = await prisma.recommendation.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return recs.map(rec => ({
+    id: rec.id,
+    score: rec.score,
+    createdAt: rec.createdAt.toISOString(),
+    updatedAt: rec.updatedAt.toISOString(),
+    userId: rec.userId,
+    basisAlbumDiscogsId: rec.basisAlbumDiscogsId,
+    recommendedAlbumDiscogsId: rec.recommendedAlbumDiscogsId,
+    basisAlbumTitle: rec.basisAlbumTitle,
+    basisAlbumArtist: rec.basisAlbumArtist,
+    basisAlbumImageUrl: rec.basisAlbumImageUrl || undefined,
+    basisAlbumYear: rec.basisAlbumYear || undefined,
+    recommendedAlbumTitle: rec.recommendedAlbumTitle,
+    recommendedAlbumArtist: rec.recommendedAlbumArtist,
+    recommendedAlbumImageUrl: rec.recommendedAlbumImageUrl || undefined,
+    recommendedAlbumYear: rec.recommendedAlbumYear || undefined,
+  }));
 }
 
-// Sample users data - in a real app, this would come from your database
-const sampleUsers: User[] = [
-  {
-    id: 'user-1',
-    name: 'Alex Rodriguez',
-    email: 'alex@example.com',
-    image:
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-  },
-  {
-    id: 'user-2',
-    name: 'Sam Chen',
-    email: 'sam@example.com',
-    image:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-  },
-  {
-    id: 'user-3',
-    name: 'Jordan Taylor',
-    email: 'jordan@example.com',
-    image:
-      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-  },
-  {
-    id: 'user-4',
-    name: 'Casey Morgan',
-    email: 'casey@example.com',
-    image:
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-  },
-  {
-    id: 'user-5',
-    name: 'Riley Park',
-    email: 'riley@example.com',
-    image:
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-  },
-];
+// Helper function to get user collections
+async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
+  const collections = await prisma.collection.findMany({
+    where: { userId },
+    include: {
+      albums: {
+        orderBy: { addedAt: 'desc' },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
 
-async function getUserById(userId: string): Promise<User | null> {
-  try {
-    // In a real app, you would fetch from your database
-    // For now, use sample data
-    const user = sampleUsers.find(u => u.id === userId);
-    return user || null;
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    return null;
-  }
+  return collections.flatMap(collection =>
+    collection.albums.map(album => ({
+      id: album.id,
+      albumId: album.albumDiscogsId,
+      albumTitle: album.albumTitle,
+      albumArtist: album.albumArtist,
+      albumImageUrl: album.albumImageUrl || undefined,
+      albumYear: album.albumYear || undefined,
+      addedAt: album.addedAt.toISOString(),
+      addedBy: collection.userId,
+      personalRating: album.personalRating || undefined,
+      personalNotes: album.personalNotes || undefined,
+      position: album.position,
+    }))
+  );
 }
 
 interface ProfilePageProps {
@@ -70,25 +71,32 @@ interface ProfilePageProps {
 }
 
 export default async function UserProfilePage({ params }: ProfilePageProps) {
-  const userData = await getUserById(params.userId);
+  const session = await auth();
+  const { userId } = params;
+
+  // Check if viewing own profile
+  const isOwnProfile = session?.user?.id === userId;
+
+  // Fetch user data from database
+  const userData = await prisma.user.findUnique({
+    where: { id: userId },
+  });
 
   if (!userData) {
     notFound();
   }
 
-  // Get user's collection (albums they own) - filter by addedBy (which should be "owner")
-  // Note: Using empty array for now since sample data doesn't match current schema
-  const userCollection: CollectionAlbum[] = [];
+  // Get collections and recommendations
+  const [collection, recommendations] = await Promise.all([
+    getUserCollections(userId),
+    getUserRecommendations(userId),
+  ]);
 
-  // Get user's recommendations
-  // Note: Using empty array for now since sample data doesn't match current schema
-  const userRecommendations: Recommendation[] = [];
-
-  // Create a user object with the fetched data plus additional profile fields
+  // Create user object for Profile component
   const user = {
-    name: userData.name,
-    email: userData.email,
-    image: userData.image,
+    name: userData.name || 'User',
+    email: userData.email || null,
+    image: userData.image || '/placeholder.svg?height=100&width=100',
     username: userData.email ? `@${userData.email.split('@')[0]}` : '@user',
     bio: 'Music enthusiast | Sharing vibes and discovering new sounds',
   };
@@ -96,8 +104,9 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
   return (
     <Profile
       user={user}
-      collection={userCollection}
-      recommendations={userRecommendations}
+      collection={collection}
+      recommendations={recommendations}
+      isOwnProfile={isOwnProfile}
     />
   );
 }
