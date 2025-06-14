@@ -51,7 +51,7 @@ export default function AlbumSelector({
     >
       <Image
         src={album.image.url}
-        alt={`${album.artist} - ${album.title}`}
+        alt={`${album.artists?.[0]?.name} - ${album.title}`}
         width={128}
         height={128}
         className='w-full aspect-square object-cover'
@@ -59,7 +59,7 @@ export default function AlbumSelector({
       <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex items-center justify-center'>
         <div className='opacity-0 group-hover:opacity-100 text-cosmic-latte text-xs text-center p-2'>
           <p className='font-medium truncate mb-1'>{album.title}</p>
-          <p className='text-zinc-300 truncate'>{album.artist}</p>
+          <p className='text-zinc-300 truncate'>{album.artists?.[0]?.name}</p>
         </div>
       </div>
       <div className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity'>

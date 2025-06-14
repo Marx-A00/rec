@@ -143,7 +143,8 @@ export default function CollageCreator() {
                         className='flex items-center justify-between text-sm'
                       >
                         <span className='text-cosmic-latte'>
-                          {index + 1}. {album.artist} - {album.title}
+                          {index + 1}. {album.artists?.[0]?.name} -{' '}
+                          {album.title}
                         </span>
                         <Button
                           variant='ghost'
