@@ -1,5 +1,3 @@
-import { Album } from './album';
-
 export interface Collection {
   id: string;
   name: string;

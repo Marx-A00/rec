@@ -4,17 +4,12 @@ import { NextResponse } from 'next/server';
 import { mapDiscogsMasterToAlbum } from '@/lib/discogs/mappers';
 import { DiscogsMaster } from '@/types/discogs/master';
 
-const log = console.log;
-
 // Create a client with consumer key and secret from environment variables
 const db = new Client({
   userAgent: 'RecProject/1.0 +http://localhost:3000',
   consumerKey: process.env.CONSUMER_KEY,
   consumerSecret: process.env.CONSUMER_SECRET,
 }).database();
-
-// Default placeholder image for albums without images
-const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x400?text=No+Image';
 
 export async function GET(
   request: Request,
@@ -71,18 +66,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
-
-// Helper function to convert duration string (MM:SS) to seconds
-function convertDurationToSeconds(duration: string | number): number {
-  if (typeof duration === 'number') return duration;
-  if (!duration) return 0;
-
-  const parts = duration.split(':');
-  if (parts.length === 2) {
-    const minutes = parseInt(parts[0], 10);
-    const seconds = parseInt(parts[1], 10);
-    return minutes * 60 + seconds;
-  }
-  return 0;
 }

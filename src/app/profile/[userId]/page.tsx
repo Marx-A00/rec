@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
+
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
-
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
 

@@ -1,4 +1,5 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+
 import { Album } from '@/types/album';
 
 async function fetchAlbumDetails(albumId: string): Promise<Album> {

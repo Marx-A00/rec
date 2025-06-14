@@ -2,9 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 
-import { Album } from '@/types/album';
 import { UnifiedSearchResult } from '@/types/search';
 
 import SearchBar from './SearchBar';
@@ -12,14 +10,12 @@ import SearchResults from './SearchResults';
 
 interface AlbumSearchProps {
   className?: string;
-  onAlbumSelect?: (album: Album) => void;
   placeholder?: string;
   showResults?: boolean;
 }
 
 export default function AlbumSearch({
   className = '',
-  onAlbumSelect,
   placeholder = 'Search albums, artists, or genres...',
   showResults = true,
 }: AlbumSearchProps) {
@@ -31,7 +27,6 @@ export default function AlbumSearch({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const router = useRouter();
   const searchContainerRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
 
   const searchAlbums = async (query: string) => {
     // Clear results if query is empty

@@ -13,12 +13,18 @@ interface AlbumModalProps {
   isExiting: boolean;
 }
 
-function isCollectionAlbum(data: any): data is CollectionAlbum {
-  return data && data.album && data.album.image && data.album.image.url;
+function isCollectionAlbum(
+  data: Release | CollectionAlbum | null
+): data is CollectionAlbum {
+  return data !== null && 'albumTitle' in data && 'albumArtist' in data;
 }
 
-function isRelease(data: any): data is Release {
-  return data && data.title && (data.thumb || data.basic_information);
+function isRelease(data: Release | CollectionAlbum | null): data is Release {
+  return (
+    data !== null &&
+    'title' in data &&
+    ('thumb' in data || 'basic_information' in data)
+  );
 }
 
 export default function AlbumModal({
