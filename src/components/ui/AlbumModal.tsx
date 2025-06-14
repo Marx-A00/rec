@@ -44,7 +44,7 @@ export default function AlbumModal({
 
   const getImageUrl = () => {
     if (isCollectionAlbum(data)) {
-      return data.album.image.url;
+      return data.albumImageUrl;
     } else if (isRelease(data)) {
       return (
         data.basic_information?.cover_image ||
@@ -57,7 +57,7 @@ export default function AlbumModal({
 
   const getTitle = () => {
     if (isCollectionAlbum(data)) {
-      return data.album.title;
+      return data.albumTitle;
     } else if (isRelease(data)) {
       return data.title;
     }
@@ -67,7 +67,7 @@ export default function AlbumModal({
   // is there a reason we are getting these separately?
   const getArtist = () => {
     if (isCollectionAlbum(data)) {
-      return data.album.artist;
+      return data.albumArtist;
     } else if (isRelease(data)) {
       return (
         data.artist ||
@@ -82,10 +82,10 @@ export default function AlbumModal({
     if (isCollectionAlbum(data)) {
       return (
         <div className='space-y-3 mb-6'>
-          {data.album.releaseDate && (
+          {data.albumYear && (
             <p className='text-zinc-400'>
               <span className='text-cosmic-latte font-medium'>Released:</span>{' '}
-              {new Date(data.album.releaseDate).getFullYear()}
+              {data.albumYear}
             </p>
           )}
           <p className='text-zinc-400'>
@@ -182,7 +182,7 @@ export default function AlbumModal({
         {/* Zoomed Album Cover */}
         <div className='flex-shrink-0'>
           <Image
-            src={getImageUrl()}
+            src={getImageUrl() || '/placeholder.svg'}
             alt={getTitle()}
             width={400}
             height={400}
