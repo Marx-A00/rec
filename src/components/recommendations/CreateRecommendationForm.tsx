@@ -4,6 +4,17 @@ import { useState } from 'react';
 import { CreateRecommendationRequest } from '@/types/recommendation';
 import { Album } from '@/types/album';
 
+// Helper function to format artists naturally
+function formatArtists(artists: Array<{ name: string }> | undefined): string {
+  if (!artists || artists.length === 0) return 'Unknown Artist';
+  if (artists.length === 1) return artists[0].name;
+  if (artists.length === 2) return `${artists[0].name} & ${artists[1].name}`;
+
+  const lastArtist = artists[artists.length - 1];
+  const otherArtists = artists.slice(0, -1);
+  return `${otherArtists.map(a => a.name).join(', ')} & ${lastArtist.name}`;
+}
+
 async function createRecommendation(data: CreateRecommendationRequest) {
   const response = await fetch('/api/recommendations', {
     method: 'POST',
@@ -53,11 +64,11 @@ export default function CreateRecommendationForm({
       recommendedAlbumDiscogsId: recommendedAlbum.id,
       score,
       basisAlbumTitle: basisAlbum.title,
-      basisAlbumArtist: basisAlbum.artist,
+      basisAlbumArtist: formatArtists(basisAlbum.artists),
       basisAlbumImageUrl: basisAlbum.image.url,
       basisAlbumYear: basisAlbum.year?.toString(),
       recommendedAlbumTitle: recommendedAlbum.title,
-      recommendedAlbumArtist: recommendedAlbum.artist,
+      recommendedAlbumArtist: formatArtists(recommendedAlbum.artists),
       recommendedAlbumImageUrl: recommendedAlbum.image.url,
       recommendedAlbumYear: recommendedAlbum.year?.toString(),
     };

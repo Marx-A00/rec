@@ -50,7 +50,7 @@ export default function CollageGrid({
               <>
                 <Image
                   src={album.image.url}
-                  alt={`${album.artist} - ${album.title}`}
+                  alt={`${album.artists?.[0]?.name} - ${album.title}`}
                   width={96}
                   height={96}
                   className='w-full h-full object-cover'

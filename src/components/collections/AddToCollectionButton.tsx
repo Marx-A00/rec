@@ -32,7 +32,7 @@ export default function AddToCollectionButton({
           body: JSON.stringify({
             createNew: false,
             albumTitle: album.title,
-            albumArtist: album.artist,
+            albumArtist: album.artists?.[0]?.name,
             albumImageUrl: album.image.url,
             albumYear:
               album.year?.toString() ||

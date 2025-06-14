@@ -40,7 +40,7 @@ export default function AlbumCard({
           </div>
           <div className='text-center'>
             <div className='font-bold text-white'>{album.title}</div>
-            <div className='text-gray-300'>{album.artist}</div>
+            <div className='text-gray-300'>{album.artists?.[0]?.name}</div>
             {album.year && (
               <div className='text-sm text-gray-400'>{album.year}</div>
             )}

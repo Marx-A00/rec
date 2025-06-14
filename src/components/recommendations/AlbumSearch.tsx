@@ -95,7 +95,9 @@ export default function AlbumSearch({
               </div>
               <div>
                 <div className='font-medium'>{album.title}</div>
-                <div className='text-sm text-gray-600'>{album.artist}</div>
+                <div className='text-sm text-gray-600'>
+                  {album.artists?.[0]?.name}
+                </div>
                 {album.year && (
                   <div className='text-xs text-gray-500'>{album.year}</div>
                 )}
