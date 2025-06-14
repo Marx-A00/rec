@@ -11,12 +11,10 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 import AddToCollectionButton from '@/components/collections/AddToCollectionButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Toast, { useToast } from '@/components/ui/toast';
-import { Album } from '@/types/album';
 import { useAlbumDetails } from '@/hooks/useAlbumDetails';
 
 export default function AlbumDetailsPage() {
