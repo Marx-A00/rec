@@ -46,3 +46,14 @@ next-env.d.ts
 direction.org
 scratch.org
 /.cursor
+
+# Playwright test results and error contexts
+/test-results/
+/playwright-report/
+test-results/
+playwright-report/
+**/test-results/
+**/playwright-report/
+*.last-run.json
+.last-run.json
+**/.last-run.json

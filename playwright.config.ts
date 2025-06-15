@@ -3,11 +3,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * Load test environment variables
  */
-// Try to load .env.local first, then .env.test
-dotenv.config({ path: path.resolve(__dirname, '.env.local') });
 dotenv.config({ path: path.resolve(__dirname, '.env.test') });
 
 /**
@@ -76,7 +73,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'pnpm dev',
+    command: 'pnpm dotenv -e .env.test -- pnpm dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
   },

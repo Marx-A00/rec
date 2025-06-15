@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 const generateTestEmail = () => {
   const timestamp = Date.now();
   const randomString = Math.random().toString(36).substring(7);
-  return `test-${timestamp}-${randomString}@example.com`;
+  return `🎭PLAYWRIGHT_TEST-${timestamp}-${randomString}@example.com`;
 };
 
 test.describe('User Registration', () => {
@@ -117,9 +117,7 @@ test.describe('User Registration', () => {
 
     // Should show error message
     await expect(
-      page
-        .locator('text=already exists')
-        .or(page.locator('text=already registered'))
+      page.locator('text=/already exists|already registered/i')
     ).toBeVisible({ timeout: 5000 });
   });
 
@@ -186,5 +184,32 @@ test.describe('User Registration', () => {
 
     // Should still work without name
     await page.waitForURL('/', { timeout: 10000 });
+  });
+
+  test('should show password mismatch error', async ({ page }) => {
+    await page.locator('input[name="password"]').fill('StrongPass123!');
+    await page
+      .locator('input[name="confirmPassword"]')
+      .fill('DifferentPass123!');
+    await page.locator('input[name="email"]').click(); // Trigger validation
+
+    await expect(page.locator('text=/passwords.*match/i')).toBeVisible();
+  });
+
+  test('should show error for duplicate email', async ({ page }) => {
+    await page.goto('/auth/register');
+
+    // Use the recognizable test user
+    await page
+      .getByText('Email', { exact: true })
+      .fill('PLAYWRIGHT_TEST_existing@example.com');
+    await page.getByText('Password', { exact: true }).fill('NewPassword123!');
+    await page
+      .getByText('Confirm Password', { exact: true })
+      .fill('NewPassword123!');
+
+    await page.getByRole('button', { name: 'Register' }).click();
+
+    await expect(page.getByText(/email.*already.*use/i)).toBeVisible();
   });
 });
