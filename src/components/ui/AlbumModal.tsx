@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Release } from '@/types/album';
 import { CollectionAlbum } from '@/types/collection';
@@ -33,6 +33,13 @@ export default function AlbumModal({
   data,
   isExiting,
 }: AlbumModalProps) {
+  const [highQualityImageUrl, setHighQualityImageUrl] = useState<string | null>(
+    null
+  );
+  const [isLoadingHighQualityImage, setIsLoadingHighQualityImage] =
+    useState(false);
+
+  // Handle Escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
@@ -46,9 +53,46 @@ export default function AlbumModal({
       document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen, onClose]);
+
+  // Fetch high-quality image for master releases
+  useEffect(() => {
+    if (!isOpen || !data) {
+      setHighQualityImageUrl(null);
+      return;
+    }
+
+    // Only fetch high-quality images for master releases
+    if (isRelease(data) && data.type === 'master' && data.main_release) {
+      setIsLoadingHighQualityImage(true);
+      console.log(
+        `Fetching high-quality image for master ${data.id}, main release: ${data.main_release}`
+      );
+
+      fetch(`/api/albums/${data.main_release}`)
+        .then(res => res.json())
+        .then(result => {
+          if (result.success && result.album?.image?.url) {
+            console.log(`Found high-quality image: ${result.album.image.url}`);
+            setHighQualityImageUrl(result.album.image.url);
+          }
+        })
+        .catch(error => {
+          console.error('Failed to fetch high-quality image:', error);
+        })
+        .finally(() => {
+          setIsLoadingHighQualityImage(false);
+        });
+    }
+  }, [isOpen, data]);
+
   if (!isOpen || !data) return null;
 
   const getImageUrl = () => {
+    // Use high-quality image if available, otherwise fall back to original logic
+    if (highQualityImageUrl) {
+      return highQualityImageUrl;
+    }
+
     if (isCollectionAlbum(data)) {
       return data.albumImageUrl;
     } else if (isRelease(data)) {
@@ -139,6 +183,15 @@ export default function AlbumModal({
               {data.role}
             </p>
           )}
+          {data.type && (
+            <p className='text-zinc-400'>
+              <span className='text-cosmic-latte font-medium'>Type:</span>{' '}
+              <span className='capitalize'>{data.type}</span>
+              {data.type === 'master' && (
+                <span className='text-emerald-400 ml-2'>(Master Release)</span>
+              )}
+            </p>
+          )}
         </div>
       );
     }
@@ -186,7 +239,7 @@ export default function AlbumModal({
         </button>
 
         {/* Zoomed Album Cover */}
-        <div className='flex-shrink-0'>
+        <div className='flex-shrink-0 relative'>
           <Image
             src={getImageUrl() || '/placeholder.svg'}
             alt={getTitle()}
@@ -194,6 +247,25 @@ export default function AlbumModal({
             height={400}
             className='w-80 h-80 lg:w-96 lg:h-96 rounded-lg object-cover border-2 border-zinc-700 shadow-2xl'
           />
+
+          {/* Loading indicator for high-quality image */}
+          {isLoadingHighQualityImage && (
+            <div className='absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center'>
+              <div className='flex flex-col items-center gap-2'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-cosmic-latte'></div>
+                {/* <span className='text-cosmic-latte text-sm'>
+                  Loading HD image...
+                </span> */}
+              </div>
+            </div>
+          )}
+
+          {/* High-quality image indicator */}
+          {/* {highQualityImageUrl && !isLoadingHighQualityImage && (
+            <div className='absolute top-2 right-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded-full'>
+              HD
+            </div>
+          )} */}
         </div>
 
         {/* Album Details */}

@@ -1,12 +1,8 @@
 import { Client } from 'disconnect';
 import { NextResponse } from 'next/server';
 
-import {
-  mapDiscogsMasterToAlbum,
-  mapDiscogsReleaseToAlbum,
-} from '@/lib/discogs/mappers';
+import { mapDiscogsMasterToAlbum } from '@/lib/discogs/mappers';
 import { DiscogsMaster } from '@/types/discogs/master';
-import { DiscogsRelease } from '@/types/discogs/release';
 
 // Create a client with consumer key and secret from environment variables
 const db = new Client({
@@ -17,9 +13,10 @@ const db = new Client({
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
+  // Ensure params is awaited before accessing properties
+  const { id } = await Promise.resolve(params);
 
   if (!id) {
     return NextResponse.json(
@@ -31,53 +28,41 @@ export async function GET(
   try {
     console.log(`Fetching album details for ID: ${id}`);
 
-    // Try to get the master release details first
+    // Try to get the master release details
+    let albumDetails: DiscogsMaster;
     try {
-      const albumDetails: DiscogsMaster = await db.getMaster(id);
+      albumDetails = await db.getMaster(id);
       console.log(`Found master release: ${albumDetails.title}`);
       console.log(
         'Full Master Details: ',
         JSON.stringify(albumDetails, null, 2)
       );
-
-      // Use the mapper to convert DiscogsMaster to Album
-      const album = mapDiscogsMasterToAlbum(albumDetails);
-      return NextResponse.json({
-        album,
-        type: 'master',
-        success: true,
-      });
     } catch {
       console.log(`Not a master release, trying as regular release`);
-
-      // If not a master, try as a regular release
       try {
-        const releaseDetails: DiscogsRelease = await db.getRelease(id);
+        // If not a master, try as a regular release
+        // Note: This would need a separate mapper for releases
+        const releaseDetails = await db.getRelease(id);
         console.log(`Found regular release: ${releaseDetails.title}`);
-        console.log(
-          'Full Release Details: ',
-          JSON.stringify(releaseDetails, null, 2)
+        // For now, return error since we haven't implemented release mapping yet
+        return NextResponse.json(
+          { error: 'Release mapping not implemented yet' },
+          { status: 501 }
         );
-
-        // Use the mapper to convert DiscogsRelease to Album
-        const album = mapDiscogsReleaseToAlbum(releaseDetails);
-        return NextResponse.json({
-          album,
-          type: 'release',
-          success: true,
-        });
       } catch (releaseError) {
-        console.error('Error fetching release details:', releaseError);
+        console.error('Error fetching album details:', releaseError);
         return NextResponse.json({ error: 'Album not found' }, { status: 404 });
       }
     }
+
+    // Use the mapper to convert DiscogsMaster to Album
+    const album = mapDiscogsMasterToAlbum(albumDetails);
+
+    return NextResponse.json({ album });
   } catch (error) {
     console.error('Error fetching album details:', error);
     return NextResponse.json(
-      {
-        error: 'Failed to fetch album details',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'Failed to fetch album details' },
       { status: 500 }
     );
   }
