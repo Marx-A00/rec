@@ -194,22 +194,25 @@ function ArtistTabsSection({
       <TabsList className='grid w-full grid-cols-4 bg-zinc-900'>
         <TabsTrigger
           value='discography'
-          className='data-[state=active]:bg-zinc-800'
+          className='data-[state=active]:bg-zinc-800 data-[state=active]:text-white'
         >
           Discography
         </TabsTrigger>
-        <TabsTrigger value='recs' className='data-[state=active]:bg-zinc-800'>
+        <TabsTrigger
+          value='recs'
+          className='data-[state=active]:bg-zinc-800 data-[state=active]:text-white'
+        >
           Recs
         </TabsTrigger>
         <TabsTrigger
           value='chinese-wisdom'
-          className='data-[state=active]:bg-zinc-800'
+          className='data-[state=active]:bg-zinc-800 data-[state=active]:text-white'
         >
           Chinese Wisdom
         </TabsTrigger>
         <TabsTrigger
           value='similar-artists'
-          className='data-[state=active]:bg-zinc-800'
+          className='data-[state=active]:bg-zinc-800 data-[state=active]:text-white'
         >
           Similar Artists
         </TabsTrigger>
