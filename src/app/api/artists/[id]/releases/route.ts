@@ -21,6 +21,7 @@ export async function GET(
   const perPage = parseInt(searchParams.get('per_page') || '25');
   const sort = searchParams.get('sort') || 'year';
   const sortOrderParam = searchParams.get('sort_order') || 'desc';
+  const typeFilter = searchParams.get('type'); // 'master' or 'release' or null for all
   const sortOrder =
     sortOrderParam === 'asc' || sortOrderParam === 'desc'
       ? sortOrderParam
@@ -56,10 +57,19 @@ export async function GET(
       });
     }
 
-    const releases = releasesData.releases.map((release: Release) => ({
+    // Filter by type if specified
+    let filteredReleases = releasesData.releases;
+    if (typeFilter === 'master' || typeFilter === 'release') {
+      filteredReleases = releasesData.releases.filter(
+        (release: Release) => release.type === typeFilter
+      );
+    }
+
+    const releases = filteredReleases.map((release: Release) => ({
       id: release.id,
       title: release.title,
       year: release.year,
+      type: release.type, // Include the type field
       format: release.format,
       label: release.label,
       role: release.role,
@@ -67,6 +77,14 @@ export async function GET(
       artist: release.artist,
       thumb: release.thumb || PLACEHOLDER_IMAGE,
       basic_information: release.basic_information,
+      // Master-specific fields
+      ...(release.type === 'master' && {
+        main_release: release.main_release,
+      }),
+      // Release-specific fields
+      ...(release.type === 'release' && {
+        status: release.status,
+      }),
     }));
 
     console.log(`Successfully formatted ${releases.length} releases`);

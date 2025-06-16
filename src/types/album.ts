@@ -44,12 +44,15 @@ export interface Release {
   id: string;
   title: string;
   year?: number;
+  type?: 'release' | 'master'; // Type of the release
   format?: string[];
   label?: string[];
   role?: string;
   resource_url?: string;
   artist?: string;
   thumb?: string;
+  status?: string; // For releases
+  main_release?: number; // For masters
   basic_information?: {
     id: number;
     title: string;
@@ -85,6 +88,6 @@ export interface ReleasesResponse {
       last?: string;
       next?: string;
     };
-  };
+  } | null;
   success: boolean;
 }

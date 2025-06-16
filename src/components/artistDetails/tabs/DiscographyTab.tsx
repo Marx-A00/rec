@@ -1,48 +1,31 @@
-import { useQuery } from '@tanstack/react-query';
-import { Calendar, Disc } from 'lucide-react';
+import { Calendar, Disc, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 
 import AlbumModal from '@/components/ui/AlbumModal';
 import { useAlbumModal } from '@/hooks/useAlbumModal';
-import { Release, ReleasesResponse } from '@/types/album';
-
-async function fetchArtistReleases(
-  artistId: string,
-  page: number = 1
-): Promise<ReleasesResponse> {
-  const response = await fetch(
-    `/api/artists/${artistId}/releases?page=${page}&per_page=25&sort=year&sort_order=desc`
-  );
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to fetch artist releases');
-  }
-  return response.json();
-}
+import { useMasters } from '@/hooks/useMasters';
+import { Release } from '@/types/album';
 
 export default function DiscographyTab({ artistId }: { artistId: string }) {
   const { selectedItem, isExiting, isOpen, openModal, closeModal } =
     useAlbumModal();
 
   const {
-    data: releasesData,
+    masters,
     isLoading,
     error,
     isError,
-  } = useQuery({
-    queryKey: ['artist-releases', artistId], // Unique cache key
-    queryFn: () => fetchArtistReleases(artistId), // Function that returns Promise
-    enabled: !!artistId, // Only fetch if artistId exists
-    staleTime: 5 * 60 * 1000, // Data fresh for 5 minutes
-    gcTime: 10 * 60 * 1000, // Cache for 10 minutes
-    retry: 2, // Retry failed requests twice
-    refetchOnWindowFocus: false, // Don't refetch on window focus
-  });
+    isLoadingMore,
+    hasMorePages,
+    totalItems,
+    loadedCount,
+    loadMoreMasters,
+  } = useMasters(artistId);
 
   if (isLoading) {
     return (
       <div className='bg-zinc-900 p-4 rounded-lg'>
-        <h3 className='text-lg font-semibold mb-4'>Albums & Releases</h3>
+        <h3 className='text-lg font-semibold mb-4'>Masters</h3>
         <div className='flex items-center justify-center h-32'>
           <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-red-500'></div>
           <span className='ml-3 text-zinc-400'>Loading discography...</span>
@@ -51,10 +34,10 @@ export default function DiscographyTab({ artistId }: { artistId: string }) {
     );
   }
 
-  if (isError || !releasesData) {
+  if (isError) {
     return (
       <div className='bg-zinc-900 p-4 rounded-lg'>
-        <h3 className='text-lg font-semibold mb-4'>Albums & Releases</h3>
+        <h3 className='text-lg font-semibold mb-4'>Masters</h3>
         <p className='text-red-400'>
           {error?.message || 'Failed to load discography'}
         </p>
@@ -73,21 +56,48 @@ export default function DiscographyTab({ artistId }: { artistId: string }) {
 
       <div className='bg-zinc-900 p-4 rounded-lg'>
         <h3 className='text-lg font-semibold mb-4'>
-          Albums & Releases ({releasesData.releases.length})
+          Masters ({loadedCount}
+          {totalItems > loadedCount ? ` of ${totalItems}` : ''})
         </h3>
 
-        {releasesData.releases.length === 0 ? (
-          <p className='text-zinc-400'>No releases found for this artist.</p>
+        {masters.length === 0 ? (
+          <p className='text-zinc-400'>
+            No master releases found for this artist.
+          </p>
         ) : (
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-            {releasesData.releases.map(release => (
-              <ReleaseCard
-                key={release.id}
-                release={release}
-                onClick={() => openModal(release)}
-              />
-            ))}
-          </div>
+          <>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+              {masters.map(release => (
+                <ReleaseCard
+                  key={release.id}
+                  release={release}
+                  onClick={() => openModal(release)}
+                />
+              ))}
+            </div>
+
+            {hasMorePages && (
+              <div className='flex justify-center mt-6'>
+                <button
+                  onClick={loadMoreMasters}
+                  disabled={isLoadingMore}
+                  className='flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:opacity-50 text-white rounded-lg transition-colors'
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className='h-4 w-4' />
+                      Load More Masters
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>
