@@ -13,9 +13,9 @@ const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x400?text=No+Image';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = params.id;
+  const { id } = await params;
 
   if (!id) {
     console.log('Missing artist ID parameter');

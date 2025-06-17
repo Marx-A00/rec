@@ -15,7 +15,7 @@ export default function Register() {
           <p className='mt-2 text-center text-sm text-gray-600'>
             Or{' '}
             <Link
-              href='/auth/signin'
+              href='/signin'
               className='font-medium text-blue-600 hover:text-blue-500'
             >
               sign in to your existing account
@@ -39,7 +39,7 @@ export default function Register() {
 
           <div className='mt-6 grid grid-cols-2 gap-3'>
             <Link
-              href='/auth/signin'
+              href='/signin'
               className='inline-flex w-full justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-500 shadow-sm hover:bg-gray-50'
             >
               <span className='sr-only'>Sign up with Google</span>
@@ -65,7 +65,7 @@ export default function Register() {
             </Link>
 
             <Link
-              href='/auth/signin'
+              href='/signin'
               className='inline-flex w-full justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-500 shadow-sm hover:bg-gray-50'
             >
               <span className='sr-only'>Sign up with Spotify</span>

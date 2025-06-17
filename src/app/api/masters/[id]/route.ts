@@ -13,10 +13,10 @@ const db = new Client({
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // Ensure params is awaited before accessing properties
-  const { id } = await Promise.resolve(params);
+  const { id } = await params;
 
   if (!id) {
     return NextResponse.json(

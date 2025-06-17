@@ -76,3 +76,7 @@ node_modules/
 *.sln
 *.sw?
 # OS specific
+
+/.taskmaster/*
+tasks.json
+.taskmaster/config.json

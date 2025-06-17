@@ -65,14 +65,14 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
 }
 
 interface ProfilePageProps {
-  params: {
+  params: Promise<{
     userId: string;
-  };
+  }>;
 }
 
 export default async function UserProfilePage({ params }: ProfilePageProps) {
   const session = await auth();
-  const { userId } = params;
+  const { userId } = await params;
 
   // Check if viewing own profile
   const isOwnProfile = session?.user?.id === userId;

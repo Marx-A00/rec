@@ -5,11 +5,11 @@ import prisma from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
-    const collectionId = params.id;
+    const { id: collectionId } = await params;
 
     const collection = await prisma.collection.findUnique({
       where: { id: collectionId },
@@ -45,7 +45,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -53,7 +53,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const collectionId = params.id;
+    const { id: collectionId } = await params;
     const { name, description, isPublic } = await request.json();
 
     // Verify ownership
@@ -93,7 +93,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -101,7 +101,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const collectionId = params.id;
+    const { id: collectionId } = await params;
 
     // Verify ownership
     const existingCollection = await prisma.collection.findUnique({
