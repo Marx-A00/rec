@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { useState, useMemo, useEffect } from 'react';
+
 import type { ReleasesResponse } from '@/types/album';
 
 async function fetchArtistMasters(

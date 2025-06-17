@@ -32,13 +32,6 @@ export async function GET(
   }
 
   try {
-    const client = new Client({
-      userAgent: 'RecProject/1.0 +http://localhost:3000',
-      consumerKey: process.env.CONSUMER_KEY,
-      consumerSecret: process.env.CONSUMER_SECRET,
-    });
-    const db = client.database();
-
     // Step 1: Get artist information to get the artist name
     log(chalk.cyan('📡 Fetching artist information...'));
     const artistInfo = await db.getArtist(id);

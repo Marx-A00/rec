@@ -19,7 +19,7 @@ export interface DiscogsRelease {
     id: number;
     resource_url: string;
   }>;
-  series: Array<any>;
+  series: unknown[];
   companies: Array<{
     name: string;
     catno: string;
