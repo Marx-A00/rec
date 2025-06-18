@@ -1,19 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 import { Album } from '@/types/album';
-
-async function fetchAlbums(query: string): Promise<{ albums: Album[] }> {
-  const response = await fetch(
-    `/api/albums/search?query=${encodeURIComponent(query)}`
-  );
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to search albums');
-  }
-  return response.json();
-}
+import { useAlbumSearchQuery } from '@/hooks';
 
 interface AlbumSearchProps {
   onAlbumSelect: (album: Album) => void;
@@ -41,14 +30,9 @@ export default function AlbumSearch({
     isLoading,
     error,
     isError,
-  } = useQuery({
-    queryKey: ['album-search', debouncedQuery],
-    queryFn: () => fetchAlbums(debouncedQuery),
-    enabled: !!debouncedQuery && debouncedQuery.length > 2 && !disabled,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2,
-    refetchOnWindowFocus: false,
+  } = useAlbumSearchQuery(debouncedQuery, {
+    enabled: !disabled,
+    minQueryLength: 3,
   });
 
   const handleAlbumSelect = (album: Album) => {

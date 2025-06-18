@@ -1,8 +1,8 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { CreateRecommendationRequest } from '@/types/recommendation';
 import { Album } from '@/types/album';
+import { useCreateRecommendationMutation, getErrorMessage } from '@/hooks';
 
 // Helper function to format artists naturally
 function formatArtists(artists: Array<{ name: string }> | undefined): string {
@@ -13,21 +13,6 @@ function formatArtists(artists: Array<{ name: string }> | undefined): string {
   const lastArtist = artists[artists.length - 1];
   const otherArtists = artists.slice(0, -1);
   return `${otherArtists.map(a => a.name).join(', ')} & ${lastArtist.name}`;
-}
-
-async function createRecommendation(data: CreateRecommendationRequest) {
-  const response = await fetch('/api/recommendations', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to create recommendation');
-  }
-
-  return response.json();
 }
 
 interface CreateRecommendationFormProps {
@@ -42,14 +27,9 @@ export default function CreateRecommendationForm({
   onSuccess,
 }: CreateRecommendationFormProps) {
   const [score, setScore] = useState(7);
-  const queryClient = useQueryClient();
 
-  const createMutation = useMutation({
-    mutationFn: createRecommendation,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recommendations'] });
-      onSuccess?.();
-    },
+  const createMutation = useCreateRecommendationMutation({
+    onSuccess,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -83,7 +63,7 @@ export default function CreateRecommendationForm({
     <form onSubmit={handleSubmit} className='space-y-6'>
       {createMutation.isError && (
         <div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded'>
-          {createMutation.error?.message}
+          {getErrorMessage(createMutation.error)}
         </div>
       )}
 

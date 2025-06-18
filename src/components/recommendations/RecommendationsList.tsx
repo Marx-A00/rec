@@ -1,32 +1,8 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-
-import { RecommendationsResponse } from '@/types/recommendation';
+import { useRecommendationsQuery } from '@/hooks';
 
 import RecommendationCard from './RecommendationCard';
-
-async function fetchRecommendations(
-  page: number = 1,
-  perPage: number = 10,
-  userId?: string
-): Promise<RecommendationsResponse> {
-  const params = new URLSearchParams({
-    page: page.toString(),
-    per_page: perPage.toString(),
-  });
-
-  if (userId) {
-    params.append('user_id', userId);
-  }
-
-  const response = await fetch(`/api/recommendations?${params}`);
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to fetch recommendations');
-  }
-  return response.json();
-}
 
 interface RecommendationsListProps {
   userId?: string;
@@ -37,13 +13,10 @@ export default function RecommendationsList({
   userId,
   title = 'Recent Recommendations',
 }: RecommendationsListProps) {
-  const { data, isLoading, error, isError } = useQuery({
-    queryKey: ['recommendations', { userId }],
-    queryFn: () => fetchRecommendations(1, 10, userId),
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2,
-    refetchOnWindowFocus: false,
+  const { data, isLoading, error, isError } = useRecommendationsQuery({
+    page: 1,
+    perPage: 10,
+    userId,
   });
 
   if (isLoading) {

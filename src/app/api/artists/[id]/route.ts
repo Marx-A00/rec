@@ -1,5 +1,12 @@
 import { Client, DiscogsImage } from 'disconnect';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { artistParamsSchema } from '@/lib/validations/params';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+} from '@/lib/validations/api';
+import { ArtistRouteContext } from '@/types/api';
 
 // Create a client with consumer key and secret from environment variables
 const db = new Client({
@@ -12,18 +19,25 @@ const db = new Client({
 const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x400?text=No+Image';
 
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
+  request: NextRequest,
+  { params }: ArtistRouteContext
+): Promise<NextResponse> {
+  const rawParams = await params;
 
-  if (!id) {
-    console.log('Missing artist ID parameter');
-    return NextResponse.json(
-      { error: 'Artist ID is required' },
-      { status: 400 }
+  // Validate parameters
+  const paramsResult = artistParamsSchema.safeParse(rawParams);
+  if (!paramsResult.success) {
+    console.error('Invalid artist parameters:', paramsResult.error);
+    const { response, status } = createErrorResponse(
+      'Invalid artist ID format',
+      400,
+      paramsResult.error.errors.map(e => e.message).join(', '),
+      'INVALID_ARTIST_PARAMS'
     );
+    return NextResponse.json(response, { status });
   }
+
+  const { id } = paramsResult.data;
 
   try {
     console.log(`Fetching artist details for ID: ${id}`);
@@ -35,7 +49,13 @@ export async function GET(
       console.log(`Found artist: ${artistDetails.name}`);
     } catch (artistError) {
       console.error('Error fetching artist details:', artistError);
-      return NextResponse.json({ error: 'Artist not found' }, { status: 404 });
+      const { response, status } = createErrorResponse(
+        'Artist not found',
+        404,
+        `Artist with ID ${id} does not exist`,
+        'ARTIST_NOT_FOUND'
+      );
+      return NextResponse.json(response, { status });
     }
 
     console.log('Raw artist data:', JSON.stringify(artistDetails, null, 2));
@@ -60,7 +80,7 @@ export async function GET(
       id: id.toString(),
       title: artistDetails.name || 'Unknown Artist',
       subtitle: artistDetails.realname || '',
-      type: 'artist',
+      type: 'artist' as const,
       image: {
         url: imageUrl,
         width: 400,
@@ -84,18 +104,20 @@ export async function GET(
 
     console.log(`Successfully formatted artist: ${artist.title}`);
 
-    return NextResponse.json({
-      artist,
-      success: true,
-    });
+    const { response, status } = createSuccessResponse(
+      'Artist details retrieved successfully',
+      { artist },
+      200
+    );
+    return NextResponse.json(response, { status });
   } catch (error) {
     console.error('Unexpected error in artist details API:', error);
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
+    const { response, status } = createErrorResponse(
+      'Failed to fetch artist details',
+      500,
+      error instanceof Error ? error.message : 'Unknown error',
+      'ARTIST_FETCH_FAILED'
     );
+    return NextResponse.json(response, { status });
   }
 }

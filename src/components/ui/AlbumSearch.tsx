@@ -1,8 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import { useNavigation } from '@/hooks/useNavigation';
 import { UnifiedSearchResult } from '@/types/search';
 
 import SearchBar from './SearchBar';
@@ -25,7 +25,8 @@ export default function AlbumSearch({
   const [showResultsDropdown, setShowResultsDropdown] = useState(false);
   // New state for keyboard navigation
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const router = useRouter();
+  const { navigateToAlbum, navigateToArtist, navigateToLabel, prefetchRoute } =
+    useNavigation();
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const searchAlbums = async (query: string) => {
@@ -60,6 +61,17 @@ export default function AlbumSearch({
       const allResults = data.results || [];
       setSearchResults(allResults);
       setShowResultsDropdown(true);
+
+      // Prefetch the first few results for better performance
+      allResults.slice(0, 3).forEach((result: UnifiedSearchResult) => {
+        if (result.type === 'album') {
+          prefetchRoute(`/albums/${result.id}`);
+        } else if (result.type === 'artist') {
+          prefetchRoute(`/artists/${result.id}`);
+        } else if (result.type === 'label') {
+          prefetchRoute(`/labels/${result.id}`);
+        }
+      });
     } catch (err) {
       console.error('Search error:', err);
       setError(err instanceof Error ? err.message : 'Search failed');
@@ -68,27 +80,43 @@ export default function AlbumSearch({
     }
   };
 
-  const handleResultSelect = (result: UnifiedSearchResult) => {
+  const handleResultSelect = async (result: UnifiedSearchResult) => {
     setShowResultsDropdown(false);
     setHighlightedIndex(-1);
 
-    if (result.type === 'album') {
-      // Pre-populate the cache with search result data
-      // queryClient.setQueryData(['album', result.id], result);
-
-      // Navigate to album page
-      router.push(`/albums/${result.id}`);
-    } else if (result.type === 'artist') {
-      // Store artist data and navigate to artist page
-      sessionStorage.setItem(`artist-${result.id}`, JSON.stringify(result));
-      router.push(`/artists/${result.id}`);
-    } else if (result.type === 'label') {
-      // Store label data and navigate to label page
-      sessionStorage.setItem(`label-${result.id}`, JSON.stringify(result));
-      router.push(`/labels/${result.id}`);
-    } else {
-      // For unknown types, try to handle as album for now
-      console.log('Unknown result type:', result.type, result);
+    try {
+      if (result.type === 'album') {
+        // Pre-populate the cache with search result data
+        // queryClient.setQueryData(['album', result.id], result);
+        await navigateToAlbum(result.id, {
+          onError: error => {
+            setError(`Failed to navigate to album: ${error.message}`);
+          },
+        });
+      } else if (result.type === 'artist') {
+        // Store artist data and navigate to artist page
+        sessionStorage.setItem(`artist-${result.id}`, JSON.stringify(result));
+        await navigateToArtist(result.id, {
+          onError: error => {
+            setError(`Failed to navigate to artist: ${error.message}`);
+          },
+        });
+      } else if (result.type === 'label') {
+        // Store label data and navigate to label page
+        sessionStorage.setItem(`label-${result.id}`, JSON.stringify(result));
+        await navigateToLabel(result.id, {
+          onError: error => {
+            setError(`Failed to navigate to label: ${error.message}`);
+          },
+        });
+      } else {
+        // For unknown types, try to handle as album for now
+        console.log('Unknown result type:', result.type, result);
+        setError('Unknown result type, please try a different search');
+      }
+    } catch (navigationError) {
+      console.error('Navigation error:', navigationError);
+      // Error is already handled by the onError callback
     }
   };
 

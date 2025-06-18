@@ -1,6 +1,18 @@
 import { Client, DiscogsSearchResult } from 'disconnect';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import chalk from 'chalk';
+
+import {
+  searchQuerySchema,
+  validateQueryParams,
+  createErrorResponse,
+} from '@/lib/validations/api';
+import {
+  SearchResponse,
+  SearchResultItem,
+  ApiErrorResponse,
+  type SimpleRouteHandler,
+} from '@/types/api';
 
 const log = console.log;
 
@@ -14,41 +26,71 @@ const db = new Client({
 // Default placeholder image for albums without images
 const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x400?text=No+Image';
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get('query');
-  const type = searchParams.get('type') || 'all'; // 'albums', 'artists', 'tracks', 'all'
+export const GET: SimpleRouteHandler<
+  SearchResponse | ApiErrorResponse
+> = async (
+  request: NextRequest
+): Promise<NextResponse<SearchResponse | ApiErrorResponse>> => {
+  // Validate query parameters
+  const validation = validateQueryParams(
+    searchQuerySchema,
+    request.nextUrl.searchParams
+  );
 
-  if (!query) {
-    console.log('Missing query parameter');
-    return NextResponse.json(
-      { error: 'Query parameter is required' },
-      { status: 400 }
+  if (!validation.success) {
+    console.error('Invalid search query parameters:', validation.details);
+    const { response, status } = createErrorResponse(
+      validation.error,
+      400,
+      validation.details.join('; '),
+      'INVALID_QUERY_PARAMS'
     );
+    return NextResponse.json(response as ApiErrorResponse, { status });
   }
 
-  try {
-    log(chalk.yellow('Searching Discogs for: '), `${query}" (type: ${type})`);
+  const { query, type, page, per_page } = validation.data;
 
-    // Search for content on Discogs with flexible parameters
+  try {
+    log(
+      chalk.yellow('Searching Discogs for: '),
+      `"${query}" (type: ${type}, page: ${page}, per_page: ${per_page})`
+    );
+
+    // Search for content on Discogs with validated parameters
     const searchResults = await db.search({
       query,
-      type: type === 'all' ? undefined : type, // Let Discogs handle type filtering
-      per_page: 15,
+      type: type === 'all' ? undefined : type,
+      page,
+      per_page,
     });
 
-    console.log(`Found ${searchResults.results?.length || 0} results`);
+    console.log(
+      `Found ${searchResults.results?.length || 0} results on page ${page}`
+    );
 
     if (!searchResults.results || searchResults.results.length === 0) {
       console.log('No results found');
-      return NextResponse.json({ results: [] });
+      const emptyResponse: SearchResponse = {
+        results: [],
+        grouped: { albums: [], artists: [], labels: [], other: [] },
+        total: 0,
+        pagination: {
+          page,
+          per_page,
+          total: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false,
+        },
+      };
+      return NextResponse.json(emptyResponse);
     }
 
     // Process the results and categorize them
-    const processedResults = searchResults.results.map(
-      (result: DiscogsSearchResult) => {
+    const processedResults: SearchResultItem[] = searchResults.results.map(
+      (result: DiscogsSearchResult): SearchResultItem => {
         // Determine the type of result from resource_url or URI patterns
-        let resultType = 'unknown';
+        let resultType: SearchResultItem['type'] = 'unknown';
         const url = result.resource_url || result.uri || '';
 
         if (url.includes('/releases/') || url.includes('/masters/')) {
@@ -100,7 +142,7 @@ export async function GET(request: Request) {
           result.cover_image || result.thumb || PLACEHOLDER_IMAGE;
 
         // Create a unified result object
-        const unifiedResult = {
+        const unifiedResult: SearchResultItem = {
           id: result.id.toString(),
           type: resultType,
           title: title,
@@ -140,25 +182,40 @@ export async function GET(request: Request) {
       albums: processedResults.filter(r => r.type === 'album'),
       artists: processedResults.filter(r => r.type === 'artist'),
       labels: processedResults.filter(r => r.type === 'label'),
-      // TODO: add other types
       other: processedResults.filter(
         r => !['album', 'artist', 'label'].includes(r.type)
       ),
     };
 
-    return NextResponse.json({
+    // Calculate pagination info
+    const total = searchResults.pagination?.items || processedResults.length;
+    const totalPages = Math.ceil(total / per_page);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    const searchResponse: SearchResponse = {
       results: processedResults,
       grouped: groupedResults,
       total: processedResults.length,
-    });
+      pagination: {
+        page,
+        per_page,
+        total,
+        totalPages,
+        hasNext,
+        hasPrev,
+      },
+    };
+
+    return NextResponse.json(searchResponse);
   } catch (error) {
     console.error('Error in search route:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to search',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
+    const { response, status } = createErrorResponse(
+      'Failed to search',
+      500,
+      error instanceof Error ? error.message : 'Unknown error',
+      'SEARCH_FAILED'
     );
+    return NextResponse.json(response as ApiErrorResponse, { status });
   }
-}
+};

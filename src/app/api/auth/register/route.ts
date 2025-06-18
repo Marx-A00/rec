@@ -3,40 +3,30 @@ import bcrypt from 'bcryptjs';
 
 import prisma from '@/lib/prisma';
 import {
-  validateEmail,
-  validatePassword,
-  validateName,
-} from '@/lib/validations';
+  userRegistrationSchema,
+  validateRequestBody,
+  createErrorResponse,
+  createSuccessResponse,
+} from '@/lib/validations/api';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { email, password, name } = body;
+    // Parse and validate request body
+    const requestBody = await request.json();
+    const validation = validateRequestBody(userRegistrationSchema, requestBody);
 
-    // Validate input
-    const emailValidation = validateEmail(email);
-    if (!emailValidation.isValid) {
-      return NextResponse.json(
-        { success: false, message: emailValidation.message },
-        { status: 400 }
+    if (!validation.success) {
+      console.error('Invalid registration request body:', validation.details);
+      const { response, status } = createErrorResponse(
+        validation.error,
+        400,
+        validation.details.join('; '),
+        'INVALID_REGISTRATION_DATA'
       );
+      return NextResponse.json(response, { status });
     }
 
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
-      return NextResponse.json(
-        { success: false, message: passwordValidation.message },
-        { status: 400 }
-      );
-    }
-
-    const nameValidation = validateName(name);
-    if (!nameValidation.isValid) {
-      return NextResponse.json(
-        { success: false, message: nameValidation.message },
-        { status: 400 }
-      );
-    }
+    const { email, password, name } = validation.data;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -44,13 +34,13 @@ export async function POST(request: Request) {
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'An account with this email already exists',
-        },
-        { status: 400 }
+      const { response, status } = createErrorResponse(
+        'Account already exists',
+        409,
+        'An account with this email address already exists',
+        'ACCOUNT_EXISTS'
       );
+      return NextResponse.json(response, { status });
     }
 
     // Hash password
@@ -70,19 +60,20 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'Account created successfully',
-        user,
-      },
-      { status: 201 }
+    const { response, status } = createSuccessResponse(
+      'Account created successfully',
+      { user },
+      201
     );
+    return NextResponse.json(response, { status });
   } catch (error) {
     console.error('Registration error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Something went wrong. Please try again.' },
-      { status: 500 }
+    const { response, status } = createErrorResponse(
+      'Failed to create account',
+      500,
+      error instanceof Error ? error.message : 'Unknown error',
+      'REGISTRATION_FAILED'
     );
+    return NextResponse.json(response, { status });
   }
 }

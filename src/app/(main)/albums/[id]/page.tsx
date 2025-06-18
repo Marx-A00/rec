@@ -1,30 +1,39 @@
-'use client';
-
-import {
-  ArrowLeft,
-  Building2,
-  Calendar,
-  Clock,
-  Music,
-  Tag,
-} from 'lucide-react';
+import { Building2, Calendar, Clock, Music, Tag } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 
-import AddToCollectionButton from '@/components/collections/AddToCollectionButton';
+import AlbumInteractions from '@/components/albums/AlbumInteractions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Toast, { useToast } from '@/components/ui/toast';
-import { useAlbumDetails } from '@/hooks/useAlbumDetails';
+import BackButton from '@/components/ui/BackButton';
+import { getAlbumDetails } from '@/lib/api/albums';
+import { albumParamsSchema } from '@/lib/validations/params';
 
-export default function AlbumDetailsPage() {
-  const params = useParams();
-  const router = useRouter();
-  const albumId = params.id as string;
+interface AlbumDetailsPageProps {
+  params: Promise<{ id: string }>;
+}
 
-  const { data: album, isLoading, error, isError } = useAlbumDetails(albumId);
+export default async function AlbumDetailsPage({
+  params,
+}: AlbumDetailsPageProps) {
+  const rawParams = await params;
 
-  const { toast, showToast, hideToast } = useToast();
+  // Validate parameters
+  const paramsResult = albumParamsSchema.safeParse(rawParams);
+  if (!paramsResult.success) {
+    console.error('Invalid album parameters:', paramsResult.error);
+    notFound();
+  }
+
+  const { id: albumId } = paramsResult.data;
+
+  // Fetch album data server-side
+  let album;
+  try {
+    album = await getAlbumDetails(albumId);
+  } catch (error) {
+    console.error('Error fetching album:', error);
+    notFound();
+  }
 
   const formatDuration = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -32,74 +41,11 @@ export default function AlbumDetailsPage() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const formatTotalDuration = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  };
-
-  const handleArtistClick = async (artistId: string, artistName: string) => {
-    if (!artistId) {
-      showToast(`Artist ID not available for ${artistName}`, 'error');
-      return;
-    }
-    router.push(`/artists/${artistId}`);
-  };
-
-  if (isLoading) {
-    return (
-      <div className='min-h-screen bg-black text-white'>
-        <div className='container mx-auto px-4 py-8'>
-          <div className='flex items-center justify-center h-64'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-red-500'></div>
-            <span className='ml-3 text-zinc-400'>Loading album details...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError || !album) {
-    return (
-      <div className='min-h-screen bg-black text-white'>
-        <div className='container mx-auto px-4 py-8'>
-          <Link
-            href='/'
-            className='inline-flex items-center text-zinc-400 hover:text-white mb-6 transition-colors'
-          >
-            <ArrowLeft className='h-4 w-4 mr-2' />
-            Back to Search
-          </Link>
-          <div className='text-center'>
-            <h1 className='text-2xl font-bold text-red-500 mb-4'>
-              Album Not Found
-            </h1>
-            <p className='text-zinc-400'>
-              {error?.message ||
-                String(error) ||
-                'The requested album could not be found.'}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className='min-h-screen bg-black text-white'>
       <div className='container mx-auto px-4 py-8'>
         {/* Back Navigation */}
-        <Link
-          href='/'
-          className='inline-flex items-center text-zinc-400 hover:text-white mb-6 transition-colors'
-        >
-          <ArrowLeft className='h-4 w-4 mr-2' />
-          Back to Search
-        </Link>
+        <BackButton />
 
         {/* Album Header */}
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'>
@@ -127,31 +73,23 @@ export default function AlbumDetailsPage() {
           <div className='lg:col-span-2 space-y-6'>
             <div>
               <h1 className='text-4xl font-bold mb-2'>{album.title}</h1>
-              <div className='flex flex-wrap items-center gap-2'>
-                {album.artists?.map((artist, index) => (
-                  <span key={artist.id || index}>
-                    <button
-                      onClick={() => handleArtistClick(artist.id, artist.name)}
-                      className='text-2xl text-zinc-300 hover:text-white hover:underline transition-colors cursor-pointer'
-                    >
-                      {artist.name}
-                    </button>
-                    {index < (album.artists?.length || 0) - 1 && (
-                      <span className='text-zinc-500 mx-1'>,</span>
-                    )}
-                  </span>
-                )) || (
-                  <span className='text-2xl text-zinc-300'>Unknown Artist</span>
-                )}
-              </div>
+              <p className='text-xl text-zinc-300 mb-4'>{album.subtitle}</p>
+              <AlbumInteractions album={album} />
             </div>
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              {album.releaseDate && (
+              {album.year && (
                 <div className='flex items-center space-x-2'>
                   <Calendar className='h-5 w-5 text-zinc-400' />
+                  <span className='text-zinc-300'>Released: {album.year}</span>
+                </div>
+              )}
+
+              {album.genre && album.genre.length > 0 && (
+                <div className='flex items-center space-x-2'>
+                  <Tag className='h-5 w-5 text-zinc-400' />
                   <span className='text-zinc-300'>
-                    Released: {album.releaseDate}
+                    Genre: {album.genre.join(', ')}
                   </span>
                 </div>
               )}
@@ -163,68 +101,25 @@ export default function AlbumDetailsPage() {
                 </div>
               )}
 
-              {album.metadata?.totalDuration &&
-                album.metadata.totalDuration > 0 && (
-                  <div className='flex items-center space-x-2'>
-                    <Clock className='h-5 w-5 text-zinc-400' />
-                    <span className='text-zinc-300'>
-                      Duration:{' '}
-                      {formatTotalDuration(album.metadata.totalDuration)}
-                    </span>
-                  </div>
-                )}
-
-              {album.metadata?.numberOfTracks &&
-                album.metadata.numberOfTracks > 0 && (
-                  <div className='flex items-center space-x-2'>
-                    <Music className='h-5 w-5 text-zinc-400' />
-                    <span className='text-zinc-300'>
-                      {album.metadata.numberOfTracks} tracks
-                    </span>
-                  </div>
-                )}
-
               {album.metadata?.format && (
                 <div className='flex items-center space-x-2'>
-                  <Tag className='h-5 w-5 text-zinc-400' />
+                  <Clock className='h-5 w-5 text-zinc-400' />
                   <span className='text-zinc-300'>
                     Format: {album.metadata.format}
                   </span>
                 </div>
               )}
-            </div>
 
-            {album.genre && album.genre.length > 0 && (
-              <div>
-                <h3 className='text-lg font-semibold mb-2'>Genres</h3>
-                <div className='flex flex-wrap gap-2'>
-                  {album.genre.map((genre, index) => (
-                    <span
-                      key={index}
-                      className='bg-zinc-800 text-zinc-300 px-3 py-1 rounded-full text-sm'
-                    >
-                      {genre}
-                    </span>
-                  ))}
+              {album.artists && album.artists.length > 0 && (
+                <div className='md:col-span-2'>
+                  <h3 className='text-lg font-semibold mb-2'>Artists</h3>
+                  <p className='text-zinc-300'>
+                    {album.artists.map(artist => artist.name).join(', ')}
+                  </p>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className='flex flex-wrap gap-4 mb-8 justify-center lg:justify-start'>
-          <button className='bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors'>
-            Make Rec
-          </button>
-          <AddToCollectionButton
-            album={album}
-            onSuccess={(message: string) => showToast(message, 'success')}
-            onError={(message: string) => showToast(message, 'error')}
-          />
-          <button className='bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-3 rounded-lg font-medium transition-colors'>
-            Other
-          </button>
         </div>
 
         {/* Tabs Section */}
@@ -316,14 +211,6 @@ export default function AlbumDetailsPage() {
             </div>
           </TabsContent>
         </Tabs>
-
-        {/* Toast Notification */}
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          isVisible={toast.isVisible}
-          onClose={hideToast}
-        />
       </div>
     </div>
   );

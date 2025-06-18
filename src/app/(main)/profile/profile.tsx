@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
 
@@ -27,6 +28,8 @@ export default function ProfileClient({
   recommendations,
   isOwnProfile,
 }: ProfileClientProps) {
+  const { prefetchRoute, navigateToAlbum, goBack } = useNavigation();
+
   // Flatten collections to get all albums
   const allAlbums = collection;
 
@@ -36,12 +39,59 @@ export default function ProfileClient({
   );
   const [isExiting, setIsExiting] = useState(false);
 
+  // Strategic prefetching for likely navigation targets
+  useEffect(() => {
+    // Prefetch browse page since there's a back button
+    prefetchRoute('/browse');
+
+    // Prefetch collage page for own profile
+    if (isOwnProfile) {
+      prefetchRoute('/profile/collage');
+    }
+
+    // Prefetch album pages for the first few albums in collection
+    allAlbums.slice(0, 3).forEach(album => {
+      if (album.albumId) {
+        prefetchRoute(`/albums/${album.albumId}`);
+      }
+    });
+  }, [prefetchRoute, isOwnProfile, allAlbums]);
+
   const handleClose = () => {
     setIsExiting(true);
     setTimeout(() => {
       setSelectedAlbum(null);
       setIsExiting(false);
     }, 300); // Match the animation duration
+  };
+
+  // Enhanced album click handler with navigation option
+  const handleAlbumClick = async (
+    collectionAlbum: CollectionAlbum,
+    event: React.MouseEvent
+  ) => {
+    // Check for modifier keys to determine navigation behavior
+    if (event.ctrlKey || event.metaKey) {
+      // Navigate to album page in new tab/window if Ctrl/Cmd is held
+      if (collectionAlbum.albumId) {
+        try {
+          await navigateToAlbum(collectionAlbum.albumId, {
+            onError: error => {
+              console.error('Failed to navigate to album:', error);
+              // Fallback to modal
+              setSelectedAlbum(collectionAlbum);
+            },
+          });
+        } catch (error) {
+          // Fallback to modal on error
+          setSelectedAlbum(collectionAlbum);
+        }
+        return;
+      }
+    }
+
+    // Default behavior: show modal
+    setSelectedAlbum(collectionAlbum);
   };
 
   // Add escape key listener
@@ -143,20 +193,51 @@ export default function ProfileClient({
                   </p>
                 )}
               </div>
+
+              {/* Enhanced navigation options in modal */}
+              {selectedAlbum.albumId && (
+                <div className='flex flex-col sm:flex-row gap-3 justify-center lg:justify-start'>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await navigateToAlbum(selectedAlbum.albumId!, {
+                          onError: error => {
+                            console.error(
+                              'Failed to navigate to album:',
+                              error
+                            );
+                          },
+                        });
+                      } catch (error) {
+                        console.error('Navigation error:', error);
+                      }
+                    }}
+                    className='bg-emeraled-green text-black px-6 py-2 rounded-lg font-medium hover:bg-opacity-90 transition-colors'
+                  >
+                    View Album Details
+                  </button>
+                  <button
+                    onClick={handleClose}
+                    className='bg-zinc-700 text-white px-6 py-2 rounded-lg font-medium hover:bg-zinc-600 transition-colors'
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
       <div className='container mx-auto px-4 py-8'>
-        {/* Header with back navigation */}
+        {/* Header with intelligent back navigation */}
         <div className='mb-8'>
-          <Link
-            href='/browse'
+          <button
+            onClick={() => goBack()}
             className='inline-flex items-center text-cosmic-latte hover:text-emeraled-green transition-colors mb-4'
           >
-            ← Back to Browse
-          </Link>
+            ← Back
+          </button>
         </div>
 
         {/* Profile Header */}
@@ -223,7 +304,8 @@ export default function ProfileClient({
                     <div
                       key={collectionAlbum.id}
                       className='relative group cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10'
-                      onClick={() => setSelectedAlbum(collectionAlbum)}
+                      onClick={e => handleAlbumClick(collectionAlbum, e)}
+                      title={`${collectionAlbum.albumTitle} by ${collectionAlbum.albumArtist}\nClick to view details • Ctrl/Cmd+Click to navigate to album page`}
                     >
                       <Image
                         src={

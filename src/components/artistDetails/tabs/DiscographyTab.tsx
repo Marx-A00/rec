@@ -1,3 +1,5 @@
+'use client';
+
 import { Calendar, Disc, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 

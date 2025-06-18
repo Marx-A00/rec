@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
+import { userProfileParamsSchema } from '@/lib/validations/params';
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
 
@@ -65,14 +66,21 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
 }
 
 interface ProfilePageProps {
-  params: Promise<{
-    userId: string;
-  }>;
+  params: Promise<{ userId: string }>;
 }
 
 export default async function UserProfilePage({ params }: ProfilePageProps) {
   const session = await auth();
-  const { userId } = await params;
+  const rawParams = await params;
+
+  // Validate parameters
+  const paramsResult = userProfileParamsSchema.safeParse(rawParams);
+  if (!paramsResult.success) {
+    console.error('Invalid user profile parameters:', paramsResult.error);
+    notFound();
+  }
+
+  const { userId } = paramsResult.data;
 
   // Check if viewing own profile
   const isOwnProfile = session?.user?.id === userId;
