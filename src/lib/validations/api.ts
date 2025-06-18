@@ -11,10 +11,7 @@ export const searchQuerySchema = z.object({
     .min(1, 'Search query cannot be empty')
     .max(100, 'Search query must be 100 characters or less')
     .trim(),
-  type: z
-    .enum(['all', 'albums', 'artists', 'labels', 'tracks'])
-    .optional()
-    .default('all'),
+  type: z.enum(['all', 'albums', 'artists', 'labels', 'tracks']).default('all'),
   page: z
     .string()
     .optional()

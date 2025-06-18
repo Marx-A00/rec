@@ -10,7 +10,6 @@ import {
   AlbumListResponse,
   ApiErrorResponse,
   ApiSuccessResponse,
-  type SimpleRouteHandler,
 } from '@/types/api';
 
 // This would eventually come from your database
@@ -23,7 +22,7 @@ const albums = [
   },
 ];
 
-export const GET: SimpleRouteHandler = async (): Promise<NextResponse> => {
+export async function GET(): Promise<NextResponse> {
   try {
     const response: AlbumListResponse = {
       albums,
@@ -40,11 +39,9 @@ export const GET: SimpleRouteHandler = async (): Promise<NextResponse> => {
     );
     return NextResponse.json(response as ApiErrorResponse, { status });
   }
-};
+}
 
-export const POST: SimpleRouteHandler = async (
-  request: NextRequest
-): Promise<NextResponse> => {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Parse request body
     const body: unknown = await request.json();
@@ -93,4 +90,4 @@ export const POST: SimpleRouteHandler = async (
     );
     return NextResponse.json(response as ApiErrorResponse, { status });
   }
-};
+}

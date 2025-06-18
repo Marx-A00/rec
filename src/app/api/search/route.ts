@@ -1,4 +1,3 @@
-import { Client, DiscogsSearchResult } from 'disconnect';
 import { NextRequest, NextResponse } from 'next/server';
 import chalk from 'chalk';
 
@@ -6,19 +5,20 @@ import {
   searchQuerySchema,
   validateQueryParams,
   createErrorResponse,
+  type SearchQuery,
 } from '@/lib/validations/api';
 import {
   SearchResponse,
   SearchResultItem,
   ApiErrorResponse,
-  type SimpleRouteHandler,
 } from '@/types/api';
 
 const log = console.log;
 
-// Create a client with consumer key and secret from environment variables
+// Initialize Discogs client - move this to a separate file in production
+const { Client } = require('disconnect');
 const db = new Client({
-  userAgent: 'RecProject/1.0 +http://localhost:3000',
+  userAgent: 'REC/1.0',
   consumerKey: process.env.CONSUMER_KEY,
   consumerSecret: process.env.CONSUMER_SECRET,
 }).database();
@@ -26,14 +26,10 @@ const db = new Client({
 // Default placeholder image for albums without images
 const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x400?text=No+Image';
 
-export const GET: SimpleRouteHandler<
-  SearchResponse | ApiErrorResponse
-> = async (
-  request: NextRequest
-): Promise<NextResponse<SearchResponse | ApiErrorResponse>> => {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   // Validate query parameters
   const validation = validateQueryParams(
-    searchQuerySchema,
+    searchQuerySchema as any,
     request.nextUrl.searchParams
   );
 
@@ -48,7 +44,7 @@ export const GET: SimpleRouteHandler<
     return NextResponse.json(response as ApiErrorResponse, { status });
   }
 
-  const { query, type, page, per_page } = validation.data;
+  const { query, type, page, per_page } = validation.data as SearchQuery;
 
   try {
     log(
@@ -88,7 +84,7 @@ export const GET: SimpleRouteHandler<
 
     // Process the results and categorize them
     const processedResults: SearchResultItem[] = searchResults.results.map(
-      (result: DiscogsSearchResult): SearchResultItem => {
+      (result: any): SearchResultItem => {
         // Determine the type of result from resource_url or URI patterns
         let resultType: SearchResultItem['type'] = 'unknown';
         const url = result.resource_url || result.uri || '';
@@ -148,7 +144,7 @@ export const GET: SimpleRouteHandler<
           title: title,
           subtitle: subtitle,
           artist: artist,
-          releaseDate: result.year || '',
+          releaseDate: result.year ? String(result.year) : '',
           genre: result.genre || [],
           label: result.label?.[0] || '',
           image: {
@@ -218,4 +214,4 @@ export const GET: SimpleRouteHandler<
     );
     return NextResponse.json(response as ApiErrorResponse, { status });
   }
-};
+}
