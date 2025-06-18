@@ -77,6 +77,6 @@ node_modules/
 *.sw?
 # OS specific
 
-/.taskmaster/*
-tasks.json
-.taskmaster/config.json
+.taskmaster/
+
+.windsurfrules
