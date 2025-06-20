@@ -1,5 +1,4 @@
-import Image from 'next/image';
-
+import AlbumImage from '@/components/ui/AlbumImage';
 import { Album } from '@/types/album';
 
 interface AlbumCardProps {
@@ -30,9 +29,12 @@ export default function AlbumCard({
       {album ? (
         <div className='flex flex-col items-center'>
           <div className='relative w-full aspect-square mb-2'>
-            <Image
+            <AlbumImage
               src={album.image.url}
-              alt={album.image.alt || ''}
+              alt={
+                album.image.alt ||
+                `${album.title} by ${album.artists?.[0]?.name}`
+              }
               fill
               sizes='(max-width: 768px) 100vw, 400px'
               className='object-cover rounded'

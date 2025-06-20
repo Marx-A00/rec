@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import AlbumImage from '@/components/ui/AlbumImage';
 import { useEffect, useState } from 'react';
 
 import { Release } from '@/types/album';
@@ -96,13 +96,9 @@ export default function AlbumModal({
     if (isCollectionAlbum(data)) {
       return data.albumImageUrl;
     } else if (isRelease(data)) {
-      return (
-        data.basic_information?.cover_image ||
-        data.thumb ||
-        'https://via.placeholder.com/400x400?text=No+Image'
-      );
+      return data.basic_information?.cover_image || data.thumb || null;
     }
-    return 'https://via.placeholder.com/400x400?text=No+Image';
+    return null;
   };
 
   const getTitle = () => {
@@ -240,11 +236,12 @@ export default function AlbumModal({
 
         {/* Zoomed Album Cover */}
         <div className='flex-shrink-0 relative'>
-          <Image
-            src={getImageUrl() || '/placeholder.svg'}
-            alt={getTitle()}
+          <AlbumImage
+            src={getImageUrl()}
+            alt={`${getTitle()} by ${getArtist()}`}
             width={400}
             height={400}
+            priority
             className='w-80 h-80 lg:w-96 lg:h-96 rounded-lg object-cover border-2 border-zinc-700 shadow-2xl'
           />
 
