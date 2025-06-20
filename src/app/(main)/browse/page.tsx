@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import BackButton from '@/components/ui/BackButton';
 import {
   HoverCard,
   HoverCardContent,
@@ -22,12 +23,7 @@ export default async function BrowsePage() {
       <div className='container mx-auto px-4 py-8'>
         {/* Header */}
         <div className='mb-8'>
-          <Link
-            href='/'
-            className='inline-flex items-center text-cosmic-latte hover:text-emeraled-green transition-colors mb-4'
-          >
-            ← Back to Home
-          </Link>
+          <BackButton className='inline-flex items-center text-cosmic-latte hover:text-emeraled-green transition-colors mb-4' />
           <h1 className='text-4xl font-bold text-cosmic-latte mb-2'>Browse</h1>
           <p className='text-zinc-400'>
             Discover users and their music recommendations
