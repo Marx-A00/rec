@@ -1,7 +1,7 @@
 'use client';
 
 import { Calendar, Disc, ChevronDown } from 'lucide-react';
-import Image from 'next/image';
+import AlbumImage from '@/components/ui/AlbumImage';
 
 import AlbumModal from '@/components/ui/AlbumModal';
 import { useAlbumModal } from '@/hooks/useAlbumModal';
@@ -120,12 +120,8 @@ function ReleaseCard({
     >
       <div className='flex gap-3'>
         <div className='relative w-16 h-16 flex-shrink-0'>
-          <Image
-            src={
-              release.thumb ||
-              release.basic_information?.thumb ||
-              'https://via.placeholder.com/64x64?text=No+Image'
-            }
+          <AlbumImage
+            src={release.thumb || release.basic_information?.thumb}
             alt={release.title}
             fill
             className='object-cover rounded'

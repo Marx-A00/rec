@@ -1,5 +1,4 @@
-import Image from 'next/image';
-
+import AlbumImage from '@/components/ui/AlbumImage';
 import { Recommendation } from '@/types/recommendation';
 
 interface RecommendationCardProps {
@@ -14,7 +13,7 @@ export default function RecommendationCard({
       <div className='flex items-center justify-between mb-4'>
         <div className='flex items-center space-x-2'>
           {recommendation.user?.image && (
-            <Image
+            <AlbumImage
               src={recommendation.user.image}
               alt={recommendation.user.name || 'User'}
               width={32}
@@ -41,12 +40,9 @@ export default function RecommendationCard({
             If you like
           </h3>
           <div className='relative w-full aspect-square mb-2'>
-            <Image
-              src={
-                recommendation.basisAlbumImageUrl ||
-                'https://via.placeholder.com/200x200?text=No+Image'
-              }
-              alt={`${recommendation.basisAlbumTitle} cover`}
+            <AlbumImage
+              src={recommendation.basisAlbumImageUrl}
+              alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
               fill
               sizes='(max-width: 768px) 50vw, 200px'
               className='object-cover rounded'
@@ -73,12 +69,9 @@ export default function RecommendationCard({
             You might like
           </h3>
           <div className='relative w-full aspect-square mb-2'>
-            <Image
-              src={
-                recommendation.recommendedAlbumImageUrl ||
-                'https://via.placeholder.com/200x200?text=No+Image'
-              }
-              alt={`${recommendation.recommendedAlbumTitle} cover`}
+            <AlbumImage
+              src={recommendation.recommendedAlbumImageUrl}
+              alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
               fill
               sizes='(max-width: 768px) 50vw, 200px'
               className='object-cover rounded'

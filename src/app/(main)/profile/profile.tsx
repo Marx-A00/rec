@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import AlbumImage from '@/components/ui/AlbumImage';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -151,11 +151,12 @@ export default function ProfileClient({
 
             {/* Zoomed Album Cover */}
             <div className='flex-shrink-0'>
-              <Image
-                src={selectedAlbum.albumImageUrl || '/placeholder.svg'}
-                alt={selectedAlbum.albumTitle}
+              <AlbumImage
+                src={selectedAlbum.albumImageUrl}
+                alt={`${selectedAlbum.albumTitle} by ${selectedAlbum.albumArtist}`}
                 width={400}
                 height={400}
+                priority
                 className='w-80 h-80 lg:w-96 lg:h-96 rounded-lg object-cover border-2 border-zinc-700 shadow-2xl'
               />
             </div>
@@ -307,11 +308,9 @@ export default function ProfileClient({
                       onClick={e => handleAlbumClick(collectionAlbum, e)}
                       title={`${collectionAlbum.albumTitle} by ${collectionAlbum.albumArtist}\nClick to view details • Ctrl/Cmd+Click to navigate to album page`}
                     >
-                      <Image
-                        src={
-                          collectionAlbum.albumImageUrl || '/placeholder.svg'
-                        }
-                        alt={collectionAlbum.albumTitle}
+                      <AlbumImage
+                        src={collectionAlbum.albumImageUrl}
+                        alt={`${collectionAlbum.albumTitle} by ${collectionAlbum.albumArtist}`}
                         width={128}
                         height={128}
                         className='w-full aspect-square rounded object-cover border border-zinc-800 group-hover:border-zinc-600 transition-colors'
@@ -394,12 +393,9 @@ export default function ProfileClient({
                           If you like
                         </p>
                         <div className='flex items-center space-x-3 bg-zinc-800 rounded-lg p-3'>
-                          <Image
-                            src={
-                              rec.basisAlbumImageUrl ||
-                              '/placeholder.svg?height=400&width=400'
-                            }
-                            alt={rec.basisAlbumTitle}
+                          <AlbumImage
+                            src={rec.basisAlbumImageUrl}
+                            alt={`${rec.basisAlbumTitle} by ${rec.basisAlbumArtist}`}
                             width={48}
                             height={48}
                             className='w-12 h-12 rounded object-cover'
@@ -426,12 +422,9 @@ export default function ProfileClient({
                           Then try
                         </p>
                         <div className='flex items-center space-x-3 bg-zinc-800 rounded-lg p-3'>
-                          <Image
-                            src={
-                              rec.recommendedAlbumImageUrl ||
-                              '/placeholder.svg?height=400&width=400'
-                            }
-                            alt={rec.recommendedAlbumTitle}
+                          <AlbumImage
+                            src={rec.recommendedAlbumImageUrl}
+                            alt={`${rec.recommendedAlbumTitle} by ${rec.recommendedAlbumArtist}`}
                             width={48}
                             height={48}
                             className='w-12 h-12 rounded object-cover'

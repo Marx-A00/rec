@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import AlbumImage from '@/components/ui/AlbumImage';
 
 import { Album } from '@/types/album';
 import { useAlbumSearchQuery } from '@/hooks';
@@ -69,9 +69,12 @@ export default function AlbumSearch({
               className='flex items-center p-2 hover:bg-gray-100 cursor-pointer'
             >
               <div className='w-12 h-12 relative mr-3'>
-                <Image
+                <AlbumImage
                   src={album.image.url}
-                  alt={album.image.alt || ''}
+                  alt={
+                    album.image.alt ||
+                    `${album.title} by ${album.artists?.[0]?.name}`
+                  }
                   fill
                   sizes='48px'
                   className='object-cover rounded'

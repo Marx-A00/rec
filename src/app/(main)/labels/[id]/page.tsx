@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowLeft, Building2, ExternalLink, MapPin } from 'lucide-react';
-import Image from 'next/image';
+import AlbumImage from '@/components/ui/AlbumImage';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -173,20 +173,15 @@ export default function LabelDetailsPage() {
           {/* Label Image */}
           <div className='lg:col-span-1'>
             <div className='relative aspect-square w-full max-w-md mx-auto'>
-              {label.image?.url ? (
-                <Image
-                  src={label.image.url}
-                  alt={label.image.alt || `${label.title} logo`}
-                  fill
-                  className='object-cover rounded-lg shadow-2xl'
-                  sizes='(max-width: 768px) 100vw, 400px'
-                  priority
-                />
-              ) : (
-                <div className='w-full h-full bg-zinc-800 rounded-lg flex items-center justify-center'>
-                  <Building2 className='h-24 w-24 text-zinc-600' />
-                </div>
-              )}
+              <AlbumImage
+                src={label.image?.url}
+                alt={label.image?.alt || `${label.title} logo`}
+                fill
+                className='object-cover rounded-lg shadow-2xl'
+                sizes='(max-width: 768px) 100vw, 400px'
+                priority
+                fallbackIcon={<Building2 className='h-24 w-24 text-zinc-600' />}
+              />
             </div>
           </div>
 

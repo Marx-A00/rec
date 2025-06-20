@@ -61,19 +61,49 @@ export default function AlbumModal({
       return;
     }
 
-    // Only fetch high-quality images for master releases
-    if (isRelease(data) && data.type === 'master' && data.main_release) {
+    // Enhanced high-quality image fetching for master releases
+    if (isRelease(data) && data.type === 'master') {
+      console.log('Master release detected:', {
+        id: data.id,
+        title: data.title,
+        type: data.type,
+        main_release: data.main_release,
+        currentImageUrl: data.basic_information?.cover_image || data.thumb,
+      });
+
+      // Try to fetch high-quality image using main_release if available, otherwise try the master ID itself
+      const fetchId = data.main_release || data.id;
+
       setIsLoadingHighQualityImage(true);
       console.log(
-        `Fetching high-quality image for master ${data.id}, main release: ${data.main_release}`
+        `Fetching high-quality image for master ${data.id}, using ID: ${fetchId}`
       );
 
-      fetch(`/api/albums/${data.main_release}`)
+      fetch(`/api/albums/${fetchId}`)
         .then(res => res.json())
         .then(result => {
-          if (result.success && result.album?.image?.url) {
-            console.log(`Found high-quality image: ${result.album.image.url}`);
-            setHighQualityImageUrl(result.album.image.url);
+          console.log('High-quality image API response:', result);
+          console.log('API response structure:', {
+            id: result.id,
+            title: result.title,
+            image: result.image,
+            imageKeys: result.image ? Object.keys(result.image) : 'no image',
+            imageUrl: result.image?.url,
+          });
+
+          // The API returns the album data directly, not wrapped in {success: true, album: {...}}
+          if (result.image && result.image.url) {
+            console.log(`Found high-quality image: ${result.image.url}`);
+            setHighQualityImageUrl(result.image.url);
+          } else {
+            console.log('No high-quality image found in response');
+            // Let's also check if the image is in a different location
+            console.log('Checking alternative image locations:', {
+              albumImageUrl: result.albumImageUrl,
+              images: result.images,
+              cover_image: result.cover_image,
+              thumb: result.thumb,
+            });
           }
         })
         .catch(error => {
@@ -90,14 +120,25 @@ export default function AlbumModal({
   const getImageUrl = () => {
     // Use high-quality image if available, otherwise fall back to original logic
     if (highQualityImageUrl) {
+      console.log('Using high-quality image:', highQualityImageUrl);
       return highQualityImageUrl;
     }
 
     if (isCollectionAlbum(data)) {
-      return data.albumImageUrl;
+      const url = data.albumImageUrl;
+      console.log('Using collection album image:', url);
+      return url;
     } else if (isRelease(data)) {
-      return data.basic_information?.cover_image || data.thumb || null;
+      // Prefer cover_image over thumb for better quality
+      const url = data.basic_information?.cover_image || data.thumb || null;
+      console.log('Using release image (cover_image/thumb):', {
+        cover_image: data.basic_information?.cover_image,
+        thumb: data.thumb,
+        selected: url,
+      });
+      return url;
     }
+    console.log('No image URL found, returning null');
     return null;
   };
 

@@ -1,5 +1,5 @@
 import { ArrowLeft, ExternalLink, User } from 'lucide-react';
-import Image from 'next/image';
+import AlbumImage from '@/components/ui/AlbumImage';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -52,20 +52,15 @@ export default async function ArtistDetailsPage({
           {/* Artist Image */}
           <div className='lg:col-span-1'>
             <div className='relative aspect-square w-full max-w-md mx-auto'>
-              {artist.image?.url ? (
-                <Image
-                  src={artist.image.url}
-                  alt={artist.image.alt || `${artist.title} photo`}
-                  fill
-                  className='object-cover rounded-lg shadow-2xl'
-                  sizes='(max-width: 768px) 100vw, 400px'
-                  priority
-                />
-              ) : (
-                <div className='w-full h-full bg-zinc-800 rounded-lg flex items-center justify-center'>
-                  <User className='h-24 w-24 text-zinc-600' />
-                </div>
-              )}
+              <AlbumImage
+                src={artist.image?.url}
+                alt={artist.image?.alt || `${artist.title} artist photo`}
+                fill
+                className='object-cover rounded-lg shadow-2xl'
+                sizes='(max-width: 768px) 100vw, 400px'
+                priority
+                fallbackIcon={<User className='h-24 w-24 text-zinc-600' />}
+              />
             </div>
           </div>
 

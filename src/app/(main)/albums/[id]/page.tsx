@@ -1,5 +1,5 @@
 import { Building2, Calendar, Clock, Music, Tag } from 'lucide-react';
-import Image from 'next/image';
+import AlbumImage from '@/components/ui/AlbumImage';
 import { notFound } from 'next/navigation';
 
 import AlbumInteractions from '@/components/albums/AlbumInteractions';
@@ -52,20 +52,18 @@ export default async function AlbumDetailsPage({
           {/* Album Cover */}
           <div className='lg:col-span-1'>
             <div className='relative aspect-square w-full max-w-md mx-auto'>
-              {album.image?.url ? (
-                <Image
-                  src={album.image.url}
-                  alt={album.image.alt || `${album.title} cover`}
-                  fill
-                  className='object-cover rounded-lg shadow-2xl'
-                  sizes='(max-width: 768px) 100vw, 400px'
-                  priority
-                />
-              ) : (
-                <div className='w-full h-full bg-zinc-800 rounded-lg flex items-center justify-center'>
-                  <Music className='h-24 w-24 text-zinc-600' />
-                </div>
-              )}
+              <AlbumImage
+                src={album.image?.url}
+                alt={
+                  album.image?.alt ||
+                  `${album.title} by ${album.artists?.[0]?.name}`
+                }
+                fill
+                className='object-cover rounded-lg shadow-2xl'
+                sizes='(max-width: 768px) 100vw, 400px'
+                priority
+                fallbackIcon={<Music className='h-24 w-24 text-zinc-600' />}
+              />
             </div>
           </div>
 

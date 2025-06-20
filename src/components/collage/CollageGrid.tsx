@@ -1,7 +1,6 @@
 'use client';
 
-import Image from 'next/image';
-
+import AlbumImage from '@/components/ui/AlbumImage';
 import { Button } from '@/components/ui/button';
 import { Album } from '@/types/album';
 
@@ -14,21 +13,6 @@ export default function CollageGrid({
   selectedAlbums,
   onRemoveAlbum,
 }: CollageGridProps) {
-  const handleImageError = (
-    e: React.SyntheticEvent<HTMLImageElement, Event>
-  ) => {
-    const target = e.target as HTMLImageElement;
-
-    // If the image has crossOrigin set, try removing it and reloading
-    if (target.crossOrigin) {
-      target.crossOrigin = '';
-      target.src = target.src; // Force reload without CORS
-    } else {
-      // If still failing, use placeholder
-      target.src = '/placeholder.svg?height=400&width=400';
-    }
-  };
-
   return (
     <div className='bg-zinc-900 rounded-lg p-6'>
       <h3 className='text-xl font-semibold text-cosmic-latte mb-4'>
@@ -48,13 +32,12 @@ export default function CollageGrid({
           >
             {album ? (
               <>
-                <Image
+                <AlbumImage
                   src={album.image.url}
                   alt={`${album.artists?.[0]?.name} - ${album.title}`}
                   width={96}
                   height={96}
                   className='w-full h-full object-cover'
-                  onError={handleImageError}
                 />
                 <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex items-center justify-center'>
                   <Button

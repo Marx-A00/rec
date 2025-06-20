@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import AlbumImage from '@/components/ui/AlbumImage';
 import Link from 'next/link';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -148,12 +148,9 @@ function RecommendationsSection({
               {/* Albums */}
               <div className='space-y-4'>
                 <div className='flex items-center space-x-3'>
-                  <Image
-                    src={
-                      recommendation.basisAlbumImageUrl ||
-                      'https://via.placeholder.com/48x48?text=No+Image'
-                    }
-                    alt={recommendation.basisAlbumTitle}
+                  <AlbumImage
+                    src={recommendation.basisAlbumImageUrl}
+                    alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
                     width={48}
                     height={48}
                     className='w-12 h-12 rounded object-cover'
@@ -175,12 +172,9 @@ function RecommendationsSection({
                 </div>
 
                 <div className='flex items-center space-x-3'>
-                  <Image
-                    src={
-                      recommendation.recommendedAlbumImageUrl ||
-                      'https://via.placeholder.com/48x48?text=No+Image'
-                    }
-                    alt={recommendation.recommendedAlbumTitle}
+                  <AlbumImage
+                    src={recommendation.recommendedAlbumImageUrl}
+                    alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
                     width={48}
                     height={48}
                     className='w-12 h-12 rounded object-cover'

@@ -1,7 +1,7 @@
 'use client';
 
 import { Building2, Music, Tag, User } from 'lucide-react';
-import Image from 'next/image';
+import AlbumImage from '@/components/ui/AlbumImage';
 import { useEffect, useRef } from 'react';
 
 import { UnifiedSearchResult } from '@/types/search';
@@ -108,35 +108,14 @@ export default function SearchResults({
           id={`search-result-${index}`}
         >
           <div className='relative w-12 h-12 flex-shrink-0'>
-            {result.image?.url &&
-            result.image.url !==
-              'https://via.placeholder.com/400x400?text=No+Image' ? (
-              <Image
-                src={result.image.url}
-                alt={result.image.alt || `${result.title} cover`}
-                fill
-                className='object-cover rounded'
-                sizes='48px'
-                onError={e => {
-                  // Hide the image and show fallback on error
-                  e.currentTarget.style.display = 'none';
-                  const fallback = e.currentTarget
-                    .nextElementSibling as HTMLElement;
-                  if (fallback) fallback.style.display = 'flex';
-                }}
-              />
-            ) : null}
-            <div
-              className={`w-full h-full bg-zinc-800 rounded flex items-center justify-center ${
-                result.image?.url &&
-                result.image.url !==
-                  'https://via.placeholder.com/400x400?text=No+Image'
-                  ? 'hidden'
-                  : ''
-              }`}
-            >
-              {getResultIcon(result.type || 'unknown')}
-            </div>
+            <AlbumImage
+              src={result.image?.url}
+              alt={result.image?.alt || `${result.title} cover`}
+              fill
+              className='object-cover rounded'
+              sizes='48px'
+              fallbackIcon={getResultIcon(result.type || 'unknown')}
+            />
           </div>
           <div className='flex-1 min-w-0'>
             <h3

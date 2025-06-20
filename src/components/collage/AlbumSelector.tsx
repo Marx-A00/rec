@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import AlbumImage from '@/components/ui/AlbumImage';
 import { useState } from 'react';
 
 import { Input } from '@/components/ui/input';
@@ -49,9 +49,9 @@ export default function AlbumSelector({
       onClick={() => onAlbumSelect(album)}
       className='relative group cursor-pointer bg-zinc-800 rounded-lg overflow-hidden hover:bg-zinc-700 transition-colors'
     >
-      <Image
+      <AlbumImage
         src={album.image.url}
-        alt={`${album.artists?.[0]?.name} - ${album.title}`}
+        alt={`${album.title} by ${album.artists?.[0]?.name}`}
         width={128}
         height={128}
         className='w-full aspect-square object-cover'
