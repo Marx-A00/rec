@@ -43,9 +43,10 @@ export default function RecommendationCard({
             <AlbumImage
               src={recommendation.basisAlbumImageUrl}
               alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
-              fill
+              width={200}
+              height={200}
               sizes='(max-width: 768px) 50vw, 200px'
-              className='object-cover rounded'
+              className='w-full h-full object-cover rounded'
             />
           </div>
           <div className='space-y-1'>
@@ -72,9 +73,10 @@ export default function RecommendationCard({
             <AlbumImage
               src={recommendation.recommendedAlbumImageUrl}
               alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
-              fill
+              width={200}
+              height={200}
               sizes='(max-width: 768px) 50vw, 200px'
-              className='object-cover rounded'
+              className='w-full h-full object-cover rounded'
             />
           </div>
           <div className='space-y-1'>

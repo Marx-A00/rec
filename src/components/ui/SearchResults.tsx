@@ -111,8 +111,9 @@ export default function SearchResults({
             <AlbumImage
               src={result.image?.url}
               alt={result.image?.alt || `${result.title} cover`}
-              fill
-              className='object-cover rounded'
+              width={48}
+              height={48}
+              className='w-full h-full object-cover rounded'
               sizes='48px'
               fallbackIcon={getResultIcon(result.type || 'unknown')}
             />

@@ -35,9 +35,10 @@ export default function AlbumCard({
                 album.image.alt ||
                 `${album.title} by ${album.artists?.[0]?.name}`
               }
-              fill
+              width={400}
+              height={400}
               sizes='(max-width: 768px) 100vw, 400px'
-              className='object-cover rounded'
+              className='w-full h-full object-cover rounded'
             />
           </div>
           <div className='text-center'>

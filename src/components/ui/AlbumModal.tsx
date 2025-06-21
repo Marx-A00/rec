@@ -36,8 +36,6 @@ export default function AlbumModal({
   const [highQualityImageUrl, setHighQualityImageUrl] = useState<string | null>(
     null
   );
-  const [isLoadingHighQualityImage, setIsLoadingHighQualityImage] =
-    useState(false);
 
   // Handle Escape key
   useEffect(() => {
@@ -63,83 +61,42 @@ export default function AlbumModal({
 
     // Enhanced high-quality image fetching for master releases
     if (isRelease(data) && data.type === 'master') {
-      console.log('Master release detected:', {
-        id: data.id,
-        title: data.title,
-        type: data.type,
-        main_release: data.main_release,
-        currentImageUrl: data.basic_information?.cover_image || data.thumb,
-      });
-
       // Try to fetch high-quality image using main_release if available, otherwise try the master ID itself
       const fetchId = data.main_release || data.id;
-
-      setIsLoadingHighQualityImage(true);
-      console.log(
-        `Fetching high-quality image for master ${data.id}, using ID: ${fetchId}`
-      );
 
       fetch(`/api/albums/${fetchId}`)
         .then(res => res.json())
         .then(result => {
-          console.log('High-quality image API response:', result);
-          console.log('API response structure:', {
-            id: result.id,
-            title: result.title,
-            image: result.image,
-            imageKeys: result.image ? Object.keys(result.image) : 'no image',
-            imageUrl: result.image?.url,
-          });
-
           // The API returns the album data directly, not wrapped in {success: true, album: {...}}
           if (result.image && result.image.url) {
-            console.log(`Found high-quality image: ${result.image.url}`);
             setHighQualityImageUrl(result.image.url);
-          } else {
-            console.log('No high-quality image found in response');
-            // Let's also check if the image is in a different location
-            console.log('Checking alternative image locations:', {
-              albumImageUrl: result.albumImageUrl,
-              images: result.images,
-              cover_image: result.cover_image,
-              thumb: result.thumb,
-            });
           }
         })
         .catch(error => {
           console.error('Failed to fetch high-quality image:', error);
-        })
-        .finally(() => {
-          setIsLoadingHighQualityImage(false);
         });
     }
-  }, [isOpen, data]);
+  }, [isOpen, data?.id, isRelease(data) ? data.type : null]);
 
   if (!isOpen || !data) return null;
 
+  // Get the appropriate image URL based on availability
   const getImageUrl = () => {
-    // Use high-quality image if available, otherwise fall back to original logic
-    if (highQualityImageUrl) {
-      console.log('Using high-quality image:', highQualityImageUrl);
-      return highQualityImageUrl;
-    }
+    // Always start with the original data image (thumbnail/low quality)
+    let originalImage: string | null = null;
 
     if (isCollectionAlbum(data)) {
-      const url = data.albumImageUrl;
-      console.log('Using collection album image:', url);
-      return url;
+      originalImage = data.albumImageUrl || null;
     } else if (isRelease(data)) {
-      // Prefer cover_image over thumb for better quality
-      const url = data.basic_information?.cover_image || data.thumb || null;
-      console.log('Using release image (cover_image/thumb):', {
-        cover_image: data.basic_information?.cover_image,
-        thumb: data.thumb,
-        selected: url,
-      });
-      return url;
+      originalImage = data.basic_information?.cover_image || data.thumb || null;
     }
-    console.log('No image URL found, returning null');
-    return null;
+
+    return originalImage;
+  };
+
+  // Get the high-quality image URL when available
+  const getHighQualityImageUrl = () => {
+    return highQualityImageUrl;
   };
 
   const getTitle = () => {
@@ -276,34 +233,48 @@ export default function AlbumModal({
         </button>
 
         {/* Zoomed Album Cover */}
-        <div className='flex-shrink-0 relative'>
-          <AlbumImage
-            src={getImageUrl()}
-            alt={`${getTitle()} by ${getArtist()}`}
-            width={400}
-            height={400}
-            priority
-            className='w-80 h-80 lg:w-96 lg:h-96 rounded-lg object-cover border-2 border-zinc-700 shadow-2xl'
-          />
+        <div className='flex-shrink-0'>
+          <div className='w-80 h-80 lg:w-96 lg:h-96 bg-zinc-800 rounded-lg border-2 border-zinc-700 shadow-2xl overflow-hidden relative'>
+            {/* Low quality image (always shown) */}
+            <AlbumImage
+              src={getImageUrl()}
+              alt={`${getTitle()} by ${getArtist()}`}
+              width={384}
+              height={384}
+              priority
+              className={`w-full h-full object-cover transition-opacity duration-500 ${
+                highQualityImageUrl ? 'opacity-30' : 'opacity-100'
+              }`}
+              sizes='(max-width: 1024px) 320px, 384px'
+              style={{ aspectRatio: '1/1' }}
+              showSkeleton={false}
+            />
 
-          {/* Loading indicator for high-quality image */}
-          {isLoadingHighQualityImage && (
-            <div className='absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center'>
-              <div className='flex flex-col items-center gap-2'>
-                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-cosmic-latte'></div>
-                {/* <span className='text-cosmic-latte text-sm'>
-                  Loading HD image...
-                </span> */}
+            {/* High quality image (shown when loaded) */}
+            {highQualityImageUrl && (
+              <AlbumImage
+                src={getHighQualityImageUrl() || ''}
+                alt={`${getTitle()} by ${getArtist()} (HD)`}
+                width={384}
+                height={384}
+                priority
+                className='absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-100 z-10'
+                sizes='(max-width: 1024px) 320px, 384px'
+                style={{ aspectRatio: '1/1' }}
+                showSkeleton={false}
+              />
+            )}
+
+            {/* Loading overlay (shown while high-quality is loading) */}
+            {!highQualityImageUrl && getImageUrl() && (
+              <div className='absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center z-20'>
+                <div className='flex flex-col items-center text-white'>
+                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2'></div>
+                  <p className='text-sm font-medium'>Loading HD...</p>
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* High-quality image indicator */}
-          {/* {highQualityImageUrl && !isLoadingHighQualityImage && (
-            <div className='absolute top-2 right-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded-full'>
-              HD
-            </div>
-          )} */}
+            )}
+          </div>
         </div>
 
         {/* Album Details */}

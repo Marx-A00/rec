@@ -123,7 +123,8 @@ function ReleaseCard({
           <AlbumImage
             src={release.thumb || release.basic_information?.thumb}
             alt={release.title}
-            fill
+            width={64}
+            height={64}
             className='object-cover rounded'
             sizes='64px'
           />

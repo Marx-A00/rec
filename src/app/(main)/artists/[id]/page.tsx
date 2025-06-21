@@ -51,12 +51,13 @@ export default async function ArtistDetailsPage({
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'>
           {/* Artist Image */}
           <div className='lg:col-span-1'>
-            <div className='relative aspect-square w-full max-w-md mx-auto'>
+            <div className='w-full max-w-md mx-auto'>
               <AlbumImage
                 src={artist.image?.url}
                 alt={artist.image?.alt || `${artist.title} artist photo`}
-                fill
-                className='object-cover rounded-lg shadow-2xl'
+                width={400}
+                height={400}
+                className='w-full aspect-square object-cover rounded-lg shadow-2xl'
                 sizes='(max-width: 768px) 100vw, 400px'
                 priority
                 fallbackIcon={<User className='h-24 w-24 text-zinc-600' />}

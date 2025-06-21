@@ -75,9 +75,10 @@ export default function AlbumSearch({
                     album.image.alt ||
                     `${album.title} by ${album.artists?.[0]?.name}`
                   }
-                  fill
+                  width={48}
+                  height={48}
                   sizes='48px'
-                  className='object-cover rounded'
+                  className='w-full h-full object-cover rounded'
                 />
               </div>
               <div>

@@ -15,6 +15,7 @@ interface AlbumImageProps {
   fill?: boolean;
   showSkeleton?: boolean;
   fallbackIcon?: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
 export default function AlbumImage({
@@ -28,6 +29,7 @@ export default function AlbumImage({
   fill = false,
   showSkeleton = true,
   fallbackIcon,
+  style,
 }: AlbumImageProps) {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -126,6 +128,7 @@ export default function AlbumImage({
         onError={handleImageError}
         // Disable drag to prevent issues with fallback logic
         draggable={false}
+        style={style}
       />
 
       {/* Error state overlay (only show if fallback image also fails) */}

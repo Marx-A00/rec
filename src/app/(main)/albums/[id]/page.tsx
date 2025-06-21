@@ -58,8 +58,9 @@ export default async function AlbumDetailsPage({
                   album.image?.alt ||
                   `${album.title} by ${album.artists?.[0]?.name}`
                 }
-                fill
-                className='object-cover rounded-lg shadow-2xl'
+                width={400}
+                height={400}
+                className='w-full h-full object-cover rounded-lg shadow-2xl'
                 sizes='(max-width: 768px) 100vw, 400px'
                 priority
                 fallbackIcon={<Music className='h-24 w-24 text-zinc-600' />}
