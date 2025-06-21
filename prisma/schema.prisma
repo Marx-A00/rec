@@ -41,10 +41,27 @@ model User {
   emailVerified   DateTime?
   image           String?
   hashedPassword  String?
+  
+  // Essential profile fields
+  bio             String?          @db.Text
+  
+  // Social statistics for music recommendations
+  followersCount  Int              @default(0)
+  followingCount  Int              @default(0)
+  recommendationsCount Int          @default(0)
+  
+  // Profile timestamp
+  profileUpdatedAt DateTime?
+  
+  // Existing relations
   accounts        Account[]
   recommendations Recommendation[]
   sessions        Session[]
   collections     Collection[]
+  
+  // Social features - following relationships
+  following       UserFollow[]     @relation("UserFollowing")
+  followers       UserFollow[]     @relation("UserFollowers")
 }
 
 model VerificationToken {
@@ -119,4 +136,19 @@ model CollectionAlbum {
   @@unique([collectionId, albumDiscogsId])
   @@index([collectionId])
   @@index([albumDiscogsId])
+}
+
+// User follow relationships
+model UserFollow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followedId  String
+  createdAt   DateTime @default(now())
+  
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  followed    User     @relation("UserFollowers", fields: [followedId], references: [id], onDelete: Cascade)
+  
+  @@unique([followerId, followedId])
+  @@index([followerId])
+  @@index([followedId])
 }
