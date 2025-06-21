@@ -88,6 +88,16 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
   // Fetch user data from database
   const userData = await prisma.user.findUnique({
     where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      bio: true,
+      followersCount: true,
+      followingCount: true,
+      recommendationsCount: true,
+    },
   });
 
   if (!userData) {
@@ -102,11 +112,17 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
 
   // Create user object for Profile component
   const user = {
+    id: userData.id,
     name: userData.name || 'User',
     email: userData.email || null,
     image: userData.image || '/placeholder.svg?height=100&width=100',
     username: userData.email ? `@${userData.email.split('@')[0]}` : '@user',
-    bio: 'Music enthusiast | Sharing vibes and discovering new sounds',
+    bio:
+      userData.bio ||
+      'Music enthusiast | Sharing vibes and discovering new sounds',
+    followersCount: userData.followersCount || 0,
+    followingCount: userData.followingCount || 0,
+    recommendationsCount: userData.recommendationsCount || 0,
   };
 
   return (

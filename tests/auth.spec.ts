@@ -10,7 +10,7 @@ const generateTestEmail = () => {
 test.describe('User Registration', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the registration page
-    await page.goto('/auth/register');
+    await page.goto('/register');
   });
 
   test('should display registration form with all required fields', async ({
@@ -31,7 +31,7 @@ test.describe('User Registration', () => {
     );
 
     // Check sign in link
-    await expect(page.locator('a[href="/auth/signin"]').first()).toBeVisible();
+    await expect(page.locator('a[href="/signin"]').first()).toBeVisible();
   });
 
   test('should show validation errors for invalid inputs', async ({ page }) => {
@@ -164,10 +164,10 @@ test.describe('User Registration', () => {
     page,
   }) => {
     // Click the sign in link
-    await page.locator('a[href="/auth/signin"]').first().click();
+    await page.locator('a[href="/signin"]').first().click();
 
     // Should navigate to sign in page
-    await expect(page).toHaveURL('/auth/signin');
+    await expect(page).toHaveURL('/signin');
   });
 
   test('should handle optional name field', async ({ page }) => {
@@ -197,7 +197,7 @@ test.describe('User Registration', () => {
   });
 
   test('should show error for duplicate email', async ({ page }) => {
-    await page.goto('/auth/register');
+    await page.goto('/register');
 
     // Use the recognizable test user
     await page

@@ -8,7 +8,7 @@ export default async function CollagePage() {
   const userData = session?.user;
 
   if (!userData || !userData.id) {
-    redirect('/auth/signin');
+    redirect('/signin');
   }
 
   return (

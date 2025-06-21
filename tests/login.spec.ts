@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('User Login', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/auth/signin');
+    await page.goto('/signin');
   });
 
   // TEST 1: Most Important - Successful Login

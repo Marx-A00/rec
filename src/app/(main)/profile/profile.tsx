@@ -8,14 +8,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
+import ProfileEditForm from '@/components/profile/ProfileEditForm';
 
 interface ProfileClientProps {
   user: {
+    id?: string;
     name: string;
     email: string | null;
     image: string;
     username: string;
     bio: string;
+    followersCount: number;
+    followingCount: number;
+    recommendationsCount: number;
   };
   collection: CollectionAlbum[];
   recommendations: Recommendation[];
@@ -38,6 +43,10 @@ export default function ProfileClient({
     null
   );
   const [isExiting, setIsExiting] = useState(false);
+
+  // Add state for profile editing
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [currentUser, setCurrentUser] = useState(user);
 
   // Strategic prefetching for likely navigation targets
   useEffect(() => {
@@ -94,22 +103,43 @@ export default function ProfileClient({
     setSelectedAlbum(collectionAlbum);
   };
 
+  // Profile editing handlers
+  const handleEditProfile = () => {
+    setIsEditingProfile(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingProfile(false);
+  };
+
+  const handleSaveProfile = (updatedUser: { name: string; bio: string }) => {
+    setCurrentUser(prev => ({
+      ...prev,
+      name: updatedUser.name,
+      bio: updatedUser.bio,
+    }));
+    setIsEditingProfile(false);
+  };
+
   // Add escape key listener
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && selectedAlbum) {
         handleClose();
       }
+      if (event.key === 'Escape' && isEditingProfile) {
+        handleCancelEdit();
+      }
     };
 
-    if (selectedAlbum) {
+    if (selectedAlbum || isEditingProfile) {
       document.addEventListener('keydown', handleEscape);
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [selectedAlbum]);
+  }, [selectedAlbum, isEditingProfile]);
 
   return (
     <div className='min-h-screen bg-black text-white'>
@@ -245,28 +275,59 @@ export default function ProfileClient({
         <div className='max-w-4xl mx-auto'>
           <div className='flex flex-col md:flex-row items-center md:items-start gap-8 mb-12'>
             <Avatar className='w-32 h-32 border-2 border-zinc-800'>
-              <AvatarImage src={user.image} alt={user.name} />
+              <AvatarImage src={currentUser.image} alt={currentUser.name} />
               <AvatarFallback className='bg-zinc-800 text-cosmic-latte text-2xl'>
-                {user.name.charAt(0)}
+                {currentUser.name.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <div className='text-center md:text-left'>
-              <h1 className='text-4xl font-bold mb-2 text-cosmic-latte'>
-                {user.name}
-              </h1>
-              <p className='text-zinc-400 mb-4 text-lg'>{user.username}</p>
-              {isOwnProfile && (
-                <div className='mb-4 px-3 py-1 bg-emeraled-green text-black text-sm font-medium rounded-full inline-block'>
-                  👋 This is your profile
+            <div className='text-center md:text-left flex-1'>
+              <div className='flex flex-col md:flex-row md:items-start md:justify-between gap-4'>
+                <div>
+                  <h1 className='text-4xl font-bold mb-2 text-cosmic-latte'>
+                    {currentUser.name}
+                  </h1>
+                  <p className='text-zinc-400 mb-4 text-lg'>
+                    {currentUser.username}
+                  </p>
+                  {isOwnProfile && (
+                    <div className='mb-4 px-3 py-1 bg-emeraled-green text-black text-sm font-medium rounded-full inline-block'>
+                      👋 This is your profile
+                    </div>
+                  )}
                 </div>
-              )}
-              <p className='mb-6 max-w-md text-zinc-300'>{user.bio}</p>
+                {isOwnProfile && (
+                  <div className='flex-shrink-0'>
+                    <button
+                      onClick={handleEditProfile}
+                      className='bg-zinc-800 text-cosmic-latte px-4 py-2 rounded-lg font-medium hover:bg-zinc-700 transition-colors border border-zinc-600'
+                    >
+                      ✏️ Edit Profile
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <p className='mb-6 max-w-md text-zinc-300'>
+                {currentUser.bio || 'No bio yet.'}
+              </p>
               <div className='flex justify-center md:justify-start gap-6 text-sm'>
                 <span className='text-zinc-300'>
-                  <strong className='text-cosmic-latte'>0</strong> Followers
+                  <strong className='text-cosmic-latte'>
+                    {user.followersCount}
+                  </strong>{' '}
+                  Followers
                 </span>
                 <span className='text-zinc-300'>
-                  <strong className='text-cosmic-latte'>0</strong> Following
+                  <strong className='text-cosmic-latte'>
+                    {user.followingCount}
+                  </strong>{' '}
+                  Following
+                </span>
+                <span className='text-zinc-300'>
+                  <strong className='text-cosmic-latte'>
+                    {user.recommendationsCount}
+                  </strong>{' '}
+                  Recommendations
                 </span>
               </div>
 
@@ -456,6 +517,19 @@ export default function ProfileClient({
           </section>
         </div>
       </div>
+
+      {/* Profile Edit Modal */}
+      {isEditingProfile && currentUser.id && (
+        <ProfileEditForm
+          user={{
+            id: currentUser.id,
+            name: currentUser.name,
+            bio: currentUser.bio,
+          }}
+          onCancel={handleCancelEdit}
+          onSave={handleSaveProfile}
+        />
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { auth } from '@/../auth';
 export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user) {
-    redirect('/auth/signin');
+    redirect('/signin');
   }
 
   redirect(`/profile/${session.user.id}`);
