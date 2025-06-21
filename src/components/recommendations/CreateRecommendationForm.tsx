@@ -3,16 +3,18 @@ import { useState } from 'react';
 import { CreateRecommendationRequest } from '@/types/recommendation';
 import { Album } from '@/types/album';
 import { useCreateRecommendationMutation, getErrorMessage } from '@/hooks';
+import { sanitizeArtistName } from '@/lib/utils';
 
-// Helper function to format artists naturally
+// Helper function to format artists naturally with sanitization
 function formatArtists(artists: Array<{ name: string }> | undefined): string {
   if (!artists || artists.length === 0) return 'Unknown Artist';
-  if (artists.length === 1) return artists[0].name;
-  if (artists.length === 2) return `${artists[0].name} & ${artists[1].name}`;
+  if (artists.length === 1) return sanitizeArtistName(artists[0].name);
+  if (artists.length === 2)
+    return `${sanitizeArtistName(artists[0].name)} & ${sanitizeArtistName(artists[1].name)}`;
 
   const lastArtist = artists[artists.length - 1];
   const otherArtists = artists.slice(0, -1);
-  return `${otherArtists.map(a => a.name).join(', ')} & ${lastArtist.name}`;
+  return `${otherArtists.map(a => sanitizeArtistName(a.name)).join(', ')} & ${sanitizeArtistName(lastArtist.name)}`;
 }
 
 interface CreateRecommendationFormProps {

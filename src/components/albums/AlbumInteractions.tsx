@@ -4,6 +4,9 @@ import AddToCollectionButton from '@/components/collections/AddToCollectionButto
 import Toast, { useToast } from '@/components/ui/toast';
 import { useNavigation } from '@/hooks/useNavigation';
 import { Album } from '@/types/album';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { sanitizeArtistName } from '@/lib/utils';
 
 interface AlbumInteractionsProps {
   album: Album;
@@ -12,6 +15,7 @@ interface AlbumInteractionsProps {
 export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
   const { navigateToArtist } = useNavigation();
   const { toast, showToast, hideToast } = useToast();
+  const router = useRouter();
 
   const handleArtistClick = async (artistId: string, artistName: string) => {
     if (!artistId) {
@@ -20,41 +24,38 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
     }
 
     try {
-      await navigateToArtist(artistId, {
-        onSuccess: () => {
-          // Optionally show success feedback or handle side effects
-        },
-        onError: error => {
-          showToast(
-            `Failed to navigate to ${artistName}: ${error.message}`,
-            'error'
-          );
-        },
-      });
+      // Navigate to artist page
+      router.push(`/artists/${artistId}`);
     } catch (error) {
-      // Error is already handled by the onError callback
       console.error('Navigation error:', error);
+      showToast(
+        `Failed to navigate to ${artistName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error'
+      );
     }
   };
 
   return (
     <>
-      {/* Artist Links */}
-      <div className='flex flex-wrap items-center gap-2'>
-        {album.artists?.map((artist, index) => (
-          <span key={artist.id || index}>
-            <button
-              onClick={() => handleArtistClick(artist.id, artist.name)}
-              className='text-2xl text-zinc-300 hover:text-white hover:underline transition-colors cursor-pointer'
-            >
-              {artist.name}
-            </button>
-            {index < (album.artists?.length || 0) - 1 && (
-              <span className='text-zinc-500 mx-1'>,</span>
-            )}
-          </span>
-        )) || <span className='text-2xl text-zinc-300'>Unknown Artist</span>}
-      </div>
+      {/* Artist buttons */}
+      {album.artists && album.artists.length > 0 && (
+        <div className='space-y-2'>
+          <h3 className='text-sm font-medium text-zinc-400'>Artists</h3>
+          <div className='flex flex-wrap gap-2'>
+            {album.artists.map(artist => (
+              <Button
+                key={artist.id}
+                variant='outline'
+                size='sm'
+                onClick={() => handleArtistClick(artist.id, artist.name)}
+                className='bg-zinc-800 border-zinc-600 hover:bg-zinc-700 text-white'
+              >
+                {sanitizeArtistName(artist.name)}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className='flex flex-wrap gap-4 mb-8 justify-center lg:justify-start'>

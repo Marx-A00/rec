@@ -1,49 +1,67 @@
 'use client';
 
+import React from 'react';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Button } from '@/components/ui/button';
 import { Album } from '@/types/album';
+import { sanitizeArtistName } from '@/lib/utils';
 
 interface CollageGridProps {
-  selectedAlbums: (Album | null)[];
+  selectedAlbums: Album[];
+  gridSize: number;
+  onAlbumClick?: (index: number) => void;
   onRemoveAlbum: (index: number) => void;
 }
 
 export default function CollageGrid({
   selectedAlbums,
+  gridSize,
+  onAlbumClick,
   onRemoveAlbum,
 }: CollageGridProps) {
+  // Create a grid array with proper size
+  const gridItems = Array.from({ length: gridSize * gridSize }, (_, index) => {
+    const album = selectedAlbums[index];
+    return album || null;
+  });
+
   return (
-    <div className='bg-zinc-900 rounded-lg p-6'>
-      <h3 className='text-xl font-semibold text-cosmic-latte mb-4'>
-        5×5 Album Grid
+    <div className='bg-zinc-900 rounded-lg p-4'>
+      <h3 className='text-lg font-semibold text-white mb-4'>
+        Collage Preview ({gridSize}×{gridSize})
       </h3>
 
-      {/* Grid for download generation */}
       <div
-        id='collage-grid'
-        className='grid grid-cols-5 gap-1 bg-black p-4 rounded-lg'
-        style={{ width: '500px', height: '500px' }} // Fixed size for consistent export
+        className={`grid gap-1 w-full max-w-md mx-auto`}
+        style={{
+          gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
+          aspectRatio: '1',
+        }}
       >
-        {selectedAlbums.map((album, index) => (
+        {gridItems.map((album, index) => (
           <div
             key={index}
-            className='relative aspect-square bg-zinc-800 rounded border-2 border-zinc-700 overflow-hidden group'
+            className='aspect-square bg-zinc-800 rounded cursor-pointer hover:opacity-80 transition-opacity'
+            onClick={() => onAlbumClick?.(index)}
           >
             {album ? (
               <>
                 <AlbumImage
-                  src={album.image.url}
-                  alt={`${album.artists?.[0]?.name} - ${album.title}`}
-                  width={96}
-                  height={96}
-                  className='w-full h-full object-cover'
+                  src={album.image?.url}
+                  alt={`${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')} - ${album.title}`}
+                  width={120}
+                  height={120}
+                  className='w-full h-full object-cover rounded'
+                  sizes='120px'
                 />
                 <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex items-center justify-center'>
                   <Button
                     variant='ghost'
                     size='sm'
-                    onClick={() => onRemoveAlbum(index)}
+                    onClick={e => {
+                      e.stopPropagation();
+                      onRemoveAlbum(index);
+                    }}
                     className='opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 bg-black bg-opacity-75 rounded-full w-8 h-8 p-0'
                   >
                     ×
@@ -51,10 +69,8 @@ export default function CollageGrid({
                 </div>
               </>
             ) : (
-              <div className='w-full h-full flex items-center justify-center border-2 border-dashed border-zinc-600'>
-                <span className='text-zinc-500 text-xs font-medium'>
-                  {index + 1}
-                </span>
+              <div className='w-full h-full flex items-center justify-center text-zinc-600'>
+                <span className='text-xs'>+</span>
               </div>
             )}
           </div>

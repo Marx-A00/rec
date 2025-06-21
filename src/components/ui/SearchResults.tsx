@@ -5,6 +5,7 @@ import AlbumImage from '@/components/ui/AlbumImage';
 import { useEffect, useRef } from 'react';
 
 import { UnifiedSearchResult } from '@/types/search';
+import { sanitizeArtistName } from '@/lib/utils';
 
 interface SearchResultsProps {
   results: UnifiedSearchResult[];
@@ -124,10 +125,14 @@ export default function SearchResults({
                 index === highlightedIndex ? 'text-green-300' : 'text-white'
               }`}
             >
-              {result.title}
+              {result.type === 'artist'
+                ? sanitizeArtistName(result.title)
+                : result.title}
             </h3>
             <p className='text-zinc-400 text-sm truncate'>
-              {result.subtitle || result.artist}
+              {result.subtitle
+                ? sanitizeArtistName(result.subtitle)
+                : sanitizeArtistName(result.artist || '')}
             </p>
             {result.releaseDate && (
               <p className='text-zinc-500 text-xs'>{result.releaseDate}</p>

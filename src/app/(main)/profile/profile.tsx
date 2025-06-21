@@ -9,6 +9,7 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
+import FollowButton from '@/components/profile/FollowButton';
 
 interface ProfileClientProps {
   user: {
@@ -47,6 +48,10 @@ export default function ProfileClient({
   // Add state for profile editing
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [currentUser, setCurrentUser] = useState(user);
+
+  // State for optimistic follow count updates
+  const [followersCount, setFollowersCount] = useState(user.followersCount);
+  const [followingCount, setFollowingCount] = useState(user.followingCount);
 
   // Strategic prefetching for likely navigation targets
   useEffect(() => {
@@ -119,6 +124,15 @@ export default function ProfileClient({
       bio: updatedUser.bio,
     }));
     setIsEditingProfile(false);
+  };
+
+  // Handle follow status changes with optimistic updates
+  const handleFollowChange = (
+    isFollowing: boolean,
+    newCounts: { followersCount: number; followingCount: number }
+  ) => {
+    // Update the follower count optimistically
+    setFollowersCount(prev => prev + newCounts.followersCount);
   };
 
   // Add escape key listener
@@ -295,16 +309,23 @@ export default function ProfileClient({
                     </div>
                   )}
                 </div>
-                {isOwnProfile && (
-                  <div className='flex-shrink-0'>
+                <div className='flex-shrink-0 flex gap-3'>
+                  {isOwnProfile ? (
                     <button
                       onClick={handleEditProfile}
                       className='bg-zinc-800 text-cosmic-latte px-4 py-2 rounded-lg font-medium hover:bg-zinc-700 transition-colors border border-zinc-600'
                     >
                       ✏️ Edit Profile
                     </button>
-                  </div>
-                )}
+                  ) : (
+                    currentUser.id && (
+                      <FollowButton
+                        userId={currentUser.id}
+                        onFollowChange={handleFollowChange}
+                      />
+                    )
+                  )}
+                </div>
               </div>
 
               <p className='mb-6 max-w-md text-zinc-300'>
@@ -313,13 +334,13 @@ export default function ProfileClient({
               <div className='flex justify-center md:justify-start gap-6 text-sm'>
                 <span className='text-zinc-300'>
                   <strong className='text-cosmic-latte'>
-                    {user.followersCount}
+                    {followersCount}
                   </strong>{' '}
                   Followers
                 </span>
                 <span className='text-zinc-300'>
                   <strong className='text-cosmic-latte'>
-                    {user.followingCount}
+                    {followingCount}
                   </strong>{' '}
                   Following
                 </span>

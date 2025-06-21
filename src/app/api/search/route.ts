@@ -12,6 +12,7 @@ import {
   SearchResultItem,
   ApiErrorResponse,
 } from '@/types/api';
+import { sanitizeArtistName } from '@/lib/utils';
 
 const log = console.log;
 

@@ -7,6 +7,7 @@ import DiscographyTab from '@/components/artistDetails/tabs/DiscographyTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getArtistDetails } from '@/lib/api/artists';
 import { artistParamsSchema } from '@/lib/validations/params';
+import { sanitizeArtistName } from '@/lib/utils';
 
 interface ArtistDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -54,7 +55,10 @@ export default async function ArtistDetailsPage({
             <div className='w-full max-w-md mx-auto'>
               <AlbumImage
                 src={artist.image?.url}
-                alt={artist.image?.alt || `${artist.title} artist photo`}
+                alt={
+                  artist.image?.alt ||
+                  `${sanitizeArtistName(artist.title)} artist photo`
+                }
                 width={400}
                 height={400}
                 className='w-full aspect-square object-cover rounded-lg shadow-2xl'
@@ -68,7 +72,9 @@ export default async function ArtistDetailsPage({
           {/* Artist Info */}
           <div className='lg:col-span-2 space-y-6'>
             <div>
-              <h1 className='text-4xl font-bold mb-2'>{artist.title}</h1>
+              <h1 className='text-4xl font-bold mb-2'>
+                {sanitizeArtistName(artist.title)}
+              </h1>
               {artist.realname && (
                 <p className='text-lg text-zinc-400 mb-4'>
                   Real name: {artist.realname}
@@ -111,7 +117,7 @@ export default async function ArtistDetailsPage({
                         key={index}
                         className='bg-zinc-800 text-zinc-300 px-3 py-1 rounded-full text-sm'
                       >
-                        {alias.name}
+                        {sanitizeArtistName(alias.name)}
                       </span>
                     ))}
                   </div>

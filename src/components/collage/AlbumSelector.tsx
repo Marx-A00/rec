@@ -2,125 +2,97 @@
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { useState } from 'react';
-
-import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 import { Album } from '@/types/album';
+import { sanitizeArtistName } from '@/lib/utils';
 
 interface AlbumSelectorProps {
-  userCollection: Album[];
-  searchResults: Album[];
-  searchQuery: string;
-  isSearching: boolean;
+  albums: Album[];
+  selectedAlbums: Album[];
   onAlbumSelect: (album: Album) => void;
-  onSearch: (query: string) => void;
-  onSearchQueryChange: (query: string) => void;
+  maxSelection: number;
 }
 
 export default function AlbumSelector({
-  userCollection,
-  searchResults,
-  searchQuery,
-  isSearching,
+  albums,
+  selectedAlbums,
   onAlbumSelect,
-  onSearch,
-  onSearchQueryChange,
+  maxSelection,
 }: AlbumSelectorProps) {
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
-    null
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredAlbums = albums.filter(
+    album =>
+      album.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      album.artists?.[0]?.name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      album.year?.toString().includes(searchTerm)
   );
 
-  const handleSearchInput = (value: string) => {
-    onSearchQueryChange(value);
+  const isSelected = (album: Album) =>
+    selectedAlbums.some(selected => selected.id === album.id);
 
-    // Debounce search
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-
-    const timeout = setTimeout(() => {
-      onSearch(value);
-    }, 300);
-
-    setSearchTimeout(timeout);
-  };
-
-  const AlbumCard = ({ album }: { album: Album }) => (
-    <div
-      onClick={() => onAlbumSelect(album)}
-      className='relative group cursor-pointer bg-zinc-800 rounded-lg overflow-hidden hover:bg-zinc-700 transition-colors'
-    >
-      <AlbumImage
-        src={album.image.url}
-        alt={`${album.title} by ${album.artists?.[0]?.name}`}
-        width={128}
-        height={128}
-        className='w-full aspect-square object-cover'
-      />
-      <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 flex items-center justify-center'>
-        <div className='opacity-0 group-hover:opacity-100 text-cosmic-latte text-xs text-center p-2'>
-          <p className='font-medium truncate mb-1'>{album.title}</p>
-          <p className='text-zinc-300 truncate'>{album.artists?.[0]?.name}</p>
-        </div>
-      </div>
-      <div className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity'>
-        <div className='bg-emeraled-green text-black rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold'>
-          +
-        </div>
-      </div>
-    </div>
-  );
+  const canSelect = selectedAlbums.length < maxSelection;
 
   return (
     <div className='space-y-6'>
       {/* Search */}
-      <div>
-        <h3 className='text-lg font-semibold text-cosmic-latte mb-3'>
-          Search Albums
-        </h3>
-        <Input
+      <div className='relative'>
+        <Search className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
+        <input
           type='text'
-          placeholder='Search for albums...'
-          value={searchQuery}
-          onChange={e => handleSearchInput(e.target.value)}
-          className='bg-zinc-800 border-zinc-700 text-cosmic-latte placeholder-zinc-500'
+          placeholder='Search albums...'
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className='w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
         />
-        {isSearching && (
-          <p className='text-zinc-400 text-sm mt-2'>Searching...</p>
-        )}
       </div>
 
-      {/* Search Results */}
-      {searchQuery && (
-        <div>
-          <h4 className='text-md font-medium text-cosmic-latte mb-3'>
-            Search Results ({searchResults.length})
-          </h4>
-          <div className='grid grid-cols-3 gap-3 max-h-64 overflow-y-auto'>
-            {searchResults.map(album => (
-              <AlbumCard key={album.id} album={album} />
-            ))}
+      {/* Album Grid */}
+      <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-96 overflow-y-auto'>
+        {filteredAlbums.map(album => (
+          <div
+            key={album.id}
+            onClick={() => {
+              if (isSelected(album) || canSelect) {
+                onAlbumSelect(album);
+              }
+            }}
+            className={`
+              cursor-pointer transition-all duration-200 rounded-lg p-2
+              ${
+                isSelected(album)
+                  ? 'bg-blue-500/20 ring-2 ring-blue-500'
+                  : canSelect
+                    ? 'hover:bg-zinc-800/50'
+                    : 'opacity-50 cursor-not-allowed'
+              }
+            `}
+          >
+            <AlbumImage
+              src={album.image?.url}
+              alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}
+              width={120}
+              height={120}
+              className='w-full aspect-square rounded-lg object-cover mb-2'
+              sizes='120px'
+            />
+            <div className='text-center'>
+              <p className='text-white text-sm font-medium truncate'>
+                {album.title}
+              </p>
+              <p className='text-zinc-300 text-xs truncate'>
+                {sanitizeArtistName(
+                  album.artists?.[0]?.name || 'Unknown Artist'
+                )}
+              </p>
+              {album.year && (
+                <p className='text-zinc-400 text-xs'>{album.year}</p>
+              )}
+            </div>
           </div>
-          {searchResults.length === 0 && !isSearching && searchQuery && (
-            <p className='text-zinc-500 text-center py-4'>No albums found.</p>
-          )}
-        </div>
-      )}
-
-      {/* User Collection */}
-      <div>
-        <h3 className='text-lg font-semibold text-cosmic-latte mb-3'>
-          My Collection ({userCollection.length})
-        </h3>
-        <div className='grid grid-cols-3 gap-3 max-h-96 overflow-y-auto'>
-          {userCollection.map(album => (
-            <AlbumCard key={album.id} album={album} />
-          ))}
-        </div>
-        {userCollection.length === 0 && (
-          <p className='text-zinc-500 text-center py-4'>
-            No albums in your collection yet.
-          </p>
-        )}
+        ))}
       </div>
     </div>
   );

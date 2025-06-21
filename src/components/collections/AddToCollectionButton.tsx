@@ -1,28 +1,31 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
-
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Album } from '@/types/album';
+import { useToast } from '@/components/ui/toast';
+import { sanitizeArtistName } from '@/lib/utils';
 
 interface AddToCollectionButtonProps {
   album: Album;
-  onSuccess?: (message: string) => void;
-  onError?: (message: string) => void;
+  size?: 'sm' | 'default' | 'lg';
+  variant?: 'default' | 'outline' | 'ghost';
 }
 
 export default function AddToCollectionButton({
   album,
-  onSuccess,
-  onError: _onError,
+  size = 'sm',
+  variant = 'outline',
 }: AddToCollectionButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const { showToast } = useToast();
 
   const handleAddToCollection = async () => {
     setIsLoading(true);
 
     try {
-      const addResponse = await fetch(
+      const response = await fetch(
         `/api/albums/${album.id}/add-to-collection`,
         {
           method: 'POST',
@@ -30,49 +33,40 @@ export default function AddToCollectionButton({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            createNew: false,
+            albumId: album.id,
             albumTitle: album.title,
-            albumArtist: album.artists?.[0]?.name,
-            albumImageUrl: album.image.url,
-            albumYear:
-              album.year?.toString() ||
-              album.releaseDate?.substring(0, 4) ||
-              null,
+            albumArtist: sanitizeArtistName(
+              album.artists?.[0]?.name || 'Unknown Artist'
+            ),
+            albumYear: album.year,
+            albumImageUrl: album.image?.url,
           }),
         }
       );
 
-      const data = await addResponse.json();
-
-      if (!addResponse.ok) {
-        throw new Error(data.error || 'Failed to add album to collection');
+      if (!response.ok) {
+        throw new Error('Failed to add to collection');
       }
 
-      onSuccess?.(data.message || `"${album.title}" added to your collection!`);
+      showToast('Added to your collection!', 'success');
     } catch (error) {
       console.error('Error adding to collection:', error);
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to add album';
-      _onError?.(errorMessage);
+      showToast('Failed to add to collection', 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <button
+    <Button
+      size={size}
+      variant={variant}
       onClick={handleAddToCollection}
       disabled={isLoading}
-      className='flex items-center justify-center px-4 py-2 bg-emeraled-green hover:bg-emeraled-green/80 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+      className='flex items-center gap-1'
     >
-      {isLoading ? (
-        <>
-          <Loader2 className='h-4 w-4 mr-2 animate-spin' />
-          Adding...
-        </>
-      ) : (
-        'Add to Collection'
-      )}
-    </button>
+      <Plus className='h-4 w-4' />
+      {isLoading ? 'Adding...' : 'Add to Collection'}
+    </Button>
   );
 }

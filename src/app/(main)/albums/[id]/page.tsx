@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BackButton from '@/components/ui/BackButton';
 import { getAlbumDetails } from '@/lib/api/albums';
 import { albumParamsSchema } from '@/lib/validations/params';
+import { sanitizeArtistName } from '@/lib/utils';
 
 interface AlbumDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -56,7 +57,7 @@ export default async function AlbumDetailsPage({
                 src={album.image?.url}
                 alt={
                   album.image?.alt ||
-                  `${album.title} by ${album.artists?.[0]?.name}`
+                  `${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`
                 }
                 width={400}
                 height={400}
@@ -113,7 +114,9 @@ export default async function AlbumDetailsPage({
                 <div className='md:col-span-2'>
                   <h3 className='text-lg font-semibold mb-2'>Artists</h3>
                   <p className='text-zinc-300'>
-                    {album.artists.map(artist => artist.name).join(', ')}
+                    {album.artists
+                      .map(artist => sanitizeArtistName(artist.name))
+                      .join(', ')}
                   </p>
                 </div>
               )}

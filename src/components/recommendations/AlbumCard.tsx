@@ -1,5 +1,6 @@
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Album } from '@/types/album';
+import { sanitizeArtistName } from '@/lib/utils';
 
 interface AlbumCardProps {
   album: Album | null;
@@ -33,7 +34,7 @@ export default function AlbumCard({
               src={album.image.url}
               alt={
                 album.image.alt ||
-                `${album.title} by ${album.artists?.[0]?.name}`
+                `${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`
               }
               width={400}
               height={400}
@@ -43,7 +44,9 @@ export default function AlbumCard({
           </div>
           <div className='text-center'>
             <div className='font-bold text-white'>{album.title}</div>
-            <div className='text-gray-300'>{album.artists?.[0]?.name}</div>
+            <div className='text-gray-300'>
+              {sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}
+            </div>
             {album.year && (
               <div className='text-sm text-gray-400'>{album.year}</div>
             )}
