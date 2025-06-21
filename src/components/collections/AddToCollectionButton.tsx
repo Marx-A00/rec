@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { Plus } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Album } from '@/types/album';
 import { useToast } from '@/components/ui/toast';
-import { sanitizeArtistName } from '@/lib/utils';
+import { useAddToCollectionMutation } from '@/hooks';
 
 interface AddToCollectionButtonProps {
   album: Album;
@@ -18,43 +18,15 @@ export default function AddToCollectionButton({
   size = 'sm',
   variant = 'outline',
 }: AddToCollectionButtonProps) {
-  const [isLoading, setIsLoading] = useState(false);
   const { showToast } = useToast();
 
-  const handleAddToCollection = async () => {
-    setIsLoading(true);
+  const addToCollectionMutation = useAddToCollectionMutation({
+    onSuccess: message => showToast(message, 'success'),
+    onError: message => showToast(message, 'error'),
+  });
 
-    try {
-      const response = await fetch(
-        `/api/albums/${album.id}/add-to-collection`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            albumId: album.id,
-            albumTitle: album.title,
-            albumArtist: sanitizeArtistName(
-              album.artists?.[0]?.name || 'Unknown Artist'
-            ),
-            albumYear: album.year,
-            albumImageUrl: album.image?.url,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to add to collection');
-      }
-
-      showToast('Added to your collection!', 'success');
-    } catch (error) {
-      console.error('Error adding to collection:', error);
-      showToast('Failed to add to collection', 'error');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleAddToCollection = () => {
+    addToCollectionMutation.mutate(album);
   };
 
   return (
@@ -62,11 +34,11 @@ export default function AddToCollectionButton({
       size={size}
       variant={variant}
       onClick={handleAddToCollection}
-      disabled={isLoading}
+      disabled={addToCollectionMutation.isPending}
       className='flex items-center gap-1'
     >
       <Plus className='h-4 w-4' />
-      {isLoading ? 'Adding...' : 'Add to Collection'}
+      {addToCollectionMutation.isPending ? 'Adding...' : 'Add to Collection'}
     </Button>
   );
 }

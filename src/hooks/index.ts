@@ -9,9 +9,13 @@ export { useAlbumDetailsQuery } from './useAlbumDetailsQuery';
 export { useMastersQuery } from './useMastersQuery';
 export { useRecommendationsQuery } from './useRecommendationsQuery';
 export { useAlbumSearchQuery } from './useAlbumSearchQuery';
+export { useUnifiedSearchQuery } from './useUnifiedSearchQuery';
 
 // Mutation Hooks
 export { useCreateRecommendationMutation } from './useCreateRecommendationMutation';
+export { useAddToCollectionMutation } from './useAddToCollectionMutation';
+export { useFollowUserMutation } from './useFollowUserMutation';
+export { useUpdateUserProfileMutation } from './useUpdateUserProfileMutation';
 
 // Non-Query Hooks (State Management)
 export { useAlbumModal } from './useAlbumModal';
@@ -29,7 +33,7 @@ export {
   queryKeys,
 } from '@/lib/queries';
 
-// Legacy exports for backward compatibility (to be removed after refactoring)
-export { useUsers } from './useUsers';
-export { useAlbumDetails } from './useAlbumDetails';
-export { useMasters } from './useMasters';
+// All legacy hooks have been migrated to TanStack Query equivalents
+// useUsers -> useUsersQuery
+// useAlbumDetails -> useAlbumDetailsQuery
+// useMasters -> useMastersQuery

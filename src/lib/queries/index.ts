@@ -52,6 +52,12 @@ export const queryKeys = {
   // Releases
   releases: () => ['releases'] as const,
   release: (id: string) => ['releases', id] as const,
+
+  // Search (unified search across types)
+  search: (query: string, type?: string, limit?: number) => {
+    const baseKey = ['search', query, type || 'all'] as const;
+    return limit ? ([...baseKey, limit] as const) : baseKey;
+  },
 } as const;
 
 // ========================================

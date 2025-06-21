@@ -1,11 +1,12 @@
 'use client';
 
-import AddToCollectionButton from '@/components/collections/AddToCollectionButton';
+import { useRouter } from 'next/navigation';
+
+import { Button } from '@/components/ui/button';
 import Toast, { useToast } from '@/components/ui/toast';
+import AddToCollectionButton from '@/components/collections/AddToCollectionButton';
 import { useNavigation } from '@/hooks/useNavigation';
 import { Album } from '@/types/album';
-import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
 import { sanitizeArtistName } from '@/lib/utils';
 
 interface AlbumInteractionsProps {
@@ -62,11 +63,7 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
         <button className='bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors'>
           Make Rec
         </button>
-        <AddToCollectionButton
-          album={album}
-          onSuccess={(message: string) => showToast(message, 'success')}
-          onError={(message: string) => showToast(message, 'error')}
-        />
+        <AddToCollectionButton album={album} />
         <button className='bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-3 rounded-lg font-medium transition-colors'>
           Other
         </button>

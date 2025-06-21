@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
+
 import AlbumImage from '@/components/ui/AlbumImage';
+import { useUnifiedSearchQuery } from '@/hooks';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
 
@@ -8,45 +10,35 @@ interface AlbumSearchProps {
   onAlbumSelect: (album: Album) => void;
   placeholder?: string;
   label?: string;
+  disabled?: boolean;
 }
 
 export default function AlbumSearch({
   onAlbumSelect,
   placeholder = 'Search for albums...',
   label = 'Search Albums',
+  disabled = false,
 }: AlbumSearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Album[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
+  // Use TanStack Query for search
+  const {
+    data: searchResponse,
+    isLoading,
+    error,
+  } = useUnifiedSearchQuery(searchQuery, {
+    type: 'album',
+    limit: 10,
+    minQueryLength: 2,
+    enabled: !disabled,
+  });
 
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `/api/search?q=${encodeURIComponent(query)}&type=album&limit=10`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data.data || []);
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Extract albums from the response (handles both formats)
+  const searchResults = searchResponse?.data || [];
 
   const handleInputChange = (value: string) => {
     setSearchQuery(value);
-    // Debounce search
-    const timeoutId = setTimeout(() => handleSearch(value), 300);
-    return () => clearTimeout(timeoutId);
+    // TanStack Query handles debouncing automatically
   };
 
   return (
@@ -62,10 +54,17 @@ export default function AlbumSearch({
             placeholder={placeholder}
             value={searchQuery}
             onChange={e => handleInputChange(e.target.value)}
-            className='w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
+            disabled={disabled}
+            className='w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
           />
         </div>
       </div>
+
+      {error && (
+        <div className='text-center py-4'>
+          <p className='text-red-400'>Search failed. Please try again.</p>
+        </div>
+      )}
 
       {isLoading && (
         <div className='text-center py-4'>

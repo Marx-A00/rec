@@ -1,11 +1,11 @@
 'use client';
 
 import { Calendar, Disc, ChevronDown } from 'lucide-react';
-import AlbumImage from '@/components/ui/AlbumImage';
 
+import AlbumImage from '@/components/ui/AlbumImage';
 import AlbumModal from '@/components/ui/AlbumModal';
 import { useAlbumModal } from '@/hooks/useAlbumModal';
-import { useMasters } from '@/hooks/useMasters';
+import { useMastersQuery } from '@/hooks/useMastersQuery';
 import { Release } from '@/types/album';
 
 export default function DiscographyTab({ artistId }: { artistId: string }) {
@@ -22,7 +22,7 @@ export default function DiscographyTab({ artistId }: { artistId: string }) {
     totalItems,
     loadedCount,
     loadMoreMasters,
-  } = useMasters(artistId);
+  } = useMastersQuery(artistId);
 
   if (isLoading) {
     return (

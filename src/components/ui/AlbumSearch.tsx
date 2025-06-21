@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { useNavigation } from '@/hooks/useNavigation';
+import { useUnifiedSearchQuery } from '@/hooks';
 import { UnifiedSearchResult } from '@/types/search';
 
 import SearchBar from './SearchBar';
@@ -19,9 +20,7 @@ export default function AlbumSearch({
   placeholder = 'Search albums, artists, or genres...',
   showResults = true,
 }: AlbumSearchProps) {
-  const [searchResults, setSearchResults] = useState<UnifiedSearchResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [showResultsDropdown, setShowResultsDropdown] = useState(false);
   // New state for keyboard navigation
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -29,41 +28,41 @@ export default function AlbumSearch({
     useNavigation();
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  const searchAlbums = async (query: string) => {
+  // Use TanStack Query for unified search
+  const {
+    data: searchResponse,
+    isLoading,
+    error: queryError,
+  } = useUnifiedSearchQuery(searchQuery, {
+    type: 'all',
+    minQueryLength: 2,
+  });
+
+  // Extract results from response and handle local error state
+  const searchResults = searchResponse?.results || [];
+  const [localError, setLocalError] = useState<string | null>(null);
+  const error = queryError ? 'Search failed. Please try again.' : localError;
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
     // Clear results if query is empty
     if (!query.trim()) {
-      setSearchResults([]);
       setShowResultsDropdown(false);
       setHighlightedIndex(-1); // Reset highlight
       return;
     }
 
-    // Don't search if already loading
-    if (isLoading) return;
-
     console.log('Searching for:', query);
-    setIsLoading(true);
-    setError(null);
+    setLocalError(null);
     setHighlightedIndex(-1); // Reset highlight when search changes
+    setShowResultsDropdown(true);
+  };
 
-    try {
-      const response = await fetch(
-        `/api/search?query=${encodeURIComponent(query)}&type=all`
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to search');
-      }
-
-      const data = await response.json();
-      // Show all result types
-      const allResults = data.results || [];
-      setSearchResults(allResults);
-      setShowResultsDropdown(true);
-
+  // Prefetch results when they become available
+  useEffect(() => {
+    if (searchResults.length > 0) {
       // Prefetch the first few results for better performance
-      allResults.slice(0, 3).forEach((result: UnifiedSearchResult) => {
+      searchResults.slice(0, 3).forEach((result: UnifiedSearchResult) => {
         if (result.type === 'album') {
           prefetchRoute(`/albums/${result.id}`);
         } else if (result.type === 'artist') {
@@ -72,13 +71,8 @@ export default function AlbumSearch({
           prefetchRoute(`/labels/${result.id}`);
         }
       });
-    } catch (err) {
-      console.error('Search error:', err);
-      setError(err instanceof Error ? err.message : 'Search failed');
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [searchResults, prefetchRoute]);
 
   const handleResultSelect = async (result: UnifiedSearchResult) => {
     setShowResultsDropdown(false);
@@ -90,7 +84,7 @@ export default function AlbumSearch({
         // queryClient.setQueryData(['album', result.id], result);
         await navigateToAlbum(result.id, {
           onError: error => {
-            setError(`Failed to navigate to album: ${error.message}`);
+            setLocalError(`Failed to navigate to album: ${error.message}`);
           },
         });
       } else if (result.type === 'artist') {
@@ -98,7 +92,7 @@ export default function AlbumSearch({
         sessionStorage.setItem(`artist-${result.id}`, JSON.stringify(result));
         await navigateToArtist(result.id, {
           onError: error => {
-            setError(`Failed to navigate to artist: ${error.message}`);
+            setLocalError(`Failed to navigate to artist: ${error.message}`);
           },
         });
       } else if (result.type === 'label') {
@@ -106,13 +100,13 @@ export default function AlbumSearch({
         sessionStorage.setItem(`label-${result.id}`, JSON.stringify(result));
         await navigateToLabel(result.id, {
           onError: error => {
-            setError(`Failed to navigate to label: ${error.message}`);
+            setLocalError(`Failed to navigate to label: ${error.message}`);
           },
         });
       } else {
         // For unknown types, try to handle as album for now
         console.log('Unknown result type:', result.type, result);
-        setError('Unknown result type, please try a different search');
+        setLocalError('Unknown result type, please try a different search');
       }
     } catch (navigationError) {
       console.error('Navigation error:', navigationError);
@@ -121,9 +115,9 @@ export default function AlbumSearch({
   };
 
   const handleClear = () => {
-    setSearchResults([]);
+    setSearchQuery('');
     setShowResultsDropdown(false);
-    setError(null);
+    setLocalError(null);
     setHighlightedIndex(-1);
   };
 
@@ -182,7 +176,7 @@ export default function AlbumSearch({
     >
       <SearchBar
         placeholder={placeholder}
-        onSearch={searchAlbums}
+        onSearch={handleSearch}
         onClear={handleClear}
         debounceMs={500}
         resultsCount={searchResults.length}
