@@ -235,35 +235,16 @@ export default function AlbumModal({
         {/* Zoomed Album Cover */}
         <div className='flex-shrink-0'>
           <div className='w-80 h-80 lg:w-96 lg:h-96 bg-zinc-800 rounded-lg border-2 border-zinc-700 shadow-2xl overflow-hidden relative'>
-            {/* Low quality image (always shown) */}
             <AlbumImage
-              src={getImageUrl()}
+              src={getHighQualityImageUrl()}
               alt={`${getTitle()} by ${getArtist()}`}
               width={384}
               height={384}
               priority
-              className={`w-full h-full object-cover ${
-                highQualityImageUrl ? 'opacity-30' : 'opacity-100'
-              } transition-opacity duration-500`}
+              className='w-full h-full object-cover'
               sizes='(max-width: 1024px) 320px, 384px'
               style={{ aspectRatio: '1/1' }}
             />
-
-            {/* High quality image (shown when loaded) */}
-            {highQualityImageUrl && (
-              <div className='absolute inset-0 z-10'>
-                <AlbumImage
-                  src={getHighQualityImageUrl() || ''}
-                  alt={`${getTitle()} by ${getArtist()} (HD)`}
-                  width={384}
-                  height={384}
-                  priority
-                  className='w-full h-full object-cover'
-                  sizes='(max-width: 1024px) 320px, 384px'
-                  style={{ aspectRatio: '1/1' }}
-                />
-              </div>
-            )}
           </div>
         </div>
 

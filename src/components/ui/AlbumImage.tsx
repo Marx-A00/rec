@@ -46,7 +46,13 @@ export default function AlbumImage({
       setIsLoading(true);
       setHasError(false);
       setRetryCount(0);
+    } else if (src === null || src === undefined) {
+      // Show loading state when src is null (waiting for URL)
+      setImgSrc(null);
+      setIsLoading(true);
+      setHasError(false);
     } else {
+      // Show fallback for invalid URLs
       setImgSrc(FALLBACK_IMAGE);
       setIsLoading(false);
       setHasError(false);
