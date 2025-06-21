@@ -8,11 +8,14 @@ export { useUsersQuery } from './useUsersQuery';
 export { useAlbumDetailsQuery } from './useAlbumDetailsQuery';
 export { useMastersQuery } from './useMastersQuery';
 export { useRecommendationsQuery } from './useRecommendationsQuery';
+export { useRecommendationQuery } from './useRecommendationQuery';
 export { useAlbumSearchQuery } from './useAlbumSearchQuery';
 export { useUnifiedSearchQuery } from './useUnifiedSearchQuery';
 
 // Mutation Hooks
 export { useCreateRecommendationMutation } from './useCreateRecommendationMutation';
+export { useUpdateRecommendationMutation } from './useUpdateRecommendationMutation';
+export { useDeleteRecommendationMutation } from './useDeleteRecommendationMutation';
 export { useAddToCollectionMutation } from './useAddToCollectionMutation';
 export { useFollowUserMutation } from './useFollowUserMutation';
 export { useUpdateUserProfileMutation } from './useUpdateUserProfileMutation';

@@ -74,7 +74,7 @@ export default function RecommendationModal({
 
   return (
     <div
-      className={`fixed inset-0 bg-black flex items-center justify-center z-50 p-4 transition-all duration-300 ${
+      className={`fixed inset-0 bg-black flex items-center justify-center z-[100] p-4 transition-all duration-300 ${
         isExiting ? 'bg-opacity-0' : 'bg-opacity-90'
       }`}
       style={{
@@ -96,7 +96,7 @@ export default function RecommendationModal({
         {/* Close X button */}
         <button
           onClick={onClose}
-          className='absolute top-4 right-4 z-60 text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110'
+          className='absolute top-4 right-4 z-[110] text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110'
         >
           <svg
             className='w-6 h-6'

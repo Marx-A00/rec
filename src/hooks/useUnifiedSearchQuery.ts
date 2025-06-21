@@ -20,7 +20,7 @@ export interface UnifiedSearchResponse {
 
 const fetchUnifiedSearch = async (
   query: string,
-  type: 'all' | 'album' | 'artist' | 'label' = 'all',
+  type: 'all' | 'albums' | 'artists' | 'labels' | 'tracks' = 'all',
   limit?: number
 ): Promise<UnifiedSearchResponse> => {
   const params = new URLSearchParams({
@@ -29,13 +29,7 @@ const fetchUnifiedSearch = async (
     ...(limit && { limit: limit.toString() }),
   });
 
-  // Handle legacy 'q' parameter for recommendations AlbumSearch compatibility
-  const url =
-    type === 'album' && limit
-      ? `/api/search?q=${encodeURIComponent(query)}&type=album&limit=${limit}`
-      : `/api/search?${params}`;
-
-  const response = await fetch(url);
+  const response = await fetch(`/api/search?${params}`);
   return handleApiResponse(response);
 };
 
@@ -46,7 +40,7 @@ const fetchUnifiedSearch = async (
 export interface UseUnifiedSearchQueryOptions {
   enabled?: boolean;
   minQueryLength?: number;
-  type?: 'all' | 'album' | 'artist' | 'label';
+  type?: 'all' | 'albums' | 'artists' | 'labels' | 'tracks';
   limit?: number;
 }
 

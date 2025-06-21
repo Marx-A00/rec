@@ -27,27 +27,47 @@ export default function AlbumSearch({
     isLoading,
     error,
   } = useUnifiedSearchQuery(searchQuery, {
-    type: 'album',
+    type: 'albums',
     limit: 10,
     minQueryLength: 2,
-    enabled: !disabled,
+    enabled: !disabled && searchQuery.length >= 2,
   });
 
-  // Extract albums from the response (handles both formats)
-  const searchResults = searchResponse?.data || [];
+  // Extract albums from the response and convert SearchResultItem to Album format
+  const searchResults =
+    searchResponse?.results
+      ?.filter(result => result.type === 'album')
+      .map(result => ({
+        id: result.id,
+        title: result.title,
+        artists: [
+          {
+            id: result.id, // Use result.id as fallback since we don't have separate artist ID
+            name: result.artist,
+          },
+        ],
+        year: result.releaseDate ? parseInt(result.releaseDate) : undefined,
+        image: result.image,
+      })) || [];
 
   const handleInputChange = (value: string) => {
     setSearchQuery(value);
+    console.log(
+      'RecommendationModal AlbumSearch:',
+      value,
+      'Results:',
+      searchResults.length
+    );
     // TanStack Query handles debouncing automatically
   };
 
   return (
-    <div className='space-y-4'>
+    <div className='space-y-4 text-white relative'>
       <div>
-        <label className='block text-sm font-medium text-zinc-300 mb-2'>
+        <label className='block text-sm font-medium text-white mb-2'>
           {label}
         </label>
-        <div className='relative'>
+        <div className='relative z-20'>
           <Search className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
           <input
             type='text'
@@ -62,41 +82,48 @@ export default function AlbumSearch({
 
       {error && (
         <div className='text-center py-4'>
-          <p className='text-red-400'>Search failed. Please try again.</p>
+          <p className='text-red-400 font-medium'>
+            Search failed. Please try again.
+          </p>
         </div>
       )}
 
       {isLoading && (
         <div className='text-center py-4'>
-          <p className='text-zinc-400'>Searching...</p>
+          <p className='text-white font-medium'>Searching...</p>
         </div>
       )}
 
       {searchResults.length > 0 && (
-        <div className='space-y-2 max-h-64 overflow-y-auto'>
+        <div className='space-y-2 max-h-64 overflow-y-auto relative z-[200] bg-zinc-900 rounded-lg border border-zinc-600 p-2'>
           {searchResults.map(album => (
             <div
               key={album.id}
               onClick={() => onAlbumSelect(album)}
-              className='flex items-center space-x-3 p-3 bg-zinc-900 rounded-lg cursor-pointer hover:bg-zinc-800 transition-colors'
+              className='flex items-center space-x-3 p-3 bg-zinc-800 border border-zinc-600 rounded-lg cursor-pointer hover:bg-zinc-700 hover:border-zinc-500 transition-all relative'
             >
-              <AlbumImage
-                src={album.image?.url}
-                alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}
-                width={48}
-                height={48}
-                className='w-12 h-12 rounded object-cover'
-                sizes='48px'
-              />
-              <div className='flex-1 min-w-0'>
-                <p className='font-medium text-white truncate'>{album.title}</p>
-                <p className='text-sm text-zinc-400 truncate'>
+              <div className='w-12 h-12 flex-shrink-0 relative'>
+                <AlbumImage
+                  src={album.image?.url}
+                  alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}
+                  width={48}
+                  height={48}
+                  className='w-full h-full rounded object-cover'
+                  sizes='48px'
+                  showSkeleton={false}
+                />
+              </div>
+              <div className='flex-1 min-w-0 relative z-10'>
+                <p className='font-semibold text-white truncate text-sm'>
+                  {album.title}
+                </p>
+                <p className='text-sm text-zinc-300 truncate'>
                   {sanitizeArtistName(
                     album.artists?.[0]?.name || 'Unknown Artist'
                   )}
                 </p>
                 {album.year && (
-                  <p className='text-xs text-zinc-500'>{album.year}</p>
+                  <p className='text-xs text-zinc-400'>{album.year}</p>
                 )}
               </div>
             </div>
@@ -106,7 +133,9 @@ export default function AlbumSearch({
 
       {searchQuery && !isLoading && searchResults.length === 0 && (
         <div className='text-center py-4'>
-          <p className='text-zinc-400'>No albums found for "{searchQuery}"</p>
+          <p className='text-white font-medium'>
+            No albums found for "{searchQuery}"
+          </p>
         </div>
       )}
     </div>

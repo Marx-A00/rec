@@ -33,6 +33,7 @@ export const queryKeys = {
 
   // Recommendations
   recommendations: () => ['recommendations'] as const,
+  recommendation: (id: string) => ['recommendations', id] as const,
   recommendationsByUser: (userId: string) =>
     ['recommendations', 'user', userId] as const,
 
