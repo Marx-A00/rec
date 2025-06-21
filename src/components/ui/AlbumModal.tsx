@@ -242,36 +242,26 @@ export default function AlbumModal({
               width={384}
               height={384}
               priority
-              className={`w-full h-full object-cover transition-opacity duration-500 ${
+              className={`w-full h-full object-cover ${
                 highQualityImageUrl ? 'opacity-30' : 'opacity-100'
-              }`}
+              } transition-opacity duration-500`}
               sizes='(max-width: 1024px) 320px, 384px'
               style={{ aspectRatio: '1/1' }}
-              showSkeleton={false}
             />
 
             {/* High quality image (shown when loaded) */}
             {highQualityImageUrl && (
-              <AlbumImage
-                src={getHighQualityImageUrl() || ''}
-                alt={`${getTitle()} by ${getArtist()} (HD)`}
-                width={384}
-                height={384}
-                priority
-                className='absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-100 z-10'
-                sizes='(max-width: 1024px) 320px, 384px'
-                style={{ aspectRatio: '1/1' }}
-                showSkeleton={false}
-              />
-            )}
-
-            {/* Loading overlay (shown while high-quality is loading) */}
-            {!highQualityImageUrl && getImageUrl() && (
-              <div className='absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center z-20'>
-                <div className='flex flex-col items-center text-white'>
-                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2'></div>
-                  <p className='text-sm font-medium'>Loading HD...</p>
-                </div>
+              <div className='absolute inset-0 z-10'>
+                <AlbumImage
+                  src={getHighQualityImageUrl() || ''}
+                  alt={`${getTitle()} by ${getArtist()} (HD)`}
+                  width={384}
+                  height={384}
+                  priority
+                  className='w-full h-full object-cover'
+                  sizes='(max-width: 1024px) 320px, 384px'
+                  style={{ aspectRatio: '1/1' }}
+                />
               </div>
             )}
           </div>
