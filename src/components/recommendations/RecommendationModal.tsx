@@ -39,6 +39,10 @@ function Turntable({
   onClick,
   placeholder = 'Search to load track',
 }: TurntableProps) {
+  const isSource = title === 'SOURCE';
+  const activeColor = isSource ? 'ring-red-500' : 'ring-green-500';
+  const labelColor = isSource ? 'bg-red-600' : 'bg-green-600';
+
   return (
     <div className='relative'>
       {/* Turntable Base */}
@@ -46,7 +50,7 @@ function Turntable({
         {/* Turntable Platter */}
         <div
           className={`relative w-32 h-32 bg-zinc-900 rounded-full border border-zinc-600 cursor-pointer ${
-            isActive ? 'ring-2 ring-blue-500' : 'hover:border-zinc-500'
+            isActive ? `ring-2 ${activeColor}` : 'hover:border-zinc-500'
           }`}
           onClick={onClick}
         >
@@ -97,7 +101,9 @@ function Turntable({
 
         {/* Side Label */}
         <div className='absolute -top-1 left-1/2 transform -translate-x-1/2'>
-          <div className='bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold'>
+          <div
+            className={`${labelColor} text-white px-2 py-1 rounded text-xs font-bold`}
+          >
             {title}
           </div>
         </div>
@@ -364,36 +370,26 @@ export default function RecommendationModal({
         <div className='p-6'>
           {/* Header */}
           <div className='text-center mb-6'>
-            <h1 className='text-2xl font-bold text-blue-400 mb-1'>
+            <h1 className='text-2xl font-bold text-white mb-1'>
               Create Recommendation
             </h1>
-            <p className='text-zinc-400 text-sm'>
-              Select source and recommended albums
-            </p>
           </div>
 
-          {/* Search Control Panel */}
-          <div className='bg-zinc-800 rounded-lg p-4 mb-6 border border-zinc-700'>
-            <div className='flex items-center gap-4 mb-3'>
-              <h2 className='text-lg font-semibold text-white'>
-                Search:{' '}
-                <span
-                  className={`${isSearchingForBasis ? 'text-blue-400' : 'text-purple-400'}`}
-                >
-                  {isSearchingForBasis ? 'Source Album' : 'Recommended Album'}
-                </span>
-              </h2>
-              <div className='flex-1'></div>
-              <div
-                className={`w-2 h-2 rounded-full ${isSearchingForBasis ? 'bg-blue-500' : 'bg-purple-500'}`}
-              ></div>
+          {/* Search Bar */}
+          <div className='mb-6'>
+            <div
+              className={`rounded-lg p-4 border-2 transition-colors ${
+                isSearchingForBasis
+                  ? 'border-red-500/50 bg-red-950/20'
+                  : 'border-green-500/50 bg-green-950/20'
+              }`}
+            >
+              <AlbumSearch
+                onAlbumSelect={handleAlbumSelect}
+                placeholder={`Search for ${isSearchingForBasis ? 'source' : 'recommended'} album...`}
+                disabled={false}
+              />
             </div>
-
-            <AlbumSearch
-              onAlbumSelect={handleAlbumSelect}
-              placeholder={`Search for ${isSearchingForBasis ? 'source' : 'recommended'} album...`}
-              disabled={false}
-            />
           </div>
 
           {/* Turntables and Score */}
