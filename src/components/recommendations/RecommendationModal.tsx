@@ -86,7 +86,7 @@ function Turntable({
           ) : (
             <div className='absolute inset-4 flex items-center justify-center'>
               <div className='text-center text-zinc-500'>
-                <div className='w-8 h-8 bg-zinc-800 rounded-full border border-zinc-700 flex items-center justify-center mx-auto mb-1'>
+                <div className='w-8 h-8 flex items-center justify-center mx-auto mb-1'>
                   <Play className='w-4 h-4' />
                 </div>
                 <div className='text-xs'>{placeholder}</div>
@@ -408,16 +408,6 @@ export default function RecommendationModal({
                 onClick={() => switchAlbumType(true)}
                 placeholder='Load source'
               />
-              <div className='mt-2 flex items-center space-x-2'>
-                <div
-                  className={`w-2 h-2 rounded-full ${selectedBasisAlbum ? 'bg-green-500' : 'bg-zinc-600'}`}
-                ></div>
-                <span
-                  className={`text-xs ${selectedBasisAlbum ? 'text-green-400' : 'text-zinc-500'}`}
-                >
-                  {selectedBasisAlbum ? 'LOADED' : 'EMPTY'}
-                </span>
-              </div>
             </div>
 
             {/* Similarity Rating Dial */}
@@ -441,16 +431,6 @@ export default function RecommendationModal({
                 onClick={() => switchAlbumType(false)}
                 placeholder='Load rec'
               />
-              <div className='mt-2 flex items-center space-x-2'>
-                <div
-                  className={`w-2 h-2 rounded-full ${selectedRecommendedAlbum ? 'bg-green-500' : 'bg-zinc-600'}`}
-                ></div>
-                <span
-                  className={`text-xs ${selectedRecommendedAlbum ? 'text-green-400' : 'text-zinc-500'}`}
-                >
-                  {selectedRecommendedAlbum ? 'LOADED' : 'EMPTY'}
-                </span>
-              </div>
             </div>
           </div>
 
