@@ -79,10 +79,10 @@ export default function RecommendationCard({
   return (
     <div
       className={`
-        bg-gradient-to-br from-white to-zinc-50 
+        bg-black
         rounded-2xl shadow-lg hover:shadow-xl 
         transition-all duration-300 hover:scale-[1.02]
-        border border-zinc-200/50
+        border border-zinc-700
         p-4 sm:p-6 relative overflow-hidden
         ${onDetail ? 'cursor-pointer' : ''}
       `}
@@ -98,18 +98,18 @@ export default function RecommendationCard({
                 alt={recommendation.user.name || 'User'}
                 width={32}
                 height={32}
-                className='rounded-full ring-2 ring-zinc-200 shadow-sm'
+                className='rounded-full ring-2 ring-zinc-600 shadow-sm'
               />
-              <div className='absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full shadow-sm'></div>
+              <div className='absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-black rounded-full shadow-sm'></div>
             </div>
           ) : (
-            <div className='w-8 h-8 bg-gradient-to-br from-zinc-300 to-zinc-400 rounded-full ring-2 ring-zinc-200 flex items-center justify-center shadow-sm'>
+            <div className='w-8 h-8 bg-gradient-to-br from-zinc-600 to-zinc-700 rounded-full ring-2 ring-zinc-600 flex items-center justify-center shadow-sm'>
               <span className='text-white font-semibold text-xs'>
                 {(recommendation.user?.name || 'A').charAt(0).toUpperCase()}
               </span>
             </div>
           )}
-          <span className='text-sm font-medium text-zinc-700'>
+          <span className='text-sm font-medium text-white'>
             {recommendation.user?.name || 'Anonymous'}
           </span>
         </div>
@@ -122,31 +122,31 @@ export default function RecommendationCard({
                 e.stopPropagation();
                 setShowActions(!showActions);
               }}
-              className='p-1.5 h-7 w-7 hover:bg-zinc-100 rounded-full transition-colors'
+              className='p-1.5 h-7 w-7 hover:bg-zinc-800 rounded-full transition-colors'
             >
-              <MoreHorizontal className='h-3 w-3 text-zinc-600' />
+              <MoreHorizontal className='h-3 w-3 text-zinc-400' />
             </Button>
             {showActions && (
-              <div className='absolute right-0 top-8 bg-white border border-zinc-200 rounded-lg shadow-xl z-20 py-2 min-w-[140px] backdrop-blur-sm'>
+              <div className='absolute right-0 top-8 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-20 py-2 min-w-[140px] backdrop-blur-sm'>
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     handleEdit();
                   }}
-                  className='flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-50 w-full text-left transition-colors'
+                  className='flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors'
                 >
-                  <Pencil className='h-4 w-4 text-zinc-600' />
-                  <span className='text-zinc-700'>Edit</span>
+                  <Pencil className='h-4 w-4 text-zinc-400' />
+                  <span className='text-zinc-200'>Edit</span>
                 </button>
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     handleDelete();
                   }}
-                  className={`flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-50 w-full text-left transition-colors ${
+                  className={`flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors ${
                     showDeleteConfirm
-                      ? 'text-red-600 bg-red-50'
-                      : 'text-zinc-700'
+                      ? 'text-red-400 bg-red-950'
+                      : 'text-zinc-200'
                   }`}
                   disabled={deleteMutation.isPending}
                 >
@@ -165,7 +165,7 @@ export default function RecommendationCard({
                       e.stopPropagation();
                       setShowDeleteConfirm(false);
                     }}
-                    className='flex items-center justify-center px-4 py-2.5 text-sm text-zinc-500 hover:bg-zinc-50 w-full transition-colors border-t border-zinc-100 mt-1'
+                    className='flex items-center justify-center px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800 w-full transition-colors border-t border-zinc-700 mt-1'
                   >
                     Cancel
                   </button>
@@ -178,21 +178,21 @@ export default function RecommendationCard({
 
       {/* Compact album layout with centered rating */}
       <div className='relative'>
-        <div className='grid grid-cols-2 gap-3'>
+        <div className='grid grid-cols-2 gap-1'>
           {/* Source Album */}
           <div className='relative group'>
             {/* Album info on top */}
             <div className='mb-2 text-center'>
-              <p className='font-bold text-sm text-zinc-900 leading-tight line-clamp-1'>
+              <p className='font-bold text-sm text-white leading-tight line-clamp-1'>
                 {recommendation.basisAlbumTitle}
               </p>
-              <p className='text-zinc-600 text-xs font-medium line-clamp-1'>
+              <p className='text-zinc-300 text-xs font-medium line-clamp-1'>
                 {recommendation.basisAlbumArtist}
               </p>
             </div>
             {/* Album image */}
             <div className='relative w-full aspect-square overflow-hidden rounded-lg'>
-              <div className='absolute inset-0 bg-gradient-to-br from-zinc-100 to-zinc-200 animate-pulse'></div>
+              <div className='absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900 animate-pulse'></div>
               <AlbumImage
                 src={recommendation.basisAlbumImageUrl}
                 alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
@@ -221,16 +221,16 @@ export default function RecommendationCard({
           <div className='relative group'>
             {/* Album info on top */}
             <div className='mb-2 text-center'>
-              <p className='font-bold text-sm text-zinc-900 leading-tight line-clamp-1'>
+              <p className='font-bold text-sm text-white leading-tight line-clamp-1'>
                 {recommendation.recommendedAlbumTitle}
               </p>
-              <p className='text-zinc-600 text-xs font-medium line-clamp-1'>
+              <p className='text-zinc-300 text-xs font-medium line-clamp-1'>
                 {recommendation.recommendedAlbumArtist}
               </p>
             </div>
             {/* Album image */}
             <div className='relative w-full aspect-square overflow-hidden rounded-lg'>
-              <div className='absolute inset-0 bg-gradient-to-br from-zinc-100 to-zinc-200 animate-pulse'></div>
+              <div className='absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900 animate-pulse'></div>
               <AlbumImage
                 src={recommendation.recommendedAlbumImageUrl}
                 alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
@@ -258,11 +258,11 @@ export default function RecommendationCard({
 
         {/* Centered rating heart between albums */}
         <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20'>
-          <div className='bg-white border-4 border-white rounded-full shadow-lg'>
-            <div className='flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-50 to-pink-50 rounded-full border-2 border-red-100 shadow-md'>
+          <div className='bg-black border-3 border-black rounded-full shadow-lg'>
+            <div className='flex items-center justify-center w-12 h-12 bg-gradient-to-r from-red-50 to-pink-50 rounded-full border-2 border-red-100 shadow-md'>
               <div className='flex flex-col items-center'>
-                <Heart className='h-5 w-5 text-red-500 fill-red-500 drop-shadow-sm mb-0.5' />
-                <span className='text-sm font-bold text-red-600 tabular-nums leading-none'>
+                <Heart className='h-4 w-4 text-red-500 fill-red-500 drop-shadow-sm mb-0.5' />
+                <span className='text-xs font-bold text-red-600 tabular-nums leading-none'>
                   {recommendation.score}
                 </span>
               </div>
@@ -272,9 +272,9 @@ export default function RecommendationCard({
       </div>
 
       {/* Compact footer with date */}
-      <div className='mt-3 text-xs text-zinc-400 text-center'>
+      {/* <div className='mt-3 text-xs text-zinc-400 text-center'>
         {new Date(recommendation.createdAt).toLocaleDateString()}
-      </div>
+      </div> */}
     </div>
   );
 }
