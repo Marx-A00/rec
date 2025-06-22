@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Pencil, Trash2, MoreHorizontal } from 'lucide-react';
+import { Pencil, Trash2, MoreHorizontal, Heart } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Button } from '@/components/ui/button';
@@ -75,162 +75,204 @@ export default function RecommendationCard({
       onDetail(recommendation);
     }
   };
+
   return (
     <div
-      className={`bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow relative ${
-        onDetail ? 'cursor-pointer' : ''
-      }`}
+      className={`
+        bg-gradient-to-br from-white to-zinc-50 
+        rounded-2xl shadow-lg hover:shadow-xl 
+        transition-all duration-300 hover:scale-[1.02]
+        border border-zinc-200/50
+        p-4 sm:p-6 relative overflow-hidden
+        ${onDetail ? 'cursor-pointer' : ''}
+      `}
       onClick={onDetail ? handleCardClick : undefined}
     >
+      {/* Compact header with user info */}
       <div className='flex items-center justify-between mb-4'>
         <div className='flex items-center space-x-2'>
-          {recommendation.user?.image && (
-            <AlbumImage
-              src={recommendation.user.image}
-              alt={recommendation.user.name || 'User'}
-              width={32}
-              height={32}
-              className='rounded-full'
-            />
+          {recommendation.user?.image ? (
+            <div className='relative'>
+              <AlbumImage
+                src={recommendation.user.image}
+                alt={recommendation.user.name || 'User'}
+                width={32}
+                height={32}
+                className='rounded-full ring-2 ring-zinc-200 shadow-sm'
+              />
+              <div className='absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full shadow-sm'></div>
+            </div>
+          ) : (
+            <div className='w-8 h-8 bg-gradient-to-br from-zinc-300 to-zinc-400 rounded-full ring-2 ring-zinc-200 flex items-center justify-center shadow-sm'>
+              <span className='text-white font-semibold text-xs'>
+                {(recommendation.user?.name || 'A').charAt(0).toUpperCase()}
+              </span>
+            </div>
           )}
-          <span className='text-sm text-gray-600'>
+          <span className='text-sm font-medium text-zinc-700'>
             {recommendation.user?.name || 'Anonymous'}
           </span>
         </div>
-        <div className='flex items-center space-x-2'>
-          <div className='flex items-center space-x-1'>
-            <span className='text-lg font-bold text-yellow-500'>
-              {recommendation.score}
-            </span>
-            <span className='text-sm text-gray-500'>/10</span>
+        {canEdit && (
+          <div className='relative' ref={actionMenuRef}>
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={e => {
+                e.stopPropagation();
+                setShowActions(!showActions);
+              }}
+              className='p-1.5 h-7 w-7 hover:bg-zinc-100 rounded-full transition-colors'
+            >
+              <MoreHorizontal className='h-3 w-3 text-zinc-600' />
+            </Button>
+            {showActions && (
+              <div className='absolute right-0 top-8 bg-white border border-zinc-200 rounded-lg shadow-xl z-20 py-2 min-w-[140px] backdrop-blur-sm'>
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleEdit();
+                  }}
+                  className='flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-50 w-full text-left transition-colors'
+                >
+                  <Pencil className='h-4 w-4 text-zinc-600' />
+                  <span className='text-zinc-700'>Edit</span>
+                </button>
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleDelete();
+                  }}
+                  className={`flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-50 w-full text-left transition-colors ${
+                    showDeleteConfirm
+                      ? 'text-red-600 bg-red-50'
+                      : 'text-zinc-700'
+                  }`}
+                  disabled={deleteMutation.isPending}
+                >
+                  <Trash2 className='h-4 w-4' />
+                  <span>
+                    {showDeleteConfirm
+                      ? deleteMutation.isPending
+                        ? 'Deleting...'
+                        : 'Confirm Delete'
+                      : 'Delete'}
+                  </span>
+                </button>
+                {showDeleteConfirm && (
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      setShowDeleteConfirm(false);
+                    }}
+                    className='flex items-center justify-center px-4 py-2.5 text-sm text-zinc-500 hover:bg-zinc-50 w-full transition-colors border-t border-zinc-100 mt-1'
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-          {canEdit && (
-            <div className='relative' ref={actionMenuRef}>
-              <Button
-                variant='ghost'
-                size='sm'
-                onClick={e => {
-                  e.stopPropagation();
-                  setShowActions(!showActions);
-                }}
-                className='p-1 h-8 w-8'
-              >
-                <MoreHorizontal className='h-4 w-4' />
-              </Button>
-              {showActions && (
-                <div className='absolute right-0 top-8 bg-white border border-gray-200 rounded-md shadow-lg z-10 py-1 min-w-[120px]'>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleEdit();
-                    }}
-                    className='flex items-center space-x-2 px-3 py-2 text-sm hover:bg-gray-50 w-full text-left'
-                  >
-                    <Pencil className='h-4 w-4' />
-                    <span>Edit</span>
-                  </button>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleDelete();
-                    }}
-                    className={`flex items-center space-x-2 px-3 py-2 text-sm hover:bg-gray-50 w-full text-left ${
-                      showDeleteConfirm
-                        ? 'text-red-600 bg-red-50'
-                        : 'text-gray-700'
-                    }`}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className='h-4 w-4' />
-                    <span>
-                      {showDeleteConfirm
-                        ? deleteMutation.isPending
-                          ? 'Deleting...'
-                          : 'Confirm Delete'
-                        : 'Delete'}
-                    </span>
-                  </button>
-                  {showDeleteConfirm && (
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        setShowDeleteConfirm(false);
-                      }}
-                      className='flex items-center justify-center px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 w-full'
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              )}
+        )}
+      </div>
+
+      {/* Compact album layout with centered rating */}
+      <div className='relative'>
+        <div className='grid grid-cols-2 gap-3'>
+          {/* Source Album */}
+          <div className='relative group'>
+            <div className='absolute top-2 left-2 z-10'>
+              <span className='bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-lg'>
+                SRC
+              </span>
             </div>
-          )}
+            {/* Album info on top */}
+            <div className='mb-2 text-center'>
+              <p className='font-bold text-sm text-zinc-900 leading-tight line-clamp-1'>
+                {recommendation.basisAlbumTitle}
+              </p>
+              <p className='text-zinc-600 text-xs font-medium line-clamp-1'>
+                {recommendation.basisAlbumArtist}
+              </p>
+            </div>
+            {/* Album image */}
+            <div className='relative w-full aspect-square overflow-hidden rounded-lg'>
+              <div className='absolute inset-0 bg-gradient-to-br from-zinc-100 to-zinc-200 animate-pulse'></div>
+              <AlbumImage
+                src={recommendation.basisAlbumImageUrl}
+                alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
+                width={400}
+                height={400}
+                sizes='(max-width: 640px) 45vw, (max-width: 768px) 35vw, 400px'
+                className='
+                  w-full h-full object-cover 
+                  transition-all duration-500 ease-out
+                  group-hover:scale-105 group-hover:brightness-110
+                  shadow-lg hover:shadow-xl
+                  relative z-10
+                '
+                priority={false}
+              />
+              <div className='absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 rounded-lg'></div>
+            </div>
+          </div>
+
+          {/* Recommended Album */}
+          <div className='relative group'>
+            <div className='absolute top-2 left-2 z-10'>
+              <span className='bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-lg'>
+                REC
+              </span>
+            </div>
+            {/* Album info on top */}
+            <div className='mb-2 text-center'>
+              <p className='font-bold text-sm text-zinc-900 leading-tight line-clamp-1'>
+                {recommendation.recommendedAlbumTitle}
+              </p>
+              <p className='text-zinc-600 text-xs font-medium line-clamp-1'>
+                {recommendation.recommendedAlbumArtist}
+              </p>
+            </div>
+            {/* Album image */}
+            <div className='relative w-full aspect-square overflow-hidden rounded-lg'>
+              <div className='absolute inset-0 bg-gradient-to-br from-zinc-100 to-zinc-200 animate-pulse'></div>
+              <AlbumImage
+                src={recommendation.recommendedAlbumImageUrl}
+                alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
+                width={400}
+                height={400}
+                sizes='(max-width: 640px) 45vw, (max-width: 768px) 35vw, 400px'
+                className='
+                  w-full h-full object-cover 
+                  transition-all duration-500 ease-out
+                  group-hover:scale-105 group-hover:brightness-110
+                  shadow-lg hover:shadow-xl
+                  relative z-10
+                '
+                priority={false}
+              />
+              <div className='absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 rounded-lg'></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Centered rating heart between albums */}
+        <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20'>
+          <div className='bg-white border-4 border-white rounded-full shadow-lg'>
+            <div className='flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-50 to-pink-50 rounded-full border-2 border-red-100 shadow-md'>
+              <div className='flex flex-col items-center'>
+                <Heart className='h-5 w-5 text-red-500 fill-red-500 drop-shadow-sm mb-0.5' />
+                <span className='text-sm font-bold text-red-600 tabular-nums leading-none'>
+                  {recommendation.score}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className='grid grid-cols-2 gap-4'>
-        {/* Basis Album */}
-        <div className='text-center'>
-          <h3 className='text-sm font-medium text-gray-500 mb-2'>
-            If you like
-          </h3>
-          <div className='relative w-full aspect-square mb-2'>
-            <AlbumImage
-              src={recommendation.basisAlbumImageUrl}
-              alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
-              width={200}
-              height={200}
-              sizes='(max-width: 768px) 50vw, 200px'
-              className='w-full h-full object-cover rounded'
-            />
-          </div>
-          <div className='space-y-1'>
-            <p className='font-semibold text-sm'>
-              {recommendation.basisAlbumTitle}
-            </p>
-            <p className='text-gray-600 text-xs'>
-              {recommendation.basisAlbumArtist}
-            </p>
-            {recommendation.basisAlbumYear && (
-              <p className='text-gray-500 text-xs'>
-                {recommendation.basisAlbumYear}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Recommended Album */}
-        <div className='text-center'>
-          <h3 className='text-sm font-medium text-gray-500 mb-2'>
-            You might like
-          </h3>
-          <div className='relative w-full aspect-square mb-2'>
-            <AlbumImage
-              src={recommendation.recommendedAlbumImageUrl}
-              alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
-              width={200}
-              height={200}
-              sizes='(max-width: 768px) 50vw, 200px'
-              className='w-full h-full object-cover rounded'
-            />
-          </div>
-          <div className='space-y-1'>
-            <p className='font-semibold text-sm'>
-              {recommendation.recommendedAlbumTitle}
-            </p>
-            <p className='text-gray-600 text-xs'>
-              {recommendation.recommendedAlbumArtist}
-            </p>
-            {recommendation.recommendedAlbumYear && (
-              <p className='text-gray-500 text-xs'>
-                {recommendation.recommendedAlbumYear}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className='mt-4 text-xs text-gray-400 text-center'>
+      {/* Compact footer with date */}
+      <div className='mt-3 text-xs text-zinc-400 text-center'>
         {new Date(recommendation.createdAt).toLocaleDateString()}
       </div>
     </div>
