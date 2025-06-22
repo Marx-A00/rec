@@ -113,8 +113,9 @@ function SimilarityRatingDial({
 }: SimilarityRatingDialProps) {
   const [isDragging, setIsDragging] = useState(false);
 
-  // Calculate rotation angle (0-270 degrees for values 1-10)
-  const rotation = ((value - 1) / 9) * 270 - 135; // Offset by -135 to start at bottom left
+  // Calculate rotation angle (0-135 degrees for values 5-10)
+  // Start at 12 o'clock (0 degrees) for score 5, end at southeast (135 degrees) for score 10
+  const rotation = ((value - 5) / 5) * 135;
 
   const updateValueFromMouse = (e: MouseEvent | React.MouseEvent) => {
     const knobElement = document.querySelector(
@@ -127,17 +128,28 @@ function SimilarityRatingDial({
     const centerY = rect.top + rect.height / 2;
 
     const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
-    let degrees = (angle * 180) / Math.PI + 135; // Adjust for our starting position
+    let degrees = (angle * 180) / Math.PI + 90; // Convert to 0-360 with 0 at top
 
     // Normalize to 0-360
     if (degrees < 0) degrees += 360;
-    if (degrees > 360) degrees -= 360;
 
-    // Map angle to value (0-270 degrees = 1-10)
-    const clampedDegrees = Math.max(0, Math.min(270, degrees));
-    const newValue = Math.round((clampedDegrees / 270) * 9) + 1;
+    // Map angle to our range (0-135 degrees = scores 5-10)
+    // If below 0 degrees (dragging above 12 o'clock), stay at score 5
+    // If above 135 degrees, stay at score 10
+    let clampedDegrees;
+    if (degrees > 180) {
+      // If we're in the left half (past 6 o'clock), clamp to 0 (score 5)
+      clampedDegrees = 0;
+    } else if (degrees > 135) {
+      // If we're past the southeast position, clamp to 135 (score 10)
+      clampedDegrees = 135;
+    } else {
+      clampedDegrees = Math.max(0, Math.min(135, degrees));
+    }
 
-    if (newValue !== value && newValue >= 1 && newValue <= 10) {
+    const newValue = Math.round((clampedDegrees / 135) * 5) + 5;
+
+    if (newValue !== value && newValue >= 5 && newValue <= 10) {
       onChange(newValue);
     }
   };
@@ -183,9 +195,10 @@ function SimilarityRatingDial({
         {/* Outer Ring with LED Indicators */}
         <div className='relative w-20 h-20 rounded-full bg-zinc-700 border-2 border-zinc-600'>
           {/* LED Ring */}
-          {Array.from({ length: 10 }, (_, i) => {
-            const ledAngle = (i * 270) / 9 - 135; // Start from -135 degrees
-            const isActive = i + 1 <= value;
+          {Array.from({ length: 6 }, (_, i) => {
+            const ledAngle = (i * 135) / 5 - 90; // Start at -90 degrees (12 o'clock) and go to 45 degrees (southeast)
+            const ledScore = i + 5;
+            const isActive = ledScore <= value;
             const ledX = 50 + 35 * Math.cos((ledAngle * Math.PI) / 180);
             const ledY = 50 + 35 * Math.sin((ledAngle * Math.PI) / 180);
 
@@ -194,11 +207,11 @@ function SimilarityRatingDial({
                 key={i}
                 className={`absolute w-1 h-1 rounded-full ${
                   isActive
-                    ? value <= 3
-                      ? 'bg-red-500'
-                      : value <= 6
-                        ? 'bg-yellow-500'
-                        : 'bg-green-500'
+                    ? ledScore <= 6
+                      ? 'bg-yellow-500'
+                      : ledScore <= 8
+                        ? 'bg-green-500'
+                        : 'bg-emerald-400'
                     : 'bg-zinc-800'
                 }`}
                 style={{
@@ -244,14 +257,14 @@ function SimilarityRatingDial({
       <div className='text-center'>
         <div
           className={`text-xs font-medium ${
-            value <= 3
-              ? 'text-red-400'
-              : value <= 6
-                ? 'text-yellow-400'
-                : 'text-green-400'
+            value <= 6
+              ? 'text-yellow-400'
+              : value <= 8
+                ? 'text-green-400'
+                : 'text-emerald-400'
           }`}
         >
-          {value <= 3 ? 'DIFFERENT' : value <= 6 ? 'SIMILAR' : 'PERFECT'}
+          {value <= 6 ? 'DECENT' : value <= 8 ? 'GREAT' : 'PERFECT'}
         </div>
       </div>
     </div>
