@@ -128,7 +128,7 @@ export async function POST(
         albumTitle: albumTitle.trim(),
         albumArtist: albumArtist.trim(),
         albumImageUrl: albumImageUrl || null,
-        albumYear: albumYear || null,
+        albumYear: albumYear ? String(albumYear) : null,
       },
       include: {
         collection: { select: { name: true } },

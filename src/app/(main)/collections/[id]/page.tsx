@@ -6,6 +6,7 @@ import CollectionHeader from '@/components/collections/CollectionHeader';
 import CollectionAlbums from '@/components/collections/CollectionAlbums';
 import { ListSkeleton } from '@/components/ui/skeletons';
 import BackButton from '@/components/ui/BackButton';
+import prisma from '@/lib/prisma';
 
 interface CollectionPageProps {
   params: Promise<{ id: string }>;
@@ -13,22 +14,51 @@ interface CollectionPageProps {
 
 async function getCollection(id: string, userId?: string) {
   try {
-    const response = await fetch(
-      `${process.env.NEXTAUTH_URL}/api/collections/${id}`,
-      {
-        cache: 'no-store', // Always fetch fresh data
-      }
-    );
+    const collection = await prisma.collection.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, name: true, image: true } },
+        albums: {
+          orderBy: { position: 'asc' },
+        },
+      },
+    });
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        notFound();
-      }
-      throw new Error('Failed to fetch collection');
+    if (!collection) {
+      notFound();
     }
 
-    const data = await response.json();
-    return data.collection;
+    // Check access permissions - same logic as API
+    if (!collection.isPublic && collection.userId !== userId) {
+      notFound(); // Treat unauthorized access as not found for security
+    }
+
+    // Transform to match Collection interface
+    const transformedCollection = {
+      ...collection,
+      createdAt: collection.createdAt.toISOString(),
+      updatedAt: collection.updatedAt.toISOString(),
+      albums: collection.albums.map(album => ({
+        ...album,
+        albumId: album.albumDiscogsId, // Map to expected field name
+        addedBy: collection.userId, // Use collection owner as adder
+        addedAt: album.addedAt.toISOString(),
+      })),
+      metadata: {
+        totalAlbums: collection.albums.length,
+        totalDuration: 0, // Not computed for now
+        genres: [], // Not computed for now
+        averageRating:
+          collection.albums
+            .filter(album => album.personalRating)
+            .reduce(
+              (acc, album, _, arr) => acc + album.personalRating! / arr.length,
+              0
+            ) || undefined,
+      },
+    };
+
+    return transformedCollection;
   } catch (error) {
     console.error('Error fetching collection:', error);
     throw error;

@@ -114,6 +114,7 @@ model Collection {
   
   @@index([userId])
   @@index([isPublic])
+  @@index([userId, updatedAt])  // Optimize user collections ordered by update time
 }
 
 model CollectionAlbum {
@@ -136,6 +137,7 @@ model CollectionAlbum {
   @@unique([collectionId, albumDiscogsId])
   @@index([collectionId])
   @@index([albumDiscogsId])
+  @@index([collectionId, position])  // Optimize ordered album retrieval
 }
 
 // User follow relationships
