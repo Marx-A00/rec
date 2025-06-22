@@ -333,18 +333,24 @@ export default function ProfileClient({
                 {currentUser.bio || 'No bio yet.'}
               </p>
               <div className='flex justify-center md:justify-start gap-6 text-sm'>
-                <span className='text-zinc-300'>
+                <Link
+                  href={`/profile/${currentUser.id}/followers`}
+                  className='text-zinc-300 hover:text-cosmic-latte transition-colors cursor-pointer'
+                >
                   <strong className='text-cosmic-latte'>
                     {followersCount}
                   </strong>{' '}
                   Followers
-                </span>
-                <span className='text-zinc-300'>
+                </Link>
+                <Link
+                  href={`/profile/${currentUser.id}/following`}
+                  className='text-zinc-300 hover:text-cosmic-latte transition-colors cursor-pointer'
+                >
                   <strong className='text-cosmic-latte'>
                     {followingCount}
                   </strong>{' '}
                   Following
-                </span>
+                </Link>
                 <span className='text-zinc-300'>
                   <strong className='text-cosmic-latte'>
                     {user.recommendationsCount}
