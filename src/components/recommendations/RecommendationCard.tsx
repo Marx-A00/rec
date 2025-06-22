@@ -181,11 +181,6 @@ export default function RecommendationCard({
         <div className='grid grid-cols-2 gap-3'>
           {/* Source Album */}
           <div className='relative group'>
-            <div className='absolute top-2 left-2 z-10'>
-              <span className='bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-lg'>
-                SRC
-              </span>
-            </div>
             {/* Album info on top */}
             <div className='mb-2 text-center'>
               <p className='font-bold text-sm text-zinc-900 leading-tight line-clamp-1'>
@@ -214,16 +209,16 @@ export default function RecommendationCard({
                 priority={false}
               />
               <div className='absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 rounded-lg'></div>
+              <div className='absolute bottom-2 left-2 z-20'>
+                <span className='bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-lg'>
+                  SRC
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Recommended Album */}
           <div className='relative group'>
-            <div className='absolute top-2 left-2 z-10'>
-              <span className='bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-lg'>
-                REC
-              </span>
-            </div>
             {/* Album info on top */}
             <div className='mb-2 text-center'>
               <p className='font-bold text-sm text-zinc-900 leading-tight line-clamp-1'>
@@ -252,6 +247,11 @@ export default function RecommendationCard({
                 priority={false}
               />
               <div className='absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 rounded-lg'></div>
+              <div className='absolute bottom-2 left-2 z-20'>
+                <span className='bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-lg'>
+                  REC
+                </span>
+              </div>
             </div>
           </div>
         </div>
