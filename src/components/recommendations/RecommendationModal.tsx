@@ -44,7 +44,7 @@ function Turntable({
       <div className='relative bg-zinc-800 rounded-full p-4 border-2 border-zinc-700'>
         {/* Turntable Platter */}
         <div
-          className={`relative w-48 h-48 bg-zinc-900 rounded-full border border-zinc-600 cursor-pointer ${
+          className={`relative w-56 h-56 bg-zinc-900 rounded-full border border-zinc-600 cursor-pointer ${
             isActive ? `ring-2 ${activeColor}` : 'hover:border-zinc-500'
           }`}
           onClick={onClick}
@@ -71,7 +71,7 @@ function Turntable({
               {/* Album Info Display */}
               <div className='absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-center'>
                 <div className='bg-black/80 rounded px-3 py-2 border border-zinc-700'>
-                  <div className='font-bold text-white text-sm truncate max-w-48'>
+                  <div className='font-bold text-white text-sm truncate max-w-56'>
                     {album.title}
                   </div>
                   <div className='text-zinc-300 text-sm truncate'>
