@@ -25,6 +25,12 @@ interface TurntableProps {
   placeholder?: string;
 }
 
+interface SimilarityRatingDialProps {
+  value: number;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+}
+
 function Turntable({
   album,
   title,
@@ -100,6 +106,136 @@ function Turntable({
   );
 }
 
+function SimilarityRatingDial({
+  value,
+  onChange,
+  disabled = false,
+}: SimilarityRatingDialProps) {
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Calculate rotation angle (0-270 degrees for values 1-10)
+  const rotation = ((value - 1) / 9) * 270;
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (disabled) return;
+    setIsDragging(true);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || disabled) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+    let degrees = (angle * 180) / Math.PI + 90;
+    if (degrees < 0) degrees += 360;
+
+    // Map angle to value (0-270 degrees = 1-10)
+    const clampedDegrees = Math.max(0, Math.min(270, degrees));
+    const newValue = Math.round((clampedDegrees / 270) * 9) + 1;
+
+    if (newValue !== value) {
+      onChange(newValue);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  return (
+    <div className='flex flex-col items-center space-y-2'>
+      {/* Dial Label */}
+      <div className='text-center'>
+        <div className='text-sm font-bold text-zinc-300 mb-1'>SCORE</div>
+        <div className='text-xl font-bold text-blue-400'>{value}/10</div>
+      </div>
+
+      {/* Main Dial Container */}
+      <div className='relative'>
+        {/* Outer Ring with LED Indicators */}
+        <div className='relative w-20 h-20 rounded-full bg-zinc-700 border-2 border-zinc-600'>
+          {/* LED Ring */}
+          {Array.from({ length: 10 }, (_, i) => {
+            const ledAngle = (i * 270) / 9 - 135; // Start from -135 degrees
+            const isActive = i + 1 <= value;
+            const ledX = 50 + 35 * Math.cos((ledAngle * Math.PI) / 180);
+            const ledY = 50 + 35 * Math.sin((ledAngle * Math.PI) / 180);
+
+            return (
+              <div
+                key={i}
+                className={`absolute w-1 h-1 rounded-full ${
+                  isActive
+                    ? value <= 3
+                      ? 'bg-red-500'
+                      : value <= 6
+                        ? 'bg-yellow-500'
+                        : 'bg-green-500'
+                    : 'bg-zinc-800'
+                }`}
+                style={{
+                  left: `${ledX}%`,
+                  top: `${ledY}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              />
+            );
+          })}
+
+          {/* Inner Knob */}
+          <div
+            className={`absolute top-1/2 left-1/2 w-12 h-12 rounded-full cursor-pointer ${
+              disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+            }`}
+            style={{
+              background:
+                'conic-gradient(from 0deg, #71717a, #a1a1aa, #d4d4d8, #a1a1aa, #71717a)',
+              transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+            }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
+            {/* Knob Indicator Line */}
+            <div
+              className='absolute w-0.5 h-4 bg-white rounded-full'
+              style={{
+                top: '4px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+              }}
+            />
+
+            {/* Center Dot */}
+            <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rounded-full' />
+          </div>
+        </div>
+      </div>
+
+      {/* Status Text */}
+      <div className='text-center'>
+        <div
+          className={`text-xs font-medium ${
+            value <= 3
+              ? 'text-red-400'
+              : value <= 6
+                ? 'text-yellow-400'
+                : 'text-green-400'
+          }`}
+        >
+          {value <= 3 ? 'DIFFERENT' : value <= 6 ? 'SIMILAR' : 'PERFECT'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function RecommendationModal({
   isOpen,
   onClose,
@@ -111,6 +247,7 @@ export default function RecommendationModal({
   const [selectedRecommendedAlbum, setSelectedRecommendedAlbum] =
     useState<Album | null>(null);
   const [isSearchingForBasis, setIsSearchingForBasis] = useState<boolean>(true);
+  const [similarityRating, setSimilarityRating] = useState<number>(5);
 
   // Handle Escape key
   useEffect(() => {
@@ -133,6 +270,7 @@ export default function RecommendationModal({
       setSelectedBasisAlbum(null);
       setSelectedRecommendedAlbum(null);
       setIsSearchingForBasis(true);
+      setSimilarityRating(5);
     }
   }, [isOpen]);
 
@@ -155,6 +293,7 @@ export default function RecommendationModal({
     setSelectedBasisAlbum(null);
     setSelectedRecommendedAlbum(null);
     setIsSearchingForBasis(true);
+    setSimilarityRating(5);
     onClose();
   };
 
@@ -246,21 +385,14 @@ export default function RecommendationModal({
               </div>
             </div>
 
-            {/* Score Knob */}
+            {/* Similarity Rating Dial */}
             <div className='flex flex-col items-center'>
               <div className='bg-zinc-800 rounded-lg p-4 border border-zinc-700'>
-                <div className='text-center mb-3'>
-                  <div className='text-sm font-bold text-zinc-300 mb-2'>
-                    SCORE
-                  </div>
-                  <div className='relative w-16 h-16'>
-                    <div className='w-full h-full bg-zinc-700 rounded-full border border-zinc-600'>
-                      <div className='absolute top-1 left-1/2 transform -translate-x-1/2 w-0.5 h-4 bg-white rounded-full'></div>
-                      <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-zinc-400 rounded-full'></div>
-                    </div>
-                  </div>
-                  <div className='text-xs text-zinc-400 mt-1'>1-10</div>
-                </div>
+                <SimilarityRatingDial
+                  value={similarityRating}
+                  onChange={setSimilarityRating}
+                  disabled={!selectedBasisAlbum || !selectedRecommendedAlbum}
+                />
               </div>
             </div>
 
@@ -292,6 +424,7 @@ export default function RecommendationModal({
             <CreateRecommendationForm
               basisAlbum={selectedBasisAlbum}
               recommendedAlbum={selectedRecommendedAlbum}
+              score={similarityRating}
               onSuccess={handleSuccess}
             />
           </div>

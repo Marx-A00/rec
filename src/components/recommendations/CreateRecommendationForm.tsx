@@ -191,15 +191,18 @@ function SimilarityRatingDial({
 interface CreateRecommendationFormProps {
   basisAlbum: Album | null;
   recommendedAlbum: Album | null;
+  score?: number;
   onSuccess?: () => void;
 }
 
 export default function CreateRecommendationForm({
   basisAlbum,
   recommendedAlbum,
+  score: externalScore,
   onSuccess,
 }: CreateRecommendationFormProps) {
   const [score, setScore] = useState(7);
+  const finalScore = externalScore ?? score;
 
   const createMutation = useCreateRecommendationMutation({
     onSuccess,
@@ -215,7 +218,7 @@ export default function CreateRecommendationForm({
     const request: CreateRecommendationRequest = {
       basisAlbumDiscogsId: basisAlbum.id,
       recommendedAlbumDiscogsId: recommendedAlbum.id,
-      score,
+      score: finalScore,
       basisAlbumTitle: basisAlbum.title,
       basisAlbumArtist: formatArtists(basisAlbum.artists),
       basisAlbumImageUrl: basisAlbum.image.url,
@@ -240,14 +243,16 @@ export default function CreateRecommendationForm({
         </div>
       )}
 
-      {/* DJ-Style Similarity Rating Dial */}
-      <div className='flex justify-center'>
-        <SimilarityRatingDial
-          value={score}
-          onChange={setScore}
-          disabled={isDisabled}
-        />
-      </div>
+      {/* DJ-Style Similarity Rating Dial - only show if no external score */}
+      {externalScore === undefined && (
+        <div className='flex justify-center'>
+          <SimilarityRatingDial
+            value={score}
+            onChange={setScore}
+            disabled={isDisabled}
+          />
+        </div>
+      )}
 
       {/* Drop the Mix Button */}
       <div className='flex justify-center'>
