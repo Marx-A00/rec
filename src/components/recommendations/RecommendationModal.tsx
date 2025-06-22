@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Play } from 'lucide-react';
 
 import { Album } from '@/types/album';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { sanitizeArtistName } from '@/lib/utils';
 
-import AlbumSearch from './AlbumSearch';
+import AlbumSearch, { AlbumSearchRef } from './AlbumSearch';
 import CreateRecommendationForm from './CreateRecommendationForm';
+import SimilarityRatingDial from './SimilarityRatingDial';
 
 interface RecommendationModalProps {
   isOpen: boolean;
@@ -23,12 +24,6 @@ interface TurntableProps {
   isActive: boolean;
   onClick: () => void;
   placeholder?: string;
-}
-
-interface SimilarityRatingDialProps {
-  value: number;
-  onChange: (value: number) => void;
-  disabled?: boolean;
 }
 
 function Turntable({
@@ -49,7 +44,7 @@ function Turntable({
       <div className='relative bg-zinc-800 rounded-full p-4 border-2 border-zinc-700'>
         {/* Turntable Platter */}
         <div
-          className={`relative w-32 h-32 bg-zinc-900 rounded-full border border-zinc-600 cursor-pointer ${
+          className={`relative w-48 h-48 bg-zinc-900 rounded-full border border-zinc-600 cursor-pointer ${
             isActive ? `ring-2 ${activeColor}` : 'hover:border-zinc-500'
           }`}
           onClick={onClick}
@@ -66,20 +61,20 @@ function Turntable({
                   <AlbumImage
                     src={album.image.url}
                     alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}
-                    width={200}
-                    height={200}
+                    width={300}
+                    height={300}
                     className='w-full h-full object-cover'
                   />
                 </div>
               </div>
 
               {/* Album Info Display */}
-              <div className='absolute -bottom-12 left-1/2 transform -translate-x-1/2 text-center'>
-                <div className='bg-black/80 rounded px-2 py-1 border border-zinc-700'>
-                  <div className='font-bold text-white text-xs truncate max-w-32'>
+              <div className='absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-center'>
+                <div className='bg-black/80 rounded px-3 py-2 border border-zinc-700'>
+                  <div className='font-bold text-white text-sm truncate max-w-48'>
                     {album.title}
                   </div>
-                  <div className='text-zinc-300 text-xs truncate'>
+                  <div className='text-zinc-300 text-sm truncate'>
                     {sanitizeArtistName(
                       album.artists?.[0]?.name || 'Unknown Artist'
                     )}
@@ -88,12 +83,12 @@ function Turntable({
               </div>
             </>
           ) : (
-            <div className='absolute inset-4 flex items-center justify-center'>
+            <div className='absolute inset-6 flex items-center justify-center'>
               <div className='text-center text-zinc-500'>
-                <div className='w-8 h-8 flex items-center justify-center mx-auto mb-1'>
-                  <Play className='w-4 h-4' />
+                <div className='w-12 h-12 flex items-center justify-center mx-auto mb-2'>
+                  <Play className='w-6 h-6' />
                 </div>
-                <div className='text-xs'>{placeholder}</div>
+                <div className='text-sm'>{placeholder}</div>
               </div>
             </div>
           )}
@@ -112,171 +107,6 @@ function Turntable({
   );
 }
 
-function SimilarityRatingDial({
-  value,
-  onChange,
-  disabled = false,
-}: SimilarityRatingDialProps) {
-  const [isDragging, setIsDragging] = useState(false);
-
-  // Calculate rotation angle (0-135 degrees for values 5-10)
-  // Start at 12 o'clock (0 degrees) for score 5, end at southeast (135 degrees) for score 10
-  const rotation = ((value - 5) / 5) * 135;
-
-  const updateValueFromMouse = (e: MouseEvent | React.MouseEvent) => {
-    const knobElement = document.querySelector(
-      '[data-knob="true"]'
-    ) as HTMLElement;
-    if (!knobElement) return;
-
-    const rect = knobElement.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-
-    const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
-    let degrees = (angle * 180) / Math.PI + 90; // Convert to 0-360 with 0 at top
-
-    // Normalize to 0-360
-    if (degrees < 0) degrees += 360;
-
-    // Map angle to our range (0-135 degrees = scores 5-10)
-    // If below 0 degrees (dragging above 12 o'clock), stay at score 5
-    // If above 135 degrees, stay at score 10
-    let clampedDegrees;
-    if (degrees > 180) {
-      // If we're in the left half (past 6 o'clock), clamp to 0 (score 5)
-      clampedDegrees = 0;
-    } else if (degrees > 135) {
-      // If we're past the southeast position, clamp to 135 (score 10)
-      clampedDegrees = 135;
-    } else {
-      clampedDegrees = Math.max(0, Math.min(135, degrees));
-    }
-
-    const newValue = Math.round((clampedDegrees / 135) * 5) + 5;
-
-    if (newValue !== value && newValue >= 5 && newValue <= 10) {
-      onChange(newValue);
-    }
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (disabled) return;
-    setIsDragging(true);
-    updateValueFromMouse(e);
-    e.preventDefault();
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging || disabled) return;
-    updateValueFromMouse(e);
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  // Add global mouse event listeners when dragging
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, disabled, value]);
-
-  return (
-    <div className='flex flex-col items-center space-y-2'>
-      {/* Dial Label */}
-      <div className='text-center'>
-        <div className='text-sm font-bold text-zinc-300 mb-1'>SCORE</div>
-        <div className='text-xl font-bold text-blue-400'>{value}/10</div>
-      </div>
-
-      {/* Main Dial Container */}
-      <div className='relative'>
-        {/* Outer Ring with LED Indicators */}
-        <div className='relative w-20 h-20 rounded-full bg-zinc-700 border-2 border-zinc-600'>
-          {/* LED Ring */}
-          {Array.from({ length: 6 }, (_, i) => {
-            const ledAngle = (i * 135) / 5 - 90; // Start at -90 degrees (12 o'clock) and go to 45 degrees (southeast)
-            const ledScore = i + 5;
-            const isActive = ledScore <= value;
-            const ledX = 50 + 35 * Math.cos((ledAngle * Math.PI) / 180);
-            const ledY = 50 + 35 * Math.sin((ledAngle * Math.PI) / 180);
-
-            return (
-              <div
-                key={i}
-                className={`absolute w-1 h-1 rounded-full ${
-                  isActive
-                    ? ledScore <= 6
-                      ? 'bg-yellow-500'
-                      : ledScore <= 8
-                        ? 'bg-green-500'
-                        : 'bg-emerald-400'
-                    : 'bg-zinc-800'
-                }`}
-                style={{
-                  left: `${ledX}%`,
-                  top: `${ledY}%`,
-                  transform: 'translate(-50%, -50%)',
-                }}
-              />
-            );
-          })}
-
-          {/* Inner Knob */}
-          <div
-            data-knob='true'
-            className={`absolute top-1/2 left-1/2 w-12 h-12 rounded-full cursor-pointer ${
-              disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
-            }`}
-            style={{
-              background:
-                'conic-gradient(from 0deg, #71717a, #a1a1aa, #d4d4d8, #a1a1aa, #71717a)',
-              transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-              boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
-            }}
-            onMouseDown={handleMouseDown}
-          >
-            {/* Knob Indicator Line */}
-            <div
-              className='absolute w-0.5 h-4 bg-white rounded-full'
-              style={{
-                top: '4px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-              }}
-            />
-
-            {/* Center Dot */}
-            <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rounded-full' />
-          </div>
-        </div>
-      </div>
-
-      {/* Status Text */}
-      <div className='text-center'>
-        <div
-          className={`text-xs font-medium ${
-            value <= 6
-              ? 'text-yellow-400'
-              : value <= 8
-                ? 'text-green-400'
-                : 'text-emerald-400'
-          }`}
-        >
-          {value <= 6 ? 'DECENT' : value <= 8 ? 'GREAT' : 'PERFECT'}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function RecommendationModal({
   isOpen,
   onClose,
@@ -289,6 +119,9 @@ export default function RecommendationModal({
     useState<Album | null>(null);
   const [isSearchingForBasis, setIsSearchingForBasis] = useState<boolean>(true);
   const [similarityRating, setSimilarityRating] = useState<number>(5);
+
+  // Ref to access AlbumSearch methods
+  const albumSearchRef = useRef<AlbumSearchRef>(null);
 
   // Handle Escape key
   useEffect(() => {
@@ -320,8 +153,20 @@ export default function RecommendationModal({
   const handleAlbumSelect = (album: Album) => {
     if (isSearchingForBasis) {
       setSelectedBasisAlbum(album);
+      // Clear the input
+      albumSearchRef.current?.clearInput();
+      // Switch to recommended if it's empty
+      if (!selectedRecommendedAlbum) {
+        setIsSearchingForBasis(false);
+      }
     } else {
       setSelectedRecommendedAlbum(album);
+      // Clear the input
+      albumSearchRef.current?.clearInput();
+      // Switch to basis if it's empty
+      if (!selectedBasisAlbum) {
+        setIsSearchingForBasis(true);
+      }
     }
   };
 
@@ -377,19 +222,14 @@ export default function RecommendationModal({
 
           {/* Search Bar */}
           <div className='mb-6'>
-            <div
-              className={`rounded-lg p-4 border-2 transition-colors ${
-                isSearchingForBasis
-                  ? 'border-red-500/50 bg-red-950/20'
-                  : 'border-green-500/50 bg-green-950/20'
-              }`}
-            >
-              <AlbumSearch
-                onAlbumSelect={handleAlbumSelect}
-                placeholder={`Search for ${isSearchingForBasis ? 'source' : 'recommended'} album...`}
-                disabled={false}
-              />
-            </div>
+            <AlbumSearch
+              ref={albumSearchRef}
+              onAlbumSelect={handleAlbumSelect}
+              placeholder={`Search for ${isSearchingForBasis ? 'source' : 'recommended'} album...`}
+              label=''
+              disabled={false}
+              colorTheme={isSearchingForBasis ? 'red' : 'green'}
+            />
           </div>
 
           {/* Turntables and Score */}
