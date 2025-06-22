@@ -16,6 +16,7 @@ export default function NavigationButtons() {
     // Prefetch common pages that users might visit from the home page
     prefetchRoute('/browse');
     prefetchRoute('/recommend');
+    prefetchRoute('/collections');
     // Prefetch albums page since it's a common discovery destination
     prefetchRoute('/albums');
   }, [prefetchRoute]);
@@ -41,6 +42,12 @@ export default function NavigationButtons() {
             className='text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg transition-colors'
           >
             Browse
+          </Link>
+          <Link
+            href='/collections'
+            className='text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg transition-colors'
+          >
+            Collections
           </Link>
         </div>
       </div>

@@ -103,3 +103,31 @@ export function TableSkeleton({
     </div>
   );
 }
+
+export function CollectionsSkeleton() {
+  return (
+    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className='animate-pulse bg-zinc-800 rounded-lg p-6 space-y-4'
+        >
+          {/* Header */}
+          <div className='space-y-2'>
+            <div className='h-5 bg-zinc-700 rounded w-3/4'></div>
+            <div className='h-4 bg-zinc-700 rounded w-1/2'></div>
+          </div>
+
+          {/* Cover Image */}
+          <div className='aspect-square bg-zinc-700 rounded-lg'></div>
+
+          {/* Footer */}
+          <div className='flex justify-between'>
+            <div className='h-4 bg-zinc-700 rounded w-16'></div>
+            <div className='h-4 bg-zinc-700 rounded w-20'></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
