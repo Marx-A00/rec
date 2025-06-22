@@ -236,9 +236,9 @@ export default function CreateRecommendationForm({
     !basisAlbum || !recommendedAlbum || createMutation.isPending;
 
   return (
-    <div className='space-y-8'>
+    <div className='relative'>
       {createMutation.isError && (
-        <div className='bg-red-950 border border-red-700 text-red-200 px-4 py-3 rounded-lg'>
+        <div className='bg-red-950 border border-red-700 text-red-200 px-4 py-3 rounded-lg mb-4'>
           {getErrorMessage(createMutation.error)}
         </div>
       )}
@@ -254,29 +254,35 @@ export default function CreateRecommendationForm({
         </div>
       )}
 
-      {/* Drop the Mix Button */}
-      <div className='flex justify-center'>
-        <button
-          type='submit'
-          onClick={handleSubmit}
-          className={`
-            relative px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform
-            ${
-              isDisabled
-                ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 hover:from-emerald-500 hover:via-green-500 hover:to-emerald-500 text-white hover:scale-105 active:scale-95 shadow-lg hover:shadow-emerald-500/25'
-            }
-          `}
-          disabled={isDisabled}
-        >
-          <span className='relative z-10'>
-            {createMutation.isPending ? '🎧 MIXING...' : '🎵 DROP THE MIX'}
-          </span>
-          {!isDisabled && (
-            <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000'></div>
-          )}
-        </button>
-      </div>
+      {/* Circular Play Button - Bottom Right */}
+      <button
+        type='submit'
+        onClick={handleSubmit}
+        className={`
+          absolute -bottom-6 right-0 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200
+          ${
+            isDisabled
+              ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed opacity-50'
+              : 'bg-green-600 hover:bg-green-500 text-white hover:scale-110 active:scale-95 shadow-lg hover:shadow-green-500/25'
+          }
+        `}
+        disabled={isDisabled}
+        title={
+          createMutation.isPending ? 'Creating...' : 'Create Recommendation'
+        }
+      >
+        {createMutation.isPending ? (
+          <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
+        ) : (
+          <svg
+            className='w-5 h-5 ml-0.5'
+            fill='currentColor'
+            viewBox='0 0 24 24'
+          >
+            <path d='M8 5v14l11-7z' />
+          </svg>
+        )}
+      </button>
     </div>
   );
 }

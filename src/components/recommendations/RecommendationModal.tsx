@@ -114,37 +114,61 @@ function SimilarityRatingDial({
   const [isDragging, setIsDragging] = useState(false);
 
   // Calculate rotation angle (0-270 degrees for values 1-10)
-  const rotation = ((value - 1) / 9) * 270;
+  const rotation = ((value - 1) / 9) * 270 - 135; // Offset by -135 to start at bottom left
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (disabled) return;
-    setIsDragging(true);
-    e.preventDefault();
-  };
+  const updateValueFromMouse = (e: MouseEvent | React.MouseEvent) => {
+    const knobElement = document.querySelector(
+      '[data-knob="true"]'
+    ) as HTMLElement;
+    if (!knobElement) return;
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || disabled) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = knobElement.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
 
     const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
-    let degrees = (angle * 180) / Math.PI + 90;
+    let degrees = (angle * 180) / Math.PI + 135; // Adjust for our starting position
+
+    // Normalize to 0-360
     if (degrees < 0) degrees += 360;
+    if (degrees > 360) degrees -= 360;
 
     // Map angle to value (0-270 degrees = 1-10)
     const clampedDegrees = Math.max(0, Math.min(270, degrees));
     const newValue = Math.round((clampedDegrees / 270) * 9) + 1;
 
-    if (newValue !== value) {
+    if (newValue !== value && newValue >= 1 && newValue <= 10) {
       onChange(newValue);
     }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (disabled) return;
+    setIsDragging(true);
+    updateValueFromMouse(e);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging || disabled) return;
+    updateValueFromMouse(e);
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
   };
+
+  // Add global mouse event listeners when dragging
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, disabled, value]);
 
   return (
     <div className='flex flex-col items-center space-y-2'>
@@ -188,6 +212,7 @@ function SimilarityRatingDial({
 
           {/* Inner Knob */}
           <div
+            data-knob='true'
             className={`absolute top-1/2 left-1/2 w-12 h-12 rounded-full cursor-pointer ${
               disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
             }`}
@@ -198,9 +223,6 @@ function SimilarityRatingDial({
               boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
             }}
             onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
           >
             {/* Knob Indicator Line */}
             <div
@@ -391,7 +413,7 @@ export default function RecommendationModal({
                 <SimilarityRatingDial
                   value={similarityRating}
                   onChange={setSimilarityRating}
-                  disabled={!selectedBasisAlbum || !selectedRecommendedAlbum}
+                  disabled={false}
                 />
               </div>
             </div>
@@ -420,7 +442,7 @@ export default function RecommendationModal({
           </div>
 
           {/* Recommendation Form */}
-          <div className='bg-zinc-800 rounded-lg p-4 border border-zinc-700'>
+          <div className='relative min-h-[60px]'>
             <CreateRecommendationForm
               basisAlbum={selectedBasisAlbum}
               recommendedAlbum={selectedRecommendedAlbum}
