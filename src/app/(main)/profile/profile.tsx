@@ -10,6 +10,7 @@ import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import FollowButton from '@/components/profile/FollowButton';
+import RecommendationCard from '@/components/recommendations/RecommendationCard';
 
 interface ProfileClientProps {
   user: {
@@ -444,85 +445,17 @@ export default function ProfileClient({
               Music Recommendations
             </h2>
             {recommendations.length > 0 ? (
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
                 {recommendations.map(rec => (
-                  <div
+                  <RecommendationCard
                     key={rec.id}
-                    className='bg-zinc-900 rounded-lg p-6 border border-zinc-800 hover:border-zinc-700 transition-colors'
-                  >
-                    {/* Recommendation Header */}
-                    <div className='mb-4'>
-                      <div className='flex items-center justify-between mb-3'>
-                        <h3 className='text-lg font-semibold text-cosmic-latte'>
-                          Music Recommendation
-                        </h3>
-                        <div className='flex items-center space-x-2'>
-                          <span className='text-sm bg-emeraled-green text-black px-2 py-1 rounded-full font-medium'>
-                            ★ {rec.score}/10
-                          </span>
-                        </div>
-                      </div>
-                      <p className='text-xs text-zinc-500'>
-                        {new Date(rec.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-
-                    {/* Albums Comparison */}
-                    <div className='space-y-4'>
-                      {/* Basis Album */}
-                      <div>
-                        <p className='text-xs text-zinc-400 mb-2 uppercase tracking-wide'>
-                          If you like
-                        </p>
-                        <div className='flex items-center space-x-3 bg-zinc-800 rounded-lg p-3'>
-                          <AlbumImage
-                            src={rec.basisAlbumImageUrl}
-                            alt={`${rec.basisAlbumTitle} by ${rec.basisAlbumArtist}`}
-                            width={48}
-                            height={48}
-                            className='w-12 h-12 rounded object-cover'
-                          />
-                          <div className='flex-1 min-w-0'>
-                            <p className='text-cosmic-latte font-medium truncate'>
-                              {rec.basisAlbumTitle}
-                            </p>
-                            <p className='text-zinc-400 text-sm truncate'>
-                              {rec.basisAlbumArtist}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Arrow */}
-                      <div className='flex justify-center'>
-                        <div className='text-emeraled-green text-xl'>↓</div>
-                      </div>
-
-                      {/* Recommended Album */}
-                      <div>
-                        <p className='text-xs text-zinc-400 mb-2 uppercase tracking-wide'>
-                          Then try
-                        </p>
-                        <div className='flex items-center space-x-3 bg-zinc-800 rounded-lg p-3'>
-                          <AlbumImage
-                            src={rec.recommendedAlbumImageUrl}
-                            alt={`${rec.recommendedAlbumTitle} by ${rec.recommendedAlbumArtist}`}
-                            width={48}
-                            height={48}
-                            className='w-12 h-12 rounded object-cover'
-                          />
-                          <div className='flex-1 min-w-0'>
-                            <p className='text-cosmic-latte font-medium truncate'>
-                              {rec.recommendedAlbumTitle}
-                            </p>
-                            <p className='text-zinc-400 text-sm truncate'>
-                              {rec.recommendedAlbumArtist}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    recommendation={rec}
+                    currentUserId={currentUser?.id}
+                    onAlbumClick={(albumId, albumType) => {
+                      // Navigate to album page
+                      window.open(`/albums/${albumId}`, '_blank');
+                    }}
+                  />
                 ))}
               </div>
             ) : (

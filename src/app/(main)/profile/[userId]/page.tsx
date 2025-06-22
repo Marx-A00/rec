@@ -15,6 +15,9 @@ async function getUserRecommendations(
   const recs = await prisma.recommendation.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
+    include: {
+      user: { select: { id: true, name: true, image: true } },
+    },
   });
 
   return recs.map(rec => ({
@@ -33,6 +36,7 @@ async function getUserRecommendations(
     recommendedAlbumArtist: rec.recommendedAlbumArtist,
     recommendedAlbumImageUrl: rec.recommendedAlbumImageUrl || undefined,
     recommendedAlbumYear: rec.recommendedAlbumYear || undefined,
+    user: rec.user,
   }));
 }
 
@@ -88,16 +92,6 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
   // Fetch user data from database
   const userData = await prisma.user.findUnique({
     where: { id: userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
-      bio: true,
-      followersCount: true,
-      followingCount: true,
-      recommendationsCount: true,
-    },
   });
 
   if (!userData) {
@@ -118,11 +112,11 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     image: userData.image || '/placeholder.svg?height=100&width=100',
     username: userData.email ? `@${userData.email.split('@')[0]}` : '@user',
     bio:
-      userData.bio ||
+      (userData as any).bio ||
       'Music enthusiast | Sharing vibes and discovering new sounds',
-    followersCount: userData.followersCount || 0,
-    followingCount: userData.followingCount || 0,
-    recommendationsCount: userData.recommendationsCount || 0,
+    followersCount: (userData as any).followersCount || 0,
+    followingCount: (userData as any).followingCount || 0,
+    recommendationsCount: (userData as any).recommendationsCount || 0,
   };
 
   return (
