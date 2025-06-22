@@ -17,6 +17,177 @@ function formatArtists(artists: Array<{ name: string }> | undefined): string {
   return `${otherArtists.map(a => sanitizeArtistName(a.name)).join(', ')} & ${sanitizeArtistName(lastArtist.name)}`;
 }
 
+interface SimilarityRatingDialProps {
+  value: number;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+}
+
+function SimilarityRatingDial({
+  value,
+  onChange,
+  disabled = false,
+}: SimilarityRatingDialProps) {
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Calculate rotation angle (0-270 degrees for values 1-10)
+  const rotation = ((value - 1) / 9) * 270;
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (disabled) return;
+    setIsDragging(true);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || disabled) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+    let degrees = (angle * 180) / Math.PI + 90;
+    if (degrees < 0) degrees += 360;
+
+    // Map angle to value (0-270 degrees = 1-10)
+    const clampedDegrees = Math.max(0, Math.min(270, degrees));
+    const newValue = Math.round((clampedDegrees / 270) * 9) + 1;
+
+    if (newValue !== value) {
+      onChange(newValue);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  return (
+    <div className='flex flex-col items-center space-y-4'>
+      {/* Dial Label */}
+      <div className='text-center'>
+        <div className='text-sm font-bold text-zinc-300 mb-1'>
+          SIMILARITY RATING
+        </div>
+        <div className='text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent'>
+          {value}/10
+        </div>
+      </div>
+
+      {/* Main Dial Container */}
+      <div className='relative'>
+        {/* Outer Ring with LED Indicators */}
+        <div className='relative w-32 h-32 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-800 border-4 border-zinc-600 shadow-2xl'>
+          {/* LED Ring */}
+          {Array.from({ length: 10 }, (_, i) => {
+            const ledAngle = (i * 270) / 9 - 135; // Start from -135 degrees
+            const isActive = i + 1 <= value;
+            const ledX = 50 + 42 * Math.cos((ledAngle * Math.PI) / 180);
+            const ledY = 50 + 42 * Math.sin((ledAngle * Math.PI) / 180);
+
+            return (
+              <div
+                key={i}
+                className={`absolute w-2 h-2 rounded-full transition-all duration-200 ${
+                  isActive
+                    ? value <= 3
+                      ? 'bg-red-500 shadow-red-500/50'
+                      : value <= 6
+                        ? 'bg-yellow-500 shadow-yellow-500/50'
+                        : 'bg-green-500 shadow-green-500/50'
+                    : 'bg-zinc-800'
+                } shadow-lg`}
+                style={{
+                  left: `${ledX}%`,
+                  top: `${ledY}%`,
+                  transform: 'translate(-50%, -50%)',
+                  boxShadow: isActive ? '0 0 8px currentColor' : 'none',
+                }}
+              />
+            );
+          })}
+
+          {/* Inner Knob */}
+          <div
+            className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full cursor-pointer transition-all duration-200 ${
+              disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+            }`}
+            style={{
+              background:
+                'conic-gradient(from 0deg, #71717a, #a1a1aa, #d4d4d8, #a1a1aa, #71717a)',
+              transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+              boxShadow: isDragging
+                ? '0 0 20px rgba(59, 130, 246, 0.5), inset 0 2px 4px rgba(0,0,0,0.3)'
+                : '0 4px 12px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.2)',
+            }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
+            {/* Knob Indicator Line */}
+            <div
+              className='absolute w-1 h-6 bg-white rounded-full shadow-lg'
+              style={{
+                top: '8px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              }}
+            />
+
+            {/* Center Dot */}
+            <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-zinc-900 rounded-full border border-zinc-700 shadow-inner' />
+          </div>
+        </div>
+
+        {/* Scale Labels */}
+        <div className='absolute inset-0 pointer-events-none'>
+          {[1, 5, 10].map((num, index) => {
+            const labelAngle = index === 0 ? -135 : index === 1 ? 0 : 135;
+            const labelX = 50 + 55 * Math.cos((labelAngle * Math.PI) / 180);
+            const labelY = 50 + 55 * Math.sin((labelAngle * Math.PI) / 180);
+
+            return (
+              <div
+                key={num}
+                className='absolute text-xs font-bold text-zinc-400'
+                style={{
+                  left: `${labelX}%`,
+                  top: `${labelY}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                {num}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Status Text */}
+      <div className='text-center'>
+        <div
+          className={`text-xs font-medium ${
+            value <= 3
+              ? 'text-red-400'
+              : value <= 6
+                ? 'text-yellow-400'
+                : 'text-green-400'
+          }`}
+        >
+          {value <= 3
+            ? 'DIFFERENT VIBE'
+            : value <= 6
+              ? 'SIMILAR ENERGY'
+              : 'PERFECT MATCH'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface CreateRecommendationFormProps {
   basisAlbum: Album | null;
   recommendedAlbum: Album | null;
@@ -62,44 +233,45 @@ export default function CreateRecommendationForm({
     !basisAlbum || !recommendedAlbum || createMutation.isPending;
 
   return (
-    <form onSubmit={handleSubmit} className='space-y-6'>
+    <div className='space-y-8'>
       {createMutation.isError && (
-        <div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded'>
+        <div className='bg-red-950 border border-red-700 text-red-200 px-4 py-3 rounded-lg'>
           {getErrorMessage(createMutation.error)}
         </div>
       )}
 
-      <div className='space-y-2'>
-        <label
-          htmlFor='score'
-          className='block text-lg font-semibold text-white'
-        >
-          Score: {score}/10
-        </label>
-        <input
-          type='range'
-          id='score'
-          min='1'
-          max='10'
+      {/* DJ-Style Similarity Rating Dial */}
+      <div className='flex justify-center'>
+        <SimilarityRatingDial
           value={score}
-          onChange={e => setScore(Number(e.target.value))}
-          className='w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer'
+          onChange={setScore}
           disabled={isDisabled}
         />
-        <div className='flex justify-between text-xs text-gray-400'>
-          {Array.from({ length: 10 }, (_, i) => (
-            <span key={i + 1}>{i + 1}</span>
-          ))}
-        </div>
       </div>
 
-      <button
-        type='submit'
-        className='w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-500 text-white font-bold py-3 px-4 rounded-lg transition-colors'
-        disabled={isDisabled}
-      >
-        {createMutation.isPending ? 'Creating...' : 'Create Recommendation'}
-      </button>
-    </form>
+      {/* Drop the Mix Button */}
+      <div className='flex justify-center'>
+        <button
+          type='submit'
+          onClick={handleSubmit}
+          className={`
+            relative px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform
+            ${
+              isDisabled
+                ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 hover:from-emerald-500 hover:via-green-500 hover:to-emerald-500 text-white hover:scale-105 active:scale-95 shadow-lg hover:shadow-emerald-500/25'
+            }
+          `}
+          disabled={isDisabled}
+        >
+          <span className='relative z-10'>
+            {createMutation.isPending ? '🎧 MIXING...' : '🎵 DROP THE MIX'}
+          </span>
+          {!isDisabled && (
+            <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000'></div>
+          )}
+        </button>
+      </div>
+    </div>
   );
 }
