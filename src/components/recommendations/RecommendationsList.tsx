@@ -45,7 +45,7 @@ export default function RecommendationsList({
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className='bg-gray-200 rounded-lg h-64 animate-pulse'
+              className='bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-2xl h-64 animate-pulse border border-zinc-600'
             />
           ))}
         </div>
@@ -57,7 +57,7 @@ export default function RecommendationsList({
     return (
       <div className='space-y-4'>
         <h2 className='text-2xl font-bold text-white mb-6'>{title}</h2>
-        <div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded'>
+        <div className='bg-red-950 border border-red-800 text-red-200 px-4 py-3 rounded-lg'>
           Error loading recommendations: {error?.message}
         </div>
       </div>
@@ -69,8 +69,8 @@ export default function RecommendationsList({
       <div className='space-y-4'>
         <h2 className='text-2xl font-bold text-white mb-6'>{title}</h2>
         <div className='text-center py-12'>
-          <p className='text-gray-400 text-lg'>No recommendations found.</p>
-          <p className='text-gray-500 text-sm mt-2'>
+          <p className='text-zinc-300 text-lg'>No recommendations found.</p>
+          <p className='text-zinc-400 text-sm mt-2'>
             {userId
               ? "This user hasn't created any recommendations yet."
               : 'Be the first to create a recommendation!'}
