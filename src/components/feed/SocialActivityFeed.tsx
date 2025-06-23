@@ -36,7 +36,7 @@ export default function SocialActivityFeed({
   activityType,
 }: SocialActivityFeedProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const { openAlbumModal } = useAlbumModal();
+  const { openModal } = useAlbumModal();
 
   const fetchActivities = async ({ pageParam }: { pageParam?: string }) => {
     const params = new URLSearchParams();
@@ -95,7 +95,9 @@ export default function SocialActivityFeed({
   }, [handleScroll]);
 
   const handleAlbumClick = (albumId: string) => {
-    openAlbumModal(albumId);
+    // TODO: Implement album modal functionality
+    // Need to convert albumId to Release/CollectionAlbum object for openModal
+    console.log('Album clicked:', albumId);
   };
 
   const handleRefresh = () => {

@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/hover-card';
 import FeedTabs from '@/components/feed/FeedTabs';
 import SocialActivityFeed from '@/components/feed/SocialActivityFeed';
+import FollowSuggestions from '@/components/profile/FollowSuggestions';
+import DiscoveryTabs from '@/components/discovery/DiscoveryTabs';
 import { useRecommendationsQuery } from '@/hooks/useRecommendationsQuery';
 import type { Recommendation } from '@/types';
 
@@ -20,6 +22,10 @@ interface User {
   name: string | null;
   email: string | null;
   image: string | null;
+  bio: string | null;
+  followersCount: number;
+  followingCount: number;
+  recommendationsCount: number;
 }
 
 interface BrowsePageClientProps {
@@ -38,15 +44,14 @@ export default function BrowsePageClient({
   const [feedTab, setFeedTab] = useState<'all' | 'following'>('all');
 
   // Use the existing recommendations query hook for the "following" tab
-  const { data: followingRecommendations, isLoading: isLoadingFollowing } =
-    useRecommendationsQuery(
-      { following: feedTab === 'following' },
-      { enabled: feedTab === 'following' }
-    );
+  const { data: followingRecommendationsData, isLoading: isLoadingFollowing } =
+    useRecommendationsQuery({
+      enabled: feedTab === 'following',
+    });
 
   const displayedRecommendations =
     feedTab === 'following'
-      ? followingRecommendations || []
+      ? followingRecommendationsData?.recommendations || []
       : initialRecommendations;
 
   return (
@@ -82,75 +87,11 @@ export default function BrowsePageClient({
       {/* Discovery Tab Content */}
       {activeTab === 'discovery' && (
         <>
-          {/* Users Section */}
-          <section className='mb-12'>
-            <h2 className='text-2xl font-semibold text-cosmic-latte mb-6 border-b border-zinc-800 pb-2'>
-              Music Enthusiasts
-            </h2>
-            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6'>
-              {initialUsers.map(user => (
-                <HoverCard key={user.id}>
-                  <HoverCardTrigger asChild>
-                    <Link href={`/profile/${user.id}`}>
-                      <div className='bg-zinc-900 rounded-lg p-4 hover:bg-zinc-800 transition-colors cursor-pointer border border-zinc-800'>
-                        <div className='flex flex-col items-center text-center'>
-                          <Avatar className='h-16 w-16 mb-3'>
-                            <AvatarImage
-                              src={user.image || undefined}
-                              alt={user.name || 'User'}
-                            />
-                            <AvatarFallback className='bg-zinc-700 text-zinc-200'>
-                              {user.name?.charAt(0) || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <h3 className='font-medium text-white mb-1'>
-                            {user.name || 'Anonymous User'}
-                          </h3>
-                          <p className='text-sm text-zinc-400'>
-                            {user.email || 'No email'}
-                          </p>
-                        </div>
-                      </div>
-                    </Link>
-                  </HoverCardTrigger>
-                  <HoverCardContent className='w-64 bg-zinc-900 border-zinc-800 text-white'>
-                    <div className='flex space-x-3'>
-                      <Avatar className='h-12 w-12'>
-                        <AvatarImage
-                          src={user.image || undefined}
-                          alt={user.name || 'User'}
-                        />
-                        <AvatarFallback className='bg-zinc-700 text-zinc-200'>
-                          {user.name?.charAt(0) || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className='space-y-1'>
-                        <h4 className='text-sm font-semibold text-zinc-100'>
-                          {user.name || 'Anonymous User'}
-                        </h4>
-                        <p className='text-sm text-zinc-300'>
-                          {user.email || 'No email'}
-                        </p>
-                        <div className='flex items-center pt-1'>
-                          <span className='text-xs text-zinc-400'>
-                            Music enthusiast
-                          </span>
-                        </div>
-                        <div className='mt-2'>
-                          <Link
-                            href={`/profile/${user.id}`}
-                            className='text-xs text-blue-400 hover:text-blue-300 hover:underline inline-block'
-                          >
-                            View Profile
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </HoverCardContent>
-                </HoverCard>
-              ))}
-            </div>
-          </section>
+          <DiscoveryTabs
+            initialUsers={initialUsers}
+            currentUserId={session?.user?.id}
+            className='mb-12'
+          />
 
           {/* Recommendations Section with Tabs */}
           <section>

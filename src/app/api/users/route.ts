@@ -10,6 +10,10 @@ export async function GET() {
         name: true,
         email: true,
         image: true,
+        bio: true,
+        followersCount: true,
+        followingCount: true,
+        recommendationsCount: true,
       },
       orderBy: {
         name: 'asc',

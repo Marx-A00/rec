@@ -56,8 +56,8 @@ export async function GET(
     // Determine sort order
     const orderBy =
       sort === 'alphabetical'
-        ? { follower: { name: 'asc' } }
-        : { createdAt: 'desc' };
+        ? { follower: { name: 'asc' as const } }
+        : { createdAt: 'desc' as const };
 
     // Fetch followers with user details
     const followers = await prisma.userFollow.findMany({
