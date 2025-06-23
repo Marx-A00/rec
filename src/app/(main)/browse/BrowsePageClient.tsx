@@ -2,12 +2,10 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import FeedTabs from '@/components/feed/FeedTabs';
-import SocialActivityFeed from '@/components/feed/SocialActivityFeed';
 import DiscoveryTabs from '@/components/discovery/DiscoveryTabs';
 import { useRecommendationsQuery } from '@/hooks/useRecommendationsQuery';
 import type { Recommendation } from '@/types';
@@ -33,9 +31,6 @@ export default function BrowsePageClient({
   initialRecommendations,
 }: BrowsePageClientProps) {
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState<'discovery' | 'social'>(
-    'discovery'
-  );
   const [feedTab, setFeedTab] = useState<'all' | 'following'>('all');
 
   // Use the existing recommendations query hook for the "following" tab
@@ -51,103 +46,41 @@ export default function BrowsePageClient({
 
   return (
     <div className='space-y-8'>
-      {/* Main Navigation Tabs */}
-      <div className='flex space-x-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 mb-8'>
-        <button
-          onClick={() => setActiveTab('discovery')}
-          className={`px-6 py-3 rounded-md text-sm font-medium transition-colors flex-1 ${
-            activeTab === 'discovery'
-              ? 'bg-emeraled-green text-black'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-          }`}
-        >
-          Discover Users
-        </button>
-        <button
-          onClick={() => setActiveTab('social')}
-          className={`px-6 py-3 rounded-md text-sm font-medium transition-colors flex-1 ${
-            activeTab === 'social'
-              ? 'bg-emeraled-green text-black'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-          }`}
-          disabled={!session}
-        >
-          Social Feed
-          {!session && (
-            <span className='ml-2 text-xs opacity-60'>(Login Required)</span>
+      {/* Discovery Content */}
+      <DiscoveryTabs
+        initialUsers={initialUsers}
+        currentUserId={session?.user?.id}
+        className='mb-12'
+      />
+
+      {/* Recommendations Section with Tabs */}
+      <section>
+        <div className='flex items-center justify-between mb-6'>
+          <h2 className='text-2xl font-semibold text-cosmic-latte border-b border-zinc-800 pb-2'>
+            Latest Recommendations
+          </h2>
+          {session && (
+            <FeedTabs
+              activeTab={feedTab}
+              onTabChange={setFeedTab}
+              className='ml-4'
+            />
           )}
-        </button>
-      </div>
+        </div>
 
-      {/* Discovery Tab Content */}
-      {activeTab === 'discovery' && (
-        <>
-          <DiscoveryTabs
-            initialUsers={initialUsers}
-            currentUserId={session?.user?.id}
-            className='mb-12'
-          />
-
-          {/* Recommendations Section with Tabs */}
-          <section>
-            <div className='flex items-center justify-between mb-6'>
-              <h2 className='text-2xl font-semibold text-cosmic-latte border-b border-zinc-800 pb-2'>
-                Latest Recommendations
-              </h2>
-              {session && (
-                <FeedTabs
-                  activeTab={feedTab}
-                  onTabChange={setFeedTab}
-                  className='ml-4'
-                />
-              )}
+        {isLoadingFollowing && feedTab === 'following' ? (
+          <div className='text-center py-8'>
+            <div className='flex items-center justify-center gap-2'>
+              <div className='w-4 h-4 border-2 border-emeraled-green border-t-transparent rounded-full animate-spin' />
+              <span className='text-zinc-400'>
+                Loading recommendations from people you follow...
+              </span>
             </div>
-
-            {isLoadingFollowing && feedTab === 'following' ? (
-              <div className='text-center py-8'>
-                <div className='flex items-center justify-center gap-2'>
-                  <div className='w-4 h-4 border-2 border-emeraled-green border-t-transparent rounded-full animate-spin' />
-                  <span className='text-zinc-400'>
-                    Loading recommendations from people you follow...
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <RecommendationsSection
-                recommendations={displayedRecommendations}
-              />
-            )}
-          </section>
-        </>
-      )}
-
-      {/* Social Feed Tab Content */}
-      {activeTab === 'social' && session && (
-        <div>
-          <SocialActivityFeed />
-        </div>
-      )}
-
-      {/* Login Required Message */}
-      {activeTab === 'social' && !session && (
-        <div className='text-center py-12'>
-          <div className='bg-zinc-900 rounded-lg p-8 border border-zinc-800'>
-            <div className='text-6xl mb-4'>🔒</div>
-            <h3 className='text-xl font-semibold text-cosmic-latte mb-2'>
-              Login Required
-            </h3>
-            <p className='text-zinc-400 mb-6'>
-              Sign in to see social activities from users you follow.
-            </p>
-            <Link
-              href='/signin'
-              className='inline-flex px-6 py-3 bg-emeraled-green text-black rounded-lg hover:bg-emeraled-green/90 transition-colors font-medium'
-            >
-              Sign In
-            </Link>
           </div>
-        </div>
-      )}
+        ) : (
+          <RecommendationsSection recommendations={displayedRecommendations} />
+        )}
+      </section>
     </div>
   );
 }
