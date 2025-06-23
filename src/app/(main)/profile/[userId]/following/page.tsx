@@ -8,12 +8,12 @@ import FollowersList from '@/components/profile/FollowersList';
 import { userProfileParamsSchema } from '@/lib/validations/params';
 
 interface FollowingPageProps {
-  params: { userId: string };
+  params: Promise<{ userId: string }>;
 }
 
 export default async function FollowingPage({ params }: FollowingPageProps) {
   const session = await auth();
-  const rawParams = params;
+  const rawParams = await params;
 
   // Validate parameters
   const paramsResult = userProfileParamsSchema.safeParse(rawParams);
