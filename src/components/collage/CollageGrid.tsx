@@ -7,22 +7,19 @@ import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
 
 interface CollageGridProps {
-  selectedAlbums: Album[];
-  gridSize: number;
-  onAlbumClick?: (index: number) => void;
+  selectedAlbums: (Album | null)[];
   onRemoveAlbum: (index: number) => void;
 }
 
 export default function CollageGrid({
   selectedAlbums,
-  gridSize,
-  onAlbumClick,
   onRemoveAlbum,
 }: CollageGridProps) {
+  const gridSize = 5; // Fixed 5x5 grid
+
   // Create a grid array with proper size
   const gridItems = Array.from({ length: gridSize * gridSize }, (_, index) => {
-    const album = selectedAlbums[index];
-    return album || null;
+    return selectedAlbums[index] || null;
   });
 
   return (
@@ -41,8 +38,7 @@ export default function CollageGrid({
         {gridItems.map((album, index) => (
           <div
             key={index}
-            className='aspect-square bg-zinc-800 rounded cursor-pointer hover:opacity-80 transition-opacity'
-            onClick={() => onAlbumClick?.(index)}
+            className='aspect-square bg-zinc-800 rounded cursor-pointer hover:opacity-80 transition-opacity group relative'
           >
             {album ? (
               <>

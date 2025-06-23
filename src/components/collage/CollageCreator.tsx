@@ -154,36 +154,39 @@ export default function CollageCreator() {
 
             {selectedCount > 0 ? (
               <div className='space-y-2 max-h-48 overflow-y-auto'>
-                {selectedAlbums.map((album, index) => (
-                  <div
-                    key={album.id}
-                    className='flex items-center justify-between p-2 bg-zinc-800 rounded-lg'
-                  >
-                    <div className='flex items-center space-x-3'>
-                      <span className='text-zinc-400 text-sm font-mono'>
-                        {index + 1}.
-                      </span>
-                      <div>
-                        <p className='text-white text-sm font-medium'>
-                          {album.title}
-                        </p>
-                        <p className='text-zinc-400 text-xs'>
-                          {sanitizeArtistName(
-                            album.artists?.[0]?.name || 'Unknown Artist'
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      onClick={() => removeAlbumFromGrid(index)}
-                      className='text-zinc-400 hover:text-red-400'
+                {selectedAlbums
+                  .map((album, index) => ({ album, index }))
+                  .filter(({ album }) => album !== null)
+                  .map(({ album, index }) => (
+                    <div
+                      key={album!.id}
+                      className='flex items-center justify-between p-2 bg-zinc-800 rounded-lg'
                     >
-                      Remove
-                    </Button>
-                  </div>
-                ))}
+                      <div className='flex items-center space-x-3'>
+                        <span className='text-zinc-400 text-sm font-mono'>
+                          {index + 1}.
+                        </span>
+                        <div>
+                          <p className='text-white text-sm font-medium'>
+                            {album!.title}
+                          </p>
+                          <p className='text-zinc-400 text-xs'>
+                            {sanitizeArtistName(
+                              album!.artists?.[0]?.name || 'Unknown Artist'
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        onClick={() => removeAlbumFromGrid(index)}
+                        className='text-zinc-400 hover:text-red-400'
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
               </div>
             ) : (
               <p className='text-zinc-400 text-center py-8'>

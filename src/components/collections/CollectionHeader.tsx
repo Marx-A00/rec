@@ -59,11 +59,21 @@ export default function CollectionHeader({
         <div className='flex-1'>
           <div className='flex items-center gap-3 mb-2'>
             <h1 className='text-3xl font-bold text-white'>{collection.name}</h1>
-            <div className='flex items-center gap-2 text-zinc-400'>
+            <div className='flex items-center gap-2'>
               {collection.isPublic ? (
-                <Globe className='h-5 w-5' title='Public collection' />
+                <>
+                  <Globe className='h-5 w-5 text-emeraled-green' />
+                  <span className='text-sm text-emeraled-green'>
+                    Public collection
+                  </span>
+                </>
               ) : (
-                <Lock className='h-5 w-5' title='Private collection' />
+                <>
+                  <Lock className='h-5 w-5 text-zinc-400' />
+                  <span className='text-sm text-zinc-400'>
+                    Private collection
+                  </span>
+                </>
               )}
             </div>
           </div>

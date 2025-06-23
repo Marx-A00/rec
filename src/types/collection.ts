@@ -1,7 +1,7 @@
 export interface Collection {
   id: string;
   name: string;
-  description?: string;
+  description: string | null;
   userId: string;
   isPublic: boolean;
   createdAt: string; // ISO 8601 format
@@ -28,20 +28,20 @@ export interface CollectionAlbum {
 
   albumTitle: string;
   albumArtist: string;
-  albumImageUrl?: string;
-  albumYear?: string;
+  albumImageUrl: string | null;
+  albumYear: string | null;
 
   addedAt: string; // ISO 8601 format
   addedBy: string; // userId
-  personalRating?: number; // 1-10 scale
-  personalNotes?: string;
+  personalRating: number | null; // 1-10 scale
+  personalNotes: string | null;
   position: number; // for ordering within collection
 }
 
 export interface CollectionSummary {
   id: string;
   name: string;
-  description?: string;
+  description: string | null;
   albumCount: number;
   isPublic: boolean;
   coverImage?: {

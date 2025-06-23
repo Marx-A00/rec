@@ -7,68 +7,85 @@ import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
 
 interface AlbumSelectorProps {
-  albums: Album[];
-  selectedAlbums: Album[];
+  userCollection: Album[];
+  searchResults: Album[];
+  searchQuery: string;
+  isSearching: boolean;
   onAlbumSelect: (album: Album) => void;
-  maxSelection: number;
+  onSearch: (query: string) => Promise<void>;
+  onSearchQueryChange: (query: string) => void;
 }
 
 export default function AlbumSelector({
-  albums,
-  selectedAlbums,
+  userCollection,
+  searchResults,
+  searchQuery,
+  isSearching,
   onAlbumSelect,
-  maxSelection,
+  onSearch,
+  onSearchQueryChange,
 }: AlbumSelectorProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredAlbums = albums.filter(
-    album =>
-      album.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      album.artists?.[0]?.name
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      album.year?.toString().includes(searchTerm)
+  const [activeTab, setActiveTab] = useState<'collection' | 'search'>(
+    'collection'
   );
 
-  const isSelected = (album: Album) =>
-    selectedAlbums.some(selected => selected.id === album.id);
-
-  const canSelect = selectedAlbums.length < maxSelection;
+  const albums = activeTab === 'collection' ? userCollection : searchResults;
 
   return (
     <div className='space-y-6'>
-      {/* Search */}
-      <div className='relative'>
-        <Search className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
-        <input
-          type='text'
-          placeholder='Search albums...'
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className='w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
-        />
+      {/* Tabs */}
+      <div className='flex space-x-1 bg-zinc-800 p-1 rounded-lg'>
+        <button
+          onClick={() => setActiveTab('collection')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'collection'
+              ? 'bg-zinc-700 text-white'
+              : 'text-zinc-300 hover:text-white'
+          }`}
+        >
+          My Collection ({userCollection.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('search')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'search'
+              ? 'bg-zinc-700 text-white'
+              : 'text-zinc-300 hover:text-white'
+          }`}
+        >
+          Search Albums
+        </button>
       </div>
+
+      {/* Search (only show when search tab is active) */}
+      {activeTab === 'search' && (
+        <div className='relative'>
+          <Search className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
+          <input
+            type='text'
+            placeholder='Search albums...'
+            value={searchQuery}
+            onChange={e => {
+              onSearchQueryChange(e.target.value);
+              onSearch(e.target.value);
+            }}
+            className='w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+          {isSearching && (
+            <div className='absolute right-3 top-3'>
+              <div className='w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin' />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Album Grid */}
       <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-96 overflow-y-auto'>
-        {filteredAlbums.map(album => (
+        {albums.map(album => (
           <div
             key={album.id}
-            onClick={() => {
-              if (isSelected(album) || canSelect) {
-                onAlbumSelect(album);
-              }
-            }}
-            className={`
-              cursor-pointer transition-all duration-200 rounded-lg p-2
-              ${
-                isSelected(album)
-                  ? 'bg-blue-500/20 ring-2 ring-blue-500'
-                  : canSelect
-                    ? 'hover:bg-zinc-800/50'
-                    : 'opacity-50 cursor-not-allowed'
-              }
-            `}
+            onClick={() => onAlbumSelect(album)}
+            className='cursor-pointer transition-all duration-200 rounded-lg p-2 hover:bg-zinc-800/50'
           >
             <AlbumImage
               src={album.image?.url}
@@ -94,6 +111,19 @@ export default function AlbumSelector({
           </div>
         ))}
       </div>
+
+      {/* Empty states */}
+      {albums.length === 0 && (
+        <div className='text-center py-8 text-zinc-400'>
+          {activeTab === 'collection'
+            ? 'No albums in your collection yet. Add some albums to get started!'
+            : searchQuery
+              ? isSearching
+                ? 'Searching...'
+                : 'No albums found for your search.'
+              : 'Enter a search term to find albums.'}
+        </div>
+      )}
     </div>
   );
 }

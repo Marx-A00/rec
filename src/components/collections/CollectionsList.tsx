@@ -94,11 +94,17 @@ export default function CollectionsList({ userId }: CollectionsListProps) {
                 )}
               </div>
 
-              <div className='flex items-center gap-2 text-zinc-500'>
+              <div className='flex items-center gap-1 text-xs'>
                 {collection.isPublic ? (
-                  <Globe className='h-4 w-4' title='Public collection' />
+                  <>
+                    <Globe className='h-4 w-4 text-emeraled-green' />
+                    <span className='text-emeraled-green'>Public</span>
+                  </>
                 ) : (
-                  <Lock className='h-4 w-4' title='Private collection' />
+                  <>
+                    <Lock className='h-4 w-4 text-zinc-500' />
+                    <span className='text-zinc-500'>Private</span>
+                  </>
                 )}
               </div>
             </div>

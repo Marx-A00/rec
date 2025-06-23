@@ -17,6 +17,7 @@ interface UserListItemProps {
     followedAt?: string;
   };
   currentUserId?: string;
+  showFollowButton?: boolean;
   onFollowChange?: (
     userId: string,
     isFollowing: boolean,
@@ -28,6 +29,7 @@ interface UserListItemProps {
 export default function UserListItem({
   user,
   currentUserId,
+  showFollowButton = true,
   onFollowChange,
   className = '',
 }: UserListItemProps) {
@@ -111,7 +113,7 @@ export default function UserListItem({
             </div>
 
             {/* Follow Button */}
-            {!isOwnProfile && (
+            {!isOwnProfile && showFollowButton && (
               <div className='flex-shrink-0'>
                 <FollowButton
                   userId={user.id}
