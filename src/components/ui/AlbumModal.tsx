@@ -12,6 +12,7 @@ interface AlbumModalProps {
   onClose: () => void;
   data: Release | CollectionAlbum | null;
   isExiting: boolean;
+  onNavigateToAlbum?: (albumId: string) => void;
 }
 
 function isCollectionAlbum(
@@ -33,6 +34,7 @@ export default function AlbumModal({
   onClose,
   data,
   isExiting,
+  onNavigateToAlbum,
 }: AlbumModalProps) {
   const [highQualityImageUrl, setHighQualityImageUrl] = useState<string | null>(
     null
@@ -44,18 +46,66 @@ export default function AlbumModal({
     [data]
   );
 
-  // Handle Escape key
+  // Enhanced keyboard handling for accessibility
   useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isOpen) return;
+
+      // Handle Escape key
+      if (event.key === 'Escape') {
+        event.preventDefault();
         onClose();
+        return;
+      }
+
+      // Trap focus within modal
+      if (event.key === 'Tab') {
+        const modal = document.getElementById('album-modal-container');
+        if (!modal) return;
+
+        const focusableElements = modal.querySelectorAll(
+          'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[
+          focusableElements.length - 1
+        ] as HTMLElement;
+
+        if (event.shiftKey) {
+          // Shift + Tab
+          if (document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement?.focus();
+          }
+        } else {
+          // Tab
+          if (document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement?.focus();
+          }
+        }
       }
     };
+
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleKeyDown);
+      // Focus the modal title when opened
+      setTimeout(() => {
+        const titleButton = document.getElementById('album-modal-title');
+        if (titleButton && !titleButton.hasAttribute('disabled')) {
+          titleButton.focus();
+        } else {
+          // Focus close button if title is disabled
+          const closeButton = document.querySelector(
+            '[aria-label="Close album details modal"]'
+          ) as HTMLElement;
+          closeButton?.focus();
+        }
+      }, 100);
     }
+
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
 
@@ -112,21 +162,46 @@ export default function AlbumModal({
     return null;
   };
 
+  // Check if album navigation is available
+  const isNavigationAvailable = () => {
+    const albumId = getAlbumId();
+    return albumId !== null && albumId !== undefined;
+  };
+
   // Handle album title click navigation
   const handleAlbumClick = () => {
     const albumId = getAlbumId();
     if (albumId) {
-      // Close modal first
-      onClose();
-      // Navigate to album details page
-      router.push(`/albums/${albumId}`);
+      try {
+        // Close modal first
+        onClose();
+        // Convert to string to ensure type safety
+        const albumIdString = String(albumId);
+        // Use custom navigation handler if provided, otherwise use router
+        if (onNavigateToAlbum) {
+          onNavigateToAlbum(albumIdString);
+        } else {
+          // Fallback to internal navigation
+          router.push(`/albums/${albumIdString}`);
+        }
+      } catch (error) {
+        console.error('Navigation error:', error);
+        // Re-open modal if navigation fails
+        // onOpen would need to be passed as prop, for now just log the error
+      }
     }
   };
 
-  // Handle keyboard navigation (Enter key)
+  // Enhanced keyboard navigation with better accessibility
   const handleAlbumKeyDown = (event: React.KeyboardEvent) => {
+    // Only handle navigation if album ID is available
+    if (!isNavigationAvailable()) {
+      return;
+    }
+
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
+      event.stopPropagation();
       handleAlbumClick();
     }
   };
@@ -225,9 +300,19 @@ export default function AlbumModal({
           ? 'background-color 300ms ease-out, backdrop-filter 0ms ease-out'
           : 'background-color 300ms ease-out, backdrop-filter 150ms ease-out',
       }}
-      onClick={onClose}
+      onClick={e => {
+        // Only close if clicking the backdrop, not the modal content
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      role='dialog'
+      aria-modal='true'
+      aria-labelledby='album-modal-title'
+      aria-describedby='album-modal-description'
     >
       <div
+        id='album-modal-container'
         className={`flex flex-col lg:flex-row items-center lg:items-start gap-8 max-w-4xl w-full transition-all duration-300 relative ${
           isExiting
             ? 'opacity-0 scale-95 translate-y-4'
@@ -238,13 +323,17 @@ export default function AlbumModal({
         {/* Close X button */}
         <button
           onClick={onClose}
-          className='absolute -top-2 -right-2 z-60 text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110'
+          className='absolute -top-2 -right-2 z-60 text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:ring-opacity-50 rounded-full p-1'
+          aria-label='Close album details modal'
+          role='button'
+          tabIndex={0}
         >
           <svg
             className='w-6 h-6'
             fill='none'
             stroke='currentColor'
             viewBox='0 0 24 24'
+            aria-hidden='true'
           >
             <path
               strokeLinecap='round'
@@ -274,15 +363,32 @@ export default function AlbumModal({
         {/* Album Details */}
         <div className='flex-1 text-center lg:text-left'>
           <button
+            id='album-modal-title'
             onClick={handleAlbumClick}
             onKeyDown={handleAlbumKeyDown}
-            className='text-3xl lg:text-4xl font-bold text-cosmic-latte hover:underline cursor-pointer mb-2 transition-all duration-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:ring-opacity-50 rounded-md px-1'
-            tabIndex={0}
-            aria-label={`Navigate to album details for ${getTitle()}`}
+            disabled={!isNavigationAvailable()}
+            className={`text-3xl lg:text-4xl font-bold mb-2 transition-all duration-200 rounded-md px-1 focus:outline-none ${
+              isNavigationAvailable()
+                ? 'text-cosmic-latte hover:underline cursor-pointer hover:text-white focus:ring-2 focus:ring-cosmic-latte focus:ring-opacity-50'
+                : 'text-zinc-500 cursor-not-allowed'
+            }`}
+            tabIndex={isNavigationAvailable() ? 0 : -1}
+            aria-label={
+              isNavigationAvailable()
+                ? `Navigate to album details for ${getTitle()}`
+                : `${getTitle()} - Album details not available`
+            }
+            aria-disabled={!isNavigationAvailable()}
+            role='button'
           >
             {getTitle()}
           </button>
-          <p className='text-xl text-zinc-300 mb-4'>{getArtist()}</p>
+          <p
+            className='text-xl text-zinc-300 mb-4'
+            id='album-modal-description'
+          >
+            By {getArtist()}
+          </p>
 
           {renderDetails()}
         </div>

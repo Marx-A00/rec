@@ -5,12 +5,14 @@ import { Calendar, Disc, ChevronDown } from 'lucide-react';
 import AlbumImage from '@/components/ui/AlbumImage';
 import AlbumModal from '@/components/ui/AlbumModal';
 import { useAlbumModal } from '@/hooks/useAlbumModal';
+import { useNavigation } from '@/hooks/useNavigation';
 import { useMastersQuery } from '@/hooks/useMastersQuery';
 import { Release } from '@/types/album';
 
 export default function DiscographyTab({ artistId }: { artistId: string }) {
   const { selectedItem, isExiting, isOpen, openModal, closeModal } =
     useAlbumModal();
+  const { navigateToAlbum } = useNavigation();
 
   const {
     masters,
@@ -54,6 +56,7 @@ export default function DiscographyTab({ artistId }: { artistId: string }) {
         onClose={closeModal}
         data={selectedItem}
         isExiting={isExiting}
+        onNavigateToAlbum={navigateToAlbum}
       />
 
       <div className='bg-zinc-900 p-4 rounded-lg'>
