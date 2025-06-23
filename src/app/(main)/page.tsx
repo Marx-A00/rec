@@ -1,10 +1,12 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 import { auth } from '@/../auth';
 import NavigationButtons from '@/components/NavigationButtons';
 import SignInButton from '@/components/auth/SignInButton';
 import SignOutButton from '@/components/auth/SignOutButton';
 import RecommendationsList from '@/components/recommendations/RecommendationsList';
+import SocialActivityFeed from '@/components/feed/SocialActivityFeed';
 import AlbumSearch from '@/components/ui/AlbumSearch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -12,6 +14,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
+import HomeFeedTabs from '@/components/feed/HomeFeedTabs';
 
 export default async function Home() {
   const session = await auth();
@@ -108,10 +111,41 @@ export default async function Home() {
       {/* Main Navigation */}
       <NavigationButtons />
 
-      {/* Recommendations Section */}
+      {/* Main Content Section */}
       <div className='flex-1 px-4 pb-8'>
         <div className='max-w-6xl mx-auto'>
-          <RecommendationsList />
+          {user ? (
+            // Authenticated user sees both feed options with tabs
+            <Suspense
+              fallback={
+                <div className='text-center py-8 text-zinc-400'>
+                  Loading feed...
+                </div>
+              }
+            >
+              <HomeFeedTabs />
+            </Suspense>
+          ) : (
+            // Non-authenticated user sees recommendations only
+            <>
+              <div className='mb-6'>
+                <h2 className='text-2xl font-semibold text-cosmic-latte border-b border-zinc-800 pb-2 mb-6'>
+                  Latest Recommendations
+                </h2>
+                <p className='text-zinc-400 mb-4'>
+                  Discover the latest music recommendations from our community.{' '}
+                  <Link
+                    href='/signin'
+                    className='text-emeraled-green hover:underline'
+                  >
+                    Sign in
+                  </Link>{' '}
+                  to see personalized content and social activities.
+                </p>
+              </div>
+              <RecommendationsList />
+            </>
+          )}
         </div>
       </div>
     </div>

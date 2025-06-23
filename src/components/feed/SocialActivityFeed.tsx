@@ -29,13 +29,14 @@ interface SocialActivityFeedProps {
     | 'recommendation'
     | 'profile_update'
     | 'collection_add';
+  refreshInterval?: number; // in milliseconds
 }
 
 export default function SocialActivityFeed({
   className = '',
   activityType,
+  refreshInterval = 30000, // 30 seconds default
 }: SocialActivityFeedProps) {
-  const [activities, setActivities] = useState<Activity[]>([]);
   const { openModal } = useAlbumModal();
 
   const fetchActivities = async ({ pageParam }: { pageParam?: string }) => {
@@ -60,22 +61,20 @@ export default function SocialActivityFeed({
     isLoading,
     isError,
     refetch,
+    isFetching,
   } = useInfiniteQuery({
     queryKey: ['social-feed', activityType],
     queryFn: fetchActivities,
     initialPageParam: undefined,
     getNextPageParam: lastPage => lastPage.nextCursor,
     staleTime: 30000, // 30 seconds
+    refetchInterval: refreshInterval, // Auto-refresh every 30 seconds
     refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   // Flatten activities from all pages
-  useEffect(() => {
-    if (data?.pages) {
-      const allActivities = data.pages.flatMap(page => page.activities || []);
-      setActivities(allActivities);
-    }
-  }, [data]);
+  const activities = data?.pages?.flatMap(page => page.activities || []) || [];
 
   // Infinite scroll handler
   const handleScroll = useCallback(() => {
@@ -170,16 +169,27 @@ export default function SocialActivityFeed({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Refresh Button */}
+      {/* Header with refresh status */}
       <div className='flex justify-between items-center mb-6'>
-        <h2 className='text-xl font-semibold text-cosmic-latte'>
-          Social Activity
-          {activityType && (
-            <span className='text-sm text-zinc-400 ml-2 font-normal'>
-              ({activityType.replace('_', ' ')})
-            </span>
+        <div className='flex items-center gap-3'>
+          <h2 className='text-xl font-semibold text-cosmic-latte'>
+            Social Activity
+            {activityType && (
+              <span className='text-sm text-zinc-400 ml-2 font-normal'>
+                ({activityType.replace('_', ' ')})
+              </span>
+            )}
+          </h2>
+
+          {/* Auto-refresh indicator */}
+          {isFetching && !isLoading && (
+            <div className='flex items-center gap-2'>
+              <div className='w-2 h-2 bg-emeraled-green rounded-full animate-pulse' />
+              <span className='text-xs text-zinc-500'>Updating...</span>
+            </div>
           )}
-        </h2>
+        </div>
+
         <button
           onClick={handleRefresh}
           className='px-3 py-1 text-sm bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors'
@@ -217,6 +227,9 @@ export default function SocialActivityFeed({
         <div className='text-center py-8'>
           <p className='text-zinc-500 text-sm'>
             You've reached the end of your social feed
+          </p>
+          <p className='text-xs text-zinc-600 mt-1'>
+            Feed updates automatically every {refreshInterval / 1000} seconds
           </p>
         </div>
       )}
