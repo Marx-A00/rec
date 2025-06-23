@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 
 import { auth } from '@/../auth';
 import NavigationButtons from '@/components/NavigationButtons';
+import NavigationSidebar from '@/components/NavigationSidebar';
 import SignInButton from '@/components/auth/SignInButton';
 import SignOutButton from '@/components/auth/SignOutButton';
 import RecommendationsList from '@/components/recommendations/RecommendationsList';
@@ -22,7 +23,7 @@ export default async function Home() {
   return (
     <div className='flex flex-col min-h-screen bg-black'>
       {/* Search Bar at the top */}
-      <div className='w-full px-4 pt-6 pb-4'>
+      <div className='w-full px-4 pt-6 pb-4 md:pl-20'>
         <div className='max-w-2xl mx-auto'>
           <AlbumSearch placeholder='Search for albums, artists, or genres...' />
         </div>
@@ -107,11 +108,14 @@ export default async function Home() {
         </HoverCard>
       </div>
 
+      {/* Navigation Sidebar */}
+      <NavigationSidebar />
+
       {/* Main Navigation */}
       <NavigationButtons />
 
       {/* Main Content Section */}
-      <div className='flex-1 px-4 pb-8'>
+      <div className='flex-1 px-4 pb-8 md:pl-20'>
         <div className='max-w-6xl mx-auto'>
           {user ? (
             // Authenticated user sees social feed directly without tabs
