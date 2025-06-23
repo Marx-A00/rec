@@ -361,11 +361,6 @@ export default function ProfileClient({
 
               {/* Action Buttons */}
               <div className='mt-6 flex flex-col sm:flex-row gap-3'>
-                <Link href={`/profile/${currentUser.id}/stats`}>
-                  <button className='bg-emeraled-green text-black font-semibold py-2 px-4 rounded-md transition-colors hover:bg-opacity-90 flex items-center gap-2'>
-                    📊 View Statistics
-                  </button>
-                </Link>
                 <Link href='/profile/collage'>
                   <button
                     disabled
