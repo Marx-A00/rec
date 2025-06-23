@@ -222,11 +222,11 @@ export default function CreateRecommendationForm({
       basisAlbumTitle: basisAlbum.title,
       basisAlbumArtist: formatArtists(basisAlbum.artists),
       basisAlbumImageUrl: basisAlbum.image.url,
-      basisAlbumYear: basisAlbum.year?.toString(),
+      basisAlbumYear: basisAlbum.year?.toString() ?? null,
       recommendedAlbumTitle: recommendedAlbum.title,
       recommendedAlbumArtist: formatArtists(recommendedAlbum.artists),
       recommendedAlbumImageUrl: recommendedAlbum.image.url,
-      recommendedAlbumYear: recommendedAlbum.year?.toString(),
+      recommendedAlbumYear: recommendedAlbum.year?.toString() ?? null,
     };
 
     createMutation.mutate(request);
