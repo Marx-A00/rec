@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { Settings, Pencil } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
@@ -52,6 +54,10 @@ export default function ProfileClient({
 
   // State for optimistic follow count updates
   const [followersCount, setFollowersCount] = useState(user.followersCount);
+
+  // Settings dropdown state
+  const [showSettings, setShowSettings] = useState(false);
+  const settingsMenuRef = useRef<HTMLDivElement>(null);
 
   // Strategic prefetching for likely navigation targets
   useEffect(() => {
@@ -117,6 +123,7 @@ export default function ProfileClient({
   // Profile editing handlers
   const handleEditProfile = () => {
     setIsEditingProfile(true);
+    setShowSettings(false);
   };
 
   const handleCancelEdit = () => {
@@ -141,6 +148,24 @@ export default function ProfileClient({
     setFollowersCount(prev => prev + newCounts.followersCount);
   };
 
+  // Close settings menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        settingsMenuRef.current &&
+        !settingsMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowSettings(false);
+      }
+    };
+
+    if (showSettings) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () =>
+        document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showSettings]);
+
   // Add escape key listener
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -150,16 +175,19 @@ export default function ProfileClient({
       if (event.key === 'Escape' && isEditingProfile) {
         handleCancelEdit();
       }
+      if (event.key === 'Escape' && showSettings) {
+        setShowSettings(false);
+      }
     };
 
-    if (selectedAlbum || isEditingProfile) {
+    if (selectedAlbum || isEditingProfile || showSettings) {
       document.addEventListener('keydown', handleEscape);
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [selectedAlbum, isEditingProfile]);
+  }, [selectedAlbum, isEditingProfile, showSettings]);
 
   return (
     <div className='min-h-screen bg-black text-white'>
@@ -312,12 +340,49 @@ export default function ProfileClient({
                 </div>
                 <div className='flex-shrink-0 flex gap-3'>
                   {isOwnProfile ? (
-                    <button
-                      onClick={handleEditProfile}
-                      className='bg-zinc-800 text-cosmic-latte px-4 py-2 rounded-lg font-medium hover:bg-zinc-700 transition-colors border border-zinc-600'
-                    >
-                      ✏️ Edit Profile
-                    </button>
+                    <div className='relative' ref={settingsMenuRef}>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        onClick={e => {
+                          e.stopPropagation();
+                          setShowSettings(!showSettings);
+                        }}
+                        className='p-2 h-9 w-9 hover:bg-zinc-800 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-black border border-zinc-600'
+                        aria-label='Profile settings menu'
+                        aria-expanded={showSettings}
+                        aria-haspopup='menu'
+                      >
+                        <Settings
+                          className='h-4 w-4 text-zinc-400'
+                          aria-hidden='true'
+                        />
+                      </Button>
+                      {showSettings && (
+                        <div
+                          className='absolute right-0 top-10 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-20 py-2 min-w-[140px] backdrop-blur-sm'
+                          role='menu'
+                          aria-label='Profile settings'
+                        >
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleEditProfile();
+                            }}
+                            className='flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800'
+                            role='menuitem'
+                            tabIndex={0}
+                            aria-label='Edit your profile'
+                          >
+                            <Pencil
+                              className='h-4 w-4 text-zinc-400'
+                              aria-hidden='true'
+                            />
+                            <span className='text-zinc-200'>Edit Profile</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     currentUser.id && (
                       <FollowButton
