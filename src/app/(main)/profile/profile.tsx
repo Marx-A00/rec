@@ -359,20 +359,25 @@ export default function ProfileClient({
                 </span>
               </div>
 
-              {/* Create Album Collage Button */}
-              <div className='mt-6'>
+              {/* Action Buttons */}
+              <div className='mt-6 flex flex-col sm:flex-row gap-3'>
+                <Link href={`/profile/${currentUser.id}/stats`}>
+                  <button className='bg-emeraled-green text-black font-semibold py-2 px-4 rounded-md transition-colors hover:bg-opacity-90 flex items-center gap-2'>
+                    📊 View Statistics
+                  </button>
+                </Link>
                 <Link href='/profile/collage'>
                   <button
                     disabled
-                    className='bg-gray-500 text-black font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                    className='bg-gray-500 text-black font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'
                   >
                     🎵 Create Album Collage
                   </button>
                 </Link>
-                <p className='text-xs text-zinc-500 mt-1'>
-                  * feature coming soon!
-                </p>
               </div>
+              <p className='text-xs text-zinc-500 mt-1'>
+                * Album collage feature coming soon!
+              </p>
             </div>
           </div>
 

@@ -53,12 +53,6 @@ export async function GET(
       };
     }
 
-    // Determine sort order
-    const orderBy =
-      sort === 'alphabetical'
-        ? { followed: { name: 'asc' } }
-        : { createdAt: 'desc' };
-
     // Fetch following with user details
     const following = await prisma.userFollow.findMany({
       where: whereClause,
@@ -76,7 +70,10 @@ export async function GET(
           },
         },
       },
-      orderBy,
+      orderBy:
+        sort === 'alphabetical'
+          ? { followed: { name: 'asc' } }
+          : { createdAt: 'desc' },
       take: limit + 1, // Take one extra to check if there are more results
     });
 
