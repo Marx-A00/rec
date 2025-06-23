@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
+
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 import BackButton from '@/components/ui/BackButton';
@@ -6,12 +8,12 @@ import FollowersList from '@/components/profile/FollowersList';
 import { userProfileParamsSchema } from '@/lib/validations/params';
 
 interface FollowersPageProps {
-  params: Promise<{ userId: string }>;
+  params: { userId: string };
 }
 
 export default async function FollowersPage({ params }: FollowersPageProps) {
   const session = await auth();
-  const rawParams = await params;
+  const rawParams = params;
 
   // Validate parameters
   const paramsResult = userProfileParamsSchema.safeParse(rawParams);
@@ -29,6 +31,7 @@ export default async function FollowersPage({ params }: FollowersPageProps) {
       id: true,
       name: true,
       image: true,
+      followersCount: true,
     },
   });
 
@@ -44,9 +47,11 @@ export default async function FollowersPage({ params }: FollowersPageProps) {
           <BackButton className='inline-flex items-center text-cosmic-latte hover:text-emeraled-green transition-colors mb-4' />
 
           <div className='flex items-center gap-4 mb-6'>
-            <img
+            <Image
               src={userData.image || '/placeholder.svg?height=64&width=64'}
               alt={userData.name || 'User'}
+              width={64}
+              height={64}
               className='w-16 h-16 rounded-full object-cover'
             />
             <div>
@@ -54,8 +59,8 @@ export default async function FollowersPage({ params }: FollowersPageProps) {
                 {userData.name || 'Anonymous User'}
               </h1>
               <p className='text-zinc-400'>
-                {(userData as any).followersCount || 0}{' '}
-                {((userData as any).followersCount || 0) === 1
+                {userData.followersCount || 0}{' '}
+                {(userData.followersCount || 0) === 1
                   ? 'Follower'
                   : 'Followers'}
               </p>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
+
 import RecommendationsList from '@/components/recommendations/RecommendationsList';
 import SocialActivityFeed from '@/components/feed/SocialActivityFeed';
 

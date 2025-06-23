@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Button } from '@/components/ui/button';
 import { Album } from '@/types/album';

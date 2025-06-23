@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { X, UserPlus, Users } from 'lucide-react';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import FollowButton from '@/components/profile/FollowButton';
 

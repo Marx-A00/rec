@@ -1,7 +1,7 @@
 import { Building2, Calendar, Clock, Music, Tag } from 'lucide-react';
-import AlbumImage from '@/components/ui/AlbumImage';
 import { notFound } from 'next/navigation';
 
+import AlbumImage from '@/components/ui/AlbumImage';
 import AlbumInteractions from '@/components/albums/AlbumInteractions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BackButton from '@/components/ui/BackButton';

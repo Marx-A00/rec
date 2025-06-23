@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
+
+interface RecommendationMetadata {
+  score: number;
+  basisAlbumTitle: string;
+  basisAlbumArtist: string;
+}
+
+interface CollectionAddMetadata {
+  collectionName: string;
+  personalRating: number | null;
+}
 
 interface ActivityItem {
   id: string;
@@ -16,7 +28,7 @@ interface ActivityItem {
   albumArtist?: string;
   albumImage?: string | null;
   createdAt: string;
-  metadata?: any;
+  metadata?: RecommendationMetadata | CollectionAddMetadata;
 }
 
 export async function GET(request: NextRequest) {

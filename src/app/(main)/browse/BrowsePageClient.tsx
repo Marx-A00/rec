@@ -3,16 +3,11 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@/components/ui/hover-card';
 import FeedTabs from '@/components/feed/FeedTabs';
 import SocialActivityFeed from '@/components/feed/SocialActivityFeed';
-import FollowSuggestions from '@/components/profile/FollowSuggestions';
 import DiscoveryTabs from '@/components/discovery/DiscoveryTabs';
 import { useRecommendationsQuery } from '@/hooks/useRecommendationsQuery';
 import type { Recommendation } from '@/types';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useNavigation } from '@/hooks/useNavigation';
 import { useUnifiedSearchQuery } from '@/hooks';
@@ -39,7 +39,10 @@ export default function AlbumSearch({
   });
 
   // Extract results from response and handle local error state
-  const searchResults = searchResponse?.results || [];
+  const searchResults = useMemo(
+    () => searchResponse?.results || [],
+    [searchResponse]
+  );
   const [localError, setLocalError] = useState<string | null>(null);
   const error = queryError ? 'Search failed. Please try again.' : localError;
 

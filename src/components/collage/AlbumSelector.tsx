@@ -1,8 +1,9 @@
 'use client';
 
-import AlbumImage from '@/components/ui/AlbumImage';
 import { useState } from 'react';
 import { Search } from 'lucide-react';
+
+import AlbumImage from '@/components/ui/AlbumImage';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
 

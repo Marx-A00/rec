@@ -1,9 +1,9 @@
 'use client';
 
 import { Building2, Music, Tag, User } from 'lucide-react';
-import AlbumImage from '@/components/ui/AlbumImage';
 import { useEffect, useRef } from 'react';
 
+import AlbumImage from '@/components/ui/AlbumImage';
 import { UnifiedSearchResult } from '@/types/search';
 import { sanitizeArtistName } from '@/lib/utils';
 

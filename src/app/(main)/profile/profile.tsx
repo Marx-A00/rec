@@ -1,9 +1,9 @@
 'use client';
 
-import AlbumImage from '@/components/ui/AlbumImage';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
@@ -52,7 +52,6 @@ export default function ProfileClient({
 
   // State for optimistic follow count updates
   const [followersCount, setFollowersCount] = useState(user.followersCount);
-  const [followingCount, setFollowingCount] = useState(user.followingCount);
 
   // Strategic prefetching for likely navigation targets
   useEffect(() => {
@@ -91,13 +90,19 @@ export default function ProfileClient({
       if (collectionAlbum.albumId) {
         try {
           await navigateToAlbum(collectionAlbum.albumId, {
-            onError: error => {
-              console.error('Failed to navigate to album:', error);
+            onError: () => {
+              console.error(
+                `Failed to navigate to album: ${collectionAlbum.albumId}`
+              );
               // Fallback to modal
               setSelectedAlbum(collectionAlbum);
             },
           });
         } catch (error) {
+          console.error(
+            `Navigation to album ${collectionAlbum.albumId} failed:`,
+            error
+          );
           // Fallback to modal on error
           setSelectedAlbum(collectionAlbum);
         }
@@ -247,15 +252,15 @@ export default function ProfileClient({
                     onClick={async () => {
                       try {
                         await navigateToAlbum(selectedAlbum.albumId!, {
-                          onError: error => {
+                          onError: () => {
                             console.error(
                               'Failed to navigate to album:',
-                              error
+                              selectedAlbum.albumId
                             );
                           },
                         });
                       } catch (error) {
-                        console.error('Navigation error:', error);
+                        console.error('Navigation from modal failed:', error);
                       }
                     }}
                     className='bg-emeraled-green text-black px-6 py-2 rounded-lg font-medium hover:bg-opacity-90 transition-colors'
@@ -347,7 +352,7 @@ export default function ProfileClient({
                   className='text-zinc-300 hover:text-cosmic-latte transition-colors cursor-pointer'
                 >
                   <strong className='text-cosmic-latte'>
-                    {followingCount}
+                    {user.followingCount}
                   </strong>{' '}
                   Following
                 </Link>
@@ -452,15 +457,14 @@ export default function ProfileClient({
             </h2>
             {recommendations.length > 0 ? (
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                {recommendations.map(rec => (
+                {recommendations.map(recommendation => (
                   <RecommendationCard
-                    key={rec.id}
-                    recommendation={rec}
-                    currentUserId={currentUser?.id}
-                    onAlbumClick={(albumId, albumType) => {
-                      // Navigate to album page
-                      window.open(`/albums/${albumId}`, '_blank');
-                    }}
+                    key={recommendation.id}
+                    recommendation={recommendation}
+                    currentUserId={user.id}
+                    onEdit={() => {}}
+                    onDetail={() => {}}
+                    onAlbumClick={albumId => navigateToAlbum(albumId)}
                   />
                 ))}
               </div>

@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
+import { Prisma, Recommendation } from '@prisma/client';
+
+type RecommendationWithUser = Recommendation & {
+  user: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+};
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause for pagination
-    const whereClause: any = {
+    const whereClause: Prisma.RecommendationWhereInput = {
       userId: { in: followedUserIds },
     };
 
@@ -67,7 +77,7 @@ export async function GET(request: NextRequest) {
       : null;
 
     // Transform the data for the response
-    const recommendationsData = results.map((rec: any) => ({
+    const recommendationsData = results.map((rec: RecommendationWithUser) => ({
       id: rec.id,
       score: rec.score,
       createdAt: rec.createdAt.toISOString(),

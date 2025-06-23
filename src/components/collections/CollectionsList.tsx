@@ -6,7 +6,6 @@ import { Folder, FolderOpen, Lock, Globe, Calendar } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { CollectionSummary } from '@/types/collection';
-import { sanitizeArtistName } from '@/lib/utils';
 
 interface CollectionsListProps {
   userId: string;

@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import ActivityItem from './ActivityItem';
+
 import { useAlbumModal } from '@/hooks/useAlbumModal';
+
+import ActivityItem from './ActivityItem';
 
 interface Activity {
   id: string;

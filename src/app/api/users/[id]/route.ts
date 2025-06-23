@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
-import { z } from 'zod';
 
 // Validation schema for profile updates
 const updateProfileSchema = z.object({

@@ -1,8 +1,8 @@
 'use client';
 
-import AlbumImage from '@/components/ui/AlbumImage';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
+import AlbumImage from '@/components/ui/AlbumImage';
 import { Release } from '@/types/album';
 import { CollectionAlbum } from '@/types/collection';
 
@@ -37,6 +37,11 @@ export default function AlbumModal({
     null
   );
 
+  const isMasterRelease = useMemo(
+    () => isRelease(data) && data.type === 'master',
+    [data]
+  );
+
   // Handle Escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -60,9 +65,9 @@ export default function AlbumModal({
     }
 
     // Enhanced high-quality image fetching for master releases
-    if (isRelease(data) && data.type === 'master') {
+    if (isMasterRelease) {
       // Try to fetch high-quality image using main_release if available, otherwise try the master ID itself
-      const fetchId = data.main_release || data.id;
+      const fetchId = isRelease(data) ? data.main_release || data.id : data.id;
 
       fetch(`/api/albums/${fetchId}`)
         .then(res => res.json())
@@ -76,23 +81,9 @@ export default function AlbumModal({
           console.error('Failed to fetch high-quality image:', error);
         });
     }
-  }, [isOpen, data?.id, isRelease(data) ? data.type : null]);
+  }, [isOpen, data, isMasterRelease]);
 
   if (!isOpen || !data) return null;
-
-  // Get the appropriate image URL based on availability
-  const getImageUrl = () => {
-    // Always start with the original data image (thumbnail/low quality)
-    let originalImage: string | null = null;
-
-    if (isCollectionAlbum(data)) {
-      originalImage = data.albumImageUrl || null;
-    } else if (isRelease(data)) {
-      originalImage = data.basic_information?.cover_image || data.thumb || null;
-    }
-
-    return originalImage;
-  };
 
   // Get the high-quality image URL when available
   const getHighQualityImageUrl = () => {

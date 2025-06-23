@@ -10,10 +10,10 @@ export interface RouteContext<T = Record<string, string>> {
 }
 
 // Specific route contexts
-export interface AlbumRouteContext extends RouteContext<{ id: string }> {}
-export interface ArtistRouteContext extends RouteContext<{ id: string }> {}
-export interface CollectionRouteContext extends RouteContext<{ id: string }> {}
-export interface UserRouteContext extends RouteContext<{ userId: string }> {}
+export type AlbumRouteContext = RouteContext<{ id: string }>;
+export type ArtistRouteContext = RouteContext<{ id: string }>;
+export type CollectionRouteContext = RouteContext<{ id: string }>;
+export type UserRouteContext = RouteContext<{ userId: string }>;
 
 // ===========================
 // API REQUEST TYPES
@@ -170,8 +170,7 @@ export interface CollectionResponse extends ApiResponse {
   updatedAt: string;
 }
 
-export interface CollectionListResponse
-  extends PaginatedApiResponse<CollectionResponse> {}
+export type CollectionListResponse = PaginatedApiResponse<CollectionResponse>;
 
 // User API responses
 export interface UserResponse extends ApiResponse {

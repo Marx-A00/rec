@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { userProfileParamsSchema } from '@/lib/validations/params';
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
+import { User } from '@prisma/client';
 
 import Profile from '../profile';
 
@@ -90,9 +91,9 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
   const isOwnProfile = session?.user?.id === userId;
 
   // Fetch user data from database
-  const userData = await prisma.user.findUnique({
+  const userData = (await prisma.user.findUnique({
     where: { id: userId },
-  });
+  })) as User;
 
   if (!userData) {
     notFound();
@@ -112,11 +113,11 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     image: userData.image || '/placeholder.svg?height=100&width=100',
     username: userData.email ? `@${userData.email.split('@')[0]}` : '@user',
     bio:
-      (userData as any).bio ||
+      userData.bio ||
       'Music enthusiast | Sharing vibes and discovering new sounds',
-    followersCount: (userData as any).followersCount || 0,
-    followingCount: (userData as any).followingCount || 0,
-    recommendationsCount: (userData as any).recommendationsCount || 0,
+    followersCount: userData.followersCount || 0,
+    followingCount: userData.followingCount || 0,
+    recommendationsCount: userData.recommendationsCount || 0,
   };
 
   return (

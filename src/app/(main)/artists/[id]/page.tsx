@@ -1,8 +1,8 @@
 import { ArrowLeft, ExternalLink, User } from 'lucide-react';
-import AlbumImage from '@/components/ui/AlbumImage';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import AlbumImage from '@/components/ui/AlbumImage';
 import DiscographyTab from '@/components/artistDetails/tabs/DiscographyTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getArtistDetails } from '@/lib/api/artists';

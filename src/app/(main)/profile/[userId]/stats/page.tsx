@@ -1,6 +1,8 @@
-import { auth } from '@/../auth';
 import { redirect } from 'next/navigation';
 import { Metadata } from 'next';
+import Image from 'next/image';
+
+import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 import SocialStatsDashboard from '@/components/profile/SocialStatsDashboard';
 import BackButton from '@/components/ui/BackButton';
@@ -59,9 +61,11 @@ export default async function StatsPage({ params }: StatsPageProps) {
             <BackButton />
             <div className='flex items-center space-x-3'>
               {user.image && (
-                <img
+                <Image
                   src={user.image}
                   alt={user.name || ''}
+                  width={48}
+                  height={48}
                   className='w-12 h-12 rounded-full object-cover'
                 />
               )}

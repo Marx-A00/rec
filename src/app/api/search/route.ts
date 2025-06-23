@@ -12,12 +12,11 @@ import {
   SearchResultItem,
   ApiErrorResponse,
 } from '@/types/api';
-import { sanitizeArtistName } from '@/lib/utils';
+import { Client } from 'disconnect';
 
 const log = console.log;
 
 // Initialize Discogs client - move this to a separate file in production
-const { Client } = require('disconnect');
 const db = new Client({
   userAgent: 'REC/1.0',
   consumerKey: process.env.CONSUMER_KEY,

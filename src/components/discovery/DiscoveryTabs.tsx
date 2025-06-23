@@ -9,6 +9,7 @@ import {
   Filter,
   SortAsc,
 } from 'lucide-react';
+
 import UserListItem from '@/components/profile/UserListItem';
 import FollowSuggestions from '@/components/profile/FollowSuggestions';
 

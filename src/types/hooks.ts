@@ -31,7 +31,7 @@ export interface BaseMutationOptions<TData = unknown> {
 // ========================================
 
 // Users Query
-export interface UseUsersQueryOptions extends BaseQueryOptions {}
+export type UseUsersQueryOptions = BaseQueryOptions;
 
 export type UseUsersQueryResult = UseQueryResult<User[], QueryError>;
 
@@ -43,7 +43,7 @@ export interface UseAlbumDetailsQueryOptions extends BaseQueryOptions {
 export type UseAlbumDetailsQueryResult = UseQueryResult<Album, QueryError>;
 
 // Masters Query
-export interface UseMastersQueryOptions extends BaseQueryOptions {}
+export type UseMastersQueryOptions = BaseQueryOptions;
 
 export interface UseMastersQueryData {
   masters: any[]; // From ReleasesResponse.releases
@@ -85,8 +85,7 @@ export type UseAlbumSearchQueryResult = UseQueryResult<
 // ========================================
 
 // Create Recommendation Mutation
-export interface UseCreateRecommendationMutationOptions
-  extends BaseMutationOptions<any> {}
+export type UseCreateRecommendationMutationOptions = BaseMutationOptions<any>;
 
 export type UseCreateRecommendationMutationResult = UseMutationResult<
   any,

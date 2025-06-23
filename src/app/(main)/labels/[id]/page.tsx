@@ -1,11 +1,11 @@
 'use client';
 
 import { ArrowLeft, Building2, ExternalLink, MapPin } from 'lucide-react';
-import AlbumImage from '@/components/ui/AlbumImage';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import AlbumImage from '@/components/ui/AlbumImage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Label {

@@ -6,11 +6,11 @@ import { Download, RotateCcw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { useCollageGenerator } from '@/hooks/useCollageGenerator';
+import { sanitizeArtistName } from '@/lib/utils';
 
 import AlbumSelector from './AlbumSelector';
 import CollageDownloader from './CollageDownloader';
 import CollageGrid from './CollageGrid';
-import { sanitizeArtistName } from '@/lib/utils';
 
 export default function CollageCreator() {
   const router = useRouter();

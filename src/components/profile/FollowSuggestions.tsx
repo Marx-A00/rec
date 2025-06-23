@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Sparkles, RefreshCw, Users } from 'lucide-react';
+
 import SuggestionCard from './SuggestionCard';
 
 interface SuggestionUser {
@@ -50,43 +51,46 @@ export default function FollowSuggestions({
     FollowSuggestionsResponse['algorithms'] | null
   >(null);
 
-  const fetchSuggestions = async (isRefresh = false) => {
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/users/suggestions?limit=${limit}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Please sign in to see suggestions');
-        }
-        throw new Error('Failed to fetch suggestions');
+  const fetchSuggestions = useCallback(
+    async (isRefresh = false) => {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
       }
+      setError(null);
 
-      const data: FollowSuggestionsResponse = await response.json();
-      setSuggestions(data.suggestions);
-      setAlgorithms(data.algorithms);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+      try {
+        const response = await fetch(`/api/users/suggestions?limit=${limit}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Please sign in to see suggestions');
+          }
+          throw new Error('Failed to fetch suggestions');
+        }
+
+        const data: FollowSuggestionsResponse = await response.json();
+        setSuggestions(data.suggestions);
+        setAlgorithms(data.algorithms);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Something went wrong');
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [limit]
+  );
 
   useEffect(() => {
     fetchSuggestions();
-  }, [limit]);
+  }, [fetchSuggestions]);
 
   const handleDismiss = (userId: string) => {
     setSuggestions(prev => prev.filter(user => user.id !== userId));

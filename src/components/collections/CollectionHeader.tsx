@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { Collection } from '@/types/collection';
-import { sanitizeArtistName } from '@/lib/utils';
 
 interface CollectionHeaderProps {
   collection: Collection;
@@ -23,14 +22,6 @@ export default function CollectionHeader({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        'Are you sure you want to delete this collection? This action cannot be undone.'
-      )
-    ) {
-      return;
-    }
-
     setIsDeleting(true);
 
     try {

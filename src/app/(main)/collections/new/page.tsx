@@ -1,6 +1,6 @@
-import { auth } from '@/../auth';
 import { redirect } from 'next/navigation';
 
+import { auth } from '@/../auth';
 import CreateCollectionForm from '@/components/collections/CreateCollectionForm';
 import BackButton from '@/components/ui/BackButton';
 

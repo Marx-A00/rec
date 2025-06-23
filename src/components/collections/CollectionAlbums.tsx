@@ -24,10 +24,6 @@ export default function CollectionAlbums({
   const [removingAlbumId, setRemovingAlbumId] = useState<string | null>(null);
 
   const handleRemoveAlbum = async (albumId: string) => {
-    if (!confirm('Remove this album from the collection?')) {
-      return;
-    }
-
     setRemovingAlbumId(albumId);
 
     try {
@@ -155,7 +151,7 @@ export default function CollectionAlbums({
               {/* Personal Notes */}
               {album.personalNotes && (
                 <p className='text-zinc-400 text-xs italic line-clamp-2'>
-                  "{album.personalNotes}"
+                  &quot;{album.personalNotes}&quot;
                 </p>
               )}
 
