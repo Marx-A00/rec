@@ -309,11 +309,6 @@ export default function ProfileClient({
                   <p className='text-zinc-400 mb-4 text-lg'>
                     {currentUser.username}
                   </p>
-                  {isOwnProfile && (
-                    <div className='mb-4 px-3 py-1 bg-emeraled-green text-black text-sm font-medium rounded-full inline-block'>
-                      👋 This is your profile
-                    </div>
-                  )}
                 </div>
                 <div className='flex-shrink-0 flex gap-3'>
                   {isOwnProfile ? (
