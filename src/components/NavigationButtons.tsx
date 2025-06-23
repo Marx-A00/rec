@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect } from 'react';
+import { Heart, Search } from 'lucide-react';
 
 import RecommendationModal from '@/components/recommendations/RecommendationModal';
 import { useNavigation } from '@/hooks/useNavigation';
@@ -21,18 +22,42 @@ export default function NavigationButtons() {
   return (
     <>
       <div className='flex items-center justify-center py-8'>
-        <div className='flex flex-row space-x-4'>
+        <div className='flex flex-row space-x-6'>
+          {/* Recommend Button with Tooltip */}
           <button
             onClick={openModal}
-            className='text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg transition-colors'
+            className='group relative h-12 w-12 flex items-center justify-center rounded-full bg-cosmic-latte hover:bg-emeraled-green transition-colors duration-200 shadow-lg'
+            aria-label='Create recommendation'
+            aria-describedby='recommend-tooltip'
           >
-            Recommend
+            <Heart className='w-6 h-6 text-black transition-transform duration-200 group-hover:scale-110' />
+            <span
+              id='recommend-tooltip'
+              className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-zinc-800 text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-opacity duration-200 pointer-events-none z-50'
+              role='tooltip'
+            >
+              Create Recommendation
+              <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-zinc-800'></div>
+            </span>
           </button>
-          <Link
-            href='/browse'
-            className='text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg transition-colors'
-          >
-            Browse
+
+          {/* Browse Button with Tooltip */}
+          <Link href='/browse'>
+            <button
+              className='group relative h-12 w-12 flex items-center justify-center rounded-full bg-cosmic-latte hover:bg-emeraled-green transition-colors duration-200 shadow-lg'
+              aria-label='Browse music and users'
+              aria-describedby='browse-tooltip'
+            >
+              <Search className='w-6 h-6 text-black transition-transform duration-200 group-hover:scale-110' />
+              <span
+                id='browse-tooltip'
+                className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-zinc-800 text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-opacity duration-200 pointer-events-none z-50'
+                role='tooltip'
+              >
+                Browse & Discover
+                <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-zinc-800'></div>
+              </span>
+            </button>
           </Link>
         </div>
       </div>
