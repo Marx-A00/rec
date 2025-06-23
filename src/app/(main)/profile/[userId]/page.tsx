@@ -71,12 +71,12 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
 }
 
 interface ProfilePageProps {
-  params: { userId: string };
+  params: Promise<{ userId: string }>;
 }
 
 export default async function UserProfilePage({ params }: ProfilePageProps) {
   const session = await auth();
-  const rawParams = params;
+  const rawParams = await params;
 
   // Validate parameters
   const paramsResult = userProfileParamsSchema.safeParse(rawParams);
