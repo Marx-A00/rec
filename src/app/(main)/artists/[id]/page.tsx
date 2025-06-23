@@ -156,7 +156,10 @@ export default async function ArtistDetailsPage({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value='discography'>
+          <TabsContent
+            value='discography'
+            className='focus:outline-none outline-none'
+          >
             <DiscographyTab artistId={artistId} />
           </TabsContent>
 

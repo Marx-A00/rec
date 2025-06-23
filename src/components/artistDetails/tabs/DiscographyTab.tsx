@@ -115,8 +115,10 @@ function ReleaseCard({
 }) {
   return (
     <div
-      className='bg-zinc-800 rounded-lg p-4 hover:bg-zinc-700 transition-all cursor-pointer transform hover:scale-105 focus:outline-none'
+      className='bg-zinc-800 rounded-lg p-4 hover:bg-zinc-700 transition-all cursor-pointer transform hover:scale-105 focus:outline-none outline-none'
       onClick={onClick}
+      tabIndex={-1}
+      style={{ outline: 'none' }}
     >
       <div className='flex gap-3'>
         <div className='relative w-16 h-16 flex-shrink-0'>
