@@ -14,7 +14,6 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
-import HomeFeedTabs from '@/components/feed/HomeFeedTabs';
 
 export default async function Home() {
   const session = await auth();
@@ -115,7 +114,7 @@ export default async function Home() {
       <div className='flex-1 px-4 pb-8'>
         <div className='max-w-6xl mx-auto'>
           {user ? (
-            // Authenticated user sees both feed options with tabs
+            // Authenticated user sees social feed directly without tabs
             <Suspense
               fallback={
                 <div className='text-center py-8 text-zinc-400'>
@@ -123,7 +122,7 @@ export default async function Home() {
                 </div>
               }
             >
-              <HomeFeedTabs />
+              <SocialActivityFeed className='max-w-4xl mx-auto' />
             </Suspense>
           ) : (
             // Non-authenticated user sees recommendations only

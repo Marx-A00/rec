@@ -17,20 +17,12 @@ export default function NavigationButtons() {
     prefetchRoute('/browse');
     prefetchRoute('/recommend');
     prefetchRoute('/collections');
-    // Prefetch albums page since it's a common discovery destination
-    prefetchRoute('/albums');
   }, [prefetchRoute]);
 
   return (
     <>
       <div className='flex items-center justify-center py-8'>
         <div className='flex flex-row space-x-4'>
-          <Link
-            href='/albums'
-            className='text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg transition-colors'
-          >
-            Discover
-          </Link>
           <button
             onClick={openModal}
             className='text-black bg-cosmic-latte hover:bg-emeraled-green font-bold py-4 px-8 rounded-full text-lg shadow-lg transition-colors'
