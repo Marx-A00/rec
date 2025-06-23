@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "build:production": "prisma generate && prisma db push && next build",
+    "build:production": "prisma generate && next build",
     "start": "next start",
+    "start:production": "prisma db push && next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
