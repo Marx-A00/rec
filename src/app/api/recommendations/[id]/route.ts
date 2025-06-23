@@ -7,11 +7,12 @@ import { Recommendation } from '@/types/recommendation';
 // GET /api/recommendations/[id] - Get single recommendation
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const recommendation = await prisma.recommendation.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: { select: { id: true, name: true, image: true } },
       },
@@ -62,9 +63,10 @@ export async function GET(
 // PATCH /api/recommendations/[id] - Update recommendation
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth();
 
     if (!session?.user?.id) {
@@ -86,7 +88,7 @@ export async function PATCH(
 
     // Check if recommendation exists and user owns it
     const existingRecommendation = await prisma.recommendation.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existingRecommendation) {
@@ -126,7 +128,7 @@ export async function PATCH(
       updateData.recommendedAlbumYear = data.recommendedAlbumYear;
 
     const updatedRecommendation = await prisma.recommendation.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         user: { select: { id: true, name: true, image: true } },
@@ -173,9 +175,10 @@ export async function PATCH(
 // DELETE /api/recommendations/[id] - Delete recommendation
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth();
 
     if (!session?.user?.id) {
@@ -187,7 +190,7 @@ export async function DELETE(
 
     // Check if recommendation exists and user owns it
     const existingRecommendation = await prisma.recommendation.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existingRecommendation) {
@@ -205,7 +208,7 @@ export async function DELETE(
     }
 
     await prisma.recommendation.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({

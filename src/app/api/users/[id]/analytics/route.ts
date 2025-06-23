@@ -31,11 +31,11 @@ interface AnalyticsData {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await auth();
-    const targetUserId = params.id;
+    const { id: targetUserId } = await params;
 
     if (!targetUserId) {
       return NextResponse.json(
