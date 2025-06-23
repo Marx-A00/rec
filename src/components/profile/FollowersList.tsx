@@ -5,18 +5,6 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 
 import UserListItem from './UserListItem';
 
-interface User {
-  id: string;
-  name: string | null;
-  email: string | null;
-  image: string | null;
-  bio: string | null;
-  followersCount: number;
-  followingCount: number;
-  recommendationsCount: number;
-  followedAt?: string;
-}
-
 interface FollowersListProps {
   userId: string;
   type: 'followers' | 'following';
@@ -250,7 +238,7 @@ export default function FollowersList({
           {!hasNextPage && users.length > 0 && (
             <div className='text-center py-4'>
               <p className='text-zinc-500 text-sm'>
-                You've reached the end of the list
+                You&apos;ve reached the end of the list
               </p>
             </div>
           )}

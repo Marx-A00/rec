@@ -543,7 +543,7 @@ export default function SocialStatsDashboard({
               Activity Heatmap
             </h3>
             <p className='text-sm text-gray-600 mb-4'>
-              Shows when you're most active creating recommendations
+              Shows when you&apos;re most active creating recommendations
             </p>
 
             {/* Simple activity visualization */}

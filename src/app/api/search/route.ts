@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import chalk from 'chalk';
+import { Client } from 'disconnect';
 
 import {
   searchQuerySchema,
@@ -12,7 +13,6 @@ import {
   SearchResultItem,
   ApiErrorResponse,
 } from '@/types/api';
-import { Client } from 'disconnect';
 
 const log = console.log;
 

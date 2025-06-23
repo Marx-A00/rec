@@ -1,11 +1,11 @@
 import { notFound } from 'next/navigation';
+import { User } from '@prisma/client';
 
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 import { userProfileParamsSchema } from '@/lib/validations/params';
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
-import { User } from '@prisma/client';
 
 import Profile from '../profile';
 

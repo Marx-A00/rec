@@ -34,7 +34,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth();
+    await auth();
     const targetUserId = params.id;
 
     if (!targetUserId) {

@@ -1,28 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-import { useAlbumModal } from '@/hooks/useAlbumModal';
-
 import ActivityItem from './ActivityItem';
-
-interface Activity {
-  id: string;
-  type: 'follow' | 'recommendation' | 'profile_update' | 'collection_add';
-  actorId: string;
-  actorName: string;
-  actorImage: string | null;
-  targetId?: string;
-  targetName?: string;
-  targetImage?: string | null;
-  albumId?: string;
-  albumTitle?: string;
-  albumArtist?: string;
-  albumImage?: string | null;
-  createdAt: string;
-  metadata?: any;
-}
 
 interface SocialActivityFeedProps {
   className?: string;
@@ -39,8 +20,6 @@ export default function SocialActivityFeed({
   activityType,
   refreshInterval = 30000, // 30 seconds default
 }: SocialActivityFeedProps) {
-  const { openModal } = useAlbumModal();
-
   const fetchActivities = async ({ pageParam }: { pageParam?: string }) => {
     const params = new URLSearchParams();
     params.append('limit', '20');
@@ -228,7 +207,7 @@ export default function SocialActivityFeed({
       {!hasNextPage && activities.length > 0 && (
         <div className='text-center py-8'>
           <p className='text-zinc-500 text-sm'>
-            You've reached the end of your social feed
+            You&apos;ve reached the end of your social feed
           </p>
           <p className='text-xs text-zinc-600 mt-1'>
             Feed updates automatically every {refreshInterval / 1000} seconds

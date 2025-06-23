@@ -14,7 +14,7 @@ interface AlbumInteractionsProps {
 }
 
 export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
-  const { navigateToArtist } = useNavigation();
+  const {} = useNavigation();
   const { toast, showToast, hideToast } = useToast();
   const router = useRouter();
 

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma, Recommendation } from '@prisma/client';
 
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
-import { Prisma, Recommendation } from '@prisma/client';
 
 type RecommendationWithUser = Recommendation & {
   user: {

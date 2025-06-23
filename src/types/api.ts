@@ -20,7 +20,7 @@ export type UserRouteContext = RouteContext<{ userId: string }>;
 // ===========================
 
 // Base API request interface
-export interface ApiRequest extends NextRequest {}
+export type ApiRequest = NextRequest;
 
 // Typed request with body
 export interface TypedApiRequest<T = unknown> extends NextRequest {

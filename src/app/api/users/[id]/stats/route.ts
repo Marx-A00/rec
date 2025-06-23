@@ -55,7 +55,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth();
+    await auth();
     const targetUserId = params.id;
 
     if (!targetUserId) {
@@ -83,7 +83,7 @@ export async function GET(
     }
 
     // Privacy check - only allow access to own stats or public stats
-    const isOwnProfile = session?.user?.id === targetUserId;
+    // const isOwnProfile = session?.user?.id === targetUserId;
 
     // For now, allow all stats to be public. In the future, add privacy settings
     // if (!isOwnProfile && !targetUser.statsPublic) {
@@ -110,19 +110,19 @@ export async function GET(
     const monthAgo = getDaysAgo(30);
 
     // Get follower growth data
-    const followersGrowthData = await prisma.userFollow.groupBy({
-      by: ['createdAt'],
-      where: {
-        followedId: targetUserId,
-        createdAt: { gte: startDate },
-      },
-      _count: {
-        id: true,
-      },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    });
+    // const followersGrowthData = await prisma.userFollow.groupBy({
+    //   by: ['createdAt'],
+    //   where: {
+    //     followedId: targetUserId,
+    //     createdAt: { gte: startDate },
+    //   },
+    //   _count: {
+    //     id: true,
+    //   },
+    //   orderBy: {
+    //     createdAt: 'asc',
+    //   },
+    // });
 
     // Calculate growth metrics
     const recentFollowers = await prisma.userFollow.count({

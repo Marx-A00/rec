@@ -162,7 +162,7 @@ const AlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
         {searchQuery && !isLoading && searchResults.length === 0 && (
           <div className='text-center py-4'>
             <p className='text-white font-medium'>
-              No albums found for "{searchQuery}"
+              No albums found for &quot;{searchQuery}&quot;
             </p>
           </div>
         )}

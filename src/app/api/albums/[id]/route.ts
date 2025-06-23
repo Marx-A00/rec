@@ -51,7 +51,7 @@ export async function GET(
 
     const album: Album = mapDiscogsMasterToAlbum(albumDetails);
     return NextResponse.json(album);
-  } catch (_error) {
+  } catch {
     console.log(`Master fetch failed for ID: ${id}, trying release...`);
 
     // If master doesn't work, try release
