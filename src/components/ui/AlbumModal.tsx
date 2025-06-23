@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Release } from '@/types/album';
@@ -36,6 +37,7 @@ export default function AlbumModal({
   const [highQualityImageUrl, setHighQualityImageUrl] = useState<string | null>(
     null
   );
+  const router = useRouter();
 
   const isMasterRelease = useMemo(
     () => isRelease(data) && data.type === 'master',
@@ -97,6 +99,36 @@ export default function AlbumModal({
       return data.title;
     }
     return 'Unknown Title';
+  };
+
+  // Get album ID for navigation
+  const getAlbumId = () => {
+    if (isCollectionAlbum(data)) {
+      return data.albumId;
+    } else if (isRelease(data)) {
+      // Use main_release if available, otherwise fall back to data.id
+      return data.main_release || data.id;
+    }
+    return null;
+  };
+
+  // Handle album title click navigation
+  const handleAlbumClick = () => {
+    const albumId = getAlbumId();
+    if (albumId) {
+      // Close modal first
+      onClose();
+      // Navigate to album details page
+      router.push(`/albums/${albumId}`);
+    }
+  };
+
+  // Handle keyboard navigation (Enter key)
+  const handleAlbumKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleAlbumClick();
+    }
   };
 
   // is there a reason we are getting these separately?
@@ -241,9 +273,15 @@ export default function AlbumModal({
 
         {/* Album Details */}
         <div className='flex-1 text-center lg:text-left'>
-          <h2 className='text-3xl lg:text-4xl font-bold text-cosmic-latte mb-2'>
+          <button
+            onClick={handleAlbumClick}
+            onKeyDown={handleAlbumKeyDown}
+            className='text-3xl lg:text-4xl font-bold text-cosmic-latte hover:underline cursor-pointer mb-2 transition-all duration-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:ring-opacity-50 rounded-md px-1'
+            tabIndex={0}
+            aria-label={`Navigate to album details for ${getTitle()}`}
+          >
             {getTitle()}
-          </h2>
+          </button>
           <p className='text-xl text-zinc-300 mb-4'>{getArtist()}</p>
 
           {renderDetails()}

@@ -8,16 +8,17 @@ import SocialStatsDashboard from '@/components/profile/SocialStatsDashboard';
 import BackButton from '@/components/ui/BackButton';
 
 interface StatsPageProps {
-  params: {
+  params: Promise<{
     userId: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({
   params,
 }: StatsPageProps): Promise<Metadata> {
+  const { userId } = await params;
   const user = await prisma.user.findUnique({
-    where: { id: params.userId },
+    where: { id: userId },
     select: { name: true },
   });
 
@@ -31,7 +32,7 @@ export async function generateMetadata({
 
 export default async function StatsPage({ params }: StatsPageProps) {
   const session = await auth();
-  const { userId } = params;
+  const { userId } = await params;
 
   // Check if user exists
   const user = await prisma.user.findUnique({
