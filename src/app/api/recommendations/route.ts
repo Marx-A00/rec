@@ -40,12 +40,12 @@ export async function GET(request: Request) {
         recommendedAlbumDiscogsId: rec.recommendedAlbumDiscogsId,
         basisAlbumTitle: rec.basisAlbumTitle,
         basisAlbumArtist: rec.basisAlbumArtist,
-        basisAlbumImageUrl: rec.basisAlbumImageUrl ?? undefined,
-        basisAlbumYear: rec.basisAlbumYear ?? undefined,
+        basisAlbumImageUrl: rec.basisAlbumImageUrl ?? null,
+        basisAlbumYear: rec.basisAlbumYear ?? null,
         recommendedAlbumTitle: rec.recommendedAlbumTitle,
         recommendedAlbumArtist: rec.recommendedAlbumArtist,
-        recommendedAlbumImageUrl: rec.recommendedAlbumImageUrl ?? undefined,
-        recommendedAlbumYear: rec.recommendedAlbumYear ?? undefined,
+        recommendedAlbumImageUrl: rec.recommendedAlbumImageUrl ?? null,
+        recommendedAlbumYear: rec.recommendedAlbumYear ?? null,
         user: rec.user,
       })
     );

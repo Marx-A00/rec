@@ -13,12 +13,12 @@ export interface Recommendation {
   // Cached display data
   basisAlbumTitle: string;
   basisAlbumArtist: string;
-  basisAlbumImageUrl?: string;
-  basisAlbumYear?: string;
+  basisAlbumImageUrl: string | null;
+  basisAlbumYear: string | null;
   recommendedAlbumTitle: string;
   recommendedAlbumArtist: string;
-  recommendedAlbumImageUrl?: string;
-  recommendedAlbumYear?: string;
+  recommendedAlbumImageUrl: string | null;
+  recommendedAlbumYear: string | null;
 
   // Optional user info for browse views
   user?: {
@@ -37,12 +37,12 @@ export interface CreateRecommendationRequest {
   // Cache these for display
   basisAlbumTitle: string;
   basisAlbumArtist: string;
-  basisAlbumImageUrl?: string;
-  basisAlbumYear?: string;
+  basisAlbumImageUrl: string | null;
+  basisAlbumYear: string | null;
   recommendedAlbumTitle: string;
   recommendedAlbumArtist: string;
-  recommendedAlbumImageUrl?: string;
-  recommendedAlbumYear?: string;
+  recommendedAlbumImageUrl: string | null;
+  recommendedAlbumYear: string | null;
 }
 
 // API responses

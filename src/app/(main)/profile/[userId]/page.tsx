@@ -30,12 +30,12 @@ async function getUserRecommendations(
     recommendedAlbumDiscogsId: rec.recommendedAlbumDiscogsId,
     basisAlbumTitle: rec.basisAlbumTitle,
     basisAlbumArtist: rec.basisAlbumArtist,
-    basisAlbumImageUrl: rec.basisAlbumImageUrl || undefined,
-    basisAlbumYear: rec.basisAlbumYear || undefined,
+    basisAlbumImageUrl: rec.basisAlbumImageUrl || null,
+    basisAlbumYear: rec.basisAlbumYear || null,
     recommendedAlbumTitle: rec.recommendedAlbumTitle,
     recommendedAlbumArtist: rec.recommendedAlbumArtist,
-    recommendedAlbumImageUrl: rec.recommendedAlbumImageUrl || undefined,
-    recommendedAlbumYear: rec.recommendedAlbumYear || undefined,
+    recommendedAlbumImageUrl: rec.recommendedAlbumImageUrl || null,
+    recommendedAlbumYear: rec.recommendedAlbumYear || null,
     user: rec.user,
   }));
 }
@@ -58,24 +58,24 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
       albumId: album.albumDiscogsId,
       albumTitle: album.albumTitle,
       albumArtist: album.albumArtist,
-      albumImageUrl: album.albumImageUrl || undefined,
-      albumYear: album.albumYear || undefined,
+      albumImageUrl: album.albumImageUrl || null,
+      albumYear: album.albumYear || null,
       addedAt: album.addedAt.toISOString(),
       addedBy: collection.userId,
-      personalRating: album.personalRating || undefined,
-      personalNotes: album.personalNotes || undefined,
+      personalRating: album.personalRating || null,
+      personalNotes: album.personalNotes || null,
       position: album.position,
     }))
   );
 }
 
 interface ProfilePageProps {
-  params: Promise<{ userId: string }>;
+  params: { userId: string };
 }
 
 export default async function UserProfilePage({ params }: ProfilePageProps) {
   const session = await auth();
-  const rawParams = await params;
+  const rawParams = params;
 
   // Validate parameters
   const paramsResult = userProfileParamsSchema.safeParse(rawParams);

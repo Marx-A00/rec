@@ -34,13 +34,12 @@ export async function GET(
       recommendedAlbumDiscogsId: recommendation.recommendedAlbumDiscogsId,
       basisAlbumTitle: recommendation.basisAlbumTitle,
       basisAlbumArtist: recommendation.basisAlbumArtist,
-      basisAlbumImageUrl: recommendation.basisAlbumImageUrl ?? undefined,
-      basisAlbumYear: recommendation.basisAlbumYear ?? undefined,
+      basisAlbumImageUrl: recommendation.basisAlbumImageUrl ?? null,
+      basisAlbumYear: recommendation.basisAlbumYear ?? null,
       recommendedAlbumTitle: recommendation.recommendedAlbumTitle,
       recommendedAlbumArtist: recommendation.recommendedAlbumArtist,
-      recommendedAlbumImageUrl:
-        recommendation.recommendedAlbumImageUrl ?? undefined,
-      recommendedAlbumYear: recommendation.recommendedAlbumYear ?? undefined,
+      recommendedAlbumImageUrl: recommendation.recommendedAlbumImageUrl ?? null,
+      recommendedAlbumYear: recommendation.recommendedAlbumYear ?? null,
       user: recommendation.user,
     };
 
@@ -145,14 +144,13 @@ export async function PATCH(
         updatedRecommendation.recommendedAlbumDiscogsId,
       basisAlbumTitle: updatedRecommendation.basisAlbumTitle,
       basisAlbumArtist: updatedRecommendation.basisAlbumArtist,
-      basisAlbumImageUrl: updatedRecommendation.basisAlbumImageUrl ?? undefined,
-      basisAlbumYear: updatedRecommendation.basisAlbumYear ?? undefined,
+      basisAlbumImageUrl: updatedRecommendation.basisAlbumImageUrl ?? null,
+      basisAlbumYear: updatedRecommendation.basisAlbumYear ?? null,
       recommendedAlbumTitle: updatedRecommendation.recommendedAlbumTitle,
       recommendedAlbumArtist: updatedRecommendation.recommendedAlbumArtist,
       recommendedAlbumImageUrl:
-        updatedRecommendation.recommendedAlbumImageUrl ?? undefined,
-      recommendedAlbumYear:
-        updatedRecommendation.recommendedAlbumYear ?? undefined,
+        updatedRecommendation.recommendedAlbumImageUrl ?? null,
+      recommendedAlbumYear: updatedRecommendation.recommendedAlbumYear ?? null,
       user: updatedRecommendation.user,
     };
 
