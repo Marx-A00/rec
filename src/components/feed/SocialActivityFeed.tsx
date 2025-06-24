@@ -113,9 +113,23 @@ export default function SocialActivityFeed({
           </p>
           <button
             onClick={handleRefresh}
-            className='px-4 py-2 bg-emeraled-green text-black rounded-lg hover:bg-emeraled-green/90 transition-colors font-medium'
+            className='p-3 text-zinc-300 rounded-lg hover:bg-zinc-800 hover:text-cosmic-latte transition-colors group'
+            aria-label='Try again'
           >
-            Try Again
+            <svg
+              className='w-5 h-5 transition-transform group-hover:rotate-180'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+              xmlns='http://www.w3.org/2000/svg'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+              />
+            </svg>
           </button>
         </div>
       </div>
@@ -136,9 +150,23 @@ export default function SocialActivityFeed({
           </p>
           <button
             onClick={handleRefresh}
-            className='px-4 py-2 bg-emeraled-green text-black rounded-lg hover:bg-emeraled-green/90 transition-colors font-medium'
+            className='p-3 text-zinc-300 rounded-lg hover:bg-zinc-800 hover:text-cosmic-latte transition-colors group'
+            aria-label='Refresh feed'
           >
-            Refresh Feed
+            <svg
+              className='w-5 h-5 transition-transform group-hover:rotate-180'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+              xmlns='http://www.w3.org/2000/svg'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+              />
+            </svg>
           </button>
         </div>
       </div>
@@ -170,10 +198,26 @@ export default function SocialActivityFeed({
 
         <button
           onClick={handleRefresh}
-          className='px-3 py-1 text-sm bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors'
+          className='p-2 text-zinc-300 rounded hover:bg-zinc-800 hover:text-cosmic-latte transition-colors group'
           disabled={isLoading}
+          aria-label={isLoading ? 'Refreshing...' : 'Refresh feed'}
         >
-          {isLoading ? 'Refreshing...' : 'Refresh'}
+          <svg
+            className={`w-4 h-4 transition-transform ${
+              isLoading ? 'animate-spin' : 'group-hover:rotate-180'
+            }`}
+            fill='none'
+            stroke='currentColor'
+            viewBox='0 0 24 24'
+            xmlns='http://www.w3.org/2000/svg'
+          >
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth={2}
+              d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+            />
+          </svg>
         </button>
       </div>
 
