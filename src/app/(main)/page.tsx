@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 
 import { auth } from '@/../auth';
-import NavigationButtons from '@/components/NavigationButtons';
 import NavigationSidebar from '@/components/NavigationSidebar';
 import SignInButton from '@/components/auth/SignInButton';
 import SignOutButton from '@/components/auth/SignOutButton';
@@ -110,9 +109,6 @@ export default async function Home() {
 
       {/* Navigation Sidebar */}
       <NavigationSidebar />
-
-      {/* Main Navigation */}
-      <NavigationButtons />
 
       {/* Main Content Section */}
       <div className='flex-1 px-4 pb-8 md:pl-20'>
