@@ -67,6 +67,14 @@ export default function NavigationSidebar() {
 
   return (
     <>
+      {/* Skip link for screen readers */}
+      <a
+        href='#main-content'
+        className='sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-cosmic-latte focus:text-zinc-900 focus:px-4 focus:py-2 focus:rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-900'
+      >
+        Skip to main content
+      </a>
+
       {/* ARIA live region for screen reader announcements */}
       <div
         className='sr-only'
@@ -101,11 +109,13 @@ export default function NavigationSidebar() {
         </div>
       </button>
 
-      {/* Desktop collapse toggle button - TEMPORARILY HIDDEN FOR TESTING */}
+      {/* Desktop collapse toggle button - Re-enabled for accessibility */}
       <button
         onClick={toggleCollapse}
         onKeyDown={e => handleKeyDown(e, toggleCollapse)}
-        className={`hidden`}
+        className={`fixed top-4 right-4 z-40 hidden md:block w-10 h-10 bg-zinc-900/95 rounded-lg flex items-center justify-center border border-zinc-800 hover:bg-zinc-800 focus:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 active:scale-95 transition-all duration-200 ease-out ${
+          isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+        }`}
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         aria-expanded={!isCollapsed}
         aria-controls='desktop-navigation'
@@ -113,9 +123,9 @@ export default function NavigationSidebar() {
       >
         <div className={`transition-transform duration-200 ease-out`}>
           {isCollapsed ? (
-            <ChevronRight className='w-6 h-6 text-zinc-300 hover:text-cosmic-latte transition-all duration-200 ease-out' />
+            <ChevronRight className='w-5 h-5 text-zinc-300 hover:text-cosmic-latte transition-all duration-200 ease-out' />
           ) : (
-            <ChevronLeft className='w-6 h-6 text-zinc-300 hover:text-cosmic-latte transition-all duration-200 ease-out' />
+            <ChevronLeft className='w-5 h-5 text-zinc-300 hover:text-cosmic-latte transition-all duration-200 ease-out' />
           )}
         </div>
       </button>
@@ -147,7 +157,11 @@ export default function NavigationSidebar() {
         >
           <HoverCard>
             <HoverCardTrigger asChild>
-              <div className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus-within:bg-black/40 focus-within:border-cosmic-latte/50 focus-within:shadow-lg focus-within:shadow-cosmic-latte/20 transition-all duration-200 ease-out cursor-pointer'>
+              <button
+                className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 transition-all duration-200 ease-out'
+                aria-label={`User profile: ${user.name || 'Unknown user'}`}
+                aria-describedby='user-profile-info'
+              >
                 <Avatar className='h-8 w-8'>
                   <AvatarImage
                     src={user.image || '/placeholder.svg?height=100&width=100'}
@@ -157,14 +171,17 @@ export default function NavigationSidebar() {
                     {user.name?.charAt(0) || 'U'}
                   </AvatarFallback>
                 </Avatar>
-              </div>
+              </button>
             </HoverCardTrigger>
             <HoverCardContent
               side='right'
               align='start'
               className='w-64 bg-black/90 backdrop-blur-sm border-zinc-700/50'
             >
-              <div className='flex items-center space-x-3'>
+              <div
+                id='user-profile-info'
+                className='flex items-center space-x-3'
+              >
                 <Avatar className='h-12 w-12'>
                   <AvatarImage
                     src={user.image || '/placeholder.svg?height=100&width=100'}
@@ -188,6 +205,7 @@ export default function NavigationSidebar() {
 
       {/* Navigation buttons - Centered vertically on desktop */}
       <nav
+        id='desktop-navigation'
         className={`fixed left-4 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-3 transition-all duration-300 ease-out ${
           isCollapsed
             ? 'md:opacity-0 md:scale-95'

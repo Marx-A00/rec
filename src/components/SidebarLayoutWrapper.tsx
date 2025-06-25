@@ -44,6 +44,8 @@ export default function SidebarLayoutWrapper({
 
   return (
     <div
+      id='main-content'
+      role='main'
       className={`transition-all duration-300 ${
         isCollapsed ? 'md:ml-0' : 'md:ml-16'
       }`}
