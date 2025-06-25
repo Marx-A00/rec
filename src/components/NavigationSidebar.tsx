@@ -1,126 +1,307 @@
 'use client';
 
-import { Home, Search, User, Music, BookOpen, TrendingUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import {
+  Home,
+  Search,
+  User,
+  Music,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
 
 export default function NavigationSidebar() {
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const { data: session } = useSession();
+  const user = session?.user;
+
+  // Load collapsed state from localStorage on mount
+  useEffect(() => {
+    const savedState = localStorage.getItem('sidebar-collapsed');
+    if (savedState !== null) {
+      setIsCollapsed(JSON.parse(savedState));
+    }
+    // Add subtle mount animation delay
+    const timer = setTimeout(() => setIsMounted(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Save collapsed state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', JSON.stringify(isCollapsed));
+    // Emit custom event to notify layout wrapper
+    window.dispatchEvent(new CustomEvent('sidebar-toggled'));
+  }, [isCollapsed]);
+
+  const toggleMobileSidebar = () => {
+    setIsMobileOpen(!isMobileOpen);
+  };
+
+  const closeMobileSidebar = () => {
+    setIsMobileOpen(false);
+  };
+
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
+  // Handle keyboard navigation
+  const handleKeyDown = (event: React.KeyboardEvent, action: () => void) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      action();
+    }
+  };
+
   return (
-    <div className='fixed left-0 top-20 w-16 h-full bg-zinc-900/95 shadow-md z-40 hidden md:block'>
-      <div className='flex flex-col gap-3 p-2'>
-        {/* Home */}
-        <Link href='/'>
-          <button
-            className='group relative w-12 h-12 flex items-center justify-center rounded-lg hover:bg-zinc-800 transition-colors group'
-            aria-label='Home'
-            aria-describedby='home-tooltip'
-          >
-            <Home className='w-6 h-6 text-zinc-400 group-hover:text-cosmic-latte transition-colors duration-200' />
-            <span
-              id='home-tooltip'
-              className='absolute left-full ml-2 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-zinc-800 text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-opacity duration-200 pointer-events-none z-50'
-              role='tooltip'
-            >
-              Home
-              <div className='absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-zinc-800'></div>
-            </span>
-          </button>
-        </Link>
-
-        {/* Browse */}
-        <Link href='/browse'>
-          <button
-            className='group relative w-12 h-12 flex items-center justify-center rounded-lg hover:bg-zinc-800 transition-colors group'
-            aria-label='Browse'
-            aria-describedby='browse-sidebar-tooltip'
-          >
-            <Search className='w-6 h-6 text-zinc-400 group-hover:text-cosmic-latte transition-colors duration-200' />
-            <span
-              id='browse-sidebar-tooltip'
-              className='absolute left-full ml-2 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-zinc-800 text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-opacity duration-200 pointer-events-none z-50'
-              role='tooltip'
-            >
-              Browse & Discover
-              <div className='absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-zinc-800'></div>
-            </span>
-          </button>
-        </Link>
-
-        {/* Recommend */}
-        <Link href='/recommend'>
-          <button
-            className='group relative w-12 h-12 flex items-center justify-center rounded-lg hover:bg-zinc-800 transition-colors group'
-            aria-label='Recommend'
-            aria-describedby='recommend-sidebar-tooltip'
-          >
-            <Music className='w-6 h-6 text-zinc-400 group-hover:text-cosmic-latte transition-colors duration-200' />
-            <span
-              id='recommend-sidebar-tooltip'
-              className='absolute left-full ml-2 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-zinc-800 text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-opacity duration-200 pointer-events-none z-50'
-              role='tooltip'
-            >
-              Create Recommendation
-              <div className='absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-zinc-800'></div>
-            </span>
-          </button>
-        </Link>
-
-        {/* Collections */}
-        <Link href='/collections'>
-          <button
-            className='group relative w-12 h-12 flex items-center justify-center rounded-lg hover:bg-zinc-800 transition-colors group'
-            aria-label='Collections'
-            aria-describedby='collections-tooltip'
-          >
-            <BookOpen className='w-6 h-6 text-zinc-400 group-hover:text-cosmic-latte transition-colors duration-200' />
-            <span
-              id='collections-tooltip'
-              className='absolute left-full ml-2 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-zinc-800 text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-opacity duration-200 pointer-events-none z-50'
-              role='tooltip'
-            >
-              My Collections
-              <div className='absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-zinc-800'></div>
-            </span>
-          </button>
-        </Link>
-
-        {/* Profile */}
-        <Link href='/profile'>
-          <button
-            className='group relative w-12 h-12 flex items-center justify-center rounded-lg hover:bg-zinc-800 transition-colors group'
-            aria-label='Profile'
-            aria-describedby='profile-tooltip'
-          >
-            <User className='w-6 h-6 text-zinc-400 group-hover:text-cosmic-latte transition-colors duration-200' />
-            <span
-              id='profile-tooltip'
-              className='absolute left-full ml-2 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-zinc-800 text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-opacity duration-200 pointer-events-none z-50'
-              role='tooltip'
-            >
-              My Profile
-              <div className='absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-zinc-800'></div>
-            </span>
-          </button>
-        </Link>
-
-        {/* Trending/Discover */}
-        <Link href='/discover'>
-          <button
-            className='group relative w-12 h-12 flex items-center justify-center rounded-lg hover:bg-zinc-800 transition-colors group'
-            aria-label='Discover'
-            aria-describedby='discover-tooltip'
-          >
-            <TrendingUp className='w-6 h-6 text-zinc-400 group-hover:text-cosmic-latte transition-colors duration-200' />
-            <span
-              id='discover-tooltip'
-              className='absolute left-full ml-2 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-zinc-800 text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-opacity duration-200 pointer-events-none z-50'
-              role='tooltip'
-            >
-              Trending & Discovery
-              <div className='absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-zinc-800'></div>
-            </span>
-          </button>
-        </Link>
+    <>
+      {/* ARIA live region for screen reader announcements */}
+      <div
+        className='sr-only'
+        aria-live='polite'
+        aria-atomic='true'
+        id='sidebar-status'
+      >
+        {isCollapsed ? 'Sidebar collapsed' : 'Sidebar expanded'}
       </div>
-    </div>
+
+      {/* Mobile hamburger menu button */}
+      <button
+        onClick={toggleMobileSidebar}
+        onKeyDown={e => handleKeyDown(e, toggleMobileSidebar)}
+        className={`fixed top-4 left-4 z-50 md:hidden w-12 h-12 bg-zinc-900/95 rounded-lg flex items-center justify-center border border-zinc-800 hover:bg-zinc-800 focus:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 active:scale-95 transition-all duration-200 ease-out ${
+          isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+        }`}
+        aria-label={
+          isMobileOpen ? 'Close navigation menu' : 'Open navigation menu'
+        }
+        aria-expanded={isMobileOpen}
+        aria-controls='mobile-navigation'
+      >
+        <div
+          className={`transition-transform duration-200 ease-out ${isMobileOpen ? 'rotate-90' : 'rotate-0'}`}
+        >
+          {isMobileOpen ? (
+            <X className='w-6 h-6 text-zinc-400 transition-colors duration-150' />
+          ) : (
+            <Menu className='w-6 h-6 text-zinc-400 transition-colors duration-150' />
+          )}
+        </div>
+      </button>
+
+      {/* Desktop collapse toggle button - TEMPORARILY HIDDEN FOR TESTING */}
+      <button
+        onClick={toggleCollapse}
+        onKeyDown={e => handleKeyDown(e, toggleCollapse)}
+        className={`hidden`}
+        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-expanded={!isCollapsed}
+        aria-controls='desktop-navigation'
+        aria-describedby='sidebar-status'
+      >
+        <div className={`transition-transform duration-200 ease-out`}>
+          {isCollapsed ? (
+            <ChevronRight className='w-6 h-6 text-zinc-300 hover:text-cosmic-latte transition-all duration-200 ease-out' />
+          ) : (
+            <ChevronLeft className='w-6 h-6 text-zinc-300 hover:text-cosmic-latte transition-all duration-200 ease-out' />
+          )}
+        </div>
+      </button>
+
+      {/* Mobile overlay with fade animation */}
+      {isMobileOpen && (
+        <div
+          className={`fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300 ease-out ${
+            isMobileOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={closeMobileSidebar}
+          onKeyDown={e => handleKeyDown(e, closeMobileSidebar)}
+          role='button'
+          tabIndex={0}
+          aria-label='Close navigation menu'
+        />
+      )}
+
+      {/* User Avatar - Fixed at top left corner, separate from nav */}
+      {user && (
+        <div
+          className={`fixed top-4 left-4 z-40 hidden md:block transition-all duration-200 ease-out delay-0 ${
+            isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+          } ${
+            isCollapsed
+              ? 'md:opacity-0 md:scale-95'
+              : 'md:opacity-100 md:scale-100'
+          }`}
+        >
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <div className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus-within:bg-black/40 focus-within:border-cosmic-latte/50 focus-within:shadow-lg focus-within:shadow-cosmic-latte/20 transition-all duration-200 ease-out cursor-pointer'>
+                <Avatar className='h-8 w-8'>
+                  <AvatarImage
+                    src={user.image || '/placeholder.svg?height=100&width=100'}
+                    alt={user.name || 'User'}
+                  />
+                  <AvatarFallback className='bg-zinc-800 text-zinc-200 text-sm'>
+                    {user.name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </HoverCardTrigger>
+            <HoverCardContent
+              side='right'
+              align='start'
+              className='w-64 bg-black/90 backdrop-blur-sm border-zinc-700/50'
+            >
+              <div className='flex items-center space-x-3'>
+                <Avatar className='h-12 w-12'>
+                  <AvatarImage
+                    src={user.image || '/placeholder.svg?height=100&width=100'}
+                    alt={user.name || 'User'}
+                  />
+                  <AvatarFallback className='bg-zinc-800 text-zinc-200'>
+                    {user.name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className='space-y-1'>
+                  <h4 className='text-sm font-semibold text-white'>
+                    {user.name}
+                  </h4>
+                  <p className='text-xs text-zinc-400'>{user.email}</p>
+                </div>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
+        </div>
+      )}
+
+      {/* Navigation buttons - Centered vertically on desktop */}
+      <nav
+        className={`fixed left-4 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-3 transition-all duration-300 ease-out ${
+          isCollapsed
+            ? 'md:opacity-0 md:scale-95'
+            : 'md:opacity-100 md:scale-100'
+        } ${isMounted ? 'opacity-100' : 'opacity-0'}`}
+        role='navigation'
+        aria-label='Main navigation'
+      >
+        {[
+          {
+            href: '/',
+            icon: Home,
+            label: 'Navigate to Home',
+            tooltip: 'Home',
+            delay: 'delay-75',
+          },
+          {
+            href: '/browse',
+            icon: Search,
+            label: 'Navigate to Browse & Discover',
+            tooltip: 'Browse & Discover',
+            delay: 'delay-150',
+          },
+          {
+            href: '/recommend',
+            icon: Music,
+            label: 'Navigate to Create Recommendation',
+            tooltip: 'Create Recommendation',
+            delay: 'delay-225',
+          },
+          {
+            href: '/profile',
+            icon: User,
+            label: 'Navigate to My Profile',
+            tooltip: 'My Profile',
+            delay: 'delay-300',
+          },
+        ].map(({ href, icon: Icon, label, tooltip, delay }) => (
+          <Link
+            key={href}
+            href={href}
+            onClick={closeMobileSidebar}
+            tabIndex={isCollapsed ? -1 : 0}
+          >
+            <button
+              className={`group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 active:scale-95 transition-all duration-200 ease-out ${
+                isMounted
+                  ? `opacity-100 translate-y-0 ${delay}`
+                  : 'opacity-0 translate-y-2'
+              }`}
+              aria-label={label}
+              aria-describedby={`${href.slice(1) || 'home'}-tooltip`}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  window.location.href = href;
+                }
+              }}
+            >
+              <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm group-focus:text-cosmic-latte transition-all duration-200 ease-out' />
+              <span
+                id={`${href.slice(1) || 'home'}-tooltip`}
+                className={`absolute left-full ml-3 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-black/90 backdrop-blur-sm text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-all duration-200 ease-out delay-300 pointer-events-none z-50 border border-zinc-700/50 shadow-lg hidden md:block scale-95 group-hover:scale-100 group-focus:scale-100 ${
+                  isCollapsed ? 'md:hidden' : ''
+                }`}
+                role='tooltip'
+              >
+                {tooltip}
+                <div className='absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-black/90'></div>
+              </span>
+            </button>
+          </Link>
+        ))}
+      </nav>
+
+      {/* Mobile sidebar - separate for mobile navigation */}
+      <nav
+        id='mobile-navigation'
+        role='navigation'
+        aria-label='Mobile navigation'
+        className={`fixed left-0 top-0 h-full z-40 transition-all duration-300 ease-out md:hidden ${
+          isMobileOpen
+            ? 'translate-x-0 w-16 bg-zinc-900/95 shadow-md'
+            : '-translate-x-full w-16'
+        }`}
+      >
+        <div
+          className={`flex flex-col gap-3 p-2 mt-16 ${isMounted ? 'opacity-100' : 'opacity-0'}`}
+        >
+          {[
+            { href: '/', icon: Home, label: 'Navigate to Home' },
+            {
+              href: '/browse',
+              icon: Search,
+              label: 'Navigate to Browse & Discover',
+            },
+            {
+              href: '/recommend',
+              icon: Music,
+              label: 'Navigate to Create Recommendation',
+            },
+            { href: '/profile', icon: User, label: 'Navigate to My Profile' },
+          ].map(({ href, icon: Icon, label }) => (
+            <Link key={href} href={href} onClick={closeMobileSidebar}>
+              <button
+                className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 active:scale-95 transition-all duration-200 ease-out'
+                aria-label={label}
+              >
+                <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm group-focus:text-cosmic-latte transition-all duration-200 ease-out' />
+              </button>
+            </Link>
+          ))}
+        </div>
+      </nav>
+    </>
   );
 }
