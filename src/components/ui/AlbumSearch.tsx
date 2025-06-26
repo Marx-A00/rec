@@ -190,13 +190,13 @@ export default function AlbumSearch({
       />
 
       {error && (
-        <div className='absolute top-full left-0 right-0 mt-2 bg-red-900 border border-red-700 rounded-lg p-3 text-red-200 text-sm z-50'>
+        <div className='absolute top-full left-0 right-0 mt-2 bg-red-900 border border-red-700 rounded-lg p-3 text-red-200 text-sm z-[60]'>
           {error}
         </div>
       )}
 
       {showResults && showResultsDropdown && (
-        <div className='absolute top-full left-0 right-0 mt-2 z-40'>
+        <div className='absolute top-full left-0 right-0 mt-2 z-[55]'>
           <SearchResults
             results={searchResults}
             isLoading={isLoading}

@@ -110,7 +110,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     id: userData.id,
     name: userData.name || 'User',
     email: userData.email || null,
-    image: userData.image || '/placeholder.svg?height=100&width=100',
+    image: userData.image || '/default-avatar.svg',
     username: userData.email ? `@${userData.email.split('@')[0]}` : '@user',
     bio:
       userData.bio ||

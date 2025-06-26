@@ -36,12 +36,16 @@ export default function AlbumImage({
   const [hasError, setHasError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
-  const FALLBACK_IMAGE = '/placeholder.svg';
+  const FALLBACK_IMAGE = '/default-album.svg';
   const MAX_RETRIES = 2;
 
   // Update imgSrc when src prop changes
   useEffect(() => {
-    if (src && src !== 'https://via.placeholder.com/400x400?text=No+Image') {
+    if (
+      src &&
+      src !== 'https://via.placeholder.com/400x400?text=No+Image' &&
+      src !== FALLBACK_IMAGE
+    ) {
       setImgSrc(src);
       setIsLoading(true);
       setHasError(false);

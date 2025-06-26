@@ -12,7 +12,7 @@ import {
 import PasswordStrength from './PasswordStrength';
 
 interface RegisterFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (userName?: string) => void;
 }
 
 export default function RegisterForm({ onSuccess }: RegisterFormProps) {
@@ -139,7 +139,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
       // Success - redirect will be handled by NextAuth
       if (onSuccess) {
-        onSuccess();
+        onSuccess(formData.name);
       } else {
         window.location.href = '/';
       }
@@ -150,10 +150,14 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className='mt-8 space-y-6'>
+    <form onSubmit={handleSubmit} className='space-y-6' noValidate>
       {serverError && (
-        <div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative'>
-          {serverError}
+        <div
+          className='rounded-lg bg-red-500/10 border border-red-500/20 p-4'
+          role='alert'
+          aria-live='polite'
+        >
+          <p className='text-red-400 text-sm font-medium'>{serverError}</p>
         </div>
       )}
 
@@ -161,7 +165,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
         <div>
           <label
             htmlFor='name'
-            className='block text-sm font-medium text-gray-700'
+            className='block text-sm font-medium text-zinc-300 mb-2'
           >
             Name (optional)
           </label>
@@ -171,18 +175,26 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             type='text'
             value={formData.name}
             onChange={handleInputChange}
-            className='mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm'
-            placeholder='Your name'
+            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-4 py-3 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+            placeholder='Enter your name'
+            aria-describedby={errors.name ? 'name-error' : undefined}
+            aria-invalid={errors.name ? 'true' : 'false'}
           />
           {errors.name && (
-            <p className='mt-1 text-sm text-red-600'>{errors.name}</p>
+            <p
+              id='name-error'
+              className='mt-2 text-sm text-red-400 font-medium'
+              role='alert'
+            >
+              {errors.name}
+            </p>
           )}
         </div>
 
         <div>
           <label
             htmlFor='email'
-            className='block text-sm font-medium text-gray-700'
+            className='block text-sm font-medium text-zinc-300 mb-2'
           >
             Email address
           </label>
@@ -193,18 +205,27 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             required
             value={formData.email}
             onChange={handleInputChange}
-            className='mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm'
-            placeholder='Email address'
+            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-4 py-3 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+            placeholder='Enter your email address'
+            aria-describedby={errors.email ? 'email-error' : undefined}
+            aria-invalid={errors.email ? 'true' : 'false'}
+            autoComplete='email'
           />
           {errors.email && (
-            <p className='mt-1 text-sm text-red-600'>{errors.email}</p>
+            <p
+              id='email-error'
+              className='mt-2 text-sm text-red-400 font-medium'
+              role='alert'
+            >
+              {errors.email}
+            </p>
           )}
         </div>
 
         <div>
           <label
             htmlFor='password'
-            className='block text-sm font-medium text-gray-700'
+            className='block text-sm font-medium text-zinc-300 mb-2'
           >
             Password
           </label>
@@ -215,19 +236,30 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             required
             value={formData.password}
             onChange={handleInputChange}
-            className='mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm'
-            placeholder='Password'
+            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-4 py-3 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+            placeholder='Create a strong password'
+            aria-describedby={`password-strength ${errors.password ? 'password-error' : ''}`}
+            aria-invalid={errors.password ? 'true' : 'false'}
+            autoComplete='new-password'
           />
           {errors.password && (
-            <p className='mt-1 text-sm text-red-600'>{errors.password}</p>
+            <p
+              id='password-error'
+              className='mt-2 text-sm text-red-400 font-medium'
+              role='alert'
+            >
+              {errors.password}
+            </p>
           )}
-          <PasswordStrength password={formData.password} />
+          <div id='password-strength'>
+            <PasswordStrength password={formData.password} />
+          </div>
         </div>
 
         <div>
           <label
             htmlFor='confirmPassword'
-            className='block text-sm font-medium text-gray-700'
+            className='block text-sm font-medium text-zinc-300 mb-2'
           >
             Confirm Password
           </label>
@@ -238,52 +270,64 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             required
             value={formData.confirmPassword}
             onChange={handleInputChange}
-            className='mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm'
-            placeholder='Confirm password'
+            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-4 py-3 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+            placeholder='Confirm your password'
+            aria-describedby={
+              errors.confirmPassword ? 'confirm-password-error' : undefined
+            }
+            aria-invalid={errors.confirmPassword ? 'true' : 'false'}
+            autoComplete='new-password'
           />
           {errors.confirmPassword && (
-            <p className='mt-1 text-sm text-red-600'>
+            <p
+              id='confirm-password-error'
+              className='mt-2 text-sm text-red-400 font-medium'
+              role='alert'
+            >
               {errors.confirmPassword}
             </p>
           )}
         </div>
       </div>
 
-      <div>
-        <button
-          type='submit'
-          disabled={isLoading}
-          className='group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
-        >
-          {isLoading ? (
-            <span className='flex items-center'>
-              <svg
-                className='animate-spin -ml-1 mr-3 h-5 w-5 text-white'
-                xmlns='http://www.w3.org/2000/svg'
-                fill='none'
-                viewBox='0 0 24 24'
-              >
-                <circle
-                  className='opacity-25'
-                  cx='12'
-                  cy='12'
-                  r='10'
-                  stroke='currentColor'
-                  strokeWidth='4'
-                ></circle>
-                <path
-                  className='opacity-75'
-                  fill='currentColor'
-                  d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                ></path>
-              </svg>
-              Creating account...
-            </span>
-          ) : (
-            'Create account'
-          )}
-        </button>
-      </div>
+      <button
+        type='submit'
+        disabled={isLoading}
+        className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-3 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+        aria-describedby='submit-button-description'
+      >
+        <span id='submit-button-description' className='sr-only'>
+          Create your account and automatically sign in
+        </span>
+        {isLoading ? (
+          <span className='flex items-center' aria-live='polite'>
+            <svg
+              className='animate-spin -ml-1 mr-3 h-5 w-5 text-black'
+              xmlns='http://www.w3.org/2000/svg'
+              fill='none'
+              viewBox='0 0 24 24'
+              aria-hidden='true'
+            >
+              <circle
+                className='opacity-25'
+                cx='12'
+                cy='12'
+                r='10'
+                stroke='currentColor'
+                strokeWidth='4'
+              ></circle>
+              <path
+                className='opacity-75'
+                fill='currentColor'
+                d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+              ></path>
+            </svg>
+            Creating your account...
+          </span>
+        ) : (
+          'Create your account'
+        )}
+      </button>
     </form>
   );
 }
