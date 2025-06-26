@@ -72,7 +72,7 @@ export default function AccountCreatedSuccess({
             <div className='flex items-center gap-3 text-zinc-300'>
               <Music className='w-5 h-5 text-cosmic-latte flex-shrink-0' />
               <span className='text-sm'>
-                You're automatically signed in and ready to discover music
+                You&apos;re automatically signed in and ready to discover music
               </span>
             </div>
             <div className='flex items-center gap-3 text-zinc-300'>
