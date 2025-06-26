@@ -12,7 +12,7 @@ import {
 import PasswordStrength from './PasswordStrength';
 
 interface RegisterFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (userName?: string) => void;
 }
 
 export default function RegisterForm({ onSuccess }: RegisterFormProps) {
@@ -139,7 +139,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
       // Success - redirect will be handled by NextAuth
       if (onSuccess) {
-        onSuccess();
+        onSuccess(formData.name);
       } else {
         window.location.href = '/';
       }

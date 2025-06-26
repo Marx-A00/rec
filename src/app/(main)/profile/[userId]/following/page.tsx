@@ -48,7 +48,7 @@ export default async function FollowingPage({ params }: FollowingPageProps) {
 
           <div className='flex items-center gap-4 mb-6'>
             <Image
-              src={userData.image || '/placeholder.svg?height=64&width=64'}
+              src={userData.image || '/default-avatar.svg'}
               alt={userData.name || 'User'}
               width={64}
               height={64}

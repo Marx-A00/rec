@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import NavigationSidebar from '@/components/NavigationSidebar';
 import SidebarLayoutWrapper from '@/components/SidebarLayoutWrapper';
+import AlbumSearch from '@/components/ui/AlbumSearch';
 
 export const metadata: Metadata = {
   title: 'Album Recommendations',
@@ -16,7 +17,23 @@ export default function MainLayout({
   return (
     <div className='min-h-screen bg-black'>
       <NavigationSidebar />
-      <SidebarLayoutWrapper>{children}</SidebarLayoutWrapper>
+
+      {/* Sticky Header with Global Search */}
+      <div className='sticky top-0 z-50 backdrop-blur-sm bg-black/80 border-b border-zinc-800/50'>
+        <SidebarLayoutWrapper>
+          <div className='px-4 py-3'>
+            <AlbumSearch
+              className='max-w-2xl mx-auto'
+              placeholder='Search albums, artists, or genres...'
+            />
+          </div>
+        </SidebarLayoutWrapper>
+      </div>
+
+      {/* Main Content */}
+      <SidebarLayoutWrapper>
+        <div className='pt-4'>{children}</div>
+      </SidebarLayoutWrapper>
     </div>
   );
 }

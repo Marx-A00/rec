@@ -6,7 +6,6 @@ import SignInButton from '@/components/auth/SignInButton';
 import SignOutButton from '@/components/auth/SignOutButton';
 import RecommendationsList from '@/components/recommendations/RecommendationsList';
 import SocialActivityFeed from '@/components/feed/SocialActivityFeed';
-import AlbumSearch from '@/components/ui/AlbumSearch';
 
 export default async function Home() {
   const session = await auth();
@@ -14,11 +13,6 @@ export default async function Home() {
 
   return (
     <div className='flex flex-col min-h-screen bg-black'>
-      {/* Search Bar at the top */}
-      <div className='w-full p-4'>
-        <AlbumSearch />
-      </div>
-
       <div className='flex-1 flex gap-8 p-4'>
         {/* Left column - Main content */}
         <div className='flex-1 space-y-8'>

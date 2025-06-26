@@ -1,10 +1,24 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 
 import RegisterForm from '@/components/auth/RegisterForm';
+import AccountCreatedSuccess from '@/components/auth/AccountCreatedSuccess';
 
 export default function Register() {
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [userName, setUserName] = useState<string>();
+
+  const handleRegistrationSuccess = (name?: string) => {
+    setUserName(name);
+    setShowSuccess(true);
+  };
+
+  if (showSuccess) {
+    return <AccountCreatedSuccess userName={userName} />;
+  }
+
   return (
     <div className='space-y-8'>
       {/* Header */}
@@ -46,7 +60,7 @@ export default function Register() {
 
       {/* Registration Form */}
       <div className='bg-black/40 backdrop-blur-sm border border-zinc-700/50 rounded-xl p-8 shadow-2xl'>
-        <RegisterForm />
+        <RegisterForm onSuccess={handleRegistrationSuccess} />
       </div>
 
       {/* OAuth Options */}
