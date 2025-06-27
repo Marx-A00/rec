@@ -26,6 +26,10 @@ export { useCollageGenerator } from './useCollageGenerator';
 export { useRecommendationModal } from './useRecommendationModal';
 export { useNavigation } from './useNavigation';
 
+// Search Hooks
+export { useUniversalSearch } from './useUniversalSearch';
+export { useSearchNavigation } from './useSearchNavigation';
+
 // Re-export common types and utilities from queries infrastructure
 export {
   QueryError,
