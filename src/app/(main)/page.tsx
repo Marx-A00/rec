@@ -131,7 +131,7 @@ export default function Home() {
   };
 
   return (
-    <div className='h-[calc(100vh-8rem)] overflow-hidden ml-6'>
+    <div className='fixed top-16 bottom-0 left-20 right-0 overflow-hidden'>
       {/* Album Modal */}
       <AlbumModal
         isOpen={!!selectedAlbum}
