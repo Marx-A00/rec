@@ -13,13 +13,13 @@ export default async function BrowsePage() {
   return (
     <div className='px-4 py-8'>
       {/* Header */}
-      <div className='mb-8'>
+      {/* <div className='mb-8'>
         <BackButton className='inline-flex items-center text-cosmic-latte hover:text-emeraled-green transition-colors mb-4' />
         <h1 className='text-4xl font-bold text-cosmic-latte mb-2'>Browse</h1>
         <p className='text-zinc-400'>
           Discover users, their music recommendations, and social activity
         </p>
-      </div>
+      </div> */}
 
       {/* Client-side content with tabs */}
       <BrowsePageClient
