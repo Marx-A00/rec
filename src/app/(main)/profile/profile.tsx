@@ -12,7 +12,6 @@ import RecommendationCard from '@/components/recommendations/RecommendationCard'
 import FollowButton from '@/components/profile/FollowButton';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import { useNavigation } from '@/hooks/useNavigation';
-
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
 

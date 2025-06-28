@@ -1,19 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-  Users,
-  Music,
-  Star,
-} from 'lucide-react';
+import { Calendar, Users, Music, Star } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import type { Recommendation } from '@/types';
 
 interface User {
@@ -76,7 +68,7 @@ interface BrowsePageClientProps {
 
 export default function BrowsePageClient({
   initialUsers,
-  initialRecommendations,
+  initialRecommendations: _initialRecommendations,
 }: BrowsePageClientProps) {
   // State for API data
   const [newUsers, setNewUsers] = useState<User[]>(initialUsers.slice(0, 10));
@@ -394,53 +386,6 @@ function TrendingAlbumCard({ album }: { album: TrendingAlbum }) {
   );
 }
 
-// Album Card Component
-function AlbumCard({ recommendation }: { recommendation: Recommendation }) {
-  return (
-    <div className='min-w-[160px] max-w-[160px] bg-zinc-900/50 border border-zinc-800 rounded-lg p-3 hover:border-zinc-600 hover:bg-zinc-800/50 transition-all duration-200 group cursor-pointer'>
-      <div className='space-y-3'>
-        <div className='relative'>
-          <AlbumImage
-            src={recommendation.recommendedAlbumImageUrl}
-            alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
-            width={144}
-            height={144}
-            className='w-full aspect-square rounded object-cover border border-zinc-700 group-hover:border-zinc-500 transition-colors'
-          />
-          <div className='absolute top-2 right-2 bg-black/60 rounded px-1.5 py-0.5'>
-            <span className='text-xs text-emeraled-green font-medium'>
-              {recommendation.score}/10
-            </span>
-          </div>
-        </div>
-
-        <div className='space-y-1'>
-          <h3 className='font-medium text-white text-sm truncate group-hover:text-cosmic-latte transition-colors'>
-            {recommendation.recommendedAlbumTitle}
-          </h3>
-          <p className='text-xs text-zinc-400 truncate'>
-            {recommendation.recommendedAlbumArtist}
-          </p>
-          <div className='flex items-center space-x-1'>
-            <div className='w-3 h-3 rounded-full bg-zinc-700'>
-              {recommendation.user?.image && (
-                <img
-                  src={recommendation.user.image}
-                  alt={recommendation.user.name || 'User'}
-                  className='w-full h-full rounded-full object-cover'
-                />
-              )}
-            </div>
-            <p className='text-xs text-zinc-500 truncate'>
-              Rec by {recommendation.user?.name || 'Anonymous'}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // Coming Soon Card Component
 function ComingSoonCard() {
   return (
@@ -452,7 +397,7 @@ function ComingSoonCard() {
             New Releases
           </h3>
           <p className='text-zinc-400 text-sm mb-4'>
-            Fresh music drops coming soon! We're working on integrating the
+            Fresh music drops coming soon! We&apos;re working on integrating the
             latest releases from your favorite artists.
           </p>
           <div className='inline-flex items-center space-x-2 text-emeraled-green text-sm font-medium'>

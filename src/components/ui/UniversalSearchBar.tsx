@@ -1,15 +1,7 @@
 'use client';
 
 import { ReactNode, useCallback, useEffect, useState } from 'react';
-import {
-  Building2,
-  Music,
-  User,
-  Tag,
-  Search,
-  Filter,
-  Settings,
-} from 'lucide-react';
+import { Building2, Music, User, Search } from 'lucide-react';
 
 import {
   Command,
@@ -20,12 +12,10 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import AlbumImage from '@/components/ui/AlbumImage';
-import SearchResultRenderer, {
-  SearchResultList,
+import {
   displayModeConfigs,
   DisplayModeConfig,
 } from '@/components/ui/SearchResultRenderer';
-import { useNavigation } from '@/hooks/useNavigation';
 import { useUniversalSearch } from '@/hooks/useUniversalSearch';
 import { useSearchNavigation } from '@/hooks/useSearchNavigation';
 import { UnifiedSearchResult } from '@/types/search';
@@ -53,8 +43,8 @@ export interface SearchFilter {
   label: string;
   type: 'text' | 'select' | 'range' | 'boolean' | 'multiselect' | 'daterange';
   options?: FilterOption[];
-  defaultValue?: any;
-  validation?: (value: any) => boolean;
+  defaultValue?: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  validation?: (value: any) => boolean; // eslint-disable-line @typescript-eslint/no-explicit-any
   category?: string;
   priority?: number;
   isVisible?: boolean;
@@ -125,8 +115,8 @@ export interface SearchTheme {
 export interface SearchContext {
   page: string;
   mode: 'global' | 'modal' | 'sidebar' | 'inline';
-  filters?: Record<string, any>;
-  userPreferences?: Record<string, any>;
+  filters?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  userPreferences?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
   layout?: 'compact' | 'comfortable' | 'spacious';
   groupBy?: 'type' | 'relevance' | 'date' | 'none';
   sortBy?: 'relevance' | 'date' | 'popularity' | 'alphabetical';
@@ -588,14 +578,12 @@ const truncateText = (text: string, maxLength?: number): string => {
 interface ContextAwareResultProps {
   result: UnifiedSearchResult;
   displayConfig: DisplayModeConfig;
-  theme: SearchTheme;
   onSelect: () => void;
 }
 
 const ContextAwareResult = ({
   result,
   displayConfig,
-  theme,
   onSelect,
 }: ContextAwareResultProps) => {
   const {
@@ -718,31 +706,23 @@ const ContextAwareResult = ({
 
 export default function UniversalSearchBar({
   entityTypes = defaultEntityTypes,
-  searchType = 'all',
   filters = [],
   placeholder = 'Search...',
   showResults = true,
-  resultDisplayFormat = 'list',
   maxResults = 10,
   debounceMs = 500,
   minQueryLength = 2,
-  enableKeyboardNavigation = true,
   enablePrefetching = true,
   onResultSelect,
   onSearch,
   onError,
   className = '',
   theme = defaultTheme,
-  size = 'md',
   customResultRenderer,
   customNavigationHandler,
   context,
   preset = 'global',
   presetOverrides,
-  enableFiltering = true,
-  enableSorting = true,
-  showGroupHeaders = true,
-  layout = 'comfortable',
   displayMode,
 }: UniversalSearchBarProps) {
   // State management
@@ -923,7 +903,6 @@ export default function UniversalSearchBar({
                             key={result.id}
                             result={result}
                             displayConfig={displayConfig}
-                            theme={finalTheme}
                             onSelect={() => handleResultSelect(result)}
                           />
                         )

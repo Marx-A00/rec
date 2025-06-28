@@ -3,23 +3,26 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+
 import SignInButton from '@/components/auth/SignInButton';
-import SignOutButton from '@/components/auth/SignOutButton';
 import RecommendationsList from '@/components/recommendations/RecommendationsList';
 import SocialActivityFeed from '@/components/feed/SocialActivityFeed';
 import RecommendationDrawer from '@/components/recommendations/RecommendationDrawer';
 import AlbumImage from '@/components/ui/AlbumImage';
 import AlbumModal from '@/components/ui/AlbumModal';
-import { useRecommendationDrawer } from '@/hooks';
-import { useNavigation } from '@/hooks/useNavigation';
 import { Button } from '@/components/ui/button';
-import { Folder, Plus } from 'lucide-react';
-import { CollectionAlbum } from '@/types/collection';
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable';
+
+import { useRecommendationDrawer } from '@/hooks';
+import { useNavigation } from '@/hooks/useNavigation';
+
+import { Folder } from 'lucide-react';
+
+import { CollectionAlbum } from '@/types/collection';
 
 export default function Home() {
   const { data: session } = useSession();
@@ -49,6 +52,7 @@ export default function Home() {
 
             // Transform the simplified format to CollectionAlbum format
             const transformedAlbums = (data.albums || []).map(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (album: any, index: number) => ({
                 id: album.id || `album-${Date.now()}-${index}`,
                 albumId: album.id,
@@ -113,7 +117,7 @@ export default function Home() {
               setSelectedAlbum(collectionAlbum);
             },
           });
-        } catch (error) {
+        } catch (_error) {
           setSelectedAlbum(collectionAlbum);
         }
         return;

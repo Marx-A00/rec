@@ -1,4 +1,3 @@
-import BackButton from '@/components/ui/BackButton';
 import { getRecommendations, getUsers } from '@/lib/api/browse';
 
 import BrowsePageClient from './BrowsePageClient';
