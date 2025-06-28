@@ -59,14 +59,7 @@ const AlbumSearchBackwardCompatible = forwardRef<
     minQueryLength: 2,
     maxResults: 10,
     enabled: !disabled && searchQuery.length >= 2,
-    context: {
-      page: 'recommendations',
-      mode: 'modal' as const,
-      layout: 'compact' as const,
-      groupBy: 'none' as const,
-      sortBy: 'relevance' as const,
-      deduplicate: true,
-    },
+    context: 'recommendations',
     deduplicate: true,
   };
 

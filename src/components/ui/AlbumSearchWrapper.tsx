@@ -43,11 +43,22 @@ const AlbumSearchWrapper = forwardRef<AlbumSearchRef, AlbumSearchProps>(
 
     // Use the universal search hook directly
     const {
-      data: searchResults,
+      results: searchResults,
       isLoading,
       error,
     } = useUniversalSearch(searchQuery, {
-      entityTypes: ['album'],
+      entityTypes: [
+        {
+          type: 'album',
+          displayName: 'Albums',
+          searchFields: ['title', 'artist', 'year'],
+          weight: 1,
+          deduplicate: true,
+          maxResults: 10,
+        },
+      ],
+      searchType: 'albums',
+      filters: [],
       maxResults: 10,
       debounceMs: 300,
       minQueryLength: 2,

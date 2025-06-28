@@ -122,7 +122,9 @@ export default function AlbumModal({
       const fetchId =
         isRelease(data) && data.type === 'master'
           ? data.id
-          : data.main_release || data.id;
+          : isRelease(data)
+            ? data.main_release || data.id
+            : data.id;
 
       console.log(
         '🖼️ AlbumModal - Fetching high-quality image for ID:',

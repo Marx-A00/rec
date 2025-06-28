@@ -321,7 +321,7 @@ export const searchPresets: Record<SearchPreset, SearchPresetConfig> = {
         primary: '#3b82f6',
         accent: '#1d4ed8',
       },
-    },
+    } as Partial<SearchTheme>,
     context: {
       page: 'modal',
       mode: 'modal',
@@ -349,7 +349,7 @@ export const searchPresets: Record<SearchPreset, SearchPresetConfig> = {
         primary: '#059669',
         accent: '#065f46',
       },
-    },
+    } as Partial<SearchTheme>,
     context: {
       page: 'header',
       mode: 'global',
@@ -403,7 +403,7 @@ export const searchPresets: Record<SearchPreset, SearchPresetConfig> = {
         primary: '#6366f1',
         accent: '#4338ca',
       },
-    },
+    } as Partial<SearchTheme>,
     context: {
       page: 'users',
       mode: 'global',
@@ -437,7 +437,7 @@ export const searchPresets: Record<SearchPreset, SearchPresetConfig> = {
         primary: '#f59e0b',
         accent: '#d97706',
       },
-    },
+    } as Partial<SearchTheme>,
     context: {
       page: 'recommendations',
       mode: 'modal',
@@ -465,7 +465,7 @@ export const searchPresets: Record<SearchPreset, SearchPresetConfig> = {
         primary: '#6b7280',
         accent: '#374151',
       },
-    },
+    } as Partial<SearchTheme>,
     context: {
       page: 'sidebar',
       mode: 'sidebar',
