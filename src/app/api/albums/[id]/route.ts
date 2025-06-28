@@ -42,27 +42,46 @@ export async function GET(
     );
   }
 
-  console.log(`Fetching album details for ID: ${id}`);
+  console.log(`🔍 API - Fetching album details for ID: ${id}`);
 
   // Try to get the master release details first
   try {
+    console.log(`🟢 API - Attempting db.getMaster(${id})`);
     const albumDetails: DiscogsMaster = await db.getMaster(id);
-    console.log(`Successfully fetched master details for ID: ${id}`);
+    console.log(`✅ API - Successfully fetched MASTER details for ID: ${id}`, {
+      title: albumDetails.title,
+      main_release: albumDetails.main_release,
+      id: albumDetails.id,
+    });
 
     const album: Album = mapDiscogsMasterToAlbum(albumDetails);
     return NextResponse.json(album);
-  } catch {
-    console.log(`Master fetch failed for ID: ${id}, trying release...`);
+  } catch (masterError) {
+    console.log(
+      `❌ API - Master fetch failed for ID: ${id}, trying release...`,
+      masterError
+    );
 
     // If master doesn't work, try release
     try {
+      console.log(`🔵 API - Attempting db.getRelease(${id})`);
       const albumDetails: DiscogsRelease = await db.getRelease(id);
-      console.log(`Successfully fetched release details for ID: ${id}`);
+      console.log(
+        `✅ API - Successfully fetched RELEASE details for ID: ${id}`,
+        {
+          title: albumDetails.title,
+          master_id: albumDetails.master_id,
+          id: albumDetails.id,
+        }
+      );
 
       const album: Album = mapDiscogsReleaseToAlbum(albumDetails);
       return NextResponse.json(album);
     } catch (releaseError) {
-      console.error(`Error fetching album ID ${id}:`, releaseError);
+      console.error(
+        `💥 API - Both master and release fetch failed for ID ${id}:`,
+        releaseError
+      );
       return NextResponse.json({ error: 'Album not found' }, { status: 404 });
     }
   }

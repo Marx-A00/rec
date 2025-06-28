@@ -118,8 +118,18 @@ export default function AlbumModal({
 
     // Enhanced high-quality image fetching for master releases
     if (isMasterRelease) {
-      // Try to fetch high-quality image using main_release if available, otherwise try the master ID itself
-      const fetchId = isRelease(data) ? data.main_release || data.id : data.id;
+      // FIXED: Use same logic as getAlbumId() - for masters, always use master ID!
+      const fetchId =
+        isRelease(data) && data.type === 'master'
+          ? data.id
+          : data.main_release || data.id;
+
+      console.log(
+        '🖼️ AlbumModal - Fetching high-quality image for ID:',
+        fetchId,
+        'from master:',
+        data.id
+      );
 
       fetch(`/api/albums/${fetchId}`)
         .then(res => res.json())
@@ -181,8 +191,27 @@ export default function AlbumModal({
     if (isCollectionAlbum(data)) {
       return data.albumId;
     } else if (isRelease(data)) {
-      // Use main_release if available, otherwise fall back to data.id
-      return data.main_release || data.id;
+      // BUG TRACE: Log the ID selection logic
+      console.log('🚨 AlbumModal getAlbumId - Release data:', {
+        id: data.id,
+        main_release: data.main_release,
+        type: data.type,
+        title: data.title,
+        selectedId: data.main_release || data.id,
+      });
+
+      // ISSUE: This prioritizes main_release over master ID!
+      // For masters, we should use data.id (master ID), not main_release!
+      if (data.type === 'master') {
+        console.log('🟢 AlbumModal - Using MASTER ID for navigation:', data.id);
+        return data.id;
+      } else {
+        console.log(
+          '🔵 AlbumModal - Using main_release or fallback ID:',
+          data.main_release || data.id
+        );
+        return data.main_release || data.id;
+      }
     }
     return null;
   };

@@ -123,6 +123,10 @@ export function useNavigation() {
   // Enhanced navigation helpers with validation
   const navigateToAlbum = useCallback(
     (albumId: string, options?: Omit<NavigationOptions, 'validate'>) => {
+      console.log(
+        '🚀 useNavigation - navigateToAlbum called with ID:',
+        albumId
+      );
       return navigateTo(`/albums/${albumId}`, { ...options, validate: true });
     },
     [navigateTo]
