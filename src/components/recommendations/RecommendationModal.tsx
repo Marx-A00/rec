@@ -7,7 +7,9 @@ import { Album } from '@/types/album';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { sanitizeArtistName } from '@/lib/utils';
 
-import AlbumSearch, { AlbumSearchRef } from './AlbumSearch';
+import AlbumSearchBackwardCompatible, {
+  AlbumSearchRef,
+} from './AlbumSearchBackwardCompatible';
 import CreateRecommendationForm from './CreateRecommendationForm';
 import SimilarityRatingDial from './SimilarityRatingDial';
 
@@ -222,7 +224,7 @@ export default function RecommendationModal({
 
           {/* Search Bar */}
           <div className='mb-6'>
-            <AlbumSearch
+            <AlbumSearchBackwardCompatible
               ref={albumSearchRef}
               onAlbumSelect={handleAlbumSelect}
               placeholder={`Search for ${isSearchingForBasis ? 'source' : 'recommended'} album...`}
