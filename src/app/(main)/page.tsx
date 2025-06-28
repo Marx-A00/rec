@@ -39,43 +39,43 @@ export default function Home() {
   }, [openDrawer]);
 
   return (
-    <div className='min-h-screen bg-black'>
-      <div className='h-screen p-4'>
-        <ResizablePanelGroup direction='vertical' className='h-full'>
-          {/* Top section - Welcome */}
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
-            <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full mb-2'>
-              <h1 className='text-3xl font-bold text-white mb-4'>
-                Welcome to Album Recommendations
-              </h1>
-              <p className='text-zinc-300 mb-6'>
-                Discover new music and share your favorite albums with the
-                community.
-              </p>
-              <div className='flex gap-4'>
-                {user ? (
-                  <div className='flex items-center gap-4'>
-                    <span className='text-zinc-300'>
-                      Welcome back, {user.name}!
-                    </span>
-                    <SignOutButton />
-                  </div>
-                ) : (
-                  <SignInButton />
-                )}
-              </div>
+    <div className='h-[calc(100vh-8rem)] overflow-hidden ml-6'>
+      <ResizablePanelGroup direction='vertical' className='h-full'>
+        {/* Top section - Welcome */}
+        <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+          <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full overflow-hidden'>
+            <h1 className='text-3xl font-bold text-white mb-4'>
+              Welcome to Album Recommendations
+            </h1>
+            <p className='text-zinc-300 mb-6'>
+              Discover new music and share your favorite albums with the
+              community.
+            </p>
+            <div className='flex gap-4'>
+              {user ? (
+                <div className='flex items-center gap-4'>
+                  <span className='text-zinc-300'>
+                    Welcome back, {user.name}!
+                  </span>
+                  <SignOutButton />
+                </div>
+              ) : (
+                <SignInButton />
+              )}
             </div>
-          </ResizablePanel>
+          </div>
+        </ResizablePanel>
 
-          <ResizableHandle withHandle />
+        <ResizableHandle withHandle />
 
-          {/* Bottom section - Main content with horizontal split */}
-          <ResizablePanel defaultSize={80} minSize={65}>
+        {/* Bottom section - Main content with horizontal split */}
+        <ResizablePanel defaultSize={75} minSize={60}>
+          <div className='h-full pt-4'>
             <ResizablePanelGroup direction='horizontal' className='h-full'>
               {/* Recommendations panel */}
-              <ResizablePanel defaultSize={75} minSize={60}>
-                <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full mr-2 flex flex-col'>
-                  <div className='flex justify-between items-center mb-6'>
+              <ResizablePanel defaultSize={70} minSize={50}>
+                <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full flex flex-col overflow-hidden'>
+                  <div className='flex justify-between items-center mb-6 flex-shrink-0'>
                     <h2 className='text-2xl font-semibold text-white'>
                       Recent Recommendations
                     </h2>
@@ -86,7 +86,7 @@ export default function Home() {
                       Create Recommendation
                     </button>
                   </div>
-                  <div className='flex-1 overflow-auto'>
+                  <div className='flex-1 overflow-y-auto overflow-x-hidden'>
                     <Suspense
                       fallback={
                         <div className='text-zinc-400'>
@@ -103,12 +103,12 @@ export default function Home() {
               <ResizableHandle withHandle />
 
               {/* Activity sidebar */}
-              <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-                <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full ml-2 flex flex-col'>
-                  <h3 className='text-xl font-semibold text-white mb-4'>
+              <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>
+                <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full flex flex-col overflow-hidden'>
+                  <h3 className='text-xl font-semibold text-white mb-4 flex-shrink-0'>
                     Recent Activity
                   </h3>
-                  <div className='flex-1 overflow-auto'>
+                  <div className='flex-1 overflow-y-auto overflow-x-hidden'>
                     <Suspense
                       fallback={
                         <div className='text-zinc-400'>Loading activity...</div>
@@ -120,9 +120,9 @@ export default function Home() {
                 </div>
               </ResizablePanel>
             </ResizablePanelGroup>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
 
       {/* Recommendation Drawer */}
       <RecommendationDrawer
