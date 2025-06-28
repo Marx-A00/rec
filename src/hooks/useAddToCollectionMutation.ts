@@ -53,8 +53,12 @@ export const useAddToCollectionMutation = (
     onSuccess: message => {
       // Invalidate collections queries to refetch the updated data
       queryClient.invalidateQueries({ queryKey: queryKeys.collections() });
-      // We invalidate all user collections since we don't know the current user's ID here
+      // Invalidate user collections specifically
       queryClient.invalidateQueries({ queryKey: ['collections', 'user'] });
+      // Invalidate user collection albums for the collection status hook
+      queryClient.invalidateQueries({
+        queryKey: ['collections', 'user', 'albums'],
+      });
 
       if (options.onSuccess) {
         options.onSuccess(message);

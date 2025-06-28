@@ -137,9 +137,34 @@ export default function AlbumModal({
 
   if (!isOpen || !data) return null;
 
-  // Get the high-quality image URL when available
-  const getHighQualityImageUrl = () => {
-    return highQualityImageUrl;
+  // Get the image URL with proper fallbacks for different data types
+  const getImageUrl = () => {
+    // For master releases, prefer high-quality image if available
+    if (highQualityImageUrl) {
+      return highQualityImageUrl;
+    }
+
+    // For collection albums, use the stored image URL
+    if (isCollectionAlbum(data)) {
+      return data.albumImageUrl;
+    }
+
+    // For releases, try to get image from various sources
+    if (isRelease(data)) {
+      // Try thumb first, then basic_information image
+      if (data.thumb) {
+        return data.thumb;
+      }
+      if (data.basic_information?.thumb) {
+        return data.basic_information.thumb;
+      }
+      if (data.basic_information?.cover_image) {
+        return data.basic_information.cover_image;
+      }
+    }
+
+    // Fallback to null if no image is available
+    return null;
   };
 
   const getTitle = () => {
@@ -348,7 +373,7 @@ export default function AlbumModal({
         <div className='flex-shrink-0'>
           <div className='w-80 h-80 lg:w-96 lg:h-96 bg-zinc-800 rounded-lg border-2 border-zinc-700 shadow-2xl overflow-hidden relative'>
             <AlbumImage
-              src={getHighQualityImageUrl()}
+              src={getImageUrl()}
               alt={`${getTitle()} by ${getArtist()}`}
               width={384}
               height={384}

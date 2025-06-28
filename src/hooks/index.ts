@@ -11,6 +11,7 @@ export { useRecommendationsQuery } from './useRecommendationsQuery';
 export { useRecommendationQuery } from './useRecommendationQuery';
 export { useAlbumSearchQuery } from './useAlbumSearchQuery';
 export { useUnifiedSearchQuery } from './useUnifiedSearchQuery';
+export { useUserCollectionStatus } from './useUserCollectionStatus';
 
 // Mutation Hooks
 export { useCreateRecommendationMutation } from './useCreateRecommendationMutation';

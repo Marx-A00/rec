@@ -4,6 +4,7 @@ import './globals.css';
 
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
+import { CollectionToastProvider } from '@/components/ui/CollectionToastProvider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -32,7 +33,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <SessionProvider>
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <CollectionToastProvider>{children}</CollectionToastProvider>
+          </QueryProvider>
         </SessionProvider>
       </body>
     </html>
