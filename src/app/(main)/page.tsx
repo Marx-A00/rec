@@ -1,14 +1,12 @@
 'use client';
 
-import Link from 'next/link';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-
 import SignInButton from '@/components/auth/SignInButton';
 import SignOutButton from '@/components/auth/SignOutButton';
 import RecommendationsList from '@/components/recommendations/RecommendationsList';
-import RecommendationDrawer from '@/components/recommendations/RecommendationDrawer';
 import SocialActivityFeed from '@/components/feed/SocialActivityFeed';
+import RecommendationDrawer from '@/components/recommendations/RecommendationDrawer';
 import { useRecommendationDrawer } from '@/hooks';
 import {
   ResizablePanelGroup,
@@ -66,61 +64,59 @@ export default function Home() {
           </div>
         </ResizablePanel>
 
-        <ResizableHandle withHandle />
+        <ResizableHandle className='h-px bg-zinc-800 hover:bg-zinc-700' />
 
         {/* Bottom section - Main content with horizontal split */}
         <ResizablePanel defaultSize={75} minSize={60}>
-          <div className='h-full pt-4'>
-            <ResizablePanelGroup direction='horizontal' className='h-full'>
-              {/* Recommendations panel */}
-              <ResizablePanel defaultSize={70} minSize={50}>
-                <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full flex flex-col overflow-hidden'>
-                  <div className='flex justify-between items-center mb-6 flex-shrink-0'>
-                    <h2 className='text-2xl font-semibold text-white'>
-                      Recent Recommendations
-                    </h2>
-                    <button
-                      onClick={openDrawer}
-                      className='px-4 py-2 bg-cosmic-latte text-black rounded-lg hover:bg-cosmic-latte/90 transition-colors'
-                    >
-                      Create Recommendation
-                    </button>
-                  </div>
-                  <div className='flex-1 overflow-y-auto overflow-x-hidden'>
-                    <Suspense
-                      fallback={
-                        <div className='text-zinc-400'>
-                          Loading recommendations...
-                        </div>
-                      }
-                    >
-                      <RecommendationsList />
-                    </Suspense>
-                  </div>
+          <ResizablePanelGroup direction='horizontal' className='h-full'>
+            {/* Recommendations panel */}
+            <ResizablePanel defaultSize={70} minSize={50}>
+              <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full flex flex-col overflow-hidden'>
+                <div className='flex justify-between items-center mb-6 flex-shrink-0'>
+                  <h2 className='text-2xl font-semibold text-white'>
+                    Recent Recommendations
+                  </h2>
+                  <button
+                    onClick={openDrawer}
+                    className='px-4 py-2 bg-cosmic-latte text-black rounded-lg hover:bg-cosmic-latte/90 transition-colors'
+                  >
+                    Create Recommendation
+                  </button>
                 </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              {/* Activity sidebar */}
-              <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>
-                <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full flex flex-col overflow-hidden'>
-                  <h3 className='text-xl font-semibold text-white mb-4 flex-shrink-0'>
-                    Recent Activity
-                  </h3>
-                  <div className='flex-1 overflow-y-auto overflow-x-hidden'>
-                    <Suspense
-                      fallback={
-                        <div className='text-zinc-400'>Loading activity...</div>
-                      }
-                    >
-                      <SocialActivityFeed />
-                    </Suspense>
-                  </div>
+                <div className='flex-1 overflow-y-auto overflow-x-hidden'>
+                  <Suspense
+                    fallback={
+                      <div className='text-zinc-400'>
+                        Loading recommendations...
+                      </div>
+                    }
+                  >
+                    <RecommendationsList />
+                  </Suspense>
                 </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </div>
+              </div>
+            </ResizablePanel>
+
+            <ResizableHandle className='w-px bg-zinc-800 hover:bg-zinc-700' />
+
+            {/* Activity sidebar */}
+            <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>
+              <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full flex flex-col overflow-hidden'>
+                <h3 className='text-xl font-semibold text-white mb-4 flex-shrink-0'>
+                  Recent Activity
+                </h3>
+                <div className='flex-1 overflow-y-auto overflow-x-hidden'>
+                  <Suspense
+                    fallback={
+                      <div className='text-zinc-400'>Loading activity...</div>
+                    }
+                  >
+                    <SocialActivityFeed />
+                  </Suspense>
+                </div>
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </ResizablePanel>
       </ResizablePanelGroup>
 
