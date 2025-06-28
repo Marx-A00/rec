@@ -10,6 +10,11 @@ import RecommendationsList from '@/components/recommendations/RecommendationsLis
 import RecommendationDrawer from '@/components/recommendations/RecommendationDrawer';
 import SocialActivityFeed from '@/components/feed/SocialActivityFeed';
 import { useRecommendationDrawer } from '@/hooks';
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable';
 
 export default function Home() {
   const { data: session } = useSession();
@@ -34,71 +39,89 @@ export default function Home() {
   }, [openDrawer]);
 
   return (
-    <div className='flex flex-col min-h-screen bg-black'>
-      <div className='flex-1 flex gap-8 p-4'>
-        {/* Left column - Main content */}
-        <div className='flex-1 space-y-8'>
-          {/* Welcome and auth section */}
-          <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800'>
-            <h1 className='text-3xl font-bold text-white mb-4'>
-              Welcome to Album Recommendations
-            </h1>
-            <p className='text-zinc-300 mb-6'>
-              Discover new music and share your favorite albums with the
-              community.
-            </p>
-            <div className='flex gap-4'>
-              {user ? (
-                <div className='flex items-center gap-4'>
-                  <span className='text-zinc-300'>
-                    Welcome back, {user.name}!
-                  </span>
-                  <SignOutButton />
+    <div className='min-h-screen bg-black'>
+      <div className='h-screen p-4'>
+        <ResizablePanelGroup direction='vertical' className='h-full'>
+          {/* Top section - Welcome */}
+          <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
+            <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full mb-2'>
+              <h1 className='text-3xl font-bold text-white mb-4'>
+                Welcome to Album Recommendations
+              </h1>
+              <p className='text-zinc-300 mb-6'>
+                Discover new music and share your favorite albums with the
+                community.
+              </p>
+              <div className='flex gap-4'>
+                {user ? (
+                  <div className='flex items-center gap-4'>
+                    <span className='text-zinc-300'>
+                      Welcome back, {user.name}!
+                    </span>
+                    <SignOutButton />
+                  </div>
+                ) : (
+                  <SignInButton />
+                )}
+              </div>
+            </div>
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          {/* Bottom section - Main content with horizontal split */}
+          <ResizablePanel defaultSize={80} minSize={65}>
+            <ResizablePanelGroup direction='horizontal' className='h-full'>
+              {/* Recommendations panel */}
+              <ResizablePanel defaultSize={75} minSize={60}>
+                <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full mr-2 flex flex-col'>
+                  <div className='flex justify-between items-center mb-6'>
+                    <h2 className='text-2xl font-semibold text-white'>
+                      Recent Recommendations
+                    </h2>
+                    <button
+                      onClick={openDrawer}
+                      className='px-4 py-2 bg-cosmic-latte text-black rounded-lg hover:bg-cosmic-latte/90 transition-colors'
+                    >
+                      Create Recommendation
+                    </button>
+                  </div>
+                  <div className='flex-1 overflow-auto'>
+                    <Suspense
+                      fallback={
+                        <div className='text-zinc-400'>
+                          Loading recommendations...
+                        </div>
+                      }
+                    >
+                      <RecommendationsList />
+                    </Suspense>
+                  </div>
                 </div>
-              ) : (
-                <SignInButton />
-              )}
-            </div>
-          </div>
+              </ResizablePanel>
 
-          {/* Recommendations Section */}
-          <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800'>
-            <div className='flex justify-between items-center mb-6'>
-              <h2 className='text-2xl font-semibold text-white'>
-                Recent Recommendations
-              </h2>
-              <button
-                onClick={openDrawer}
-                className='px-4 py-2 bg-cosmic-latte text-black rounded-lg hover:bg-cosmic-latte/90 transition-colors'
-              >
-                Create Recommendation
-              </button>
-            </div>
-            <Suspense
-              fallback={
-                <div className='text-zinc-400'>Loading recommendations...</div>
-              }
-            >
-              <RecommendationsList />
-            </Suspense>
-          </div>
-        </div>
+              <ResizableHandle withHandle />
 
-        {/* Right column - Social Activity Feed */}
-        <div className='w-80 hidden lg:block'>
-          <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-fit'>
-            <h3 className='text-xl font-semibold text-white mb-4'>
-              Recent Activity
-            </h3>
-            <Suspense
-              fallback={
-                <div className='text-zinc-400'>Loading activity...</div>
-              }
-            >
-              <SocialActivityFeed />
-            </Suspense>
-          </div>
-        </div>
+              {/* Activity sidebar */}
+              <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+                <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full ml-2 flex flex-col'>
+                  <h3 className='text-xl font-semibold text-white mb-4'>
+                    Recent Activity
+                  </h3>
+                  <div className='flex-1 overflow-auto'>
+                    <Suspense
+                      fallback={
+                        <div className='text-zinc-400'>Loading activity...</div>
+                      }
+                    >
+                      <SocialActivityFeed />
+                    </Suspense>
+                  </div>
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
 
       {/* Recommendation Drawer */}
