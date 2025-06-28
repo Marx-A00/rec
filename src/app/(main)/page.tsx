@@ -285,7 +285,7 @@ export default function Home() {
                 <h3 className='text-lg font-semibold text-white mb-4 flex-shrink-0'>
                   Recent Activity
                 </h3>
-                <div className='flex-1 overflow-y-auto overflow-x-hidden'>
+                <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
                   <Suspense
                     fallback={
                       <div className='text-zinc-400'>Loading activity...</div>
