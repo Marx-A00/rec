@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { Heart, Share2, MoreHorizontal, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import Toast, { useToast } from '@/components/ui/toast';
@@ -36,21 +37,58 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
     }
   };
 
+  const handleMakeRecommendation = () => {
+    try {
+      // Trigger the custom event to open recommendation drawer
+      window.dispatchEvent(new CustomEvent('open-recommendation-drawer'));
+      showToast('Recommendation form opened', 'success');
+    } catch (error) {
+      console.error('Failed to open recommendation form:', error);
+      showToast('Failed to open recommendation form', 'error');
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${album.title} by ${album.artists?.map(a => a.name).join(', ')}`,
+          text: `Check out this album: ${album.title}`,
+          url: window.location.href,
+        });
+        showToast('Album shared successfully', 'success');
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        showToast('Album link copied to clipboard', 'success');
+      }
+    } catch (error) {
+      console.error('Share failed:', error);
+      showToast('Failed to share album', 'error');
+    }
+  };
+
+  const handleMoreActions = () => {
+    showToast('More actions coming soon!', 'success');
+  };
+
   return (
     <>
       {/* Artist buttons */}
       {album.artists && album.artists.length > 0 && (
-        <div className='space-y-2'>
+        <div className='space-y-2 mb-8'>
           <h3 className='text-sm font-medium text-zinc-400'>Artists</h3>
           <div className='flex flex-wrap gap-2'>
             {album.artists.map(artist => (
               <Button
                 key={artist.id}
-                variant='outline'
+                variant='secondary'
                 size='sm'
                 onClick={() => handleArtistClick(artist.id, artist.name)}
-                className='bg-zinc-800 border-zinc-600 hover:bg-zinc-700 text-white'
+                className='gap-2'
+                aria-label={`View artist ${sanitizeArtistName(artist.name)}`}
               >
+                <User className='h-3 w-3' />
                 {sanitizeArtistName(artist.name)}
               </Button>
             ))}
@@ -60,13 +98,40 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
 
       {/* Action Buttons */}
       <div className='flex flex-wrap gap-4 mb-8 justify-center lg:justify-start'>
-        <button className='bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors'>
+        <Button
+          variant='primary'
+          size='lg'
+          onClick={handleMakeRecommendation}
+          className='gap-2'
+          aria-label='Create a recommendation for this album'
+        >
+          <Heart className='h-4 w-4' />
           Make Rec
-        </button>
-        <AddToCollectionButton album={album} />
-        <button className='bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-3 rounded-lg font-medium transition-colors'>
-          Other
-        </button>
+        </Button>
+
+        <AddToCollectionButton album={album} size='lg' variant='default' />
+
+        <Button
+          variant='outline'
+          size='lg'
+          onClick={handleShare}
+          className='gap-2'
+          aria-label='Share this album'
+        >
+          <Share2 className='h-4 w-4' />
+          Share
+        </Button>
+
+        <Button
+          variant='ghost'
+          size='lg'
+          onClick={handleMoreActions}
+          className='gap-2'
+          aria-label='More actions for this album'
+        >
+          <MoreHorizontal className='h-4 w-4' />
+          More
+        </Button>
       </div>
 
       {/* Toast Notification */}
