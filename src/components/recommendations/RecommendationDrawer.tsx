@@ -153,6 +153,23 @@ export default function RecommendationDrawer({
     }
   }, [isOpen]);
 
+  // Handle escape key to close drawer
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
+
   const handleAlbumSelect = (album: Album) => {
     if (isSearchingForBasis) {
       setSelectedBasisAlbum(album);
@@ -188,8 +205,17 @@ export default function RecommendationDrawer({
   };
 
   return (
-    <Drawer open={isOpen} onOpenChange={onClose}>
-      <DrawerContent className='h-[90vh] bg-zinc-900 border-zinc-700'>
+    <Drawer
+      open={isOpen}
+      onOpenChange={onClose}
+      snapPoints={[0.95, 0.8, 0.5]}
+      fadeFromIndex={2}
+    >
+      <DrawerContent
+        className='bg-zinc-900 border-zinc-700'
+        onClick={e => e.stopPropagation()}
+        onPointerDown={e => e.stopPropagation()}
+      >
         <DrawerHeader className='flex-shrink-0'>
           <div className='flex items-center justify-between'>
             <DrawerTitle className='text-2xl font-bold text-white'>
@@ -197,6 +223,7 @@ export default function RecommendationDrawer({
             </DrawerTitle>
             <DrawerClose asChild>
               <button
+                onClick={onClose}
                 className='text-zinc-400 hover:text-white bg-black/50 rounded-full p-1'
                 aria-label='Close drawer'
               >
