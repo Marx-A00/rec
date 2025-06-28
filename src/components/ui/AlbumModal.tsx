@@ -118,8 +118,20 @@ export default function AlbumModal({
 
     // Enhanced high-quality image fetching for master releases
     if (isMasterRelease) {
-      // Try to fetch high-quality image using main_release if available, otherwise try the master ID itself
-      const fetchId = isRelease(data) ? data.main_release || data.id : data.id;
+      // FIXED: Use same logic as getAlbumId() - for masters, always use master ID!
+      const fetchId =
+        isRelease(data) && data.type === 'master'
+          ? data.id
+          : isRelease(data)
+            ? data.main_release || data.id
+            : data.id;
+
+      console.log(
+        '🖼️ AlbumModal - Fetching high-quality image for ID:',
+        fetchId,
+        'from master:',
+        data.id
+      );
 
       fetch(`/api/albums/${fetchId}`)
         .then(res => res.json())
@@ -137,9 +149,34 @@ export default function AlbumModal({
 
   if (!isOpen || !data) return null;
 
-  // Get the high-quality image URL when available
-  const getHighQualityImageUrl = () => {
-    return highQualityImageUrl;
+  // Get the image URL with proper fallbacks for different data types
+  const getImageUrl = () => {
+    // For master releases, prefer high-quality image if available
+    if (highQualityImageUrl) {
+      return highQualityImageUrl;
+    }
+
+    // For collection albums, use the stored image URL
+    if (isCollectionAlbum(data)) {
+      return data.albumImageUrl;
+    }
+
+    // For releases, try to get image from various sources
+    if (isRelease(data)) {
+      // Try thumb first, then basic_information image
+      if (data.thumb) {
+        return data.thumb;
+      }
+      if (data.basic_information?.thumb) {
+        return data.basic_information.thumb;
+      }
+      if (data.basic_information?.cover_image) {
+        return data.basic_information.cover_image;
+      }
+    }
+
+    // Fallback to null if no image is available
+    return null;
   };
 
   const getTitle = () => {
@@ -156,8 +193,27 @@ export default function AlbumModal({
     if (isCollectionAlbum(data)) {
       return data.albumId;
     } else if (isRelease(data)) {
-      // Use main_release if available, otherwise fall back to data.id
-      return data.main_release || data.id;
+      // BUG TRACE: Log the ID selection logic
+      console.log('🚨 AlbumModal getAlbumId - Release data:', {
+        id: data.id,
+        main_release: data.main_release,
+        type: data.type,
+        title: data.title,
+        selectedId: data.main_release || data.id,
+      });
+
+      // ISSUE: This prioritizes main_release over master ID!
+      // For masters, we should use data.id (master ID), not main_release!
+      if (data.type === 'master') {
+        console.log('🟢 AlbumModal - Using MASTER ID for navigation:', data.id);
+        return data.id;
+      } else {
+        console.log(
+          '🔵 AlbumModal - Using main_release or fallback ID:',
+          data.main_release || data.id
+        );
+        return data.main_release || data.id;
+      }
     }
     return null;
   };
@@ -348,7 +404,7 @@ export default function AlbumModal({
         <div className='flex-shrink-0'>
           <div className='w-80 h-80 lg:w-96 lg:h-96 bg-zinc-800 rounded-lg border-2 border-zinc-700 shadow-2xl overflow-hidden relative'>
             <AlbumImage
-              src={getHighQualityImageUrl()}
+              src={getImageUrl()}
               alt={`${getTitle()} by ${getArtist()}`}
               width={384}
               height={384}

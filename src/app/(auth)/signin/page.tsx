@@ -38,7 +38,7 @@ export default function SignIn() {
       } else {
         window.location.href = '/';
       }
-    } catch (error) {
+    } catch {
       setCredentialsError('An error occurred. Please try again.');
     } finally {
       setIsCredentialsLoading(false);

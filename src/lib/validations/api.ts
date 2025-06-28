@@ -37,6 +37,139 @@ export const searchQuerySchema = z.object({
           'Per page must be between 1 and 100'
         )
     ),
+  // ===========================
+  // PHASE 3: Enhanced Parameters
+  // ===========================
+
+  // Entity types filter - comma-separated list
+  entityTypes: z
+    .string()
+    .optional()
+    .transform(val => (val ? val.split(',').map(t => t.trim()) : []))
+    .pipe(
+      z
+        .array(
+          z.enum(['album', 'artist', 'label', 'track', 'user', 'playlist'])
+        )
+        .optional()
+        .default([])
+    ),
+
+  // JSON-based filters for advanced filtering
+  filters: z
+    .string()
+    .optional()
+    .transform(val => {
+      if (!val) return {};
+      try {
+        return JSON.parse(val);
+      } catch {
+        return {};
+      }
+    })
+    .pipe(
+      z
+        .object({
+          genre: z.array(z.string()).optional(),
+          year: z
+            .object({
+              min: z
+                .number()
+                .min(1900)
+                .max(new Date().getFullYear())
+                .optional(),
+              max: z
+                .number()
+                .min(1900)
+                .max(new Date().getFullYear())
+                .optional(),
+            })
+            .optional(),
+          decade: z.array(z.string()).optional(),
+          label: z.array(z.string()).optional(),
+          country: z.array(z.string()).optional(),
+          format: z.array(z.string()).optional(),
+          status: z.array(z.string()).optional(),
+          // User-specific filters
+          userStatus: z.enum(['active', 'inactive', 'pending']).optional(),
+          // Custom filters for context-specific search
+          collection: z.string().optional(),
+          recommendation: z.boolean().optional(),
+        })
+        .optional()
+        .default({})
+    ),
+
+  // Search context for context-aware results
+  context: z
+    .enum([
+      'global',
+      'modal',
+      'users',
+      'recommendations',
+      'compact',
+      'collection',
+      'sidebar',
+      'inline',
+    ])
+    .optional()
+    .default('global'),
+
+  // Sorting options
+  sortBy: z
+    .enum([
+      'relevance',
+      'title',
+      'artist',
+      'year',
+      'added',
+      'popularity',
+      'alphabetical',
+    ])
+    .optional()
+    .default('relevance'),
+
+  // Sort order
+  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+
+  // Deduplication flag
+  deduplicate: z
+    .string()
+    .optional()
+    .transform(val => val === 'true' || val === '1')
+    .pipe(z.boolean().optional().default(true)),
+
+  // Result grouping
+  groupBy: z
+    .enum(['none', 'type', 'artist', 'label', 'year', 'genre'])
+    .optional()
+    .default('type'),
+
+  // Limit per entity type (for mixed searches)
+  limit: z
+    .string()
+    .optional()
+    .pipe(
+      z
+        .string()
+        .optional()
+        .transform(val => (val ? Number(val) : undefined))
+        .pipe(z.number().min(1).max(50).optional())
+    ),
+
+  // Include metadata in response
+  includeMetadata: z
+    .string()
+    .optional()
+    .transform(val => val === 'true' || val === '1')
+    .pipe(z.boolean().optional().default(false)),
+
+  // Track search specific - search within releases for tracks
+  searchInTracks: z
+    .string()
+    .optional()
+    .transform(val => val === 'true' || val === '1')
+    .pipe(z.boolean().optional().default(false)),
 });
 
 // Collection query parameters

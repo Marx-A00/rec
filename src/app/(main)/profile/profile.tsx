@@ -1,31 +1,34 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useRef } from 'react';
-import { Settings, Pencil } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Pencil, Settings } from 'lucide-react';
 
-import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import AlbumImage from '@/components/ui/AlbumImage';
+import AlbumModal from '@/components/ui/AlbumModal';
+import RecommendationCard from '@/components/recommendations/RecommendationCard';
+import FollowButton from '@/components/profile/FollowButton';
+import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
-import ProfileEditForm from '@/components/profile/ProfileEditForm';
-import FollowButton from '@/components/profile/FollowButton';
-import RecommendationCard from '@/components/recommendations/RecommendationCard';
+
+interface User {
+  id: string;
+  name: string;
+  email: string | null;
+  image: string;
+  username: string;
+  bio: string;
+  followersCount: number;
+  followingCount: number;
+  recommendationsCount: number;
+}
 
 interface ProfileClientProps {
-  user: {
-    id?: string;
-    name: string;
-    email: string | null;
-    image: string;
-    username: string;
-    bio: string;
-    followersCount: number;
-    followingCount: number;
-    recommendationsCount: number;
-  };
+  user: User;
   collection: CollectionAlbum[];
   recommendations: Recommendation[];
   isOwnProfile: boolean;
@@ -131,7 +134,7 @@ export default function ProfileClient({
   };
 
   const handleSaveProfile = (updatedUser: { name: string; bio: string }) => {
-    setCurrentUser(prev => ({
+    setCurrentUser((prev: User) => ({
       ...prev,
       name: updatedUser.name,
       bio: updatedUser.bio,
@@ -145,7 +148,7 @@ export default function ProfileClient({
     newCounts: { followersCount: number; followingCount: number }
   ) => {
     // Update the follower count optimistically
-    setFollowersCount(prev => prev + newCounts.followersCount);
+    setFollowersCount((prev: number) => prev + newCounts.followersCount);
   };
 
   // Close settings menu when clicking outside
@@ -191,122 +194,14 @@ export default function ProfileClient({
 
   return (
     <div className='min-h-screen bg-black text-white'>
-      {/* Album Modal/Overlay */}
-      {selectedAlbum && (
-        <div
-          className={`fixed inset-0 bg-black flex items-center justify-center z-50 p-4 transition-all duration-300 ${
-            isExiting ? 'bg-opacity-0' : 'bg-opacity-90'
-          }`}
-          onClick={handleClose}
-        >
-          <div
-            className={`flex flex-col lg:flex-row items-center lg:items-start gap-8 max-w-4xl w-full transition-all duration-300 relative ${
-              isExiting
-                ? 'opacity-0 scale-95 translate-y-4'
-                : 'opacity-100 scale-100 translate-y-0'
-            }`}
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Close X button */}
-            <button
-              onClick={handleClose}
-              className='absolute -top-2 -right-2 z-60 text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110'
-            >
-              <svg
-                className='w-6 h-6'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M6 18L18 6M6 6l12 12'
-                />
-              </svg>
-            </button>
-
-            {/* Zoomed Album Cover */}
-            <div className='flex-shrink-0'>
-              <AlbumImage
-                src={selectedAlbum.albumImageUrl}
-                alt={`${selectedAlbum.albumTitle} by ${selectedAlbum.albumArtist}`}
-                width={400}
-                height={400}
-                priority
-                className='w-80 h-80 lg:w-96 lg:h-96 rounded-lg object-cover border-2 border-zinc-700 shadow-2xl'
-              />
-            </div>
-
-            {/* Album Details */}
-            <div className='flex-1 text-center lg:text-left'>
-              <h2 className='text-3xl lg:text-4xl font-bold text-cosmic-latte mb-2'>
-                {selectedAlbum.albumTitle}
-              </h2>
-              <p className='text-xl text-zinc-300 mb-4'>
-                {selectedAlbum.albumArtist}
-              </p>
-
-              <div className='space-y-3 mb-6'>
-                {selectedAlbum.albumYear && (
-                  <p className='text-zinc-400'>
-                    <span className='text-cosmic-latte font-medium'>
-                      Released:
-                    </span>{' '}
-                    {selectedAlbum.albumYear}
-                  </p>
-                )}
-                <p className='text-zinc-400'>
-                  <span className='text-cosmic-latte font-medium'>Added:</span>{' '}
-                  {new Date(selectedAlbum.addedAt).toLocaleDateString()}
-                </p>
-                {selectedAlbum.personalRating && (
-                  <p className='text-zinc-400'>
-                    <span className='text-cosmic-latte font-medium'>
-                      Personal Rating:
-                    </span>
-                    <span className='text-emeraled-green ml-2'>
-                      ★ {selectedAlbum.personalRating}/10
-                    </span>
-                  </p>
-                )}
-              </div>
-
-              {/* Enhanced navigation options in modal */}
-              {selectedAlbum.albumId && (
-                <div className='flex flex-col sm:flex-row gap-3 justify-center lg:justify-start'>
-                  <button
-                    onClick={async () => {
-                      try {
-                        await navigateToAlbum(selectedAlbum.albumId!, {
-                          onError: () => {
-                            console.error(
-                              'Failed to navigate to album:',
-                              selectedAlbum.albumId
-                            );
-                          },
-                        });
-                      } catch (error) {
-                        console.error('Navigation from modal failed:', error);
-                      }
-                    }}
-                    className='bg-emeraled-green text-black px-6 py-2 rounded-lg font-medium hover:bg-opacity-90 transition-colors'
-                  >
-                    View Album Details
-                  </button>
-                  <button
-                    onClick={handleClose}
-                    className='bg-zinc-700 text-white px-6 py-2 rounded-lg font-medium hover:bg-zinc-600 transition-colors'
-                  >
-                    Close
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Album Modal using the dedicated AlbumModal component */}
+      <AlbumModal
+        isOpen={!!selectedAlbum}
+        onClose={handleClose}
+        data={selectedAlbum}
+        isExiting={isExiting}
+        onNavigateToAlbum={navigateToAlbum}
+      />
 
       <div className='container mx-auto px-4 py-8'>
         {/* Header with intelligent back navigation */}

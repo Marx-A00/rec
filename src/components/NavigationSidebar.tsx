@@ -233,9 +233,10 @@ export default function NavigationSidebar() {
           {
             href: '/recommend',
             icon: Music,
-            label: 'Navigate to Create Recommendation',
+            label: 'Open Create Recommendation',
             tooltip: 'Create Recommendation',
             delay: 'delay-225',
+            isDrawerTrigger: true,
           },
           {
             href: '/profile',
@@ -244,42 +245,95 @@ export default function NavigationSidebar() {
             tooltip: 'My Profile',
             delay: 'delay-300',
           },
-        ].map(({ href, icon: Icon, label, tooltip, delay }) => (
-          <Link
-            key={href}
-            href={href}
-            onClick={closeMobileSidebar}
-            tabIndex={isCollapsed ? -1 : 0}
-          >
-            <button
-              className={`group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 active:scale-95 transition-all duration-200 ease-out ${
-                isMounted
-                  ? `opacity-100 translate-y-0 ${delay}`
-                  : 'opacity-0 translate-y-2'
-              }`}
-              aria-label={label}
-              aria-describedby={`${href.slice(1) || 'home'}-tooltip`}
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
+        ].map(
+          ({ href, icon: Icon, label, tooltip, delay, isDrawerTrigger }) => {
+            const handleClick = () => {
+              closeMobileSidebar();
+              if (isDrawerTrigger) {
+                // Emit custom event for recommendation drawer
+                window.dispatchEvent(
+                  new CustomEvent('open-recommendation-drawer')
+                );
+              }
+            };
+
+            const handleKeyDown = (e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (isDrawerTrigger) {
+                  window.dispatchEvent(
+                    new CustomEvent('open-recommendation-drawer')
+                  );
+                } else {
                   window.location.href = href;
                 }
-              }}
-            >
-              <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm group-focus:text-cosmic-latte transition-all duration-200 ease-out' />
-              <span
-                id={`${href.slice(1) || 'home'}-tooltip`}
-                className={`absolute left-full ml-3 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-black/90 backdrop-blur-sm text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-all duration-200 ease-out delay-300 pointer-events-none z-50 border border-zinc-700/50 shadow-lg hidden md:block scale-95 group-hover:scale-100 group-focus:scale-100 ${
-                  isCollapsed ? 'md:hidden' : ''
-                }`}
-                role='tooltip'
+              }
+            };
+
+            // For drawer triggers, render as button; for navigation, render as Link
+            if (isDrawerTrigger) {
+              return (
+                <button
+                  key={href}
+                  onClick={handleClick}
+                  onKeyDown={handleKeyDown}
+                  tabIndex={isCollapsed ? -1 : 0}
+                  className={`group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 active:scale-95 transition-all duration-200 ease-out ${
+                    isMounted
+                      ? `opacity-100 translate-y-0 ${delay}`
+                      : 'opacity-0 translate-y-2'
+                  }`}
+                  aria-label={label}
+                  aria-describedby={`${href.slice(1) || 'home'}-tooltip`}
+                >
+                  <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm group-focus:text-cosmic-latte transition-all duration-200 ease-out' />
+                  <span
+                    id={`${href.slice(1) || 'home'}-tooltip`}
+                    className={`absolute left-full ml-3 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-black/90 backdrop-blur-sm text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-all duration-200 ease-out delay-300 pointer-events-none z-50 border border-zinc-700/50 shadow-lg hidden md:block scale-95 group-hover:scale-100 group-focus:scale-100 ${
+                      isCollapsed ? 'md:hidden' : ''
+                    }`}
+                    role='tooltip'
+                  >
+                    {tooltip}
+                    <div className='absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-black/90'></div>
+                  </span>
+                </button>
+              );
+            }
+
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={handleClick}
+                tabIndex={isCollapsed ? -1 : 0}
               >
-                {tooltip}
-                <div className='absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-black/90'></div>
-              </span>
-            </button>
-          </Link>
-        ))}
+                <button
+                  className={`group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 active:scale-95 transition-all duration-200 ease-out ${
+                    isMounted
+                      ? `opacity-100 translate-y-0 ${delay}`
+                      : 'opacity-0 translate-y-2'
+                  }`}
+                  aria-label={label}
+                  aria-describedby={`${href.slice(1) || 'home'}-tooltip`}
+                  onKeyDown={handleKeyDown}
+                >
+                  <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm group-focus:text-cosmic-latte transition-all duration-200 ease-out' />
+                  <span
+                    id={`${href.slice(1) || 'home'}-tooltip`}
+                    className={`absolute left-full ml-3 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-black/90 backdrop-blur-sm text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-all duration-200 ease-out delay-300 pointer-events-none z-50 border border-zinc-700/50 shadow-lg hidden md:block scale-95 group-hover:scale-100 group-focus:scale-100 ${
+                      isCollapsed ? 'md:hidden' : ''
+                    }`}
+                    role='tooltip'
+                  >
+                    {tooltip}
+                    <div className='absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-black/90'></div>
+                  </span>
+                </button>
+              </Link>
+            );
+          }
+        )}
       </nav>
 
       {/* Mobile sidebar - separate for mobile navigation */}
@@ -306,19 +360,44 @@ export default function NavigationSidebar() {
             {
               href: '/recommend',
               icon: Music,
-              label: 'Navigate to Create Recommendation',
+              label: 'Open Create Recommendation',
+              isDrawerTrigger: true,
             },
             { href: '/profile', icon: User, label: 'Navigate to My Profile' },
-          ].map(({ href, icon: Icon, label }) => (
-            <Link key={href} href={href} onClick={closeMobileSidebar}>
-              <button
-                className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 active:scale-95 transition-all duration-200 ease-out'
-                aria-label={label}
-              >
-                <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm group-focus:text-cosmic-latte transition-all duration-200 ease-out' />
-              </button>
-            </Link>
-          ))}
+          ].map(({ href, icon: Icon, label, isDrawerTrigger }) => {
+            const handleMobileClick = () => {
+              closeMobileSidebar();
+              if (isDrawerTrigger) {
+                window.dispatchEvent(
+                  new CustomEvent('open-recommendation-drawer')
+                );
+              }
+            };
+
+            if (isDrawerTrigger) {
+              return (
+                <button
+                  key={href}
+                  onClick={handleMobileClick}
+                  className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 active:scale-95 transition-all duration-200 ease-out'
+                  aria-label={label}
+                >
+                  <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm group-focus:text-cosmic-latte transition-all duration-200 ease-out' />
+                </button>
+              );
+            }
+
+            return (
+              <Link key={href} href={href} onClick={handleMobileClick}>
+                <button
+                  className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 active:scale-95 transition-all duration-200 ease-out'
+                  aria-label={label}
+                >
+                  <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm group-focus:text-cosmic-latte transition-all duration-200 ease-out' />
+                </button>
+              </Link>
+            );
+          })}
         </div>
       </nav>
     </>

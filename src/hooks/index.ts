@@ -11,6 +11,7 @@ export { useRecommendationsQuery } from './useRecommendationsQuery';
 export { useRecommendationQuery } from './useRecommendationQuery';
 export { useAlbumSearchQuery } from './useAlbumSearchQuery';
 export { useUnifiedSearchQuery } from './useUnifiedSearchQuery';
+export { useUserCollectionStatus } from './useUserCollectionStatus';
 
 // Mutation Hooks
 export { useCreateRecommendationMutation } from './useCreateRecommendationMutation';
@@ -24,7 +25,19 @@ export { useUpdateUserProfileMutation } from './useUpdateUserProfileMutation';
 export { useAlbumModal } from './useAlbumModal';
 export { useCollageGenerator } from './useCollageGenerator';
 export { useRecommendationModal } from './useRecommendationModal';
+export { useRecommendationDrawer } from './useRecommendationDrawer';
 export { useNavigation } from './useNavigation';
+
+// Search Hooks
+export { useUniversalSearch } from './useUniversalSearch';
+export { useSearchNavigation } from './useSearchNavigation';
+
+// Layout Hooks
+export {
+  useDrawerLayout,
+  useLayoutBreakpoints,
+  getLayoutClasses,
+} from './useDrawerLayout';
 
 // Re-export common types and utilities from queries infrastructure
 export {

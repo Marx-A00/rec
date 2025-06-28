@@ -1,9 +1,17 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Play } from 'lucide-react';
+import { X, Play } from 'lucide-react';
 
 import { Album } from '@/types/album';
+import { useDrawerLayout } from '@/hooks/useDrawerLayout';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerClose,
+} from '@/components/ui/drawer';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { sanitizeArtistName } from '@/lib/utils';
 
@@ -13,12 +21,7 @@ import AlbumSearchBackwardCompatible, {
 import CreateRecommendationForm from './CreateRecommendationForm';
 import SimilarityRatingDial from './SimilarityRatingDial';
 
-interface RecommendationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  isExiting: boolean;
-}
-
+// Local Turntable component that accepts responsive size props
 interface TurntableProps {
   album: Album | null;
   title: string;
@@ -26,6 +29,7 @@ interface TurntableProps {
   isActive: boolean;
   onClick: () => void;
   placeholder?: string;
+  size?: number;
 }
 
 function Turntable({
@@ -35,6 +39,7 @@ function Turntable({
   isActive,
   onClick,
   placeholder = 'Search to load track',
+  size = 224, // default w-56 h-56 = 224px
 }: TurntableProps) {
   const isSource = title === 'SOURCE';
   const activeColor = isSource ? 'ring-red-500' : 'ring-green-500';
@@ -46,9 +51,10 @@ function Turntable({
       <div className='relative bg-zinc-800 rounded-full p-4 border-2 border-zinc-700'>
         {/* Turntable Platter */}
         <div
-          className={`relative w-56 h-56 bg-zinc-900 rounded-full border border-zinc-600 cursor-pointer ${
+          className={`relative bg-zinc-900 rounded-full border border-zinc-600 cursor-pointer ${
             isActive ? `ring-2 ${activeColor}` : 'hover:border-zinc-500'
           }`}
+          style={{ width: size, height: size }}
           onClick={onClick}
         >
           {/* Center Spindle */}
@@ -73,7 +79,10 @@ function Turntable({
               {/* Album Info Display */}
               <div className='absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-center'>
                 <div className='bg-black/80 rounded px-3 py-2 border border-zinc-700'>
-                  <div className='font-bold text-white text-sm truncate max-w-56'>
+                  <div
+                    className='font-bold text-white text-sm truncate'
+                    style={{ maxWidth: size }}
+                  >
                     {album.title}
                   </div>
                   <div className='text-zinc-300 text-sm truncate'>
@@ -109,11 +118,17 @@ function Turntable({
   );
 }
 
-export default function RecommendationModal({
+interface RecommendationDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+}
+
+export default function RecommendationDrawer({
   isOpen,
   onClose,
-  isExiting,
-}: RecommendationModalProps) {
+  onSuccess,
+}: RecommendationDrawerProps) {
   const [selectedBasisAlbum, setSelectedBasisAlbum] = useState<Album | null>(
     null
   );
@@ -122,25 +137,13 @@ export default function RecommendationModal({
   const [isSearchingForBasis, setIsSearchingForBasis] = useState<boolean>(true);
   const [similarityRating, setSimilarityRating] = useState<number>(5);
 
+  // Get responsive layout configuration
+  const layoutConfig = useDrawerLayout();
+
   // Ref to access AlbumSearch methods
   const albumSearchRef = useRef<AlbumSearchRef>(null);
 
-  // Handle Escape key
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-    }
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isOpen, onClose]);
-
-  // Reset state when modal closes
+  // Reset state when drawer closes
   useEffect(() => {
     if (!isOpen) {
       setSelectedBasisAlbum(null);
@@ -150,7 +153,22 @@ export default function RecommendationModal({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  // Handle escape key to close drawer
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
 
   const handleAlbumSelect = (album: Album) => {
     if (isSearchingForBasis) {
@@ -183,106 +201,95 @@ export default function RecommendationModal({
     setIsSearchingForBasis(true);
     setSimilarityRating(5);
     onClose();
+    onSuccess?.();
   };
 
   return (
-    <div
-      className='fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[100] p-4'
-      onClick={onClose}
-    >
-      <div
-        className='bg-zinc-900 border border-zinc-700 rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto relative'
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Close X button */}
-        <button
-          onClick={onClose}
-          className='absolute top-4 right-4 z-[110] text-zinc-400 hover:text-white bg-black/50 rounded-full p-1'
-        >
-          <svg
-            className='w-5 h-5'
-            fill='none'
-            stroke='currentColor'
-            viewBox='0 0 24 24'
-          >
-            <path
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              strokeWidth={2}
-              d='M6 18L18 6M6 6l12 12'
-            />
-          </svg>
-        </button>
-
-        <div className='p-6'>
-          {/* Header */}
-          <div className='text-center mb-6'>
-            <h1 className='text-2xl font-bold text-white mb-1'>
+    <Drawer open={isOpen} onOpenChange={onClose} handleOnly={true}>
+      <DrawerContent className='h-[90vh] bg-zinc-900 border-zinc-700'>
+        <DrawerHeader className='flex-shrink-0'>
+          <div className='flex items-center justify-between'>
+            <DrawerTitle className='text-2xl font-bold text-white'>
               Create Recommendation
-            </h1>
+            </DrawerTitle>
+            <DrawerClose asChild>
+              <button
+                onClick={onClose}
+                className='text-zinc-400 hover:text-white bg-black/50 rounded-full p-1'
+                aria-label='Close drawer'
+              >
+                <X className='w-5 h-5' />
+              </button>
+            </DrawerClose>
           </div>
+        </DrawerHeader>
 
-          {/* Search Bar */}
-          <div className='mb-6'>
-            <AlbumSearchBackwardCompatible
-              ref={albumSearchRef}
-              onAlbumSelect={handleAlbumSelect}
-              placeholder={`Search for ${isSearchingForBasis ? 'source' : 'recommended'} album...`}
-              label=''
-              disabled={false}
-              colorTheme={isSearchingForBasis ? 'red' : 'green'}
-            />
-          </div>
-
-          {/* Turntables and Score */}
-          <div className='flex items-center justify-center gap-8 mb-6'>
-            {/* Left Turntable */}
-            <div className='flex flex-col items-center'>
-              <Turntable
-                album={selectedBasisAlbum}
-                title='SOURCE'
-                side='left'
-                isActive={isSearchingForBasis}
-                onClick={() => switchAlbumType(true)}
-                placeholder='Load source'
+        <div className='flex-1 overflow-y-auto'>
+          <div className={layoutConfig.containerClasses}>
+            {/* Search Bar */}
+            <div className='mb-6'>
+              <AlbumSearchBackwardCompatible
+                ref={albumSearchRef}
+                onAlbumSelect={handleAlbumSelect}
+                placeholder={`Search for ${isSearchingForBasis ? 'source' : 'recommended'} album...`}
+                label=''
+                disabled={false}
+                colorTheme={isSearchingForBasis ? 'red' : 'green'}
               />
             </div>
 
-            {/* Similarity Rating Dial */}
-            <div className='flex flex-col items-center'>
-              <div className='bg-zinc-800 rounded-lg p-4 border border-zinc-700'>
-                <SimilarityRatingDial
-                  value={similarityRating}
-                  onChange={setSimilarityRating}
-                  disabled={false}
+            {/* Turntables Layout - Responsive */}
+            <div className={`${layoutConfig.turntableClasses} mb-6`}>
+              {/* Left Turntable */}
+              <div className='flex flex-col items-center'>
+                <Turntable
+                  album={selectedBasisAlbum}
+                  title='SOURCE'
+                  side='left'
+                  isActive={isSearchingForBasis}
+                  onClick={() => switchAlbumType(true)}
+                  placeholder='Load source'
+                  size={layoutConfig.turntableSize}
+                />
+              </div>
+
+              {/* Similarity Rating Dial */}
+              <div className='flex flex-col items-center'>
+                <div className='bg-zinc-800 rounded-lg p-4 border border-zinc-700'>
+                  <SimilarityRatingDial
+                    value={similarityRating}
+                    onChange={setSimilarityRating}
+                    disabled={false}
+                  />
+                </div>
+              </div>
+
+              {/* Right Turntable */}
+              <div className='flex flex-col items-center'>
+                <Turntable
+                  album={selectedRecommendedAlbum}
+                  title='RECOMMENDED'
+                  side='right'
+                  isActive={!isSearchingForBasis}
+                  onClick={() => switchAlbumType(false)}
+                  placeholder='Load rec'
+                  size={layoutConfig.turntableSize}
                 />
               </div>
             </div>
 
-            {/* Right Turntable */}
-            <div className='flex flex-col items-center'>
-              <Turntable
-                album={selectedRecommendedAlbum}
-                title='RECOMMENDED'
-                side='right'
-                isActive={!isSearchingForBasis}
-                onClick={() => switchAlbumType(false)}
-                placeholder='Load rec'
+            {/* Recommendation Form */}
+            <div className='relative min-h-[60px]'>
+              <CreateRecommendationForm
+                basisAlbum={selectedBasisAlbum}
+                recommendedAlbum={selectedRecommendedAlbum}
+                score={similarityRating}
+                onSuccess={handleSuccess}
               />
             </div>
           </div>
-
-          {/* Recommendation Form */}
-          <div className='relative min-h-[60px]'>
-            <CreateRecommendationForm
-              basisAlbum={selectedBasisAlbum}
-              recommendedAlbum={selectedRecommendedAlbum}
-              score={similarityRating}
-              onSuccess={handleSuccess}
-            />
-          </div>
         </div>
-      </div>
-    </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
