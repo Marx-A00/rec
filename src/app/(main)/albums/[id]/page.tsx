@@ -71,7 +71,9 @@ export default async function AlbumDetailsPage({
         {/* Album Info */}
         <div className='lg:col-span-2 space-y-6'>
           <div>
-            <h1 className='text-4xl font-bold mb-2'>{album.title}</h1>
+            <h1 className='text-4xl font-bold mb-2 text-white'>
+              {album.title}
+            </h1>
             <p className='text-xl text-zinc-300 mb-4'>{album.subtitle}</p>
             <AlbumInteractions album={album} />
           </div>
@@ -111,7 +113,9 @@ export default async function AlbumDetailsPage({
 
             {album.artists && album.artists.length > 0 && (
               <div className='md:col-span-2'>
-                <h3 className='text-lg font-semibold mb-2'>Artists</h3>
+                <h3 className='text-lg font-semibold mb-2 text-white'>
+                  Artists
+                </h3>
                 <p className='text-zinc-300'>
                   {album.artists
                     .map(artist => sanitizeArtistName(artist.name))
@@ -128,25 +132,25 @@ export default async function AlbumDetailsPage({
         <TabsList className='grid w-full grid-cols-4 bg-zinc-900'>
           <TabsTrigger
             value='tracklist'
-            className='data-[state=active]:bg-zinc-700'
+            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
             Tracklist
           </TabsTrigger>
           <TabsTrigger
             value='recommendations'
-            className='data-[state=active]:bg-zinc-700'
+            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
             Recommendations
           </TabsTrigger>
           <TabsTrigger
             value='reviews'
-            className='data-[state=active]:bg-zinc-700'
+            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
             Reviews
           </TabsTrigger>
           <TabsTrigger
             value='similar'
-            className='data-[state=active]:bg-zinc-700'
+            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
             Similar Albums
           </TabsTrigger>
@@ -154,7 +158,9 @@ export default async function AlbumDetailsPage({
 
         <TabsContent value='tracklist' className='mt-6'>
           <div className='bg-zinc-900 rounded-lg p-6'>
-            <h3 className='text-xl font-semibold mb-4'>Track Listing</h3>
+            <h3 className='text-xl font-semibold mb-4 text-white'>
+              Track Listing
+            </h3>
             {album.tracks && album.tracks.length > 0 ? (
               <div className='space-y-2'>
                 {album.tracks.map(track => (
@@ -184,7 +190,9 @@ export default async function AlbumDetailsPage({
 
         <TabsContent value='recommendations' className='mt-6'>
           <div className='bg-zinc-900 rounded-lg p-6'>
-            <h3 className='text-xl font-semibold mb-4'>Recommendations</h3>
+            <h3 className='text-xl font-semibold mb-4 text-white'>
+              Recommendations
+            </h3>
             <p className='text-zinc-400'>
               Recommendations based on this album will appear here. This feature
               is coming soon!
@@ -194,7 +202,9 @@ export default async function AlbumDetailsPage({
 
         <TabsContent value='reviews' className='mt-6'>
           <div className='bg-zinc-900 rounded-lg p-6'>
-            <h3 className='text-xl font-semibold mb-4'>User Reviews</h3>
+            <h3 className='text-xl font-semibold mb-4 text-white'>
+              User Reviews
+            </h3>
             <p className='text-zinc-400'>
               User reviews and ratings for this album will appear here. This
               feature is coming soon!
@@ -204,7 +214,9 @@ export default async function AlbumDetailsPage({
 
         <TabsContent value='similar' className='mt-6'>
           <div className='bg-zinc-900 rounded-lg p-6'>
-            <h3 className='text-xl font-semibold mb-4'>Similar Albums</h3>
+            <h3 className='text-xl font-semibold mb-4 text-white'>
+              Similar Albums
+            </h3>
             <p className='text-zinc-400'>
               Albums similar to this one will appear here. This feature is
               coming soon!
