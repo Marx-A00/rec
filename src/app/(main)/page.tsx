@@ -76,12 +76,6 @@ export default function Home() {
                   <h2 className='text-2xl font-semibold text-white'>
                     Recent Recommendations
                   </h2>
-                  <button
-                    onClick={openDrawer}
-                    className='px-4 py-2 bg-cosmic-latte text-black rounded-lg hover:bg-cosmic-latte/90 transition-colors'
-                  >
-                    Create Recommendation
-                  </button>
                 </div>
                 <div className='flex-1 overflow-y-auto overflow-x-hidden'>
                   <Suspense
@@ -91,7 +85,7 @@ export default function Home() {
                       </div>
                     }
                   >
-                    <RecommendationsList />
+                    <RecommendationsList title='' />
                   </Suspense>
                 </div>
               </div>
