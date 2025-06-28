@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { Folder } from 'lucide-react';
 
 import SignInButton from '@/components/auth/SignInButton';
 import RecommendationsList from '@/components/recommendations/RecommendationsList';
@@ -16,12 +17,8 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable';
-
 import { useRecommendationDrawer } from '@/hooks';
 import { useNavigation } from '@/hooks/useNavigation';
-
-import { Folder } from 'lucide-react';
-
 import { CollectionAlbum } from '@/types/collection';
 
 export default function Home() {
@@ -117,7 +114,7 @@ export default function Home() {
               setSelectedAlbum(collectionAlbum);
             },
           });
-        } catch (_error) {
+        } catch {
           setSelectedAlbum(collectionAlbum);
         }
         return;

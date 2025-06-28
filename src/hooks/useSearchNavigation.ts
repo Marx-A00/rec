@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+
 import { useNavigation } from '@/hooks/useNavigation';
 import { UnifiedSearchResult } from '@/types/search';
 
@@ -32,12 +33,7 @@ export interface UseSearchNavigationOptions {
 // ========================================
 
 export function useSearchNavigation(options: UseSearchNavigationOptions) {
-  const {
-    entityTypes,
-    customHandlers = {},
-    enablePrefetching,
-    context,
-  } = options;
+  const { entityTypes, customHandlers = {}, enablePrefetching } = options;
   const { navigateToAlbum, navigateToArtist, navigateToLabel, prefetchRoute } =
     useNavigation();
 

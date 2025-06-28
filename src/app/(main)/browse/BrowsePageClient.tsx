@@ -285,6 +285,7 @@ function TrendingArtistCard({ artist }: { artist: TrendingArtist }) {
       <div className='text-center space-y-3'>
         <div className='relative w-16 h-16 mx-auto'>
           {artist.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={artist.imageUrl}
               alt={artist.name}
@@ -367,6 +368,7 @@ function TrendingAlbumCard({ album }: { album: TrendingAlbum }) {
             <div className='flex items-center space-x-1'>
               <div className='w-3 h-3 rounded-full bg-zinc-700'>
                 {album.recentRecommendations[0].user?.image && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={album.recentRecommendations[0].user.image}
                     alt={album.recentRecommendations[0].user.name || 'User'}

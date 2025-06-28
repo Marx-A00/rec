@@ -1,18 +1,16 @@
 'use client';
 
-import {
-  forwardRef,
-  useImperativeHandle,
-  useState,
-  useCallback,
-  useEffect,
-} from 'react';
+import { forwardRef, useImperativeHandle, useState, useCallback } from 'react';
 import { Search } from 'lucide-react';
+
 import { Album } from '@/types/album';
 import { UnifiedSearchResult } from '@/types/search';
+
 import { useUniversalSearch } from '@/hooks/useUniversalSearch';
-import AlbumImage from './AlbumImage';
+
 import { sanitizeArtistName } from '@/lib/utils';
+
+import AlbumImage from './AlbumImage';
 
 // Original AlbumSearch Interface - MUST be maintained exactly
 interface AlbumSearchProps {

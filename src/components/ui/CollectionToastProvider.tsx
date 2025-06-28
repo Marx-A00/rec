@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, ReactNode } from 'react';
+
 import CollectionToast, { useCollectionToast } from './CollectionToast';
 
 interface CollectionToastContextType {

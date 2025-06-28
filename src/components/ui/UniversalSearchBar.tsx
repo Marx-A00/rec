@@ -736,6 +736,7 @@ export default function UniversalSearchBar({
   // Resolve final configuration values
   const finalEntityTypes = entityTypes;
   const finalFilters = filters.length > 0 ? filters : presetConfig.filters;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const finalTheme = { ...defaultTheme, ...theme, ...presetConfig.theme };
   const finalContext = context || presetConfig.context;
   const finalMaxResults =

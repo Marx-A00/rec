@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react';
 import { Music, User, Building2, Search } from 'lucide-react';
+
 import { CommandItem, CommandGroup } from '@/components/ui/command';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { UnifiedSearchResult } from '@/types/search';

@@ -1,10 +1,10 @@
 'use client';
 
 import { forwardRef, useImperativeHandle, useState, useCallback } from 'react';
-import { Search, Music } from 'lucide-react';
+import { Search } from 'lucide-react';
+
 import { Album } from '@/types/album';
 import { UnifiedSearchResult } from '@/types/search';
-import { SearchContext } from '@/components/ui/UniversalSearchBar';
 import {
   useUniversalSearch,
   UseUniversalSearchOptions,
