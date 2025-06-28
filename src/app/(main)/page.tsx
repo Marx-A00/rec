@@ -154,7 +154,7 @@ export default function Home() {
                   </h2>
                 </div>
 
-                <div className='flex-1 overflow-y-auto overflow-x-hidden'>
+                <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
                   {isLoadingAlbums ? (
                     <div className='grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2'>
                       {Array.from({ length: 15 }).map((_, i) => (
@@ -263,7 +263,7 @@ export default function Home() {
                     Recent Recommendations
                   </h2>
                 </div>
-                <div className='flex-1 overflow-y-auto overflow-x-hidden'>
+                <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
                   <Suspense
                     fallback={
                       <div className='text-zinc-400'>
