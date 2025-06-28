@@ -5,11 +5,8 @@ import { Search } from 'lucide-react';
 
 import { Album } from '@/types/album';
 import { UnifiedSearchResult } from '@/types/search';
-
 import { useUniversalSearch } from '@/hooks/useUniversalSearch';
-
 import { sanitizeArtistName } from '@/lib/utils';
-
 import AlbumImage from './AlbumImage';
 
 // Original AlbumSearch Interface - MUST be maintained exactly
