@@ -1,15 +1,37 @@
-import Link from 'next/link';
-import { Suspense } from 'react';
+'use client';
 
-import { auth } from '@/../auth';
+import Link from 'next/link';
+import { Suspense, useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+
 import SignInButton from '@/components/auth/SignInButton';
 import SignOutButton from '@/components/auth/SignOutButton';
 import RecommendationsList from '@/components/recommendations/RecommendationsList';
+import RecommendationDrawer from '@/components/recommendations/RecommendationDrawer';
 import SocialActivityFeed from '@/components/feed/SocialActivityFeed';
+import { useRecommendationDrawer } from '@/hooks';
 
-export default async function Home() {
-  const session = await auth();
+export default function Home() {
+  const { data: session } = useSession();
   const user = session?.user;
+  const { isOpen, openDrawer, closeDrawer, handleSuccess } =
+    useRecommendationDrawer();
+
+  // Listen for custom event from navigation sidebar
+  useEffect(() => {
+    const handleOpenDrawer = () => {
+      openDrawer();
+    };
+
+    window.addEventListener('open-recommendation-drawer', handleOpenDrawer);
+
+    return () => {
+      window.removeEventListener(
+        'open-recommendation-drawer',
+        handleOpenDrawer
+      );
+    };
+  }, [openDrawer]);
 
   return (
     <div className='flex flex-col min-h-screen bg-black'>
@@ -45,12 +67,12 @@ export default async function Home() {
               <h2 className='text-2xl font-semibold text-white'>
                 Recent Recommendations
               </h2>
-              <Link
-                href='/recommend'
+              <button
+                onClick={openDrawer}
                 className='px-4 py-2 bg-cosmic-latte text-black rounded-lg hover:bg-cosmic-latte/90 transition-colors'
               >
                 Create Recommendation
-              </Link>
+              </button>
             </div>
             <Suspense
               fallback={
@@ -78,6 +100,13 @@ export default async function Home() {
           </div>
         </div>
       </div>
+
+      {/* Recommendation Drawer */}
+      <RecommendationDrawer
+        isOpen={isOpen}
+        onClose={closeDrawer}
+        onSuccess={handleSuccess}
+      />
     </div>
   );
 }
