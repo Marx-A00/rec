@@ -273,7 +273,6 @@ export default function RecommendationCard({
               aria-label={`View details for ${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist} from ${recommendation.basisAlbumYear || 'unknown year'}`}
               tabIndex={0}
             >
-              <div className='absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900 animate-pulse'></div>
               <AlbumImage
                 src={recommendation.basisAlbumImageUrl}
                 alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
@@ -288,6 +287,7 @@ export default function RecommendationCard({
                   relative z-10
                 '
                 priority={false}
+                showSkeleton={false}
               />
               <div className='absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 rounded-lg'></div>
               <div className='absolute bottom-2 left-2 z-20 pointer-events-none'>
@@ -326,7 +326,6 @@ export default function RecommendationCard({
               aria-label={`View details for ${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist} from ${recommendation.recommendedAlbumYear || 'unknown year'}`}
               tabIndex={0}
             >
-              <div className='absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900 animate-pulse'></div>
               <AlbumImage
                 src={recommendation.recommendedAlbumImageUrl}
                 alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
@@ -341,6 +340,7 @@ export default function RecommendationCard({
                   relative z-10
                 '
                 priority={false}
+                showSkeleton={false}
               />
               <div className='absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 rounded-lg'></div>
               <div className='absolute bottom-2 left-2 z-20 pointer-events-none'>

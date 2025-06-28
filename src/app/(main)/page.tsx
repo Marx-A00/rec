@@ -156,19 +156,29 @@ export default function Home() {
 
                 <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
                   {isLoadingAlbums ? (
-                    <div className='grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2'>
-                      {Array.from({ length: 15 }).map((_, i) => (
-                        <div key={i} className='animate-pulse'>
-                          <div className='bg-zinc-800 rounded aspect-square'></div>
+                    <div className='flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className='relative group cursor-pointer transform transition-all duration-200 flex-shrink-0 w-32'
+                        >
+                          <AlbumImage
+                            src={null}
+                            alt='Loading...'
+                            width={128}
+                            height={128}
+                            className='w-full aspect-square rounded object-cover border border-zinc-800'
+                            showSkeleton={true}
+                          />
                         </div>
                       ))}
                     </div>
                   ) : userAlbums?.length > 0 ? (
-                    <div className='grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2'>
+                    <div className='flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
                       {userAlbums.map(collectionAlbum => (
                         <div
                           key={collectionAlbum.id}
-                          className='relative group cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10'
+                          className='relative group cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10 flex-shrink-0 w-32'
                           onClick={e => handleAlbumClick(collectionAlbum, e)}
                           title={`${collectionAlbum.albumTitle} by ${collectionAlbum.albumArtist}\nClick to view details • Ctrl/Cmd+Click to navigate to album page`}
                         >
@@ -178,6 +188,7 @@ export default function Home() {
                             width={128}
                             height={128}
                             className='w-full aspect-square rounded object-cover border border-zinc-800 group-hover:border-zinc-600 transition-colors'
+                            showSkeleton={true}
                           />
                           <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 rounded flex items-center justify-center'>
                             <div className='opacity-0 group-hover:opacity-100 text-cosmic-latte text-xs text-center p-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-200'>

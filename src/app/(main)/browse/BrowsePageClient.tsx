@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
   ChevronLeft,
@@ -79,8 +78,6 @@ export default function BrowsePageClient({
   initialUsers,
   initialRecommendations,
 }: BrowsePageClientProps) {
-  const { data: session } = useSession();
-
   // State for API data
   const [newUsers, setNewUsers] = useState<User[]>(initialUsers.slice(0, 10));
   const [trendingArtists, setTrendingArtists] = useState<TrendingArtist[]>([]);

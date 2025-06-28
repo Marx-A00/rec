@@ -13,14 +13,25 @@ import FollowButton from '@/components/profile/FollowButton';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import { useNavigation } from '@/hooks/useNavigation';
 
-import { User } from '@/types/user';
 import { CollectionAlbum } from '@/types/collection';
-import { RecommendationWithAlbum } from '@/types/recommendation';
+import { Recommendation } from '@/types/recommendation';
+
+interface User {
+  id: string;
+  name: string;
+  email: string | null;
+  image: string;
+  username: string;
+  bio: string;
+  followersCount: number;
+  followingCount: number;
+  recommendationsCount: number;
+}
 
 interface ProfileClientProps {
   user: User;
   collection: CollectionAlbum[];
-  recommendations: RecommendationWithAlbum[];
+  recommendations: Recommendation[];
   isOwnProfile: boolean;
 }
 
@@ -124,7 +135,7 @@ export default function ProfileClient({
   };
 
   const handleSaveProfile = (updatedUser: { name: string; bio: string }) => {
-    setCurrentUser(prev => ({
+    setCurrentUser((prev: User) => ({
       ...prev,
       name: updatedUser.name,
       bio: updatedUser.bio,
@@ -138,7 +149,7 @@ export default function ProfileClient({
     newCounts: { followersCount: number; followingCount: number }
   ) => {
     // Update the follower count optimistically
-    setFollowersCount(prev => prev + newCounts.followersCount);
+    setFollowersCount((prev: number) => prev + newCounts.followersCount);
   };
 
   // Close settings menu when clicking outside
