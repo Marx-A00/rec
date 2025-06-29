@@ -148,12 +148,8 @@ export default function NavigationSidebar() {
       {/* User Avatar - Fixed at top left corner, separate from nav */}
       {user && (
         <div
-          className={`fixed top-4 left-4 z-40 hidden md:block transition-all duration-200 ease-out delay-0 ${
+          className={`fixed top-4 left-4 z-[60] hidden md:block transition-all duration-200 ease-out delay-0 ${
             isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-          } ${
-            isCollapsed
-              ? 'md:opacity-0 md:scale-95'
-              : 'md:opacity-100 md:scale-100'
           }`}
         >
           <HoverCard>
