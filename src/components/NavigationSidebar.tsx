@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import {
   Home,
-  Search,
-  User,
-  Music,
+  TreePalm,
+  Disc,
   Menu,
   X,
   ChevronLeft,
@@ -154,21 +153,23 @@ export default function NavigationSidebar() {
         >
           <HoverCard>
             <HoverCardTrigger asChild>
-              <button
-                className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 transition-all duration-200 ease-out'
-                aria-label={`User profile: ${user.name || 'Unknown user'}`}
-                aria-describedby='user-profile-info'
-              >
-                <Avatar className='h-8 w-8'>
-                  <AvatarImage
-                    src={user.image || '/default-avatar.svg'}
-                    alt={user.name || 'User'}
-                  />
-                  <AvatarFallback className='bg-zinc-800 text-zinc-200 text-sm'>
-                    {user.name?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              </button>
+              <Link href='/profile'>
+                <button
+                  className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 transition-all duration-200 ease-out'
+                  aria-label={`User profile: ${user.name || 'Unknown user'}`}
+                  aria-describedby='user-profile-info'
+                >
+                  <Avatar className='h-8 w-8'>
+                    <AvatarImage
+                      src={user.image || '/default-avatar.svg'}
+                      alt={user.name || 'User'}
+                    />
+                    <AvatarFallback className='bg-zinc-800 text-zinc-200 text-sm'>
+                      {user.name?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </Link>
             </HoverCardTrigger>
             <HoverCardContent
               side='right'
@@ -221,25 +222,18 @@ export default function NavigationSidebar() {
           },
           {
             href: '/browse',
-            icon: Search,
+            icon: TreePalm,
             label: 'Navigate to Browse & Discover',
             tooltip: 'Browse & Discover',
             delay: 'delay-150',
           },
           {
             href: '/recommend',
-            icon: Music,
+            icon: Disc,
             label: 'Open Create Recommendation',
             tooltip: 'Create Recommendation',
             delay: 'delay-225',
             isDrawerTrigger: true,
-          },
-          {
-            href: '/profile',
-            icon: User,
-            label: 'Navigate to My Profile',
-            tooltip: 'My Profile',
-            delay: 'delay-300',
           },
         ].map(
           ({ href, icon: Icon, label, tooltip, delay, isDrawerTrigger }) => {
@@ -350,16 +344,15 @@ export default function NavigationSidebar() {
             { href: '/', icon: Home, label: 'Navigate to Home' },
             {
               href: '/browse',
-              icon: Search,
+              icon: TreePalm,
               label: 'Navigate to Browse & Discover',
             },
             {
               href: '/recommend',
-              icon: Music,
+              icon: Disc,
               label: 'Open Create Recommendation',
               isDrawerTrigger: true,
             },
-            { href: '/profile', icon: User, label: 'Navigate to My Profile' },
           ].map(({ href, icon: Icon, label, isDrawerTrigger }) => {
             const handleMobileClick = () => {
               closeMobileSidebar();

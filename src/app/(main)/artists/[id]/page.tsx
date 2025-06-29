@@ -1,8 +1,8 @@
-import { ArrowLeft, ExternalLink, User } from 'lucide-react';
-import Link from 'next/link';
+import { ExternalLink, User } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 import AlbumImage from '@/components/ui/AlbumImage';
+import BackButton from '@/components/ui/BackButton';
 import DiscographyTab from '@/components/artistDetails/tabs/DiscographyTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getArtistDetails } from '@/lib/api/artists';
@@ -39,13 +39,7 @@ export default async function ArtistDetailsPage({
   return (
     <div className='px-4 py-8'>
       {/* Back Navigation */}
-      <Link
-        href='/'
-        className='inline-flex items-center text-zinc-400 hover:text-white mb-6 transition-colors'
-      >
-        <ArrowLeft className='h-4 w-4 mr-2' />
-        Back to Search
-      </Link>
+      <BackButton text='Back' fallbackHref='/' />
 
       {/* Artist Header */}
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'>
