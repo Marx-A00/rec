@@ -65,7 +65,7 @@ export default async function ArtistDetailsPage({
         {/* Artist Info */}
         <div className='lg:col-span-2 space-y-6'>
           <div>
-            <h1 className='text-4xl font-bold mb-2'>
+            <h1 className='text-4xl font-bold mb-2 text-white'>
               {sanitizeArtistName(artist.title)}
             </h1>
             {artist.realname && (
@@ -78,7 +78,9 @@ export default async function ArtistDetailsPage({
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             {artist.profile && (
               <div className='md:col-span-2'>
-                <h3 className='text-lg font-semibold mb-2'>Biography</h3>
+                <h3 className='text-lg font-semibold mb-2 text-white'>
+                  Biography
+                </h3>
                 <p className='text-zinc-300 text-sm leading-relaxed'>
                   {artist.profile}
                 </p>
@@ -103,7 +105,9 @@ export default async function ArtistDetailsPage({
 
             {artist.aliases && artist.aliases.length > 0 && (
               <div className='md:col-span-2'>
-                <h3 className='text-lg font-semibold mb-2'>Also known as</h3>
+                <h3 className='text-lg font-semibold mb-2 text-white'>
+                  Also known as
+                </h3>
                 <div className='flex flex-wrap gap-2'>
                   {artist.aliases.map((alias, index) => (
                     <span
@@ -125,25 +129,25 @@ export default async function ArtistDetailsPage({
         <TabsList className='grid w-full grid-cols-4 bg-zinc-900'>
           <TabsTrigger
             value='discography'
-            className='data-[state=active]:bg-zinc-800 data-[state=active]:text-white'
+            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
             Discography
           </TabsTrigger>
           <TabsTrigger
             value='biography'
-            className='data-[state=active]:bg-zinc-800 data-[state=active]:text-white'
+            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
             Biography
           </TabsTrigger>
           <TabsTrigger
             value='collaborations'
-            className='data-[state=active]:bg-zinc-800 data-[state=active]:text-white'
+            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
             Collaborations
           </TabsTrigger>
           <TabsTrigger
             value='similar'
-            className='data-[state=active]:bg-zinc-800 data-[state=active]:text-white'
+            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
             Similar Artists
           </TabsTrigger>
@@ -158,7 +162,7 @@ export default async function ArtistDetailsPage({
 
         <TabsContent value='biography'>
           <div className='bg-zinc-900 p-4 rounded-lg'>
-            <h3 className='text-lg font-semibold mb-4'>Biography</h3>
+            <h3 className='text-lg font-semibold mb-4 text-white'>Biography</h3>
             {artist.profile ? (
               <p className='text-zinc-300 leading-relaxed'>{artist.profile}</p>
             ) : (
@@ -169,7 +173,9 @@ export default async function ArtistDetailsPage({
 
         <TabsContent value='collaborations'>
           <div className='bg-zinc-900 p-4 rounded-lg'>
-            <h3 className='text-lg font-semibold mb-4'>Collaborations</h3>
+            <h3 className='text-lg font-semibold mb-4 text-white'>
+              Collaborations
+            </h3>
             <p className='text-zinc-400'>
               Collaboration information will appear here when available.
             </p>
@@ -178,7 +184,9 @@ export default async function ArtistDetailsPage({
 
         <TabsContent value='similar'>
           <div className='bg-zinc-900 p-4 rounded-lg'>
-            <h3 className='text-lg font-semibold mb-4'>Similar Artists</h3>
+            <h3 className='text-lg font-semibold mb-4 text-white'>
+              Similar Artists
+            </h3>
             <p className='text-zinc-400'>
               Similar artist recommendations will appear here.
             </p>

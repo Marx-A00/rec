@@ -29,7 +29,7 @@ export default function DiscographyTab({ artistId }: { artistId: string }) {
   if (isLoading) {
     return (
       <div className='bg-zinc-900 p-4 rounded-lg'>
-        <h3 className='text-lg font-semibold mb-4'>Masters</h3>
+        <h3 className='text-lg font-semibold mb-4 text-white'>Masters</h3>
         <div className='flex items-center justify-center h-32'>
           <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-red-500'></div>
           <span className='ml-3 text-zinc-400'>Loading discography...</span>
@@ -60,7 +60,7 @@ export default function DiscographyTab({ artistId }: { artistId: string }) {
       />
 
       <div className='bg-zinc-900 p-4 rounded-lg'>
-        <h3 className='text-lg font-semibold mb-4'>
+        <h3 className='text-lg font-semibold mb-4 text-white'>
           Masters ({loadedCount}
           {totalItems > loadedCount ? ` of ${totalItems}` : ''})
         </h3>
