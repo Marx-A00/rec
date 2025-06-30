@@ -41,7 +41,9 @@ export default function FollowButton({
     checkFollowStatus();
   }, [userId]);
 
-  const handleFollowToggle = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+  const handleFollowToggle = async (
+    e?: React.MouseEvent<HTMLButtonElement>
+  ) => {
     if (isLoading || !canFollow) return;
 
     // Blur the button to remove focus state

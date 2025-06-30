@@ -253,7 +253,9 @@ export default function AlbumModal({
   };
 
   // Enhanced keyboard navigation with better accessibility
-  const handleAlbumKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+  const handleAlbumKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>
+  ) => {
     // Only handle navigation if album ID is available
     if (!isNavigationAvailable()) {
       return;
@@ -384,7 +386,7 @@ export default function AlbumModal({
       >
         {/* Close X button */}
         <button
-          onClick={(e) => {
+          onClick={e => {
             e.currentTarget.blur();
             onClose();
           }}

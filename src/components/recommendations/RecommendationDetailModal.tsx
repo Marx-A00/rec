@@ -32,9 +32,9 @@ export default function RecommendationDetailModal({
           <h2 className='text-xl font-bold text-white'>
             Recommendation Details
           </h2>
-          <Button 
-            variant='ghost' 
-            size='sm' 
+          <Button
+            variant='ghost'
+            size='sm'
             onClick={onClose}
             className='hover:bg-zinc-800 text-zinc-400 hover:text-white h-8 w-8 p-0'
           >
@@ -82,7 +82,9 @@ export default function RecommendationDetailModal({
                 ) : (
                   <div className='w-10 h-10 bg-gradient-to-br from-zinc-600 to-zinc-700 rounded-full ring-2 ring-zinc-600 flex items-center justify-center shadow-sm'>
                     <span className='text-white font-semibold text-sm'>
-                      {(recommendation.user?.name || 'A').charAt(0).toUpperCase()}
+                      {(recommendation.user?.name || 'A')
+                        .charAt(0)
+                        .toUpperCase()}
                     </span>
                   </div>
                 )}

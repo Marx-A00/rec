@@ -4,7 +4,8 @@ import RecommendationDrawer from '@/components/recommendations/RecommendationDra
 import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 
 export default function GlobalRecommendationDrawer() {
-  const { isOpen, prefilledAlbum, closeDrawer, handleSuccess } = useRecommendationDrawerContext();
+  const { isOpen, prefilledAlbum, closeDrawer, handleSuccess } =
+    useRecommendationDrawerContext();
 
   return (
     <RecommendationDrawer
@@ -14,4 +15,4 @@ export default function GlobalRecommendationDrawer() {
       prefilledAlbum={prefilledAlbum}
     />
   );
-} 
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode } from 'react';
+
 import { Album } from '@/types/album';
 
 interface RecommendationDrawerContextType {
@@ -11,9 +12,15 @@ interface RecommendationDrawerContextType {
   handleSuccess: () => void;
 }
 
-const RecommendationDrawerContext = createContext<RecommendationDrawerContextType | undefined>(undefined);
+const RecommendationDrawerContext = createContext<
+  RecommendationDrawerContextType | undefined
+>(undefined);
 
-export function RecommendationDrawerProvider({ children }: { children: ReactNode }) {
+export function RecommendationDrawerProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [prefilledAlbum, setPrefilledAlbum] = useState<Album | null>(null);
 
@@ -52,7 +59,9 @@ export function RecommendationDrawerProvider({ children }: { children: ReactNode
 export function useRecommendationDrawerContext() {
   const context = useContext(RecommendationDrawerContext);
   if (context === undefined) {
-    throw new Error('useRecommendationDrawerContext must be used within a RecommendationDrawerProvider');
+    throw new Error(
+      'useRecommendationDrawerContext must be used within a RecommendationDrawerProvider'
+    );
   }
   return context;
-} 
+}

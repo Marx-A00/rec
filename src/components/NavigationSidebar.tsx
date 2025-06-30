@@ -12,8 +12,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 
+import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   HoverCard,
@@ -89,7 +89,7 @@ export default function NavigationSidebar() {
 
       {/* Mobile hamburger menu button */}
       <button
-        onClick={(e) => {
+        onClick={e => {
           toggleMobileSidebar();
           e.currentTarget.blur();
         }}
@@ -116,7 +116,7 @@ export default function NavigationSidebar() {
 
       {/* Desktop collapse toggle button - Re-enabled for accessibility */}
       <button
-        onClick={(e) => {
+        onClick={e => {
           toggleCollapse();
           e.currentTarget.blur();
         }}
@@ -161,9 +161,12 @@ export default function NavigationSidebar() {
         >
           <HoverCard>
             <HoverCardTrigger asChild>
-              <Link href='/profile' onClick={(e) => {
-                (e.currentTarget as HTMLElement).blur();
-              }}>
+              <Link
+                href='/profile'
+                onClick={e => {
+                  (e.currentTarget as HTMLElement).blur();
+                }}
+              >
                 <button
                   className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:outline-none transition-all duration-200 ease-out'
                   aria-label={`User profile: ${user.name || 'Unknown user'}`}
@@ -372,7 +375,7 @@ export default function NavigationSidebar() {
               return (
                 <button
                   key={href}
-                  onClick={(e) => {
+                  onClick={e => {
                     handleMobileClick();
                     (e.currentTarget as HTMLElement).blur();
                   }}
@@ -385,10 +388,14 @@ export default function NavigationSidebar() {
             }
 
             return (
-              <Link key={href} href={href} onClick={(e) => {
-                handleMobileClick();
-                (e.currentTarget as HTMLElement).blur();
-              }}>
+              <Link
+                key={href}
+                href={href}
+                onClick={e => {
+                  handleMobileClick();
+                  (e.currentTarget as HTMLElement).blur();
+                }}
+              >
                 <button
                   className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:outline-none active:scale-95 transition-all duration-200 ease-out'
                   aria-label={label}

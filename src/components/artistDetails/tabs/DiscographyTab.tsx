@@ -119,7 +119,7 @@ function ReleaseCard({
   return (
     <div
       className='bg-zinc-800 rounded-lg p-4 hover:bg-zinc-700 transition-all cursor-pointer transform hover:scale-105 focus:outline-none outline-none'
-      onClick={(e) => {
+      onClick={e => {
         (e.currentTarget as HTMLElement).blur();
         onClick();
       }}
