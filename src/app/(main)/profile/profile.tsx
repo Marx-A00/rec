@@ -242,8 +242,9 @@ export default function ProfileClient({
                         onClick={e => {
                           e.stopPropagation();
                           setShowSettings(!showSettings);
+                          (e.currentTarget as HTMLElement).blur();
                         }}
-                        className='p-2 h-9 w-9 hover:bg-zinc-800 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-black border border-zinc-600'
+                        className='p-2 h-9 w-9 hover:bg-zinc-800 rounded-lg transition-colors focus:outline-none border border-zinc-600'
                         aria-label='Profile settings menu'
                         aria-expanded={showSettings}
                         aria-haspopup='menu'

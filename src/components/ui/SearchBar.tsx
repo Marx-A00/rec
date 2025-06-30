@@ -34,6 +34,7 @@ export default function SearchBar({
   const [isFocused, setIsFocused] = useState(false);
   const lastSearchedQuery = useRef('');
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Debounced search effect - only search when user stops typing
   useEffect(() => {
@@ -104,6 +105,10 @@ export default function SearchBar({
       e.preventDefault();
       if (highlightedIndex >= 0 && resultsCount > 0) {
         onSelectHighlighted?.();
+        // Blur the input only when selecting a result with Enter
+        if (inputRef.current) {
+          inputRef.current.blur();
+        }
       }
     }
   };
@@ -126,6 +131,7 @@ export default function SearchBar({
       >
         <Search className='absolute left-3 h-4 w-4 text-zinc-400' />
         <input
+          ref={inputRef}
           type='text'
           value={query}
           onChange={handleInputChange}
@@ -154,12 +160,6 @@ export default function SearchBar({
           </button>
         )}
       </div>
-      {/* Keyboard navigation hint */}
-      {resultsCount > 0 && (
-        <div className='absolute top-full right-0 mt-1 text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded shadow-lg border border-zinc-600 z-50'>
-          Use ↑↓, C-p/n, C-k/j to navigate, Enter to select, Esc to close
-        </div>
-      )}
     </div>
   );
 }

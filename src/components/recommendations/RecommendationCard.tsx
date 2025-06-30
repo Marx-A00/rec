@@ -144,16 +144,18 @@ export default function RecommendationCard({
               size='sm'
               onClick={e => {
                 e.stopPropagation();
+                e.currentTarget.blur();
                 setShowActions(!showActions);
               }}
               onKeyDown={e => {
                 e.stopPropagation();
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
+                  e.currentTarget.blur();
                   setShowActions(!showActions);
                 }
               }}
-              className='p-1.5 h-7 w-7 hover:bg-zinc-800 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-black'
+              className='p-1.5 h-7 w-7 hover:bg-zinc-800 rounded-full transition-colors focus:outline-none'
               aria-label='Recommendation actions menu'
               aria-expanded={showActions}
               aria-haspopup='menu'
@@ -261,14 +263,19 @@ export default function RecommendationCard({
             </div>
             {/* Album image */}
             <button
-              className='relative w-full aspect-square overflow-hidden rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-black transition-all duration-300'
+              className='relative w-full aspect-square overflow-hidden rounded-lg focus:outline-none transition-all duration-300'
               onClick={e => {
                 e.stopPropagation();
+                e.currentTarget.blur();
                 handleAlbumClick('source');
               }}
               onKeyDown={e => {
                 e.stopPropagation();
-                handleKeyDown(e, () => handleAlbumClick('source'));
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.currentTarget.blur();
+                  handleAlbumClick('source');
+                }
               }}
               aria-label={`View details for ${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist} from ${recommendation.basisAlbumYear || 'unknown year'}`}
               tabIndex={0}
@@ -314,14 +321,19 @@ export default function RecommendationCard({
             </div>
             {/* Album image */}
             <button
-              className='relative w-full aspect-square overflow-hidden rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-black transition-all duration-300'
+              className='relative w-full aspect-square overflow-hidden rounded-lg focus:outline-none transition-all duration-300'
               onClick={e => {
                 e.stopPropagation();
+                e.currentTarget.blur();
                 handleAlbumClick('recommended');
               }}
               onKeyDown={e => {
                 e.stopPropagation();
-                handleKeyDown(e, () => handleAlbumClick('recommended'));
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.currentTarget.blur();
+                  handleAlbumClick('recommended');
+                }
               }}
               aria-label={`View details for ${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist} from ${recommendation.recommendedAlbumYear || 'unknown year'}`}
               tabIndex={0}

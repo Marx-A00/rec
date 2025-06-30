@@ -87,9 +87,12 @@ export default function NavigationSidebar() {
 
       {/* Mobile hamburger menu button */}
       <button
-        onClick={toggleMobileSidebar}
+        onClick={(e) => {
+          toggleMobileSidebar();
+          e.currentTarget.blur();
+        }}
         onKeyDown={e => handleKeyDown(e, toggleMobileSidebar)}
-        className={`fixed top-4 left-4 z-50 md:hidden w-12 h-12 bg-zinc-900/95 rounded-lg flex items-center justify-center border border-zinc-800 hover:bg-zinc-800 focus:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 active:scale-95 transition-all duration-200 ease-out ${
+        className={`fixed top-4 left-4 z-50 md:hidden w-12 h-12 bg-zinc-900/95 rounded-lg flex items-center justify-center border border-zinc-800 hover:bg-zinc-800 focus:outline-none active:scale-95 transition-all duration-200 ease-out ${
           isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
         }`}
         aria-label={
@@ -111,9 +114,12 @@ export default function NavigationSidebar() {
 
       {/* Desktop collapse toggle button - Re-enabled for accessibility */}
       <button
-        onClick={toggleCollapse}
+        onClick={(e) => {
+          toggleCollapse();
+          e.currentTarget.blur();
+        }}
         onKeyDown={e => handleKeyDown(e, toggleCollapse)}
-        className={`fixed top-4 right-4 z-40 hidden md:block w-10 h-10 bg-zinc-900/95 rounded-lg flex items-center justify-center border border-zinc-800 hover:bg-zinc-800 focus:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 active:scale-95 transition-all duration-200 ease-out ${
+        className={`fixed top-4 right-4 z-40 hidden md:block w-10 h-10 bg-zinc-900/95 rounded-lg flex items-center justify-center border border-zinc-800 hover:bg-zinc-800 focus:outline-none active:scale-95 transition-all duration-200 ease-out ${
           isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
         }`}
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -153,9 +159,11 @@ export default function NavigationSidebar() {
         >
           <HoverCard>
             <HoverCardTrigger asChild>
-              <Link href='/profile'>
+              <Link href='/profile' onClick={(e) => {
+                (e.currentTarget as HTMLElement).blur();
+              }}>
                 <button
-                  className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 transition-all duration-200 ease-out'
+                  className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:outline-none transition-all duration-200 ease-out'
                   aria-label={`User profile: ${user.name || 'Unknown user'}`}
                   aria-describedby='user-profile-info'
                 >
@@ -236,8 +244,10 @@ export default function NavigationSidebar() {
           },
         ].map(
           ({ href, icon: Icon, label, tooltip, delay, isDrawerTrigger }) => {
-            const handleClick = () => {
+            const handleClick = (e: React.MouseEvent) => {
               closeMobileSidebar();
+              // Blur the button to remove focus state after click
+              (e.currentTarget as HTMLElement).blur();
               if (isDrawerTrigger) {
                 // Emit custom event for recommendation drawer
                 window.dispatchEvent(
@@ -267,7 +277,7 @@ export default function NavigationSidebar() {
                   onClick={handleClick}
                   onKeyDown={handleKeyDown}
                   tabIndex={isCollapsed ? -1 : 0}
-                  className={`group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 active:scale-95 transition-all duration-200 ease-out ${
+                  className={`group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:outline-none active:scale-95 transition-all duration-200 ease-out ${
                     isMounted
                       ? `opacity-100 translate-y-0 ${delay}`
                       : 'opacity-0 translate-y-2'
@@ -275,10 +285,10 @@ export default function NavigationSidebar() {
                   aria-label={label}
                   aria-describedby={`${href.slice(1) || 'home'}-tooltip`}
                 >
-                  <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm group-focus:text-cosmic-latte transition-all duration-200 ease-out' />
+                  <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm transition-all duration-200 ease-out' />
                   <span
                     id={`${href.slice(1) || 'home'}-tooltip`}
-                    className={`absolute left-full ml-3 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-black/90 backdrop-blur-sm text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-all duration-200 ease-out delay-300 pointer-events-none z-50 border border-zinc-700/50 shadow-lg hidden md:block scale-95 group-hover:scale-100 group-focus:scale-100 ${
+                    className={`absolute left-full ml-3 opacity-0 group-hover:opacity-100 bg-black/90 backdrop-blur-sm text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-all duration-200 ease-out delay-300 pointer-events-none z-50 border border-zinc-700/50 shadow-lg hidden md:block scale-95 group-hover:scale-100 ${
                       isCollapsed ? 'md:hidden' : ''
                     }`}
                     role='tooltip'
@@ -298,7 +308,7 @@ export default function NavigationSidebar() {
                 tabIndex={isCollapsed ? -1 : 0}
               >
                 <button
-                  className={`group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 active:scale-95 transition-all duration-200 ease-out ${
+                  className={`group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:outline-none active:scale-95 transition-all duration-200 ease-out ${
                     isMounted
                       ? `opacity-100 translate-y-0 ${delay}`
                       : 'opacity-0 translate-y-2'
@@ -307,10 +317,10 @@ export default function NavigationSidebar() {
                   aria-describedby={`${href.slice(1) || 'home'}-tooltip`}
                   onKeyDown={handleKeyDown}
                 >
-                  <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm group-focus:text-cosmic-latte transition-all duration-200 ease-out' />
+                  <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm transition-all duration-200 ease-out' />
                   <span
                     id={`${href.slice(1) || 'home'}-tooltip`}
-                    className={`absolute left-full ml-3 opacity-0 group-hover:opacity-100 group-focus:opacity-100 bg-black/90 backdrop-blur-sm text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-all duration-200 ease-out delay-300 pointer-events-none z-50 border border-zinc-700/50 shadow-lg hidden md:block scale-95 group-hover:scale-100 group-focus:scale-100 ${
+                    className={`absolute left-full ml-3 opacity-0 group-hover:opacity-100 bg-black/90 backdrop-blur-sm text-white rounded-md px-3 py-2 text-sm whitespace-nowrap transition-all duration-200 ease-out delay-300 pointer-events-none z-50 border border-zinc-700/50 shadow-lg hidden md:block scale-95 group-hover:scale-100 ${
                       isCollapsed ? 'md:hidden' : ''
                     }`}
                     role='tooltip'
@@ -366,22 +376,28 @@ export default function NavigationSidebar() {
               return (
                 <button
                   key={href}
-                  onClick={handleMobileClick}
-                  className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 active:scale-95 transition-all duration-200 ease-out'
+                  onClick={(e) => {
+                    handleMobileClick();
+                    (e.currentTarget as HTMLElement).blur();
+                  }}
+                  className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:outline-none active:scale-95 transition-all duration-200 ease-out'
                   aria-label={label}
                 >
-                  <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm group-focus:text-cosmic-latte transition-all duration-200 ease-out' />
+                  <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm transition-all duration-200 ease-out' />
                 </button>
               );
             }
 
             return (
-              <Link key={href} href={href} onClick={handleMobileClick}>
+              <Link key={href} href={href} onClick={(e) => {
+                handleMobileClick();
+                (e.currentTarget as HTMLElement).blur();
+              }}>
                 <button
-                  className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:bg-black/40 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:shadow-lg focus:shadow-cosmic-latte/20 active:scale-95 transition-all duration-200 ease-out'
+                  className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:outline-none active:scale-95 transition-all duration-200 ease-out'
                   aria-label={label}
                 >
-                  <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm group-focus:text-cosmic-latte transition-all duration-200 ease-out' />
+                  <Icon className='w-6 h-6 text-zinc-300 group-hover:text-cosmic-latte group-hover:drop-shadow-sm transition-all duration-200 ease-out' />
                 </button>
               </Link>
             );
