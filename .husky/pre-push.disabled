@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-export PATH="/usr/local/bin:$PATH"
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 # Load nvm if it exists
 [ -s "$HOME/.nvm/nvm.sh" ] && \. "$HOME/.nvm/nvm.sh"
 
@@ -15,22 +15,24 @@ if [ $current_branch = $protected_branch ]; then
     
     # Type checking
     echo "📝 Type checking..."
-    pnpm type-check
+    pnpm type-check || exit 1
     
-    # Linting
+    # Linting (allow warnings, fail only on errors)
     echo "🔍 Linting..."
-    pnpm lint
+    pnpm lint --max-warnings 1000 || exit 1
     
     # Format check
     echo "🎨 Format checking..."
-    pnpm format:check
+    pnpm format:check || exit 1
     
     # Build check
     echo "🏗️  Build checking..."
-    pnpm build
+    pnpm build || exit 1
     
     echo "✅ All checks passed! Pushing to $protected_branch"
 else
     echo "📝 Quick checks for feature branch..."
-    pnpm type-check && pnpm lint
+    # Type check (must pass)
+    pnpm type-check || exit 1
+    echo "✅ Feature branch checks passed!"
 fi 

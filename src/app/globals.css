@@ -69,6 +69,13 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Remove ugly default focus outlines on mouse clicks */
+  button:focus:not(:focus-visible),
+  a:focus:not(:focus-visible),
+  [role="button"]:focus:not(:focus-visible) {
+    outline: none;
+  }
 }
 
 /* Custom utility to hide scrollbars */

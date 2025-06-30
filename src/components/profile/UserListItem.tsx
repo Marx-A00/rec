@@ -72,9 +72,6 @@ export default function UserListItem({
                   {user.name || 'Anonymous User'}
                 </h3>
               </Link>
-              <p className='text-sm text-zinc-400 truncate'>
-                {user.email || 'No email'}
-              </p>
 
               {/* Bio */}
               {user.bio && (

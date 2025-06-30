@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
@@ -110,11 +110,9 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     id: userData.id,
     name: userData.name || 'User',
     email: userData.email || null,
-    image: userData.image || '/default-avatar.svg',
+    image: userData.image || '/placeholder.svg',
     username: userData.email ? `@${userData.email.split('@')[0]}` : '@user',
-    bio:
-      userData.bio ||
-      'Music enthusiast | Sharing vibes and discovering new sounds',
+    bio: userData.bio || 'Music enthusiast | Sharing vibes and discovering new sounds',
     followersCount: userData.followersCount || 0,
     followingCount: userData.followingCount || 0,
     recommendationsCount: userData.recommendationsCount || 0,

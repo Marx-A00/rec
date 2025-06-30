@@ -2,6 +2,9 @@ import { getRecommendations, getUsers } from '@/lib/api/browse';
 
 import BrowsePageClient from './BrowsePageClient';
 
+// Force this route to be dynamic since it fetches fresh data
+export const dynamic = 'force-dynamic';
+
 export default async function BrowsePage() {
   // Fetch data server-side
   const [users, recommendations] = await Promise.all([

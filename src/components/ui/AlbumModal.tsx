@@ -225,10 +225,14 @@ export default function AlbumModal({
   };
 
   // Handle album title click navigation
-  const handleAlbumClick = () => {
+  const handleAlbumClick = (e?: React.MouseEvent<HTMLButtonElement>) => {
     const albumId = getAlbumId();
     if (albumId) {
       try {
+        // Blur the button to remove focus state
+        if (e) {
+          e.currentTarget.blur();
+        }
         // Close modal first
         onClose();
         // Convert to string to ensure type safety
@@ -249,7 +253,7 @@ export default function AlbumModal({
   };
 
   // Enhanced keyboard navigation with better accessibility
-  const handleAlbumKeyDown = (event: React.KeyboardEvent) => {
+  const handleAlbumKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     // Only handle navigation if album ID is available
     if (!isNavigationAvailable()) {
       return;
@@ -258,6 +262,8 @@ export default function AlbumModal({
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       event.stopPropagation();
+      // Blur the button to remove focus state
+      event.currentTarget.blur();
       handleAlbumClick();
     }
   };
@@ -378,8 +384,11 @@ export default function AlbumModal({
       >
         {/* Close X button */}
         <button
-          onClick={onClose}
-          className='absolute -top-2 -right-2 z-60 text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:ring-opacity-50 rounded-full p-1'
+          onClick={(e) => {
+            e.currentTarget.blur();
+            onClose();
+          }}
+          className='absolute -top-2 -right-2 z-60 text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110 focus:outline-none rounded-full p-1'
           aria-label='Close album details modal'
           role='button'
           tabIndex={0}
@@ -425,7 +434,7 @@ export default function AlbumModal({
             disabled={!isNavigationAvailable()}
             className={`text-3xl lg:text-4xl font-bold mb-2 transition-all duration-200 rounded-md px-1 focus:outline-none ${
               isNavigationAvailable()
-                ? 'text-cosmic-latte hover:underline cursor-pointer hover:text-white focus:ring-2 focus:ring-cosmic-latte focus:ring-opacity-50'
+                ? 'text-cosmic-latte hover:underline cursor-pointer hover:text-white'
                 : 'text-zinc-500 cursor-not-allowed'
             }`}
             tabIndex={isNavigationAvailable() ? 0 : -1}

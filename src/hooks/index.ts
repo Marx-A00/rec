@@ -25,7 +25,7 @@ export { useUpdateUserProfileMutation } from './useUpdateUserProfileMutation';
 export { useAlbumModal } from './useAlbumModal';
 export { useCollageGenerator } from './useCollageGenerator';
 export { useRecommendationModal } from './useRecommendationModal';
-export { useRecommendationDrawer } from './useRecommendationDrawer';
+
 export { useNavigation } from './useNavigation';
 
 // Search Hooks

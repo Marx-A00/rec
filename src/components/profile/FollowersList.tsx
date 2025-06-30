@@ -148,7 +148,7 @@ export default function FollowersList({
         <div className='flex flex-col sm:flex-row gap-4'>
           {/* Search Input */}
           <div className='flex-1'>
-            <input
+                        <input
               type='text'
               placeholder={`Search ${type}...`}
               value={search}
