@@ -43,7 +43,6 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
     try {
       // Open recommendation drawer with current album pre-filled
       openDrawer(album);
-      showToast('Recommendation form opened', 'success');
     } catch (error) {
       console.error('Failed to open recommendation form:', error);
       showToast('Failed to open recommendation form', 'error');
