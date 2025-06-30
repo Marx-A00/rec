@@ -4,6 +4,9 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 [ -s "$HOME/.nvm/nvm.sh" ] && \. "$HOME/.nvm/nvm.sh"
 
 echo "🚀 Running pre-push checks..."
+echo "DEBUG: PATH = $PATH"
+echo "DEBUG: PWD = $PWD"
+echo "DEBUG: which pnpm = $(which pnpm)"
 
 # Check if we're pushing to main/master
 protected_branch='main'
