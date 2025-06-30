@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+
+import BackButton from '@/components/ui/BackButton';
 
 export default function AlbumError({
   error,
@@ -19,13 +20,7 @@ export default function AlbumError({
     <div className='min-h-screen bg-black text-white'>
       <div className='container mx-auto px-4 py-8'>
         {/* Back Navigation */}
-        <Link
-          href='/'
-          className='inline-flex items-center text-zinc-400 hover:text-white mb-6 transition-colors'
-        >
-          <ArrowLeft className='h-4 w-4 mr-2' />
-          Back to Search
-        </Link>
+        <BackButton text='Back' fallbackHref='/' />
 
         <div className='text-center max-w-lg mx-auto'>
           <h1 className='text-3xl font-bold text-red-500 mb-4'>
