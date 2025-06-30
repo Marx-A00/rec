@@ -193,7 +193,6 @@ export default function NavigationSidebar() {
                   <h4 className='text-sm font-semibold text-white'>
                     {user.name}
                   </h4>
-                  <p className='text-xs text-zinc-400'>{user.email}</p>
                 </div>
               </div>
             </HoverCardContent>
