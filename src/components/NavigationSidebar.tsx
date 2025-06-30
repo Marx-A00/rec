@@ -171,7 +171,7 @@ export default function NavigationSidebar() {
                 >
                   <Avatar className='h-8 w-8'>
                     <AvatarImage
-                      src={user.image || '/default-avatar.svg'}
+                      src={user.image || '/placeholder.svg'}
                       alt={user.name || 'User'}
                     />
                     <AvatarFallback className='bg-zinc-800 text-zinc-200 text-sm'>
@@ -192,7 +192,7 @@ export default function NavigationSidebar() {
               >
                 <Avatar className='h-12 w-12'>
                   <AvatarImage
-                    src={user.image || '/default-avatar.svg'}
+                    src={user.image || '/placeholder.svg'}
                     alt={user.name || 'User'}
                   />
                   <AvatarFallback className='bg-zinc-800 text-zinc-200'>
