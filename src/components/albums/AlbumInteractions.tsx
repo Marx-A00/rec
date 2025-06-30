@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import Toast, { useToast } from '@/components/ui/toast';
 import AddToCollectionButton from '@/components/collections/AddToCollectionButton';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
 
@@ -18,6 +19,7 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
   const {} = useNavigation();
   const { toast, showToast, hideToast } = useToast();
   const router = useRouter();
+  const { openDrawer } = useRecommendationDrawerContext();
 
   const handleArtistClick = async (artistId: string, artistName: string) => {
     if (!artistId) {
@@ -39,8 +41,8 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
 
   const handleMakeRecommendation = () => {
     try {
-      // Trigger the custom event to open recommendation drawer
-      window.dispatchEvent(new CustomEvent('open-recommendation-drawer'));
+      // Open recommendation drawer with current album pre-filled
+      openDrawer(album);
       showToast('Recommendation form opened', 'success');
     } catch (error) {
       console.error('Failed to open recommendation form:', error);

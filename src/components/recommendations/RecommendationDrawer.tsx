@@ -122,12 +122,14 @@ interface RecommendationDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  prefilledAlbum?: Album | null;
 }
 
 export default function RecommendationDrawer({
   isOpen,
   onClose,
   onSuccess,
+  prefilledAlbum,
 }: RecommendationDrawerProps) {
   const [selectedBasisAlbum, setSelectedBasisAlbum] = useState<Album | null>(
     null
@@ -143,15 +145,20 @@ export default function RecommendationDrawer({
   // Ref to access AlbumSearch methods
   const albumSearchRef = useRef<AlbumSearchRef>(null);
 
-  // Reset state when drawer closes
+  // Reset state when drawer closes, or set prefilled album when drawer opens
   useEffect(() => {
     if (!isOpen) {
       setSelectedBasisAlbum(null);
       setSelectedRecommendedAlbum(null);
       setIsSearchingForBasis(true);
       setSimilarityRating(5);
+    } else if (isOpen && prefilledAlbum) {
+      // Auto-fill the SOURCE (basis) album with the prefilled album
+      setSelectedBasisAlbum(prefilledAlbum);
+      // Switch to searching for the RECOMMENDED album
+      setIsSearchingForBasis(false);
     }
-  }, [isOpen]);
+  }, [isOpen, prefilledAlbum]);
 
   // Handle escape key to close drawer
   useEffect(() => {

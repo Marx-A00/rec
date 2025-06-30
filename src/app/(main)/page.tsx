@@ -8,7 +8,6 @@ import { Folder } from 'lucide-react';
 import SignInButton from '@/components/auth/SignInButton';
 import RecommendationsList from '@/components/recommendations/RecommendationsList';
 import SocialActivityFeed from '@/components/feed/SocialActivityFeed';
-import RecommendationDrawer from '@/components/recommendations/RecommendationDrawer';
 import AlbumImage from '@/components/ui/AlbumImage';
 import AlbumModal from '@/components/ui/AlbumModal';
 import { Button } from '@/components/ui/button';
@@ -17,15 +16,12 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable';
-import { useRecommendationDrawer } from '@/hooks';
 import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
 
 export default function Home() {
   const { data: session } = useSession();
   const user = session?.user;
-  const { isOpen, openDrawer, closeDrawer, handleSuccess } =
-    useRecommendationDrawer();
   const { navigateToAlbum } = useNavigation();
 
   // State for user's album collection
@@ -84,22 +80,6 @@ export default function Home() {
       fetchUserCollection();
     }
   }, [user]);
-
-  // Listen for custom event from navigation sidebar
-  useEffect(() => {
-    const handleOpenDrawer = () => {
-      openDrawer();
-    };
-
-    window.addEventListener('open-recommendation-drawer', handleOpenDrawer);
-
-    return () => {
-      window.removeEventListener(
-        'open-recommendation-drawer',
-        handleOpenDrawer
-      );
-    };
-  }, [openDrawer]);
 
   // Album modal handlers
   const handleAlbumClick = async (
@@ -311,13 +291,6 @@ export default function Home() {
           </ResizablePanelGroup>
         </ResizablePanel>
       </ResizablePanelGroup>
-
-      {/* Recommendation Drawer */}
-      <RecommendationDrawer
-        isOpen={isOpen}
-        onClose={closeDrawer}
-        onSuccess={handleSuccess}
-      />
     </div>
   );
 }

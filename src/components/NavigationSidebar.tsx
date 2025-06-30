@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -26,6 +27,7 @@ export default function NavigationSidebar() {
   const [isMounted, setIsMounted] = useState(false);
   const { data: session } = useSession();
   const user = session?.user;
+  const { openDrawer } = useRecommendationDrawerContext();
 
   // Load collapsed state from localStorage on mount
   useEffect(() => {
@@ -249,10 +251,8 @@ export default function NavigationSidebar() {
               // Blur the button to remove focus state after click
               (e.currentTarget as HTMLElement).blur();
               if (isDrawerTrigger) {
-                // Emit custom event for recommendation drawer
-                window.dispatchEvent(
-                  new CustomEvent('open-recommendation-drawer')
-                );
+                // Open recommendation drawer using context
+                openDrawer();
               }
             };
 
@@ -260,9 +260,7 @@ export default function NavigationSidebar() {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 if (isDrawerTrigger) {
-                  window.dispatchEvent(
-                    new CustomEvent('open-recommendation-drawer')
-                  );
+                  openDrawer();
                 } else {
                   window.location.href = href;
                 }
@@ -366,9 +364,7 @@ export default function NavigationSidebar() {
             const handleMobileClick = () => {
               closeMobileSidebar();
               if (isDrawerTrigger) {
-                window.dispatchEvent(
-                  new CustomEvent('open-recommendation-drawer')
-                );
+                openDrawer();
               }
             };
 
