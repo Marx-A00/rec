@@ -20,6 +20,8 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
+import SignOutButton from '@/components/auth/SignOutButton';
+import SignInButton from '@/components/auth/SignInButton';
 
 export default function NavigationSidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -153,14 +155,14 @@ export default function NavigationSidebar() {
       )}
 
       {/* User Avatar - Fixed at top left corner, separate from nav */}
-      {user && (
-        <div
-          className={`fixed top-4 left-4 z-[60] hidden md:block transition-all duration-200 ease-out delay-0 ${
-            isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-          }`}
-        >
-          <HoverCard>
-            <HoverCardTrigger asChild>
+      <div
+        className={`fixed top-4 left-4 z-[60] hidden md:block transition-all duration-200 ease-out delay-0 ${
+          isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+        }`}
+      >
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            {user ? (
               <Link
                 href='/profile'
                 onClick={e => {
@@ -183,35 +185,76 @@ export default function NavigationSidebar() {
                   </Avatar>
                 </button>
               </Link>
-            </HoverCardTrigger>
-            <HoverCardContent
-              side='right'
-              align='start'
-              className='w-64 bg-black/90 backdrop-blur-sm border-zinc-700/50'
-            >
-              <div
-                id='user-profile-info'
-                className='flex items-center space-x-3'
+            ) : (
+              <button
+                className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 border border-zinc-700/30 hover:bg-black/40 hover:border-zinc-600 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:outline-none transition-all duration-200 ease-out'
+                aria-label='Sign in to your account'
+                aria-describedby='sign-in-info'
               >
-                <Avatar className='h-12 w-12'>
-                  <AvatarImage
-                    src={user.image || '/placeholder.svg'}
-                    alt={user.name || 'User'}
-                  />
-                  <AvatarFallback className='bg-zinc-800 text-zinc-200'>
-                    {user.name?.charAt(0) || 'U'}
+                <Avatar className='h-8 w-8'>
+                  <AvatarImage src='/placeholder.svg' alt='Guest user' />
+                  <AvatarFallback className='bg-zinc-800 text-zinc-200 text-sm'>
+                    ?
                   </AvatarFallback>
                 </Avatar>
-                <div className='space-y-1'>
-                  <h4 className='text-sm font-semibold text-white'>
-                    {user.name}
-                  </h4>
+              </button>
+            )}
+          </HoverCardTrigger>
+          <HoverCardContent
+            side='right'
+            align='start'
+            className='w-64 bg-black/90 backdrop-blur-sm border-zinc-700/50'
+          >
+            {user ? (
+              <div>
+                <div
+                  id='user-profile-info'
+                  className='flex items-center space-x-3 mb-6'
+                >
+                  <Avatar className='h-12 w-12'>
+                    <AvatarImage
+                      src={user.image || '/placeholder.svg'}
+                      alt={user.name || 'User'}
+                    />
+                    <AvatarFallback className='bg-zinc-800 text-zinc-200'>
+                      {user.name?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className='space-y-1'>
+                    <h4 className='text-sm font-semibold text-white'>
+                      {user.name}
+                    </h4>
+                  </div>
                 </div>
+                <SignOutButton />
               </div>
-            </HoverCardContent>
-          </HoverCard>
-        </div>
-      )}
+            ) : (
+              <div>
+                <div
+                  id='sign-in-info'
+                  className='flex items-center space-x-3 mb-6'
+                >
+                  <Avatar className='h-12 w-12'>
+                    <AvatarImage src='/placeholder.svg' alt='Guest user' />
+                    <AvatarFallback className='bg-zinc-800 text-zinc-200'>
+                      ?
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className='space-y-1'>
+                    <h4 className='text-sm font-semibold text-white'>
+                      Welcome
+                    </h4>
+                    <p className='text-xs text-zinc-400'>
+                      Sign in to access your profile
+                    </p>
+                  </div>
+                </div>
+                <SignInButton />
+              </div>
+            )}
+          </HoverCardContent>
+        </HoverCard>
+      </div>
 
       {/* Navigation buttons - Centered vertically on desktop */}
       <nav

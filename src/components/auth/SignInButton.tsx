@@ -5,7 +5,7 @@ export default function SignInButton() {
     <Link href='/signin'>
       <button
         type='button'
-        className='w-full text-white bg-blue-600 hover:bg-blue-700 text-xs font-medium py-2 px-3 rounded-md'
+        className='w-full text-white bg-red-600 hover:bg-red-700 text-xs font-normal py-1.5 px-3 rounded-md'
       >
         Sign In
       </button>
