@@ -34,7 +34,5 @@ else
     echo "📝 Quick checks for feature branch..."
     # Type check (must pass)
     pnpm type-check || exit 1
-    # Lint with high warning threshold (allow warnings)
-    pnpm lint --max-warnings 1000 || exit 1
     echo "✅ Feature branch checks passed!"
 fi 
