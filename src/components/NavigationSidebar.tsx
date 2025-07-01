@@ -9,6 +9,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
@@ -221,9 +222,19 @@ export default function NavigationSidebar() {
                     </AvatarFallback>
                   </Avatar>
                   <div className='space-y-1'>
-                    <h4 className='text-sm font-semibold text-white'>
-                      {user.name}
-                    </h4>
+                    <div className='flex items-center gap-2'>
+                      <h4 className='text-sm font-semibold text-white'>
+                        {user.name}
+                      </h4>
+                      <Link href='/settings'>
+                        <button
+                          className='p-1 rounded hover:bg-zinc-800 transition-colors focus:outline-none'
+                          aria-label='User settings'
+                        >
+                          <Settings className='w-4 h-4 text-zinc-400 hover:text-cosmic-latte' />
+                        </button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
                 <SignOutButton />
