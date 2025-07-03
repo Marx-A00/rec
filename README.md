@@ -45,16 +45,17 @@ This project uses [Playwright](https://playwright.dev/) for end-to-end testing w
 
 1. **Create Test Environment File**:
    Create `.env.test` in your project root with your test database configuration:
+
    ```env
    # Test Database (separate from production!)
    DATABASE_URL="postgresql://postgres:[YOUR-TEST-PASSWORD]@db.[YOUR-TEST-PROJECT].supabase.co:5432/postgres"
    DIRECT_URL="postgresql://postgres:[YOUR-TEST-PASSWORD]@db.[YOUR-TEST-PROJECT].supabase.co:5432/postgres"
-   
+
    # NextAuth.js (same as main)
    NEXTAUTH_URL=http://127.0.0.1:3000
    NEXTAUTH_SECRET="YUjO35DuswlAp7FroWlHb3atZmljPZa19TxTRBMRq+g="
    NEXTAUTH_DEBUG=true
-   
+
    # OAuth providers (same as main)
    GOOGLE_CLIENT_ID="your-google-client-id"
    GOOGLE_CLIENT_SECRET="your-google-client-secret"
@@ -71,21 +72,25 @@ This project uses [Playwright](https://playwright.dev/) for end-to-end testing w
 ### Running Tests
 
 - **Run all tests**:
+
   ```bash
   pnpm test
   ```
 
 - **Run specific test**:
+
   ```bash
   npx playwright test --grep "test name"
   ```
 
 - **Run tests with UI** (interactive mode):
+
   ```bash
   pnpm test:ui
   ```
 
 - **Debug tests** (step through with DevTools):
+
   ```bash
   pnpm test:debug
   ```
@@ -98,6 +103,7 @@ This project uses [Playwright](https://playwright.dev/) for end-to-end testing w
 ### Test Database Management
 
 - **Apply migrations to test database**:
+
   ```bash
   pnpm test:migrate
   ```
@@ -116,6 +122,7 @@ This project uses [Playwright](https://playwright.dev/) for end-to-end testing w
 ### Test Configuration
 
 Tests are configured to:
+
 - Use a separate test database to avoid affecting production data
 - Create test users automatically via global setup
 - Run against `http://localhost:3000` (development server)
