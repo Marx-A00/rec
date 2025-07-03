@@ -22,7 +22,10 @@
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report",
+    "test:migrate": "dotenv -e .env.test -- npx prisma migrate deploy",
+    "test:reset": "dotenv -e .env.test -- npx prisma migrate reset --force",
+    "test:setup": "pnpm test:migrate && playwright install"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.0",

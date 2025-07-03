@@ -116,8 +116,8 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
       const data = await response.json();
 
-      if (!data.success) {
-        setServerError(data.message);
+      if (!response.ok) {
+        setServerError(data.message || data.error || 'Registration failed');
         setIsLoading(false);
         return;
       }
