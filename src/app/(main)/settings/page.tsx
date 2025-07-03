@@ -3,8 +3,9 @@ import { Metadata } from 'next';
 
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
-import SettingsClient from './SettingsClient';
 import BackButton from '@/components/ui/BackButton';
+
+import SettingsClient from './SettingsClient';
 
 export const metadata: Metadata = {
   title: 'Settings - Rec',
@@ -54,4 +55,4 @@ export default async function SettingsPage() {
       <SettingsClient user={user} />
     </div>
   );
-} 
+}
