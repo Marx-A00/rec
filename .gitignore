@@ -83,3 +83,7 @@ node_modules/
 
 # Roo development files
 .roo/
+
+# Task files
+# tasks.json
+# tasks/ 
