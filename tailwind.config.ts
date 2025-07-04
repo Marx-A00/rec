@@ -61,6 +61,21 @@ export default {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      keyframes: {
+        ripple: {
+          '0%, 100%': {
+            transform: 'translate(-50%, -50%) scale(1)',
+            opacity: '1',
+          },
+          '50%': {
+            transform: 'translate(-50%, -50%) scale(0.9)',
+            opacity: '0.5',
+          },
+        },
+      },
+      animation: {
+        ripple: 'ripple 3.4s ease-in-out infinite',
+      },
     },
   },
   plugins: [tailwindcssAnimate],

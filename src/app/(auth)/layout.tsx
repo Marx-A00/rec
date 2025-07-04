@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { auth } from '@/../auth';
-import { FlickeringGrid } from '@/components/ui/flickering-grid';
+import { Ripple } from '@/components/ui/ripple';
 
 export const metadata: Metadata = {
   title: 'Authentication | Album Recommendations',
@@ -23,22 +23,25 @@ export default async function AuthLayout({
   }
 
   return (
-    <div className='relative min-h-screen bg-black flex items-center justify-center overflow-hidden'>
-      {/* Flickering Grid Background */}
-      <FlickeringGrid
+    <div className='relative h-screen bg-black flex items-center justify-center overflow-hidden'>
+      {/* Ripple Background */}
+      <Ripple
         className="absolute inset-0 z-0"
-        squareSize={4}
-        gridGap={6}
-        color="#60A5FA"
-        maxOpacity={0.4}
-        flickerChance={0.3}
+        mainCircleSize={120}
+        mainCircleOpacity={0.3}
+        numCircles={8}
+        color="#FFFBEB"
       />
       
-      {/* Lighter gradient overlay to let the grid show through */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/90 via-black/40 to-black/60" />
+      {/* Gradient overlay to ensure content readability */}
+      <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/60 via-black/20 to-black/40" />
       
-      {/* Content */}
-      <div className='relative z-20 w-full max-w-md px-6 py-8'>{children}</div>
+      {/* Content - Compact and centered */}
+      <div className='relative z-20 w-full max-w-sm px-4 py-4 h-full flex items-center justify-center'>
+        <div className="w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
+          {children}
+        </div>
+      </div>
     </div>
   );
 }
