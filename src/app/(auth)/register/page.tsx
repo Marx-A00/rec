@@ -42,19 +42,15 @@ export default function Register() {
         <h1 className='text-2xl font-bold text-white tracking-tight'>
           Create your account
         </h1>
-        <p className='text-zinc-400 text-base'>
-          Join the community and start discovering music
-        </p>
-
-        <p className='text-sm text-zinc-500'>
+        <p className='text-sm text-zinc-800'>
           Already have an account?{' '}
           <Link
             href='/signin'
-            className='font-medium text-cosmic-latte hover:text-cosmic-latte/80 transition-colors duration-200 underline underline-offset-4'
+            className='font-medium text-white hover:text-cosmic-latte/80 transition-colors duration-200 underline underline-offset-4'
             aria-label='Sign in to existing account - Go to sign in page'
           >
-            Sign in to your account
-          </Link>
+            Sign in  
+                     </Link>
         </p>
       </div>
 

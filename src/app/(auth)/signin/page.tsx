@@ -3,6 +3,7 @@
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import Link from 'next/link';
+import { Separator } from '@/components/ui/separator';
 
 export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
@@ -68,15 +69,12 @@ export default function SignIn() {
         <h1 className='text-2xl font-bold text-white tracking-tight'>
           Welcome back
         </h1>
-        <p className='text-zinc-400 text-base'>
-          Sign in to continue your music journey
-        </p>
 
-        <p className='text-sm text-zinc-500'>
+        <p className='text-sm text-zinc-800'>
           New around here?{' '}
           <Link
             href='/register'
-            className='font-medium text-cosmic-latte hover:text-cosmic-latte/80 transition-colors duration-200 underline underline-offset-4'
+            className='font-medium text-white hover:text-cosmic-latte/80 transition-colors duration-200 underline underline-offset-4'
             aria-label='Create a new account - Go to registration page'
           >
             Create a new account
@@ -173,12 +171,12 @@ export default function SignIn() {
         </div>
 
         {/* Divider */}
-        <div className='relative'>
+        <div className='relative my-6'>
           <div className='absolute inset-0 flex items-center'>
-            <div className='w-full border-t border-zinc-700/50' />
+            <div className='w-full border-t border-zinc-700/60'></div>
           </div>
-          <div className='relative flex justify-center text-sm'>
-            <span className='bg-black/40 px-4 text-zinc-400 font-medium'>
+          <div className='relative flex justify-center'>
+            <span className='bg-zinc-900/80 backdrop-blur-sm px-4 py-2 text-xs font-medium text-zinc-400 border border-zinc-700/50 rounded-lg'>
               Or continue with email
             </span>
           </div>

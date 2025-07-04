@@ -26,10 +26,10 @@ export default async function AuthLayout({
     <div className='relative h-screen bg-black flex items-center justify-center overflow-hidden'>
       {/* Ripple Background */}
       <Ripple
-        className="absolute inset-0 z-0"
-        mainCircleSize={120}
+        className="absolute top-60 left-5"
+        mainCircleSize={210}
         mainCircleOpacity={0.3}
-        numCircles={8}
+        numCircles={14}
         color="#FFFBEB"
       />
       
