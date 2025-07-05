@@ -5,6 +5,8 @@ import './globals.css';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { CollectionToastProvider } from '@/components/ui/CollectionToastProvider';
+import { NextStepProvider } from '@/components/providers/NextStepProvider';
+import { NextStepOnboardingProvider } from '@/contexts/NextStepOnboardingContext';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -34,7 +36,11 @@ export default function RootLayout({
       >
         <SessionProvider>
           <QueryProvider>
-            <CollectionToastProvider>{children}</CollectionToastProvider>
+            <NextStepProvider>
+              <NextStepOnboardingProvider>
+                <CollectionToastProvider>{children}</CollectionToastProvider>
+              </NextStepOnboardingProvider>
+            </NextStepProvider>
           </QueryProvider>
         </SessionProvider>
       </body>
