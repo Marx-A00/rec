@@ -5,8 +5,7 @@ import './globals.css';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { CollectionToastProvider } from '@/components/ui/CollectionToastProvider';
-import { NextStepProvider } from '@/components/providers/NextStepProvider';
-import { NextStepOnboardingProvider } from '@/contexts/NextStepOnboardingContext';
+import { MusicPlatformTourProvider } from '@/components/MusicPlatformTourProvider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -34,15 +33,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <SessionProvider>
-          <QueryProvider>
-            <NextStepProvider>
-              <NextStepOnboardingProvider>
-                <CollectionToastProvider>{children}</CollectionToastProvider>
-              </NextStepOnboardingProvider>
-            </NextStepProvider>
-          </QueryProvider>
-        </SessionProvider>
+              <SessionProvider>
+        <QueryProvider>
+          <MusicPlatformTourProvider>
+            <CollectionToastProvider>{children}</CollectionToastProvider>
+          </MusicPlatformTourProvider>
+        </QueryProvider>
+      </SessionProvider>
       </body>
     </html>
   );

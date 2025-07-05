@@ -18,7 +18,8 @@ import {
 } from '@/components/ui/resizable';
 import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
-import { NextStepControllerTest } from '@/components/NextStepControllerTest';
+import { TourTestComponent } from '@/components/TourTestComponent';
+
 
 export default function Home() {
   const { data: session } = useSession();
@@ -114,8 +115,8 @@ export default function Home() {
 
   return (
     <div className='fixed top-16 bottom-0 left-20 right-0 overflow-hidden'>
-      {/* NextStep Controller Test Component */}
-      <NextStepControllerTest />
+      {/* Tour Test Component */}
+      <TourTestComponent />
       
       {/* Album Modal */}
       <AlbumModal
