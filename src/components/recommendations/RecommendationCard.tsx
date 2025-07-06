@@ -143,10 +143,10 @@ export default function RecommendationCard({
       <article
         className={`
           bg-black
-          rounded-2xl shadow-lg hover:shadow-xl 
-          transition-all duration-300 hover:scale-[1.02]
+          rounded-xl shadow-lg hover:shadow-xl 
+          transition-all duration-300 hover:scale-[1.01]
           border border-zinc-600
-          p-4 sm:p-6 relative overflow-hidden
+          p-3 relative overflow-hidden
           focus-within:ring-2 focus-within:ring-blue-400 focus-within:ring-offset-2 focus-within:ring-offset-black
           ${(showDetailModal || onDetail) ? 'cursor-pointer' : ''}
         `}
@@ -157,7 +157,7 @@ export default function RecommendationCard({
         aria-label={`Music recommendation: ${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist} suggests ${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}, rated ${recommendation.score} out of 10`}
       >
         {/* Compact header with user info */}
-        <div className='flex items-center justify-between mb-4'>
+        <div className='flex items-center justify-between mb-3'>
           <div className='flex items-center space-x-2'>
             {recommendation.user?.image ? (
               <div className='relative'>
@@ -295,11 +295,11 @@ export default function RecommendationCard({
 
         {/* Compact album layout with centered rating */}
         <div className='relative'>
-          <div className='grid grid-cols-2 gap-1'>
+          <div className='grid grid-cols-2 gap-2'>
             {/* Source Album */}
             <div className='relative group'>
               {/* Album info on top */}
-              <div className='mb-2 text-center'>
+              <div className='mb-1.5 text-center'>
                 <p className='font-bold text-sm text-white leading-tight line-clamp-1'>
                   {recommendation.basisAlbumTitle}
                 </p>
@@ -357,7 +357,7 @@ export default function RecommendationCard({
             {/* Recommended Album */}
             <div className='relative group'>
               {/* Album info on top */}
-              <div className='mb-2 text-center'>
+              <div className='mb-1.5 text-center'>
                 <p className='font-bold text-sm text-white leading-tight line-clamp-1'>
                   {recommendation.recommendedAlbumTitle}
                 </p>
@@ -417,13 +417,13 @@ export default function RecommendationCard({
           <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20'>
             <div className='bg-black border-3 border-black rounded-full shadow-lg'>
               <div
-                className={`flex items-center justify-center w-12 h-12 bg-gradient-to-r ${scoreColors.bgGradient} rounded-full border-2 ${scoreColors.borderColor} shadow-md`}
+                className={`flex items-center justify-center w-10 h-10 bg-gradient-to-r ${scoreColors.bgGradient} rounded-full border-2 ${scoreColors.borderColor} shadow-md`}
                 role='img'
                 aria-label={`Rating: ${recommendation.score} out of 10 hearts`}
               >
                 <div className='flex flex-col items-center'>
                   <Heart
-                    className={`h-4 w-4 ${scoreColors.heartColor} drop-shadow-sm mb-0.5`}
+                    className={`h-3 w-3 ${scoreColors.heartColor} drop-shadow-sm mb-0.5`}
                     aria-hidden='true'
                   />
                   <span
