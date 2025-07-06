@@ -16,7 +16,7 @@
  * - title: Step title
  * - content: Description text
  * - selector: CSS selector for target element
- * - position: 'top' | 'bottom' | 'left' | 'right'
+ * - position: 'top' | 'bottom' | 'left' | 'right' | 'center'
  * - side: Same as position
  * - showControls: Enable Next/Previous buttons
  * - showSkip: Enable Skip button
@@ -29,9 +29,8 @@ export const welcomeOnboardingTour = {
     {
       icon: '🎵',
       title: 'Welcome to Rec!',
-      content: 'Welcome to your music discovery platform. Let\'s show you around!',
-      selector: '#test-search-bar',
-      position: 'bottom' as const,
+      content: 'Discover amazing music through community recommendations. Let\'s show you how it works!',
+      selector: 'body', // Portal will handle positioning
       side: 'bottom' as const,
       showControls: true,
       showSkip: true,
@@ -40,8 +39,7 @@ export const welcomeOnboardingTour = {
       icon: '🔍', 
       title: 'Search for Music',
       content: 'Use the search bar to find albums, artists, and tracks. This is your gateway to discovering new music.',
-      selector: '#test-search-bar',
-      position: 'bottom' as const,
+      selector: '#main-search-bar',
       side: 'bottom' as const,
       showControls: true,
       showSkip: true,
@@ -49,19 +47,17 @@ export const welcomeOnboardingTour = {
     {
       icon: '📚',
       title: 'Build Your Collection',
-      content: 'Click here to manage your music collection. Organize your favorite albums and tracks.',
-      selector: '#test-collections-btn',
-      position: 'bottom' as const,
-      side: 'bottom' as const,
+      content: 'This is your personal collection section. Here you can organize your favorite albums and tracks.',
+      selector: '#collections-section',
+      side: 'top' as const,
       showControls: true,
       showSkip: true,
     },
     {
       icon: '👤',
       title: 'Your Profile',
-      content: 'Access your profile and customize your music experience.',
-      selector: '#test-profile-menu',
-      position: 'bottom' as const,
+      content: 'Click your avatar to access your profile and customize your music experience.',
+      selector: '#user-profile-menu',
       side: 'bottom' as const,
       showControls: true,
       showSkip: true,
@@ -77,8 +73,7 @@ export const navigationBasicsTour = {
       icon: '🧭',
       title: 'Navigation Basics',
       content: 'Learn how to navigate around the platform efficiently.',
-      selector: '#test-search-bar',
-      position: 'bottom' as const,
+      selector: '#main-search-bar',
       side: 'bottom' as const,
       showControls: true,
       showSkip: true,
@@ -86,9 +81,8 @@ export const navigationBasicsTour = {
     {
       icon: '🔍',
       title: 'Advanced Search',
-      content: 'Discover advanced search features and filters.',
-      selector: '#test-search-bar',
-      position: 'bottom' as const,
+      content: 'Discover advanced search features and filters to find exactly what you\'re looking for.',
+      selector: '#main-search-bar',
       side: 'bottom' as const,
       showControls: true,
       showSkip: true,
@@ -103,20 +97,18 @@ export const collectionBuildingTour = {
     {
       icon: '📚',
       title: 'Building Collections',
-      content: 'Learn how to create and manage your music collections.',
-      selector: '#test-collections-btn',
-      position: 'bottom' as const,
-      side: 'bottom' as const,
+      content: 'Learn how to create and manage your music collections to organize your favorite albums.',
+      selector: '#collections-section',
+      side: 'top' as const,
       showControls: true,
       showSkip: true,
     },
     {
       icon: '⭐',
       title: 'Rating System',
-      content: 'Rate your favorite albums and tracks.',
-      selector: '#test-collections-btn',
-      position: 'bottom' as const,
-      side: 'bottom' as const,
+      content: 'Rate your favorite albums and tracks to build a personalized music profile.',
+      selector: '#collections-section',
+      side: 'top' as const,
       showControls: true,
       showSkip: true,
     },

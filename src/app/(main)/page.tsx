@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/resizable';
 import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
-import { TourTestComponent } from '@/components/TourTestComponent';
+import TourTestComponent from '@/components/TourTestComponent';
 
 
 export default function Home() {
@@ -118,29 +118,7 @@ export default function Home() {
       {/* Tour Test Component */}
       <TourTestComponent />
       
-      {/* Tour Target Elements - Hidden but accessible for tours */}
-      <div className="absolute top-4 left-4 space-y-2">
-        <input 
-          id="test-search-bar" 
-          placeholder="Search for music..." 
-          className="px-3 py-2 border rounded bg-zinc-800 text-white border-zinc-600"
-          style={{ opacity: 0.1 }}
-        />
-        <button 
-          id="test-collections-btn"
-          className="px-3 py-2 bg-blue-600 text-white rounded"
-          style={{ opacity: 0.1 }}
-        >
-          Collections
-        </button>
-        <button 
-          id="test-profile-menu"
-          className="px-3 py-2 bg-green-600 text-white rounded"
-          style={{ opacity: 0.1 }}
-        >
-          Profile
-        </button>
-      </div>
+
       
       {/* Album Modal */}
       <AlbumModal
@@ -159,7 +137,7 @@ export default function Home() {
               // Show user's album collection
               <div className='h-full flex flex-col'>
                 <div className='mb-3 flex-shrink-0'>
-                  <h2 className='text-lg font-semibold text-white'>
+                  <h2 id="collections-section" className='text-lg font-semibold text-white'>
                     Your Collection
                   </h2>
                 </div>

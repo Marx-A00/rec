@@ -4,6 +4,7 @@
 import React, { ReactNode } from 'react';
 import { NextStepProvider, NextStep } from 'nextstepjs';
 import { musicPlatformTours } from '@/lib/tours/musicPlatformTours';
+import { CustomTourCard } from '@/components/CustomTourCard';
 
 interface MusicPlatformTourProviderProps {
   children: ReactNode;
@@ -21,12 +22,16 @@ interface MusicPlatformTourProviderProps {
  * - Call startNextStep('tour-id') to begin a tour
  * 
  * Tours are defined in: src/lib/tours/musicPlatformTours.ts
+ * Custom card styling in: src/components/CustomTourCard.tsx
  */
 export function MusicPlatformTourProvider({ children }: MusicPlatformTourProviderProps) {
   return (
     <NextStepProvider>
-      {/* Configure NextStep with our tours */}
-      <NextStep steps={musicPlatformTours}>
+      {/* Configure NextStep with our tours and custom card component */}
+      <NextStep 
+        steps={musicPlatformTours}
+        cardComponent={CustomTourCard}
+      >
         {children}
       </NextStep>
     </NextStepProvider>
