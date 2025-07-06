@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/hover-card';
 import SignOutButton from '@/components/auth/SignOutButton';
 import SignInButton from '@/components/auth/SignInButton';
+import { useNextStep } from 'nextstepjs';
 
 export default function NavigationSidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -31,6 +32,7 @@ export default function NavigationSidebar() {
   const { data: session } = useSession();
   const user = session?.user;
   const { openDrawer } = useRecommendationDrawerContext();
+  const { startNextStep } = useNextStep();
 
   // Load collapsed state from localStorage on mount
   useEffect(() => {
@@ -306,6 +308,7 @@ export default function NavigationSidebar() {
               return (
                 <button
                   key={href}
+                  id="create-recommendation-button"
                   onClick={handleClick}
                   onKeyDown={handleKeyDown}
                   tabIndex={isCollapsed ? -1 : 0}
@@ -367,6 +370,41 @@ export default function NavigationSidebar() {
         )}
       </nav>
 
+      {/* Tour Test Buttons - Bottom of desktop sidebar */}
+      <div
+        className={`fixed left-4 bottom-4 z-40 hidden md:flex flex-col gap-2 transition-all duration-300 ease-out ${
+          isCollapsed
+            ? 'md:opacity-0 md:scale-95'
+            : 'md:opacity-100 md:scale-100'
+        } ${isMounted ? 'opacity-100' : 'opacity-0'}`}
+      >
+        <div className="text-xs text-zinc-500 font-medium mb-1 px-1">Tour Tests</div>
+        
+        <button
+          onClick={() => startNextStep('welcome-onboarding')}
+          className="group relative w-12 h-8 flex items-center justify-center rounded-md bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-700/70 hover:border-zinc-600 text-xs text-zinc-400 hover:text-zinc-200 transition-all duration-200 ease-out"
+          aria-label="Start Welcome Tour"
+        >
+          W
+        </button>
+        
+        <button
+          onClick={() => startNextStep('navigation-basics')}
+          className="group relative w-12 h-8 flex items-center justify-center rounded-md bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-700/70 hover:border-zinc-600 text-xs text-zinc-400 hover:text-zinc-200 transition-all duration-200 ease-out"
+          aria-label="Start Navigation Tour"
+        >
+          N
+        </button>
+        
+        <button
+          onClick={() => startNextStep('collection-building')}
+          className="group relative w-12 h-8 flex items-center justify-center rounded-md bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-700/70 hover:border-zinc-600 text-xs text-zinc-400 hover:text-zinc-200 transition-all duration-200 ease-out"
+          aria-label="Start Collection Tour"
+        >
+          C
+        </button>
+      </div>
+
       {/* Mobile sidebar - separate for mobile navigation */}
       <nav
         id='mobile-navigation'
@@ -406,6 +444,7 @@ export default function NavigationSidebar() {
               return (
                 <button
                   key={href}
+                  id="create-recommendation-button-mobile"
                   onClick={e => {
                     handleMobileClick();
                     (e.currentTarget as HTMLElement).blur();

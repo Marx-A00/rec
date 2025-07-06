@@ -16,11 +16,56 @@
  * - title: Step title
  * - content: Description text
  * - selector: CSS selector for target element
- * - position: 'top' | 'bottom' | 'left' | 'right' | 'center'
- * - side: Same as position
+ * - side: 'top' | 'bottom' | 'left' | 'right'
  * - showControls: Enable Next/Previous buttons
  * - showSkip: Enable Skip button
+ * 
+ * POSITIONING GUIDELINES:
+ * - 'bottom': Card appears below target (best for top elements like headers)
+ * - 'top': Card appears above target (best for bottom elements like footers)
+ * - 'right': Card appears to the right (best for left-side elements)
+ * - 'left': Card appears to the left (best for right-side elements)
+ * 
+ * RESPONSIVE POSITIONING TIPS:
+ * - Use 'bottom' for header elements (search bar, nav)
+ * - Use 'right' for left-side elements (avatar, sidebar items)
+ * - Use 'left' for right-side elements (buttons, menus)
+ * - Avoid 'top' positioning on mobile (can go above screen)
  */
+
+/**
+ * Positioning Helper Function
+ * Use this to determine the best side based on element position
+ */
+export function getBestPositioning(elementSelector: string): 'top' | 'bottom' | 'left' | 'right' {
+  if (typeof window === 'undefined') return 'bottom';
+  
+  const element = document.querySelector(elementSelector);
+  if (!element) return 'bottom';
+  
+  const rect = element.getBoundingClientRect();
+  const viewport = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  };
+  
+  // Determine best position based on element location
+  const isInTopHalf = rect.top < viewport.height / 2;
+  const isInLeftHalf = rect.left < viewport.width / 2;
+  
+  // Priority: bottom > right > left > top (top can go off-screen on mobile)
+  if (isInTopHalf && rect.bottom + 200 < viewport.height) {
+    return 'bottom'; // Plenty of space below
+  } else if (isInLeftHalf && rect.right + 300 < viewport.width) {
+    return 'right'; // Space to the right
+  } else if (!isInLeftHalf && rect.left - 300 > 0) {
+    return 'left'; // Space to the left
+  } else if (!isInTopHalf) {
+    return 'top'; // Last resort: above
+  }
+  
+  return 'bottom'; // Default fallback
+}
 
 // Welcome onboarding tour - First-time user experience
 export const welcomeOnboardingTour = {
@@ -36,11 +81,20 @@ export const welcomeOnboardingTour = {
       showSkip: true,
     },
     {
+      icon: '🎤',
+      title: 'Share Your Music Taste',
+      content: 'Click this button to create your first recommendation! Share albums you love and discover what others are listening to.',
+      selector: '#create-recommendation-button',
+      side: 'right' as const, // Show to the right of the button
+      showControls: true,
+      showSkip: true,
+    },
+    {
       icon: '🔍', 
       title: 'Search for Music',
       content: 'Use the search bar to find albums, artists, and tracks. This is your gateway to discovering new music.',
       selector: '#main-search-bar',
-      side: 'bottom' as const,
+      side: 'bottom' as const, // Show below search bar (safer positioning)
       showControls: true,
       showSkip: true,
     },
@@ -49,7 +103,7 @@ export const welcomeOnboardingTour = {
       title: 'Build Your Collection',
       content: 'This is your personal collection section. Here you can organize your favorite albums and tracks.',
       selector: '#collections-section',
-      side: 'top' as const,
+      side: 'right' as const, // Show to the right of collections (better for mobile)
       showControls: true,
       showSkip: true,
     },
@@ -58,7 +112,7 @@ export const welcomeOnboardingTour = {
       title: 'Your Profile',
       content: 'Click your avatar to access your profile and customize your music experience.',
       selector: '#user-profile-menu',
-      side: 'bottom' as const,
+      side: 'bottom' as const, // Show below avatar (safe for top-left element)
       showControls: true,
       showSkip: true,
     },
@@ -99,7 +153,7 @@ export const collectionBuildingTour = {
       title: 'Building Collections',
       content: 'Learn how to create and manage your music collections to organize your favorite albums.',
       selector: '#collections-section',
-      side: 'top' as const,
+      side: 'right' as const, // Better positioning for collection section
       showControls: true,
       showSkip: true,
     },
@@ -108,7 +162,7 @@ export const collectionBuildingTour = {
       title: 'Rating System',
       content: 'Rate your favorite albums and tracks to build a personalized music profile.',
       selector: '#collections-section',
-      side: 'top' as const,
+      side: 'bottom' as const, // Show below for second step
       showControls: true,
       showSkip: true,
     },
