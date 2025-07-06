@@ -90,6 +90,15 @@ export const welcomeOnboardingTour = {
       showSkip: true,
     },
     {
+      icon: '✨',
+      title: 'Create Your First Recommendation',
+      content: 'Great! Now you can search for an album and add your personal recommendation. This is how you share your music taste with the community.',
+      selector: '#recommendation-drawer', // Target the drawer itself
+      side: 'right' as const, // Show to the right inside the drawer
+      showControls: true,
+      showSkip: true,
+    },
+    {
       icon: '🔍', 
       title: 'Search for Music',
       content: 'Use the search bar to find albums, artists, and tracks. This is your gateway to discovering new music.',
@@ -103,7 +112,7 @@ export const welcomeOnboardingTour = {
       title: 'Build Your Collection',
       content: 'This is your personal collection section. Here you can organize your favorite albums and tracks.',
       selector: '#collections-section',
-      side: 'right' as const, // Show to the right of collections (better for mobile)
+      side: 'bottom' as const, // Show to the right of collections (better for mobile)
       showControls: true,
       showSkip: true,
     },

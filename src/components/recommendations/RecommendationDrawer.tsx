@@ -213,7 +213,7 @@ export default function RecommendationDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} handleOnly={true}>
-      <DrawerContent className='h-[90vh] bg-zinc-900 border-zinc-700'>
+      <DrawerContent id="recommendation-drawer" className='h-[90vh] bg-zinc-900 border-zinc-700'>
         <DrawerHeader className='flex-shrink-0'>
           <div className='flex items-center justify-between'>
             <DrawerTitle className='text-2xl font-bold text-white'>
