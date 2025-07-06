@@ -1,6 +1,7 @@
 'use client';
 
 import { X, Heart } from 'lucide-react';
+import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Button } from '@/components/ui/button';
@@ -89,9 +90,11 @@ export default function RecommendationDetailModal({
                   </div>
                 )}
                 <div>
-                  <h3 className='font-semibold text-lg text-white'>
-                    {recommendation.user?.name || 'Anonymous'}
-                  </h3>
+                  <Link href={`/profile/${recommendation.userId}`}>
+                    <h3 className='font-semibold text-lg text-white hover:underline cursor-pointer transition-all duration-200'>
+                      {recommendation.user?.name || 'Anonymous'}
+                    </h3>
+                  </Link>
                   <p className='text-zinc-400 text-xs'>
                     {new Date(recommendation.createdAt).toLocaleDateString(
                       'en-US',
