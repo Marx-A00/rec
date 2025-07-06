@@ -113,74 +113,80 @@ export default function RecommendationDetailModal({
                 <div className='grid grid-cols-2 gap-4'>
                   {/* Basis Album */}
                   <div className='text-center space-y-3'>
-                    <div className='mb-3'>
-                      <div className='space-y-1'>
-                        <p className='font-bold text-sm text-white leading-tight line-clamp-2'>
-                          {recommendation.basisAlbumTitle}
-                        </p>
-                        <p className='text-zinc-300 text-xs font-medium line-clamp-1'>
-                          {recommendation.basisAlbumArtist}
-                        </p>
-                        {recommendation.basisAlbumYear && (
-                          <p className='text-zinc-400 text-xs'>
-                            {recommendation.basisAlbumYear}
+                    <Link href={`/albums/${recommendation.basisAlbumDiscogsId}`} className='group block'>
+                      <div className='mb-3'>
+                        <div className='space-y-1'>
+                          <p className='font-bold text-sm text-white leading-tight line-clamp-2 group-hover:text-cosmic-latte transition-colors duration-300'>
+                            {recommendation.basisAlbumTitle}
                           </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className='relative group'>
-                      <div className='relative w-full max-w-48 mx-auto aspect-square overflow-hidden rounded-lg shadow-lg'>
-                        <AlbumImage
-                          src={recommendation.basisAlbumImageUrl}
-                          alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
-                          width={192}
-                          height={192}
-                          sizes='192px'
-                          className='w-full h-full object-cover transition-all duration-300 group-hover:scale-105'
-                        />
-                        <div className='absolute bottom-2 left-2'>
-                          <span className='bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-lg'>
-                            SRC
-                          </span>
+                          <p className='text-zinc-300 text-xs font-medium line-clamp-1 group-hover:text-white transition-colors duration-300'>
+                            {recommendation.basisAlbumArtist}
+                          </p>
+                          {recommendation.basisAlbumYear && (
+                            <p className='text-zinc-400 text-xs group-hover:text-zinc-300 transition-colors duration-300'>
+                              {recommendation.basisAlbumYear}
+                            </p>
+                          )}
                         </div>
                       </div>
-                    </div>
+                      <div className='relative cursor-pointer'>
+                        <div className='relative w-full max-w-48 mx-auto aspect-square overflow-hidden rounded-lg shadow-lg transition-all duration-300 group-hover:shadow-xl group-hover:scale-105'>
+                          <AlbumImage
+                            src={recommendation.basisAlbumImageUrl}
+                            alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
+                            width={192}
+                            height={192}
+                            sizes='192px'
+                            className='w-full h-full object-cover transition-all duration-300 group-hover:brightness-110'
+                          />
+                          <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 rounded-lg'></div>
+                          <div className='absolute bottom-2 left-2'>
+                            <span className='bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-lg'>
+                              SRC
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
                   </div>
 
                   {/* Recommended Album */}
                   <div className='text-center space-y-3'>
-                    <div className='mb-3'>
-                      <div className='space-y-1'>
-                        <p className='font-bold text-sm text-white leading-tight line-clamp-2'>
-                          {recommendation.recommendedAlbumTitle}
-                        </p>
-                        <p className='text-zinc-300 text-xs font-medium line-clamp-1'>
-                          {recommendation.recommendedAlbumArtist}
-                        </p>
-                        {recommendation.recommendedAlbumYear && (
-                          <p className='text-zinc-400 text-xs'>
-                            {recommendation.recommendedAlbumYear}
+                    <Link href={`/albums/${recommendation.recommendedAlbumDiscogsId}`} className='group block'>
+                      <div className='mb-3'>
+                        <div className='space-y-1'>
+                          <p className='font-bold text-sm text-white leading-tight line-clamp-2 group-hover:text-cosmic-latte transition-colors duration-300'>
+                            {recommendation.recommendedAlbumTitle}
                           </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className='relative group'>
-                      <div className='relative w-full max-w-48 mx-auto aspect-square overflow-hidden rounded-lg shadow-lg'>
-                        <AlbumImage
-                          src={recommendation.recommendedAlbumImageUrl}
-                          alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
-                          width={192}
-                          height={192}
-                          sizes='192px'
-                          className='w-full h-full object-cover transition-all duration-300 group-hover:scale-105'
-                        />
-                        <div className='absolute bottom-2 left-2'>
-                          <span className='bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-lg'>
-                            REC
-                          </span>
+                          <p className='text-zinc-300 text-xs font-medium line-clamp-1 group-hover:text-white transition-colors duration-300'>
+                            {recommendation.recommendedAlbumArtist}
+                          </p>
+                          {recommendation.recommendedAlbumYear && (
+                            <p className='text-zinc-400 text-xs group-hover:text-zinc-300 transition-colors duration-300'>
+                              {recommendation.recommendedAlbumYear}
+                            </p>
+                          )}
                         </div>
                       </div>
-                    </div>
+                      <div className='relative cursor-pointer'>
+                        <div className='relative w-full max-w-48 mx-auto aspect-square overflow-hidden rounded-lg shadow-lg transition-all duration-300 group-hover:shadow-xl group-hover:scale-105'>
+                          <AlbumImage
+                            src={recommendation.recommendedAlbumImageUrl}
+                            alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
+                            width={192}
+                            height={192}
+                            sizes='192px'
+                            className='w-full h-full object-cover transition-all duration-300 group-hover:brightness-110'
+                          />
+                          <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 rounded-lg'></div>
+                          <div className='absolute bottom-2 left-2'>
+                            <span className='bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-lg'>
+                              REC
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
                   </div>
                 </div>
 

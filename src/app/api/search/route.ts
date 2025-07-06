@@ -257,6 +257,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
               totalDuration: 0,
               numberOfTracks: 0,
             },
+            // Preserve master_id for release records to enable master ID preference
+            master_id: result.master_id || undefined,
           }),
           // Store original Discogs data for reference
           _discogs: {

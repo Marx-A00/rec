@@ -8,13 +8,39 @@ import { sanitizeArtistName } from '@/lib/utils';
 // Helper function to format artists naturally with sanitization
 function formatArtists(artists: Array<{ name: string }> | undefined): string {
   if (!artists || artists.length === 0) return 'Unknown Artist';
-  if (artists.length === 1) return sanitizeArtistName(artists[0].name);
-  if (artists.length === 2)
-    return `${sanitizeArtistName(artists[0].name)} & ${sanitizeArtistName(artists[1].name)}`;
+  return artists.map(artist => artist.name).join(', ');
+}
 
-  const lastArtist = artists[artists.length - 1];
-  const otherArtists = artists.slice(0, -1);
-  return `${otherArtists.map(a => sanitizeArtistName(a.name)).join(', ')} & ${sanitizeArtistName(lastArtist.name)}`;
+/**
+ * Extract the best ID for album navigation - prefers master ID over release ID
+ */
+function extractBestAlbumId(album: Album): string {
+  // Check if the album has Discogs metadata stored
+  const discogsData = (album as any)._discogs;
+  
+  if (discogsData) {
+    const uri = discogsData.uri || discogsData.resource_url || '';
+    
+    // If this is a release, try to get the master ID
+    if (uri.includes('/releases/')) {
+      // If we have access to master_id from the original data, use that
+      const masterIdFromData = (album as any).master_id;
+      if (masterIdFromData) {
+        return masterIdFromData.toString();
+      }
+    }
+    
+    // If this is already a master or we don't have master_id, use the current ID
+    if (uri.includes('/masters/')) {
+      const masterId = uri.match(/\/masters\/(\d+)/)?.[1];
+      if (masterId) {
+        return masterId;
+      }
+    }
+  }
+  
+  // Fallback to the regular ID
+  return album.id;
 }
 
 interface SimilarityRatingDialProps {
@@ -216,8 +242,8 @@ export default function CreateRecommendationForm({
     }
 
     const request: CreateRecommendationRequest = {
-      basisAlbumDiscogsId: basisAlbum.id,
-      recommendedAlbumDiscogsId: recommendedAlbum.id,
+      basisAlbumDiscogsId: extractBestAlbumId(basisAlbum),
+      recommendedAlbumDiscogsId: extractBestAlbumId(recommendedAlbum),
       score: finalScore,
       basisAlbumTitle: basisAlbum.title,
       basisAlbumArtist: formatArtists(basisAlbum.artists),
