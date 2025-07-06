@@ -249,7 +249,7 @@ export default function Home() {
           </div>
         </ResizablePanel>
 
-        <ResizableHandle className='h-px bg-zinc-800 hover:bg-zinc-700' />
+        <ResizableHandle withHandle className='h-px bg-zinc-800 hover:bg-zinc-700' />
 
         {/* Bottom section - Main content with horizontal split */}
         <ResizablePanel defaultSize={65} minSize={50}>
@@ -276,7 +276,7 @@ export default function Home() {
               </div>
             </ResizablePanel>
 
-            <ResizableHandle className='w-px bg-zinc-800 hover:bg-zinc-700' />
+            <ResizableHandle withHandle className='w-px bg-zinc-800 hover:bg-zinc-700' />
 
             {/* Activity sidebar */}
             <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>
