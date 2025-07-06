@@ -17,6 +17,33 @@ interface RecommendationCardProps {
   showDetailModal?: boolean; // New prop to control modal functionality
 }
 
+// Helper function to get color classes based on score
+const getScoreColors = (score: number) => {
+  if (score >= 10) {
+    return {
+      heartColor: 'text-red-500 fill-red-500',
+      textColor: 'text-red-600',
+      bgGradient: 'from-red-50 to-pink-50',
+      borderColor: 'border-red-100'
+    };
+  } else if (score >= 8) {
+    return {
+      heartColor: 'text-green-500 fill-green-500',
+      textColor: 'text-green-600',
+      bgGradient: 'from-green-50 to-emerald-50',
+      borderColor: 'border-green-100'
+    };
+  } else {
+    // 5-7 range (yellow)
+    return {
+      heartColor: 'text-yellow-500 fill-yellow-500',
+      textColor: 'text-yellow-600',
+      bgGradient: 'from-yellow-50 to-amber-50',
+      borderColor: 'border-yellow-100'
+    };
+  }
+};
+
 export default function RecommendationCard({
   recommendation,
   currentUserId,
@@ -42,6 +69,9 @@ export default function RecommendationCard({
   });
 
   const canEdit = currentUserId && currentUserId === recommendation.userId;
+
+  // Get dynamic colors based on score
+  const scoreColors = getScoreColors(recommendation.score);
 
   // Close action menu when clicking outside
   useEffect(() => {
@@ -387,17 +417,17 @@ export default function RecommendationCard({
           <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20'>
             <div className='bg-black border-3 border-black rounded-full shadow-lg'>
               <div
-                className='flex items-center justify-center w-12 h-12 bg-gradient-to-r from-red-50 to-pink-50 rounded-full border-2 border-red-100 shadow-md'
+                className={`flex items-center justify-center w-12 h-12 bg-gradient-to-r ${scoreColors.bgGradient} rounded-full border-2 ${scoreColors.borderColor} shadow-md`}
                 role='img'
                 aria-label={`Rating: ${recommendation.score} out of 10 hearts`}
               >
                 <div className='flex flex-col items-center'>
                   <Heart
-                    className='h-4 w-4 text-red-500 fill-red-500 drop-shadow-sm mb-0.5'
+                    className={`h-4 w-4 ${scoreColors.heartColor} drop-shadow-sm mb-0.5`}
                     aria-hidden='true'
                   />
                   <span
-                    className='text-xs font-bold text-red-600 tabular-nums leading-none'
+                    className={`text-xs font-bold ${scoreColors.textColor} tabular-nums leading-none`}
                     aria-hidden='true'
                   >
                     {recommendation.score}

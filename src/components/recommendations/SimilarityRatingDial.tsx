@@ -40,15 +40,15 @@ const SimilarityRatingDial = memo(function SimilarityRatingDial({
   );
 
   const statusText = useMemo(() => {
-    if (value <= 6) return { text: 'DECENT', color: 'text-yellow-400' };
-    if (value <= 8) return { text: 'GREAT', color: 'text-green-400' };
-    return { text: 'PERFECT', color: 'text-emerald-400' };
+    if (value <= 7) return { text: 'DECENT', color: 'text-yellow-400' };
+    if (value <= 9) return { text: 'GREAT', color: 'text-green-400' };
+    return { text: 'PERFECT', color: 'text-red-400' };
   }, [value]);
 
   const scoreColor = useMemo(() => {
-    if (value <= 6) return 'text-yellow-400';
-    if (value <= 8) return 'text-green-400';
-    return 'text-emerald-400';
+    if (value >= 10) return 'text-red-400';
+    if (value >= 8) return 'text-green-400';
+    return 'text-yellow-400'; // 5-7 range
   }, [value]);
 
   const updateValueFromMouse = useCallback(
@@ -139,11 +139,11 @@ const SimilarityRatingDial = memo(function SimilarityRatingDial({
               key={i}
               className={`absolute w-1 h-1 rounded-full ${
                 led.isActive
-                  ? led.ledScore <= 6
-                    ? 'bg-yellow-500'
-                    : led.ledScore <= 8
+                  ? led.ledScore >= 10
+                    ? 'bg-red-500'
+                    : led.ledScore >= 8
                       ? 'bg-green-500'
-                      : 'bg-emerald-400'
+                      : 'bg-yellow-500'
                   : 'bg-zinc-800'
               }`}
               style={{
