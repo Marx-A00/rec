@@ -20,7 +20,7 @@ export default function CollectionToast({
   type,
   isVisible,
   onClose,
-  duration = 7000, // Longer duration for navigation toasts
+  duration = 4000, // Auto-dismiss duration
   showNavigation = false,
   navigationLabel = 'View Collection',
   navigationUrl = '/profile',
@@ -28,14 +28,14 @@ export default function CollectionToast({
   const router = useRouter();
 
   useEffect(() => {
-    if (isVisible && duration > 0 && !showNavigation) {
+    if (isVisible && duration > 0) {
       const timer = setTimeout(() => {
         onClose();
       }, duration);
 
       return () => clearTimeout(timer);
     }
-  }, [isVisible, duration, onClose, showNavigation]);
+  }, [isVisible, duration, onClose]);
 
   const handleNavigation = () => {
     router.push(navigationUrl);
