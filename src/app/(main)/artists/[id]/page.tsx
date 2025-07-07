@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getArtistDetails } from '@/lib/api/artists';
 import { artistParamsSchema } from '@/lib/validations/params';
 import { sanitizeArtistName } from '@/lib/utils';
+import { CollapsibleBio } from '@/components/artistDetails/CollapsibleBio';
 
 interface ArtistDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -81,9 +82,7 @@ export default async function ArtistDetailsPage({
                 <h3 className='text-lg font-semibold mb-2 text-white'>
                   Biography
                 </h3>
-                <p className='text-zinc-300 text-sm leading-relaxed'>
-                  {artist.profile}
-                </p>
+                <CollapsibleBio content={artist.profile} />
               </div>
             )}
 
