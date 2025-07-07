@@ -914,6 +914,204 @@ const SearchMusicCard = ({ step, currentStep, totalSteps, nextStep, prevStep, sk
   );
 };
 
+// Explore Albums Card (Custom card that finds and clicks Random Access Memories)
+const ExploreAlbumsCard = ({ step, currentStep, totalSteps, nextStep, prevStep, skipTour, arrow }: CustomTourCardProps) => {
+  const handleNext = async () => {
+    console.log('🚀 ExploreAlbumsCard: Looking for Random Access Memories album...');
+    
+    try {
+      // Look for Random Access Memories album by various selectors
+      const albumSelectors = [
+        'img[alt*="Random Access Memories"]',
+        'img[alt*="random access memories"]',
+        '[data-testid*="random-access-memories"]',
+        'img[src*="random-access-memories"]',
+        'img[src*="Random-Access-Memories"]',
+        // Fallback: look for any album image in discography section
+        '#artist-discography img, .artist-albums img, [data-testid="artist-albums"] img'
+      ];
+      
+      let albumElement = null;
+      
+      // Try each selector to find Random Access Memories
+      for (const selector of albumSelectors) {
+        const elements = document.querySelectorAll(selector);
+        console.log(`🔍 Found ${elements.length} elements with selector: ${selector}`);
+        
+        if (elements.length > 0) {
+          // For image selectors, check alt text for Random Access Memories
+          for (const element of elements) {
+            const altText = (element as HTMLImageElement).alt?.toLowerCase() || '';
+            const srcText = (element as HTMLImageElement).src?.toLowerCase() || '';
+            
+            if (altText.includes('random access memories') || srcText.includes('random-access-memories')) {
+              albumElement = element;
+              console.log('✅ Found Random Access Memories album:', element);
+              break;
+            }
+          }
+          
+          // If we didn't find RAM specifically, use the first album as fallback
+          if (!albumElement && selector.includes('img')) {
+            albumElement = elements[0];
+            console.log('📀 Using first album as fallback:', albumElement);
+            break;
+          }
+        }
+        
+        if (albumElement) break;
+      }
+      
+      if (albumElement) {
+        console.log('🎯 Clicking album element:', albumElement);
+        
+        // Click the album to open modal
+        (albumElement as HTMLElement).click();
+        
+        // Wait a moment for modal to open, then advance to next step
+        setTimeout(() => {
+          console.log('✅ Album modal should be open, advancing to next step');
+          nextStep();
+        }, 800);
+      } else {
+        console.log('❌ No album found, advancing to next step anyway');
+        nextStep();
+      }
+    } catch (error) {
+      console.error('❌ Error finding album:', error);
+      nextStep();
+    }
+  };
+
+  return (
+    <div 
+      className="bg-gradient-to-br from-purple-900/90 to-pink-900/90 backdrop-blur-sm border border-purple-500/50 rounded-xl shadow-xl p-5 relative"
+      style={{
+        width: '380px',
+        maxWidth: 'calc(100vw - 40px)',
+        maxHeight: 'calc(100vh - 40px)',
+        zIndex: 50,
+      }}
+    >
+      {arrow}
+      
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="text-xl animate-pulse">{step.icon}</div>
+          <div>
+            <h3 className="text-base font-semibold text-white">{step.title}</h3>
+            <p className="text-xs text-purple-200 opacity-90">Step {currentStep + 1} of {totalSteps}</p>
+          </div>
+        </div>
+        <button
+          onClick={skipTour}
+          className="text-purple-300 hover:text-white text-xs px-2 py-1 rounded transition-colors"
+        >
+          Skip Tour
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="text-purple-100 mb-4 text-sm leading-relaxed">
+        {step.content}
+      </div>
+      
+      {/* Album Demo Preview */}
+      <div className="mb-4 p-3 bg-white/10 border border-white/20 rounded-lg">
+        <p className="text-xs font-medium text-purple-200 mb-2">🎯 What happens next:</p>
+        <div className="text-xs text-purple-100 space-y-1">
+          <div>• Find "Random Access Memories"</div>
+          <div>• Open album details modal</div>
+          <div>• Explore album interactions</div>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex justify-between items-center pt-3 border-t border-purple-500/30">
+        <button
+          onClick={prevStep}
+          className="px-4 py-2 text-sm bg-purple-800/50 hover:bg-purple-700/70 text-purple-200 rounded-lg transition-all"
+        >
+          ← Back
+        </button>
+        <button
+          onClick={handleNext}
+          className="px-4 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-all font-semibold shadow-lg"
+        >
+          Open Album Details →
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Album Interactions Card (Appears after album modal is open)
+const AlbumInteractionsCard = ({ step, currentStep, totalSteps, nextStep, prevStep, skipTour, arrow }: CustomTourCardProps) => {
+  return (
+    <div 
+      className="bg-gradient-to-br from-green-900/90 to-emerald-900/90 backdrop-blur-sm border border-green-500/50 rounded-xl shadow-xl p-5 relative"
+      style={{
+        width: '380px',
+        maxWidth: 'calc(100vw - 40px)',
+        maxHeight: 'calc(100vh - 40px)',
+        zIndex: 10002, // Higher than modal (which is usually around 10000)
+      }}
+    >
+      {arrow}
+      
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="text-xl animate-bounce">{step.icon}</div>
+          <div>
+            <h3 className="text-base font-semibold text-white">{step.title}</h3>
+            <p className="text-xs text-green-200 opacity-90">Step {currentStep + 1} of {totalSteps}</p>
+          </div>
+        </div>
+        <button
+          onClick={skipTour}
+          className="text-green-300 hover:text-white text-xs px-2 py-1 rounded transition-colors"
+        >
+          Skip Tour
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="text-green-100 mb-4 text-sm leading-relaxed">
+        {step.content}
+      </div>
+      
+      {/* Album Interactions Preview */}
+      <div className="mb-4 p-3 bg-white/10 border border-white/20 rounded-lg">
+        <p className="text-xs font-medium text-green-200 mb-2">🎯 Key Features:</p>
+        <div className="text-xs text-green-100 space-y-1">
+          <div>• 📚 Add to Collection</div>
+          <div>• ⭐ Rate & Review</div>
+          <div>• 🔗 See Recommendations</div>
+          <div>• 🎧 Listen to Samples</div>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex justify-between items-center pt-3 border-t border-green-500/30">
+        <button
+          onClick={prevStep}
+          className="px-4 py-2 text-sm bg-green-800/50 hover:bg-green-700/70 text-green-200 rounded-lg transition-all"
+        >
+          ← Back
+        </button>
+        <button
+          onClick={nextStep}
+          className="px-4 py-2 text-sm bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg transition-all font-semibold shadow-lg"
+        >
+          Got it! →
+        </button>
+      </div>
+    </div>
+  );
+};
+
 
 // Main router component
 export const CustomTourCard = (props: CustomTourCardProps) => {
@@ -975,6 +1173,14 @@ export const CustomTourCard = (props: CustomTourCardProps) => {
 
   if (step.title?.includes('Search for Music') && step.icon === '🔍') {
     return <SearchMusicCard {...props} />;
+  }
+
+  if (step.title?.includes('Explore Albums') && step.icon === '💿') {
+    return <ExploreAlbumsCard {...props} />;
+  }
+
+  if (step.title?.includes('Album Details & Interactions') && step.icon === '🎵') {
+    return <AlbumInteractionsCard {...props} />;
   }
 
   // Default to standard card

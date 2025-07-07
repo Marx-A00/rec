@@ -74,6 +74,24 @@ function TourStateManager() {
           }));
           location.reload();
         },
+        jumpToAlbums: () => {
+          console.log('🚀 Debug: Jumping to explore albums step (step 10)');
+          localStorage.setItem('nextstep-welcome-onboarding', JSON.stringify({
+            currentStep: 10,
+            isActive: true,
+            hasBeenStarted: true
+          }));
+          location.reload();
+        },
+        jumpToAlbumModal: () => {
+          console.log('🚀 Debug: Jumping to album modal step (step 11)');
+          localStorage.setItem('nextstep-welcome-onboarding', JSON.stringify({
+            currentStep: 11,
+            isActive: true,
+            hasBeenStarted: true
+          }));
+          location.reload();
+        },
         restartTour: () => {
           console.log('🚀 Debug: Restarting tour');
           localStorage.removeItem('nextstep-welcome-onboarding');
@@ -97,6 +115,31 @@ function TourStateManager() {
           } catch (error) {
             console.error('❌ Error:', error);
           }
+        },
+        testFindAlbums: () => {
+          console.log('🚀 Debug: Testing album finding');
+          const selectors = [
+            'img[alt*="Random Access Memories"]',
+            'img[alt*="random access memories"]',
+            '[data-testid*="random-access-memories"]',
+            'img[src*="random-access-memories"]',
+            'img[src*="Random-Access-Memories"]',
+            '#artist-discography img, .artist-albums img, [data-testid="artist-albums"] img'
+          ];
+          
+          selectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            console.log(`🔍 Selector "${selector}" found ${elements.length} elements:`, elements);
+            
+            elements.forEach((el, index) => {
+              const img = el as HTMLImageElement;
+              console.log(`  - Element ${index}:`, {
+                alt: img.alt,
+                src: img.src,
+                element: img
+              });
+            });
+          });
         }
       };
     }

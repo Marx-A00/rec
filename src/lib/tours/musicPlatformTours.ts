@@ -168,6 +168,26 @@ export const welcomeOnboardingTour = {
       prevRoute: '/browse', // Navigate back to browse when Previous is clicked
     },
     {
+      icon: '💿',
+      title: 'Explore Albums',
+      content: 'Now let\'s explore Daft Punk\'s legendary discography! I\'ll show you how to interact with albums. Click Next and I\'ll demonstrate by opening the iconic "Random Access Memories" album details.',
+      selector: '#artist-discography, .artist-albums, [data-testid="artist-albums"]', // Target the discography section
+      side: 'bottom' as const, // Show below the discography
+      showControls: true,
+      showSkip: true,
+      // Custom card will handle finding and clicking Random Access Memories
+    },
+    {
+      icon: '🎵',
+      title: 'Album Details & Interactions',
+      content: 'Perfect! This is an album detail modal where you can explore everything about an album. Here you can read details, listen to samples, add to your collection, and see what others are saying about it. These interactions are the heart of music discovery!',
+      selector: '#album-modal, .album-modal, [data-testid="album-modal"]', // Target the album modal
+      side: 'right' as const, // Show to the right of the modal
+      showControls: true,
+      showSkip: true,
+      // This step appears after the album modal is opened
+    },
+    {
       icon: '📚',
       title: 'Build Your Collection',
       content: 'This is your personal collection section. Here you can organize your favorite albums and tracks.',
