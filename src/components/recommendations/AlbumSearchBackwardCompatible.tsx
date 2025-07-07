@@ -160,7 +160,7 @@ const AlbumSearchBackwardCompatible = forwardRef<
       )}
 
       {albumResults.length > 0 && (
-        <div className='space-y-2 max-h-48 overflow-y-auto relative z-[200] bg-zinc-900 rounded-lg border border-zinc-600 p-2'>
+        <div className='space-y-2 max-h-48 overflow-y-auto relative z-[100] bg-zinc-900 rounded-lg border border-zinc-600 p-2'>
           {albumResults.map((result: UnifiedSearchResult) => {
             const album = convertToAlbum(result);
             return (

@@ -282,6 +282,7 @@ export default function CreateRecommendationForm({
 
       {/* Circular Play Button - Bottom Right */}
       <button
+        id="submit-recommendation-button"
         type='submit'
         onClick={handleSubmit}
         className={`

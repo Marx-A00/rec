@@ -100,10 +100,28 @@ export const welcomeOnboardingTour = {
     },
     {
       icon: '🎯',
-      title: 'Search for Albums',
-      content: 'Type in the search bar to find albums! Try searching for your favorite artist or album name. The search will show results as you type.',
-      selector: '#recommendation-search-input', // Target the search input
-      side: 'bottom' as const, // Show below the search bar
+      title: 'Demo Recommendation',
+      content: 'check this shit out cuh',
+      selector: '#recommendation-search-input', // Target the search input again
+      side: 'top' as const, // Show above the search bar so it doesn't block results below
+      showControls: true,
+      showSkip: true,
+    },
+    {
+      icon: '⭐',
+      title: 'Rate the Similarity',
+      content: 'Use the rating dial to score how similar the albums are! Drag the dial or click to set a rating from 1-10. This helps other users understand your recommendation.',
+      selector: '#similarity-rating-dial', // Target the rating component
+      side: 'left' as const, // Show to the left of the rating dial
+      showControls: true,
+      showSkip: true,
+    },
+    {
+      icon: '🚀',
+      title: 'Submit Your Recommendation',
+      content: 'Hit this green button cuh',
+      selector: '#submit-recommendation-button', // Target the submit button
+      side: 'left' as const, // Show above the submit button
       showControls: true,
       showSkip: true,
     },

@@ -181,6 +181,33 @@ export default function RecommendationDrawer({
     };
   }, [isOpen, onClose]);
 
+  // Handle demo recommendation filling for tour
+  useEffect(() => {
+    const handleDemoFill = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { sourceAlbum, recommendedAlbum, similarityRating } = customEvent.detail;
+      
+      if (sourceAlbum) {
+        setSelectedBasisAlbum(sourceAlbum);
+      }
+      if (recommendedAlbum) {
+        setSelectedRecommendedAlbum(recommendedAlbum);
+      }
+      if (similarityRating) {
+        setSimilarityRating(similarityRating);
+      }
+      
+      // Switch to viewing mode (not searching)
+      setIsSearchingForBasis(false);
+    };
+
+    window.addEventListener('fill-demo-recommendation', handleDemoFill);
+
+    return () => {
+      window.removeEventListener('fill-demo-recommendation', handleDemoFill);
+    };
+  }, []);
+
       // Modified close handler that respects tour state
     const handleDrawerClose = (open: boolean) => {
       // Don't close the drawer if tour is active and trying to keep it open

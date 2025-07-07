@@ -122,7 +122,7 @@ const SimilarityRatingDial = memo(function SimilarityRatingDial({
   }, [isDragging, disabled, handleMouseMove, handleMouseUp]);
 
   return (
-    <div className='flex flex-col items-center space-y-2'>
+    <div id="similarity-rating-dial" className='flex flex-col items-center space-y-2'>
       {/* Dial Label */}
       <div className='text-center'>
         <div className='text-sm font-bold text-zinc-300 mb-1'>SCORE</div>
