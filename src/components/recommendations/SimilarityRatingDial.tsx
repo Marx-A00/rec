@@ -107,6 +107,15 @@ const SimilarityRatingDial = memo(function SimilarityRatingDial({
     setIsDragging(false);
   }, []);
 
+  // Handle LED dot clicks
+  const handleLedClick = useCallback(
+    (ledScore: number) => {
+      if (disabled) return;
+      onChange(ledScore);
+    },
+    [disabled, onChange]
+  );
+
   // Add global mouse event listeners when dragging
   useEffect(() => {
     if (isDragging && !disabled) {
@@ -135,20 +144,22 @@ const SimilarityRatingDial = memo(function SimilarityRatingDial({
           {ledPositions.map((led, i) => (
             <div
               key={i}
-              className={`absolute w-1 h-1 rounded-full ${
+              className={`absolute w-2 h-2 rounded-full cursor-pointer transition-all duration-200 hover:scale-125 ${
                 led.isActive
                   ? led.ledScore >= 10
-                    ? 'bg-red-500'
+                    ? 'bg-red-500 hover:bg-red-400'
                     : led.ledScore >= 8
-                      ? 'bg-green-500'
-                      : 'bg-yellow-500'
-                  : 'bg-zinc-800'
-              }`}
+                      ? 'bg-green-500 hover:bg-green-400'
+                      : 'bg-yellow-500 hover:bg-yellow-400'
+                  : 'bg-zinc-800 hover:bg-zinc-600'
+              } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
               style={{
                 left: `${led.ledX}%`,
                 top: `${led.ledY}%`,
                 transform: 'translate(-50%, -50%)',
               }}
+              onClick={() => handleLedClick(led.ledScore)}
+              title={`Set score to ${led.ledScore}/10`}
             />
           ))}
 
