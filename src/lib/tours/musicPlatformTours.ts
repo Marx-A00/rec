@@ -128,12 +128,22 @@ export const welcomeOnboardingTour = {
     {
       icon: '🌟',
       title: 'Discover New Music',
-      content: 'Amazing! Now that you know how to recommend music, explore what others are sharing. Click the Browse & Discover button to find new albums and see trending recommendations!',
+      content: 'Amazing! Now that you know how to recommend music, explore what others are sharing. Click Next to go to the Browse & Discover page!',
       selector: '#discover-nav-button', // Target the discover nav button
       side: 'right' as const, // Show to the right of the nav button
       showControls: true,
       showSkip: true,
-      nextRoute: '/browse', // Navigate to the browse/discover page when clicking Next
+      nextRoute: '/browse', // Navigate to browse page when Next is clicked
+    },
+    {
+      icon: '🎵',
+      title: 'Welcome to Discovery',
+      content: 'Perfect! This is where the magic happens. Browse through trending albums, discover new artists, and explore recommendations from other music lovers. Everything is organized to help you find your next favorite album!',
+      selector: '#browse-page-header', // Target the browse page header - NextStep will wait for it to appear
+      side: 'bottom' as const, // Show below the header
+      showControls: true,
+      showSkip: true,
+      prevRoute: '/', // Navigate back to home when Previous is clicked
     },
     {
       icon: '🔍', 
@@ -215,6 +225,22 @@ export const collectionBuildingTour = {
   ],
 };
 
+// Discovery page tour - Simple single-step tour for browse page
+export const discoveryPageTour = {
+  tour: 'discovery-page',
+  steps: [
+    {
+      icon: '🎵',
+      title: 'Welcome to Discovery',
+      content: 'Perfect! This is where the magic happens. Browse through trending albums, discover new artists, and explore recommendations from other music lovers. Everything is organized to help you find your next favorite album!',
+      selector: '#browse-page-header',
+      side: 'bottom' as const,
+      showControls: true,
+      showSkip: true,
+    },
+  ],
+};
+
 /**
  * Export all tours as an array
  * 
@@ -225,4 +251,5 @@ export const musicPlatformTours = [
   welcomeOnboardingTour,
   navigationBasicsTour,
   collectionBuildingTour,
+  discoveryPageTour,
 ]; 
