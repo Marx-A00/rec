@@ -201,8 +201,8 @@ export const welcomeOnboardingTour = {
       icon: '✨',
       title: 'Welcome to Your Profile!',
       content: 'Amazing! This is your personal music profile page. Here you can see your recommendations, followers, music stats, create collages, manage your collections, and showcase your unique music taste to the community. This is your musical identity hub!',
-      selector: '#profile-header, .profile-header, [data-testid="profile-header"]', // Target the profile page header
-      side: 'bottom' as const, // Show below the header
+      selector: 'h1.text-4xl.font-bold.mb-2, .text-4xl.font-bold, h1', // Target the user's name heading which is stable
+      side: 'bottom' as const, // Show below the user's name for stable positioning
       showControls: true,
       showSkip: true,
       // This is the final step of the tour
