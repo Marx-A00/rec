@@ -175,24 +175,25 @@ export const welcomeOnboardingTour = {
       side: 'bottom' as const, // Show below the discography
       showControls: true,
       showSkip: true,
+      nextRoute: '/albums/556257', // Navigate to Random Access Memories album page
       // Custom card will handle finding and clicking Random Access Memories
     },
     {
       icon: '🎵',
       title: 'Album Details & Interactions',
-      content: 'Perfect! This is an album detail modal where you can explore everything about an album. Here you can read details, listen to samples, add to your collection, and see what others are saying about it. These interactions are the heart of music discovery!',
-      selector: '#album-modal, .album-modal, [data-testid="album-modal"], [role="dialog"], [role="modal"], .modal, .fixed.inset-0, .absolute.inset-0', // Target the album modal with multiple fallbacks
-      side: 'right' as const, // Show to the right of the modal
+      content: 'Perfect! This is a dedicated album page where you can explore everything about this album. Here you can see detailed information, track listings, reviews, add to your collection, and discover what others are saying about it. These interactions are the heart of music discovery!',
+      selector: 'h1, .text-3xl, .album-header, main', // Target the album page header or main content
+      side: 'bottom' as const, // Show below the album header
       showControls: true,
       showSkip: true,
-      // This step appears after the album modal is opened
+      // This step appears on the album page after navigation from artist page
     },
     {
       icon: '👤',
       title: 'Explore Your Profile',
       content: 'Now let\'s explore your personal music profile! This is where you can showcase your music taste, connect with other music lovers, and track your listening journey. Click Next and I\'ll take you to your profile page.',
-      selector: '#user-profile-menu, .user-avatar, [data-testid="user-avatar"]', // Target the user avatar/menu
-      side: 'bottom' as const, // Show below the avatar
+      selector: 'nav, .sidebar, aside, header', // Target navigation elements that exist on album page
+      side: 'bottom' as const, // Show below navigation
       showControls: true,
       showSkip: true,
       nextRoute: '/profile', // Navigate to user's profile page when Next is clicked
