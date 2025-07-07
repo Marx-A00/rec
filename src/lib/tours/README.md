@@ -42,8 +42,8 @@ function MyComponent() {
 
 Current tours in the system:
 - **`welcome-onboarding`** - Complete first-time user walkthrough
-- **`navigation-basics`** - Essential navigation and search
-- **`collection-building`** - How to manage music collections
+  - **`navigation-basics`** - Essential navigation and search
+  - **`collection-building`** - How to manage music collections
 
 ## Adding New Tours
 
@@ -114,3 +114,4 @@ Use the `TourTestComponent` to test tours during development. It provides button
 - Keep tour steps focused and concise
 - Test tours on different screen sizes
 - Make sure target elements exist before starting tours 
+

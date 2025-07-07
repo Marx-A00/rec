@@ -1,7 +1,7 @@
 // src/components/CustomTourCard.tsx
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Step } from 'nextstepjs';
 import { X } from 'lucide-react';
@@ -640,16 +640,14 @@ const DiscoverDemoCard = ({ step, currentStep, totalSteps, nextStep, prevStep, s
     const closeEvent = new CustomEvent('close-recommendation-drawer');
     window.dispatchEvent(closeEvent);
     
-    // End this tour and navigate
-    if (skipTour) {
-      skipTour(); // This ends the current tour
-    }
-    
-    // Set a flag to start discovery tour on the browse page
-    sessionStorage.setItem('start-discovery-tour', 'true');
+    // Continue to next step instead of ending tour
+    console.log('🎯 DiscoverDemoCard: Navigating to browse page and continuing tour');
     
     // Navigate to browse page
     router.push('/browse');
+    
+    // Continue to next step (Welcome to Discovery)
+    nextStep();
   };
 
   // Close the drawer when this step loads
@@ -816,6 +814,105 @@ const DiscoveryOverviewCard = ({ step, currentStep, totalSteps, nextStep, prevSt
   );
 };
 
+// Search Music Card (Custom search with Daft Punk navigation)
+const SearchMusicCard = ({ step, currentStep, totalSteps, nextStep, prevStep, skipTour, arrow }: CustomTourCardProps) => {
+  const router = useRouter();
+  
+  const handleNext = async () => {
+    console.log('🚀 SearchMusicCard: Searching for Daft Punk and navigating...');
+    
+    try {
+      // Perform search for Daft Punk artist
+      const searchResponse = await fetch('/api/search?query=daft+punk&type=artists&limit=1');
+      const searchData = await searchResponse.json();
+      
+      console.log('🔍 Search API response:', searchData);
+      
+      if (searchData.results && searchData.results.length > 0) {
+        const daftPunkArtist = searchData.results[0];
+        console.log('✅ Found Daft Punk artist:', daftPunkArtist);
+        
+        // Navigate to the artist page first
+        router.push(`/artists/${daftPunkArtist.id}`);
+        
+        // Then continue to next step after a short delay
+        setTimeout(() => {
+          nextStep();
+        }, 500);
+      } else {
+        console.log('❌ No Daft Punk artist found, using fallback');
+        // Fallback: just go to next step normally
+        nextStep();
+      }
+    } catch (error) {
+      console.error('❌ Error searching for Daft Punk:', error);
+      // Fallback: just go to next step normally
+      nextStep();
+    }
+  };
+
+  return (
+    <div 
+      className="bg-gradient-to-br from-blue-900/90 to-indigo-900/90 backdrop-blur-sm border border-blue-500/50 rounded-xl shadow-xl p-5 relative"
+      style={{
+        width: '380px',
+        maxWidth: 'calc(100vw - 40px)',
+        maxHeight: 'calc(100vh - 40px)',
+        zIndex: 50,
+      }}
+    >
+      {arrow}
+      
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="text-xl animate-bounce">{step.icon}</div>
+          <div>
+            <h3 className="text-base font-semibold text-white">{step.title}</h3>
+            <p className="text-xs text-blue-200 opacity-90">Step {currentStep + 1} of {totalSteps}</p>
+          </div>
+        </div>
+        <button
+          onClick={skipTour}
+          className="text-blue-300 hover:text-white text-xs px-2 py-1 rounded transition-colors"
+        >
+          Skip Tour
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="text-blue-100 mb-4 text-sm leading-relaxed">
+        {step.content}
+      </div>
+      
+      {/* Search Demo Preview */}
+      <div className="mb-4 p-3 bg-white/10 border border-white/20 rounded-lg">
+        <p className="text-xs font-medium text-blue-200 mb-2">🎯 What happens next:</p>
+        <div className="text-xs text-blue-100 space-y-1">
+          <div>• Search for "Daft Punk"</div>
+          <div>• Navigate to artist page</div>
+          <div>• Explore artist details</div>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex justify-between items-center pt-3 border-t border-blue-500/30">
+        <button
+          onClick={prevStep}
+          className="px-4 py-2 text-sm bg-blue-800/50 hover:bg-blue-700/70 text-blue-200 rounded-lg transition-all"
+        >
+          ← Back
+        </button>
+        <button
+          onClick={handleNext}
+          className="px-4 py-2 text-sm bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg transition-all font-semibold shadow-lg"
+        >
+          Search Daft Punk →
+        </button>
+      </div>
+    </div>
+  );
+};
 
 
 // Main router component
@@ -823,6 +920,13 @@ export const CustomTourCard = (props: CustomTourCardProps) => {
   const { step } = props;
 
   console.log('🎯 CustomTourCard called with step:', step.title, 'icon:', step.icon);
+  console.log('🎯 Step details:', {
+    title: step.title,
+    icon: step.icon,
+    includesWelcomeToDiscovery: step.title?.includes('Welcome to Discovery'),
+    iconIsMusic: step.icon === '🎵',
+    shouldRouteToDiscovery: step.title?.includes('Welcome to Discovery') && step.icon === '🎵'
+  });
 
   // Route to specific card component based on step characteristics
   // NOTE: More specific conditions should come first!
@@ -867,6 +971,10 @@ export const CustomTourCard = (props: CustomTourCardProps) => {
 
   if (step.title?.includes('Discover New Music') && step.icon === '🌟') {
     return <DiscoverDemoCard {...props} />;
+  }
+
+  if (step.title?.includes('Search for Music') && step.icon === '🔍') {
+    return <SearchMusicCard {...props} />;
   }
 
   // Default to standard card

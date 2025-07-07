@@ -876,6 +876,7 @@ export default function UniversalSearchBar({
       >
         <div className="[&_.border-b]:border-cosmic-latte [&_[cmdk-input-wrapper]]:border-cosmic-latte [&_svg]:text-cosmic-latte [&_svg]:opacity-100">
           <CommandInput
+            id="main-search-bar"
             placeholder={finalPlaceholder}
             value={query}
             onValueChange={handleValueChange}

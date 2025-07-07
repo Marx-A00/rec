@@ -150,11 +150,22 @@ export const welcomeOnboardingTour = {
     {
       icon: '🔍', 
       title: 'Search for Music',
-      content: 'Use the search bar to find albums, artists, and tracks. This is your gateway to discovering new music.',
-      selector: '#main-search-bar',
+      content: 'Use the search bar to find albums, artists, and tracks. This is your gateway to discovering new music. Click Next and I\'ll show you by searching for the legendary electronic duo Daft Punk!',
+      selector: '#main-search-bar, [cmdk-input], input[placeholder*="Search albums"], .cmdk-input',
       side: 'bottom' as const, // Show below search bar (safer positioning)
       showControls: true,
       showSkip: true,
+      // TourStateManager will handle dynamic navigation to Daft Punk artist page
+    },
+    {
+      icon: '🤖',
+      title: 'Welcome to Artist Pages',
+      content: 'Fantastic! This is an artist page where you can explore everything about an artist. Here you can see their biography, discography, collaborations, and discover similar artists. This is where you dive deep into an artist\'s world!',
+      selector: '#artist-page-header', // Target the artist page header
+      side: 'bottom' as const, // Show below the header
+      showControls: true,
+      showSkip: true,
+      prevRoute: '/browse', // Navigate back to browse when Previous is clicked
     },
     {
       icon: '📚',
@@ -177,72 +188,6 @@ export const welcomeOnboardingTour = {
   ],
 };
 
-// Navigation basics tour - Essential navigation features
-export const navigationBasicsTour = {
-  tour: 'navigation-basics',
-  steps: [
-    {
-      icon: '🧭',
-      title: 'Navigation Basics',
-      content: 'Learn how to navigate around the platform efficiently.',
-      selector: '#main-search-bar',
-      side: 'bottom' as const,
-      showControls: true,
-      showSkip: true,
-    },
-    {
-      icon: '🔍',
-      title: 'Advanced Search',
-      content: 'Discover advanced search features and filters to find exactly what you\'re looking for.',
-      selector: '#main-search-bar',
-      side: 'bottom' as const,
-      showControls: true,
-      showSkip: true,
-    },
-  ],
-};
-
-// Collection building tour - How to manage collections
-export const collectionBuildingTour = {
-  tour: 'collection-building',
-  steps: [
-    {
-      icon: '📚',
-      title: 'Building Collections',
-      content: 'Learn how to create and manage your music collections to organize your favorite albums.',
-      selector: '#collections-section',
-      side: 'right' as const, // Better positioning for collection section
-      showControls: true,
-      showSkip: true,
-    },
-    {
-      icon: '⭐',
-      title: 'Rating System',
-      content: 'Rate your favorite albums and tracks to build a personalized music profile.',
-      selector: '#collections-section',
-      side: 'bottom' as const, // Show below for second step
-      showControls: true,
-      showSkip: true,
-    },
-  ],
-};
-
-// Discovery page tour - Simple single-step tour for browse page
-export const discoveryPageTour = {
-  tour: 'discovery-page',
-  steps: [
-    {
-      icon: '🎵',
-      title: 'Welcome to Discovery',
-      content: 'Perfect! This is where the magic happens. Browse through trending albums, discover new artists, and explore recommendations from other music lovers. Everything is organized to help you find your next favorite album!',
-      selector: '#browse-page-header',
-      side: 'bottom' as const,
-      showControls: true,
-      showSkip: true,
-    },
-  ],
-};
-
 /**
  * Export all tours as an array
  * 
@@ -251,7 +196,4 @@ export const discoveryPageTour = {
  */
 export const musicPlatformTours = [
   welcomeOnboardingTour,
-  navigationBasicsTour,
-  collectionBuildingTour,
-  discoveryPageTour,
 ]; 

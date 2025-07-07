@@ -379,30 +379,14 @@ export default function NavigationSidebar() {
             : 'md:opacity-100 md:scale-100'
         } ${isMounted ? 'opacity-100' : 'opacity-0'}`}
       >
-        <div className="text-xs text-zinc-500 font-medium mb-1 px-1">Tour Tests</div>
+        <div className="text-xs text-zinc-500 font-medium mb-1 px-1"></div>
         
         <button
           onClick={() => startNextStep('welcome-onboarding')}
-          className="group relative w-12 h-8 flex items-center justify-center rounded-md bg-zinc-800/50 hover:bg-zinc-700/70 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 text-xs text-zinc-400 hover:text-zinc-200 transition-all duration-200 ease-out"
+          className="group relative w-20 h-10 flex items-center justify-center rounded-md bg-gradient-to-br from-orange-600/80 to-orange-700/90 hover:from-orange-500/90 hover:to-orange-600 hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 text-xs text-white font-semibold transition-all duration-200 ease-out"
           aria-label="Start Welcome Tour"
         >
           W
-        </button>
-        
-        <button
-          onClick={() => startNextStep('navigation-basics')}
-          className="group relative w-12 h-8 flex items-center justify-center rounded-md bg-zinc-800/50 hover:bg-zinc-700/70 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 text-xs text-zinc-400 hover:text-zinc-200 transition-all duration-200 ease-out"
-          aria-label="Start Navigation Tour"
-        >
-          N
-        </button>
-        
-        <button
-          onClick={() => startNextStep('collection-building')}
-          className="group relative w-12 h-8 flex items-center justify-center rounded-md bg-zinc-800/50 hover:bg-zinc-700/70 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 text-xs text-zinc-400 hover:text-zinc-200 transition-all duration-200 ease-out"
-          aria-label="Start Collection Tour"
-        >
-          C
         </button>
       </div>
 
