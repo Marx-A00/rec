@@ -874,7 +874,7 @@ export default function UniversalSearchBar({
         className='border-zinc-700 shadow-lg bg-zinc-900'
         shouldFilter={false}
       >
-        <div className="[&_.border-b]:border-transparent [&_[cmdk-input-wrapper]]:border-transparent">
+        <div className="[&_.border-b]:border-cosmic-latte [&_[cmdk-input-wrapper]]:border-cosmic-latte [&_svg]:text-cosmic-latte [&_svg]:opacity-100">
           <CommandInput
             placeholder={finalPlaceholder}
             value={query}
