@@ -164,21 +164,21 @@ export default function RecommendationCard({
                 <AlbumImage
                   src={recommendation.user.image}
                   alt={recommendation.user.name || 'User'}
-                  width={32}
-                  height={32}
+                  width={24}
+                  height={24}
                   className='rounded-full ring-2 ring-zinc-600 shadow-sm'
                 />
-                <div className='absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-black rounded-full shadow-sm'></div>
+                <div className='absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-black rounded-full shadow-sm'></div>
               </div>
             ) : (
-              <div className='w-8 h-8 bg-gradient-to-br from-zinc-600 to-zinc-700 rounded-full ring-2 ring-zinc-600 flex items-center justify-center shadow-sm'>
+              <div className='w-6 h-6 bg-gradient-to-br from-zinc-600 to-zinc-700 rounded-full ring-2 ring-zinc-600 flex items-center justify-center shadow-sm'>
                 <span className='text-white font-semibold text-xs'>
                   {(recommendation.user?.name || 'A').charAt(0).toUpperCase()}
                 </span>
               </div>
             )}
             <Link href={`/profile/${recommendation.userId}`}>
-              <span className='text-sm font-medium text-white hover:underline cursor-pointer transition-all duration-200'>
+              <span className='text-xs font-medium text-cosmic-latte hover:underline cursor-pointer transition-all duration-200'>
                 {recommendation.user?.name || 'Anonymous'}
               </span>
             </Link>
