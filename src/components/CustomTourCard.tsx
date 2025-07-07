@@ -630,6 +630,79 @@ const StandardTourCard = ({ step, currentStep, totalSteps, nextStep, prevStep, s
   );
 };
 
+// Discover Demo Card (Shows discovery features and closes the drawer)
+const DiscoverDemoCard = ({ step, currentStep, totalSteps, nextStep, prevStep, skipTour, arrow }: CustomTourCardProps) => {
+  const handleNext = () => {
+    nextStep();
+  };
+
+  // Close the drawer when this step loads
+  React.useEffect(() => {
+    const closeEvent = new CustomEvent('close-recommendation-drawer');
+    window.dispatchEvent(closeEvent);
+  }, []);
+
+  return (
+    <div 
+      className="bg-gradient-to-br from-purple-900/90 to-blue-900/90 backdrop-blur-sm border border-purple-500/50 rounded-xl shadow-xl p-5 relative"
+      style={{
+        width: '350px',
+        maxWidth: 'calc(100vw - 40px)',
+        maxHeight: 'calc(100vh - 40px)',
+        zIndex: 50,
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="text-xl animate-pulse">{step.icon}</div>
+          <div>
+            <h3 className="text-base font-semibold text-white">{step.title}</h3>
+            <p className="text-xs text-purple-200 opacity-90">Step {currentStep} of {totalSteps}</p>
+          </div>
+        </div>
+        <button
+          onClick={skipTour}
+          className="text-purple-300 hover:text-white text-xs px-2 py-1 rounded transition-colors"
+        >
+          Skip Tour
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="text-purple-100 mb-4 text-sm leading-relaxed">
+        {step.content}
+      </div>
+      
+      {/* Discovery Features Preview */}
+      <div className="mb-4 p-3 bg-white/10 border border-white/20 rounded-lg">
+        <p className="text-xs font-medium text-purple-200 mb-2">🎵 What you'll find:</p>
+        <div className="text-xs text-purple-100 space-y-1">
+          <div>• Trending albums & artists</div>
+          <div>• New user recommendations</div>
+          <div>• Music discovery features</div>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex justify-between items-center pt-3 border-t border-purple-500/30">
+        <button
+          onClick={prevStep}
+          className="px-4 py-1.5 text-xs bg-purple-800/50 hover:bg-purple-700/70 text-purple-200 rounded-md transition-all"
+        >
+          ← Back
+        </button>
+        <button
+          onClick={handleNext}
+          className="px-4 py-1.5 text-xs bg-purple-600 hover:bg-purple-500 text-white rounded-md transition-all font-medium"
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Main router component
 export const CustomTourCard = (props: CustomTourCardProps) => {
   const { step } = props;
@@ -665,6 +738,10 @@ export const CustomTourCard = (props: CustomTourCardProps) => {
   
   if (step.title?.includes('Submit Your Recommendation') && step.icon === '🚀') {
     return <SubmitDemoCard {...props} />;
+  }
+
+  if (step.title?.includes('Discover New Music') && step.icon === '🌟') {
+    return <DiscoverDemoCard {...props} />;
   }
 
   // Default to standard card

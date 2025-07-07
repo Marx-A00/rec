@@ -14,13 +14,19 @@ export default function GlobalRecommendationDrawer() {
       openDrawerForTour();
     };
 
-    // Add event listener for tour integration
+    const handleCloseDrawer = () => {
+      closeDrawer();
+    };
+
+    // Add event listeners for tour integration
     window.addEventListener('open-recommendation-drawer', handleOpenDrawer);
+    window.addEventListener('close-recommendation-drawer', handleCloseDrawer);
 
     return () => {
       window.removeEventListener('open-recommendation-drawer', handleOpenDrawer);
+      window.removeEventListener('close-recommendation-drawer', handleCloseDrawer);
     };
-  }, [openDrawerForTour]);
+  }, [openDrawerForTour, closeDrawer]);
 
   return (
     <RecommendationDrawer

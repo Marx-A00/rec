@@ -126,6 +126,16 @@ export const welcomeOnboardingTour = {
       showSkip: true,
     },
     {
+      icon: '🌟',
+      title: 'Discover New Music',
+      content: 'Amazing! Now that you know how to recommend music, explore what others are sharing. Click the Browse & Discover button to find new albums and see trending recommendations!',
+      selector: '#discover-nav-button', // Target the discover nav button
+      side: 'right' as const, // Show to the right of the nav button
+      showControls: true,
+      showSkip: true,
+      nextRoute: '/browse', // Navigate to the browse/discover page when clicking Next
+    },
+    {
       icon: '🔍', 
       title: 'Search for Music',
       content: 'Use the search bar to find albums, artists, and tracks. This is your gateway to discovering new music.',
