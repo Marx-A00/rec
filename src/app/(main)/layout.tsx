@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 import NavigationSidebar from '@/components/NavigationSidebar';
 import SidebarLayoutWrapper from '@/components/SidebarLayoutWrapper';
-import AlbumSearch from '@/components/ui/AlbumSearch';
+import UniversalSearchBar from '@/components/ui/UniversalSearchBar';
 import GlobalRecommendationDrawer from '@/components/GlobalRecommendationDrawer';
 import { MusicPlatformTourProvider } from '@/components/MusicPlatformTourProvider';
 import { RecommendationDrawerProvider } from '@/contexts/RecommendationDrawerContext';
@@ -27,10 +27,13 @@ export default function MainLayout({
           <div className='sticky top-0 z-50 backdrop-blur-sm bg-black/80 border-b border-zinc-800/50'>
             <SidebarLayoutWrapper>
               <div className='px-4 py-3'>
-                <AlbumSearch
-                  className='max-w-2xl mx-auto'
-                  placeholder='Search albums, artists, or genres...'
-                />
+                <div className='max-w-2xl mx-auto'>
+                  <UniversalSearchBar
+                    preset="global"
+                    placeholder='Search albums, artists, or genres...'
+                    className='max-w-2xl mx-auto'
+                  />
+                </div>
               </div>
             </SidebarLayoutWrapper>
           </div>
