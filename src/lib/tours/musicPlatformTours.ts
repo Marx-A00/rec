@@ -144,6 +144,8 @@ export const welcomeOnboardingTour = {
       showControls: true,
       showSkip: true,
       prevRoute: '/', // Navigate back to home when Previous is clicked
+      // Add a custom delay to help with detection
+      blockKeyboardControl: false,
     },
     {
       icon: '🔍', 

@@ -31,49 +31,84 @@ function useNextJSNavigationAdapter() {
 
 // Tour State Manager Component  
 function TourStateManager() {
-  const { startNextStep } = useNextStep();
+  const { startNextStep, isNextStepVisible, currentTour, currentStep } = useNextStep();
   const pathname = usePathname();
 
   useEffect(() => {
     console.log('🎯 TourStateManager mounted - ready for tours!');
   }, [startNextStep]);
 
-  // Debug when we're on browse page
+  // Handle browse page tour step manually
   useEffect(() => {
     if (pathname === '/browse') {
       console.log('🔍 DEBUG: On browse page');
       
-      // Check for element every 100ms for 3 seconds
-      let attempts = 0;
-      const maxAttempts = 30;
-      
-      const checkElement = () => {
-        attempts++;
-        const element = document.querySelector('#browse-page-header');
-        console.log(`🔍 Attempt ${attempts}: browse-page-header exists?`, !!element);
+      // Check if we should auto-start the discovery tour
+      const shouldStartDiscoveryTour = sessionStorage.getItem('start-discovery-tour');
+      if (shouldStartDiscoveryTour) {
+        console.log('🎯 Auto-starting discovery-page tour');
+        sessionStorage.removeItem('start-discovery-tour');
         
-                 if (element) {
-           console.log('✅ Found browse-page-header element!', element);
-           
-           // Also check if NextStep overlay is visible
-           const nextStepOverlay = document.querySelector('[data-name="nextstep-overlay"]');
-           const nextStepCards = document.querySelectorAll('[data-nextstep]');
-           console.log('🔍 NextStep overlay visible?', !!nextStepOverlay);
-           console.log('🔍 NextStep cards found:', nextStepCards.length);
-         } else if (attempts < maxAttempts) {
-           setTimeout(checkElement, 100);
-         } else {
-           console.log('❌ Gave up looking for browse-page-header after 3 seconds');
-           
-           // Check if NextStep is working even without the element
-           const nextStepOverlay = document.querySelector('[data-name="nextstep-overlay"]');
-           console.log('🔍 NextStep overlay visible (without element)?', !!nextStepOverlay);
-         }
-      };
+        // Wait a bit for the page to render, then start the tour
+        setTimeout(() => {
+          startNextStep('discovery-page');
+        }, 500);
+        return;
+      }
       
-      setTimeout(checkElement, 100);
+      // If we're currently on the welcome tour and on browse page, help NextStep find the element
+      if (isNextStepVisible && currentTour === 'welcome-onboarding') {
+        let attempts = 0;
+        const maxAttempts = 50; // Increased from 30
+        
+        const checkElement = () => {
+          attempts++;
+          const element = document.querySelector('#browse-page-header');
+          console.log(`🔍 Attempt ${attempts}: browse-page-header exists?`, !!element);
+          
+          if (element) {
+            console.log('✅ Found browse-page-header element!', element);
+            
+            // Trigger NextStep to recognize the element by manually dispatching events
+            const event = new CustomEvent('nextstep-element-found', {
+              detail: { 
+                selector: '#browse-page-header',
+                element: element 
+              }
+            });
+            window.dispatchEvent(event);
+            
+            // Also check if NextStep overlay is visible
+            setTimeout(() => {
+              const nextStepOverlay = document.querySelector('[data-name="nextstep-overlay"]');
+              const nextStepCards = document.querySelectorAll('[data-nextstep]');
+              console.log('🔍 NextStep overlay visible?', !!nextStepOverlay);
+              console.log('🔍 NextStep cards found:', nextStepCards.length);
+              
+              // If still no overlay, try to force NextStep to update
+              if (!nextStepOverlay) {
+                console.log('🔧 Forcing NextStep update...');
+                // Trigger a resize event to make NextStep recalculate
+                window.dispatchEvent(new Event('resize'));
+              }
+            }, 100);
+            
+          } else if (attempts < maxAttempts) {
+            setTimeout(checkElement, 100);
+          } else {
+            console.log('❌ Gave up looking for browse-page-header after 5 seconds');
+            
+            // Check if NextStep is working even without the element
+            const nextStepOverlay = document.querySelector('[data-name="nextstep-overlay"]');
+            console.log('🔍 NextStep overlay visible (without element)?', !!nextStepOverlay);
+          }
+        };
+        
+        // Start checking immediately and then every 100ms
+        checkElement();
+      }
     }
-  }, [pathname]);
+  }, [pathname, isNextStepVisible, currentTour, currentStep, startNextStep]);
 
   return null;
 }

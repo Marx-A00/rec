@@ -729,85 +729,85 @@ const DiscoveryOverviewCard = ({ step, currentStep, totalSteps, nextStep, prevSt
 
   return (
     <div 
-      className="bg-red-500 border-4 border-yellow-500 rounded-xl p-6 relative"
+      className="bg-gradient-to-br from-indigo-600 to-purple-700 border-2 border-indigo-400 rounded-xl p-4 relative shadow-2xl overflow-y-auto"
       style={{
-        width: '400px',
-        maxWidth: 'calc(100vw - 40px)',
-        maxHeight: 'calc(100vh - 40px)',
+        width: '380px',
+        maxWidth: 'calc(100vw - 20px)',
+        maxHeight: 'calc(100vh - 20px)',
         zIndex: 99999,
         position: 'fixed',
-        top: '50%',
+        top: '10px',
         left: '50%',
-        transform: 'translate(-50%, -50%)',
+        transform: 'translateX(-50%)',
       }}
     >
       {arrow}
       
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="text-2xl animate-bounce">{step.icon}</div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="text-xl animate-bounce">{step.icon}</div>
           <div>
-            <h3 className="text-lg font-bold text-white">{step.title}</h3>
-            <p className="text-xs text-indigo-200 opacity-90">Step {currentStep} of {totalSteps}</p>
+            <h3 className="text-base font-bold text-white">{step.title}</h3>
+            <p className="text-xs text-indigo-200 opacity-90">Step {currentStep + 1} of {totalSteps}</p>
           </div>
         </div>
         <button
           onClick={skipTour}
-          className="text-indigo-300 hover:text-white text-xs px-3 py-1 rounded-md hover:bg-white/10 transition-all"
+          className="text-indigo-300 hover:text-white text-xs px-2 py-1 rounded-md hover:bg-white/10 transition-all"
         >
-          Skip Tour
+          Skip
         </button>
       </div>
 
       {/* Content */}
-      <div className="text-indigo-100 mb-5 text-sm leading-relaxed">
+      <div className="text-indigo-100 mb-4 text-sm leading-relaxed">
         {step.content}
       </div>
       
-      {/* Feature Highlights */}
-      <div className="mb-5 p-4 bg-white/10 border border-white/20 rounded-lg">
-        <p className="text-sm font-semibold text-indigo-200 mb-3 flex items-center gap-2">
-          <span>🚀</span> Explore these features:
+      {/* Feature Highlights - More compact */}
+      <div className="mb-4 p-3 bg-white/10 border border-white/20 rounded-lg">
+        <p className="text-sm font-semibold text-indigo-200 mb-2 flex items-center gap-2">
+          <span>🚀</span> What you can explore:
         </p>
-        <div className="grid grid-cols-2 gap-3 text-xs text-indigo-100">
-          <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 gap-2 text-xs text-indigo-100">
+          <div className="flex items-center gap-1">
             <span className="text-yellow-400">🔥</span>
-            <span>Trending Albums</span>
+            <span>Hot Albums</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <span className="text-green-400">👥</span>
             <span>New Users</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <span className="text-blue-400">🎯</span>
-            <span>Recommendations</span>
+            <span>Recs</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <span className="text-purple-400">✨</span>
-            <span>Suggestions</span>
+            <span>Artists</span>
           </div>
         </div>
       </div>
 
-      {/* Encouraging message */}
-      <div className="mb-5 p-3 bg-gradient-to-r from-green-900/30 to-blue-900/30 border border-green-500/30 rounded-lg">
+      {/* Encouraging message - More compact */}
+      <div className="mb-4 p-2 bg-gradient-to-r from-green-900/30 to-blue-900/30 border border-green-500/30 rounded-lg">
         <p className="text-xs text-green-200 text-center">
-          💡 <strong>Tip:</strong> Click on any album to see detailed recommendations and add them to your collections!
+          💡 <strong>Tip:</strong> Click any album for details & recommendations!
         </p>
       </div>
 
       {/* Controls */}
-      <div className="flex justify-between items-center pt-4 border-t border-indigo-500/30">
+      <div className="flex justify-between items-center pt-3 border-t border-indigo-500/30">
         <button
           onClick={prevStep}
-          className="px-5 py-2 text-sm bg-indigo-800/50 hover:bg-indigo-700/70 text-indigo-200 rounded-lg transition-all hover:scale-105"
+          className="px-4 py-2 text-sm bg-indigo-800/50 hover:bg-indigo-700/70 text-indigo-200 rounded-lg transition-all"
         >
           ← Back
         </button>
         <button
           onClick={handleNext}
-          className="px-5 py-2 text-sm bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg transition-all font-semibold hover:scale-105 shadow-lg"
+          className="px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white rounded-lg transition-all font-semibold shadow-lg"
         >
           Got it! →
         </button>
@@ -816,6 +816,8 @@ const DiscoveryOverviewCard = ({ step, currentStep, totalSteps, nextStep, prevSt
   );
 };
 
+
+
 // Main router component
 export const CustomTourCard = (props: CustomTourCardProps) => {
   const { step } = props;
@@ -823,6 +825,13 @@ export const CustomTourCard = (props: CustomTourCardProps) => {
   console.log('🎯 CustomTourCard called with step:', step.title, 'icon:', step.icon);
 
   // Route to specific card component based on step characteristics
+  // NOTE: More specific conditions should come first!
+  
+  if (step.title?.includes('Welcome to Discovery') && step.icon === '🎵') {
+    console.log('🎯 Routing to DiscoveryOverviewCard');
+    return <DiscoveryOverviewCard {...props} />;
+  }
+  
   if (step.title?.includes('Welcome') && step.icon === '🎵') {
     console.log('🎯 Routing to WelcomeModalCard');
     return <WelcomeModalCard {...props} />;
@@ -858,11 +867,6 @@ export const CustomTourCard = (props: CustomTourCardProps) => {
 
   if (step.title?.includes('Discover New Music') && step.icon === '🌟') {
     return <DiscoverDemoCard {...props} />;
-  }
-  
-  if (step.title?.includes('Welcome to Discovery') && step.icon === '🎵') {
-    console.log('🎯 Routing to DiscoveryOverviewCard');
-    return <DiscoveryOverviewCard {...props} />;
   }
 
   // Default to standard card
