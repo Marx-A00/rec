@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { CheckCircle, XCircle, X } from 'lucide-react';
 
 interface ToastProps {
@@ -30,8 +31,9 @@ export default function Toast({
 
   if (!isVisible) return null;
 
-  return (
-    <div className='fixed top-4 right-4 z-50 animate-in slide-in-from-top-2'>
+  // Render via portal to bypass stacking context issues
+  const toastElement = (
+    <div className='fixed top-4 right-4 z-[9999] animate-in slide-in-from-top-2'>
       <div
         className={`
         flex items-center space-x-3 px-4 py-3 rounded-lg shadow-lg border max-w-md
@@ -59,6 +61,13 @@ export default function Toast({
       </div>
     </div>
   );
+
+  // Only render via portal on client side
+  if (typeof window !== 'undefined') {
+    return createPortal(toastElement, document.body);
+  }
+
+  return toastElement;
 }
 
 // Hook for managing toast state
