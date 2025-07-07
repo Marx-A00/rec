@@ -2,10 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Heart, Share2, MoreHorizontal, User } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
+import { Button } from '@/components/ui/button';
+import Toast, { useToast } from '@/components/ui/toast';
+import AddToCollectionButton from '@/components/collections/AddToCollectionButton';
+import { useNavigation } from '@/hooks/useNavigation';
+import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 import { Release } from '@/types/album';
 import { CollectionAlbum } from '@/types/collection';
+import { Album } from '@/types/album';
+import { sanitizeArtistName } from '@/lib/utils';
 
 interface AlbumModalProps {
   isOpen: boolean;
@@ -40,11 +48,193 @@ export default function AlbumModal({
     null
   );
   const router = useRouter();
+  const {} = useNavigation();
+  const { toast, showToast, hideToast } = useToast();
+  const { openDrawer } = useRecommendationDrawerContext();
 
   const isMasterRelease = useMemo(
     () => isRelease(data) && data.type === 'master',
     [data]
   );
+
+  // Get the image URL with proper fallbacks for different data types
+  const getImageUrl = () => {
+    // For master releases, prefer high-quality image if available
+    if (highQualityImageUrl) {
+      return highQualityImageUrl;
+    }
+
+    // For collection albums, use the stored image URL
+    if (isCollectionAlbum(data)) {
+      return data.albumImageUrl;
+    }
+
+    // For releases, try to get image from various sources
+    if (isRelease(data)) {
+      // Try thumb first, then basic_information image
+      if (data.thumb) {
+        return data.thumb;
+      }
+      if (data.basic_information?.thumb) {
+        return data.basic_information.thumb;
+      }
+      if (data.basic_information?.cover_image) {
+        return data.basic_information.cover_image;
+      }
+    }
+
+    // Fallback to null if no image is available
+    return null;
+  };
+
+  const getTitle = () => {
+    if (isCollectionAlbum(data)) {
+      return data.albumTitle;
+    } else if (isRelease(data)) {
+      return data.title;
+    }
+    return 'Unknown Title';
+  };
+
+  // Get album ID for navigation
+  const getAlbumId = () => {
+    if (isCollectionAlbum(data)) {
+      return data.albumId;
+    } else if (isRelease(data)) {
+      // BUG TRACE: Log the ID selection logic
+      console.log('🚨 AlbumModal getAlbumId - Release data:', {
+        id: data.id,
+        main_release: data.main_release,
+        type: data.type,
+        title: data.title,
+        selectedId: data.main_release || data.id,
+      });
+
+      // ISSUE: This prioritizes main_release over master ID!
+      // For masters, we should use data.id (master ID), not main_release!
+      if (data.type === 'master') {
+        console.log('🟢 AlbumModal - Using MASTER ID for navigation:', data.id);
+        return data.id;
+      } else {
+        console.log(
+          '🔵 AlbumModal - Using main_release or fallback ID:',
+          data.main_release || data.id
+        );
+        return data.main_release || data.id;
+      }
+    }
+    return null;
+  };
+
+  const getArtist = () => {
+    if (isCollectionAlbum(data)) {
+      return data.albumArtist;
+    } else if (isRelease(data)) {
+      return (
+        data.artist ||
+        data.basic_information?.artists?.[0]?.name ||
+        'Unknown Artist'
+      );
+    }
+    return 'Unknown Artist';
+  };
+
+  // Convert Release/CollectionAlbum data to Album format for interactions
+  const albumForInteractions = useMemo((): Album | null => {
+    if (!data) return null;
+
+    const albumId = getAlbumId();
+    if (!albumId) return null;
+
+    if (isCollectionAlbum(data)) {
+      return {
+        id: String(albumId),
+        title: data.albumTitle,
+        artists: data.albumArtist ? [{ id: '', name: data.albumArtist }] : [],
+        year: typeof data.albumYear === 'string' ? parseInt(data.albumYear) : data.albumYear || undefined,
+        image: { url: data.albumImageUrl || '', width: 300, height: 300, alt: data.albumTitle },
+        label: undefined,
+        genre: [],
+      };
+    } else if (isRelease(data)) {
+      return {
+        id: String(albumId),
+        title: data.title,
+        artists: data.artist 
+          ? [{ id: '', name: data.artist }] 
+          : data.basic_information?.artists?.map(a => ({ id: '', name: a.name })) || [],
+        year: data.year,
+        image: { url: getImageUrl() || '', width: 300, height: 300, alt: data.title },
+        label: Array.isArray(data.label) ? data.label.join(', ') : data.label?.[0],
+        genre: [],
+      };
+    }
+
+    return null;
+  }, [data, highQualityImageUrl]);
+
+  // Album interaction handlers
+  const handleArtistClick = async (artistId: string, artistName: string) => {
+    if (!artistId) {
+      showToast(`Artist ID not available for ${artistName}`, 'error');
+      return;
+    }
+
+    try {
+      onClose(); // Close modal first
+      router.push(`/artists/${artistId}`);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      showToast(
+        `Failed to navigate to ${artistName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error'
+      );
+    }
+  };
+
+  const handleMakeRecommendation = () => {
+    if (!albumForInteractions) {
+      showToast('Album data not available for recommendations', 'error');
+      return;
+    }
+
+    try {
+      onClose(); // Close modal first
+      openDrawer(albumForInteractions);
+    } catch (error) {
+      console.error('Failed to open recommendation form:', error);
+      showToast('Failed to open recommendation form', 'error');
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const title = getTitle();
+      const artist = getArtist();
+      const albumId = getAlbumId();
+      
+      if (navigator.share) {
+        await navigator.share({
+          title: `${title} by ${artist}`,
+          text: `Check out this album: ${title}`,
+          url: albumId ? `${window.location.origin}/albums/${albumId}` : window.location.href,
+        });
+        showToast('Album shared successfully', 'success');
+      } else {
+        // Fallback to clipboard
+        const shareUrl = albumId ? `${window.location.origin}/albums/${albumId}` : window.location.href;
+        await navigator.clipboard.writeText(shareUrl);
+        showToast('Album link copied to clipboard', 'success');
+      }
+    } catch (error) {
+      console.error('Share failed:', error);
+      showToast('Failed to share album', 'error');
+    }
+  };
+
+  const handleMoreActions = () => {
+    showToast('More actions coming soon!', 'success');
+  };
 
   // Enhanced keyboard handling for accessibility
   useEffect(() => {
@@ -149,75 +339,6 @@ export default function AlbumModal({
 
   if (!isOpen || !data) return null;
 
-  // Get the image URL with proper fallbacks for different data types
-  const getImageUrl = () => {
-    // For master releases, prefer high-quality image if available
-    if (highQualityImageUrl) {
-      return highQualityImageUrl;
-    }
-
-    // For collection albums, use the stored image URL
-    if (isCollectionAlbum(data)) {
-      return data.albumImageUrl;
-    }
-
-    // For releases, try to get image from various sources
-    if (isRelease(data)) {
-      // Try thumb first, then basic_information image
-      if (data.thumb) {
-        return data.thumb;
-      }
-      if (data.basic_information?.thumb) {
-        return data.basic_information.thumb;
-      }
-      if (data.basic_information?.cover_image) {
-        return data.basic_information.cover_image;
-      }
-    }
-
-    // Fallback to null if no image is available
-    return null;
-  };
-
-  const getTitle = () => {
-    if (isCollectionAlbum(data)) {
-      return data.albumTitle;
-    } else if (isRelease(data)) {
-      return data.title;
-    }
-    return 'Unknown Title';
-  };
-
-  // Get album ID for navigation
-  const getAlbumId = () => {
-    if (isCollectionAlbum(data)) {
-      return data.albumId;
-    } else if (isRelease(data)) {
-      // BUG TRACE: Log the ID selection logic
-      console.log('🚨 AlbumModal getAlbumId - Release data:', {
-        id: data.id,
-        main_release: data.main_release,
-        type: data.type,
-        title: data.title,
-        selectedId: data.main_release || data.id,
-      });
-
-      // ISSUE: This prioritizes main_release over master ID!
-      // For masters, we should use data.id (master ID), not main_release!
-      if (data.type === 'master') {
-        console.log('🟢 AlbumModal - Using MASTER ID for navigation:', data.id);
-        return data.id;
-      } else {
-        console.log(
-          '🔵 AlbumModal - Using main_release or fallback ID:',
-          data.main_release || data.id
-        );
-        return data.main_release || data.id;
-      }
-    }
-    return null;
-  };
-
   // Check if album navigation is available
   const isNavigationAvailable = () => {
     const albumId = getAlbumId();
@@ -268,20 +389,6 @@ export default function AlbumModal({
       event.currentTarget.blur();
       handleAlbumClick();
     }
-  };
-
-  // is there a reason we are getting these separately?
-  const getArtist = () => {
-    if (isCollectionAlbum(data)) {
-      return data.albumArtist;
-    } else if (isRelease(data)) {
-      return (
-        data.artist ||
-        data.basic_information?.artists?.[0]?.name ||
-        'Unknown Artist'
-      );
-    }
-    return 'Unknown Artist';
   };
 
   const renderDetails = () => {
@@ -377,7 +484,7 @@ export default function AlbumModal({
     >
       <div
         id='album-modal-container'
-        className={`flex flex-col lg:flex-row items-center lg:items-start gap-8 max-w-4xl w-full transition-all duration-300 relative ${
+        className={`flex flex-col lg:flex-row items-center lg:items-start gap-6 max-w-5xl w-full transition-all duration-300 relative ${
           isExiting
             ? 'opacity-0 scale-95 translate-y-4'
             : 'opacity-100 scale-100 translate-y-0'
@@ -412,7 +519,7 @@ export default function AlbumModal({
         </button>
 
         {/* Zoomed Album Cover */}
-        <div className='flex-shrink-0'>
+        <div className='flex-shrink-0 lg:mr-2'>
           <div className='w-80 h-80 lg:w-96 lg:h-96 bg-zinc-800 rounded-lg border-2 border-zinc-700 shadow-2xl overflow-hidden relative'>
             <AlbumImage
               src={getImageUrl()}
@@ -457,9 +564,82 @@ export default function AlbumModal({
             By {getArtist()}
           </p>
 
+          {/* Album Interactions */}
+          {albumForInteractions && (
+            <div className='mb-4'>
+              {/* Artist buttons */}
+              {albumForInteractions.artists && albumForInteractions.artists.length > 0 && (
+                <div className='space-y-1 mb-4'>
+                  <h3 className='text-xs font-medium text-zinc-400'>Artists</h3>
+                  <div className='flex flex-wrap gap-1.5'>
+                    {albumForInteractions.artists.map((artist, index) => (
+                      <Button
+                        key={`${artist.id}-${index}`}
+                        variant='secondary'
+                        size='sm'
+                        onClick={() => handleArtistClick(artist.id, artist.name)}
+                        className='gap-1.5 text-xs h-7 px-2'
+                        aria-label={`View artist ${sanitizeArtistName(artist.name)}`}
+                      >
+                        <User className='h-3 w-3' />
+                        {sanitizeArtistName(artist.name)}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className='flex flex-wrap gap-2 justify-center lg:justify-start'>
+                <Button
+                  variant='primary'
+                  size='sm'
+                  onClick={handleMakeRecommendation}
+                  className='gap-1.5 text-sm'
+                  aria-label='Create a recommendation for this album'
+                >
+                  <Heart className='h-3.5 w-3.5' />
+                  Make Rec
+                </Button>
+
+                <AddToCollectionButton album={albumForInteractions} size='sm' variant='default' />
+
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={handleShare}
+                  className='gap-1.5 text-sm'
+                  aria-label='Share this album'
+                >
+                  <Share2 className='h-3.5 w-3.5' />
+                  Share
+                </Button>
+
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={handleMoreActions}
+                  className='gap-1.5 text-sm'
+                  aria-label='More actions for this album'
+                >
+                  <MoreHorizontal className='h-3.5 w-3.5' />
+                  More
+                </Button>
+              </div>
+            </div>
+          )}
+
           {renderDetails()}
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
     </div>
   );
 }
