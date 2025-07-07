@@ -65,6 +65,17 @@ const WelcomeModalCard = ({ step, currentStep, totalSteps, nextStep, skipTour }:
 
 // Recommendation Drawer Card (Special card for drawer overlay)
 const RecommendationDrawerCard = ({ step, currentStep, totalSteps, nextStep, prevStep, skipTour, arrow }: CustomTourCardProps) => {
+  const handleNext = () => {
+    // Ensure drawer stays open before advancing to next step
+    const event = new CustomEvent('open-recommendation-drawer');
+    window.dispatchEvent(event);
+    
+    // Small delay to ensure drawer is open
+    setTimeout(() => {
+      nextStep();
+    }, 200);
+  };
+
   return (
     <div 
       className="bg-zinc-800/90 backdrop-blur-sm border border-zinc-600 rounded-xl shadow-2xl p-6 relative"
@@ -108,10 +119,10 @@ const RecommendationDrawerCard = ({ step, currentStep, totalSteps, nextStep, pre
           )}
           
           <button
-            onClick={nextStep}
+            onClick={handleNext}
             className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-lg transition-colors font-medium"
           >
-            {currentStep === totalSteps - 1 ? 'Finish' : 'Got it!'}
+            {currentStep === totalSteps - 1 ? 'Finish' : 'Continue'}
           </button>
           
           {step.showSkip && skipTour && (
@@ -235,7 +246,7 @@ const ShareMusicTourCard = ({ step, currentStep, totalSteps, nextStep, prevStep,
       </div>
       
       <div className="flex justify-between items-center">
-        <div className="text-xs text-zinc-500 font-medium">
+        <div className="text-xs text-zinc-400 font-medium">
           {currentStep + 1} / {totalSteps}
         </div>
         
@@ -243,7 +254,7 @@ const ShareMusicTourCard = ({ step, currentStep, totalSteps, nextStep, prevStep,
           {currentStep > 0 && (
             <button
               onClick={prevStep}
-              className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-sm rounded-lg transition-colors"
+              className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 text-sm rounded-lg transition-colors"
             >
               Previous
             </button>
@@ -253,7 +264,84 @@ const ShareMusicTourCard = ({ step, currentStep, totalSteps, nextStep, prevStep,
             onClick={handleNext}
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm rounded-lg transition-colors font-medium"
           >
-            {currentStep === totalSteps - 1 ? 'Finish' : 'Next'}
+            {currentStep === totalSteps - 1 ? 'Finish' : 'Open Drawer'}
+          </button>
+          
+          {step.showSkip && skipTour && (
+            <button
+              onClick={skipTour}
+              className="px-3 py-2 text-zinc-400 hover:text-zinc-300 text-sm transition-colors"
+            >
+              Skip
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Search Demo Card (Custom styling for search demonstration)
+const SearchDemoCard = ({ step, currentStep, totalSteps, nextStep, prevStep, skipTour, arrow }: CustomTourCardProps) => {
+  const handleNext = () => {
+    // Focus the search input when advancing from this step
+    const searchInput = document.getElementById('recommendation-search-input') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.focus();
+      // Optionally add a sample search term to demonstrate
+      searchInput.value = '';
+      searchInput.placeholder = 'Try typing "radiohead" or "taylor swift"...';
+    }
+    nextStep();
+  };
+
+  return (
+    <div 
+      className="bg-zinc-800/90 backdrop-blur-sm border border-zinc-600 rounded-xl shadow-2xl p-6 relative"
+      style={{
+        width: '380px', // Standard width for drawer context
+        maxWidth: 'calc(100vw - 32px)', // Responsive fallback
+        zIndex: 10001, // Higher than drawer (which is usually 10000)
+      }}
+    >
+      {arrow}
+      
+      <div className="flex items-center gap-3 mb-4">
+        <div className="text-3xl animate-bounce">{step.icon}</div>
+        <h3 className="text-xl font-semibold text-white leading-tight">{step.title}</h3>
+      </div>
+      
+      <div className="text-zinc-200 mb-6 leading-relaxed text-sm">
+        {step.content}
+      </div>
+      
+      {/* Add a helpful tip box for search context */}
+      <div className="mb-6 p-3 bg-blue-900/30 border border-blue-600/40 rounded-lg">
+        <p className="text-xs text-blue-300 font-medium">
+          💡 <strong>Try it:</strong> Start typing an artist or album name to see the search in action!
+        </p>
+      </div>
+      
+      <div className="flex justify-between items-center">
+        <div className="text-xs text-zinc-400 font-medium">
+          {currentStep + 1} / {totalSteps}
+        </div>
+        
+        <div className="flex gap-2 flex-wrap">
+          {currentStep > 0 && (
+            <button
+              onClick={prevStep}
+              className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 text-sm rounded-lg transition-colors"
+            >
+              Previous
+            </button>
+          )}
+          
+          <button
+            onClick={handleNext}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors font-medium"
+          >
+            {currentStep === totalSteps - 1 ? 'Finish' : 'Got it!'}
           </button>
           
           {step.showSkip && skipTour && (
@@ -344,6 +432,10 @@ export const CustomTourCard = (props: CustomTourCardProps) => {
     return <RecommendationDrawerCard {...props} />;
   }
   
+  if (step.title?.includes('Search for Albums') && step.icon === '🎯') {
+    return <SearchDemoCard {...props} />;
+  }
+  
   if (step.title?.includes('Your Profile') && step.icon === '👤') {
     return <AvatarTourCard {...props} />;
   }
@@ -351,7 +443,7 @@ export const CustomTourCard = (props: CustomTourCardProps) => {
   if ((step.title?.includes('Build Your Collection') || step.title?.includes('Building Collections')) && step.icon === '📚') {
     return <CollectionTourCard {...props} />;
   }
-  
+
   // Default to standard card
   return <StandardTourCard {...props} />;
 }; 

@@ -20,6 +20,7 @@ import AlbumSearchBackwardCompatible, {
 } from './AlbumSearchBackwardCompatible';
 import CreateRecommendationForm from './CreateRecommendationForm';
 import SimilarityRatingDial from './SimilarityRatingDial';
+import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 
 // Local Turntable component that accepts responsive size props
 interface TurntableProps {
@@ -145,6 +146,9 @@ export default function RecommendationDrawer({
   // Ref to access AlbumSearch methods
   const albumSearchRef = useRef<AlbumSearchRef>(null);
 
+  // Get tour mode from context
+  const { isTourMode } = useRecommendationDrawerContext();
+
   // Reset state when drawer closes, or set prefilled album when drawer opens
   useEffect(() => {
     if (!isOpen) {
@@ -176,6 +180,20 @@ export default function RecommendationDrawer({
       document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen, onClose]);
+
+      // Modified close handler that respects tour state
+    const handleDrawerClose = (open: boolean) => {
+      // Don't close the drawer if tour is active and trying to keep it open
+      if (!open && isTourMode) {
+        console.log('Preventing drawer close during tour');
+        return; // Prevent closing during tour
+      }
+      
+      // Normal close behavior
+      if (!open) {
+        onClose();
+      }
+    };
 
   const handleAlbumSelect = (album: Album) => {
     if (isSearchingForBasis) {
@@ -212,7 +230,7 @@ export default function RecommendationDrawer({
   };
 
   return (
-    <Drawer open={isOpen} onOpenChange={onClose} handleOnly={true}>
+    <Drawer open={isOpen} onOpenChange={handleDrawerClose} handleOnly={true}>
       <DrawerContent id="recommendation-drawer" className='h-[90vh] bg-zinc-900 border-zinc-700'>
         <DrawerHeader className='flex-shrink-0'>
           <div className='flex items-center justify-between'>

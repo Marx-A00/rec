@@ -7,7 +7,9 @@ import { Album } from '@/types/album';
 interface RecommendationDrawerContextType {
   isOpen: boolean;
   prefilledAlbum: Album | null;
+  isTourMode: boolean;
   openDrawer: (album?: Album) => void;
+  openDrawerForTour: (album?: Album) => void;
   closeDrawer: () => void;
   handleSuccess: () => void;
 }
@@ -23,14 +25,23 @@ export function RecommendationDrawerProvider({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [prefilledAlbum, setPrefilledAlbum] = useState<Album | null>(null);
+  const [isTourMode, setIsTourMode] = useState(false);
 
   const openDrawer = (album?: Album) => {
     setPrefilledAlbum(album || null);
+    setIsTourMode(false);
+    setIsOpen(true);
+  };
+
+  const openDrawerForTour = (album?: Album) => {
+    setPrefilledAlbum(album || null);
+    setIsTourMode(true);
     setIsOpen(true);
   };
 
   const closeDrawer = () => {
     setIsOpen(false);
+    setIsTourMode(false);
     // Clear prefilled album when closing
     setPrefilledAlbum(null);
   };
@@ -38,6 +49,7 @@ export function RecommendationDrawerProvider({
   const handleSuccess = () => {
     // Close drawer on successful recommendation creation
     setIsOpen(false);
+    setIsTourMode(false);
     setPrefilledAlbum(null);
   };
 
@@ -46,7 +58,9 @@ export function RecommendationDrawerProvider({
       value={{
         isOpen,
         prefilledAlbum,
+        isTourMode,
         openDrawer,
+        openDrawerForTour,
         closeDrawer,
         handleSuccess,
       }}

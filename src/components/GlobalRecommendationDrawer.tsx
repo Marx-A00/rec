@@ -5,13 +5,13 @@ import RecommendationDrawer from '@/components/recommendations/RecommendationDra
 import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 
 export default function GlobalRecommendationDrawer() {
-  const { isOpen, prefilledAlbum, closeDrawer, handleSuccess, openDrawer } =
+  const { isOpen, prefilledAlbum, closeDrawer, handleSuccess, openDrawer, openDrawerForTour } =
     useRecommendationDrawerContext();
 
   // Listen for tour events to open the drawer
   useEffect(() => {
     const handleOpenDrawer = () => {
-      openDrawer();
+      openDrawerForTour();
     };
 
     // Add event listener for tour integration
@@ -20,7 +20,7 @@ export default function GlobalRecommendationDrawer() {
     return () => {
       window.removeEventListener('open-recommendation-drawer', handleOpenDrawer);
     };
-  }, [openDrawer]);
+  }, [openDrawerForTour]);
 
   return (
     <RecommendationDrawer

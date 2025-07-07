@@ -134,6 +134,7 @@ const AlbumSearchBackwardCompatible = forwardRef<
         <div className='relative z-20'>
           <Search className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
           <input
+            id="recommendation-search-input"
             type='text'
             placeholder={placeholder}
             value={searchQuery}

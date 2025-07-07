@@ -99,6 +99,15 @@ export const welcomeOnboardingTour = {
       showSkip: true,
     },
     {
+      icon: '🎯',
+      title: 'Search for Albums',
+      content: 'Type in the search bar to find albums! Try searching for your favorite artist or album name. The search will show results as you type.',
+      selector: '#recommendation-search-input', // Target the search input
+      side: 'bottom' as const, // Show below the search bar
+      showControls: true,
+      showSkip: true,
+    },
+    {
       icon: '🔍', 
       title: 'Search for Music',
       content: 'Use the search bar to find albums, artists, and tracks. This is your gateway to discovering new music.',
