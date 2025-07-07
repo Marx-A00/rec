@@ -874,12 +874,14 @@ export default function UniversalSearchBar({
         className='border-zinc-700 shadow-lg bg-zinc-900'
         shouldFilter={false}
       >
-        <CommandInput
-          placeholder={finalPlaceholder}
-          value={query}
-          onValueChange={handleValueChange}
-          className='h-9 text-white placeholder:text-zinc-400'
-        />
+        <div className="[&_.border-b]:border-transparent [&_[cmdk-input-wrapper]]:border-transparent">
+          <CommandInput
+            placeholder={finalPlaceholder}
+            value={query}
+            onValueChange={handleValueChange}
+            className='h-9 text-white placeholder:text-zinc-400'
+          />
+        </div>
         {open && showResults && (
           <CommandList className='absolute top-full left-0 right-0 max-h-80 overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-b-lg shadow-xl z-50'>
             {isLoading && (

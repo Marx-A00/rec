@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/resizable';
 import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
+import TourTestComponent from '@/components/TourTestComponent';
 
 
 
