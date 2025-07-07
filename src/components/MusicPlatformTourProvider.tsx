@@ -55,6 +55,7 @@ function TourStateManager() {
   // Add debug functions to window
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      console.log('🔧 Setting up debugTour functions...');
       (window as any).debugTour = {
         jumpToStep: (stepNumber: number) => {
           console.log(`🚀 Debug: Jumping to step ${stepNumber}`);
@@ -87,6 +88,24 @@ function TourStateManager() {
           console.log('🚀 Debug: Jumping to album modal step (step 11)');
           localStorage.setItem('nextstep-welcome-onboarding', JSON.stringify({
             currentStep: 11,
+            isActive: true,
+            hasBeenStarted: true
+          }));
+          location.reload();
+        },
+        jumpToProfile: () => {
+          console.log('🚀 Debug: Jumping to explore profile step (step 12)');
+          localStorage.setItem('nextstep-welcome-onboarding', JSON.stringify({
+            currentStep: 12,
+            isActive: true,
+            hasBeenStarted: true
+          }));
+          location.reload();
+        },
+        jumpToProfileWelcome: () => {
+          console.log('🚀 Debug: Jumping to profile welcome step (step 13)');
+          localStorage.setItem('nextstep-welcome-onboarding', JSON.stringify({
+            currentStep: 13,
             isActive: true,
             hasBeenStarted: true
           }));
@@ -140,6 +159,129 @@ function TourStateManager() {
               });
             });
           });
+        },
+        testProfileNavigation: () => {
+          console.log('🚀 Debug: Testing profile navigation');
+          try {
+            window.location.href = '/profile';
+          } catch (error) {
+            console.error('❌ Error navigating to profile:', error);
+          }
+        },
+        inspectModals: () => {
+          console.log('🔍 Debug: Inspecting current page modals and elements...');
+          
+          // Check for various modal selectors
+          const modalSelectors = [
+            '#album-modal',
+            '.album-modal', 
+            '[data-testid="album-modal"]',
+            '[role="dialog"]',
+            '[role="modal"]',
+            '.modal',
+            '.dialog',
+            // Check for common modal wrapper classes
+            '.fixed.inset-0',
+            '.absolute.inset-0',
+            '.z-50',
+            '.z-\\[50\\]'
+          ];
+          
+          modalSelectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            console.log(`📋 Selector "${selector}": ${elements.length} elements found`, elements);
+          });
+          
+          // Check for close buttons
+          const closeSelectors = [
+            '[data-testid="close-modal"]',
+            '.modal-close',
+            '[aria-label="Close"]',
+            '[aria-label="close"]',
+            'button[aria-label*="close" i]',
+            '.close-button',
+            'button:has(svg)',
+            // Look for X buttons
+            'button',
+          ];
+          
+          console.log('🔍 Looking for close buttons...');
+          closeSelectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            console.log(`❌ Close selector "${selector}": ${elements.length} elements found`);
+            if (elements.length > 0 && elements.length < 10) { // Don't log too many
+              elements.forEach((el, i) => {
+                console.log(`  - Close button ${i}:`, {
+                  element: el,
+                  text: el.textContent?.trim(),
+                  ariaLabel: (el as HTMLElement).getAttribute('aria-label'),
+                  className: (el as HTMLElement).className
+                });
+              });
+            }
+          });
+          
+          // Check current page and tour state
+          console.log('📍 Current page:', window.location.pathname);
+          const tourData = localStorage.getItem('nextstep-welcome-onboarding');
+          console.log('🎯 Current tour state:', tourData ? JSON.parse(tourData) : null);
+        },
+        testModalCloseAndNavigate: async () => {
+          console.log('🚀 Debug: Testing enhanced modal close and profile navigation...');
+          
+          // Use the same logic as ExploreProfileCard
+          const modalSelectors = [
+            '#album-modal',
+            '.album-modal', 
+            '[data-testid="album-modal"]',
+            '[role="dialog"]',
+            '[role="modal"]',
+            '.modal',
+            '.fixed.inset-0',
+            '.absolute.inset-0'
+          ];
+          
+          let foundModal = null;
+          for (const selector of modalSelectors) {
+            const modal = document.querySelector(selector);
+            if (modal) {
+              console.log('✅ Found modal with selector:', selector, modal);
+              foundModal = modal;
+              break;
+            }
+          }
+          
+          if (foundModal) {
+            console.log('🎯 Modal found, attempting to close...');
+            
+            // Try to find and click close button
+            const closeButtons = foundModal.querySelectorAll('button');
+            console.log(`🔍 Found ${closeButtons.length} buttons in modal`);
+            
+            closeButtons.forEach((button, i) => {
+              const buttonEl = button as HTMLElement;
+              console.log(`  - Button ${i}:`, {
+                text: buttonEl.textContent?.trim(),
+                ariaLabel: buttonEl.getAttribute('aria-label'),
+                className: buttonEl.className
+              });
+            });
+            
+            // Try clicking first button as test
+            if (closeButtons.length > 0) {
+              console.log('🔘 Clicking first button to test...');
+              (closeButtons[0] as HTMLElement).click();
+            }
+            
+            // Wait and then navigate
+            setTimeout(() => {
+              console.log('📍 Navigating to profile...');
+              window.location.href = '/profile';
+            }, 500);
+          } else {
+            console.log('ℹ️ No modal found, navigating directly...');
+            window.location.href = '/profile';
+          }
         }
       };
     }

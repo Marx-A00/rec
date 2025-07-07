@@ -181,29 +181,31 @@ export const welcomeOnboardingTour = {
       icon: '🎵',
       title: 'Album Details & Interactions',
       content: 'Perfect! This is an album detail modal where you can explore everything about an album. Here you can read details, listen to samples, add to your collection, and see what others are saying about it. These interactions are the heart of music discovery!',
-      selector: '#album-modal, .album-modal, [data-testid="album-modal"]', // Target the album modal
+      selector: '#album-modal, .album-modal, [data-testid="album-modal"], [role="dialog"], [role="modal"], .modal, .fixed.inset-0, .absolute.inset-0', // Target the album modal with multiple fallbacks
       side: 'right' as const, // Show to the right of the modal
       showControls: true,
       showSkip: true,
       // This step appears after the album modal is opened
     },
     {
-      icon: '📚',
-      title: 'Build Your Collection',
-      content: 'This is your personal collection section. Here you can organize your favorite albums and tracks.',
-      selector: '#collections-section',
-      side: 'bottom' as const, // Show to the right of collections (better for mobile)
+      icon: '👤',
+      title: 'Explore Your Profile',
+      content: 'Now let\'s explore your personal music profile! This is where you can showcase your music taste, connect with other music lovers, and track your listening journey. Click Next and I\'ll take you to your profile page.',
+      selector: '#user-profile-menu, .user-avatar, [data-testid="user-avatar"]', // Target the user avatar/menu
+      side: 'bottom' as const, // Show below the avatar
       showControls: true,
       showSkip: true,
+      nextRoute: '/profile', // Navigate to user's profile page when Next is clicked
     },
     {
-      icon: '👤',
-      title: 'Your Profile',
-      content: 'Click your avatar to access your profile and customize your music experience.',
-      selector: '#user-profile-menu',
-      side: 'bottom' as const, // Show below avatar (safe for top-left element)
+      icon: '✨',
+      title: 'Welcome to Your Profile!',
+      content: 'Amazing! This is your personal music profile page. Here you can see your recommendations, followers, music stats, create collages, manage your collections, and showcase your unique music taste to the community. This is your musical identity hub!',
+      selector: '#profile-header, .profile-header, [data-testid="profile-header"]', // Target the profile page header
+      side: 'bottom' as const, // Show below the header
       showControls: true,
       showSkip: true,
+      // This is the final step of the tour
     },
   ],
 };

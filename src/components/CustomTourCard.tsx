@@ -1112,6 +1112,289 @@ const AlbumInteractionsCard = ({ step, currentStep, totalSteps, nextStep, prevSt
   );
 };
 
+// Explore Profile Card (Custom card that navigates to profile page)
+const ExploreProfileCard = ({ step, currentStep, totalSteps, nextStep, prevStep, skipTour, arrow }: CustomTourCardProps) => {
+  const router = useRouter();
+  
+  const handleNext = async () => {
+    console.log('🚀 ExploreProfileCard: Navigating to profile page...');
+    
+    try {
+      // First, close any open modals (like album modal)
+      console.log('🔒 Closing any open modals...');
+      
+      // Step 1: Detect any open modals
+      const modalSelectors = [
+        '#album-modal',
+        '.album-modal', 
+        '[data-testid="album-modal"]',
+        '[role="dialog"]',
+        '[role="modal"]',
+        '.modal',
+        '.fixed.inset-0',
+        '.absolute.inset-0'
+      ];
+      
+      let foundModal = null;
+      for (const selector of modalSelectors) {
+        const modal = document.querySelector(selector);
+        if (modal) {
+          console.log('✅ Found modal with selector:', selector, modal);
+          foundModal = modal;
+          break;
+        }
+      }
+      
+      if (foundModal) {
+        console.log('🎯 Modal found, attempting to close...');
+        
+        // Try multiple methods to close the modal
+        const closeSelectors = [
+          // The specific close button we found!
+          'button[aria-label*="Close album details modal"]',
+          'button[aria-label*="close" i]',
+          // Other fallbacks
+          '[data-testid="close-modal"]',
+          '[data-testid="close-button"]',
+          '.modal-close',
+          '[aria-label="Close"]',
+          '[aria-label="close"]',
+          '.close-button',
+          // Look for buttons with X or close icons
+          'button:has(svg)',
+          // Look for buttons inside the modal
+          'button'
+        ];
+        
+        let modalClosed = false;
+        
+        // Try to find close button within the modal
+        for (const selector of closeSelectors) {
+          const closeButtons = foundModal.querySelectorAll(selector);
+          console.log(`🔍 Looking for close buttons in modal with "${selector}": found ${closeButtons.length}`);
+          
+          if (closeButtons.length > 0) {
+            // Try each button to see if it closes the modal
+            for (const button of closeButtons) {
+              const buttonEl = button as HTMLElement;
+              console.log('🔘 Trying close button:', {
+                text: buttonEl.textContent?.trim(),
+                ariaLabel: buttonEl.getAttribute('aria-label'),
+                className: buttonEl.className
+              });
+              
+              buttonEl.click();
+              modalClosed = true;
+              
+              // Wait a moment and check if modal is gone
+              setTimeout(() => {
+                const stillThere = document.querySelector(modalSelectors[0]); // Check first selector
+                console.log('🔍 Modal still present after close attempt:', !!stillThere);
+              }, 100);
+              
+              break; // Try only the first close button
+            }
+            if (modalClosed) break;
+          }
+        }
+        
+        // If no close button worked, try other methods
+        if (!modalClosed) {
+          console.log('🎹 Trying Escape key to close modal...');
+          const escapeEvent = new KeyboardEvent('keydown', {
+            key: 'Escape',
+            code: 'Escape',
+            keyCode: 27,
+            which: 27,
+            bubbles: true
+          });
+          document.dispatchEvent(escapeEvent);
+          foundModal.dispatchEvent(escapeEvent);
+        }
+        
+        // Last resort: try clicking outside the modal
+        if (!modalClosed) {
+          console.log('🔘 Trying to click outside modal...');
+          // Create a click event outside the modal content
+          const rect = foundModal.getBoundingClientRect();
+          const clickEvent = new MouseEvent('click', {
+            bubbles: true,
+            clientX: rect.left - 10, // Click outside
+            clientY: rect.top + 10
+          });
+          document.dispatchEvent(clickEvent);
+        }
+      } else {
+        console.log('ℹ️ No modal found, proceeding to navigation...');
+      }
+      
+      // Wait longer for modal to close, then navigate
+      setTimeout(() => {
+        console.log('📍 Navigating to profile page...');
+        // Navigate to the user's profile page
+        router.push('/profile');
+        
+        // Wait for navigation, then advance to next step
+        setTimeout(() => {
+          console.log('✅ Should be on profile page, advancing to next step');
+          nextStep();
+        }, 1200); // Even longer delay for page load
+      }, 500); // Wait longer for modal to close
+      
+    } catch (error) {
+      console.error('❌ Error navigating to profile:', error);
+      // Fallback: just go to next step
+      nextStep();
+    }
+  };
+
+  return (
+    <div 
+      className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-sm border border-indigo-500/50 rounded-xl shadow-xl p-5 relative"
+      style={{
+        width: '380px',
+        maxWidth: 'calc(100vw - 40px)',
+        maxHeight: 'calc(100vh - 40px)',
+        zIndex: 50,
+      }}
+    >
+      {arrow}
+      
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="text-xl animate-pulse">{step.icon}</div>
+          <div>
+            <h3 className="text-base font-semibold text-white">{step.title}</h3>
+            <p className="text-xs text-indigo-200 opacity-90">Step {currentStep + 1} of {totalSteps}</p>
+          </div>
+        </div>
+        <button
+          onClick={skipTour}
+          className="text-indigo-300 hover:text-white text-xs px-2 py-1 rounded transition-colors"
+        >
+          Skip Tour
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="text-indigo-100 mb-4 text-sm leading-relaxed">
+        {step.content}
+      </div>
+      
+      {/* Profile Demo Preview */}
+      <div className="mb-4 p-3 bg-white/10 border border-white/20 rounded-lg">
+        <p className="text-xs font-medium text-indigo-200 mb-2">🎯 What happens next:</p>
+        <div className="text-xs text-indigo-100 space-y-1">
+          <div>• Navigate to your profile</div>
+          <div>• Explore profile features</div>
+          <div>• Complete the tour!</div>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex justify-between items-center pt-3 border-t border-indigo-500/30">
+        <button
+          onClick={prevStep}
+          className="px-4 py-2 text-sm bg-indigo-800/50 hover:bg-indigo-700/70 text-indigo-200 rounded-lg transition-all"
+        >
+          ← Back
+        </button>
+        <button
+          onClick={handleNext}
+          className="px-4 py-2 text-sm bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-lg transition-all font-semibold shadow-lg"
+        >
+          Visit My Profile →
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Profile Welcome Card (Final step explaining profile features)
+const ProfileWelcomeCard = ({ step, currentStep, totalSteps, nextStep, prevStep, skipTour, arrow }: CustomTourCardProps) => {
+  const handleFinish = () => {
+    console.log('🎉 Tour completed! Finishing tour...');
+    if (skipTour) {
+      skipTour(); // This effectively finishes the tour
+    } else {
+      nextStep(); // Or advance to complete
+    }
+  };
+
+  return (
+    <div 
+      className="bg-gradient-to-br from-emerald-900/90 to-teal-900/90 backdrop-blur-sm border border-emerald-500/50 rounded-xl shadow-xl p-5 relative"
+      style={{
+        width: '420px', // Slightly wider for final step
+        maxWidth: 'calc(100vw - 40px)',
+        maxHeight: 'calc(100vh - 40px)',
+        zIndex: 50,
+      }}
+    >
+      {arrow}
+      
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="text-xl animate-bounce">{step.icon}</div>
+          <div>
+            <h3 className="text-base font-semibold text-white">{step.title}</h3>
+            <p className="text-xs text-emerald-200 opacity-90">Step {currentStep + 1} of {totalSteps} - Final Step!</p>
+          </div>
+        </div>
+        <button
+          onClick={skipTour}
+          className="text-emerald-300 hover:text-white text-xs px-2 py-1 rounded transition-colors"
+        >
+          Skip
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="text-emerald-100 mb-4 text-sm leading-relaxed">
+        {step.content}
+      </div>
+      
+      {/* Profile Features Overview */}
+      <div className="mb-4 p-3 bg-white/10 border border-white/20 rounded-lg">
+        <p className="text-xs font-medium text-emerald-200 mb-2">🌟 Profile Features:</p>
+        <div className="text-xs text-emerald-100 space-y-1">
+          <div>• 🎵 Your Music Recommendations</div>
+          <div>• 👥 Followers & Following</div>
+          <div>• 📊 Music Discovery Stats</div>
+          <div>• 🎨 Create Album Collages</div>
+          <div>• 📚 Manage Collections</div>
+          <div>• ⚙️ Customize Settings</div>
+        </div>
+      </div>
+
+      {/* Completion Message */}
+      <div className="mb-4 p-3 bg-gradient-to-r from-emerald-900/30 to-teal-900/30 border border-emerald-500/40 rounded-lg">
+        <p className="text-xs text-emerald-200 text-center font-medium">
+          🎉 <strong>Congratulations!</strong> You've completed the Rec tour. Start exploring and sharing your music taste!
+        </p>
+      </div>
+
+      {/* Controls */}
+      <div className="flex justify-between items-center pt-3 border-t border-emerald-500/30">
+        <button
+          onClick={prevStep}
+          className="px-4 py-2 text-sm bg-emerald-800/50 hover:bg-emerald-700/70 text-emerald-200 rounded-lg transition-all"
+        >
+          ← Back
+        </button>
+        <button
+          onClick={handleFinish}
+          className="px-6 py-2 text-sm bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg transition-all font-semibold shadow-lg"
+        >
+          🎉 Finish Tour!
+        </button>
+      </div>
+    </div>
+  );
+};
+
 
 // Main router component
 export const CustomTourCard = (props: CustomTourCardProps) => {
@@ -1181,6 +1464,14 @@ export const CustomTourCard = (props: CustomTourCardProps) => {
 
   if (step.title?.includes('Album Details & Interactions') && step.icon === '🎵') {
     return <AlbumInteractionsCard {...props} />;
+  }
+
+  if (step.title?.includes('Explore Your Profile') && step.icon === '👤') {
+    return <ExploreProfileCard {...props} />;
+  }
+
+  if (step.title?.includes('Welcome to Your Profile') && step.icon === '✨') {
+    return <ProfileWelcomeCard {...props} />;
   }
 
   // Default to standard card
