@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getArtistDetails } from '@/lib/api/artists';
 import { artistParamsSchema } from '@/lib/validations/params';
 import { sanitizeArtistName } from '@/lib/utils';
+import { CollapsibleBio } from '@/components/artistDetails/CollapsibleBio';
 
 interface ArtistDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -42,7 +43,10 @@ export default async function ArtistDetailsPage({
       <BackButton text='Back' fallbackHref='/' />
 
       {/* Artist Header */}
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'>
+      <div
+        id='artist-page-header'
+        className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'
+      >
         {/* Artist Image */}
         <div className='lg:col-span-1'>
           <div className='w-full max-w-md mx-auto'>
@@ -81,9 +85,7 @@ export default async function ArtistDetailsPage({
                 <h3 className='text-lg font-semibold mb-2 text-white'>
                   Biography
                 </h3>
-                <p className='text-zinc-300 text-sm leading-relaxed'>
-                  {artist.profile}
-                </p>
+                <CollapsibleBio content={artist.profile} />
               </div>
             )}
 

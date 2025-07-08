@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from 'react';
+import { Heart } from 'lucide-react';
 
 interface SimilarityRatingDialProps {
   value: number;
@@ -17,15 +18,12 @@ const SimilarityRatingDial = memo(function SimilarityRatingDial({
   // Memoize expensive calculations
   const rotation = useMemo(() => ((value - 5) / 5) * 135, [value]);
 
-  const knobStyle = useMemo(
-    () => ({
-      background:
-        'conic-gradient(from 0deg, #71717a, #a1a1aa, #d4d4d8, #a1a1aa, #71717a)',
-      transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-      boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
-    }),
-    [rotation]
-  );
+  // Heart color based on score (matching other components in the project)
+  const heartColor = useMemo(() => {
+    if (value >= 10) return 'text-red-500 fill-red-500';
+    if (value >= 8) return 'text-green-500 fill-green-500';
+    return 'text-yellow-500 fill-yellow-500'; // 5-7 range
+  }, [value]);
 
   const ledPositions = useMemo(
     () =>
@@ -40,15 +38,15 @@ const SimilarityRatingDial = memo(function SimilarityRatingDial({
   );
 
   const statusText = useMemo(() => {
-    if (value <= 6) return { text: 'DECENT', color: 'text-yellow-400' };
-    if (value <= 8) return { text: 'GREAT', color: 'text-green-400' };
-    return { text: 'PERFECT', color: 'text-emerald-400' };
+    if (value <= 7) return { text: 'DECENT', color: 'text-yellow-400' };
+    if (value <= 9) return { text: 'GREAT', color: 'text-green-400' };
+    return { text: 'PERFECT', color: 'text-red-400' };
   }, [value]);
 
   const scoreColor = useMemo(() => {
-    if (value <= 6) return 'text-yellow-400';
-    if (value <= 8) return 'text-green-400';
-    return 'text-emerald-400';
+    if (value >= 10) return 'text-red-400';
+    if (value >= 8) return 'text-green-400';
+    return 'text-yellow-400'; // 5-7 range
   }, [value]);
 
   const updateValueFromMouse = useCallback(
@@ -109,6 +107,15 @@ const SimilarityRatingDial = memo(function SimilarityRatingDial({
     setIsDragging(false);
   }, []);
 
+  // Handle LED dot clicks
+  const handleLedClick = useCallback(
+    (ledScore: number) => {
+      if (disabled) return;
+      onChange(ledScore);
+    },
+    [disabled, onChange]
+  );
+
   // Add global mouse event listeners when dragging
   useEffect(() => {
     if (isDragging && !disabled) {
@@ -122,7 +129,10 @@ const SimilarityRatingDial = memo(function SimilarityRatingDial({
   }, [isDragging, disabled, handleMouseMove, handleMouseUp]);
 
   return (
-    <div className='flex flex-col items-center space-y-2'>
+    <div
+      id='similarity-rating-dial'
+      className='flex flex-col items-center space-y-2'
+    >
       {/* Dial Label */}
       <div className='text-center'>
         <div className='text-sm font-bold text-zinc-300 mb-1'>SCORE</div>
@@ -137,44 +147,39 @@ const SimilarityRatingDial = memo(function SimilarityRatingDial({
           {ledPositions.map((led, i) => (
             <div
               key={i}
-              className={`absolute w-1 h-1 rounded-full ${
+              className={`absolute w-2 h-2 rounded-full cursor-pointer transition-all duration-200 hover:scale-125 ${
                 led.isActive
-                  ? led.ledScore <= 6
-                    ? 'bg-yellow-500'
-                    : led.ledScore <= 8
-                      ? 'bg-green-500'
-                      : 'bg-emerald-400'
-                  : 'bg-zinc-800'
-              }`}
+                  ? led.ledScore >= 10
+                    ? 'bg-red-500 hover:bg-red-400'
+                    : led.ledScore >= 8
+                      ? 'bg-green-500 hover:bg-green-400'
+                      : 'bg-yellow-500 hover:bg-yellow-400'
+                  : 'bg-zinc-800 hover:bg-zinc-600'
+              } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
               style={{
                 left: `${led.ledX}%`,
                 top: `${led.ledY}%`,
                 transform: 'translate(-50%, -50%)',
               }}
+              onClick={() => handleLedClick(led.ledScore)}
+              title={`Set score to ${led.ledScore}/10`}
             />
           ))}
 
-          {/* Inner Knob */}
+          {/* Heart Icon Knob */}
           <div
             ref={knobRef}
-            className={`absolute top-1/2 left-1/2 w-12 h-12 rounded-full cursor-pointer ${
-              disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+            className={`absolute top-1/2 left-1/2 cursor-pointer transition-transform ${
+              disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110'
             }`}
-            style={knobStyle}
+            style={{
+              transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+            }}
             onMouseDown={handleMouseDown}
           >
-            {/* Knob Indicator Line */}
-            <div
-              className='absolute w-0.5 h-4 bg-white rounded-full'
-              style={{
-                top: '4px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-              }}
+            <Heart
+              className={`h-8 w-8 ${heartColor} drop-shadow-lg transition-colors duration-200`}
             />
-
-            {/* Center Dot */}
-            <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rounded-full' />
           </div>
         </div>
       </div>

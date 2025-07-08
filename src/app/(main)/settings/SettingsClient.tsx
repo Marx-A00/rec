@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   User,
   Palette,
@@ -10,7 +11,9 @@ import {
   EyeOff,
   Save,
   Loader2,
+  Play,
 } from 'lucide-react';
+import { useNextStep } from 'nextstepjs';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -37,9 +40,11 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isStartingTour, setIsStartingTour] = useState(false);
   const { showToast } = useToast();
   const updateProfileMutation = useUpdateUserProfileMutation(user.id);
+  const router = useRouter();
+  const { startNextStep } = useNextStep();
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -87,7 +92,13 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   };
 
   const handleDeleteAccount = async () => {
-    if (showDeleteConfirm) {
+    // Confirm account deletion with user
+    if (
+      // eslint-disable-next-line no-alert
+      window.confirm(
+        'Are you sure you want to delete your account? This action cannot be undone.'
+      )
+    ) {
       try {
         setIsLoading(true);
         // TODO: Implement account deletion API
@@ -97,10 +108,38 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         showToast('Failed to delete account', 'error');
       } finally {
         setIsLoading(false);
-        setShowDeleteConfirm(false);
       }
-    } else {
-      setShowDeleteConfirm(true);
+    }
+  };
+
+  const handleRestartTour = async () => {
+    try {
+      setIsStartingTour(true);
+      showToast('Starting tour...', 'success');
+
+      // Navigate to home page first
+      router.push('/');
+
+      // Wait for navigation to complete, then start the tour
+      setTimeout(() => {
+        try {
+          // Clear any existing tour state to ensure a fresh start
+          localStorage.removeItem('nextstep-welcome-onboarding');
+
+          // Start the welcome onboarding tour
+          startNextStep('welcome-onboarding');
+          console.log('🚀 Tour restarted from settings');
+        } catch (error) {
+          console.error('❌ Error starting tour:', error);
+          showToast('Failed to start tour', 'error');
+        } finally {
+          setIsStartingTour(false);
+        }
+      }, 1500); // Give enough time for navigation and page load
+    } catch (error) {
+      console.error('❌ Error restarting tour:', error);
+      showToast('Failed to restart tour', 'error');
+      setIsStartingTour(false);
     }
   };
 
@@ -159,7 +198,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
               <div className='space-y-2'>
                 <h4 className='text-lg font-medium text-white'>{user.name}</h4>
                 <p className='text-zinc-400 text-sm'>
-                  {user.recommendationsCount} recommendations{' • '}
+                  {user.recommendationsCount} recommendations •{' '}
                   {user.followersCount} followers
                 </p>
                 <Button variant='outline' size='sm' className='mt-2'>
@@ -362,11 +401,9 @@ export default function SettingsClient({ user }: SettingsClientProps) {
             <div className='space-y-4'>
               <div className='flex items-center justify-between py-3 border-b border-zinc-700'>
                 <div>
-                  <h4 className='text-white font-medium'>
-                    Show followers count
-                  </h4>
+                  <h4 className='text-white font-medium'>Show followers</h4>
                   <p className='text-zinc-400 text-sm'>
-                    Display follower count on your profile
+                    Display your followers list publicly
                   </p>
                 </div>
                 <input
@@ -494,37 +531,32 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                 </div>
               </div>
 
+              <div className='bg-blue-900/20 border border-blue-700 rounded-lg p-4'>
+                <h4 className='text-blue-400 font-medium mb-2'>App Tutorial</h4>
+                <p className='text-zinc-400 text-sm mb-4'>
+                  Restart the interactive tour to learn about all features and
+                  how to use the app effectively.
+                </p>
+                <Button
+                  onClick={handleRestartTour}
+                  disabled={isStartingTour}
+                  className='flex items-center gap-2 bg-blue-600 hover:bg-blue-700'
+                >
+                  {isStartingTour ? (
+                    <Loader2 className='w-4 h-4 animate-spin' />
+                  ) : (
+                    <Play className='w-4 h-4' />
+                  )}
+                  {isStartingTour ? 'Starting Tour...' : 'Restart App Tour'}
+                </Button>
+              </div>
+
               <div className='bg-red-900/20 border border-red-700 rounded-lg p-4'>
                 <h4 className='text-red-400 font-medium mb-2'>Danger Zone</h4>
                 <p className='text-zinc-400 text-sm mb-4'>
                   Once you delete your account, there is no going back. Please
                   be certain.
                 </p>
-                {showDeleteConfirm && (
-                  <div className='mb-4 p-3 bg-red-900/30 border border-red-600 rounded'>
-                    <p className='text-red-300 text-sm font-medium mb-2'>
-                      Are you sure you want to delete your account? This action
-                      cannot be undone.
-                    </p>
-                    <div className='flex gap-2'>
-                      <Button
-                        size='sm'
-                        variant='destructive'
-                        onClick={handleDeleteAccount}
-                        disabled={isLoading}
-                      >
-                        Yes, delete my account
-                      </Button>
-                      <Button
-                        size='sm'
-                        variant='outline'
-                        onClick={() => setShowDeleteConfirm(false)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
                 <Button
                   variant='destructive'
                   onClick={handleDeleteAccount}
@@ -536,7 +568,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                   ) : (
                     <Trash2 className='w-4 h-4' />
                   )}
-                  {showDeleteConfirm ? 'Confirm Delete' : 'Delete Account'}
+                  Delete Account
                 </Button>
               </div>
             </div>

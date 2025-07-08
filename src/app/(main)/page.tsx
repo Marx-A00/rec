@@ -130,7 +130,10 @@ export default function Home() {
               // Show user's album collection
               <div className='h-full flex flex-col'>
                 <div className='mb-3 flex-shrink-0'>
-                  <h2 className='text-lg font-semibold text-white'>
+                  <h2
+                    id='collections-section'
+                    className='text-lg font-semibold text-white'
+                  >
                     Your Collection
                   </h2>
                 </div>
@@ -242,7 +245,10 @@ export default function Home() {
           </div>
         </ResizablePanel>
 
-        <ResizableHandle className='h-px bg-zinc-800 hover:bg-zinc-700' />
+        <ResizableHandle
+          withHandle
+          className='h-px bg-zinc-800 hover:bg-zinc-700'
+        />
 
         {/* Bottom section - Main content with horizontal split */}
         <ResizablePanel defaultSize={65} minSize={50}>
@@ -269,7 +275,10 @@ export default function Home() {
               </div>
             </ResizablePanel>
 
-            <ResizableHandle className='w-px bg-zinc-800 hover:bg-zinc-700' />
+            <ResizableHandle
+              withHandle
+              className='w-px bg-zinc-800 hover:bg-zinc-700'
+            />
 
             {/* Activity sidebar */}
             <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>

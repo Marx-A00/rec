@@ -418,8 +418,6 @@ export default function ProfileClient({
                     key={recommendation.id}
                     recommendation={recommendation}
                     currentUserId={user.id}
-                    onEdit={() => {}}
-                    onDetail={() => {}}
                     onAlbumClick={albumId => navigateToAlbum(albumId)}
                   />
                 ))}

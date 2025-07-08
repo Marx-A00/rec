@@ -50,14 +50,14 @@ const AlbumSearchBackwardCompatible = forwardRef<
         searchFields: ['title', 'artist', 'year'],
         weight: 1,
         deduplicate: true,
-        maxResults: 10,
+        maxResults: 50, // Increased from 10 to show more albums
       },
     ],
     searchType: 'albums',
     filters: [],
     debounceMs: 300,
     minQueryLength: 2,
-    maxResults: 10,
+    maxResults: 50, // Increased from 10 to show more albums
     enabled: !disabled && searchQuery.length >= 2,
     context: 'recommendations',
     deduplicate: true,
@@ -113,11 +113,16 @@ const AlbumSearchBackwardCompatible = forwardRef<
   const handleInputChange = (value: string) => {
     setSearchQuery(value);
     console.log(
-      'RecommendationModal AlbumSearch:',
+      'Album Search:',
       value,
-      'Results:',
+      'Raw Results:',
+      searchResults?.length || 0,
+      'Album Results:',
       albumResults.length
     );
+    if (value.toLowerCase().includes('charli')) {
+      console.log('Charli XCX search results:', albumResults.slice(0, 5));
+    }
   };
 
   return (
@@ -129,6 +134,7 @@ const AlbumSearchBackwardCompatible = forwardRef<
         <div className='relative z-20'>
           <Search className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
           <input
+            id='recommendation-search-input'
             type='text'
             placeholder={placeholder}
             value={searchQuery}
@@ -154,23 +160,23 @@ const AlbumSearchBackwardCompatible = forwardRef<
       )}
 
       {albumResults.length > 0 && (
-        <div className='space-y-2 max-h-64 overflow-y-auto relative z-[200] bg-zinc-900 rounded-lg border border-zinc-600 p-2'>
+        <div className='space-y-2 max-h-48 overflow-y-auto relative z-[100] bg-zinc-900 rounded-lg border border-zinc-600 p-2'>
           {albumResults.map((result: UnifiedSearchResult) => {
             const album = convertToAlbum(result);
             return (
               <div
                 key={album.id}
                 onClick={() => onAlbumSelect(album)}
-                className='flex items-center space-x-3 p-3 bg-zinc-800 border border-zinc-600 rounded-lg cursor-pointer hover:bg-zinc-700 hover:border-zinc-500 transition-all relative'
+                className='flex items-center space-x-2 p-2 bg-zinc-800 border border-zinc-600 rounded-lg cursor-pointer hover:bg-zinc-700 hover:border-zinc-500 transition-all relative'
               >
-                <div className='w-12 h-12 flex-shrink-0 relative'>
+                <div className='w-10 h-10 flex-shrink-0 relative'>
                   <AlbumImage
                     src={album.image?.url}
                     alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}
-                    width={48}
-                    height={48}
+                    width={40}
+                    height={40}
                     className='w-full h-full rounded object-cover'
-                    sizes='48px'
+                    sizes='40px'
                     showSkeleton={false}
                   />
                 </div>

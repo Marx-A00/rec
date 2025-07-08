@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { CheckCircle, XCircle, X, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -20,7 +21,7 @@ export default function CollectionToast({
   type,
   isVisible,
   onClose,
-  duration = 7000, // Longer duration for navigation toasts
+  duration = 4000, // Auto-dismiss duration
   showNavigation = false,
   navigationLabel = 'View Collection',
   navigationUrl = '/profile',
@@ -28,14 +29,14 @@ export default function CollectionToast({
   const router = useRouter();
 
   useEffect(() => {
-    if (isVisible && duration > 0 && !showNavigation) {
+    if (isVisible && duration > 0) {
       const timer = setTimeout(() => {
         onClose();
       }, duration);
 
       return () => clearTimeout(timer);
     }
-  }, [isVisible, duration, onClose, showNavigation]);
+  }, [isVisible, duration, onClose]);
 
   const handleNavigation = () => {
     router.push(navigationUrl);
@@ -44,8 +45,9 @@ export default function CollectionToast({
 
   if (!isVisible) return null;
 
-  return (
-    <div className='fixed top-4 right-4 z-50 animate-in slide-in-from-top-2'>
+  // Render via portal to bypass stacking context issues
+  const toastElement = (
+    <div className='fixed top-4 right-4 z-[9999] animate-in slide-in-from-top-2'>
       <div
         className={`
         flex flex-col space-y-3 px-4 py-3 rounded-lg shadow-lg border max-w-sm
@@ -89,6 +91,13 @@ export default function CollectionToast({
       </div>
     </div>
   );
+
+  // Only render via portal on client side
+  if (typeof window !== 'undefined') {
+    return createPortal(toastElement, document.body);
+  }
+
+  return toastElement;
 }
 
 // Enhanced hook for collection toasts

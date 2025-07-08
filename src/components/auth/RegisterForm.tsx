@@ -20,7 +20,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -34,11 +33,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
         return validatePassword(value);
       case 'name':
         return validateName(value);
-      case 'confirmPassword':
-        if (value !== formData.password) {
-          return { isValid: false, message: 'Passwords do not match' };
-        }
-        return { isValid: true };
       default:
         return { isValid: true };
     }
@@ -57,20 +51,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       ...prev,
       [name]: validation.isValid ? '' : validation.message || '',
     }));
-
-    // Also validate confirm password if password changes
-    if (name === 'password' && formData.confirmPassword) {
-      const confirmValidation = validateField(
-        'confirmPassword',
-        formData.confirmPassword
-      );
-      setErrors(prev => ({
-        ...prev,
-        confirmPassword: confirmValidation.isValid
-          ? ''
-          : confirmValidation.message || '',
-      }));
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,10 +63,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       name: validateField('name', formData.name),
       email: validateField('email', formData.email),
       password: validateField('password', formData.password),
-      confirmPassword: validateField(
-        'confirmPassword',
-        formData.confirmPassword
-      ),
     };
 
     const newErrors: Record<string, string> = {};
@@ -150,7 +126,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className='space-y-6' noValidate>
+    <form onSubmit={handleSubmit} className='space-y-4' noValidate>
       {serverError && (
         <div
           className='rounded-lg bg-red-500/10 border border-red-500/20 p-4'
@@ -161,7 +137,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
         </div>
       )}
 
-      <div className='space-y-4'>
+      <div className='space-y-3'>
         <div>
           <label
             htmlFor='name'
@@ -175,7 +151,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             type='text'
             value={formData.name}
             onChange={handleInputChange}
-            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-4 py-3 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
             placeholder='Enter your name'
             aria-describedby={errors.name ? 'name-error' : undefined}
             aria-invalid={errors.name ? 'true' : 'false'}
@@ -183,7 +159,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
           {errors.name && (
             <p
               id='name-error'
-              className='mt-2 text-sm text-red-400 font-medium'
+              className='mt-1 text-sm text-red-400 font-medium'
               role='alert'
             >
               {errors.name}
@@ -205,7 +181,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             required
             value={formData.email}
             onChange={handleInputChange}
-            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-4 py-3 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
             placeholder='Enter your email address'
             aria-describedby={errors.email ? 'email-error' : undefined}
             aria-invalid={errors.email ? 'true' : 'false'}
@@ -214,7 +190,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
           {errors.email && (
             <p
               id='email-error'
-              className='mt-2 text-sm text-red-400 font-medium'
+              className='mt-1 text-sm text-red-400 font-medium'
               role='alert'
             >
               {errors.email}
@@ -236,7 +212,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             required
             value={formData.password}
             onChange={handleInputChange}
-            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-4 py-3 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
             placeholder='Create a strong password'
             aria-describedby={`password-strength ${errors.password ? 'password-error' : ''}`}
             aria-invalid={errors.password ? 'true' : 'false'}
@@ -245,7 +221,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
           {errors.password && (
             <p
               id='password-error'
-              className='mt-2 text-sm text-red-400 font-medium'
+              className='mt-1 text-sm text-red-400 font-medium'
               role='alert'
             >
               {errors.password}
@@ -255,45 +231,12 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             <PasswordStrength password={formData.password} />
           </div>
         </div>
-
-        <div>
-          <label
-            htmlFor='confirmPassword'
-            className='block text-sm font-medium text-zinc-300 mb-2'
-          >
-            Confirm Password
-          </label>
-          <input
-            id='confirmPassword'
-            name='confirmPassword'
-            type='password'
-            required
-            value={formData.confirmPassword}
-            onChange={handleInputChange}
-            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-4 py-3 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
-            placeholder='Confirm your password'
-            aria-describedby={
-              errors.confirmPassword ? 'confirm-password-error' : undefined
-            }
-            aria-invalid={errors.confirmPassword ? 'true' : 'false'}
-            autoComplete='new-password'
-          />
-          {errors.confirmPassword && (
-            <p
-              id='confirm-password-error'
-              className='mt-2 text-sm text-red-400 font-medium'
-              role='alert'
-            >
-              {errors.confirmPassword}
-            </p>
-          )}
-        </div>
       </div>
 
       <button
         type='submit'
         disabled={isLoading}
-        className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-3 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+        className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-2.5 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
         aria-describedby='submit-button-description'
       >
         <span id='submit-button-description' className='sr-only'>

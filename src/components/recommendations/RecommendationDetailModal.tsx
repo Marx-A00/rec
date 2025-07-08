@@ -1,9 +1,9 @@
 'use client';
 
 import { X, Heart } from 'lucide-react';
+import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
-import { Button } from '@/components/ui/button';
 import { useRecommendationQuery } from '@/hooks';
 import { Recommendation } from '@/types/recommendation';
 
@@ -11,6 +11,33 @@ interface RecommendationDetailModalProps {
   recommendationId: string | null;
   onClose: () => void;
 }
+
+// Helper function to get color classes based on score
+const getScoreColors = (score: number) => {
+  if (score >= 10) {
+    return {
+      heartColor: 'text-red-500 fill-red-500',
+      textColor: 'text-red-600',
+      bgGradient: 'from-red-50 to-pink-50',
+      borderColor: 'border-red-100',
+    };
+  } else if (score >= 8) {
+    return {
+      heartColor: 'text-green-500 fill-green-500',
+      textColor: 'text-green-600',
+      bgGradient: 'from-green-50 to-emerald-50',
+      borderColor: 'border-green-100',
+    };
+  } else {
+    // 5-7 range (yellow)
+    return {
+      heartColor: 'text-yellow-500 fill-yellow-500',
+      textColor: 'text-yellow-600',
+      bgGradient: 'from-yellow-50 to-amber-50',
+      borderColor: 'border-yellow-100',
+    };
+  }
+};
 
 export default function RecommendationDetailModal({
   recommendationId,
@@ -24,179 +51,238 @@ export default function RecommendationDetailModal({
 
   if (!recommendationId) return null;
 
-  return (
-    <div className='fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-start justify-center pt-20 z-50 p-4'>
-      <div className='bg-black border border-zinc-600 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl'>
-        {/* Header */}
-        <div className='flex items-center justify-between p-4 border-b border-zinc-700'>
-          <h2 className='text-xl font-bold text-white'>
-            Recommendation Details
-          </h2>
-          <Button
-            variant='ghost'
-            size='sm'
-            onClick={onClose}
-            className='hover:bg-zinc-800 text-zinc-400 hover:text-white h-8 w-8 p-0'
-          >
-            <X className='h-4 w-4' />
-          </Button>
+  if (isLoading) {
+    return (
+      <div
+        className='fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4 transition-all duration-300'
+        style={{
+          backdropFilter: 'blur(4px)',
+          transition:
+            'background-color 300ms ease-out, backdrop-filter 150ms ease-out',
+        }}
+      >
+        <div className='flex flex-col items-center'>
+          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-4'></div>
+          <p className='text-white'>Loading recommendation...</p>
         </div>
+      </div>
+    );
+  }
 
-        {/* Content */}
-        <div className='p-4'>
-          {isLoading && (
-            <div className='flex items-center justify-center py-8'>
-              <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-white'></div>
-              <span className='ml-3 text-zinc-300 text-sm'>
-                Loading recommendation...
+  if (error || !recommendation) {
+    return (
+      <div
+        className='fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4 transition-all duration-300'
+        style={{
+          backdropFilter: 'blur(4px)',
+          transition:
+            'background-color 300ms ease-out, backdrop-filter 150ms ease-out',
+        }}
+      >
+        <div className='flex flex-col items-center'>
+          <p className='text-red-400 mb-4'>Failed to load recommendation</p>
+          <button
+            onClick={onClose}
+            className='px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition-colors'
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Get dynamic colors based on score
+  const scoreColors = getScoreColors(recommendation.score);
+
+  return (
+    <div
+      className='fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4 transition-all duration-300'
+      style={{
+        backdropFilter: 'blur(4px)',
+        transition:
+          'background-color 300ms ease-out, backdrop-filter 150ms ease-out',
+      }}
+      onClick={e => {
+        // Only close if clicking the backdrop, not the modal content
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      role='dialog'
+      aria-modal='true'
+      aria-labelledby='recommendation-modal-content'
+    >
+      <div
+        className='flex flex-col items-center max-w-4xl w-full transition-all duration-300 relative opacity-100 scale-100 translate-y-0'
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Close X button */}
+        <button
+          onClick={e => {
+            e.currentTarget.blur();
+            onClose();
+          }}
+          className='absolute -top-2 -right-2 z-60 text-cosmic-latte hover:text-white transition-all duration-200 hover:scale-110 focus:outline-none rounded-full p-1'
+          aria-label='Close recommendation details modal'
+          role='button'
+          tabIndex={0}
+        >
+          <svg
+            className='w-6 h-6'
+            fill='none'
+            stroke='currentColor'
+            viewBox='0 0 24 24'
+            aria-hidden='true'
+          >
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth={2}
+              d='M6 18L18 6M6 6l12 12'
+            />
+          </svg>
+        </button>
+
+        {/* User Info */}
+        <div className='flex items-center space-x-3 mb-6'>
+          {recommendation.user?.image ? (
+            <AlbumImage
+              src={recommendation.user.image}
+              alt={recommendation.user.name || 'User'}
+              width={40}
+              height={40}
+              className='rounded-full'
+            />
+          ) : (
+            <div className='w-10 h-10 bg-zinc-700 rounded-full flex items-center justify-center'>
+              <span className='text-white font-semibold'>
+                {(recommendation.user?.name || 'A').charAt(0).toUpperCase()}
               </span>
             </div>
           )}
+          <div>
+            <Link href={`/profile/${recommendation.userId}`}>
+              <span className='text-cosmic-latte font-medium hover:underline hover:text-white'>
+                {recommendation.user?.name || 'Anonymous'}
+              </span>
+            </Link>
+            <p className='text-zinc-400 text-sm'>
+              {new Date(recommendation.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
 
-          {error && (
-            <div className='text-center py-8'>
-              <div className='text-red-400 mb-2 text-sm'>
-                Failed to load recommendation
-              </div>
-              <div className='text-zinc-400 text-xs'>
-                {error instanceof Error ? error.message : 'Unknown error'}
-              </div>
-            </div>
-          )}
-
-          {recommendation && (
-            <div className='space-y-6'>
-              {/* User Info */}
-              <div className='flex items-center space-x-3'>
-                {recommendation.user?.image ? (
-                  <div className='relative'>
-                    <AlbumImage
-                      src={recommendation.user.image}
-                      alt={recommendation.user.name || 'User'}
-                      width={40}
-                      height={40}
-                      className='rounded-full ring-2 ring-zinc-600 shadow-sm'
-                    />
-                    <div className='absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-black rounded-full shadow-sm'></div>
-                  </div>
-                ) : (
-                  <div className='w-10 h-10 bg-gradient-to-br from-zinc-600 to-zinc-700 rounded-full ring-2 ring-zinc-600 flex items-center justify-center shadow-sm'>
-                    <span className='text-white font-semibold text-sm'>
-                      {(recommendation.user?.name || 'A')
-                        .charAt(0)
-                        .toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                <div>
-                  <h3 className='font-semibold text-lg text-white'>
-                    {recommendation.user?.name || 'Anonymous'}
-                  </h3>
-                  <p className='text-zinc-400 text-xs'>
-                    {new Date(recommendation.createdAt).toLocaleDateString(
-                      'en-US',
-                      {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      }
-                    )}
+        {/* Albums Layout */}
+        <div className='relative'>
+          <div className='grid grid-cols-2 gap-8'>
+            {/* Source Album */}
+            <div className='text-center'>
+              <div className='mb-4'>
+                <Link href={`/albums/${recommendation.basisAlbumDiscogsId}`}>
+                  <p className='font-bold text-cosmic-latte text-xl hover:underline cursor-pointer hover:text-white transition-colors'>
+                    {recommendation.basisAlbumTitle}
                   </p>
-                </div>
+                </Link>
+                <p className='text-zinc-300 text-lg'>
+                  {recommendation.basisAlbumArtist}
+                </p>
+                {recommendation.basisAlbumYear && (
+                  <p className='text-zinc-400'>
+                    {recommendation.basisAlbumYear}
+                  </p>
+                )}
               </div>
-
-              {/* Album Comparison - Compact Layout */}
-              <div className='relative'>
-                <div className='grid grid-cols-2 gap-4'>
-                  {/* Basis Album */}
-                  <div className='text-center space-y-3'>
-                    <div className='mb-3'>
-                      <div className='space-y-1'>
-                        <p className='font-bold text-sm text-white leading-tight line-clamp-2'>
-                          {recommendation.basisAlbumTitle}
-                        </p>
-                        <p className='text-zinc-300 text-xs font-medium line-clamp-1'>
-                          {recommendation.basisAlbumArtist}
-                        </p>
-                        {recommendation.basisAlbumYear && (
-                          <p className='text-zinc-400 text-xs'>
-                            {recommendation.basisAlbumYear}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className='relative group'>
-                      <div className='relative w-full max-w-48 mx-auto aspect-square overflow-hidden rounded-lg shadow-lg'>
-                        <AlbumImage
-                          src={recommendation.basisAlbumImageUrl}
-                          alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
-                          width={192}
-                          height={192}
-                          sizes='192px'
-                          className='w-full h-full object-cover transition-all duration-300 group-hover:scale-105'
-                        />
-                        <div className='absolute bottom-2 left-2'>
-                          <span className='bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-lg'>
-                            SRC
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Recommended Album */}
-                  <div className='text-center space-y-3'>
-                    <div className='mb-3'>
-                      <div className='space-y-1'>
-                        <p className='font-bold text-sm text-white leading-tight line-clamp-2'>
-                          {recommendation.recommendedAlbumTitle}
-                        </p>
-                        <p className='text-zinc-300 text-xs font-medium line-clamp-1'>
-                          {recommendation.recommendedAlbumArtist}
-                        </p>
-                        {recommendation.recommendedAlbumYear && (
-                          <p className='text-zinc-400 text-xs'>
-                            {recommendation.recommendedAlbumYear}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className='relative group'>
-                      <div className='relative w-full max-w-48 mx-auto aspect-square overflow-hidden rounded-lg shadow-lg'>
-                        <AlbumImage
-                          src={recommendation.recommendedAlbumImageUrl}
-                          alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
-                          width={192}
-                          height={192}
-                          sizes='192px'
-                          className='w-full h-full object-cover transition-all duration-300 group-hover:scale-105'
-                        />
-                        <div className='absolute bottom-2 left-2'>
-                          <span className='bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-lg'>
-                            REC
-                          </span>
-                        </div>
-                      </div>
+              <Link href={`/albums/${recommendation.basisAlbumDiscogsId}`}>
+                <div className='group relative cursor-pointer'>
+                  <div className='relative w-72 h-72 lg:w-80 lg:h-80 mx-auto aspect-square overflow-hidden rounded-lg shadow-2xl transition-all duration-300 group-hover:shadow-xl group-hover:scale-105 bg-zinc-800 border-2 border-zinc-700'>
+                    <AlbumImage
+                      src={recommendation.basisAlbumImageUrl}
+                      alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
+                      width={320}
+                      height={320}
+                      sizes='(max-width: 1024px) 288px, 320px'
+                      className='w-full h-full object-cover transition-all duration-300 group-hover:brightness-110'
+                      priority
+                    />
+                    <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 rounded-lg'></div>
+                    <div className='absolute bottom-3 left-3'>
+                      <span className='bg-red-600 text-white text-sm font-bold px-3 py-1 rounded shadow-lg'>
+                        SRC
+                      </span>
                     </div>
                   </div>
                 </div>
+              </Link>
+            </div>
 
-                {/* Centered rating heart between albums - Smaller */}
-                <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20'>
-                  <div className='bg-black border-2 border-black rounded-full shadow-xl'>
-                    <div className='flex items-center justify-center w-12 h-12 bg-gradient-to-r from-red-50 to-pink-50 rounded-full border-2 border-red-100 shadow-lg'>
-                      <div className='flex flex-col items-center'>
-                        <Heart className='h-4 w-4 text-red-500 fill-red-500 drop-shadow-sm mb-0.5' />
-                        <span className='text-xs font-bold text-red-600 tabular-nums leading-none'>
-                          {recommendation.score}
-                        </span>
-                      </div>
+            {/* Recommended Album */}
+            <div className='text-center'>
+              <div className='mb-4'>
+                <Link
+                  href={`/albums/${recommendation.recommendedAlbumDiscogsId}`}
+                >
+                  <p className='font-bold text-cosmic-latte text-xl hover:underline cursor-pointer hover:text-white transition-colors'>
+                    {recommendation.recommendedAlbumTitle}
+                  </p>
+                </Link>
+                <p className='text-zinc-300 text-lg'>
+                  {recommendation.recommendedAlbumArtist}
+                </p>
+                {recommendation.recommendedAlbumYear && (
+                  <p className='text-zinc-400'>
+                    {recommendation.recommendedAlbumYear}
+                  </p>
+                )}
+              </div>
+              <Link
+                href={`/albums/${recommendation.recommendedAlbumDiscogsId}`}
+              >
+                <div className='group relative cursor-pointer'>
+                  <div className='relative w-72 h-72 lg:w-80 lg:h-80 mx-auto aspect-square overflow-hidden rounded-lg shadow-2xl transition-all duration-300 group-hover:shadow-xl group-hover:scale-105 bg-zinc-800 border-2 border-zinc-700'>
+                    <AlbumImage
+                      src={recommendation.recommendedAlbumImageUrl}
+                      alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
+                      width={320}
+                      height={320}
+                      sizes='(max-width: 1024px) 288px, 320px'
+                      className='w-full h-full object-cover transition-all duration-300 group-hover:brightness-110'
+                      priority
+                    />
+                    <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 rounded-lg'></div>
+                    <div className='absolute bottom-3 left-3'>
+                      <span className='bg-green-600 text-white text-sm font-bold px-3 py-1 rounded shadow-lg'>
+                        REC
+                      </span>
                     </div>
                   </div>
+                </div>
+              </Link>
+            </div>
+          </div>
+
+          {/* Centered rating heart between albums */}
+          <div
+            className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20'
+            style={{ top: 'calc(50% + 32px)' }}
+          >
+            <div className='bg-black border-2 border-black rounded-full shadow-xl'>
+              <div
+                className={`flex items-center justify-center w-16 h-16 bg-gradient-to-r ${scoreColors.bgGradient} rounded-full border-2 ${scoreColors.borderColor} shadow-lg`}
+              >
+                <div className='flex flex-col items-center'>
+                  <Heart
+                    className={`h-5 w-5 ${scoreColors.heartColor} drop-shadow-sm mb-0.5`}
+                  />
+                  <span
+                    className={`text-sm font-bold ${scoreColors.textColor} tabular-nums leading-none`}
+                  >
+                    {recommendation.score}
+                  </span>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

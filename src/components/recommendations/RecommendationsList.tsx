@@ -7,7 +7,6 @@ import { useRecommendationsQuery } from '@/hooks';
 import { Recommendation } from '@/types/recommendation';
 
 import RecommendationCard from './RecommendationCard';
-import RecommendationDetailModal from './RecommendationDetailModal';
 
 interface RecommendationsListProps {
   userId?: string;
@@ -18,19 +17,12 @@ export default function RecommendationsList({
   userId,
   title = 'Recent Recommendations',
 }: RecommendationsListProps) {
-  const [selectedRecommendationId, setSelectedRecommendationId] = useState<
-    string | null
-  >(null);
   const { data: session } = useSession();
   const { data, isLoading, error, isError } = useRecommendationsQuery({
     page: 1,
     perPage: 10,
     userId,
   });
-
-  const handleDetailView = (recommendation: Recommendation) => {
-    setSelectedRecommendationId(recommendation.id);
-  };
 
   const handleEditRecommendation = (recommendation: Recommendation) => {
     // TODO: Implement edit modal/form
@@ -89,7 +81,6 @@ export default function RecommendationsList({
             key={recommendation.id}
             recommendation={recommendation}
             currentUserId={session?.user?.id}
-            onDetail={handleDetailView}
             onEdit={handleEditRecommendation}
           />
         ))}
@@ -102,12 +93,6 @@ export default function RecommendationsList({
           </button>
         </div>
       )}
-
-      {/* Detail Modal */}
-      <RecommendationDetailModal
-        recommendationId={selectedRecommendationId}
-        onClose={() => setSelectedRecommendationId(null)}
-      />
     </div>
   );
 }

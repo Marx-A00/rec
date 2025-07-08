@@ -118,7 +118,7 @@ function ReleaseCard({
 }) {
   return (
     <div
-      className='bg-zinc-800 rounded-lg p-4 hover:bg-zinc-700 transition-all cursor-pointer transform hover:scale-105 focus:outline-none outline-none'
+      className='bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-all cursor-pointer transform hover:scale-105 focus:outline-none outline-none overflow-hidden'
       onClick={e => {
         (e.currentTarget as HTMLElement).blur();
         onClick();
@@ -126,19 +126,19 @@ function ReleaseCard({
       tabIndex={-1}
       style={{ outline: 'none' }}
     >
-      <div className='flex gap-3'>
-        <div className='relative w-16 h-16 flex-shrink-0'>
+      <div className='flex h-24'>
+        <div className='relative w-24 h-24 flex-shrink-0'>
           <AlbumImage
             src={release.thumb || release.basic_information?.thumb}
             alt={release.title}
-            width={64}
-            height={64}
-            className='object-cover rounded'
-            sizes='64px'
+            width={96}
+            height={96}
+            className='object-cover w-full h-full'
+            sizes='96px'
           />
         </div>
 
-        <div className='flex-1 min-w-0'>
+        <div className='flex-1 min-w-0 p-4'>
           <h4 className='font-medium text-white truncate mb-1'>
             {release.title}
           </h4>

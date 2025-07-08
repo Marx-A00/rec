@@ -18,6 +18,14 @@ import {
   Area,
   AreaChart,
 } from 'recharts';
+import { Heart } from 'lucide-react';
+
+// Helper function to get text color based on score
+const getScoreTextColor = (score: number) => {
+  if (score >= 10) return 'text-red-600';
+  if (score >= 8) return 'text-green-600';
+  return 'text-yellow-600'; // 5-7 range
+};
 
 interface UserStats {
   userId: string;
@@ -471,7 +479,9 @@ export default function SocialStatsDashboard({
                     </p>
                   </div>
                   <div className='flex-shrink-0 text-right'>
-                    <p className='text-sm font-medium text-gray-900'>
+                    <p
+                      className={`text-sm font-medium ${getScoreTextColor(rec.score)}`}
+                    >
                       Score: {rec.score.toFixed(1)}
                     </p>
                     <p className='text-sm text-gray-500'>

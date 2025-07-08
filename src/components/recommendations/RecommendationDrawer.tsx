@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/drawer';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { sanitizeArtistName } from '@/lib/utils';
+import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 
 import AlbumSearchBackwardCompatible, {
   AlbumSearchRef,
@@ -145,6 +146,9 @@ export default function RecommendationDrawer({
   // Ref to access AlbumSearch methods
   const albumSearchRef = useRef<AlbumSearchRef>(null);
 
+  // Get tour mode from context
+  const { isTourMode } = useRecommendationDrawerContext();
+
   // Reset state when drawer closes, or set prefilled album when drawer opens
   useEffect(() => {
     if (!isOpen) {
@@ -176,6 +180,48 @@ export default function RecommendationDrawer({
       document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen, onClose]);
+
+  // Handle demo recommendation filling for tour
+  useEffect(() => {
+    const handleDemoFill = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { sourceAlbum, recommendedAlbum, similarityRating } =
+        customEvent.detail;
+
+      if (sourceAlbum) {
+        setSelectedBasisAlbum(sourceAlbum);
+      }
+      if (recommendedAlbum) {
+        setSelectedRecommendedAlbum(recommendedAlbum);
+      }
+      if (similarityRating) {
+        setSimilarityRating(similarityRating);
+      }
+
+      // Switch to viewing mode (not searching)
+      setIsSearchingForBasis(false);
+    };
+
+    window.addEventListener('fill-demo-recommendation', handleDemoFill);
+
+    return () => {
+      window.removeEventListener('fill-demo-recommendation', handleDemoFill);
+    };
+  }, []);
+
+  // Modified close handler that respects tour state
+  const handleDrawerClose = (open: boolean) => {
+    // Don't close the drawer if tour is active and trying to keep it open
+    if (!open && isTourMode) {
+      console.log('Preventing drawer close during tour');
+      return; // Prevent closing during tour
+    }
+
+    // Normal close behavior
+    if (!open) {
+      onClose();
+    }
+  };
 
   const handleAlbumSelect = (album: Album) => {
     if (isSearchingForBasis) {
@@ -212,8 +258,11 @@ export default function RecommendationDrawer({
   };
 
   return (
-    <Drawer open={isOpen} onOpenChange={onClose} handleOnly={true}>
-      <DrawerContent className='h-[90vh] bg-zinc-900 border-zinc-700'>
+    <Drawer open={isOpen} onOpenChange={handleDrawerClose} handleOnly={true}>
+      <DrawerContent
+        id='recommendation-drawer'
+        className='h-[90vh] bg-zinc-900 border-zinc-700'
+      >
         <DrawerHeader className='flex-shrink-0'>
           <div className='flex items-center justify-between'>
             <DrawerTitle className='text-2xl font-bold text-white'>

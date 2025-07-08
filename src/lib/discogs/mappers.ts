@@ -57,7 +57,15 @@ export function mapDiscogsMasterToAlbum(discogsMaster: DiscogsMaster): Album {
       numberOfTracks: tracks.length,
       format: 'Digital', // Default for masters
     },
-  };
+    // Preserve Discogs metadata for ID extraction
+    _discogs: {
+      type: 'master',
+      uri: discogsMaster.uri,
+      resource_url: discogsMaster.resource_url,
+    },
+    // Store the main release ID as master_id for consistency
+    master_id: discogsMaster.id,
+  } as Album & { _discogs?: any; master_id?: number };
 }
 
 export function mapDiscogsReleaseToAlbum(
@@ -135,5 +143,13 @@ export function mapDiscogsReleaseToAlbum(
       numberOfTracks: tracks.length,
       format: formatStrings.join(', ') || 'Unknown',
     },
-  };
+    // Preserve Discogs metadata for ID extraction
+    _discogs: {
+      type: 'release',
+      uri: discogsRelease.uri,
+      resource_url: discogsRelease.resource_url,
+    },
+    // Store the master ID if available - this is key for preferring master IDs!
+    master_id: discogsRelease.master_id,
+  } as Album & { _discogs?: any; master_id?: number | null };
 }

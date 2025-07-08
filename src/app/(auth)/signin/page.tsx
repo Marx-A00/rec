@@ -4,6 +4,8 @@ import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import Link from 'next/link';
 
+import { Separator } from '@/components/ui/separator';
+
 export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   // const [isSpotifyLoading, setIsSpotifyLoading] = useState(false);
@@ -46,12 +48,12 @@ export default function SignIn() {
   };
 
   return (
-    <div className='space-y-8'>
+    <div className='space-y-6'>
       {/* Header */}
-      <div className='text-center space-y-4'>
-        <div className='inline-flex items-center justify-center w-16 h-16 rounded-full bg-cosmic-latte/20 backdrop-blur-sm border border-cosmic-latte/30 mb-6'>
+      <div className='text-center space-y-3'>
+        <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-cosmic-latte/20 backdrop-blur-sm border border-cosmic-latte/30 mb-4'>
           <svg
-            className='w-8 h-8 text-cosmic-latte'
+            className='w-6 h-6 text-cosmic-latte'
             fill='none'
             stroke='currentColor'
             viewBox='0 0 24 24'
@@ -65,18 +67,15 @@ export default function SignIn() {
           </svg>
         </div>
 
-        <h1 className='text-3xl font-bold text-white tracking-tight'>
+        <h1 className='text-2xl font-bold text-white tracking-tight'>
           Welcome back
         </h1>
-        <p className='text-zinc-400 text-lg'>
-          Sign in to continue your music journey
-        </p>
 
-        <p className='text-sm text-zinc-500'>
+        <p className='text-sm text-zinc-800'>
           New around here?{' '}
           <Link
             href='/register'
-            className='font-medium text-cosmic-latte hover:text-cosmic-latte/80 transition-colors duration-200 underline underline-offset-4'
+            className='font-medium text-white hover:text-cosmic-latte/80 transition-colors duration-200 underline underline-offset-4'
             aria-label='Create a new account - Go to registration page'
           >
             Create a new account
@@ -85,13 +84,13 @@ export default function SignIn() {
       </div>
 
       {/* Sign In Form */}
-      <div className='bg-black/40 backdrop-blur-sm border border-zinc-700/50 rounded-xl p-8 shadow-2xl space-y-6'>
+      <div className='bg-black/40 backdrop-blur-sm border border-zinc-700/50 rounded-xl p-6 shadow-2xl space-y-4'>
         {/* OAuth Buttons */}
         <div className='space-y-4'>
           <button
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className='group relative flex w-full justify-center items-center rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm py-3 px-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800/50 hover:border-zinc-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:border-cosmic-latte/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+            className='group relative flex w-full justify-center items-center rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm py-2.5 px-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800/50 hover:border-zinc-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:border-cosmic-latte/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
           >
             {isLoading ? (
               <span className='flex items-center'>
@@ -173,12 +172,12 @@ export default function SignIn() {
         </div>
 
         {/* Divider */}
-        <div className='relative'>
+        <div className='relative my-6'>
           <div className='absolute inset-0 flex items-center'>
-            <div className='w-full border-t border-zinc-700/50' />
+            <div className='w-full border-t border-zinc-700/60'></div>
           </div>
-          <div className='relative flex justify-center text-sm'>
-            <span className='bg-black/40 px-4 text-zinc-400 font-medium'>
+          <div className='relative flex justify-center'>
+            <span className='bg-zinc-900/80 backdrop-blur-sm px-4 py-2 text-xs font-medium text-zinc-400 border border-zinc-700/50 rounded-lg'>
               Or continue with email
             </span>
           </div>
@@ -212,7 +211,7 @@ export default function SignIn() {
                 onChange={e =>
                   setCredentials({ ...credentials, email: e.target.value })
                 }
-                className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-4 py-3 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+                className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2.5 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
                 placeholder='Enter your email'
               />
             </div>
@@ -234,7 +233,7 @@ export default function SignIn() {
                 onChange={e =>
                   setCredentials({ ...credentials, password: e.target.value })
                 }
-                className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-4 py-3 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+                className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2.5 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
                 placeholder='Enter your password'
               />
             </div>
@@ -243,7 +242,7 @@ export default function SignIn() {
           <button
             type='submit'
             disabled={isCredentialsLoading}
-            className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-3 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
+            className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-2.5 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
           >
             {isCredentialsLoading ? (
               <span className='flex items-center'>

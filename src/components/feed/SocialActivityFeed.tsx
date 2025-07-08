@@ -2,6 +2,10 @@
 
 import { useEffect, useCallback } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
+import type { Session } from 'next-auth';
+
+import SignInButton from '@/components/auth/SignInButton';
 
 import ActivityItem from './ActivityItem';
 
@@ -13,13 +17,20 @@ interface SocialActivityFeedProps {
     | 'profile_update'
     | 'collection_add';
   refreshInterval?: number; // in milliseconds
+  session?: Session | null; // Optional prop for server-side session
 }
 
 export default function SocialActivityFeed({
   className = '',
   activityType,
   refreshInterval = 30000, // 30 seconds default
+  session: sessionProp,
 }: SocialActivityFeedProps) {
+  const { data: clientSession } = useSession();
+
+  // Use prop session if provided (server-side), otherwise fall back to client session
+  const session = sessionProp ?? clientSession;
+
   const fetchActivities = async ({ pageParam }: { pageParam?: string }) => {
     const params = new URLSearchParams();
     params.append('limit', '20');
@@ -52,6 +63,7 @@ export default function SocialActivityFeed({
     refetchInterval: refreshInterval, // Auto-refresh every 30 seconds
     refetchOnWindowFocus: true,
     refetchOnMount: true,
+    enabled: !!session, // Only fetch if user is signed in
   });
 
   // Flatten activities from all pages
@@ -83,6 +95,27 @@ export default function SocialActivityFeed({
   const handleRefresh = () => {
     refetch();
   };
+
+  // Show sign-in message if user is not authenticated
+  if (!session) {
+    return (
+      <div className={`text-center py-12 ${className}`}>
+        <div className='rounded-lg p-8'>
+          <div className='text-6xl mb-4'>🔒</div>
+          <h3 className='text-xl font-semibold text-cosmic-latte mb-2'>
+            Sign In Required
+          </h3>
+          <p className='text-zinc-400 mb-6 max-w-md mx-auto'>
+            Please sign in to view your social activity feed and see what your
+            friends are recommending and adding to their collections.
+          </p>
+          <div className='flex justify-center'>
+            <SignInButton />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
