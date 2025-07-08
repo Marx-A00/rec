@@ -7,6 +7,7 @@ This folder contains the tour system for the music platform, powered by NextStep
 The tour system uses [NextStep.js](https://nextstepjs.com/) to create interactive onboarding tours for users.
 
 ### Files:
+
 - `musicPlatformTours.ts` - Contains all tour configurations
 - `README.md` - This documentation file
 
@@ -41,6 +42,7 @@ function MyComponent() {
 ### 3. Available Tours
 
 Current tours in the system:
+
 - **`welcome-onboarding`** - Complete first-time user walkthrough
   - **`navigation-basics`** - Essential navigation and search
   - **`collection-building`** - How to manage music collections
@@ -79,6 +81,7 @@ export const musicPlatformTours = [
 ### Step Configuration
 
 Each step needs:
+
 - `icon`: Emoji or icon to display
 - `title`: Step title
 - `content`: Description text
@@ -100,6 +103,7 @@ Make sure your target elements have unique IDs:
 ## Keyboard Navigation
 
 Tours support keyboard navigation:
+
 - **Enter/Space**: Next step
 - **Escape**: Close tour
 - **Tab**: Navigate through tour controls
@@ -113,5 +117,4 @@ Use the `TourTestComponent` to test tours during development. It provides button
 - Tours are lightweight and use the existing NextStep.js library
 - Keep tour steps focused and concise
 - Test tours on different screen sizes
-- Make sure target elements exist before starting tours 
-
+- Make sure target elements exist before starting tours

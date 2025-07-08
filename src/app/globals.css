@@ -95,14 +95,14 @@ body {
 /* NextStep.js overrides - Fix tour card width constraints */
 @layer utilities {
   /* Override NextStep's positioning wrapper constraints */
-  div[data-name="nextstep-pointer"] > div {
+  div[data-name='nextstep-pointer'] > div {
     max-width: none !important;
     min-width: auto !important;
     width: auto !important;
   }
-  
+
   /* Ensure our custom cards can be their desired width */
-  div[data-name="nextstep-pointer"] .bg-zinc-900 {
+  div[data-name='nextstep-pointer'] .bg-zinc-900 {
     max-width: 480px !important; /* Allow cards to be wider */
     width: max-content !important;
   }
