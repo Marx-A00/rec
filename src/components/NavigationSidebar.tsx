@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/hover-card';
 import SignOutButton from '@/components/auth/SignOutButton';
 import SignInButton from '@/components/auth/SignInButton';
-import { useNextStep } from 'nextstepjs';
 
 export default function NavigationSidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -32,7 +31,6 @@ export default function NavigationSidebar() {
   const { data: session } = useSession();
   const user = session?.user;
   const { openDrawer } = useRecommendationDrawerContext();
-  const { startNextStep } = useNextStep();
 
   // Load collapsed state from localStorage on mount
   useEffect(() => {
@@ -371,24 +369,7 @@ export default function NavigationSidebar() {
         )}
       </nav>
 
-      {/* Tour Test Buttons - Bottom of desktop sidebar */}
-      <div
-        className={`fixed left-4 bottom-4 z-40 hidden md:flex flex-col gap-2 transition-all duration-300 ease-out ${
-          isCollapsed
-            ? 'md:opacity-0 md:scale-95'
-            : 'md:opacity-100 md:scale-100'
-        } ${isMounted ? 'opacity-100' : 'opacity-0'}`}
-      >
-        <div className="text-xs text-zinc-500 font-medium mb-1 px-1"></div>
-        
-        <button
-          onClick={() => startNextStep('welcome-onboarding')}
-          className="group relative w-20 h-10 flex items-center justify-center rounded-md bg-gradient-to-br from-orange-600/80 to-orange-700/90 hover:from-orange-500/90 hover:to-orange-600 hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 text-xs text-white font-semibold transition-all duration-200 ease-out"
-          aria-label="Start Welcome Tour"
-        >
-          W
-        </button>
-      </div>
+
 
       {/* Mobile sidebar - separate for mobile navigation */}
       <nav

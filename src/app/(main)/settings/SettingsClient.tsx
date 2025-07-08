@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   User,
   Palette,
@@ -10,6 +11,7 @@ import {
   EyeOff,
   Save,
   Loader2,
+  Play,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -17,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/toast';
 import { useUpdateUserProfileMutation } from '@/hooks/useUpdateUserProfileMutation';
+import { useNextStep } from 'nextstepjs';
 
 interface SettingsUser {
   id: string;
@@ -37,8 +40,11 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
+  const [isStartingTour, setIsStartingTour] = useState(false);
   const { showToast } = useToast();
   const updateProfileMutation = useUpdateUserProfileMutation(user.id);
+  const router = useRouter();
+  const { startNextStep } = useNextStep();
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -97,6 +103,38 @@ export default function SettingsClient({ user }: SettingsClientProps) {
       } finally {
         setIsLoading(false);
       }
+    }
+  };
+
+  const handleRestartTour = async () => {
+    try {
+      setIsStartingTour(true);
+      showToast('Starting tour...', 'success');
+      
+      // Navigate to home page first
+      router.push('/');
+      
+      // Wait for navigation to complete, then start the tour
+      setTimeout(() => {
+        try {
+          // Clear any existing tour state to ensure a fresh start
+          localStorage.removeItem('nextstep-welcome-onboarding');
+          
+          // Start the welcome onboarding tour
+          startNextStep('welcome-onboarding');
+          console.log('🚀 Tour restarted from settings');
+        } catch (error) {
+          console.error('❌ Error starting tour:', error);
+          showToast('Failed to start tour', 'error');
+        } finally {
+          setIsStartingTour(false);
+        }
+      }, 1500); // Give enough time for navigation and page load
+      
+    } catch (error) {
+      console.error('❌ Error restarting tour:', error);
+      showToast('Failed to restart tour', 'error');
+      setIsStartingTour(false);
     }
   };
 
@@ -395,6 +433,25 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                     <div className='text-zinc-400 text-sm'>Following</div>
                   </div>
                 </div>
+              </div>
+
+              <div className='bg-blue-900/20 border border-blue-700 rounded-lg p-4'>
+                <h4 className='text-blue-400 font-medium mb-2'>App Tutorial</h4>
+                <p className='text-zinc-400 text-sm mb-4'>
+                  Restart the interactive tour to learn about all features and how to use the app effectively.
+                </p>
+                <Button 
+                  onClick={handleRestartTour}
+                  disabled={isStartingTour}
+                  className='flex items-center gap-2 bg-blue-600 hover:bg-blue-700'
+                >
+                  {isStartingTour ? (
+                    <Loader2 className='w-4 h-4 animate-spin' />
+                  ) : (
+                    <Play className='w-4 h-4' />
+                  )}
+                  {isStartingTour ? 'Starting Tour...' : 'Restart App Tour'}
+                </Button>
               </div>
 
               <div className='bg-red-900/20 border border-red-700 rounded-lg p-4'>

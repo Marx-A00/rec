@@ -1,9 +1,10 @@
 // src/components/MusicPlatformTourProvider.tsx
 'use client';
 
-import React, { ReactNode, useEffect, useCallback } from 'react';
+import React, { ReactNode, useEffect, useCallback, useState } from 'react';
 import { NextStepProvider, NextStep, useNextStep } from 'nextstepjs';
 import { useRouter, usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { musicPlatformTours } from '@/lib/tours/musicPlatformTours';
 import { CustomTourCard } from '@/components/CustomTourCard';
 
@@ -56,6 +57,8 @@ function TourStateManager() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       console.log('🔧 Setting up debugTour functions...');
+      // Make startNextStep available globally for debug functions
+      (window as any).startNextStep = startNextStep;
       (window as any).debugTour = {
         jumpToStep: (stepNumber: number) => {
           console.log(`🚀 Debug: Jumping to step ${stepNumber}`);
@@ -115,6 +118,46 @@ function TourStateManager() {
           console.log('🚀 Debug: Restarting tour');
           localStorage.removeItem('nextstep-welcome-onboarding');
           location.reload();
+        },
+        testOnboarding: async () => {
+          console.log('🚀 Debug: Testing onboarding flow');
+          try {
+            // Check current onboarding status
+            const statusResponse = await fetch('/api/users/onboarding-status');
+            const statusData = await statusResponse.json();
+            console.log('📊 Current onboarding status:', statusData);
+            
+            // If not a new user, we can simulate by resetting their profileUpdatedAt to null
+            if (!statusData.isNewUser) {
+              console.log('🔄 User is not new - this would normally auto-trigger for new users only');
+            }
+            
+            // Start the tour manually for testing
+            console.log('🎯 Starting welcome-onboarding tour...');
+            (window as any).startNextStep('welcome-onboarding');
+            
+          } catch (error) {
+            console.error('❌ Error testing onboarding:', error);
+          }
+        },
+        resetOnboardingStatus: async () => {
+          console.log('🚀 Debug: Resetting onboarding status (for testing)');
+          try {
+            const response = await fetch('/api/users/onboarding-status/reset', {
+              method: 'POST',
+            });
+            const data = await response.json();
+            
+            if (response.ok) {
+              console.log('✅ Onboarding status reset successfully!');
+              console.log('📝 Message:', data.message);
+              console.log('🔄 Refresh the page to trigger auto-onboarding for testing');
+            } else {
+              console.error('❌ Failed to reset onboarding status:', data.error);
+            }
+          } catch (error) {
+            console.error('❌ Error resetting onboarding status:', error);
+          }
         },
         getCurrentStep: () => {
           const data = localStorage.getItem('nextstep-welcome-onboarding');
@@ -742,6 +785,71 @@ function TourStateManager() {
   return null;
 }
 
+// Onboarding Tour Manager Component
+function OnboardingTourManager() {
+  const { data: session, status } = useSession();
+  const { startNextStep, isNextStepVisible, currentTour } = useNextStep();
+  const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
+  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(false);
+
+  useEffect(() => {
+    // Only check for new users once per session, and only when user is authenticated
+    if (
+      status === 'authenticated' && 
+      session?.user?.id && 
+      !hasCheckedOnboarding && 
+      !isCheckingOnboarding &&
+      !isNextStepVisible && // Don't interfere if tour is already running
+      !currentTour // Don't interfere if any tour is active
+    ) {
+      setIsCheckingOnboarding(true);
+      
+      const checkAndStartOnboarding = async () => {
+        try {
+          console.log('🔍 Checking onboarding status for user:', session.user.id);
+          
+          const response = await fetch('/api/users/onboarding-status');
+          const data = await response.json();
+          
+          if (response.ok && data.isNewUser) {
+            console.log('🎯 New user detected! Starting onboarding tour...');
+            
+            // Mark that user has started the tour by updating profileUpdatedAt
+            const updateResponse = await fetch('/api/users/onboarding-status', {
+              method: 'POST',
+            });
+            
+            if (updateResponse.ok) {
+              console.log('✅ Updated user onboarding status');
+              
+              // Start the welcome onboarding tour
+              setTimeout(() => {
+                startNextStep('welcome-onboarding');
+                console.log('🚀 Started welcome-onboarding tour for new user');
+              }, 1000); // Small delay to ensure everything is ready
+            } else {
+              console.error('❌ Failed to update user onboarding status');
+            }
+          } else if (response.ok) {
+            console.log('👋 Returning user detected - no onboarding needed');
+          } else {
+            console.error('❌ Failed to check onboarding status:', data.error);
+          }
+        } catch (error) {
+          console.error('❌ Error checking onboarding status:', error);
+        } finally {
+          setHasCheckedOnboarding(true);
+          setIsCheckingOnboarding(false);
+        }
+      };
+
+      checkAndStartOnboarding();
+    }
+  }, [session, status, hasCheckedOnboarding, isCheckingOnboarding, isNextStepVisible, currentTour, startNextStep]);
+
+  return null;
+}
+
 /**
  * Tour Provider Component
  * 
@@ -768,6 +876,7 @@ export function MusicPlatformTourProvider({ children }: MusicPlatformTourProvide
         navigationAdapter={() => navigationAdapter}
       >
         <TourStateManager />
+        <OnboardingTourManager />
         {children}
       </NextStep>
     </NextStepProvider>

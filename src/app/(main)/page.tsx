@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/resizable';
 import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
-import TourTestComponent from '@/components/TourTestComponent';
 
 
 
@@ -116,11 +115,6 @@ export default function Home() {
 
   return (
     <div className='fixed top-16 bottom-0 left-20 right-0 overflow-hidden'>
-      {/* Tour Test Component */}
-      
-      
-
-      
       {/* Album Modal */}
       <AlbumModal
         isOpen={!!selectedAlbum}
