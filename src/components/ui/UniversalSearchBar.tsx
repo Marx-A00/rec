@@ -640,7 +640,12 @@ const ContextAwareResult = ({
         >
           <AlbumImage
             src={result.image?.url || result.cover_image}
-            alt={result.image?.alt || (result.type === 'artist' ? sanitizeArtistName(result.title) : result.title)}
+            alt={
+              result.image?.alt ||
+              (result.type === 'artist'
+                ? sanitizeArtistName(result.title)
+                : result.title)
+            }
             width={imageSize.width}
             height={imageSize.height}
             className='w-full h-full object-cover rounded'
@@ -653,7 +658,7 @@ const ContextAwareResult = ({
         <div className='flex-1 min-w-0'>
           {/* Title */}
           <h3 className={`${titleClasses} text-white truncate`}>
-            {result.type === 'artist' 
+            {result.type === 'artist'
               ? truncateText(sanitizeArtistName(result.title), maxTitleLength)
               : truncateText(result.title, maxTitleLength)}
           </h3>
@@ -843,7 +848,9 @@ export default function UniversalSearchBar({
       if (event.key === 'Escape' && open) {
         setOpen(false);
         // Unfocus the search input
-        const searchInput = document.querySelector('[cmdk-input]') as HTMLInputElement;
+        const searchInput = document.querySelector(
+          '[cmdk-input]'
+        ) as HTMLInputElement;
         if (searchInput) {
           searchInput.blur();
         }
@@ -874,9 +881,9 @@ export default function UniversalSearchBar({
         className='border-zinc-700 shadow-lg bg-zinc-900'
         shouldFilter={false}
       >
-        <div className="[&_.border-b]:border-cosmic-latte [&_[cmdk-input-wrapper]]:border-cosmic-latte [&_svg]:text-cosmic-latte [&_svg]:opacity-100">
+        <div className='[&_.border-b]:border-cosmic-latte [&_[cmdk-input-wrapper]]:border-cosmic-latte [&_svg]:text-cosmic-latte [&_svg]:opacity-100'>
           <CommandInput
-            id="main-search-bar"
+            id='main-search-bar'
             placeholder={finalPlaceholder}
             value={query}
             onValueChange={handleValueChange}
@@ -893,7 +900,9 @@ export default function UniversalSearchBar({
               Array.isArray(results) &&
               results.length === 0 &&
               query.length >= finalMinQueryLength && (
-                <CommandEmpty className='text-zinc-400'>No results found.</CommandEmpty>
+                <CommandEmpty className='text-zinc-400'>
+                  No results found.
+                </CommandEmpty>
               )}
 
             {!isLoading && Array.isArray(results) && results.length > 0 && (
@@ -914,12 +923,12 @@ export default function UniversalSearchBar({
                     >
                       {typeResults.map(result =>
                         customResultRenderer ? (
-                                                                         <CommandItem
-             key={result.id}
-             value={`${result.type}-${result.id}`}
-             onSelect={() => handleResultSelect(result)}
-             className={`${displayConfig.padding} cursor-pointer hover:bg-zinc-700 data-[selected=true]:bg-zinc-600 aria-selected:bg-zinc-600`}
-           >
+                          <CommandItem
+                            key={result.id}
+                            value={`${result.type}-${result.id}`}
+                            onSelect={() => handleResultSelect(result)}
+                            className={`${displayConfig.padding} cursor-pointer hover:bg-zinc-700 data-[selected=true]:bg-zinc-600 aria-selected:bg-zinc-600`}
+                          >
                             {customResultRenderer(result)}
                           </CommandItem>
                         ) : (

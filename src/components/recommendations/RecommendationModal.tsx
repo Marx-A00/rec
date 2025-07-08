@@ -191,7 +191,7 @@ export default function RecommendationModal({
       onClick={onClose}
     >
       <div
-        id="recommendation-modal"
+        id='recommendation-modal'
         className='bg-zinc-900 border border-zinc-700 rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto relative'
         onClick={e => e.stopPropagation()}
       >

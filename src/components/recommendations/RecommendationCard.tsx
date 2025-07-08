@@ -6,6 +6,7 @@ import AlbumImage from '@/components/ui/AlbumImage';
 import { Button } from '@/components/ui/button';
 import { useDeleteRecommendationMutation } from '@/hooks';
 import { Recommendation } from '@/types/recommendation';
+
 import RecommendationDetailModal from './RecommendationDetailModal';
 
 interface RecommendationCardProps {
@@ -24,14 +25,14 @@ const getScoreColors = (score: number) => {
       heartColor: 'text-red-500 fill-red-500',
       textColor: 'text-red-600',
       bgGradient: 'from-red-50 to-pink-50',
-      borderColor: 'border-red-100'
+      borderColor: 'border-red-100',
     };
   } else if (score >= 8) {
     return {
       heartColor: 'text-green-500 fill-green-500',
       textColor: 'text-green-600',
       bgGradient: 'from-green-50 to-emerald-50',
-      borderColor: 'border-green-100'
+      borderColor: 'border-green-100',
     };
   } else {
     // 5-7 range (yellow)
@@ -39,7 +40,7 @@ const getScoreColors = (score: number) => {
       heartColor: 'text-yellow-500 fill-yellow-500',
       textColor: 'text-yellow-600',
       bgGradient: 'from-yellow-50 to-amber-50',
-      borderColor: 'border-yellow-100'
+      borderColor: 'border-yellow-100',
     };
   }
 };
@@ -54,7 +55,9 @@ export default function RecommendationCard({
 }: RecommendationCardProps) {
   const [showActions, setShowActions] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [selectedRecommendationId, setSelectedRecommendationId] = useState<string | null>(null);
+  const [selectedRecommendationId, setSelectedRecommendationId] = useState<
+    string | null
+  >(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
 
   const deleteMutation = useDeleteRecommendationMutation({
@@ -148,12 +151,16 @@ export default function RecommendationCard({
           border border-zinc-600
           p-3 relative overflow-hidden
           focus-within:ring-2 focus-within:ring-blue-400 focus-within:ring-offset-2 focus-within:ring-offset-black
-          ${(showDetailModal || onDetail) ? 'cursor-pointer' : ''}
+          ${showDetailModal || onDetail ? 'cursor-pointer' : ''}
         `}
-        onClick={(showDetailModal || onDetail) ? handleCardClick : undefined}
-        onKeyDown={(showDetailModal || onDetail) ? e => handleKeyDown(e, handleCardClick) : undefined}
-        tabIndex={(showDetailModal || onDetail) ? 0 : -1}
-        role={(showDetailModal || onDetail) ? 'button' : 'article'}
+        onClick={showDetailModal || onDetail ? handleCardClick : undefined}
+        onKeyDown={
+          showDetailModal || onDetail
+            ? e => handleKeyDown(e, handleCardClick)
+            : undefined
+        }
+        tabIndex={showDetailModal || onDetail ? 0 : -1}
+        role={showDetailModal || onDetail ? 'button' : 'article'}
         aria-label={`Music recommendation: ${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist} suggests ${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}, rated ${recommendation.score} out of 10`}
       >
         {/* Compact header with user info */}

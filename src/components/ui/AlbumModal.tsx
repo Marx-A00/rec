@@ -151,8 +151,16 @@ export default function AlbumModal({
         id: String(albumId),
         title: data.albumTitle,
         artists: data.albumArtist ? [{ id: '', name: data.albumArtist }] : [],
-        year: typeof data.albumYear === 'string' ? parseInt(data.albumYear) : data.albumYear || undefined,
-        image: { url: data.albumImageUrl || '', width: 300, height: 300, alt: data.albumTitle },
+        year:
+          typeof data.albumYear === 'string'
+            ? parseInt(data.albumYear)
+            : data.albumYear || undefined,
+        image: {
+          url: data.albumImageUrl || '',
+          width: 300,
+          height: 300,
+          alt: data.albumTitle,
+        },
         label: undefined,
         genre: [],
       };
@@ -160,12 +168,22 @@ export default function AlbumModal({
       return {
         id: String(albumId),
         title: data.title,
-        artists: data.artist 
-          ? [{ id: '', name: data.artist }] 
-          : data.basic_information?.artists?.map(a => ({ id: '', name: a.name })) || [],
+        artists: data.artist
+          ? [{ id: '', name: data.artist }]
+          : data.basic_information?.artists?.map(a => ({
+              id: '',
+              name: a.name,
+            })) || [],
         year: data.year,
-        image: { url: getImageUrl() || '', width: 300, height: 300, alt: data.title },
-        label: Array.isArray(data.label) ? data.label.join(', ') : data.label?.[0],
+        image: {
+          url: getImageUrl() || '',
+          width: 300,
+          height: 300,
+          alt: data.title,
+        },
+        label: Array.isArray(data.label)
+          ? data.label.join(', ')
+          : data.label?.[0],
         genre: [],
       };
     }
@@ -212,17 +230,21 @@ export default function AlbumModal({
       const title = getTitle();
       const artist = getArtist();
       const albumId = getAlbumId();
-      
+
       if (navigator.share) {
         await navigator.share({
           title: `${title} by ${artist}`,
           text: `Check out this album: ${title}`,
-          url: albumId ? `${window.location.origin}/albums/${albumId}` : window.location.href,
+          url: albumId
+            ? `${window.location.origin}/albums/${albumId}`
+            : window.location.href,
         });
         showToast('Album shared successfully', 'success');
       } else {
         // Fallback to clipboard
-        const shareUrl = albumId ? `${window.location.origin}/albums/${albumId}` : window.location.href;
+        const shareUrl = albumId
+          ? `${window.location.origin}/albums/${albumId}`
+          : window.location.href;
         await navigator.clipboard.writeText(shareUrl);
         showToast('Album link copied to clipboard', 'success');
       }
@@ -568,26 +590,31 @@ export default function AlbumModal({
           {albumForInteractions && (
             <div className='mb-4'>
               {/* Artist buttons */}
-              {albumForInteractions.artists && albumForInteractions.artists.length > 0 && (
-                <div className='space-y-1 mb-4'>
-                  <h3 className='text-xs font-medium text-zinc-400'>Artists</h3>
-                  <div className='flex flex-wrap gap-1.5'>
-                    {albumForInteractions.artists.map((artist, index) => (
-                      <Button
-                        key={`${artist.id}-${index}`}
-                        variant='secondary'
-                        size='sm'
-                        onClick={() => handleArtistClick(artist.id, artist.name)}
-                        className='gap-1.5 text-xs h-7 px-2'
-                        aria-label={`View artist ${sanitizeArtistName(artist.name)}`}
-                      >
-                        <User className='h-3 w-3' />
-                        {sanitizeArtistName(artist.name)}
-                      </Button>
-                    ))}
+              {albumForInteractions.artists &&
+                albumForInteractions.artists.length > 0 && (
+                  <div className='space-y-1 mb-4'>
+                    <h3 className='text-xs font-medium text-zinc-400'>
+                      Artists
+                    </h3>
+                    <div className='flex flex-wrap gap-1.5'>
+                      {albumForInteractions.artists.map((artist, index) => (
+                        <Button
+                          key={`${artist.id}-${index}`}
+                          variant='secondary'
+                          size='sm'
+                          onClick={() =>
+                            handleArtistClick(artist.id, artist.name)
+                          }
+                          className='gap-1.5 text-xs h-7 px-2'
+                          aria-label={`View artist ${sanitizeArtistName(artist.name)}`}
+                        >
+                          <User className='h-3 w-3' />
+                          {sanitizeArtistName(artist.name)}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Action Buttons */}
               <div className='flex flex-wrap gap-2 justify-center lg:justify-start'>
@@ -602,7 +629,11 @@ export default function AlbumModal({
                   Make Rec
                 </Button>
 
-                <AddToCollectionButton album={albumForInteractions} size='sm' variant='default' />
+                <AddToCollectionButton
+                  album={albumForInteractions}
+                  size='sm'
+                  variant='default'
+                />
 
                 <Button
                   variant='outline'

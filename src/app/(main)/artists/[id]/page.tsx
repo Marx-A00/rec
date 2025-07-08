@@ -43,7 +43,10 @@ export default async function ArtistDetailsPage({
       <BackButton text='Back' fallbackHref='/' />
 
       {/* Artist Header */}
-      <div id="artist-page-header" className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'>
+      <div
+        id='artist-page-header'
+        className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'
+      >
         {/* Artist Image */}
         <div className='lg:col-span-1'>
           <div className='w-full max-w-md mx-auto'>

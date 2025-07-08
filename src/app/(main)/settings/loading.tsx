@@ -22,7 +22,7 @@ export default function SettingsLoading() {
         {/* Content Skeleton */}
         <div className='p-6 space-y-6'>
           <div className='w-48 h-6 bg-zinc-700 rounded animate-pulse' />
-          
+
           {/* Avatar section skeleton */}
           <div className='flex items-center gap-6'>
             <div className='w-20 h-20 bg-zinc-700 rounded-full animate-pulse' />
@@ -55,4 +55,4 @@ export default function SettingsLoading() {
       </div>
     </div>
   );
-} 
+}

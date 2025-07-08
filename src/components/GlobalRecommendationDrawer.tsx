@@ -1,12 +1,19 @@
 'use client';
 
 import { useEffect } from 'react';
+
 import RecommendationDrawer from '@/components/recommendations/RecommendationDrawer';
 import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 
 export default function GlobalRecommendationDrawer() {
-  const { isOpen, prefilledAlbum, closeDrawer, handleSuccess, openDrawer, openDrawerForTour } =
-    useRecommendationDrawerContext();
+  const {
+    isOpen,
+    prefilledAlbum,
+    closeDrawer,
+    handleSuccess,
+    openDrawer,
+    openDrawerForTour,
+  } = useRecommendationDrawerContext();
 
   // Listen for tour events to open the drawer
   useEffect(() => {
@@ -23,8 +30,14 @@ export default function GlobalRecommendationDrawer() {
     window.addEventListener('close-recommendation-drawer', handleCloseDrawer);
 
     return () => {
-      window.removeEventListener('open-recommendation-drawer', handleOpenDrawer);
-      window.removeEventListener('close-recommendation-drawer', handleCloseDrawer);
+      window.removeEventListener(
+        'open-recommendation-drawer',
+        handleOpenDrawer
+      );
+      window.removeEventListener(
+        'close-recommendation-drawer',
+        handleCloseDrawer
+      );
     };
   }, [openDrawerForTour, closeDrawer]);
 

@@ -13,13 +13,13 @@ import {
   Loader2,
   Play,
 } from 'lucide-react';
+import { useNextStep } from 'nextstepjs';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/toast';
 import { useUpdateUserProfileMutation } from '@/hooks/useUpdateUserProfileMutation';
-import { useNextStep } from 'nextstepjs';
 
 interface SettingsUser {
   id: string;
@@ -92,7 +92,13 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   };
 
   const handleDeleteAccount = async () => {
-    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+    // Confirm account deletion with user
+    if (
+      // eslint-disable-next-line no-alert
+      window.confirm(
+        'Are you sure you want to delete your account? This action cannot be undone.'
+      )
+    ) {
       try {
         setIsLoading(true);
         // TODO: Implement account deletion API
@@ -110,16 +116,16 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     try {
       setIsStartingTour(true);
       showToast('Starting tour...', 'success');
-      
+
       // Navigate to home page first
       router.push('/');
-      
+
       // Wait for navigation to complete, then start the tour
       setTimeout(() => {
         try {
           // Clear any existing tour state to ensure a fresh start
           localStorage.removeItem('nextstep-welcome-onboarding');
-          
+
           // Start the welcome onboarding tour
           startNextStep('welcome-onboarding');
           console.log('🚀 Tour restarted from settings');
@@ -130,7 +136,6 @@ export default function SettingsClient({ user }: SettingsClientProps) {
           setIsStartingTour(false);
         }
       }, 1500); // Give enough time for navigation and page load
-      
     } catch (error) {
       console.error('❌ Error restarting tour:', error);
       showToast('Failed to restart tour', 'error');
@@ -175,12 +180,17 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         {/* Profile Tab */}
         <TabsContent value='profile' className='p-6 space-y-6'>
           <div className='space-y-6'>
-            <h3 className='text-xl font-semibold text-white'>Profile Information</h3>
-            
+            <h3 className='text-xl font-semibold text-white'>
+              Profile Information
+            </h3>
+
             {/* Avatar Section */}
             <div className='flex items-center gap-6'>
               <Avatar className='h-20 w-20'>
-                <AvatarImage src={user.image || '/placeholder.svg'} alt={user.name || 'User'} />
+                <AvatarImage
+                  src={user.image || '/placeholder.svg'}
+                  alt={user.name || 'User'}
+                />
                 <AvatarFallback className='bg-zinc-800 text-zinc-200 text-lg'>
                   {user.name?.charAt(0) || 'U'}
                 </AvatarFallback>
@@ -188,7 +198,8 @@ export default function SettingsClient({ user }: SettingsClientProps) {
               <div className='space-y-2'>
                 <h4 className='text-lg font-medium text-white'>{user.name}</h4>
                 <p className='text-zinc-400 text-sm'>
-                  {user.recommendationsCount} recommendations • {user.followersCount} followers
+                  {user.recommendationsCount} recommendations •{' '}
+                  {user.followersCount} followers
                 </p>
                 <Button variant='outline' size='sm' className='mt-2'>
                   Change Avatar
@@ -198,11 +209,15 @@ export default function SettingsClient({ user }: SettingsClientProps) {
 
             {/* Name Field */}
             <div className='space-y-2'>
-              <label className='text-sm font-medium text-zinc-200'>Display Name</label>
+              <label className='text-sm font-medium text-zinc-200'>
+                Display Name
+              </label>
               <input
                 type='text'
                 value={profileForm.name}
-                onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                onChange={e =>
+                  setProfileForm(prev => ({ ...prev, name: e.target.value }))
+                }
                 className='w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:border-transparent'
                 placeholder='Your display name'
               />
@@ -213,7 +228,9 @@ export default function SettingsClient({ user }: SettingsClientProps) {
               <label className='text-sm font-medium text-zinc-200'>Bio</label>
               <textarea
                 value={profileForm.bio}
-                onChange={(e) => setProfileForm(prev => ({ ...prev, bio: e.target.value }))}
+                onChange={e =>
+                  setProfileForm(prev => ({ ...prev, bio: e.target.value }))
+                }
                 className='w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:border-transparent h-24 resize-none'
                 placeholder='Tell us about yourself...'
               />
@@ -232,17 +249,21 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                   onClick={() => setShowEmail(!showEmail)}
                   className='p-1'
                 >
-                  {showEmail ? <EyeOff className='w-4 h-4' /> : <Eye className='w-4 h-4' />}
+                  {showEmail ? (
+                    <EyeOff className='w-4 h-4' />
+                  ) : (
+                    <Eye className='w-4 h-4' />
+                  )}
                 </Button>
               </div>
             </div>
 
-            <Button 
-              onClick={handleProfileSave} 
+            <Button
+              onClick={handleProfileSave}
               disabled={isLoading || updateProfileMutation.isPending}
               className='flex items-center gap-2'
             >
-              {(isLoading || updateProfileMutation.isPending) ? (
+              {isLoading || updateProfileMutation.isPending ? (
                 <Loader2 className='w-4 h-4 animate-spin' />
               ) : (
                 <Save className='w-4 h-4' />
@@ -256,10 +277,12 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         <TabsContent value='preferences' className='p-6 space-y-6'>
           <div className='space-y-6'>
             <h3 className='text-xl font-semibold text-white'>Preferences</h3>
-            
+
             {/* Profile Visibility */}
             <div className='space-y-3'>
-              <h4 className='text-lg font-medium text-zinc-200'>Profile Visibility</h4>
+              <h4 className='text-lg font-medium text-zinc-200'>
+                Profile Visibility
+              </h4>
               <div className='space-y-2'>
                 <label className='flex items-center gap-3'>
                   <input
@@ -267,10 +290,17 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                     name='profileVisibility'
                     value='public'
                     checked={preferences.profileVisibility === 'public'}
-                    onChange={(e) => setPreferences(prev => ({ ...prev, profileVisibility: e.target.value }))}
+                    onChange={e =>
+                      setPreferences(prev => ({
+                        ...prev,
+                        profileVisibility: e.target.value,
+                      }))
+                    }
                     className='text-cosmic-latte focus:ring-cosmic-latte'
                   />
-                  <span className='text-white'>Public - Anyone can view your profile</span>
+                  <span className='text-white'>
+                    Public - Anyone can view your profile
+                  </span>
                 </label>
                 <label className='flex items-center gap-3'>
                   <input
@@ -278,7 +308,12 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                     name='profileVisibility'
                     value='followers'
                     checked={preferences.profileVisibility === 'followers'}
-                    onChange={(e) => setPreferences(prev => ({ ...prev, profileVisibility: e.target.value }))}
+                    onChange={e =>
+                      setPreferences(prev => ({
+                        ...prev,
+                        profileVisibility: e.target.value,
+                      }))
+                    }
                     className='text-cosmic-latte focus:ring-cosmic-latte'
                   />
                   <span className='text-white'>Followers only</span>
@@ -289,24 +324,38 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                     name='profileVisibility'
                     value='private'
                     checked={preferences.profileVisibility === 'private'}
-                    onChange={(e) => setPreferences(prev => ({ ...prev, profileVisibility: e.target.value }))}
+                    onChange={e =>
+                      setPreferences(prev => ({
+                        ...prev,
+                        profileVisibility: e.target.value,
+                      }))
+                    }
                     className='text-cosmic-latte focus:ring-cosmic-latte'
                   />
-                  <span className='text-white'>Private - Only you can view</span>
+                  <span className='text-white'>
+                    Private - Only you can view
+                  </span>
                 </label>
               </div>
             </div>
 
             {/* Notifications */}
             <div className='space-y-3'>
-              <h4 className='text-lg font-medium text-zinc-200'>Notifications</h4>
+              <h4 className='text-lg font-medium text-zinc-200'>
+                Notifications
+              </h4>
               <div className='space-y-3'>
                 <label className='flex items-center justify-between'>
                   <span className='text-white'>Email notifications</span>
                   <input
                     type='checkbox'
                     checked={preferences.emailNotifications}
-                    onChange={(e) => setPreferences(prev => ({ ...prev, emailNotifications: e.target.checked }))}
+                    onChange={e =>
+                      setPreferences(prev => ({
+                        ...prev,
+                        emailNotifications: e.target.checked,
+                      }))
+                    }
                     className='rounded border-zinc-600 text-cosmic-latte focus:ring-cosmic-latte'
                   />
                 </label>
@@ -315,15 +364,20 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                   <input
                     type='checkbox'
                     checked={preferences.pushNotifications}
-                    onChange={(e) => setPreferences(prev => ({ ...prev, pushNotifications: e.target.checked }))}
+                    onChange={e =>
+                      setPreferences(prev => ({
+                        ...prev,
+                        pushNotifications: e.target.checked,
+                      }))
+                    }
                     className='rounded border-zinc-600 text-cosmic-latte focus:ring-cosmic-latte'
                   />
                 </label>
               </div>
             </div>
 
-            <Button 
-              onClick={handlePreferencesSave} 
+            <Button
+              onClick={handlePreferencesSave}
               disabled={isLoading}
               className='flex items-center gap-2'
             >
@@ -340,18 +394,29 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         {/* Privacy Tab */}
         <TabsContent value='privacy' className='p-6 space-y-6'>
           <div className='space-y-6'>
-            <h3 className='text-xl font-semibold text-white'>Privacy Settings</h3>
-            
+            <h3 className='text-xl font-semibold text-white'>
+              Privacy Settings
+            </h3>
+
             <div className='space-y-4'>
               <div className='flex items-center justify-between py-3 border-b border-zinc-700'>
                 <div>
-                  <h4 className='text-white font-medium'>Show followers count</h4>
-                  <p className='text-zinc-400 text-sm'>Display follower count on your profile</p>
+                  <h4 className='text-white font-medium'>
+                    Show followers count
+                  </h4>
+                  <p className='text-zinc-400 text-sm'>
+                    Display follower count on your profile
+                  </p>
                 </div>
                 <input
                   type='checkbox'
                   checked={preferences.followersVisible}
-                  onChange={(e) => setPreferences(prev => ({ ...prev, followersVisible: e.target.checked }))}
+                  onChange={e =>
+                    setPreferences(prev => ({
+                      ...prev,
+                      followersVisible: e.target.checked,
+                    }))
+                  }
                   className='rounded border-zinc-600 text-cosmic-latte focus:ring-cosmic-latte'
                 />
               </div>
@@ -359,25 +424,41 @@ export default function SettingsClient({ user }: SettingsClientProps) {
               <div className='flex items-center justify-between py-3 border-b border-zinc-700'>
                 <div>
                   <h4 className='text-white font-medium'>Show collections</h4>
-                  <p className='text-zinc-400 text-sm'>Allow others to view your album collections</p>
+                  <p className='text-zinc-400 text-sm'>
+                    Allow others to view your album collections
+                  </p>
                 </div>
                 <input
                   type='checkbox'
                   checked={preferences.collectionsVisible}
-                  onChange={(e) => setPreferences(prev => ({ ...prev, collectionsVisible: e.target.checked }))}
+                  onChange={e =>
+                    setPreferences(prev => ({
+                      ...prev,
+                      collectionsVisible: e.target.checked,
+                    }))
+                  }
                   className='rounded border-zinc-600 text-cosmic-latte focus:ring-cosmic-latte'
                 />
               </div>
 
               <div className='flex items-center justify-between py-3 border-b border-zinc-700'>
                 <div>
-                  <h4 className='text-white font-medium'>Show recommendations</h4>
-                  <p className='text-zinc-400 text-sm'>Display your music recommendations publicly</p>
+                  <h4 className='text-white font-medium'>
+                    Show recommendations
+                  </h4>
+                  <p className='text-zinc-400 text-sm'>
+                    Display your music recommendations publicly
+                  </p>
                 </div>
                 <input
                   type='checkbox'
                   checked={preferences.recommendationsVisible}
-                  onChange={(e) => setPreferences(prev => ({ ...prev, recommendationsVisible: e.target.checked }))}
+                  onChange={e =>
+                    setPreferences(prev => ({
+                      ...prev,
+                      recommendationsVisible: e.target.checked,
+                    }))
+                  }
                   className='rounded border-zinc-600 text-cosmic-latte focus:ring-cosmic-latte'
                 />
               </div>
@@ -385,19 +466,26 @@ export default function SettingsClient({ user }: SettingsClientProps) {
               <div className='flex items-center justify-between py-3'>
                 <div>
                   <h4 className='text-white font-medium'>Allow follows</h4>
-                  <p className='text-zinc-400 text-sm'>Let other users follow your profile</p>
+                  <p className='text-zinc-400 text-sm'>
+                    Let other users follow your profile
+                  </p>
                 </div>
                 <input
                   type='checkbox'
                   checked={preferences.allowFollows}
-                  onChange={(e) => setPreferences(prev => ({ ...prev, allowFollows: e.target.checked }))}
+                  onChange={e =>
+                    setPreferences(prev => ({
+                      ...prev,
+                      allowFollows: e.target.checked,
+                    }))
+                  }
                   className='rounded border-zinc-600 text-cosmic-latte focus:ring-cosmic-latte'
                 />
               </div>
             </div>
 
-            <Button 
-              onClick={handlePreferencesSave} 
+            <Button
+              onClick={handlePreferencesSave}
               disabled={isLoading}
               className='flex items-center gap-2'
             >
@@ -414,22 +502,32 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         {/* Account Tab */}
         <TabsContent value='account' className='p-6 space-y-6'>
           <div className='space-y-6'>
-            <h3 className='text-xl font-semibold text-white'>Account Management</h3>
-            
+            <h3 className='text-xl font-semibold text-white'>
+              Account Management
+            </h3>
+
             <div className='space-y-4'>
               <div className='bg-zinc-800 rounded-lg p-4 border border-zinc-700'>
-                <h4 className='text-white font-medium mb-2'>Account Statistics</h4>
+                <h4 className='text-white font-medium mb-2'>
+                  Account Statistics
+                </h4>
                 <div className='grid grid-cols-3 gap-4 text-center'>
                   <div>
-                    <div className='text-2xl font-bold text-cosmic-latte'>{user.recommendationsCount}</div>
+                    <div className='text-2xl font-bold text-cosmic-latte'>
+                      {user.recommendationsCount}
+                    </div>
                     <div className='text-zinc-400 text-sm'>Recommendations</div>
                   </div>
                   <div>
-                    <div className='text-2xl font-bold text-cosmic-latte'>{user.followersCount}</div>
+                    <div className='text-2xl font-bold text-cosmic-latte'>
+                      {user.followersCount}
+                    </div>
                     <div className='text-zinc-400 text-sm'>Followers</div>
                   </div>
                   <div>
-                    <div className='text-2xl font-bold text-cosmic-latte'>{user.followingCount}</div>
+                    <div className='text-2xl font-bold text-cosmic-latte'>
+                      {user.followingCount}
+                    </div>
                     <div className='text-zinc-400 text-sm'>Following</div>
                   </div>
                 </div>
@@ -438,9 +536,10 @@ export default function SettingsClient({ user }: SettingsClientProps) {
               <div className='bg-blue-900/20 border border-blue-700 rounded-lg p-4'>
                 <h4 className='text-blue-400 font-medium mb-2'>App Tutorial</h4>
                 <p className='text-zinc-400 text-sm mb-4'>
-                  Restart the interactive tour to learn about all features and how to use the app effectively.
+                  Restart the interactive tour to learn about all features and
+                  how to use the app effectively.
                 </p>
-                <Button 
+                <Button
                   onClick={handleRestartTour}
                   disabled={isStartingTour}
                   className='flex items-center gap-2 bg-blue-600 hover:bg-blue-700'
@@ -457,9 +556,10 @@ export default function SettingsClient({ user }: SettingsClientProps) {
               <div className='bg-red-900/20 border border-red-700 rounded-lg p-4'>
                 <h4 className='text-red-400 font-medium mb-2'>Danger Zone</h4>
                 <p className='text-zinc-400 text-sm mb-4'>
-                  Once you delete your account, there is no going back. Please be certain.
+                  Once you delete your account, there is no going back. Please
+                  be certain.
                 </p>
-                <Button 
+                <Button
                   variant='destructive'
                   onClick={handleDeleteAccount}
                   disabled={isLoading}
@@ -479,4 +579,4 @@ export default function SettingsClient({ user }: SettingsClientProps) {
       </Tabs>
     </div>
   );
-} 
+}

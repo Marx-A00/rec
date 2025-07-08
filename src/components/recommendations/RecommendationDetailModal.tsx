@@ -19,14 +19,14 @@ const getScoreColors = (score: number) => {
       heartColor: 'text-red-500 fill-red-500',
       textColor: 'text-red-600',
       bgGradient: 'from-red-50 to-pink-50',
-      borderColor: 'border-red-100'
+      borderColor: 'border-red-100',
     };
   } else if (score >= 8) {
     return {
       heartColor: 'text-green-500 fill-green-500',
       textColor: 'text-green-600',
       bgGradient: 'from-green-50 to-emerald-50',
-      borderColor: 'border-green-100'
+      borderColor: 'border-green-100',
     };
   } else {
     // 5-7 range (yellow)
@@ -34,7 +34,7 @@ const getScoreColors = (score: number) => {
       heartColor: 'text-yellow-500 fill-yellow-500',
       textColor: 'text-yellow-600',
       bgGradient: 'from-yellow-50 to-amber-50',
-      borderColor: 'border-yellow-100'
+      borderColor: 'border-yellow-100',
     };
   }
 };
@@ -43,17 +43,22 @@ export default function RecommendationDetailModal({
   recommendationId,
   onClose,
 }: RecommendationDetailModalProps) {
-  const { data: recommendation, isLoading, error } = useRecommendationQuery(recommendationId || '');
+  const {
+    data: recommendation,
+    isLoading,
+    error,
+  } = useRecommendationQuery(recommendationId || '');
 
   if (!recommendationId) return null;
 
   if (isLoading) {
     return (
-      <div 
+      <div
         className='fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4 transition-all duration-300'
         style={{
           backdropFilter: 'blur(4px)',
-          transition: 'background-color 300ms ease-out, backdrop-filter 150ms ease-out',
+          transition:
+            'background-color 300ms ease-out, backdrop-filter 150ms ease-out',
         }}
       >
         <div className='flex flex-col items-center'>
@@ -66,11 +71,12 @@ export default function RecommendationDetailModal({
 
   if (error || !recommendation) {
     return (
-      <div 
+      <div
         className='fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4 transition-all duration-300'
         style={{
           backdropFilter: 'blur(4px)',
-          transition: 'background-color 300ms ease-out, backdrop-filter 150ms ease-out',
+          transition:
+            'background-color 300ms ease-out, backdrop-filter 150ms ease-out',
         }}
       >
         <div className='flex flex-col items-center'>
@@ -90,11 +96,12 @@ export default function RecommendationDetailModal({
   const scoreColors = getScoreColors(recommendation.score);
 
   return (
-    <div 
+    <div
       className='fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4 transition-all duration-300'
       style={{
         backdropFilter: 'blur(4px)',
-        transition: 'background-color 300ms ease-out, backdrop-filter 150ms ease-out',
+        transition:
+          'background-color 300ms ease-out, backdrop-filter 150ms ease-out',
       }}
       onClick={e => {
         // Only close if clicking the backdrop, not the modal content
@@ -173,11 +180,17 @@ export default function RecommendationDetailModal({
             <div className='text-center'>
               <div className='mb-4'>
                 <Link href={`/albums/${recommendation.basisAlbumDiscogsId}`}>
-                  <p className='font-bold text-cosmic-latte text-xl hover:underline cursor-pointer hover:text-white transition-colors'>{recommendation.basisAlbumTitle}</p>
+                  <p className='font-bold text-cosmic-latte text-xl hover:underline cursor-pointer hover:text-white transition-colors'>
+                    {recommendation.basisAlbumTitle}
+                  </p>
                 </Link>
-                <p className='text-zinc-300 text-lg'>{recommendation.basisAlbumArtist}</p>
+                <p className='text-zinc-300 text-lg'>
+                  {recommendation.basisAlbumArtist}
+                </p>
                 {recommendation.basisAlbumYear && (
-                  <p className='text-zinc-400'>{recommendation.basisAlbumYear}</p>
+                  <p className='text-zinc-400'>
+                    {recommendation.basisAlbumYear}
+                  </p>
                 )}
               </div>
               <Link href={`/albums/${recommendation.basisAlbumDiscogsId}`}>
@@ -206,15 +219,25 @@ export default function RecommendationDetailModal({
             {/* Recommended Album */}
             <div className='text-center'>
               <div className='mb-4'>
-                <Link href={`/albums/${recommendation.recommendedAlbumDiscogsId}`}>
-                  <p className='font-bold text-cosmic-latte text-xl hover:underline cursor-pointer hover:text-white transition-colors'>{recommendation.recommendedAlbumTitle}</p>
+                <Link
+                  href={`/albums/${recommendation.recommendedAlbumDiscogsId}`}
+                >
+                  <p className='font-bold text-cosmic-latte text-xl hover:underline cursor-pointer hover:text-white transition-colors'>
+                    {recommendation.recommendedAlbumTitle}
+                  </p>
                 </Link>
-                <p className='text-zinc-300 text-lg'>{recommendation.recommendedAlbumArtist}</p>
+                <p className='text-zinc-300 text-lg'>
+                  {recommendation.recommendedAlbumArtist}
+                </p>
                 {recommendation.recommendedAlbumYear && (
-                  <p className='text-zinc-400'>{recommendation.recommendedAlbumYear}</p>
+                  <p className='text-zinc-400'>
+                    {recommendation.recommendedAlbumYear}
+                  </p>
                 )}
               </div>
-              <Link href={`/albums/${recommendation.recommendedAlbumDiscogsId}`}>
+              <Link
+                href={`/albums/${recommendation.recommendedAlbumDiscogsId}`}
+              >
                 <div className='group relative cursor-pointer'>
                   <div className='relative w-72 h-72 lg:w-80 lg:h-80 mx-auto aspect-square overflow-hidden rounded-lg shadow-2xl transition-all duration-300 group-hover:shadow-xl group-hover:scale-105 bg-zinc-800 border-2 border-zinc-700'>
                     <AlbumImage
@@ -239,12 +262,21 @@ export default function RecommendationDetailModal({
           </div>
 
           {/* Centered rating heart between albums */}
-          <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20' style={{ top: 'calc(50% + 32px)' }}>
+          <div
+            className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20'
+            style={{ top: 'calc(50% + 32px)' }}
+          >
             <div className='bg-black border-2 border-black rounded-full shadow-xl'>
-              <div className={`flex items-center justify-center w-16 h-16 bg-gradient-to-r ${scoreColors.bgGradient} rounded-full border-2 ${scoreColors.borderColor} shadow-lg`}>
+              <div
+                className={`flex items-center justify-center w-16 h-16 bg-gradient-to-r ${scoreColors.bgGradient} rounded-full border-2 ${scoreColors.borderColor} shadow-lg`}
+              >
                 <div className='flex flex-col items-center'>
-                  <Heart className={`h-5 w-5 ${scoreColors.heartColor} drop-shadow-sm mb-0.5`} />
-                  <span className={`text-sm font-bold ${scoreColors.textColor} tabular-nums leading-none`}>
+                  <Heart
+                    className={`h-5 w-5 ${scoreColors.heartColor} drop-shadow-sm mb-0.5`}
+                  />
+                  <span
+                    className={`text-sm font-bold ${scoreColors.textColor} tabular-nums leading-none`}
+                  >
                     {recommendation.score}
                   </span>
                 </div>

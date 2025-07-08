@@ -51,8 +51,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       ...prev,
       [name]: validation.isValid ? '' : validation.message || '',
     }));
-
-
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -233,8 +231,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             <PasswordStrength password={formData.password} />
           </div>
         </div>
-
-
       </div>
 
       <button

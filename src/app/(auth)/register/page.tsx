@@ -49,8 +49,8 @@ export default function Register() {
             className='font-medium text-white hover:text-cosmic-latte/80 transition-colors duration-200 underline underline-offset-4'
             aria-label='Sign in to existing account - Go to sign in page'
           >
-            Sign in  
-                     </Link>
+            Sign in
+          </Link>
         </p>
       </div>
 

@@ -134,7 +134,7 @@ const AlbumSearchBackwardCompatible = forwardRef<
         <div className='relative z-20'>
           <Search className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
           <input
-            id="recommendation-search-input"
+            id='recommendation-search-input'
             type='text'
             placeholder={placeholder}
             value={searchQuery}
@@ -170,15 +170,15 @@ const AlbumSearchBackwardCompatible = forwardRef<
                 className='flex items-center space-x-2 p-2 bg-zinc-800 border border-zinc-600 rounded-lg cursor-pointer hover:bg-zinc-700 hover:border-zinc-500 transition-all relative'
               >
                 <div className='w-10 h-10 flex-shrink-0 relative'>
-                                      <AlbumImage
-                      src={album.image?.url}
-                      alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}
-                      width={40}
-                      height={40}
-                      className='w-full h-full rounded object-cover'
-                      sizes='40px'
-                      showSkeleton={false}
-                    />
+                  <AlbumImage
+                    src={album.image?.url}
+                    alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}
+                    width={40}
+                    height={40}
+                    className='w-full h-full rounded object-cover'
+                    sizes='40px'
+                    showSkeleton={false}
+                  />
                 </div>
                 <div className='flex-1 min-w-0 relative z-10'>
                   <p className='font-semibold text-white truncate text-sm'>

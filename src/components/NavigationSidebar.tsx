@@ -147,7 +147,7 @@ export default function NavigationSidebar() {
                 }}
               >
                 <button
-                  id="user-profile-menu"
+                  id='user-profile-menu'
                   className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 hover:bg-black/40 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:outline-none transition-all duration-200 ease-out'
                   aria-label={`User profile: ${user.name || 'Unknown user'}`}
                   aria-describedby='user-profile-info'
@@ -306,7 +306,7 @@ export default function NavigationSidebar() {
               return (
                 <button
                   key={href}
-                  id="create-recommendation-button"
+                  id='create-recommendation-button'
                   onClick={handleClick}
                   onKeyDown={handleKeyDown}
                   tabIndex={isCollapsed ? -1 : 0}
@@ -369,8 +369,6 @@ export default function NavigationSidebar() {
         )}
       </nav>
 
-
-
       {/* Mobile sidebar - separate for mobile navigation */}
       <nav
         id='mobile-navigation'
@@ -410,7 +408,7 @@ export default function NavigationSidebar() {
               return (
                 <button
                   key={href}
-                  id="create-recommendation-button-mobile"
+                  id='create-recommendation-button-mobile'
                   onClick={e => {
                     handleMobileClick();
                     (e.currentTarget as HTMLElement).blur();
@@ -433,7 +431,11 @@ export default function NavigationSidebar() {
                 }}
               >
                 <button
-                  id={href === '/browse' ? 'discover-nav-button-mobile' : undefined}
+                  id={
+                    href === '/browse'
+                      ? 'discover-nav-button-mobile'
+                      : undefined
+                  }
                   className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 hover:bg-black/40 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:outline-none active:scale-95 transition-all duration-200 ease-out'
                   aria-label={label}
                 >

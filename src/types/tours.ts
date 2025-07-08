@@ -7,7 +7,13 @@ export interface MusicPlatformStep {
   position: 'top' | 'bottom' | 'left' | 'right' | 'center';
   icon: string;
   metadata?: {
-    category: 'navigation' | 'discovery' | 'social' | 'collection' | 'recommendation' | 'profile';
+    category:
+      | 'navigation'
+      | 'discovery'
+      | 'social'
+      | 'collection'
+      | 'recommendation'
+      | 'profile';
     duration?: number; // Estimated seconds to complete
     difficulty?: 'beginner' | 'intermediate' | 'advanced';
     actionRequired?: boolean; // Does user need to perform an action?
@@ -41,7 +47,12 @@ export interface MusicPlatformTour {
   description: string;
   steps: MusicPlatformStep[];
   metadata: {
-    category: 'onboarding' | 'feature-discovery' | 'advanced' | 'social' | 'collection';
+    category:
+      | 'onboarding'
+      | 'feature-discovery'
+      | 'advanced'
+      | 'social'
+      | 'collection';
     difficulty: 'beginner' | 'intermediate' | 'advanced';
     estimatedDuration: number; // Total time in minutes
     targetUser: 'new' | 'returning' | 'power' | 'all';
@@ -71,7 +82,12 @@ export interface MusicPlatformTour {
 export interface TourRecommendation {
   tourId: string;
   priority: number; // 1-10, higher = more important
-  reason: 'first_visit' | 'feature_usage' | 'user_behavior' | 'time_based' | 'incomplete_tour';
+  reason:
+    | 'first_visit'
+    | 'feature_usage'
+    | 'user_behavior'
+    | 'time_based'
+    | 'incomplete_tour';
   context?: {
     userActivity?: string[];
     sessionData?: Record<string, any>;
@@ -80,9 +96,20 @@ export interface TourRecommendation {
 }
 
 export interface TourRecommendationEngine {
-  getRecommendedTours: (userId?: string, context?: any) => Promise<TourRecommendation[]>;
-  trackTourCompletion: (userId: string, tourId: string, completed: boolean) => void;
-  trackUserActivity: (userId: string, activity: string, metadata?: Record<string, any>) => void;
+  getRecommendedTours: (
+    userId?: string,
+    context?: any
+  ) => Promise<TourRecommendation[]>;
+  trackTourCompletion: (
+    userId: string,
+    tourId: string,
+    completed: boolean
+  ) => void;
+  trackUserActivity: (
+    userId: string,
+    activity: string,
+    metadata?: Record<string, any>
+  ) => void;
   updateUserPreferences: (userId: string, preferences: any) => void;
 }
 
@@ -121,26 +148,31 @@ export interface UserContext {
 }
 
 export interface TourTrigger {
-  type: 'page_visit' | 'feature_access' | 'user_action' | 'time_based' | 'onboarding_incomplete';
+  type:
+    | 'page_visit'
+    | 'feature_access'
+    | 'user_action'
+    | 'time_based'
+    | 'onboarding_incomplete';
   value: string | number;
   metadata?: Record<string, any>;
 }
 
 // Category definitions for step organization
-export type StepCategory = 
-  | 'navigation'      // Sidebar, search, basic navigation
-  | 'discovery'       // Browse, find new music/users
-  | 'collection'      // Adding albums, managing collection
-  | 'recommendation'  // Creating and sharing recommendations
-  | 'social'          // Following, social feed, community
-  | 'profile';        // Profile setup, settings, personalization
+export type StepCategory =
+  | 'navigation' // Sidebar, search, basic navigation
+  | 'discovery' // Browse, find new music/users
+  | 'collection' // Adding albums, managing collection
+  | 'recommendation' // Creating and sharing recommendations
+  | 'social' // Following, social feed, community
+  | 'profile'; // Profile setup, settings, personalization
 
-export type TourCategory = 
-  | 'onboarding'      // First-time user experience
+export type TourCategory =
+  | 'onboarding' // First-time user experience
   | 'feature-discovery' // Learn about specific features
-  | 'advanced'        // Power user features
-  | 'social'          // Community and social features
-  | 'collection';     // Collection management focus
+  | 'advanced' // Power user features
+  | 'social' // Community and social features
+  | 'collection'; // Collection management focus
 
 // Tour configuration constants
 export const TOUR_THEMES = {
@@ -162,4 +194,4 @@ export const TOUR_THEMES = {
     textColor: '#e0e7ff',
     borderRadius: '16px',
   },
-} as const; 
+} as const;

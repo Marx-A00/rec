@@ -33,13 +33,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-              <SessionProvider>
-        <QueryProvider>
-          <MusicPlatformTourProvider>
-            <CollectionToastProvider>{children}</CollectionToastProvider>
-          </MusicPlatformTourProvider>
-        </QueryProvider>
-      </SessionProvider>
+        <SessionProvider>
+          <QueryProvider>
+            <MusicPlatformTourProvider>
+              <CollectionToastProvider>{children}</CollectionToastProvider>
+            </MusicPlatformTourProvider>
+          </QueryProvider>
+        </SessionProvider>
       </body>
     </html>
   );

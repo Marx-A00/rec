@@ -63,7 +63,7 @@ export function mapDiscogsMasterToAlbum(discogsMaster: DiscogsMaster): Album {
       uri: discogsMaster.uri,
       resource_url: discogsMaster.resource_url,
     },
-    // Store the main release ID as master_id for consistency 
+    // Store the main release ID as master_id for consistency
     master_id: discogsMaster.id,
   } as Album & { _discogs?: any; master_id?: number };
 }

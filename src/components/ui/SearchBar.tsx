@@ -132,7 +132,7 @@ export default function SearchBar({
         <Search className='absolute left-3 h-4 w-4 text-zinc-400' />
         <input
           ref={inputRef}
-          id="main-search-bar"
+          id='main-search-bar'
           type='text'
           value={query}
           onChange={handleInputChange}

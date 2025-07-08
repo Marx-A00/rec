@@ -479,7 +479,9 @@ export default function SocialStatsDashboard({
                     </p>
                   </div>
                   <div className='flex-shrink-0 text-right'>
-                    <p className={`text-sm font-medium ${getScoreTextColor(rec.score)}`}>
+                    <p
+                      className={`text-sm font-medium ${getScoreTextColor(rec.score)}`}
+                    >
                       Score: {rec.score.toFixed(1)}
                     </p>
                     <p className='text-sm text-gray-500'>

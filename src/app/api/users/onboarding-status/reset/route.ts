@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 
@@ -14,7 +15,7 @@ export async function POST() {
     }
 
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -33,7 +34,8 @@ export async function POST() {
 
     return NextResponse.json({
       success: true,
-      message: 'Onboarding status reset successfully - user will be treated as new on next login/page refresh',
+      message:
+        'Onboarding status reset successfully - user will be treated as new on next login/page refresh',
       profileUpdatedAt: updatedUser.profileUpdatedAt,
     });
   } catch (error) {
@@ -43,4 +45,4 @@ export async function POST() {
       { status: 500 }
     );
   }
-} 
+}

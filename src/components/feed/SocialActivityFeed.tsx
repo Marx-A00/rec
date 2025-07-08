@@ -5,8 +5,9 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import type { Session } from 'next-auth';
 
-import ActivityItem from './ActivityItem';
 import SignInButton from '@/components/auth/SignInButton';
+
+import ActivityItem from './ActivityItem';
 
 interface SocialActivityFeedProps {
   className?: string;
@@ -26,7 +27,7 @@ export default function SocialActivityFeed({
   session: sessionProp,
 }: SocialActivityFeedProps) {
   const { data: clientSession } = useSession();
-  
+
   // Use prop session if provided (server-side), otherwise fall back to client session
   const session = sessionProp ?? clientSession;
 
@@ -199,7 +200,7 @@ export default function SocialActivityFeed({
                 d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
               />
             </svg>
-            </button>
+          </button>
         </div>
       </div>
     );

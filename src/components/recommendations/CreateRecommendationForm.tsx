@@ -17,10 +17,10 @@ function formatArtists(artists: Array<{ name: string }> | undefined): string {
 function extractBestAlbumId(album: Album): string {
   // Check if the album has Discogs metadata stored
   const discogsData = (album as any)._discogs;
-  
+
   if (discogsData) {
     const uri = discogsData.uri || discogsData.resource_url || '';
-    
+
     // If this is a release, try to get the master ID
     if (uri.includes('/releases/')) {
       // If we have access to master_id from the original data, use that
@@ -29,7 +29,7 @@ function extractBestAlbumId(album: Album): string {
         return masterIdFromData.toString();
       }
     }
-    
+
     // If this is already a master or we don't have master_id, use the current ID
     if (uri.includes('/masters/')) {
       const masterId = uri.match(/\/masters\/(\d+)/)?.[1];
@@ -38,7 +38,7 @@ function extractBestAlbumId(album: Album): string {
       }
     }
   }
-  
+
   // Fallback to the regular ID
   return album.id;
 }
@@ -282,7 +282,7 @@ export default function CreateRecommendationForm({
 
       {/* Circular Play Button - Bottom Right */}
       <button
-        id="submit-recommendation-button"
+        id='submit-recommendation-button'
         type='submit'
         onClick={handleSubmit}
         className={`

@@ -2,15 +2,15 @@
 
 /**
  * Music Platform Tours Configuration
- * 
+ *
  * This file contains all tour definitions for the music platform.
  * Each tour is an object with a unique ID and array of steps.
- * 
+ *
  * To add a new tour:
  * 1. Create a new tour object with unique 'tour' ID
  * 2. Add steps array with proper selectors
  * 3. Add to musicPlatformTours export array
- * 
+ *
  * Step Properties:
  * - icon: Emoji or icon
  * - title: Step title
@@ -19,13 +19,13 @@
  * - side: 'top' | 'bottom' | 'left' | 'right'
  * - showControls: Enable Next/Previous buttons
  * - showSkip: Enable Skip button
- * 
+ *
  * POSITIONING GUIDELINES:
  * - 'bottom': Card appears below target (best for top elements like headers)
  * - 'top': Card appears above target (best for bottom elements like footers)
  * - 'right': Card appears to the right (best for left-side elements)
  * - 'left': Card appears to the left (best for right-side elements)
- * 
+ *
  * RESPONSIVE POSITIONING TIPS:
  * - Use 'bottom' for header elements (search bar, nav)
  * - Use 'right' for left-side elements (avatar, sidebar items)
@@ -37,22 +37,24 @@
  * Positioning Helper Function
  * Use this to determine the best side based on element position
  */
-export function getBestPositioning(elementSelector: string): 'top' | 'bottom' | 'left' | 'right' {
+export function getBestPositioning(
+  elementSelector: string
+): 'top' | 'bottom' | 'left' | 'right' {
   if (typeof window === 'undefined') return 'bottom';
-  
+
   const element = document.querySelector(elementSelector);
   if (!element) return 'bottom';
-  
+
   const rect = element.getBoundingClientRect();
   const viewport = {
     width: window.innerWidth,
     height: window.innerHeight,
   };
-  
+
   // Determine best position based on element location
   const isInTopHalf = rect.top < viewport.height / 2;
   const isInLeftHalf = rect.left < viewport.width / 2;
-  
+
   // Priority: bottom > right > left > top (top can go off-screen on mobile)
   if (isInTopHalf && rect.bottom + 200 < viewport.height) {
     return 'bottom'; // Plenty of space below
@@ -63,7 +65,7 @@ export function getBestPositioning(elementSelector: string): 'top' | 'bottom' | 
   } else if (!isInTopHalf) {
     return 'top'; // Last resort: above
   }
-  
+
   return 'bottom'; // Default fallback
 }
 
@@ -74,7 +76,8 @@ export const welcomeOnboardingTour = {
     {
       icon: '🎵',
       title: 'Welcome to Rec!',
-      content: 'Discover amazing music through community recommendations. Let\'s show you how it works!',
+      content:
+        "Discover amazing music through community recommendations. Let's show you how it works!",
       selector: 'body', // Portal will handle positioning
       side: 'bottom' as const,
       showControls: true,
@@ -83,7 +86,8 @@ export const welcomeOnboardingTour = {
     {
       icon: '🎤',
       title: 'Share Your Music Taste',
-      content: 'Click this button to create your first recommendation! Share albums you love and discover what others are listening to.',
+      content:
+        'Click this button to create your first recommendation! Share albums you love and discover what others are listening to.',
       selector: '#create-recommendation-button',
       side: 'right' as const, // Show to the right of the button
       showControls: true,
@@ -92,7 +96,8 @@ export const welcomeOnboardingTour = {
     {
       icon: '✨',
       title: 'Create Your First Recommendation',
-      content: 'Great! Now you can search for an album and add your personal recommendation. This is how you share your music taste with the community.',
+      content:
+        'Great! Now you can search for an album and add your personal recommendation. This is how you share your music taste with the community.',
       selector: '#recommendation-drawer', // Target the drawer itself
       side: 'right' as const, // Show to the right inside the drawer
       showControls: true,
@@ -110,7 +115,8 @@ export const welcomeOnboardingTour = {
     {
       icon: '⭐',
       title: 'Rate the Similarity',
-      content: 'Use the rating dial to score how similar the albums are! Drag the dial or click to set a rating from 1-10. This helps other users understand your recommendation.',
+      content:
+        'Use the rating dial to score how similar the albums are! Drag the dial or click to set a rating from 1-10. This helps other users understand your recommendation.',
       selector: '#similarity-rating-dial', // Target the rating component
       side: 'left' as const, // Show to the left of the rating dial
       showControls: true,
@@ -128,7 +134,8 @@ export const welcomeOnboardingTour = {
     {
       icon: '🌟',
       title: 'Discover New Music',
-      content: 'Amazing! Now that you know how to recommend music, explore what others are sharing. Click Next to go to the Browse & Discover page!',
+      content:
+        'Amazing! Now that you know how to recommend music, explore what others are sharing. Click Next to go to the Browse & Discover page!',
       selector: '#discover-nav-button', // Target the discover nav button
       side: 'right' as const, // Show to the right of the nav button
       showControls: true,
@@ -138,7 +145,8 @@ export const welcomeOnboardingTour = {
     {
       icon: '🎵',
       title: 'Welcome to Discovery',
-      content: 'Perfect! This is where the magic happens. Browse through trending albums, discover new artists, and explore recommendations from other music lovers. Everything is organized to help you find your next favorite album!',
+      content:
+        'Perfect! This is where the magic happens. Browse through trending albums, discover new artists, and explore recommendations from other music lovers. Everything is organized to help you find your next favorite album!',
       selector: '#browse-page-header', // Target the browse page header - NextStep will wait for it to appear
       side: 'bottom' as const, // Show below the header
       showControls: true,
@@ -148,10 +156,12 @@ export const welcomeOnboardingTour = {
       blockKeyboardControl: false,
     },
     {
-      icon: '🔍', 
+      icon: '🔍',
       title: 'Search for Music',
-      content: 'Use the search bar to find albums, artists, and tracks. This is your gateway to discovering new music. Click Next and I\'ll show you by searching for the legendary electronic duo Daft Punk!',
-      selector: '#main-search-bar, [cmdk-input], input[placeholder*="Search albums"], .cmdk-input',
+      content:
+        "Use the search bar to find albums, artists, and tracks. This is your gateway to discovering new music. Click Next and I'll show you by searching for the legendary electronic duo Daft Punk!",
+      selector:
+        '#main-search-bar, [cmdk-input], input[placeholder*="Search albums"], .cmdk-input',
       side: 'bottom' as const, // Show below search bar (safer positioning)
       showControls: true,
       showSkip: true,
@@ -160,7 +170,8 @@ export const welcomeOnboardingTour = {
     {
       icon: '🤖',
       title: 'Welcome to Artist Pages',
-      content: 'Fantastic! This is an artist page where you can explore everything about an artist. Here you can see their biography, discography, collaborations, and discover similar artists. This is where you dive deep into an artist\'s world!',
+      content:
+        "Fantastic! This is an artist page where you can explore everything about an artist. Here you can see their biography, discography, collaborations, and discover similar artists. This is where you dive deep into an artist's world!",
       selector: '#artist-page-header', // Target the artist page header
       side: 'bottom' as const, // Show below the header
       showControls: true,
@@ -170,8 +181,10 @@ export const welcomeOnboardingTour = {
     {
       icon: '💿',
       title: 'Explore Albums',
-      content: 'Now let\'s explore Daft Punk\'s legendary discography! I\'ll show you how to interact with albums. Click Next and I\'ll demonstrate by opening the iconic "Random Access Memories" album details.',
-      selector: '#artist-discography, .artist-albums, [data-testid="artist-albums"]', // Target the discography section
+      content:
+        "Now let's explore Daft Punk's legendary discography! I'll show you how to interact with albums. Click Next and I'll demonstrate by opening the iconic \"Random Access Memories\" album details.",
+      selector:
+        '#artist-discography, .artist-albums, [data-testid="artist-albums"]', // Target the discography section
       side: 'bottom' as const, // Show below the discography
       showControls: true,
       showSkip: true,
@@ -181,7 +194,8 @@ export const welcomeOnboardingTour = {
     {
       icon: '🎵',
       title: 'Album Details & Interactions',
-      content: 'Perfect! This is a dedicated album page where you can explore everything about this album. Here you can see detailed information, track listings, reviews, add to your collection, and discover what others are saying about it. These interactions are the heart of music discovery!',
+      content:
+        'Perfect! This is a dedicated album page where you can explore everything about this album. Here you can see detailed information, track listings, reviews, add to your collection, and discover what others are saying about it. These interactions are the heart of music discovery!',
       selector: 'h1, .text-3xl, .album-header, main', // Target the album page header or main content
       side: 'bottom' as const, // Show below the album header
       showControls: true,
@@ -191,7 +205,8 @@ export const welcomeOnboardingTour = {
     {
       icon: '👤',
       title: 'Explore Your Profile',
-      content: 'Now let\'s explore your personal music profile! This is where you can showcase your music taste, connect with other music lovers, and track your listening journey. Click Next and I\'ll take you to your profile page.',
+      content:
+        "Now let's explore your personal music profile! This is where you can showcase your music taste, connect with other music lovers, and track your listening journey. Click Next and I'll take you to your profile page.",
       selector: 'nav, .sidebar, aside, header', // Target navigation elements that exist on album page
       side: 'bottom' as const, // Show below navigation
       showControls: true,
@@ -201,7 +216,8 @@ export const welcomeOnboardingTour = {
     {
       icon: '✨',
       title: 'Welcome to Your Profile!',
-      content: 'Amazing! This is your personal music profile page. Here you can see your recommendations, followers, music stats, create collages, manage your collections, and showcase your unique music taste to the community. This is your musical identity hub!',
+      content:
+        'Amazing! This is your personal music profile page. Here you can see your recommendations, followers, music stats, create collages, manage your collections, and showcase your unique music taste to the community. This is your musical identity hub!',
       selector: 'h1.text-4xl.font-bold.mb-2, .text-4xl.font-bold, h1', // Target the user's name heading which is stable
       side: 'bottom' as const, // Show below the user's name for stable positioning
       showControls: true,
@@ -213,10 +229,8 @@ export const welcomeOnboardingTour = {
 
 /**
  * Export all tours as an array
- * 
+ *
  * This array is used by the NextStep component to load all available tours.
  * Add new tours to this array after defining them above.
  */
-export const musicPlatformTours = [
-  welcomeOnboardingTour,
-]; 
+export const musicPlatformTours = [welcomeOnboardingTour];

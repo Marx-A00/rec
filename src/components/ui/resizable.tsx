@@ -38,7 +38,7 @@ const ResizableHandle = ({
       <>
         {/* Invisible hover area - larger target */}
         <div className='absolute inset-0 data-[panel-group-direction=vertical]:inset-x-0 data-[panel-group-direction=vertical]:inset-y-[-8px] inset-x-[-8px] z-0' />
-        
+
         {/* Visible handle - only shows on hover */}
         <div className='z-10 flex h-4 w-3 items-center justify-center rounded-sm border border-zinc-600 bg-zinc-800 opacity-0 group-hover:opacity-100 group-hover:bg-zinc-700 group-hover:border-zinc-500 transition-all duration-200 ease-out'>
           <GripVertical className='h-2.5 w-2.5 text-zinc-400' />

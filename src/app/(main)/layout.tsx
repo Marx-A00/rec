@@ -29,7 +29,7 @@ export default function MainLayout({
               <div className='px-4 py-3'>
                 <div className='max-w-2xl mx-auto'>
                   <UniversalSearchBar
-                    preset="global"
+                    preset='global'
                     placeholder='Search albums, artists, or genres...'
                     className='max-w-2xl mx-auto'
                   />
@@ -40,7 +40,9 @@ export default function MainLayout({
 
           {/* Main Content */}
           <SidebarLayoutWrapper>
-            <div className='pt-4' id="main-content">{children}</div>
+            <div className='pt-4' id='main-content'>
+              {children}
+            </div>
           </SidebarLayoutWrapper>
 
           {/* Global Recommendation Drawer */}

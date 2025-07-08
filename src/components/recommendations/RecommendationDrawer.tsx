@@ -14,13 +14,13 @@ import {
 } from '@/components/ui/drawer';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { sanitizeArtistName } from '@/lib/utils';
+import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 
 import AlbumSearchBackwardCompatible, {
   AlbumSearchRef,
 } from './AlbumSearchBackwardCompatible';
 import CreateRecommendationForm from './CreateRecommendationForm';
 import SimilarityRatingDial from './SimilarityRatingDial';
-import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 
 // Local Turntable component that accepts responsive size props
 interface TurntableProps {
@@ -185,8 +185,9 @@ export default function RecommendationDrawer({
   useEffect(() => {
     const handleDemoFill = (event: Event) => {
       const customEvent = event as CustomEvent;
-      const { sourceAlbum, recommendedAlbum, similarityRating } = customEvent.detail;
-      
+      const { sourceAlbum, recommendedAlbum, similarityRating } =
+        customEvent.detail;
+
       if (sourceAlbum) {
         setSelectedBasisAlbum(sourceAlbum);
       }
@@ -196,7 +197,7 @@ export default function RecommendationDrawer({
       if (similarityRating) {
         setSimilarityRating(similarityRating);
       }
-      
+
       // Switch to viewing mode (not searching)
       setIsSearchingForBasis(false);
     };
@@ -208,19 +209,19 @@ export default function RecommendationDrawer({
     };
   }, []);
 
-      // Modified close handler that respects tour state
-    const handleDrawerClose = (open: boolean) => {
-      // Don't close the drawer if tour is active and trying to keep it open
-      if (!open && isTourMode) {
-        console.log('Preventing drawer close during tour');
-        return; // Prevent closing during tour
-      }
-      
-      // Normal close behavior
-      if (!open) {
-        onClose();
-      }
-    };
+  // Modified close handler that respects tour state
+  const handleDrawerClose = (open: boolean) => {
+    // Don't close the drawer if tour is active and trying to keep it open
+    if (!open && isTourMode) {
+      console.log('Preventing drawer close during tour');
+      return; // Prevent closing during tour
+    }
+
+    // Normal close behavior
+    if (!open) {
+      onClose();
+    }
+  };
 
   const handleAlbumSelect = (album: Album) => {
     if (isSearchingForBasis) {
@@ -258,7 +259,10 @@ export default function RecommendationDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={handleDrawerClose} handleOnly={true}>
-      <DrawerContent id="recommendation-drawer" className='h-[90vh] bg-zinc-900 border-zinc-700'>
+      <DrawerContent
+        id='recommendation-drawer'
+        className='h-[90vh] bg-zinc-900 border-zinc-700'
+      >
         <DrawerHeader className='flex-shrink-0'>
           <div className='flex items-center justify-between'>
             <DrawerTitle className='text-2xl font-bold text-white'>
