@@ -43,6 +43,60 @@ export function validatePassword(password: string): ValidationResult {
   return { isValid: true };
 }
 
+// Strict validation function (minimum 2 characters for all new names)
+export function validateNameStrict(name: string): ValidationResult {
+  if (!name || !name.trim()) {
+    return {
+      isValid: false,
+      message: 'Name is required',
+    };
+  }
+
+  const trimmedName = name.trim();
+
+  if (trimmedName.length < 2) {
+    return {
+      isValid: false,
+      message: 'Name must be at least 2 characters long',
+    };
+  }
+
+  if (trimmedName.length > 30) {
+    return {
+      isValid: false,
+      message: 'Name must be 30 characters or less',
+    };
+  }
+
+  if (!/^[a-zA-Z0-9\s\-_.]+$/.test(trimmedName)) {
+    return {
+      isValid: false,
+      message:
+        'Name can only contain letters, numbers, spaces, hyphens, underscores, and periods',
+    };
+  }
+
+  if (trimmedName !== name) {
+    return {
+      isValid: false,
+      message: 'Name cannot start or end with spaces',
+    };
+  }
+
+  return { isValid: true };
+}
+
+// For new user registration (name required)
+export function validateNameForRegistration(name: string): ValidationResult {
+  return validateNameStrict(name);
+}
+
+// For profile updates (name required, minimum 2 characters)
+export function validateNameForProfile(name: string): ValidationResult {
+  return validateNameStrict(name);
+}
+
+// Keep existing function for backward compatibility
 export function validateName(name: string): ValidationResult {
   if (!name) {
     return { isValid: true }; // Name is optional

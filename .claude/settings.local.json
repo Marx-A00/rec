@@ -1,6 +1,11 @@
 {
   "permissions": {
-    "allow": ["Bash(find:*)"],
+    "allow": [
+      "Bash(find:*)",
+      "Bash(pnpm fix-all:*)",
+      "Bash(pnpm type-check:*)",
+      "Bash(pnpm lint:*)"
+    ],
     "deny": []
   }
 }

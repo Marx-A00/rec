@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 import {
   validateEmail,
-  validateName,
+  validateNameForRegistration,
   validatePassword,
 } from '@/lib/validations';
 
@@ -32,7 +32,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       case 'password':
         return validatePassword(value);
       case 'name':
-        return validateName(value);
+        return validateNameForRegistration(value);
       default:
         return { isValid: true };
     }
@@ -143,12 +143,13 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             htmlFor='name'
             className='block text-sm font-medium text-zinc-300 mb-2'
           >
-            Name (optional)
+            Name
           </label>
           <input
             id='name'
             name='name'
             type='text'
+            required
             value={formData.name}
             onChange={handleInputChange}
             className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'

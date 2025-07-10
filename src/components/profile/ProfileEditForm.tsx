@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { validateNameForProfile } from '@/lib/validations';
+
 interface ProfileEditFormProps {
   user: {
     id: string;
@@ -22,17 +24,35 @@ export default function ProfileEditForm({
   const [bio, setBio] = useState(user.bio || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const router = useRouter();
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setName(value);
+
+    // Validate name
+    const validation = validateNameForProfile(value);
+    setNameError(validation.isValid ? null : validation.message || null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
+    // Validate before submitting
+    const nameValidation = validateNameForProfile(name);
+    if (!nameValidation.isValid) {
+      setNameError(nameValidation.message || 'Invalid name');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch(`/api/users/${user.id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -47,8 +67,9 @@ export default function ProfileEditForm({
         throw new Error(errorData.error || 'Failed to update profile');
       }
 
-      const updatedUser = await response.json();
-      onSave({ name: updatedUser.name, bio: updatedUser.bio });
+      const result = await response.json();
+      const updatedUser = result.data?.user || result;
+      onSave({ name: updatedUser.name || '', bio: updatedUser.bio || '' });
       router.refresh(); // Refresh to show updated data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -82,15 +103,27 @@ export default function ProfileEditForm({
               type='text'
               id='name'
               value={name}
-              onChange={e => setName(e.target.value)}
-              maxLength={100}
-              className='w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emeraled-green focus:border-transparent'
+              onChange={handleNameChange}
+              maxLength={30}
+              className={`w-full px-3 py-2 bg-zinc-800 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:border-transparent ${
+                nameError
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-zinc-600 focus:ring-emeraled-green'
+              }`}
               placeholder='Enter your display name'
+              aria-invalid={nameError ? 'true' : 'false'}
+              aria-describedby={nameError ? 'name-error' : undefined}
               required
             />
-            <p className='text-xs text-zinc-500 mt-1'>
-              {name.length}/100 characters
-            </p>
+            {nameError ? (
+              <p id='name-error' className='text-xs text-red-400 mt-1'>
+                {nameError}
+              </p>
+            ) : (
+              <p className='text-xs text-zinc-500 mt-1'>
+                {name.length}/30 characters
+              </p>
+            )}
           </div>
 
           <div>
@@ -117,7 +150,7 @@ export default function ProfileEditForm({
           <div className='flex gap-3 pt-4'>
             <button
               type='submit'
-              disabled={isLoading || name.trim().length === 0}
+              disabled={isLoading || !!nameError || name.trim().length === 0}
               className='flex-1 bg-emeraled-green text-black py-2 px-4 rounded-lg font-medium hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
             >
               {isLoading ? 'Saving...' : 'Save Changes'}

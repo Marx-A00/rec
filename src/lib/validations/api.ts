@@ -254,7 +254,7 @@ export const addToCollectionSchema = z.object({
     .regex(/^\d+$/, 'Album ID must be numeric'),
 });
 
-// User registration schema
+// User registration schema (name required and strict)
 export const userRegistrationSchema = z.object({
   email: z
     .string()
@@ -272,10 +272,27 @@ export const userRegistrationSchema = z.object({
     ),
   name: z
     .string()
-    .min(1, 'Name is required')
-    .max(100, 'Name must be 100 characters or less')
-    .trim()
-    .optional(),
+    .min(2, 'Name must be at least 2 characters long')
+    .max(30, 'Name must be 30 characters or less')
+    .regex(
+      /^[a-zA-Z0-9\s\-_.]+$/,
+      'Name can only contain letters, numbers, spaces, hyphens, underscores, and periods'
+    )
+    .transform(val => val.trim()), // Name is required!
+});
+
+// User profile update schema (name required, minimum 2 characters)
+export const userProfileUpdateSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters long')
+    .max(30, 'Name must be 30 characters or less')
+    .regex(
+      /^[a-zA-Z0-9\s\-_.]+$/,
+      'Name can only contain letters, numbers, spaces, hyphens, underscores, and periods'
+    )
+    .transform(val => val.trim()), // Name is required for profile updates
+  bio: z.string().max(500).optional(),
 });
 
 // ===========================
