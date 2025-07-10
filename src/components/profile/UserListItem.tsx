@@ -58,7 +58,7 @@ export default function UserListItem({
               alt={user.name || 'User'}
             />
             <AvatarFallback className='bg-zinc-700 text-zinc-200'>
-              {user.name?.charAt(0)?.toUpperCase() || 'U'}
+              {user.name?.charAt(0)?.toUpperCase() || 'A'}
             </AvatarFallback>
           </Avatar>
         </Link>
@@ -69,7 +69,7 @@ export default function UserListItem({
             <div className='flex-1 min-w-0'>
               <Link href={`/profile/${user.id}`}>
                 <h3 className='font-medium text-white hover:text-emeraled-green transition-colors cursor-pointer truncate'>
-                  {user.name || 'Anonymous User'}
+                  {user.name || 'Anonymous music enjoyer'}
                 </h3>
               </Link>
 

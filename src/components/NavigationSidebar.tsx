@@ -149,7 +149,7 @@ export default function NavigationSidebar() {
                       alt={user.name || 'User'}
                     />
                     <AvatarFallback className='bg-zinc-800 text-zinc-200 text-sm'>
-                      {user.name?.charAt(0) || 'U'}
+                      {user.name?.charAt(0) || 'A'}
                     </AvatarFallback>
                   </Avatar>
                 </button>
@@ -186,7 +186,7 @@ export default function NavigationSidebar() {
                       alt={user.name || 'User'}
                     />
                     <AvatarFallback className='bg-zinc-800 text-zinc-200'>
-                      {user.name?.charAt(0) || 'U'}
+                      {user.name?.charAt(0) || 'A'}
                     </AvatarFallback>
                   </Avatar>
                   <div className='space-y-1'>

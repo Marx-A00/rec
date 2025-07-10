@@ -125,7 +125,7 @@ export default function ActivityItem({
               alt={activity.actorName}
             />
             <AvatarFallback className='bg-zinc-700 text-zinc-200 text-sm'>
-              {activity.actorName.charAt(0)?.toUpperCase() || 'U'}
+              {activity.actorName.charAt(0)?.toUpperCase() || 'A'}
             </AvatarFallback>
           </Avatar>
         </Link>
@@ -201,7 +201,7 @@ export default function ActivityItem({
                     alt={activity.targetName || 'User'}
                   />
                   <AvatarFallback className='bg-zinc-700 text-zinc-200'>
-                    {activity.targetName?.charAt(0)?.toUpperCase() || 'U'}
+                    {activity.targetName?.charAt(0)?.toUpperCase() || 'A'}
                   </AvatarFallback>
                 </Avatar>
               </Link>

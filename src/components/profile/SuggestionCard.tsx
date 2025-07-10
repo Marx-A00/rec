@@ -105,7 +105,7 @@ export default function SuggestionCard({
               alt={user.name || 'User'}
             />
             <AvatarFallback className='bg-zinc-700 text-zinc-200'>
-              {user.name?.charAt(0)?.toUpperCase() || 'U'}
+              {user.name?.charAt(0)?.toUpperCase() || 'A'}
             </AvatarFallback>
           </Avatar>
         </Link>
@@ -116,7 +116,7 @@ export default function SuggestionCard({
               href={`/profile/${user.id}`}
               className='font-medium text-cosmic-latte hover:text-emeraled-green transition-colors truncate'
             >
-              {user.name || 'Anonymous User'}
+              {user.name || 'Anonymous music enjoyer'}
             </Link>
           </div>
 

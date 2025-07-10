@@ -235,13 +235,13 @@ function UserCard({ user }: { user: User }) {
               alt={user.name || 'User'}
             />
             <AvatarFallback className='bg-zinc-700 text-cosmic-latte text-lg'>
-              {user.name?.charAt(0) || 'U'}
+              {user.name?.charAt(0) || 'A'}
             </AvatarFallback>
           </Avatar>
 
           <div>
             <h3 className='font-medium text-white text-sm truncate group-hover:text-cosmic-latte transition-colors'>
-              {user.name || 'Anonymous User'}
+              {user.name || 'Anonymous music enjoyer'}
             </h3>
             <p className='text-xs text-zinc-400 mt-1'>
               {user.followersCount} followers

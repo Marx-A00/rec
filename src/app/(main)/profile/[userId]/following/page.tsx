@@ -56,7 +56,7 @@ export default async function FollowingPage({ params }: FollowingPageProps) {
             />
             <div>
               <h1 className='text-3xl font-bold text-cosmic-latte'>
-                {userData.name || 'Anonymous User'}
+                {userData.name || 'Anonymous music enjoyer'}
               </h1>
               <p className='text-zinc-400'>
                 Following {userData.followingCount || 0}{' '}

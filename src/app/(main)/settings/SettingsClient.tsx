@@ -192,7 +192,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
                   alt={user.name || 'User'}
                 />
                 <AvatarFallback className='bg-zinc-800 text-zinc-200 text-lg'>
-                  {user.name?.charAt(0) || 'U'}
+                  {user.name?.charAt(0) || 'A'}
                 </AvatarFallback>
               </Avatar>
               <div className='space-y-2'>

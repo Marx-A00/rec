@@ -220,16 +220,14 @@ export default function ProfileClient({
             <Avatar className='w-32 h-32 border-2 border-zinc-800'>
               <AvatarImage src={currentUser.image} alt={currentUser.name} />
               <AvatarFallback className='bg-zinc-800 text-cosmic-latte text-2xl'>
-                {currentUser.name?.charAt(0) ||
-                  currentUser.email?.charAt(0) ||
-                  '?'}
+                {currentUser.name?.charAt(0) || 'A'}
               </AvatarFallback>
             </Avatar>
             <div className='text-center md:text-left flex-1'>
               <div className='flex flex-col md:flex-row md:items-start md:justify-between gap-4'>
                 <div>
                   <h1 className='text-4xl font-bold mb-4 text-cosmic-latte'>
-                    {currentUser.name || currentUser.email}
+                    {currentUser.name || 'Anonymous music enjoyer'}
                   </h1>
                 </div>
                 <div className='flex-shrink-0 flex gap-3'>
