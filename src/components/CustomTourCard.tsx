@@ -1,7 +1,7 @@
 // src/components/CustomTourCard.tsx
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
 import { Step } from 'nextstepjs';
 import { X } from 'lucide-react';
@@ -21,7 +21,7 @@ interface CustomTourCardProps {
 
 // Welcome Modal Card (Portal-based)
 const WelcomeModalCard = ({
-  step,
+  step: _step,
   currentStep,
   totalSteps,
   nextStep,
@@ -331,7 +331,7 @@ const SearchDemoCard = ({
   nextStep,
   prevStep,
   skipTour,
-  arrow,
+  arrow: _arrow,
 }: CustomTourCardProps) => {
   const handleNext = () => {
     nextStep();

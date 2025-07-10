@@ -9,6 +9,7 @@ This is a **music recommendation web application** built with Next.js 15 and Rea
 ## Essential Commands
 
 ### Development
+
 ```bash
 pnpm dev                    # Start development server with Turbopack
 pnpm build                  # Build for production
@@ -18,6 +19,7 @@ pnpm start:production       # Start with database migrations
 ```
 
 ### Code Quality
+
 ```bash
 pnpm lint                   # Run ESLint
 pnpm lint:fix              # Fix ESLint issues
@@ -30,6 +32,7 @@ pnpm validate              # Full validation (checks + build)
 ```
 
 ### Database
+
 ```bash
 pnpm db:seed               # Seed database with sample data
 pnpm db:reset              # Reset database and reseed
@@ -39,6 +42,7 @@ prisma studio              # Open Prisma Studio
 ```
 
 ### Testing
+
 ```bash
 pnpm test                  # Run Playwright tests
 pnpm test:ui               # Run tests in interactive mode
@@ -52,6 +56,7 @@ pnpm test:reset            # Reset test database
 ## Architecture
 
 ### Tech Stack
+
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS
 - **Backend**: Next.js API routes, Prisma ORM, PostgreSQL
 - **Authentication**: NextAuth.js with Google/Spotify OAuth + email/password
@@ -60,6 +65,7 @@ pnpm test:reset            # Reset test database
 - **Testing**: Playwright for E2E testing
 
 ### Directory Structure
+
 ```
 src/
 ├── app/                    # Next.js App Router pages
@@ -93,6 +99,7 @@ src/
 ```
 
 ### Key Features
+
 - **User Authentication**: Multi-provider auth with NextAuth.js
 - **Album Discovery**: Discogs API integration for album search
 - **Collections**: Personal album libraries with ratings and notes
@@ -103,6 +110,7 @@ src/
 ## Development Guidelines
 
 ### Code Conventions
+
 - Use TypeScript for all new code
 - Follow existing component patterns in `/components/ui/`
 - Use Tailwind CSS for styling with custom color palette
@@ -110,7 +118,9 @@ src/
 - Use TanStack Query for data fetching and caching
 
 ### File Path Comments
+
 Always include file path comments at the top of code examples:
+
 ```typescript
 // src/app/browse/page.tsx
 export default function BrowsePage() {
@@ -119,6 +129,7 @@ export default function BrowsePage() {
 ```
 
 ### Data Fetching Patterns
+
 - Use React Query (useQuery) for data fetching
 - Fetch data at page/layout level, pass minimal props to children
 - Use separate components for independent data fetching (tabs, modals)
@@ -130,7 +141,7 @@ const {
   data: releasesData,
   isLoading,
   error,
-  isError
+  isError,
 } = useQuery({
   queryKey: ['artist-releases', artistId],
   queryFn: () => fetchArtistReleases(artistId),
@@ -138,29 +149,33 @@ const {
   staleTime: 5 * 60 * 1000,
   gcTime: 10 * 60 * 1000,
   retry: 2,
-  refetchOnWindowFocus: false
+  refetchOnWindowFocus: false,
 });
 ```
 
 ### API Development
+
 - API routes are in `/src/app/api/`
 - Use proper HTTP status codes and error responses
 - Implement authentication checks where needed
 - Follow RESTful conventions for endpoints
 
 ### Component Development
+
 - Use Radix UI primitives for accessibility
 - Follow the established component structure in `/components/ui/`
 - Implement proper TypeScript interfaces
 - Use the custom design system colors and spacing
 
 ### Authentication
+
 - NextAuth.js configuration is in `/src/app/api/auth/[...nextauth]/route.ts`
 - Supports Google OAuth, Spotify OAuth, and email/password
 - User sessions are managed automatically
 - Protected routes should check authentication status
 
 ### Database Operations
+
 - Use Prisma Client for all database operations
 - Follow the existing patterns for queries and mutations
 - Use proper indexing for performance
@@ -169,6 +184,7 @@ const {
 ## Database Schema
 
 ### Core Models
+
 - **User**: Authentication, profiles, social stats
 - **Recommendation**: Album-to-album recommendations with cached display data
 - **Collection**: User-created album collections
@@ -177,6 +193,7 @@ const {
 - **Account/Session**: NextAuth.js authentication tables
 
 ### Important Fields
+
 - Albums are referenced by `albumDiscogsId` (Discogs API ID)
 - Display data (title, artist, image, year) is cached to avoid API calls
 - Social stats (followers, following, recommendations counts) are denormalized
@@ -185,12 +202,14 @@ const {
 ## Testing Strategy
 
 ### E2E Testing with Playwright
+
 - Tests are in `/tests/` directory
 - Uses separate test database (configure in `.env.test`)
 - Tests cover authentication flows, core features, and user interactions
 - Run `pnpm test:setup` before first test run
 
 ### Test Database
+
 - Always use a separate test database
 - Configure `DATABASE_URL` in `.env.test`
 - Use `pnpm test:reset` to clean test data between runs
@@ -198,16 +217,19 @@ const {
 ## Security Considerations
 
 ### Content Security Policy
+
 - Strict CSP configured for API routes in `next.config.ts`
 - Security headers applied to all API endpoints
 - Image loading restricted to trusted domains (Discogs, Google, Spotify)
 
 ### Authentication Security
+
 - Password hashing with bcryptjs
 - Secure session management with NextAuth.js
 - Protected API routes with authentication checks
 
 ### Input Validation
+
 - Use Zod for schema validation
 - Sanitize user inputs
 - Validate external API responses
@@ -215,12 +237,14 @@ const {
 ## External Integrations
 
 ### Discogs API
+
 - Primary source for album data
 - Use `disconnect` library for API calls
 - Cache album data in database to reduce API calls
 - Handle rate limiting and errors gracefully
 
 ### OAuth Providers
+
 - Google: Profile and email access
 - Spotify: Profile and email access
 - Configure client IDs/secrets in environment variables
@@ -228,16 +252,19 @@ const {
 ## Performance Optimization
 
 ### Caching Strategy
+
 - Use TanStack Query for client-side caching
 - Cache album display data in database
 - Implement proper cache invalidation
 
 ### Database Optimization
+
 - Use database indexes for common queries
 - Denormalize social statistics for performance
 - Optimize collection queries with proper indexing
 
 ### Image Optimization
+
 - Use Next.js Image component for album covers
 - Configure remote patterns for trusted domains
 - Implement proper loading states
@@ -245,12 +272,15 @@ const {
 ## TypeScript and Prisma
 
 ### TypeScript Server Issues
+
 After Prisma schema changes, if TypeScript shows old type definitions:
+
 1. Run `prisma generate`
 2. Restart TypeScript server: `Cmd+Shift+P` → "TypeScript: Restart TS Server"
 3. If needed, reload window: `Cmd+Shift+P` → "Developer: Reload Window"
 
 ### Type Organization
+
 - Group types by domain in `/src/types/`
 - Use consistent API response wrapper types
 - Handle API inconsistencies in type definitions
@@ -260,6 +290,7 @@ After Prisma schema changes, if TypeScript shows old type definitions:
 This project uses Taskmaster for task-driven development. Key commands:
 
 ### Basic Workflow
+
 ```bash
 task-master list            # Show all tasks
 task-master next           # Get next available task
@@ -269,6 +300,7 @@ task-master set-status --id=<id> --status=done  # Mark complete
 ```
 
 ### Advanced Features
+
 ```bash
 task-master analyze-complexity --research  # Analyze task complexity
 task-master parse-prd <file>              # Generate tasks from PRD
@@ -276,7 +308,9 @@ task-master update-subtask --id=<id> --prompt="notes"  # Log progress
 ```
 
 ### Tagged Task Lists
+
 Use tags for feature branches, experiments, or team collaboration:
+
 ```bash
 task-master add-tag feature-xyz
 task-master use-tag feature-xyz
@@ -286,6 +320,7 @@ task-master list --tag feature-xyz
 ## Environment Variables
 
 ### Required Variables
+
 - `DATABASE_URL`: PostgreSQL connection string
 - `NEXTAUTH_URL`: Application URL
 - `NEXTAUTH_SECRET`: NextAuth.js secret
@@ -293,6 +328,7 @@ task-master list --tag feature-xyz
 - `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET`: Spotify OAuth
 
 ### Test Environment
+
 - Configure separate `.env.test` file
 - Use different database for testing
 - Same OAuth credentials can be used for testing
@@ -300,6 +336,7 @@ task-master list --tag feature-xyz
 ## Common Tasks
 
 ### Adding New Features
+
 1. Create database migrations if needed
 2. Add API routes following existing patterns
 3. Implement frontend components using design system
@@ -307,12 +344,14 @@ task-master list --tag feature-xyz
 5. Write E2E tests for new functionality
 
 ### Modifying Authentication
+
 - Update NextAuth.js configuration
 - Modify user schema if needed
 - Update authentication flows
 - Test with all providers
 
 ### Database Schema Changes
+
 1. Modify `prisma/schema.prisma`
 2. Run `prisma db push` for development
 3. Generate new Prisma client
@@ -322,24 +361,28 @@ task-master list --tag feature-xyz
 ## Best Practices
 
 ### Code Quality
+
 - Always run `pnpm validate` before committing
 - Use proper error handling and loading states
 - Follow existing patterns for consistency
 - Include proper TypeScript types
 
 ### Security
+
 - Never expose sensitive information in code or commits
 - Use environment variables for API keys
 - Implement proper input validation
 - Follow secure authentication patterns
 
 ### Performance
+
 - Use appropriate caching strategies
 - Optimize database queries with proper indexing
 - Handle API rate limiting gracefully
 - Use Next.js Image component for optimization
 
 ### Testing
+
 - Write E2E tests for new functionality
 - Use separate test database
 - Test authentication flows thoroughly

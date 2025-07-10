@@ -11,7 +11,7 @@ export default function GlobalRecommendationDrawer() {
     prefilledAlbum,
     closeDrawer,
     handleSuccess,
-    openDrawer,
+    openDrawer: _openDrawer,
     openDrawerForTour,
   } = useRecommendationDrawerContext();
 

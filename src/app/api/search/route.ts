@@ -15,7 +15,6 @@ import {
   SearchContext,
   SortBy,
   GroupBy,
-  SearchMetadata,
   GroupedSearchResults,
   TrackSearchResult,
   SearchResponse,
@@ -24,7 +23,6 @@ import {
   deduplicateResults,
   applyFilters,
   sortResults,
-  groupResults,
   applyContextSettings,
   createSearchMetadata,
   searchTracksInReleases,
@@ -311,7 +309,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // PHASE 3: Apply Advanced Filtering
     // ===========================
 
-    let filteringInfo = { appliedCount: 0 };
+    let _filteringInfo = { appliedCount: 0 };
     const totalBeforeFiltering = processedResults.length;
 
     if (Object.keys(filters).length > 0) {
@@ -319,7 +317,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
       const filterResult = applyFilters(processedResults, filters);
       processedResults = filterResult.results;
-      filteringInfo = { appliedCount: filterResult.appliedCount };
+      _filteringInfo = { appliedCount: filterResult.appliedCount };
 
       performance_metrics.filteringTime =
         performance.now() - filteringStartTime;

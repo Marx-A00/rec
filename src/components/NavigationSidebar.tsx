@@ -1,16 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Home,
-  TreePalm,
-  Disc,
-  Menu,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Settings,
-} from 'lucide-react';
+import { Home, TreePalm, Disc, Menu, X, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 
@@ -58,7 +49,7 @@ export default function NavigationSidebar() {
     setIsMobileOpen(false);
   };
 
-  const toggleCollapse = () => {
+  const _toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
 
