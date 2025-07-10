@@ -132,7 +132,7 @@ export default function Home() {
                 <div className='mb-3 flex-shrink-0'>
                   <h2
                     id='collections-section'
-                    className='text-lg font-semibold text-white'
+                    className='text-lg font-semibold text-cosmic-latte'
                   >
                     Your Collection
                   </h2>
@@ -257,7 +257,7 @@ export default function Home() {
             <ResizablePanel defaultSize={70} minSize={50}>
               <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full flex flex-col overflow-hidden'>
                 <div className='flex justify-between items-center mb-6 flex-shrink-0'>
-                  <h2 className='text-lg font-semibold text-white'>
+                  <h2 className='text-lg font-semibold text-cosmic-latte'>
                     Recent Recommendations
                   </h2>
                 </div>
@@ -283,9 +283,9 @@ export default function Home() {
             {/* Activity sidebar */}
             <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>
               <div className='bg-zinc-900/50 rounded-lg p-6 border border-zinc-800 h-full flex flex-col overflow-hidden'>
-                <h3 className='text-lg font-semibold text-white mb-4 flex-shrink-0'>
+                {/* <h3 className='text-lg font-semibold text-white mb-4 flex-shrink-0'>
                   Recent Activity
-                </h3>
+                </h3> */}
                 <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
                   <Suspense
                     fallback={
