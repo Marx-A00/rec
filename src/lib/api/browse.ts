@@ -2,10 +2,21 @@ import type { User } from '@prisma/client';
 
 import type { Recommendation } from '@/types';
 
+function getBaseUrl() {
+  // In server components, use the internal URL
+  if (typeof window === 'undefined') {
+    // Use NEXTAUTH_URL which is already configured
+    return process.env.NEXTAUTH_URL || 'http://127.0.0.1:3002';
+  }
+  // In client components, use relative URLs
+  return '';
+}
+
 export async function getUsers(): Promise<User[]> {
   try {
+    const baseUrl = getBaseUrl();
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/users`,
+      `${baseUrl}/api/users`,
       {
         cache: 'no-store',
       }
@@ -25,8 +36,9 @@ export async function getUsers(): Promise<User[]> {
 
 export async function getRecommendations(): Promise<Recommendation[]> {
   try {
+    const baseUrl = getBaseUrl();
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/recommendations`,
+      `${baseUrl}/api/recommendations`,
       {
         cache: 'no-store',
       }

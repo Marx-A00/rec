@@ -5,6 +5,7 @@ import AlbumImage from '@/components/ui/AlbumImage';
 import AlbumInteractions from '@/components/albums/AlbumInteractions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BackButton from '@/components/ui/BackButton';
+import TracklistTab from '@/components/albumDetails/tabs/TracklistTab';
 import { getAlbumDetails } from '@/lib/api/albums';
 import { albumParamsSchema } from '@/lib/validations/params';
 import { sanitizeArtistName } from '@/lib/utils';
@@ -36,11 +37,6 @@ export default async function AlbumDetailsPage({
     notFound();
   }
 
-  const formatDuration = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
 
   return (
     <div className='px-4 py-8'>
@@ -157,35 +153,7 @@ export default async function AlbumDetailsPage({
         </TabsList>
 
         <TabsContent value='tracklist' className='mt-6'>
-          <div className='bg-zinc-900 rounded-lg p-6'>
-            <h3 className='text-xl font-semibold mb-4 text-white'>
-              Track Listing
-            </h3>
-            {album.tracks && album.tracks.length > 0 ? (
-              <div className='space-y-2'>
-                {album.tracks.map(track => (
-                  <div
-                    key={track.id}
-                    className='flex items-center justify-between p-3 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors'
-                  >
-                    <div className='flex items-center space-x-3'>
-                      <span className='text-zinc-400 text-sm w-8'>
-                        {track.trackNumber}
-                      </span>
-                      <span className='text-white'>{track.title}</span>
-                    </div>
-                    {track.duration > 0 && (
-                      <span className='text-zinc-400 text-sm'>
-                        {formatDuration(track.duration)}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className='text-zinc-400'>No track information available.</p>
-            )}
-          </div>
+          <TracklistTab tracks={album.tracks || []} />
         </TabsContent>
 
         <TabsContent value='recommendations' className='mt-6'>
