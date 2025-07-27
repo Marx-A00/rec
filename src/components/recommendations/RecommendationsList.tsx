@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { ChevronDown } from 'lucide-react';
 
 import { useRecommendationsQuery } from '@/hooks';
 import { Recommendation } from '@/types/recommendation';
@@ -18,8 +18,15 @@ export default function RecommendationsList({
   title = 'Recent Recommendations',
 }: RecommendationsListProps) {
   const { data: session } = useSession();
-  const { data, isLoading, error, isError } = useRecommendationsQuery({
-    page: 1,
+  const {
+    recommendations,
+    isLoading,
+    error,
+    isError,
+    isLoadingMore,
+    hasMorePages,
+    loadMoreRecommendations,
+  } = useRecommendationsQuery({
     perPage: 10,
     userId,
   });
@@ -56,7 +63,7 @@ export default function RecommendationsList({
     );
   }
 
-  if (!data?.recommendations || data.recommendations.length === 0) {
+  if (!recommendations || recommendations.length === 0) {
     return (
       <div className='space-y-4'>
         <h2 className='text-2xl font-bold text-white mb-6'>{title}</h2>
@@ -76,7 +83,7 @@ export default function RecommendationsList({
     <div className='space-y-4'>
       <h2 className='text-2xl font-bold text-white mb-6'>{title}</h2>
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-        {data.recommendations.map(recommendation => (
+        {recommendations.map(recommendation => (
           <RecommendationCard
             key={recommendation.id}
             recommendation={recommendation}
@@ -86,10 +93,24 @@ export default function RecommendationsList({
         ))}
       </div>
 
-      {data.pagination && data.pagination.has_more && (
+      {hasMorePages && (
         <div className='text-center mt-8'>
-          <button className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors'>
-            Load More
+          <button
+            onClick={loadMoreRecommendations}
+            disabled={isLoadingMore}
+            className='bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:opacity-50 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2 mx-auto'
+          >
+            {isLoadingMore ? (
+              <>
+                <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
+                Loading...
+              </>
+            ) : (
+              <>
+                <ChevronDown className='h-4 w-4' />
+                Load More
+              </>
+            )}
           </button>
         </div>
       )}
