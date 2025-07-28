@@ -46,7 +46,10 @@ export default function AlbumRecommendationsTab({
     isFetching,
   } = useAlbumRecommendations({ albumId });
 
-  const recommendations = data?.recommendations || [];
+  const recommendations = useMemo(
+    () => data?.recommendations || [],
+    [data?.recommendations]
+  );
 
   const handleAlbumClick = (clickedAlbumId: string) => {
     router.push(`/albums/${clickedAlbumId}`);

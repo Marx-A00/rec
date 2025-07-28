@@ -1,10 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import {
-  Pencil,
-  Trash2,
-  MoreHorizontal,
-  Heart,
-} from 'lucide-react';
+import { Pencil, Trash2, MoreHorizontal, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -451,7 +446,6 @@ export default function RecommendationCard({
 
           {/* Centered rating heart between albums */}
           <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20'>
-
             {/* Rating */}
             <div className='bg-black border-3 border-black rounded-full shadow-lg'>
               <div
