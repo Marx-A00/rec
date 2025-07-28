@@ -184,7 +184,10 @@ function isPublicApiRoute(pathname: string): boolean {
   // Special case: Albums [id] route is public for GET, including recommendations
   const albumDetailRegex = /^\/api\/albums\/[^/]+$/;
   const albumRecommendationsRegex = /^\/api\/albums\/[^/]+\/recommendations$/;
-  if (albumDetailRegex.test(pathname) || albumRecommendationsRegex.test(pathname)) {
+  if (
+    albumDetailRegex.test(pathname) ||
+    albumRecommendationsRegex.test(pathname)
+  ) {
     return true; // Public album details and recommendations
   }
 
