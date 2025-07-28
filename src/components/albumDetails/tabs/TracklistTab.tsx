@@ -16,9 +16,7 @@ export default function TracklistTab({ tracks }: TracklistTabProps) {
 
   return (
     <div className='bg-zinc-900 rounded-lg p-6'>
-      <h3 className='text-xl font-semibold mb-4 text-white'>
-        Track Listing
-      </h3>
+      <h3 className='text-xl font-semibold mb-4 text-white'>Track Listing</h3>
       {tracks && tracks.length > 0 ? (
         <div className='space-y-2'>
           {tracks.map(track => (

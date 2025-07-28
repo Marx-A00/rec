@@ -4,7 +4,8 @@
       "Bash(find:*)",
       "Bash(pnpm fix-all:*)",
       "Bash(pnpm type-check:*)",
-      "Bash(pnpm lint:*)"
+      "Bash(pnpm lint:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

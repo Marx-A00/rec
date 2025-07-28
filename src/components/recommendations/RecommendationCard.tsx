@@ -1,5 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Pencil, Trash2, MoreHorizontal, Heart } from 'lucide-react';
+import {
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+  Heart,
+} from 'lucide-react';
 import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -12,6 +17,7 @@ import RecommendationDetailModal from './RecommendationDetailModal';
 interface RecommendationCardProps {
   recommendation: Recommendation;
   currentUserId?: string;
+  currentAlbumId?: string; // New prop to highlight current album
   onEdit?: (recommendation: Recommendation) => void;
   onDetail?: (recommendation: Recommendation) => void; // Kept for backward compatibility
   onAlbumClick?: (albumId: string, albumType: 'source' | 'recommended') => void;
@@ -48,6 +54,7 @@ const getScoreColors = (score: number) => {
 export default function RecommendationCard({
   recommendation,
   currentUserId,
+  currentAlbumId,
   onEdit,
   onDetail,
   onAlbumClick,
@@ -75,6 +82,12 @@ export default function RecommendationCard({
 
   // Get dynamic colors based on score
   const scoreColors = getScoreColors(recommendation.score);
+
+  // Check if either album is the current one being viewed
+  const isSourceAlbumCurrent =
+    currentAlbumId === recommendation.basisAlbumDiscogsId;
+  const isRecommendedAlbumCurrent =
+    currentAlbumId === recommendation.recommendedAlbumDiscogsId;
 
   // Close action menu when clicking outside
   useEffect(() => {
@@ -125,11 +138,17 @@ export default function RecommendationCard({
   };
 
   const handleAlbumClick = (albumType: 'source' | 'recommended') => {
+    // Don't navigate if it's the current album
+    const albumId =
+      albumType === 'source'
+        ? recommendation.basisAlbumDiscogsId
+        : recommendation.recommendedAlbumDiscogsId;
+
+    if (albumId === currentAlbumId) {
+      return; // Don't navigate to current album
+    }
+
     if (onAlbumClick) {
-      const albumId =
-        albumType === 'source'
-          ? recommendation.basisAlbumDiscogsId
-          : recommendation.recommendedAlbumDiscogsId;
       onAlbumClick(albumId, albumType);
     }
   };
@@ -316,12 +335,17 @@ export default function RecommendationCard({
               </div>
               {/* Album image */}
               <button
-                className='relative w-full aspect-square overflow-hidden rounded-lg focus:outline-none transition-all duration-300'
+                className={`relative w-full aspect-square overflow-hidden rounded-lg focus:outline-none transition-all duration-300 ${
+                  isSourceAlbumCurrent
+                    ? 'ring-2 ring-cosmic-latte opacity-75 cursor-default'
+                    : ''
+                }`}
                 onClick={e => {
                   e.stopPropagation();
                   e.currentTarget.blur();
                   handleAlbumClick('source');
                 }}
+                disabled={isSourceAlbumCurrent}
                 onKeyDown={e => {
                   e.stopPropagation();
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -339,13 +363,13 @@ export default function RecommendationCard({
                   width={400}
                   height={400}
                   sizes='(max-width: 640px) 45vw, (max-width: 768px) 35vw, 400px'
-                  className='
+                  className={`
                     w-full h-full object-cover 
                     transition-all duration-500 ease-out
-                    group-hover:scale-105 group-hover:brightness-110
+                    ${isSourceAlbumCurrent ? '' : 'group-hover:scale-105 group-hover:brightness-110'}
                     shadow-lg hover:shadow-xl
                     relative z-10
-                  '
+                  `}
                   priority={false}
                   showSkeleton={false}
                 />
@@ -374,12 +398,17 @@ export default function RecommendationCard({
               </div>
               {/* Album image */}
               <button
-                className='relative w-full aspect-square overflow-hidden rounded-lg focus:outline-none transition-all duration-300'
+                className={`relative w-full aspect-square overflow-hidden rounded-lg focus:outline-none transition-all duration-300 ${
+                  isRecommendedAlbumCurrent
+                    ? 'ring-2 ring-cosmic-latte opacity-75 cursor-default'
+                    : ''
+                }`}
                 onClick={e => {
                   e.stopPropagation();
                   e.currentTarget.blur();
                   handleAlbumClick('recommended');
                 }}
+                disabled={isRecommendedAlbumCurrent}
                 onKeyDown={e => {
                   e.stopPropagation();
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -397,13 +426,13 @@ export default function RecommendationCard({
                   width={400}
                   height={400}
                   sizes='(max-width: 640px) 45vw, (max-width: 768px) 35vw, 400px'
-                  className='
+                  className={`
                     w-full h-full object-cover 
                     transition-all duration-500 ease-out
-                    group-hover:scale-105 group-hover:brightness-110
+                    ${isRecommendedAlbumCurrent ? '' : 'group-hover:scale-105 group-hover:brightness-110'}
                     shadow-lg hover:shadow-xl
                     relative z-10
-                  '
+                  `}
                   priority={false}
                   showSkeleton={false}
                 />
@@ -422,6 +451,8 @@ export default function RecommendationCard({
 
           {/* Centered rating heart between albums */}
           <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20'>
+
+            {/* Rating */}
             <div className='bg-black border-3 border-black rounded-full shadow-lg'>
               <div
                 className={`flex items-center justify-center w-10 h-10 bg-gradient-to-r ${scoreColors.bgGradient} rounded-full border-2 ${scoreColors.borderColor} shadow-md`}

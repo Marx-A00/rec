@@ -109,7 +109,11 @@ export function useRecommendationsQuery(
     setIsLoadingMore(true);
     try {
       const nextPage = currentPage + 1;
-      const nextPageData = await fetchRecommendations(nextPage, perPage, userId);
+      const nextPageData = await fetchRecommendations(
+        nextPage,
+        perPage,
+        userId
+      );
       setLoadedPages(prev => [...prev, nextPageData]);
       setCurrentPage(nextPage);
     } catch (error) {

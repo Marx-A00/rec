@@ -181,10 +181,11 @@ function isPublicApiRoute(pathname: string): boolean {
     '/api/releases/[id]', // Public release details (read-only)
   ];
 
-  // Special case: Albums [id] route is public for GET, but nested routes require auth
+  // Special case: Albums [id] route is public for GET, including recommendations
   const albumDetailRegex = /^\/api\/albums\/[^/]+$/;
-  if (albumDetailRegex.test(pathname)) {
-    return true; // Public album details
+  const albumRecommendationsRegex = /^\/api\/albums\/[^/]+\/recommendations$/;
+  if (albumDetailRegex.test(pathname) || albumRecommendationsRegex.test(pathname)) {
+    return true; // Public album details and recommendations
   }
 
   // Check standard public API patterns

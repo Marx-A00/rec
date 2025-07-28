@@ -6,6 +6,7 @@ import AlbumInteractions from '@/components/albums/AlbumInteractions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BackButton from '@/components/ui/BackButton';
 import TracklistTab from '@/components/albumDetails/tabs/TracklistTab';
+import AlbumRecommendationsTab from '@/components/albumDetails/tabs/AlbumRecommendationsTab';
 import { getAlbumDetails } from '@/lib/api/albums';
 import { albumParamsSchema } from '@/lib/validations/params';
 import { sanitizeArtistName } from '@/lib/utils';
@@ -36,7 +37,6 @@ export default async function AlbumDetailsPage({
     console.error('Error fetching album:', error);
     notFound();
   }
-
 
   return (
     <div className='px-4 py-8'>
@@ -157,15 +157,15 @@ export default async function AlbumDetailsPage({
         </TabsContent>
 
         <TabsContent value='recommendations' className='mt-6'>
-          <div className='bg-zinc-900 rounded-lg p-6'>
-            <h3 className='text-xl font-semibold mb-4 text-white'>
-              Recommendations
-            </h3>
-            <p className='text-zinc-400'>
-              Recommendations based on this album will appear here. This feature
-              is coming soon!
-            </p>
-          </div>
+          <AlbumRecommendationsTab
+            albumId={albumId}
+            albumTitle={album.title}
+            albumArtist={sanitizeArtistName(
+              album.artists?.[0]?.name || 'Unknown Artist'
+            )}
+            albumImageUrl={album.image?.url || null}
+            albumYear={album.year?.toString() || null}
+          />
         </TabsContent>
 
         <TabsContent value='reviews' className='mt-6'>
