@@ -8,5 +8,9 @@
       "Bash(grep:*)"
     ],
     "deny": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "taskmaster-ai"
+  ],
+  "enableAllProjectMcpServers": true
 }
