@@ -33,6 +33,10 @@ export async function GET(
       userId: recommendation.userId,
       basisAlbumDiscogsId: recommendation.basisAlbumDiscogsId,
       recommendedAlbumDiscogsId: recommendation.recommendedAlbumDiscogsId,
+      basisAlbumArtistDiscogsId:
+        recommendation.basisAlbumArtistDiscogsId ?? null,
+      recommendedAlbumArtistDiscogsId:
+        recommendation.recommendedAlbumArtistDiscogsId ?? null,
       basisAlbumTitle: recommendation.basisAlbumTitle,
       basisAlbumArtist: recommendation.basisAlbumArtist,
       basisAlbumImageUrl: recommendation.basisAlbumImageUrl ?? null,
@@ -144,6 +148,10 @@ export async function PATCH(
       basisAlbumDiscogsId: updatedRecommendation.basisAlbumDiscogsId,
       recommendedAlbumDiscogsId:
         updatedRecommendation.recommendedAlbumDiscogsId,
+      basisAlbumArtistDiscogsId:
+        updatedRecommendation.basisAlbumArtistDiscogsId ?? null,
+      recommendedAlbumArtistDiscogsId:
+        updatedRecommendation.recommendedAlbumArtistDiscogsId ?? null,
       basisAlbumTitle: updatedRecommendation.basisAlbumTitle,
       basisAlbumArtist: updatedRecommendation.basisAlbumArtist,
       basisAlbumImageUrl: updatedRecommendation.basisAlbumImageUrl ?? null,

@@ -44,7 +44,9 @@ async function backfillArtistIds() {
           await prisma.recommendation.update({
             where: { id: rec.id },
             data: {
-              ...(basisArtistId && { basisAlbumArtistDiscogsId: basisArtistId }),
+              ...(basisArtistId && {
+                basisAlbumArtistDiscogsId: basisArtistId,
+              }),
               ...(recommendedArtistId && {
                 recommendedAlbumArtistDiscogsId: recommendedArtistId,
               }),

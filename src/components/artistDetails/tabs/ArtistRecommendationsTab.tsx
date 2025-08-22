@@ -220,7 +220,12 @@ export default function ArtistRecommendationsTab({
             {recommendations.map(recommendation => (
               <RecommendationCard
                 key={recommendation.id}
-                recommendation={recommendation}
+                recommendation={{
+                  ...recommendation,
+                  updatedAt: recommendation.createdAt, // Use createdAt as fallback for updatedAt
+                  basisAlbumArtistDiscogsId: null, // Not available from artist recommendations API
+                  recommendedAlbumArtistDiscogsId: null, // Not available from artist recommendations API
+                }}
                 onAlbumClick={handleAlbumClick}
                 showDetailModal={false}
               />

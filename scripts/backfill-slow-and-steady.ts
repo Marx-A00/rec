@@ -4,8 +4,14 @@ import { getAlbumDetails } from '@/lib/api/albums';
 import chalk from 'chalk';
 
 async function slowAndSteadyBackfill() {
-  console.log(chalk.bgBlue.white.bold('\n🐌 Starting SLOW & STEADY artist ID backfill... 🐌\n'));
-  console.log(chalk.yellow('This will take a while but it won\'t hit rate limits!\n'));
+  console.log(
+    chalk.bgBlue.white.bold(
+      '\n🐌 Starting SLOW & STEADY artist ID backfill... 🐌\n'
+    )
+  );
+  console.log(
+    chalk.yellow("This will take a while but it won't hit rate limits!\n")
+  );
 
   try {
     // Get ALL recommendations with missing artist IDs
@@ -20,7 +26,11 @@ async function slowAndSteadyBackfill() {
 
     const total = missingRecs.length;
     console.log(chalk.yellow(`Found ${total} recommendations to process`));
-    console.log(chalk.gray(`Estimated time: ${Math.ceil((total * 2 * 10) / 60)} minutes\n`));
+    console.log(
+      chalk.gray(
+        `Estimated time: ${Math.ceil((total * 2 * 10) / 60)} minutes\n`
+      )
+    );
 
     let processed = 0;
     let updated = 0;
@@ -28,8 +38,14 @@ async function slowAndSteadyBackfill() {
 
     for (const rec of missingRecs) {
       processed++;
-      console.log(chalk.bgMagenta.white(`\n[${processed}/${total}] Processing recommendation ${rec.id}`));
-      console.log(chalk.cyan(`${rec.basisAlbumTitle} → ${rec.recommendedAlbumTitle}`));
+      console.log(
+        chalk.bgMagenta.white(
+          `\n[${processed}/${total}] Processing recommendation ${rec.id}`
+        )
+      );
+      console.log(
+        chalk.cyan(`${rec.basisAlbumTitle} → ${rec.recommendedAlbumTitle}`)
+      );
 
       const updates: any = {};
       let apiCallsMade = 0;
@@ -39,20 +55,32 @@ async function slowAndSteadyBackfill() {
         try {
           console.log(chalk.gray(`\n⏳ Waiting 10 seconds before API call...`));
           await new Promise(resolve => setTimeout(resolve, 10000)); // 10 second wait
-          
-          console.log(chalk.blue(`📡 Fetching basis album ${rec.basisAlbumDiscogsId}...`));
+
+          console.log(
+            chalk.blue(`📡 Fetching basis album ${rec.basisAlbumDiscogsId}...`)
+          );
           const album = await getAlbumDetails(rec.basisAlbumDiscogsId);
           apiCallsMade++;
-          
+
           const artistId = album.artists?.[0]?.id;
           if (artistId) {
             updates.basisAlbumArtistDiscogsId = artistId;
-            console.log(chalk.green(`✅ Found basis artist: ${rec.basisAlbumArtist} → ID: ${artistId}`));
+            console.log(
+              chalk.green(
+                `✅ Found basis artist: ${rec.basisAlbumArtist} → ID: ${artistId}`
+              )
+            );
           } else {
-            console.log(chalk.yellow(`⚠️  No artist ID found in basis album data`));
+            console.log(
+              chalk.yellow(`⚠️  No artist ID found in basis album data`)
+            );
           }
         } catch (e) {
-          console.log(chalk.red(`❌ Failed to fetch basis album: ${e instanceof Error ? e.message : 'Unknown error'}`));
+          console.log(
+            chalk.red(
+              `❌ Failed to fetch basis album: ${e instanceof Error ? e.message : 'Unknown error'}`
+            )
+          );
         }
       }
 
@@ -61,20 +89,34 @@ async function slowAndSteadyBackfill() {
         try {
           console.log(chalk.gray(`\n⏳ Waiting 10 seconds before API call...`));
           await new Promise(resolve => setTimeout(resolve, 10000)); // 10 second wait
-          
-          console.log(chalk.blue(`📡 Fetching recommended album ${rec.recommendedAlbumDiscogsId}...`));
+
+          console.log(
+            chalk.blue(
+              `📡 Fetching recommended album ${rec.recommendedAlbumDiscogsId}...`
+            )
+          );
           const album = await getAlbumDetails(rec.recommendedAlbumDiscogsId);
           apiCallsMade++;
-          
+
           const artistId = album.artists?.[0]?.id;
           if (artistId) {
             updates.recommendedAlbumArtistDiscogsId = artistId;
-            console.log(chalk.green(`✅ Found recommended artist: ${rec.recommendedAlbumArtist} → ID: ${artistId}`));
+            console.log(
+              chalk.green(
+                `✅ Found recommended artist: ${rec.recommendedAlbumArtist} → ID: ${artistId}`
+              )
+            );
           } else {
-            console.log(chalk.yellow(`⚠️  No artist ID found in recommended album data`));
+            console.log(
+              chalk.yellow(`⚠️  No artist ID found in recommended album data`)
+            );
           }
         } catch (e) {
-          console.log(chalk.red(`❌ Failed to fetch recommended album: ${e instanceof Error ? e.message : 'Unknown error'}`));
+          console.log(
+            chalk.red(
+              `❌ Failed to fetch recommended album: ${e instanceof Error ? e.message : 'Unknown error'}`
+            )
+          );
         }
       }
 
@@ -86,9 +128,15 @@ async function slowAndSteadyBackfill() {
             data: updates,
           });
           updated++;
-          console.log(chalk.bgGreen.black(`\n✨ Successfully updated recommendation! ✨`));
+          console.log(
+            chalk.bgGreen.black(`\n✨ Successfully updated recommendation! ✨`)
+          );
         } catch (e) {
-          console.log(chalk.red(`❌ Failed to update database: ${e instanceof Error ? e.message : 'Unknown error'}`));
+          console.log(
+            chalk.red(
+              `❌ Failed to update database: ${e instanceof Error ? e.message : 'Unknown error'}`
+            )
+          );
           failed++;
         }
       } else if (apiCallsMade === 0) {
@@ -98,15 +146,20 @@ async function slowAndSteadyBackfill() {
       // Progress report
       const percentage = Math.round((processed / total) * 100);
       const remainingTime = Math.ceil(((total - processed) * 2 * 10) / 60);
-      console.log(chalk.blue(`\n📊 Progress: ${percentage}% | Remaining time: ~${remainingTime} minutes`));
+      console.log(
+        chalk.blue(
+          `\n📊 Progress: ${percentage}% | Remaining time: ~${remainingTime} minutes`
+        )
+      );
       console.log(chalk.green(`Updated: ${updated} | Failed: ${failed}`));
     }
 
     console.log(chalk.bgGreen.black.bold('\n🎉 BACKFILL COMPLETE! 🎉\n'));
     console.log(chalk.green(`✅ Successfully updated: ${updated}`));
     console.log(chalk.red(`❌ Failed: ${failed}`));
-    console.log(chalk.yellow(`⏭️  Already complete: ${total - updated - failed}`));
-
+    console.log(
+      chalk.yellow(`⏭️  Already complete: ${total - updated - failed}`)
+    );
   } catch (error) {
     console.error(chalk.bgRed.white('\n💥 FATAL ERROR 💥'), error);
   } finally {
@@ -115,10 +168,12 @@ async function slowAndSteadyBackfill() {
 }
 
 // Better error handling
-process.on('unhandledRejection', (error) => {
+process.on('unhandledRejection', error => {
   console.error(chalk.bgRed.white('\n💥 Unhandled error 💥'));
   console.error(error);
-  console.log(chalk.yellow('\n⚠️  The script will continue with the next item...'));
+  console.log(
+    chalk.yellow('\n⚠️  The script will continue with the next item...')
+  );
 });
 
 // Allow graceful shutdown

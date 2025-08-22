@@ -71,8 +71,10 @@ async function fetchArtistRecommendations(
     limit: limit.toString(),
   });
 
-  const response = await fetch(`/api/artists/${artistId}/recommendations?${params}`);
-  
+  const response = await fetch(
+    `/api/artists/${artistId}/recommendations?${params}`
+  );
+
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch recommendations');
@@ -90,7 +92,9 @@ export function useArtistRecommendations({
   const [filter, setFilter] = useState<FilterType>(initialFilter);
   const [sort, setSort] = useState<SortType>(initialSort);
   const [page, setPage] = useState(1);
-  const [allRecommendations, setAllRecommendations] = useState<ArtistRecommendation[]>([]);
+  const [allRecommendations, setAllRecommendations] = useState<
+    ArtistRecommendation[]
+  >([]);
 
   // Reset page when filter or sort changes
   useEffect(() => {
@@ -98,16 +102,10 @@ export function useArtistRecommendations({
     setAllRecommendations([]);
   }, [filter, sort]);
 
-  const {
-    data,
-    isLoading,
-    error,
-    isError,
-    refetch,
-    isFetching,
-  } = useQuery({
+  const { data, isLoading, error, isError, refetch, isFetching } = useQuery({
     queryKey: ['artist-recommendations', artistId, filter, sort, page, limit],
-    queryFn: () => fetchArtistRecommendations(artistId, filter, sort, page, limit),
+    queryFn: () =>
+      fetchArtistRecommendations(artistId, filter, sort, page, limit),
     enabled: !!artistId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes

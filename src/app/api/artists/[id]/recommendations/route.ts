@@ -1,8 +1,9 @@
 // src/app/api/artists/[id]/recommendations/route.ts
 import { NextResponse } from 'next/server';
+import chalk from 'chalk';
+
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
-import chalk from 'chalk';
 
 export async function GET(
   request: Request,
@@ -26,7 +27,11 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '12');
     const offset = (page - 1) * limit;
 
-    console.log(chalk.bgBlue.white.bold('\n🎨 === ARTIST RECOMMENDATIONS API START === 🎨'));
+    console.log(
+      chalk.bgBlue.white.bold(
+        '\n🎨 === ARTIST RECOMMENDATIONS API START === 🎨'
+      )
+    );
     console.log(chalk.cyan('Request params:'), {
       artistId: chalk.yellow(artistId),
       filter: chalk.green(filter),
@@ -74,11 +79,17 @@ export async function GET(
         break;
     }
 
-    console.log(chalk.magenta('Query where clause:'), JSON.stringify(whereClause, null, 2));
+    console.log(
+      chalk.magenta('Query where clause:'),
+      JSON.stringify(whereClause, null, 2)
+    );
 
     // Get total count
     const total = await prisma.recommendation.count({ where: whereClause });
-    console.log(chalk.green('✓ Total recommendations found:'), chalk.yellow(total));
+    console.log(
+      chalk.green('✓ Total recommendations found:'),
+      chalk.yellow(total)
+    );
 
     // Get recommendations with user data
     const recommendations = await prisma.recommendation.findMany({
@@ -96,17 +107,21 @@ export async function GET(
       skip: offset,
       take: limit,
     });
-    console.log(chalk.green('✓ Fetched recommendations:'), chalk.yellow(recommendations.length));
+    console.log(
+      chalk.green('✓ Fetched recommendations:'),
+      chalk.yellow(recommendations.length)
+    );
 
     // Transform recommendations to include album role information
     const transformedRecommendations = recommendations.map(rec => {
       const isBasisArtist = rec.basisAlbumArtistDiscogsId === artistId;
-      const isRecommendedArtist = rec.recommendedAlbumArtistDiscogsId === artistId;
-      
+      const isRecommendedArtist =
+        rec.recommendedAlbumArtistDiscogsId === artistId;
+
       // Determine which album is from this artist and which is the "other" album
       let albumRole: 'basis' | 'recommended' | 'both';
       let otherAlbum;
-      
+
       if (isBasisArtist && isRecommendedArtist) {
         albumRole = 'both';
         // For albums from the same artist, treat recommended as "other"
@@ -146,7 +161,7 @@ export async function GET(
     });
 
     console.log(chalk.green('✓ Transformation complete'));
-    
+
     const response = {
       recommendations: transformedRecommendations,
       pagination: {
@@ -157,32 +172,41 @@ export async function GET(
         hasMore: offset + limit < total,
       },
     };
-    
+
     console.log(chalk.cyan('Response preview:'), {
       recommendationsCount: response.recommendations.length,
-      firstRec: response.recommendations[0] ? {
-        id: response.recommendations[0].id,
-        albumRole: response.recommendations[0].albumRole,
-        basisArtist: response.recommendations[0].basisAlbumArtist,
-        recommendedArtist: response.recommendations[0].recommendedAlbumArtist,
-      } : 'none',
+      firstRec: response.recommendations[0]
+        ? {
+            id: response.recommendations[0].id,
+            albumRole: response.recommendations[0].albumRole,
+            basisArtist: response.recommendations[0].basisAlbumArtist,
+            recommendedArtist:
+              response.recommendations[0].recommendedAlbumArtist,
+          }
+        : 'none',
       pagination: response.pagination,
     });
-    
-    console.log(chalk.bgGreen.black.bold('\n🎨 === ARTIST RECOMMENDATIONS API SUCCESS === 🎨\n'));
+
+    console.log(
+      chalk.bgGreen.black.bold(
+        '\n🎨 === ARTIST RECOMMENDATIONS API SUCCESS === 🎨\n'
+      )
+    );
 
     return NextResponse.json(response);
   } catch (error) {
-    console.log(chalk.bgRed.white.bold('\n❌ === ARTIST RECOMMENDATIONS API ERROR === ❌'));
+    console.log(
+      chalk.bgRed.white.bold('\n❌ === ARTIST RECOMMENDATIONS API ERROR === ❌')
+    );
     console.error(chalk.red('Error details:'), {
       artistId: chalk.yellow(artistId),
       error: chalk.red(error instanceof Error ? error.message : error),
       stack: error instanceof Error ? error.stack : undefined,
     });
     console.log(chalk.bgRed.white.bold('❌ === END ERROR === ❌\n'));
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch recommendations',
         details: error instanceof Error ? error.message : 'Unknown error',
       },

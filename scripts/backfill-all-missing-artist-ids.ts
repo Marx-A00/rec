@@ -4,7 +4,11 @@ import { getAlbumDetails } from '@/lib/api/albums';
 import chalk from 'chalk';
 
 async function backfillAllMissingArtistIds() {
-  console.log(chalk.bgBlue.white.bold('\n🎨 Starting comprehensive artist ID backfill... 🎨\n'));
+  console.log(
+    chalk.bgBlue.white.bold(
+      '\n🎨 Starting comprehensive artist ID backfill... 🎨\n'
+    )
+  );
 
   try {
     // Count total missing
@@ -17,7 +21,11 @@ async function backfillAllMissingArtistIds() {
       },
     });
 
-    console.log(chalk.yellow(`Found ${totalMissing} recommendations with missing artist IDs\n`));
+    console.log(
+      chalk.yellow(
+        `Found ${totalMissing} recommendations with missing artist IDs\n`
+      )
+    );
 
     // Process in batches to avoid memory issues
     const batchSize = 10;
@@ -40,11 +48,19 @@ async function backfillAllMissingArtistIds() {
 
       if (batch.length === 0) break;
 
-      console.log(chalk.blue(`\nProcessing batch: ${processed + 1} to ${processed + batch.length}`));
+      console.log(
+        chalk.blue(
+          `\nProcessing batch: ${processed + 1} to ${processed + batch.length}`
+        )
+      );
 
       for (const rec of batch) {
         try {
-          console.log(chalk.cyan(`\n[${processed + 1}/${totalMissing}] ${rec.basisAlbumTitle} → ${rec.recommendedAlbumTitle}`));
+          console.log(
+            chalk.cyan(
+              `\n[${processed + 1}/${totalMissing}] ${rec.basisAlbumTitle} → ${rec.recommendedAlbumTitle}`
+            )
+          );
 
           const updates: any = {};
           let needsUpdate = false;
@@ -52,18 +68,32 @@ async function backfillAllMissingArtistIds() {
           // Check basis album
           if (!rec.basisAlbumArtistDiscogsId) {
             try {
-              console.log(chalk.gray(`  Fetching basis album ${rec.basisAlbumDiscogsId}...`));
+              console.log(
+                chalk.gray(
+                  `  Fetching basis album ${rec.basisAlbumDiscogsId}...`
+                )
+              );
               const album = await getAlbumDetails(rec.basisAlbumDiscogsId);
               const artistId = album.artists?.[0]?.id;
               if (artistId) {
                 updates.basisAlbumArtistDiscogsId = artistId;
                 needsUpdate = true;
-                console.log(chalk.green(`  ✓ Basis: ${rec.basisAlbumArtist} → ID: ${artistId}`));
+                console.log(
+                  chalk.green(
+                    `  ✓ Basis: ${rec.basisAlbumArtist} → ID: ${artistId}`
+                  )
+                );
               } else {
-                console.log(chalk.yellow(`  ⚠ No artist ID found for basis album`));
+                console.log(
+                  chalk.yellow(`  ⚠ No artist ID found for basis album`)
+                );
               }
             } catch (e) {
-              console.log(chalk.red(`  ✗ Failed to fetch basis album: ${e instanceof Error ? e.message : 'Unknown error'}`));
+              console.log(
+                chalk.red(
+                  `  ✗ Failed to fetch basis album: ${e instanceof Error ? e.message : 'Unknown error'}`
+                )
+              );
             }
             // Add delay between API calls
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -72,18 +102,34 @@ async function backfillAllMissingArtistIds() {
           // Check recommended album
           if (!rec.recommendedAlbumArtistDiscogsId) {
             try {
-              console.log(chalk.gray(`  Fetching recommended album ${rec.recommendedAlbumDiscogsId}...`));
-              const album = await getAlbumDetails(rec.recommendedAlbumDiscogsId);
+              console.log(
+                chalk.gray(
+                  `  Fetching recommended album ${rec.recommendedAlbumDiscogsId}...`
+                )
+              );
+              const album = await getAlbumDetails(
+                rec.recommendedAlbumDiscogsId
+              );
               const artistId = album.artists?.[0]?.id;
               if (artistId) {
                 updates.recommendedAlbumArtistDiscogsId = artistId;
                 needsUpdate = true;
-                console.log(chalk.green(`  ✓ Recommended: ${rec.recommendedAlbumArtist} → ID: ${artistId}`));
+                console.log(
+                  chalk.green(
+                    `  ✓ Recommended: ${rec.recommendedAlbumArtist} → ID: ${artistId}`
+                  )
+                );
               } else {
-                console.log(chalk.yellow(`  ⚠ No artist ID found for recommended album`));
+                console.log(
+                  chalk.yellow(`  ⚠ No artist ID found for recommended album`)
+                );
               }
             } catch (e) {
-              console.log(chalk.red(`  ✗ Failed to fetch recommended album: ${e instanceof Error ? e.message : 'Unknown error'}`));
+              console.log(
+                chalk.red(
+                  `  ✗ Failed to fetch recommended album: ${e instanceof Error ? e.message : 'Unknown error'}`
+                )
+              );
             }
             // Add delay between API calls
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -111,7 +157,11 @@ async function backfillAllMissingArtistIds() {
       }
 
       // Progress summary
-      console.log(chalk.blue(`\nProgress: ${processed}/${totalMissing} (${Math.round((processed / totalMissing) * 100)}%)`));
+      console.log(
+        chalk.blue(
+          `\nProgress: ${processed}/${totalMissing} (${Math.round((processed / totalMissing) * 100)}%)`
+        )
+      );
       console.log(chalk.green(`Updated: ${updated}`));
       console.log(chalk.red(`Failed: ${failed}`));
     }
@@ -120,7 +170,6 @@ async function backfillAllMissingArtistIds() {
     console.log(chalk.green(`✓ Successfully updated: ${updated}`));
     console.log(chalk.red(`✗ Failed: ${failed}`));
     console.log(chalk.yellow(`⚠ Skipped: ${totalMissing - updated - failed}`));
-
   } catch (error) {
     console.error(chalk.bgRed.white('Backfill failed:'), error);
   } finally {
@@ -129,8 +178,10 @@ async function backfillAllMissingArtistIds() {
 }
 
 // Add error handling for the Discogs API issues
-process.on('unhandledRejection', (error) => {
-  console.error(chalk.bgRed.white('\n❌ Unhandled error - likely Discogs API issue ❌'));
+process.on('unhandledRejection', error => {
+  console.error(
+    chalk.bgRed.white('\n❌ Unhandled error - likely Discogs API issue ❌')
+  );
   console.error(error);
   process.exit(1);
 });

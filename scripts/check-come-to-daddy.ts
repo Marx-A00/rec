@@ -25,7 +25,9 @@ async function checkComeToDaddy() {
       },
     });
 
-    console.log(`Found ${comeToDaddyRecs.length} recommendations with "Come to Daddy":`);
+    console.log(
+      `Found ${comeToDaddyRecs.length} recommendations with "Come to Daddy":`
+    );
     comeToDaddyRecs.forEach(rec => {
       console.log('\nRecommendation:', rec.id);
       console.log('Basis:', {
@@ -60,7 +62,9 @@ async function checkComeToDaddy() {
       },
     });
 
-    console.log(`\nFound ${ashKooshaRecs.length} recommendations with Ash Koosha:`);
+    console.log(
+      `\nFound ${ashKooshaRecs.length} recommendations with Ash Koosha:`
+    );
     ashKooshaRecs.forEach(rec => {
       console.log('\nRecommendation:', rec.id);
       console.log('Basis:', {
@@ -74,7 +78,6 @@ async function checkComeToDaddy() {
         artistId: rec.recommendedAlbumArtistDiscogsId || 'MISSING',
       });
     });
-
   } catch (error) {
     console.error('Error:', error);
   } finally {

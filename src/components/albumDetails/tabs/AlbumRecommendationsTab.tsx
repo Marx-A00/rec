@@ -108,6 +108,8 @@ export default function AlbumRecommendationsTab({
             rec.albumRole === 'recommended'
               ? albumArtist
               : rec.otherAlbum.artist,
+          basisAlbumArtistDiscogsId: null, // Not available from this API
+          recommendedAlbumArtistDiscogsId: null, // Not available from this API
           basisAlbumImageUrl:
             rec.albumRole === 'basis' ? albumImageUrl : rec.otherAlbum.imageUrl,
           recommendedAlbumImageUrl:

@@ -38,6 +38,9 @@ export async function GET(request: Request) {
         userId: rec.userId,
         basisAlbumDiscogsId: rec.basisAlbumDiscogsId,
         recommendedAlbumDiscogsId: rec.recommendedAlbumDiscogsId,
+        basisAlbumArtistDiscogsId: rec.basisAlbumArtistDiscogsId ?? null,
+        recommendedAlbumArtistDiscogsId:
+          rec.recommendedAlbumArtistDiscogsId ?? null,
         basisAlbumTitle: rec.basisAlbumTitle,
         basisAlbumArtist: rec.basisAlbumArtist,
         basisAlbumImageUrl: rec.basisAlbumImageUrl ?? null,
@@ -103,7 +106,8 @@ export async function POST(request: Request) {
         basisAlbumDiscogsId: data.basisAlbumDiscogsId,
         recommendedAlbumDiscogsId: data.recommendedAlbumDiscogsId,
         basisAlbumArtistDiscogsId: data.basisAlbumArtistDiscogsId || null,
-        recommendedAlbumArtistDiscogsId: data.recommendedAlbumArtistDiscogsId || null,
+        recommendedAlbumArtistDiscogsId:
+          data.recommendedAlbumArtistDiscogsId || null,
         basisAlbumTitle: data.basisAlbumTitle,
         basisAlbumArtist: data.basisAlbumArtist,
         basisAlbumImageUrl: data.basisAlbumImageUrl,

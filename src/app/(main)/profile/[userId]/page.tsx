@@ -29,6 +29,9 @@ async function getUserRecommendations(
     userId: rec.userId,
     basisAlbumDiscogsId: rec.basisAlbumDiscogsId,
     recommendedAlbumDiscogsId: rec.recommendedAlbumDiscogsId,
+    basisAlbumArtistDiscogsId: rec.basisAlbumArtistDiscogsId || null,
+    recommendedAlbumArtistDiscogsId:
+      rec.recommendedAlbumArtistDiscogsId || null,
     basisAlbumTitle: rec.basisAlbumTitle,
     basisAlbumArtist: rec.basisAlbumArtist,
     basisAlbumImageUrl: rec.basisAlbumImageUrl || null,

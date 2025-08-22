@@ -173,7 +173,9 @@ export default function NavigationSidebar() {
             side='right'
             align='start'
             className='w-64 bg-black/90 backdrop-blur-sm border-zinc-700/50'
-            collisionBoundary={typeof window !== 'undefined' ? document.body : undefined}
+            collisionBoundary={
+              typeof window !== 'undefined' ? document.body : undefined
+            }
             collisionPadding={16}
             alignOffset={-8}
           >

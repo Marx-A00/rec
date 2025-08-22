@@ -4,7 +4,9 @@ import { getAlbumDetails } from '@/lib/api/albums';
 import chalk from 'chalk';
 
 async function backfillMissingArtistIds() {
-  console.log(chalk.bgBlue.white.bold('\n🎨 Starting targeted artist ID backfill... 🎨\n'));
+  console.log(
+    chalk.bgBlue.white.bold('\n🎨 Starting targeted artist ID backfill... 🎨\n')
+  );
 
   try {
     // Find recommendations with Aphex Twin but missing artist IDs
@@ -27,22 +29,35 @@ async function backfillMissingArtistIds() {
       },
     });
 
-    console.log(chalk.yellow(`Found ${aphexRecs.length} Aphex Twin recommendations missing artist IDs`));
+    console.log(
+      chalk.yellow(
+        `Found ${aphexRecs.length} Aphex Twin recommendations missing artist IDs`
+      )
+    );
 
     for (const rec of aphexRecs) {
       try {
-        console.log(chalk.cyan(`\nProcessing: ${rec.basisAlbumTitle} → ${rec.recommendedAlbumTitle}`));
+        console.log(
+          chalk.cyan(
+            `\nProcessing: ${rec.basisAlbumTitle} → ${rec.recommendedAlbumTitle}`
+          )
+        );
 
         const updates: any = {};
 
         // Check basis album
-        if (rec.basisAlbumArtist === 'Aphex Twin' && !rec.basisAlbumArtistDiscogsId) {
+        if (
+          rec.basisAlbumArtist === 'Aphex Twin' &&
+          !rec.basisAlbumArtistDiscogsId
+        ) {
           try {
             const album = await getAlbumDetails(rec.basisAlbumDiscogsId);
             const artistId = album.artists?.[0]?.id;
             if (artistId) {
               updates.basisAlbumArtistDiscogsId = artistId;
-              console.log(chalk.green(`  ✓ Found basis artist ID: ${artistId}`));
+              console.log(
+                chalk.green(`  ✓ Found basis artist ID: ${artistId}`)
+              );
             }
           } catch (e) {
             console.log(chalk.red(`  ✗ Failed to get basis album details`));
@@ -50,16 +65,23 @@ async function backfillMissingArtistIds() {
         }
 
         // Check recommended album
-        if (rec.recommendedAlbumArtist === 'Aphex Twin' && !rec.recommendedAlbumArtistDiscogsId) {
+        if (
+          rec.recommendedAlbumArtist === 'Aphex Twin' &&
+          !rec.recommendedAlbumArtistDiscogsId
+        ) {
           try {
             const album = await getAlbumDetails(rec.recommendedAlbumDiscogsId);
             const artistId = album.artists?.[0]?.id;
             if (artistId) {
               updates.recommendedAlbumArtistDiscogsId = artistId;
-              console.log(chalk.green(`  ✓ Found recommended artist ID: ${artistId}`));
+              console.log(
+                chalk.green(`  ✓ Found recommended artist ID: ${artistId}`)
+              );
             }
           } catch (e) {
-            console.log(chalk.red(`  ✗ Failed to get recommended album details`));
+            console.log(
+              chalk.red(`  ✗ Failed to get recommended album details`)
+            );
           }
         }
 

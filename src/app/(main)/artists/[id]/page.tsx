@@ -173,9 +173,9 @@ export default async function ArtistDetailsPage({
           value='recommendations'
           className='focus:outline-none outline-none'
         >
-          <ArtistRecommendationsTab 
-            artistId={artistId} 
-            artistName={sanitizeArtistName(artist.title)} 
+          <ArtistRecommendationsTab
+            artistId={artistId}
+            artistName={sanitizeArtistName(artist.title)}
           />
         </TabsContent>
 

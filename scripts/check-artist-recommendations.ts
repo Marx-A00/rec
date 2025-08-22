@@ -18,7 +18,9 @@ async function checkArtistRecommendations(artistId: string) {
       },
     });
 
-    console.log(`\nFound ${basisRecs.length} recommendations where artist ${artistId} is the basis album artist`);
+    console.log(
+      `\nFound ${basisRecs.length} recommendations where artist ${artistId} is the basis album artist`
+    );
     if (basisRecs.length > 0) {
       console.log('Sample:', basisRecs[0]);
     }
@@ -36,7 +38,9 @@ async function checkArtistRecommendations(artistId: string) {
       },
     });
 
-    console.log(`\nFound ${recommendedRecs.length} recommendations where artist ${artistId} is the recommended album artist`);
+    console.log(
+      `\nFound ${recommendedRecs.length} recommendations where artist ${artistId} is the recommended album artist`
+    );
     if (recommendedRecs.length > 0) {
       console.log('Sample:', recommendedRecs[0]);
     }
@@ -67,7 +71,6 @@ async function checkArtistRecommendations(artistId: string) {
         recommended: `${rec.recommendedAlbumArtist} (ID: ${rec.recommendedAlbumArtistDiscogsId})`,
       });
     });
-
   } catch (error) {
     console.error('Error checking recommendations:', error);
   } finally {
