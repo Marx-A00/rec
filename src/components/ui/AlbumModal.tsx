@@ -590,7 +590,13 @@ export default function AlbumModal({
           {albumForInteractions && (
             <div className='mb-4'>
               {/* Artist buttons */}
-              {albumForInteractions.artists &&
+              {/* TECHNICAL DEBT: Collection albums don't store artist IDs, so we can't navigate to artists.
+                  This should be fixed by either:
+                  1. Adding albumArtistDiscogsId to CollectionAlbum model in the database
+                  2. Fetching artist data from Discogs API when needed
+                  For now, we hide artist buttons for collection albums to avoid broken navigation */}
+              {!isCollectionAlbum(data) &&
+                albumForInteractions.artists &&
                 albumForInteractions.artists.length > 0 && (
                   <div className='space-y-1 mb-4'>
                     <h3 className='text-xs font-medium text-zinc-400'>
