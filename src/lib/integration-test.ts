@@ -15,7 +15,7 @@
 //     // This endpoint connects to Discogs API to search for albums
 //     console.log('\nTesting album search...');
 //     const searchResponse = await fetch(
-//       'http://localhost:3000/api/albums/search?query=nevermind%20nirvana'
+//       'http://localhost:3005/api/albums/search?query=nevermind%20nirvana'
 //     );
 //     if (!searchResponse.ok)
 //       throw new Error(`Album search failed: ${searchResponse.statusText}`);
@@ -30,7 +30,7 @@
 //       console.log('\nTesting album details...');
 //       const albumId = searchResults.albums[0].id;
 //       const detailsResponse = await fetch(
-//         `http://localhost:3000/api/albums/${albumId}`
+//         `http://localhost:3005/api/albums/${albumId}`
 //       );
 //       if (!detailsResponse.ok)
 //         throw new Error(`Album details failed: ${detailsResponse.statusText}`);

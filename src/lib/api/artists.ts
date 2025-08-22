@@ -4,7 +4,7 @@ import { ArtistDetails } from '@/types/artist';
 
 // Create a client with consumer key and secret from environment variables
 const db = new Client({
-  userAgent: 'RecProject/1.0 +http://localhost:3000',
+  userAgent: 'RecProject/1.0 +https://github.com/Marx-A00/rec',
   consumerKey: process.env.CONSUMER_KEY,
   consumerSecret: process.env.CONSUMER_SECRET,
 }).database();

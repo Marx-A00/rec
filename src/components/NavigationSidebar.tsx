@@ -124,7 +124,7 @@ export default function NavigationSidebar() {
 
       {/* User Avatar - Fixed at top left corner, separate from nav */}
       <div
-        className={`fixed top-4 left-4 z-[60] hidden md:block transition-all duration-200 ease-out delay-0 ${
+        className={`fixed top-8 left-4 z-[60] hidden md:block transition-all duration-200 ease-out delay-0 ${
           isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
         }`}
       >
@@ -173,6 +173,9 @@ export default function NavigationSidebar() {
             side='right'
             align='start'
             className='w-64 bg-black/90 backdrop-blur-sm border-zinc-700/50'
+            collisionBoundary={typeof window !== 'undefined' ? document.body : undefined}
+            collisionPadding={16}
+            alignOffset={-8}
           >
             {user ? (
               <div>

@@ -253,6 +253,9 @@ export default function CreateRecommendationForm({
       recommendedAlbumArtist: formatArtists(recommendedAlbum.artists),
       recommendedAlbumImageUrl: recommendedAlbum.image.url,
       recommendedAlbumYear: recommendedAlbum.year?.toString() ?? null,
+      // Extract artist IDs from the first artist in the array
+      basisAlbumArtistDiscogsId: basisAlbum.artists?.[0]?.id || null,
+      recommendedAlbumArtistDiscogsId: recommendedAlbum.artists?.[0]?.id || null,
     };
 
     createMutation.mutate(request);

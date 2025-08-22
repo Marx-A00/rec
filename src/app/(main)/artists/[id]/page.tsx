@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import AlbumImage from '@/components/ui/AlbumImage';
 import BackButton from '@/components/ui/BackButton';
 import DiscographyTab from '@/components/artistDetails/tabs/DiscographyTab';
+import ArtistRecommendationsTab from '@/components/artistDetails/tabs/ArtistRecommendationsTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getArtistDetails } from '@/lib/api/artists';
 import { artistParamsSchema } from '@/lib/validations/params';
@@ -128,12 +129,18 @@ export default async function ArtistDetailsPage({
 
       {/* Tabs */}
       <Tabs defaultValue='discography' className='w-full'>
-        <TabsList className='grid w-full grid-cols-4 bg-zinc-900'>
+        <TabsList className='grid w-full grid-cols-5 bg-zinc-900'>
           <TabsTrigger
             value='discography'
             className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
             Discography
+          </TabsTrigger>
+          <TabsTrigger
+            value='recommendations'
+            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
+          >
+            Recs
           </TabsTrigger>
           <TabsTrigger
             value='biography'
@@ -160,6 +167,16 @@ export default async function ArtistDetailsPage({
           className='focus:outline-none outline-none'
         >
           <DiscographyTab artistId={artistId} />
+        </TabsContent>
+
+        <TabsContent
+          value='recommendations'
+          className='focus:outline-none outline-none'
+        >
+          <ArtistRecommendationsTab 
+            artistId={artistId} 
+            artistName={sanitizeArtistName(artist.title)} 
+          />
         </TabsContent>
 
         <TabsContent value='biography'>

@@ -102,6 +102,8 @@ export async function POST(request: Request) {
         score: data.score,
         basisAlbumDiscogsId: data.basisAlbumDiscogsId,
         recommendedAlbumDiscogsId: data.recommendedAlbumDiscogsId,
+        basisAlbumArtistDiscogsId: data.basisAlbumArtistDiscogsId || null,
+        recommendedAlbumArtistDiscogsId: data.recommendedAlbumArtistDiscogsId || null,
         basisAlbumTitle: data.basisAlbumTitle,
         basisAlbumArtist: data.basisAlbumArtist,
         basisAlbumImageUrl: data.basisAlbumImageUrl,

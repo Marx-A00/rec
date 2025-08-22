@@ -9,6 +9,8 @@ export interface Recommendation {
   // Discogs references
   basisAlbumDiscogsId: string;
   recommendedAlbumDiscogsId: string;
+  basisAlbumArtistDiscogsId: string | null;
+  recommendedAlbumArtistDiscogsId: string | null;
 
   // Cached display data
   basisAlbumTitle: string;
@@ -33,6 +35,10 @@ export interface CreateRecommendationRequest {
   basisAlbumDiscogsId: string;
   recommendedAlbumDiscogsId: string;
   score: number;
+
+  // Artist Discogs IDs
+  basisAlbumArtistDiscogsId?: string | null;
+  recommendedAlbumArtistDiscogsId?: string | null;
 
   // Cache these for display
   basisAlbumTitle: string;

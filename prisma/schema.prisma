@@ -81,6 +81,8 @@ model Recommendation {
   // Discogs references (source of truth)
   basisAlbumDiscogsId       String
   recommendedAlbumDiscogsId String
+  basisAlbumArtistDiscogsId       String?
+  recommendedAlbumArtistDiscogsId String?
   
   // Cached display data (to avoid API calls in lists)
   basisAlbumTitle           String
@@ -97,6 +99,8 @@ model Recommendation {
   @@index([userId])
   @@index([basisAlbumDiscogsId])
   @@index([recommendedAlbumDiscogsId])
+  @@index([basisAlbumArtistDiscogsId])
+  @@index([recommendedAlbumArtistDiscogsId])
 }
 
 model Collection {

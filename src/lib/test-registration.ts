@@ -14,7 +14,7 @@ async function testRegistration() {
   console.log('Test user:', { ...testUser, password: '[HIDDEN]' });
 
   try {
-    const response = await fetch('http://localhost:3000/api/auth/register', {
+    const response = await fetch('http://localhost:3005/api/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +61,7 @@ async function testValidation() {
 
   for (const testCase of testCases) {
     try {
-      const response = await fetch('http://localhost:3000/api/auth/register', {
+      const response = await fetch('http://localhost:3005/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -93,7 +93,7 @@ async function testValidation() {
 async function main() {
   console.log('🚀 Starting registration tests...');
   console.log(
-    'Make sure the development server is running on http://localhost:3000\n'
+    'Make sure the development server is running on http://localhost:3005\n'
   );
 
   await testValidation();
