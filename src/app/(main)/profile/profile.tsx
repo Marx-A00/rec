@@ -414,7 +414,7 @@ export default function ProfileClient({
                   <RecommendationCard
                     key={recommendation.id}
                     recommendation={recommendation}
-                    currentUserId={user.id}
+                    currentUserId={isOwnProfile ? user.id : undefined}
                     onAlbumClick={albumId => navigateToAlbum(albumId)}
                   />
                 ))}
