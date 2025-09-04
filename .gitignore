@@ -77,6 +77,7 @@ node_modules/
 *.sw?
 # OS specific
 
+.taskmaster
 .taskmaster/
 
 .windsurfrules
@@ -86,4 +87,5 @@ node_modules/
 
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/ .taskmaster
+*.code-workspace
