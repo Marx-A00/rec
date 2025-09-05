@@ -1,5 +1,9 @@
 'use client';
 
+// TODO: Build a comprehensive dedicated search page that utilizes the full MusicBrainz lookup capabilities
+// with rich metadata (aliases, tags, genres, relationships, full discographies)
+// This current implementation only uses search results - we want to leverage the complete API
+
 import { ReactNode, useCallback, useEffect, useState } from 'react';
 import { Building2, Music, User, Search } from 'lucide-react';
 
