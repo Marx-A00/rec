@@ -1,0 +1,329 @@
+# GraphQL Schema for Rec - Music Recommendation Platform
+# Canonical music entities schema aligned with Prisma models
+
+# =============================================
+# SCALAR TYPES
+# =============================================
+
+scalar DateTime
+scalar UUID
+scalar JSON
+
+# =============================================
+# CORE MUSIC ENTITIES
+# =============================================
+
+type Artist {
+  id: UUID!
+  musicbrainzId: UUID
+  name: String!
+  biography: String
+  formedYear: Int
+  countryCode: String
+  imageUrl: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Relationships
+  albums: [Album!]!
+  tracks: [Track!]!
+  
+  # Computed fields
+  albumCount: Int!
+  trackCount: Int!
+  popularity: Float
+}
+
+type Album {
+  id: UUID!
+  musicbrainzId: UUID
+  title: String!
+  releaseDate: DateTime
+  releaseType: String
+  trackCount: Int
+  durationMs: Int
+  coverArtUrl: String
+  barcode: String
+  label: String
+  catalogNumber: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Relationships
+  artists: [ArtistCredit!]!
+  tracks: [Track!]!
+  collectionAlbums: [CollectionAlbum!]!
+  basisRecommendations: [Recommendation!]!
+  targetRecommendations: [Recommendation!]!
+  
+  # Computed fields
+  duration: String # Formatted duration (e.g., "42:30")
+  averageRating: Float
+  inCollectionsCount: Int!
+  recommendationScore: Float
+}
+
+type Track {
+  id: UUID!
+  albumId: UUID!
+  musicbrainzId: UUID
+  isrc: String
+  title: String!
+  trackNumber: Int!
+  discNumber: Int!
+  durationMs: Int
+  explicit: Boolean!
+  previewUrl: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Audio Features (limited availability)
+  audioFeatures: AudioFeatures
+  
+  # Relationships
+  album: Album!
+  artists: [ArtistCredit!]!
+  
+  # Computed fields
+  duration: String # Formatted duration (e.g., "3:42")
+  popularity: Float
+}
+
+# =============================================
+# RELATIONSHIP TYPES
+# =============================================
+
+type ArtistCredit {
+  artist: Artist!
+  role: String!
+  position: Int!
+}
+
+type AudioFeatures {
+  energy: Float
+  valence: Float
+  danceability: Float
+  tempo: Float
+  acousticness: Float
+  instrumentalness: Float
+  liveness: Float
+  loudness: Float
+  speechiness: Float
+  key: Int
+  mode: Int
+  timeSignature: Int
+}
+
+# =============================================
+# USER & SOCIAL TYPES
+# =============================================
+
+type User {
+  id: String!
+  name: String
+  email: String
+  image: String
+  bio: String
+  followersCount: Int!
+  followingCount: Int!
+  recommendationsCount: Int!
+  profileUpdatedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Relationships
+  collections: [Collection!]!
+  recommendations: [Recommendation!]!
+  followers: [UserFollow!]!
+  following: [UserFollow!]!
+  
+  # Computed fields
+  isFollowing: Boolean # Context-dependent based on current user
+  mutualFollowers: [User!]!
+}
+
+type Collection {
+  id: String!
+  name: String!
+  description: String
+  isPublic: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Relationships
+  user: User!
+  albums: [CollectionAlbum!]!
+  
+  # Computed fields
+  albumCount: Int!
+  totalDuration: Int
+  averageRating: Float
+}
+
+type CollectionAlbum {
+  id: String!
+  personalRating: Int
+  personalNotes: String
+  position: Int!
+  addedAt: DateTime!
+  
+  # Relationships
+  collection: Collection!
+  album: Album!
+}
+
+type Recommendation {
+  id: String!
+  score: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Relationships
+  user: User!
+  basisAlbum: Album!
+  recommendedAlbum: Album!
+  
+  # Computed fields
+  normalizedScore: Float! # Score normalized to 0-1
+  similarity: Float # Computed similarity metric
+}
+
+type UserFollow {
+  id: String!
+  createdAt: DateTime!
+  
+  # Relationships
+  follower: User!
+  followed: User!
+}
+
+# =============================================
+# SEARCH & DISCOVERY TYPES
+# =============================================
+
+union SearchResult = Artist | Album | Track
+
+type SearchResults {
+  artists: [Artist!]!
+  albums: [Album!]!
+  tracks: [Track!]!
+  total: Int!
+  hasMore: Boolean!
+}
+
+type RecommendationFeed {
+  recommendations: [Recommendation!]!
+  cursor: String
+  hasMore: Boolean!
+}
+
+# =============================================
+# INPUT TYPES
+# =============================================
+
+input SearchInput {
+  query: String!
+  type: SearchType
+  limit: Int = 20
+  offset: Int = 0
+}
+
+input RecommendationInput {
+  albumId: UUID!
+  limit: Int = 10
+  includeExplicit: Boolean = true
+}
+
+input CollectionAlbumInput {
+  albumId: UUID!
+  personalRating: Int
+  personalNotes: String
+  position: Int
+}
+
+# =============================================
+# ENUMS
+# =============================================
+
+enum SearchType {
+  ALL
+  ARTIST
+  ALBUM
+  TRACK
+}
+
+enum RecommendationSort {
+  SCORE_DESC
+  SCORE_ASC
+  DATE_DESC
+  DATE_ASC
+  POPULARITY_DESC
+}
+
+enum CollectionSort {
+  POSITION_ASC
+  POSITION_DESC
+  ADDED_DATE_DESC
+  ADDED_DATE_ASC
+  TITLE_ASC
+  TITLE_DESC
+  RATING_DESC
+  RATING_ASC
+}
+
+# =============================================
+# ROOT QUERY TYPE
+# =============================================
+
+type Query {
+  # Health check
+  health: String!
+  
+  # Search & Discovery
+  search(input: SearchInput!): SearchResults!
+  albumRecommendations(input: RecommendationInput!): [Album!]!
+  trackRecommendations(trackId: UUID!, limit: Int = 10): [Track!]!
+  
+  # Entity retrieval
+  artist(id: UUID!): Artist
+  album(id: UUID!): Album
+  track(id: UUID!): Track
+  user(id: String!): User
+  collection(id: String!): Collection
+  recommendation(id: String!): Recommendation
+  
+  # Feed & Social
+  recommendationFeed(cursor: String, limit: Int = 20): RecommendationFeed!
+  trendingAlbums(limit: Int = 20): [Album!]!
+  trendingArtists(limit: Int = 20): [Artist!]!
+  userSuggestions(limit: Int = 10): [User!]!
+  
+  # User-specific queries
+  myCollections: [Collection!]!
+  myRecommendations(sort: RecommendationSort = SCORE_DESC, limit: Int = 50): [Recommendation!]!
+  followingActivity(limit: Int = 50): [Recommendation!]!
+}
+
+# =============================================
+# MUTATIONS (Placeholder for future implementation)
+# =============================================
+
+type Mutation {
+  # Collection management
+  createCollection(name: String!, description: String, isPublic: Boolean = false): Collection!
+  addAlbumToCollection(collectionId: String!, input: CollectionAlbumInput!): CollectionAlbum!
+  removeAlbumFromCollection(collectionId: String!, albumId: UUID!): Boolean!
+  updateCollectionAlbum(id: String!, input: CollectionAlbumInput!): CollectionAlbum!
+  
+  # Recommendation system
+  createRecommendation(basisAlbumId: UUID!, recommendedAlbumId: UUID!, score: Int!): Recommendation!
+  updateRecommendation(id: String!, score: Int!): Recommendation!
+  deleteRecommendation(id: String!): Boolean!
+  
+  # Social features
+  followUser(userId: String!): UserFollow!
+  unfollowUser(userId: String!): Boolean!
+  
+  # Profile management
+  updateProfile(name: String, bio: String): User!
+}
