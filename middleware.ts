@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from './auth';
 
 // ===========================
 // RATE LIMITING CONFIGURATION
@@ -171,6 +170,7 @@ function isPublicApiRoute(pathname: string): boolean {
     '/api/search', // Public search functionality
     '/api/albums/search', // Public album search
     '/api/test/', // Test endpoints
+    '/api/spotify/', // Spotify API endpoints
   ];
 
   // Public read-only routes (GET only)
@@ -445,6 +445,8 @@ async function handleAuthentication(
   pathname: string
 ): Promise<{ response: NextResponse | null; userID?: string }> {
   try {
+    // Dynamically import auth to avoid edge runtime issues
+    const { auth } = await import('./auth');
     const session = await auth();
 
     if (!session?.user) {
@@ -505,8 +507,11 @@ export async function middleware(request: NextRequest) {
 
   let userID: string | undefined;
 
+  // Skip auth entirely for public API routes to avoid Prisma edge runtime issues
+  const isPublicApi = pathname.startsWith('/api/') && isPublicApiRoute(pathname);
+  
   // 1. Authentication check for protected routes (both pages and API)
-  if (isProtectedRoute(pathname)) {
+  if (!isPublicApi && isProtectedRoute(pathname)) {
     // Development logging for route protection decisions
     if (process.env.NODE_ENV === 'development') {
       console.log(`🔒 Protected route accessed: ${method} ${pathname}`);

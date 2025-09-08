@@ -161,6 +161,7 @@ model UserFollow {
 model Artist {
   id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   musicbrainzId  String?   @unique @map("musicbrainz_id") @db.Uuid
+  spotifyId      String?   @unique @map("spotify_id")  // Add Spotify ID
   name           String    @db.VarChar(255)
   biography      String?   @db.Text
   formedYear     Int?      @map("formed_year")
@@ -283,4 +284,22 @@ model TrackArtist {
   @@index([trackId])
   @@index([artistId])
   @@map("track_artists")
+}
+
+// ==================================
+// EXTERNAL API CACHE
+// ==================================
+// Simple cache for external API data (Spotify, MusicBrainz, etc.)
+
+model CacheData {
+  id        String   @id @default(cuid())
+  key       String   @unique  // 'spotify_trending', 'spotify_new_releases', etc.
+  data      Json     // Raw response from API
+  expires   DateTime // When to refresh
+  metadata  Json?    // Optional: processing status, MB matches, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([key, expires])
+  @@map("cache_data")
 }
