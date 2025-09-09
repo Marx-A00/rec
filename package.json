@@ -32,7 +32,8 @@
     "migrate:preview": "tsx scripts/migrate-discogs-to-musicbrainz.ts --dry-run",
     "migrate:execute": "tsx scripts/migrate-discogs-to-musicbrainz.ts --execute",
     "migrate:resume": "tsx scripts/migrate-discogs-to-musicbrainz.ts --resume",
-    "queue:test-redis": "tsx src/lib/queue/test-redis.ts"
+    "queue:test-redis": "tsx src/lib/queue/test-redis.ts",
+    "queue:test": "tsx src/lib/queue/test-queue.ts"
   },
   "dependencies": {
     "@apollo/server": "^5.0.0",
