@@ -18,7 +18,7 @@ const RATE_LIMIT_CONFIG = {
   // API routes rate limiting
   api: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10), // 100 requests
+    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000', 10), // 1000 requests (increased for QueueDash)
     blockDurationMs: parseInt(
       process.env.RATE_LIMIT_BLOCK_DURATION_MS || '600000',
       10
@@ -27,11 +27,11 @@ const RATE_LIMIT_CONFIG = {
   // Authentication endpoints (more restrictive)
   auth: {
     windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
-    maxRequests: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '10', 10), // 10 attempts
+    maxRequests: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '50', 10), // 50 attempts (increased from 10)
     blockDurationMs: parseInt(
-      process.env.AUTH_RATE_LIMIT_BLOCK_DURATION_MS || '1800000',
+      process.env.AUTH_RATE_LIMIT_BLOCK_DURATION_MS || '300000',
       10
-    ), // 30 minutes
+    ), // 5 minutes (reduced from 30 minutes)
   },
   // Search endpoints (moderate limits)
   search: {

@@ -1,7 +1,17 @@
 // src/lib/musicbrainz/index.ts
 
-// Core MusicBrainz API service
+// Core MusicBrainz API services
 export { MusicBrainzService, musicbrainzService } from './service';
+export { 
+  QueuedMusicBrainzService, 
+  getQueuedMusicBrainzService,
+  destroyQueuedMusicBrainzService 
+} from './queue-service';
+
+// Create a factory function instead of direct instance to avoid import issues
+export function createMusicBrainzQueueService() {
+  return getQueuedMusicBrainzService();
+}
 
 // Data validation schemas
 export {

@@ -7,7 +7,7 @@ export interface RedisConfig {
   port: number;
   password?: string;
   db?: number;
-  maxRetriesPerRequest?: number;
+  maxRetriesPerRequest?: number | null;
   retryDelayOnFailover?: number;
   enableReadyCheck?: boolean;
   lazyConnect?: boolean;
@@ -26,7 +26,7 @@ function getRedisConfig(): RedisConfig {
       port: parseInt(url.port) || 6379,
       password: url.password || undefined,
       db: 0,
-      maxRetriesPerRequest: undefined,
+      maxRetriesPerRequest: null,
       retryDelayOnFailover: 100,
       enableReadyCheck: false,
       lazyConnect: true,
@@ -39,7 +39,7 @@ function getRedisConfig(): RedisConfig {
     port: parseInt(process.env.REDIS_PORT || '6379'),
     password: process.env.REDIS_PASSWORD || undefined,
     db: parseInt(process.env.REDIS_DB || '0'),
-    maxRetriesPerRequest: undefined,
+    maxRetriesPerRequest: null,
     retryDelayOnFailover: 100,
     enableReadyCheck: false,
     lazyConnect: true,
