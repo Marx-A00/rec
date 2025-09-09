@@ -1,5 +1,6 @@
 // src/lib/queue/redis.ts
 import Redis from 'ioredis';
+import chalk from 'chalk';
 
 export interface RedisConfig {
   host: string;
@@ -25,7 +26,7 @@ function getRedisConfig(): RedisConfig {
       port: parseInt(url.port) || 6379,
       password: url.password || undefined,
       db: 0,
-      maxRetriesPerRequest: null,
+      maxRetriesPerRequest: undefined,
       retryDelayOnFailover: 100,
       enableReadyCheck: false,
       lazyConnect: true,
@@ -38,7 +39,7 @@ function getRedisConfig(): RedisConfig {
     port: parseInt(process.env.REDIS_PORT || '6379'),
     password: process.env.REDIS_PASSWORD || undefined,
     db: parseInt(process.env.REDIS_DB || '0'),
-    maxRetriesPerRequest: null,
+    maxRetriesPerRequest: undefined,
     retryDelayOnFailover: 100,
     enableReadyCheck: false,
     lazyConnect: true,
@@ -92,27 +93,27 @@ class RedisManager {
     if (!client) return;
 
     client.on('connect', () => {
-      console.log('✅ Redis connected successfully');
+      console.log(chalk.green.bold('🚀 Redis') + chalk.green(' connected successfully'));
     });
 
     client.on('ready', () => {
-      console.log('✅ Redis ready for commands');
+      console.log(chalk.cyan.bold('⚡ Redis') + chalk.cyan(' ready for commands'));
     });
 
     client.on('error', (err) => {
-      console.error('❌ Redis connection error:', err.message);
+      console.error(chalk.red.bold('💥 Redis Error:') + chalk.red(` ${err.message}`));
     });
 
     client.on('close', () => {
-      console.log('⚠️ Redis connection closed');
+      console.log(chalk.yellow.bold('🔌 Redis') + chalk.yellow(' connection closed'));
     });
 
-    client.on('reconnecting', (time) => {
-      console.log(`🔄 Redis reconnecting in ${time}ms`);
+    client.on('reconnecting', (time: number) => {
+      console.log(chalk.blue.bold('🔄 Redis') + chalk.blue(` reconnecting in ${chalk.white.bold(time + 'ms')}`));
     });
 
     client.on('end', () => {
-      console.log('🔚 Redis connection ended');
+      console.log(chalk.magenta.bold('🏁 Redis') + chalk.magenta(' connection ended'));
     });
   }
 
@@ -123,10 +124,10 @@ class RedisManager {
     try {
       const client = this.getClient();
       await client.ping();
-      console.log('✅ Redis connection test successful');
+      console.log(chalk.green.bold('✅ Redis') + chalk.green(' connection test successful'));
       return true;
     } catch (error) {
-      console.error('❌ Redis connection test failed:', error);
+      console.error(chalk.red.bold('❌ Redis') + chalk.red(' connection test failed:'), chalk.red(error));
       return false;
     }
   }
@@ -138,7 +139,7 @@ class RedisManager {
     if (this.redis) {
       await this.redis.quit();
       this.redis = null;
-      console.log('✅ Redis disconnected gracefully');
+      console.log(chalk.green.bold('👋 Redis') + chalk.green(' disconnected gracefully'));
     }
   }
 
