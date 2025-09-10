@@ -1,6 +1,6 @@
 // src/lib/queue/redis.ts
 import Redis from 'ioredis';
-import chalk from 'chalk';
+const chalk = require('chalk');
 
 export interface RedisConfig {
   host: string;
@@ -93,11 +93,11 @@ class RedisManager {
     if (!client) return;
 
     client.on('connect', () => {
-      console.log(chalk.green.bold('🚀 Redis') + chalk.green(' connected successfully'));
+      // Redis connected (verbose logging disabled)
     });
 
     client.on('ready', () => {
-      console.log(chalk.cyan.bold('⚡ Redis') + chalk.cyan(' ready for commands'));
+      // Redis ready (verbose logging disabled)
     });
 
     client.on('error', (err) => {
@@ -105,15 +105,15 @@ class RedisManager {
     });
 
     client.on('close', () => {
-      console.log(chalk.yellow.bold('🔌 Redis') + chalk.yellow(' connection closed'));
+      // Redis connection closed (verbose logging disabled)
     });
 
     client.on('reconnecting', (time: number) => {
-      console.log(chalk.blue.bold('🔄 Redis') + chalk.blue(` reconnecting in ${chalk.white.bold(time + 'ms')}`));
+      console.log(`🔄 Redis reconnecting (${time}ms)`);
     });
 
     client.on('end', () => {
-      console.log(chalk.magenta.bold('🏁 Redis') + chalk.magenta(' connection ended'));
+      // Redis connection ended (verbose logging disabled)
     });
   }
 
@@ -124,7 +124,7 @@ class RedisManager {
     try {
       const client = this.getClient();
       await client.ping();
-      console.log(chalk.green.bold('✅ Redis') + chalk.green(' connection test successful'));
+      // Redis test successful (verbose logging disabled)
       return true;
     } catch (error) {
       console.error(chalk.red.bold('❌ Redis') + chalk.red(' connection test failed:'), chalk.red(error));
@@ -139,7 +139,7 @@ class RedisManager {
     if (this.redis) {
       await this.redis.quit();
       this.redis = null;
-      console.log(chalk.green.bold('👋 Redis') + chalk.green(' disconnected gracefully'));
+      // Redis disconnected (verbose logging disabled)
     }
   }
 

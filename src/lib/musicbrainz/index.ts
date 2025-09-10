@@ -1,17 +1,23 @@
 // src/lib/musicbrainz/index.ts
 
 // Core MusicBrainz API services
-export { MusicBrainzService, musicbrainzService } from './service';
+export { MusicBrainzService as BasicMusicBrainzService, musicbrainzService as basicMusicBrainzService } from './basic-service';
+export { MusicBrainzService, musicBrainzService } from './musicbrainz-service';
 export { 
   QueuedMusicBrainzService, 
   getQueuedMusicBrainzService,
   destroyQueuedMusicBrainzService 
 } from './queue-service';
 
-// Create a factory function instead of direct instance to avoid import issues
+// Factory function available if needed (though getQueuedMusicBrainzService can be used directly)
 export function createMusicBrainzQueueService() {
+  const { getQueuedMusicBrainzService } = require('./queue-service');
   return getQueuedMusicBrainzService();
 }
+
+// Error handling and monitoring
+export { musicbrainzErrorHandler } from './error-handler';
+export * from './errors';
 
 // Data validation schemas
 export {
@@ -45,7 +51,7 @@ export type {
   ArtistSearchResult,
   ReleaseGroupSearchResult,
   RecordingSearchResult,
-} from './service';
+} from './basic-service';
 
 export type {
   ValidatedArtistSearchResult,

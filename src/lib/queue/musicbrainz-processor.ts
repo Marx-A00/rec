@@ -1,6 +1,6 @@
 // src/lib/queue/musicbrainz-processor.ts
 import { Job } from 'bullmq';
-import { musicbrainzService } from '../musicbrainz';
+import { musicBrainzService } from '../musicbrainz';
 import {
   JOB_TYPES,
   type MusicBrainzJobData,
@@ -24,15 +24,41 @@ export async function processMusicBrainzJob(
   const startTime = Date.now();
   const requestId = (job.data as any).requestId || job.id;
 
-  console.log(`🎵 Processing MusicBrainz job: ${job.name}`, {
-    requestId,
-    jobId: job.id,
-    attempt: job.attemptsMade + 1,
-    maxAttempts: job.opts.attempts,
-  });
+  // Minimal processing log - worker handles the main logging
 
   try {
     let result: any;
+
+    // Handle slow processing for testing Bull Board UI
+    const isSlowJob = (job.data as any).slowProcessing;
+    if (isSlowJob) {
+      const delaySeconds = (job.data as any).delaySeconds || 10;
+      const query = (job.data as any).query || 'slow job';
+      console.log(`🐌 ${query} (${delaySeconds}s delay)`);
+      
+      // Simulate slow processing
+      await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
+      
+      // Return mock result for slow job
+      return {
+        success: true,
+        data: {
+          results: [{
+            id: 'bladee-the-fool-slow',
+            title: query,
+            processingType: 'SLOW_MOCK',
+            duration: `${delaySeconds}s`
+          }],
+          totalResults: 1,
+          processingTime: `${delaySeconds * 1000}ms`
+        },
+        metadata: {
+          duration: delaySeconds * 1000,
+          timestamp: new Date().toISOString(),
+          requestId
+        }
+      };
+    }
 
     // Route to appropriate MusicBrainz service method
     switch (job.name) {
@@ -90,12 +116,7 @@ export async function processMusicBrainzJob(
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    console.error(`❌ MusicBrainz job failed: ${job.name}`, {
-      requestId,
-      error: errorMessage,
-      duration: `${duration}ms`,
-      attempt: job.attemptsMade + 1,
-    });
+    // Error logging handled by worker
 
     // Determine if error is retryable
     const isRetryable = isRetryableError(error);
@@ -121,7 +142,7 @@ export async function processMusicBrainzJob(
 // ============================================================================
 
 async function handleSearchArtists(data: MusicBrainzSearchArtistsJobData) {
-  return await musicbrainzService.searchArtists(
+  return await musicBrainzService.searchArtists(
     data.query,
     data.limit,
     data.offset
@@ -129,7 +150,7 @@ async function handleSearchArtists(data: MusicBrainzSearchArtistsJobData) {
 }
 
 async function handleSearchReleases(data: MusicBrainzSearchReleasesJobData) {
-  return await musicbrainzService.searchReleaseGroups(
+  return await musicBrainzService.searchReleaseGroups(
     data.query,
     data.limit,
     data.offset
@@ -137,7 +158,7 @@ async function handleSearchReleases(data: MusicBrainzSearchReleasesJobData) {
 }
 
 async function handleSearchRecordings(data: MusicBrainzSearchRecordingsJobData) {
-  return await musicbrainzService.searchRecordings(
+  return await musicBrainzService.searchRecordings(
     data.query,
     data.limit,
     data.offset
@@ -145,19 +166,19 @@ async function handleSearchRecordings(data: MusicBrainzSearchRecordingsJobData) 
 }
 
 async function handleLookupArtist(data: MusicBrainzLookupArtistJobData) {
-  return await musicbrainzService.getArtist(data.mbid, data.includes);
+  return await musicBrainzService.getArtist(data.mbid, data.includes);
 }
 
 async function handleLookupRelease(data: MusicBrainzLookupReleaseJobData) {
-  return await musicbrainzService.getRelease(data.mbid, data.includes);
+  return await musicBrainzService.getRelease(data.mbid, data.includes);
 }
 
 async function handleLookupRecording(data: MusicBrainzLookupRecordingJobData) {
-  return await musicbrainzService.getRecording(data.mbid, data.includes);
+  return await musicBrainzService.getRecording(data.mbid, data.includes);
 }
 
 async function handleLookupReleaseGroup(data: MusicBrainzLookupReleaseGroupJobData) {
-  return await musicbrainzService.getReleaseGroup(data.mbid, data.includes);
+  return await musicBrainzService.getReleaseGroup(data.mbid, data.includes);
 }
 
 // ============================================================================

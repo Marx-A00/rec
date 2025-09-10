@@ -1,8 +1,7 @@
 // src/scripts/bull-board-server.ts
 /**
- * Bull Board Express Server
- * A dedicated Express server for monitoring BullMQ queues
- * Much cleaner than integrating with Next.js
+ * Bull Board Express Server - Silent Mode
+ * Minimal logging, clean terminal output
  */
 
 import express from 'express';
@@ -12,44 +11,37 @@ import { ExpressAdapter } from '@bull-board/express';
 import { getMusicBrainzQueue } from '@/lib/queue';
 
 const PORT = 3001;
+
+// Create Express app with minimal configuration
 const app = express();
+app.disable('x-powered-by');
+app.set('env', 'production');
 
-console.log('🚀 Starting Bull Board Dashboard...');
-
-// Initialize the queue
+// Initialize queue and Bull Board
 let musicBrainzQueue: any;
 
 try {
   musicBrainzQueue = getMusicBrainzQueue();
-  console.log('✅ MusicBrainz queue initialized');
 } catch (error) {
   console.error('❌ Failed to initialize MusicBrainz queue:', error);
   process.exit(1);
 }
 
-// Set up Bull Board
+// Set up Bull Board (silent mode)
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath('/admin/queues');
-
-console.log('🔧 Setting up Bull Board...');
 
 try {
   createBullBoard({
     queues: [new BullMQAdapter(musicBrainzQueue.getQueue())],
     serverAdapter: serverAdapter,
   });
-  console.log('✅ Bull Board configured');
 } catch (error) {
   console.error('❌ Failed to configure Bull Board:', error);
   process.exit(1);
 }
 
-// Add basic logging middleware
-app.use((req, res, next) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${req.method} ${req.url}`);
-  next();
-});
+// Minimal Express setup - no logging middleware
 
 // Mount Bull Board
 app.use('/admin/queues', serverAdapter.getRouter());
@@ -99,9 +91,7 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('🔄 Received SIGTERM, shutting down gracefully...');
   server.close(() => {
-    console.log('✅ Express server closed');
     if (musicBrainzQueue && typeof musicBrainzQueue.shutdown === 'function') {
       musicBrainzQueue.shutdown();
     }
@@ -110,9 +100,7 @@ process.on('SIGTERM', () => {
 });
 
 process.on('SIGINT', () => {
-  console.log('🔄 Received SIGINT, shutting down gracefully...');
   server.close(() => {
-    console.log('✅ Express server closed');
     if (musicBrainzQueue && typeof musicBrainzQueue.shutdown === 'function') {
       musicBrainzQueue.shutdown();
     }
@@ -120,25 +108,15 @@ process.on('SIGINT', () => {
   });
 });
 
-// Start server
+// Start server and keep process alive
 const server = app.listen(PORT, () => {
-  console.log('');
-  console.log('🎯 ================================');
-  console.log('🎉 Bull Board Dashboard Ready!');
-  console.log('🎯 ================================');
-  console.log('');
   console.log(`📊 Dashboard: http://localhost:${PORT}/admin/queues`);
-  console.log(`💊 Health:    http://localhost:${PORT}/health`);
-  console.log('');
-  console.log('📈 Features:');
-  console.log('  ✅ Real-time job monitoring');
-  console.log('  ✅ Job retry & management');
-  console.log('  ✅ Queue statistics');
-  console.log('  ✅ Professional UI');
-  console.log('  ✅ No rate limiting issues');
-  console.log('');
-  console.log('🛑 Press Ctrl+C to stop');
-  console.log('');
 });
 
-export { app, server };
+// Keep the process alive
+server.on('error', (err) => {
+  console.error('❌ Server error:', err.message);
+});
+
+// Prevent the process from exiting
+process.stdin.resume();

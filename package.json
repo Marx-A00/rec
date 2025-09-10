@@ -28,7 +28,7 @@
     "test:migrate": "dotenv -e .env.test -- npx prisma migrate deploy",
     "test:reset": "dotenv -e .env.test -- npx prisma migrate reset --force",
     "test:setup": "pnpm test:migrate && playwright install",
-    "test:musicbrainz": "tsx scripts/test-musicbrainz-mapping.ts",
+    "test:musicbrainz-mapping": "tsx scripts/test-musicbrainz-mapping.ts",
     "migrate:preview": "tsx scripts/migrate-discogs-to-musicbrainz.ts --dry-run",
     "migrate:execute": "tsx scripts/migrate-discogs-to-musicbrainz.ts --execute",
     "migrate:resume": "tsx scripts/migrate-discogs-to-musicbrainz.ts --resume",
@@ -39,7 +39,14 @@
     "queue:investigate": "tsx src/lib/queue/investigate-solutions.ts",
     "queue:activity": "tsx src/scripts/generate-queue-activity.ts",
     "queue:mock": "tsx src/scripts/test-queue-dashboard.ts",
-    "dashboard": "tsx src/scripts/bull-board-server.ts"
+    "queue:add": "tsx src/scripts/add-single-job.ts",
+    "queue:slow": "tsx src/scripts/add-slow-job.ts",
+    "queue:worker": "tsx src/scripts/start-worker.ts",
+    "test:worker": "tsx src/scripts/test-worker.ts",
+    "test:musicbrainz": "tsx src/scripts/test-musicbrainz.ts",
+    "worker": "tsx src/workers/musicbrainz-worker.ts",
+    "dashboard": "tsx src/scripts/bull-board-server.ts",
+    "queue:dev": "concurrently \"pnpm dashboard\" \"pnpm worker\" --names \"dashboard,worker\" --prefix-colors \"cyan,yellow\""
   },
   "dependencies": {
     "@apollo/server": "^5.0.0",
@@ -103,6 +110,7 @@
     "@types/react-dom": "^19",
     "@typescript-eslint/eslint-plugin": "^8.33.0",
     "@typescript-eslint/parser": "^8.33.0",
+    "concurrently": "^9.2.1",
     "dotenv": "^16.5.0",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9",

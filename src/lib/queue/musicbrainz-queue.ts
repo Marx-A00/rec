@@ -61,8 +61,8 @@ export class MusicBrainzQueue {
       },
       priority: options.priority || 0,
       delay: options.delay || 0,
-      removeOnComplete: options.removeOnComplete !== false,
-      removeOnFail: options.removeOnFail || false,
+      removeOnComplete: options.removeOnComplete || 100, // Keep last 100 completed jobs
+      removeOnFail: options.removeOnFail || 50, // Keep last 50 failed jobs
       ...options,
     };
 

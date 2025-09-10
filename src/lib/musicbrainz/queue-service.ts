@@ -4,14 +4,14 @@
  * Maintains the same interface as the original service but uses BullMQ for rate limiting
  */
 
-import { QueueEvents } from 'bullmq';
+import { QueueEvents, Worker } from 'bullmq';
 import { getMusicBrainzQueue, processMusicBrainzJob, JOB_TYPES } from '../queue';
 import { createRedisConnection } from '../queue/redis';
 import type {
   ArtistSearchResult,
   ReleaseGroupSearchResult,
   RecordingSearchResult,
-} from './service';
+} from './basic-service';
 
 /**
  * MusicBrainz service with automatic job queue integration
@@ -19,7 +19,7 @@ import type {
  */
 export class QueuedMusicBrainzService {
   private queue = getMusicBrainzQueue();
-  private worker = null;
+  private worker: Worker | null = null;
   private isWorkerRunning = false;
   
   // 🎯 THE MISSING PIECE: QueueEvents listener!
@@ -74,9 +74,6 @@ export class QueuedMusicBrainzService {
       }
     });
 
-    this.queueEvents.on('ready', () => {
-      console.log('🎯 QueueEvents listener ready');
-    });
 
     this.queueEvents.on('error', (error) => {
       console.error('❌ QueueEvents error:', error);
@@ -454,9 +451,9 @@ export class QueuedMusicBrainzService {
     console.log('🛑 Shutting down MusicBrainz service...');
     
     // Reject any pending jobs
-    for (const [jobId, { reject }] of this.pendingJobs) {
+    this.pendingJobs.forEach(({ reject }, jobId) => {
       reject(new Error('Service shutting down'));
-    }
+    });
     this.pendingJobs.clear();
     
     // Close QueueEvents listener
