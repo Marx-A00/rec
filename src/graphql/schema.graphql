@@ -24,6 +24,11 @@ type Artist {
   createdAt: DateTime!
   updatedAt: DateTime!
   
+  # Enrichment tracking
+  dataQuality: DataQuality
+  enrichmentStatus: EnrichmentStatus
+  lastEnriched: DateTime
+  
   # Relationships
   albums: [Album!]!
   tracks: [Track!]!
@@ -32,6 +37,7 @@ type Artist {
   albumCount: Int!
   trackCount: Int!
   popularity: Float
+  needsEnrichment: Boolean!
 }
 
 type Album {
@@ -49,6 +55,11 @@ type Album {
   createdAt: DateTime!
   updatedAt: DateTime!
   
+  # Enrichment tracking
+  dataQuality: DataQuality
+  enrichmentStatus: EnrichmentStatus
+  lastEnriched: DateTime
+  
   # Relationships
   artists: [ArtistCredit!]!
   tracks: [Track!]!
@@ -61,6 +72,7 @@ type Album {
   averageRating: Float
   inCollectionsCount: Int!
   recommendationScore: Float
+  needsEnrichment: Boolean!
 }
 
 type Track {
@@ -241,6 +253,28 @@ input CollectionAlbumInput {
   position: Int
 }
 
+input AlbumInput {
+  title: String!
+  releaseDate: String # ISO date string
+  albumType: String # "ALBUM", "EP", "SINGLE", etc.
+  totalTracks: Int
+  coverImageUrl: String
+  musicbrainzId: String
+  spotifyId: String
+  appleMusicId: String
+  discogsMasterReleaseId: String
+  discogsReleaseId: String
+  
+  # Artist associations
+  artists: [ArtistAlbumInput!]!
+}
+
+input ArtistAlbumInput {
+  artistId: UUID # Use existing artist
+  artistName: String # Create new artist
+  role: String # "PRIMARY", "FEATURED", "PRODUCER", etc.
+}
+
 # =============================================
 # ENUMS
 # =============================================
@@ -269,6 +303,19 @@ enum CollectionSort {
   TITLE_DESC
   RATING_DESC
   RATING_ASC
+}
+
+enum DataQuality {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum EnrichmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
 }
 
 # =============================================
@@ -309,6 +356,10 @@ type Query {
 # =============================================
 
 type Mutation {
+  # Album management
+  addAlbum(input: AlbumInput!): Album!
+  updateAlbum(id: UUID!, input: AlbumInput!): Album!
+  
   # Collection management
   createCollection(name: String!, description: String, isPublic: Boolean = false): Collection!
   addAlbumToCollection(collectionId: String!, input: CollectionAlbumInput!): CollectionAlbum!

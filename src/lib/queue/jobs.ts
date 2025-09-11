@@ -16,6 +16,12 @@ export const JOB_TYPES = {
   MUSICBRAINZ_LOOKUP_RELEASE: 'musicbrainz:lookup-release',
   MUSICBRAINZ_LOOKUP_RECORDING: 'musicbrainz:lookup-recording',
   MUSICBRAINZ_LOOKUP_RELEASE_GROUP: 'musicbrainz:lookup-release-group',
+  // Enrichment Check Jobs (lightweight)
+  CHECK_ALBUM_ENRICHMENT: 'check:album-enrichment',
+  CHECK_ARTIST_ENRICHMENT: 'check:artist-enrichment',
+  // Actual Enrichment Jobs (heavy)
+  ENRICH_ALBUM: 'enrichment:album',
+  ENRICH_ARTIST: 'enrichment:artist',
 } as const;
 
 export type JobType = typeof JOB_TYPES[keyof typeof JOB_TYPES];
@@ -69,6 +75,34 @@ export interface MusicBrainzLookupReleaseGroupJobData {
   requestId?: string;
 }
 
+export interface CheckAlbumEnrichmentJobData {
+  albumId: string;
+  source: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual';
+  priority?: 'low' | 'medium' | 'high';
+  requestId?: string;
+}
+
+export interface CheckArtistEnrichmentJobData {
+  artistId: string;
+  source: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual';
+  priority?: 'low' | 'medium' | 'high';
+  requestId?: string;
+}
+
+export interface EnrichAlbumJobData {
+  albumId: string;
+  priority?: 'low' | 'medium' | 'high';
+  userAction?: 'collection_add' | 'recommendation_create' | 'search' | 'browse';
+  requestId?: string;
+}
+
+export interface EnrichArtistJobData {
+  artistId: string;
+  priority?: 'low' | 'medium' | 'high';
+  userAction?: 'collection_add' | 'recommendation_create' | 'search' | 'browse';
+  requestId?: string;
+}
+
 // ============================================================================
 // Job Data Union Type
 // ============================================================================
@@ -80,7 +114,11 @@ export type MusicBrainzJobData =
   | MusicBrainzLookupArtistJobData
   | MusicBrainzLookupReleaseJobData
   | MusicBrainzLookupRecordingJobData
-  | MusicBrainzLookupReleaseGroupJobData;
+  | MusicBrainzLookupReleaseGroupJobData
+  | CheckAlbumEnrichmentJobData
+  | CheckArtistEnrichmentJobData
+  | EnrichAlbumJobData
+  | EnrichArtistJobData;
 
 // ============================================================================
 // Job Result Interfaces  

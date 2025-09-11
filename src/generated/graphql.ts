@@ -56,12 +56,16 @@ export type Album = {
   collectionAlbums: Array<CollectionAlbum>;
   coverArtUrl?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
+  dataQuality?: Maybe<DataQuality>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
+  enrichmentStatus?: Maybe<EnrichmentStatus>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
   label?: Maybe<Scalars['String']['output']>;
+  lastEnriched?: Maybe<Scalars['DateTime']['output']>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
+  needsEnrichment: Scalars['Boolean']['output'];
   recommendationScore?: Maybe<Scalars['Float']['output']>;
   releaseDate?: Maybe<Scalars['DateTime']['output']>;
   releaseType?: Maybe<Scalars['String']['output']>;
@@ -72,6 +76,20 @@ export type Album = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
+export type AlbumInput = {
+  albumType?: InputMaybe<Scalars['String']['input']>;
+  appleMusicId?: InputMaybe<Scalars['String']['input']>;
+  artists: Array<ArtistAlbumInput>;
+  coverImageUrl?: InputMaybe<Scalars['String']['input']>;
+  discogsMasterReleaseId?: InputMaybe<Scalars['String']['input']>;
+  discogsReleaseId?: InputMaybe<Scalars['String']['input']>;
+  musicbrainzId?: InputMaybe<Scalars['String']['input']>;
+  releaseDate?: InputMaybe<Scalars['String']['input']>;
+  spotifyId?: InputMaybe<Scalars['String']['input']>;
+  title: Scalars['String']['input'];
+  totalTracks?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type Artist = {
   __typename?: 'Artist';
   albumCount: Scalars['Int']['output'];
@@ -79,15 +97,25 @@ export type Artist = {
   biography?: Maybe<Scalars['String']['output']>;
   countryCode?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
+  dataQuality?: Maybe<DataQuality>;
+  enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
+  lastEnriched?: Maybe<Scalars['DateTime']['output']>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   name: Scalars['String']['output'];
+  needsEnrichment: Scalars['Boolean']['output'];
   popularity?: Maybe<Scalars['Float']['output']>;
   trackCount: Scalars['Int']['output'];
   tracks: Array<Track>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type ArtistAlbumInput = {
+  artistId?: InputMaybe<Scalars['UUID']['input']>;
+  artistName?: InputMaybe<Scalars['String']['input']>;
+  role?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type ArtistCredit = {
@@ -157,8 +185,22 @@ export enum CollectionSort {
   TitleDesc = 'TITLE_DESC',
 }
 
+export enum DataQuality {
+  High = 'HIGH',
+  Low = 'LOW',
+  Medium = 'MEDIUM',
+}
+
+export enum EnrichmentStatus {
+  Completed = 'COMPLETED',
+  Failed = 'FAILED',
+  InProgress = 'IN_PROGRESS',
+  Pending = 'PENDING',
+}
+
 export type Mutation = {
   __typename?: 'Mutation';
+  addAlbum: Album;
   addAlbumToCollection: CollectionAlbum;
   createCollection: Collection;
   createRecommendation: Recommendation;
@@ -166,9 +208,14 @@ export type Mutation = {
   followUser: UserFollow;
   removeAlbumFromCollection: Scalars['Boolean']['output'];
   unfollowUser: Scalars['Boolean']['output'];
+  updateAlbum: Album;
   updateCollectionAlbum: CollectionAlbum;
   updateProfile: User;
   updateRecommendation: Recommendation;
+};
+
+export type MutationAddAlbumArgs = {
+  input: AlbumInput;
 };
 
 export type MutationAddAlbumToCollectionArgs = {
@@ -203,6 +250,11 @@ export type MutationRemoveAlbumFromCollectionArgs = {
 
 export type MutationUnfollowUserArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationUpdateAlbumArgs = {
+  id: Scalars['UUID']['input'];
+  input: AlbumInput;
 };
 
 export type MutationUpdateCollectionAlbumArgs = {
@@ -530,7 +582,9 @@ export type ResolversUnionTypes<_RefType extends Record<string, unknown>> =
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = ResolversObject<{
   Album: ResolverTypeWrapper<DatabaseAlbum>;
+  AlbumInput: AlbumInput;
   Artist: ResolverTypeWrapper<DatabaseArtist>;
+  ArtistAlbumInput: ArtistAlbumInput;
   ArtistCredit: ResolverTypeWrapper<
     Omit<ArtistCredit, 'artist'> & { artist: ResolversTypes['Artist'] }
   >;
@@ -550,7 +604,9 @@ export type ResolversTypes = ResolversObject<{
   >;
   CollectionAlbumInput: CollectionAlbumInput;
   CollectionSort: CollectionSort;
+  DataQuality: DataQuality;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
+  EnrichmentStatus: EnrichmentStatus;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   JSON: ResolverTypeWrapper<Scalars['JSON']['output']>;
@@ -612,7 +668,9 @@ export type ResolversTypes = ResolversObject<{
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = ResolversObject<{
   Album: DatabaseAlbum;
+  AlbumInput: AlbumInput;
   Artist: DatabaseArtist;
+  ArtistAlbumInput: ArtistAlbumInput;
   ArtistCredit: Omit<ArtistCredit, 'artist'> & {
     artist: ResolversParentTypes['Artist'];
   };
@@ -712,13 +770,33 @@ export type AlbumResolvers<
     ContextType
   >;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  dataQuality?: Resolver<
+    Maybe<ResolversTypes['DataQuality']>,
+    ParentType,
+    ContextType
+  >;
   duration?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  enrichmentStatus?: Resolver<
+    Maybe<ResolversTypes['EnrichmentStatus']>,
+    ParentType,
+    ContextType
+  >;
   id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   inCollectionsCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   label?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  lastEnriched?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
   musicbrainzId?: Resolver<
     Maybe<ResolversTypes['UUID']>,
+    ParentType,
+    ContextType
+  >;
+  needsEnrichment?: Resolver<
+    ResolversTypes['Boolean'],
     ParentType,
     ContextType
   >;
@@ -767,15 +845,35 @@ export type ArtistResolvers<
     ContextType
   >;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  dataQuality?: Resolver<
+    Maybe<ResolversTypes['DataQuality']>,
+    ParentType,
+    ContextType
+  >;
+  enrichmentStatus?: Resolver<
+    Maybe<ResolversTypes['EnrichmentStatus']>,
+    ParentType,
+    ContextType
+  >;
   formedYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  lastEnriched?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
   musicbrainzId?: Resolver<
     Maybe<ResolversTypes['UUID']>,
     ParentType,
     ContextType
   >;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  needsEnrichment?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
   popularity?: Resolver<
     Maybe<ResolversTypes['Float']>,
     ParentType,
@@ -911,6 +1009,12 @@ export type MutationResolvers<
   ParentType extends
     ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation'],
 > = ResolversObject<{
+  addAlbum?: Resolver<
+    ResolversTypes['Album'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationAddAlbumArgs, 'input'>
+  >;
   addAlbumToCollection?: Resolver<
     ResolversTypes['CollectionAlbum'],
     ParentType,
@@ -958,6 +1062,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationUnfollowUserArgs, 'userId'>
+  >;
+  updateAlbum?: Resolver<
+    ResolversTypes['Album'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationUpdateAlbumArgs, 'id' | 'input'>
   >;
   updateCollectionAlbum?: Resolver<
     ResolversTypes['CollectionAlbum'],

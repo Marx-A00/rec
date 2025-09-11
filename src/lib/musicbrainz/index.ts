@@ -46,6 +46,16 @@ export {
   createMusicBrainzIntegrationService,
 } from './integration';
 
+// Enrichment decision logic
+export {
+  shouldEnrichAlbum,
+  shouldEnrichArtist,
+  analyzeAlbumEnrichmentNeed,
+  analyzeArtistEnrichmentNeed,
+  calculateEnrichmentPriority,
+  mapSourceToUserAction,
+} from './enrichment-logic';
+
 // Type exports
 export type {
   ArtistSearchResult,
@@ -63,6 +73,12 @@ export type {
   CreateArtistData,
   CreateAlbumData,
 } from './mappers';
+
+export type {
+  EnrichmentDecision,
+  AlbumEnrichmentData,
+  ArtistEnrichmentData,
+} from './enrichment-logic';
 
 // Re-export the main MusicBrainzApi for advanced usage
 export { MusicBrainzApi } from 'musicbrainz-api';
