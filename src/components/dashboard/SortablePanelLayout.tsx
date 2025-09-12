@@ -106,7 +106,10 @@ export default function SortablePanelLayout({
                     ) : (
                       // Otherwise, render the sortable panel component
                       isEditMode ? (
-                        <SortablePanelWrapper panel={panel} />
+                        <SortablePanelWrapper 
+                          panel={panel} 
+                          isDragActive={!!activePanel}
+                        />
                       ) : (
                         <PanelWrapper panel={panel} />
                       )
@@ -164,9 +167,14 @@ export default function SortablePanelLayout({
 
     const activeId = active.id as string;
     const overId = over.id as string;
+    const dropData = over.data.current;
 
-    // Simple reordering - group creation is now handled by buttons
-    if (activeId !== overId) {
+    // Check if this is a smart drop onto a zone
+    if (dropData?.type === 'panel-drop-zone') {
+      const { zoneType, panelId } = dropData;
+      actions.smartDrop(activeId, panelId, zoneType);
+    } else if (activeId !== overId) {
+      // Regular reordering
       actions.reorderPanels(activeId, overId);
     }
     

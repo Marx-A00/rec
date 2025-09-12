@@ -28,6 +28,7 @@ type DashboardAction =
   | { type: 'CREATE_GROUP'; payload: { panelIds: string[]; direction: 'horizontal' | 'vertical'; position?: number } }
   | { type: 'UNGROUP_PANEL'; payload: { panelId: string; targetPosition?: number } }
   | { type: 'CHANGE_LAYOUT_DIRECTION'; payload: { layoutPath: string[]; direction: 'horizontal' | 'vertical' } }
+  | { type: 'SMART_DROP'; payload: { draggedPanelId: string; targetPanelId: string; dropZone: 'top' | 'bottom' | 'left' | 'right' | 'center' } }
   | { type: 'SELECT_PANEL'; payload: { panelId: string | null } };
 
 // Default layout - flattened so all panels can be reordered
@@ -143,9 +144,45 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
         };
       };
 
+      // Clean up empty layouts after removal
+      const cleanLayout = (layout: PanelLayout): PanelLayout => {
+        if (!layout.panels || layout.panels.length === 0) {
+          return layout;
+        }
+
+        const cleanedPanels = layout.panels
+          .map(panel => {
+            if (panel.layout) {
+              const cleanedNestedLayout = cleanLayout(panel.layout);
+              // If nested layout is empty, remove this panel entirely
+              if (cleanedNestedLayout.panels.length === 0) {
+                return null;
+              }
+              // If nested layout has only one panel, flatten it completely
+              if (cleanedNestedLayout.panels.length === 1) {
+                const flattenedPanel = cleanedNestedLayout.panels[0];
+                // Preserve the parent's size but use the child's properties
+                return {
+                  ...flattenedPanel,
+                  size: panel.size,
+                  minSize: panel.minSize,
+                  maxSize: panel.maxSize,
+                };
+              }
+              return { ...panel, layout: cleanedNestedLayout };
+            }
+            return panel;
+          })
+          .filter(Boolean) as Panel[];
+
+        return { ...layout, panels: cleanedPanels };
+      };
+
+      const layoutAfterRemoval = removePanelFromLayout(state.layout);
+
       return {
         ...state,
-        layout: removePanelFromLayout(state.layout),
+        layout: cleanLayout(layoutAfterRemoval),
         selectedPanelId: state.selectedPanelId === panelId ? null : state.selectedPanelId,
       };
     }
@@ -211,6 +248,40 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
       const { activeId, overId } = action.payload;
       
       if (activeId === overId) return state;
+
+      // Helper function to clean up empty layouts and flatten single-panel groups
+      const cleanLayout = (layout: PanelLayout): PanelLayout => {
+        if (!layout.panels || layout.panels.length === 0) {
+          return layout;
+        }
+
+        const cleanedPanels = layout.panels
+          .map(panel => {
+            if (panel.layout) {
+              const cleanedNestedLayout = cleanLayout(panel.layout);
+              // If nested layout is empty, remove this panel entirely
+              if (cleanedNestedLayout.panels.length === 0) {
+                return null;
+              }
+              // If nested layout has only one panel, flatten it completely
+              if (cleanedNestedLayout.panels.length === 1) {
+                const flattenedPanel = cleanedNestedLayout.panels[0];
+                // Preserve the parent's size but use the child's properties
+                return {
+                  ...flattenedPanel,
+                  size: panel.size,
+                  minSize: panel.minSize,
+                  maxSize: panel.maxSize,
+                };
+              }
+              return { ...panel, layout: cleanedNestedLayout };
+            }
+            return panel;
+          })
+          .filter(Boolean) as Panel[];
+
+        return { ...layout, panels: cleanedPanels };
+      };
 
       // Helper function to reorder panels within a layout
       const reorderPanelsInLayout = (layout: PanelLayout): PanelLayout => {
@@ -384,6 +455,169 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
       };
     }
 
+    case 'SMART_DROP': {
+      const { draggedPanelId, targetPanelId, dropZone } = action.payload;
+      
+      // Helper function to find and extract a panel from the layout
+      const extractPanel = (layout: PanelLayout): { panel: Panel | null; newLayout: PanelLayout } => {
+        let extractedPanel: Panel | null = null;
+        
+        const newPanels = layout.panels.reduce((acc: Panel[], panel) => {
+          if (panel.id === draggedPanelId) {
+            extractedPanel = panel;
+            return acc; // Don't include this panel
+          }
+          
+          if (panel.layout) {
+            const result = extractPanel(panel.layout);
+            if (result.panel) {
+              extractedPanel = result.panel;
+              // If the nested layout is now empty, don't include this panel
+              if (result.newLayout.panels.length === 0) {
+                return acc;
+              }
+              // If only one panel left in nested layout, flatten it
+              if (result.newLayout.panels.length === 1) {
+                acc.push(result.newLayout.panels[0]);
+              } else {
+                acc.push({ ...panel, layout: result.newLayout });
+              }
+            } else {
+              acc.push(panel);
+            }
+          } else {
+            acc.push(panel);
+          }
+          
+          return acc;
+        }, []);
+
+        return {
+          panel: extractedPanel,
+          newLayout: { ...layout, panels: newPanels },
+        };
+      };
+
+      // Helper function to insert panel based on drop zone
+      const insertPanelInLayout = (layout: PanelLayout, draggedPanel: Panel): PanelLayout => {
+        const newPanels = layout.panels.map(panel => {
+          if (panel.id === targetPanelId) {
+            // This is where we need to create the split
+            switch (dropZone) {
+              case 'center':
+                // Replace the target panel
+                return draggedPanel;
+                
+              case 'top':
+              case 'bottom': {
+                // Create vertical split - don't create a wrapper panel, just modify the layout
+                const topPanel = dropZone === 'top' ? { ...draggedPanel, size: 50 } : { ...panel, size: 50 };
+                const bottomPanel = dropZone === 'top' ? { ...panel, size: 50 } : { ...draggedPanel, size: 50 };
+                
+                return {
+                  id: crypto.randomUUID(),
+                  type: panel.type, // Keep the original panel type
+                  size: panel.size,
+                  minSize: panel.minSize,
+                  maxSize: panel.maxSize,
+                  config: {},
+                  layout: {
+                    direction: 'vertical' as const,
+                    panels: [topPanel, bottomPanel],
+                  },
+                };
+              }
+              
+              case 'left':
+              case 'right': {
+                // Create horizontal split - don't create a wrapper panel, just modify the layout
+                const leftPanel = dropZone === 'left' ? { ...draggedPanel, size: 50 } : { ...panel, size: 50 };
+                const rightPanel = dropZone === 'left' ? { ...panel, size: 50 } : { ...draggedPanel, size: 50 };
+                
+                return {
+                  id: crypto.randomUUID(),
+                  type: panel.type, // Keep the original panel type
+                  size: panel.size,
+                  minSize: panel.minSize,
+                  maxSize: panel.maxSize,
+                  config: {},
+                  layout: {
+                    direction: 'horizontal' as const,
+                    panels: [leftPanel, rightPanel],
+                  },
+                };
+              }
+              
+              default:
+                return panel;
+            }
+          }
+          
+          // Recursively handle nested layouts
+          if (panel.layout) {
+            return {
+              ...panel,
+              layout: insertPanelInLayout(panel.layout, draggedPanel),
+            };
+          }
+          
+          return panel;
+        });
+
+        return { ...layout, panels: newPanels };
+      };
+
+      // Extract the dragged panel first
+      const { panel: draggedPanel, newLayout } = extractPanel(state.layout);
+      
+      if (!draggedPanel) {
+        console.warn('Could not find dragged panel:', draggedPanelId);
+        return state;
+      }
+
+      // Insert the panel at the target location
+      const finalLayout = insertPanelInLayout(newLayout, draggedPanel);
+
+      // Reuse the cleanup function to prevent "No panels configured" message
+      const cleanLayoutForSmartDrop = (layout: PanelLayout): PanelLayout => {
+        if (!layout.panels || layout.panels.length === 0) {
+          return layout;
+        }
+
+        const cleanedPanels = layout.panels
+          .map(panel => {
+            if (panel.layout) {
+              const cleanedNestedLayout = cleanLayoutForSmartDrop(panel.layout);
+              // If nested layout is empty, remove this panel entirely
+              if (cleanedNestedLayout.panels.length === 0) {
+                return null;
+              }
+              // If nested layout has only one panel, flatten it completely
+              if (cleanedNestedLayout.panels.length === 1) {
+                const flattenedPanel = cleanedNestedLayout.panels[0];
+                // Preserve the parent's size but use the child's properties
+                return {
+                  ...flattenedPanel,
+                  size: panel.size,
+                  minSize: panel.minSize,
+                  maxSize: panel.maxSize,
+                };
+              }
+              return { ...panel, layout: cleanedNestedLayout };
+            }
+            return panel;
+          })
+          .filter(Boolean) as Panel[];
+
+        return { ...layout, panels: cleanedPanels };
+      };
+
+      return {
+        ...state,
+        layout: cleanLayoutForSmartDrop(finalLayout),
+      };
+    }
+
     default:
       return state;
   }
@@ -444,6 +678,10 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
     changeLayoutDirection: useCallback((layoutPath: string[], direction: 'horizontal' | 'vertical') => {
       dispatch({ type: 'CHANGE_LAYOUT_DIRECTION', payload: { layoutPath, direction } });
+    }, []),
+
+    smartDrop: useCallback((draggedPanelId: string, targetPanelId: string, dropZone: 'top' | 'bottom' | 'left' | 'right' | 'center') => {
+      dispatch({ type: 'SMART_DROP', payload: { draggedPanelId, targetPanelId, dropZone } });
     }, []),
 
     saveLayout: useCallback(async () => {

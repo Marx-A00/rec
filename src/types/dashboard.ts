@@ -93,6 +93,7 @@ export interface DashboardContextType {
     createGroup: (panelIds: string[], direction: 'horizontal' | 'vertical', position?: number) => void;
     ungroupPanel: (panelId: string, targetPosition?: number) => void;
     changeLayoutDirection: (layoutPath: string[], direction: 'horizontal' | 'vertical') => void;
+    smartDrop: (draggedPanelId: string, targetPanelId: string, dropZone: 'top' | 'bottom' | 'left' | 'right' | 'center') => void;
     selectPanel: (panelId: string | null) => void;
     saveLayout: () => Promise<void>;
     loadLayout: (layoutId: string) => Promise<void>;

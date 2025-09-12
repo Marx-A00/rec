@@ -9,16 +9,19 @@ import { Panel, PanelComponentProps } from '@/types/dashboard';
 import { useDashboard } from '@/contexts/DashboardContext';
 import { getPanelDefinition } from '@/lib/dashboard/PanelRegistry';
 import { Button } from '@/components/ui/button';
+import PanelDropZones, { DropZoneType } from './PanelDropZones';
 
 interface SortablePanelWrapperProps {
   panel: Panel;
   children?: React.ReactNode;
+  isDragActive?: boolean;
 }
 
-export default function SortablePanelWrapper({ panel, children }: SortablePanelWrapperProps) {
+export default function SortablePanelWrapper({ panel, children, isDragActive = false }: SortablePanelWrapperProps) {
   const { state, actions } = useDashboard();
   const { isEditMode, selectedPanelId } = state;
   const panelDefinition = getPanelDefinition(panel.type);
+  const [previewZone, setPreviewZone] = React.useState<DropZoneType | null>(null);
   
   const {
     attributes,
@@ -71,6 +74,10 @@ export default function SortablePanelWrapper({ panel, children }: SortablePanelW
       actions.createGroup([panel.id, otherPanels[0].id], 'vertical');
       actions.selectPanel(null); // Clear selection
     }
+  };
+
+  const handleDropZonePreview = (zone: DropZoneType | null) => {
+    setPreviewZone(zone);
   };
 
   const handleSelectPanel = () => {
@@ -199,6 +206,15 @@ export default function SortablePanelWrapper({ panel, children }: SortablePanelW
       {/* Drag indicator */}
       {isDragging && (
         <div className="absolute inset-0 bg-emerald-500/20 border-2 border-emerald-500 rounded-lg pointer-events-none z-40" />
+      )}
+
+      {/* Drop Zones - Show when dragging is active and this panel is not being dragged */}
+      {isEditMode && isDragActive && !isDragging && (
+        <PanelDropZones
+          panelId={panel.id}
+          isActive={true}
+          onPreview={handleDropZonePreview}
+        />
       )}
 
       {/* Group Creation Controls - Show when panel is selected */}
