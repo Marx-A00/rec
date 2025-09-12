@@ -55,17 +55,17 @@ export function shouldEnrichAlbum(album: AlbumEnrichmentData): boolean {
     return true;
   }
 
+  // Re-enrich if missing critical fields (prioritize this over time-based checks)
+  if (!album.musicbrainzId || !album.releaseDate) {
+    return true;
+  }
+
   // Re-enrich if data quality is low and it's been more than 30 days
   if (album.dataQuality === 'LOW' && album.lastEnriched) {
     const daysSinceEnrichment = Math.floor(
       (Date.now() - new Date(album.lastEnriched).getTime()) / (1000 * 60 * 60 * 24)
     );
     return daysSinceEnrichment > 30;
-  }
-
-  // Re-enrich if missing critical fields
-  if (!album.musicbrainzId || !album.releaseDate) {
-    return true;
   }
 
   return false;

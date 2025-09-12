@@ -180,6 +180,9 @@ model Artist {
   biography      String?   @db.Text
   formedYear     Int?      @map("formed_year")
   countryCode    String?   @map("country_code") @db.VarChar(2)
+  area           String?   @map("area") @db.VarChar(100)  // Full area name
+  artistType     String?   @map("artist_type") @db.VarChar(20)  // 'Group' or 'Person'
+  genres         String[]  @map("genres")  // Genre tags from MusicBrainz
   imageUrl       String?   @map("image_url") @db.Text
   searchVector   Unsupported("tsvector")? @map("search_vector")
   
@@ -207,6 +210,10 @@ model Album {
   title         String    @db.VarChar(255)
   releaseDate   DateTime? @map("release_date") @db.Date
   releaseType   String?   @map("release_type") @db.VarChar(50)
+  releaseStatus String?   @map("release_status") @db.VarChar(20)  // 'official', 'promotion', etc.
+  releaseCountry String?  @map("release_country") @db.VarChar(2)  // Country code where released
+  genres        String[]  @map("genres")  // Genre tags from MusicBrainz
+  secondaryTypes String[] @map("secondary_types")  // ['live', 'compilation', etc.]
   trackCount    Int?      @map("track_count")
   durationMs    Int?      @map("duration_ms")
   coverArtUrl   String?   @map("cover_art_url") @db.Text

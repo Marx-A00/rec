@@ -79,6 +79,7 @@ export class MusicBrainzService {
         query,
         limit,
         offset,
+        inc: ['aliases'], // Include artist aliases for better matching
       });
 
       return (
@@ -120,6 +121,7 @@ export class MusicBrainzService {
         query,
         limit,
         offset,
+        inc: ['artist-credits'], // Include artist credit information
       });
 
       return (
@@ -161,6 +163,7 @@ export class MusicBrainzService {
         query,
         limit,
         offset,
+        inc: ['artist-credits', 'releases'], // Include artist and release info
       });
 
       return (

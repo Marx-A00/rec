@@ -385,10 +385,16 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
         const searchResults = await musicBrainzService.searchReleaseGroups(searchQuery, 5);
         
         if (searchResults && searchResults.length > 0) {
+          // Debug logging for search results
+          console.log(`🔍 Found ${searchResults.length} search results for "${album.title}"`);
+          console.log(`📊 First result: "${searchResults[0].title}" by ${searchResults[0].artistCredit?.map(ac => ac.name).join(', ')} (score: ${searchResults[0].score})`);
+          
           // Find best match based on title and artist similarity
           const bestMatch = findBestAlbumMatch(album, searchResults);
-          if (bestMatch && bestMatch.score > 0.8) {
-            const mbData = await musicBrainzService.getReleaseGroup(bestMatch.result.id, ['artists']);
+          console.log(`🎯 Best match: ${bestMatch ? `"${bestMatch.result.title}" with ${(bestMatch.score * 100).toFixed(1)}% similarity` : 'None found'}`);
+          
+          if (bestMatch && bestMatch.score > 0.8) {  // Back to proper 80% threshold
+            const mbData = await musicBrainzService.getReleaseGroup(bestMatch.result.id, ['artists', 'tags', 'releases']);
             if (mbData) {
               enrichmentResult = await updateAlbumFromMusicBrainz(album, mbData);
               newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
@@ -471,7 +477,7 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
     // If we have a MusicBrainz ID, fetch detailed data
     if (artist.musicbrainzId) {
       try {
-        const mbData = await musicBrainzService.getArtist(artist.musicbrainzId, ['url-rels']);
+        const mbData = await musicBrainzService.getArtist(artist.musicbrainzId, ['url-rels', 'tags']);
         if (mbData) {
           enrichmentResult = await updateArtistFromMusicBrainz(artist, mbData);
           newDataQuality = 'HIGH';
@@ -490,7 +496,7 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
           // Find best match based on name similarity
           const bestMatch = findBestArtistMatch(artist, searchResults);
           if (bestMatch && bestMatch.score > 0.8) {
-            const mbData = await musicBrainzService.getArtist(bestMatch.result.id, ['url-rels']);
+            const mbData = await musicBrainzService.getArtist(bestMatch.result.id, ['url-rels', 'tags']);
             if (mbData) {
               enrichmentResult = await updateArtistFromMusicBrainz(artist, mbData);
               newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
@@ -541,7 +547,8 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
 
 
 function buildAlbumSearchQuery(album: any): string {
-  let query = `release:"${album.title}"`;
+  // Use releasegroup field for release group searches
+  let query = `releasegroup:"${album.title}"`;
   
   if (album.artists && album.artists.length > 0) {
     // Add primary artist to search
@@ -550,6 +557,12 @@ function buildAlbumSearchQuery(album: any): string {
       query += ` AND artist:"${primaryArtist.artist.name}"`;
     }
   }
+
+  // Add type filter to prefer albums over singles/EPs
+  query += ` AND type:album`;
+  
+  // Add status filter to only include official releases
+  query += ` AND status:official`;
 
   return query;
 }
@@ -567,8 +580,8 @@ function findBestAlbumMatch(album: any, searchResults: any[]): { result: any; sc
     }
 
     // Artist similarity
-    if (result['artist-credit'] && album.artists && album.artists.length > 0) {
-      const resultArtists = result['artist-credit'].map((ac: any) => ac.name?.toLowerCase() || '');
+    if (result.artistCredit && album.artists && album.artists.length > 0) {
+      const resultArtists = result.artistCredit.map((ac: any) => ac.name?.toLowerCase() || '');
       const albumArtists = album.artists.map((a: any) => a.artist?.name?.toLowerCase() || '');
       
       let artistScore = 0;
@@ -651,7 +664,61 @@ async function updateAlbumFromMusicBrainz(album: any, mbData: any): Promise<any>
     updateData.releaseType = mbData['primary-type'];
   }
 
+  // Extract genre tags from MusicBrainz
+  if (mbData.tags && mbData.tags.length > 0) {
+    // Get top 5 genre tags, sorted by count (popularity)
+    const genres = mbData.tags
+      .sort((a: any, b: any) => (b.count || 0) - (a.count || 0))
+      .slice(0, 5)
+      .map((tag: any) => tag.name);
+    updateData.genres = genres;
+  }
+
+  // Extract secondary types (live, compilation, etc.)
+  if (mbData['secondary-types'] && mbData['secondary-types'].length > 0) {
+    updateData.secondaryTypes = mbData['secondary-types'];
+  } else {
+    updateData.secondaryTypes = []; // Ensure empty array if no secondary types
+  }
+
+  // Extract release status (official, promotion, bootleg, etc.)
+  if (mbData.status) {
+    updateData.releaseStatus = mbData.status;
+  }
+
+  // Extract release country from releases
+  if (mbData.releases && mbData.releases.length > 0) {
+    // Get country from the first release that has one
+    const releaseWithCountry = mbData.releases.find((release: any) => release.country);
+    if (releaseWithCountry?.country) {
+      updateData.releaseCountry = releaseWithCountry.country;
+    }
+  }
+
   if (Object.keys(updateData).length > 0) {
+    // Check if another album already has this MusicBrainz ID before updating
+    if (updateData.musicbrainzId) {
+      const existingAlbum = await prisma.album.findUnique({
+        where: { musicbrainzId: updateData.musicbrainzId }
+      });
+      
+      if (existingAlbum && existingAlbum.id !== album.id) {
+        console.log(`⚠️ Duplicate MusicBrainz ID detected: Album ${album.id} ("${album.title}") would get MusicBrainz ID ${updateData.musicbrainzId}, but it's already used by album ${existingAlbum.id} ("${existingAlbum.title}")`);
+        console.log(`   → Skipping MusicBrainz ID update to avoid constraint violation`);
+        console.log(`   → Consider implementing album merging logic for true deduplication`);
+        
+        // Remove musicbrainzId from update to avoid constraint error
+        delete updateData.musicbrainzId;
+        
+        // If we removed the only update field, skip the entire update
+        if (Object.keys(updateData).length === 0) {
+          console.log(`   → No other fields to update, skipping database update`);
+          return null;
+        }
+      }
+    }
+
+    // Proceed with the update (without conflicting musicbrainzId if removed)
     await prisma.album.update({
       where: { id: album.id },
       data: updateData
@@ -685,7 +752,50 @@ async function updateArtistFromMusicBrainz(artist: any, mbData: any): Promise<an
     updateData.countryCode = mbData.area.iso.substring(0, 2);
   }
 
+  // Extract full area name (country/region)
+  if (mbData.area?.name) {
+    updateData.area = mbData.area.name;
+  }
+
+  // Extract artist type (Group, Person, etc.)
+  if (mbData.type) {
+    updateData.artistType = mbData.type;
+  }
+
+  // Extract genre tags from MusicBrainz
+  if (mbData.tags && mbData.tags.length > 0) {
+    // Get top 5 genre tags, sorted by count (popularity)
+    const genres = mbData.tags
+      .sort((a: any, b: any) => (b.count || 0) - (a.count || 0))
+      .slice(0, 5)
+      .map((tag: any) => tag.name);
+    updateData.genres = genres;
+  }
+
   if (Object.keys(updateData).length > 0) {
+    // Check if another artist already has this MusicBrainz ID before updating
+    if (updateData.musicbrainzId) {
+      const existingArtist = await prisma.artist.findUnique({
+        where: { musicbrainzId: updateData.musicbrainzId }
+      });
+      
+      if (existingArtist && existingArtist.id !== artist.id) {
+        console.log(`⚠️ Duplicate MusicBrainz ID detected: Artist ${artist.id} ("${artist.name}") would get MusicBrainz ID ${updateData.musicbrainzId}, but it's already used by artist ${existingArtist.id} ("${existingArtist.name}")`);
+        console.log(`   → Skipping MusicBrainz ID update to avoid constraint violation`);
+        console.log(`   → Consider implementing artist merging logic for true deduplication`);
+        
+        // Remove musicbrainzId from update to avoid constraint error
+        delete updateData.musicbrainzId;
+        
+        // If we removed the only update field, skip the entire update
+        if (Object.keys(updateData).length === 0) {
+          console.log(`   → No other fields to update, skipping database update`);
+          return null;
+        }
+      }
+    }
+
+    // Proceed with the update (without conflicting musicbrainzId if removed)
     await prisma.artist.update({
       where: { id: artist.id },
       data: updateData

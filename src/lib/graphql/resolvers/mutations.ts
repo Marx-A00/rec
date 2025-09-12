@@ -15,6 +15,8 @@ export const mutationResolvers: MutationResolvers = {
       });
     }
 
+    // TODO shouldn't we first check if the album already exists?
+
     try {
       // Parse release date if provided
       const releaseDate = input.releaseDate ? new Date(input.releaseDate) : null;
@@ -40,16 +42,34 @@ export const mutationResolvers: MutationResolvers = {
       for (const artistInput of input.artists) {
         let artistId = artistInput.artistId;
 
-        // If no artistId provided, create a new artist
+        // If no artistId provided, try to find existing artist by name first
         if (!artistId && artistInput.artistName) {
-          const newArtist = await prisma.artist.create({
-            data: {
-              name: artistInput.artistName,
-              dataQuality: 'LOW',
-              enrichmentStatus: 'PENDING',
+          // Search for existing artist by name (case-insensitive)
+          const existingArtist = await prisma.artist.findFirst({
+            where: {
+              name: {
+                equals: artistInput.artistName,
+                mode: 'insensitive'
+              }
             }
           });
-          artistId = newArtist.id;
+
+          if (existingArtist) {
+            // Use existing artist
+            artistId = existingArtist.id;
+            console.log(`🔄 Reusing existing artist: "${existingArtist.name}" (${existingArtist.id})`);
+          } else {
+            // Create new artist only if none exists
+            const newArtist = await prisma.artist.create({
+              data: {
+                name: artistInput.artistName,
+                dataQuality: 'LOW',
+                enrichmentStatus: 'PENDING',
+              }
+            });
+            artistId = newArtist.id;
+            console.log(`✨ Created new artist: "${newArtist.name}" (${newArtist.id})`);
+          }
         }
 
         if (artistId) {
