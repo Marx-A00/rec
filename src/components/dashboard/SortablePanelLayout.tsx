@@ -191,25 +191,46 @@ export default function SortablePanelLayout({
   }
 
   return (
-    <div className={className}>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className={className}>
         {renderPanelGroup(layout)}
+      </div>
         
-        <DragOverlay>
-          {activePanel ? (
-            <div className="bg-zinc-800 border-2 border-emerald-500 rounded-lg p-3 shadow-xl">
-              <span className="text-white font-medium">
+      <DragOverlay 
+        dropAnimation={null}
+        style={{ 
+          zIndex: 99999,
+          position: 'fixed',
+          pointerEvents: 'none'
+        }}
+      >
+        {activePanel ? (
+          <div className="w-80 h-60 bg-zinc-900/95 border-2 border-emerald-500 rounded-lg shadow-2xl backdrop-blur-sm transform rotate-3 scale-105 pointer-events-none">
+            {/* Panel Header */}
+            <div className="bg-zinc-800/80 rounded-t-lg p-3 border-b border-zinc-700">
+              <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                 {activePanel.config.headerTitle || activePanel.type}
-              </span>
+              </h3>
             </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-    </div>
+            
+            {/* Panel Content Preview */}
+            <div className="p-4 h-full flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-zinc-700 rounded-lg mx-auto mb-3 flex items-center justify-center">
+                  <div className="w-6 h-6 bg-emerald-500 rounded animate-spin" />
+                </div>
+                <p className="text-zinc-300 text-sm">Moving panel...</p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

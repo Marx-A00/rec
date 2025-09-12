@@ -108,8 +108,8 @@ export default function SortablePanelWrapper({ panel, children, isDragActive = f
         relative h-full flex flex-col group
         ${isEditMode ? 'border-2 border-dashed border-zinc-700 hover:border-zinc-600' : ''}
         ${isSelected ? 'border-emerald-500' : ''}
-        ${isDragging ? 'opacity-50 z-50' : ''}
-        transition-all duration-200
+        ${isDragging ? 'opacity-30 scale-95' : ''}
+        ${isDragActive ? 'transition-none' : 'transition-all duration-200'}
       `}
       onClick={handleSelectPanel}
       {...attributes}
@@ -203,9 +203,15 @@ export default function SortablePanelWrapper({ panel, children, isDragActive = f
         <div className="absolute inset-0 border-2 border-emerald-500 rounded-lg pointer-events-none z-30" />
       )}
 
-      {/* Drag indicator */}
+      {/* Drag overlay - shown when this panel is being dragged */}
       {isDragging && (
-        <div className="absolute inset-0 bg-emerald-500/20 border-2 border-emerald-500 rounded-lg pointer-events-none z-40" />
+        <div className="absolute inset-0 bg-emerald-500/10 border-2 border-dashed border-emerald-500/30 rounded-lg pointer-events-none z-40">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="bg-emerald-500/20 rounded-full px-3 py-1">
+              <span className="text-emerald-300 text-xs font-medium">Dragging...</span>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Drop Zones - Show when dragging is active and this panel is not being dragged */}
