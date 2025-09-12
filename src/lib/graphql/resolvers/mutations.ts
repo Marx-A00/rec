@@ -8,7 +8,7 @@ import type { CheckAlbumEnrichmentJobData, CheckArtistEnrichmentJobData } from '
 
 export const mutationResolvers: MutationResolvers = {
   // Album management
-  addAlbum: async (_, { input }, { user, prisma }) => {
+  addAlbum: async (_, { input }, { user, prisma, activityTracker, priorityManager, sessionId, requestId }) => {
     if (!user) {
       throw new GraphQLError('Authentication required', {
         extensions: { code: 'UNAUTHENTICATED' }
@@ -83,19 +83,45 @@ export const mutationResolvers: MutationResolvers = {
         }
       }
 
-      // Queue enrichment check for the new album
+      // Queue enrichment check for the new album using smart priority management
       try {
         const queue = getMusicBrainzQueue();
+        
+        // Track collection action for priority management
+        await activityTracker.trackCollectionAction('add_album', album.id);
+        
+        // Get smart job options based on user activity
+        const jobOptions = await priorityManager.getJobOptions(
+          'manual', // Source for manually added albums
+          album.id,
+          'album',
+          user?.id,
+          sessionId
+        );
+        
         const albumCheckData: CheckAlbumEnrichmentJobData = {
           albumId: album.id,
           source: 'manual',
-          priority: 'medium',
-          requestId: `add-album-${album.id}`,
+          priority: 'high', // Manual additions get high priority
+          requestId: requestId,
         };
-        await queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, albumCheckData, {
-          priority: 5,
-          attempts: 3,
-        });
+        
+        await queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, albumCheckData, jobOptions);
+        
+        // Log priority decision for debugging
+        priorityManager.logPriorityDecision(
+          'manual',
+          album.id,
+          jobOptions.priority / 10, // Convert back to 1-10 scale
+          { 
+            actionImportance: 8,
+            userActivity: 0, 
+            entityRelevance: 0, 
+            systemLoad: 0 
+          },
+          jobOptions.delay
+        );
+        
       } catch (queueError) {
         console.warn('Failed to queue enrichment check for new album:', queueError);
       }

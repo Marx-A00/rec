@@ -16,6 +16,14 @@ import {
   createArtistsByAlbumLoader,
   createCollectionsByUserLoader,
 } from './dataloaders';
+import { 
+  ActivityTracker, 
+  createActivityTracker,
+  extractSessionId,
+  extractUserAgent,
+  extractIpAddress 
+} from '@/lib/activity/activity-tracker';
+import { QueuePriorityManager, createQueuePriorityManager } from '@/lib/activity/queue-priority-manager';
 
 // DataLoader types - strongly typed DataLoader instances
 export interface DataLoaders {
@@ -53,6 +61,15 @@ export interface GraphQLContext {
   // Request metadata
   requestId: string;
   timestamp: Date;
+
+  // Activity tracking
+  sessionId: string;
+  activityTracker: ActivityTracker;
+  priorityManager: QueuePriorityManager;
+  
+  // Request context for activity tracking
+  userAgent?: string;
+  ipAddress?: string;
 }
 
 // Context factory function
@@ -67,6 +84,16 @@ export async function createGraphQLContext(
   // TODO: Extract user from authentication when implemented
   // For now, we'll set user to null (public access)
   const user = null;
+
+  // Extract request metadata for activity tracking
+  const requestId = randomUUID();
+  const sessionId = extractSessionId(req);
+  const userAgent = extractUserAgent(req);
+  const ipAddress = extractIpAddress(req);
+
+  // Create activity tracking instances
+  const activityTracker = createActivityTracker(prisma, sessionId, user?.id, requestId);
+  const priorityManager = createQueuePriorityManager(prisma);
 
   // Create request-scoped DataLoaders - fresh instances per GraphQL request
   const dataloaders: DataLoaders = {
@@ -89,7 +116,12 @@ export async function createGraphQLContext(
     dataloaders,
     req,
     user,
-    requestId: randomUUID(),
+    requestId,
     timestamp: new Date(),
+    sessionId,
+    activityTracker,
+    priorityManager,
+    userAgent,
+    ipAddress,
   };
 }

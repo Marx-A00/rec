@@ -164,6 +164,37 @@ model UserFollow {
   @@unique([followerId, followedId])
   @@index([followerId])
   @@index([followedId])
+  @@map("user_follows")
+}
+
+// User Activity Tracking
+model UserActivity {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String?  @map("user_id")  // Null for anonymous users
+  sessionId     String   @map("session_id") @db.VarChar(255)
+  operation     String   @db.VarChar(100)          // GraphQL operation name
+  operationType String   @map("operation_type") @db.VarChar(20) // query/mutation/subscription
+  
+  // Metadata as JSONB for flexibility (search queries, filters, etc.)
+  metadata      Json?    @map("metadata")
+  
+  // Entity interactions for priority management
+  albumIds      String[] @map("album_ids")
+  artistIds     String[] @map("artist_ids")
+  
+  // Request context
+  userAgent     String?  @map("user_agent") @db.Text
+  ipAddress     String?  @map("ip_address") @db.VarChar(45)
+  requestId     String?  @map("request_id") @db.VarChar(255)
+  
+  timestamp     DateTime @default(now())
+  
+  // Indexes for fast querying
+  @@index([userId, timestamp])
+  @@index([sessionId, timestamp])
+  @@index([operation])
+  @@index([timestamp])
+  @@map("user_activities")
 }
 
 // ==================================

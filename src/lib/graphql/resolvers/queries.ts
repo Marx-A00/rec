@@ -11,8 +11,16 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // Entity retrieval queries (placeholders)
-  artist: async (_, { id }, { prisma }) => {
+  artist: async (_, { id }, { prisma, activityTracker }) => {
     try {
+      // Track entity interaction for priority management
+      await activityTracker.recordEntityInteraction(
+        'view_artist',
+        'artist',
+        id,
+        'query'
+      );
+      
       const artist = await prisma.artist.findUnique({
         where: { id },
       });
@@ -22,8 +30,16 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-  album: async (_, { id }, { prisma }) => {
+  album: async (_, { id }, { prisma, activityTracker }) => {
     try {
+      // Track entity interaction for priority management
+      await activityTracker.recordEntityInteraction(
+        'view_album',
+        'album',
+        id,
+        'query'
+      );
+      
       const album = await prisma.album.findUnique({
         where: { id },
       });
@@ -157,13 +173,32 @@ export const queryResolvers: QueryResolvers = {
     };
   },
 
-  trendingAlbums: async (_, { limit = 20 }, { prisma }) => {
+  trendingAlbums: async (_, { limit = 20 }, { prisma, activityTracker }) => {
     try {
+      // Track browse activity for trending content
+      await activityTracker.trackBrowse('trending', undefined, { 
+        contentType: 'albums',
+        limit 
+      });
+      
       // Simple trending based on creation date for now
       const albums = await prisma.album.findMany({
         take: limit,
         orderBy: { createdAt: 'desc' },
       });
+      
+      // Track entity interactions if albums returned
+      if (albums.length > 0) {
+        const albumIds = albums.map(album => album.id);
+        await activityTracker.recordEntityInteraction(
+          'browse_trending_albums',
+          'album',
+          albumIds,
+          'query',
+          { resultCount: albums.length }
+        );
+      }
+      
       return albums;
     } catch (error) {
       throw new GraphQLError(`Failed to fetch trending albums: ${error}`);
