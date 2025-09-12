@@ -2,6 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import { arrayMove } from '@dnd-kit/sortable';
 // Using built-in crypto.randomUUID() instead of nanoid to avoid extra dependency
 import { 
   DashboardContextType, 
@@ -23,46 +24,39 @@ type DashboardAction =
   | { type: 'UPDATE_PANEL_CONFIG'; payload: { panelId: string; config: PanelConfig } }
   | { type: 'RESIZE_PANEL'; payload: { panelId: string; size: number } }
   | { type: 'MOVE_PANEL'; payload: { panelId: string; targetPosition: number } }
+  | { type: 'REORDER_PANELS'; payload: { activeId: string; overId: string; layoutPath?: string[] } }
+  | { type: 'CREATE_GROUP'; payload: { panelIds: string[]; direction: 'horizontal' | 'vertical'; position?: number } }
+  | { type: 'UNGROUP_PANEL'; payload: { panelId: string; targetPosition?: number } }
+  | { type: 'CHANGE_LAYOUT_DIRECTION'; payload: { layoutPath: string[]; direction: 'horizontal' | 'vertical' } }
   | { type: 'SELECT_PANEL'; payload: { panelId: string | null } };
 
-// Default layout matching current home page structure
+// Default layout - flattened so all panels can be reordered
 const createDefaultLayout = (): PanelLayout => ({
   direction: 'vertical',
   panels: [
     {
       id: 'collection-panel',
       type: 'collection-albums',
-      size: 35,
+      size: 40,
       minSize: 25,
-      maxSize: 50,
+      maxSize: 60,
       config: { showHeader: true, headerTitle: 'Your Collection' }
     },
     {
-      id: 'main-content-group',
-      type: 'collection-albums', // This will be overridden by nested layout
-      size: 65,
-      minSize: 50,
-      config: {},
-      layout: {
-        direction: 'horizontal',
-        panels: [
-          {
-            id: 'recommendations-panel',
-            type: 'recommendations',
-            size: 70,
-            minSize: 50,
-            config: { showHeader: true, headerTitle: 'Recent Recommendations' }
-          },
-          {
-            id: 'activity-panel',
-            type: 'activity-feed',
-            size: 30,
-            minSize: 25,
-            maxSize: 50,
-            config: { showHeader: true, headerTitle: 'Recent Activity' }
-          }
-        ]
-      }
+      id: 'recommendations-panel',
+      type: 'recommendations',
+      size: 35,
+      minSize: 20,
+      maxSize: 50,
+      config: { showHeader: true, headerTitle: 'Recent Recommendations' }
+    },
+    {
+      id: 'activity-panel',
+      type: 'activity-feed',
+      size: 25,
+      minSize: 15,
+      maxSize: 40,
+      config: { showHeader: true, headerTitle: 'Recent Activity' }
     }
   ]
 });
@@ -213,6 +207,183 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
       console.log('Move panel functionality not yet implemented');
       return state;
 
+    case 'REORDER_PANELS': {
+      const { activeId, overId } = action.payload;
+      
+      if (activeId === overId) return state;
+
+      // Helper function to reorder panels within a layout
+      const reorderPanelsInLayout = (layout: PanelLayout): PanelLayout => {
+        const activeIndex = layout.panels.findIndex(panel => panel.id === activeId);
+        const overIndex = layout.panels.findIndex(panel => panel.id === overId);
+        
+        if (activeIndex !== -1 && overIndex !== -1) {
+          // Both panels are in this layout, reorder them
+          return {
+            ...layout,
+            panels: arrayMove(layout.panels, activeIndex, overIndex),
+          };
+        }
+        
+        // Check nested layouts
+        return {
+          ...layout,
+          panels: layout.panels.map(panel => ({
+            ...panel,
+            layout: panel.layout ? reorderPanelsInLayout(panel.layout) : undefined,
+          })),
+        };
+      };
+
+      return {
+        ...state,
+        layout: reorderPanelsInLayout(state.layout),
+      };
+    }
+
+    case 'CREATE_GROUP': {
+      const { panelIds, direction, position = 0 } = action.payload;
+      
+      // Helper function to create a group from specified panels
+      const createGroupInLayout = (layout: PanelLayout): PanelLayout => {
+        const panelsToGroup = layout.panels.filter(panel => panelIds.includes(panel.id));
+        const remainingPanels = layout.panels.filter(panel => !panelIds.includes(panel.id));
+        
+        if (panelsToGroup.length < 2) {
+          // Need at least 2 panels to create a group
+          return layout;
+        }
+
+        // Create the new group panel
+        const groupPanel: Panel = {
+          id: crypto.randomUUID(),
+          type: panelsToGroup[0].type, // Will be overridden by layout
+          size: panelsToGroup.reduce((sum, panel) => sum + panel.size, 0),
+          minSize: 20,
+          maxSize: 80,
+          config: {},
+          layout: {
+            direction,
+            panels: panelsToGroup.map(panel => ({
+              ...panel,
+              size: panel.size / panelsToGroup.length * 100, // Redistribute sizes
+            })),
+          },
+        };
+
+        // Insert the group at the specified position
+        const newPanels = [...remainingPanels];
+        newPanels.splice(position, 0, groupPanel);
+
+        return {
+          ...layout,
+          panels: newPanels,
+        };
+      };
+
+      return {
+        ...state,
+        layout: createGroupInLayout(state.layout),
+      };
+    }
+
+    case 'UNGROUP_PANEL': {
+      const { panelId, targetPosition = 0 } = action.payload;
+      
+      // Helper function to ungroup a panel and move it to main layout
+      const ungroupPanelInLayout = (layout: PanelLayout): PanelLayout => {
+        let extractedPanel: Panel | null = null;
+        
+        const processedPanels = layout.panels.reduce((acc: Panel[], panel) => {
+          if (panel.layout) {
+            // Check if the panel to ungroup is in this nested layout
+            const panelInGroup = panel.layout.panels.find(p => p.id === panelId);
+            
+            if (panelInGroup) {
+              // Extract the panel
+              extractedPanel = panelInGroup;
+              
+              // Remove the panel from the group
+              const remainingGroupPanels = panel.layout.panels.filter(p => p.id !== panelId);
+              
+              if (remainingGroupPanels.length === 1) {
+                // If only one panel left in group, dissolve the group
+                acc.push(remainingGroupPanels[0]);
+              } else if (remainingGroupPanels.length > 1) {
+                // Keep the group with remaining panels
+                acc.push({
+                  ...panel,
+                  layout: {
+                    ...panel.layout,
+                    panels: remainingGroupPanels,
+                  },
+                });
+              }
+            } else {
+              // Recursively process nested layouts
+              acc.push({
+                ...panel,
+                layout: ungroupPanelInLayout(panel.layout),
+              });
+            }
+          } else {
+            acc.push(panel);
+          }
+          
+          return acc;
+        }, []);
+
+        // Insert extracted panel at target position
+        if (extractedPanel) {
+          processedPanels.splice(targetPosition, 0, extractedPanel);
+        }
+
+        return {
+          ...layout,
+          panels: processedPanels,
+        };
+      };
+
+      return {
+        ...state,
+        layout: ungroupPanelInLayout(state.layout),
+      };
+    }
+
+    case 'CHANGE_LAYOUT_DIRECTION': {
+      const { layoutPath, direction } = action.payload;
+      
+      // Helper function to change direction at a specific path
+      const changeDirectionInLayout = (layout: PanelLayout, path: string[], depth = 0): PanelLayout => {
+        if (depth === path.length) {
+          return {
+            ...layout,
+            direction,
+          };
+        }
+        
+        const panelId = path[depth];
+        return {
+          ...layout,
+          panels: layout.panels.map(panel => 
+            panel.id === panelId && panel.layout
+              ? {
+                  ...panel,
+                  layout: changeDirectionInLayout(panel.layout, path, depth + 1),
+                }
+              : panel
+          ),
+        };
+      };
+
+      return {
+        ...state,
+        layout: layoutPath.length === 0 
+          ? { ...state.layout, direction }
+          : changeDirectionInLayout(state.layout, layoutPath),
+      };
+    }
+
     default:
       return state;
   }
@@ -257,6 +428,22 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
     selectPanel: useCallback((panelId: string | null) => {
       dispatch({ type: 'SELECT_PANEL', payload: { panelId } });
+    }, []),
+
+    reorderPanels: useCallback((activeId: string, overId: string, layoutPath?: string[]) => {
+      dispatch({ type: 'REORDER_PANELS', payload: { activeId, overId, layoutPath } });
+    }, []),
+
+    createGroup: useCallback((panelIds: string[], direction: 'horizontal' | 'vertical', position?: number) => {
+      dispatch({ type: 'CREATE_GROUP', payload: { panelIds, direction, position } });
+    }, []),
+
+    ungroupPanel: useCallback((panelId: string, targetPosition?: number) => {
+      dispatch({ type: 'UNGROUP_PANEL', payload: { panelId, targetPosition } });
+    }, []),
+
+    changeLayoutDirection: useCallback((layoutPath: string[], direction: 'horizontal' | 'vertical') => {
+      dispatch({ type: 'CHANGE_LAYOUT_DIRECTION', payload: { layoutPath, direction } });
     }, []),
 
     saveLayout: useCallback(async () => {

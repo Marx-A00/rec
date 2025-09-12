@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 
 interface SidebarLayoutWrapperProps {
   children: React.ReactNode;
+  headerControls?: React.ReactNode;
 }
 
 export default function SidebarLayoutWrapper({
   children,
+  headerControls,
 }: SidebarLayoutWrapperProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -50,7 +52,18 @@ export default function SidebarLayoutWrapper({
         isCollapsed ? 'md:ml-0' : 'md:ml-16'
       }`}
     >
-      {children}
+      {headerControls ? (
+        <div className="flex items-center justify-between w-full">
+          <div className="flex-1">
+            {children}
+          </div>
+          <div className="flex-shrink-0 ml-4 mr-8">
+            {headerControls}
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </div>
   );
 }

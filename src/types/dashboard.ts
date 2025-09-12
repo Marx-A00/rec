@@ -5,12 +5,13 @@ export type PanelType =
   | 'recommendations' 
   | 'activity-feed'
   | 'recently-played'
+  | 'quick-stats'
+  | 'friends-activity'
+  | 'friend-discovery'
   | 'favorite-artists'
   | 'trending-albums'
-  | 'quick-stats'
   | 'genre-discovery'
   | 'new-releases'
-  | 'friends-activity'
   | 'personal-notes'
   | 'mini-player'
   | 'search-quick-access';
@@ -88,6 +89,10 @@ export interface DashboardContextType {
     updatePanelConfig: (panelId: string, config: PanelConfig) => void;
     resizePanel: (panelId: string, size: number) => void;
     movePanel: (panelId: string, targetPosition: number) => void;
+    reorderPanels: (activeId: string, overId: string, layoutPath?: string[]) => void;
+    createGroup: (panelIds: string[], direction: 'horizontal' | 'vertical', position?: number) => void;
+    ungroupPanel: (panelId: string, targetPosition?: number) => void;
+    changeLayoutDirection: (layoutPath: string[], direction: 'horizontal' | 'vertical') => void;
     selectPanel: (panelId: string | null) => void;
     saveLayout: () => Promise<void>;
     loadLayout: (layoutId: string) => Promise<void>;
