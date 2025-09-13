@@ -5,15 +5,30 @@
 
 import { PrismaClient } from '@prisma/client';
 import { mutationResolvers } from '../lib/graphql/resolvers/mutations';
+import { createActivityTracker } from '@/lib/activity/activity-tracker';
+import { createQueuePriorityManager } from '@/lib/activity/queue-priority-manager';
+import { randomUUID } from 'crypto';
 
-// Mock GraphQL context
-const createMockContext = (userId: string) => ({
-  user: { id: userId },
-  prisma: new PrismaClient(),
-  dataloaders: {} as any,
-  req: null as any,
-  timestamp: new Date(),
-});
+// Mock GraphQL context with activity tracking
+const createMockContext = (userId: string) => {
+  const prisma = new PrismaClient();
+  const sessionId = `test-session-${Date.now()}`;
+  const requestId = randomUUID();
+  
+  return {
+    user: { id: userId },
+    prisma,
+    dataloaders: {} as any,
+    req: null as any,
+    timestamp: new Date(),
+    sessionId,
+    activityTracker: createActivityTracker(prisma, sessionId, userId, requestId),
+    priorityManager: createQueuePriorityManager(prisma),
+    requestId,
+    userAgent: 'test-script',
+    ipAddress: '127.0.0.1',
+  };
+};
 
 // Single test album
 const testAlbum = {

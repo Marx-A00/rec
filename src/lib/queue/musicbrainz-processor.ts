@@ -391,9 +391,11 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
           
           // Find best match based on title and artist similarity
           const bestMatch = findBestAlbumMatch(album, searchResults);
-          console.log(`🎯 Best match: ${bestMatch ? `"${bestMatch.result.title}" with ${(bestMatch.score * 100).toFixed(1)}% similarity` : 'None found'}`);
+          console.log(`🎯 Best match: ${bestMatch ? 
+            `"${bestMatch.result.title}" - Combined: ${(bestMatch.score * 100).toFixed(1)}% (MB: ${bestMatch.mbScore}, Jaccard: ${(bestMatch.jaccardScore * 100).toFixed(1)}%)` : 
+            'None found'}`);
           
-          if (bestMatch && bestMatch.score > 0.8) {  // Back to proper 80% threshold
+          if (bestMatch && bestMatch.score > 0.8) {  // 80% threshold for combined score
             const mbData = await musicBrainzService.getReleaseGroup(bestMatch.result.id, ['artists', 'tags', 'releases']);
             if (mbData) {
               enrichmentResult = await updateAlbumFromMusicBrainz(album, mbData);
@@ -493,8 +495,15 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
         const searchResults = await musicBrainzService.searchArtists(artist.name, 5);
         
         if (searchResults && searchResults.length > 0) {
+          console.log(`🔍 Found ${searchResults.length} artist search results for "${artist.name}"`);
+          console.log(`📊 First result: "${searchResults[0].name}" (score: ${searchResults[0].score})`);
+          
           // Find best match based on name similarity
           const bestMatch = findBestArtistMatch(artist, searchResults);
+          console.log(`🎯 Best artist match: ${bestMatch ? 
+            `"${bestMatch.result.name}" - Combined: ${(bestMatch.score * 100).toFixed(1)}% (MB: ${bestMatch.mbScore}, Jaccard: ${(bestMatch.jaccardScore * 100).toFixed(1)}%)` : 
+            'None found'}`);
+          
           if (bestMatch && bestMatch.score > 0.8) {
             const mbData = await musicBrainzService.getArtist(bestMatch.result.id, ['url-rels', 'tags']);
             if (mbData) {
@@ -567,16 +576,20 @@ function buildAlbumSearchQuery(album: any): string {
   return query;
 }
 
-function findBestAlbumMatch(album: any, searchResults: any[]): { result: any; score: number } | null {
+function findBestAlbumMatch(album: any, searchResults: any[]): { result: any; score: number; mbScore: number; jaccardScore: number } | null {
   let bestMatch = null;
   let bestScore = 0;
 
   for (const result of searchResults) {
-    let score = 0;
+    // Get MusicBrainz's confidence score (0-100)
+    const mbScore = result.score || 0;
+    
+    // Calculate our Jaccard similarity score (0-1)
+    let jaccardScore = 0;
 
     // Title similarity (most important)
     if (result.title && album.title) {
-      score += calculateStringSimilarity(result.title.toLowerCase(), album.title.toLowerCase()) * 0.6;
+      jaccardScore += calculateStringSimilarity(result.title.toLowerCase(), album.title.toLowerCase()) * 0.6;
     }
 
     // Artist similarity
@@ -590,33 +603,57 @@ function findBestAlbumMatch(album: any, searchResults: any[]): { result: any; sc
           artistScore = Math.max(artistScore, calculateStringSimilarity(albumArtist, resultArtist));
         }
       }
-      score += artistScore * 0.4;
+      jaccardScore += artistScore * 0.4;
     }
 
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = { result, score };
+    // Hybrid scoring: Combine MusicBrainz score with our Jaccard similarity
+    // MB score (0-100) normalized to 0-1, weighted 70%
+    // Jaccard score (0-1) weighted 30%
+    const combinedScore = (mbScore / 100) * 0.7 + jaccardScore * 0.3;
+
+    if (combinedScore > bestScore) {
+      bestScore = combinedScore;
+      bestMatch = { 
+        result, 
+        score: combinedScore, 
+        mbScore: mbScore,
+        jaccardScore: jaccardScore 
+      };
     }
   }
 
   return bestMatch;
 }
 
-function findBestArtistMatch(artist: any, searchResults: any[]): { result: any; score: number } | null {
+function findBestArtistMatch(artist: any, searchResults: any[]): { result: any; score: number; mbScore: number; jaccardScore: number } | null {
   let bestMatch = null;
   let bestScore = 0;
 
   for (const result of searchResults) {
-    let score = 0;
+    // Get MusicBrainz's confidence score (0-100)
+    const mbScore = result.score || 0;
+    
+    // Calculate our Jaccard similarity score (0-1)
+    let jaccardScore = 0;
 
     // Name similarity
     if (result.name && artist.name) {
-      score = calculateStringSimilarity(result.name.toLowerCase(), artist.name.toLowerCase());
+      jaccardScore = calculateStringSimilarity(result.name.toLowerCase(), artist.name.toLowerCase());
     }
 
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = { result, score };
+    // Hybrid scoring: Combine MusicBrainz score with our Jaccard similarity
+    // MB score (0-100) normalized to 0-1, weighted 70%
+    // Jaccard score (0-1) weighted 30%
+    const combinedScore = (mbScore / 100) * 0.7 + jaccardScore * 0.3;
+
+    if (combinedScore > bestScore) {
+      bestScore = combinedScore;
+      bestMatch = { 
+        result, 
+        score: combinedScore, 
+        mbScore: mbScore,
+        jaccardScore: jaccardScore 
+      };
     }
   }
 
