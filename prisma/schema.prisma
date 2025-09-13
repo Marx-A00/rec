@@ -253,6 +253,10 @@ model Album {
   catalogNumber String?   @map("catalog_number") @db.VarChar(100)
   searchVector  Unsupported("tsvector")? @map("search_vector")
   
+  // Spotify integration fields
+  spotifyId     String?   @unique @map("spotify_id") @db.VarChar(50)
+  spotifyUrl    String?   @map("spotify_url") @db.Text
+  
   // Enrichment tracking fields
   dataQuality      DataQuality?      @default(LOW) @map("data_quality")
   enrichmentStatus EnrichmentStatus? @default(PENDING) @map("enrichment_status")
@@ -286,6 +290,15 @@ model Track {
   durationMs       Int?      @map("duration_ms")
   explicit         Boolean   @default(false)
   previewUrl       String?   @map("preview_url") @db.Text
+  
+  // Spotify integration fields
+  spotifyId        String?   @unique @map("spotify_id") @db.VarChar(50)
+  spotifyUrl       String?   @map("spotify_url") @db.Text
+  
+  // Enrichment tracking fields
+  dataQuality      String    @default("LOW") @map("data_quality") @db.VarChar(10)
+  enrichmentStatus String    @default("PENDING") @map("enrichment_status") @db.VarChar(20)
+  lastEnriched     DateTime? @map("last_enriched")
   
   // Audio Features (LIMITED AVAILABILITY - see notes below)
   // AcousticBrainz: Legacy data only (stopped collection 2022), some coverage via MusicBrainz ID

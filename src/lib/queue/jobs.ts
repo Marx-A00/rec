@@ -22,6 +22,9 @@ export const JOB_TYPES = {
   // Actual Enrichment Jobs (heavy)
   ENRICH_ALBUM: 'enrichment:album',
   ENRICH_ARTIST: 'enrichment:artist',
+  // Spotify Sync Jobs (batch processing)
+  SPOTIFY_SYNC_NEW_RELEASES: 'spotify:sync-new-releases',
+  SPOTIFY_SYNC_FEATURED_PLAYLISTS: 'spotify:sync-featured-playlists',
 } as const;
 
 export type JobType = typeof JOB_TYPES[keyof typeof JOB_TYPES];
@@ -104,6 +107,27 @@ export interface EnrichArtistJobData {
 }
 
 // ============================================================================
+// Spotify Sync Job Data Interfaces
+// ============================================================================
+
+export interface SpotifySyncNewReleasesJobData {
+  limit?: number;           // Number of releases to fetch (default: 20)
+  country?: string;         // Country code (default: 'US')
+  priority?: 'low' | 'medium' | 'high';
+  requestId?: string;
+  source?: 'scheduled' | 'manual' | 'graphql'; // How this sync was triggered
+}
+
+export interface SpotifySyncFeaturedPlaylistsJobData {
+  limit?: number;           // Number of playlists to process (default: 10)
+  country?: string;         // Country code (default: 'US')
+  extractAlbums?: boolean;  // Whether to extract albums from playlist tracks (default: true)
+  priority?: 'low' | 'medium' | 'high';
+  requestId?: string;
+  source?: 'scheduled' | 'manual' | 'graphql';
+}
+
+// ============================================================================
 // Job Data Union Type
 // ============================================================================
 
@@ -118,7 +142,9 @@ export type MusicBrainzJobData =
   | CheckAlbumEnrichmentJobData
   | CheckArtistEnrichmentJobData
   | EnrichAlbumJobData
-  | EnrichArtistJobData;
+  | EnrichArtistJobData
+  | SpotifySyncNewReleasesJobData
+  | SpotifySyncFeaturedPlaylistsJobData;
 
 // ============================================================================
 // Job Result Interfaces  

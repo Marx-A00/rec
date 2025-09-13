@@ -62,6 +62,74 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Spotify metrics endpoint
+app.get('/spotify/metrics', async (req, res) => {
+  try {
+    const { spotifyMetrics } = await import('@/lib/spotify/error-handling');
+    const { spotifyScheduler } = await import('@/lib/spotify/scheduler');
+    
+    const metrics = spotifyMetrics.getMetrics();
+    const status = spotifyScheduler.getStatus();
+    
+    res.json({
+      scheduler: {
+        isRunning: status.isRunning,
+        activeJobs: status.activeJobs,
+        config: status.config
+      },
+      metrics: {
+        ...metrics,
+        successRate: spotifyMetrics.getSuccessRate()
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to get Spotify metrics',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Spotify control endpoint
+app.post('/spotify/:action', async (req, res) => {
+  const { action } = req.params;
+  const { type } = req.body;
+  
+  try {
+    const { spotifyScheduler } = await import('@/lib/spotify/scheduler');
+    
+    switch (action) {
+      case 'start':
+        const { initializeSpotifyScheduler } = await import('@/lib/spotify/scheduler');
+        const started = initializeSpotifyScheduler();
+        res.json({ success: started, message: started ? 'Scheduler started' : 'Failed to start (check credentials)' });
+        break;
+        
+      case 'stop':
+        spotifyScheduler.stop();
+        res.json({ success: true, message: 'Scheduler stopped' });
+        break;
+        
+      case 'sync':
+        if (!type || !['new-releases', 'featured-playlists', 'both'].includes(type)) {
+          return res.status(400).json({ error: 'Invalid sync type. Use: new-releases, featured-playlists, or both' });
+        }
+        await spotifyScheduler.triggerSync(type);
+        res.json({ success: true, message: `${type} sync triggered` });
+        break;
+        
+      default:
+        res.status(400).json({ error: 'Invalid action. Use: start, stop, or sync' });
+    }
+  } catch (error) {
+    res.status(500).json({
+      error: 'Spotify action failed',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Root redirect
 app.get('/', (req, res) => {
   res.redirect('/admin/queues');
@@ -74,7 +142,11 @@ app.use((req, res) => {
     message: `Path '${req.originalUrl}' not found`,
     availablePaths: [
       '/admin/queues - Bull Board Dashboard',
-      '/health - Health Check'
+      '/health - Health Check',
+      '/spotify/metrics - Spotify Metrics',
+      'POST /spotify/start - Start Spotify Scheduler',
+      'POST /spotify/stop - Stop Spotify Scheduler',
+      'POST /spotify/sync - Trigger Spotify Sync'
     ]
   });
 });
