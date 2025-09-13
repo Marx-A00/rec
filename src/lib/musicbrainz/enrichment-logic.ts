@@ -60,6 +60,12 @@ export function shouldEnrichAlbum(album: AlbumEnrichmentData): boolean {
     return true;
   }
 
+  // 🎵 NEW: Re-enrich if album has no tracks (for pure MusicBrainz track approach)
+  // Check if the album has any tracks at all
+  if ('tracks' in album && Array.isArray(album.tracks) && album.tracks.length === 0) {
+    return true;
+  }
+
   // Re-enrich if data quality is low and it's been more than 30 days
   if (album.dataQuality === 'LOW' && album.lastEnriched) {
     const daysSinceEnrichment = Math.floor(

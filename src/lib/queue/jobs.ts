@@ -19,9 +19,11 @@ export const JOB_TYPES = {
   // Enrichment Check Jobs (lightweight)
   CHECK_ALBUM_ENRICHMENT: 'check:album-enrichment',
   CHECK_ARTIST_ENRICHMENT: 'check:artist-enrichment',
+  CHECK_TRACK_ENRICHMENT: 'check:track-enrichment',
   // Actual Enrichment Jobs (heavy)
   ENRICH_ALBUM: 'enrichment:album',
   ENRICH_ARTIST: 'enrichment:artist',
+  ENRICH_TRACK: 'enrichment:track',
   // Spotify Sync Jobs (batch processing)
   SPOTIFY_SYNC_NEW_RELEASES: 'spotify:sync-new-releases',
   SPOTIFY_SYNC_FEATURED_PLAYLISTS: 'spotify:sync-featured-playlists',
@@ -80,14 +82,21 @@ export interface MusicBrainzLookupReleaseGroupJobData {
 
 export interface CheckAlbumEnrichmentJobData {
   albumId: string;
-  source: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual';
+  source: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
 }
 
 export interface CheckArtistEnrichmentJobData {
   artistId: string;
-  source: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual';
+  source: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
+  priority?: 'low' | 'medium' | 'high';
+  requestId?: string;
+}
+
+export interface CheckTrackEnrichmentJobData {
+  trackId: string;
+  source: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
 }
@@ -95,14 +104,21 @@ export interface CheckArtistEnrichmentJobData {
 export interface EnrichAlbumJobData {
   albumId: string;
   priority?: 'low' | 'medium' | 'high';
-  userAction?: 'collection_add' | 'recommendation_create' | 'search' | 'browse';
+  userAction?: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
   requestId?: string;
 }
 
 export interface EnrichArtistJobData {
   artistId: string;
   priority?: 'low' | 'medium' | 'high';
-  userAction?: 'collection_add' | 'recommendation_create' | 'search' | 'browse';
+  userAction?: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
+  requestId?: string;
+}
+
+export interface EnrichTrackJobData {
+  trackId: string;
+  priority?: 'low' | 'medium' | 'high';
+  userAction?: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
   requestId?: string;
 }
 
@@ -141,8 +157,10 @@ export type MusicBrainzJobData =
   | MusicBrainzLookupReleaseGroupJobData
   | CheckAlbumEnrichmentJobData
   | CheckArtistEnrichmentJobData
+  | CheckTrackEnrichmentJobData
   | EnrichAlbumJobData
   | EnrichArtistJobData
+  | EnrichTrackJobData
   | SpotifySyncNewReleasesJobData
   | SpotifySyncFeaturedPlaylistsJobData;
 

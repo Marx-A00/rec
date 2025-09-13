@@ -21,8 +21,10 @@ import {
   type MusicBrainzLookupReleaseGroupJobData,
   type CheckAlbumEnrichmentJobData,
   type CheckArtistEnrichmentJobData,
+  type CheckTrackEnrichmentJobData,
   type EnrichAlbumJobData,
   type EnrichArtistJobData,
+  type EnrichTrackJobData,
   type SpotifySyncNewReleasesJobData,
   type SpotifySyncFeaturedPlaylistsJobData,
 } from './jobs';
@@ -111,12 +113,20 @@ export async function processMusicBrainzJob(
         result = await handleCheckArtistEnrichment(job.data as CheckArtistEnrichmentJobData);
         break;
 
+      case JOB_TYPES.CHECK_TRACK_ENRICHMENT:
+        result = await handleCheckTrackEnrichment(job.data as CheckTrackEnrichmentJobData);
+        break;
+
       case JOB_TYPES.ENRICH_ALBUM:
         result = await handleEnrichAlbum(job.data as EnrichAlbumJobData);
         break;
 
       case JOB_TYPES.ENRICH_ARTIST:
         result = await handleEnrichArtist(job.data as EnrichArtistJobData);
+        break;
+
+      case JOB_TYPES.ENRICH_TRACK:
+        result = await handleEnrichTrack(job.data as EnrichTrackJobData);
         break;
 
       case JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES:
@@ -345,7 +355,10 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
   // Get current album from database
   const album = await prisma.album.findUnique({
     where: { id: data.albumId },
-    include: { artists: { include: { artist: true } } }
+    include: { 
+      artists: { include: { artist: true } },
+      tracks: true  // 🎵 Include tracks for enrichment decision
+    }
   });
 
   if (!album) {
@@ -378,10 +391,36 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
     // If we have a MusicBrainz ID, fetch detailed data
     if (album.musicbrainzId) {
       try {
-        const mbData = await musicBrainzService.getReleaseGroup(album.musicbrainzId, ['artists']);
+        const mbData = await musicBrainzService.getReleaseGroup(album.musicbrainzId, ['artists', 'releases']);
         if (mbData) {
           enrichmentResult = await updateAlbumFromMusicBrainz(album, mbData);
           newDataQuality = 'HIGH';
+          
+          // 🎵 FETCH TRACKS for albums that already have MusicBrainz IDs
+          if (mbData.releases && mbData.releases.length > 0) {
+            try {
+              const primaryRelease = mbData.releases[0];
+              console.log(`🎵 Fetching tracks for existing MB album: ${primaryRelease.title}`);
+              
+              const releaseWithTracks = await musicBrainzService.getRelease(primaryRelease.id, [
+                'recordings',      // Get all track data
+                'artist-credits', // Track-level artist info
+                'isrcs',          // Track ISRCs
+                'url-rels'        // Track URLs (YouTube, etc.)
+              ]);
+              
+              if (releaseWithTracks?.media) {
+                const totalTracks = releaseWithTracks.media.reduce((sum: number, medium: any) => 
+                  sum + (medium.tracks?.length || 0), 0);
+                console.log(`✅ Fetched ${totalTracks} tracks for existing album "${album.title}"!`);
+                
+                // 🚀 PROCESS TRACKS for existing albums too!
+                await processMusicBrainzTracksForAlbum(album.id, releaseWithTracks);
+              }
+            } catch (error) {
+              console.warn(`⚠️ Failed to fetch tracks for existing album "${album.title}":`, error);
+            }
+          }
         }
       } catch (mbError) {
         console.warn(`MusicBrainz lookup failed for album ${data.albumId}:`, mbError);
@@ -410,6 +449,33 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
             if (mbData) {
               enrichmentResult = await updateAlbumFromMusicBrainz(album, mbData);
               newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
+              
+              // 🚀 OPTIMIZATION: Fetch tracks for this album efficiently
+              if (mbData.releases && mbData.releases.length > 0) {
+                try {
+                  // Get the first release (main edition) with all tracks
+                  const primaryRelease = mbData.releases[0];
+                  console.log(`🎵 Fetching tracks for release: ${primaryRelease.title}`);
+                  
+                  const releaseWithTracks = await musicBrainzService.getRelease(primaryRelease.id, [
+                    'recordings',      // Get all track data
+                    'artist-credits', // Track-level artist info
+                    'isrcs',          // Track ISRCs
+                    'url-rels'        // Track URLs (YouTube, etc.)
+                  ]);
+                  
+                  if (releaseWithTracks?.media) {
+                    const totalTracks = releaseWithTracks.media.reduce((sum: number, medium: any) => 
+                      sum + (medium.tracks?.length || 0), 0);
+                    console.log(`✅ Fetched ${totalTracks} tracks for "${album.title}" in one API call!`);
+                    
+                    // 🚀 BULK PROCESS TRACKS - Much more efficient!
+                    await processMusicBrainzTracksForAlbum(album.id, releaseWithTracks);
+                  }
+                } catch (error) {
+                  console.warn(`⚠️ Failed to fetch tracks for album "${album.title}":`, error);
+                }
+              }
             }
           }
         }
@@ -1073,7 +1139,8 @@ async function handleSpotifySyncFeaturedPlaylists(data: SpotifySyncFeaturedPlayl
         console.log(`🎧 Processing playlist: "${playlist.name}"`);
         
         // Get playlist tracks (limit to first 50 tracks per playlist)
-        const tracks = await spotifyClient.playlists.getPlaylistItems(
+        const playlistClient = createSpotifyClient();
+        const tracks = await playlistClient.playlists.getPlaylistItems(
           playlist.id,
           (data.country || 'US') as any,
           undefined,
@@ -1094,8 +1161,8 @@ async function handleSpotifySyncFeaturedPlaylists(data: SpotifySyncFeaturedPlayl
             albumsMap.set(album.id, {
               id: album.id,
               name: album.name,
-              artists: album.artists.map(a => a.name).join(', '),
-              artistIds: album.artists.map(a => a.id),
+              artists: album.artists.map((a: any) => a.name).join(', '),
+              artistIds: album.artists.map((a: any) => a.id),
               releaseDate: album.release_date,
               image: album.images[0]?.url || null,
               spotifyUrl: album.external_urls.spotify,
@@ -1168,4 +1235,573 @@ async function handleSpotifySyncFeaturedPlaylists(data: SpotifySyncFeaturedPlayl
       errors: [errorInfo.message]
     };
   }
+}
+
+// ============================================================================
+// Track Enrichment Handlers
+// ============================================================================
+
+/**
+ * Check if a track needs enrichment and queue enrichment job if needed
+ */
+async function handleCheckTrackEnrichment(data: CheckTrackEnrichmentJobData) {
+  console.log(`🔍 Checking if track ${data.trackId} needs enrichment (source: ${data.source})`);
+  
+  // Get track with current enrichment status
+  const track = await (prisma.track as any).findUnique({
+    where: { id: data.trackId },
+    select: {
+      id: true,
+      title: true,
+      musicbrainzId: true,
+      lastEnriched: true
+    }
+  });
+
+  if (!track) {
+    console.error(`❌ Track ${data.trackId} not found`);
+    return {
+      success: false,
+      error: {
+        message: `Track ${data.trackId} not found`,
+        code: 'TRACK_NOT_FOUND',
+        retryable: false
+      },
+      metadata: {
+        duration: 0,
+        timestamp: new Date().toISOString(),
+        requestId: data.requestId
+      }
+    };
+  }
+
+  // For now, enrich if no MusicBrainz ID
+  const needsEnrichment = !track.musicbrainzId;
+
+  if (!needsEnrichment) {
+    console.log(`✅ Track "${track.title}" already enriched`);
+    return {
+      success: true,
+      data: {
+        trackId: track.id,
+        action: 'skipped',
+        reason: 'already_enriched',
+        dataQuality: 'MEDIUM',
+        hadMusicBrainzData: !!track.musicbrainzId
+      },
+      metadata: {
+        duration: 0,
+        timestamp: new Date().toISOString(),
+        requestId: data.requestId
+      }
+    };
+  }
+
+  // Queue enrichment job
+  const { getMusicBrainzQueue } = await import('../queue');
+  const queue = getMusicBrainzQueue();
+
+  const enrichmentJobData: EnrichTrackJobData = {
+    trackId: track.id,
+    priority: data.priority || 'low',
+    userAction: data.source === 'spotify_sync' ? 'browse' : data.source,
+    requestId: data.requestId
+  };
+
+  await queue.addJob(JOB_TYPES.ENRICH_TRACK, enrichmentJobData, {
+    priority: 8, // Lower priority for tracks
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 2000 },
+  });
+
+  console.log(`⚡ Queued track enrichment for "${track.title}"`);
+
+  return {
+    success: true,
+    data: {
+      trackId: track.id,
+      action: 'queued_enrichment',
+      dataQuality: 'LOW',
+      hadMusicBrainzData: !!track.musicbrainzId,
+      enqueuedTimestamp: new Date().toISOString()
+    },
+    metadata: {
+      duration: 0,
+      timestamp: new Date().toISOString(),
+      requestId: data.requestId
+    }
+  };
+}
+
+/**
+ * Enrich a track with MusicBrainz data
+ */
+async function handleEnrichTrack(data: EnrichTrackJobData) {
+  console.log(`🎵 Enriching track ${data.trackId}`);
+  
+  const startTime = Date.now();
+  
+  try {
+    // Get track with related data
+    const track = await prisma.track.findUnique({
+      where: { id: data.trackId },
+      include: {
+        artists: {
+          include: {
+            artist: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!track) {
+      throw new Error(`Track ${data.trackId} not found`);
+    }
+
+    let musicbrainzData = null;
+    let matchFound = false;
+
+    // Try ISRC lookup first (most reliable)
+    if (track.isrc) {
+      try {
+        console.log(`🔍 Looking up track by ISRC: ${track.isrc}`);
+        const recordings = await musicBrainzService.searchRecordings(`isrc:${track.isrc}`, 1);
+
+        if (recordings.length > 0) {
+          const recording = recordings[0];
+          console.log(`✅ Found track by ISRC with score ${recording.score}`);
+          musicbrainzData = recording;
+          matchFound = true;
+        }
+      } catch (error) {
+        console.warn(`⚠️ ISRC lookup failed for ${track.isrc}:`, error);
+      }
+    }
+
+    // If no ISRC match, try title + artist search
+    if (!matchFound) {
+      try {
+        const artistName = track.artists[0]?.artist?.name || 'Unknown Artist';
+        const searchQuery = `recording:"${track.title}" AND artist:"${artistName}"`;
+        
+        console.log(`🔍 Searching MusicBrainz for: ${searchQuery}`);
+        
+        const recordings = await musicBrainzService.searchRecordings(searchQuery, 10);
+
+        if (recordings.length > 0) {
+          // Find best match using title similarity and duration
+          const bestMatch = findBestTrackMatch(track, recordings);
+          if (bestMatch) {
+            console.log(`✅ Found track match with score ${bestMatch.score}`);
+            musicbrainzData = bestMatch;
+            matchFound = true;
+          }
+        }
+      } catch (error) {
+        console.warn(`⚠️ Track search failed:`, error);
+      }
+    }
+
+    // Update track with enrichment results
+    const updateData: any = {
+      lastEnriched: new Date()
+    };
+
+    if (matchFound && musicbrainzData) {
+      updateData.musicbrainzId = musicbrainzData.id;
+      
+      // Fetch detailed recording data with relationships
+      try {
+        const detailedRecording = await musicBrainzService.getRecording(musicbrainzData.id, [
+          'artist-credits',  // Get artist information
+          'releases',        // Get releases this recording appears on
+          'isrcs',          // Get ISRC codes
+          'url-rels',       // Get URLs (Spotify, YouTube, etc.)
+          'tags'            // Get genre/style tags
+        ]);
+        
+        if (detailedRecording) {
+          console.log(`🎵 Enhanced track data fetched for "${track.title}"`);
+          // TODO: Update track with additional metadata from detailedRecording
+          // Could extract: length, disambiguation, additional ISRCs, genres, etc.
+        }
+      } catch (error) {
+        console.warn(`⚠️ Failed to fetch detailed recording data:`, error);
+      }
+    }
+
+    await (prisma.track as any).update({
+      where: { id: track.id },
+      data: updateData
+    });
+
+    const duration = Date.now() - startTime;
+    console.log(`✅ Track enrichment completed in ${duration}ms (${matchFound ? 'enriched' : 'no match'})`);
+
+    return {
+      success: true,
+      data: {
+        trackId: track.id,
+        action: matchFound ? 'enriched' : 'no_match_found',
+        dataQuality: matchFound ? 'MEDIUM' : 'LOW',
+        hadMusicBrainzData: !!musicbrainzData,
+        enrichmentTimestamp: updateData.lastEnriched.toISOString()
+      },
+      metadata: {
+        duration,
+        timestamp: new Date().toISOString(),
+        requestId: data.requestId
+      }
+    };
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`❌ Track enrichment failed:`, error);
+
+    // Update track status to failed
+    await (prisma.track as any).update({
+      where: { id: data.trackId },
+      data: {
+        lastEnriched: new Date()
+      }
+    });
+
+    return {
+      success: false,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error during track enrichment',
+        code: 'ENRICHMENT_ERROR',
+        retryable: true
+      },
+      metadata: {
+        duration,
+        timestamp: new Date().toISOString(),
+        requestId: data.requestId
+      }
+    };
+  }
+}
+
+/**
+ * Find the best matching track from MusicBrainz search results
+ */
+function findBestTrackMatch(track: any, recordings: any[]): any | null {
+  let bestMatch = null;
+  let bestScore = 0;
+
+  for (const recording of recordings) {
+    let score = recording.score || 0;
+
+    // Boost score for duration match (within 5 seconds)
+    if (track.durationMs && recording.length) {
+      const trackDurationSec = Math.round(track.durationMs / 1000);
+      const recordingDurationSec = Math.round(recording.length / 1000);
+      const durationDiff = Math.abs(trackDurationSec - recordingDurationSec);
+      
+      if (durationDiff <= 5) {
+        score += 10; // Boost for close duration match
+      }
+    }
+
+    // Boost score for exact title match
+    if (recording.title && track.title) {
+      const titleSimilarity = calculateStringSimilarity(
+        track.title.toLowerCase(),
+        recording.title.toLowerCase()
+      );
+      score += titleSimilarity * 10;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = recording;
+    }
+  }
+
+  // Only return matches with reasonable confidence
+  return bestScore >= 70 ? bestMatch : null;
+}
+
+// ============================================================================
+// Bulk Track Processing from MusicBrainz
+// ============================================================================
+
+/**
+ * Process all tracks for an album from MusicBrainz release data
+ * This is MUCH more efficient than individual track enrichment jobs
+ */
+async function processMusicBrainzTracksForAlbum(albumId: string, mbRelease: any) {
+  console.log(`🎵 Processing tracks for album ${albumId} from MusicBrainz release`);
+  
+  try {
+    // Get existing tracks for this album from our database
+    const existingTracks = await prisma.track.findMany({
+      where: { albumId },
+      select: {
+        id: true,
+        title: true,
+        trackNumber: true,
+        discNumber: true,
+        durationMs: true,
+        musicbrainzId: true
+      }
+    });
+
+    let tracksProcessed = 0;
+    let tracksMatched = 0;
+    let tracksUpdated = 0;
+
+    // Process each disc/medium
+    for (const medium of mbRelease.media || []) {
+      const discNumber = medium.position || 1;
+      
+      // Process each track on this disc
+      for (const mbTrack of medium.tracks || []) {
+        try {
+          const trackNumber = mbTrack.position;
+          const mbRecording = mbTrack.recording;
+          
+          if (!mbRecording) continue;
+          
+          // Find matching existing track by position and title similarity
+          const matchingTrack = findMatchingTrack(existingTracks, {
+            trackNumber,
+            discNumber,
+            title: mbRecording.title,
+            durationMs: mbRecording.length ? mbRecording.length * 1000 : null
+          });
+
+          if (matchingTrack) {
+            // Update existing track with MusicBrainz data
+            const updateData: any = {
+              lastEnriched: new Date()
+            };
+
+            // Only update if we don't already have MusicBrainz ID
+            if (!matchingTrack.musicbrainzId) {
+              updateData.musicbrainzId = mbRecording.id;
+              
+              // Extract YouTube URL from MusicBrainz url-rels
+              const youtubeUrl = extractYouTubeUrl(mbRecording);
+              if (youtubeUrl) {
+                updateData.youtubeUrl = youtubeUrl;
+                console.log(`🎬 Found YouTube URL for "${matchingTrack.title}": ${youtubeUrl}`);
+              }
+              
+              console.log(`🔗 Linking track "${matchingTrack.title}" to MusicBrainz ID: ${mbRecording.id}`);
+              tracksMatched++;
+            }
+
+            // Update track
+            await (prisma.track as any).update({
+              where: { id: matchingTrack.id },
+              data: updateData
+            });
+
+            tracksUpdated++;
+          } else {
+            // Create missing track from MusicBrainz data
+            try {
+              console.log(`🆕 Creating new track: "${mbRecording.title}" (${trackNumber})`);
+              
+              // Extract YouTube URL from MusicBrainz url-rels
+              const youtubeUrl = extractYouTubeUrl(mbRecording);
+              
+              const newTrack = await (prisma.track as any).create({
+                data: {
+                  albumId,
+                  title: mbRecording.title,
+                  trackNumber,
+                  discNumber,
+                  durationMs: mbRecording.length ? mbRecording.length * 1000 : null,
+                  explicit: false, // MusicBrainz doesn't provide explicit flag
+                  previewUrl: null, // No preview URL from MusicBrainz
+                  musicbrainzId: mbRecording.id,
+                  youtubeUrl,
+                  dataQuality: 'HIGH', // Coming from MusicBrainz = high quality
+                  enrichmentStatus: 'COMPLETED',
+                  lastEnriched: new Date()
+                }
+              });
+              
+              // Create track-artist relationships
+              if (mbRecording['artist-credit']) {
+                for (let artistIndex = 0; artistIndex < mbRecording['artist-credit'].length; artistIndex++) {
+                  const mbArtist = mbRecording['artist-credit'][artistIndex];
+                  const artistName = mbArtist.name || mbArtist.artist?.name;
+                  
+                  if (artistName) {
+                    // Find or create artist in our database
+                    let artist = await prisma.artist.findFirst({
+                      where: {
+                        OR: [
+                          { musicbrainzId: mbArtist.artist?.id },
+                          { name: { equals: artistName, mode: 'insensitive' } }
+                        ]
+                      }
+                    });
+                    
+                    if (!artist) {
+                      // Create artist if not found
+                      artist = await prisma.artist.create({
+                        data: {
+                          name: artistName,
+                          musicbrainzId: mbArtist.artist?.id || null,
+                          dataQuality: 'MEDIUM',
+                          enrichmentStatus: 'PENDING',
+                          lastEnriched: null
+                        }
+                      });
+                      console.log(`🎤 Created new artist: "${artistName}"`);
+                    }
+                    
+                    // Create track-artist relationship
+                    await prisma.trackArtist.create({
+                      data: {
+                        trackId: newTrack.id,
+                        artistId: artist.id,
+                        role: artistIndex === 0 ? 'primary' : 'featured',
+                        position: artistIndex
+                      }
+                    });
+                  }
+                }
+              }
+              
+              tracksMatched++; // Count as matched since we created it
+              tracksUpdated++; // Count as updated since it's new
+              
+              if (youtubeUrl) {
+                console.log(`🎬 Added YouTube URL for new track "${mbRecording.title}": ${youtubeUrl}`);
+              }
+              
+            } catch (trackError) {
+              console.error(`❌ Failed to create track "${mbRecording.title}":`, trackError);
+            }
+          }
+
+          tracksProcessed++;
+          
+        } catch (error) {
+          console.error(`❌ Failed to process track ${mbTrack.position}:`, error);
+        }
+      }
+    }
+
+    console.log(`✅ Bulk track processing complete:`);
+    console.log(`   - ${tracksProcessed} tracks processed`);
+    console.log(`   - ${tracksMatched} tracks matched to MusicBrainz`);
+    console.log(`   - ${tracksUpdated} tracks updated`);
+
+  } catch (error) {
+    console.error(`❌ Bulk track processing failed for album ${albumId}:`, error);
+  }
+}
+
+/**
+ * Normalize track title for better matching between Spotify and MusicBrainz
+ * Handles featuring artist differences: "Song (feat. Artist)" vs "Song"
+ */
+function normalizeTrackTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/\s*\(feat\.?\s+[^)]+\)/gi, '') // Remove (feat. Artist)
+    .replace(/\s*\(featuring\s+[^)]+\)/gi, '') // Remove (featuring Artist)  
+    .replace(/\s*feat\.?\s+[^,]+/gi, '') // Remove feat. Artist
+    .replace(/\s*featuring\s+[^,]+/gi, '') // Remove featuring Artist
+    .replace(/\s*with\s+[^,]+/gi, '') // Remove with Artist
+    .replace(/[^\w\s]/g, '') // Remove punctuation
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+}
+
+/**
+ * Find existing track that matches MusicBrainz track data
+ * Enhanced to handle featuring artist differences between Spotify and MusicBrainz
+ */
+function findMatchingTrack(existingTracks: any[], mbTrackData: any): any | null {
+  // First try exact position match (most reliable)
+  let match = existingTracks.find(track => 
+    track.trackNumber === mbTrackData.trackNumber && 
+    track.discNumber === mbTrackData.discNumber
+  );
+
+  if (match) {
+    console.log(`🎯 Position match: Track ${match.trackNumber} "${match.title}" → "${mbTrackData.title}"`);
+    return match;
+  }
+
+  // Fallback to normalized title similarity
+  const normalizedMBTitle = normalizeTrackTitle(mbTrackData.title);
+  let bestMatch = null;
+  let bestScore = 0;
+
+  for (const track of existingTracks) {
+    const normalizedSpotifyTitle = normalizeTrackTitle(track.title);
+    
+    // Try exact normalized match first
+    if (normalizedSpotifyTitle === normalizedMBTitle) {
+      console.log(`🎯 Exact normalized match: "${track.title}" → "${mbTrackData.title}"`);
+      return track;
+    }
+    
+    // Calculate similarity with normalized titles
+    const titleSimilarity = calculateStringSimilarity(
+      normalizedSpotifyTitle,
+      normalizedMBTitle
+    );
+    
+    // Boost score for duration match (within 5 seconds)
+    let score = titleSimilarity;
+    if (track.durationMs && mbTrackData.durationMs) {
+      const durationDiff = Math.abs(track.durationMs - mbTrackData.durationMs) / 1000;
+      if (durationDiff <= 5) {
+        score += 0.2; // Boost for close duration match
+      }
+    }
+
+    if (score > bestScore && score > 0.7) {
+      bestScore = score;
+      bestMatch = track;
+    }
+  }
+
+  return bestMatch;
+}
+
+/**
+ * Extract YouTube URL from MusicBrainz recording URL relationships
+ */
+function extractYouTubeUrl(mbRecording: any): string | null {
+  if (!mbRecording.relations) return null;
+  
+  // Look for YouTube URL relationships
+  for (const relation of mbRecording.relations) {
+    if (relation.type === 'youtube' && relation.url) {
+      return relation.url.resource;
+    }
+    
+    // Also check for streaming music relationships that might be YouTube
+    if (relation.type === 'streaming music' && relation.url) {
+      const url = relation.url.resource;
+      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        return url;
+      }
+    }
+    
+    // Check for free streaming that might be YouTube
+    if (relation.type === 'free streaming' && relation.url) {
+      const url = relation.url.resource;
+      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        return url;
+      }
+    }
+  }
+  
+  return null;
 }

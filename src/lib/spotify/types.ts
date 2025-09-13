@@ -17,6 +17,7 @@ export interface SpotifyAlbumData {
   spotifyUrl: string;            // Spotify web URL
   type: string;                  // "album", "single", "compilation"
   totalTracks: number;           // Track count
+  tracks?: SpotifyTrackData[];   // Optional: tracks (fetched separately if needed)
 }
 
 export interface SpotifyPlaylistData {
@@ -113,6 +114,7 @@ export interface TrackCreationData {
   previewUrl: string | null;
   spotifyId?: string;
   spotifyUrl?: string;
+  youtubeUrl?: string;
   // Album relationship (required)
   albumId: string;
   // Artist relationships

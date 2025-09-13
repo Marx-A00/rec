@@ -6,7 +6,8 @@
 
 import { prisma } from '../prisma';
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
-import type { CheckAlbumEnrichmentJobData, CheckArtistEnrichmentJobData } from '../queue/jobs';
+import type { CheckAlbumEnrichmentJobData, CheckArtistEnrichmentJobData, CheckTrackEnrichmentJobData } from '../queue/jobs';
+import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import type {
   SpotifyAlbumData,
   SpotifyCacheData,
@@ -126,16 +127,26 @@ export function inferSecondaryTypes(spotifyAlbum: SpotifyAlbumData): string[] {
 }
 
 /**
- * Extract individual artist names from Spotify's joined string
- * "Artist 1, Artist 2" → ["Artist 1", "Artist 2"]
+ * Extract individual artist names from Spotify data
+ * Handles both string format "Artist 1, Artist 2" and object array format from API
  */
-export function parseArtistNames(artistsString: string): string[] {
-  if (!artistsString) return [];
+export function parseArtistNames(artists: string | Array<{ name: string }>): string[] {
+  if (!artists) return [];
   
-  return artistsString
-    .split(',')
-    .map(name => name.trim())
-    .filter(name => name.length > 0);
+  // Handle array of artist objects (from Spotify API)
+  if (Array.isArray(artists)) {
+    return artists.map(artist => artist.name).filter(name => name && name.length > 0);
+  }
+  
+  // Handle comma-separated string format
+  if (typeof artists === 'string') {
+    return artists
+      .split(',')
+      .map(name => name.trim())
+      .filter(name => name.length > 0);
+  }
+  
+  return [];
 }
 
 /**
@@ -239,7 +250,7 @@ export async function findOrCreateArtist(artistData: ArtistCreationData): Promis
 export async function processSpotifyAlbum(
   spotifyAlbum: SpotifyAlbumData,
   source: string = 'spotify_sync'
-): Promise<{ albumId: string; artistIds: string[] }> {
+): Promise<{ albumId: string; artistIds: string[]; tracksCreated?: number }> {
   console.log(`🎵 Processing Spotify album: "${spotifyAlbum.name}"`);
 
   // 1. Transform album data
@@ -258,12 +269,15 @@ export async function processSpotifyAlbum(
       dataQuality: albumData.dataQuality,
       enrichmentStatus: albumData.enrichmentStatus,
       lastEnriched: albumData.lastEnriched,
-    }
+    } as any
   });
 
   console.log(`✅ Created album: "${album.title}" (${album.id})`);
 
-  // 3. Process artists
+  // 3. Tracks will be created later by MusicBrainz enrichment (not from Spotify)
+  console.log(`🎵 Tracks will be created by MusicBrainz enrichment, not from Spotify`);
+
+  // 4. Process artists
   const artistNames = parseArtistNames(spotifyAlbum.artists);
   const artistIds: string[] = [];
 
@@ -295,7 +309,7 @@ export async function processSpotifyAlbum(
   // Queue album enrichment
   const albumJobData: CheckAlbumEnrichmentJobData = {
     albumId: album.id,
-    source: source,
+    source: 'spotify_sync', // Automated Spotify background sync
     priority: 'medium', // Spotify sync is medium priority
     requestId: `spotify_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   };
@@ -310,7 +324,7 @@ export async function processSpotifyAlbum(
   for (const artistId of artistIds) {
     const artistJobData: CheckArtistEnrichmentJobData = {
       artistId: artistId,
-      source: source,
+      source: 'spotify_sync', // Automated Spotify background sync
       priority: 'low', // Artist enrichment is lower priority than albums
       requestId: `spotify_artist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
@@ -324,7 +338,14 @@ export async function processSpotifyAlbum(
 
   console.log(`⚡ Queued enrichment jobs for album and ${artistIds.length} artists`);
 
-  return { albumId: album.id, artistIds };
+  // 5. No track processing - MusicBrainz enrichment will handle tracks
+  console.log(`📋 Album "${album.title}" ready for MusicBrainz enrichment to add tracks`);
+
+  return { 
+    albumId: album.id, 
+    artistIds,
+    tracksCreated: 0  // No tracks created from Spotify
+  };
 }
 
 /**
@@ -413,7 +434,7 @@ export async function processCachedSpotifyData(cacheKey: string = 'spotify_trend
     throw new Error(`No cached Spotify data found for key: ${cacheKey}`);
   }
 
-  const spotifyData = cached.data as SpotifyCacheData;
+  const spotifyData = cached.data as unknown as SpotifyCacheData;
   
   if (!spotifyData.newReleases || !Array.isArray(spotifyData.newReleases)) {
     throw new Error('Invalid cached Spotify data structure');
@@ -422,6 +443,58 @@ export async function processCachedSpotifyData(cacheKey: string = 'spotify_trend
   console.log(`📊 Found ${spotifyData.newReleases.length} new releases in cache`);
 
   return await processSpotifyAlbums(spotifyData.newReleases, 'spotify_cache');
+}
+
+// ============================================================================
+// Spotify Track Fetching
+// ============================================================================
+
+/**
+ * Fetch tracks for a Spotify album using the Spotify API
+ */
+async function fetchSpotifyAlbumTracks(albumId: string): Promise<SpotifyTrackData[]> {
+  try {
+    // Create Spotify client with client credentials
+    const spotifyClient = SpotifyApi.withClientCredentials(
+      process.env.SPOTIFY_CLIENT_ID!,
+      process.env.SPOTIFY_CLIENT_SECRET!
+    );
+
+    // Fetch album tracks (up to 50 tracks per request)
+    const albumTracks = await spotifyClient.albums.tracks(albumId, 'US', 50);
+    
+    // Transform to our SpotifyTrackData format
+    const tracks: SpotifyTrackData[] = albumTracks.items.map(track => ({
+      id: track.id,
+      name: track.name,
+      track_number: track.track_number,
+      disc_number: track.disc_number,
+      duration_ms: track.duration_ms,
+      explicit: track.explicit,
+      preview_url: track.preview_url,
+      artists: track.artists.map(artist => ({
+        id: artist.id,
+        name: artist.name,
+        type: artist.type,
+        uri: artist.uri,
+        href: artist.href,
+        external_urls: artist.external_urls
+      })),
+      external_urls: track.external_urls,
+      href: track.href,
+      type: track.type,
+      uri: track.uri,
+      is_local: track.is_local,
+      is_playable: track.is_playable
+    }));
+
+    console.log(`🎵 Fetched ${tracks.length} tracks for album ${albumId}`);
+    return tracks;
+
+  } catch (error) {
+    console.error(`❌ Failed to fetch tracks for album ${albumId}:`, error);
+    return []; // Return empty array on failure
+  }
 }
 
 // ============================================================================
@@ -452,6 +525,7 @@ export function transformSpotifyTrack(
     previewUrl: spotifyTrack.preview_url,
     spotifyId: spotifyTrack.id,
     spotifyUrl: spotifyTrack.external_urls.spotify,
+    youtubeUrl: null, // Will be populated during MusicBrainz enrichment
     albumId: albumId,
     artists: trackArtists,
     // Start with low quality, will be enriched later
@@ -476,15 +550,12 @@ export async function createTrackRecord(trackData: TrackCreationData): Promise<s
       previewUrl: trackData.previewUrl,
       spotifyId: trackData.spotifyId,
       spotifyUrl: trackData.spotifyUrl,
+      youtubeUrl: trackData.youtubeUrl,
       albumId: trackData.albumId,
       dataQuality: trackData.dataQuality,
       enrichmentStatus: trackData.enrichmentStatus,
-      lastEnriched: trackData.lastEnriched,
-      // Album relationship is handled by albumId foreign key
-      album: {
-        connect: { id: trackData.albumId }
-      }
-    }
+      lastEnriched: trackData.lastEnriched
+    } as any
   });
 
   // Create track-artist relationships
@@ -528,7 +599,22 @@ export async function processSpotifyTracks(
       const trackId = await createTrackRecord(trackData);
       trackIds.push(trackId);
       
-      console.log(`✅ Created track: "${trackData.title}" (${trackData.trackNumber})`);
+      // Queue track enrichment job
+      const queue = getMusicBrainzQueue();
+      const trackJobData: CheckTrackEnrichmentJobData = {
+        trackId: trackId,
+        source: 'spotify_sync',
+        priority: 'low', // Tracks are lower priority than albums
+        requestId: `spotify_track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      };
+
+      await queue.addJob(JOB_TYPES.CHECK_TRACK_ENRICHMENT, trackJobData, {
+        priority: 9, // Very low priority for tracks
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 2000 },
+      });
+      
+      console.log(`✅ Created track: "${trackData.title}" (${trackData.trackNumber}) + queued enrichment`);
       
     } catch (error) {
       const errorMsg = `Failed to create track "${spotifyTrack.name}": ${error instanceof Error ? error.message : 'Unknown error'}`;

@@ -4,7 +4,7 @@
 import { PrismaClient } from '@prisma/client';
 import { ActivityTracker, UserActivityContext } from './activity-tracker';
 
-export type JobSource = 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual';
+export type JobSource = 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
 export type JobPriority = 'low' | 'medium' | 'high';
 
 export interface PriorityBoost {
@@ -83,6 +83,7 @@ export class QueuePriorityManager {
       'recommendation_create': 7, // High - user is actively engaging/sharing  
       'search': 5,               // Medium - user is exploring
       'browse': 3,               // Medium-low - passive discovery
+      'spotify_sync': 2,         // Low - automated background sync
       'manual': 2,               // Low - background/admin tasks
     };
 
@@ -265,6 +266,7 @@ export function mapSourceToUserAction(source: JobSource): string {
     'recommendation_create': 'Creating recommendation',
     'search': 'Searching for music',
     'browse': 'Browsing music',
+    'spotify_sync': 'Syncing from Spotify',
     'manual': 'Manual operation',
   };
 

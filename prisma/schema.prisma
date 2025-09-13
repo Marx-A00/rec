@@ -291,9 +291,10 @@ model Track {
   explicit         Boolean   @default(false)
   previewUrl       String?   @map("preview_url") @db.Text
   
-  // Spotify integration fields
+  // External platform integration fields
   spotifyId        String?   @unique @map("spotify_id") @db.VarChar(50)
   spotifyUrl       String?   @map("spotify_url") @db.Text
+  youtubeUrl       String?   @map("youtube_url") @db.Text
   
   // Enrichment tracking fields
   dataQuality      String    @default("LOW") @map("data_quality") @db.VarChar(10)
