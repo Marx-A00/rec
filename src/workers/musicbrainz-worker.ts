@@ -7,6 +7,8 @@
 
 import { getMusicBrainzQueue } from '@/lib/queue';
 import { processMusicBrainzJob } from '@/lib/queue/musicbrainz-processor';
+import { startQueueActivityMonitor } from '@/lib/activity/queue-activity-monitor';
+import { PrismaClient } from '@prisma/client';
 
 class MusicBrainzWorkerService {
   private worker: any;
@@ -14,12 +16,20 @@ class MusicBrainzWorkerService {
   private restartAttempts = 0;
   private readonly maxRestartAttempts = 5;
   private readonly restartDelay = 2000; // 2 seconds
+  private prisma: PrismaClient;
 
   async start() {
     console.log('🎵 Worker started | Rate: 1/sec | Dashboard: http://localhost:3001');
 
+    // Initialize Prisma
+    this.prisma = new PrismaClient();
+
     await this.createWorker();
     this.setupGracefulShutdown();
+    
+    // Start queue activity monitor
+    startQueueActivityMonitor(this.prisma, 15000); // Check every 15 seconds
+    console.log('🔄 Queue activity monitor started');
     
     // Keep process alive
     this.keepAlive();

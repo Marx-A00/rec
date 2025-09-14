@@ -186,8 +186,47 @@ export class QueuePriorityManager {
   async shouldPauseBackgroundJobs(): Promise<boolean> {
     const activeUsers = await ActivityTracker.getActiveUserCount(this.prisma);
     
-    // Pause background work if many users are active
-    return activeUsers > 8;
+    // Always pause if many users are active (high load scenario)
+    if (activeUsers > 8) {
+      return true;
+    }
+    
+    // Also pause during ANY recent user activity that could involve MusicBrainz calls
+    const recentActivity = await this.hasRecentUserActivity();
+    
+    return recentActivity;
+  }
+
+  /**
+   * Check if there has been recent user activity that should pause background jobs
+   */
+  private async hasRecentUserActivity(): Promise<boolean> {
+    const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
+    
+    // Check for recent user actions that might trigger MusicBrainz enrichment
+    const recentActions = await this.prisma.userActivity.count({
+      where: {
+        timestamp: { gte: threeMinutesAgo },
+        OR: [
+          // High-priority actions that definitely trigger enrichment
+          { operation: { contains: 'search' } },           // Search queries
+          { operation: { contains: 'collection' } },       // Collection actions
+          { operation: { contains: 'recommendation' } },   // Recommendations
+          { operation: { contains: 'view_album' } },       // Album views
+          { operation: { contains: 'view_artist' } },      // Artist views
+          
+          // Browse actions that might trigger enrichment
+          { operation: { contains: 'browse_trending' } },  // Trending browsing
+          { operation: { contains: 'browse_' } },          // General browsing
+          
+          // Any GraphQL mutation (creates, updates)
+          { operationType: 'mutation' },
+        ]
+      }
+    });
+    
+    // Pause background jobs if there's been ANY user activity in last 3 minutes
+    return recentActions > 0;
   }
 
   /**
