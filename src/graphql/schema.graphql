@@ -275,6 +275,38 @@ input ArtistAlbumInput {
   role: String # "PRIMARY", "FEATURED", "PRODUCER", etc.
 }
 
+input TrackInput {
+  title: String!
+  albumId: UUID!
+  trackNumber: Int!
+  discNumber: Int = 1
+  durationMs: Int
+  explicit: Boolean = false
+  previewUrl: String
+  isrc: String
+  musicbrainzId: UUID
+  
+  # Artist associations
+  artists: [ArtistTrackInput!]!
+}
+
+input ArtistTrackInput {
+  artistId: UUID # Use existing artist
+  artistName: String # Create new artist
+  role: String # "PRIMARY", "FEATURED", "PRODUCER", etc.
+}
+
+input UpdateTrackInput {
+  title: String
+  trackNumber: Int
+  discNumber: Int
+  durationMs: Int
+  explicit: Boolean
+  previewUrl: String
+  isrc: String
+  musicbrainzId: UUID
+}
+
 # =============================================
 # ENUMS
 # =============================================
@@ -335,6 +367,8 @@ type Query {
   artist(id: UUID!): Artist
   album(id: UUID!): Album
   track(id: UUID!): Track
+  albumTracks(albumId: UUID!): [Track!]!
+  searchTracks(query: String!, limit: Int = 20): [Track!]!
   user(id: String!): User
   collection(id: String!): Collection
   recommendation(id: String!): Recommendation
@@ -359,6 +393,11 @@ type Mutation {
   # Album management
   addAlbum(input: AlbumInput!): Album!
   updateAlbum(id: UUID!, input: AlbumInput!): Album!
+  
+  # Track management
+  createTrack(input: TrackInput!): Track!
+  updateTrack(id: UUID!, input: UpdateTrackInput!): Track!
+  deleteTrack(id: UUID!): Boolean!
   
   # Collection management
   createCollection(name: String!, description: String, isPublic: Boolean = false): Collection!

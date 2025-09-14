@@ -60,6 +60,39 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  albumTracks: async (_, { albumId }, { prisma }) => {
+    try {
+      const tracks = await prisma.track.findMany({
+        where: { albumId },
+        orderBy: [
+          { discNumber: 'asc' },
+          { trackNumber: 'asc' }
+        ],
+      });
+      return tracks;
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch album tracks: ${error}`);
+    }
+  },
+
+  searchTracks: async (_, { query, limit = 20 }, { prisma }) => {
+    try {
+      const tracks = await prisma.track.findMany({
+        where: {
+          title: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+        take: limit,
+        orderBy: { title: 'asc' },
+      });
+      return tracks;
+    } catch (error) {
+      throw new GraphQLError(`Failed to search tracks: ${error}`);
+    }
+  },
+
   user: async (_, { id }, { prisma }) => {
     try {
       const user = await prisma.user.findUnique({

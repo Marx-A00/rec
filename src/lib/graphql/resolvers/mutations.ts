@@ -4,10 +4,213 @@
 import { MutationResolvers } from '@/generated/graphql';
 import { GraphQLError } from 'graphql';
 import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
-import type { CheckAlbumEnrichmentJobData, CheckArtistEnrichmentJobData } from '@/lib/queue/jobs';
+import type { CheckAlbumEnrichmentJobData, CheckArtistEnrichmentJobData, CheckTrackEnrichmentJobData } from '@/lib/queue/jobs';
 
 export const mutationResolvers: MutationResolvers = {
   // Album management
+  // Track management mutations
+  createTrack: async (_, { input }, { user, prisma, activityTracker, priorityManager, sessionId, requestId }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' }
+      });
+    }
+
+    try {
+      // Validate that the album exists
+      const album = await prisma.album.findUnique({
+        where: { id: input.albumId }
+      });
+
+      if (!album) {
+        throw new GraphQLError('Album not found', {
+          extensions: { code: 'NOT_FOUND' }
+        });
+      }
+
+      // Create the track
+      const track = await prisma.track.create({
+        data: {
+          title: input.title,
+          albumId: input.albumId,
+          trackNumber: input.trackNumber,
+          discNumber: input.discNumber || 1,
+          durationMs: input.durationMs,
+          explicit: input.explicit || false,
+          previewUrl: input.previewUrl,
+          isrc: input.isrc,
+          musicbrainzId: input.musicbrainzId,
+          // Set initial enrichment data
+          dataQuality: input.musicbrainzId ? 'MEDIUM' : 'LOW',
+          enrichmentStatus: input.musicbrainzId ? 'COMPLETED' : 'PENDING',
+          lastEnriched: input.musicbrainzId ? new Date() : null,
+        }
+      });
+
+      // Handle artist associations
+      for (const artistInput of input.artists) {
+        let artistId = artistInput.artistId;
+
+        // If no artistId provided, try to find existing artist by name first
+        if (!artistId && artistInput.artistName) {
+          const existingArtist = await prisma.artist.findFirst({
+            where: {
+              name: {
+                equals: artistInput.artistName,
+                mode: 'insensitive'
+              }
+            }
+          });
+
+          if (existingArtist) {
+            artistId = existingArtist.id;
+            console.log(`🔄 Reusing existing artist: "${existingArtist.name}" (${existingArtist.id})`);
+          } else {
+            // Create new artist
+            const newArtist = await prisma.artist.create({
+              data: {
+                name: artistInput.artistName,
+                dataQuality: 'LOW',
+                enrichmentStatus: 'PENDING',
+              }
+            });
+            artistId = newArtist.id;
+            console.log(`✨ Created new artist: "${newArtist.name}" (${newArtist.id})`);
+          }
+        }
+
+        if (artistId) {
+          await prisma.trackArtist.create({
+            data: {
+              trackId: track.id,
+              artistId: artistId,
+              role: artistInput.role || 'primary',
+            }
+          });
+        }
+      }
+
+      // Queue enrichment check for the new track
+      try {
+        const queue = getMusicBrainzQueue();
+        
+        // Track collection action for priority management
+        await activityTracker.trackCollectionAction('add_track', track.id);
+        
+        // Get smart job options based on user activity
+        const jobOptions = await priorityManager.getJobOptions(
+          'manual',
+          track.id,
+          'track',
+          user?.id,
+          sessionId
+        );
+        
+        const trackCheckData: CheckTrackEnrichmentJobData = {
+          trackId: track.id,
+          source: 'manual',
+          priority: 'high',
+          requestId: requestId,
+        };
+        
+        await queue.addJob(JOB_TYPES.CHECK_TRACK_ENRICHMENT, trackCheckData, jobOptions);
+        
+      } catch (queueError) {
+        console.warn('Failed to queue enrichment check for new track:', queueError);
+      }
+
+      return track;
+
+    } catch (error) {
+      console.error('Error creating track:', error);
+      throw new GraphQLError('Failed to create track', {
+        extensions: { code: 'INTERNAL_ERROR' }
+      });
+    }
+  },
+
+  updateTrack: async (_, { id, input }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' }
+      });
+    }
+
+    try {
+      // Check that track exists
+      const existingTrack = await prisma.track.findUnique({
+        where: { id }
+      });
+
+      if (!existingTrack) {
+        throw new GraphQLError('Track not found', {
+          extensions: { code: 'NOT_FOUND' }
+        });
+      }
+
+      // Update the track
+      const updatedTrack = await prisma.track.update({
+        where: { id },
+        data: {
+          title: input.title,
+          trackNumber: input.trackNumber,
+          discNumber: input.discNumber,
+          durationMs: input.durationMs,
+          explicit: input.explicit,
+          previewUrl: input.previewUrl,
+          isrc: input.isrc,
+          musicbrainzId: input.musicbrainzId,
+          // Update enrichment status if MusicBrainz ID was added
+          dataQuality: input.musicbrainzId ? 'MEDIUM' : existingTrack.dataQuality,
+          enrichmentStatus: input.musicbrainzId ? 'COMPLETED' : existingTrack.enrichmentStatus,
+          lastEnriched: input.musicbrainzId ? new Date() : existingTrack.lastEnriched,
+        }
+      });
+
+      return updatedTrack;
+
+    } catch (error) {
+      console.error('Error updating track:', error);
+      throw new GraphQLError('Failed to update track', {
+        extensions: { code: 'INTERNAL_ERROR' }
+      });
+    }
+  },
+
+  deleteTrack: async (_, { id }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' }
+      });
+    }
+
+    try {
+      // Check that track exists
+      const existingTrack = await prisma.track.findUnique({
+        where: { id }
+      });
+
+      if (!existingTrack) {
+        throw new GraphQLError('Track not found', {
+          extensions: { code: 'NOT_FOUND' }
+        });
+      }
+
+      // Delete the track (CASCADE will handle TrackArtist relationships)
+      await prisma.track.delete({
+        where: { id }
+      });
+
+      return true;
+
+    } catch (error) {
+      console.error('Error deleting track:', error);
+      throw new GraphQLError('Failed to delete track', {
+        extensions: { code: 'INTERNAL_ERROR' }
+      });
+    }
+  },
+
   addAlbum: async (_, { input }, { user, prisma, activityTracker, priorityManager, sessionId, requestId }) => {
     if (!user) {
       throw new GraphQLError('Authentication required', {

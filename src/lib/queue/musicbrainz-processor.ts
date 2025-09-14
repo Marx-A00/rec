@@ -28,6 +28,7 @@ import {
   type SpotifySyncNewReleasesJobData,
   type SpotifySyncFeaturedPlaylistsJobData,
 } from './jobs';
+import { MusicBrainzRecordingDetail, MusicBrainzRelation } from '../musicbrainz/schemas';
 
 /**
  * Process MusicBrainz jobs and make actual API calls
@@ -1586,6 +1587,13 @@ async function processMusicBrainzTracksForAlbum(albumId: string, mbRelease: any)
             if (!matchingTrack.musicbrainzId) {
               updateData.musicbrainzId = mbRecording.id;
               
+              // Extract ISRC from MusicBrainz data
+              const isrc = mbRecording.isrcs && mbRecording.isrcs.length > 0 ? mbRecording.isrcs[0] : null;
+              if (isrc) {
+                updateData.isrc = isrc;
+                console.log(`🏷️ Found ISRC for "${matchingTrack.title}": ${isrc}`);
+              }
+              
               // Extract YouTube URL from MusicBrainz url-rels
               const youtubeUrl = extractYouTubeUrl(mbRecording);
               if (youtubeUrl) {
@@ -1609,8 +1617,18 @@ async function processMusicBrainzTracksForAlbum(albumId: string, mbRelease: any)
             try {
               console.log(`🆕 Creating new track: "${mbRecording.title}" (${trackNumber})`);
               
+              // Extract ISRC from MusicBrainz data
+              const isrc = mbRecording.isrcs && mbRecording.isrcs.length > 0 ? mbRecording.isrcs[0] : null;
+              
               // Extract YouTube URL from MusicBrainz url-rels
               const youtubeUrl = extractYouTubeUrl(mbRecording);
+              
+              if (isrc) {
+                console.log(`🏷️ Found ISRC for "${mbRecording.title}": ${isrc}`);
+              }
+              if (youtubeUrl) {
+                console.log(`🎬 Found YouTube URL for "${mbRecording.title}": ${youtubeUrl}`);
+              }
               
               const newTrack = await (prisma.track as any).create({
                 data: {
@@ -1622,6 +1640,7 @@ async function processMusicBrainzTracksForAlbum(albumId: string, mbRelease: any)
                   explicit: false, // MusicBrainz doesn't provide explicit flag
                   previewUrl: null, // No preview URL from MusicBrainz
                   musicbrainzId: mbRecording.id,
+                  isrc, // 🏷️ NEW: Store ISRC
                   youtubeUrl,
                   dataQuality: 'HIGH', // Coming from MusicBrainz = high quality
                   enrichmentStatus: 'COMPLETED',
@@ -1777,28 +1796,46 @@ function findMatchingTrack(existingTracks: any[], mbTrackData: any): any | null 
 /**
  * Extract YouTube URL from MusicBrainz recording URL relationships
  */
-function extractYouTubeUrl(mbRecording: any): string | null {
-  if (!mbRecording.relations) return null;
+function extractYouTubeUrl(mbRecording: MusicBrainzRecordingDetail): string | null {
+  // Check both 'relations' and 'url-rels' fields (MusicBrainz API can use either)
+  const relations = mbRecording.relations || mbRecording['url-rels'] || [];
+  
+  if (relations.length === 0) return null;
   
   // Look for YouTube URL relationships
-  for (const relation of mbRecording.relations) {
-    if (relation.type === 'youtube' && relation.url) {
-      return relation.url.resource;
+  for (const relation of relations) {
+    const relationType = relation.type || relation['target-type'];
+    const relationUrl = relation.url?.resource || relation.url || relation.target;
+    
+    if (!relationUrl) continue;
+    
+    // Direct YouTube relationship
+    if (relationType === 'youtube' && relationUrl) {
+      console.log(`🎬 Found direct YouTube relation: ${relationUrl}`);
+      return relationUrl;
     }
     
-    // Also check for streaming music relationships that might be YouTube
-    if (relation.type === 'streaming music' && relation.url) {
-      const url = relation.url.resource;
-      if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        return url;
+    // Streaming music relationships that might be YouTube
+    if (relationType === 'streaming music' && relationUrl) {
+      if (relationUrl.includes('youtube.com') || relationUrl.includes('youtu.be')) {
+        console.log(`🎬 Found YouTube in streaming music: ${relationUrl}`);
+        return relationUrl;
       }
     }
     
-    // Check for free streaming that might be YouTube
-    if (relation.type === 'free streaming' && relation.url) {
-      const url = relation.url.resource;
-      if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        return url;
+    // Free streaming that might be YouTube
+    if (relationType === 'free streaming' && relationUrl) {
+      if (relationUrl.includes('youtube.com') || relationUrl.includes('youtu.be')) {
+        console.log(`🎬 Found YouTube in free streaming: ${relationUrl}`);
+        return relationUrl;
+      }
+    }
+    
+    // Performance/video relationships
+    if (relationType === 'performance' && relationUrl) {
+      if (relationUrl.includes('youtube.com') || relationUrl.includes('youtu.be')) {
+        console.log(`🎬 Found YouTube in performance: ${relationUrl}`);
+        return relationUrl;
       }
     }
   }

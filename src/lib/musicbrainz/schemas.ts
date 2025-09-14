@@ -45,7 +45,7 @@ export const MusicBrainzReleaseGroupSearchSchema = z.object({
   score: z.number(),
 });
 
-// Recording search result schema (for future use)
+// Recording search result schema (for search results)
 export const MusicBrainzRecordingSearchSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
@@ -59,10 +59,55 @@ export const MusicBrainzRecordingSearchSchema = z.object({
   score: z.number(),
 });
 
+// URL Relation schemas for recordings
+export const MusicBrainzUrlSchema = z.object({
+  resource: z.string().url(),
+  id: z.string().uuid().optional(),
+});
+
+export const MusicBrainzRelationSchema = z.object({
+  type: z.string(),
+  direction: z.string().optional(),
+  url: MusicBrainzUrlSchema.optional(),
+  target: z.string().optional(), // Alternative URL field
+  'target-type': z.string().optional(), // Alternative type field
+});
+
+// Full recording details schema (for getRecording responses)
+export const MusicBrainzRecordingDetailSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  disambiguation: z.string().optional(),
+  length: z.number().optional(),
+  video: z.boolean().optional(),
+  
+  // ISRC data
+  isrcs: z.array(z.string()).optional(),
+  
+  // URL relationships
+  relations: z.array(MusicBrainzRelationSchema).optional(),
+  
+  // Artist credits
+  'artist-credit': z.array(MusicBrainzArtistCreditSchema).optional(),
+  
+  // Release information
+  releases: z.array(z.object({
+    id: z.string().uuid(),
+    title: z.string(),
+    status: z.string().optional(),
+    'status-id': z.string().uuid().optional(),
+  })).optional(),
+});
+
 // Type exports for use in other files
 export type ValidatedArtistSearchResult = z.infer<typeof MusicBrainzArtistSearchSchema>;
 export type ValidatedReleaseGroupSearchResult = z.infer<typeof MusicBrainzReleaseGroupSearchSchema>;
 export type ValidatedRecordingSearchResult = z.infer<typeof MusicBrainzRecordingSearchSchema>;
+
+// New detailed recording types
+export type MusicBrainzUrl = z.infer<typeof MusicBrainzUrlSchema>;
+export type MusicBrainzRelation = z.infer<typeof MusicBrainzRelationSchema>;
+export type MusicBrainzRecordingDetail = z.infer<typeof MusicBrainzRecordingDetailSchema>;
 
 // Validation helper functions
 export function validateArtistSearchResult(data: unknown): ValidatedArtistSearchResult {
@@ -75,6 +120,10 @@ export function validateReleaseGroupSearchResult(data: unknown): ValidatedReleas
 
 export function validateRecordingSearchResult(data: unknown): ValidatedRecordingSearchResult {
   return MusicBrainzRecordingSearchSchema.parse(data);
+}
+
+export function validateRecordingDetail(data: unknown): MusicBrainzRecordingDetail {
+  return MusicBrainzRecordingDetailSchema.parse(data);
 }
 
 // Safe validation functions (don't throw errors)
