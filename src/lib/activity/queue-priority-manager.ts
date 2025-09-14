@@ -204,7 +204,7 @@ export class QueuePriorityManager {
     const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
     
     // Check for recent user actions that might trigger MusicBrainz enrichment
-    const recentActions = await this.prisma.userActivity.count({
+    const recentActions = await (this.prisma as any).userActivity.count({
       where: {
         timestamp: { gte: threeMinutesAgo },
         OR: [

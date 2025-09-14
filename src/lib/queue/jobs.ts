@@ -27,6 +27,11 @@ export const JOB_TYPES = {
   // Spotify Sync Jobs (batch processing)
   SPOTIFY_SYNC_NEW_RELEASES: 'spotify:sync-new-releases',
   SPOTIFY_SYNC_FEATURED_PLAYLISTS: 'spotify:sync-featured-playlists',
+  // Data Migration Jobs
+  MIGRATE_COLLECTION_ALBUMS: 'migration:collection-albums',
+  MIGRATE_RECOMMENDATIONS: 'migration:recommendations',
+  VALIDATE_MIGRATION: 'migration:validate',
+  ROLLBACK_MIGRATION: 'migration:rollback',
 } as const;
 
 export type JobType = typeof JOB_TYPES[keyof typeof JOB_TYPES];
@@ -220,16 +225,16 @@ export interface MusicBrainzJobOptions {
   requestId?: string;
   
   /**
-   * Whether this job can be removed when completed
-   * Default: true
+   * Number of completed jobs to keep, or boolean for all/none
+   * Default: 100
    */
-  removeOnComplete?: boolean;
+  removeOnComplete?: number | boolean;
   
   /**
-   * Whether this job can be removed when failed
-   * Default: false (keep for debugging)
+   * Number of failed jobs to keep, or boolean for all/none 
+   * Default: 50 (keep for debugging)
    */
-  removeOnFail?: boolean;
+  removeOnFail?: number | boolean;
 }
 
 // ============================================================================
