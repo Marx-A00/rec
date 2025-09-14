@@ -47,6 +47,7 @@ export default function DashboardHeaderWrapper({ children }: DashboardHeaderWrap
     <>
       {/* Render children with header controls */}
       {React.cloneElement(children as React.ReactElement, {
+        // @ts-expect-error - headerControls prop injection pattern
         headerControls: (
           <DashboardHeaderControls
             isEditMode={isEditMode}

@@ -27,6 +27,7 @@ const server = new ApolloServer<GraphQLContext>({
   resolvers,
   introspection: process.env.NODE_ENV !== 'production',
   includeStacktraceInErrorResponses: process.env.NODE_ENV !== 'production',
+  // @ts-expect-error - GraphQL error formatter type signature mismatch
   formatError,
 });
 

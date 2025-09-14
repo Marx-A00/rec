@@ -525,7 +525,7 @@ export function transformSpotifyTrack(
     previewUrl: spotifyTrack.preview_url,
     spotifyId: spotifyTrack.id,
     spotifyUrl: spotifyTrack.external_urls.spotify,
-    youtubeUrl: null, // Will be populated during MusicBrainz enrichment
+    youtubeUrl: undefined, // Will be populated during MusicBrainz enrichment
     albumId: albumId,
     artists: trackArtists,
     // Start with low quality, will be enriched later

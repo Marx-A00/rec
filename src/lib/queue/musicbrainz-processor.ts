@@ -1798,6 +1798,7 @@ function findMatchingTrack(existingTracks: any[], mbTrackData: any): any | null 
  */
 function extractYouTubeUrl(mbRecording: MusicBrainzRecordingDetail): string | null {
   // Check both 'relations' and 'url-rels' fields (MusicBrainz API can use either)
+  // @ts-expect-error - Handling different MusicBrainz API response formats
   const relations = mbRecording.relations || mbRecording['url-rels'] || [];
   
   if (relations.length === 0) return null;
