@@ -6,6 +6,7 @@ import { QueryResolvers } from '@/generated/graphql';
 import { GraphQLError } from 'graphql';
 import { getMusicBrainzQueue } from '@/lib/queue';
 import { healthChecker, metricsCollector, alertManager } from '@/lib/monitoring';
+import { getSearchService } from '../search';
 
 // @ts-ignore - Temporarily suppress complex GraphQL resolver type issues  
 // TODO: Fix GraphQL resolver return types to match generated types
@@ -233,6 +234,44 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  // Spotify trending data from cache
+  spotifyTrending: async (_, __, { prisma }) => {
+    try {
+      // Get cached Spotify data
+      const cached = await prisma.cacheData.findUnique({
+        where: { key: 'spotify_trending' }
+      });
+
+      // If no cache or expired, trigger a sync
+      if (!cached || cached.expires < new Date()) {
+        // Return empty data with a flag to trigger client-side sync
+        return {
+          newReleases: [],
+          featuredPlaylists: [],
+          topCharts: [],
+          popularArtists: [],
+          needsSync: true,
+          expires: null,
+          lastUpdated: cached?.updatedAt || null
+        };
+      }
+
+      // Return cached data
+      const data = cached.data as any;
+      return {
+        newReleases: data.newReleases || [],
+        featuredPlaylists: data.featuredPlaylists || [],
+        topCharts: data.topCharts || [],
+        popularArtists: data.popularArtists || [],
+        needsSync: false,
+        expires: cached.expires,
+        lastUpdated: cached.updatedAt
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch Spotify trending data: ${error}`);
+    }
+  },
+
   // Entity retrieval queries (placeholders)
   artist: async (_, { id }, { prisma, activityTracker }) => {
     try {
@@ -349,53 +388,63 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-  // Search & discovery (placeholder implementations)
-  search: async (_, { input }, { prisma }) => {
-    // Placeholder search implementation
+  // Search & discovery with full-text search and scoring
+  search: async (_, { input }, { prisma, activityTracker }) => {
     const { query, type = 'ALL', limit = 20, offset = 0 } = input;
 
     try {
-      const artists =
-        type === 'ALL' || type === 'ARTIST'
-          ? await prisma.artist.findMany({
-              where: {
-                name: {
-                  contains: query,
-                  mode: 'insensitive',
-                },
-              },
-              take: limit || 20,
-              skip: offset || 0,
-            })
-          : [];
+      // Track search activity
+      await activityTracker.recordSearch(query, 'graphql');
 
-      const albums =
-        type === 'ALL' || type === 'ALBUM'
-          ? await prisma.album.findMany({
-              where: {
-                title: {
-                  contains: query,
-                  mode: 'insensitive',
-                },
-              },
-              take: limit || 20,
-              skip: offset || 0,
-            })
-          : [];
+      // Use the search service for better results
+      const searchService = getSearchService(prisma);
 
-      const tracks =
-        type === 'ALL' || type === 'TRACK'
-          ? await prisma.track.findMany({
-              where: {
-                title: {
-                  contains: query,
-                  mode: 'insensitive',
-                },
-              },
-              take: limit || 20,
-              skip: offset || 0,
-            })
-          : [];
+      // Map GraphQL type to search types
+      const searchTypes = type === 'ALL'
+        ? ['artist', 'album', 'track']
+        : type === 'ARTIST'
+        ? ['artist']
+        : type === 'ALBUM'
+        ? ['album']
+        : type === 'TRACK'
+        ? ['track']
+        : ['artist', 'album', 'track'];
+
+      const searchResults = await searchService.search({
+        query,
+        types: searchTypes as Array<'artist' | 'album' | 'track'>,
+        limit: limit || 20,
+        offset: offset || 0,
+      });
+
+      // Map search results back to entities
+      const artistIds = searchResults.results
+        .filter(r => r.type === 'artist')
+        .map(r => r.id);
+      const albumIds = searchResults.results
+        .filter(r => r.type === 'album')
+        .map(r => r.id);
+      const trackIds = searchResults.results
+        .filter(r => r.type === 'track')
+        .map(r => r.id);
+
+      const artists = artistIds.length > 0
+        ? await prisma.artist.findMany({
+            where: { id: { in: artistIds } },
+          })
+        : [];
+
+      const albums = albumIds.length > 0
+        ? await prisma.album.findMany({
+            where: { id: { in: albumIds } },
+          })
+        : [];
+
+      const tracks = trackIds.length > 0
+        ? await prisma.track.findMany({
+            where: { id: { in: trackIds } },
+          })
+        : [];
 
       return {
         artists,

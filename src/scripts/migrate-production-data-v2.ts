@@ -601,7 +601,7 @@ function parseCollectionLine(values: string[]): OldSchemaCollection {
     id: values[0],
     name: parsePostgresValue(values[1]) || 'Untitled Collection',  // Fallback name
     description: parsePostgresValue(values[2]),
-    userId: parsePostgresValue(values[3]), // FIXED: was values[4] 
+    userId: parsePostgresValue(values[3]) || '', // FIXED: was values[4], added fallback 
     isPublic: parsePostgresBool(values[4]), // FIXED: was values[3]
     createdAt: parsePostgresDate(values[5]) || new Date(),
     updatedAt: parsePostgresDate(values[6]) || new Date(),

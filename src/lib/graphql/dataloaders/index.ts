@@ -154,3 +154,89 @@ export function createCollectionsByUserLoader(prisma: PrismaClient) {
     return userIds.map(userId => collectionsByUser.get(userId) || []);
   });
 }
+
+// Recommendations DataLoader - batch load recommendations for multiple albums
+export function createRecommendationsByAlbumLoader(prisma: PrismaClient) {
+  return new DataLoader(async (albumIds: readonly string[]) => {
+    const recommendations = await prisma.recommendation.findMany({
+      where: {
+        OR: [
+          { basisAlbumId: { in: [...albumIds] } },
+          { recommendedAlbumId: { in: [...albumIds] } },
+        ],
+      },
+      include: { user: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Group recommendations by album ID (both basis and recommended)
+    const recommendationsByAlbum = new Map<string, any[]>();
+    for (const rec of recommendations) {
+      // Add to basis album's recommendations
+      if (!recommendationsByAlbum.has(rec.basisAlbumId)) {
+        recommendationsByAlbum.set(rec.basisAlbumId, []);
+      }
+      recommendationsByAlbum.get(rec.basisAlbumId)!.push(rec);
+
+      // Add to recommended album's recommendations
+      if (!recommendationsByAlbum.has(rec.recommendedAlbumId)) {
+        recommendationsByAlbum.set(rec.recommendedAlbumId, []);
+      }
+      recommendationsByAlbum.get(rec.recommendedAlbumId)!.push(rec);
+    }
+
+    return albumIds.map(albumId => recommendationsByAlbum.get(albumId) || []);
+  });
+}
+
+// Track Artists DataLoader - batch load artists for multiple tracks
+export function createArtistsByTrackLoader(prisma: PrismaClient) {
+  return new DataLoader(async (trackIds: readonly string[]) => {
+    const trackArtists = await prisma.trackArtist.findMany({
+      where: { trackId: { in: [...trackIds] } },
+      include: { artist: true },
+      orderBy: { position: 'asc' },
+    });
+
+    // Group artists by track ID
+    const artistsByTrack = new Map<string, any[]>();
+    for (const ta of trackArtists) {
+      if (!artistsByTrack.has(ta.trackId)) {
+        artistsByTrack.set(ta.trackId, []);
+      }
+      artistsByTrack.get(ta.trackId)!.push({
+        artist: ta.artist,
+        role: ta.role,
+        position: ta.position,
+      });
+    }
+
+    return trackIds.map(trackId => artistsByTrack.get(trackId) || []);
+  });
+}
+
+
+// Collection Albums DataLoader - batch load albums for multiple collections
+export function createAlbumsByCollectionLoader(prisma: PrismaClient) {
+  return new DataLoader(async (collectionIds: readonly string[]) => {
+    const collectionAlbums = await prisma.collectionAlbum.findMany({
+      where: { collectionId: { in: [...collectionIds] } },
+      include: { album: true },
+      orderBy: { addedAt: 'desc' },
+    });
+
+    // Group albums by collection ID
+    const albumsByCollection = new Map<string, any[]>();
+    for (const ca of collectionAlbums) {
+      if (!albumsByCollection.has(ca.collectionId)) {
+        albumsByCollection.set(ca.collectionId, []);
+      }
+      albumsByCollection.get(ca.collectionId)!.push({
+        album: ca.album,
+        addedAt: ca.addedAt,
+      });
+    }
+
+    return collectionIds.map(collectionId => albumsByCollection.get(collectionId) || []);
+  });
+}

@@ -6,6 +6,7 @@ import { Calendar, Users, Music, Star } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useHotAlbums, useFeaturedPlaylists } from '@/lib/hooks/use-spotify-trending';
 import type { Recommendation } from '@/types';
 
 interface User {
@@ -70,17 +71,26 @@ export default function BrowsePageClient({
   initialUsers,
   initialRecommendations: _initialRecommendations,
 }: BrowsePageClientProps) {
-  // State for API data
+  // Use GraphQL hooks for Spotify data
+  const {
+    data: hotAlbums,
+    isLoading: isLoadingHotAlbums
+  } = useHotAlbums(15);
+
+  const {
+    data: featuredPlaylists,
+    isLoading: isLoadingPlaylists
+  } = useFeaturedPlaylists();
+
+  // State for other API data (users and artists still use REST for now)
   const [newUsers, setNewUsers] = useState<User[]>(initialUsers.slice(0, 10));
   const [trendingArtists, setTrendingArtists] = useState<TrendingArtist[]>([]);
-  const [trendingAlbums, setTrendingAlbums] = useState<TrendingAlbum[]>([]);
   const [loading, setLoading] = useState({
     users: false,
     artists: false,
-    albums: false,
   });
 
-  // Fetch data from our new APIs
+  // Fetch non-Spotify data from existing APIs
   useEffect(() => {
     const fetchBrowseData = async () => {
       try {
@@ -93,7 +103,7 @@ export default function BrowsePageClient({
         }
         setLoading(prev => ({ ...prev, users: false }));
 
-        // Fetch trending artists
+        // Fetch trending artists (from recommendations, not Spotify)
         setLoading(prev => ({ ...prev, artists: true }));
         const artistsResponse = await fetch(
           '/api/browse/trending-artists?limit=12'
@@ -103,20 +113,9 @@ export default function BrowsePageClient({
           setTrendingArtists(artistsData.artists || []);
         }
         setLoading(prev => ({ ...prev, artists: false }));
-
-        // Fetch trending albums
-        setLoading(prev => ({ ...prev, albums: true }));
-        const albumsResponse = await fetch(
-          '/api/browse/trending-albums?limit=15'
-        );
-        if (albumsResponse.ok) {
-          const albumsData = await albumsResponse.json();
-          setTrendingAlbums(albumsData.albums || []);
-        }
-        setLoading(prev => ({ ...prev, albums: false }));
       } catch (error) {
         console.error('Error fetching browse data:', error);
-        setLoading({ users: false, artists: false, albums: false });
+        setLoading({ users: false, artists: false });
       }
     };
 
@@ -168,19 +167,19 @@ export default function BrowsePageClient({
           </div>
         </ContentRow>
 
-        {/* Recently Recommended Albums Row */}
+        {/* Hot Albums from Spotify New Releases */}
         <ContentRow
           title='Hot Albums Right Now'
-          subtitle='Albums getting love from the community'
+          subtitle='New releases from Spotify'
           icon={<Music className='w-5 h-5' />}
         >
           <div className='flex space-x-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
-            {loading.albums
+            {isLoadingHotAlbums
               ? Array.from({ length: 8 }).map((_, i) => (
                   <AlbumCardSkeleton key={i} />
                 ))
-              : trendingAlbums.map(album => (
-                  <TrendingAlbumCard key={album.albumId} album={album} />
+              : hotAlbums?.map(album => (
+                  <SpotifyAlbumCard key={album.id} album={album} />
                 ))}
           </div>
         </ContentRow>
@@ -384,6 +383,41 @@ function TrendingAlbumCard({ album }: { album: TrendingAlbum }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Spotify Album Card Component (for Hot Albums from Spotify)
+function SpotifyAlbumCard({ album }: { album: any }) {
+  return (
+    <div className='min-w-[200px] max-w-[200px] group'>
+      <a
+        href={album.spotifyUrl}
+        target='_blank'
+        rel='noopener noreferrer'
+        className='block'
+      >
+        <div className='relative aspect-square mb-3'>
+          <AlbumImage
+            src={album.image || album.imageUrl}
+            alt={album.name}
+            className='w-full h-full object-cover rounded-lg shadow-lg group-hover:shadow-xl transition-shadow duration-200'
+          />
+          {/* Spotify badge */}
+          <div className='absolute top-2 right-2 bg-green-500 text-black text-xs font-bold px-2 py-1 rounded-full'>
+            SPOTIFY
+          </div>
+        </div>
+        <div className='space-y-1'>
+          <h3 className='font-medium text-white text-sm truncate group-hover:text-cosmic-latte transition-colors'>
+            {album.name}
+          </h3>
+          <p className='text-xs text-zinc-400 truncate'>{album.artists}</p>
+          <p className='text-xs text-zinc-500'>
+            Released: {new Date(album.releaseDate).toLocaleDateString()}
+          </p>
+        </div>
+      </a>
     </div>
   );
 }

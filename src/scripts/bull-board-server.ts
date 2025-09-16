@@ -18,6 +18,20 @@ const app = express();
 app.disable('x-powered-by');
 app.set('env', 'production');
 
+// Add CORS middleware to allow requests from localhost:3000
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 // Initialize queue and Bull Board
 let musicBrainzQueue: any;
 
@@ -43,6 +57,7 @@ try {
 }
 
 // Minimal Express setup - no logging middleware
+app.use(express.json()); // Add JSON body parser for POST endpoints
 
 // Mount Bull Board
 app.use('/admin/queues', serverAdapter.getRouter());

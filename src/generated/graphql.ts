@@ -336,6 +336,7 @@ export type Mutation = {
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
+  triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
   updateAlbum: Album;
   updateAlertThresholds: AlertThresholds;
@@ -395,6 +396,10 @@ export type MutationRetryJobArgs = {
   jobId: Scalars['String']['input'];
 };
 
+export type MutationTriggerSpotifySyncArgs = {
+  type: SpotifySyncType;
+};
+
 export type MutationUnfollowUserArgs = {
   userId: Scalars['String']['input'];
 };
@@ -448,6 +453,7 @@ export type Query = {
   recommendationFeed: RecommendationFeed;
   search: SearchResults;
   searchTracks: Array<Track>;
+  spotifyTrending: SpotifyTrendingData;
   systemHealth: SystemHealth;
   track?: Maybe<Track>;
   trackRecommendations: Array<Track>;
@@ -638,6 +644,100 @@ export enum SearchType {
   Artist = 'ARTIST',
   Track = 'TRACK',
 }
+
+export type SpotifyAlbum = {
+  __typename?: 'SpotifyAlbum';
+  artistIds: Array<Scalars['String']['output']>;
+  artists: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  releaseDate: Scalars['String']['output'];
+  spotifyUrl: Scalars['String']['output'];
+  totalTracks: Scalars['Int']['output'];
+  type: Scalars['String']['output'];
+};
+
+export type SpotifyArtist = {
+  __typename?: 'SpotifyArtist';
+  followers: Scalars['Int']['output'];
+  genres: Array<Scalars['String']['output']>;
+  id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  popularity: Scalars['Int']['output'];
+  spotifyUrl: Scalars['String']['output'];
+};
+
+export type SpotifyPlaylist = {
+  __typename?: 'SpotifyPlaylist';
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  owner: Scalars['String']['output'];
+  spotifyUrl: Scalars['String']['output'];
+  tracksTotal: Scalars['Int']['output'];
+};
+
+export type SpotifyPopularArtists = {
+  __typename?: 'SpotifyPopularArtists';
+  artists: Array<SpotifyArtist>;
+  searchTerm: Scalars['String']['output'];
+};
+
+export type SpotifySyncResult = {
+  __typename?: 'SpotifySyncResult';
+  jobId?: Maybe<Scalars['String']['output']>;
+  message: Scalars['String']['output'];
+  stats?: Maybe<SpotifySyncStats>;
+  success: Scalars['Boolean']['output'];
+};
+
+export type SpotifySyncStats = {
+  __typename?: 'SpotifySyncStats';
+  albumsCreated: Scalars['Int']['output'];
+  albumsQueued: Scalars['Int']['output'];
+  albumsUpdated: Scalars['Int']['output'];
+  enrichmentJobsQueued: Scalars['Int']['output'];
+};
+
+export enum SpotifySyncType {
+  Both = 'BOTH',
+  FeaturedPlaylists = 'FEATURED_PLAYLISTS',
+  NewReleases = 'NEW_RELEASES',
+}
+
+export type SpotifyTopChart = {
+  __typename?: 'SpotifyTopChart';
+  playlistId: Scalars['String']['output'];
+  playlistImage?: Maybe<Scalars['String']['output']>;
+  playlistName: Scalars['String']['output'];
+  tracks: Array<SpotifyTrack>;
+};
+
+export type SpotifyTrack = {
+  __typename?: 'SpotifyTrack';
+  album?: Maybe<Scalars['String']['output']>;
+  albumId?: Maybe<Scalars['String']['output']>;
+  artistIds?: Maybe<Array<Scalars['String']['output']>>;
+  artists: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  image?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  popularity?: Maybe<Scalars['Int']['output']>;
+};
+
+export type SpotifyTrendingData = {
+  __typename?: 'SpotifyTrendingData';
+  expires?: Maybe<Scalars['DateTime']['output']>;
+  featuredPlaylists: Array<SpotifyPlaylist>;
+  lastUpdated?: Maybe<Scalars['DateTime']['output']>;
+  needsSync: Scalars['Boolean']['output'];
+  newReleases: Array<SpotifyAlbum>;
+  popularArtists: Array<SpotifyPopularArtists>;
+  topCharts: Array<SpotifyTopChart>;
+};
 
 export type Subscription = {
   __typename?: 'Subscription';
@@ -953,6 +1053,16 @@ export type ResolversTypes = ResolversObject<{
     }
   >;
   SearchType: SearchType;
+  SpotifyAlbum: ResolverTypeWrapper<SpotifyAlbum>;
+  SpotifyArtist: ResolverTypeWrapper<SpotifyArtist>;
+  SpotifyPlaylist: ResolverTypeWrapper<SpotifyPlaylist>;
+  SpotifyPopularArtists: ResolverTypeWrapper<SpotifyPopularArtists>;
+  SpotifySyncResult: ResolverTypeWrapper<SpotifySyncResult>;
+  SpotifySyncStats: ResolverTypeWrapper<SpotifySyncStats>;
+  SpotifySyncType: SpotifySyncType;
+  SpotifyTopChart: ResolverTypeWrapper<SpotifyTopChart>;
+  SpotifyTrack: ResolverTypeWrapper<SpotifyTrack>;
+  SpotifyTrendingData: ResolverTypeWrapper<SpotifyTrendingData>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Subscription: ResolverTypeWrapper<{}>;
   SystemHealth: ResolverTypeWrapper<SystemHealth>;
@@ -1046,6 +1156,15 @@ export type ResolversParentTypes = ResolversObject<{
     artists: Array<ResolversParentTypes['Artist']>;
     tracks: Array<ResolversParentTypes['Track']>;
   };
+  SpotifyAlbum: SpotifyAlbum;
+  SpotifyArtist: SpotifyArtist;
+  SpotifyPlaylist: SpotifyPlaylist;
+  SpotifyPopularArtists: SpotifyPopularArtists;
+  SpotifySyncResult: SpotifySyncResult;
+  SpotifySyncStats: SpotifySyncStats;
+  SpotifyTopChart: SpotifyTopChart;
+  SpotifyTrack: SpotifyTrack;
+  SpotifyTrendingData: SpotifyTrendingData;
   String: Scalars['String']['output'];
   Subscription: {};
   SystemHealth: SystemHealth;
@@ -1564,6 +1683,12 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationRetryJobArgs, 'jobId'>
   >;
+  triggerSpotifySync?: Resolver<
+    ResolversTypes['SpotifySyncResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationTriggerSpotifySyncArgs, 'type'>
+  >;
   unfollowUser?: Resolver<
     ResolversTypes['Boolean'],
     ParentType,
@@ -1712,6 +1837,11 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QuerySearchTracksArgs, 'limit' | 'query'>
+  >;
+  spotifyTrending?: Resolver<
+    ResolversTypes['SpotifyTrendingData'],
+    ParentType,
+    ContextType
   >;
   systemHealth?: Resolver<
     ResolversTypes['SystemHealth'],
@@ -1900,6 +2030,186 @@ export type SearchResultsResolvers<
   hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   tracks?: Resolver<Array<ResolversTypes['Track']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SpotifyAlbumResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SpotifyAlbum'] = ResolversParentTypes['SpotifyAlbum'],
+> = ResolversObject<{
+  artistIds?: Resolver<
+    Array<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  artists?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  releaseDate?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  spotifyUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  totalTracks?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SpotifyArtistResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SpotifyArtist'] = ResolversParentTypes['SpotifyArtist'],
+> = ResolversObject<{
+  followers?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  genres?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  popularity?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  spotifyUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SpotifyPlaylistResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SpotifyPlaylist'] = ResolversParentTypes['SpotifyPlaylist'],
+> = ResolversObject<{
+  description?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  owner?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  spotifyUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  tracksTotal?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SpotifyPopularArtistsResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SpotifyPopularArtists'] = ResolversParentTypes['SpotifyPopularArtists'],
+> = ResolversObject<{
+  artists?: Resolver<
+    Array<ResolversTypes['SpotifyArtist']>,
+    ParentType,
+    ContextType
+  >;
+  searchTerm?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SpotifySyncResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SpotifySyncResult'] = ResolversParentTypes['SpotifySyncResult'],
+> = ResolversObject<{
+  jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  stats?: Resolver<
+    Maybe<ResolversTypes['SpotifySyncStats']>,
+    ParentType,
+    ContextType
+  >;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SpotifySyncStatsResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SpotifySyncStats'] = ResolversParentTypes['SpotifySyncStats'],
+> = ResolversObject<{
+  albumsCreated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  albumsQueued?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  albumsUpdated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  enrichmentJobsQueued?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SpotifyTopChartResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SpotifyTopChart'] = ResolversParentTypes['SpotifyTopChart'],
+> = ResolversObject<{
+  playlistId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  playlistImage?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  playlistName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  tracks?: Resolver<
+    Array<ResolversTypes['SpotifyTrack']>,
+    ParentType,
+    ContextType
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SpotifyTrackResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SpotifyTrack'] = ResolversParentTypes['SpotifyTrack'],
+> = ResolversObject<{
+  album?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  albumId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  artistIds?: Resolver<
+    Maybe<Array<ResolversTypes['String']>>,
+    ParentType,
+    ContextType
+  >;
+  artists?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  popularity?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SpotifyTrendingDataResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SpotifyTrendingData'] = ResolversParentTypes['SpotifyTrendingData'],
+> = ResolversObject<{
+  expires?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  featuredPlaylists?: Resolver<
+    Array<ResolversTypes['SpotifyPlaylist']>,
+    ParentType,
+    ContextType
+  >;
+  lastUpdated?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  needsSync?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  newReleases?: Resolver<
+    Array<ResolversTypes['SpotifyAlbum']>,
+    ParentType,
+    ContextType
+  >;
+  popularArtists?: Resolver<
+    Array<ResolversTypes['SpotifyPopularArtists']>,
+    ParentType,
+    ContextType
+  >;
+  topCharts?: Resolver<
+    Array<ResolversTypes['SpotifyTopChart']>,
+    ParentType,
+    ContextType
+  >;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -2133,6 +2443,15 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   RecommendationFeed?: RecommendationFeedResolvers<ContextType>;
   SearchResult?: SearchResultResolvers<ContextType>;
   SearchResults?: SearchResultsResolvers<ContextType>;
+  SpotifyAlbum?: SpotifyAlbumResolvers<ContextType>;
+  SpotifyArtist?: SpotifyArtistResolvers<ContextType>;
+  SpotifyPlaylist?: SpotifyPlaylistResolvers<ContextType>;
+  SpotifyPopularArtists?: SpotifyPopularArtistsResolvers<ContextType>;
+  SpotifySyncResult?: SpotifySyncResultResolvers<ContextType>;
+  SpotifySyncStats?: SpotifySyncStatsResolvers<ContextType>;
+  SpotifyTopChart?: SpotifyTopChartResolvers<ContextType>;
+  SpotifyTrack?: SpotifyTrackResolvers<ContextType>;
+  SpotifyTrendingData?: SpotifyTrendingDataResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
   SystemHealth?: SystemHealthResolvers<ContextType>;
   ThroughputMetrics?: ThroughputMetricsResolvers<ContextType>;

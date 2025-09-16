@@ -3,6 +3,12 @@
 // Type resolvers for GraphQL schema relationships and computed fields
 
 import { Resolvers } from '@/generated/graphql';
+import {
+  cacheAlbumPopularity,
+  cacheAlbumAverageRating,
+  cacheArtistFollowerCount,
+  cachedField,
+} from '../field-cache';
 
 export const typeResolvers: Resolvers = {
   // Artist type resolvers
@@ -13,7 +19,7 @@ export const typeResolvers: Resolvers = {
     },
 
     tracks: async (parent, _, { prisma }) => {
-      // TODO: Create tracksByArtistLoader for this relationship
+      // Get all tracks where this artist is credited
       const trackArtists = await prisma.trackArtist.findMany({
         where: { artistId: parent.id },
         include: { track: true },
@@ -22,22 +28,49 @@ export const typeResolvers: Resolvers = {
       return trackArtists.map(ta => ta.track);
     },
 
-    // Computed field resolvers
+    // Computed field resolvers with caching
     albumCount: async (parent, _, { prisma }) => {
-      return prisma.albumArtist.count({
-        where: { artistId: parent.id },
-      });
+      return cachedField(
+        'artist',
+        parent.id,
+        'albumCount',
+        async () => prisma.albumArtist.count({
+          where: { artistId: parent.id },
+        }),
+        { ttl: 1800 } // 30 minutes
+      );
     },
 
     trackCount: async (parent, _, { prisma }) => {
-      return prisma.trackArtist.count({
-        where: { artistId: parent.id },
-      });
+      return cachedField(
+        'artist',
+        parent.id,
+        'trackCount',
+        async () => prisma.trackArtist.count({
+          where: { artistId: parent.id },
+        }),
+        { ttl: 1800 } // 30 minutes
+      );
     },
 
-    popularity: () => {
-      // Placeholder - implement popularity calculation logic
-      return null;
+    popularity: async (parent, _, { prisma }) => {
+      return cacheAlbumPopularity(parent.id, async () => {
+        // Calculate popularity based on collection count and recommendations
+        const inCollections = await prisma.albumArtist.count({
+          where: {
+            artistId: parent.id,
+            album: {
+              collectionAlbums: {
+                some: {},
+              },
+            },
+          },
+        });
+
+        if (inCollections === 0) return null;
+        // Simple popularity score: log scale of collection count
+        return Math.min(100, Math.round(Math.log10(inCollections + 1) * 30));
+      });
     },
   },
 
@@ -58,13 +91,13 @@ export const typeResolvers: Resolvers = {
       });
     },
 
-    basisRecommendations: async (parent, _, { prisma }) => {
-      return prisma.recommendation.findMany({
-        where: { basisAlbumId: parent.id },
-      });
+    basisRecommendations: async (parent, _, { dataloaders }) => {
+      // Load recommendations where this album is the basis
+      return dataloaders.recommendationsByAlbumLoader.load(parent.id);
     },
 
     targetRecommendations: async (parent, _, { prisma }) => {
+      // Recommendations where this album is recommended (different field)
       return prisma.recommendation.findMany({
         where: { recommendedAlbumId: parent.id },
       });
@@ -79,24 +112,32 @@ export const typeResolvers: Resolvers = {
     },
 
     averageRating: async (parent, _, { prisma }) => {
-      const ratings = await prisma.collectionAlbum.findMany({
-        where: {
-          albumId: parent.id,
-          personalRating: { not: null },
-        },
-        select: { personalRating: true },
+      return cacheAlbumAverageRating(parent.id, async () => {
+        const ratings = await prisma.collectionAlbum.findMany({
+          where: {
+            albumId: parent.id,
+            personalRating: { not: null },
+          },
+          select: { personalRating: true },
+        });
+
+        if (ratings.length === 0) return null;
+
+        const sum = ratings.reduce((acc, r) => acc + (r.personalRating || 0), 0);
+        return sum / ratings.length;
       });
-
-      if (ratings.length === 0) return null;
-
-      const sum = ratings.reduce((acc, r) => acc + (r.personalRating || 0), 0);
-      return sum / ratings.length;
     },
 
     inCollectionsCount: async (parent, _, { prisma }) => {
-      return prisma.collectionAlbum.count({
-        where: { albumId: parent.id },
-      });
+      return cachedField(
+        'album',
+        parent.id,
+        'inCollectionsCount',
+        async () => prisma.collectionAlbum.count({
+          where: { albumId: parent.id },
+        }),
+        { ttl: 600 } // 10 minutes
+      );
     },
 
     recommendationScore: () => {

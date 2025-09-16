@@ -16,6 +16,9 @@ import {
   createTracksByAlbumLoader,
   createArtistsByAlbumLoader,
   createCollectionsByUserLoader,
+  createRecommendationsByAlbumLoader,
+  createArtistsByTrackLoader,
+  createAlbumsByCollectionLoader,
 } from './dataloaders';
 import { 
   ActivityTracker, 
@@ -40,6 +43,9 @@ export interface DataLoaders {
   tracksByAlbumLoader: DataLoader<string, any[]>;
   artistsByAlbumLoader: DataLoader<string, any[]>;
   collectionsByUserLoader: DataLoader<string, any[]>;
+  recommendationsByAlbumLoader: DataLoader<string, any[]>;
+  artistsByTrackLoader: DataLoader<string, any[]>;
+  albumsByCollectionLoader: DataLoader<string, any[]>;
 }
 
 // GraphQL context interface
@@ -115,6 +121,9 @@ export async function createGraphQLContext(
     tracksByAlbumLoader: createTracksByAlbumLoader(prisma),
     artistsByAlbumLoader: createArtistsByAlbumLoader(prisma),
     collectionsByUserLoader: createCollectionsByUserLoader(prisma),
+    recommendationsByAlbumLoader: createRecommendationsByAlbumLoader(prisma),
+    artistsByTrackLoader: createArtistsByTrackLoader(prisma),
+    albumsByCollectionLoader: createAlbumsByCollectionLoader(prisma),
   };
 
   return {

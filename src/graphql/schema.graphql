@@ -490,6 +490,95 @@ enum TimeRange {
 }
 
 # =============================================
+# SPOTIFY INTEGRATION TYPES
+# =============================================
+
+type SpotifyAlbum {
+  id: String!
+  name: String!
+  artists: String!
+  artistIds: [String!]!
+  releaseDate: String!
+  image: String
+  spotifyUrl: String!
+  type: String!
+  totalTracks: Int!
+}
+
+type SpotifyPlaylist {
+  id: String!
+  name: String!
+  description: String
+  image: String
+  tracksTotal: Int!
+  spotifyUrl: String!
+  owner: String!
+}
+
+type SpotifyTrack {
+  id: String!
+  name: String!
+  artists: String!
+  artistIds: [String!]
+  album: String
+  albumId: String
+  popularity: Int
+  image: String
+}
+
+type SpotifyTopChart {
+  playlistName: String!
+  playlistId: String!
+  playlistImage: String
+  tracks: [SpotifyTrack!]!
+}
+
+type SpotifyArtist {
+  id: String!
+  name: String!
+  popularity: Int!
+  followers: Int!
+  genres: [String!]!
+  image: String
+  spotifyUrl: String!
+}
+
+type SpotifyPopularArtists {
+  searchTerm: String!
+  artists: [SpotifyArtist!]!
+}
+
+type SpotifyTrendingData {
+  newReleases: [SpotifyAlbum!]!
+  featuredPlaylists: [SpotifyPlaylist!]!
+  topCharts: [SpotifyTopChart!]!
+  popularArtists: [SpotifyPopularArtists!]!
+  needsSync: Boolean!
+  expires: DateTime
+  lastUpdated: DateTime
+}
+
+enum SpotifySyncType {
+  NEW_RELEASES
+  FEATURED_PLAYLISTS
+  BOTH
+}
+
+type SpotifySyncResult {
+  success: Boolean!
+  jobId: String
+  message: String!
+  stats: SpotifySyncStats
+}
+
+type SpotifySyncStats {
+  albumsQueued: Int!
+  albumsCreated: Int!
+  albumsUpdated: Int!
+  enrichmentJobsQueued: Int!
+}
+
+# =============================================
 # ROOT QUERY TYPE
 # =============================================
 
@@ -504,11 +593,14 @@ type Query {
   jobHistory(limit: Int = 100, status: JobStatus): [JobRecord!]!
   activeJobs: [JobRecord!]!
   failedJobs(limit: Int = 50): [JobRecord!]!
-  
+
   # Search & Discovery
   search(input: SearchInput!): SearchResults!
   albumRecommendations(input: RecommendationInput!): [Album!]!
   trackRecommendations(trackId: UUID!, limit: Int = 10): [Track!]!
+
+  # Spotify Data
+  spotifyTrending: SpotifyTrendingData!
   
   # Entity retrieval
   artist(id: UUID!): Artist
@@ -544,6 +636,9 @@ type Mutation {
   retryAllFailed: Int! # Returns count of retried jobs
   cleanQueue(olderThan: Int): Boolean!
   clearFailedJobs: Boolean!
+
+  # Spotify Sync
+  triggerSpotifySync(type: SpotifySyncType!): SpotifySyncResult!
 
   # Alert Configuration
   updateAlertThresholds(input: AlertThresholdsInput!): AlertThresholds!

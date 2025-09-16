@@ -5,7 +5,13 @@
 import { MutationResolvers } from '@/generated/graphql';
 import { GraphQLError } from 'graphql';
 import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
-import type { CheckAlbumEnrichmentJobData, CheckArtistEnrichmentJobData, CheckTrackEnrichmentJobData } from '@/lib/queue/jobs';
+import type {
+  CheckAlbumEnrichmentJobData,
+  CheckArtistEnrichmentJobData,
+  CheckTrackEnrichmentJobData,
+  SpotifySyncNewReleasesJobData,
+  SpotifySyncFeaturedPlaylistsJobData
+} from '@/lib/queue/jobs';
 import { alertManager } from '@/lib/monitoring';
 
 // Utility function to cast return values for GraphQL resolvers
@@ -92,6 +98,82 @@ export const mutationResolvers: MutationResolvers = {
       return true;
     } catch (error) {
       throw new GraphQLError(`Failed to clear failed jobs: ${error}`);
+    }
+  },
+
+  // Spotify Sync mutation
+  triggerSpotifySync: async (_, { type }) => {
+    try {
+      const queue = getMusicBrainzQueue();
+      const results = {
+        success: true,
+        jobId: null as string | null,
+        message: '',
+        stats: {
+          albumsQueued: 0,
+          albumsCreated: 0,
+          albumsUpdated: 0,
+          enrichmentJobsQueued: 0,
+        },
+      };
+
+      // Queue the appropriate job(s) based on type
+      if (type === 'NEW_RELEASES' || type === 'BOTH') {
+        const jobData: SpotifySyncNewReleasesJobData = {
+          limit: 20,
+          country: process.env.SPOTIFY_COUNTRY || 'US',
+          priority: 'high',
+          source: 'manual_trigger',
+          requestId: `manual_new_releases_${Date.now()}`,
+        };
+
+        const job = await queue.addJob(
+          JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES,
+          jobData,
+          {
+            priority: 1, // High priority for manual triggers
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 5000 },
+          }
+        );
+
+        results.jobId = job.id;
+        results.message = `Queued Spotify new releases sync (Job ID: ${job.id})`;
+        console.log(`📀 Triggered Spotify new releases sync: Job ${job.id}`);
+      }
+
+      if (type === 'FEATURED_PLAYLISTS' || type === 'BOTH') {
+        const jobData: SpotifySyncFeaturedPlaylistsJobData = {
+          limit: 10,
+          country: process.env.SPOTIFY_COUNTRY || 'US',
+          extractAlbums: true,
+          priority: 'high',
+          source: 'manual_trigger',
+          requestId: `manual_playlists_${Date.now()}`,
+        };
+
+        const job = await queue.addJob(
+          JOB_TYPES.SPOTIFY_SYNC_FEATURED_PLAYLISTS,
+          jobData,
+          {
+            priority: 1,
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 5000 },
+          }
+        );
+
+        if (type === 'FEATURED_PLAYLISTS') {
+          results.jobId = job.id;
+          results.message = `Queued Spotify featured playlists sync (Job ID: ${job.id})`;
+        } else {
+          results.message = `Queued both Spotify sync jobs`;
+        }
+        console.log(`🎧 Triggered Spotify featured playlists sync: Job ${job.id}`);
+      }
+
+      return results;
+    } catch (error) {
+      throw new GraphQLError(`Failed to trigger Spotify sync: ${error}`);
     }
   },
 

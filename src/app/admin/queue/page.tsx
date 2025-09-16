@@ -132,7 +132,7 @@ export default function QueueManagementPage() {
                   className="w-full justify-start"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Clean Old Jobs (>24h)
+                  Clean Old Jobs (&gt;24h)
                 </Button>
               </div>
             </div>

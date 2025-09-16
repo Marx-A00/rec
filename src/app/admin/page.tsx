@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle, XCircle, Activity, Database, Users, Album, Clock } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Activity, Database, Users, Album, Clock, Music } from 'lucide-react';
 
 interface DashboardData {
   health: string;
@@ -49,6 +49,8 @@ export default function AdminDashboard() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [syncingSpotify, setSyncingSpotify] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -73,6 +75,58 @@ export default function AdminDashboard() {
       setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const triggerSpotifySync = async (type: 'NEW_RELEASES' | 'FEATURED_PLAYLISTS' | 'BOTH') => {
+    setSyncingSpotify(true);
+    setSyncMessage(null);
+
+    try {
+      const response = await fetch('/api/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `
+            mutation TriggerSpotifySync($type: SpotifySyncType!) {
+              triggerSpotifySync(type: $type) {
+                success
+                jobId
+                message
+                stats {
+                  albumsQueued
+                  albumsCreated
+                  albumsUpdated
+                  enrichmentJobsQueued
+                }
+              }
+            }
+          `,
+          variables: { type }
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.errors) {
+        throw new Error(data.errors[0].message);
+      }
+
+      if (data.data.triggerSpotifySync.success) {
+        setSyncMessage(`✅ ${data.data.triggerSpotifySync.message}`);
+        // Refresh dashboard data after triggering sync
+        setTimeout(fetchData, 2000);
+      } else {
+        throw new Error('Sync failed');
+      }
+    } catch (err) {
+      setSyncMessage(`❌ Error: ${err instanceof Error ? err.message : 'Failed to trigger sync'}`);
+    } finally {
+      setSyncingSpotify(false);
+      // Clear message after 5 seconds
+      setTimeout(() => setSyncMessage(null), 5000);
     }
   };
 
@@ -280,24 +334,96 @@ export default function AdminDashboard() {
           <CardDescription>Common administrative tasks</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm">
-              <a href="http://localhost:3001/admin/queues" target="_blank" rel="noopener noreferrer">
-                Open Bull Board
-              </a>
-            </Button>
-            <Button variant="outline" size="sm">
-              View Logs
-            </Button>
-            <Button variant="outline" size="sm">
-              Clear Failed Jobs
-            </Button>
-            <Button variant="outline" size="sm">
-              Restart Workers
-            </Button>
-            <Button variant="outline" size="sm">
-              Export Metrics
-            </Button>
+          <div className="space-y-4">
+            {/* Spotify Sync Section */}
+            <div className="border border-zinc-800 rounded-lg p-4 bg-zinc-900/50">
+              <h4 className="text-sm font-medium mb-3 text-white">Spotify Data Sync</h4>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => triggerSpotifySync('NEW_RELEASES')}
+                  disabled={syncingSpotify}
+                >
+                  {syncingSpotify ? (
+                    <>
+                      <Activity className="mr-2 h-3 w-3 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <Album className="mr-2 h-3 w-3" />
+                      Sync New Releases
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => triggerSpotifySync('FEATURED_PLAYLISTS')}
+                  disabled={syncingSpotify}
+                >
+                  {syncingSpotify ? (
+                    <>
+                      <Activity className="mr-2 h-3 w-3 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <Music className="mr-2 h-3 w-3" />
+                      Sync Featured Playlists
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => triggerSpotifySync('BOTH')}
+                  disabled={syncingSpotify}
+                >
+                  {syncingSpotify ? (
+                    <>
+                      <Activity className="mr-2 h-3 w-3 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="mr-2 h-3 w-3" />
+                      Sync All Spotify Data
+                    </>
+                  )}
+                </Button>
+              </div>
+              {syncMessage && (
+                <div className={`mt-3 text-xs ${syncMessage.startsWith('✅') ? 'text-green-500' : 'text-red-500'}`}>
+                  {syncMessage}
+                </div>
+              )}
+            </div>
+
+            {/* Other Actions */}
+            <div className="border border-zinc-800 rounded-lg p-4 bg-zinc-900/50">
+              <h4 className="text-sm font-medium mb-3 text-white">System Management</h4>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm">
+                  <a href="http://localhost:3001/admin/queues" target="_blank" rel="noopener noreferrer">
+                    Open Bull Board
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm">
+                  View Logs
+                </Button>
+                <Button variant="outline" size="sm">
+                  Clear Failed Jobs
+                </Button>
+                <Button variant="outline" size="sm">
+                  Restart Workers
+                </Button>
+                <Button variant="outline" size="sm">
+                  Export Metrics
+                </Button>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
