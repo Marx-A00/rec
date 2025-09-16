@@ -6,6 +6,7 @@ import { MutationResolvers } from '@/generated/graphql';
 import { GraphQLError } from 'graphql';
 import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
 import type { CheckAlbumEnrichmentJobData, CheckArtistEnrichmentJobData, CheckTrackEnrichmentJobData } from '@/lib/queue/jobs';
+import { alertManager } from '@/lib/monitoring';
 
 // Utility function to cast return values for GraphQL resolvers
 // Field resolvers will populate missing computed fields
@@ -16,6 +17,117 @@ function asResolverResult<T>(data: any): T {
 // @ts-ignore - Temporarily suppress complex GraphQL resolver type issues
 // TODO: Fix GraphQL resolver return types to match generated types
 export const mutationResolvers: MutationResolvers = {
+  // Queue Management mutations
+  pauseQueue: async () => {
+    try {
+      const queue = getMusicBrainzQueue();
+      await queue.pause();
+      return true;
+    } catch (error) {
+      throw new GraphQLError(`Failed to pause queue: ${error}`);
+    }
+  },
+
+  resumeQueue: async () => {
+    try {
+      const queue = getMusicBrainzQueue();
+      await queue.resume();
+      return true;
+    } catch (error) {
+      throw new GraphQLError(`Failed to resume queue: ${error}`);
+    }
+  },
+
+  retryJob: async (_, { jobId }) => {
+    try {
+      const queue = getMusicBrainzQueue().getQueue();
+      const job = await queue.getJob(jobId);
+
+      if (!job) {
+        throw new GraphQLError(`Job ${jobId} not found`);
+      }
+
+      await job.retry();
+      return true;
+    } catch (error) {
+      throw new GraphQLError(`Failed to retry job: ${error}`);
+    }
+  },
+
+  retryAllFailed: async () => {
+    try {
+      const queue = getMusicBrainzQueue().getQueue();
+      const failed = await queue.getFailed();
+
+      let retriedCount = 0;
+      for (const job of failed) {
+        try {
+          await job.retry();
+          retriedCount++;
+        } catch (error) {
+          console.error(`Failed to retry job ${job.id}:`, error);
+        }
+      }
+
+      return retriedCount;
+    } catch (error) {
+      throw new GraphQLError(`Failed to retry failed jobs: ${error}`);
+    }
+  },
+
+  cleanQueue: async (_, { olderThan }) => {
+    try {
+      const queue = getMusicBrainzQueue();
+      await queue.cleanup(olderThan || 86400000); // Default 24 hours
+      return true;
+    } catch (error) {
+      throw new GraphQLError(`Failed to clean queue: ${error}`);
+    }
+  },
+
+  clearFailedJobs: async () => {
+    try {
+      const queue = getMusicBrainzQueue().getQueue();
+      await queue.clean(0, 1000, 'failed');
+      return true;
+    } catch (error) {
+      throw new GraphQLError(`Failed to clear failed jobs: ${error}`);
+    }
+  },
+
+  // Alert configuration
+  updateAlertThresholds: async (_, { input }) => {
+    try {
+      const thresholds: any = {};
+
+      if (input.queueDepth !== undefined) {
+        thresholds.queueDepth = input.queueDepth;
+      }
+      if (input.errorRatePercent !== undefined) {
+        thresholds.errorRatePercent = input.errorRatePercent;
+      }
+      if (input.avgProcessingTimeMs !== undefined) {
+        thresholds.avgProcessingTimeMs = input.avgProcessingTimeMs;
+      }
+      if (input.memoryUsageMB !== undefined) {
+        thresholds.memoryUsageMB = input.memoryUsageMB;
+      }
+
+      alertManager.updateThresholds(thresholds);
+
+      const updatedThresholds = alertManager.getThresholds();
+
+      return {
+        queueDepth: updatedThresholds.queueDepth,
+        errorRatePercent: updatedThresholds.errorRatePercent,
+        avgProcessingTimeMs: updatedThresholds.avgProcessingTimeMs,
+        memoryUsageMB: updatedThresholds.memoryUsageMB,
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to update alert thresholds: ${error}`);
+    }
+  },
+
   // Album management
   // Track management mutations
   createTrack: async (_: any, { input }: any, { user, prisma, activityTracker, priorityManager, sessionId, requestId }: any) => {

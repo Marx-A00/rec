@@ -265,7 +265,7 @@ export class MusicBrainzQueue {
   }
 
   /**
-   * Get the worker instance (if created)
+   * Get the underlying BullMQ worker instance
    */
   getWorker(): Worker | null {
     return this.worker;

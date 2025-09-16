@@ -307,6 +307,20 @@ input UpdateTrackInput {
   musicbrainzId: UUID
 }
 
+input AlertThresholdsInput {
+  queueDepth: Int
+  errorRatePercent: Float
+  avgProcessingTimeMs: Int
+  memoryUsageMB: Int
+}
+
+type AlertThresholds {
+  queueDepth: Int!
+  errorRatePercent: Float!
+  avgProcessingTimeMs: Int!
+  memoryUsageMB: Int!
+}
+
 # =============================================
 # ENUMS
 # =============================================
@@ -351,12 +365,145 @@ enum EnrichmentStatus {
 }
 
 # =============================================
+# MONITORING & HEALTH TYPES
+# =============================================
+
+type SystemHealth {
+  status: HealthStatus!
+  timestamp: DateTime!
+  uptime: Float!
+  components: HealthComponents!
+  metrics: HealthMetrics!
+  alerts: [String!]!
+}
+
+type HealthComponents {
+  queue: ComponentHealth!
+  redis: ComponentHealth!
+  worker: ComponentHealth!
+  spotify: ComponentHealth!
+  memory: ComponentHealth!
+}
+
+type ComponentHealth {
+  status: HealthStatus!
+  message: String!
+  details: JSON
+  lastCheck: DateTime!
+}
+
+type HealthMetrics {
+  queueDepth: Int!
+  activeJobs: Int!
+  failedJobs: Int!
+  completedJobs: Int!
+  errorRate: Float!
+  avgProcessingTime: Float!
+}
+
+enum HealthStatus {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+}
+
+type QueueStatus {
+  name: String!
+  isPaused: Boolean!
+  stats: QueueStats!
+  rateLimitInfo: RateLimitInfo!
+  workers: [WorkerInfo!]!
+}
+
+type QueueStats {
+  waiting: Int!
+  active: Int!
+  completed: Int!
+  failed: Int!
+  delayed: Int!
+  paused: Int!
+}
+
+type RateLimitInfo {
+  maxRequestsPerSecond: Int!
+  currentWindowRequests: Int!
+  windowResetTime: DateTime!
+}
+
+type WorkerInfo {
+  id: String!
+  isRunning: Boolean!
+  isPaused: Boolean!
+  activeJobCount: Int!
+}
+
+type QueueMetrics {
+  timeRange: TimeRange!
+  jobsProcessed: Int!
+  jobsFailed: Int!
+  avgProcessingTime: Float!
+  successRate: Float!
+  errorRate: Float!
+  throughput: ThroughputMetrics!
+  topErrors: [ErrorMetric!]!
+}
+
+type ThroughputMetrics {
+  jobsPerMinute: Float!
+  jobsPerHour: Float!
+  peakJobsPerMinute: Float!
+}
+
+type ErrorMetric {
+  error: String!
+  count: Int!
+  lastOccurrence: DateTime!
+}
+
+type JobRecord {
+  id: String!
+  type: String!
+  status: JobStatus!
+  data: JSON
+  result: JSON
+  error: String
+  attempts: Int!
+  startedAt: DateTime
+  completedAt: DateTime
+  duration: Int
+  priority: Int!
+}
+
+enum JobStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+  FAILED
+  DELAYED
+}
+
+enum TimeRange {
+  LAST_HOUR
+  LAST_DAY
+  LAST_WEEK
+  LAST_MONTH
+}
+
+# =============================================
 # ROOT QUERY TYPE
 # =============================================
 
 type Query {
   # Health check
   health: String!
+  systemHealth: SystemHealth!
+
+  # Monitoring & Queue Management
+  queueStatus: QueueStatus!
+  queueMetrics(timeRange: TimeRange = LAST_HOUR): QueueMetrics!
+  jobHistory(limit: Int = 100, status: JobStatus): [JobRecord!]!
+  activeJobs: [JobRecord!]!
+  failedJobs(limit: Int = 50): [JobRecord!]!
   
   # Search & Discovery
   search(input: SearchInput!): SearchResults!
@@ -390,6 +537,17 @@ type Query {
 # =============================================
 
 type Mutation {
+  # Queue Management
+  pauseQueue: Boolean!
+  resumeQueue: Boolean!
+  retryJob(jobId: String!): Boolean!
+  retryAllFailed: Int! # Returns count of retried jobs
+  cleanQueue(olderThan: Int): Boolean!
+  clearFailedJobs: Boolean!
+
+  # Alert Configuration
+  updateAlertThresholds(input: AlertThresholdsInput!): AlertThresholds!
+
   # Album management
   addAlbum(input: AlbumInput!): Album!
   updateAlbum(id: UUID!, input: AlbumInput!): Album!
@@ -416,4 +574,52 @@ type Mutation {
   
   # Profile management
   updateProfile(name: String, bio: String): User!
+}
+
+# =============================================
+# SUBSCRIPTIONS
+# =============================================
+
+type Subscription {
+  # Real-time queue monitoring
+  queueStatusUpdates: QueueStatus!
+  jobStatusUpdates(jobId: String): JobStatusUpdate!
+  systemHealthUpdates: SystemHealth!
+  alertStream: Alert!
+  metricsStream(interval: Int = 10): QueueMetrics!
+}
+
+type JobStatusUpdate {
+  jobId: String!
+  type: String!
+  status: JobStatus!
+  progress: Float
+  message: String
+  timestamp: DateTime!
+}
+
+type Alert {
+  id: String!
+  level: AlertLevel!
+  type: AlertType!
+  message: String!
+  details: JSON
+  timestamp: DateTime!
+}
+
+enum AlertLevel {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum AlertType {
+  QUEUE_DEPTH
+  ERROR_RATE
+  MEMORY_USAGE
+  PROCESSING_TIME
+  RATE_LIMIT
+  WORKER_FAILURE
+  REDIS_CONNECTION
 }

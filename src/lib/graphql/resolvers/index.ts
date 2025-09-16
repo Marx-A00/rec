@@ -4,12 +4,16 @@
 
 import { Resolvers } from '@/generated/graphql';
 import { scalarResolvers } from './scalars';
+import { queryResolvers } from './queries';
+import { mutationResolvers } from './mutations';
+import { subscriptionResolvers } from './subscriptions';
 
 // Production-ready resolvers with DataLoader optimization
 export const resolvers: Resolvers = {
   ...scalarResolvers,
 
   Query: {
+    ...queryResolvers,
     health: () => `GraphQL server running at ${new Date().toISOString()}`,
 
     // Basic entity queries using DataLoaders
@@ -181,6 +185,7 @@ export const resolvers: Resolvers = {
   },
 
   Mutation: {
+    ...mutationResolvers,
     // Simplified mutation placeholders
     createCollection: async () => { throw new Error('Not implemented yet'); },
     addAlbumToCollection: async () => { throw new Error('Not implemented yet'); },
@@ -193,4 +198,6 @@ export const resolvers: Resolvers = {
     unfollowUser: async () => false,
     updateProfile: async () => { throw new Error('Not implemented yet'); },
   },
+
+  Subscription: subscriptionResolvers,
 };

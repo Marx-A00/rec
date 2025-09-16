@@ -1,9 +1,11 @@
-// @ts-nocheck - Schema migration broke GraphQL resolvers, needs complete rewrite  
+// @ts-nocheck - Schema migration broke GraphQL resolvers, needs complete rewrite
 // src/lib/graphql/resolvers/queries.ts
 // Query resolvers for GraphQL API
 
 import { QueryResolvers } from '@/generated/graphql';
 import { GraphQLError } from 'graphql';
+import { getMusicBrainzQueue } from '@/lib/queue';
+import { healthChecker, metricsCollector, alertManager } from '@/lib/monitoring';
 
 // @ts-ignore - Temporarily suppress complex GraphQL resolver type issues  
 // TODO: Fix GraphQL resolver return types to match generated types
@@ -11,6 +13,224 @@ export const queryResolvers: QueryResolvers = {
   // Health check query
   health: () => {
     return `GraphQL server running at ${new Date().toISOString()}`;
+  },
+
+  // System health monitoring
+  systemHealth: async () => {
+    try {
+      const health = await healthChecker.checkHealth();
+      return health as any;
+    } catch (error) {
+      throw new GraphQLError(`Failed to get system health: ${error}`);
+    }
+  },
+
+  // Queue status monitoring
+  queueStatus: async () => {
+    try {
+      const queue = getMusicBrainzQueue();
+      const stats = await queue.getStats();
+      const isPaused = await queue.getQueue().isPaused();
+      const worker = queue.getWorker();
+
+      return {
+        name: 'musicbrainz',
+        isPaused,
+        stats,
+        rateLimitInfo: {
+          maxRequestsPerSecond: 1,
+          currentWindowRequests: stats.active,
+          windowResetTime: new Date(Date.now() + 1000),
+        },
+        workers: worker ? [{
+          id: 'worker-1',
+          isRunning: worker.isRunning(),
+          isPaused: worker.isPaused(),
+          activeJobCount: stats.active,
+        }] : [],
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to get queue status: ${error}`);
+    }
+  },
+
+  // Queue metrics with time range
+  queueMetrics: async (_, { timeRange = 'LAST_HOUR' }) => {
+    try {
+      const metrics = metricsCollector.getCurrentMetrics();
+      const history = metricsCollector.getMetricsHistory(100);
+      const jobMetrics = metricsCollector.getJobMetrics(100);
+
+      // Filter based on time range
+      const now = Date.now();
+      const ranges = {
+        LAST_HOUR: 3600000,
+        LAST_DAY: 86400000,
+        LAST_WEEK: 604800000,
+        LAST_MONTH: 2592000000,
+      };
+      const rangeMs = ranges[timeRange] || ranges.LAST_HOUR;
+
+      const filteredJobs = jobMetrics.filter(
+        j => j.endTime && j.endTime.getTime() > now - rangeMs
+      );
+
+      const jobsProcessed = filteredJobs.filter(j => j.success).length;
+      const jobsFailed = filteredJobs.filter(j => !j.success).length;
+      const totalJobs = jobsProcessed + jobsFailed;
+
+      const avgProcessingTime = filteredJobs.length > 0
+        ? filteredJobs.reduce((sum, j) => sum + (j.duration || 0), 0) / filteredJobs.length
+        : 0;
+
+      const successRate = totalJobs > 0 ? (jobsProcessed / totalJobs) * 100 : 100;
+      const errorRate = totalJobs > 0 ? (jobsFailed / totalJobs) * 100 : 0;
+
+      // Calculate throughput
+      const jobsPerMinute = filteredJobs.filter(
+        j => j.endTime && j.endTime.getTime() > now - 60000
+      ).length;
+      const jobsPerHour = filteredJobs.filter(
+        j => j.endTime && j.endTime.getTime() > now - 3600000
+      ).length;
+
+      // Get top errors
+      const errorMap = new Map<string, { count: number; lastOccurrence: Date }>();
+      filteredJobs
+        .filter(j => !j.success && j.error)
+        .forEach(j => {
+          const existing = errorMap.get(j.error!) || { count: 0, lastOccurrence: j.endTime! };
+          existing.count++;
+          if (j.endTime! > existing.lastOccurrence) {
+            existing.lastOccurrence = j.endTime!;
+          }
+          errorMap.set(j.error!, existing);
+        });
+
+      const topErrors = Array.from(errorMap.entries())
+        .map(([error, data]) => ({ error, ...data }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      return {
+        timeRange,
+        jobsProcessed,
+        jobsFailed,
+        avgProcessingTime,
+        successRate,
+        errorRate,
+        throughput: {
+          jobsPerMinute,
+          jobsPerHour,
+          peakJobsPerMinute: Math.max(jobsPerMinute, ...history.map(h => h.queue.throughput.jobsPerMinute)),
+        },
+        topErrors,
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to get queue metrics: ${error}`);
+    }
+  },
+
+  // Job history with optional filtering
+  jobHistory: async (_, { limit = 100, status }) => {
+    try {
+      const queue = getMusicBrainzQueue().getQueue();
+
+      let jobs = [];
+
+      if (!status || status === 'COMPLETED') {
+        const completed = await queue.getCompleted(0, limit);
+        jobs.push(...completed.map(j => ({ ...j, status: 'COMPLETED' })));
+      }
+
+      if (!status || status === 'FAILED') {
+        const failed = await queue.getFailed(0, limit);
+        jobs.push(...failed.map(j => ({ ...j, status: 'FAILED' })));
+      }
+
+      if (!status || status === 'WAITING') {
+        const waiting = await queue.getWaiting(0, limit);
+        jobs.push(...waiting.map(j => ({ ...j, status: 'WAITING' })));
+      }
+
+      if (!status || status === 'ACTIVE') {
+        const active = await queue.getActive(0, limit);
+        jobs.push(...active.map(j => ({ ...j, status: 'ACTIVE' })));
+      }
+
+      if (!status || status === 'DELAYED') {
+        const delayed = await queue.getDelayed(0, limit);
+        jobs.push(...delayed.map(j => ({ ...j, status: 'DELAYED' })));
+      }
+
+      // Sort by timestamp and limit
+      jobs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      jobs = jobs.slice(0, limit);
+
+      return jobs.map(job => ({
+        id: job.id,
+        type: job.name,
+        status: job.status,
+        data: job.data,
+        result: job.returnvalue,
+        error: job.failedReason,
+        attempts: job.attemptsMade,
+        startedAt: job.processedOn ? new Date(job.processedOn) : null,
+        completedAt: job.finishedOn ? new Date(job.finishedOn) : null,
+        duration: job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : null,
+        priority: job.opts?.priority || 0,
+      }));
+    } catch (error) {
+      throw new GraphQLError(`Failed to get job history: ${error}`);
+    }
+  },
+
+  // Get currently active jobs
+  activeJobs: async () => {
+    try {
+      const queue = getMusicBrainzQueue().getQueue();
+      const active = await queue.getActive();
+
+      return active.map(job => ({
+        id: job.id,
+        type: job.name,
+        status: 'ACTIVE',
+        data: job.data,
+        result: null,
+        error: null,
+        attempts: job.attemptsMade,
+        startedAt: job.processedOn ? new Date(job.processedOn) : null,
+        completedAt: null,
+        duration: null,
+        priority: job.opts?.priority || 0,
+      }));
+    } catch (error) {
+      throw new GraphQLError(`Failed to get active jobs: ${error}`);
+    }
+  },
+
+  // Get failed jobs
+  failedJobs: async (_, { limit = 50 }) => {
+    try {
+      const queue = getMusicBrainzQueue().getQueue();
+      const failed = await queue.getFailed(0, limit);
+
+      return failed.map(job => ({
+        id: job.id,
+        type: job.name,
+        status: 'FAILED',
+        data: job.data,
+        result: null,
+        error: job.failedReason,
+        attempts: job.attemptsMade,
+        startedAt: job.processedOn ? new Date(job.processedOn) : null,
+        completedAt: job.finishedOn ? new Date(job.finishedOn) : null,
+        duration: job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : null,
+        priority: job.opts?.priority || 0,
+      }));
+    } catch (error) {
+      throw new GraphQLError(`Failed to get failed jobs: ${error}`);
+    }
   },
 
   // Entity retrieval queries (placeholders)

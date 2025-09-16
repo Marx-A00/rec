@@ -9,6 +9,7 @@ import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import { getMusicBrainzQueue } from '@/lib/queue';
+import { healthChecker, metricsCollector, alertManager } from '@/lib/monitoring';
 
 const PORT = 3001;
 
@@ -46,20 +47,127 @@ try {
 // Mount Bull Board
 app.use('/admin/queues', serverAdapter.getRouter());
 
-// Health check endpoint
-app.get('/health', (req, res) => {
+// Basic health check endpoint
+app.get('/health', async (_req, res) => {
+  try {
+    const health = await healthChecker.checkHealth();
+    const statusCode = health.status === 'unhealthy' ? 503 :
+                       health.status === 'degraded' ? 200 : 200;
+    res.status(statusCode).json(health);
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Detailed metrics endpoint
+app.get('/metrics', (_req, res) => {
+  const metrics = metricsCollector.getCurrentMetrics();
+  const history = metricsCollector.getMetricsHistory(100);
+  const jobMetrics = metricsCollector.getJobMetrics(50);
+
   res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    queues: {
-      musicbrainz: {
-        connected: true,
-        name: 'musicbrainz'
-      }
-    }
+    current: metrics,
+    history,
+    jobs: jobMetrics,
+    timestamp: new Date().toISOString()
   });
+});
+
+// Alert management endpoints
+app.get('/alerts', (_req, res) => {
+  const active = alertManager.getActiveAlerts();
+  const history = alertManager.getAlertHistory(50);
+
+  res.json({
+    active,
+    history,
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.post('/alerts/:alertId/acknowledge', (req, res) => {
+  const { alertId } = req.params;
+  const success = alertManager.acknowledgeAlert(alertId);
+
+  res.json({
+    success,
+    message: success ? 'Alert acknowledged' : 'Alert not found or already acknowledged'
+  });
+});
+
+app.post('/alerts/:alertId/resolve', (req, res) => {
+  const { alertId } = req.params;
+  const success = alertManager.resolveAlert(alertId);
+
+  res.json({
+    success,
+    message: success ? 'Alert resolved' : 'Alert not found or already resolved'
+  });
+});
+
+// Queue metrics endpoint
+app.get('/queue/metrics', async (_req, res) => {
+  try {
+    const queue = getMusicBrainzQueue();
+    const metrics = await queue.getMetrics();
+    const stats = await queue.getStats();
+
+    res.json({
+      ...metrics,
+      queueDepth: stats.waiting + stats.active + stats.delayed,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to get queue metrics',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Queue control endpoints
+app.post('/queue/pause', async (_req, res) => {
+  try {
+    const queue = getMusicBrainzQueue();
+    await queue.pause();
+    res.json({ success: true, message: 'Queue paused' });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to pause queue',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+app.post('/queue/resume', async (_req, res) => {
+  try {
+    const queue = getMusicBrainzQueue();
+    await queue.resume();
+    res.json({ success: true, message: 'Queue resumed' });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to resume queue',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+app.post('/queue/cleanup', async (req, res) => {
+  try {
+    const { olderThan = 86400000 } = req.body; // Default 24 hours
+    const queue = getMusicBrainzQueue();
+    await queue.cleanup(olderThan);
+    res.json({ success: true, message: 'Queue cleaned up' });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to cleanup queue',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 });
 
 // Spotify metrics endpoint
@@ -130,8 +238,36 @@ app.post('/spotify/:action', async (req, res) => {
   }
 });
 
+// Dashboard overview endpoint
+app.get('/dashboard', async (_req, res) => {
+  try {
+    const health = await healthChecker.checkHealth();
+    const metrics = metricsCollector.getCurrentMetrics();
+    const alerts = alertManager.getActiveAlerts();
+    const queue = getMusicBrainzQueue();
+    const stats = await queue.getStats();
+
+    res.json({
+      health: health.status,
+      queueDepth: stats.waiting + stats.active + stats.delayed,
+      activeJobs: stats.active,
+      failedJobs: stats.failed,
+      completedJobs: stats.completed,
+      errorRate: metrics?.queue.errorRate || 0,
+      throughput: metrics?.queue.throughput || null,
+      activeAlerts: alerts.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to get dashboard data',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Root redirect
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.redirect('/admin/queues');
 });
 
@@ -142,8 +278,17 @@ app.use((req, res) => {
     message: `Path '${req.originalUrl}' not found`,
     availablePaths: [
       '/admin/queues - Bull Board Dashboard',
-      '/health - Health Check',
+      '/dashboard - Dashboard Overview',
+      '/health - System Health Check',
+      '/metrics - System Metrics',
+      '/queue/metrics - Queue Metrics',
+      '/alerts - Active & Historical Alerts',
       '/spotify/metrics - Spotify Metrics',
+      'POST /queue/pause - Pause Queue',
+      'POST /queue/resume - Resume Queue',
+      'POST /queue/cleanup - Cleanup Old Jobs',
+      'POST /alerts/:id/acknowledge - Acknowledge Alert',
+      'POST /alerts/:id/resolve - Resolve Alert',
       'POST /spotify/start - Start Spotify Scheduler',
       'POST /spotify/stop - Stop Spotify Scheduler',
       'POST /spotify/sync - Trigger Spotify Sync'
@@ -152,7 +297,7 @@ app.use((req, res) => {
 });
 
 // Error handler
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((error: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('💥 Express error:', error);
   res.status(500).json({
     error: 'Internal Server Error',
@@ -163,6 +308,7 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
+  metricsCollector.stopCollecting();
   server.close(() => {
     if (musicBrainzQueue && typeof musicBrainzQueue.shutdown === 'function') {
       musicBrainzQueue.shutdown();
@@ -180,9 +326,16 @@ process.on('SIGINT', () => {
   });
 });
 
+// Start metrics collection
+metricsCollector.startCollecting(10000); // Collect every 10 seconds
+
 // Start server and keep process alive
 const server = app.listen(PORT, () => {
-  console.log(`📊 Dashboard: http://localhost:${PORT}/admin/queues`);
+  console.log(`📊 Bull Board: http://localhost:${PORT}/admin/queues`);
+  console.log(`📈 Metrics API: http://localhost:${PORT}/metrics`);
+  console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
+  console.log(`🚨 Alerts: http://localhost:${PORT}/alerts`);
+  console.log(`📊 Dashboard Overview: http://localhost:${PORT}/dashboard`);
 });
 
 // Keep the process alive
