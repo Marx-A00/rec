@@ -108,9 +108,10 @@ export const resolvers: Resolvers = {
       });
     },
     userSuggestions: async () => [],
-    myCollections: async () => [],
-    myRecommendations: async () => [],
-    followingActivity: async () => [],
+    // These are now implemented in queryResolvers - removing duplicates
+    // myCollections: async () => [],
+    // myRecommendations: async () => [],
+    // followingActivity: async () => [],
   },
 
   // Type resolvers for relationships

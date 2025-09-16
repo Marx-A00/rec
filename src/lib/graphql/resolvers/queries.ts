@@ -529,12 +529,45 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // User-specific queries (placeholders - require authentication)
-  myCollections: async (_, __, { user }) => {
+  myCollections: async (_, __, { user, prisma }) => {
+    // Debug logging to check auth context
+    console.log('=== myCollections resolver ===');
+    console.log('User in GraphQL context:', user);
+    console.log('User ID:', user?.id);
+    console.log('User email:', user?.email);
+
     if (!user) {
+      console.log('No user found in context, throwing auth error');
       throw new GraphQLError('Authentication required');
     }
-    // Placeholder - return empty array for now
-    return [];
+
+    console.log(`Fetching collections for user: ${user.id}`);
+    const collections = await prisma.collection.findMany({
+      where: { userId: user.id},
+      include: {
+        albums: {
+          include: {
+            album: {
+              include: {
+                artists: {
+                  include: {
+                    artist: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { addedAt: 'desc' }
+        }
+      }
+    });
+
+    console.log(`Found ${collections.length} collections for user ${user.id}`);
+    collections.forEach((col, idx) => {
+      console.log(`  Collection ${idx + 1}: ${col.name} with ${col.albums?.length || 0} albums`);
+    });
+
+    return collections;
   },
 
   myRecommendations: async (_, __, { user }) => {

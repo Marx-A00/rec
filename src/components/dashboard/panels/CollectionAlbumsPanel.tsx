@@ -35,27 +35,76 @@ export default function CollectionAlbumsPanel({
       const fetchUserCollection = async () => {
         setIsLoadingAlbums(true);
         try {
-          const response = await fetch('/api/collections/user/albums');
+          // const response = await fetch('/api/collections/user/albums');
+          const query = `
+          query GetMyCollections {
+            myCollections {
+              id
+              name
+              albums {
+                id
+                position
+                personalRating
+                personalNotes
+                addedAt
+                album {
+                  id
+                  title
+                  coverArtUrl
+                  releaseDate
+                  artists {
+                    artist {
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          }
+        `;
+      
+        const response = await fetch('/api/graphql', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ query })
+        });
+
           if (response.ok) {
             const data = await response.json();
 
+            // Debug logging
+            console.log('GraphQL Response:', data);
+            console.log('Collections:', data.data?.myCollections);
+
+            const collections = data.data?.myCollections || [];
+            const allAlbums = collections.flatMap(collection => collection.albums || []);
+
+            console.log('All Albums extracted:', allAlbums);
+            console.log('Number of albums:', allAlbums.length);
+
             // Transform the simplified format to CollectionAlbum format
-            const transformedAlbums = (data.albums || []).map(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (album: any, index: number) => ({
-                id: album.id || `album-${Date.now()}-${index}`,
-                albumId: album.id,
-                albumTitle: album.title || 'Unknown Album',
-                albumArtist: album.artist || 'Unknown Artist',
-                albumImageUrl: album.image?.url || null,
-                albumYear: album.releaseDate || null,
-                addedAt: new Date().toISOString(),
+            // FIX: Use allAlbums instead of data.albums!
+            const transformedAlbums = allAlbums.map(
+              (collectionAlbum: any, index: number) => ({
+                id: collectionAlbum.id,
+                albumId: collectionAlbum.album.id,
+                albumTitle: collectionAlbum.album.title,
+                albumArtist: collectionAlbum.album.artists?.[0]?.artist?.name || 'Unknown Artist',
+                albumImageUrl: collectionAlbum.album.coverArtUrl || null,
+                albumYear: collectionAlbum.album.releaseDate
+                  ? new Date(collectionAlbum.album.releaseDate).getFullYear().toString()
+                  : null,
+                addedAt: collectionAlbum.addedAt,
                 addedBy: user?.id || 'unknown',
-                personalRating: null,
-                personalNotes: null,
-                position: index,
+                personalRating: collectionAlbum.personalRating,
+                personalNotes: collectionAlbum.personalNotes,
+                position: collectionAlbum.position || index,
               })
             );
+
+            console.log('Transformed albums:', transformedAlbums);
 
             setUserAlbums(transformedAlbums);
           } else {

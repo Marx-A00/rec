@@ -6,6 +6,7 @@ import type { PrismaClient } from '@prisma/client';
 import type { NextRequest } from 'next/server';
 import { randomUUID } from 'crypto';
 import DataLoader from 'dataloader';
+import { auth } from '@/../auth';
 import {
   createArtistLoader,
   createAlbumLoader,
@@ -20,12 +21,12 @@ import {
   createArtistsByTrackLoader,
   createAlbumsByCollectionLoader,
 } from './dataloaders';
-import { 
-  ActivityTracker, 
+import {
+  ActivityTracker,
   createActivityTracker,
   extractSessionId,
   extractUserAgent,
-  extractIpAddress 
+  extractIpAddress
 } from '@/lib/activity/activity-tracker';
 import { QueuePriorityManager, createQueuePriorityManager } from '@/lib/activity/queue-priority-manager';
 
@@ -88,9 +89,27 @@ export async function createGraphQLContext(
     throw new Error('Prisma client is required for GraphQL context');
   }
 
-  // TODO: Extract user from authentication when implemented
-  // For now, we'll set user to null (public access)
-  const user = null;
+  // Extract user from authentication session
+  let user = null;
+  try {
+    console.log('=== GraphQL Context Creation ===');
+    console.log('Attempting to get auth session...');
+    const session = await auth();
+    console.log('Session:', session);
+    console.log('Session user:', session?.user);
+
+    if (session?.user?.id) {
+      user = {
+        id: session.user.id,
+        email: session.user.email || undefined
+      };
+      console.log('User extracted from session:', user);
+    } else {
+      console.log('No authenticated user in session');
+    }
+  } catch (error) {
+    console.error('Error extracting user from session:', error);
+  }
 
   // Extract request metadata for activity tracking
   const requestId = randomUUID();
