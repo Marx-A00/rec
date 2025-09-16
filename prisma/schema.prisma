@@ -7,7 +7,17 @@ datasource db {
   url       = env("DATABASE_URL")
 }
 
-// Enums for enrichment tracking
+// Enums for content source tracking and enrichment
+enum ContentSource {
+  DISCOGS
+  MUSICBRAINZ
+  SPOTIFY
+  YOUTUBE
+  BANDCAMP
+  SOUNDCLOUD
+  USER_SUBMITTED
+}
+
 enum DataQuality {
   LOW
   MEDIUM
@@ -96,9 +106,9 @@ model Recommendation {
   basisAlbumId        String   @map("basis_album_id") @db.Uuid
   recommendedAlbumId  String   @map("recommended_album_id") @db.Uuid
   
-  // Migration metadata (temporary - track migration from Discogs)
-  migratedFromBasisDiscogsId       String? @map("migrated_from_basis_discogs_id")
-  migratedFromRecommendedDiscogsId String? @map("migrated_from_recommended_discogs_id")
+  // Data enrichment - maintain Discogs IDs for cross-referencing and validation
+  basisDiscogsId       String? @map("basis_discogs_id")
+  recommendedDiscogsId String? @map("recommended_discogs_id")
   
   // Relationships
   user           User  @relation(fields: [userId], references: [id])
@@ -138,17 +148,18 @@ model CollectionAlbum {
   position       Int        @default(0)
   addedAt        DateTime   @default(now())
   
-  // Migration metadata (temporary - track migration from Discogs)
-  migratedFromDiscogsId String? @map("migrated_from_discogs_id")  // Track source for debugging
+  // Data enrichment - maintain Discogs ID for cross-referencing and validation
+  discogsId String? @map("discogs_id")  // Preserve original Discogs reference
   
   // Relationships
   collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   album      Album      @relation(fields: [albumId], references: [id], onDelete: Cascade)
   
-  @@unique([collectionId, albumId])  // One album per collection
+  @@unique([collectionId, albumId])  // One album per collection (post-migration)
   @@index([collectionId])
   @@index([albumId])
   @@index([collectionId, position])  // Optimize ordered album retrieval
+  @@index([collectionId, discogsId])  // Support legacy Discogs-based lookups during transition
 }
 
 // User follow relationships
@@ -207,6 +218,7 @@ model Artist {
   id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   musicbrainzId  String?   @unique @map("musicbrainz_id") @db.Uuid
   spotifyId      String?   @unique @map("spotify_id")  // Add Spotify ID
+  discogsId      String?   @map("discogs_id") @db.VarChar(20)  // Preserve original Discogs reference
   name           String    @db.VarChar(255)
   biography      String?   @db.Text
   formedYear     Int?      @map("formed_year")
@@ -216,6 +228,11 @@ model Artist {
   genres         String[]  @map("genres")  // Genre tags from MusicBrainz
   imageUrl       String?   @map("image_url") @db.Text
   searchVector   Unsupported("tsvector")? @map("search_vector")
+  
+  // Multi-source content tracking
+  source         ContentSource     @default(MUSICBRAINZ)
+  sourceUrl      String?           @map("source_url") @db.Text
+  submittedBy    String?           @map("submitted_by") @db.Uuid  // User ID who submitted this content
   
   // Enrichment tracking fields
   dataQuality      DataQuality?      @default(LOW) @map("data_quality")
@@ -232,6 +249,7 @@ model Artist {
   @@index([name])
   @@index([musicbrainzId])
   @@index([searchVector], type: Gin)
+  @@index([source])
   @@map("artists")
 }
 
@@ -253,9 +271,15 @@ model Album {
   catalogNumber String?   @map("catalog_number") @db.VarChar(100)
   searchVector  Unsupported("tsvector")? @map("search_vector")
   
-  // Spotify integration fields
+  // External platform integration fields
   spotifyId     String?   @unique @map("spotify_id") @db.VarChar(50)
   spotifyUrl    String?   @map("spotify_url") @db.Text
+  discogsId     String?   @map("discogs_id") @db.VarChar(20)  // Preserve original Discogs reference
+  
+  // Multi-source content tracking
+  source         ContentSource     @default(MUSICBRAINZ)
+  sourceUrl      String?           @map("source_url") @db.Text
+  submittedBy    String?           @map("submitted_by") @db.Uuid  // User ID who submitted this content
   
   // Enrichment tracking fields
   dataQuality      DataQuality?      @default(LOW) @map("data_quality")
@@ -276,6 +300,7 @@ model Album {
   @@index([releaseDate])
   @@index([musicbrainzId])
   @@index([searchVector], type: Gin)
+  @@index([source])
   @@map("albums")
 }
 
@@ -296,10 +321,19 @@ model Track {
   spotifyUrl       String?   @map("spotify_url") @db.Text
   youtubeUrl       String?   @map("youtube_url") @db.Text
   
+  // Discogs composite reference (since Discogs doesn't provide individual track IDs)
+  discogsReleaseId String?   @map("discogs_release_id") @db.VarChar(20)
+  discogsPosition  String?   @map("discogs_position") @db.VarChar(10)  // "A1", "B2", "1", etc.
+  
+  // Multi-source content tracking
+  source           ContentSource     @default(MUSICBRAINZ)
+  sourceUrl        String?           @map("source_url") @db.Text
+  submittedBy      String?           @map("submitted_by") @db.Uuid  // User ID who submitted this content
+  
   // Enrichment tracking fields
-  dataQuality      String    @default("LOW") @map("data_quality") @db.VarChar(10)
-  enrichmentStatus String    @default("PENDING") @map("enrichment_status") @db.VarChar(20)
-  lastEnriched     DateTime? @map("last_enriched")
+  dataQuality      DataQuality       @default(LOW) @map("data_quality")
+  enrichmentStatus EnrichmentStatus  @default(PENDING) @map("enrichment_status")
+  lastEnriched     DateTime?         @map("last_enriched")
   
   // Audio Features (LIMITED AVAILABILITY - see notes below)
   // AcousticBrainz: Legacy data only (stopped collection 2022), some coverage via MusicBrainz ID
@@ -330,6 +364,8 @@ model Track {
   @@index([title])
   @@index([isrc])
   @@index([searchVector], type: Gin)
+  @@index([source])
+  @@index([discogsReleaseId, discogsPosition])  // For Discogs track lookups
   @@map("tracks")
 }
 

@@ -101,8 +101,9 @@ export async function POST(request: Request) {
       data: {
         userId: session.user.id,
         score: data.score,
-        basisAlbumDiscogsId: data.basisAlbumDiscogsId,
-        recommendedAlbumDiscogsId: data.recommendedAlbumDiscogsId,
+        basisDiscogsId: data.basisAlbumDiscogsId,      // NEW: Store Discogs ID for cross-reference
+        recommendedDiscogsId: data.recommendedAlbumDiscogsId,  // NEW: Store Discogs ID for cross-reference
+        // TODO: basisAlbumId and recommendedAlbumId will be populated during migration from Discogs->MusicBrainz
         basisAlbumTitle: data.basisAlbumTitle,
         basisAlbumArtist: data.basisAlbumArtist,
         basisAlbumImageUrl: data.basisAlbumImageUrl,

@@ -27,11 +27,8 @@ export const JOB_TYPES = {
   // Spotify Sync Jobs (batch processing)
   SPOTIFY_SYNC_NEW_RELEASES: 'spotify:sync-new-releases',
   SPOTIFY_SYNC_FEATURED_PLAYLISTS: 'spotify:sync-featured-playlists',
-  // Data Migration Jobs
-  MIGRATE_COLLECTION_ALBUMS: 'migration:collection-albums',
-  MIGRATE_RECOMMENDATIONS: 'migration:recommendations',
-  VALIDATE_MIGRATION: 'migration:validate',
-  ROLLBACK_MIGRATION: 'migration:rollback',
+  // Simple Migration Job (one-time use)
+  RUN_DISCOGS_MIGRATION: 'migration:run-discogs-migration',
 } as const;
 
 export type JobType = typeof JOB_TYPES[keyof typeof JOB_TYPES];
@@ -149,6 +146,29 @@ export interface SpotifySyncFeaturedPlaylistsJobData {
 }
 
 // ============================================================================
+// Simple Migration Job (one-time use)
+// ============================================================================
+
+export interface RunDiscogsMigrationJobData {
+  /**
+   * Whether to create backup before migration
+   * Default: true
+   */
+  createBackup?: boolean;
+  
+  /**
+   * Batch size for processing
+   * Default: 100
+   */
+  batchSize?: number;
+  
+  /**
+   * Request ID for tracking
+   */
+  requestId?: string;
+}
+
+// ============================================================================
 // Job Data Union Type
 // ============================================================================
 
@@ -167,7 +187,8 @@ export type MusicBrainzJobData =
   | EnrichArtistJobData
   | EnrichTrackJobData
   | SpotifySyncNewReleasesJobData
-  | SpotifySyncFeaturedPlaylistsJobData;
+  | SpotifySyncFeaturedPlaylistsJobData
+  | RunDiscogsMigrationJobData;
 
 // ============================================================================
 // Job Result Interfaces  
@@ -186,6 +207,19 @@ export interface JobResult<T = any> {
     timestamp: string;
     requestId?: string;
   };
+}
+
+// ============================================================================
+// Simple Migration Result Interface
+// ============================================================================
+
+export interface DiscogsMigrationResult {
+  success: boolean;
+  collectionAlbumsProcessed: number;
+  recommendationsProcessed: number;
+  backupFile?: string;
+  errors: string[];
+  duration: number;
 }
 
 // ============================================================================

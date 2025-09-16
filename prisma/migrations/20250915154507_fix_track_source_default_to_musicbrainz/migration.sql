@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "tracks" ALTER COLUMN "source" SET DEFAULT 'MUSICBRAINZ';
