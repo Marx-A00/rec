@@ -774,7 +774,7 @@ export const queryResolvers: QueryResolvers = {
             collection: {
               userId: { in: followedUserIds }
             },
-            ...cursorCondition
+            ...(cursorDate ? { addedAt: { lt: cursorDate } } : {})
           },
           include: {
             collection: {

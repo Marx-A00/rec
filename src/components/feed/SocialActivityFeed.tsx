@@ -73,6 +73,7 @@ export default function SocialActivityFeed({
               basisAlbum {
                 id
                 title
+                coverArtUrl
                 artists {
                   artist {
                     name
@@ -141,8 +142,7 @@ export default function SocialActivityFeed({
       createdAt: activity.createdAt,
       metadata: activity.metadata ? {
         score: activity.metadata.score,
-        basisAlbumTitle: activity.metadata.basisAlbum?.title,
-        basisAlbumArtist: activity.metadata.basisAlbum?.artists?.[0]?.artist?.name,
+        basisAlbum: activity.metadata.basisAlbum,
         collectionName: activity.metadata.collectionName,
         personalRating: activity.metadata.personalRating
       } : undefined
