@@ -134,6 +134,7 @@ type User {
   id: String!
   name: String
   email: String
+  emailVerified: DateTime
   image: String
   bio: String
   followersCount: Int!
@@ -142,7 +143,7 @@ type User {
   profileUpdatedAt: DateTime
   createdAt: DateTime!
   updatedAt: DateTime!
-  
+
   # Relationships
   collections: [Collection!]!
   recommendations: [Recommendation!]!
@@ -153,6 +154,14 @@ type User {
   # Computed fields
   isFollowing: Boolean # Context-dependent based on current user
   mutualFollowers: [User!]!
+
+  # Count aggregations for admin
+  _count: UserCount
+}
+
+type UserCount {
+  collections: Int!
+  recommendations: Int!
 }
 
 type UserSettings {
@@ -739,6 +748,10 @@ type Query {
   myRecommendations(sort: RecommendationSort = SCORE_DESC, limit: Int = 50): [Recommendation!]!
   followingActivity(limit: Int = 50): [Recommendation!]!
   socialFeed(type: ActivityType, cursor: String, limit: Int = 20): ActivityFeed!
+
+  # Admin queries
+  users(offset: Int = 0, limit: Int = 20, search: String): [User!]!
+  usersCount(search: String): Int!
   mySettings: UserSettings
 
   # Music Database queries

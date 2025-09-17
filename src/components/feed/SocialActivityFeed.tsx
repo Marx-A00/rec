@@ -31,6 +31,8 @@ export default function SocialActivityFeed({
   // Use prop session if provided (server-side), otherwise fall back to client session
   const session = sessionProp ?? clientSession;
 
+  // TODO: See if there is way that we can abstract this query or make it prettier
+
   const fetchActivities = async ({ pageParam }: { pageParam?: string }) => {
     // GraphQL query for social feed
     const query = `

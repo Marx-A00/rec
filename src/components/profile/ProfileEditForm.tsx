@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import AvatarUpload from './AvatarUpload';
 
 interface ProfileEditFormProps {
   user: {
     id: string;
     name: string | null;
     bio: string | null;
+    image?: string | null;
   };
   onCancel: () => void;
   onSave: (updatedUser: { name: string; bio: string }) => void;
@@ -71,6 +73,17 @@ export default function ProfileEditForm({
         )}
 
         <form onSubmit={handleSubmit} className='space-y-4'>
+          {/* Avatar Upload */}
+          <div className='flex justify-center mb-6'>
+            <AvatarUpload
+              currentImage={user.image}
+              onUploadSuccess={(url) => {
+                // Avatar is automatically saved to the database by the upload endpoint
+                console.log('Avatar updated:', url);
+              }}
+            />
+          </div>
+
           <div>
             <label
               htmlFor='name'

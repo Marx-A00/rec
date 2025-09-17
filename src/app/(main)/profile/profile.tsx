@@ -12,6 +12,7 @@ import RecommendationCard from '@/components/recommendations/RecommendationCard'
 import FollowButton from '@/components/profile/FollowButton';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useUserCollectionsQuery } from '@/hooks/useUserCollectionsQuery';
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
 
@@ -29,18 +30,38 @@ interface User {
 
 interface ProfileClientProps {
   user: User;
-  collection: CollectionAlbum[];
+  collection?: CollectionAlbum[]; // Make optional since we'll fetch via GraphQL
   recommendations: Recommendation[];
   isOwnProfile: boolean;
 }
 
 export default function ProfileClient({
   user,
-  collection,
+  collection: initialCollection,
   recommendations,
   isOwnProfile,
 }: ProfileClientProps) {
   const { prefetchRoute, navigateToAlbum, goBack } = useNavigation();
+
+  // Fetch collections using GraphQL
+  const { data: collectionsData, isLoading: collectionsLoading } = useUserCollectionsQuery(user.id);
+
+  // Transform GraphQL data or use initial collection
+  const collection = collectionsData?.user?.collections?.flatMap(col =>
+    col.albums.map(item => ({
+      id: item.id,
+      albumId: item.album.id,
+      albumTitle: item.album.title,
+      albumArtist: item.album.artists[0]?.artist?.name || 'Unknown Artist',
+      albumImageUrl: item.album.coverArtUrl,
+      albumYear: item.album.releaseDate ? String(new Date(item.album.releaseDate).getFullYear()) : null,
+      addedAt: item.addedAt,
+      addedBy: user.id,
+      personalRating: item.personalRating,
+      personalNotes: item.personalNotes,
+      position: item.position,
+    }))
+  ) || initialCollection || [];
 
   // Flatten collections to get all albums
   const allAlbums = collection;
@@ -443,6 +464,7 @@ export default function ProfileClient({
             id: currentUser.id,
             name: currentUser.name,
             bio: currentUser.bio,
+            image: currentUser.image,
           }}
           onCancel={handleCancelEdit}
           onSave={handleSaveProfile}

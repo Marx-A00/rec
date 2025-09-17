@@ -253,6 +253,156 @@ app.post('/spotify/:action', async (req, res) => {
   }
 });
 
+// Job history endpoint
+app.get('/jobs/history', async (req, res) => {
+  try {
+    const {
+      page = '1',
+      limit = '20',
+      status: statusFilter = '',
+      timeRange = '24h'
+    } = req.query;
+
+    const queue = getMusicBrainzQueue().getQueue();
+
+    // Calculate time filter
+    const now = Date.now();
+    let startTime = 0;
+    switch (timeRange) {
+      case '1h':
+        startTime = now - 3600000;
+        break;
+      case '24h':
+        startTime = now - 86400000;
+        break;
+      case '7d':
+        startTime = now - 604800000;
+        break;
+      case '30d':
+        startTime = now - 2592000000;
+        break;
+      default:
+        startTime = 0;
+    }
+
+    // Fetch jobs based on status filter
+    const jobPromises = [];
+    if (!statusFilter || statusFilter === 'completed') {
+      jobPromises.push(queue.getCompleted(0, 100).catch(() => []));
+    }
+    if (!statusFilter || statusFilter === 'failed') {
+      jobPromises.push(queue.getFailed(0, 100).catch(() => []));
+    }
+    if (!statusFilter || statusFilter === 'active') {
+      jobPromises.push(queue.getActive(0, 100).catch(() => []));
+    }
+    if (!statusFilter || statusFilter === 'waiting') {
+      jobPromises.push(queue.getWaiting(0, 100).catch(() => []));
+    }
+    if (!statusFilter || statusFilter === 'delayed') {
+      jobPromises.push(queue.getDelayed(0, 100).catch(() => []));
+    }
+
+    const jobArrays = await Promise.all(jobPromises);
+    const allJobs = jobArrays.flat().filter(job => job);
+
+    // Filter by time and format jobs
+    const filteredJobs = allJobs
+      .filter(job => !startTime || job.timestamp > startTime)
+      .map(job => ({
+        id: job.id,
+        name: job.name,
+        status: job.failedReason ? 'failed' :
+                job.finishedOn ? 'completed' :
+                job.processedOn ? 'active' :
+                job.opts?.delay ? 'delayed' : 'waiting',
+        data: job.data,
+        result: job.returnvalue,
+        error: job.failedReason,
+        createdAt: new Date(job.timestamp).toISOString(),
+        completedAt: job.finishedOn ? new Date(job.finishedOn).toISOString() : undefined,
+        processedOn: job.processedOn ? new Date(job.processedOn).toISOString() : undefined,
+        duration: job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : undefined,
+        attempts: job.attemptsMade || 0,
+        albumId: job.data?.albumId,
+        albumName: job.data?.albumName || job.data?.title
+      }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // Calculate stats
+    const totalJobs = filteredJobs.length;
+    const completedJobs = filteredJobs.filter(j => j.status === 'completed').length;
+    const failedJobs = filteredJobs.filter(j => j.status === 'failed').length;
+    const totalDuration = filteredJobs
+      .filter(j => j.duration)
+      .reduce((sum, j) => sum + (j.duration || 0), 0);
+    const avgDuration = completedJobs > 0 ? totalDuration / completedJobs : 0;
+
+    // Calculate jobs today and this week
+    const todayStart = new Date().setHours(0, 0, 0, 0);
+    const weekStart = new Date().setDate(new Date().getDate() - 7);
+    const jobsToday = filteredJobs.filter(j => new Date(j.createdAt).getTime() > todayStart).length;
+    const jobsThisWeek = filteredJobs.filter(j => new Date(j.createdAt).getTime() > weekStart).length;
+
+    // Pagination
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = startIndex + limitNum;
+    const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+
+    res.json({
+      jobs: paginatedJobs,
+      stats: {
+        totalJobs,
+        completedJobs,
+        failedJobs,
+        avgDuration,
+        successRate: totalJobs > 0 ? completedJobs / totalJobs : 0,
+        jobsToday,
+        jobsThisWeek,
+        trendsUp: true // Would need historical data to calculate properly
+      },
+      page: pageNum,
+      totalPages: Math.ceil(totalJobs / limitNum),
+      totalItems: totalJobs
+    });
+  } catch (error) {
+    console.error('Job history error:', error);
+    res.status(500).json({
+      error: 'Failed to fetch job history',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Retry job endpoint
+app.post('/jobs/:jobId/retry', async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const queue = getMusicBrainzQueue().getQueue();
+
+    // Find the job
+    const job = await queue.getJob(jobId);
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Retry the job
+    await job.retry();
+
+    res.json({
+      success: true,
+      message: `Job ${jobId} queued for retry`
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to retry job',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Dashboard overview endpoint
 app.get('/dashboard', async (_req, res) => {
   try {
@@ -297,11 +447,13 @@ app.use((req, res) => {
       '/health - System Health Check',
       '/metrics - System Metrics',
       '/queue/metrics - Queue Metrics',
+      '/jobs/history - Job History with Stats',
       '/alerts - Active & Historical Alerts',
       '/spotify/metrics - Spotify Metrics',
       'POST /queue/pause - Pause Queue',
       'POST /queue/resume - Resume Queue',
       'POST /queue/cleanup - Cleanup Old Jobs',
+      'POST /jobs/:id/retry - Retry Failed Job',
       'POST /alerts/:id/acknowledge - Acknowledge Alert',
       'POST /alerts/:id/resolve - Resolve Alert',
       'POST /spotify/start - Start Spotify Scheduler',

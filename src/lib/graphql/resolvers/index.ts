@@ -14,6 +14,51 @@ export const resolvers: Resolvers = {
 
   Query: {
     ...queryResolvers,
+
+    // Admin users query
+    users: async (_, { offset = 0, limit = 20, search }, { prisma }) => {
+      const where = search ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' as const } },
+          { email: { contains: search, mode: 'insensitive' as const } },
+        ]
+      } : {};
+
+      const users = await prisma.user.findMany({
+        where,
+        skip: offset,
+        take: limit,
+        include: {
+          collections: {
+            select: {
+              id: true,
+              name: true,
+            },
+            take: 5,
+          },
+          _count: {
+            select: {
+              collections: true,
+              recommendations: true,
+            }
+          }
+        },
+        orderBy: { id: 'desc' }, // Order by ID since createdAt doesn't exist
+      });
+
+      return users;
+    },
+
+    usersCount: async (_, { search }, { prisma }) => {
+      const where = search ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' as const } },
+          { email: { contains: search, mode: 'insensitive' as const } },
+        ]
+      } : {};
+
+      return prisma.user.count({ where });
+    },
     health: () => `GraphQL server running at ${new Date().toISOString()}`,
 
     // Basic entity queries using DataLoaders
@@ -87,17 +132,6 @@ export const resolvers: Resolvers = {
       }
     },
 
-    // These placeholders are now implemented in queryResolvers - removing all duplicates
-    // albumRecommendations: async () => [],
-    // trackRecommendations: async () => [],
-    // recommendationFeed - implemented in queryResolvers
-    // trendingAlbums - implemented in queryResolvers
-    // trendingArtists - implemented in queryResolvers
-    // userSuggestions: async () => [],
-    // These are now implemented in queryResolvers - removing duplicates
-    // myCollections: async () => [],
-    // myRecommendations: async () => [],
-    // followingActivity: async () => [],
   },
 
   // Type resolvers for relationships
@@ -157,13 +191,44 @@ export const resolvers: Resolvers = {
     },
     isFollowing: () => null, // Placeholder
     mutualFollowers: () => [], // Placeholder
+    _count: async (parent) => {
+      // Return the _count object if it exists (from Prisma include)
+      if (parent._count) {
+        return parent._count;
+      }
+      // Otherwise return defaults
+      return {
+        collections: 0,
+        recommendations: 0,
+      };
+    },
   },
 
   Collection: {
     user: async (parent, _, { dataloaders }) => {
       return dataloaders.userLoader.load(parent.user.id);
     },
-    // Simplified computed fields  
+    albums: async (parent, _, { prisma }) => {
+      // Fetch collection albums with their album data
+      const collectionAlbums = await prisma.collectionAlbum.findMany({
+        where: { collectionId: parent.id },
+        include: {
+          album: {
+            include: {
+              artists: {
+                include: {
+                  artist: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: { position: 'asc' }
+      });
+
+      return collectionAlbums;
+    },
+    // Simplified computed fields
     albumCount: async (parent, _, { prisma }) => {
       return prisma.collectionAlbum.count({ where: { collectionId: parent.id } });
     },

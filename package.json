@@ -52,6 +52,8 @@
     "@apollo/server": "^5.0.0",
     "@as-integrations/next": "^4.0.0",
     "@auth/prisma-adapter": "^2.9.0",
+    "@aws-sdk/client-s3": "^3.890.0",
+    "@aws-sdk/s3-request-presigner": "^3.890.0",
     "@bull-board/api": "^6.12.7",
     "@bull-board/express": "^6.12.7",
     "@dnd-kit/core": "^6.3.1",
