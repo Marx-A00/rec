@@ -87,27 +87,13 @@ export const resolvers: Resolvers = {
       }
     },
 
-    // Placeholder implementations
-    albumRecommendations: async () => [],
-    trackRecommendations: async () => [],
-    recommendationFeed: async () => ({
-      recommendations: [],
-      cursor: null,
-      hasMore: false,
-    }),
-    trendingAlbums: async (_, { limit = 20 }, { prisma }) => {
-      return prisma.album.findMany({
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      });
-    },
-    trendingArtists: async (_, { limit = 20 }, { prisma }) => {
-      return prisma.artist.findMany({
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      });
-    },
-    userSuggestions: async () => [],
+    // These placeholders are now implemented in queryResolvers - removing all duplicates
+    // albumRecommendations: async () => [],
+    // trackRecommendations: async () => [],
+    // recommendationFeed - implemented in queryResolvers
+    // trendingAlbums - implemented in queryResolvers
+    // trendingArtists - implemented in queryResolvers
+    // userSuggestions: async () => [],
     // These are now implemented in queryResolvers - removing duplicates
     // myCollections: async () => [],
     // myRecommendations: async () => [],
@@ -195,9 +181,10 @@ export const resolvers: Resolvers = {
     createRecommendation: async () => { throw new Error('Not implemented yet'); },
     updateRecommendation: async () => { throw new Error('Not implemented yet'); },
     deleteRecommendation: async () => false,
-    followUser: async () => { throw new Error('Not implemented yet'); },
-    unfollowUser: async () => false,
-    updateProfile: async () => { throw new Error('Not implemented yet'); },
+    // These are implemented in mutationResolvers - removing placeholders
+    // followUser: async () => { throw new Error('Not implemented yet'); },
+    // unfollowUser: async () => false,
+    // updateProfile: async () => { throw new Error('Not implemented yet'); },
   },
 
   Subscription: subscriptionResolvers,

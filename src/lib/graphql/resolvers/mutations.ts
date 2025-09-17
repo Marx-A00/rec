@@ -883,4 +883,282 @@ export const mutationResolvers: MutationResolvers = {
       throw new GraphQLError(`Failed to update profile: ${error}`);
     }
   },
+
+  // Music Database Enrichment mutations
+  triggerAlbumEnrichment: async (_: any, { id, priority = 'MEDIUM' }: any, { prisma }: any) => {
+    try {
+      const album = await prisma.album.findUnique({
+        where: { id }
+      });
+
+      if (!album) {
+        throw new GraphQLError('Album not found', {
+          extensions: { code: 'NOT_FOUND' }
+        });
+      }
+
+      const queue = getMusicBrainzQueue();
+      const jobData: CheckAlbumEnrichmentJobData = {
+        albumId: id,
+        source: 'admin_manual',
+        priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
+        requestId: `admin_enrichment_${Date.now()}`,
+      };
+
+      const job = await queue.addJob(
+        JOB_TYPES.CHECK_ALBUM_ENRICHMENT,
+        jobData,
+        {
+          priority: priority === 'HIGH' ? 1 : priority === 'MEDIUM' ? 5 : 10,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 5000 },
+        }
+      );
+
+      // Update album enrichment status
+      await prisma.album.update({
+        where: { id },
+        data: {
+          enrichmentStatus: 'IN_PROGRESS'
+        }
+      });
+
+      return {
+        success: true,
+        jobId: job.id,
+        message: `Album enrichment job ${job.id} queued with ${priority} priority`
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to trigger album enrichment: ${error}`);
+    }
+  },
+
+  triggerArtistEnrichment: async (_: any, { id, priority = 'MEDIUM' }: any, { prisma }: any) => {
+    try {
+      const artist = await prisma.artist.findUnique({
+        where: { id }
+      });
+
+      if (!artist) {
+        throw new GraphQLError('Artist not found', {
+          extensions: { code: 'NOT_FOUND' }
+        });
+      }
+
+      const queue = getMusicBrainzQueue();
+      const jobData: CheckArtistEnrichmentJobData = {
+        artistId: id,
+        source: 'admin_manual',
+        priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
+        requestId: `admin_enrichment_${Date.now()}`,
+      };
+
+      const job = await queue.addJob(
+        JOB_TYPES.CHECK_ARTIST_ENRICHMENT,
+        jobData,
+        {
+          priority: priority === 'HIGH' ? 1 : priority === 'MEDIUM' ? 5 : 10,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 5000 },
+        }
+      );
+
+      // Update artist enrichment status
+      await prisma.artist.update({
+        where: { id },
+        data: {
+          enrichmentStatus: 'IN_PROGRESS'
+        }
+      });
+
+      return {
+        success: true,
+        jobId: job.id,
+        message: `Artist enrichment job ${job.id} queued with ${priority} priority`
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to trigger artist enrichment: ${error}`);
+    }
+  },
+
+  batchEnrichment: async (_: any, { ids, type, priority = 'MEDIUM' }: any, { prisma }: any) => {
+    try {
+      const queue = getMusicBrainzQueue();
+      const jobs = [];
+
+      for (const id of ids) {
+        if (type === 'ALBUM') {
+          const album = await prisma.album.findUnique({
+            where: { id }
+          });
+
+          if (album) {
+            const jobData: CheckAlbumEnrichmentJobData = {
+              albumId: id,
+              source: 'admin_batch',
+              priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
+              requestId: `admin_batch_${Date.now()}`,
+            };
+
+            const job = await queue.addJob(
+              JOB_TYPES.CHECK_ALBUM_ENRICHMENT,
+              jobData,
+              {
+                priority: priority === 'HIGH' ? 1 : priority === 'MEDIUM' ? 5 : 10,
+                attempts: 3,
+                backoff: { type: 'exponential', delay: 5000 },
+              }
+            );
+
+            await prisma.album.update({
+              where: { id },
+              data: { enrichmentStatus: 'IN_PROGRESS' }
+            });
+
+            jobs.push(job);
+          }
+        } else if (type === 'ARTIST') {
+          const artist = await prisma.artist.findUnique({
+            where: { id }
+          });
+
+          if (artist) {
+            const jobData: CheckArtistEnrichmentJobData = {
+              artistId: id,
+              source: 'admin_batch',
+              priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
+              requestId: `admin_batch_${Date.now()}`,
+            };
+
+            const job = await queue.addJob(
+              JOB_TYPES.CHECK_ARTIST_ENRICHMENT,
+              jobData,
+              {
+                priority: priority === 'HIGH' ? 1 : priority === 'MEDIUM' ? 5 : 10,
+                attempts: 3,
+                backoff: { type: 'exponential', delay: 5000 },
+              }
+            );
+
+            await prisma.artist.update({
+              where: { id },
+              data: { enrichmentStatus: 'IN_PROGRESS' }
+            });
+
+            jobs.push(job);
+          }
+        }
+      }
+
+      return {
+        success: true,
+        jobsQueued: jobs.length,
+        message: `Queued ${jobs.length} ${type.toLowerCase()} enrichment jobs`
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to trigger batch enrichment: ${error}`);
+    }
+  },
+
+  // User Settings mutations
+  updateDashboardLayout: async (_, { layout }, context) => {
+    console.log('=== updateDashboardLayout mutation called ===');
+    console.log('Full context:', context);
+    console.log('Context keys:', Object.keys(context));
+    console.log('Context user:', context.user);
+    console.log('Context prisma:', context.prisma);
+    console.log('Layout received:', layout);
+
+    const { user, prisma } = context;
+
+    if (!user) {
+      console.error('No user in context!');
+      throw new GraphQLError('Authentication required');
+    }
+    if (!prisma) {
+      console.error('No prisma client in context!');
+      throw new GraphQLError('Database connection error');
+    }
+
+    try {
+      console.log(`Upserting settings for user ${user.id}`);
+      const settings = await prisma.userSettings.upsert({
+        where: { userId: user.id },
+        update: {
+          dashboardLayout: layout,
+          updatedAt: new Date()
+        },
+        create: {
+          userId: user.id,
+          dashboardLayout: layout,
+          theme: 'dark',
+          language: 'en',
+          profileVisibility: 'public',
+          showRecentActivity: true,
+          showCollections: true,
+          emailNotifications: true,
+          recommendationAlerts: true,
+          followAlerts: true,
+          defaultCollectionView: 'grid',
+          autoplayPreviews: false
+        }
+      });
+
+      console.log(`Updated dashboard layout for user ${user.id}`);
+      return settings;
+    } catch (error) {
+      console.error('Failed to update dashboard layout:', error);
+      throw new GraphQLError(`Failed to update dashboard layout: ${error}`);
+    }
+  },
+
+  updateUserSettings: async (_, args, context) => {
+    const { user, prisma } = context;
+
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+    if (!prisma) {
+      throw new GraphQLError('Database connection error');
+    }
+
+    const {
+      theme,
+      language,
+      profileVisibility,
+      showRecentActivity,
+      showCollections
+    } = args;
+
+    try {
+      const updateData: any = {};
+      if (theme !== undefined) updateData.theme = theme;
+      if (language !== undefined) updateData.language = language;
+      if (profileVisibility !== undefined) updateData.profileVisibility = profileVisibility;
+      if (showRecentActivity !== undefined) updateData.showRecentActivity = showRecentActivity;
+      if (showCollections !== undefined) updateData.showCollections = showCollections;
+
+      const settings = await prisma.userSettings.upsert({
+        where: { userId: user.id },
+        update: updateData,
+        create: {
+          userId: user.id,
+          theme: theme || 'dark',
+          language: language || 'en',
+          profileVisibility: profileVisibility || 'public',
+          showRecentActivity: showRecentActivity ?? true,
+          showCollections: showCollections ?? true,
+          emailNotifications: true,
+          recommendationAlerts: true,
+          followAlerts: true,
+          defaultCollectionView: 'grid',
+          autoplayPreviews: false
+        }
+      });
+
+      return settings;
+    } catch (error) {
+      throw new GraphQLError(`Failed to update settings: ${error}`);
+    }
+  },
 };

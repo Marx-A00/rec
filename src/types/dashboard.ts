@@ -77,6 +77,7 @@ export interface DashboardState {
   layout: PanelLayout;
   isEditMode: boolean;
   selectedPanelId: string | null;
+  isLoading?: boolean;
 }
 
 export interface DashboardContextType {

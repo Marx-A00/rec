@@ -148,10 +148,41 @@ type User {
   recommendations: [Recommendation!]!
   followers: [UserFollow!]!
   following: [UserFollow!]!
-  
+  settings: UserSettings
+
   # Computed fields
   isFollowing: Boolean # Context-dependent based on current user
   mutualFollowers: [User!]!
+}
+
+type UserSettings {
+  id: String!
+  userId: String!
+
+  # Dashboard customization
+  dashboardLayout: JSON
+
+  # Display preferences
+  theme: String!
+  language: String!
+
+  # Privacy settings
+  profileVisibility: String!
+  showRecentActivity: Boolean!
+  showCollections: Boolean!
+
+  # Notification preferences
+  emailNotifications: Boolean!
+  recommendationAlerts: Boolean!
+  followAlerts: Boolean!
+
+  # Music preferences
+  defaultCollectionView: String!
+  autoplayPreviews: Boolean!
+
+  # Timestamps
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 type Collection {
@@ -225,6 +256,53 @@ type SearchResults {
 
 type RecommendationFeed {
   recommendations: [Recommendation!]!
+  cursor: String
+  hasMore: Boolean!
+}
+
+# Social Activity Types
+enum ActivityType {
+  FOLLOW
+  RECOMMENDATION
+  COLLECTION_ADD
+  PROFILE_UPDATE
+}
+
+type Activity {
+  id: String!
+  type: ActivityType!
+  createdAt: DateTime!
+
+  # Actor (who performed the activity)
+  actor: User!
+
+  # Target (for follow activities)
+  targetUser: User
+
+  # Album data (for recommendations and collection adds)
+  album: Album
+
+  # Additional context based on activity type
+  recommendation: Recommendation
+  collection: Collection
+
+  # Metadata
+  metadata: ActivityMetadata
+}
+
+type ActivityMetadata {
+  # For recommendations
+  score: Int
+  basisAlbum: Album
+
+  # For collection adds
+  collectionName: String
+  personalRating: Int
+  position: Int
+}
+
+type ActivityFeed {
+  activities: [Activity!]!
   cursor: String
   hasMore: Boolean!
 }
@@ -564,6 +642,44 @@ enum SpotifySyncType {
   BOTH
 }
 
+# =============================================
+# MUSIC DATABASE TYPES
+# =============================================
+
+type DatabaseStats {
+  totalAlbums: Int!
+  totalArtists: Int!
+  totalTracks: Int!
+  albumsNeedingEnrichment: Int!
+  artistsNeedingEnrichment: Int!
+  recentlyEnriched: Int!
+  failedEnrichments: Int!
+  averageDataQuality: Float!
+}
+
+type EnrichmentResult {
+  success: Boolean!
+  jobId: String
+  message: String!
+}
+
+type BatchEnrichmentResult {
+  success: Boolean!
+  jobsQueued: Int!
+  message: String!
+}
+
+enum EnrichmentPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum EnrichmentType {
+  ALBUM
+  ARTIST
+}
+
 type SpotifySyncResult {
   success: Boolean!
   jobId: String
@@ -622,6 +738,29 @@ type Query {
   myCollections: [Collection!]!
   myRecommendations(sort: RecommendationSort = SCORE_DESC, limit: Int = 50): [Recommendation!]!
   followingActivity(limit: Int = 50): [Recommendation!]!
+  socialFeed(type: ActivityType, cursor: String, limit: Int = 20): ActivityFeed!
+  mySettings: UserSettings
+
+  # Music Database queries
+  databaseStats: DatabaseStats!
+  searchAlbums(
+    query: String
+    dataQuality: String
+    enrichmentStatus: String
+    needsEnrichment: Boolean
+    sortBy: String
+    sortOrder: String
+    limit: Int
+  ): [Album!]!
+  searchArtists(
+    query: String
+    dataQuality: String
+    enrichmentStatus: String
+    needsEnrichment: Boolean
+    sortBy: String
+    sortOrder: String
+    limit: Int
+  ): [Artist!]!
 }
 
 # =============================================
@@ -669,6 +808,13 @@ type Mutation {
   
   # Profile management
   updateProfile(name: String, bio: String): User!
+  updateDashboardLayout(layout: JSON!): UserSettings!
+  updateUserSettings(theme: String, language: String, profileVisibility: String, showRecentActivity: Boolean, showCollections: Boolean): UserSettings!
+
+  # Music Database enrichment mutations
+  triggerAlbumEnrichment(id: UUID!, priority: EnrichmentPriority): EnrichmentResult!
+  triggerArtistEnrichment(id: UUID!, priority: EnrichmentPriority): EnrichmentResult!
+  batchEnrichment(ids: [UUID!]!, type: EnrichmentType!, priority: EnrichmentPriority): BatchEnrichmentResult!
 }
 
 # =============================================

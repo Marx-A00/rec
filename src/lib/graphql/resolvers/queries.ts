@@ -469,13 +469,54 @@ export const queryResolvers: QueryResolvers = {
     return [];
   },
 
-  // Feed & trending (placeholders)
-  recommendationFeed: async (_, { cursor, limit = 20 }) => {
-    return {
-      recommendations: [],
-      cursor: null,
-      hasMore: false,
-    };
+  // Feed & trending
+  recommendationFeed: async (_, { cursor, limit = 20 }, { prisma }) => {
+    try {
+      // Fetch recent recommendations from all users
+      const recommendations = await prisma.recommendation.findMany({
+        take: limit + 1, // Fetch one extra to check if there's more
+        cursor: cursor ? { id: cursor } : undefined,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: true,
+          basisAlbum: {
+            include: {
+              artists: {
+                include: {
+                  artist: true
+                }
+              }
+            }
+          },
+          recommendedAlbum: {
+            include: {
+              artists: {
+                include: {
+                  artist: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      const hasMore = recommendations.length > limit;
+      const items = hasMore ? recommendations.slice(0, limit) : recommendations;
+      const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].id : null;
+
+      return {
+        recommendations: items,
+        cursor: nextCursor,
+        hasMore
+      };
+    } catch (error) {
+      console.error('Error fetching recommendation feed:', error);
+      return {
+        recommendations: [],
+        cursor: null,
+        hasMore: false
+      };
+    }
   },
 
   trendingAlbums: async (_, { limit = 20 }, { prisma, activityTracker }) => {
@@ -570,19 +611,590 @@ export const queryResolvers: QueryResolvers = {
     return collections;
   },
 
-  myRecommendations: async (_, __, { user }) => {
+  myRecommendations: async (_, { sort = 'SCORE_DESC', limit = 50 }, { user, prisma }) => {
     if (!user) {
       throw new GraphQLError('Authentication required');
     }
-    // Placeholder - return empty array for now
-    return [];
+
+    try {
+      const orderBy = sort === 'SCORE_DESC'
+        ? { score: 'desc' as const }
+        : sort === 'SCORE_ASC'
+        ? { score: 'asc' as const }
+        : { createdAt: 'desc' as const };
+
+      const recommendations = await prisma.recommendation.findMany({
+        where: { userId: user.id },
+        take: limit,
+        orderBy,
+        include: {
+          user: true,
+          basisAlbum: {
+            include: {
+              artists: {
+                include: {
+                  artist: true
+                }
+              }
+            }
+          },
+          recommendedAlbum: {
+            include: {
+              artists: {
+                include: {
+                  artist: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      console.log(`Found ${recommendations.length} recommendations for user ${user.id}`);
+      return recommendations;
+    } catch (error) {
+      console.error('Error fetching user recommendations:', error);
+      return [];
+    }
   },
 
-  followingActivity: async (_, __, { user }) => {
+  socialFeed: async (_, { type, cursor, limit = 20 }, { user, prisma }) => {
     if (!user) {
       throw new GraphQLError('Authentication required');
     }
-    // Placeholder - return empty array for now
-    return [];
+
+    try {
+      // Get users that the current user follows
+      const followedUsers = await prisma.userFollow.findMany({
+        where: { followerId: user.id },
+        select: { followedId: true }
+      });
+
+      const followedUserIds = followedUsers.map(f => f.followedId);
+
+      if (followedUserIds.length === 0) {
+        return {
+          activities: [],
+          cursor: null,
+          hasMore: false
+        };
+      }
+
+      const activities: any[] = [];
+      const cursorDate = cursor ? new Date(cursor) : null;
+      const cursorCondition = cursorDate ? { createdAt: { lt: cursorDate } } : {};
+
+      // 1. Get follow activities
+      if (!type || type === 'FOLLOW') {
+        const followActivities = await prisma.userFollow.findMany({
+          where: {
+            followerId: { in: followedUserIds },
+            ...cursorCondition
+          },
+          include: {
+            follower: true,
+            followed: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: limit
+        });
+
+        followActivities.forEach(follow => {
+          activities.push({
+            id: `follow-${follow.followerId}-${follow.followedId}`,
+            type: 'FOLLOW',
+            createdAt: follow.createdAt,
+            actor: follow.follower,
+            targetUser: follow.followed,
+            album: null,
+            recommendation: null,
+            collection: null,
+            metadata: null
+          });
+        });
+      }
+
+      // 2. Get recommendations
+      if (!type || type === 'RECOMMENDATION') {
+        const recommendations = await prisma.recommendation.findMany({
+          where: {
+            userId: { in: followedUserIds },
+            ...cursorCondition
+          },
+          include: {
+            user: true,
+            basisAlbum: {
+              include: {
+                artists: {
+                  include: {
+                    artist: true
+                  }
+                }
+              }
+            },
+            recommendedAlbum: {
+              include: {
+                artists: {
+                  include: {
+                    artist: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: limit
+        });
+
+        recommendations.forEach(rec => {
+          activities.push({
+            id: `rec-${rec.id}`,
+            type: 'RECOMMENDATION',
+            createdAt: rec.createdAt,
+            actor: rec.user,
+            targetUser: null,
+            album: rec.recommendedAlbum,
+            recommendation: rec,
+            collection: null,
+            metadata: {
+              score: rec.score,
+              basisAlbum: rec.basisAlbum,
+              collectionName: null,
+              personalRating: null,
+              position: null
+            }
+          });
+        });
+      }
+
+      // 3. Get collection adds
+      if (!type || type === 'COLLECTION_ADD') {
+        const collectionAdds = await prisma.collectionAlbum.findMany({
+          where: {
+            collection: {
+              userId: { in: followedUserIds }
+            },
+            ...cursorCondition
+          },
+          include: {
+            collection: {
+              include: {
+                user: true
+              }
+            },
+            album: {
+              include: {
+                artists: {
+                  include: {
+                    artist: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { addedAt: 'desc' },
+          take: limit
+        });
+
+        collectionAdds.forEach(ca => {
+          activities.push({
+            id: `collection-${ca.id}`,
+            type: 'COLLECTION_ADD',
+            createdAt: ca.addedAt,
+            actor: ca.collection.user,
+            targetUser: null,
+            album: ca.album,
+            recommendation: null,
+            collection: ca.collection,
+            metadata: {
+              score: null,
+              basisAlbum: null,
+              collectionName: ca.collection.name,
+              personalRating: ca.personalRating,
+              position: ca.position
+            }
+          });
+        });
+      }
+
+      // Sort all activities by date
+      activities.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+      // Take only the requested limit
+      const limitedActivities = activities.slice(0, limit);
+      const hasMore = activities.length > limit;
+      const nextCursor = hasMore && limitedActivities.length > 0
+        ? limitedActivities[limitedActivities.length - 1].createdAt.toISOString()
+        : null;
+
+      return {
+        activities: limitedActivities,
+        cursor: nextCursor,
+        hasMore
+      };
+    } catch (error) {
+      console.error('Error fetching social feed:', error);
+      return {
+        activities: [],
+        cursor: null,
+        hasMore: false
+      };
+    }
+  },
+
+  mySettings: async (_, __, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      // Get or create user settings
+      let settings = await prisma.userSettings.findUnique({
+        where: { userId: user.id }
+      });
+
+      // If no settings exist, create default settings
+      if (!settings) {
+        settings = await prisma.userSettings.create({
+          data: {
+            userId: user.id,
+            theme: 'dark',
+            language: 'en',
+            profileVisibility: 'public',
+            showRecentActivity: true,
+            showCollections: true,
+            emailNotifications: true,
+            recommendationAlerts: true,
+            followAlerts: true,
+            defaultCollectionView: 'grid',
+            autoplayPreviews: false
+          }
+        });
+      }
+
+      return settings;
+    } catch (error) {
+      console.error('Error fetching user settings:', error);
+      throw new GraphQLError('Failed to fetch settings');
+    }
+  },
+
+  followingActivity: async (_, { limit = 50 }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      // Get users that the current user follows
+      const followedUsers = await prisma.userFollow.findMany({
+        where: { followerId: user.id },
+        select: { followedId: true }
+      });
+
+      const followedUserIds = followedUsers.map(f => f.followedId);
+
+      if (followedUserIds.length === 0) {
+        console.log('User not following anyone, returning empty activity');
+        return [];
+      }
+
+      // Get recent recommendations from followed users
+      const recommendations = await prisma.recommendation.findMany({
+        where: {
+          userId: { in: followedUserIds }
+        },
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: true,
+          basisAlbum: {
+            include: {
+              artists: {
+                include: {
+                  artist: true
+                }
+              }
+            }
+          },
+          recommendedAlbum: {
+            include: {
+              artists: {
+                include: {
+                  artist: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      console.log(`Found ${recommendations.length} recommendations from ${followedUserIds.length} followed users`);
+      return recommendations;
+    } catch (error) {
+      console.error('Error fetching following activity:', error);
+      return [];
+    }
+  },
+
+  // Music Database queries
+  databaseStats: async (_, __, { prisma }) => {
+    try {
+      const [
+        totalAlbums,
+        totalArtists,
+        totalTracks,
+        albumsNeedingEnrichment,
+        artistsNeedingEnrichment,
+        recentlyEnrichedAlbums,
+        recentlyEnrichedArtists,
+        failedAlbums,
+        failedArtists,
+        albumQuality,
+      ] = await Promise.all([
+        prisma.album.count(),
+        prisma.artist.count(),
+        prisma.track.count(),
+        prisma.album.count({
+          where: {
+            OR: [
+              { dataQuality: 'LOW' },
+              { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
+              { musicbrainzId: null }
+            ]
+          }
+        }),
+        prisma.artist.count({
+          where: {
+            OR: [
+              { dataQuality: 'LOW' },
+              { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
+              { musicbrainzId: null }
+            ]
+          }
+        }),
+        prisma.album.count({
+          where: {
+            lastEnriched: {
+              gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+            }
+          }
+        }),
+        prisma.artist.count({
+          where: {
+            lastEnriched: {
+              gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
+            }
+          }
+        }),
+        prisma.album.count({
+          where: { enrichmentStatus: 'FAILED' }
+        }),
+        prisma.artist.count({
+          where: { enrichmentStatus: 'FAILED' }
+        }),
+        prisma.album.groupBy({
+          by: ['dataQuality'],
+          _count: true
+        }),
+      ]);
+
+      // Calculate average data quality
+      const qualityScores = { HIGH: 1, MEDIUM: 0.5, LOW: 0 };
+      let totalQualityScore = 0;
+      let totalWithQuality = 0;
+
+      albumQuality.forEach(q => {
+        if (q.dataQuality && qualityScores[q.dataQuality] !== undefined) {
+          totalQualityScore += qualityScores[q.dataQuality] * q._count;
+          totalWithQuality += q._count;
+        }
+      });
+
+      const averageDataQuality = totalWithQuality > 0 ? totalQualityScore / totalWithQuality : 0;
+
+      return {
+        totalAlbums,
+        totalArtists,
+        totalTracks,
+        albumsNeedingEnrichment,
+        artistsNeedingEnrichment,
+        recentlyEnriched: recentlyEnrichedAlbums + recentlyEnrichedArtists,
+        failedEnrichments: failedAlbums + failedArtists,
+        averageDataQuality,
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to get database stats: ${error}`);
+    }
+  },
+
+  searchAlbums: async (_, args, { prisma }) => {
+    try {
+      const { query, dataQuality, enrichmentStatus, needsEnrichment, sortBy = 'title', sortOrder = 'asc', limit = 50 } = args;
+
+      const where: any = {};
+
+      // Search query
+      if (query) {
+        where.OR = [
+          { title: { contains: query, mode: 'insensitive' } },
+          { label: { contains: query, mode: 'insensitive' } },
+          { barcode: { contains: query, mode: 'insensitive' } },
+        ];
+      }
+
+      // Filters
+      if (dataQuality && dataQuality !== 'all') {
+        where.dataQuality = dataQuality;
+      }
+      if (enrichmentStatus && enrichmentStatus !== 'all') {
+        where.enrichmentStatus = enrichmentStatus;
+      }
+      if (needsEnrichment) {
+        where.OR = where.OR || [];
+        where.OR.push(
+          { dataQuality: 'LOW' },
+          { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
+          { musicbrainzId: null }
+        );
+      }
+
+      // Sorting
+      const orderBy: any = {};
+      if (sortBy === 'title') orderBy.title = sortOrder;
+      else if (sortBy === 'releaseDate') orderBy.releaseDate = sortOrder;
+      else if (sortBy === 'lastEnriched') orderBy.lastEnriched = sortOrder;
+      else if (sortBy === 'dataQuality') orderBy.dataQuality = sortOrder;
+
+      const albums = await prisma.album.findMany({
+        where,
+        orderBy,
+        take: limit,
+        include: {
+          albumArtists: {
+            include: {
+              artist: true
+            }
+          }
+        }
+      });
+
+      // Transform to match GraphQL schema
+      return albums.map(album => ({
+        ...album,
+        artists: album.albumArtists.map(aa => ({
+          artist: aa.artist,
+          role: aa.role,
+          position: aa.position
+        })),
+        needsEnrichment: album.dataQuality === 'LOW' ||
+                        album.enrichmentStatus === 'PENDING' ||
+                        album.enrichmentStatus === 'FAILED' ||
+                        !album.musicbrainzId
+      }));
+    } catch (error) {
+      throw new GraphQLError(`Failed to search albums: ${error}`);
+    }
+  },
+
+  searchArtists: async (_, args, { prisma }) => {
+    try {
+      const { query, dataQuality, enrichmentStatus, needsEnrichment, sortBy = 'name', sortOrder = 'asc', limit = 50 } = args;
+
+      const where: any = {};
+
+      // Search query
+      if (query) {
+        where.name = { contains: query, mode: 'insensitive' };
+      }
+
+      // Filters
+      if (dataQuality && dataQuality !== 'all') {
+        where.dataQuality = dataQuality;
+      }
+      if (enrichmentStatus && enrichmentStatus !== 'all') {
+        where.enrichmentStatus = enrichmentStatus;
+      }
+      if (needsEnrichment) {
+        where.OR = where.OR || [];
+        where.OR.push(
+          { dataQuality: 'LOW' },
+          { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
+          { musicbrainzId: null }
+        );
+      }
+
+      // Sorting
+      const orderBy: any = {};
+      if (sortBy === 'name') orderBy.name = sortOrder;
+      else if (sortBy === 'lastEnriched') orderBy.lastEnriched = sortOrder;
+      else if (sortBy === 'dataQuality') orderBy.dataQuality = sortOrder;
+
+      const artists = await prisma.artist.findMany({
+        where,
+        orderBy,
+        take: limit,
+        include: {
+          _count: {
+            select: {
+              albumArtists: true,
+              trackArtists: true
+            }
+          }
+        }
+      });
+
+      // Transform to match GraphQL schema
+      return artists.map(artist => ({
+        ...artist,
+        albumCount: artist._count.albumArtists,
+        trackCount: artist._count.trackArtists,
+        needsEnrichment: artist.dataQuality === 'LOW' ||
+                        artist.enrichmentStatus === 'PENDING' ||
+                        artist.enrichmentStatus === 'FAILED' ||
+                        !artist.musicbrainzId
+      }));
+    } catch (error) {
+      throw new GraphQLError(`Failed to search artists: ${error}`);
+    }
+  },
+
+  searchTracks: async (_, args, { prisma }) => {
+    try {
+      const { query, limit = 50 } = args;
+
+      const where: any = {};
+
+      // Search query
+      if (query) {
+        where.OR = [
+          { title: { contains: query, mode: 'insensitive' } },
+          { isrc: { contains: query, mode: 'insensitive' } },
+        ];
+      }
+
+      const tracks = await prisma.track.findMany({
+        where,
+        take: limit,
+        include: {
+          album: true,
+          trackArtists: {
+            include: {
+              artist: true
+            }
+          }
+        }
+      });
+
+      // Transform to match GraphQL schema
+      return tracks.map(track => ({
+        ...track,
+        artists: track.trackArtists.map(ta => ({
+          artist: ta.artist,
+          role: ta.role
+        }))
+      }));
+    } catch (error) {
+      throw new GraphQLError(`Failed to search tracks: ${error}`);
+    }
   },
 };

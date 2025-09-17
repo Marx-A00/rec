@@ -1,16 +1,17 @@
 // src/contexts/DashboardContext.tsx
 'use client';
 
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
+import { useSession } from 'next-auth/react';
 // Using built-in crypto.randomUUID() instead of nanoid to avoid extra dependency
-import { 
-  DashboardContextType, 
-  DashboardState, 
-  PanelLayout, 
-  Panel, 
-  PanelType, 
-  PanelConfig 
+import {
+  DashboardContextType,
+  DashboardState,
+  PanelLayout,
+  Panel,
+  PanelType,
+  PanelConfig
 } from '@/types/dashboard';
 import { panelRegistry } from '@/lib/dashboard/PanelRegistry';
 
@@ -66,6 +67,7 @@ const initialState: DashboardState = {
   layout: createDefaultLayout(),
   isEditMode: false,
   selectedPanelId: null,
+  isLoading: true,
 };
 
 // Reducer function
@@ -627,8 +629,92 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 // Provider component
+// GraphQL queries/mutations for settings
+const LOAD_SETTINGS_QUERY = `
+  query LoadDashboardSettings {
+    mySettings {
+      id
+      dashboardLayout
+    }
+  }
+`;
+
+const SAVE_LAYOUT_MUTATION = `
+  mutation UpdateDashboardLayout($layout: JSON!) {
+    updateDashboardLayout(layout: $layout) {
+      id
+      dashboardLayout
+    }
+  }
+`;
+
 export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(dashboardReducer, initialState);
+  const { data: session } = useSession();
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasLoadedRef = useRef(false);
+
+  // Load dashboard layout from database on mount
+  useEffect(() => {
+    if (!session?.user || hasLoadedRef.current) return;
+
+    const loadLayout = async () => {
+      try {
+        const response = await fetch('/api/graphql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            query: LOAD_SETTINGS_QUERY
+          })
+        });
+
+        const { data } = await response.json();
+        if (data?.mySettings?.dashboardLayout) {
+          dispatch({ type: 'SET_LAYOUT', payload: data.mySettings.dashboardLayout });
+        }
+        hasLoadedRef.current = true;
+      } catch (error) {
+        console.error('Failed to load dashboard layout:', error);
+      }
+    };
+
+    loadLayout();
+  }, [session]);
+
+  // Auto-save layout changes with debounce
+  useEffect(() => {
+    if (!session?.user || !hasLoadedRef.current) return;
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Set new timeout for saving
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await fetch('/api/graphql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            query: SAVE_LAYOUT_MUTATION,
+            variables: { layout: state.layout }
+          })
+        });
+        console.log('Dashboard layout saved');
+      } catch (error) {
+        console.error('Failed to save dashboard layout:', error);
+      }
+    }, 2000); // 2 second debounce
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [state.layout, session]);
 
   // Action creators
   const actions = {
@@ -685,13 +771,43 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     }, []),
 
     saveLayout: useCallback(async () => {
-      // TODO: Implement API call to save layout
-      console.log('Saving layout:', state.layout);
-    }, [state.layout]),
+      if (!session?.user) {
+        console.error('No session user, cannot save');
+        return;
+      }
 
-    loadLayout: useCallback(async (layoutId: string) => {
-      // TODO: Implement API call to load layout
-      console.log('Loading layout:', layoutId);
+      console.log('Saving layout for user:', session.user.id);
+      console.log('Layout to save:', state.layout);
+
+      try {
+        const response = await fetch('/api/graphql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            query: SAVE_LAYOUT_MUTATION,
+            variables: { layout: state.layout }
+          })
+        });
+
+        const result = await response.json();
+        console.log('Save response:', result);
+
+        if (result.errors) {
+          console.error('GraphQL errors:', result.errors);
+          throw new Error(result.errors[0].message);
+        }
+
+        console.log('Layout saved manually - settings ID:', result.data?.updateDashboardLayout?.id);
+      } catch (error) {
+        console.error('Failed to save layout:', error);
+        throw error;
+      }
+    }, [state.layout, session]),
+
+    loadLayout: useCallback(async () => {
+      // Already handled in useEffect
+      console.log('Layout loading handled automatically');
     }, []),
   };
 

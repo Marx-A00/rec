@@ -2,8 +2,9 @@
 'use client';
 
 import React from 'react';
-import { Settings, Plus } from 'lucide-react';
+import { Settings, Plus, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useDashboard } from '@/contexts/DashboardContext';
 
 interface DashboardHeaderControlsProps {
   isEditMode: boolean;
@@ -16,8 +17,36 @@ export default function DashboardHeaderControls({
   onToggleEditMode,
   onShowWidgetLibrary,
 }: DashboardHeaderControlsProps) {
+  const { actions } = useDashboard();
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  const handleSaveLayout = async () => {
+    setIsSaving(true);
+    try {
+      await actions.saveLayout();
+      console.log('Layout saved successfully');
+    } catch (error) {
+      console.error('Failed to save layout:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
+      {/* Save Layout Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleSaveLayout}
+        disabled={isSaving}
+        className="h-8 px-3 bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30"
+        title="Save Dashboard Layout"
+      >
+        <Save className="w-4 h-4 mr-2" />
+        {isSaving ? 'Saving...' : 'Save Layout'}
+      </Button>
+
       {/* Edit Mode Toggle */}
       <Button
         variant="ghost"
@@ -25,8 +54,8 @@ export default function DashboardHeaderControls({
         onClick={onToggleEditMode}
         className={`
           h-8 px-3 transition-all duration-200
-          ${isEditMode 
-            ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30' 
+          ${isEditMode
+            ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
             : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700'
           }
         `}

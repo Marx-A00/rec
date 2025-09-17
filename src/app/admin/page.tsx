@@ -166,10 +166,10 @@ export default function AdminDashboard() {
     return (
       <div className="p-8">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
+          <div className="h-8 bg-zinc-800 rounded w-1/4 mb-8"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              <div key={i} className="h-32 bg-zinc-800 rounded"></div>
             ))}
           </div>
         </div>
@@ -180,7 +180,7 @@ export default function AdminDashboard() {
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-950/50 border border-red-900 text-red-400 px-4 py-3 rounded-lg">
           <strong>Error:</strong> {error}
         </div>
       </div>
@@ -191,24 +191,24 @@ export default function AdminDashboard() {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
+        <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+        <p className="text-zinc-400 mt-1">
           System monitoring and management
         </p>
       </div>
 
       {/* Overall Health Status */}
       <div className="mb-6">
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">System Health</CardTitle>
+            <CardTitle className="text-sm font-medium text-white">System Health</CardTitle>
             {health && getHealthBadge(health.status)}
           </CardHeader>
           <CardContent>
             {health?.alerts && health.alerts.length > 0 && (
               <div className="mt-2 space-y-1">
                 {health.alerts.map((alert, i) => (
-                  <div key={i} className="text-sm text-yellow-600 dark:text-yellow-400">
+                  <div key={i} className="text-sm text-yellow-400">
                     ⚠️ {alert}
                   </div>
                 ))}
@@ -220,53 +220,53 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Queue Depth</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-white">Queue Depth</CardTitle>
+            <Activity className="h-4 w-4 text-zinc-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboard?.queueDepth || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-white">{dashboard?.queueDepth || 0}</div>
+            <p className="text-xs text-zinc-500">
               {dashboard?.activeJobs || 0} active
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Jobs</CardTitle>
+            <CardTitle className="text-sm font-medium text-white">Completed Jobs</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboard?.completedJobs || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-white">{dashboard?.completedJobs || 0}</div>
+            <p className="text-xs text-zinc-500">
               {dashboard?.throughput?.jobsPerHour || 0}/hour
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Failed Jobs</CardTitle>
+            <CardTitle className="text-sm font-medium text-white">Failed Jobs</CardTitle>
             <XCircle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboard?.failedJobs || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-white">{dashboard?.failedJobs || 0}</div>
+            <p className="text-xs text-zinc-500">
               {dashboard?.errorRate?.toFixed(1) || 0}% error rate
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
+            <CardTitle className="text-sm font-medium text-white">Active Alerts</CardTitle>
             <AlertCircle className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboard?.activeAlerts || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-white">{dashboard?.activeAlerts || 0}</div>
+            <p className="text-xs text-zinc-500">
               {dashboard?.activeAlerts === 0 ? 'All clear' : 'Needs attention'}
             </p>
           </CardContent>
@@ -275,10 +275,10 @@ export default function AdminDashboard() {
 
       {/* Component Health */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle>Component Health</CardTitle>
-            <CardDescription>Status of system components</CardDescription>
+            <CardTitle className="text-white">Component Health</CardTitle>
+            <CardDescription className="text-zinc-400">Status of system components</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -286,9 +286,9 @@ export default function AdminDashboard() {
                 <div key={name} className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     {getHealthIcon(component.status)}
-                    <span className="capitalize font-medium">{name}</span>
+                    <span className="capitalize font-medium text-white">{name}</span>
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="text-sm text-zinc-400">
                     {component.message}
                   </span>
                 </div>
@@ -297,28 +297,28 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle>Performance Metrics</CardTitle>
-            <CardDescription>System performance indicators</CardDescription>
+            <CardTitle className="text-white">Performance Metrics</CardTitle>
+            <CardDescription className="text-zinc-400">System performance indicators</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm font-medium">Avg Processing Time</span>
-                <span className="text-sm">{health?.metrics?.avgProcessingTime?.toFixed(0) || 0}ms</span>
+                <span className="text-sm font-medium text-zinc-300">Avg Processing Time</span>
+                <span className="text-sm text-zinc-400">{health?.metrics?.avgProcessingTime?.toFixed(0) || 0}ms</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium">Jobs/Minute</span>
-                <span className="text-sm">{dashboard?.throughput?.jobsPerMinute || 0}</span>
+                <span className="text-sm font-medium text-zinc-300">Jobs/Minute</span>
+                <span className="text-sm text-zinc-400">{dashboard?.throughput?.jobsPerMinute || 0}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium">Jobs/Hour</span>
-                <span className="text-sm">{dashboard?.throughput?.jobsPerHour || 0}</span>
+                <span className="text-sm font-medium text-zinc-300">Jobs/Hour</span>
+                <span className="text-sm text-zinc-400">{dashboard?.throughput?.jobsPerHour || 0}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium">Memory Usage</span>
-                <span className="text-sm">
+                <span className="text-sm font-medium text-zinc-300">Memory Usage</span>
+                <span className="text-sm text-zinc-400">
                   {health?.components?.memory?.details?.heapUsedMB || 'N/A'} MB
                 </span>
               </div>
@@ -328,20 +328,21 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <Card>
+      <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common administrative tasks</CardDescription>
+          <CardTitle className="text-white">Quick Actions</CardTitle>
+          <CardDescription className="text-zinc-400">Common administrative tasks</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {/* Spotify Sync Section */}
-            <div className="border border-zinc-800 rounded-lg p-4 bg-zinc-900/50">
+            <div className="border border-zinc-800 rounded-lg p-4 bg-zinc-800/50">
               <h4 className="text-sm font-medium mb-3 text-white">Spotify Data Sync</h4>
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="text-white border-zinc-700 hover:bg-zinc-700"
                   onClick={() => triggerSpotifySync('NEW_RELEASES')}
                   disabled={syncingSpotify}
                 >
@@ -360,6 +361,7 @@ export default function AdminDashboard() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="text-white border-zinc-700 hover:bg-zinc-700"
                   onClick={() => triggerSpotifySync('FEATURED_PLAYLISTS')}
                   disabled={syncingSpotify}
                 >
@@ -378,6 +380,7 @@ export default function AdminDashboard() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="text-white border-zinc-700 hover:bg-zinc-700"
                   onClick={() => triggerSpotifySync('BOTH')}
                   disabled={syncingSpotify}
                 >
@@ -402,24 +405,24 @@ export default function AdminDashboard() {
             </div>
 
             {/* Other Actions */}
-            <div className="border border-zinc-800 rounded-lg p-4 bg-zinc-900/50">
+            <div className="border border-zinc-800 rounded-lg p-4 bg-zinc-800/50">
               <h4 className="text-sm font-medium mb-3 text-white">System Management</h4>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="text-white border-zinc-700 hover:bg-zinc-700">
                   <a href="http://localhost:3001/admin/queues" target="_blank" rel="noopener noreferrer">
                     Open Bull Board
                   </a>
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="text-white border-zinc-700 hover:bg-zinc-700">
                   View Logs
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="text-white border-zinc-700 hover:bg-zinc-700">
                   Clear Failed Jobs
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="text-white border-zinc-700 hover:bg-zinc-700">
                   Restart Workers
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="text-white border-zinc-700 hover:bg-zinc-700">
                   Export Metrics
                 </Button>
               </div>
@@ -429,7 +432,7 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Last Updated */}
-      <div className="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+      <div className="mt-4 text-sm text-zinc-500 text-center">
         Last updated: {dashboard?.timestamp ? new Date(dashboard.timestamp).toLocaleString() : 'N/A'}
       </div>
     </div>

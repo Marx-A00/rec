@@ -78,25 +78,25 @@ export default function QueueManagementPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Queue Management</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
+        <h1 className="text-3xl font-bold text-white">Queue Management</h1>
+        <p className="text-zinc-400 mt-1">
           Control and manage the job processing queue
         </p>
       </div>
 
       {/* Queue Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle>Queue Controls</CardTitle>
-            <CardDescription>Start, stop, and manage the queue</CardDescription>
+            <CardTitle className="text-white">Queue Controls</CardTitle>
+            <CardDescription className="text-zinc-400">Start, stop, and manage the queue</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-2">
               <Button
                 onClick={() => handleQueueAction('resume')}
                 disabled={loading === 'resume'}
-                className="flex-1"
+                className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white"
                 variant="default"
               >
                 <PlayCircle className="h-4 w-4 mr-2" />
@@ -105,7 +105,7 @@ export default function QueueManagementPage() {
               <Button
                 onClick={() => handleQueueAction('pause')}
                 disabled={loading === 'pause'}
-                className="flex-1"
+                className="flex-1 text-white border-zinc-700 hover:bg-zinc-700"
                 variant="outline"
               >
                 <PauseCircle className="h-4 w-4 mr-2" />
@@ -113,14 +113,14 @@ export default function QueueManagementPage() {
               </Button>
             </div>
 
-            <div className="pt-4 border-t">
-              <h4 className="font-medium mb-2">Maintenance Actions</h4>
+            <div className="pt-4 border-t border-zinc-800">
+              <h4 className="font-medium mb-2 text-white">Maintenance Actions</h4>
               <div className="space-y-2">
                 <Button
                   onClick={handleRetryAllFailed}
                   disabled={loading === 'retry-all'}
                   variant="outline"
-                  className="w-full justify-start"
+                  className="w-full justify-start text-white border-zinc-700 hover:bg-zinc-700"
                 >
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Retry All Failed Jobs
@@ -129,7 +129,7 @@ export default function QueueManagementPage() {
                   onClick={handleCleanup}
                   disabled={loading === 'cleanup'}
                   variant="outline"
-                  className="w-full justify-start"
+                  className="w-full justify-start text-white border-zinc-700 hover:bg-zinc-700"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Clean Old Jobs (&gt;24h)
@@ -139,41 +139,41 @@ export default function QueueManagementPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle>Queue Configuration</CardTitle>
-            <CardDescription>Current queue settings and limits</CardDescription>
+            <CardTitle className="text-white">Queue Configuration</CardTitle>
+            <CardDescription className="text-zinc-400">Current queue settings and limits</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm font-medium">Rate Limit</span>
-                <Badge variant="outline">1 req/sec</Badge>
+                <span className="text-sm font-medium text-zinc-300">Rate Limit</span>
+                <Badge variant="outline" className="border-zinc-700 text-zinc-300">1 req/sec</Badge>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium">Max Retries</span>
-                <span className="text-sm">3 attempts</span>
+                <span className="text-sm font-medium text-zinc-300">Max Retries</span>
+                <span className="text-sm text-zinc-400">3 attempts</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium">Backoff Type</span>
-                <span className="text-sm">Exponential</span>
+                <span className="text-sm font-medium text-zinc-300">Backoff Type</span>
+                <span className="text-sm text-zinc-400">Exponential</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium">Keep Completed</span>
-                <span className="text-sm">Last 100 jobs</span>
+                <span className="text-sm font-medium text-zinc-300">Keep Completed</span>
+                <span className="text-sm text-zinc-400">Last 100 jobs</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium">Keep Failed</span>
-                <span className="text-sm">Last 50 jobs</span>
+                <span className="text-sm font-medium text-zinc-300">Keep Failed</span>
+                <span className="text-sm text-zinc-400">Last 50 jobs</span>
               </div>
             </div>
 
-            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+            <div className="mt-4 p-3 bg-yellow-900/20 rounded-lg border border-yellow-900/30">
               <div className="flex items-start space-x-2">
-                <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-                <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                <AlertCircle className="h-4 w-4 text-yellow-400 mt-0.5" />
+                <div className="text-sm text-yellow-200">
                   <p className="font-medium">MusicBrainz API Rate Limit</p>
-                  <p className="text-xs mt-1">Queue is limited to 1 request per second to comply with MusicBrainz API requirements.</p>
+                  <p className="text-xs mt-1 text-yellow-300/80">Queue is limited to 1 request per second to comply with MusicBrainz API requirements.</p>
                 </div>
               </div>
             </div>
@@ -182,10 +182,10 @@ export default function QueueManagementPage() {
       </div>
 
       {/* External Tools */}
-      <Card>
+      <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
-          <CardTitle>External Tools</CardTitle>
-          <CardDescription>Access advanced monitoring and management tools</CardDescription>
+          <CardTitle className="text-white">External Tools</CardTitle>
+          <CardDescription className="text-zinc-400">Access advanced monitoring and management tools</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -195,9 +195,9 @@ export default function QueueManagementPage() {
               rel="noopener noreferrer"
               className="block"
             >
-              <div className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <h4 className="font-medium">Bull Board Dashboard</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <div className="p-4 border border-zinc-800 rounded-lg hover:bg-zinc-800 transition-colors">
+                <h4 className="font-medium text-white">Bull Board Dashboard</h4>
+                <p className="text-sm text-zinc-400 mt-1">
                   Visual queue management interface with job details
                 </p>
               </div>
@@ -209,9 +209,9 @@ export default function QueueManagementPage() {
               rel="noopener noreferrer"
               className="block"
             >
-              <div className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <h4 className="font-medium">Metrics API</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <div className="p-4 border border-zinc-800 rounded-lg hover:bg-zinc-800 transition-colors">
+                <h4 className="font-medium text-white">Metrics API</h4>
+                <p className="text-sm text-zinc-400 mt-1">
                   Raw JSON metrics for integration with monitoring tools
                 </p>
               </div>

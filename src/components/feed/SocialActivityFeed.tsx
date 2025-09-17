@@ -32,16 +32,127 @@ export default function SocialActivityFeed({
   const session = sessionProp ?? clientSession;
 
   const fetchActivities = async ({ pageParam }: { pageParam?: string }) => {
-    const params = new URLSearchParams();
-    params.append('limit', '20');
-    if (pageParam) params.append('cursor', pageParam);
-    if (activityType) params.append('type', activityType);
+    // GraphQL query for social feed
+    const query = `
+      query GetSocialFeed($type: ActivityType, $cursor: String, $limit: Int) {
+        socialFeed(type: $type, cursor: $cursor, limit: $limit) {
+          activities {
+            id
+            type
+            createdAt
+            actor {
+              id
+              name
+              image
+            }
+            targetUser {
+              id
+              name
+              image
+            }
+            album {
+              id
+              title
+              coverArtUrl
+              artists {
+                artist {
+                  name
+                }
+              }
+            }
+            recommendation {
+              id
+              score
+            }
+            collection {
+              id
+              name
+            }
+            metadata {
+              score
+              basisAlbum {
+                id
+                title
+                artists {
+                  artist {
+                    name
+                  }
+                }
+              }
+              collectionName
+              personalRating
+              position
+            }
+          }
+          cursor
+          hasMore
+        }
+      }
+    `;
 
-    const response = await fetch(`/api/feed/social?${params}`);
+    // Map activity type to GraphQL enum
+    const typeMap: Record<string, string> = {
+      'follow': 'FOLLOW',
+      'recommendation': 'RECOMMENDATION',
+      'collection_add': 'COLLECTION_ADD',
+      'profile_update': 'PROFILE_UPDATE'
+    };
+
+    const response = await fetch('/api/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        query,
+        variables: {
+          type: activityType ? typeMap[activityType] : null,
+          cursor: pageParam,
+          limit: 20
+        }
+      })
+    });
+
     if (!response.ok) {
       throw new Error('Failed to fetch activities');
     }
-    return response.json();
+
+    const { data, errors } = await response.json();
+
+    if (errors) {
+      throw new Error(errors[0].message);
+    }
+
+    // Transform GraphQL response to match existing format
+    const activities = data.socialFeed.activities.map((activity: any) => ({
+      id: activity.id,
+      type: activity.type.toLowerCase().replace('_', '_'),
+      actorId: activity.actor.id,
+      actorName: activity.actor.name,
+      actorImage: activity.actor.image,
+      targetId: activity.targetUser?.id,
+      targetName: activity.targetUser?.name,
+      targetImage: activity.targetUser?.image,
+      albumId: activity.album?.id,
+      albumTitle: activity.album?.title,
+      albumArtist: activity.album?.artists?.[0]?.artist?.name,
+      albumImage: activity.album?.coverArtUrl,
+      createdAt: activity.createdAt,
+      metadata: activity.metadata ? {
+        score: activity.metadata.score,
+        basisAlbumTitle: activity.metadata.basisAlbum?.title,
+        basisAlbumArtist: activity.metadata.basisAlbum?.artists?.[0]?.artist?.name,
+        collectionName: activity.metadata.collectionName,
+        personalRating: activity.metadata.personalRating
+      } : undefined
+    }));
+
+    return {
+      activities,
+      nextCursor: data.socialFeed.cursor,
+      hasMore: data.socialFeed.hasMore
+    };
   };
 
   const {
