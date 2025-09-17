@@ -1,30 +1,31 @@
-// src/components/dashboard/CustomizableDashboard.tsx
+// src/components/dashboard/MosaicContainer.tsx
 'use client';
 
 import React from 'react';
-import { useDashboard } from '@/contexts/DashboardContext';
+import { useMosaic } from '@/contexts/MosaicContext';
 import { panelRegistry } from '@/lib/dashboard/PanelRegistry';
 import { panelDefinitions } from '@/lib/dashboard/panelDefinitions';
-import SortablePanelLayout from './SortablePanelLayout';
+import Mosaic from '../mosaic/Mosaic';
 
 // Register all panel definitions on import
 panelDefinitions.forEach(definition => {
   panelRegistry.register(definition);
 });
 
-// TODO: experiment with dnd kit
-
-// TODO: Define a few different templates
-
-function DashboardContent() {
-  const { state } = useDashboard();
-  const { layout, isEditMode } = state;
+function MosaicContent() {
+  const { state, actions } = useMosaic();
+  const { tiles, isEditMode } = state;
 
   return (
     <div className="relative h-full">
-      {/* Main Dashboard Layout */}
+      {/* Main Mosaic Layout */}
       <div className="bg-zinc-900/50 rounded-lg border border-zinc-800 h-full overflow-hidden">
-        <SortablePanelLayout layout={layout} />
+        <Mosaic
+          tiles={tiles}
+          isEditMode={isEditMode}
+          onTilesChange={actions.setTiles}
+          onRemoveTile={actions.removeTile}
+        />
       </div>
 
       {/* Edit Mode Overlay */}
@@ -35,16 +36,16 @@ function DashboardContent() {
   );
 }
 
-interface CustomizableDashboardProps {
+interface MosaicContainerProps {
   className?: string;
 }
 
-export default function CustomizableDashboard({ 
-  className = 'fixed top-16 bottom-0 left-20 right-0 overflow-hidden' 
-}: CustomizableDashboardProps) {
+export default function MosaicContainer({
+  className = 'fixed top-16 bottom-0 left-20 right-0 overflow-hidden p-4'
+}: MosaicContainerProps) {
   return (
     <div className={className}>
-      <DashboardContent />
+      <MosaicContent />
     </div>
   );
 }

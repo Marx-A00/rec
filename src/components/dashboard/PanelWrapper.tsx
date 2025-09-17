@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { X, Settings, GripVertical } from 'lucide-react';
-import { Panel, PanelComponentProps } from '@/types/dashboard';
+import { Panel, PanelComponentProps } from '@/types/mosaic';
 import { useDashboard } from '@/contexts/DashboardContext';
 import { getPanelDefinition } from '@/lib/dashboard/PanelRegistry';
 import { Button } from '@/components/ui/button';

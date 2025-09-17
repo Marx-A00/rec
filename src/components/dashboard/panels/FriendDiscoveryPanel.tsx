@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { UserPlus, User, Music, Heart, RefreshCw } from 'lucide-react';
-import { PanelComponentProps } from '@/types/dashboard';
+import { PanelComponentProps } from '@/types/mosaic';
 import { Button } from '@/components/ui/button';
 
 interface SuggestedFriend {

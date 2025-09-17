@@ -5,7 +5,7 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { X, Settings, GripVertical, Ungroup, ArrowRightLeft, ArrowUpDown } from 'lucide-react';
-import { Panel, PanelComponentProps } from '@/types/dashboard';
+import { Panel, PanelComponentProps } from '@/types/mosaic';
 import { useDashboard } from '@/contexts/DashboardContext';
 import { getPanelDefinition } from '@/lib/dashboard/PanelRegistry';
 import { Button } from '@/components/ui/button';

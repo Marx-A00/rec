@@ -4,7 +4,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { useIsDashboardPage } from '@/hooks/useIsDashboardPage';
-import { useDashboard } from '@/contexts/DashboardContext';
+import { useMosaic } from '@/contexts/MosaicContext';
 import DashboardHeaderControls from './DashboardHeaderControls';
 import WidgetLibrary from './WidgetLibrary';
 
@@ -27,8 +27,8 @@ export default function DashboardHeaderWrapper({ children }: DashboardHeaderWrap
     return <>{children}</>;
   }
 
-  // Hook to access dashboard context (will be available due to ConditionalDashboardProvider)
-  const { state, actions } = useDashboard();
+  // Hook to access mosaic context (will be available due to ConditionalDashboardProvider)
+  const { state, actions } = useMosaic();
   const { isEditMode } = state;
 
   const handleToggleEditMode = () => {

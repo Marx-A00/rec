@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Music, Users, Heart, TrendingUp } from 'lucide-react';
-import { PanelComponentProps } from '@/types/dashboard';
+import { PanelComponentProps } from '@/types/mosaic';
 
 interface StatsData {
   albumsInCollection: number;
@@ -64,6 +64,19 @@ export default function QuickStatsPanel({
             <p className="text-sm text-zinc-400 mb-2">Panel Preview</p>
             <h2 className="text-lg font-semibold text-white">
               Quick Stats
+              <br />
+              <br />
+              <ul>
+                <li>Albums</li>
+                <li>Recommendations</li>
+                <li>consecutive days logged in</li>
+                <li>recommendations receive</li>
+                <li>Albums to listen to from LL playlist </li>
+                <li> profile views (?) </li>
+                <li> follows </li>
+                <li> genres is collection</li>
+                <li> genres recommended</li>
+                </ul> 
             </h2>
           </div>
           

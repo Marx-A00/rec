@@ -36,6 +36,21 @@ export interface Panel {
   layout?: PanelLayout; // for nested panel groups
 }
 
+// New flat panel structure for simplified dashboard
+export interface FlatPanel {
+  id: string;
+  type: PanelType;
+  x: number; // grid column start
+  y: number; // grid row start
+  width: number; // grid column span
+  height: number; // grid row span
+  config: PanelConfig;
+  minWidth?: number;
+  minHeight?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+}
+
 export interface PanelLayout {
   direction: 'horizontal' | 'vertical';
   panels: Panel[];

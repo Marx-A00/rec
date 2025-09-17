@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Heart, User, Settings, ChevronDown } from 'lucide-react';
-import { PanelComponentProps } from '@/types/dashboard';
+import { PanelComponentProps } from '@/types/mosaic';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Button } from '@/components/ui/button';
 

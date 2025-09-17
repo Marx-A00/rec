@@ -26,7 +26,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable';
-import { PanelLayout, Panel } from '@/types/dashboard';
+import { PanelLayout, Panel } from '@/types/mosaic';
 import { useDashboard } from '@/contexts/DashboardContext';
 import SortablePanelWrapper from './SortablePanelWrapper';
 import PanelWrapper from './PanelWrapper';

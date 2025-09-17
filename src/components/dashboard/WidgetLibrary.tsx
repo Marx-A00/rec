@@ -3,9 +3,9 @@
 
 import React, { useState } from 'react';
 import { X, Plus, Grip } from 'lucide-react';
-import { useDashboard } from '@/contexts/DashboardContext';
+import { useMosaic } from '@/contexts/MosaicContext';
 import { getAllPanelDefinitions, getPanelsByCategory } from '@/lib/dashboard/PanelRegistry';
-import { PanelDefinition } from '@/types/dashboard';
+import { PanelDefinition } from '@/types/mosaic';
 import { Button } from '@/components/ui/button';
 
 interface WidgetLibraryProps {
@@ -14,7 +14,7 @@ interface WidgetLibraryProps {
 }
 
 export default function WidgetLibrary({ isOpen, onClose }: WidgetLibraryProps) {
-  const { actions } = useDashboard();
+  const { actions } = useMosaic();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
   const allPanels = getAllPanelDefinitions();
@@ -25,9 +25,8 @@ export default function WidgetLibrary({ isOpen, onClose }: WidgetLibraryProps) {
     : getPanelsByCategory(selectedCategory as PanelDefinition['category']);
 
   const handleAddPanel = (panelType: PanelDefinition['type']) => {
-    actions.addPanel(panelType);
-    // Optionally close the sidebar after adding
-    // onClose();
+    actions.addTile(panelType);
+    onClose(); // Close after adding
   };
 
   if (!isOpen) return null;

@@ -2,7 +2,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { PanelComponentProps } from '@/types/dashboard';
+import { PanelComponentProps } from '@/types/mosaic';
 import RecommendationsList from '@/components/recommendations/RecommendationsList';
 
 export default function RecommendationsPanel({ 

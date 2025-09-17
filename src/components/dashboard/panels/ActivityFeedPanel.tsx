@@ -2,7 +2,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { PanelComponentProps } from '@/types/dashboard';
+import { PanelComponentProps } from '@/types/mosaic';
 import SocialActivityFeed from '@/components/feed/SocialActivityFeed';
 
 export default function ActivityFeedPanel({ 

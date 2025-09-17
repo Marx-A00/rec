@@ -4,7 +4,7 @@
 import React from 'react';
 import { Settings, Plus, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useDashboard } from '@/contexts/DashboardContext';
+import { useMosaic } from '@/contexts/MosaicContext';
 
 interface DashboardHeaderControlsProps {
   isEditMode: boolean;
@@ -17,13 +17,13 @@ export default function DashboardHeaderControls({
   onToggleEditMode,
   onShowWidgetLibrary,
 }: DashboardHeaderControlsProps) {
-  const { actions } = useDashboard();
+  const { actions } = useMosaic();
   const [isSaving, setIsSaving] = React.useState(false);
 
   const handleSaveLayout = async () => {
     setIsSaving(true);
     try {
-      await actions.saveLayout();
+      // TODO: Implement save layout for mosaic
       console.log('Layout saved successfully');
     } catch (error) {
       console.error('Failed to save layout:', error);

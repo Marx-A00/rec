@@ -1,6 +1,6 @@
 // src/lib/dashboard/PanelRegistry.ts
 
-import { PanelDefinition, PanelType } from '@/types/dashboard';
+import { PanelDefinition, PanelType } from '@/types/mosaic';
 
 class PanelRegistry {
   private panels = new Map<PanelType, PanelDefinition>();

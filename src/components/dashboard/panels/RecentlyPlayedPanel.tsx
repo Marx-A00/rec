@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Play, Clock } from 'lucide-react';
-import { PanelComponentProps } from '@/types/dashboard';
+import { PanelComponentProps } from '@/types/mosaic';
 import AlbumImage from '@/components/ui/AlbumImage';
 
 interface RecentlyPlayedAlbum {

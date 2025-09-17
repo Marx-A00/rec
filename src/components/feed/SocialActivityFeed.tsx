@@ -23,7 +23,7 @@ interface SocialActivityFeedProps {
 export default function SocialActivityFeed({
   className = '',
   activityType,
-  refreshInterval = 30000, // 30 seconds default
+  refreshInterval = 30000, // 30 seconds default - DISABLED TEMPORARILY
   session: sessionProp,
 }: SocialActivityFeedProps) {
   const { data: clientSession } = useSession();
@@ -172,10 +172,10 @@ export default function SocialActivityFeed({
     queryFn: fetchActivities,
     initialPageParam: undefined,
     getNextPageParam: lastPage => lastPage.nextCursor,
-    staleTime: 30000, // 30 seconds
-    refetchInterval: refreshInterval, // Auto-refresh every 30 seconds
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes (increased from 30 seconds)
+    refetchInterval: false, // DISABLED: was refreshInterval - causing performance issues
+    refetchOnWindowFocus: false, // DISABLED: prevent refetch on tab switch
+    refetchOnMount: 'always', // Only fetch on mount
     enabled: !!session, // Only fetch if user is signed in
   });
 

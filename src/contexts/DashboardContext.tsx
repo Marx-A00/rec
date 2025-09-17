@@ -12,7 +12,7 @@ import {
   Panel,
   PanelType,
   PanelConfig
-} from '@/types/dashboard';
+} from '@/types/mosaic';
 import { panelRegistry } from '@/lib/dashboard/PanelRegistry';
 
 // Action types for reducer

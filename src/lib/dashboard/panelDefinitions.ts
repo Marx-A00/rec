@@ -1,7 +1,7 @@
 // src/lib/dashboard/panelDefinitions.ts
 
 import { Folder, Heart, Users, BarChart3, Play, UserPlus } from 'lucide-react';
-import { PanelDefinition } from '@/types/dashboard';
+import { PanelDefinition } from '@/types/mosaic';
 import CollectionAlbumsPanel from '@/components/dashboard/panels/CollectionAlbumsPanel';
 import RecommendationsPanel from '@/components/dashboard/panels/RecommendationsPanel';
 import ActivityFeedPanel from '@/components/dashboard/panels/ActivityFeedPanel';

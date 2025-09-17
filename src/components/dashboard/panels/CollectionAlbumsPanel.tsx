@@ -7,8 +7,9 @@ import Link from 'next/link';
 import { Folder } from 'lucide-react';
 // TODO: fix text overflow 
 // TODO: Think about sizing, also allowing this to be vertical
-import { PanelComponentProps } from '@/types/dashboard';
+import { PanelComponentProps } from '@/types/mosaic';
 import { CollectionAlbum } from '@/types/collection';
+import { Collection } from '@/generated/graphql';
 import { useNavigation } from '@/hooks/useNavigation';
 import SignInButton from '@/components/auth/SignInButton';
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -79,8 +80,8 @@ export default function CollectionAlbumsPanel({
             console.log('GraphQL Response:', data);
             console.log('Collections:', data.data?.myCollections);
 
-            const collections = data.data?.myCollections || [];
-            const allAlbums = collections.flatMap(collection => collection.albums || []);
+            const collections: Collection[] = data.data?.myCollections || [];
+            const allAlbums = collections.flatMap((collection: Collection) => collection.albums || []);
 
             console.log('All Albums extracted:', allAlbums);
             console.log('Number of albums:', allAlbums.length);

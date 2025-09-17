@@ -7,7 +7,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable';
-import { PanelLayout } from '@/types/dashboard';
+import { PanelLayout } from '@/types/mosaic';
 import PanelWrapper from './PanelWrapper';
 
 interface DynamicPanelLayoutProps {
