@@ -6,6 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Table,
   TableBody,
   TableCell,
@@ -89,6 +96,7 @@ export default function JobHistoryPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [timeFilter, setTimeFilter] = useState<string>('24h');
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<JobHistoryItem | null>(null);
 
   const fetchJobHistory = async () => {
     setLoading(true);
@@ -349,7 +357,11 @@ export default function JobHistoryPage() {
                   </TableRow>
                 ) : (
                   jobs.map((job) => (
-                    <TableRow key={job.id} className="border-zinc-800">
+                    <TableRow
+                      key={job.id}
+                      className="border-zinc-800 cursor-pointer hover:bg-zinc-800/50 transition-colors"
+                      onClick={() => setSelectedJob(job)}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {getStatusIcon(job.status)}
@@ -376,7 +388,10 @@ export default function JobHistoryPage() {
                       <TableCell>
                         {job.status === 'failed' && (
                           <Button
-                            onClick={() => handleRetryJob(job.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRetryJob(job.id);
+                            }}
                             size="sm"
                             variant="ghost"
                             className="text-zinc-400 hover:text-white"
@@ -387,6 +402,7 @@ export default function JobHistoryPage() {
                         )}
                         {job.error && (
                           <Button
+                            onClick={(e) => e.stopPropagation()}
                             size="sm"
                             variant="ghost"
                             className="text-zinc-400 hover:text-white"
@@ -435,6 +451,120 @@ export default function JobHistoryPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Job Details Modal */}
+      <Dialog open={!!selectedJob} onOpenChange={(open) => !open && setSelectedJob(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white">Job Details</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Full details for job {selectedJob?.id}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedJob && (
+            <div className="space-y-4">
+              {/* Job Status and Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="text-sm text-zinc-400">Status</div>
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(selectedJob.status)}
+                    <Badge variant={getStatusBadgeVariant(selectedJob.status) as any}>
+                      {selectedJob.status}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm text-zinc-400">Job Name</div>
+                  <div className="text-white font-medium">{selectedJob.name}</div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm text-zinc-400">Created</div>
+                  <div className="text-white">{new Date(selectedJob.createdAt).toLocaleString()}</div>
+                </div>
+
+                {selectedJob.completedAt && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-zinc-400">Completed</div>
+                    <div className="text-white">{new Date(selectedJob.completedAt).toLocaleString()}</div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <div className="text-sm text-zinc-400">Duration</div>
+                  <div className="text-white">{formatDuration(selectedJob.duration)}</div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm text-zinc-400">Attempts</div>
+                  <div className="text-white">{selectedJob.attempts}</div>
+                </div>
+              </div>
+
+              {/* Job Data */}
+              <div className="space-y-2">
+                <div className="text-sm text-zinc-400">Job Data</div>
+                <div className="bg-zinc-800 rounded-lg p-3">
+                  <pre className="text-xs text-zinc-300 overflow-x-auto">
+                    {JSON.stringify(selectedJob.data, null, 2)}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Job Result (if completed) */}
+              {selectedJob.result && (
+                <div className="space-y-2">
+                  <div className="text-sm text-zinc-400">Result</div>
+                  <div className="bg-zinc-800 rounded-lg p-3">
+                    <pre className="text-xs text-zinc-300 overflow-x-auto">
+                      {JSON.stringify(selectedJob.result, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Details (if failed) */}
+              {selectedJob.error && (
+                <div className="space-y-2">
+                  <div className="text-sm text-zinc-400">Error</div>
+                  <div className="bg-red-900/20 border border-red-800 rounded-lg p-3">
+                    <pre className="text-xs text-red-300 overflow-x-auto">
+                      {selectedJob.error}
+                    </pre>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-4 border-t border-zinc-800">
+                {selectedJob.status === 'failed' && (
+                  <Button
+                    onClick={() => {
+                      handleRetryJob(selectedJob.id);
+                      setSelectedJob(null);
+                    }}
+                    variant="outline"
+                    className="border-zinc-700 text-white hover:bg-zinc-800"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Retry Job
+                  </Button>
+                )}
+                <Button
+                  onClick={() => setSelectedJob(null)}
+                  variant="outline"
+                  className="border-zinc-700 text-white hover:bg-zinc-800"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
