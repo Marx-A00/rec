@@ -32,6 +32,8 @@ export default function NavigationSidebar() {
   const user = session?.user;
   const { openDrawer } = useRecommendationDrawerContext();
 
+  // TODO: Figure out what's going on here cuh
+
   // Load collapsed state from localStorage on mount
   useEffect(() => {
     const savedState = localStorage.getItem('sidebar-collapsed');

@@ -6,6 +6,8 @@ import { Heart } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AlbumImage from '@/components/ui/AlbumImage';
 
+// TODO: make breakpoint (?) for albums to expand vertically if they need to
+
 // Helper function to get color classes based on score
 const getScoreColors = (score: number) => {
   if (score >= 10) {

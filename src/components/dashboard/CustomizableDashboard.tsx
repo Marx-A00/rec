@@ -12,6 +12,10 @@ panelDefinitions.forEach(definition => {
   panelRegistry.register(definition);
 });
 
+// TODO: experiment with dnd kit
+
+// TODO: Define a few different templates
+
 function DashboardContent() {
   const { state } = useDashboard();
   const { layout, isEditMode } = state;

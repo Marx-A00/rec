@@ -5,7 +5,8 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Folder } from 'lucide-react';
-
+// TODO: fix text overflow 
+// TODO: Think about sizing, also allowing this to be vertical
 import { PanelComponentProps } from '@/types/dashboard';
 import { CollectionAlbum } from '@/types/collection';
 import { useNavigation } from '@/hooks/useNavigation';

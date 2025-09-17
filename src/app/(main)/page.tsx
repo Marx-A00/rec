@@ -5,3 +5,6 @@ import CustomizableDashboard from '@/components/dashboard/CustomizableDashboard'
 export default function Home() {
   return <CustomizableDashboard />;
 }
+
+// TODO: check out memory leak or whatever
+// TODO: check out prisma query shits in terminal
