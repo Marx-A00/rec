@@ -107,20 +107,20 @@ async function getTrendingArtists(limit: number = 12) {
 
 export default async function BrowsePage() {
   return (
-    <div className='space-y-8'>
+    <div className='container mx-auto px-4 py-8 max-w-7xl'>
       {/* Page Header */}
-      <div id='browse-page-header' className='mb-8'>
-        <h1 className='text-3xl font-bold text-white mb-2'>
+      <div id='browse-page-header' className='mb-16'>
+        <h1 className='text-4xl font-bold text-white mb-4'>
           Discover Music & Community
         </h1>
-        <p className='text-zinc-400'>
+        <p className='text-zinc-400 text-lg max-w-3xl leading-relaxed'>
           Explore new music, connect with fellow music lovers, and discover your
           next favorite album
         </p>
       </div>
 
       {/* Content Sections */}
-      <div className='space-y-12'>
+      <div className='space-y-16'>
         {/* New Users Section */}
         <ContentRow
           title='Welcome New Music Lovers'
@@ -175,7 +175,7 @@ async function NewUsersSection() {
   const users = await getNewUsers(15);
 
   return (
-    <div className='flex space-x-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
+    <div className='flex gap-6 overflow-x-auto pb-6 scrollbar-hide'>
       {users.map(user => (
         <UserCard
           key={user.id}
@@ -191,14 +191,14 @@ async function TrendingArtistsSection() {
 
   if (artists.length === 0) {
     return (
-      <div className='text-center py-8 text-zinc-500'>
-        No trending artists yet. Be the first to recommend some albums!
+      <div className='text-center py-12 bg-zinc-900/50 rounded-lg border border-zinc-800'>
+        <p className='text-zinc-400'>No trending artists yet. Be the first to recommend some albums!</p>
       </div>
     );
   }
 
   return (
-    <div className='flex space-x-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
+    <div className='flex gap-6 overflow-x-auto pb-6 scrollbar-hide'>
       {artists.map(artist => (
         <TrendingArtistCard key={artist.id} artist={artist} />
       ))}
@@ -211,15 +211,15 @@ async function SpotifyAlbumsSection() {
 
   if (spotifyData.needsSync || spotifyData.newReleases.length === 0) {
     return (
-      <div className='text-center py-8 text-zinc-500'>
-        <p>No Spotify data available. Sync may be needed.</p>
-        <p className='text-xs mt-2'>Visit the admin dashboard to trigger a sync.</p>
+      <div className='text-center py-12 bg-zinc-900/50 rounded-lg border border-zinc-800'>
+        <p className='text-zinc-400'>No Spotify data available. Sync may be needed.</p>
+        <p className='text-xs mt-2 text-zinc-500'>Visit the admin dashboard to trigger a sync.</p>
       </div>
     );
   }
 
   return (
-    <div className='flex space-x-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
+    <div className='flex gap-6 overflow-x-auto pb-6 scrollbar-hide'>
       {spotifyData.newReleases.slice(0, 15).map((album: any) => (
         <SpotifyAlbumCard key={album.id} album={album} />
       ))}
@@ -240,15 +240,17 @@ function ContentRow({
   children: React.ReactNode;
 }) {
   return (
-    <section className='space-y-4'>
-      <div className='flex items-center space-x-3'>
-        <div className='text-cosmic-latte'>{icon}</div>
+    <section className='space-y-8'>
+      <div className='flex items-center space-x-4'>
+        <div className='text-cosmic-latte p-3 bg-cosmic-latte/10 rounded-xl border border-cosmic-latte/20'>{icon}</div>
         <div>
-          <h2 className='text-lg font-semibold text-white'>{title}</h2>
-          <p className='text-sm text-zinc-400'>{subtitle}</p>
+          <h2 className='text-3xl font-semibold text-white'>{title}</h2>
+          <p className='text-lg text-zinc-400 mt-2 leading-relaxed'>{subtitle}</p>
         </div>
       </div>
-      {children}
+      <div className='relative'>
+        {children}
+      </div>
     </section>
   );
 }
@@ -256,31 +258,33 @@ function ContentRow({
 function UserCard({ user }: { user: any }) {
   return (
     <Link href={`/profile/${user.id}`}>
-      <div className='min-w-[160px] max-w-[160px] bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 hover:border-zinc-600 hover:bg-zinc-800/50 transition-all duration-200 group cursor-pointer'>
-        <div className='text-center space-y-3'>
-          <Avatar className='w-16 h-16 mx-auto border-2 border-zinc-700 group-hover:border-cosmic-latte transition-colors'>
+      <div className='flex-shrink-0 w-[200px] bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-6 hover:border-emeraled-green/50 hover:bg-zinc-800/60 transition-all duration-300 group cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-emeraled-green/10'>
+        <div className='text-center space-y-4'>
+          <Avatar className='w-20 h-20 mx-auto ring-2 ring-zinc-700/80 group-hover:ring-cosmic-latte/80 transition-all duration-300'>
             <AvatarImage
               src={user.image || undefined}
               alt={user.name || 'User'}
             />
-            <AvatarFallback className='bg-zinc-700 text-cosmic-latte text-lg'>
-              {user.name?.charAt(0) || 'U'}
+            <AvatarFallback className='bg-gradient-to-br from-zinc-700 to-zinc-800 text-cosmic-latte text-xl font-semibold'>
+              {user.name?.charAt(0)?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
 
-          <div>
-            <h3 className='font-medium text-white text-sm truncate group-hover:text-cosmic-latte transition-colors'>
+          <div className='space-y-2'>
+            <h3 className='font-semibold text-white text-base truncate group-hover:text-cosmic-latte transition-colors'>
               {user.name || 'Anonymous User'}
             </h3>
-            <p className='text-xs text-zinc-400 mt-1'>
-              {user.followersCount} followers
-            </p>
-            <p className='text-xs text-zinc-500'>
-              {user.recommendationsCount} recommendations
-            </p>
+            <div className='space-y-1'>
+              <p className='text-sm text-zinc-400'>
+                {user.followersCount || 0} followers
+              </p>
+              <p className='text-sm text-zinc-500'>
+                {user.recommendationsCount || 0} recs
+              </p>
+            </div>
           </div>
 
-          <div className='text-xs text-emeraled-green bg-emeraled-green/10 rounded px-2 py-1'>
+          <div className='text-xs text-emeraled-green bg-gradient-to-r from-emeraled-green/15 to-emeraled-green/5 rounded-full px-4 py-2 font-medium border border-emeraled-green/20'>
             New Member
           </div>
         </div>
@@ -291,32 +295,39 @@ function UserCard({ user }: { user: any }) {
 
 function TrendingArtistCard({ artist }: { artist: any }) {
   return (
-    <div className='min-w-[160px] max-w-[160px] bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 hover:border-zinc-600 hover:bg-zinc-800/50 transition-all duration-200 group cursor-pointer'>
-      <div className='text-center space-y-3'>
-        <div className='relative w-16 h-16 mx-auto'>
+    <div className='flex-shrink-0 w-[200px] bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-6 hover:border-cosmic-latte/50 hover:bg-zinc-800/60 transition-all duration-300 group cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-cosmic-latte/10'>
+      <div className='text-center space-y-4'>
+        <div className='relative w-20 h-20 mx-auto'>
           {artist.imageUrl ? (
             <img
               src={artist.imageUrl}
               alt={artist.name}
-              className='w-full h-full rounded-full object-cover border-2 border-zinc-700 group-hover:border-cosmic-latte transition-colors'
+              className='w-full h-full rounded-full object-cover ring-2 ring-zinc-700/80 group-hover:ring-cosmic-latte/80 transition-all duration-300'
             />
           ) : (
-            <div className='w-full h-full bg-zinc-700 rounded-full flex items-center justify-center border-2 border-zinc-700 group-hover:border-cosmic-latte transition-colors'>
-              <Music className='w-6 h-6 text-zinc-400' />
+            <div className='w-full h-full bg-gradient-to-br from-zinc-700 to-zinc-800 rounded-full flex items-center justify-center ring-2 ring-zinc-700/80 group-hover:ring-cosmic-latte/80 transition-all duration-300'>
+              <Music className='w-8 h-8 text-zinc-400' />
             </div>
           )}
+          {/* Trending badge */}
+          <div className='absolute -top-1 -right-1 bg-gradient-to-r from-cosmic-latte to-yellow-300 text-black text-xs font-bold rounded-full w-7 h-7 flex items-center justify-center shadow-lg'>
+            HOT
+          </div>
         </div>
 
-        <div>
-          <h3 className='font-medium text-white text-sm truncate group-hover:text-cosmic-latte transition-colors'>
+        <div className='space-y-2'>
+          <h3 className='font-semibold text-white text-base truncate group-hover:text-cosmic-latte transition-colors'>
             {artist.name}
           </h3>
-          <p className='text-xs text-zinc-400 mt-1'>
-            {artist.recommendationCount} recommendations
-          </p>
-          <p className='text-xs text-zinc-500'>
-            ⭐ {artist.averageScore}/10
-          </p>
+          <div className='space-y-1'>
+            <p className='text-sm text-zinc-400'>
+              {artist.recommendationCount} recs
+            </p>
+            <div className='flex items-center justify-center gap-1'>
+              <span className='text-yellow-400'>★</span>
+              <span className='text-sm text-zinc-300 font-medium'>{artist.averageScore}/10</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -325,32 +336,38 @@ function TrendingArtistCard({ artist }: { artist: any }) {
 
 function SpotifyAlbumCard({ album }: { album: any }) {
   return (
-    <div className='min-w-[200px] max-w-[200px] group'>
+    <div className='flex-shrink-0 w-[240px] group'>
       <a
         href={album.spotifyUrl}
         target='_blank'
         rel='noopener noreferrer'
         className='block'
       >
-        <div className='relative aspect-square mb-3'>
-          <AlbumImage
-            src={album.image}
-            alt={album.name}
-            className='w-full h-full object-cover rounded-lg shadow-lg group-hover:shadow-xl transition-shadow duration-200'
-          />
-          {/* Spotify badge */}
-          <div className='absolute top-2 right-2 bg-green-500 text-black text-xs font-bold px-2 py-1 rounded-full'>
-            SPOTIFY
+        <div className='bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-5 hover:border-green-500/50 hover:bg-zinc-800/60 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/10'>
+          <div className='relative aspect-square mb-5'>
+            <AlbumImage
+              src={album.image}
+              alt={album.name}
+              className='w-full h-full object-cover rounded-lg shadow-xl'
+            />
+            {/* Spotify badge */}
+            <div className='absolute top-3 right-3 bg-gradient-to-r from-green-500 to-green-400 text-black text-xs font-bold px-3 py-2 rounded-full flex items-center gap-1.5 shadow-lg'>
+              SPOTIFY
+            </div>
           </div>
-        </div>
-        <div className='space-y-1'>
-          <h3 className='font-medium text-white text-sm truncate group-hover:text-cosmic-latte transition-colors'>
-            {album.name}
-          </h3>
-          <p className='text-xs text-zinc-400 truncate'>{album.artists}</p>
-          <p className='text-xs text-zinc-500'>
-            Released: {new Date(album.releaseDate).toLocaleDateString()}
-          </p>
+          <div className='space-y-2'>
+            <h3 className='font-semibold text-white text-base line-clamp-1 group-hover:text-cosmic-latte transition-colors'>
+              {album.name}
+            </h3>
+            <p className='text-sm text-zinc-400 line-clamp-1'>{album.artists}</p>
+            <p className='text-xs text-zinc-500'>
+              {new Date(album.releaseDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              })}
+            </p>
+          </div>
         </div>
       </a>
     </div>
@@ -360,19 +377,21 @@ function SpotifyAlbumCard({ album }: { album: any }) {
 function ComingSoonCard() {
   return (
     <div className='flex justify-center'>
-      <div className='min-w-[300px] bg-gradient-to-r from-zinc-900/80 to-zinc-800/80 border border-zinc-700 rounded-lg p-8 text-center'>
-        <div className='space-y-4'>
-          <div className='text-6xl'>🎵</div>
+      <div className='min-w-[320px] bg-gradient-to-br from-zinc-900/80 via-zinc-800/80 to-zinc-900/80 border border-zinc-700/80 rounded-xl p-10 text-center backdrop-blur-sm'>
+        <div className='space-y-6'>
+          <div className='text-7xl'>
+            <Music className='w-16 h-16 mx-auto text-zinc-400' />
+          </div>
           <div>
-            <h3 className='text-xl font-semibold text-white mb-2'>
+            <h3 className='text-2xl font-semibold text-white mb-3'>
               New Releases
             </h3>
-            <p className='text-zinc-400 text-sm mb-4'>
+            <p className='text-zinc-400 text-base mb-6 leading-relaxed'>
               Fresh music drops coming soon! We&apos;re working on integrating the
               latest releases from your favorite artists.
             </p>
-            <div className='inline-flex items-center space-x-2 text-emeraled-green text-sm font-medium'>
-              <Calendar className='w-4 h-4' />
+            <div className='inline-flex items-center space-x-2 text-emeraled-green text-base font-medium bg-emeraled-green/10 px-4 py-2 rounded-full border border-emeraled-green/20'>
+              <Calendar className='w-5 h-5' />
               <span>Coming Soon</span>
             </div>
           </div>
@@ -384,16 +403,18 @@ function ComingSoonCard() {
 
 function LoadingCards({ count }: { count: number }) {
   return (
-    <div className='flex space-x-4 overflow-hidden'>
+    <div className='flex gap-6 overflow-hidden'>
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className='min-w-[160px] max-w-[160px] bg-zinc-900/50 border border-zinc-800 rounded-lg p-4'
+          className='flex-shrink-0 w-[200px] bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-6'
         >
           <div className='animate-pulse'>
-            <div className='w-16 h-16 mx-auto bg-zinc-700 rounded-full mb-3' />
-            <div className='h-4 bg-zinc-700 rounded mb-2' />
-            <div className='h-3 bg-zinc-800 rounded' />
+            <div className='w-20 h-20 mx-auto bg-zinc-700/60 rounded-full mb-5' />
+            <div className='space-y-3'>
+              <div className='h-4 bg-zinc-700/60 rounded mx-auto w-3/4' />
+              <div className='h-3 bg-zinc-800/60 rounded mx-auto w-1/2' />
+            </div>
           </div>
         </div>
       ))}
