@@ -14,6 +14,9 @@ panelDefinitions.forEach(definition => {
   panelRegistry.register(definition);
 });
 
+// TODO: remove random padding on elements
+// TODO: remove panels like recently played...
+
 const MosaicContent = React.memo(function MosaicContent() {
   const { state, actions } = useSplitMosaic();
   const { root, isEditMode } = state;
