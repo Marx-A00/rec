@@ -5,6 +5,7 @@ import React from 'react';
 import { Settings, Plus, Save, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSplitMosaic } from '@/contexts/SplitMosaicContext';
+import Toast from '@/components/ui/toast';
 
 interface MosaicHeaderControlsProps {
   isEditMode: boolean;
@@ -19,14 +20,28 @@ export default function MosaicHeaderControls({
 }: MosaicHeaderControlsProps) {
   const { actions } = useSplitMosaic();
   const [isSaving, setIsSaving] = React.useState(false);
+  const [toast, setToast] = React.useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
+    show: false,
+    message: '',
+    type: 'success'
+  });
 
   const handleSaveLayout = async () => {
     setIsSaving(true);
     try {
       actions.saveLayout();
-      console.log('Layout saved successfully');
+      setToast({
+        show: true,
+        message: 'Layout saved successfully! 🎉',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Failed to save layout:', error);
+      setToast({
+        show: true,
+        message: 'Failed to save layout. Please try again.',
+        type: 'error'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -35,11 +50,25 @@ export default function MosaicHeaderControls({
   const handleResetLayout = () => {
     if (confirm('Are you sure you want to reset the layout to default?')) {
       actions.resetLayout();
+      setToast({
+        show: true,
+        message: 'Layout reset to default',
+        type: 'success'
+      });
     }
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <>
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        duration={3000}
+      />
+
+      <div className="flex items-center gap-2">
       {/* Save Layout Button */}
       <Button
         variant="ghost"
@@ -97,6 +126,7 @@ export default function MosaicHeaderControls({
           </Button>
         </>
       )}
-    </div>
+      </div>
+    </>
   );
 }

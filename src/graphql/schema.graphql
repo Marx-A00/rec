@@ -130,6 +130,24 @@ type AudioFeatures {
 # USER & SOCIAL TYPES
 # =============================================
 
+type OnboardingStatus {
+  isNewUser: Boolean!
+  profileUpdatedAt: DateTime
+  hasCompletedTour: Boolean!
+}
+
+type UserStats {
+  userId: String!
+  followersCount: Int!
+  followingCount: Int!
+  recommendationsCount: Int!
+  collectionsCount: Int!
+  totalAlbumsInCollections: Int!
+  averageRecommendationScore: Float
+  topGenres: [String!]!
+  joinedAt: DateTime!
+}
+
 type User {
   id: String!
   name: String
@@ -745,9 +763,21 @@ type Query {
   
   # User-specific queries
   myCollections: [Collection!]!
+  publicCollections(limit: Int = 20, offset: Int = 0): [Collection!]!
+  userCollections(userId: String!): [Collection!]!
   myRecommendations(sort: RecommendationSort = SCORE_DESC, limit: Int = 50): [Recommendation!]!
   followingActivity(limit: Int = 50): [Recommendation!]!
   socialFeed(type: ActivityType, cursor: String, limit: Int = 20): ActivityFeed!
+
+  # User social queries
+  userFollowers(userId: String!, limit: Int = 50, offset: Int = 0): [User!]!
+  userFollowing(userId: String!, limit: Int = 50, offset: Int = 0): [User!]!
+  mutualConnections(userId: String!): [User!]!
+  isFollowing(userId: String!): Boolean!
+
+  # User status queries
+  onboardingStatus: OnboardingStatus!
+  userStats(userId: String!): UserStats!
 
   # Admin queries
   users(offset: Int = 0, limit: Int = 20, search: String): [User!]!
@@ -806,9 +836,12 @@ type Mutation {
   
   # Collection management
   createCollection(name: String!, description: String, isPublic: Boolean = false): Collection!
+  updateCollection(id: String!, name: String, description: String, isPublic: Boolean): Collection!
+  deleteCollection(id: String!): Boolean!
   addAlbumToCollection(collectionId: String!, input: CollectionAlbumInput!): CollectionAlbum!
   removeAlbumFromCollection(collectionId: String!, albumId: UUID!): Boolean!
   updateCollectionAlbum(id: String!, input: CollectionAlbumInput!): CollectionAlbum!
+  reorderCollectionAlbums(collectionId: String!, albumIds: [UUID!]!): [CollectionAlbum!]!
   
   # Recommendation system
   createRecommendation(basisAlbumId: UUID!, recommendedAlbumId: UUID!, score: Int!): Recommendation!
@@ -818,9 +851,12 @@ type Mutation {
   # Social features
   followUser(userId: String!): UserFollow!
   unfollowUser(userId: String!): Boolean!
-  
+  dismissUserSuggestion(userId: String!): Boolean!
+
   # Profile management
   updateProfile(name: String, bio: String): User!
+  updateOnboardingStatus(hasCompletedTour: Boolean!): OnboardingStatus!
+  resetOnboardingStatus: OnboardingStatus!
   updateDashboardLayout(layout: JSON!): UserSettings!
   updateUserSettings(theme: String, language: String, profileVisibility: String, showRecentActivity: Boolean, showCollections: Boolean): UserSettings!
 

@@ -569,6 +569,181 @@ export const queryResolvers: QueryResolvers = {
     return [];
   },
 
+  // User social queries
+  userFollowers: async (_, { userId, limit = 50, offset = 0 }, { prisma }) => {
+    try {
+      const followers = await prisma.user.findMany({
+        where: {
+          following: {
+            some: {
+              followedId: userId,
+            },
+          },
+        },
+        skip: offset,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      });
+      return followers;
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch user followers: ${error}`);
+    }
+  },
+
+  userFollowing: async (_, { userId, limit = 50, offset = 0 }, { prisma }) => {
+    try {
+      const following = await prisma.user.findMany({
+        where: {
+          followers: {
+            some: {
+              followerId: userId,
+            },
+          },
+        },
+        skip: offset,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      });
+      return following;
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch user following: ${error}`);
+    }
+  },
+
+  mutualConnections: async (_, { userId }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      // Get users that both the current user and target user follow
+      const mutuals = await prisma.user.findMany({
+        where: {
+          AND: [
+            {
+              followers: {
+                some: {
+                  followerId: user.id,
+                },
+              },
+            },
+            {
+              followers: {
+                some: {
+                  followerId: userId,
+                },
+              },
+            },
+          ],
+        },
+      });
+      return mutuals;
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch mutual connections: ${error}`);
+    }
+  },
+
+  isFollowing: async (_, { userId }, { user, prisma }) => {
+    if (!user) {
+      return false;
+    }
+
+    try {
+      const follow = await prisma.userFollow.findUnique({
+        where: {
+          followerId_followedId: {
+            followerId: user.id,
+            followedId: userId,
+          },
+        },
+      });
+      return !!follow;
+    } catch (error) {
+      throw new GraphQLError(`Failed to check follow status: ${error}`);
+    }
+  },
+
+  // User status queries
+  onboardingStatus: async (_, __, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      const userData = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: {
+          profileUpdatedAt: true,
+        },
+      });
+
+      return {
+        isNewUser: !userData?.profileUpdatedAt,
+        profileUpdatedAt: userData?.profileUpdatedAt,
+        hasCompletedTour: !!userData?.profileUpdatedAt,
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to get onboarding status: ${error}`);
+    }
+  },
+
+  userStats: async (_, { userId }, { prisma }) => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          _count: {
+            select: {
+              followers: true,
+              following: true,
+              recommendations: true,
+              collections: true,
+            },
+          },
+          collections: {
+            include: {
+              _count: {
+                select: {
+                  albums: true,
+                },
+              },
+            },
+          },
+          recommendations: true,
+        },
+      });
+
+      if (!user) {
+        throw new GraphQLError('User not found');
+      }
+
+      // Calculate total albums across all collections
+      const totalAlbumsInCollections = user.collections.reduce(
+        (sum, collection) => sum + collection._count.albums,
+        0
+      );
+
+      // Calculate average recommendation score
+      const avgScore = user.recommendations.length > 0
+        ? user.recommendations.reduce((sum, rec) => sum + rec.score, 0) / user.recommendations.length
+        : 0;
+
+      return {
+        userId,
+        followersCount: user._count.followers,
+        followingCount: user._count.following,
+        recommendationsCount: user._count.recommendations,
+        collectionsCount: user._count.collections,
+        totalAlbumsInCollections,
+        averageRecommendationScore: avgScore,
+        topGenres: [], // Placeholder - would need to analyze user's albums/recommendations
+        joinedAt: user.createdAt,
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to get user stats: ${error}`);
+    }
+  },
+
   // User-specific queries (placeholders - require authentication)
   myCollections: async (_, __, { user, prisma }) => {
     // Debug logging to check auth context
@@ -609,6 +784,40 @@ export const queryResolvers: QueryResolvers = {
     });
 
     return collections;
+  },
+
+  publicCollections: async (_, { limit = 20, offset = 0 }, { prisma }) => {
+    try {
+      const collections = await prisma.collection.findMany({
+        where: { isPublic: true },
+        skip: offset,
+        take: limit,
+        orderBy: { updatedAt: 'desc' },
+      });
+      return collections;
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch public collections: ${error}`);
+    }
+  },
+
+  userCollections: async (_, { userId }, { prisma }) => {
+    try {
+      const collections = await prisma.collection.findMany({
+        where: {
+          userId,
+          OR: [
+            { isPublic: true },
+            // Note: In the future, we might want to add logic here
+            // to show private collections if the requesting user
+            // is the owner or has permission to view them
+          ],
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+      return collections;
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch user collections: ${error}`);
+    }
   },
 
   myRecommendations: async (_, { sort = 'SCORE_DESC', limit = 50 }, { user, prisma }) => {

@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import type { Session } from 'next-auth';
 
 import SignInButton from '@/components/auth/SignInButton';
+import { groupActivities } from '@/utils/activity-grouping';
 
 import ActivityItem from './ActivityItem';
+import GroupedActivityItem from './GroupedActivityItem';
 
 interface SocialActivityFeedProps {
   className?: string;
@@ -182,6 +184,11 @@ export default function SocialActivityFeed({
   // Flatten activities from all pages
   const activities = data?.pages?.flatMap(page => page.activities || []) || [];
 
+  // Group activities by user and type within time windows
+  const groupedActivities = useMemo(() => {
+    return groupActivities(activities);
+  }, [activities]);
+
   // Infinite scroll handler
   const handleScroll = useCallback(() => {
     if (
@@ -282,7 +289,7 @@ export default function SocialActivityFeed({
     );
   }
 
-  if (activities.length === 0) {
+  if (groupedActivities.length === 0) {
     return (
       <div className={`text-center py-12 ${className}`}>
         <div className='rounded-lg p-8'>
@@ -369,10 +376,10 @@ export default function SocialActivityFeed({
 
       {/* Activities List */}
       <div className='space-y-4'>
-        {activities.map(activity => (
-          <ActivityItem
-            key={activity.id}
-            activity={activity}
+        {groupedActivities.map(group => (
+          <GroupedActivityItem
+            key={group.id}
+            group={group}
             onAlbumClick={handleAlbumClick}
           />
         ))}
@@ -391,7 +398,7 @@ export default function SocialActivityFeed({
       )}
 
       {/* End of Feed */}
-      {!hasNextPage && activities.length > 0 && (
+      {!hasNextPage && groupedActivities.length > 0 && (
         <div className='text-center py-8'>
           <p className='text-zinc-500 text-sm'>
             You&apos;ve reached the end of your social feed

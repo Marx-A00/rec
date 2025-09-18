@@ -1,25 +1,53 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { graphqlClient } from '@/lib/graphql-client';
 import { CreateRecommendationRequest } from '@/types/recommendation';
 import {
   queryKeys,
   createMutationOptions,
-  handleApiResponse,
-  QueryError,
 } from '@/lib/queries';
 
 // ========================================
 // API Functions
 // ========================================
 
-const createRecommendation = async (data: CreateRecommendationRequest) => {
-  const response = await fetch('/api/recommendations', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
+const CREATE_RECOMMENDATION_MUTATION = `
+  mutation CreateRecommendation($basisAlbumId: UUID!, $recommendedAlbumId: UUID!, $score: Int!) {
+    createRecommendation(
+      basisAlbumId: $basisAlbumId,
+      recommendedAlbumId: $recommendedAlbumId,
+      score: $score
+    ) {
+      id
+      score
+      createdAt
+      basisAlbum {
+        id
+        title
+      }
+      recommendedAlbum {
+        id
+        title
+      }
+    }
+  }
+`;
 
-  return handleApiResponse(response);
+const createRecommendation = async (data: CreateRecommendationRequest): Promise<undefined> => {
+  try {
+    // Note: The GraphQL mutation uses album UUIDs, not Discogs IDs
+    // If data contains Discogs IDs, they need to be converted first
+    await graphqlClient.request(CREATE_RECOMMENDATION_MUTATION, {
+      basisAlbumId: data.basisAlbumDiscogsId, // This might need conversion
+      recommendedAlbumId: data.recommendedAlbumDiscogsId, // This might need conversion
+      score: data.score,
+    });
+  } catch (error: any) {
+    if (error.response?.errors?.[0]) {
+      throw new Error(error.response.errors[0].message);
+    }
+    throw new Error('Failed to create recommendation');
+  }
 };
 
 // ========================================
@@ -39,7 +67,7 @@ export function useCreateRecommendationMutation(
 
   return useMutation({
     mutationFn: createRecommendation,
-    onSuccess: data => {
+    onSuccess: () => {
       // Invalidate and refetch recommendations
       queryClient.invalidateQueries({
         queryKey: queryKeys.recommendations(),

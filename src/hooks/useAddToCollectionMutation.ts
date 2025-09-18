@@ -1,41 +1,81 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { graphqlClient } from '@/lib/graphql-client';
 import { queryKeys } from '@/lib/queries';
 import { Album } from '@/types/album';
-import { sanitizeArtistName } from '@/lib/utils';
 
-interface AddToCollectionRequest {
-  albumId: string;
-  albumTitle: string;
-  albumArtist: string;
-  albumYear?: number;
-  albumImageUrl?: string;
-}
+const ADD_ALBUM_TO_COLLECTION = `
+  mutation AddAlbumToCollection($collectionId: String!, $albumId: UUID!, $position: Int) {
+    addAlbumToCollection(
+      collectionId: $collectionId,
+      input: {
+        albumId: $albumId,
+        position: $position
+      }
+    ) {
+      id
+      collection {
+        id
+        name
+      }
+      album {
+        id
+        title
+      }
+    }
+  }
+`;
 
 const addToCollection = async (album: Album): Promise<string> => {
-  const response = await fetch(`/api/albums/${album.id}/add-to-collection`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      albumTitle: album.title,
-      albumArtist: sanitizeArtistName(
-        album.artists?.[0]?.name || 'Unknown Artist'
-      ),
-      albumYear: album.year,
-      albumImageUrl: album.image?.url,
-      // Let API create/use default collection
-    }),
-  });
+  try {
+    // First, try to get existing collections
+    const collectionsQuery = `
+      query GetMyCollections {
+        myCollections {
+          id
+          name
+          albumCount
+        }
+      }
+    `;
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to add to collection');
+    const collectionsData: any = await graphqlClient.request(collectionsQuery);
+    let collectionId: string;
+
+    if (!collectionsData.myCollections || collectionsData.myCollections.length === 0) {
+      // Create default collection if none exists
+      const createMutation = `
+        mutation CreateCollection {
+          createCollection(name: "My Collection", description: "My music collection", isPublic: false) {
+            id
+            name
+          }
+        }
+      `;
+      const newCollection: any = await graphqlClient.request(createMutation);
+      collectionId = newCollection.createCollection.id;
+    } else {
+      // Use the first collection or find "My Collection"
+      const defaultCollection = collectionsData.myCollections.find(
+        (c: any) => c.name === 'My Collection'
+      ) || collectionsData.myCollections[0];
+      collectionId = defaultCollection.id;
+    }
+
+    // Now add the album to the collection
+    await graphqlClient.request(ADD_ALBUM_TO_COLLECTION, {
+      collectionId,
+      albumId: album.id,
+      position: 0, // Add at the beginning
+    });
+
+    return `Added "${album.title}" to collection`;
+  } catch (error: any) {
+    if (error.response?.errors?.[0]) {
+      throw new Error(error.response.errors[0].message);
+    }
+    throw new Error('Failed to add to collection');
   }
-
-  const data = await response.json();
-  return data.message;
 };
 
 interface UseAddToCollectionMutationOptions {

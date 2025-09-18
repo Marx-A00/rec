@@ -577,6 +577,71 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
+  updateCollection: async (
+    _,
+    { id, name, description, isPublic },
+    { user, prisma }
+  ) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      // Verify collection ownership
+      const existingCollection = await prisma.collection.findFirst({
+        where: {
+          id,
+          userId: user.id,
+        },
+      });
+
+      if (!existingCollection) {
+        throw new GraphQLError('Collection not found or access denied');
+      }
+
+      const collection = await prisma.collection.update({
+        where: { id },
+        data: {
+          ...(name && { name: name.trim() }),
+          ...(description !== undefined && { description: description?.trim() }),
+          ...(isPublic !== undefined && { isPublic }),
+        },
+      });
+
+      return collection;
+    } catch (error) {
+      throw new GraphQLError(`Failed to update collection: ${error}`);
+    }
+  },
+
+  deleteCollection: async (_, { id }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      // Verify collection ownership
+      const existingCollection = await prisma.collection.findFirst({
+        where: {
+          id,
+          userId: user.id,
+        },
+      });
+
+      if (!existingCollection) {
+        throw new GraphQLError('Collection not found or access denied');
+      }
+
+      await prisma.collection.delete({
+        where: { id },
+      });
+
+      return true;
+    } catch (error) {
+      throw new GraphQLError(`Failed to delete collection: ${error}`);
+    }
+  },
+
   addAlbumToCollection: async (
     _,
     { collectionId, input },
@@ -704,6 +769,55 @@ export const mutationResolvers: MutationResolvers = {
       return updatedCollectionAlbum;
     } catch (error) {
       throw new GraphQLError(`Failed to update collection album: ${error}`);
+    }
+  },
+
+  reorderCollectionAlbums: async (
+    _,
+    { collectionId, albumIds },
+    { user, prisma }
+  ) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      // Verify collection ownership
+      const collection = await prisma.collection.findFirst({
+        where: {
+          id: collectionId,
+          userId: user.id,
+        },
+      });
+
+      if (!collection) {
+        throw new GraphQLError('Collection not found or access denied');
+      }
+
+      // Update positions in a transaction
+      const updates = albumIds.map((albumId, index) =>
+        prisma.collectionAlbum.updateMany({
+          where: {
+            collectionId,
+            albumId,
+          },
+          data: {
+            position: index,
+          },
+        })
+      );
+
+      await prisma.$transaction(updates);
+
+      // Return the reordered collection albums
+      const collectionAlbums = await prisma.collectionAlbum.findMany({
+        where: { collectionId },
+        orderBy: { position: 'asc' },
+      });
+
+      return collectionAlbums;
+    } catch (error) {
+      throw new GraphQLError(`Failed to reorder collection albums: ${error}`);
     }
   },
 
@@ -863,6 +977,20 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
+  dismissUserSuggestion: async (_, { userId }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      // Stub implementation - returns true
+      // In the future, could track dismissed suggestions
+      return true;
+    } catch (error) {
+      throw new GraphQLError(`Failed to dismiss user suggestion: ${error}`);
+    }
+  },
+
   // Profile management mutations (placeholders)
   updateProfile: async (_, { name, bio }, { user, prisma }) => {
     if (!user) {
@@ -881,6 +1009,52 @@ export const mutationResolvers: MutationResolvers = {
       return updatedUser;
     } catch (error) {
       throw new GraphQLError(`Failed to update profile: ${error}`);
+    }
+  },
+
+  updateOnboardingStatus: async (_, { hasCompletedTour }, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          profileUpdatedAt: hasCompletedTour ? new Date() : null,
+        },
+      });
+
+      return {
+        isNewUser: !updatedUser.profileUpdatedAt,
+        profileUpdatedAt: updatedUser.profileUpdatedAt,
+        hasCompletedTour: !!updatedUser.profileUpdatedAt,
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to update onboarding status: ${error}`);
+    }
+  },
+
+  resetOnboardingStatus: async (_, __, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          profileUpdatedAt: null,
+        },
+      });
+
+      return {
+        isNewUser: true,
+        profileUpdatedAt: null,
+        hasCompletedTour: false,
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to reset onboarding status: ${error}`);
     }
   },
 

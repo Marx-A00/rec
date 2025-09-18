@@ -174,6 +174,18 @@ export const resolvers: Resolvers = {
     album: async (parent, _, { dataloaders }) => {
       return dataloaders.albumLoader.load(parent.albumId);
     },
+    artists: async (parent, _, { prisma }) => {
+      const trackArtists = await prisma.trackArtist.findMany({
+        where: { trackId: parent.id },
+        include: { artist: true },
+        orderBy: { position: 'asc' },
+      });
+      return trackArtists.map(ta => ({
+        artist: ta.artist,
+        role: ta.role || 'performer',
+        position: ta.position,
+      }));
+    },
     // Simplified audio features
     audioFeatures: () => null, // Placeholder - would need audio features data
     duration: (parent) => {
