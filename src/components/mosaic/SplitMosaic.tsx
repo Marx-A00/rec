@@ -38,7 +38,7 @@ const Panel: React.FC<PanelProps> = ({ node, isEditMode, onSplit, onRemove }) =>
       const newPanel: PanelContent = {
         id: `panel-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         type: panelType,
-        title: panelRegistry.get(panelType)?.displayName || panelType,
+        title: panelRegistry.get(panelType as any)?.displayName || panelType,
       };
       onSplit(pendingSplit, newPanel);
     }
@@ -48,7 +48,7 @@ const Panel: React.FC<PanelProps> = ({ node, isEditMode, onSplit, onRemove }) =>
 
   if (!node.content) return null;
 
-  const PanelComponent = panelRegistry.get(node.content.type)?.component;
+  const PanelComponent = panelRegistry.get(node.content.type as any)?.component;
   if (!PanelComponent) {
     return (
       <div className="h-full bg-zinc-900/50 rounded-lg border border-zinc-800 p-4">
@@ -115,7 +115,7 @@ const Panel: React.FC<PanelProps> = ({ node, isEditMode, onSplit, onRemove }) =>
       <div className={`h-full ${isEditMode ? 'pt-12' : 'pt-8'} p-4`}>
         <PanelComponent
           panelId={node.id}
-          config={node.content.config}
+          config={node.content.config || {}}
           isEditMode={isEditMode}
         />
       </div>

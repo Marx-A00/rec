@@ -55,7 +55,7 @@ const updateRecommendation = async (
       recommendedAlbumArtist: '',
       recommendedAlbumImageUrl: null,
       recommendedAlbumYear: null,
-      user: null,
+      user: undefined,
     };
   } catch (error: any) {
     if (error.response?.errors?.[0]) {

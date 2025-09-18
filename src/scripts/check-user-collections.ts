@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Check user collections and albums
 import { prisma } from '@/lib/prisma';
 

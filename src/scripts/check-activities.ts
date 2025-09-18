@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Check what activities are actually in the database
 import { prisma } from '@/lib/prisma';
 

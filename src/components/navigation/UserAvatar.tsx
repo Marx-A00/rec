@@ -54,7 +54,7 @@ export const UserAvatar: FC<UserAvatarProps> = ({ isCollapsed = false, className
             </div>
           </div>
           <div className="pt-2 border-t border-zinc-800">
-            <SignOutButton variant="ghost" size="sm" className="w-full justify-start" />
+            <SignOutButton />
           </div>
         </div>
       </HoverCardContent>

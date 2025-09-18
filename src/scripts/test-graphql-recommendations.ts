@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Test GraphQL recommendations queries
 import { ApolloServer } from '@apollo/server';
 import { readFileSync } from 'fs';

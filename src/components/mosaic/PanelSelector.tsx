@@ -111,7 +111,7 @@ export default function PanelSelector({ onSelect, onClose }: PanelSelectorProps)
         <div className="p-4 overflow-y-auto max-h-[calc(80vh-80px)]">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {allPanels.map((panel) => {
-              const config = panelConfigs[panel.type] || {
+              const config = panelConfigs[panel.type as keyof typeof panelConfigs] || {
                 icon: Activity,
                 name: panel.displayName,
                 description: panel.description || 'Custom panel',

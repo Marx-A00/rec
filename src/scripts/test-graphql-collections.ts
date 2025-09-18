@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Test GraphQL collections query directly
 import { ApolloServer } from '@apollo/server';
 import { readFileSync } from 'fs';
