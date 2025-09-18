@@ -3,9 +3,9 @@
 
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { useIsDashboardPage } from '@/hooks/useIsDashboardPage';
+import { useIsHomePage } from '@/hooks/useIsHomePage';
 import { useMosaic } from '@/contexts/MosaicContext';
-import DashboardHeaderControls from './DashboardHeaderControls';
+import MosaicHeaderControls from './MosaicHeaderControls';
 import WidgetLibrary from './WidgetLibrary';
 
 interface DashboardHeaderWrapperProps {
@@ -13,7 +13,7 @@ interface DashboardHeaderWrapperProps {
 }
 
 export default function DashboardHeaderWrapper({ children }: DashboardHeaderWrapperProps) {
-  const isDashboardPage = useIsDashboardPage();
+  const isHomePage = useIsHomePage();
   const [showWidgetLibrary, setShowWidgetLibrary] = React.useState(false);
   const [isMounted, setIsMounted] = React.useState(false);
 
@@ -22,8 +22,8 @@ export default function DashboardHeaderWrapper({ children }: DashboardHeaderWrap
     setIsMounted(true);
   }, []);
 
-  // If not on dashboard page, just render children without any dashboard controls
-  if (!isDashboardPage) {
+  // If not on home page, just render children without any mosaic controls
+  if (!isHomePage) {
     return <>{children}</>;
   }
 
@@ -49,7 +49,7 @@ export default function DashboardHeaderWrapper({ children }: DashboardHeaderWrap
       {React.cloneElement(children as React.ReactElement, {
         // @ts-expect-error - headerControls prop injection pattern
         headerControls: (
-          <DashboardHeaderControls
+          <MosaicHeaderControls
             isEditMode={isEditMode}
             onToggleEditMode={handleToggleEditMode}
             onShowWidgetLibrary={handleShowWidgetLibrary}

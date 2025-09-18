@@ -2,6 +2,7 @@
 
 import React, { FC } from 'react';
 import { useHeader } from '@/contexts/HeaderContext';
+import { useIsHomePage } from '@/hooks/useIsHomePage';
 import UserAvatar from './UserAvatar';
 import UniversalSearchBar from '@/components/ui/UniversalSearchBar';
 import { cn } from '@/lib/utils';
@@ -12,6 +13,40 @@ interface TopBarProps {
   showAvatar?: boolean;
 }
 
+// Separate component for mosaic controls that uses MosaicContext
+const MosaicControls: FC = () => {
+  const { useMosaic } = require('@/contexts/MosaicContext');
+  const MosaicHeaderControls = require('@/components/dashboard/MosaicHeaderControls').default;
+  const WidgetLibrary = require('@/components/dashboard/WidgetLibrary').default;
+  const { createPortal } = require('react-dom');
+
+  const [showWidgetLibrary, setShowWidgetLibrary] = React.useState(false);
+  const [isMounted, setIsMounted] = React.useState(false);
+  const { state: mosaicState, actions: mosaicActions } = useMosaic();
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  return (
+    <>
+      <MosaicHeaderControls
+        isEditMode={mosaicState.isEditMode}
+        onToggleEditMode={mosaicActions.toggleEditMode}
+        onShowWidgetLibrary={() => setShowWidgetLibrary(true)}
+      />
+
+      {isMounted && showWidgetLibrary && createPortal(
+        <WidgetLibrary
+          isOpen={showWidgetLibrary}
+          onClose={() => setShowWidgetLibrary(false)}
+        />,
+        document.body
+      )}
+    </>
+  );
+};
+
 export const TopBar: FC<TopBarProps> = ({
   className,
   showSearch = true,
@@ -19,12 +54,14 @@ export const TopBar: FC<TopBarProps> = ({
 }) => {
   const { state } = useHeader();
   const { leftContent, centerContent, rightContent, isVisible } = state;
+  const isHomePage = useIsHomePage();
 
   if (!isVisible) {
     return null;
   }
 
   return (
+    <>
     <header className={cn(
       'sticky top-0 z-50 backdrop-blur-sm bg-black/80 border-b border-zinc-800/50',
       className
@@ -37,15 +74,20 @@ export const TopBar: FC<TopBarProps> = ({
 
         {/* Center Section - Search/Title */}
         <div className="flex-1 flex justify-center px-4">
-          {centerContent || (showSearch && <UniversalSearchBar />)}
+          {centerContent || (showSearch && (
+            <div className="w-full max-w-2xl">
+              <UniversalSearchBar className="w-full" />
+            </div>
+          ))}
         </div>
 
         {/* Right Section - Actions */}
         <div className="flex items-center gap-2 flex-shrink-0 w-48 justify-end">
-          {rightContent}
+          {isHomePage ? <MosaicControls /> : rightContent}
         </div>
       </div>
     </header>
+  </>
   );
 };
 

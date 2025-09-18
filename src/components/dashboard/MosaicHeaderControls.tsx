@@ -1,4 +1,4 @@
-// src/components/dashboard/DashboardHeaderControls.tsx
+// src/components/dashboard/MosaicHeaderControls.tsx
 'use client';
 
 import React from 'react';
@@ -6,17 +6,17 @@ import { Settings, Plus, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMosaic } from '@/contexts/MosaicContext';
 
-interface DashboardHeaderControlsProps {
+interface MosaicHeaderControlsProps {
   isEditMode: boolean;
   onToggleEditMode: () => void;
   onShowWidgetLibrary: () => void;
 }
 
-export default function DashboardHeaderControls({
+export default function MosaicHeaderControls({
   isEditMode,
   onToggleEditMode,
   onShowWidgetLibrary,
-}: DashboardHeaderControlsProps) {
+}: MosaicHeaderControlsProps) {
   const { actions } = useMosaic();
   const [isSaving, setIsSaving] = React.useState(false);
 
@@ -41,7 +41,7 @@ export default function DashboardHeaderControls({
         onClick={handleSaveLayout}
         disabled={isSaving}
         className="h-8 px-3 bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30"
-        title="Save Dashboard Layout"
+        title="Save Mosaic Layout"
       >
         <Save className="w-4 h-4 mr-2" />
         {isSaving ? 'Saving...' : 'Save Layout'}

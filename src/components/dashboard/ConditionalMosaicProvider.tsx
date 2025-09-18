@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { useIsDashboardPage } from '@/hooks/useIsDashboardPage';
+import { useIsHomePage } from '@/hooks/useIsHomePage';
 import { MosaicProvider } from '@/contexts/MosaicContext';
 
 interface ConditionalMosaicProviderProps {
@@ -10,10 +10,10 @@ interface ConditionalMosaicProviderProps {
 }
 
 export default function ConditionalMosaicProvider({ children }: ConditionalMosaicProviderProps) {
-  const isDashboardPage = useIsDashboardPage();
+  const isHomePage = useIsHomePage();
 
-  // Only provide mosaic context on the dashboard page
-  if (isDashboardPage) {
+  // Only provide mosaic context on the home page
+  if (isHomePage) {
     return (
       <MosaicProvider>
         {children}

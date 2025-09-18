@@ -7,8 +7,6 @@ import {
   Disc,
   Menu,
   X,
-  ChevronLeft,
-  ChevronRight,
   Settings,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -26,31 +24,17 @@ import SignInButton from '@/components/auth/SignInButton';
 
 export default function NavigationSidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed] = useState(false); // No toggle feature implemented yet
   const [isMounted, setIsMounted] = useState(false);
   const { data: session } = useSession();
   const user = session?.user;
   const { openDrawer } = useRecommendationDrawerContext();
 
-  // TODO: Figure out what's going on here cuh
-
-  // Load collapsed state from localStorage on mount
+  // Add subtle mount animation delay
   useEffect(() => {
-    const savedState = localStorage.getItem('sidebar-collapsed');
-    if (savedState !== null) {
-      setIsCollapsed(JSON.parse(savedState));
-    }
-    // Add subtle mount animation delay
     const timer = setTimeout(() => setIsMounted(true), 100);
     return () => clearTimeout(timer);
   }, []);
-
-  // Save collapsed state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('sidebar-collapsed', JSON.stringify(isCollapsed));
-    // Emit custom event to notify layout wrapper
-    window.dispatchEvent(new CustomEvent('sidebar-toggled'));
-  }, [isCollapsed]);
 
   const toggleMobileSidebar = () => {
     setIsMobileOpen(!isMobileOpen);
@@ -60,9 +44,6 @@ export default function NavigationSidebar() {
     setIsMobileOpen(false);
   };
 
-  const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
 
   // Handle keyboard navigation
   const handleKeyDown = (event: React.KeyboardEvent, action: () => void) => {
