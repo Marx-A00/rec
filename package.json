@@ -83,6 +83,7 @@
     "dataloader": "^2.2.2",
     "disconnect": "^1.2.2",
     "express": "^5.1.0",
+    "framer-motion": "^12.23.14",
     "graphql": "^16.9.0",
     "graphql-request": "^7.2.0",
     "graphql-subscriptions": "^3.0.0",

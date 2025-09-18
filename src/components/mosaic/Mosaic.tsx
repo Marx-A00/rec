@@ -29,7 +29,7 @@ interface MosaicProps {
   onRemoveTile: (id: string) => void;
 }
 
-export default function Mosaic({
+const Mosaic = React.memo(function Mosaic({
   tiles,
   isEditMode,
   onTilesChange,
@@ -108,7 +108,7 @@ export default function Mosaic({
     >
       <SortableContext items={tiles.map(t => t.id)} strategy={rectSortingStrategy}>
         <div
-          className="relative h-full p-4"
+          className="relative h-full p-4 transition-all duration-300"
           style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${gridColumns}, ${gridUnit}px)`,
@@ -117,10 +117,10 @@ export default function Mosaic({
             overflow: 'auto',
           }}
         >
-          {/* Grid background for edit mode */}
+          {/* Grid background for edit mode with smooth transition */}
           {isEditMode && (
             <div
-              className="absolute inset-4 pointer-events-none opacity-10"
+              className="absolute inset-4 pointer-events-none opacity-10 transition-opacity duration-300 animate-fade-in"
               style={{
                 backgroundImage: `
                   linear-gradient(to right, #3f3f46 1px, transparent 1px),
@@ -144,17 +144,17 @@ export default function Mosaic({
         </div>
       </SortableContext>
 
-      {/* Drag Overlay */}
+      {/* Enhanced Drag Overlay with smooth transitions */}
       <DragOverlay>
         {activeId && activeTile ? (
           <div
-            className="bg-zinc-900/90 rounded-lg border-2 border-blue-500 shadow-2xl"
+            className="bg-zinc-900/95 rounded-lg border-2 border-blue-500 shadow-2xl transition-all duration-150 scale-105"
             style={{
               width: activeTile.width * gridUnit,
               height: activeTile.height * gridUnit,
             }}
           >
-            <div className="p-4 text-zinc-300">
+            <div className="p-4 text-zinc-300 font-medium">
               {panelRegistry.get(activeTile.type)?.displayName || 'Tile'}
             </div>
           </div>
@@ -162,4 +162,6 @@ export default function Mosaic({
       </DragOverlay>
     </DndContext>
   );
-}
+});
+
+export default Mosaic;

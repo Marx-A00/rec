@@ -62,10 +62,21 @@ export const TopBar: FC<TopBarProps> = ({
 
   return (
     <>
-    <header className={cn(
-      'sticky top-0 z-50 backdrop-blur-sm bg-black/80 border-b border-zinc-800/50',
-      className
-    )}>
+    {/* Skip to content link for keyboard navigation */}
+    <a
+      href="#main-content"
+      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:bg-emeraled-green focus:text-black focus:px-4 focus:py-2 focus:rounded-md focus:outline-none"
+    >
+      Skip to main content
+    </a>
+
+    <header
+      className={cn(
+        'sticky top-0 z-50 backdrop-blur-sm bg-black/80 border-b border-zinc-800/50',
+        className
+      )}
+      role="banner"
+    >
       <div className="flex items-center h-16 px-4">
         {/* Left Section - Avatar/Logo */}
         <div className="flex items-center flex-shrink-0 w-48">

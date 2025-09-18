@@ -17,7 +17,7 @@ interface ResizableMosaicTileProps {
   gridUnit: number; // Size of one grid unit in pixels
 }
 
-export default function ResizableMosaicTile({
+const ResizableMosaicTile = React.memo(function ResizableMosaicTile({
   tile,
   isEditMode,
   onResize,
@@ -40,7 +40,9 @@ export default function ResizableMosaicTile({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition: isDragging || isResizing ? undefined : transition,
+    transition: isDragging || isResizing
+      ? undefined
+      : `${transition || ''}, opacity 200ms ease, box-shadow 200ms ease`,
     opacity: isDragging ? 0.5 : 1,
     gridColumn: `${tile.x} / span ${tile.width}`,
     gridRow: `${tile.y} / span ${tile.height}`,
@@ -109,23 +111,24 @@ export default function ResizableMosaicTile({
           }
           className="h-full"
         >
-          <div className="h-full bg-zinc-900/50 rounded-lg border border-zinc-800 relative group overflow-hidden">
-            {/* Drag Handle */}
+          <div className="h-full bg-zinc-900/50 rounded-lg border border-zinc-800 relative group overflow-hidden transition-all duration-200 hover:border-zinc-700 hover:shadow-lg hover:shadow-black/20">
+            {/* Drag Handle with enhanced hover state */}
             <div
               {...attributes}
               {...listeners}
-              className="absolute top-2 left-2 p-1.5 rounded bg-zinc-800/80 cursor-move hover:bg-zinc-700/80 transition-colors z-10"
+              className="absolute top-2 left-2 p-1.5 rounded bg-zinc-800/80 cursor-move hover:bg-zinc-700 hover:scale-110 transition-all duration-150 z-10 opacity-60 group-hover:opacity-100"
               style={{ touchAction: 'none' }}
             >
               <GripVertical className="w-4 h-4 text-zinc-400" />
             </div>
 
-            {/* Remove Button */}
+            {/* Remove Button with enhanced hover state */}
             <button
               onClick={() => onRemove(tile.id)}
-              className="absolute top-2 right-2 p-1.5 rounded bg-zinc-800/80 hover:bg-red-900/80 transition-colors z-10"
+              className="absolute top-2 right-2 p-1.5 rounded bg-zinc-800/80 hover:bg-red-900 hover:scale-110 transition-all duration-150 z-10 opacity-60 group-hover:opacity-100"
+              aria-label="Remove panel"
             >
-              <X className="w-4 h-4 text-zinc-400 hover:text-red-400" />
+              <X className="w-4 h-4 text-zinc-400 hover:text-red-300 transition-colors" />
             </button>
 
             {/* Tile Content */}
@@ -137,9 +140,9 @@ export default function ResizableMosaicTile({
               />
             </div>
 
-            {/* Visual feedback during operations */}
+            {/* Enhanced visual feedback during operations */}
             {(isDragging || isResizing) && (
-              <div className="absolute inset-0 bg-blue-500/10 border-2 border-blue-500 rounded-lg pointer-events-none" />
+              <div className="absolute inset-0 bg-blue-500/10 border-2 border-blue-500 rounded-lg pointer-events-none animate-pulse" />
             )}
           </div>
         </ResizableBox>
@@ -150,7 +153,7 @@ export default function ResizableMosaicTile({
   // Non-edit mode: just render the tile without resize/drag capabilities
   return (
     <div ref={setNodeRef} style={style}>
-      <div className="h-full bg-zinc-900/50 rounded-lg border border-zinc-800 overflow-hidden">
+      <div className="h-full bg-zinc-900/50 rounded-lg border border-zinc-800 overflow-hidden transition-all duration-200 hover:border-zinc-700 hover:shadow-md hover:shadow-black/10">
         <PanelComponent
           panelId={tile.id}
           config={tile.config}
@@ -159,4 +162,6 @@ export default function ResizableMosaicTile({
       </div>
     </div>
   );
-}
+});
+
+export default ResizableMosaicTile;
