@@ -3,6 +3,7 @@ import { Pencil, Trash2, MoreHorizontal, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useDeleteRecommendationMutation } from '@/hooks';
 import { Recommendation } from '@/types/recommendation';
@@ -166,24 +167,18 @@ export default function RecommendationCard({
         {/* Compact header with user info */}
         <div className='flex items-center justify-between mb-3'>
           <div className='flex items-center space-x-2'>
-            {recommendation.user?.image ? (
-              <div className='relative'>
-                <AlbumImage
-                  src={recommendation.user.image}
-                  alt={recommendation.user.name || 'User'}
-                  width={24}
-                  height={24}
-                  className='rounded-full ring-2 ring-zinc-600 shadow-sm'
+            <div className='relative'>
+              <Avatar className='h-6 w-6 ring-2 ring-zinc-600 shadow-sm'>
+                <AvatarImage
+                  src={recommendation.user?.image || undefined}
+                  alt={recommendation.user?.name || 'User'}
                 />
-                <div className='absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-black rounded-full shadow-sm'></div>
-              </div>
-            ) : (
-              <div className='w-6 h-6 bg-gradient-to-br from-zinc-600 to-zinc-700 rounded-full ring-2 ring-zinc-600 flex items-center justify-center shadow-sm'>
-                <span className='text-white font-semibold text-xs'>
+                <AvatarFallback className='bg-gradient-to-br from-zinc-600 to-zinc-700 text-white text-xs font-semibold'>
                   {(recommendation.user?.name || 'A').charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
+                </AvatarFallback>
+              </Avatar>
+              <div className='absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-black rounded-full shadow-sm'></div>
+            </div>
             <Link href={`/profile/${recommendation.userId}`}>
               <span className='text-xs font-medium text-cosmic-latte hover:underline cursor-pointer transition-all duration-200'>
                 {recommendation.user?.name || 'Anonymous'}

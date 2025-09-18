@@ -104,7 +104,14 @@ async function getTrendingArtists(limit: number = 12) {
       averageScore: Math.round(totalScore / count * 10) / 10
     }));
 }
+/* TODO: instead of 'welcome new music lovers' , and then 
+just showing the new users, have a 'check out what the community is doing 
+and we can show a feed or users' activites at random....
 
+add in a mr-x just made a sandwich for laughs
+
+could have a 'looking for' section, showing people that have a looking for tag, and maybe make it filterable
+*/
 export default async function BrowsePage() {
   return (
     <div className='container mx-auto px-4 py-8 max-w-7xl'>

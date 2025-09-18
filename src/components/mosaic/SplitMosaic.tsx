@@ -3,10 +3,16 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
-import { Plus, X, Maximize2, Minimize2, Columns, Rows } from 'lucide-react';
+import { Plus, X, Maximize2, Minimize2, Columns, Rows, ChevronDown } from 'lucide-react';
 import { SplitNode, SplitDirection, PanelContent } from '@/types/split-mosaic';
-import { panelRegistry } from '@/lib/dashboard/PanelRegistry';
+import { panelRegistry, getAllPanelDefinitions } from '@/lib/dashboard/PanelRegistry';
 import PanelSelector from './PanelSelector';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface SplitMosaicProps {
   root: SplitNode | null;
@@ -21,9 +27,10 @@ interface PanelProps {
   isEditMode: boolean;
   onSplit: (direction: SplitDirection, newPanel: PanelContent) => void;
   onRemove: () => void;
+  onChangeType: (newType: string) => void;
 }
 
-const Panel: React.FC<PanelProps> = ({ node, isEditMode, onSplit, onRemove }) => {
+const Panel: React.FC<PanelProps> = ({ node, isEditMode, onSplit, onRemove, onChangeType }) => {
   const [isMaximized, setIsMaximized] = useState(false);
   const [showPanelSelector, setShowPanelSelector] = useState(false);
   const [pendingSplit, setPendingSplit] = useState<SplitDirection | null>(null);
@@ -104,10 +111,34 @@ const Panel: React.FC<PanelProps> = ({ node, isEditMode, onSplit, onRemove }) =>
         </div>
       )}
 
-      {/* Panel Title */}
+      {/* Panel Title with Dropdown */}
       {node.content.title && (
-        <div className="absolute top-2 left-2 z-10 px-2 py-1 bg-zinc-800/80 rounded text-sm text-zinc-300">
-          {node.content.title}
+        <div className="absolute top-2 left-2 z-10">
+          {isEditMode ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1 px-2 py-1 bg-zinc-800/80 hover:bg-zinc-700/80 rounded text-sm text-zinc-300 transition-colors">
+                  {node.content.title}
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-48 bg-zinc-800 border-zinc-700">
+                {getAllPanelDefinitions().map((panelDef) => (
+                  <DropdownMenuItem
+                    key={panelDef.type}
+                    onClick={() => onChangeType(panelDef.type)}
+                    className="text-zinc-300 hover:bg-zinc-700 hover:text-white focus:bg-zinc-700 focus:text-white"
+                  >
+                    {panelDef.displayName}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="px-2 py-1 bg-zinc-800/80 rounded text-sm text-zinc-300">
+              {node.content.title}
+            </div>
+          )}
         </div>
       )}
 
@@ -191,6 +222,30 @@ const SplitMosaic: React.FC<SplitMosaicProps> = ({
             onSplitPanel(node.id, direction, newPanel);
           }}
           onRemove={() => onRemovePanel(node.id)}
+          onChangeType={(newType) => {
+            if (node.content) {
+              const updatedPanel: PanelContent = {
+                ...node.content,
+                type: newType,
+                title: panelRegistry.get(newType as any)?.displayName || newType,
+              };
+              // Update the node in the root tree
+              if (!root) return;
+              const updateNodeType = (currentNode: SplitNode): SplitNode => {
+                if (currentNode.id === node.id) {
+                  return { ...currentNode, content: updatedPanel };
+                }
+                if (currentNode.children) {
+                  return {
+                    ...currentNode,
+                    children: currentNode.children.map(updateNodeType),
+                  };
+                }
+                return currentNode;
+              };
+              onLayoutChange(updateNodeType(root));
+            }
+          }}
         />
       );
     }

@@ -1,7 +1,7 @@
 // src/components/dashboard/panels/CollectionAlbumsPanel.tsx
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Folder } from 'lucide-react';
@@ -30,8 +30,32 @@ export default function CollectionAlbumsPanel({
   const [isLoadingAlbums, setIsLoadingAlbums] = useState(false);
   const [selectedAlbum, setSelectedAlbum] = useState<CollectionAlbum | null>(null);
   const [isExiting, setIsExiting] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Add smooth horizontal scroll with mouse wheel
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (scrollContainerRef.current && scrollContainerRef.current.contains(e.target as Node)) {
+        e.preventDefault();
+
+        // Simply scroll horizontally by the vertical delta
+        // The scroll-smooth CSS class will handle the smoothing
+        scrollContainerRef.current.scrollBy({
+          left: e.deltaY * 0.5, // Adjust multiplier for scroll speed
+          behavior: 'smooth'
+        });
+      }
+    };
+
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('wheel', handleWheel, { passive: false });
+      return () => container.removeEventListener('wheel', handleWheel);
+    }
+  }, [userAlbums]); // Re-attach when albums change
 
   // Fetch user's collection albums
+  // TODO: stop it from refreshing and auto fetching
   useEffect(() => {
     if (user && !isEditMode) {
       const fetchUserCollection = async () => {
@@ -171,8 +195,8 @@ export default function CollectionAlbumsPanel({
             </h2>
           </div>
           
-          <div className="flex-1 overflow-y-auto overflow-x-hidden">
-            <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="flex-1 overflow-hidden">
+            <div className="flex gap-2 overflow-x-auto pb-2 h-full">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={i}
@@ -210,7 +234,7 @@ export default function CollectionAlbumsPanel({
         {user ? (
           // Show user's album collection
           <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="flex-1 overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {isLoadingAlbums ? (
                 <div className="flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   {Array.from({ length: 10 }).map((_, i) => (
@@ -230,11 +254,13 @@ export default function CollectionAlbumsPanel({
                   ))}
                 </div>
               ) : userAlbums?.length > 0 ? (
-                <div className="flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div
+                  ref={scrollContainerRef}
+                  className="flex gap-2 overflow-x-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   {userAlbums.map(collectionAlbum => (
                     <div
                       key={collectionAlbum.id}
-                      className="relative group cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10 flex-shrink-0 w-32"
+                      className="relative group/album cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10 flex-shrink-0 w-32"
                       onClick={e => handleAlbumClick(collectionAlbum, e)}
                       title={`${collectionAlbum.albumTitle} by ${collectionAlbum.albumArtist}\nClick to view details • Ctrl/Cmd+Click to navigate to album page`}
                     >
@@ -243,11 +269,11 @@ export default function CollectionAlbumsPanel({
                         alt={`${collectionAlbum.albumTitle} by ${collectionAlbum.albumArtist}`}
                         width={128}
                         height={128}
-                        className="w-full aspect-square rounded object-cover border border-zinc-800 group-hover:border-zinc-600 transition-colors"
+                        className="w-full aspect-square rounded object-cover border border-zinc-800 group-hover/album:border-zinc-600 transition-colors"
                         showSkeleton={true}
                       />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 rounded flex items-center justify-center">
-                        <div className="opacity-0 group-hover:opacity-100 text-cosmic-latte text-xs text-center p-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-200">
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover/album:bg-opacity-70 transition-all duration-200 rounded flex items-center justify-center">
+                        <div className="opacity-0 group-hover/album:opacity-100 text-cosmic-latte text-xs text-center p-2 transform translate-y-2 group-hover/album:translate-y-0 transition-all duration-200">
                           <p className="font-medium truncate mb-1">
                             {collectionAlbum.albumTitle}
                           </p>

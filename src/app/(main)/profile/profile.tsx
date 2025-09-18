@@ -359,6 +359,8 @@ export default function ProfileClient({
           </div>
 
           {/* Collection Section */}
+          {/* TODO: add in DnD grid with varying sizes or whatever */}
+          
           <section className='border-t border-zinc-800 pt-8'>
             <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
               Record Collection
