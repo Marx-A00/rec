@@ -9,7 +9,6 @@ import { cn } from '@/lib/utils';
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
@@ -100,16 +99,14 @@ export const NavigationItem: FC<NavigationItemProps> = ({
   return (
     <>
       {isCollapsed ? (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {wrapperElement}
-            </TooltipTrigger>
-            <TooltipContent side="right" className="font-medium">
-              {item.tooltip || item.label}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {wrapperElement}
+          </TooltipTrigger>
+          <TooltipContent side="right" className="font-medium">
+            {item.tooltip || item.label}
+          </TooltipContent>
+        </Tooltip>
       ) : (
         wrapperElement
       )}

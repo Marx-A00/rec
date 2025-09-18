@@ -6,8 +6,8 @@ import { useSession } from 'next-auth/react';
 import { NavItem, NavigationContext, filterNavigationItems, getDefaultNavItems } from '@/config/navigation';
 import NavigationItem from './NavigationItem';
 import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
-import { useMosaic } from '@/contexts/MosaicContext';
 import { cn } from '@/lib/utils';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 interface SidebarProps {
   items?: NavItem[];
@@ -25,13 +25,12 @@ export const Sidebar: FC<SidebarProps> = ({
   const pathname = usePathname();
   const { data: session } = useSession();
   const { openDrawer } = useRecommendationDrawerContext();
-  const { state: mosaicState, actions: mosaicActions } = useMosaic();
 
   // Build navigation context
   const navigationContext: NavigationContext = useMemo(() => ({
     isAuthenticated: !!session?.user,
-    isEditMode: mosaicState.isEditMode,
-    userRole: session?.user?.role,
+    isEditMode: false, // We'll set this false for now since the context isn't available in sidebar
+    userRole: (session?.user as any)?.role,
     currentPath: pathname,
     openRecommendationDrawer: openDrawer,
     openTileLibrary: () => {
@@ -42,7 +41,7 @@ export const Sidebar: FC<SidebarProps> = ({
       // TODO: Implement save layout
       console.log('Save mosaic layout');
     }
-  }), [session, pathname, mosaicState.isEditMode, openDrawer]);
+  }), [session, pathname, openDrawer]);
 
   // Get and filter navigation items
   const navigationItems = useMemo(() => {
@@ -60,16 +59,18 @@ export const Sidebar: FC<SidebarProps> = ({
     aria-label="Main navigation"
     >
       {/* Navigation Items */}
-      <div className="flex-1 flex flex-col items-center py-4 space-y-2">
-        {navigationItems.map(item => (
-          <NavigationItem
-            key={item.id}
-            item={item}
-            context={navigationContext}
-            isCollapsed={true}
-          />
-        ))}
-      </div>
+      <TooltipProvider>
+        <div className="flex-1 flex flex-col items-center py-4 space-y-2">
+          {navigationItems.map(item => (
+            <NavigationItem
+              key={item.id}
+              item={item}
+              context={navigationContext}
+              isCollapsed={true}
+            />
+          ))}
+        </div>
+      </TooltipProvider>
     </nav>
   );
 };

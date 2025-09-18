@@ -2,9 +2,9 @@
 'use client';
 
 import React from 'react';
-import { Settings, Plus, Save } from 'lucide-react';
+import { Settings, Plus, Save, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useMosaic } from '@/contexts/MosaicContext';
+import { useSplitMosaic } from '@/contexts/SplitMosaicContext';
 
 interface MosaicHeaderControlsProps {
   isEditMode: boolean;
@@ -17,18 +17,24 @@ export default function MosaicHeaderControls({
   onToggleEditMode,
   onShowWidgetLibrary,
 }: MosaicHeaderControlsProps) {
-  const { actions } = useMosaic();
+  const { actions } = useSplitMosaic();
   const [isSaving, setIsSaving] = React.useState(false);
 
   const handleSaveLayout = async () => {
     setIsSaving(true);
     try {
-      // TODO: Implement save layout for mosaic
+      actions.saveLayout();
       console.log('Layout saved successfully');
     } catch (error) {
       console.error('Failed to save layout:', error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleResetLayout = () => {
+    if (confirm('Are you sure you want to reset the layout to default?')) {
+      actions.resetLayout();
     }
   };
 
@@ -67,16 +73,29 @@ export default function MosaicHeaderControls({
 
       {/* Add Panel Button - Only show in edit mode */}
       {isEditMode && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onShowWidgetLibrary}
-          className="h-8 px-3 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30"
-          title="Add Panel"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Panel
-        </Button>
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onShowWidgetLibrary}
+            className="h-8 px-3 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30"
+            title="Add Panel"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Panel
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleResetLayout}
+            className="h-8 px-3 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30"
+            title="Reset Layout"
+          >
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Reset
+          </Button>
+        </>
       )}
     </div>
   );

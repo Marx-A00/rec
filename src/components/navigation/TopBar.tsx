@@ -13,16 +13,16 @@ interface TopBarProps {
   showAvatar?: boolean;
 }
 
-// Separate component for mosaic controls that uses MosaicContext
+// Separate component for mosaic controls that uses SplitMosaicContext
 const MosaicControls: FC = () => {
-  const { useMosaic } = require('@/contexts/MosaicContext');
+  const { useSplitMosaic } = require('@/contexts/SplitMosaicContext');
   const MosaicHeaderControls = require('@/components/dashboard/MosaicHeaderControls').default;
   const WidgetLibrary = require('@/components/dashboard/WidgetLibrary').default;
   const { createPortal } = require('react-dom');
 
   const [showWidgetLibrary, setShowWidgetLibrary] = React.useState(false);
   const [isMounted, setIsMounted] = React.useState(false);
-  const { state: mosaicState, actions: mosaicActions } = useMosaic();
+  const { state: mosaicState, actions: mosaicActions } = useSplitMosaic();
 
   React.useEffect(() => {
     setIsMounted(true);

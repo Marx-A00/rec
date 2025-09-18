@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useIsHomePage } from '@/hooks/useIsHomePage';
-import { MosaicProvider } from '@/contexts/MosaicContext';
+import { SplitMosaicProvider } from '@/contexts/SplitMosaicContext';
 
 interface ConditionalMosaicProviderProps {
   children: React.ReactNode;
@@ -15,9 +15,9 @@ export default function ConditionalMosaicProvider({ children }: ConditionalMosai
   // Only provide mosaic context on the home page
   if (isHomePage) {
     return (
-      <MosaicProvider>
+      <SplitMosaicProvider>
         {children}
-      </MosaicProvider>
+      </SplitMosaicProvider>
     );
   }
 

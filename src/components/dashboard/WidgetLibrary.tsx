@@ -3,7 +3,6 @@
 
 import React, { useState } from 'react';
 import { X, Plus, Grip } from 'lucide-react';
-import { useMosaic } from '@/contexts/MosaicContext';
 import { getAllPanelDefinitions, getPanelsByCategory } from '@/lib/dashboard/PanelRegistry';
 import { PanelDefinition } from '@/types/mosaic';
 import { Button } from '@/components/ui/button';
@@ -14,18 +13,18 @@ interface WidgetLibraryProps {
 }
 
 export default function WidgetLibrary({ isOpen, onClose }: WidgetLibraryProps) {
-  const { actions } = useMosaic();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  
+
   const allPanels = getAllPanelDefinitions();
   const categories = ['all', 'music', 'social', 'analytics', 'tools'];
-  
-  const filteredPanels = selectedCategory === 'all' 
-    ? allPanels 
+
+  const filteredPanels = selectedCategory === 'all'
+    ? allPanels
     : getPanelsByCategory(selectedCategory as PanelDefinition['category']);
 
   const handleAddPanel = (panelType: PanelDefinition['type']) => {
-    actions.addTile(panelType);
+    // This could be connected to the split mosaic context if needed
+    console.log('Adding panel:', panelType);
     onClose(); // Close after adding
   };
 

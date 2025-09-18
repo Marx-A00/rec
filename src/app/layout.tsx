@@ -5,7 +5,6 @@ import './globals.css';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { CollectionToastProvider } from '@/components/ui/CollectionToastProvider';
-import { MusicPlatformTourProvider } from '@/components/MusicPlatformTourProvider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -35,9 +34,7 @@ export default function RootLayout({
       >
         <SessionProvider>
           <QueryProvider>
-            <MusicPlatformTourProvider>
-              <CollectionToastProvider>{children}</CollectionToastProvider>
-            </MusicPlatformTourProvider>
+            <CollectionToastProvider>{children}</CollectionToastProvider>
           </QueryProvider>
         </SessionProvider>
       </body>
