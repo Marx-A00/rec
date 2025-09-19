@@ -19,6 +19,32 @@ async function getUserRecommendations(
     orderBy: { createdAt: 'desc' },
     include: {
       user: { select: { id: true, name: true, image: true } },
+      basisAlbum: {
+        select: {
+          id: true,
+          title: true,
+          coverArtUrl: true,
+          releaseDate: true,
+          artists: {
+            select: {
+              artist: { select: { name: true } }
+            }
+          }
+        }
+      },
+      recommendedAlbum: {
+        select: {
+          id: true,
+          title: true,
+          coverArtUrl: true,
+          releaseDate: true,
+          artists: {
+            select: {
+              artist: { select: { name: true } }
+            }
+          }
+        }
+      }
     },
   });
 
@@ -28,16 +54,18 @@ async function getUserRecommendations(
     createdAt: rec.createdAt.toISOString(),
     updatedAt: rec.updatedAt.toISOString(),
     userId: rec.userId,
-    basisAlbumDiscogsId: rec.basisAlbumDiscogsId,
-    recommendedAlbumDiscogsId: rec.recommendedAlbumDiscogsId,
-    basisAlbumTitle: rec.basisAlbumTitle,
-    basisAlbumArtist: rec.basisAlbumArtist,
-    basisAlbumImageUrl: rec.basisAlbumImageUrl || null,
-    basisAlbumYear: rec.basisAlbumYear || null,
-    recommendedAlbumTitle: rec.recommendedAlbumTitle,
-    recommendedAlbumArtist: rec.recommendedAlbumArtist,
-    recommendedAlbumImageUrl: rec.recommendedAlbumImageUrl || null,
-    recommendedAlbumYear: rec.recommendedAlbumYear || null,
+    basisAlbumId: rec.basisAlbumId,
+    recommendedAlbumId: rec.recommendedAlbumId,
+    basisAlbumDiscogsId: rec.basisDiscogsId || null,
+    recommendedAlbumDiscogsId: rec.recommendedDiscogsId || null,
+    basisAlbumTitle: rec.basisAlbum.title,
+    basisAlbumArtist: rec.basisAlbum.artists[0]?.artist?.name || 'Unknown Artist',
+    basisAlbumImageUrl: rec.basisAlbum.coverArtUrl || null,
+    basisAlbumYear: rec.basisAlbum.releaseDate ? String(new Date(rec.basisAlbum.releaseDate).getFullYear()) : null,
+    recommendedAlbumTitle: rec.recommendedAlbum.title,
+    recommendedAlbumArtist: rec.recommendedAlbum.artists[0]?.artist?.name || 'Unknown Artist',
+    recommendedAlbumImageUrl: rec.recommendedAlbum.coverArtUrl || null,
+    recommendedAlbumYear: rec.recommendedAlbum.releaseDate ? String(new Date(rec.recommendedAlbum.releaseDate).getFullYear()) : null,
     user: rec.user,
   }));
 }

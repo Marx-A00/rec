@@ -5,6 +5,7 @@ const DELIVERY_URL = process.env.CLOUDFLARE_IMAGES_DELIVERY_URL || `https://imag
 
 const API_BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/images/v1`;
 // TODO: add images for albums to cloudflare
+// TODO: Think about monitoring who can upload images and shit
 export type ImageVariant = 'thumbnail' | 'small' | 'medium' | 'large' | 'public';
 
 // Upload image from URL (for caching external images)

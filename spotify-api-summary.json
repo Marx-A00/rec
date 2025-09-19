@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-09-18T20:12:29.215Z",
+  "endpointsSummary": [
+    {
+      "endpoint": "newReleases",
+      "success": true,
+      "error": null
+    },
+    {
+      "endpoint": "featuredPlaylists",
+      "success": false,
+      "error": "Unrecognised response code: 404 - Not Found. Body: {\"error\": {\"status\": 404, \"message\": \"Not Found\" } }"
+    },
+    {
+      "endpoint": "categories",
+      "success": true,
+      "error": null
+    },
+    {
+      "endpoint": "search",
+      "success": true,
+      "error": null
+    }
+  ]
+}

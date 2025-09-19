@@ -17,9 +17,8 @@ const typeDefs = readFileSync(
   'utf8'
 );
 
-// Initialize Prisma client (singleton pattern)
-const prisma = globalThis.prisma || new PrismaClient();
-if (process.env.NODE_ENV === 'development') globalThis.prisma = prisma;
+// Use shared Prisma client from lib
+import { prisma } from '@/lib/prisma';
 
 // Apollo Server configuration
 const server = new ApolloServer<GraphQLContext>({

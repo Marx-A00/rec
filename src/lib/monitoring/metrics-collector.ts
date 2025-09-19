@@ -67,7 +67,7 @@ export class MetricsCollector extends EventEmitter {
   private metricsHistory: SystemMetrics[] = [];
   private jobMetrics: Map<string, JobMetrics> = new Map();
   private collectionInterval?: NodeJS.Timeout;
-  private readonly maxHistorySize = 1000; // Keep last 1000 metrics
+  private readonly maxHistorySize = 200; // Reduced from 1000 to save memory
   private readonly thresholds: AlertThresholds;
 
   private constructor() {
@@ -76,7 +76,7 @@ export class MetricsCollector extends EventEmitter {
       queueDepth: 1000,
       errorRatePercent: 10,
       avgProcessingTimeMs: 30000, // 30 seconds
-      memoryUsageMB: 512,
+      memoryUsageMB: 600, // Optimal for medium complexity apps
     };
   }
 

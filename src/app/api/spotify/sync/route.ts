@@ -9,8 +9,8 @@ const spotifyClient = SpotifyApi.withClientCredentials(
   process.env.SPOTIFY_CLIENT_SECRET!
 );
 
-// Cache duration in milliseconds (6 hours)
-const CACHE_DURATION = 6 * 60 * 60 * 1000;
+// Cache duration in milliseconds (1 week)
+const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
 
 export async function GET() {
   try {
@@ -43,10 +43,11 @@ export async function GET() {
       fetchedAt: new Date().toISOString()
     };
 
-    // 1. Get New Releases
+    // 1. Get New Releases (larger pool, then sort chronologically)
     try {
-      const newReleases = await spotifyClient.browse.getNewReleases('US', 20);
-      data.newReleases = newReleases.albums.items.map(album => ({
+      const newReleases = await spotifyClient.browse.getNewReleases('US', 50); // Get 50 instead of 20
+      
+      const processedAlbums = newReleases.albums.items.map(album => ({
         id: album.id,
         name: album.name,
         artists: album.artists.map(a => a.name).join(', '),
@@ -57,6 +58,14 @@ export async function GET() {
         type: album.album_type,
         totalTracks: album.total_tracks
       }));
+
+      // Sort by release date (newest first)
+      data.newReleases = processedAlbums.sort((a, b) => {
+        const dateA = new Date(a.releaseDate);
+        const dateB = new Date(b.releaseDate);
+        return dateB.getTime() - dateA.getTime(); // Newest first
+      });
+
     } catch (error) {
       console.error('Failed to fetch new releases:', error);
     }

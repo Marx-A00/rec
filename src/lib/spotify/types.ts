@@ -4,7 +4,177 @@
  */
 
 // ============================================================================
-// Raw Spotify API Response Types (from our cache)
+// Raw Spotify API Response Types (what Spotify actually returns)
+// ============================================================================
+
+export interface SpotifyRawAlbum {
+  id: string;
+  name: string;
+  album_type: "album" | "single" | "compilation";
+  artists: Array<{
+    id: string;
+    name: string;
+    type: "artist";
+    uri: string;
+    href: string;
+    external_urls: { spotify: string };
+  }>;
+  available_markets: string[];
+  external_urls: { spotify: string };
+  href: string;
+  images: Array<{
+    url: string;
+    height: number;
+    width: number;
+  }>;
+  release_date: string;
+  release_date_precision: "year" | "month" | "day";
+  total_tracks: number;
+  type: "album";
+  uri: string;
+}
+
+export interface SpotifyRawArtist {
+  id: string;
+  name: string;
+  type: "artist";
+  uri: string;
+  href: string;
+  external_urls: { spotify: string };
+  followers: {
+    href: null;
+    total: number;
+  };
+  genres: string[];
+  images: Array<{
+    url: string;
+    height: number;
+    width: number;
+  }>;
+  popularity: number;
+}
+
+export interface SpotifyRawPlaylist {
+  id: string;
+  name: string;
+  description: string | null;
+  external_urls: { spotify: string };
+  href: string;
+  images: Array<{
+    url: string;
+    height: number;
+    width: number;
+  }>;
+  owner: {
+    id: string;
+    display_name: string;
+    type: "user";
+    uri: string;
+    href: string;
+    external_urls: { spotify: string };
+  };
+  public: boolean | null;
+  snapshot_id: string;
+  tracks: {
+    href: string;
+    total: number;
+  };
+  type: "playlist";
+  uri: string;
+}
+
+export interface SpotifyRawTrack {
+  id: string;
+  name: string;
+  artists: Array<{
+    id: string;
+    name: string;
+    type: "artist";
+    uri: string;
+    href: string;
+    external_urls: { spotify: string };
+  }>;
+  album: {
+    id: string;
+    name: string;
+    album_type: string;
+    artists: Array<{
+      id: string;
+      name: string;
+      type: "artist";
+      uri: string;
+      href: string;
+      external_urls: { spotify: string };
+    }>;
+    images: Array<{
+      url: string;
+      height: number;
+      width: number;
+    }>;
+    release_date: string;
+    total_tracks: number;
+    type: "album";
+    uri: string;
+    external_urls: { spotify: string };
+    href: string;
+  };
+  disc_number: number;
+  duration_ms: number;
+  explicit: boolean;
+  external_urls: { spotify: string };
+  href: string;
+  is_local: boolean;
+  is_playable?: boolean;
+  preview_url: string | null;
+  track_number: number;
+  type: "track";
+  uri: string;
+  popularity?: number;
+}
+
+// Paginated response wrapper (used by most Spotify endpoints)
+export interface SpotifyPaginatedResponse<T> {
+  href: string;
+  items: T[];
+  limit: number;
+  next: string | null;
+  offset: number;
+  previous: string | null;
+  total: number;
+}
+
+// Specific endpoint response types
+export interface SpotifyNewReleasesResponse {
+  albums: SpotifyPaginatedResponse<SpotifyRawAlbum>;
+}
+
+export interface SpotifyFeaturedPlaylistsResponse {
+  message?: string;
+  playlists: SpotifyPaginatedResponse<SpotifyRawPlaylist>;
+}
+
+export interface SpotifySearchResponse {
+  artists?: SpotifyPaginatedResponse<SpotifyRawArtist>;
+  albums?: SpotifyPaginatedResponse<SpotifyRawAlbum>;
+  tracks?: SpotifyPaginatedResponse<SpotifyRawTrack>;
+  playlists?: SpotifyPaginatedResponse<SpotifyRawPlaylist>;
+}
+
+export interface SpotifyPlaylistTracksResponse extends SpotifyPaginatedResponse<{
+  added_at: string;
+  added_by: {
+    id: string;
+    type: "user";
+    uri: string;
+    href: string;
+    external_urls: { spotify: string };
+  };
+  is_local: boolean;
+  track: SpotifyRawTrack | null;
+}> {}
+
+// ============================================================================
+// Processed Spotify Data Types (transformed and cached in our DB)
 // ============================================================================
 
 export interface SpotifyAlbumData {

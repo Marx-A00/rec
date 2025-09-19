@@ -11,15 +11,20 @@ async function getSpotifyTrending() {
     where: { key: 'spotify_trending' }
   });
 
-  if (!cache || !cache.data || new Date(cache.expires) < new Date()) {
-    return { newReleases: [], needsSync: true };
+  // If no cache exists at all, return empty state
+  if (!cache || !cache.data) {
+    return { newReleases: [], needsSync: true, hasData: false };
   }
 
   const data = cache.data as any;
+  const isExpired = new Date(cache.expires) < new Date();
+  
   return {
     newReleases: data.newReleases || [],
     featuredPlaylists: data.featuredPlaylists || [],
-    needsSync: false,
+    needsSync: isExpired, // Only indicate sync needed if expired
+    hasData: true,
+    isStale: isExpired,
     expires: cache.expires,
     lastUpdated: cache.updatedAt
   };
@@ -155,8 +160,8 @@ export default async function BrowsePage() {
                 {/* TODO: Fix invalidation timing or whatever */}
  
         <ContentRow
-          title='Hot Albums Right Now'
-          subtitle='New releases from Spotify'
+          title='Latest Releases'
+          subtitle='Recent albums sorted by release date'
           icon={<Music className='w-5 h-5' />}
         >
           <Suspense fallback={<LoadingCards count={8} />}>
@@ -216,7 +221,8 @@ async function TrendingArtistsSection() {
 async function SpotifyAlbumsSection() {
   const spotifyData = await getSpotifyTrending();
 
-  if (spotifyData.needsSync || spotifyData.newReleases.length === 0) {
+  // Only show empty state if there's truly no data
+  if (!spotifyData.hasData || spotifyData.newReleases.length === 0) {
     return (
       <div className='text-center py-12 bg-zinc-900/50 rounded-lg border border-zinc-800'>
         <p className='text-zinc-400'>No Spotify data available. Sync may be needed.</p>
@@ -226,10 +232,25 @@ async function SpotifyAlbumsSection() {
   }
 
   return (
-    <div className='flex gap-6 overflow-x-auto pb-6 scrollbar-hide'>
-      {spotifyData.newReleases.slice(0, 15).map((album: any) => (
-        <SpotifyAlbumCard key={album.id} album={album} />
-      ))}
+    <div className='space-y-4'>
+      {/* Show last sync time */}
+      <div className='text-center py-2'>
+        <p className='text-zinc-500 text-xs'>
+          Last synced: {new Date(spotifyData.lastUpdated).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          })}
+        </p>
+      </div>
+      
+      <div className='flex gap-6 overflow-x-auto pb-6 scrollbar-hide'>
+        {spotifyData.newReleases.slice(0, 15).map((album: any) => (
+          <SpotifyAlbumCard key={album.id} album={album} />
+        ))}
+      </div>
     </div>
   );
 }

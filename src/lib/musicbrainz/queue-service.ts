@@ -27,14 +27,24 @@ export class QueuedMusicBrainzService {
   private pendingJobs = new Map<string, { resolve: Function, reject: Function }>();
 
   constructor() {
-    // Set up the events listener with explicit connection (fixes deprecation warning)
-    this.queueEvents = new QueueEvents('musicbrainz', {
-      connection: createRedisConnection()
-    });
-    this.setupEventListeners();
-    
-    // Automatically start the worker when service is created
-    this.ensureWorkerRunning();
+    // Don't auto-start everything in constructor - wait for first use
+    // This reduces memory usage when service is imported but not used
+  }
+
+  /**
+   * Lazy initialization - only set up connections when actually needed
+   */
+  private ensureInitialized() {
+    if (!this.queueEvents) {
+      // Set up the events listener with explicit connection (fixes deprecation warning)
+      this.queueEvents = new QueueEvents('musicbrainz', {
+        connection: createRedisConnection()
+      });
+      this.setupEventListeners();
+      
+      // Start the worker when first needed
+      this.ensureWorkerRunning();
+    }
   }
 
   // ============================================================================
@@ -93,6 +103,7 @@ export class QueuedMusicBrainzService {
     limit = 25,
     offset = 0
   ): Promise<ArtistSearchResult[]> {
+    this.ensureInitialized();
     await this.ensureWorkerRunning();
 
     try {
@@ -130,6 +141,7 @@ export class QueuedMusicBrainzService {
     limit = 25,
     offset = 0
   ): Promise<ReleaseGroupSearchResult[]> {
+    this.ensureInitialized();
     await this.ensureWorkerRunning();
 
     try {
@@ -166,6 +178,7 @@ export class QueuedMusicBrainzService {
     limit = 25,
     offset = 0
   ): Promise<RecordingSearchResult[]> {
+    this.ensureInitialized();
     await this.ensureWorkerRunning();
 
     try {

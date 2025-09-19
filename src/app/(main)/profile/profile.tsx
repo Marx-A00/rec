@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Pencil, Settings } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,10 +11,13 @@ import AlbumModal from '@/components/ui/AlbumModal';
 import RecommendationCard from '@/components/recommendations/RecommendationCard';
 import FollowButton from '@/components/profile/FollowButton';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
+import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useUserCollectionsQuery } from '@/hooks/useUserCollectionsQuery';
 import { CollectionAlbum } from '@/types/collection';
 import { Recommendation } from '@/types/recommendation';
+
+// TODO: fix the whole client and server components shit
 
 interface User {
   id: string;
@@ -46,25 +49,24 @@ export default function ProfileClient({
   // Fetch collections using GraphQL
   const { data: collectionsData, isLoading: collectionsLoading } = useUserCollectionsQuery(user.id);
 
-  // Transform GraphQL data or use initial collection
-  const collection = collectionsData?.user?.collections?.flatMap(col =>
-    col.albums.map(item => ({
-      id: item.id,
-      albumId: item.album.id,
-      albumTitle: item.album.title,
-      albumArtist: item.album.artists[0]?.artist?.name || 'Unknown Artist',
-      albumImageUrl: item.album.coverArtUrl,
-      albumYear: item.album.releaseDate ? String(new Date(item.album.releaseDate).getFullYear()) : null,
-      addedAt: item.addedAt,
-      addedBy: user.id,
-      personalRating: item.personalRating,
-      personalNotes: item.personalNotes,
-      position: item.position,
-    }))
-  ) || initialCollection || [];
-
-  // Flatten collections to get all albums
-  const allAlbums = collection;
+  // Memoize collection data to prevent infinite re-renders
+  const allAlbums = useMemo(() => {
+    return collectionsData?.user?.collections?.flatMap(col =>
+      col.albums.map(item => ({
+        id: item.id,
+        albumId: item.album.id,
+        albumTitle: item.album.title,
+        albumArtist: item.album.artists[0]?.artist?.name || 'Unknown Artist',
+        albumImageUrl: item.album.coverArtUrl,
+        albumYear: item.album.releaseDate ? String(new Date(item.album.releaseDate).getFullYear()) : null,
+        addedAt: item.addedAt,
+        addedBy: user.id,
+        personalRating: item.personalRating,
+        personalNotes: item.personalNotes,
+        position: item.position,
+      }))
+    ) || initialCollection || [];
+  }, [collectionsData, initialCollection, user.id]);
 
   // Add state for the selected album and exit animation
   const [selectedAlbum, setSelectedAlbum] = useState<CollectionAlbum | null>(
@@ -82,6 +84,14 @@ export default function ProfileClient({
   // Settings dropdown state
   const [showSettings, setShowSettings] = useState(false);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
+
+  // Collection reordering state
+  const [sortedAlbums, setSortedAlbums] = useState<CollectionAlbum[]>(allAlbums);
+  
+  // Update sorted albums when collection changes
+  useEffect(() => {
+    setSortedAlbums(allAlbums);
+  }, [allAlbums]);
 
   // Strategic prefetching for likely navigation targets
   useEffect(() => {
@@ -140,11 +150,42 @@ export default function ProfileClient({
       }
     }
 
-    // Default behavior: show modal
-    setSelectedAlbum(collectionAlbum);
-  };
+  // Default behavior: show modal
+  setSelectedAlbum(collectionAlbum);
+};
 
-  // Profile editing handlers
+// Handle album reordering
+const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
+  setSortedAlbums(reorderedAlbums);
+  
+  if (!isOwnProfile || !collectionsData?.user?.collections?.[0]?.id) {
+    return;
+  }
+
+  try {
+    const collectionId = collectionsData.user.collections[0].id;
+    const albumIds = reorderedAlbums.map(album => album.albumId);
+
+    const response = await fetch(`/api/collections/${collectionId}/reorder`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ albumIds }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save album order');
+    }
+
+    console.log('Album order saved successfully');
+  } catch (error) {
+    console.error('Error saving album order:', error);
+    // Could show a toast notification here
+  }
+};
+
+// Profile editing handlers
   const handleEditProfile = () => {
     setIsEditingProfile(true);
     setShowSettings(false);
@@ -372,49 +413,19 @@ export default function ProfileClient({
                   <p>{allAlbums.length} albums in collection</p>
                 </div>
 
-                {/* Album Grid */}
-                <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
-                  {allAlbums.map(collectionAlbum => (
-                    <div
-                      key={collectionAlbum.id}
-                      className='relative group cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10'
-                      onClick={e => handleAlbumClick(collectionAlbum, e)}
-                      title={`${collectionAlbum.albumTitle} by ${collectionAlbum.albumArtist}\nClick to view details • Ctrl/Cmd+Click to navigate to album page`}
-                    >
-                      <AlbumImage
-                        src={collectionAlbum.albumImageUrl}
-                        alt={`${collectionAlbum.albumTitle} by ${collectionAlbum.albumArtist}`}
-                        width={128}
-                        height={128}
-                        className='w-full aspect-square rounded object-cover border border-zinc-800 group-hover:border-zinc-600 transition-colors'
-                      />
-                      <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 rounded flex items-center justify-center'>
-                        <div className='opacity-0 group-hover:opacity-100 text-cosmic-latte text-xs text-center p-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-200'>
-                          <p className='font-medium truncate mb-1'>
-                            {collectionAlbum.albumTitle}
-                          </p>
-                          <p className='text-zinc-300 truncate mb-1'>
-                            {collectionAlbum.albumArtist}
-                          </p>
-                          {collectionAlbum.personalRating && (
-                            <p className='text-emeraled-green text-xs'>
-                              ★ {collectionAlbum.personalRating}/10
-                            </p>
-                          )}
-                          <p className='text-zinc-400 text-xs mt-1'>
-                            Click to view
-                          </p>
-                        </div>
-                      </div>
-                      {/* Added date indicator */}
-                      <div className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity'>
-                        <span className='text-xs bg-black bg-opacity-75 text-zinc-300 px-1 py-0.5 rounded'>
-                          {new Date(collectionAlbum.addedAt).getFullYear()}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {/* Sortable Album Grid */}
+                <SortableAlbumGrid
+                  albums={sortedAlbums}
+                  onReorder={handleAlbumReorder}
+                  onAlbumClick={(albumId) => {
+                    const album = sortedAlbums.find(a => a.albumId === albumId);
+                    if (album) {
+                      setSelectedAlbum(album);
+                    }
+                  }}
+                  isEditable={isOwnProfile}
+                  className="mb-8"
+                />
               </div>
             ) : (
               <div className='text-center py-12'>

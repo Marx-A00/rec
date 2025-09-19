@@ -346,10 +346,10 @@ export class HealthChecker {
     let status: HealthStatus;
     let message: string;
 
-    if (heapUsedMB > 512) {
+    if (heapUsedMB > 800) {
       status = HealthStatus.UNHEALTHY;
       message = `Critical memory usage: ${heapUsedMB.toFixed(2)}MB`;
-    } else if (heapUsedMB > 256) {
+    } else if (heapUsedMB > 600) {
       status = HealthStatus.DEGRADED;
       message = `High memory usage: ${heapUsedMB.toFixed(2)}MB`;
     } else {

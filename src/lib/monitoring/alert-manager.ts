@@ -45,7 +45,7 @@ export class AlertManager extends EventEmitter {
   private rules: Map<AlertType, AlertRule> = new Map();
   private lastAlertTime: Map<AlertType, number> = new Map();
   private alertHistory: Alert[] = [];
-  private readonly maxHistorySize = 500;
+  private readonly maxHistorySize = 100; // Reduced from 500 to save memory
 
   private constructor() {
     super();
@@ -97,11 +97,11 @@ export class AlertManager extends EventEmitter {
       level: AlertLevel.WARNING,
       condition: (metrics) => {
         const memoryMB = metrics.system.memory.heapUsed / 1024 / 1024;
-        return memoryMB > 512;
+        return memoryMB > 600;
       },
       message: (metrics) => {
         const memoryMB = (metrics.system.memory.heapUsed / 1024 / 1024).toFixed(2);
-        return `Memory usage (${memoryMB}MB) exceeds threshold (512MB)`;
+        return `Memory usage (${memoryMB}MB) exceeds threshold (600MB)`;
       },
       cooldownMs: 600000, // 10 minutes
     });
