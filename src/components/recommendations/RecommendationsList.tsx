@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 
-import { useRecommendationsQuery } from '@/hooks';
-import { Recommendation } from '@/types/recommendation';
+import {
+  useInfiniteGetRecommendationFeedQuery,
+  useInfiniteGetMyRecommendationsQuery,
+} from '@/generated/graphql';
 
 import RecommendationCard from './RecommendationCard';
 
@@ -18,18 +19,57 @@ export default function RecommendationsList({
   title = 'Recent Recommendations',
 }: RecommendationsListProps) {
   const { data: session } = useSession();
-  const { data, isLoading, error, isError } = useRecommendationsQuery({
-    page: 1,
-    perPage: 10,
-    userId,
-  });
 
-  const handleEditRecommendation = (recommendation: Recommendation) => {
+  // Use the appropriate generated hook based on whether we have a userId
+  const myRecsQuery = useInfiniteGetMyRecommendationsQuery(
+    { limit: 10 },
+    {
+      enabled: !!userId,
+      initialPageParam: undefined as string | undefined,
+      getNextPageParam: (lastPage) => {
+        return lastPage.myRecommendations?.hasMore
+          ? lastPage.myRecommendations.cursor
+          : undefined;
+      },
+    }
+  );
+
+  const feedQuery = useInfiniteGetRecommendationFeedQuery(
+    { limit: 10 },
+    {
+      enabled: !userId,
+      initialPageParam: undefined as string | undefined,
+      getNextPageParam: (lastPage) => {
+        return lastPage.recommendationFeed?.hasMore
+          ? lastPage.recommendationFeed.cursor
+          : undefined;
+      },
+    }
+  );
+
+  // Select the active query based on userId and extract recommendations
+  const isUserQuery = !!userId;
+  const activeQuery = isUserQuery ? myRecsQuery : feedQuery;
+  const { isLoading, error, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = activeQuery;
+
+  // Extract recommendations based on which query is active
+  const allRecommendations = isUserQuery
+    ? myRecsQuery.data?.pages.flatMap((page) => page.myRecommendations?.recommendations || []) || []
+    : feedQuery.data?.pages.flatMap((page) => page.recommendationFeed?.recommendations || []) || [];
+
+  const handleEditRecommendation = (recommendation: any) => {
     // TODO: Implement edit modal/form
     console.log('Edit recommendation:', recommendation);
   };
 
-  if (isLoading) {
+  const handleLoadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
+
+  // Initial loading state (only for the very first fetch)
+  if (isLoading && allRecommendations.length === 0) { // Check length to avoid flickering if some data already present
     return (
       <div className='space-y-4'>
         <h2 className='text-2xl font-bold text-white mb-6'>{title}</h2>
@@ -44,19 +84,18 @@ export default function RecommendationsList({
       </div>
     );
   }
-
   if (isError) {
     return (
       <div className='space-y-4'>
         <h2 className='text-2xl font-bold text-white mb-6'>{title}</h2>
         <div className='bg-red-950 border border-red-800 text-red-200 px-4 py-3 rounded-lg'>
-          Error loading recommendations: {error?.message}
+          Error loading recommendations: {error instanceof Error ? error.message : 'Unknown error'}
         </div>
       </div>
     );
   }
 
-  if (!data?.recommendations || data.recommendations.length === 0) {
+  if (allRecommendations.length === 0) {
     return (
       <div className='space-y-4'>
         <h2 className='text-2xl font-bold text-white mb-6'>{title}</h2>
@@ -76,7 +115,7 @@ export default function RecommendationsList({
     <div className='space-y-4'>
       <h2 className='text-2xl font-bold text-white mb-6'>{title}</h2>
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-        {data.recommendations.map(recommendation => (
+        {allRecommendations.map(recommendation => (
           <RecommendationCard
             key={recommendation.id}
             recommendation={recommendation}
@@ -86,10 +125,13 @@ export default function RecommendationsList({
         ))}
       </div>
 
-      {data.pagination && data.pagination.has_more && (
+      {hasNextPage && (
         <div className='text-center mt-8'>
-          <button className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors'>
-            Load More
+          <button
+            onClick={handleLoadMore}
+            disabled={isFetchingNextPage}
+            className='bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg transition-colors'>
+            {isFetchingNextPage ? 'Loading...' : 'Load More'}
           </button>
         </div>
       )}

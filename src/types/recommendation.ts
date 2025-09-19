@@ -62,6 +62,7 @@ export interface RecommendationsResponse {
     per_page: number;
     total: number;
     has_more: boolean;
+    cursor?: string | null;
   };
   success: boolean;
 }

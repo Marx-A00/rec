@@ -1,417 +1,208 @@
-# Task Master AI - Claude Code Integration Guide
+# CLAUDE.md
 
-## Essential Commands
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-### Core Workflow Commands
+## Core Development Commands
 
+### Daily Development
 ```bash
-# Project Setup
-task-master init                                    # Initialize Task Master in current project
-task-master parse-prd .taskmaster/docs/prd.txt      # Generate tasks from PRD document
-task-master models --setup                        # Configure AI models interactively
+pnpm dev                    # Start Next.js dev server (http://localhost:3000)
+pnpm queue:dev             # Start BullMQ dashboard + worker (http://localhost:3001/admin/queues)
+pnpm build                 # Build for production
+pnpm lint                  # Run ESLint
+pnpm lint:fix              # Fix linting issues
+pnpm format                # Format code with Prettier
+pnpm type-check            # TypeScript type checking
+pnpm check-all             # Run all checks (type-check, lint, format)
+pnpm fix-all               # Fix all auto-fixable issues
+```
 
-# Daily Development Workflow
-task-master list                                   # Show all tasks with status
-task-master next                                   # Get next available task to work on
-task-master show <id>                             # View detailed task information (e.g., task-master show 1.2)
+### Database & Prisma
+```bash
+pnpm prisma generate       # Generate Prisma client
+pnpm prisma db push        # Push schema changes to database
+pnpm db:seed              # Seed database with initial data
+pnpm db:reset             # Reset and re-seed database
+```
+
+### GraphQL Code Generation
+```bash
+pnpm codegen              # Generate TypeScript types and React Query hooks
+pnpm codegen:watch        # Watch mode for GraphQL changes
+```
+
+### Testing
+```bash
+pnpm test                 # Run all Playwright tests
+pnpm test:ui             # Run tests with interactive UI
+npx playwright test --grep "test name"  # Run specific test
+pnpm test:debug          # Debug tests with DevTools
+pnpm test:setup          # Initial test environment setup
+pnpm test:reset          # Reset test database
+```
+
+### Queue System (BullMQ)
+```bash
+pnpm queue:dev           # Start dashboard + worker together
+pnpm worker              # Start production worker only
+pnpm dashboard           # Start Bull Board dashboard only
+pnpm queue:add           # Add single test job
+pnpm queue:slow          # Add 30-second test job
+pnpm queue:mock          # Generate varied test jobs
+```
+
+### Task Master Commands
+```bash
+task-master next         # Get next task to work on
+task-master show <id>    # View task details
 task-master set-status --id=<id> --status=done    # Mark task complete
-
-# Task Management
-task-master add-task --prompt="description" --research        # Add new task with AI assistance
-task-master expand --id=<id> --research --force              # Break task into subtasks
-task-master update-task --id=<id> --prompt="changes"         # Update specific task
-task-master update --from=<id> --prompt="changes"            # Update multiple tasks from ID onwards
-task-master update-subtask --id=<id> --prompt="notes"        # Add implementation notes to subtask
-
-# Analysis & Planning
-task-master analyze-complexity --research          # Analyze task complexity
-task-master complexity-report                      # View complexity analysis
-task-master expand --all --research               # Expand all eligible tasks
-
-# Dependencies & Organization
-task-master add-dependency --id=<id> --depends-on=<id>       # Add task dependency
-task-master move --from=<id> --to=<id>                       # Reorganize task hierarchy
-task-master validate-dependencies                            # Check for dependency issues
-task-master generate                                         # Update task markdown files (usually auto-called)
+task-master update-subtask --id=<id> --prompt="notes"  # Log progress
 ```
+📚 **Full Task Master guide**: See `.taskmaster/docs/procedures/taskmaster-workflow.md`
 
-## Key Files & Project Structure
+## Architecture Overview
 
-### Core Files
+### Technology Stack
+- **Framework**: Next.js 15 with App Router
+- **Database**: PostgreSQL with Prisma ORM
+- **API Layer**: GraphQL (Apollo Server) + REST endpoints
+- **State Management**: TanStack Query (React Query) v5
+- **Authentication**: NextAuth.js v5 beta
+- **Queue System**: BullMQ with Redis for rate-limited API calls
+- **Styling**: Tailwind CSS with custom design system
+- **Type Safety**: TypeScript with generated GraphQL types
 
-- `.taskmaster/tasks/tasks.json` - Main task data file (auto-managed)
-- `.taskmaster/config.json` - AI model configuration (use `task-master models` to modify)
-- `.taskmaster/docs/prd.txt` - Product Requirements Document for parsing
-- `.taskmaster/tasks/*.txt` - Individual task files (auto-generated from tasks.json)
-- `.env` - API keys for CLI usage
-
-### Claude Code Integration Files
-
-- `CLAUDE.md` - Auto-loaded context for Claude Code (this file)
-- `.claude/settings.json` - Claude Code tool allowlist and preferences
-- `.claude/commands/` - Custom slash commands for repeated workflows
-- `.mcp.json` - MCP server configuration (project-specific)
-
-### Directory Structure
+### Data Flow Architecture
 
 ```
-project/
-├── .taskmaster/
-│   ├── tasks/              # Task files directory
-│   │   ├── tasks.json      # Main task database
-│   │   ├── task-1.md      # Individual task files
-│   │   └── task-2.md
-│   ├── docs/              # Documentation directory
-│   │   ├── prd.txt        # Product requirements
-│   ├── reports/           # Analysis reports directory
-│   │   └── task-complexity-report.json
-│   ├── templates/         # Template files
-│   │   └── example_prd.txt  # Example PRD template
-│   └── config.json        # AI models & settings
-├── .claude/
-│   ├── settings.json      # Claude Code configuration
-│   └── commands/         # Custom slash commands
-├── .env                  # API keys
-├── .mcp.json            # MCP configuration
-└── CLAUDE.md            # This file - auto-loaded by Claude Code
+[React Components]
+    ↓ (use generated hooks)
+[Generated GraphQL Hooks] ← codegen.yml
+    ↓ (queries/mutations)
+[Apollo GraphQL Server] ← /api/graphql/route.ts
+    ↓ (resolvers)
+[Prisma ORM] ← schema.prisma
+    ↓
+[PostgreSQL Database]
 ```
 
-## MCP Integration
+### GraphQL System
+- **Schema**: `/src/graphql/schema.graphql` - Defines types and operations
+- **Queries**: `/src/graphql/queries/*.graphql` - Client-side queries/mutations
+- **Resolvers**: `/src/lib/graphql/resolvers/` - Server-side data fetching
+- **Generated Code**: `/src/generated/graphql.ts` - Auto-generated hooks and types
+- **Code Generation**: Run `pnpm codegen` after modifying `.graphql` files
+- **📚 IMPORTANT**: See `.taskmaster/docs/procedures/graphql-data-fetching.md` for the complete step-by-step guide on implementing GraphQL data fetching
 
-Task Master provides an MCP server that Claude Code can connect to. Configure in `.mcp.json`:
+### Database Schema (Key Models)
+- **User**: Authentication and profile data
+- **Album**: Music album with MusicBrainz integration
+- **Artist**: Music artist information
+- **Recommendation**: User-created album pairings with scores
+- **Collection**: User's saved albums with metadata
+- **UserFollow**: Social following relationships
 
-```json
-{
-  "mcpServers": {
-    "task-master-ai": {
-      "command": "npx",
-      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
-      "env": {
-        "ANTHROPIC_API_KEY": "your_key_here",
-        "PERPLEXITY_API_KEY": "your_key_here",
-        "OPENAI_API_KEY": "OPENAI_API_KEY_HERE",
-        "GOOGLE_API_KEY": "GOOGLE_API_KEY_HERE",
-        "XAI_API_KEY": "XAI_API_KEY_HERE",
-        "OPENROUTER_API_KEY": "OPENROUTER_API_KEY_HERE",
-        "MISTRAL_API_KEY": "MISTRAL_API_KEY_HERE",
-        "AZURE_OPENAI_API_KEY": "AZURE_OPENAI_API_KEY_HERE",
-        "OLLAMA_API_KEY": "OLLAMA_API_KEY_HERE"
-      }
-    }
+### MusicBrainz Integration
+- **Rate Limiting**: 1 request/second via BullMQ
+- **Queue Service**: `/src/lib/musicbrainz/queue-service.ts`
+- **Worker**: `/src/workers/musicbrainz-worker.ts`
+- **Job Types**: `search-artists`, `search-releases`, `get-artist`, `get-release`
+
+### Component Patterns
+
+#### Data Fetching with Generated Hooks
+```typescript
+// Use generated GraphQL hooks instead of manual queries
+import { useGetRecommendationFeedQuery } from '@/generated/graphql';
+
+const { data, isLoading, error } = useGetRecommendationFeedQuery(
+  { limit: 10 },
+  { enabled: !!userId }
+);
+```
+
+#### Infinite Scroll Pattern
+```typescript
+// Use generated infinite query hooks for pagination
+const { data, fetchNextPage, hasNextPage } = useInfiniteGetRecommendationFeedQuery(
+  { limit: 10 },
+  {
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.recommendationFeed?.cursor
   }
-}
+);
 ```
 
-### Essential MCP Tools
-
-```javascript
-help; // = shows available taskmaster commands
-// Project setup
-initialize_project; // = task-master init
-parse_prd; // = task-master parse-prd
-
-// Daily workflow
-get_tasks; // = task-master list
-next_task; // = task-master next
-get_task; // = task-master show <id>
-set_task_status; // = task-master set-status
-
-// Task management
-add_task; // = task-master add-task
-expand_task; // = task-master expand
-update_task; // = task-master update-task
-update_subtask; // = task-master update-subtask
-update; // = task-master update
-
-// Analysis
-analyze_project_complexity; // = task-master analyze-complexity
-complexity_report; // = task-master complexity-report
+### File Organization
+```
+src/
+├── app/                    # Next.js app router pages
+│   ├── (main)/            # Authenticated routes
+│   ├── api/               # API routes (REST + GraphQL)
+│   └── auth/              # Authentication pages
+├── components/            # React components
+│   ├── ui/               # Reusable UI components
+│   └── [feature]/        # Feature-specific components
+├── generated/            # Generated GraphQL code (DO NOT EDIT)
+├── graphql/             # GraphQL schemas and queries
+│   ├── schema.graphql   # Server schema definition
+│   └── queries/         # Client queries/mutations
+├── hooks/               # Custom React hooks
+├── lib/                 # Core business logic
+│   ├── graphql/        # GraphQL resolvers
+│   ├── musicbrainz/    # MusicBrainz API integration
+│   └── queries/        # Query utilities
+├── types/              # TypeScript type definitions
+└── workers/            # Background job processors
 ```
 
-## Claude Code Workflow Integration
-
-### Standard Development Workflow
-
-#### 1. Project Initialization
-
-```bash
-# Initialize Task Master
-task-master init
-
-# Create or obtain PRD, then parse it
-task-master parse-prd .taskmaster/docs/prd.txt
-
-# Analyze complexity and expand tasks
-task-master analyze-complexity --research
-task-master expand --all --research
-```
-
-If tasks already exist, another PRD can be parsed (with new information only!) using parse-prd with --append flag. This will add the generated tasks to the existing list of tasks..
-
-#### 2. Daily Development Loop
-
-```bash
-# Start each session
-task-master next                           # Find next available task
-task-master show <id>                     # Review task details
-
-# During implementation, check in code context into the tasks and subtasks
-task-master update-subtask --id=<id> --prompt="implementation notes..."
-
-# Complete tasks
-task-master set-status --id=<id> --status=done
-```
-
-#### 3. Multi-Claude Workflows
-
-For complex projects, use multiple Claude Code sessions:
-
-```bash
-# Terminal 1: Main implementation
-cd project && claude
-
-# Terminal 2: Testing and validation
-cd project-test-worktree && claude
-
-# Terminal 3: Documentation updates
-cd project-docs-worktree && claude
-```
-
-### Custom Slash Commands
-
-Create `.claude/commands/taskmaster-next.md`:
-
-```markdown
-Find the next available Task Master task and show its details.
-
-Steps:
-
-1. Run `task-master next` to get the next task
-2. If a task is available, run `task-master show <id>` for full details
-3. Provide a summary of what needs to be implemented
-4. Suggest the first implementation step
-```
-
-Create `.claude/commands/taskmaster-complete.md`:
-
-```markdown
-Complete a Task Master task: $ARGUMENTS
-
-Steps:
-
-1. Review the current task with `task-master show $ARGUMENTS`
-2. Verify all implementation is complete
-3. Run any tests related to this task
-4. Mark as complete: `task-master set-status --id=$ARGUMENTS --status=done`
-5. Show the next available task with `task-master next`
-```
-
-## Tool Allowlist Recommendations
-
-Add to `.claude/settings.json`:
-
-```json
-{
-  "allowedTools": [
-    "Edit",
-    "Bash(task-master *)",
-    "Bash(git commit:*)",
-    "Bash(git add:*)",
-    "Bash(npm run *)",
-    "mcp__task_master_ai__*"
-  ]
-}
-```
-
-## Configuration & Setup
-
-### API Keys Required
-
-At least **one** of these API keys must be configured:
-
-- `ANTHROPIC_API_KEY` (Claude models) - **Recommended**
-- `PERPLEXITY_API_KEY` (Research features) - **Highly recommended**
-- `OPENAI_API_KEY` (GPT models)
-- `GOOGLE_API_KEY` (Gemini models)
-- `MISTRAL_API_KEY` (Mistral models)
-- `OPENROUTER_API_KEY` (Multiple models)
-- `XAI_API_KEY` (Grok models)
-
-An API key is required for any provider used across any of the 3 roles defined in the `models` command.
-
-### Model Configuration
-
-```bash
-# Interactive setup (recommended)
-task-master models --setup
-
-# Set specific models
-task-master models --set-main claude-3-5-sonnet-20241022
-task-master models --set-research perplexity-llama-3.1-sonar-large-128k-online
-task-master models --set-fallback gpt-4o-mini
-```
-
-## Task Structure & IDs
-
-### Task ID Format
-
-- Main tasks: `1`, `2`, `3`, etc.
-- Subtasks: `1.1`, `1.2`, `2.1`, etc.
-- Sub-subtasks: `1.1.1`, `1.1.2`, etc.
-
-### Task Status Values
-
-- `pending` - Ready to work on
-- `in-progress` - Currently being worked on
-- `done` - Completed and verified
-- `deferred` - Postponed
-- `cancelled` - No longer needed
-- `blocked` - Waiting on external factors
-
-### Task Fields
-
-```json
-{
-  "id": "1.2",
-  "title": "Implement user authentication",
-  "description": "Set up JWT-based auth system",
-  "status": "pending",
-  "priority": "high",
-  "dependencies": ["1.1"],
-  "details": "Use bcrypt for hashing, JWT for tokens...",
-  "testStrategy": "Unit tests for auth functions, integration tests for login flow",
-  "subtasks": []
-}
-```
-
-## Claude Code Best Practices with Task Master
-
-### Context Management
-
-- Use `/clear` between different tasks to maintain focus
-- This CLAUDE.md file is automatically loaded for context
-- Use `task-master show <id>` to pull specific task context when needed
-
-### Iterative Implementation
-
-1. `task-master show <subtask-id>` - Understand requirements
-2. Explore codebase and plan implementation
-3. `task-master update-subtask --id=<id> --prompt="detailed plan"` - Log plan
-4. `task-master set-status --id=<id> --status=in-progress` - Start work
-5. Implement code following logged plan
-6. `task-master update-subtask --id=<id> --prompt="what worked/didn't work"` - Log progress
-7. `task-master set-status --id=<id> --status=done` - Complete task
-
-### Complex Workflows with Checklists
-
-For large migrations or multi-step processes:
-
-1. Create a markdown PRD file describing the new changes: `touch task-migration-checklist.md` (prds can be .txt or .md)
-2. Use Taskmaster to parse the new prd with `task-master parse-prd --append` (also available in MCP)
-3. Use Taskmaster to expand the newly generated tasks into subtasks. Consdier using `analyze-complexity` with the correct --to and --from IDs (the new ids) to identify the ideal subtask amounts for each task. Then expand them.
-4. Work through items systematically, checking them off as completed
-5. Use `task-master update-subtask` to log progress on each task/subtask and/or updating/researching them before/during implementation if getting stuck
-
-### Git Integration
-
-Task Master works well with `gh` CLI:
-
-```bash
-# Create PR for completed task
-gh pr create --title "Complete task 1.2: User authentication" --body "Implements JWT auth system as specified in task 1.2"
-
-# Reference task in commits
-git commit -m "feat: implement JWT auth (task 1.2)"
-```
-
-### Parallel Development with Git Worktrees
-
-```bash
-# Create worktrees for parallel task development
-git worktree add ../project-auth feature/auth-system
-git worktree add ../project-api feature/api-refactor
-
-# Run Claude Code in each worktree
-cd ../project-auth && claude    # Terminal 1: Auth work
-cd ../project-api && claude     # Terminal 2: API work
-```
-
-## Troubleshooting
-
-### AI Commands Failing
-
-```bash
-# Check API keys are configured
-cat .env                           # For CLI usage
-
-# Verify model configuration
-task-master models
-
-# Test with different model
-task-master models --set-fallback gpt-4o-mini
-```
-
-### MCP Connection Issues
-
-- Check `.mcp.json` configuration
-- Verify Node.js installation
-- Use `--mcp-debug` flag when starting Claude Code
-- Use CLI as fallback if MCP unavailable
-
-### Task File Sync Issues
-
-```bash
-# Regenerate task files from tasks.json
-task-master generate
-
-# Fix dependency issues
-task-master fix-dependencies
-```
-
-DO NOT RE-INITIALIZE. That will not do anything beyond re-adding the same Taskmaster core files.
-
-## Important Notes
-
-### AI-Powered Operations
-
-These commands make AI calls and may take up to a minute:
-
-- `parse_prd` / `task-master parse-prd`
-- `analyze_project_complexity` / `task-master analyze-complexity`
-- `expand_task` / `task-master expand`
-- `expand_all` / `task-master expand --all`
-- `add_task` / `task-master add-task`
-- `update` / `task-master update`
-- `update_task` / `task-master update-task`
-- `update_subtask` / `task-master update-subtask`
-
-### File Management
-
-- Never manually edit `tasks.json` - use commands instead
-- Never manually edit `.taskmaster/config.json` - use `task-master models`
-- Task markdown files in `tasks/` are auto-generated
-- Run `task-master generate` after manual changes to tasks.json
-
-### Claude Code Session Management
-
-- Use `/clear` frequently to maintain focused context
-- Create custom slash commands for repeated Task Master workflows
-- Configure tool allowlist to streamline permissions
-- Use headless mode for automation: `claude -p "task-master next"`
-
-### Multi-Task Updates
-
-- Use `update --from=<id>` to update multiple future tasks
-- Use `update-task --id=<id>` for single task updates
-- Use `update-subtask --id=<id>` for implementation logging
-
-### Research Mode
-
-- Add `--research` flag for research-based AI enhancement
-- Requires a research model API key like Perplexity (`PERPLEXITY_API_KEY`) in environment
-- Provides more informed task creation and updates
-- Recommended for complex technical tasks
-
----
-
-_This guide ensures Claude Code has immediate access to Task Master's essential functionality for agentic development workflows._
+### Authentication Flow
+- **Providers**: Google, Spotify, Email/Password
+- **Session Management**: JWT-based with NextAuth
+- **Protected Routes**: Wrapped in `(main)` route group
+- **User Context**: Access via `useSession()` hook
+
+### Environment Variables
+Required environment variables:
+- `DATABASE_URL` - PostgreSQL connection string
+- `NEXTAUTH_SECRET` - NextAuth encryption key
+- `NEXTAUTH_URL` - Application URL
+- `REDIS_URL` - Redis connection for BullMQ
+- `GOOGLE_CLIENT_ID/SECRET` - Google OAuth
+- `SPOTIFY_CLIENT_ID/SECRET` - Spotify OAuth
+- AWS S3 credentials for image storage
+
+### Development Workflow
+
+1. **GraphQL Changes** (See `.taskmaster/docs/procedures/graphql-data-fetching.md` for detailed guide):
+   - Modify schema in `/src/graphql/schema.graphql`
+   - Add queries in `/src/graphql/queries/`
+   - Run `pnpm codegen` to generate types and hooks
+   - Use generated hooks in components
+
+2. **Database Changes**:
+   - Update `prisma/schema.prisma`
+   - Run `pnpm prisma generate` to update client
+   - Run `pnpm prisma db push` to update database
+
+3. **Adding New Features**:
+   - Check Task Master: `task-master next`
+   - Create GraphQL schema if needed
+   - Generate types: `pnpm codegen`
+   - Implement resolvers in `/src/lib/graphql/resolvers/`
+   - Create components using generated hooks
+   - Add tests in `/tests/`
+
+### Performance Considerations
+- **Image Optimization**: Use Next.js Image with Cloudflare CDN
+- **Query Caching**: React Query with 5-minute stale time
+- **Rate Limiting**: MusicBrainz API via BullMQ queue
+- **Database Indexes**: On userId, albumId for fast lookups
+- **Pagination**: Cursor-based for large datasets
+
+### Common Gotchas
+- Always run `pnpm codegen` after modifying `.graphql` files
+- Use generated GraphQL types (`RecommendationFieldsFragment`) not old REST types
+- MusicBrainz API requires rate limiting (1 req/sec)
+- Prisma UUID fields require `@db.Uuid` for PostgreSQL
+- Next.js Image requires `unoptimized` prop for external images

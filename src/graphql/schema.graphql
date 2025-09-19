@@ -765,7 +765,7 @@ type Query {
   myCollections: [Collection!]!
   publicCollections(limit: Int = 20, offset: Int = 0): [Collection!]!
   userCollections(userId: String!): [Collection!]!
-  myRecommendations(sort: RecommendationSort = SCORE_DESC, limit: Int = 50): [Recommendation!]!
+  myRecommendations(cursor: String, limit: Int = 10, sort: RecommendationSort = SCORE_DESC): RecommendationFeed!
   followingActivity(limit: Int = 50): [Recommendation!]!
   socialFeed(type: ActivityType, cursor: String, limit: Int = 20): ActivityFeed!
 

@@ -1,17 +1,14 @@
 import {
-  GraphQLResolveInfo,
-  GraphQLScalarType,
-  GraphQLScalarTypeConfig,
-} from 'graphql';
-import {
-  Artist as DatabaseArtist,
-  Album as DatabaseAlbum,
-  Track as DatabaseTrack,
-  AudioFeatures as DatabaseAudioFeatures,
-} from '../lib/types/database';
-import { GraphQLContext } from '../lib/graphql/context';
-export type Maybe<T> = T | null | undefined;
-export type InputMaybe<T> = T | null | undefined;
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  UseQueryOptions,
+  UseInfiniteQueryOptions,
+  InfiniteData,
+  UseMutationOptions,
+} from '@tanstack/react-query';
+export type Maybe<T> = T | null;
+export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = {
   [K in keyof T]: T[K];
 };
@@ -30,10 +27,33 @@ export type Incremental<T> =
   | {
       [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never;
     };
-export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
-export type RequireFields<T, K extends keyof T> = Omit<T, K> & {
-  [P in K]-?: NonNullable<T[P]>;
-};
+
+function fetcher<TData, TVariables>(query: string, variables?: TVariables) {
+  return async (): Promise<TData> => {
+    const res = await fetch(
+      process.env.NEXT_PUBLIC_API_URL || ('/api/graphql' as string),
+      {
+        method: 'POST',
+        ...{
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        },
+        body: JSON.stringify({ query, variables }),
+      }
+    );
+
+    const json = await res.json();
+
+    if (json.errors) {
+      const { message } = json.errors[0];
+
+      throw new Error(message);
+    }
+
+    return json.data;
+  };
+}
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: { input: string; output: string };
@@ -45,6 +65,42 @@ export type Scalars = {
   JSON: { input: any; output: any };
   UUID: { input: string; output: string };
 };
+
+export type Activity = {
+  __typename?: 'Activity';
+  actor: User;
+  album?: Maybe<Album>;
+  collection?: Maybe<Collection>;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['String']['output'];
+  metadata?: Maybe<ActivityMetadata>;
+  recommendation?: Maybe<Recommendation>;
+  targetUser?: Maybe<User>;
+  type: ActivityType;
+};
+
+export type ActivityFeed = {
+  __typename?: 'ActivityFeed';
+  activities: Array<Activity>;
+  cursor?: Maybe<Scalars['String']['output']>;
+  hasMore: Scalars['Boolean']['output'];
+};
+
+export type ActivityMetadata = {
+  __typename?: 'ActivityMetadata';
+  basisAlbum?: Maybe<Album>;
+  collectionName?: Maybe<Scalars['String']['output']>;
+  personalRating?: Maybe<Scalars['Int']['output']>;
+  position?: Maybe<Scalars['Int']['output']>;
+  score?: Maybe<Scalars['Int']['output']>;
+};
+
+export enum ActivityType {
+  CollectionAdd = 'COLLECTION_ADD',
+  Follow = 'FOLLOW',
+  ProfileUpdate = 'PROFILE_UPDATE',
+  Recommendation = 'RECOMMENDATION',
+}
 
 export type Album = {
   __typename?: 'Album';
@@ -189,6 +245,13 @@ export type AudioFeatures = {
   valence?: Maybe<Scalars['Float']['output']>;
 };
 
+export type BatchEnrichmentResult = {
+  __typename?: 'BatchEnrichmentResult';
+  jobsQueued: Scalars['Int']['output'];
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
 export type Collection = {
   __typename?: 'Collection';
   albumCount: Scalars['Int']['output'];
@@ -247,11 +310,41 @@ export enum DataQuality {
   Medium = 'MEDIUM',
 }
 
+export type DatabaseStats = {
+  __typename?: 'DatabaseStats';
+  albumsNeedingEnrichment: Scalars['Int']['output'];
+  artistsNeedingEnrichment: Scalars['Int']['output'];
+  averageDataQuality: Scalars['Float']['output'];
+  failedEnrichments: Scalars['Int']['output'];
+  recentlyEnriched: Scalars['Int']['output'];
+  totalAlbums: Scalars['Int']['output'];
+  totalArtists: Scalars['Int']['output'];
+  totalTracks: Scalars['Int']['output'];
+};
+
+export enum EnrichmentPriority {
+  High = 'HIGH',
+  Low = 'LOW',
+  Medium = 'MEDIUM',
+}
+
+export type EnrichmentResult = {
+  __typename?: 'EnrichmentResult';
+  jobId?: Maybe<Scalars['String']['output']>;
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
 export enum EnrichmentStatus {
   Completed = 'COMPLETED',
   Failed = 'FAILED',
   InProgress = 'IN_PROGRESS',
   Pending = 'PENDING',
+}
+
+export enum EnrichmentType {
+  Album = 'ALBUM',
+  Artist = 'ARTIST',
 }
 
 export type ErrorMetric = {
@@ -323,27 +416,38 @@ export type Mutation = {
   __typename?: 'Mutation';
   addAlbum: Album;
   addAlbumToCollection: CollectionAlbum;
+  batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
   clearFailedJobs: Scalars['Boolean']['output'];
   createCollection: Collection;
   createRecommendation: Recommendation;
   createTrack: Track;
+  deleteCollection: Scalars['Boolean']['output'];
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
+  dismissUserSuggestion: Scalars['Boolean']['output'];
   followUser: UserFollow;
   pauseQueue: Scalars['Boolean']['output'];
   removeAlbumFromCollection: Scalars['Boolean']['output'];
+  reorderCollectionAlbums: Array<CollectionAlbum>;
+  resetOnboardingStatus: OnboardingStatus;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
+  triggerAlbumEnrichment: EnrichmentResult;
+  triggerArtistEnrichment: EnrichmentResult;
   triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
   updateAlbum: Album;
   updateAlertThresholds: AlertThresholds;
+  updateCollection: Collection;
   updateCollectionAlbum: CollectionAlbum;
+  updateDashboardLayout: UserSettings;
+  updateOnboardingStatus: OnboardingStatus;
   updateProfile: User;
   updateRecommendation: Recommendation;
   updateTrack: Track;
+  updateUserSettings: UserSettings;
 };
 
 export type MutationAddAlbumArgs = {
@@ -353,6 +457,12 @@ export type MutationAddAlbumArgs = {
 export type MutationAddAlbumToCollectionArgs = {
   collectionId: Scalars['String']['input'];
   input: CollectionAlbumInput;
+};
+
+export type MutationBatchEnrichmentArgs = {
+  ids: Array<Scalars['UUID']['input']>;
+  priority?: InputMaybe<EnrichmentPriority>;
+  type: EnrichmentType;
 };
 
 export type MutationCleanQueueArgs = {
@@ -375,12 +485,20 @@ export type MutationCreateTrackArgs = {
   input: TrackInput;
 };
 
+export type MutationDeleteCollectionArgs = {
+  id: Scalars['String']['input'];
+};
+
 export type MutationDeleteRecommendationArgs = {
   id: Scalars['String']['input'];
 };
 
 export type MutationDeleteTrackArgs = {
   id: Scalars['UUID']['input'];
+};
+
+export type MutationDismissUserSuggestionArgs = {
+  userId: Scalars['String']['input'];
 };
 
 export type MutationFollowUserArgs = {
@@ -392,8 +510,23 @@ export type MutationRemoveAlbumFromCollectionArgs = {
   collectionId: Scalars['String']['input'];
 };
 
+export type MutationReorderCollectionAlbumsArgs = {
+  albumIds: Array<Scalars['UUID']['input']>;
+  collectionId: Scalars['String']['input'];
+};
+
 export type MutationRetryJobArgs = {
   jobId: Scalars['String']['input'];
+};
+
+export type MutationTriggerAlbumEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+  priority?: InputMaybe<EnrichmentPriority>;
+};
+
+export type MutationTriggerArtistEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+  priority?: InputMaybe<EnrichmentPriority>;
 };
 
 export type MutationTriggerSpotifySyncArgs = {
@@ -413,9 +546,24 @@ export type MutationUpdateAlertThresholdsArgs = {
   input: AlertThresholdsInput;
 };
 
+export type MutationUpdateCollectionArgs = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['String']['input'];
+  isPublic?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type MutationUpdateCollectionAlbumArgs = {
   id: Scalars['String']['input'];
   input: CollectionAlbumInput;
+};
+
+export type MutationUpdateDashboardLayoutArgs = {
+  layout: Scalars['JSON']['input'];
+};
+
+export type MutationUpdateOnboardingStatusArgs = {
+  hasCompletedTour: Scalars['Boolean']['input'];
 };
 
 export type MutationUpdateProfileArgs = {
@@ -433,6 +581,21 @@ export type MutationUpdateTrackArgs = {
   input: UpdateTrackInput;
 };
 
+export type MutationUpdateUserSettingsArgs = {
+  language?: InputMaybe<Scalars['String']['input']>;
+  profileVisibility?: InputMaybe<Scalars['String']['input']>;
+  showCollections?: InputMaybe<Scalars['Boolean']['input']>;
+  showRecentActivity?: InputMaybe<Scalars['Boolean']['input']>;
+  theme?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type OnboardingStatus = {
+  __typename?: 'OnboardingStatus';
+  hasCompletedTour: Scalars['Boolean']['output'];
+  isNewUser: Scalars['Boolean']['output'];
+  profileUpdatedAt?: Maybe<Scalars['DateTime']['output']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   activeJobs: Array<JobRecord>;
@@ -441,18 +604,27 @@ export type Query = {
   albumTracks: Array<Track>;
   artist?: Maybe<Artist>;
   collection?: Maybe<Collection>;
+  databaseStats: DatabaseStats;
   failedJobs: Array<JobRecord>;
   followingActivity: Array<Recommendation>;
   health: Scalars['String']['output'];
+  isFollowing: Scalars['Boolean']['output'];
   jobHistory: Array<JobRecord>;
+  mutualConnections: Array<User>;
   myCollections: Array<Collection>;
-  myRecommendations: Array<Recommendation>;
+  myRecommendations: RecommendationFeed;
+  mySettings?: Maybe<UserSettings>;
+  onboardingStatus: OnboardingStatus;
+  publicCollections: Array<Collection>;
   queueMetrics: QueueMetrics;
   queueStatus: QueueStatus;
   recommendation?: Maybe<Recommendation>;
   recommendationFeed: RecommendationFeed;
   search: SearchResults;
+  searchAlbums: Array<Album>;
+  searchArtists: Array<Artist>;
   searchTracks: Array<Track>;
+  socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
   systemHealth: SystemHealth;
   track?: Maybe<Track>;
@@ -460,7 +632,13 @@ export type Query = {
   trendingAlbums: Array<Album>;
   trendingArtists: Array<Artist>;
   user?: Maybe<User>;
+  userCollections: Array<Collection>;
+  userFollowers: Array<User>;
+  userFollowing: Array<User>;
+  userStats: UserStats;
   userSuggestions: Array<User>;
+  users: Array<User>;
+  usersCount: Scalars['Int']['output'];
 };
 
 export type QueryAlbumArgs = {
@@ -491,14 +669,28 @@ export type QueryFollowingActivityArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type QueryIsFollowingArgs = {
+  userId: Scalars['String']['input'];
+};
+
 export type QueryJobHistoryArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   status?: InputMaybe<JobStatus>;
 };
 
+export type QueryMutualConnectionsArgs = {
+  userId: Scalars['String']['input'];
+};
+
 export type QueryMyRecommendationsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<RecommendationSort>;
+};
+
+export type QueryPublicCollectionsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryQueueMetricsArgs = {
@@ -518,9 +710,35 @@ export type QuerySearchArgs = {
   input: SearchInput;
 };
 
+export type QuerySearchAlbumsArgs = {
+  dataQuality?: InputMaybe<Scalars['String']['input']>;
+  enrichmentStatus?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
+  query?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortOrder?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QuerySearchArtistsArgs = {
+  dataQuality?: InputMaybe<Scalars['String']['input']>;
+  enrichmentStatus?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
+  query?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortOrder?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type QuerySearchTracksArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
+};
+
+export type QuerySocialFeedArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  type?: InputMaybe<ActivityType>;
 };
 
 export type QueryTrackArgs = {
@@ -544,8 +762,38 @@ export type QueryUserArgs = {
   id: Scalars['String']['input'];
 };
 
+export type QueryUserCollectionsArgs = {
+  userId: Scalars['String']['input'];
+};
+
+export type QueryUserFollowersArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  userId: Scalars['String']['input'];
+};
+
+export type QueryUserFollowingArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  userId: Scalars['String']['input'];
+};
+
+export type QueryUserStatsArgs = {
+  userId: Scalars['String']['input'];
+};
+
 export type QueryUserSuggestionsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryUsersArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QueryUsersCountArgs = {
+  search?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueueMetrics = {
@@ -827,10 +1075,12 @@ export type UpdateTrackInput = {
 
 export type User = {
   __typename?: 'User';
+  _count?: Maybe<UserCount>;
   bio?: Maybe<Scalars['String']['output']>;
   collections: Array<Collection>;
   createdAt: Scalars['DateTime']['output'];
   email?: Maybe<Scalars['String']['output']>;
+  emailVerified?: Maybe<Scalars['DateTime']['output']>;
   followers: Array<UserFollow>;
   followersCount: Scalars['Int']['output'];
   following: Array<UserFollow>;
@@ -843,7 +1093,14 @@ export type User = {
   profileUpdatedAt?: Maybe<Scalars['DateTime']['output']>;
   recommendations: Array<Recommendation>;
   recommendationsCount: Scalars['Int']['output'];
+  settings?: Maybe<UserSettings>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type UserCount = {
+  __typename?: 'UserCount';
+  collections: Scalars['Int']['output'];
+  recommendations: Scalars['Int']['output'];
 };
 
 export type UserFollow = {
@@ -854,6 +1111,38 @@ export type UserFollow = {
   id: Scalars['String']['output'];
 };
 
+export type UserSettings = {
+  __typename?: 'UserSettings';
+  autoplayPreviews: Scalars['Boolean']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  dashboardLayout?: Maybe<Scalars['JSON']['output']>;
+  defaultCollectionView: Scalars['String']['output'];
+  emailNotifications: Scalars['Boolean']['output'];
+  followAlerts: Scalars['Boolean']['output'];
+  id: Scalars['String']['output'];
+  language: Scalars['String']['output'];
+  profileVisibility: Scalars['String']['output'];
+  recommendationAlerts: Scalars['Boolean']['output'];
+  showCollections: Scalars['Boolean']['output'];
+  showRecentActivity: Scalars['Boolean']['output'];
+  theme: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  userId: Scalars['String']['output'];
+};
+
+export type UserStats = {
+  __typename?: 'UserStats';
+  averageRecommendationScore?: Maybe<Scalars['Float']['output']>;
+  collectionsCount: Scalars['Int']['output'];
+  followersCount: Scalars['Int']['output'];
+  followingCount: Scalars['Int']['output'];
+  joinedAt: Scalars['DateTime']['output'];
+  recommendationsCount: Scalars['Int']['output'];
+  topGenres: Array<Scalars['String']['output']>;
+  totalAlbumsInCollections: Scalars['Int']['output'];
+  userId: Scalars['String']['output'];
+};
+
 export type WorkerInfo = {
   __typename?: 'WorkerInfo';
   activeJobCount: Scalars['Int']['output'];
@@ -862,1602 +1151,667 @@ export type WorkerInfo = {
   isRunning: Scalars['Boolean']['output'];
 };
 
-export type WithIndex<TObject> = TObject & Record<string, any>;
-export type ResolversObject<TObject> = WithIndex<TObject>;
-
-export type ResolverTypeWrapper<T> = Promise<T> | T;
-
-export type ResolverWithResolve<TResult, TParent, TContext, TArgs> = {
-  resolve: ResolverFn<TResult, TParent, TContext, TArgs>;
+export type RecommendationFieldsFragment = {
+  __typename?: 'Recommendation';
+  id: string;
+  score: number;
+  createdAt: Date;
+  user: {
+    __typename?: 'User';
+    id: string;
+    name?: string | null;
+    image?: string | null;
+  };
+  basisAlbum: {
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    coverArtUrl?: string | null;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  };
+  recommendedAlbum: {
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    coverArtUrl?: string | null;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  };
 };
-export type Resolver<TResult, TParent = {}, TContext = {}, TArgs = {}> =
-  | ResolverFn<TResult, TParent, TContext, TArgs>
-  | ResolverWithResolve<TResult, TParent, TContext, TArgs>;
 
-export type ResolverFn<TResult, TParent, TContext, TArgs> = (
-  parent: TParent,
-  args: TArgs,
-  context: TContext,
-  info: GraphQLResolveInfo
-) => Promise<TResult> | TResult;
-
-export type SubscriptionSubscribeFn<TResult, TParent, TContext, TArgs> = (
-  parent: TParent,
-  args: TArgs,
-  context: TContext,
-  info: GraphQLResolveInfo
-) => AsyncIterable<TResult> | Promise<AsyncIterable<TResult>>;
-
-export type SubscriptionResolveFn<TResult, TParent, TContext, TArgs> = (
-  parent: TParent,
-  args: TArgs,
-  context: TContext,
-  info: GraphQLResolveInfo
-) => TResult | Promise<TResult>;
-
-export interface SubscriptionSubscriberObject<
-  TResult,
-  TKey extends string,
-  TParent,
-  TContext,
-  TArgs,
-> {
-  subscribe: SubscriptionSubscribeFn<
-    { [key in TKey]: TResult },
-    TParent,
-    TContext,
-    TArgs
-  >;
-  resolve?: SubscriptionResolveFn<
-    TResult,
-    { [key in TKey]: TResult },
-    TContext,
-    TArgs
-  >;
-}
-
-export interface SubscriptionResolverObject<TResult, TParent, TContext, TArgs> {
-  subscribe: SubscriptionSubscribeFn<any, TParent, TContext, TArgs>;
-  resolve: SubscriptionResolveFn<TResult, any, TContext, TArgs>;
-}
-
-export type SubscriptionObject<
-  TResult,
-  TKey extends string,
-  TParent,
-  TContext,
-  TArgs,
-> =
-  | SubscriptionSubscriberObject<TResult, TKey, TParent, TContext, TArgs>
-  | SubscriptionResolverObject<TResult, TParent, TContext, TArgs>;
-
-export type SubscriptionResolver<
-  TResult,
-  TKey extends string,
-  TParent = {},
-  TContext = {},
-  TArgs = {},
-> =
-  | ((
-      ...args: any[]
-    ) => SubscriptionObject<TResult, TKey, TParent, TContext, TArgs>)
-  | SubscriptionObject<TResult, TKey, TParent, TContext, TArgs>;
-
-export type TypeResolveFn<TTypes, TParent = {}, TContext = {}> = (
-  parent: TParent,
-  context: TContext,
-  info: GraphQLResolveInfo
-) => Maybe<TTypes> | Promise<Maybe<TTypes>>;
-
-export type IsTypeOfResolverFn<T = {}, TContext = {}> = (
-  obj: T,
-  context: TContext,
-  info: GraphQLResolveInfo
-) => boolean | Promise<boolean>;
-
-export type NextResolverFn<T> = () => Promise<T>;
-
-export type DirectiveResolverFn<
-  TResult = {},
-  TParent = {},
-  TContext = {},
-  TArgs = {},
-> = (
-  next: NextResolverFn<TResult>,
-  parent: TParent,
-  args: TArgs,
-  context: TContext,
-  info: GraphQLResolveInfo
-) => TResult | Promise<TResult>;
-
-/** Mapping of union types */
-export type ResolversUnionTypes<_RefType extends Record<string, unknown>> =
-  ResolversObject<{
-    SearchResult: DatabaseAlbum | DatabaseArtist | DatabaseTrack;
-  }>;
-
-/** Mapping between all available schema types and the resolvers types */
-export type ResolversTypes = ResolversObject<{
-  Album: ResolverTypeWrapper<DatabaseAlbum>;
-  AlbumInput: AlbumInput;
-  Alert: ResolverTypeWrapper<Alert>;
-  AlertLevel: AlertLevel;
-  AlertThresholds: ResolverTypeWrapper<AlertThresholds>;
-  AlertThresholdsInput: AlertThresholdsInput;
-  AlertType: AlertType;
-  Artist: ResolverTypeWrapper<DatabaseArtist>;
-  ArtistAlbumInput: ArtistAlbumInput;
-  ArtistCredit: ResolverTypeWrapper<
-    Omit<ArtistCredit, 'artist'> & { artist: ResolversTypes['Artist'] }
-  >;
-  ArtistTrackInput: ArtistTrackInput;
-  AudioFeatures: ResolverTypeWrapper<DatabaseAudioFeatures>;
-  Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
-  Collection: ResolverTypeWrapper<
-    Omit<Collection, 'albums' | 'user'> & {
-      albums: Array<ResolversTypes['CollectionAlbum']>;
-      user: ResolversTypes['User'];
-    }
-  >;
-  CollectionAlbum: ResolverTypeWrapper<
-    Omit<CollectionAlbum, 'album' | 'collection'> & {
-      album: ResolversTypes['Album'];
-      collection: ResolversTypes['Collection'];
-    }
-  >;
-  CollectionAlbumInput: CollectionAlbumInput;
-  CollectionSort: CollectionSort;
-  ComponentHealth: ResolverTypeWrapper<ComponentHealth>;
-  DataQuality: DataQuality;
-  DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
-  EnrichmentStatus: EnrichmentStatus;
-  ErrorMetric: ResolverTypeWrapper<ErrorMetric>;
-  Float: ResolverTypeWrapper<Scalars['Float']['output']>;
-  HealthComponents: ResolverTypeWrapper<HealthComponents>;
-  HealthMetrics: ResolverTypeWrapper<HealthMetrics>;
-  HealthStatus: HealthStatus;
-  Int: ResolverTypeWrapper<Scalars['Int']['output']>;
-  JSON: ResolverTypeWrapper<Scalars['JSON']['output']>;
-  JobRecord: ResolverTypeWrapper<JobRecord>;
-  JobStatus: JobStatus;
-  JobStatusUpdate: ResolverTypeWrapper<JobStatusUpdate>;
-  Mutation: ResolverTypeWrapper<{}>;
-  Query: ResolverTypeWrapper<{}>;
-  QueueMetrics: ResolverTypeWrapper<QueueMetrics>;
-  QueueStats: ResolverTypeWrapper<QueueStats>;
-  QueueStatus: ResolverTypeWrapper<QueueStatus>;
-  RateLimitInfo: ResolverTypeWrapper<RateLimitInfo>;
-  Recommendation: ResolverTypeWrapper<
-    Omit<Recommendation, 'basisAlbum' | 'recommendedAlbum' | 'user'> & {
-      basisAlbum: ResolversTypes['Album'];
-      recommendedAlbum: ResolversTypes['Album'];
-      user: ResolversTypes['User'];
-    }
-  >;
-  RecommendationFeed: ResolverTypeWrapper<
-    Omit<RecommendationFeed, 'recommendations'> & {
-      recommendations: Array<ResolversTypes['Recommendation']>;
-    }
-  >;
-  RecommendationInput: RecommendationInput;
-  RecommendationSort: RecommendationSort;
-  SearchInput: SearchInput;
-  SearchResult: ResolverTypeWrapper<
-    ResolversUnionTypes<ResolversTypes>['SearchResult']
-  >;
-  SearchResults: ResolverTypeWrapper<
-    Omit<SearchResults, 'albums' | 'artists' | 'tracks'> & {
-      albums: Array<ResolversTypes['Album']>;
-      artists: Array<ResolversTypes['Artist']>;
-      tracks: Array<ResolversTypes['Track']>;
-    }
-  >;
-  SearchType: SearchType;
-  SpotifyAlbum: ResolverTypeWrapper<SpotifyAlbum>;
-  SpotifyArtist: ResolverTypeWrapper<SpotifyArtist>;
-  SpotifyPlaylist: ResolverTypeWrapper<SpotifyPlaylist>;
-  SpotifyPopularArtists: ResolverTypeWrapper<SpotifyPopularArtists>;
-  SpotifySyncResult: ResolverTypeWrapper<SpotifySyncResult>;
-  SpotifySyncStats: ResolverTypeWrapper<SpotifySyncStats>;
-  SpotifySyncType: SpotifySyncType;
-  SpotifyTopChart: ResolverTypeWrapper<SpotifyTopChart>;
-  SpotifyTrack: ResolverTypeWrapper<SpotifyTrack>;
-  SpotifyTrendingData: ResolverTypeWrapper<SpotifyTrendingData>;
-  String: ResolverTypeWrapper<Scalars['String']['output']>;
-  Subscription: ResolverTypeWrapper<{}>;
-  SystemHealth: ResolverTypeWrapper<SystemHealth>;
-  ThroughputMetrics: ResolverTypeWrapper<ThroughputMetrics>;
-  TimeRange: TimeRange;
-  Track: ResolverTypeWrapper<DatabaseTrack>;
-  TrackInput: TrackInput;
-  UUID: ResolverTypeWrapper<Scalars['UUID']['output']>;
-  UpdateTrackInput: UpdateTrackInput;
-  User: ResolverTypeWrapper<
-    Omit<
-      User,
-      | 'collections'
-      | 'followers'
-      | 'following'
-      | 'mutualFollowers'
-      | 'recommendations'
-    > & {
-      collections: Array<ResolversTypes['Collection']>;
-      followers: Array<ResolversTypes['UserFollow']>;
-      following: Array<ResolversTypes['UserFollow']>;
-      mutualFollowers: Array<ResolversTypes['User']>;
-      recommendations: Array<ResolversTypes['Recommendation']>;
-    }
-  >;
-  UserFollow: ResolverTypeWrapper<
-    Omit<UserFollow, 'followed' | 'follower'> & {
-      followed: ResolversTypes['User'];
-      follower: ResolversTypes['User'];
-    }
-  >;
-  WorkerInfo: ResolverTypeWrapper<WorkerInfo>;
+export type GetRecommendationFeedQueryVariables = Exact<{
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
-/** Mapping between all available schema types and the resolvers parents */
-export type ResolversParentTypes = ResolversObject<{
-  Album: DatabaseAlbum;
-  AlbumInput: AlbumInput;
-  Alert: Alert;
-  AlertThresholds: AlertThresholds;
-  AlertThresholdsInput: AlertThresholdsInput;
-  Artist: DatabaseArtist;
-  ArtistAlbumInput: ArtistAlbumInput;
-  ArtistCredit: Omit<ArtistCredit, 'artist'> & {
-    artist: ResolversParentTypes['Artist'];
+export type GetRecommendationFeedQuery = {
+  __typename?: 'Query';
+  recommendationFeed: {
+    __typename?: 'RecommendationFeed';
+    cursor?: string | null;
+    hasMore: boolean;
+    recommendations: Array<{
+      __typename?: 'Recommendation';
+      id: string;
+      score: number;
+      createdAt: Date;
+      user: {
+        __typename?: 'User';
+        id: string;
+        name?: string | null;
+        image?: string | null;
+      };
+      basisAlbum: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+        artists: Array<{
+          __typename?: 'ArtistCredit';
+          artist: { __typename?: 'Artist'; id: string; name: string };
+        }>;
+      };
+      recommendedAlbum: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+        artists: Array<{
+          __typename?: 'ArtistCredit';
+          artist: { __typename?: 'Artist'; id: string; name: string };
+        }>;
+      };
+    }>;
   };
-  ArtistTrackInput: ArtistTrackInput;
-  AudioFeatures: DatabaseAudioFeatures;
-  Boolean: Scalars['Boolean']['output'];
-  Collection: Omit<Collection, 'albums' | 'user'> & {
-    albums: Array<ResolversParentTypes['CollectionAlbum']>;
-    user: ResolversParentTypes['User'];
+};
+
+export type GetMyRecommendationsQueryVariables = Exact<{
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<RecommendationSort>;
+}>;
+
+export type GetMyRecommendationsQuery = {
+  __typename?: 'Query';
+  myRecommendations: {
+    __typename?: 'RecommendationFeed';
+    cursor?: string | null;
+    hasMore: boolean;
+    recommendations: Array<{
+      __typename?: 'Recommendation';
+      id: string;
+      score: number;
+      createdAt: Date;
+      user: {
+        __typename?: 'User';
+        id: string;
+        name?: string | null;
+        image?: string | null;
+      };
+      basisAlbum: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+        artists: Array<{
+          __typename?: 'ArtistCredit';
+          artist: { __typename?: 'Artist'; id: string; name: string };
+        }>;
+      };
+      recommendedAlbum: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+        artists: Array<{
+          __typename?: 'ArtistCredit';
+          artist: { __typename?: 'Artist'; id: string; name: string };
+        }>;
+      };
+    }>;
   };
-  CollectionAlbum: Omit<CollectionAlbum, 'album' | 'collection'> & {
-    album: ResolversParentTypes['Album'];
-    collection: ResolversParentTypes['Collection'];
+};
+
+export type CreateRecommendationMutationVariables = Exact<{
+  basisAlbumId: Scalars['UUID']['input'];
+  recommendedAlbumId: Scalars['UUID']['input'];
+  score: Scalars['Int']['input'];
+}>;
+
+export type CreateRecommendationMutation = {
+  __typename?: 'Mutation';
+  createRecommendation: {
+    __typename?: 'Recommendation';
+    id: string;
+    score: number;
+    createdAt: Date;
+    user: {
+      __typename?: 'User';
+      id: string;
+      name?: string | null;
+      image?: string | null;
+    };
+    basisAlbum: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+    recommendedAlbum: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
   };
-  CollectionAlbumInput: CollectionAlbumInput;
-  ComponentHealth: ComponentHealth;
-  DateTime: Scalars['DateTime']['output'];
-  ErrorMetric: ErrorMetric;
-  Float: Scalars['Float']['output'];
-  HealthComponents: HealthComponents;
-  HealthMetrics: HealthMetrics;
-  Int: Scalars['Int']['output'];
-  JSON: Scalars['JSON']['output'];
-  JobRecord: JobRecord;
-  JobStatusUpdate: JobStatusUpdate;
-  Mutation: {};
-  Query: {};
-  QueueMetrics: QueueMetrics;
-  QueueStats: QueueStats;
-  QueueStatus: QueueStatus;
-  RateLimitInfo: RateLimitInfo;
-  Recommendation: Omit<
-    Recommendation,
-    'basisAlbum' | 'recommendedAlbum' | 'user'
+};
+
+export type UpdateRecommendationMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+  score: Scalars['Int']['input'];
+}>;
+
+export type UpdateRecommendationMutation = {
+  __typename?: 'Mutation';
+  updateRecommendation: {
+    __typename?: 'Recommendation';
+    id: string;
+    score: number;
+    createdAt: Date;
+    user: {
+      __typename?: 'User';
+      id: string;
+      name?: string | null;
+      image?: string | null;
+    };
+    basisAlbum: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+    recommendedAlbum: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+  };
+};
+
+export type DeleteRecommendationMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+export type DeleteRecommendationMutation = {
+  __typename?: 'Mutation';
+  deleteRecommendation: boolean;
+};
+
+export type GetRecommendationQueryVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+export type GetRecommendationQuery = {
+  __typename?: 'Query';
+  recommendation?: {
+    __typename?: 'Recommendation';
+    id: string;
+    score: number;
+    createdAt: Date;
+    user: {
+      __typename?: 'User';
+      id: string;
+      name?: string | null;
+      image?: string | null;
+    };
+    basisAlbum: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+    recommendedAlbum: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+  } | null;
+};
+
+export const RecommendationFieldsFragmentDoc = `
+    fragment RecommendationFields on Recommendation {
+  id
+  score
+  createdAt
+  user {
+    id
+    name
+    image
+  }
+  basisAlbum {
+    id
+    title
+    coverArtUrl
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+  recommendedAlbum {
+    id
+    title
+    coverArtUrl
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+export const GetRecommendationFeedDocument = `
+    query GetRecommendationFeed($cursor: String, $limit: Int) {
+  recommendationFeed(cursor: $cursor, limit: $limit) {
+    recommendations {
+      ...RecommendationFields
+    }
+    cursor
+    hasMore
+  }
+}
+    ${RecommendationFieldsFragmentDoc}`;
+
+export const useGetRecommendationFeedQuery = <
+  TData = GetRecommendationFeedQuery,
+  TError = unknown,
+>(
+  variables?: GetRecommendationFeedQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetRecommendationFeedQuery, TError, TData>,
+    'queryKey'
   > & {
-    basisAlbum: ResolversParentTypes['Album'];
-    recommendedAlbum: ResolversParentTypes['Album'];
-    user: ResolversParentTypes['User'];
-  };
-  RecommendationFeed: Omit<RecommendationFeed, 'recommendations'> & {
-    recommendations: Array<ResolversParentTypes['Recommendation']>;
-  };
-  RecommendationInput: RecommendationInput;
-  SearchInput: SearchInput;
-  SearchResult: ResolversUnionTypes<ResolversParentTypes>['SearchResult'];
-  SearchResults: Omit<SearchResults, 'albums' | 'artists' | 'tracks'> & {
-    albums: Array<ResolversParentTypes['Album']>;
-    artists: Array<ResolversParentTypes['Artist']>;
-    tracks: Array<ResolversParentTypes['Track']>;
-  };
-  SpotifyAlbum: SpotifyAlbum;
-  SpotifyArtist: SpotifyArtist;
-  SpotifyPlaylist: SpotifyPlaylist;
-  SpotifyPopularArtists: SpotifyPopularArtists;
-  SpotifySyncResult: SpotifySyncResult;
-  SpotifySyncStats: SpotifySyncStats;
-  SpotifyTopChart: SpotifyTopChart;
-  SpotifyTrack: SpotifyTrack;
-  SpotifyTrendingData: SpotifyTrendingData;
-  String: Scalars['String']['output'];
-  Subscription: {};
-  SystemHealth: SystemHealth;
-  ThroughputMetrics: ThroughputMetrics;
-  Track: DatabaseTrack;
-  TrackInput: TrackInput;
-  UUID: Scalars['UUID']['output'];
-  UpdateTrackInput: UpdateTrackInput;
-  User: Omit<
-    User,
-    | 'collections'
-    | 'followers'
-    | 'following'
-    | 'mutualFollowers'
-    | 'recommendations'
+    queryKey?: UseQueryOptions<
+      GetRecommendationFeedQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetRecommendationFeedQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetRecommendationFeed']
+        : ['GetRecommendationFeed', variables],
+    queryFn: fetcher<
+      GetRecommendationFeedQuery,
+      GetRecommendationFeedQueryVariables
+    >(GetRecommendationFeedDocument, variables),
+    ...options,
+  });
+};
+
+useGetRecommendationFeedQuery.getKey = (
+  variables?: GetRecommendationFeedQueryVariables
+) =>
+  variables === undefined
+    ? ['GetRecommendationFeed']
+    : ['GetRecommendationFeed', variables];
+
+export const useInfiniteGetRecommendationFeedQuery = <
+  TData = InfiniteData<GetRecommendationFeedQuery>,
+  TError = unknown,
+>(
+  variables: GetRecommendationFeedQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetRecommendationFeedQuery, TError, TData>,
+    'queryKey'
   > & {
-    collections: Array<ResolversParentTypes['Collection']>;
-    followers: Array<ResolversParentTypes['UserFollow']>;
-    following: Array<ResolversParentTypes['UserFollow']>;
-    mutualFollowers: Array<ResolversParentTypes['User']>;
-    recommendations: Array<ResolversParentTypes['Recommendation']>;
-  };
-  UserFollow: Omit<UserFollow, 'followed' | 'follower'> & {
-    followed: ResolversParentTypes['User'];
-    follower: ResolversParentTypes['User'];
-  };
-  WorkerInfo: WorkerInfo;
-}>;
+    queryKey?: UseInfiniteQueryOptions<
+      GetRecommendationFeedQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetRecommendationFeedQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetRecommendationFeed.infinite']
+            : ['GetRecommendationFeed.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            GetRecommendationFeedQuery,
+            GetRecommendationFeedQueryVariables
+          >(GetRecommendationFeedDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
 
-export type AlbumResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['Album'] = ResolversParentTypes['Album'],
-> = ResolversObject<{
-  artists?: Resolver<
-    Array<ResolversTypes['ArtistCredit']>,
-    ParentType,
-    ContextType
-  >;
-  averageRating?: Resolver<
-    Maybe<ResolversTypes['Float']>,
-    ParentType,
-    ContextType
-  >;
-  barcode?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  basisRecommendations?: Resolver<
-    Array<ResolversTypes['Recommendation']>,
-    ParentType,
-    ContextType
-  >;
-  catalogNumber?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  collectionAlbums?: Resolver<
-    Array<ResolversTypes['CollectionAlbum']>,
-    ParentType,
-    ContextType
-  >;
-  coverArtUrl?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  dataQuality?: Resolver<
-    Maybe<ResolversTypes['DataQuality']>,
-    ParentType,
-    ContextType
-  >;
-  duration?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  enrichmentStatus?: Resolver<
-    Maybe<ResolversTypes['EnrichmentStatus']>,
-    ParentType,
-    ContextType
-  >;
-  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
-  inCollectionsCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  label?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  lastEnriched?: Resolver<
-    Maybe<ResolversTypes['DateTime']>,
-    ParentType,
-    ContextType
-  >;
-  musicbrainzId?: Resolver<
-    Maybe<ResolversTypes['UUID']>,
-    ParentType,
-    ContextType
-  >;
-  needsEnrichment?: Resolver<
-    ResolversTypes['Boolean'],
-    ParentType,
-    ContextType
-  >;
-  recommendationScore?: Resolver<
-    Maybe<ResolversTypes['Float']>,
-    ParentType,
-    ContextType
-  >;
-  releaseDate?: Resolver<
-    Maybe<ResolversTypes['DateTime']>,
-    ParentType,
-    ContextType
-  >;
-  releaseType?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  targetRecommendations?: Resolver<
-    Array<ResolversTypes['Recommendation']>,
-    ParentType,
-    ContextType
-  >;
-  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  trackCount?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  tracks?: Resolver<Array<ResolversTypes['Track']>, ParentType, ContextType>;
-  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
+useInfiniteGetRecommendationFeedQuery.getKey = (
+  variables?: GetRecommendationFeedQueryVariables
+) =>
+  variables === undefined
+    ? ['GetRecommendationFeed.infinite']
+    : ['GetRecommendationFeed.infinite', variables];
 
-export type AlertResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['Alert'] = ResolversParentTypes['Alert'],
-> = ResolversObject<{
-  details?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  level?: Resolver<ResolversTypes['AlertLevel'], ParentType, ContextType>;
-  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  timestamp?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  type?: Resolver<ResolversTypes['AlertType'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type AlertThresholdsResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['AlertThresholds'] = ResolversParentTypes['AlertThresholds'],
-> = ResolversObject<{
-  avgProcessingTimeMs?: Resolver<
-    ResolversTypes['Int'],
-    ParentType,
-    ContextType
-  >;
-  errorRatePercent?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  memoryUsageMB?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  queueDepth?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type ArtistResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['Artist'] = ResolversParentTypes['Artist'],
-> = ResolversObject<{
-  albumCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  albums?: Resolver<Array<ResolversTypes['Album']>, ParentType, ContextType>;
-  biography?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  countryCode?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  dataQuality?: Resolver<
-    Maybe<ResolversTypes['DataQuality']>,
-    ParentType,
-    ContextType
-  >;
-  enrichmentStatus?: Resolver<
-    Maybe<ResolversTypes['EnrichmentStatus']>,
-    ParentType,
-    ContextType
-  >;
-  formedYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
-  imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  lastEnriched?: Resolver<
-    Maybe<ResolversTypes['DateTime']>,
-    ParentType,
-    ContextType
-  >;
-  musicbrainzId?: Resolver<
-    Maybe<ResolversTypes['UUID']>,
-    ParentType,
-    ContextType
-  >;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  needsEnrichment?: Resolver<
-    ResolversTypes['Boolean'],
-    ParentType,
-    ContextType
-  >;
-  popularity?: Resolver<
-    Maybe<ResolversTypes['Float']>,
-    ParentType,
-    ContextType
-  >;
-  trackCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  tracks?: Resolver<Array<ResolversTypes['Track']>, ParentType, ContextType>;
-  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type ArtistCreditResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['ArtistCredit'] = ResolversParentTypes['ArtistCredit'],
-> = ResolversObject<{
-  artist?: Resolver<ResolversTypes['Artist'], ParentType, ContextType>;
-  position?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  role?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type AudioFeaturesResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['AudioFeatures'] = ResolversParentTypes['AudioFeatures'],
-> = ResolversObject<{
-  acousticness?: Resolver<
-    Maybe<ResolversTypes['Float']>,
-    ParentType,
-    ContextType
-  >;
-  danceability?: Resolver<
-    Maybe<ResolversTypes['Float']>,
-    ParentType,
-    ContextType
-  >;
-  energy?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
-  instrumentalness?: Resolver<
-    Maybe<ResolversTypes['Float']>,
-    ParentType,
-    ContextType
-  >;
-  key?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  liveness?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
-  loudness?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
-  mode?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  speechiness?: Resolver<
-    Maybe<ResolversTypes['Float']>,
-    ParentType,
-    ContextType
-  >;
-  tempo?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
-  timeSignature?: Resolver<
-    Maybe<ResolversTypes['Int']>,
-    ParentType,
-    ContextType
-  >;
-  valence?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type CollectionResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['Collection'] = ResolversParentTypes['Collection'],
-> = ResolversObject<{
-  albumCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  albums?: Resolver<
-    Array<ResolversTypes['CollectionAlbum']>,
-    ParentType,
-    ContextType
-  >;
-  averageRating?: Resolver<
-    Maybe<ResolversTypes['Float']>,
-    ParentType,
-    ContextType
-  >;
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  description?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  isPublic?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  totalDuration?: Resolver<
-    Maybe<ResolversTypes['Int']>,
-    ParentType,
-    ContextType
-  >;
-  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type CollectionAlbumResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['CollectionAlbum'] = ResolversParentTypes['CollectionAlbum'],
-> = ResolversObject<{
-  addedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  album?: Resolver<ResolversTypes['Album'], ParentType, ContextType>;
-  collection?: Resolver<ResolversTypes['Collection'], ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  personalNotes?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  personalRating?: Resolver<
-    Maybe<ResolversTypes['Int']>,
-    ParentType,
-    ContextType
-  >;
-  position?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type ComponentHealthResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['ComponentHealth'] = ResolversParentTypes['ComponentHealth'],
-> = ResolversObject<{
-  details?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
-  lastCheck?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  status?: Resolver<ResolversTypes['HealthStatus'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export interface DateTimeScalarConfig
-  extends GraphQLScalarTypeConfig<ResolversTypes['DateTime'], any> {
-  name: 'DateTime';
+export const GetMyRecommendationsDocument = `
+    query GetMyRecommendations($cursor: String, $limit: Int, $sort: RecommendationSort) {
+  myRecommendations(cursor: $cursor, limit: $limit, sort: $sort) {
+    recommendations {
+      ...RecommendationFields
+    }
+    cursor
+    hasMore
+  }
 }
+    ${RecommendationFieldsFragmentDoc}`;
 
-export type ErrorMetricResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['ErrorMetric'] = ResolversParentTypes['ErrorMetric'],
-> = ResolversObject<{
-  count?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  error?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  lastOccurrence?: Resolver<
-    ResolversTypes['DateTime'],
-    ParentType,
-    ContextType
-  >;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
+export const useGetMyRecommendationsQuery = <
+  TData = GetMyRecommendationsQuery,
+  TError = unknown,
+>(
+  variables?: GetMyRecommendationsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetMyRecommendationsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetMyRecommendationsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetMyRecommendationsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetMyRecommendations']
+        : ['GetMyRecommendations', variables],
+    queryFn: fetcher<
+      GetMyRecommendationsQuery,
+      GetMyRecommendationsQueryVariables
+    >(GetMyRecommendationsDocument, variables),
+    ...options,
+  });
+};
 
-export type HealthComponentsResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['HealthComponents'] = ResolversParentTypes['HealthComponents'],
-> = ResolversObject<{
-  memory?: Resolver<ResolversTypes['ComponentHealth'], ParentType, ContextType>;
-  queue?: Resolver<ResolversTypes['ComponentHealth'], ParentType, ContextType>;
-  redis?: Resolver<ResolversTypes['ComponentHealth'], ParentType, ContextType>;
-  spotify?: Resolver<
-    ResolversTypes['ComponentHealth'],
-    ParentType,
-    ContextType
-  >;
-  worker?: Resolver<ResolversTypes['ComponentHealth'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
+useGetMyRecommendationsQuery.getKey = (
+  variables?: GetMyRecommendationsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetMyRecommendations']
+    : ['GetMyRecommendations', variables];
 
-export type HealthMetricsResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['HealthMetrics'] = ResolversParentTypes['HealthMetrics'],
-> = ResolversObject<{
-  activeJobs?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  avgProcessingTime?: Resolver<
-    ResolversTypes['Float'],
-    ParentType,
-    ContextType
-  >;
-  completedJobs?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  errorRate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  failedJobs?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  queueDepth?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
+export const useInfiniteGetMyRecommendationsQuery = <
+  TData = InfiniteData<GetMyRecommendationsQuery>,
+  TError = unknown,
+>(
+  variables: GetMyRecommendationsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetMyRecommendationsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetMyRecommendationsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetMyRecommendationsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetMyRecommendations.infinite']
+            : ['GetMyRecommendations.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            GetMyRecommendationsQuery,
+            GetMyRecommendationsQueryVariables
+          >(GetMyRecommendationsDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
 
-export interface JsonScalarConfig
-  extends GraphQLScalarTypeConfig<ResolversTypes['JSON'], any> {
-  name: 'JSON';
+useInfiniteGetMyRecommendationsQuery.getKey = (
+  variables?: GetMyRecommendationsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetMyRecommendations.infinite']
+    : ['GetMyRecommendations.infinite', variables];
+
+export const CreateRecommendationDocument = `
+    mutation CreateRecommendation($basisAlbumId: UUID!, $recommendedAlbumId: UUID!, $score: Int!) {
+  createRecommendation(
+    basisAlbumId: $basisAlbumId
+    recommendedAlbumId: $recommendedAlbumId
+    score: $score
+  ) {
+    ...RecommendationFields
+  }
 }
+    ${RecommendationFieldsFragmentDoc}`;
 
-export type JobRecordResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['JobRecord'] = ResolversParentTypes['JobRecord'],
-> = ResolversObject<{
-  attempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  completedAt?: Resolver<
-    Maybe<ResolversTypes['DateTime']>,
-    ParentType,
-    ContextType
-  >;
-  data?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
-  duration?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  priority?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  result?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
-  startedAt?: Resolver<
-    Maybe<ResolversTypes['DateTime']>,
-    ParentType,
-    ContextType
-  >;
-  status?: Resolver<ResolversTypes['JobStatus'], ParentType, ContextType>;
-  type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
+export const useCreateRecommendationMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    CreateRecommendationMutation,
+    TError,
+    CreateRecommendationMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    CreateRecommendationMutation,
+    TError,
+    CreateRecommendationMutationVariables,
+    TContext
+  >({
+    mutationKey: ['CreateRecommendation'],
+    mutationFn: (variables?: CreateRecommendationMutationVariables) =>
+      fetcher<
+        CreateRecommendationMutation,
+        CreateRecommendationMutationVariables
+      >(CreateRecommendationDocument, variables)(),
+    ...options,
+  });
+};
 
-export type JobStatusUpdateResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['JobStatusUpdate'] = ResolversParentTypes['JobStatusUpdate'],
-> = ResolversObject<{
-  jobId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  progress?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
-  status?: Resolver<ResolversTypes['JobStatus'], ParentType, ContextType>;
-  timestamp?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
+useCreateRecommendationMutation.getKey = () => ['CreateRecommendation'];
 
-export type MutationResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation'],
-> = ResolversObject<{
-  addAlbum?: Resolver<
-    ResolversTypes['Album'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationAddAlbumArgs, 'input'>
-  >;
-  addAlbumToCollection?: Resolver<
-    ResolversTypes['CollectionAlbum'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationAddAlbumToCollectionArgs, 'collectionId' | 'input'>
-  >;
-  cleanQueue?: Resolver<
-    ResolversTypes['Boolean'],
-    ParentType,
-    ContextType,
-    Partial<MutationCleanQueueArgs>
-  >;
-  clearFailedJobs?: Resolver<
-    ResolversTypes['Boolean'],
-    ParentType,
-    ContextType
-  >;
-  createCollection?: Resolver<
-    ResolversTypes['Collection'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationCreateCollectionArgs, 'isPublic' | 'name'>
-  >;
-  createRecommendation?: Resolver<
-    ResolversTypes['Recommendation'],
-    ParentType,
-    ContextType,
-    RequireFields<
-      MutationCreateRecommendationArgs,
-      'basisAlbumId' | 'recommendedAlbumId' | 'score'
-    >
-  >;
-  createTrack?: Resolver<
-    ResolversTypes['Track'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationCreateTrackArgs, 'input'>
-  >;
-  deleteRecommendation?: Resolver<
-    ResolversTypes['Boolean'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationDeleteRecommendationArgs, 'id'>
-  >;
-  deleteTrack?: Resolver<
-    ResolversTypes['Boolean'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationDeleteTrackArgs, 'id'>
-  >;
-  followUser?: Resolver<
-    ResolversTypes['UserFollow'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationFollowUserArgs, 'userId'>
-  >;
-  pauseQueue?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  removeAlbumFromCollection?: Resolver<
-    ResolversTypes['Boolean'],
-    ParentType,
-    ContextType,
-    RequireFields<
-      MutationRemoveAlbumFromCollectionArgs,
-      'albumId' | 'collectionId'
-    >
-  >;
-  resumeQueue?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  retryAllFailed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  retryJob?: Resolver<
-    ResolversTypes['Boolean'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationRetryJobArgs, 'jobId'>
-  >;
-  triggerSpotifySync?: Resolver<
-    ResolversTypes['SpotifySyncResult'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationTriggerSpotifySyncArgs, 'type'>
-  >;
-  unfollowUser?: Resolver<
-    ResolversTypes['Boolean'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationUnfollowUserArgs, 'userId'>
-  >;
-  updateAlbum?: Resolver<
-    ResolversTypes['Album'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationUpdateAlbumArgs, 'id' | 'input'>
-  >;
-  updateAlertThresholds?: Resolver<
-    ResolversTypes['AlertThresholds'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationUpdateAlertThresholdsArgs, 'input'>
-  >;
-  updateCollectionAlbum?: Resolver<
-    ResolversTypes['CollectionAlbum'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationUpdateCollectionAlbumArgs, 'id' | 'input'>
-  >;
-  updateProfile?: Resolver<
-    ResolversTypes['User'],
-    ParentType,
-    ContextType,
-    Partial<MutationUpdateProfileArgs>
-  >;
-  updateRecommendation?: Resolver<
-    ResolversTypes['Recommendation'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationUpdateRecommendationArgs, 'id' | 'score'>
-  >;
-  updateTrack?: Resolver<
-    ResolversTypes['Track'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationUpdateTrackArgs, 'id' | 'input'>
-  >;
-}>;
-
-export type QueryResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['Query'] = ResolversParentTypes['Query'],
-> = ResolversObject<{
-  activeJobs?: Resolver<
-    Array<ResolversTypes['JobRecord']>,
-    ParentType,
-    ContextType
-  >;
-  album?: Resolver<
-    Maybe<ResolversTypes['Album']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryAlbumArgs, 'id'>
-  >;
-  albumRecommendations?: Resolver<
-    Array<ResolversTypes['Album']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryAlbumRecommendationsArgs, 'input'>
-  >;
-  albumTracks?: Resolver<
-    Array<ResolversTypes['Track']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryAlbumTracksArgs, 'albumId'>
-  >;
-  artist?: Resolver<
-    Maybe<ResolversTypes['Artist']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryArtistArgs, 'id'>
-  >;
-  collection?: Resolver<
-    Maybe<ResolversTypes['Collection']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryCollectionArgs, 'id'>
-  >;
-  failedJobs?: Resolver<
-    Array<ResolversTypes['JobRecord']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryFailedJobsArgs, 'limit'>
-  >;
-  followingActivity?: Resolver<
-    Array<ResolversTypes['Recommendation']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryFollowingActivityArgs, 'limit'>
-  >;
-  health?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  jobHistory?: Resolver<
-    Array<ResolversTypes['JobRecord']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryJobHistoryArgs, 'limit'>
-  >;
-  myCollections?: Resolver<
-    Array<ResolversTypes['Collection']>,
-    ParentType,
-    ContextType
-  >;
-  myRecommendations?: Resolver<
-    Array<ResolversTypes['Recommendation']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryMyRecommendationsArgs, 'limit' | 'sort'>
-  >;
-  queueMetrics?: Resolver<
-    ResolversTypes['QueueMetrics'],
-    ParentType,
-    ContextType,
-    RequireFields<QueryQueueMetricsArgs, 'timeRange'>
-  >;
-  queueStatus?: Resolver<
-    ResolversTypes['QueueStatus'],
-    ParentType,
-    ContextType
-  >;
-  recommendation?: Resolver<
-    Maybe<ResolversTypes['Recommendation']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryRecommendationArgs, 'id'>
-  >;
-  recommendationFeed?: Resolver<
-    ResolversTypes['RecommendationFeed'],
-    ParentType,
-    ContextType,
-    RequireFields<QueryRecommendationFeedArgs, 'limit'>
-  >;
-  search?: Resolver<
-    ResolversTypes['SearchResults'],
-    ParentType,
-    ContextType,
-    RequireFields<QuerySearchArgs, 'input'>
-  >;
-  searchTracks?: Resolver<
-    Array<ResolversTypes['Track']>,
-    ParentType,
-    ContextType,
-    RequireFields<QuerySearchTracksArgs, 'limit' | 'query'>
-  >;
-  spotifyTrending?: Resolver<
-    ResolversTypes['SpotifyTrendingData'],
-    ParentType,
-    ContextType
-  >;
-  systemHealth?: Resolver<
-    ResolversTypes['SystemHealth'],
-    ParentType,
-    ContextType
-  >;
-  track?: Resolver<
-    Maybe<ResolversTypes['Track']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryTrackArgs, 'id'>
-  >;
-  trackRecommendations?: Resolver<
-    Array<ResolversTypes['Track']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryTrackRecommendationsArgs, 'limit' | 'trackId'>
-  >;
-  trendingAlbums?: Resolver<
-    Array<ResolversTypes['Album']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryTrendingAlbumsArgs, 'limit'>
-  >;
-  trendingArtists?: Resolver<
-    Array<ResolversTypes['Artist']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryTrendingArtistsArgs, 'limit'>
-  >;
-  user?: Resolver<
-    Maybe<ResolversTypes['User']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryUserArgs, 'id'>
-  >;
-  userSuggestions?: Resolver<
-    Array<ResolversTypes['User']>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryUserSuggestionsArgs, 'limit'>
-  >;
-}>;
-
-export type QueueMetricsResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['QueueMetrics'] = ResolversParentTypes['QueueMetrics'],
-> = ResolversObject<{
-  avgProcessingTime?: Resolver<
-    ResolversTypes['Float'],
-    ParentType,
-    ContextType
-  >;
-  errorRate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  jobsFailed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  jobsProcessed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  successRate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  throughput?: Resolver<
-    ResolversTypes['ThroughputMetrics'],
-    ParentType,
-    ContextType
-  >;
-  timeRange?: Resolver<ResolversTypes['TimeRange'], ParentType, ContextType>;
-  topErrors?: Resolver<
-    Array<ResolversTypes['ErrorMetric']>,
-    ParentType,
-    ContextType
-  >;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type QueueStatsResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['QueueStats'] = ResolversParentTypes['QueueStats'],
-> = ResolversObject<{
-  active?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  completed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  delayed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  failed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  paused?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  waiting?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type QueueStatusResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['QueueStatus'] = ResolversParentTypes['QueueStatus'],
-> = ResolversObject<{
-  isPaused?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  rateLimitInfo?: Resolver<
-    ResolversTypes['RateLimitInfo'],
-    ParentType,
-    ContextType
-  >;
-  stats?: Resolver<ResolversTypes['QueueStats'], ParentType, ContextType>;
-  workers?: Resolver<
-    Array<ResolversTypes['WorkerInfo']>,
-    ParentType,
-    ContextType
-  >;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type RateLimitInfoResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['RateLimitInfo'] = ResolversParentTypes['RateLimitInfo'],
-> = ResolversObject<{
-  currentWindowRequests?: Resolver<
-    ResolversTypes['Int'],
-    ParentType,
-    ContextType
-  >;
-  maxRequestsPerSecond?: Resolver<
-    ResolversTypes['Int'],
-    ParentType,
-    ContextType
-  >;
-  windowResetTime?: Resolver<
-    ResolversTypes['DateTime'],
-    ParentType,
-    ContextType
-  >;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type RecommendationResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['Recommendation'] = ResolversParentTypes['Recommendation'],
-> = ResolversObject<{
-  basisAlbum?: Resolver<ResolversTypes['Album'], ParentType, ContextType>;
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  normalizedScore?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  recommendedAlbum?: Resolver<ResolversTypes['Album'], ParentType, ContextType>;
-  score?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  similarity?: Resolver<
-    Maybe<ResolversTypes['Float']>,
-    ParentType,
-    ContextType
-  >;
-  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type RecommendationFeedResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['RecommendationFeed'] = ResolversParentTypes['RecommendationFeed'],
-> = ResolversObject<{
-  cursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  recommendations?: Resolver<
-    Array<ResolversTypes['Recommendation']>,
-    ParentType,
-    ContextType
-  >;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type SearchResultResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['SearchResult'] = ResolversParentTypes['SearchResult'],
-> = ResolversObject<{
-  __resolveType: TypeResolveFn<
-    'Album' | 'Artist' | 'Track',
-    ParentType,
-    ContextType
-  >;
-}>;
-
-export type SearchResultsResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['SearchResults'] = ResolversParentTypes['SearchResults'],
-> = ResolversObject<{
-  albums?: Resolver<Array<ResolversTypes['Album']>, ParentType, ContextType>;
-  artists?: Resolver<Array<ResolversTypes['Artist']>, ParentType, ContextType>;
-  hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  tracks?: Resolver<Array<ResolversTypes['Track']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type SpotifyAlbumResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['SpotifyAlbum'] = ResolversParentTypes['SpotifyAlbum'],
-> = ResolversObject<{
-  artistIds?: Resolver<
-    Array<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  artists?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  releaseDate?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  spotifyUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  totalTracks?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type SpotifyArtistResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['SpotifyArtist'] = ResolversParentTypes['SpotifyArtist'],
-> = ResolversObject<{
-  followers?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  genres?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  popularity?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  spotifyUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type SpotifyPlaylistResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['SpotifyPlaylist'] = ResolversParentTypes['SpotifyPlaylist'],
-> = ResolversObject<{
-  description?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  owner?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  spotifyUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  tracksTotal?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type SpotifyPopularArtistsResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['SpotifyPopularArtists'] = ResolversParentTypes['SpotifyPopularArtists'],
-> = ResolversObject<{
-  artists?: Resolver<
-    Array<ResolversTypes['SpotifyArtist']>,
-    ParentType,
-    ContextType
-  >;
-  searchTerm?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type SpotifySyncResultResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['SpotifySyncResult'] = ResolversParentTypes['SpotifySyncResult'],
-> = ResolversObject<{
-  jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  stats?: Resolver<
-    Maybe<ResolversTypes['SpotifySyncStats']>,
-    ParentType,
-    ContextType
-  >;
-  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type SpotifySyncStatsResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['SpotifySyncStats'] = ResolversParentTypes['SpotifySyncStats'],
-> = ResolversObject<{
-  albumsCreated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  albumsQueued?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  albumsUpdated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  enrichmentJobsQueued?: Resolver<
-    ResolversTypes['Int'],
-    ParentType,
-    ContextType
-  >;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type SpotifyTopChartResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['SpotifyTopChart'] = ResolversParentTypes['SpotifyTopChart'],
-> = ResolversObject<{
-  playlistId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  playlistImage?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  playlistName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  tracks?: Resolver<
-    Array<ResolversTypes['SpotifyTrack']>,
-    ParentType,
-    ContextType
-  >;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type SpotifyTrackResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['SpotifyTrack'] = ResolversParentTypes['SpotifyTrack'],
-> = ResolversObject<{
-  album?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  albumId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  artistIds?: Resolver<
-    Maybe<Array<ResolversTypes['String']>>,
-    ParentType,
-    ContextType
-  >;
-  artists?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  popularity?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type SpotifyTrendingDataResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['SpotifyTrendingData'] = ResolversParentTypes['SpotifyTrendingData'],
-> = ResolversObject<{
-  expires?: Resolver<
-    Maybe<ResolversTypes['DateTime']>,
-    ParentType,
-    ContextType
-  >;
-  featuredPlaylists?: Resolver<
-    Array<ResolversTypes['SpotifyPlaylist']>,
-    ParentType,
-    ContextType
-  >;
-  lastUpdated?: Resolver<
-    Maybe<ResolversTypes['DateTime']>,
-    ParentType,
-    ContextType
-  >;
-  needsSync?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  newReleases?: Resolver<
-    Array<ResolversTypes['SpotifyAlbum']>,
-    ParentType,
-    ContextType
-  >;
-  popularArtists?: Resolver<
-    Array<ResolversTypes['SpotifyPopularArtists']>,
-    ParentType,
-    ContextType
-  >;
-  topCharts?: Resolver<
-    Array<ResolversTypes['SpotifyTopChart']>,
-    ParentType,
-    ContextType
-  >;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type SubscriptionResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['Subscription'] = ResolversParentTypes['Subscription'],
-> = ResolversObject<{
-  alertStream?: SubscriptionResolver<
-    ResolversTypes['Alert'],
-    'alertStream',
-    ParentType,
-    ContextType
-  >;
-  jobStatusUpdates?: SubscriptionResolver<
-    ResolversTypes['JobStatusUpdate'],
-    'jobStatusUpdates',
-    ParentType,
-    ContextType,
-    Partial<SubscriptionJobStatusUpdatesArgs>
-  >;
-  metricsStream?: SubscriptionResolver<
-    ResolversTypes['QueueMetrics'],
-    'metricsStream',
-    ParentType,
-    ContextType,
-    RequireFields<SubscriptionMetricsStreamArgs, 'interval'>
-  >;
-  queueStatusUpdates?: SubscriptionResolver<
-    ResolversTypes['QueueStatus'],
-    'queueStatusUpdates',
-    ParentType,
-    ContextType
-  >;
-  systemHealthUpdates?: SubscriptionResolver<
-    ResolversTypes['SystemHealth'],
-    'systemHealthUpdates',
-    ParentType,
-    ContextType
-  >;
-}>;
-
-export type SystemHealthResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['SystemHealth'] = ResolversParentTypes['SystemHealth'],
-> = ResolversObject<{
-  alerts?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
-  components?: Resolver<
-    ResolversTypes['HealthComponents'],
-    ParentType,
-    ContextType
-  >;
-  metrics?: Resolver<ResolversTypes['HealthMetrics'], ParentType, ContextType>;
-  status?: Resolver<ResolversTypes['HealthStatus'], ParentType, ContextType>;
-  timestamp?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  uptime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type ThroughputMetricsResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['ThroughputMetrics'] = ResolversParentTypes['ThroughputMetrics'],
-> = ResolversObject<{
-  jobsPerHour?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  jobsPerMinute?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  peakJobsPerMinute?: Resolver<
-    ResolversTypes['Float'],
-    ParentType,
-    ContextType
-  >;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type TrackResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['Track'] = ResolversParentTypes['Track'],
-> = ResolversObject<{
-  album?: Resolver<ResolversTypes['Album'], ParentType, ContextType>;
-  albumId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
-  artists?: Resolver<
-    Array<ResolversTypes['ArtistCredit']>,
-    ParentType,
-    ContextType
-  >;
-  audioFeatures?: Resolver<
-    Maybe<ResolversTypes['AudioFeatures']>,
-    ParentType,
-    ContextType
-  >;
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  discNumber?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  duration?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  explicit?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
-  isrc?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  musicbrainzId?: Resolver<
-    Maybe<ResolversTypes['UUID']>,
-    ParentType,
-    ContextType
-  >;
-  popularity?: Resolver<
-    Maybe<ResolversTypes['Float']>,
-    ParentType,
-    ContextType
-  >;
-  previewUrl?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  trackNumber?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export interface UuidScalarConfig
-  extends GraphQLScalarTypeConfig<ResolversTypes['UUID'], any> {
-  name: 'UUID';
+export const UpdateRecommendationDocument = `
+    mutation UpdateRecommendation($id: String!, $score: Int!) {
+  updateRecommendation(id: $id, score: $score) {
+    ...RecommendationFields
+  }
 }
+    ${RecommendationFieldsFragmentDoc}`;
 
-export type UserResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['User'] = ResolversParentTypes['User'],
-> = ResolversObject<{
-  bio?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  collections?: Resolver<
-    Array<ResolversTypes['Collection']>,
-    ParentType,
-    ContextType
-  >;
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  email?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  followers?: Resolver<
-    Array<ResolversTypes['UserFollow']>,
-    ParentType,
-    ContextType
-  >;
-  followersCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  following?: Resolver<
-    Array<ResolversTypes['UserFollow']>,
-    ParentType,
-    ContextType
-  >;
-  followingCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  isFollowing?: Resolver<
-    Maybe<ResolversTypes['Boolean']>,
-    ParentType,
-    ContextType
-  >;
-  mutualFollowers?: Resolver<
-    Array<ResolversTypes['User']>,
-    ParentType,
-    ContextType
-  >;
-  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  profileUpdatedAt?: Resolver<
-    Maybe<ResolversTypes['DateTime']>,
-    ParentType,
-    ContextType
-  >;
-  recommendations?: Resolver<
-    Array<ResolversTypes['Recommendation']>,
-    ParentType,
-    ContextType
-  >;
-  recommendationsCount?: Resolver<
-    ResolversTypes['Int'],
-    ParentType,
-    ContextType
-  >;
-  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
+export const useUpdateRecommendationMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateRecommendationMutation,
+    TError,
+    UpdateRecommendationMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateRecommendationMutation,
+    TError,
+    UpdateRecommendationMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateRecommendation'],
+    mutationFn: (variables?: UpdateRecommendationMutationVariables) =>
+      fetcher<
+        UpdateRecommendationMutation,
+        UpdateRecommendationMutationVariables
+      >(UpdateRecommendationDocument, variables)(),
+    ...options,
+  });
+};
 
-export type UserFollowResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['UserFollow'] = ResolversParentTypes['UserFollow'],
-> = ResolversObject<{
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  followed?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
-  follower?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
+useUpdateRecommendationMutation.getKey = () => ['UpdateRecommendation'];
 
-export type WorkerInfoResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['WorkerInfo'] = ResolversParentTypes['WorkerInfo'],
-> = ResolversObject<{
-  activeJobCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  isPaused?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  isRunning?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
+export const DeleteRecommendationDocument = `
+    mutation DeleteRecommendation($id: String!) {
+  deleteRecommendation(id: $id)
+}
+    `;
 
-export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
-  Album?: AlbumResolvers<ContextType>;
-  Alert?: AlertResolvers<ContextType>;
-  AlertThresholds?: AlertThresholdsResolvers<ContextType>;
-  Artist?: ArtistResolvers<ContextType>;
-  ArtistCredit?: ArtistCreditResolvers<ContextType>;
-  AudioFeatures?: AudioFeaturesResolvers<ContextType>;
-  Collection?: CollectionResolvers<ContextType>;
-  CollectionAlbum?: CollectionAlbumResolvers<ContextType>;
-  ComponentHealth?: ComponentHealthResolvers<ContextType>;
-  DateTime?: GraphQLScalarType;
-  ErrorMetric?: ErrorMetricResolvers<ContextType>;
-  HealthComponents?: HealthComponentsResolvers<ContextType>;
-  HealthMetrics?: HealthMetricsResolvers<ContextType>;
-  JSON?: GraphQLScalarType;
-  JobRecord?: JobRecordResolvers<ContextType>;
-  JobStatusUpdate?: JobStatusUpdateResolvers<ContextType>;
-  Mutation?: MutationResolvers<ContextType>;
-  Query?: QueryResolvers<ContextType>;
-  QueueMetrics?: QueueMetricsResolvers<ContextType>;
-  QueueStats?: QueueStatsResolvers<ContextType>;
-  QueueStatus?: QueueStatusResolvers<ContextType>;
-  RateLimitInfo?: RateLimitInfoResolvers<ContextType>;
-  Recommendation?: RecommendationResolvers<ContextType>;
-  RecommendationFeed?: RecommendationFeedResolvers<ContextType>;
-  SearchResult?: SearchResultResolvers<ContextType>;
-  SearchResults?: SearchResultsResolvers<ContextType>;
-  SpotifyAlbum?: SpotifyAlbumResolvers<ContextType>;
-  SpotifyArtist?: SpotifyArtistResolvers<ContextType>;
-  SpotifyPlaylist?: SpotifyPlaylistResolvers<ContextType>;
-  SpotifyPopularArtists?: SpotifyPopularArtistsResolvers<ContextType>;
-  SpotifySyncResult?: SpotifySyncResultResolvers<ContextType>;
-  SpotifySyncStats?: SpotifySyncStatsResolvers<ContextType>;
-  SpotifyTopChart?: SpotifyTopChartResolvers<ContextType>;
-  SpotifyTrack?: SpotifyTrackResolvers<ContextType>;
-  SpotifyTrendingData?: SpotifyTrendingDataResolvers<ContextType>;
-  Subscription?: SubscriptionResolvers<ContextType>;
-  SystemHealth?: SystemHealthResolvers<ContextType>;
-  ThroughputMetrics?: ThroughputMetricsResolvers<ContextType>;
-  Track?: TrackResolvers<ContextType>;
-  UUID?: GraphQLScalarType;
-  User?: UserResolvers<ContextType>;
-  UserFollow?: UserFollowResolvers<ContextType>;
-  WorkerInfo?: WorkerInfoResolvers<ContextType>;
-}>;
+export const useDeleteRecommendationMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    DeleteRecommendationMutation,
+    TError,
+    DeleteRecommendationMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    DeleteRecommendationMutation,
+    TError,
+    DeleteRecommendationMutationVariables,
+    TContext
+  >({
+    mutationKey: ['DeleteRecommendation'],
+    mutationFn: (variables?: DeleteRecommendationMutationVariables) =>
+      fetcher<
+        DeleteRecommendationMutation,
+        DeleteRecommendationMutationVariables
+      >(DeleteRecommendationDocument, variables)(),
+    ...options,
+  });
+};
+
+useDeleteRecommendationMutation.getKey = () => ['DeleteRecommendation'];
+
+export const GetRecommendationDocument = `
+    query GetRecommendation($id: String!) {
+  recommendation(id: $id) {
+    ...RecommendationFields
+  }
+}
+    ${RecommendationFieldsFragmentDoc}`;
+
+export const useGetRecommendationQuery = <
+  TData = GetRecommendationQuery,
+  TError = unknown,
+>(
+  variables: GetRecommendationQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetRecommendationQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetRecommendationQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetRecommendationQuery, TError, TData>({
+    queryKey: ['GetRecommendation', variables],
+    queryFn: fetcher<GetRecommendationQuery, GetRecommendationQueryVariables>(
+      GetRecommendationDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetRecommendationQuery.getKey = (
+  variables: GetRecommendationQueryVariables
+) => ['GetRecommendation', variables];
+
+export const useInfiniteGetRecommendationQuery = <
+  TData = InfiniteData<GetRecommendationQuery>,
+  TError = unknown,
+>(
+  variables: GetRecommendationQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetRecommendationQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetRecommendationQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetRecommendationQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetRecommendation.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetRecommendationQuery, GetRecommendationQueryVariables>(
+            GetRecommendationDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetRecommendationQuery.getKey = (
+  variables: GetRecommendationQueryVariables
+) => ['GetRecommendation.infinite', variables];

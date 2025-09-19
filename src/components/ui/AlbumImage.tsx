@@ -152,6 +152,8 @@ export default function AlbumImage({
         // Disable drag to prevent issues with fallback logic
         draggable={false}
         style={style}
+        // Use unoptimized for external images to avoid loader warnings
+        unoptimized={!imgSrc.includes('imagedelivery.net')}
       />
 
       {/* Error state overlay (only show if fallback image also fails) */}

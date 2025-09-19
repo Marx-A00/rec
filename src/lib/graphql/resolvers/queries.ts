@@ -475,6 +475,7 @@ export const queryResolvers: QueryResolvers = {
       // Fetch recent recommendations from all users
       const recommendations = await prisma.recommendation.findMany({
         take: limit + 1, // Fetch one extra to check if there's more
+        skip: cursor ? 1 : 0, // Skip 1 to exclude the cursor itself
         cursor: cursor ? { id: cursor } : undefined,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -820,7 +821,7 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-  myRecommendations: async (_, { sort = 'SCORE_DESC', limit = 50 }, { user, prisma }) => {
+  myRecommendations: async (_, { cursor, limit = 10, sort = 'SCORE_DESC' }, { user, prisma }) => {
     if (!user) {
       throw new GraphQLError('Authentication required');
     }
@@ -834,8 +835,13 @@ export const queryResolvers: QueryResolvers = {
 
       const recommendations = await prisma.recommendation.findMany({
         where: { userId: user.id },
-        take: limit,
-        orderBy,
+        take: limit + 1, // Fetch one extra to determine if there are more pages
+        skip: cursor ? 1 : 0, // Skip 1 to exclude the cursor itself
+        cursor: cursor ? { id: cursor } : undefined,
+        orderBy: [
+          orderBy,
+          { id: 'desc' } // Secondary sort by ID for stable pagination
+        ],
         include: {
           user: true,
           basisAlbum: {
@@ -859,11 +865,25 @@ export const queryResolvers: QueryResolvers = {
         }
       });
 
-      console.log(`Found ${recommendations.length} recommendations for user ${user.id}`);
-      return recommendations;
+      // Check if there are more items
+      const hasMore = recommendations.length > limit;
+      const items = hasMore ? recommendations.slice(0, limit) : recommendations;
+      const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+      console.log(`Found ${items.length} recommendations for user ${user.id}, hasMore: ${hasMore}`);
+
+      return {
+        recommendations: items,
+        cursor: nextCursor,
+        hasMore
+      };
     } catch (error) {
       console.error('Error fetching user recommendations:', error);
-      return [];
+      return {
+        recommendations: [],
+        cursor: null,
+        hasMore: false
+      };
     }
   },
 
