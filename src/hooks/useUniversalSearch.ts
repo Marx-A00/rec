@@ -1,20 +1,13 @@
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useSearchQuery, SearchType } from '@/generated/graphql';
 
-import { graphqlClient } from '@/lib/graphql-client';
 import {
   UnifiedSearchResult,
-  SearchResponse,
   SearchFilters,
   SearchContext,
   SortBy,
   GroupBy,
 } from '@/types/search';
-import {
-  queryKeys,
-  defaultQueryOptions,
-  QueryError,
-} from '@/lib/queries';
 
 // ========================================
 // Types from UniversalSearchBar (Phase 3 Enhanced)
@@ -86,252 +79,6 @@ export interface UseUniversalSearchOptions {
 }
 
 // ========================================
-// GraphQL Queries
-// ========================================
-
-const SEARCH_QUERY = `
-  query Search($input: SearchInput!) {
-    search(input: $input) {
-      total
-      albums {
-        id
-        musicbrainzId
-        title
-        releaseDate
-        coverArtUrl
-        artists {
-          artist {
-            id
-            name
-          }
-        }
-      }
-      artists {
-        id
-        musicbrainzId
-        name
-        imageUrl
-      }
-      tracks {
-        id
-        musicbrainzId
-        title
-        durationMs
-        trackNumber
-        album {
-          id
-          title
-          coverArtUrl
-        }
-        artists {
-          artist {
-            id
-            name
-          }
-        }
-      }
-    }
-  }
-`;
-
-const SEARCH_ALBUMS_QUERY = `
-  query SearchAlbums($query: String!, $limit: Int) {
-    searchAlbums(query: $query, limit: $limit) {
-      id
-      musicbrainzId
-      title
-      releaseDate
-      coverArtUrl
-      artists {
-        artist {
-          id
-          name
-        }
-      }
-    }
-  }
-`;
-
-const SEARCH_ARTISTS_QUERY = `
-  query SearchArtists($query: String!, $limit: Int) {
-    searchArtists(query: $query, limit: $limit) {
-      id
-      musicbrainzId
-      name
-      imageUrl
-    }
-  }
-`;
-
-const SEARCH_TRACKS_QUERY = `
-  query SearchTracks($query: String!, $limit: Int) {
-    searchTracks(query: $query, limit: $limit) {
-      id
-      musicbrainzId
-      title
-      durationMs
-      trackNumber
-      album {
-        id
-        title
-        coverArtUrl
-      }
-      artists {
-        artist {
-          id
-          name
-        }
-      }
-    }
-  }
-`;
-
-// ========================================
-// Enhanced API Function (Phase 3)
-// ========================================
-
-const fetchUniversalSearch = async (
-  query: string,
-  options: UseUniversalSearchOptions
-): Promise<SearchResponse> => {
-  const {
-    searchType,
-    maxResults,
-    limit,
-  } = options;
-
-  try {
-    let results: UnifiedSearchResult[] = [];
-
-    if (searchType === 'all') {
-      // Use the unified search query
-      const data: any = await graphqlClient.request(SEARCH_QUERY, {
-        input: {
-          query: query,
-          type: 'ALL',
-          limit: limit || maxResults || 10
-        }
-      });
-
-      // Transform GraphQL results to UnifiedSearchResult format
-      const albumResults = (data.search.albums || []).map((album: any) => ({
-        id: album.id,
-        type: 'album' as const,
-        title: album.title,
-        subtitle: album.artists?.map((a: any) => a.artist.name).join(', '),
-        imageUrl: album.coverArtUrl,
-        metadata: {
-          year: album.releaseDate ? new Date(album.releaseDate).getFullYear() : null,
-          musicbrainzId: album.musicbrainzId
-        }
-      }));
-
-      const artistResults = (data.search.artists || []).map((artist: any) => ({
-        id: artist.id,
-        type: 'artist' as const,
-        title: artist.name,
-        imageUrl: artist.imageUrl,
-        metadata: {
-          musicbrainzId: artist.musicbrainzId
-        }
-      }));
-
-      const trackResults = (data.search.tracks || []).map((track: any) => ({
-        id: track.id,
-        type: 'track' as const,
-        title: track.title,
-        subtitle: track.artists?.map((a: any) => a.artist.name).join(', '),
-        imageUrl: track.album?.coverArtUrl,
-        metadata: {
-          album: track.album?.title,
-          durationMs: track.durationMs,
-          trackNumber: track.trackNumber,
-          musicbrainzId: track.musicbrainzId
-        }
-      }));
-
-      results = [...albumResults, ...artistResults, ...trackResults];
-    } else if (searchType === 'albums') {
-      const data: any = await graphqlClient.request(SEARCH_ALBUMS_QUERY, {
-        query,
-        limit: limit || maxResults || 10
-      });
-
-      results = data.searchAlbums.map((album: any) => ({
-        id: album.id,
-        type: 'album' as const,
-        title: album.title,
-        subtitle: album.artists?.map((a: any) => a.artist.name).join(', '),
-        imageUrl: album.coverArtUrl,
-        metadata: {
-          year: album.releaseDate ? new Date(album.releaseDate).getFullYear() : null,
-          musicbrainzId: album.musicbrainzId
-        }
-      }));
-    } else if (searchType === 'artists') {
-      const data: any = await graphqlClient.request(SEARCH_ARTISTS_QUERY, {
-        query,
-        limit: limit || maxResults || 10
-      });
-
-      results = data.searchArtists.map((artist: any) => ({
-        id: artist.id,
-        type: 'artist' as const,
-        title: artist.name,
-        imageUrl: artist.imageUrl,
-        metadata: {
-          musicbrainzId: artist.musicbrainzId
-        }
-      }));
-    } else if (searchType === 'tracks') {
-      const data: any = await graphqlClient.request(SEARCH_TRACKS_QUERY, {
-        query,
-        limit: limit || maxResults || 10
-      });
-
-      results = data.searchTracks.map((track: any) => ({
-        id: track.id,
-        type: 'track' as const,
-        title: track.title,
-        subtitle: track.artists?.map((a: any) => a.artist.name).join(', '),
-        imageUrl: track.album?.coverArtUrl,
-        metadata: {
-          album: track.album?.title,
-          durationMs: track.durationMs,
-          trackNumber: track.trackNumber,
-          musicbrainzId: track.musicbrainzId
-        }
-      }));
-    }
-
-    return {
-      results,
-      grouped: {
-        albums: results.filter(r => r.type === 'album'),
-        artists: results.filter(r => r.type === 'artist'),
-        tracks: results.filter(r => r.type === 'track'),
-        labels: [],
-        other: []
-      },
-      total: results.length,
-      pagination: {
-        total: results.length,
-        per_page: maxResults || 10,
-        page: 1,
-        totalPages: 1,
-        hasNext: false,
-        hasPrev: false
-      }
-    };
-  } catch (error: any) {
-    if (error.response?.errors?.[0]) {
-      throw new QueryError(error.response.errors[0].message);
-    }
-    throw new QueryError('Failed to perform search');
-  }
-};
-
-// ========================================
 // Enhanced Main Hook (Phase 3)
 // ========================================
 
@@ -339,75 +86,134 @@ export function useUniversalSearch(
   query: string,
   options: UseUniversalSearchOptions
 ) {
-  const { enabled, minQueryLength } = options;
+  const { enabled, minQueryLength, searchType, maxResults, limit } = options;
 
   const shouldQuery = !!query && query.length >= minQueryLength && enabled;
 
-  // Enhanced query key including new parameters
-  const queryKey = useMemo(() => {
-    // Create a comprehensive key that includes Phase 3 parameters
-    const baseKey = queryKeys.search(
-      query,
-      options.searchType,
-      options.maxResults
-    );
+  // Map searchType to GraphQL SearchType enum
+  let type: SearchType = SearchType.All;
+  if (searchType === 'albums') {
+    type = SearchType.Album;
+  } else if (searchType === 'artists') {
+    type = SearchType.Artist;
+  } else if (searchType === 'tracks') {
+    type = SearchType.Track;
+  }
 
-    // Add Phase 3 parameters to create unique cache key
-    const enhancedParams = {
-      context: options.context,
-      sortBy: options.sortBy,
-      sortOrder: options.sortOrder,
-      deduplicate: options.deduplicate,
-      groupBy: options.groupBy,
-      advancedFilters: options.advancedFilters,
-      entityTypeFilter: options.entityTypeFilter,
-      limit: options.limit,
-    };
+  // Use the generated GraphQL hook
+  const queryResult = useSearchQuery(
+    {
+      input: {
+        query,
+        type,
+        limit: limit || maxResults || 20,
+      },
+    },
+    {
+      enabled: shouldQuery,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 10, // 10 minutes
+    }
+  );
 
-    // Only add enhanced params if they differ from defaults
-    const hasEnhancedParams = Object.values(enhancedParams).some(
-      value =>
-        value !== undefined &&
-        value !== null &&
-        (Array.isArray(value) ? value.length > 0 : true) &&
-        (typeof value === 'object' && value !== null
-          ? Object.keys(value).length > 0
-          : true)
-    );
-
-    return hasEnhancedParams
-      ? ([...baseKey, 'enhanced', enhancedParams] as const)
-      : baseKey;
-  }, [
-    query,
-    options.searchType,
-    options.maxResults,
-    options.context,
-    options.sortBy,
-    options.sortOrder,
-    options.deduplicate,
-    options.groupBy,
-    options.advancedFilters,
-    options.entityTypeFilter,
-    options.limit,
-  ]);
-
-  const queryResult = useQuery({
-    queryKey,
-    queryFn: () => fetchUniversalSearch(query, options),
-    enabled: shouldQuery,
-    // Use search options for unified search
-    ...defaultQueryOptions.search,
-  });
-
-  // Extract and normalize results with Phase 3 enhancements
+  // Transform and normalize results
   const results = useMemo(() => {
-    if (!queryResult.data?.results) return [];
+    if (!queryResult.data?.search) return [];
 
-    // Results are already processed by the enhanced API
-    // No need for client-side filtering since server handles it
-    return queryResult.data.results;
-  }, [queryResult.data?.results]);
+    const searchData = queryResult.data.search;
+    const transformedResults: UnifiedSearchResult[] = [];
+
+    // Transform albums
+    if (searchData.albums) {
+      searchData.albums.forEach((album) => {
+        transformedResults.push({
+          id: album.id,
+          type: 'album' as const,
+          title: album.title,
+          subtitle: album.artists?.[0]?.artist?.name || 'Unknown Artist',
+          artist: album.artists?.[0]?.artist?.name || 'Unknown Artist',
+          releaseDate: album.releaseDate instanceof Date ? album.releaseDate.toISOString() : album.releaseDate || '',
+          genre: [],
+          label: '',
+          image: {
+            url: album.coverArtUrl || '',
+            width: 300,
+            height: 300,
+            alt: album.title,
+          },
+          cover_image: album.coverArtUrl || undefined,
+          _discogs: {},
+        });
+      });
+    }
+
+    // Transform artists
+    if (searchData.artists) {
+      searchData.artists.forEach((artist) => {
+        transformedResults.push({
+          id: artist.id,
+          type: 'artist' as const,
+          title: artist.name,
+          subtitle: 'Artist',
+          artist: artist.name,
+          releaseDate: '',
+          genre: [],
+          label: '',
+          image: {
+            url: artist.imageUrl || '',
+            width: 300,
+            height: 300,
+            alt: artist.name,
+          },
+          cover_image: artist.imageUrl || undefined,
+          _discogs: {},
+        });
+      });
+    }
+
+    // Transform tracks
+    if (searchData.tracks) {
+      searchData.tracks.forEach((track) => {
+        transformedResults.push({
+          id: track.id,
+          type: 'track' as const,
+          title: track.title,
+          subtitle: `Track ${track.trackNumber}${
+            track.album ? ` - ${track.album.title}` : ''
+          }`,
+          artist: track.artists?.[0]?.artist?.name || 'Unknown Artist',
+          releaseDate: '',
+          genre: [],
+          label: '',
+          image: {
+            url: track.album?.coverArtUrl || '',
+            width: 300,
+            height: 300,
+            alt: track.title,
+          },
+          cover_image: track.album?.coverArtUrl || undefined,
+          _discogs: {},
+          metadata: {
+            totalDuration: track.durationMs || 0,
+            numberOfTracks: 1,
+          },
+        });
+      });
+    }
+
+    return transformedResults;
+  }, [queryResult.data?.search]);
+
+  // Group results by type
+  const grouped = useMemo(() => {
+    return {
+      albums: results.filter((r) => r.type === 'album'),
+      artists: results.filter((r) => r.type === 'artist'),
+      tracks: results.filter((r) => r.type === 'track'),
+      labels: [],
+      other: [],
+    };
+  }, [results]);
 
   // ===========================
   // PHASE 3: Enhanced Return Data
@@ -418,13 +224,20 @@ export function useUniversalSearch(
     results,
 
     // Phase 3 enhanced data
-    grouped: queryResult.data?.grouped,
-    metadata: queryResult.data?.metadata,
-    deduplication: queryResult.data?.deduplication,
-    filterResults: queryResult.data?.filterResults,
-    performance: queryResult.data?.performance,
-    context: queryResult.data?.context,
-    pagination: queryResult.data?.pagination,
+    grouped,
+    metadata: undefined, // Would need to be added to GraphQL schema
+    deduplication: undefined, // Would need to be added to GraphQL schema
+    filterResults: undefined, // Would need to be added to GraphQL schema
+    performance: undefined, // Would need to be added to GraphQL schema
+    context: undefined, // Would need to be added to GraphQL schema
+    pagination: {
+      total: queryResult.data?.search?.total || 0,
+      per_page: maxResults || 20,
+      page: 1,
+      totalPages: 1,
+      hasNext: false,
+      hasPrev: false,
+    },
   };
 }
 
@@ -441,4 +254,3 @@ export type {
   SortBy,
   GroupBy,
 } from '@/types/search';
-export { QueryError, isQueryError, getErrorMessage } from '@/lib/queries';

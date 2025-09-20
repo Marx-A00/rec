@@ -1,0 +1,88 @@
+query Search($input: SearchInput!) {
+  search(input: $input) {
+    total
+    albums {
+      id
+      musicbrainzId
+      title
+      releaseDate
+      coverArtUrl
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+    artists {
+      id
+      musicbrainzId
+      name
+      imageUrl
+    }
+    tracks {
+      id
+      musicbrainzId
+      title
+      durationMs
+      trackNumber
+      album {
+        id
+        title
+        coverArtUrl
+      }
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+query SearchAlbums($query: String!, $limit: Int) {
+  searchAlbums(query: $query, limit: $limit) {
+    id
+    musicbrainzId
+    title
+    releaseDate
+    coverArtUrl
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+
+query SearchArtists($query: String!, $limit: Int) {
+  searchArtists(query: $query, limit: $limit) {
+    id
+    musicbrainzId
+    name
+    imageUrl
+  }
+}
+
+query SearchTracks($query: String!, $limit: Int) {
+  searchTracks(query: $query, limit: $limit) {
+    id
+    musicbrainzId
+    title
+    durationMs
+    trackNumber
+    album {
+      id
+      title
+      coverArtUrl
+    }
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}

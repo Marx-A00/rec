@@ -1,19 +1,14 @@
-import { Client, DiscogsSearchResult } from 'disconnect';
 import { NextResponse } from 'next/server';
-
-// Create a client with consumer key and secret from environment variables
-const db = new Client({
-  userAgent: 'RecProject/1.0 +http://localhost:3000',
-  consumerKey: process.env.CONSUMER_KEY,
-  consumerSecret: process.env.CONSUMER_SECRET,
-}).database();
-
-// Default placeholder image for albums without images
-const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x400?text=No+Image';
+import { SearchOrchestrator, SearchSource, SearchType } from '@/lib/search/SearchOrchestrator';
+import { prisma } from '@/lib/prisma';
+import type { SearchResponse, GroupedSearchResults } from '@/types/search';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
+  const sources = searchParams.get('sources')?.split(',') || ['local'];
+  const types = searchParams.get('types')?.split(',') as SearchType[] || ['album', 'artist'];
+  const limit = parseInt(searchParams.get('limit') || '20', 10);
 
   if (!query) {
     console.log('Missing query parameter');
@@ -24,68 +19,105 @@ export async function GET(request: Request) {
   }
 
   try {
-    console.log(`Searching Discogs for: "${query}"`);
+    console.log(`Searching for: "${query}" in sources: ${sources.join(', ')}`);
 
-    // Search for albums on Discogs with more flexible parameters
-    const searchResults = await db.search({
-      query,
-      // Don't restrict to master or album to get more results
-      per_page: 10,
+    // Create SearchOrchestrator instance
+    const orchestrator = new SearchOrchestrator(prisma);
+
+    // Map source strings to SearchSource enum
+    const searchSources: SearchSource[] = sources.map(source => {
+      switch (source.toLowerCase()) {
+        case 'musicbrainz':
+          return SearchSource.MUSICBRAINZ;
+        case 'discogs':
+          return SearchSource.DISCOGS;
+        case 'local':
+        default:
+          return SearchSource.LOCAL;
+      }
     });
 
-    console.log(`Found ${searchResults.results?.length || 0} results`);
+    // Perform orchestrated search
+    const searchResult = await orchestrator.search({
+      query,
+      types,
+      sources: searchSources,
+      limit,
+      deduplicateResults: true,
+    });
 
-    if (!searchResults.results || searchResults.results.length === 0) {
-      console.log('No results found');
-      return NextResponse.json({ albums: [] });
+    // Group results by type for compatibility with existing UI
+    const grouped: GroupedSearchResults = {
+      albums: searchResult.results.filter(r => r.type === 'album'),
+      artists: searchResult.results.filter(r => r.type === 'artist'),
+      labels: [],
+      tracks: searchResult.results.filter(r => r.type === 'track'),
+      other: searchResult.results.filter(r => !['album', 'artist', 'track'].includes(r.type)),
+    };
+
+    // Format response to match existing SearchResponse interface
+    const response: SearchResponse = {
+      results: searchResult.results,
+      grouped,
+      total: searchResult.totalResults,
+      metadata: {
+        query,
+        executionTime: searchResult.timing.totalDuration,
+        totalResults: searchResult.totalResults,
+        deduplicationApplied: searchResult.deduplicationApplied,
+        duplicatesRemoved: searchResult.duplicatesRemoved,
+        filtersApplied: {},
+        context: 'global',
+        sortBy: 'relevance',
+        groupBy: 'none',
+        entityTypes: types,
+        timestamp: new Date().toISOString(),
+        performance: {
+          processingTime: searchResult.timing.totalDuration,
+          deduplicationTime: 0,
+        },
+      },
+      deduplication: {
+        strategy: 'artist-title',
+        totalBeforeDeduplication: searchResult.totalResults + searchResult.duplicatesRemoved,
+        totalAfterDeduplication: searchResult.totalResults,
+        duplicatesRemoved: searchResult.duplicatesRemoved,
+        masterPreferenceApplied: false,
+        groupingMethod: 'artistTitle',
+      },
+      performance: {
+        totalExecutionTime: searchResult.timing.totalDuration,
+        processingTime: searchResult.timing.localDuration || 0,
+      },
+    };
+
+    // For backward compatibility with existing UI that expects { albums: [...] }
+    if (sources.length === 1 && sources[0] === 'discogs') {
+      // Legacy format for Discogs-only search
+      return NextResponse.json({
+        albums: grouped.albums.map(album => ({
+          id: album.id,
+          title: album.title,
+          artist: album.artist,
+          releaseDate: album.releaseDate,
+          genre: album.genre,
+          label: album.label,
+          image: album.image,
+          tracks: album.tracks || [],
+          metadata: album.metadata || {
+            totalDuration: 0,
+            numberOfTracks: 0,
+          },
+        }))
+      });
     }
 
-    // Process the results to match our Album interface
-    const albums = searchResults.results.map((result: DiscogsSearchResult) => {
-      // Extract title and artist from the result
-      let title = result.title;
-      let artist = 'Unknown Artist';
-
-      // Handle different Discogs result formats
-      if (result.title.includes(' - ')) {
-        const parts = result.title.split(' - ');
-        artist = parts[0] || 'Unknown Artist';
-        title = parts[1] || result.title;
-      } else if (result.artist) {
-        artist = result.artist;
-      }
-
-      // Get the image URL from the result
-      const imageUrl = result.cover_image || result.thumb || PLACEHOLDER_IMAGE;
-
-      return {
-        id: result.id.toString(),
-        title: title,
-        artist: artist,
-        releaseDate: result.year || '',
-        genre: result.genre || [],
-        label: result.label?.[0] || '',
-        image: {
-          url: imageUrl,
-          width: 400, // Consistent width
-          height: 400, // Consistent height
-          alt: title || 'Album cover',
-        },
-        tracks: [],
-        metadata: {
-          totalDuration: 0,
-          numberOfTracks: 0,
-        },
-      };
-    });
-
-    return NextResponse.json({ albums });
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Error searching Discogs:', error);
-    // Include the error message in the response for debugging
+    console.error('Error searching:', error);
     return NextResponse.json(
       {
-        error: 'Failed to search albums',
+        error: 'Failed to search',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }

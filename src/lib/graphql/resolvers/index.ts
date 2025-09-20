@@ -7,6 +7,7 @@ import { scalarResolvers } from './scalars';
 import { queryResolvers } from './queries';
 import { mutationResolvers } from './mutations';
 import { subscriptionResolvers } from './subscriptions';
+import { SearchOrchestrator, SearchSource, SearchType } from '@/lib/search/SearchOrchestrator';
 
 // Production-ready resolvers with DataLoader optimization
 export const resolvers: Resolvers = {
@@ -93,37 +94,81 @@ export const resolvers: Resolvers = {
       });
     },
 
-    // Basic search implementation
+    // Enhanced search using SearchOrchestrator
     search: async (_, { input }, { prisma }) => {
-      const { query, type = 'ALL', limit = 20, offset = 0 } = input;
+      const { query, type = 'ALL', limit = 20 } = input;
 
       try {
-        const artists = type === 'ALL' || type === 'ARTIST' 
-          ? await prisma.artist.findMany({
-              where: { name: { contains: query, mode: 'insensitive' } },
-              take: limit ?? undefined, skip: offset ?? undefined,
-            })
-          : [];
+        // Create SearchOrchestrator instance
+        const orchestrator = new SearchOrchestrator(prisma);
 
-        const albums = type === 'ALL' || type === 'ALBUM'
-          ? await prisma.album.findMany({
-              where: { title: { contains: query, mode: 'insensitive' } },
-              take: limit ?? undefined, skip: offset ?? undefined,
-            })
-          : [];
+        // Map GraphQL search type to SearchType[]
+        let searchTypes: SearchType[] = [];
+        if (type === 'ALL') {
+          searchTypes = ['album', 'artist', 'track'];
+        } else if (type === 'ARTIST') {
+          searchTypes = ['artist'];
+        } else if (type === 'ALBUM') {
+          searchTypes = ['album'];
+        } else if (type === 'TRACK') {
+          searchTypes = ['track'];
+        }
 
-        const tracks = type === 'ALL' || type === 'TRACK'
-          ? await prisma.track.findMany({
-              where: { title: { contains: query, mode: 'insensitive' } },
-              take: limit ?? undefined, skip: offset ?? undefined,
-            })
-          : [];
+        // Perform orchestrated search (local only for now)
+        const searchResult = await orchestrator.search({
+          query,
+          types: searchTypes,
+          sources: [SearchSource.LOCAL], // Can add MUSICBRAINZ later
+          limit,
+          deduplicateResults: true,
+        });
+
+        // Need to fetch the actual data from database since we're returning minimal data from SearchOrchestrator
+        const albumIds = searchResult.results
+          .filter(r => r.type === 'album')
+          .map(r => r.id);
+
+        const artistIds = searchResult.results
+          .filter(r => r.type === 'artist')
+          .map(r => r.id);
+
+        const trackIds = searchResult.results
+          .filter(r => r.type === 'track')
+          .map(r => r.id);
+
+        // Fetch actual data
+        const albums = albumIds.length > 0 ? await prisma.album.findMany({
+          where: { id: { in: albumIds } },
+          include: {
+            artists: {
+              include: {
+                artist: true
+              }
+            }
+          }
+        }) : [];
+
+        const artists = artistIds.length > 0 ? await prisma.artist.findMany({
+          where: { id: { in: artistIds } }
+        }) : [];
+
+        const tracks = trackIds.length > 0 ? await prisma.track.findMany({
+          where: { id: { in: trackIds } },
+          include: {
+            album: true,
+            artists: {
+              include: {
+                artist: true
+              }
+            }
+          }
+        }) : [];
 
         return {
           artists,
           albums,
           tracks,
-          total: artists.length + albums.length + tracks.length,
+          total: searchResult.totalResults,
           hasMore: false,
         };
       } catch (error) {

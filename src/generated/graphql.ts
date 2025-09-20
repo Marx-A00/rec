@@ -1409,6 +1409,119 @@ export type GetRecommendationQuery = {
   } | null;
 };
 
+export type SearchQueryVariables = Exact<{
+  input: SearchInput;
+}>;
+
+export type SearchQuery = {
+  __typename?: 'Query';
+  search: {
+    __typename?: 'SearchResults';
+    total: number;
+    albums: Array<{
+      __typename?: 'Album';
+      id: string;
+      musicbrainzId?: string | null;
+      title: string;
+      releaseDate?: Date | null;
+      coverArtUrl?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    }>;
+    artists: Array<{
+      __typename?: 'Artist';
+      id: string;
+      musicbrainzId?: string | null;
+      name: string;
+      imageUrl?: string | null;
+    }>;
+    tracks: Array<{
+      __typename?: 'Track';
+      id: string;
+      musicbrainzId?: string | null;
+      title: string;
+      durationMs?: number | null;
+      trackNumber: number;
+      album: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+      };
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    }>;
+  };
+};
+
+export type SearchAlbumsQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type SearchAlbumsQuery = {
+  __typename?: 'Query';
+  searchAlbums: Array<{
+    __typename?: 'Album';
+    id: string;
+    musicbrainzId?: string | null;
+    title: string;
+    releaseDate?: Date | null;
+    coverArtUrl?: string | null;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  }>;
+};
+
+export type SearchArtistsQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type SearchArtistsQuery = {
+  __typename?: 'Query';
+  searchArtists: Array<{
+    __typename?: 'Artist';
+    id: string;
+    musicbrainzId?: string | null;
+    name: string;
+    imageUrl?: string | null;
+  }>;
+};
+
+export type SearchTracksQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type SearchTracksQuery = {
+  __typename?: 'Query';
+  searchTracks: Array<{
+    __typename?: 'Track';
+    id: string;
+    musicbrainzId?: string | null;
+    title: string;
+    durationMs?: number | null;
+    trackNumber: number;
+    album: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+    };
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  }>;
+};
+
 export const RecommendationFieldsFragmentDoc = `
     fragment RecommendationFields on Recommendation {
   id
@@ -1815,3 +1928,343 @@ export const useInfiniteGetRecommendationQuery = <
 useInfiniteGetRecommendationQuery.getKey = (
   variables: GetRecommendationQueryVariables
 ) => ['GetRecommendation.infinite', variables];
+
+export const SearchDocument = `
+    query Search($input: SearchInput!) {
+  search(input: $input) {
+    total
+    albums {
+      id
+      musicbrainzId
+      title
+      releaseDate
+      coverArtUrl
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+    artists {
+      id
+      musicbrainzId
+      name
+      imageUrl
+    }
+    tracks {
+      id
+      musicbrainzId
+      title
+      durationMs
+      trackNumber
+      album {
+        id
+        title
+        coverArtUrl
+      }
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useSearchQuery = <TData = SearchQuery, TError = unknown>(
+  variables: SearchQueryVariables,
+  options?: Omit<UseQueryOptions<SearchQuery, TError, TData>, 'queryKey'> & {
+    queryKey?: UseQueryOptions<SearchQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<SearchQuery, TError, TData>({
+    queryKey: ['Search', variables],
+    queryFn: fetcher<SearchQuery, SearchQueryVariables>(
+      SearchDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useSearchQuery.getKey = (variables: SearchQueryVariables) => [
+  'Search',
+  variables,
+];
+
+export const useInfiniteSearchQuery = <
+  TData = InfiniteData<SearchQuery>,
+  TError = unknown,
+>(
+  variables: SearchQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SearchQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<SearchQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SearchQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['Search.infinite', variables],
+        queryFn: metaData =>
+          fetcher<SearchQuery, SearchQueryVariables>(SearchDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSearchQuery.getKey = (variables: SearchQueryVariables) => [
+  'Search.infinite',
+  variables,
+];
+
+export const SearchAlbumsDocument = `
+    query SearchAlbums($query: String!, $limit: Int) {
+  searchAlbums(query: $query, limit: $limit) {
+    id
+    musicbrainzId
+    title
+    releaseDate
+    coverArtUrl
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+
+export const useSearchAlbumsQuery = <
+  TData = SearchAlbumsQuery,
+  TError = unknown,
+>(
+  variables: SearchAlbumsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SearchAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<SearchAlbumsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<SearchAlbumsQuery, TError, TData>({
+    queryKey: ['SearchAlbums', variables],
+    queryFn: fetcher<SearchAlbumsQuery, SearchAlbumsQueryVariables>(
+      SearchAlbumsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useSearchAlbumsQuery.getKey = (variables: SearchAlbumsQueryVariables) => [
+  'SearchAlbums',
+  variables,
+];
+
+export const useInfiniteSearchAlbumsQuery = <
+  TData = InfiniteData<SearchAlbumsQuery>,
+  TError = unknown,
+>(
+  variables: SearchAlbumsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SearchAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SearchAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SearchAlbumsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['SearchAlbums.infinite', variables],
+        queryFn: metaData =>
+          fetcher<SearchAlbumsQuery, SearchAlbumsQueryVariables>(
+            SearchAlbumsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSearchAlbumsQuery.getKey = (
+  variables: SearchAlbumsQueryVariables
+) => ['SearchAlbums.infinite', variables];
+
+export const SearchArtistsDocument = `
+    query SearchArtists($query: String!, $limit: Int) {
+  searchArtists(query: $query, limit: $limit) {
+    id
+    musicbrainzId
+    name
+    imageUrl
+  }
+}
+    `;
+
+export const useSearchArtistsQuery = <
+  TData = SearchArtistsQuery,
+  TError = unknown,
+>(
+  variables: SearchArtistsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SearchArtistsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<SearchArtistsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<SearchArtistsQuery, TError, TData>({
+    queryKey: ['SearchArtists', variables],
+    queryFn: fetcher<SearchArtistsQuery, SearchArtistsQueryVariables>(
+      SearchArtistsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useSearchArtistsQuery.getKey = (variables: SearchArtistsQueryVariables) => [
+  'SearchArtists',
+  variables,
+];
+
+export const useInfiniteSearchArtistsQuery = <
+  TData = InfiniteData<SearchArtistsQuery>,
+  TError = unknown,
+>(
+  variables: SearchArtistsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SearchArtistsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SearchArtistsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SearchArtistsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['SearchArtists.infinite', variables],
+        queryFn: metaData =>
+          fetcher<SearchArtistsQuery, SearchArtistsQueryVariables>(
+            SearchArtistsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSearchArtistsQuery.getKey = (
+  variables: SearchArtistsQueryVariables
+) => ['SearchArtists.infinite', variables];
+
+export const SearchTracksDocument = `
+    query SearchTracks($query: String!, $limit: Int) {
+  searchTracks(query: $query, limit: $limit) {
+    id
+    musicbrainzId
+    title
+    durationMs
+    trackNumber
+    album {
+      id
+      title
+      coverArtUrl
+    }
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+
+export const useSearchTracksQuery = <
+  TData = SearchTracksQuery,
+  TError = unknown,
+>(
+  variables: SearchTracksQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SearchTracksQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<SearchTracksQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<SearchTracksQuery, TError, TData>({
+    queryKey: ['SearchTracks', variables],
+    queryFn: fetcher<SearchTracksQuery, SearchTracksQueryVariables>(
+      SearchTracksDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useSearchTracksQuery.getKey = (variables: SearchTracksQueryVariables) => [
+  'SearchTracks',
+  variables,
+];
+
+export const useInfiniteSearchTracksQuery = <
+  TData = InfiniteData<SearchTracksQuery>,
+  TError = unknown,
+>(
+  variables: SearchTracksQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SearchTracksQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SearchTracksQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SearchTracksQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['SearchTracks.infinite', variables],
+        queryFn: metaData =>
+          fetcher<SearchTracksQuery, SearchTracksQueryVariables>(
+            SearchTracksDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSearchTracksQuery.getKey = (
+  variables: SearchTracksQueryVariables
+) => ['SearchTracks.infinite', variables];
