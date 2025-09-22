@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { QueuedMusicBrainzService } from '../musicbrainz/queue-service';
+import { QueuedMusicBrainzService, getQueuedMusicBrainzService } from '../musicbrainz/queue-service';
 import type { UnifiedSearchResult, SearchContext, SearchFilters, SortBy } from '@/types/search';
 
 export enum SearchSource {
@@ -58,7 +58,7 @@ export class SearchOrchestrator {
 
   constructor(prisma: PrismaClient, musicbrainzService?: QueuedMusicBrainzService) {
     this.prisma = prisma;
-    this.musicbrainzService = musicbrainzService || new QueuedMusicBrainzService();
+    this.musicbrainzService = musicbrainzService || getQueuedMusicBrainzService();
   }
 
   async search(options: SearchOptions): Promise<OrchestratedSearchResult> {
@@ -265,23 +265,74 @@ export class SearchOrchestrator {
   ): Promise<SearchResult> {
     const startTime = Date.now();
 
+    // TODO: Research better MusicBrainz search strategies:
+    // 1. Use advanced Lucene query syntax for more precise results
+    //    - Consider searching with: artist:(query) AND primarytype:album AND status:official
+    //    - Use fuzzy search (~) for spelling variations
+    //    - Implement weighted searches for different fields
+    // 2. Make multiple API calls with different strategies and merge results:
+    //    - First search for exact artist name matches
+    //    - Then search for album titles
+    //    - Finally do a general search
+    // 3. Use MusicBrainz relationships to get better data:
+    //    - Fetch artist first, then get their release groups
+    //    - This would give us complete discographies
+    // 4. Consider caching artist MBIDs locally after first search
+    //    - Would allow direct lookups for known artists
+    // 5. Look into using release-group type and status filters more effectively
+    //    - Filter by status:official to exclude bootlegs
+    //    - Properly handle various release types (album, single, EP, etc)
+    // 6. Investigate using MusicBrainz's browse endpoints instead of search
+    //    - browse/release-group?artist=<mbid> gives all releases for an artist
+
     try {
       const results: UnifiedSearchResult[] = [];
 
+      // Execute searches in parallel for better performance
+      const promises: Promise<any>[] = [];
+
       if (types.includes('album')) {
-        const releaseGroups = await this.musicbrainzService.searchReleaseGroups(query, limit);
-        results.push(...releaseGroups.map(rg => this.mapMusicBrainzReleaseToUnifiedResult(rg)));
+        promises.push(
+          this.musicbrainzService.searchReleaseGroups(query, limit * 2) // Get extra to filter
+            .then(releaseGroups => {
+              // Sort by MusicBrainz score and filter by quality
+              const sorted = releaseGroups
+                .sort((a, b) => (b.score || 0) - (a.score || 0))
+                .slice(0, limit);
+              results.push(...sorted.map(rg => this.mapMusicBrainzReleaseToUnifiedResult(rg)));
+            })
+            .catch(err => {
+              console.error('Error searching MusicBrainz albums:', err);
+            })
+        );
       }
 
       if (types.includes('artist')) {
-        const artists = await this.musicbrainzService.searchArtists(query, limit);
-        results.push(...artists.map(artist => this.mapMusicBrainzArtistToUnifiedResult(artist)));
+        promises.push(
+          this.musicbrainzService.searchArtists(query, limit)
+            .then(artists => {
+              results.push(...artists.map(artist => this.mapMusicBrainzArtistToUnifiedResult(artist)));
+            })
+            .catch(err => {
+              console.error('Error searching MusicBrainz artists:', err);
+            })
+        );
       }
 
       if (types.includes('track')) {
-        const recordings = await this.musicbrainzService.searchRecordings(query, limit);
-        results.push(...recordings.map(rec => this.mapMusicBrainzRecordingToUnifiedResult(rec)));
+        promises.push(
+          this.musicbrainzService.searchRecordings(query, limit)
+            .then(recordings => {
+              results.push(...recordings.map(rec => this.mapMusicBrainzRecordingToUnifiedResult(rec)));
+            })
+            .catch(err => {
+              console.error('Error searching MusicBrainz tracks:', err);
+            })
+        );
       }
+
+      // Wait for all searches to complete
+      await Promise.allSettled(promises);
 
       const endTime = Date.now();
 
@@ -296,6 +347,7 @@ export class SearchOrchestrator {
       };
     } catch (error) {
       const endTime = Date.now();
+      console.error('MusicBrainz search error:', error);
       return {
         source: SearchSource.MUSICBRAINZ,
         results: [],
@@ -317,15 +369,36 @@ export class SearchOrchestrator {
     const startTime = Date.now();
 
     try {
-      // TODO: Implement Discogs search
-      // Will need to extract logic from /api/albums/search/route.ts
-      // For now, return empty results
-      console.log('Discogs search not yet implemented', { query, types, limit });
+      // TODO: Move Discogs client initialization to a service class
+      // For now, create client inline (same as old route.ts)
+      const Discogs = require('disconnect').Client;
+      const db = new Discogs({
+        userAgent: 'RecProject/1.0',
+        userToken: process.env.DISCOGS_TOKEN || 'QJRXBuUbvTQccgvYSRgKPPjJEPHAZoRJVkRQSRXW'
+      }).database();
+
+      const results: UnifiedSearchResult[] = [];
+
+      // Search for albums on Discogs
+      if (types.includes('album')) {
+        const searchResults = await db.search({
+          query,
+          per_page: limit,
+        });
+
+        if (searchResults.results && searchResults.results.length > 0) {
+          results.push(...searchResults.results.map((result: any) =>
+            this.mapDiscogsToUnifiedResult(result)
+          ));
+        }
+      }
+
+      // TODO: Add artist and track search support for Discogs
 
       const endTime = Date.now();
       return {
         source: SearchSource.DISCOGS,
-        results: [],
+        results,
         timing: {
           startTime,
           endTime,
@@ -334,6 +407,7 @@ export class SearchOrchestrator {
       };
     } catch (error) {
       const endTime = Date.now();
+      console.error('Discogs search error:', error);
       return {
         source: SearchSource.DISCOGS,
         results: [],
@@ -345,6 +419,43 @@ export class SearchOrchestrator {
         },
       };
     }
+  }
+
+  private mapDiscogsToUnifiedResult(result: any): UnifiedSearchResult {
+    // Extract title and artist from the result
+    let title = result.title;
+    let artist = 'Unknown Artist';
+
+    // Handle different Discogs result formats
+    if (result.title.includes(' - ')) {
+      const parts = result.title.split(' - ');
+      artist = parts[0] || 'Unknown Artist';
+      title = parts[1] || result.title;
+    } else if (result.artist) {
+      artist = result.artist;
+    }
+
+    return {
+      id: result.id.toString(),
+      type: 'album',
+      title: title,
+      subtitle: result.format?.join(', ') || 'Album',
+      artist: artist,
+      releaseDate: result.year || null,
+      genre: result.genre || [],
+      label: result.label?.[0] || '',
+      image: {
+        url: result.cover_image || result.thumb || '',
+        width: 400,
+        height: 400,
+        alt: title,
+      },
+      _discogs: {
+        type: result.type,
+        uri: result.uri,
+        resource_url: result.resource_url,
+      },
+    };
   }
 
   private deduplicateResults(results: UnifiedSearchResult[]): {
@@ -393,10 +504,17 @@ export class SearchOrchestrator {
   private getDeduplicationKeys(result: UnifiedSearchResult): string[] {
     const keys: string[] = [];
 
+    // Priority 1: Check for exact ID matches (most reliable)
+    // Check if the result has a MusicBrainz ID (either as main ID for MB results, or in metadata)
+    if (result.id && result.type === 'album' && result.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)) {
+      // This is a MusicBrainz ID (UUID format)
+      keys.push(`musicbrainz:${result.id}`);
+    }
     if (result._discogs?.uri) {
       keys.push(`discogs:${result._discogs.uri}`);
     }
 
+    // Priority 2: Fallback to artist-title matching
     const normalizedArtist = result.artist.toLowerCase().trim();
     const normalizedTitle = result.title.toLowerCase().trim();
     keys.push(`${normalizedArtist}:${normalizedTitle}`);
@@ -405,11 +523,31 @@ export class SearchOrchestrator {
   }
 
   private shouldReplaceResult(existing: UnifiedSearchResult, candidate: UnifiedSearchResult): boolean {
+    // Prefer local database results over external (they have richer data)
+    if (existing.id.startsWith('cm') && !candidate.id.startsWith('cm')) {
+      return false; // Keep local result
+    }
+    if (!existing.id.startsWith('cm') && candidate.id.startsWith('cm')) {
+      return true; // Replace with local result
+    }
+
+    // Prefer results with images
     if (candidate.image?.url && !existing.image?.url) {
       return true;
     }
 
+    // Prefer results with track listings
     if (candidate.tracks?.length && !existing.tracks?.length) {
+      return true;
+    }
+
+    // Prefer results with better metadata
+    if (candidate.releaseDate && !existing.releaseDate) {
+      return true;
+    }
+
+    // Prefer higher relevance scores (if available)
+    if ((candidate.relevanceScore || 0) > (existing.relevanceScore || 0)) {
       return true;
     }
 
@@ -463,13 +601,23 @@ export class SearchOrchestrator {
   }
 
   private mapMusicBrainzReleaseToUnifiedResult(release: any): UnifiedSearchResult {
+    // Build subtitle showing release type
+    let subtitle = release.primaryType || 'Release';
+    if (release.secondaryTypes && release.secondaryTypes.length > 0) {
+      // Show the most relevant secondary type
+      const secondaryType = release.secondaryTypes[0];
+      subtitle = `${subtitle} • ${secondaryType}`;
+    }
+
     return {
       id: release.id,
       type: 'album',
       title: release.title,
-      subtitle: release.type || 'Album',
-      artist: release['artist-credit']?.[0]?.artist?.name || 'Unknown Artist',
-      releaseDate: release['first-release-date'] || '',
+      subtitle,
+      artist: release.artistCredit?.[0]?.artist?.name ||
+              release['artist-credit']?.[0]?.artist?.name ||
+              'Unknown Artist',
+      releaseDate: release.firstReleaseDate || release['first-release-date'] || null,
       genre: release.tags?.map((t: any) => t.name) || [],
       label: '',
       image: {
@@ -478,6 +626,7 @@ export class SearchOrchestrator {
         height: 300,
         alt: release.title,
       },
+      relevanceScore: release.score, // Pass through MusicBrainz's score
       _discogs: {},
     };
   }
@@ -509,7 +658,7 @@ export class SearchOrchestrator {
       title: recording.title,
       subtitle: 'Recording',
       artist: recording['artist-credit']?.[0]?.artist?.name || 'Unknown Artist',
-      releaseDate: recording['first-release-date'] || '',
+      releaseDate: recording['first-release-date'] || null, // Return null instead of empty string
       genre: recording.tags?.map((t: any) => t.name) || [],
       label: '',
       image: {

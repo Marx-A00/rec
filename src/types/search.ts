@@ -101,7 +101,7 @@ export interface UnifiedSearchResult {
   title: string;
   subtitle: string;
   artist: string;
-  releaseDate: string;
+  releaseDate: string | null;
   genre: string[];
   label: string;
   image: {

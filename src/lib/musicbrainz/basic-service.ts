@@ -117,8 +117,12 @@ export class MusicBrainzService {
     offset = 0
   ): Promise<ReleaseGroupSearchResult[]> {
     try {
+      // Enhance query to search both artist and release title
+      // This finds albums BY the artist OR albums with the query in the title
+      const enhancedQuery = `artist:"${query}" OR releasegroup:"${query}"`;
+
       const response = await this.api.search('release-group', {
-        query,
+        query: enhancedQuery,
         limit,
         offset,
         inc: ['artist-credits'], // Include artist credit information

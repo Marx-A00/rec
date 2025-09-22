@@ -1,11 +1,11 @@
 import {
+  useMutation,
   useQuery,
   useInfiniteQuery,
-  useMutation,
+  UseMutationOptions,
   UseQueryOptions,
   UseInfiniteQueryOptions,
   InfiniteData,
-  UseMutationOptions,
 } from '@tanstack/react-query';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -310,6 +310,12 @@ export enum DataQuality {
   Medium = 'MEDIUM',
 }
 
+export enum DataSource {
+  Discogs = 'DISCOGS',
+  Local = 'LOCAL',
+  Musicbrainz = 'MUSICBRAINZ',
+}
+
 export type DatabaseStats = {
   __typename?: 'DatabaseStats';
   albumsNeedingEnrichment: Scalars['Int']['output'];
@@ -603,6 +609,7 @@ export type Query = {
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
   artist?: Maybe<Artist>;
+  artistDiscography: Array<UnifiedRelease>;
   collection?: Maybe<Collection>;
   databaseStats: DatabaseStats;
   failedJobs: Array<JobRecord>;
@@ -655,6 +662,10 @@ export type QueryAlbumTracksArgs = {
 
 export type QueryArtistArgs = {
   id: Scalars['UUID']['input'];
+};
+
+export type QueryArtistDiscographyArgs = {
+  id: Scalars['String']['input'];
 };
 
 export type QueryCollectionArgs = {
@@ -872,8 +883,15 @@ export type SearchInput = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
+  searchMode?: InputMaybe<SearchMode>;
   type?: InputMaybe<SearchType>;
 };
+
+export enum SearchMode {
+  ExternalOnly = 'EXTERNAL_ONLY',
+  LocalAndExternal = 'LOCAL_AND_EXTERNAL',
+  LocalOnly = 'LOCAL_ONLY',
+}
 
 export type SearchResult = Album | Artist | Track;
 
@@ -1030,8 +1048,8 @@ export enum TimeRange {
 
 export type Track = {
   __typename?: 'Track';
-  album: Album;
-  albumId: Scalars['UUID']['output'];
+  album?: Maybe<Album>;
+  albumId?: Maybe<Scalars['UUID']['output']>;
   artists: Array<ArtistCredit>;
   audioFeatures?: Maybe<AudioFeatures>;
   createdAt: Scalars['DateTime']['output'];
@@ -1060,6 +1078,20 @@ export type TrackInput = {
   previewUrl?: InputMaybe<Scalars['String']['input']>;
   title: Scalars['String']['input'];
   trackNumber: Scalars['Int']['input'];
+};
+
+export type UnifiedRelease = {
+  __typename?: 'UnifiedRelease';
+  artistName?: Maybe<Scalars['String']['output']>;
+  id: Scalars['String']['output'];
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  primaryType?: Maybe<Scalars['String']['output']>;
+  releaseDate?: Maybe<Scalars['DateTime']['output']>;
+  secondaryTypes?: Maybe<Array<Scalars['String']['output']>>;
+  source: DataSource;
+  title: Scalars['String']['output'];
+  trackCount?: Maybe<Scalars['Int']['output']>;
+  year?: Maybe<Scalars['Int']['output']>;
 };
 
 export type UpdateTrackInput = {
@@ -1149,6 +1181,64 @@ export type WorkerInfo = {
   id: Scalars['String']['output'];
   isPaused: Scalars['Boolean']['output'];
   isRunning: Scalars['Boolean']['output'];
+};
+
+export type FollowUserMutationVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+export type FollowUserMutation = {
+  __typename?: 'Mutation';
+  followUser: {
+    __typename?: 'UserFollow';
+    id: string;
+    createdAt: Date;
+    follower: { __typename?: 'User'; id: string };
+    followed: { __typename?: 'User'; id: string };
+  };
+};
+
+export type UnfollowUserMutationVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+export type UnfollowUserMutation = {
+  __typename?: 'Mutation';
+  unfollowUser: boolean;
+};
+
+export type CheckFollowStatusQueryVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+export type CheckFollowStatusQuery = {
+  __typename?: 'Query';
+  user?: {
+    __typename?: 'User';
+    id: string;
+    isFollowing?: boolean | null;
+  } | null;
+};
+
+export type GetArtistDiscographyQueryVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+export type GetArtistDiscographyQuery = {
+  __typename?: 'Query';
+  artistDiscography: Array<{
+    __typename?: 'UnifiedRelease';
+    id: string;
+    source: DataSource;
+    title: string;
+    releaseDate?: Date | null;
+    primaryType?: string | null;
+    secondaryTypes?: Array<string> | null;
+    imageUrl?: string | null;
+    artistName?: string | null;
+    trackCount?: number | null;
+    year?: number | null;
+  }>;
 };
 
 export type RecommendationFieldsFragment = {
@@ -1444,12 +1534,12 @@ export type SearchQuery = {
       title: string;
       durationMs?: number | null;
       trackNumber: number;
-      album: {
+      album?: {
         __typename?: 'Album';
         id: string;
         title: string;
         coverArtUrl?: string | null;
-      };
+      } | null;
       artists: Array<{
         __typename?: 'ArtistCredit';
         artist: { __typename?: 'Artist'; id: string; name: string };
@@ -1509,12 +1599,12 @@ export type SearchTracksQuery = {
     title: string;
     durationMs?: number | null;
     trackNumber: number;
-    album: {
+    album?: {
       __typename?: 'Album';
       id: string;
       title: string;
       coverArtUrl?: string | null;
-    };
+    } | null;
     artists: Array<{
       __typename?: 'ArtistCredit';
       artist: { __typename?: 'Artist'; id: string; name: string };
@@ -1556,6 +1646,243 @@ export const RecommendationFieldsFragmentDoc = `
   }
 }
     `;
+export const FollowUserDocument = `
+    mutation FollowUser($userId: String!) {
+  followUser(userId: $userId) {
+    id
+    follower {
+      id
+    }
+    followed {
+      id
+    }
+    createdAt
+  }
+}
+    `;
+
+export const useFollowUserMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    FollowUserMutation,
+    TError,
+    FollowUserMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    FollowUserMutation,
+    TError,
+    FollowUserMutationVariables,
+    TContext
+  >({
+    mutationKey: ['FollowUser'],
+    mutationFn: (variables?: FollowUserMutationVariables) =>
+      fetcher<FollowUserMutation, FollowUserMutationVariables>(
+        FollowUserDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useFollowUserMutation.getKey = () => ['FollowUser'];
+
+export const UnfollowUserDocument = `
+    mutation UnfollowUser($userId: String!) {
+  unfollowUser(userId: $userId)
+}
+    `;
+
+export const useUnfollowUserMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    UnfollowUserMutation,
+    TError,
+    UnfollowUserMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UnfollowUserMutation,
+    TError,
+    UnfollowUserMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UnfollowUser'],
+    mutationFn: (variables?: UnfollowUserMutationVariables) =>
+      fetcher<UnfollowUserMutation, UnfollowUserMutationVariables>(
+        UnfollowUserDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useUnfollowUserMutation.getKey = () => ['UnfollowUser'];
+
+export const CheckFollowStatusDocument = `
+    query CheckFollowStatus($userId: String!) {
+  user(id: $userId) {
+    id
+    isFollowing
+  }
+}
+    `;
+
+export const useCheckFollowStatusQuery = <
+  TData = CheckFollowStatusQuery,
+  TError = unknown,
+>(
+  variables: CheckFollowStatusQueryVariables,
+  options?: Omit<
+    UseQueryOptions<CheckFollowStatusQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      CheckFollowStatusQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<CheckFollowStatusQuery, TError, TData>({
+    queryKey: ['CheckFollowStatus', variables],
+    queryFn: fetcher<CheckFollowStatusQuery, CheckFollowStatusQueryVariables>(
+      CheckFollowStatusDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useCheckFollowStatusQuery.getKey = (
+  variables: CheckFollowStatusQueryVariables
+) => ['CheckFollowStatus', variables];
+
+export const useInfiniteCheckFollowStatusQuery = <
+  TData = InfiniteData<CheckFollowStatusQuery>,
+  TError = unknown,
+>(
+  variables: CheckFollowStatusQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<CheckFollowStatusQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      CheckFollowStatusQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<CheckFollowStatusQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['CheckFollowStatus.infinite', variables],
+        queryFn: metaData =>
+          fetcher<CheckFollowStatusQuery, CheckFollowStatusQueryVariables>(
+            CheckFollowStatusDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteCheckFollowStatusQuery.getKey = (
+  variables: CheckFollowStatusQueryVariables
+) => ['CheckFollowStatus.infinite', variables];
+
+export const GetArtistDiscographyDocument = `
+    query GetArtistDiscography($id: String!) {
+  artistDiscography(id: $id) {
+    id
+    source
+    title
+    releaseDate
+    primaryType
+    secondaryTypes
+    imageUrl
+    artistName
+    trackCount
+    year
+  }
+}
+    `;
+
+export const useGetArtistDiscographyQuery = <
+  TData = GetArtistDiscographyQuery,
+  TError = unknown,
+>(
+  variables: GetArtistDiscographyQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetArtistDiscographyQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetArtistDiscographyQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetArtistDiscographyQuery, TError, TData>({
+    queryKey: ['GetArtistDiscography', variables],
+    queryFn: fetcher<
+      GetArtistDiscographyQuery,
+      GetArtistDiscographyQueryVariables
+    >(GetArtistDiscographyDocument, variables),
+    ...options,
+  });
+};
+
+useGetArtistDiscographyQuery.getKey = (
+  variables: GetArtistDiscographyQueryVariables
+) => ['GetArtistDiscography', variables];
+
+export const useInfiniteGetArtistDiscographyQuery = <
+  TData = InfiniteData<GetArtistDiscographyQuery>,
+  TError = unknown,
+>(
+  variables: GetArtistDiscographyQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetArtistDiscographyQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetArtistDiscographyQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetArtistDiscographyQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'GetArtistDiscography.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            GetArtistDiscographyQuery,
+            GetArtistDiscographyQueryVariables
+          >(GetArtistDiscographyDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetArtistDiscographyQuery.getKey = (
+  variables: GetArtistDiscographyQueryVariables
+) => ['GetArtistDiscography.infinite', variables];
+
 export const GetRecommendationFeedDocument = `
     query GetRecommendationFeed($cursor: String, $limit: Int) {
   recommendationFeed(cursor: $cursor, limit: $limit) {

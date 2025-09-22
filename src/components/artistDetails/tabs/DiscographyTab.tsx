@@ -1,135 +1,69 @@
 'use client';
 
-import { Calendar, Disc, ChevronDown } from 'lucide-react';
+import { Calendar, Disc } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
-import AlbumModal from '@/components/ui/AlbumModal';
-import { useAlbumModal } from '@/hooks/useAlbumModal';
-import { useNavigation } from '@/hooks/useNavigation';
-import { useMastersQuery } from '@/hooks/useMastersQuery';
-import { Release } from '@/types/album';
+import { useGetArtistDiscographyQuery } from '@/generated/graphql';
 
 export default function DiscographyTab({ artistId }: { artistId: string }) {
-  const { selectedItem, isExiting, isOpen, openModal, closeModal } =
-    useAlbumModal();
-  const { navigateToAlbum } = useNavigation();
+  const { data, isLoading, error } = useGetArtistDiscographyQuery(
+    { id: artistId },
+    { enabled: !!artistId }
+  );
 
-  const {
-    masters,
-    isLoading,
-    error,
-    isError,
-    isLoadingMore,
-    hasMorePages,
-    totalItems,
-    loadedCount,
-    loadMoreMasters,
-  } = useMastersQuery(artistId);
+  const releases = data?.artistDiscography || [];
 
   if (isLoading) {
     return (
       <div className='bg-zinc-900 p-4 rounded-lg'>
-        <h3 className='text-lg font-semibold mb-4 text-white'>Masters</h3>
+        <h3 className='text-lg font-semibold mb-4 text-white'>Discography</h3>
         <div className='flex items-center justify-center h-32'>
-          <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-red-500'></div>
+          <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-emeraled-green'></div>
           <span className='ml-3 text-zinc-400'>Loading discography...</span>
         </div>
       </div>
     );
   }
 
-  if (isError) {
+  if (error) {
     return (
       <div className='bg-zinc-900 p-4 rounded-lg'>
-        <h3 className='text-lg font-semibold mb-4'>Masters</h3>
+        <h3 className='text-lg font-semibold mb-4'>Discography</h3>
         <p className='text-red-400'>
-          {error?.message || 'Failed to load discography'}
+          Failed to load discography
         </p>
       </div>
     );
   }
 
   return (
-    <>
-      <AlbumModal
-        isOpen={isOpen}
-        onClose={closeModal}
-        data={selectedItem}
-        isExiting={isExiting}
-        onNavigateToAlbum={navigateToAlbum}
-      />
+    <div className='bg-zinc-900 p-4 rounded-lg'>
+      <h3 className='text-lg font-semibold mb-4 text-white'>
+        Discography ({releases.length})
+      </h3>
 
-      <div className='bg-zinc-900 p-4 rounded-lg'>
-        <h3 className='text-lg font-semibold mb-4 text-white'>
-          Masters ({loadedCount}
-          {totalItems > loadedCount ? ` of ${totalItems}` : ''})
-        </h3>
-
-        {masters.length === 0 ? (
-          <p className='text-zinc-400'>
-            No master releases found for this artist.
-          </p>
-        ) : (
-          <>
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-              {masters.map(release => (
-                <ReleaseCard
-                  key={release.id}
-                  release={release}
-                  onClick={() => openModal(release)}
-                />
-              ))}
-            </div>
-
-            {hasMorePages && (
-              <div className='flex justify-center mt-6'>
-                <button
-                  onClick={loadMoreMasters}
-                  disabled={isLoadingMore}
-                  className='flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:opacity-50 text-white rounded-lg transition-colors'
-                >
-                  {isLoadingMore ? (
-                    <>
-                      <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
-                      Loading...
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className='h-4 w-4' />
-                      Load More Masters
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </>
+      {releases.length === 0 ? (
+        <p className='text-zinc-400'>
+          No releases found for this artist.
+        </p>
+      ) : (
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+          {releases.map(release => (
+            <ReleaseCard key={release.id} release={release} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
-function ReleaseCard({
-  release,
-  onClick,
-}: {
-  release: Release;
-  onClick: () => void;
-}) {
+function ReleaseCard({ release }: { release: any }) {
   return (
-    <div
-      className='bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-all cursor-pointer transform hover:scale-105 focus:outline-none outline-none overflow-hidden'
-      onClick={e => {
-        (e.currentTarget as HTMLElement).blur();
-        onClick();
-      }}
-      tabIndex={-1}
-      style={{ outline: 'none' }}
-    >
+    <div className='bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-all overflow-hidden'>
       <div className='flex h-24'>
         <div className='relative w-24 h-24 flex-shrink-0'>
           <AlbumImage
-            src={release.thumb || release.basic_information?.thumb}
+            src={release.imageUrl}
             alt={release.title}
             width={96}
             height={96}
@@ -151,20 +85,16 @@ function ReleaseCard({
               </div>
             )}
 
-            {release.format && (
+            {release.primaryType && (
               <div className='flex items-center gap-1 text-xs text-zinc-400'>
                 <Disc className='h-3 w-3' />
-                <span>
-                  {Array.isArray(release.format)
-                    ? release.format.join(', ')
-                    : release.format}
-                </span>
+                <span>{release.primaryType}</span>
               </div>
             )}
 
-            {release.role && (
-              <div className='text-xs text-zinc-500'>Role: {release.role}</div>
-            )}
+            <div className='text-xs text-zinc-500'>
+              Source: {release.source?.toLowerCase() || 'unknown'}
+            </div>
           </div>
         </div>
       </div>

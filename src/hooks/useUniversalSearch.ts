@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
-import { useSearchQuery, SearchType } from '@/generated/graphql';
+import { useSearchQuery, SearchType, SearchMode as GraphQLSearchMode } from '@/generated/graphql';
+
+export type SearchMode = 'LOCAL_ONLY' | 'LOCAL_AND_EXTERNAL' | 'EXTERNAL_ONLY';
 
 import {
   UnifiedSearchResult,
@@ -44,6 +46,7 @@ export interface UseUniversalSearchOptions {
   minQueryLength: number;
   maxResults: number;
   enabled: boolean;
+  searchMode?: SearchMode;
 
   // ===========================
   // PHASE 3: Enhanced Options
@@ -86,7 +89,7 @@ export function useUniversalSearch(
   query: string,
   options: UseUniversalSearchOptions
 ) {
-  const { enabled, minQueryLength, searchType, maxResults, limit } = options;
+  const { enabled, minQueryLength, searchType, maxResults, limit, searchMode = 'LOCAL_ONLY' } = options;
 
   const shouldQuery = !!query && query.length >= minQueryLength && enabled;
 
@@ -100,6 +103,14 @@ export function useUniversalSearch(
     type = SearchType.Track;
   }
 
+  // Map SearchMode to GraphQL enum
+  let graphqlSearchMode: GraphQLSearchMode = GraphQLSearchMode.LocalOnly;
+  if (searchMode === 'LOCAL_AND_EXTERNAL') {
+    graphqlSearchMode = GraphQLSearchMode.LocalAndExternal;
+  } else if (searchMode === 'EXTERNAL_ONLY') {
+    graphqlSearchMode = GraphQLSearchMode.ExternalOnly;
+  }
+
   // Use the generated GraphQL hook
   const queryResult = useSearchQuery(
     {
@@ -107,6 +118,7 @@ export function useUniversalSearch(
         query,
         type,
         limit: limit || maxResults || 20,
+        searchMode: graphqlSearchMode,
       },
     },
     {

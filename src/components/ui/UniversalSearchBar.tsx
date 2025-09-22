@@ -20,7 +20,7 @@ import {
   displayModeConfigs,
   DisplayModeConfig,
 } from '@/components/ui/SearchResultRenderer';
-import { useUniversalSearch } from '@/hooks/useUniversalSearch';
+import { useUniversalSearch, SearchMode } from '@/hooks/useUniversalSearch';
 import { useSearchNavigation } from '@/hooks/useSearchNavigation';
 import { UnifiedSearchResult } from '@/types/search';
 import { sanitizeArtistName } from '@/lib/utils';
@@ -740,6 +740,8 @@ export default function UniversalSearchBar({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [searchMode, setSearchMode] = useState<SearchMode>('LOCAL_ONLY');
+  const [showExternalHint, setShowExternalHint] = useState(false);
 
   // Merge preset configuration with props
   const presetConfig = mergePresetConfig(preset, presetOverrides);
@@ -777,6 +779,7 @@ export default function UniversalSearchBar({
     minQueryLength: finalMinQueryLength,
     maxResults: finalMaxResults,
     enabled: query.length >= finalMinQueryLength && open,
+    searchMode,
   });
 
   const { navigateToResult, prefetchResults } = useSearchNavigation({
@@ -794,15 +797,38 @@ export default function UniversalSearchBar({
       setQuery(value);
       setOpen(value.length >= finalMinQueryLength);
 
+      // Reset to local search when typing
+      if (searchMode !== 'LOCAL_ONLY') {
+        setSearchMode('LOCAL_ONLY');
+      }
+
+      // Show hint about external search after typing
+      if (value.length >= finalMinQueryLength) {
+        setShowExternalHint(true);
+      }
+
       if (value.length === 0) {
         setLocalError(null);
         setOpen(false);
+        setShowExternalHint(false);
       }
 
       // Call external onSearch callback
       onSearch?.(value, finalFilters);
     },
-    [finalMinQueryLength, finalFilters, onSearch]
+    [finalMinQueryLength, finalFilters, onSearch, searchMode]
+  );
+
+  // Handle Enter key for external search
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === 'Enter' && query.length >= finalMinQueryLength) {
+        event.preventDefault();
+        setSearchMode('LOCAL_AND_EXTERNAL');
+        setShowExternalHint(false);
+      }
+    },
+    [query, finalMinQueryLength]
   );
 
   // Handle result selection
@@ -891,12 +917,23 @@ export default function UniversalSearchBar({
             placeholder={finalPlaceholder}
             value={query}
             onValueChange={handleValueChange}
+            onKeyDown={handleKeyDown}
             className='h-9 text-white placeholder:text-zinc-400'
           />
         </div>
         {open && showResults && (
           <CommandList className='absolute top-full left-0 right-0 max-h-80 overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-b-lg shadow-xl z-50'>
-            {isLoading && (
+            {showExternalHint && searchMode === 'LOCAL_ONLY' && (
+              <div className='p-2 text-center text-zinc-400 text-sm border-b border-zinc-800'>
+                Press <kbd className='px-1.5 py-0.5 mx-1 bg-zinc-800 rounded text-xs'>Enter</kbd> to search external sources
+              </div>
+            )}
+            {searchMode === 'LOCAL_AND_EXTERNAL' && isLoading && (
+              <div className='p-2 text-center text-blue-400 text-sm border-b border-zinc-800'>
+                Searching MusicBrainz... (may take 10-15 seconds)
+              </div>
+            )}
+            {searchMode === 'LOCAL_ONLY' && isLoading && (
               <div className='p-4 text-center text-zinc-400'>Searching...</div>
             )}
 

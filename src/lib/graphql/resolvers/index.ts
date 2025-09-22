@@ -8,6 +8,7 @@ import { queryResolvers } from './queries';
 import { mutationResolvers } from './mutations';
 import { subscriptionResolvers } from './subscriptions';
 import { SearchOrchestrator, SearchSource, SearchType } from '@/lib/search/SearchOrchestrator';
+import { unifiedArtistService } from '@/lib/api/unified-artist-service';
 
 // Production-ready resolvers with DataLoader optimization
 export const resolvers: Resolvers = {
@@ -84,7 +85,7 @@ export const resolvers: Resolvers = {
     },
 
     recommendation: async (_, { id }, { prisma }) => {
-      return await prisma.recommendation.findUnique({ 
+      return await prisma.recommendation.findUnique({
         where: { id },
         include: {
           basisAlbum: true,
@@ -94,9 +95,28 @@ export const resolvers: Resolvers = {
       });
     },
 
+    // Unified artist discography for client components
+    artistDiscography: async (_, { id }) => {
+      const discography = await unifiedArtistService.getArtistDiscography(id);
+
+      // Map to GraphQL UnifiedRelease type
+      return discography.map(release => ({
+        id: release.id,
+        source: release.source?.toUpperCase() || 'UNKNOWN',
+        title: release.title,
+        releaseDate: release.releaseDate,
+        primaryType: release.primaryType,
+        secondaryTypes: release.secondaryTypes || [],
+        imageUrl: release.imageUrl || release.thumb || release.coverImage || null,
+        artistName: release.artists?.[0]?.artist?.name || release.artist || '',
+        trackCount: release.trackCount || null,
+        year: release.releaseDate ? new Date(release.releaseDate).getFullYear() : null,
+      }));
+    },
+
     // Enhanced search using SearchOrchestrator
     search: async (_, { input }, { prisma }) => {
-      const { query, type = 'ALL', limit = 20 } = input;
+      const { query, type = 'ALL', limit = 20, searchMode = 'LOCAL_ONLY' } = input;
 
       try {
         // Create SearchOrchestrator instance
@@ -114,31 +134,36 @@ export const resolvers: Resolvers = {
           searchTypes = ['track'];
         }
 
-        // Perform orchestrated search (local only for now)
+        // Determine which sources to search based on searchMode
+        let sources: SearchSource[] = [];
+        if (searchMode === 'LOCAL_ONLY') {
+          sources = [SearchSource.LOCAL];
+        } else if (searchMode === 'LOCAL_AND_EXTERNAL') {
+          sources = [SearchSource.LOCAL, SearchSource.MUSICBRAINZ];
+        } else if (searchMode === 'EXTERNAL_ONLY') {
+          sources = [SearchSource.MUSICBRAINZ];
+        }
+
+        // Perform orchestrated search
         const searchResult = await orchestrator.search({
           query,
           types: searchTypes,
-          sources: [SearchSource.LOCAL], // Can add MUSICBRAINZ later
+          sources,
           limit,
           deduplicateResults: true,
         });
 
-        // Need to fetch the actual data from database since we're returning minimal data from SearchOrchestrator
-        const albumIds = searchResult.results
-          .filter(r => r.type === 'album')
-          .map(r => r.id);
+        // Separate results by source
+        const localResults = searchResult.sources.local?.results || [];
+        const musicbrainzResults = searchResult.sources.musicbrainz?.results || [];
 
-        const artistIds = searchResult.results
-          .filter(r => r.type === 'artist')
-          .map(r => r.id);
+        // For local results, fetch from database
+        const localAlbumIds = localResults.filter(r => r.type === 'album').map(r => r.id);
+        const localArtistIds = localResults.filter(r => r.type === 'artist').map(r => r.id);
+        const localTrackIds = localResults.filter(r => r.type === 'track').map(r => r.id);
 
-        const trackIds = searchResult.results
-          .filter(r => r.type === 'track')
-          .map(r => r.id);
-
-        // Fetch actual data
-        const albums = albumIds.length > 0 ? await prisma.album.findMany({
-          where: { id: { in: albumIds } },
+        const dbAlbums = localAlbumIds.length > 0 ? await prisma.album.findMany({
+          where: { id: { in: localAlbumIds } },
           include: {
             artists: {
               include: {
@@ -148,12 +173,12 @@ export const resolvers: Resolvers = {
           }
         }) : [];
 
-        const artists = artistIds.length > 0 ? await prisma.artist.findMany({
-          where: { id: { in: artistIds } }
+        const dbArtists = localArtistIds.length > 0 ? await prisma.artist.findMany({
+          where: { id: { in: localArtistIds } }
         }) : [];
 
-        const tracks = trackIds.length > 0 ? await prisma.track.findMany({
-          where: { id: { in: trackIds } },
+        const dbTracks = localTrackIds.length > 0 ? await prisma.track.findMany({
+          where: { id: { in: localTrackIds } },
           include: {
             album: true,
             artists: {
@@ -163,6 +188,82 @@ export const resolvers: Resolvers = {
             }
           }
         }) : [];
+
+        // For MusicBrainz results, check if they already exist in DB
+        const mbAlbumIds = musicbrainzResults.filter(r => r.type === 'album').map(r => r.id);
+        const mbArtistIds = musicbrainzResults.filter(r => r.type === 'artist').map(r => r.id);
+        const mbTrackIds = musicbrainzResults.filter(r => r.type === 'track').map(r => r.id);
+
+        // Find which MusicBrainz items already exist in our DB
+        const existingMbAlbums = mbAlbumIds.length > 0 ? await prisma.album.findMany({
+          where: { musicbrainzId: { in: mbAlbumIds } },
+          include: {
+            artists: {
+              include: {
+                artist: true
+              }
+            }
+          }
+        }) : [];
+
+        const existingMbArtists = mbArtistIds.length > 0 ? await prisma.artist.findMany({
+          where: { musicbrainzId: { in: mbArtistIds } }
+        }) : [];
+
+        const existingMbTracks = mbTrackIds.length > 0 ? await prisma.track.findMany({
+          where: { musicbrainzId: { in: mbTrackIds } },
+          include: {
+            album: true,
+            artists: {
+              include: {
+                artist: true
+              }
+            }
+          }
+        }) : [];
+
+        // For MusicBrainz results NOT in DB, create temporary objects
+        const existingMbAlbumIds = new Set(existingMbAlbums.map(a => a.musicbrainzId));
+        const existingMbArtistIds = new Set(existingMbArtists.map(a => a.musicbrainzId));
+        const existingMbTrackIds = new Set(existingMbTracks.map(t => t.musicbrainzId));
+
+        const newMbAlbums = musicbrainzResults
+          .filter(r => r.type === 'album' && !existingMbAlbumIds.has(r.id))
+          .map(r => ({
+            id: r.id, // Use MusicBrainz ID as temporary ID
+            musicbrainzId: r.id,
+            title: r.title,
+            releaseDate: r.releaseDate || null, // Handle empty strings
+            coverArtUrl: null,
+            artists: []
+          }));
+
+        const newMbArtists = musicbrainzResults
+          .filter(r => r.type === 'artist' && !existingMbArtistIds.has(r.id))
+          .map(r => ({
+            id: r.id, // Use MusicBrainz ID as temporary ID
+            musicbrainzId: r.id,
+            name: r.title, // title is the artist name in UnifiedSearchResult
+            imageUrl: null
+          }));
+
+        const newMbTracks = musicbrainzResults
+          .filter(r => r.type === 'track' && !existingMbTrackIds.has(r.id))
+          .map(r => ({
+            id: r.id, // Use MusicBrainz ID as temporary ID
+            musicbrainzId: r.id,
+            title: r.title,
+            durationMs: 0,
+            trackNumber: 0,
+            albumId: null, // Set albumId to null instead of album object
+            album: null,
+            artists: []
+          }));
+
+        // Combine all results
+        const albums = [...dbAlbums, ...existingMbAlbums, ...newMbAlbums];
+        const artists = [...dbArtists, ...existingMbArtists, ...newMbArtists];
+        const tracks = [...dbTracks, ...existingMbTracks, ...newMbTracks];
 
         return {
           artists,
@@ -217,6 +318,7 @@ export const resolvers: Resolvers = {
 
   Track: {
     album: async (parent, _, { dataloaders }) => {
+      if (!parent.albumId) return null;
       return dataloaders.albumLoader.load(parent.albumId);
     },
     artists: async (parent, _, { prisma }) => {

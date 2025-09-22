@@ -1,0 +1,14 @@
+query GetArtistDiscography($id: String!) {
+  artistDiscography(id: $id) {
+    id
+    source
+    title
+    releaseDate
+    primaryType
+    secondaryTypes
+    imageUrl
+    artistName
+    trackCount
+    year
+  }
+}

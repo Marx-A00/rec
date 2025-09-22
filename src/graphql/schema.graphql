@@ -77,7 +77,7 @@ type Album {
 
 type Track {
   id: UUID!
-  albumId: UUID!
+  albumId: UUID
   musicbrainzId: UUID
   isrc: String
   title: String!
@@ -93,12 +93,35 @@ type Track {
   audioFeatures: AudioFeatures
   
   # Relationships
-  album: Album!
+  album: Album
   artists: [ArtistCredit!]!
   
   # Computed fields
   duration: String # Formatted duration (e.g., "3:42")
   popularity: Float
+}
+
+# =============================================
+# UNIFIED TYPES (Multi-source Support)
+# =============================================
+
+type UnifiedRelease {
+  id: String!
+  source: DataSource!
+  title: String!
+  releaseDate: DateTime
+  primaryType: String
+  secondaryTypes: [String!]
+  imageUrl: String
+  artistName: String
+  trackCount: Int
+  year: Int
+}
+
+enum DataSource {
+  LOCAL
+  MUSICBRAINZ
+  DISCOGS
 }
 
 # =============================================
@@ -343,6 +366,13 @@ input SearchInput {
   type: SearchType
   limit: Int = 20
   offset: Int = 0
+  searchMode: SearchMode = LOCAL_ONLY
+}
+
+enum SearchMode {
+  LOCAL_ONLY
+  LOCAL_AND_EXTERNAL
+  EXTERNAL_ONLY
 }
 
 input RecommendationInput {
@@ -754,6 +784,10 @@ type Query {
   user(id: String!): User
   collection(id: String!): Collection
   recommendation(id: String!): Recommendation
+
+  # Unified artist discography (supports local, MusicBrainz, and Discogs IDs)
+  # Note: artistDetails is handled directly by server components
+  artistDiscography(id: String!): [UnifiedRelease!]!
   
   # Feed & Social
   recommendationFeed(cursor: String, limit: Int = 20): RecommendationFeed!

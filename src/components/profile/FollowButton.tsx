@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useFollowUserMutation, useUnfollowUserMutation, useCheckFollowStatusQuery } from '@/generated/graphql';
 
 interface FollowButtonProps {
   userId: string;
@@ -19,27 +20,25 @@ export default function FollowButton({
   className = '',
 }: FollowButtonProps) {
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [canFollow, setCanFollow] = useState(true);
 
-  // Check follow status on component mount
-  useEffect(() => {
-    const checkFollowStatus = async () => {
-      try {
-        const response = await fetch(`/api/users/${userId}/follow`);
-        if (response.ok) {
-          const data = await response.json();
-          setIsFollowing(data.isFollowing);
-          setCanFollow(data.canFollow);
-        }
-      } catch (error) {
-        console.error('Error checking follow status:', error);
-      }
-    };
+  // GraphQL hooks
+  const followUserMutation = useFollowUserMutation();
+  const unfollowUserMutation = useUnfollowUserMutation();
+  const { data: followStatusData } = useCheckFollowStatusQuery({
+    userId,
+    enabled: !!userId,
+  });
 
-    checkFollowStatus();
-  }, [userId]);
+  const isLoading = followUserMutation.isLoading || unfollowUserMutation.isLoading;
+
+  // Update follow status from query
+  useEffect(() => {
+    if (followStatusData?.user) {
+      setIsFollowing(followStatusData.user.isFollowing || false);
+      // TODO: Add canFollow logic based on whether it's the current user
+    }
+  }, [followStatusData]);
 
   const handleFollowToggle = async (
     e?: React.MouseEvent<HTMLButtonElement>
@@ -51,71 +50,53 @@ export default function FollowButton({
       e.currentTarget.blur();
     }
 
-    setIsLoading(true);
-    setError(null);
-
     // Optimistic update
     const previousIsFollowing = isFollowing;
     setIsFollowing(!isFollowing);
 
     try {
-      const method = isFollowing ? 'DELETE' : 'POST';
-      const response = await fetch(`/api/users/${userId}/follow`, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      if (isFollowing) {
+        // Unfollow
+        const result = await unfollowUserMutation.mutateAsync({ userId });
 
-      const data = await response.json();
+        if (result.data?.unfollowUser) {
+          // Successfully unfollowed
+          if (onFollowChange) {
+            onFollowChange(false, {
+              followersCount: -1,
+              followingCount: 0,
+            });
+          }
+        } else {
+          // Revert if failed
+          setIsFollowing(previousIsFollowing);
+        }
+      } else {
+        // Follow
+        const result = await followUserMutation.mutateAsync({ userId });
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update follow status');
-      }
-
-      // Update the actual state based on server response
-      setIsFollowing(data.isFollowing);
-
-      // Notify parent component of the change (for updating counts)
-      if (onFollowChange) {
-        const countChange = data.isFollowing ? 1 : -1;
-        onFollowChange(data.isFollowing, {
-          followersCount: countChange,
-          followingCount: 0, // This would be for the current user's following count
-        });
+        if (result.data?.followUser) {
+          // Successfully followed
+          if (onFollowChange) {
+            onFollowChange(true, {
+              followersCount: 1,
+              followingCount: 0,
+            });
+          }
+        } else {
+          // Revert if failed
+          setIsFollowing(previousIsFollowing);
+        }
       }
     } catch (error) {
       // Revert optimistic update on error
       setIsFollowing(previousIsFollowing);
-      setError(error instanceof Error ? error.message : 'An error occurred');
       console.error('Follow/unfollow error:', error);
-    } finally {
-      setIsLoading(false);
     }
-  };
-
-  // Clear error when user tries again
-  const handleRetry = () => {
-    setError(null);
-    handleFollowToggle();
   };
 
   if (!canFollow) {
     return null; // Don't show follow button for own profile
-  }
-
-  if (error) {
-    return (
-      <div className={`flex flex-col gap-2 ${className}`}>
-        <button
-          onClick={handleRetry}
-          className='bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors'
-        >
-          Retry
-        </button>
-        <p className='text-red-400 text-xs'>{error}</p>
-      </div>
-    );
   }
 
   return (
