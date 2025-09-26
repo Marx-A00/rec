@@ -230,19 +230,23 @@ export async function getAlbumDetails(
     }
   }
 
-  // Fallback detection if no explicit source matched
-  try {
-    const albumDetails: DiscogsMaster = await db.getMaster(id);
-    const album = mapDiscogsMasterToAlbum(albumDetails);
-    return album;
-  } catch {
+  // Fallback detection: only attempt Discogs when the ID is numeric
+  if (/^\d+$/.test(id)) {
     try {
-      const releaseDetails: DiscogsRelease = await db.getRelease(id);
-      const album = mapDiscogsReleaseToAlbum(releaseDetails);
+      const albumDetails: DiscogsMaster = await db.getMaster(id);
+      const album = mapDiscogsMasterToAlbum(albumDetails);
       return album;
-    } catch (releaseError) {
-      console.error('Error fetching release details:', releaseError);
-      throw new Error('Album not found');
+    } catch {
+      try {
+        const releaseDetails: DiscogsRelease = await db.getRelease(id);
+        const album = mapDiscogsReleaseToAlbum(releaseDetails);
+        return album;
+      } catch (releaseError) {
+        console.error('Error fetching release details:', releaseError);
+        throw new Error('Album not found');
+      }
     }
   }
+
+  throw new Error('Album not found');
 }

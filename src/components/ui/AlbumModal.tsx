@@ -332,7 +332,7 @@ export default function AlbumModal({
     };
   }, [isOpen, onClose]);
 
-  // Fetch high-quality image for master releases
+  // Fetch high-quality image for master releases (skip for MusicBrainz; use existing imageUrl)
   useEffect(() => {
     if (!isOpen || !data) {
       setHighQualityImageUrl(null);
@@ -341,6 +341,13 @@ export default function AlbumModal({
 
     // Enhanced high-quality image fetching for master releases
     if (isMasterRelease) {
+      const source = getSource();
+      const normalizedSource = typeof source === 'string' ? source.toLowerCase() : source;
+      // For MusicBrainz release-groups (discography), we already have CAA URLs; avoid extra fetch
+      if (normalizedSource === 'musicbrainz') {
+        return;
+      }
+
       // FIXED: Use same logic as getAlbumId() - for masters, always use master ID!
       const fetchId =
         isRelease(data) && data.type === 'master'
@@ -356,7 +363,6 @@ export default function AlbumModal({
         data.id
       );
 
-      const source = getSource();
       const suffix = source ? `?source=${encodeURIComponent(source)}` : '';
       fetch(`/api/albums/${fetchId}${suffix}`)
         .then(res => res.json())
