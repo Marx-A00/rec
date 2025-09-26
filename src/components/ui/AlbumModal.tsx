@@ -126,6 +126,13 @@ export default function AlbumModal({
     return null;
   };
 
+  const getSource = (): 'local' | 'musicbrainz' | 'discogs' | undefined => {
+    if (!data) return undefined;
+    if (isCollectionAlbum(data)) return (data as any).source || 'local';
+    if (isRelease(data)) return (data as any).source as any;
+    return undefined;
+  };
+
   const getArtist = () => {
     if (isCollectionAlbum(data)) {
       return data.albumArtist;
@@ -349,7 +356,9 @@ export default function AlbumModal({
         data.id
       );
 
-      fetch(`/api/albums/${fetchId}`)
+      const source = getSource();
+      const suffix = source ? `?source=${encodeURIComponent(source)}` : '';
+      fetch(`/api/albums/${fetchId}${suffix}`)
         .then(res => res.json())
         .then(result => {
           // The API returns the album data directly, not wrapped in {success: true, album: {...}}
@@ -388,8 +397,10 @@ export default function AlbumModal({
         if (onNavigateToAlbum) {
           onNavigateToAlbum(albumIdString);
         } else {
-          // Fallback to internal navigation
-          router.push(`/albums/${albumIdString}`);
+          // Fallback to internal navigation with explicit source
+          const source = getSource();
+          const suffix = source ? `?source=${encodeURIComponent(source)}` : '';
+          router.push(`/albums/${albumIdString}${suffix}`);
         }
       } catch (error) {
         console.error('Navigation error:', error);

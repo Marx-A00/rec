@@ -74,11 +74,27 @@ class UnifiedArtistService {
     try {
       const mbService = getQueuedMusicBrainzService();
       const mbArtist = await mbService.getArtist(mbid, ['url-rels']);
+      try {
+        const rels = Array.isArray(mbArtist?.relations) ? mbArtist.relations : [];
+        // eslint-disable-next-line no-console
+        console.log('[WikidataImage] MB artist relations', {
+          mbid,
+          relationCount: rels.length,
+          relationTypes: rels.slice(0, 5).map((r: any) => r?.type).filter(Boolean),
+        });
+      } catch {}
       const qid = this.extractWikidataQid(mbArtist);
+      // eslint-disable-next-line no-console
+      console.log('[WikidataImage] Extracted QID', { mbid, qid: qid || null });
       if (!qid) return undefined;
       const filename = await this.fetchWikidataP18Filename(qid);
+      // eslint-disable-next-line no-console
+      console.log('[WikidataImage] P18 filename', { qid, filename: filename || null });
       if (!filename) return undefined;
-      return this.buildWikimediaThumbUrl(filename, 600);
+      const url = this.buildWikimediaThumbUrl(filename, 600);
+      // eslint-disable-next-line no-console
+      console.log('[WikidataImage] Wikimedia URL', { qid, url });
+      return url;
     } catch (error) {
       console.warn('Wikidata image resolution failed:', error);
       return undefined;
@@ -178,6 +194,8 @@ class UnifiedArtistService {
 
       if (localArtist) {
         if (localArtist.imageUrl) {
+          // eslint-disable-next-line no-console
+          console.log('[MBArtist] Returning existing local with image', { id: localArtist.id, mbid });
           return this.getLocalArtist(localArtist.id);
         }
 
@@ -189,21 +207,34 @@ class UnifiedArtistService {
               where: { id: localArtist.id },
               data: { imageUrl: enrichedImage },
             });
+            // eslint-disable-next-line no-console
+            console.log('[MBArtist] Persisted enriched image for local artist', { id: localArtist.id });
           } catch (e) {
             console.warn('Failed to persist enriched artist image:', e);
           }
         }
+        // eslint-disable-next-line no-console
+        console.log('[MBArtist] Returning local after attempted image enrich', { id: localArtist.id });
         return this.getLocalArtist(localArtist.id);
       }
 
       // Fetch from MusicBrainz API
-      const mbArtist = await mbService.getArtist(mbid, [
-        'aliases',
-        'url-rels',
-        'tags',
-      ]);
+      const includes = ['aliases', 'url-rels', 'tags'];
+      const mbArtist = await mbService.getArtist(mbid, includes);
+      try {
+        const rels = Array.isArray(mbArtist?.relations) ? mbArtist.relations : [];
+        // eslint-disable-next-line no-console
+        console.log('[MBArtist] getArtist response', {
+          mbid,
+          includes,
+          relationCount: rels.length,
+          relationTypes: rels.slice(0, 5).map((r: any) => r?.type).filter(Boolean),
+        });
+      } catch {}
 
       const wikidataImage = await this.resolveArtistImageFromWikidata(mbid);
+      // eslint-disable-next-line no-console
+      console.log('[MBArtist] Wikidata image resolved', { mbid, hasImage: !!wikidataImage });
 
       return {
         id: mbid,

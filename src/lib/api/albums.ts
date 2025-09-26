@@ -1,5 +1,5 @@
 import { Client } from 'disconnect';
-import { musicbrainzService } from '@/lib/musicbrainz/basic-service';
+import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { prisma } from '@/lib/prisma';
 
 import {
@@ -99,7 +99,8 @@ export async function getAlbumDetails(
   // MusicBrainz Release Group path (explicit or UUID)
   if (preferredSource === 'musicbrainz' || isUuid(id)) {
     try {
-      const mb = await musicbrainzService.getReleaseGroup(id, [
+      const mbQueued = getQueuedMusicBrainzService();
+      const mb = await mbQueued.getReleaseGroup(id, [
         'artists',
         'tags',
         'releases',
@@ -151,7 +152,7 @@ export async function getAlbumDetails(
 
       if (representativeRelease?.id) {
         try {
-          const releaseWithTracks = await musicbrainzService.getRelease(
+          const releaseWithTracks = await mbQueued.getRelease(
             representativeRelease.id,
             ['recordings']
           );

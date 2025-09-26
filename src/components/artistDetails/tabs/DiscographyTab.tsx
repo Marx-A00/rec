@@ -74,6 +74,7 @@ export default function DiscographyTab({ artistId, artistName }: { artistId: str
                     thumb: (release as any).imageUrl || undefined,
                     artist:
                       (release as any).artistName || artistName || undefined,
+                    source: (release as any).source || 'musicbrainz',
                     // carry credits for UI if needed later
                     basic_information: {
                       artists: Array.isArray((release as any).artistCredits)

@@ -51,6 +51,7 @@ export interface Release {
   resource_url?: string;
   artist?: string;
   thumb?: string;
+  source?: 'local' | 'musicbrainz' | 'discogs';
   status?: string; // For releases
   main_release?: number; // For masters
   basic_information?: {
