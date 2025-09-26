@@ -119,8 +119,11 @@ class UnifiedArtistService {
   /**
    * Get artist details from any source based on ID
    */
-  async getArtistDetails(id: string): Promise<UnifiedArtistDetails> {
-    const source = this.detectSource(id);
+  async getArtistDetails(
+    id: string,
+    options?: { source?: 'local' | 'musicbrainz' | 'discogs' }
+  ): Promise<UnifiedArtistDetails> {
+    const source = options?.source || this.detectSource(id);
 
     switch (source) {
       case 'local':
@@ -293,17 +296,33 @@ class UnifiedArtistService {
    * Get artist discography based on source
    */
   async getArtistDiscography(id: string) {
-    const source = this.detectSource(id);
+    // Local-first resolution: if this is a local UUID, resolve MusicBrainz ID then browse
+    try {
+      const localArtist = await prisma.artist.findUnique({ where: { id } });
+      if (localArtist) {
+        // If we have an MBID on the local artist, browse MB by that MBID
+        if (localArtist.musicbrainzId) {
+          return this.getMusicBrainzDiscography(localArtist.musicbrainzId);
+        }
+        // No MBID available → return empty for now (UI will show a message)
+        return [];
+      }
+    } catch (e) {
+      console.warn('[UnifiedArtistService] Local lookup failed in getArtistDiscography:', e);
+    }
 
+    // Not a local UUID; detect by format
+    const source = this.detectSource(id);
     switch (source) {
-      case 'local':
-        return this.getLocalDiscography(id);
       case 'musicbrainz':
         return this.getMusicBrainzDiscography(id);
       case 'discogs':
         return this.getDiscogsDiscography(id);
+      case 'local':
+        // Fallback safety; treat as no results
+        return [];
       default:
-        throw new Error(`Unable to determine source for artist ID: ${id}`);
+        return [];
     }
   }
 

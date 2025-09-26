@@ -182,12 +182,27 @@ export function useUniversalSearch(
     // Transform artists
     if (searchData.artists) {
       searchData.artists.forEach((artist) => {
-        const idStr = String(artist.id);
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idStr);
-        const isNumeric = /^\d+$/.test(idStr);
-        const inferredSource = isUuid ? 'musicbrainz' : isNumeric ? 'discogs' : 'local';
+        const localId = String(artist.id);
+        const musicbrainzId = artist.musicbrainzId || undefined;
+        // Heuristic: if GraphQL returned an MBID equal to id (no local record), treat as external
+        const isExternalOnly = !!musicbrainzId && musicbrainzId === localId;
+
+        const navId = isExternalOnly ? musicbrainzId! : localId;
+        const source: 'local' | 'musicbrainz' = isExternalOnly ? 'musicbrainz' : 'local';
+
+        try {
+          // eslint-disable-next-line no-console
+          console.log('[useUniversalSearch] Artist mapping (classified)', {
+            localId,
+            musicbrainzId: musicbrainzId || null,
+            navId,
+            source,
+            title: artist.name,
+          });
+        } catch {}
+
         transformedResults.push({
-          id: artist.id,
+          id: navId,
           type: 'artist' as const,
           title: artist.name,
           subtitle: 'Artist',
@@ -195,7 +210,7 @@ export function useUniversalSearch(
           releaseDate: '',
           genre: [],
           label: '',
-          source: inferredSource,
+          source,
           image: {
             url: artist.imageUrl || '',
             width: 300,

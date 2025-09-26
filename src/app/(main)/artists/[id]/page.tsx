@@ -12,12 +12,15 @@ import { CollapsibleBio } from '@/components/artistDetails/CollapsibleBio';
 
 interface ArtistDetailsPageProps {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ source?: string }>;
 }
 
 export default async function ArtistDetailsPage({
   params,
+  searchParams,
 }: ArtistDetailsPageProps) {
   const rawParams = await params;
+  const rawSearch = searchParams ? await searchParams : {};
 
   // Validate parameters
   const paramsResult = artistParamsSchema.safeParse(rawParams);
@@ -31,7 +34,9 @@ export default async function ArtistDetailsPage({
   // Fetch artist data server-side
   let artist;
   try {
-    artist = await getArtistDetails(artistId);
+    const preferredSource = (rawSearch as any)?.source as 'local' | 'musicbrainz' | 'discogs' | undefined;
+    // Pass through preferred source when present
+    artist = await getArtistDetails(artistId, preferredSource ? { source: preferredSource } : undefined);
   } catch (error) {
     console.error('Error fetching artist:', error);
     notFound();
