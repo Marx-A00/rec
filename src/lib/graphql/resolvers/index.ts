@@ -108,7 +108,15 @@ export const resolvers: Resolvers = {
         primaryType: release.primaryType,
         secondaryTypes: release.secondaryTypes || [],
         imageUrl: release.imageUrl || release.thumb || release.coverImage || null,
-        artistName: release.artists?.[0]?.artist?.name || release.artist || '',
+        artistName: release.artist || release.artistName || '',
+        artistCredits:
+          Array.isArray(release.artistCredits)
+            ? release.artistCredits.map((c: any) => ({
+                artist: { id: c.artist?.id || '', name: c.artist?.name || c.name || '' },
+                role: c.role || null,
+                position: typeof c.position === 'number' ? c.position : null,
+              }))
+            : [],
         trackCount: release.trackCount || null,
         year: release.releaseDate ? new Date(release.releaseDate).getFullYear() : null,
       }));

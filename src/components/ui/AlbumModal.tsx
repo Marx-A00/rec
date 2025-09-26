@@ -168,12 +168,16 @@ export default function AlbumModal({
       return {
         id: String(albumId),
         title: data.title,
-        artists: data.artist
-          ? [{ id: '', name: data.artist }]
-          : data.basic_information?.artists?.map(a => ({
-              id: '',
-              name: a.name,
-            })) || [],
+        artists:
+          (data.basic_information?.artists &&
+            data.basic_information.artists.length > 0)
+            ? data.basic_information.artists.map(a => ({
+                id: (a as any).id || '',
+                name: a.name,
+              }))
+            : data.artist
+              ? [{ id: '', name: data.artist }]
+              : [],
         year: data.year,
         image: {
           url: getImageUrl() || '',

@@ -114,6 +114,7 @@ type UnifiedRelease {
   secondaryTypes: [String!]
   imageUrl: String
   artistName: String
+  artistCredits: [ArtistCredit!] # Minimal credits for linking
   trackCount: Int
   year: Int
 }

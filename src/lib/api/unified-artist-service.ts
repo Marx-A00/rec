@@ -1,6 +1,7 @@
 import { Client } from 'disconnect';
 import { prisma } from '@/lib/prisma';
-import { musicbrainzService } from '@/lib/musicbrainz/basic-service';
+import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
+import { musicbrainzService as baseMusicbrainzService } from '@/lib/musicbrainz/basic-service';
 
 export interface UnifiedArtistDetails {
   id: string;
@@ -67,6 +68,55 @@ class UnifiedArtistService {
   }
 
   /**
+   * Attempt to resolve an artist image via MusicBrainz → Wikidata → Wikimedia
+   */
+  private async resolveArtistImageFromWikidata(mbid: string): Promise<string | undefined> {
+    try {
+      const mbService = getQueuedMusicBrainzService();
+      const mbArtist = await mbService.getArtist(mbid, ['url-rels']);
+      const qid = this.extractWikidataQid(mbArtist);
+      if (!qid) return undefined;
+      const filename = await this.fetchWikidataP18Filename(qid);
+      if (!filename) return undefined;
+      return this.buildWikimediaThumbUrl(filename, 600);
+    } catch (error) {
+      console.warn('Wikidata image resolution failed:', error);
+      return undefined;
+    }
+  }
+
+  private extractWikidataQid(mbArtist: any): string | undefined {
+    const rels = mbArtist?.relations || [];
+    for (const rel of rels) {
+      if (rel.type === 'wikidata' && rel.url?.resource) {
+        const match = rel.url.resource.match(/\/wiki\/(Q\d+)/);
+        if (match) return match[1];
+      }
+    }
+    return undefined;
+  }
+
+  private async fetchWikidataP18Filename(qid: string): Promise<string | undefined> {
+    try {
+      const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`;
+      const res = await fetch(url);
+      if (!res.ok) return undefined;
+      const data = await res.json();
+      const entity = data?.entities?.[qid];
+      const p18 = entity?.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
+      if (typeof p18 === 'string' && p18.length > 0) return p18; // filename
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private buildWikimediaThumbUrl(filename: string, width: number = 600): string {
+    const encoded = encodeURIComponent(filename);
+    return `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=${width}`;
+  }
+
+  /**
    * Get artist details from any source based on ID
    */
   async getArtistDetails(id: string): Promise<UnifiedArtistDetails> {
@@ -117,28 +167,47 @@ class UnifiedArtistService {
    */
   private async getMusicBrainzArtist(mbid: string): Promise<UnifiedArtistDetails> {
     try {
+      const mbService = getQueuedMusicBrainzService();
       // First check if we have this artist in our database
       const localArtist = await prisma.artist.findFirst({
         where: { musicbrainzId: mbid },
       });
 
       if (localArtist) {
-        // Return local data with MusicBrainz ID preserved
+        if (localArtist.imageUrl) {
+          return this.getLocalArtist(localArtist.id);
+        }
+
+        // Try to enrich image and persist
+        const enrichedImage = await this.resolveArtistImageFromWikidata(mbid);
+        if (enrichedImage) {
+          try {
+            await prisma.artist.update({
+              where: { id: localArtist.id },
+              data: { imageUrl: enrichedImage },
+            });
+          } catch (e) {
+            console.warn('Failed to persist enriched artist image:', e);
+          }
+        }
         return this.getLocalArtist(localArtist.id);
       }
 
       // Fetch from MusicBrainz API
-      const mbArtist = await musicbrainzService.getArtist(mbid, [
+      const mbArtist = await mbService.getArtist(mbid, [
         'aliases',
         'url-rels',
         'tags',
       ]);
+
+      const wikidataImage = await this.resolveArtistImageFromWikidata(mbid);
 
       return {
         id: mbid,
         source: 'musicbrainz',
         name: mbArtist.name,
         disambiguation: mbArtist.disambiguation || undefined,
+        imageUrl: wikidataImage || undefined,
         // MusicBrainz artist lookup may not include annotations reliably; omit profile
         country: mbArtist.country || undefined,
         lifeSpan: mbArtist['life-span'] ? {
@@ -261,12 +330,14 @@ class UnifiedArtistService {
   }
 
   private async getMusicBrainzDiscography(mbid: string) {
-    const releaseGroups = await musicbrainzService.getArtistReleaseGroups(mbid, 100);
-
-    const groups = releaseGroups['release-groups'] || [];
+    // Use queued browse for artist release-groups
+    const groupsResp = await getQueuedMusicBrainzService().browseReleaseGroupsByArtist(mbid, 100, 0);
+    console.log('🎶 MB queue browse response keys:', Object.keys(groupsResp || {}));
+    console.log('🎶 MB queue browse sample item:', groupsResp?.['release-groups']?.[0]);
+    const groups: any[] = groupsResp['release-groups'] || [];
 
     // Normalize, filter to main albums, and sort newest -> oldest
-    const excludedSecondaryTypes = new Set([
+    const excludedSecondaryTypes = new Set<string>([
       'compilation',
       'live',
       'remix',
@@ -281,23 +352,41 @@ class UnifiedArtistService {
       releaseDate: rg['first-release-date'] || null,
       primaryType: rg['primary-type'] as string | undefined,
       secondaryTypes: (rg['secondary-types'] as string[] | undefined) || [],
+      // Minimal artist credits for linking in the UI
+      artistCredits: Array.isArray(rg['artist-credit'])
+        ? rg['artist-credit'].map((ac: any, index: number) => ({
+            name: ac.name,
+            artist: { id: ac.artist?.id, name: ac.artist?.name || ac.name },
+            position: index,
+          }))
+        : [],
       // Use Cover Art Archive release-group front image (will 404 if not available; UI has fallback)
       imageUrl: `https://coverartarchive.org/release-group/${rg.id}/front-250`,
       source: 'musicbrainz' as const,
     }));
 
-    const mainAlbums = normalized.filter(item => {
+    const mainAlbums = normalized.filter((item: { primaryType?: string; secondaryTypes: string[] }) => {
       const isAlbum = (item.primaryType || '').toLowerCase() === 'album';
       if (!isAlbum) return false;
-      const hasExcludedSecondary = item.secondaryTypes.some(t => excludedSecondaryTypes.has(t.toLowerCase()));
+      const hasExcludedSecondary = item.secondaryTypes.some((t: string) => excludedSecondaryTypes.has(t.toLowerCase()));
       return !hasExcludedSecondary;
     });
 
-    mainAlbums.sort((a, b) => {
-      const aTime = a.releaseDate ? Date.parse(a.releaseDate) : -Infinity;
-      const bTime = b.releaseDate ? Date.parse(b.releaseDate) : -Infinity;
-      return bTime - aTime;
+    mainAlbums.sort((a: { releaseDate: string | null }, b: { releaseDate: string | null }) => {
+      const aTime = a.releaseDate ? Date.parse(a.releaseDate) : -Infinity as any;
+      const bTime = b.releaseDate ? Date.parse(b.releaseDate) : -Infinity as any;
+      return (bTime as number) - (aTime as number);
     });
+
+    // Fallback: if filtering yields nothing (API missing primaryType), show all normalized sorted
+    if (mainAlbums.length === 0) {
+      const sorted = [...normalized].sort((a: any, b: any) => {
+        const aTime = a.releaseDate ? Date.parse(a.releaseDate) : -Infinity;
+        const bTime = b.releaseDate ? Date.parse(b.releaseDate) : -Infinity;
+        return bTime - aTime;
+      });
+      return sorted;
+    }
 
     return mainAlbums;
   }

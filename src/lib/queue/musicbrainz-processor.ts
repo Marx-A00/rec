@@ -106,6 +106,10 @@ export async function processMusicBrainzJob(
         result = await handleLookupReleaseGroup(job.data as MusicBrainzLookupReleaseGroupJobData);
         break;
 
+      case JOB_TYPES.MUSICBRAINZ_BROWSE_RELEASE_GROUPS_BY_ARTIST:
+        result = await handleBrowseReleaseGroupsByArtist(job.data as any);
+        break;
+
       case JOB_TYPES.CHECK_ALBUM_ENRICHMENT:
         result = await handleCheckAlbumEnrichment(job.data as CheckAlbumEnrichmentJobData);
         break;
@@ -227,6 +231,10 @@ async function handleLookupRecording(data: MusicBrainzLookupRecordingJobData) {
 
 async function handleLookupReleaseGroup(data: MusicBrainzLookupReleaseGroupJobData) {
   return await musicBrainzService.getReleaseGroup(data.mbid, data.includes);
+}
+
+async function handleBrowseReleaseGroupsByArtist(data: { artistMbid: string; limit?: number; offset?: number }) {
+  return await musicBrainzService.getArtistReleaseGroups(data.artistMbid, data.limit || 100, data.offset || 0);
 }
 
 async function handleCheckAlbumEnrichment(data: CheckAlbumEnrichmentJobData) {

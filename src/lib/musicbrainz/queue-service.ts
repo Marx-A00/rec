@@ -23,7 +23,7 @@ export class QueuedMusicBrainzService {
   private isWorkerRunning = false;
   
   // 🎯 THE MISSING PIECE: QueueEvents listener!
-  private queueEvents: QueueEvents;
+  private queueEvents: QueueEvents | null = null;
   private pendingJobs = new Map<string, { resolve: Function, reject: Function }>();
 
   constructor() {
@@ -58,6 +58,7 @@ export class QueuedMusicBrainzService {
   private setupEventListeners(): void {
     console.log('🔗 Setting up QueueEvents listeners...');
 
+    if (!this.queueEvents) return;
     this.queueEvents.on('completed', ({ jobId, returnvalue }) => {
       console.log(`🎉 QueueEvents: Job ${jobId} completed`);
       
@@ -211,6 +212,7 @@ export class QueuedMusicBrainzService {
    * Get artist by MBID
    */
   async getArtist(mbid: string, includes?: string[]): Promise<any> {
+    this.ensureInitialized();
     await this.ensureWorkerRunning();
 
     try {
@@ -243,6 +245,7 @@ export class QueuedMusicBrainzService {
    * Get release by MBID
    */
   async getRelease(mbid: string, includes?: string[]): Promise<any> {
+    this.ensureInitialized();
     await this.ensureWorkerRunning();
 
     try {
@@ -275,6 +278,7 @@ export class QueuedMusicBrainzService {
    * Get release group by MBID
    */
   async getReleaseGroup(mbid: string, includes?: string[]): Promise<any> {
+    this.ensureInitialized();
     await this.ensureWorkerRunning();
 
     try {
@@ -304,9 +308,47 @@ export class QueuedMusicBrainzService {
   }
 
   /**
+   * Browse release groups by artist MBID
+   */
+  async browseReleaseGroupsByArtist(artistMbid: string, limit = 100, offset = 0): Promise<any> {
+    this.ensureInitialized();
+    await this.ensureWorkerRunning();
+
+    try {
+      const job = await this.queue.addJob(
+        JOB_TYPES.MUSICBRAINZ_BROWSE_RELEASE_GROUPS_BY_ARTIST,
+        { artistMbid, limit, offset },
+        { 
+          priority: 1,
+          requestId: `browse-rg-by-artist-${Date.now()}`,
+        }
+      );
+
+      const result = await this.waitForJobViaEvents(job.id!);
+      if (!result.success) {
+        throw new Error(result.error?.message || 'Browse failed');
+      }
+      try {
+        const count = Array.isArray(result.data?.['release-groups'])
+          ? result.data['release-groups'].length
+          : (result.data?.count ?? 'unknown');
+        console.log(`🎶 MB browse RG by artist ${artistMbid}: got ${count}`);
+      } catch {}
+      return result.data;
+
+    } catch (error) {
+      console.error('Queued MusicBrainz browse release-groups by artist error:', error);
+      throw new Error(
+        `Failed to browse release groups: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
    * Get recording by MBID
    */
   async getRecording(mbid: string, includes?: string[]): Promise<any> {
+    this.ensureInitialized();
     await this.ensureWorkerRunning();
 
     try {
@@ -425,7 +467,7 @@ export class QueuedMusicBrainzService {
    * Wait for job completion using QueueEvents (the proper BullMQ way!)
    * This uses the Promise + Map pattern recommended by the community
    */
-  private async waitForJobViaEvents(jobId: string, timeoutMs = 15000): Promise<any> {
+  private async waitForJobViaEvents(jobId: string, timeoutMs = 30000): Promise<any> {
     return new Promise((resolve, reject) => {
       // Store the promise resolvers so QueueEvents can call them
       this.pendingJobs.set(jobId, { resolve, reject });
@@ -470,7 +512,10 @@ export class QueuedMusicBrainzService {
     this.pendingJobs.clear();
     
     // Close QueueEvents listener
-    await this.queueEvents.close();
+    if (this.queueEvents) {
+      await this.queueEvents.close();
+      this.queueEvents = null;
+    }
     console.log('✅ QueueEvents closed');
     
     await this.stopWorker();

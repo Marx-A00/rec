@@ -16,6 +16,7 @@ export const JOB_TYPES = {
   MUSICBRAINZ_LOOKUP_RELEASE: 'musicbrainz:lookup-release',
   MUSICBRAINZ_LOOKUP_RECORDING: 'musicbrainz:lookup-recording',
   MUSICBRAINZ_LOOKUP_RELEASE_GROUP: 'musicbrainz:lookup-release-group',
+  MUSICBRAINZ_BROWSE_RELEASE_GROUPS_BY_ARTIST: 'musicbrainz:browse-release-groups-by-artist',
   // Enrichment Check Jobs (lightweight)
   CHECK_ALBUM_ENRICHMENT: 'check:album-enrichment',
   CHECK_ARTIST_ENRICHMENT: 'check:artist-enrichment',
@@ -78,6 +79,14 @@ export interface MusicBrainzLookupRecordingJobData {
 
 export interface MusicBrainzLookupReleaseGroupJobData {
   mbid: string;
+  includes?: string[];
+  requestId?: string;
+}
+
+export interface MusicBrainzBrowseReleaseGroupsByArtistJobData {
+  artistMbid: string;
+  limit?: number;
+  offset?: number;
   includes?: string[];
   requestId?: string;
 }
@@ -180,6 +189,7 @@ export type MusicBrainzJobData =
   | MusicBrainzLookupReleaseJobData
   | MusicBrainzLookupRecordingJobData
   | MusicBrainzLookupReleaseGroupJobData
+  | MusicBrainzBrowseReleaseGroupsByArtistJobData
   | CheckAlbumEnrichmentJobData
   | CheckArtistEnrichmentJobData
   | CheckTrackEnrichmentJobData

@@ -8,6 +8,11 @@ query GetArtistDiscography($id: String!) {
     secondaryTypes
     imageUrl
     artistName
+    artistCredits {
+      artist { id name }
+      role
+      position
+    }
     trackCount
     year
   }

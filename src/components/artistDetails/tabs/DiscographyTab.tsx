@@ -3,13 +3,18 @@
 import { Calendar, Disc } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
+import AlbumModal from '@/components/ui/AlbumModal';
+import { useAlbumModal } from '@/hooks/useAlbumModal';
 import { useGetArtistDiscographyQuery } from '@/generated/graphql';
 
-export default function DiscographyTab({ artistId }: { artistId: string }) {
+export default function DiscographyTab({ artistId, artistName }: { artistId: string; artistName?: string }) {
   const { data, isLoading, error } = useGetArtistDiscographyQuery(
     { id: artistId },
     { enabled: !!artistId }
   );
+
+  const { selectedItem, isExiting, isOpen, openModal, closeModal } =
+    useAlbumModal();
 
   const releases = data?.artistDiscography || [];
 
@@ -29,41 +34,94 @@ export default function DiscographyTab({ artistId }: { artistId: string }) {
     return (
       <div className='bg-zinc-900 p-4 rounded-lg'>
         <h3 className='text-lg font-semibold mb-4'>Discography</h3>
-        <p className='text-red-400'>
-          Failed to load discography
-        </p>
+        <p className='text-red-400'>Failed to load discography</p>
       </div>
     );
   }
 
   return (
-    <div className='bg-zinc-900 p-4 rounded-lg'>
-      <h3 className='text-lg font-semibold mb-4 text-white'>
-        Discography ({releases.length})
-      </h3>
+    <>
+      <AlbumModal
+        isOpen={isOpen}
+        onClose={closeModal}
+        data={selectedItem}
+        isExiting={isExiting}
+      />
 
-      {releases.length === 0 ? (
-        <p className='text-zinc-400'>
-          No releases found for this artist.
-        </p>
-      ) : (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-          {releases.map(release => (
-            <ReleaseCard key={release.id} release={release} />
-          ))}
-        </div>
-      )}
-    </div>
+      <div className='bg-zinc-900 p-4 rounded-lg'>
+        <h3 className='text-lg font-semibold mb-4 text-white'>
+          Discography ({releases.length})
+        </h3>
+
+        {releases.length === 0 ? (
+          <p className='text-zinc-400'>No releases found for this artist.</p>
+        ) : (
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+            {releases.map(release => (
+              <ReleaseCard
+                key={release.id}
+                release={release}
+                onOpen={() =>
+                  openModal({
+                    id: String(release.id),
+                    title: release.title,
+                    year:
+                      (release as any).year ||
+                      (release.releaseDate
+                        ? new Date(release.releaseDate as any).getFullYear()
+                        : undefined),
+                    type: 'master',
+                    thumb: (release as any).imageUrl || undefined,
+                    artist:
+                      (release as any).artistName || artistName || undefined,
+                    // carry credits for UI if needed later
+                    basic_information: {
+                      artists: Array.isArray((release as any).artistCredits)
+                        ? (release as any).artistCredits.map((c: any) => ({
+                            id: c?.artist?.id,
+                            name: c?.artist?.name,
+                          }))
+                        : undefined,
+                    },
+                  } as any)
+                }
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
-function ReleaseCard({ release }: { release: any }) {
+function ReleaseCard({
+  release,
+  onOpen,
+}: {
+  release: any;
+  onOpen: () => void;
+}) {
+  const credits = Array.isArray(release.artistCredits)
+    ? (release.artistCredits as any[])
+    : [];
+
   return (
-    <div className='bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-all overflow-hidden'>
+    <div
+      className='bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-all overflow-hidden cursor-pointer'
+      onClick={() => onOpen()}
+      tabIndex={0}
+      role='button'
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+    >
       <div className='flex h-24'>
         <div className='relative w-24 h-24 flex-shrink-0'>
           <AlbumImage
-            src={release.imageUrl}
+            src={(release as any).imageUrl}
             alt={release.title}
             width={96}
             height={96}
@@ -92,8 +150,19 @@ function ReleaseCard({ release }: { release: any }) {
               </div>
             )}
 
+            {credits.length > 0 && (
+              <div className='text-xs text-zinc-400 truncate'>
+                {credits
+                  .map((c: any) => c?.artist?.name)
+                  .filter(Boolean)
+                  .slice(0, 3)
+                  .join(', ')}
+                {credits.length > 3 ? '…' : ''}
+              </div>
+            )}
+
             <div className='text-xs text-zinc-500'>
-              Source: {release.source?.toLowerCase() || 'unknown'}
+              Source: {(release as any).source?.toLowerCase() || 'unknown'}
             </div>
           </div>
         </div>

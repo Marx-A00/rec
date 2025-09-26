@@ -138,8 +138,27 @@ export function useUniversalSearch(
     // Transform albums
     if (searchData.albums) {
       searchData.albums.forEach((album) => {
+        // LOCAL-FIRST: navigate using local UUID and mark as local when present
+        const localId = album.id;
+        const musicbrainzId = album.musicbrainzId || undefined;
+        const navId = localId; // prefer local for routing
+        const inferredSource: 'local' | 'musicbrainz' = 'local';
+        try {
+          // Debug log to trace source/id selection for album results
+          // eslint-disable-next-line no-console
+          console.log(
+            '[useUniversalSearch] Album mapping (local-first)',
+            {
+              localId: String(localId),
+              musicbrainzId: musicbrainzId || null,
+              navId: String(navId),
+              inferredSource,
+              title: album.title,
+            }
+          );
+        } catch {}
         transformedResults.push({
-          id: album.id,
+          id: navId,
           type: 'album' as const,
           title: album.title,
           subtitle: album.artists?.[0]?.artist?.name || 'Unknown Artist',
@@ -147,6 +166,7 @@ export function useUniversalSearch(
           releaseDate: album.releaseDate instanceof Date ? album.releaseDate.toISOString() : album.releaseDate || '',
           genre: [],
           label: '',
+          source: inferredSource,
           image: {
             url: album.coverArtUrl || '',
             width: 300,
@@ -162,6 +182,10 @@ export function useUniversalSearch(
     // Transform artists
     if (searchData.artists) {
       searchData.artists.forEach((artist) => {
+        const idStr = String(artist.id);
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idStr);
+        const isNumeric = /^\d+$/.test(idStr);
+        const inferredSource = isUuid ? 'musicbrainz' : isNumeric ? 'discogs' : 'local';
         transformedResults.push({
           id: artist.id,
           type: 'artist' as const,
@@ -171,6 +195,7 @@ export function useUniversalSearch(
           releaseDate: '',
           genre: [],
           label: '',
+          source: inferredSource,
           image: {
             url: artist.imageUrl || '',
             width: 300,
@@ -186,6 +211,10 @@ export function useUniversalSearch(
     // Transform tracks
     if (searchData.tracks) {
       searchData.tracks.forEach((track) => {
+        const idStr = String(track.id);
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idStr);
+        const isNumeric = /^\d+$/.test(idStr);
+        const inferredSource = isUuid ? 'musicbrainz' : isNumeric ? 'discogs' : 'local';
         transformedResults.push({
           id: track.id,
           type: 'track' as const,
@@ -197,6 +226,7 @@ export function useUniversalSearch(
           releaseDate: '',
           genre: [],
           label: '',
+          source: inferredSource,
           image: {
             url: track.album?.coverArtUrl || '',
             width: 300,

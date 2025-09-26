@@ -104,6 +104,8 @@ export interface UnifiedSearchResult {
   releaseDate: string | null;
   genre: string[];
   label: string;
+  // Preferred data source for this result (used for routing/fetching)
+  source?: 'musicbrainz' | 'discogs' | 'local';
   image: {
     url: string;
     width: number;

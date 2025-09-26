@@ -184,7 +184,7 @@ export default async function ArtistDetailsPage({
           value='discography'
           className='focus:outline-none outline-none'
         >
-          <DiscographyTab artistId={artistId} />
+          <DiscographyTab artistId={artistId} artistName={artist.name} />
         </TabsContent>
 
         <TabsContent value='biography'>
