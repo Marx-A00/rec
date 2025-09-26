@@ -28,7 +28,7 @@ export default function RecommendationsList({
       initialPageParam: undefined as string | undefined,
       getNextPageParam: (lastPage) => {
         return lastPage.myRecommendations?.hasMore
-          ? lastPage.myRecommendations.cursor
+          ? { cursor: lastPage.myRecommendations.cursor }
           : undefined;
       },
     }
@@ -41,7 +41,7 @@ export default function RecommendationsList({
       initialPageParam: undefined as string | undefined,
       getNextPageParam: (lastPage) => {
         return lastPage.recommendationFeed?.hasMore
-          ? lastPage.recommendationFeed.cursor
+          ? { cursor: lastPage.recommendationFeed.cursor }
           : undefined;
       },
     }
