@@ -14,6 +14,7 @@ import { Release } from '@/types/album';
 import { CollectionAlbum } from '@/types/collection';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
+import { graphqlClient } from '@/lib/graphql-client';
 
 interface AlbumModalProps {
   isOpen: boolean;
@@ -146,18 +147,30 @@ export default function AlbumModal({
     return 'Unknown Artist';
   };
 
+  const getArtistId = () => {
+    if (isCollectionAlbum(data)) {
+      return (data as any).albumArtistId || '';
+    }
+    return '';
+  };
+
   // Convert Release/CollectionAlbum data to Album format for interactions
   const albumForInteractions = useMemo((): Album | null => {
     if (!data) return null;
 
     const albumId = getAlbumId();
     if (!albumId) return null;
+    const source = getSource();
+    const normalizedSource = source ? (source.toLowerCase() as 'local' | 'musicbrainz' | 'discogs') : undefined;
 
     if (isCollectionAlbum(data)) {
       return {
         id: String(albumId),
         title: data.albumTitle,
-        artists: data.albumArtist ? [{ id: '', name: data.albumArtist }] : [],
+        artists: data.albumArtist
+          ? [{ id: (data as any).albumArtistId || '', name: data.albumArtist }]
+          : [],
+        source: 'local',
         year:
           typeof data.albumYear === 'string'
             ? parseInt(data.albumYear)
@@ -185,6 +198,8 @@ export default function AlbumModal({
             : data.artist
               ? [{ id: '', name: data.artist }]
               : [],
+        source: normalizedSource,
+        musicbrainzId: normalizedSource === 'musicbrainz' ? String(data.id) : undefined,
         year: data.year,
         image: {
           url: getImageUrl() || '',
@@ -204,14 +219,36 @@ export default function AlbumModal({
 
   // Album interaction handlers
   const handleArtistClick = async (artistId: string, artistName: string) => {
-    if (!artistId) {
-      showToast(`Artist ID not available for ${artistName}`, 'error');
-      return;
-    }
-
     try {
-      onClose(); // Close modal first
-      router.push(`/artists/${artistId}`);
+      const source = getSource();
+      const normalizedSource = source ? source.toLowerCase() : undefined;
+
+      let navId = artistId;
+
+      if (!navId) {
+        // Resolve by name → prefer local match
+        const SEARCH_ARTISTS = `
+          query SearchArtists($query: String!, $limit: Int) {
+            searchArtists(query: $query, limit: $limit) { id name musicbrainzId }
+          }
+        `;
+        const res: any = await graphqlClient.request(SEARCH_ARTISTS, {
+          query: artistName,
+          limit: 5,
+        });
+        const results = Array.isArray(res?.searchArtists) ? res.searchArtists : [];
+        const local = results.find((a: any) => a.id && a.id.length > 0);
+        if (local) navId = String(local.id);
+      }
+
+      if (!navId) {
+        showToast(`Artist not found: ${artistName}`, 'error');
+        return;
+      }
+
+      onClose();
+      const suffix = normalizedSource ? `?source=${encodeURIComponent(normalizedSource as string)}` : '';
+      router.push(`/artists/${navId}${suffix}`);
     } catch (error) {
       console.error('Navigation error:', error);
       showToast(
@@ -624,7 +661,7 @@ export default function AlbumModal({
                           variant='secondary'
                           size='sm'
                           onClick={() =>
-                            handleArtistClick(artist.id, artist.name)
+                            handleArtistClick(artist.id || getArtistId(), artist.name)
                           }
                           className='gap-1.5 text-xs h-7 px-2'
                           aria-label={`View artist ${sanitizeArtistName(artist.name)}`}

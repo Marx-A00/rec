@@ -403,20 +403,26 @@ export const resolvers: Resolvers = {
     averageRating: () => null, // Placeholder
   },
 
+  // Resolve nested fields for collection-album pivot
+  CollectionAlbum: {
+    collection: async (parent, _, { prisma }) => {
+      const collection = await prisma.collection.findUnique({
+        where: { id: parent.collectionId },
+      });
+      if (!collection) throw new Error('Collection not found');
+      return collection;
+    },
+    album: async (parent, _, { prisma }) => {
+      const album = await prisma.album.findUnique({
+        where: { id: parent.albumId },
+      });
+      if (!album) throw new Error('Album not found');
+      return album;
+    },
+  },
+
   Mutation: {
     ...mutationResolvers,
-    // Simplified mutation placeholders
-    createCollection: async () => { throw new Error('Not implemented yet'); },
-    addAlbumToCollection: async () => { throw new Error('Not implemented yet'); },
-    removeAlbumFromCollection: async () => false,
-    updateCollectionAlbum: async () => { throw new Error('Not implemented yet'); },
-    createRecommendation: async () => { throw new Error('Not implemented yet'); },
-    updateRecommendation: async () => { throw new Error('Not implemented yet'); },
-    deleteRecommendation: async () => false,
-    // These are implemented in mutationResolvers - removing placeholders
-    // followUser: async () => { throw new Error('Not implemented yet'); },
-    // unfollowUser: async () => false,
-    // updateProfile: async () => { throw new Error('Not implemented yet'); },
   },
 
   Subscription: subscriptionResolvers,

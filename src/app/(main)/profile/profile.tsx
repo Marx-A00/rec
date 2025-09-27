@@ -57,6 +57,7 @@ export default function ProfileClient({
         albumId: item.album.id,
         albumTitle: item.album.title,
         albumArtist: item.album.artists[0]?.artist?.name || 'Unknown Artist',
+        albumArtistId: item.album.artists[0]?.artist?.id || null,
         albumImageUrl: item.album.coverArtUrl,
         albumYear: item.album.releaseDate ? String(new Date(item.album.releaseDate).getFullYear()) : null,
         addedAt: item.addedAt,

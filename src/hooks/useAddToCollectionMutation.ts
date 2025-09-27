@@ -26,6 +26,56 @@ const ADD_ALBUM_TO_COLLECTION = `
   }
 `;
 
+const GET_ALBUM = `
+  query GetAlbum($id: UUID!) {
+    album(id: $id) {
+      id
+    }
+  }
+`;
+
+const ADD_ALBUM = `
+  mutation AddAlbum($input: AlbumInput!) {
+    addAlbum(input: $input) {
+      id
+      title
+    }
+  }
+`;
+
+async function ensureLocalAlbumId(album: Album): Promise<string> {
+  // 1) If a local DB album with this ID exists, use it (local source path)
+  try {
+    const existing: any = await graphqlClient.request(GET_ALBUM, { id: album.id });
+    if (existing?.album?.id) {
+      return existing.album.id as string;
+    }
+  } catch (_) {
+    // ignore and fallback to create path
+  }
+
+  // 2) Create the album using explicit source identifiers (no inference)
+  const artistInputs = (album.artists || []).map(a => ({ artistName: a.name }));
+
+  const input: any = {
+    title: album.title || 'Unknown Album',
+    artists: artistInputs.length > 0 ? artistInputs : [{ artistName: 'Unknown Artist' }],
+  };
+
+  // Attach MusicBrainz ID only if explicitly provided on the album
+  if (album.source === 'musicbrainz' && album.musicbrainzId) {
+    input.musicbrainzId = album.musicbrainzId;
+  }
+
+  // Optional fields
+  if (album.releaseDate) input.releaseDate = album.releaseDate;
+  if (album.metadata?.numberOfTracks) input.totalTracks = album.metadata.numberOfTracks;
+  if (album.image?.url) input.coverImageUrl = album.image.url;
+
+  const created: any = await graphqlClient.request(ADD_ALBUM, { input });
+  return created.addAlbum.id as string;
+}
+
 const addToCollection = async (album: Album): Promise<string> => {
   try {
     // First, try to get existing collections
@@ -62,10 +112,13 @@ const addToCollection = async (album: Album): Promise<string> => {
       collectionId = defaultCollection.id;
     }
 
-    // Now add the album to the collection
+    // Ensure we have a local album ID (create from MBID/metadata if needed)
+    const localAlbumId = await ensureLocalAlbumId(album);
+
+    // Now add the album to the collection using the local DB album ID
     await graphqlClient.request(ADD_ALBUM_TO_COLLECTION, {
       collectionId,
-      albumId: album.id,
+      albumId: localAlbumId,
       position: 0, // Add at the beginning
     });
 
