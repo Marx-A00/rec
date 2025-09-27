@@ -147,12 +147,6 @@ export default function AlbumModal({
     return 'Unknown Artist';
   };
 
-  const getArtistId = () => {
-    if (isCollectionAlbum(data)) {
-      return (data as any).albumArtistId || '';
-    }
-    return '';
-  };
 
   // Convert Release/CollectionAlbum data to Album format for interactions
   const albumForInteractions = useMemo((): Album | null => {
@@ -660,9 +654,7 @@ export default function AlbumModal({
                           key={`${artist.id}-${index}`}
                           variant='secondary'
                           size='sm'
-                          onClick={() =>
-                            handleArtistClick(artist.id || getArtistId(), artist.name)
-                          }
+                          onClick={() => handleArtistClick(artist.id, artist.name)}
                           className='gap-1.5 text-xs h-7 px-2'
                           aria-label={`View artist ${sanitizeArtistName(artist.name)}`}
                         >

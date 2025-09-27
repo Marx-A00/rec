@@ -54,7 +54,7 @@ export function SortableAlbumItem({
     const isWide = gridSize === 'wide';
     
     return (
-      <div className="relative h-full w-full group">
+      <div className="group">
         {/* Drag Handle - only show if editable */}
         {isEditable && (
           <div
@@ -67,66 +67,25 @@ export function SortableAlbumItem({
         )}
 
         {/* Album Cover */}
-        <div className={`relative ${isLarge || isWide ? 'h-full' : 'aspect-square'} overflow-hidden rounded-lg`}>
-          <AlbumImage
-            src={album.albumImageUrl}
-            alt={album.albumTitle}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onClick={() => onAlbumClick?.(album.albumId)}
-          />
-          
-          {/* Rating overlay for larger cards */}
-          {(isLarge || isWide) && album.personalRating && (
-            <div className="absolute top-2 left-2 bg-black/70 rounded px-2 py-1 flex items-center gap-1">
-              <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-              <span className="text-white text-xs font-medium">{album.personalRating}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Album Info - show more details for larger cards */}
-        {(isLarge || isWide) && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-            <h3 className="text-white font-semibold text-sm line-clamp-1">
-              {album.albumTitle}
-            </h3>
-            <p className="text-zinc-300 text-xs line-clamp-1">
-              {album.albumArtist}
-            </p>
-            {album.albumYear && (
-              <p className="text-zinc-400 text-xs">
-                {album.albumYear}
-              </p>
+        <button type="button" onClick={() => onAlbumClick?.(album.albumId)} className="block w-full text-left">
+          <div className={`relative ${isLarge || isWide ? 'h-full' : 'aspect-square'} overflow-hidden rounded-lg`}>
+            <AlbumImage
+              src={album.albumImageUrl}
+              alt={album.albumTitle}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            {(isLarge || isWide) && album.personalRating && (
+              <div className="absolute top-2 left-2 bg-black/70 rounded px-2 py-1 flex items-center gap-1">
+                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                <span className="text-white text-xs font-medium">{album.personalRating}</span>
+              </div>
             )}
           </div>
-        )}
-
-        {/* Small card - minimal info */}
-        {gridSize === 'small' && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-            <p className="text-white text-xs font-medium line-clamp-1">
-              {album.albumTitle}
-            </p>
+          <div className="mt-2">
+            <h3 className="text-white font-medium text-sm line-clamp-1">{album.albumTitle}</h3>
+            <p className="text-zinc-300 text-xs line-clamp-1">{album.albumArtist}</p>
           </div>
-        )}
-
-        {/* Medium/Tall cards - balanced info */}
-        {(gridSize === 'medium' || gridSize === 'tall') && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-            <h3 className="text-white font-medium text-xs line-clamp-1">
-              {album.albumTitle}
-            </h3>
-            <p className="text-zinc-300 text-xs line-clamp-1">
-              {album.albumArtist}
-            </p>
-          </div>
-        )}
-
-        {/* Click overlay */}
-        <div 
-          className="absolute inset-0 cursor-pointer"
-          onClick={() => onAlbumClick?.(album.albumId)}
-        />
+        </button>
       </div>
     );
   };

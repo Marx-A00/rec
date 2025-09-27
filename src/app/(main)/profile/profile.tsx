@@ -51,7 +51,7 @@ export default function ProfileClient({
 
   // Memoize collection data to prevent infinite re-renders
   const allAlbums = useMemo(() => {
-    return collectionsData?.user?.collections?.flatMap(col =>
+    const mapped = collectionsData?.user?.collections?.flatMap(col =>
       col.albums.map(item => ({
         id: item.id,
         albumId: item.album.id,
@@ -67,6 +67,17 @@ export default function ProfileClient({
         position: item.position,
       }))
     ) || initialCollection || [];
+
+    // Deduplicate by albumId (album may appear in multiple collections)
+    const seen = new Set<string>();
+    const unique = [] as typeof mapped;
+    for (const a of mapped) {
+      if (!seen.has(a.albumId)) {
+        seen.add(a.albumId);
+        unique.push(a);
+      }
+    }
+    return unique;
   }, [collectionsData, initialCollection, user.id]);
 
   // Add state for the selected album and exit animation

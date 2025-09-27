@@ -131,10 +131,7 @@ export default function SortableAlbumGrid({
     >
       <SortableContext items={items.map(album => album.id)} strategy={rectSortingStrategy}>
         <div
-          className={`grid grid-cols-6 gap-4 auto-rows-[200px] ${className}`}
-          style={{
-            gridAutoRows: 'minmax(200px, auto)',
-          }}
+          className={`grid grid-cols-6 gap-6 auto-rows-auto ${className}`}
         >
           {items.map((album, index) => {
             const gridSize = getAlbumGridSize(album, index);

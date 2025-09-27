@@ -28,18 +28,13 @@ const ADD_ALBUM_TO_COLLECTION = `
 
 const GET_ALBUM = `
   query GetAlbum($id: UUID!) {
-    album(id: $id) {
-      id
-    }
+    album(id: $id) { id }
   }
 `;
 
 const ADD_ALBUM = `
   mutation AddAlbum($input: AlbumInput!) {
-    addAlbum(input: $input) {
-      id
-      title
-    }
+    addAlbum(input: $input) { id title }
   }
 `;
 
