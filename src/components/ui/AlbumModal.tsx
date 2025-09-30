@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, Share2, MoreHorizontal, User } from 'lucide-react';
+import { Heart, Share2, MoreHorizontal, User, Clock } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { CollectionAlbum } from '@/types/collection';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
 import { graphqlClient } from '@/lib/graphql-client';
+import { useAddToListenLaterMutation } from '@/generated/graphql';
 
 interface AlbumModalProps {
   isOpen: boolean;
@@ -52,6 +53,10 @@ export default function AlbumModal({
   const {} = useNavigation();
   const { toast, showToast, hideToast } = useToast();
   const { openDrawer } = useRecommendationDrawerContext();
+  const addToListenLater = useAddToListenLaterMutation({
+    onSuccess: () => showToast('Added to Listen Later', 'success'),
+    onError: () => showToast('Failed to add to Listen Later', 'error'),
+  });
 
   const isMasterRelease = useMemo(
     () => isRelease(data) && data.type === 'master',
@@ -294,6 +299,16 @@ export default function AlbumModal({
       console.error('Share failed:', error);
       showToast('Failed to share album', 'error');
     }
+  };
+
+  const handleAddToListenLater = async () => {
+    if (!albumForInteractions?.id) {
+      showToast('Album not available', 'error');
+      return;
+    }
+    try {
+      await addToListenLater.mutateAsync({ albumId: albumForInteractions.id });
+    } catch {}
   };
 
   const handleMoreActions = () => {
@@ -684,6 +699,17 @@ export default function AlbumModal({
                   size='sm'
                   variant='default'
                 />
+
+                <Button
+                  variant='secondary'
+                  size='sm'
+                  onClick={handleAddToListenLater}
+                  className='gap-1.5 text-sm'
+                  aria-label='Add to Listen Later'
+                >
+                  <Clock className='h-3.5 w-3.5' />
+                  Listen Later
+                </Button>
 
                 <Button
                   variant='outline'

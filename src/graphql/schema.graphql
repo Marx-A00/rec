@@ -877,6 +877,10 @@ type Mutation {
   removeAlbumFromCollection(collectionId: String!, albumId: UUID!): Boolean!
   updateCollectionAlbum(id: String!, input: CollectionAlbumInput!): CollectionAlbum!
   reorderCollectionAlbums(collectionId: String!, albumIds: [UUID!]!): [CollectionAlbum!]!
+  # Listen Later convenience without schema change
+  ensureListenLaterCollection: Collection!
+  addToListenLater(albumId: UUID!): CollectionAlbum!
+  removeFromListenLater(albumId: UUID!): Boolean!
   
   # Recommendation system
   createRecommendation(basisAlbumId: UUID!, recommendedAlbumId: UUID!, score: Int!): Recommendation!

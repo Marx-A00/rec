@@ -739,6 +739,60 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
+  // Listen Later (name-based, no schema change)
+  ensureListenLaterCollection: async (_, __, { user, prisma }) => {
+    if (!user) throw new GraphQLError('Authentication required');
+    const name = 'Listen Later';
+    const existing = await prisma.collection.findFirst({
+      where: { userId: user.id, name },
+    });
+    if (existing) return existing as any;
+    const created = await prisma.collection.create({
+      data: { userId: user.id, name, isPublic: false },
+    });
+    return created as any;
+  },
+
+  addToListenLater: async (_, { albumId }, { user, prisma }) => {
+    if (!user) throw new GraphQLError('Authentication required');
+    const name = 'Listen Later';
+    let collection = await prisma.collection.findFirst({
+      where: { userId: user.id, name },
+    });
+    if (!collection) {
+      collection = await prisma.collection.create({
+        data: { userId: user.id, name, isPublic: false },
+      });
+    }
+    // Upsert-like behavior: ignore if already exists
+    try {
+      const ca = await prisma.collectionAlbum.create({
+        data: { collectionId: collection.id, albumId },
+      });
+      return ca as any;
+    } catch (e: any) {
+      // Unique violation => already in list, fetch and return
+      const existing = await prisma.collectionAlbum.findFirst({
+        where: { collectionId: collection.id, albumId },
+      });
+      if (existing) return existing as any;
+      throw new GraphQLError('Failed to add to Listen Later');
+    }
+  },
+
+  removeFromListenLater: async (_, { albumId }, { user, prisma }) => {
+    if (!user) throw new GraphQLError('Authentication required');
+    const name = 'Listen Later';
+    const collection = await prisma.collection.findFirst({
+      where: { userId: user.id, name },
+    });
+    if (!collection) return true;
+    await prisma.collectionAlbum.deleteMany({
+      where: { collectionId: collection.id, albumId },
+    });
+    return true;
+  },
+
   updateCollectionAlbum: async (_, { id, input }, { user, prisma }) => {
     if (!user) {
       throw new GraphQLError('Authentication required');
