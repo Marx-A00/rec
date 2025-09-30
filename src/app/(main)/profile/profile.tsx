@@ -14,6 +14,7 @@ import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useUserCollectionsQuery } from '@/hooks/useUserCollectionsQuery';
+import { useReorderCollectionAlbumsMutation } from '@/generated/graphql';
 import { CollectionAlbum } from '@/types/collection';
 import { RecommendationFieldsFragment } from '@/generated/graphql';
 
@@ -166,34 +167,21 @@ export default function ProfileClient({
   setSelectedAlbum(collectionAlbum);
 };
 
-// Handle album reordering
+// Handle album reordering (GraphQL)
+const reorderMutation = useReorderCollectionAlbumsMutation();
 const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
   setSortedAlbums(reorderedAlbums);
-  
-  if (!isOwnProfile || !collectionsData?.user?.collections?.[0]?.id) {
-    return;
-  }
+
+  const collectionId = collectionsData?.user?.collections?.[0]?.id;
+  if (!isOwnProfile || !collectionId) return;
 
   try {
-    const collectionId = collectionsData.user.collections[0].id;
-    const albumIds = reorderedAlbums.map(album => album.albumId);
-
-    const response = await fetch(`/api/collections/${collectionId}/reorder`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ albumIds }),
+    await reorderMutation.mutateAsync({
+      collectionId,
+      albumIds: reorderedAlbums.map(a => a.albumId),
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to save album order');
-    }
-
-    console.log('Album order saved successfully');
   } catch (error) {
     console.error('Error saving album order:', error);
-    // Could show a toast notification here
   }
 };
 

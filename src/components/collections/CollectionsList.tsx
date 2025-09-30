@@ -1,40 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { Folder, FolderOpen, Lock, Globe, Calendar } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
-import { CollectionSummary } from '@/types/collection';
+import { useGetUserCollectionListQuery } from '@/generated/graphql';
 
 interface CollectionsListProps {
   userId: string;
 }
 
 export default function CollectionsList({ userId }: CollectionsListProps) {
-  const [collections, setCollections] = useState<CollectionSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchCollections = async () => {
-      try {
-        const response = await fetch('/api/collections');
-        if (!response.ok) {
-          throw new Error('Failed to fetch collections');
-        }
-        const data = await response.json();
-        setCollections(data.collections || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-        console.error('Error fetching collections:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCollections();
-  }, [userId]);
+  const { data, isLoading, error } = useGetUserCollectionListQuery(
+    { userId },
+    { enabled: !!userId }
+  );
+  const collections = useMemo(() => data?.user?.collections ?? [], [data]);
 
   if (isLoading) {
     return (
@@ -51,7 +33,7 @@ export default function CollectionsList({ userId }: CollectionsListProps) {
   if (error) {
     return (
       <div className='text-center py-8'>
-        <p className='text-red-400'>Failed to load collections: {error}</p>
+        <p className='text-red-400'>Failed to load collections</p>
       </div>
     );
   }

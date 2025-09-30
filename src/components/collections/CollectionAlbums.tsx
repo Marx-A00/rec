@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { Collection } from '@/types/collection';
 import { sanitizeArtistName } from '@/lib/utils';
+import { useRemoveAlbumFromCollectionMutation } from '@/generated/graphql';
 
 interface CollectionAlbumsProps {
   collection: Collection;
@@ -22,28 +23,26 @@ export default function CollectionAlbums({
   const { showToast } = useToast();
   const [albums, setAlbums] = useState(collection.albums || []);
   const [removingAlbumId, setRemovingAlbumId] = useState<string | null>(null);
+  const removeMutation = useRemoveAlbumFromCollectionMutation({
+    onSuccess: () => {
+      showToast('Album removed from collection', 'success');
+    },
+    onError: () => {
+      showToast('Failed to remove album', 'error');
+    },
+  });
 
   const handleRemoveAlbum = async (albumId: string) => {
     setRemovingAlbumId(albumId);
 
     try {
-      const response = await fetch(`/api/collections/${collection.id}/albums`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ albumId }),
+      await removeMutation.mutateAsync({
+        collectionId: collection.id,
+        albumId,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to remove album');
-      }
-
       setAlbums(prev => prev.filter(album => album.albumId !== albumId));
-      showToast('Album removed from collection', 'success');
     } catch (error) {
       console.error('Error removing album:', error);
-      showToast('Failed to remove album', 'error');
     } finally {
       setRemovingAlbumId(null);
     }

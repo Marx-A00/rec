@@ -1082,6 +1082,7 @@ export type TrackInput = {
 
 export type UnifiedRelease = {
   __typename?: 'UnifiedRelease';
+  artistCredits?: Maybe<Array<ArtistCredit>>;
   artistName?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
@@ -1183,6 +1184,34 @@ export type WorkerInfo = {
   isRunning: Scalars['Boolean']['output'];
 };
 
+export type CreateCollectionMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  isPublic?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+export type CreateCollectionMutation = {
+  __typename?: 'Mutation';
+  createCollection: {
+    __typename?: 'Collection';
+    id: string;
+    name: string;
+    description?: string | null;
+    isPublic: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+};
+
+export type DeleteCollectionMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+export type DeleteCollectionMutation = {
+  __typename?: 'Mutation';
+  deleteCollection: boolean;
+};
+
 export type FollowUserMutationVariables = Exact<{
   userId: Scalars['String']['input'];
 }>;
@@ -1220,6 +1249,46 @@ export type CheckFollowStatusQuery = {
   } | null;
 };
 
+export type ReorderCollectionAlbumsMutationVariables = Exact<{
+  collectionId: Scalars['String']['input'];
+  albumIds: Array<Scalars['UUID']['input']> | Scalars['UUID']['input'];
+}>;
+
+export type ReorderCollectionAlbumsMutation = {
+  __typename?: 'Mutation';
+  reorderCollectionAlbums: Array<{
+    __typename?: 'CollectionAlbum';
+    id: string;
+    position: number;
+    addedAt: Date;
+    album: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+    };
+  }>;
+};
+
+export type UpdateCollectionMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  isPublic?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+export type UpdateCollectionMutation = {
+  __typename?: 'Mutation';
+  updateCollection: {
+    __typename?: 'Collection';
+    id: string;
+    name: string;
+    description?: string | null;
+    isPublic: boolean;
+    updatedAt: Date;
+  };
+};
+
 export type GetArtistDiscographyQueryVariables = Exact<{
   id: Scalars['String']['input'];
 }>;
@@ -1238,7 +1307,104 @@ export type GetArtistDiscographyQuery = {
     artistName?: string | null;
     trackCount?: number | null;
     year?: number | null;
+    artistCredits?: Array<{
+      __typename?: 'ArtistCredit';
+      role: string;
+      position: number;
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }> | null;
   }>;
+};
+
+export type GetCollectionQueryVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+export type GetCollectionQuery = {
+  __typename?: 'Query';
+  collection?: {
+    __typename?: 'Collection';
+    id: string;
+    name: string;
+    description?: string | null;
+    isPublic: boolean;
+    albums: Array<{
+      __typename?: 'CollectionAlbum';
+      id: string;
+      personalRating?: number | null;
+      personalNotes?: string | null;
+      position: number;
+      addedAt: Date;
+      album: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+        releaseDate?: Date | null;
+        artists: Array<{
+          __typename?: 'ArtistCredit';
+          artist: { __typename?: 'Artist'; id: string; name: string };
+        }>;
+      };
+    }>;
+  } | null;
+};
+
+export type GetUserCollectionListQueryVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+export type GetUserCollectionListQuery = {
+  __typename?: 'Query';
+  user?: {
+    __typename?: 'User';
+    id: string;
+    collections: Array<{
+      __typename?: 'Collection';
+      id: string;
+      name: string;
+      description?: string | null;
+      isPublic: boolean;
+    }>;
+  } | null;
+};
+
+export type GetUserCollectionsQueryVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+export type GetUserCollectionsQuery = {
+  __typename?: 'Query';
+  user?: {
+    __typename?: 'User';
+    id: string;
+    collections: Array<{
+      __typename?: 'Collection';
+      id: string;
+      name: string;
+      description?: string | null;
+      isPublic: boolean;
+      albums: Array<{
+        __typename?: 'CollectionAlbum';
+        id: string;
+        personalRating?: number | null;
+        personalNotes?: string | null;
+        position: number;
+        addedAt: Date;
+        album: {
+          __typename?: 'Album';
+          id: string;
+          title: string;
+          coverArtUrl?: string | null;
+          releaseDate?: Date | null;
+          artists: Array<{
+            __typename?: 'ArtistCredit';
+            artist: { __typename?: 'Artist'; id: string; name: string };
+          }>;
+        };
+      }>;
+    }>;
+  } | null;
 };
 
 export type RecommendationFieldsFragment = {
@@ -1646,6 +1812,83 @@ export const RecommendationFieldsFragmentDoc = `
   }
 }
     `;
+export const CreateCollectionDocument = `
+    mutation CreateCollection($name: String!, $description: String, $isPublic: Boolean) {
+  createCollection(name: $name, description: $description, isPublic: $isPublic) {
+    id
+    name
+    description
+    isPublic
+    createdAt
+    updatedAt
+  }
+}
+    `;
+
+export const useCreateCollectionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    CreateCollectionMutation,
+    TError,
+    CreateCollectionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    CreateCollectionMutation,
+    TError,
+    CreateCollectionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['CreateCollection'],
+    mutationFn: (variables?: CreateCollectionMutationVariables) =>
+      fetcher<CreateCollectionMutation, CreateCollectionMutationVariables>(
+        CreateCollectionDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useCreateCollectionMutation.getKey = () => ['CreateCollection'];
+
+export const DeleteCollectionDocument = `
+    mutation DeleteCollection($id: String!) {
+  deleteCollection(id: $id)
+}
+    `;
+
+export const useDeleteCollectionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    DeleteCollectionMutation,
+    TError,
+    DeleteCollectionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    DeleteCollectionMutation,
+    TError,
+    DeleteCollectionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['DeleteCollection'],
+    mutationFn: (variables?: DeleteCollectionMutationVariables) =>
+      fetcher<DeleteCollectionMutation, DeleteCollectionMutationVariables>(
+        DeleteCollectionDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useDeleteCollectionMutation.getKey = () => ['DeleteCollection'];
+
 export const FollowUserDocument = `
     mutation FollowUser($userId: String!) {
   followUser(userId: $userId) {
@@ -1794,6 +2037,96 @@ useInfiniteCheckFollowStatusQuery.getKey = (
   variables: CheckFollowStatusQueryVariables
 ) => ['CheckFollowStatus.infinite', variables];
 
+export const ReorderCollectionAlbumsDocument = `
+    mutation ReorderCollectionAlbums($collectionId: String!, $albumIds: [UUID!]!) {
+  reorderCollectionAlbums(collectionId: $collectionId, albumIds: $albumIds) {
+    id
+    position
+    addedAt
+    album {
+      id
+      title
+      coverArtUrl
+    }
+  }
+}
+    `;
+
+export const useReorderCollectionAlbumsMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ReorderCollectionAlbumsMutation,
+    TError,
+    ReorderCollectionAlbumsMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ReorderCollectionAlbumsMutation,
+    TError,
+    ReorderCollectionAlbumsMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ReorderCollectionAlbums'],
+    mutationFn: (variables?: ReorderCollectionAlbumsMutationVariables) =>
+      fetcher<
+        ReorderCollectionAlbumsMutation,
+        ReorderCollectionAlbumsMutationVariables
+      >(ReorderCollectionAlbumsDocument, variables)(),
+    ...options,
+  });
+};
+
+useReorderCollectionAlbumsMutation.getKey = () => ['ReorderCollectionAlbums'];
+
+export const UpdateCollectionDocument = `
+    mutation UpdateCollection($id: String!, $name: String, $description: String, $isPublic: Boolean) {
+  updateCollection(
+    id: $id
+    name: $name
+    description: $description
+    isPublic: $isPublic
+  ) {
+    id
+    name
+    description
+    isPublic
+    updatedAt
+  }
+}
+    `;
+
+export const useUpdateCollectionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateCollectionMutation,
+    TError,
+    UpdateCollectionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateCollectionMutation,
+    TError,
+    UpdateCollectionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateCollection'],
+    mutationFn: (variables?: UpdateCollectionMutationVariables) =>
+      fetcher<UpdateCollectionMutation, UpdateCollectionMutationVariables>(
+        UpdateCollectionDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useUpdateCollectionMutation.getKey = () => ['UpdateCollection'];
+
 export const GetArtistDiscographyDocument = `
     query GetArtistDiscography($id: String!) {
   artistDiscography(id: $id) {
@@ -1805,6 +2138,14 @@ export const GetArtistDiscographyDocument = `
     secondaryTypes
     imageUrl
     artistName
+    artistCredits {
+      artist {
+        id
+        name
+      }
+      role
+      position
+    }
     trackCount
     year
   }
@@ -1882,6 +2223,284 @@ export const useInfiniteGetArtistDiscographyQuery = <
 useInfiniteGetArtistDiscographyQuery.getKey = (
   variables: GetArtistDiscographyQueryVariables
 ) => ['GetArtistDiscography.infinite', variables];
+
+export const GetCollectionDocument = `
+    query GetCollection($id: String!) {
+  collection(id: $id) {
+    id
+    name
+    description
+    isPublic
+    albums {
+      id
+      personalRating
+      personalNotes
+      position
+      addedAt
+      album {
+        id
+        title
+        coverArtUrl
+        releaseDate
+        artists {
+          artist {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useGetCollectionQuery = <
+  TData = GetCollectionQuery,
+  TError = unknown,
+>(
+  variables: GetCollectionQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetCollectionQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<GetCollectionQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<GetCollectionQuery, TError, TData>({
+    queryKey: ['GetCollection', variables],
+    queryFn: fetcher<GetCollectionQuery, GetCollectionQueryVariables>(
+      GetCollectionDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetCollectionQuery.getKey = (variables: GetCollectionQueryVariables) => [
+  'GetCollection',
+  variables,
+];
+
+export const useInfiniteGetCollectionQuery = <
+  TData = InfiniteData<GetCollectionQuery>,
+  TError = unknown,
+>(
+  variables: GetCollectionQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetCollectionQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetCollectionQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetCollectionQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetCollection.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetCollectionQuery, GetCollectionQueryVariables>(
+            GetCollectionDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetCollectionQuery.getKey = (
+  variables: GetCollectionQueryVariables
+) => ['GetCollection.infinite', variables];
+
+export const GetUserCollectionListDocument = `
+    query GetUserCollectionList($userId: String!) {
+  user(id: $userId) {
+    id
+    collections {
+      id
+      name
+      description
+      isPublic
+    }
+  }
+}
+    `;
+
+export const useGetUserCollectionListQuery = <
+  TData = GetUserCollectionListQuery,
+  TError = unknown,
+>(
+  variables: GetUserCollectionListQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetUserCollectionListQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetUserCollectionListQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetUserCollectionListQuery, TError, TData>({
+    queryKey: ['GetUserCollectionList', variables],
+    queryFn: fetcher<
+      GetUserCollectionListQuery,
+      GetUserCollectionListQueryVariables
+    >(GetUserCollectionListDocument, variables),
+    ...options,
+  });
+};
+
+useGetUserCollectionListQuery.getKey = (
+  variables: GetUserCollectionListQueryVariables
+) => ['GetUserCollectionList', variables];
+
+export const useInfiniteGetUserCollectionListQuery = <
+  TData = InfiniteData<GetUserCollectionListQuery>,
+  TError = unknown,
+>(
+  variables: GetUserCollectionListQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetUserCollectionListQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetUserCollectionListQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetUserCollectionListQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'GetUserCollectionList.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            GetUserCollectionListQuery,
+            GetUserCollectionListQueryVariables
+          >(GetUserCollectionListDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetUserCollectionListQuery.getKey = (
+  variables: GetUserCollectionListQueryVariables
+) => ['GetUserCollectionList.infinite', variables];
+
+export const GetUserCollectionsDocument = `
+    query GetUserCollections($userId: String!) {
+  user(id: $userId) {
+    id
+    collections {
+      id
+      name
+      description
+      isPublic
+      albums {
+        id
+        personalRating
+        personalNotes
+        position
+        addedAt
+        album {
+          id
+          title
+          coverArtUrl
+          releaseDate
+          artists {
+            artist {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useGetUserCollectionsQuery = <
+  TData = GetUserCollectionsQuery,
+  TError = unknown,
+>(
+  variables: GetUserCollectionsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetUserCollectionsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetUserCollectionsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetUserCollectionsQuery, TError, TData>({
+    queryKey: ['GetUserCollections', variables],
+    queryFn: fetcher<GetUserCollectionsQuery, GetUserCollectionsQueryVariables>(
+      GetUserCollectionsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetUserCollectionsQuery.getKey = (
+  variables: GetUserCollectionsQueryVariables
+) => ['GetUserCollections', variables];
+
+export const useInfiniteGetUserCollectionsQuery = <
+  TData = InfiniteData<GetUserCollectionsQuery>,
+  TError = unknown,
+>(
+  variables: GetUserCollectionsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetUserCollectionsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetUserCollectionsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetUserCollectionsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetUserCollections.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetUserCollectionsQuery, GetUserCollectionsQueryVariables>(
+            GetUserCollectionsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetUserCollectionsQuery.getKey = (
+  variables: GetUserCollectionsQueryVariables
+) => ['GetUserCollections.infinite', variables];
 
 export const GetRecommendationFeedDocument = `
     query GetRecommendationFeed($cursor: String, $limit: Int) {

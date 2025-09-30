@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { Collection } from '@/types/collection';
+import { useDeleteCollectionMutation } from '@/generated/graphql';
 
 interface CollectionHeaderProps {
   collection: Collection;
@@ -20,24 +21,20 @@ export default function CollectionHeader({
   const router = useRouter();
   const { showToast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
+  const deleteMutation = useDeleteCollectionMutation({
+    onSuccess: () => {
+      showToast('Collection deleted successfully', 'success');
+      router.push('/collections');
+    },
+    onError: () => {
+      showToast('Failed to delete collection', 'error');
+    },
+  });
 
   const handleDelete = async () => {
     setIsDeleting(true);
-
     try {
-      const response = await fetch(`/api/collections/${collection.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete collection');
-      }
-
-      showToast('Collection deleted successfully', 'success');
-      router.push('/collections');
-    } catch (error) {
-      console.error('Error deleting collection:', error);
-      showToast('Failed to delete collection', 'error');
+      await deleteMutation.mutateAsync({ id: collection.id });
     } finally {
       setIsDeleting(false);
     }

@@ -1,0 +1,11 @@
+query GetUserCollectionList($userId: String!) {
+  user(id: $userId) {
+    id
+    collections {
+      id
+      name
+      description
+      isPublic
+    }
+  }
+}
