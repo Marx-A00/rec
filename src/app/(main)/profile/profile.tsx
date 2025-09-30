@@ -15,7 +15,7 @@ import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useUserCollectionsQuery } from '@/hooks/useUserCollectionsQuery';
 import { CollectionAlbum } from '@/types/collection';
-import { Recommendation } from '@/types/recommendation';
+import { RecommendationFieldsFragment } from '@/generated/graphql';
 
 // TODO: fix the whole client and server components shit
 
@@ -34,7 +34,7 @@ interface User {
 interface ProfileClientProps {
   user: User;
   collection?: CollectionAlbum[]; // Make optional since we'll fetch via GraphQL
-  recommendations: Recommendation[];
+  recommendations: RecommendationFieldsFragment[];
   isOwnProfile: boolean;
 }
 
@@ -464,7 +464,7 @@ const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
                     key={recommendation.id}
                     recommendation={recommendation}
                     currentUserId={user.id}
-                    onAlbumClick={albumId => navigateToAlbum(albumId)}
+                    onAlbumClick={(albumId, _albumType) => navigateToAlbum(albumId)}
                   />
                 ))}
               </div>

@@ -6,14 +6,11 @@ import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 import { userProfileParamsSchema } from '@/lib/validations/params';
 import { CollectionAlbum } from '@/types/collection';
-import { Recommendation } from '@/types/recommendation';
 
 import Profile from '../profile';
 
 // Helper function to get user recommendations
-async function getUserRecommendations(
-  userId: string
-): Promise<Recommendation[]> {
+async function getUserRecommendations(userId: string) {
   const recs = await prisma.recommendation.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
@@ -27,7 +24,7 @@ async function getUserRecommendations(
           releaseDate: true,
           artists: {
             select: {
-              artist: { select: { name: true } }
+              artist: { select: { id: true, name: true } }
             }
           }
         }
@@ -40,7 +37,7 @@ async function getUserRecommendations(
           releaseDate: true,
           artists: {
             select: {
-              artist: { select: { name: true } }
+              artist: { select: { id: true, name: true } }
             }
           }
         }
@@ -48,25 +45,28 @@ async function getUserRecommendations(
     },
   });
 
+  // Shape to match RecommendationFieldsFragment expected by the client
   return recs.map(rec => ({
     id: rec.id,
     score: rec.score,
-    createdAt: rec.createdAt.toISOString(),
-    updatedAt: rec.updatedAt.toISOString(),
-    userId: rec.userId,
-    basisAlbumId: rec.basisAlbumId,
-    recommendedAlbumId: rec.recommendedAlbumId,
-    basisAlbumDiscogsId: rec.basisDiscogsId || null,
-    recommendedAlbumDiscogsId: rec.recommendedDiscogsId || null,
-    basisAlbumTitle: rec.basisAlbum.title,
-    basisAlbumArtist: rec.basisAlbum.artists[0]?.artist?.name || 'Unknown Artist',
-    basisAlbumImageUrl: rec.basisAlbum.coverArtUrl || null,
-    basisAlbumYear: rec.basisAlbum.releaseDate ? String(new Date(rec.basisAlbum.releaseDate).getFullYear()) : null,
-    recommendedAlbumTitle: rec.recommendedAlbum.title,
-    recommendedAlbumArtist: rec.recommendedAlbum.artists[0]?.artist?.name || 'Unknown Artist',
-    recommendedAlbumImageUrl: rec.recommendedAlbum.coverArtUrl || null,
-    recommendedAlbumYear: rec.recommendedAlbum.releaseDate ? String(new Date(rec.recommendedAlbum.releaseDate).getFullYear()) : null,
+    createdAt: rec.createdAt,
     user: rec.user,
+    basisAlbum: {
+      id: rec.basisAlbum.id,
+      title: rec.basisAlbum.title,
+      coverArtUrl: rec.basisAlbum.coverArtUrl,
+      artists: rec.basisAlbum.artists.map(ac => ({
+        artist: { id: ac.artist.id, name: ac.artist.name },
+      })),
+    },
+    recommendedAlbum: {
+      id: rec.recommendedAlbum.id,
+      title: rec.recommendedAlbum.title,
+      coverArtUrl: rec.recommendedAlbum.coverArtUrl,
+      artists: rec.recommendedAlbum.artists.map(ac => ({
+        artist: { id: ac.artist.id, name: ac.artist.name },
+      })),
+    },
   }));
 }
 
