@@ -401,6 +401,53 @@ const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
 
           {/* Collection Section */}
           {/* TODO: add in DnD grid with varying sizes or whatever */}
+
+          {/* Listen Later (owner-only) */}
+          {isOwnProfile && collectionsData?.user?.collections && (
+            (() => {
+              const listenLater = collectionsData.user.collections.find(
+                c => c.name === 'Listen Later'
+              );
+              if (!listenLater) return null;
+              const albums = listenLater.albums || [];
+              return (
+                <section className='border-t border-zinc-800 pt-8 mb-8'>
+                  <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
+                    Listen Later
+                  </h2>
+                  {albums.length > 0 ? (
+                    <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'>
+                      {albums.map(item => (
+                        <Link key={item.id} href={`/albums/${item.album.id}`}>
+                          <div className='bg-zinc-900 border border-zinc-700 rounded-lg p-3 hover:bg-zinc-800 hover:border-zinc-600 transition-all'>
+                            <div className='aspect-square bg-zinc-800 rounded-lg overflow-hidden mb-2'>
+                              <AlbumImage
+                                src={item.album.coverArtUrl}
+                                alt={item.album.title}
+                                fill
+                                className='object-cover'
+                                showSkeleton={false}
+                              />
+                            </div>
+                            <p className='text-sm font-semibold text-white line-clamp-1'>
+                              {item.album.title}
+                            </p>
+                            <p className='text-xs text-zinc-400 line-clamp-1'>
+                              {item.album.artists?.map(a => a.artist?.name).join(', ')}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className='text-center py-8'>
+                      <p className='text-zinc-400'>No albums saved for later yet.</p>
+                    </div>
+                  )}
+                </section>
+              );
+            })()
+          )}
           
           <section className='border-t border-zinc-800 pt-8'>
             <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
