@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 
 import RecommendationCard from '@/components/recommendations/RecommendationCard';
 import { RecommendationsTabSkeleton } from '@/components/ui/skeletons';
+import type { RecommendationFieldsFragment } from '@/generated/graphql';
 import {
   useArtistRecommendations,
   FilterType,
@@ -221,11 +222,9 @@ export default function ArtistRecommendationsTab({
               <RecommendationCard
                 key={recommendation.id}
                 recommendation={{
-                  ...recommendation,
-                  updatedAt: recommendation.createdAt, // Use createdAt as fallback for updatedAt
-                  basisAlbumArtistDiscogsId: null, // Not available from artist recommendations API
-                  recommendedAlbumArtistDiscogsId: null, // Not available from artist recommendations API
-                }}
+                  // Cast temporary shape to GraphQL fragment to satisfy types
+                  ...(recommendation as unknown as RecommendationFieldsFragment),
+                } as RecommendationFieldsFragment}
                 onAlbumClick={handleAlbumClick}
                 showDetailModal={false}
               />

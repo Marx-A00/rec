@@ -205,7 +205,7 @@ export default async function ArtistDetailsPage({
         >
           <ArtistRecommendationsTab
             artistId={artistId}
-            artistName={sanitizeArtistName(artist.title)}
+            artistName={sanitizeArtistName(artist.name)}
           />
         </TabsContent>
 

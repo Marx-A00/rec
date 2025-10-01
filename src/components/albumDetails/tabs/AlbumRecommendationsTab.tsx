@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 
 import RecommendationCard from '@/components/recommendations/RecommendationCard';
 import { RecommendationsTabSkeleton } from '@/components/ui/skeletons';
+import type { RecommendationFieldsFragment } from '@/generated/graphql';
 import {
   useAlbumRecommendations,
   FilterType,
@@ -273,8 +274,9 @@ export default function AlbumRecommendationsTab({
             {transformedRecommendations.map(({ key, recommendation }) => (
               <RecommendationCard
                 key={key}
-                recommendation={recommendation}
-                currentAlbumId={albumId}
+                recommendation={
+                  recommendation as unknown as RecommendationFieldsFragment
+                }
                 onAlbumClick={handleAlbumClick}
                 showDetailModal={false}
               />
