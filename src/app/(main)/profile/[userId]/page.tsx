@@ -4,7 +4,7 @@ import type { User } from '@prisma/client';
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 import { userProfileParamsSchema } from '@/lib/validations/params';
-import { CollectionAlbum } from '@/types/collection';
+import type { CollectionAlbum } from '@/types/collection';
 
 import Profile from '../profile';
 
@@ -82,19 +82,21 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
   });
 
   return collections.flatMap(collection =>
-    collection.albums.map(album => ({
-      id: album.id,
-      albumId: album.albumDiscogsId,
-      albumTitle: album.albumTitle,
-      albumArtist: album.albumArtist,
-      albumImageUrl: album.albumImageUrl || null,
-      albumYear: album.albumYear || null,
-      addedAt: album.addedAt.toISOString(),
-      addedBy: collection.userId,
-      personalRating: album.personalRating || null,
-      personalNotes: album.personalNotes || null,
-      position: album.position,
-    }))
+    collection.albums.map(
+      (album): CollectionAlbum => ({
+        id: album.id,
+        albumId: String((album as { albumId?: string } | null)?.albumId ?? album.discogsId ?? ''),
+        albumTitle: album.albumTitle ?? 'Unknown Album',
+        albumArtist: album.albumArtist ?? 'Unknown Artist',
+        albumImageUrl: album.albumImageUrl ?? null,
+        albumYear: album.albumYear ?? null,
+        addedAt: album.addedAt.toISOString(),
+        addedBy: collection.userId,
+        personalRating: album.personalRating ?? null,
+        personalNotes: album.personalNotes ?? null,
+        position: album.position,
+      })
+    )
   );
 }
 

@@ -154,7 +154,7 @@ export default function WidgetLibrary({ isOpen, onClose }: WidgetLibraryProps) {
         {/* Footer */}
         <div className='p-4 border-t border-zinc-700'>
           <p className='text-xs text-zinc-500 text-center'>
-            Click "Add Panel" to add widgets to your dashboard
+            Click &quot;Add Panel&quot; to add widgets to your dashboard
           </p>
         </div>
       </div>

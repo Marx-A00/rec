@@ -96,7 +96,8 @@ async function syncSpotifyData() {
 ```typescript
 useEffect(() => {
   // 1. Trigger sync (non-blocking)
-  fetch('/api/spotify/sync').catch(() => {});
+  // Legacy endpoint removed; use GraphQL mutation or scheduler instead.
+  // Example: trigger via admin panel or background job.
 
   // 2. Load from cache (always fast)
   fetch('/api/cache/trending')

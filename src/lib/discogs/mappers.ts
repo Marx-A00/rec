@@ -3,6 +3,11 @@ import { DiscogsMaster } from '@/types/discogs/master';
 import { DiscogsRelease } from '@/types/discogs/release';
 
 export function mapDiscogsMasterToAlbum(discogsMaster: DiscogsMaster): Album {
+  interface DiscogsMetadata {
+    type: 'master' | 'release';
+    uri?: string | null;
+    resource_url?: string | null;
+  }
   // Convert duration string (MM:SS) to seconds
   const convertDurationToSeconds = (duration: string): number => {
     if (!duration) return 0;
@@ -65,12 +70,17 @@ export function mapDiscogsMasterToAlbum(discogsMaster: DiscogsMaster): Album {
     },
     // Store the main release ID as master_id for consistency
     master_id: discogsMaster.id,
-  } as Album & { _discogs?: any; master_id?: number };
+  } as Album & { _discogs?: DiscogsMetadata; master_id?: number };
 }
 
 export function mapDiscogsReleaseToAlbum(
   discogsRelease: DiscogsRelease
 ): Album {
+  interface DiscogsMetadata {
+    type: 'master' | 'release';
+    uri?: string | null;
+    resource_url?: string | null;
+  }
   // Convert duration string (MM:SS) to seconds
   const convertDurationToSeconds = (duration: string): number => {
     if (!duration) return 0;
@@ -151,5 +161,5 @@ export function mapDiscogsReleaseToAlbum(
     },
     // Store the master ID if available - this is key for preferring master IDs!
     master_id: discogsRelease.master_id,
-  } as Album & { _discogs?: any; master_id?: number | null };
+  } as Album & { _discogs?: DiscogsMetadata; master_id?: number | null };
 }

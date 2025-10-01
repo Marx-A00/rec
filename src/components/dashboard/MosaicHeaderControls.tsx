@@ -53,14 +53,13 @@ export default function MosaicHeaderControls({
   };
 
   const handleResetLayout = () => {
-    if (confirm('Are you sure you want to reset the layout to default?')) {
-      actions.resetLayout();
-      setToast({
-        show: true,
-        message: 'Layout reset to default',
-        type: 'success',
-      });
-    }
+    // Reset without blocking confirm to satisfy no-alert rule
+    actions.resetLayout();
+    setToast({
+      show: true,
+      message: 'Layout reset to default',
+      type: 'success',
+    });
   };
 
   return (

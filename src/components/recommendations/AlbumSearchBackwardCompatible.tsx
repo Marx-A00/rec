@@ -145,7 +145,7 @@ const AlbumSearchBackwardCompatible = forwardRef<
         </div>
       </div>
 
-      {error && (
+      {Boolean(error) && (
         <div className='text-center py-4'>
           <p className='text-red-400 font-medium'>
             Search failed. Please try again.

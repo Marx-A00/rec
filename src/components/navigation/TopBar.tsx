@@ -1,10 +1,12 @@
 'use client';
 
 import React, { FC, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 
+import UniversalSearchBar from '@/components/ui/UniversalSearchBar';
 import { useHeader } from '@/contexts/HeaderContext';
 import { useIsHomePage } from '@/hooks/useIsHomePage';
-import UniversalSearchBar from '@/components/ui/UniversalSearchBar';
+import { useSplitMosaic } from '@/contexts/SplitMosaicContext';
 import { cn } from '@/lib/utils';
 
 import UserAvatar from './UserAvatar';
@@ -25,9 +27,6 @@ const LazyWidgetLibrary = React.lazy(
 
 // Separate component for mosaic controls that uses SplitMosaicContext
 const MosaicControls: FC = () => {
-  const { useSplitMosaic } = require('@/contexts/SplitMosaicContext');
-  const { createPortal } = require('react-dom');
-
   const [showWidgetLibrary, setShowWidgetLibrary] = React.useState(false);
   const [isMounted, setIsMounted] = React.useState(false);
   const { state: mosaicState, actions: mosaicActions } = useSplitMosaic();
