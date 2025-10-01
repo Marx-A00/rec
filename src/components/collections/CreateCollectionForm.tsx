@@ -6,6 +6,7 @@ import { Save, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
+import { useCreateCollectionMutation, useGetUserCollectionListQuery } from '@/generated/graphql';
 
 interface CreateCollectionFormData {
   name: string;
@@ -41,6 +42,19 @@ export default function CreateCollectionForm() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const createMutation = useCreateCollectionMutation({
+    onSuccess: data => {
+      const collection = data.createCollection;
+      showToast('Collection created successfully!', 'success');
+      router.push(`/collections/${collection.id}`);
+    },
+    onError: error => {
+      console.error('Error creating collection:', error);
+      const message = (error as Error)?.message || 'Failed to create collection';
+      showToast(message, 'error');
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -51,32 +65,11 @@ export default function CreateCollectionForm() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/collections', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          description: formData.description.trim() || undefined,
-          isPublic: formData.isPublic,
-        }),
+      await createMutation.mutateAsync({
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined,
+        isPublic: formData.isPublic,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create collection');
-      }
-
-      const { collection } = await response.json();
-      showToast('Collection created successfully!', 'success');
-      router.push(`/collections/${collection.id}`);
-    } catch (error) {
-      console.error('Error creating collection:', error);
-      showToast(
-        error instanceof Error ? error.message : 'Failed to create collection',
-        'error'
-      );
     } finally {
       setIsSubmitting(false);
     }
@@ -87,7 +80,6 @@ export default function CreateCollectionForm() {
     value: string | boolean
   ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }

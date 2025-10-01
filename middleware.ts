@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from './auth';
 
 // ===========================
 // RATE LIMITING CONFIGURATION
@@ -19,7 +18,7 @@ const RATE_LIMIT_CONFIG = {
   // API routes rate limiting
   api: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10), // 100 requests
+    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000', 10), // 1000 requests (increased for QueueDash)
     blockDurationMs: parseInt(
       process.env.RATE_LIMIT_BLOCK_DURATION_MS || '600000',
       10
@@ -28,11 +27,11 @@ const RATE_LIMIT_CONFIG = {
   // Authentication endpoints (more restrictive)
   auth: {
     windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
-    maxRequests: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '10', 10), // 10 attempts
+    maxRequests: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '50', 10), // 50 attempts (increased from 10)
     blockDurationMs: parseInt(
-      process.env.AUTH_RATE_LIMIT_BLOCK_DURATION_MS || '1800000',
+      process.env.AUTH_RATE_LIMIT_BLOCK_DURATION_MS || '300000',
       10
-    ), // 30 minutes
+    ), // 5 minutes (reduced from 30 minutes)
   },
   // Search endpoints (moderate limits)
   search: {
@@ -171,6 +170,7 @@ function isPublicApiRoute(pathname: string): boolean {
     '/api/search', // Public search functionality
     '/api/albums/search', // Public album search
     '/api/test/', // Test endpoints
+    '/api/spotify/', // Spotify API endpoints
   ];
 
   // Public read-only routes (GET only)
@@ -449,6 +449,8 @@ async function handleAuthentication(
   pathname: string
 ): Promise<{ response: NextResponse | null; userID?: string }> {
   try {
+    // Dynamically import auth to avoid edge runtime issues
+    const { auth } = await import('./auth');
     const session = await auth();
 
     if (!session?.user) {
@@ -509,8 +511,11 @@ export async function middleware(request: NextRequest) {
 
   let userID: string | undefined;
 
+  // Skip auth entirely for public API routes to avoid Prisma edge runtime issues
+  const isPublicApi = pathname.startsWith('/api/') && isPublicApiRoute(pathname);
+  
   // 1. Authentication check for protected routes (both pages and API)
-  if (isProtectedRoute(pathname)) {
+  if (!isPublicApi && isProtectedRoute(pathname)) {
     // Development logging for route protection decisions
     if (process.env.NODE_ENV === 'development') {
       console.log(`🔒 Protected route accessed: ${method} ${pathname}`);

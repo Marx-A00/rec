@@ -13,12 +13,15 @@ import { sanitizeArtistName } from '@/lib/utils';
 
 interface AlbumDetailsPageProps {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ source?: string }>;
 }
 
 export default async function AlbumDetailsPage({
   params,
+  searchParams,
 }: AlbumDetailsPageProps) {
   const rawParams = await params;
+  const rawSearch = searchParams ? await searchParams : {};
 
   // Validate parameters
   const paramsResult = albumParamsSchema.safeParse(rawParams);
@@ -32,7 +35,21 @@ export default async function AlbumDetailsPage({
   // Fetch album data server-side
   let album;
   try {
-    album = await getAlbumDetails(albumId);
+    const preferredSource = (rawSearch as any)?.source as 'musicbrainz' | 'discogs' | 'local' | undefined;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(albumId);
+    const isNumeric = /^\d+$/.test(albumId);
+    const inferredSource = isUuid ? 'musicbrainz' : isNumeric ? 'discogs' : undefined;
+    const source = preferredSource || inferredSource;
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[AlbumDetailsPage] Fetching album', {
+        albumId,
+        preferredSource: preferredSource || null,
+        inferredSource: inferredSource || null,
+        finalSource: source || null,
+      });
+    } catch {}
+    album = await getAlbumDetails(albumId, source ? { source } as any : undefined);
   } catch (error) {
     console.error('Error fetching album:', error);
     notFound();

@@ -4,8 +4,7 @@ import { X, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
-import { useRecommendationQuery } from '@/hooks';
-import { Recommendation } from '@/types/recommendation';
+import { useGetRecommendationQuery } from '@/generated/graphql';
 
 interface RecommendationDetailModalProps {
   recommendationId: string | null;
@@ -43,11 +42,12 @@ export default function RecommendationDetailModal({
   recommendationId,
   onClose,
 }: RecommendationDetailModalProps) {
-  const {
-    data: recommendation,
-    isLoading,
-    error,
-  } = useRecommendationQuery(recommendationId || '');
+  const { data, isLoading, error } = useGetRecommendationQuery(
+    { id: recommendationId || '' },
+    { enabled: !!recommendationId }
+  );
+
+  const recommendation = data?.recommendation;
 
   if (!recommendationId) return null;
 
@@ -162,7 +162,7 @@ export default function RecommendationDetailModal({
             </div>
           )}
           <div>
-            <Link href={`/profile/${recommendation.userId}`}>
+            <Link href={`/profile/${recommendation.user.id}`}>
               <span className='text-cosmic-latte font-medium hover:underline hover:text-white'>
                 {recommendation.user?.name || 'Anonymous'}
               </span>
@@ -179,26 +179,21 @@ export default function RecommendationDetailModal({
             {/* Source Album */}
             <div className='text-center'>
               <div className='mb-4'>
-                <Link href={`/albums/${recommendation.basisAlbumDiscogsId}`}>
+                <Link href={`/albums/${recommendation.basisAlbum.id}`}>
                   <p className='font-bold text-cosmic-latte text-xl hover:underline cursor-pointer hover:text-white transition-colors'>
-                    {recommendation.basisAlbumTitle}
+                    {recommendation.basisAlbum.title}
                   </p>
                 </Link>
                 <p className='text-zinc-300 text-lg'>
-                  {recommendation.basisAlbumArtist}
+                  {recommendation.basisAlbum.artists.map(a => a.artist.name).join(', ')}
                 </p>
-                {recommendation.basisAlbumYear && (
-                  <p className='text-zinc-400'>
-                    {recommendation.basisAlbumYear}
-                  </p>
-                )}
               </div>
-              <Link href={`/albums/${recommendation.basisAlbumDiscogsId}`}>
+              <Link href={`/albums/${recommendation.basisAlbum.id}`}>
                 <div className='group relative cursor-pointer'>
                   <div className='relative w-72 h-72 lg:w-80 lg:h-80 mx-auto aspect-square overflow-hidden rounded-lg shadow-2xl transition-all duration-300 group-hover:shadow-xl group-hover:scale-105 bg-zinc-800 border-2 border-zinc-700'>
                     <AlbumImage
-                      src={recommendation.basisAlbumImageUrl}
-                      alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
+                      src={recommendation.basisAlbum.coverArtUrl}
+                      alt={`${recommendation.basisAlbum.title} by ${recommendation.basisAlbum.artists.map(a => a.artist.name).join(', ')}`}
                       width={320}
                       height={320}
                       sizes='(max-width: 1024px) 288px, 320px'
@@ -220,29 +215,24 @@ export default function RecommendationDetailModal({
             <div className='text-center'>
               <div className='mb-4'>
                 <Link
-                  href={`/albums/${recommendation.recommendedAlbumDiscogsId}`}
+                  href={`/albums/${recommendation.recommendedAlbum.id}`}
                 >
                   <p className='font-bold text-cosmic-latte text-xl hover:underline cursor-pointer hover:text-white transition-colors'>
-                    {recommendation.recommendedAlbumTitle}
+                    {recommendation.recommendedAlbum.title}
                   </p>
                 </Link>
                 <p className='text-zinc-300 text-lg'>
-                  {recommendation.recommendedAlbumArtist}
+                  {recommendation.recommendedAlbum.artists.map(a => a.artist.name).join(', ')}
                 </p>
-                {recommendation.recommendedAlbumYear && (
-                  <p className='text-zinc-400'>
-                    {recommendation.recommendedAlbumYear}
-                  </p>
-                )}
               </div>
               <Link
-                href={`/albums/${recommendation.recommendedAlbumDiscogsId}`}
+                href={`/albums/${recommendation.recommendedAlbum.id}`}
               >
                 <div className='group relative cursor-pointer'>
                   <div className='relative w-72 h-72 lg:w-80 lg:h-80 mx-auto aspect-square overflow-hidden rounded-lg shadow-2xl transition-all duration-300 group-hover:shadow-xl group-hover:scale-105 bg-zinc-800 border-2 border-zinc-700'>
                     <AlbumImage
-                      src={recommendation.recommendedAlbumImageUrl}
-                      alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
+                      src={recommendation.recommendedAlbum.coverArtUrl}
+                      alt={`${recommendation.recommendedAlbum.title} by ${recommendation.recommendedAlbum.artists.map(a => a.artist.name).join(', ')}`}
                       width={320}
                       height={320}
                       sizes='(max-width: 1024px) 288px, 320px'

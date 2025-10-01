@@ -1,13 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find:*)",
-      "Bash(pnpm fix-all:*)",
-      "Bash(pnpm type-check:*)",
-      "Bash(pnpm lint:*)",
-      "Bash(grep:*)"
+      "WebSearch"
     ],
-    "deny": []
+    "deny": [],
+    "ask": []
   },
   "enabledMcpjsonServers": [
     "taskmaster-ai"

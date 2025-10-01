@@ -58,17 +58,6 @@ export interface UseMastersQueryData {
   pagination?: any; // From ReleasesResponse.pagination
 }
 
-// Recommendations Query
-export interface UseRecommendationsQueryOptions extends BaseQueryOptions {
-  page?: number;
-  perPage?: number;
-  userId?: string;
-}
-
-export type UseRecommendationsQueryResult = UseQueryResult<
-  RecommendationsResponse,
-  QueryError
->;
 
 // Album Search Query
 export interface UseAlbumSearchQueryOptions extends BaseQueryOptions {
@@ -109,10 +98,6 @@ export interface HookSignatures {
     artistId: string,
     options?: UseMastersQueryOptions
   ) => UseMastersQueryData;
-
-  useRecommendationsQuery: (
-    options?: UseRecommendationsQueryOptions
-  ) => UseRecommendationsQueryResult;
 
   useAlbumSearchQuery: (
     query: string,

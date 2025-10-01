@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
+import { graphqlClient } from '@/lib/graphql-client';
 
 interface UserAlbum {
   id: string;
@@ -14,18 +15,67 @@ interface UserAlbum {
   };
 }
 
-const fetchUserCollectionAlbums = async (): Promise<UserAlbum[]> => {
-  const response = await fetch('/api/collections/user/albums');
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      return []; // User not authenticated
+const MY_COLLECTIONS_ALBUMS_QUERY = `
+  query GetMyCollectionAlbums {
+    myCollections {
+      id
+      name
+      albums {
+        id
+        album {
+          id
+          title
+          releaseDate
+          coverArtUrl
+          artists {
+            artist {
+              name
+            }
+          }
+        }
+      }
     }
-    throw new Error('Failed to fetch user collection');
   }
+`;
 
-  const data = await response.json();
-  return data.albums || [];
+const fetchUserCollectionAlbums = async (): Promise<UserAlbum[]> => {
+  try {
+    const data: any = await graphqlClient.request(MY_COLLECTIONS_ALBUMS_QUERY);
+
+    if (!data.myCollections) {
+      return [];
+    }
+
+    // Flatten all albums from all collections
+    const allAlbums: UserAlbum[] = [];
+
+    for (const collection of data.myCollections) {
+      for (const collectionAlbum of collection.albums || []) {
+        if (collectionAlbum.album) {
+          const album = collectionAlbum.album;
+          const artistName = album.artists?.[0]?.artist?.name || 'Unknown Artist';
+
+          allAlbums.push({
+            id: album.id,
+            title: album.title,
+            artist: artistName,
+            releaseDate: album.releaseDate,
+            image: album.coverArtUrl ? {
+              url: album.coverArtUrl,
+              width: 400,
+              height: 400,
+              alt: `${album.title} cover`
+            } : undefined
+          });
+        }
+      }
+    }
+
+    return allAlbums;
+  } catch (error) {
+    console.error('Failed to fetch collection albums:', error);
+    return [];
+  }
 };
 
 export const useUserCollectionStatus = (albumId: string) => {

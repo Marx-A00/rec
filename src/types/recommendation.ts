@@ -6,11 +6,13 @@ export interface Recommendation {
   updatedAt: string;
   userId: string;
 
-  // Discogs references
-  basisAlbumDiscogsId: string;
-  recommendedAlbumDiscogsId: string;
-  basisAlbumArtistDiscogsId: string | null;
-  recommendedAlbumArtistDiscogsId: string | null;
+  // Album references (new schema)
+  basisAlbumId: string;
+  recommendedAlbumId: string;
+
+  // Discogs references (legacy/optional)
+  basisAlbumDiscogsId: string | null;
+  recommendedAlbumDiscogsId: string | null;
 
   // Cached display data
   basisAlbumTitle: string;
@@ -36,10 +38,6 @@ export interface CreateRecommendationRequest {
   recommendedAlbumDiscogsId: string;
   score: number;
 
-  // Artist Discogs IDs
-  basisAlbumArtistDiscogsId?: string | null;
-  recommendedAlbumArtistDiscogsId?: string | null;
-
   // Cache these for display
   basisAlbumTitle: string;
   basisAlbumArtist: string;
@@ -64,6 +62,7 @@ export interface RecommendationsResponse {
     per_page: number;
     total: number;
     has_more: boolean;
+    cursor?: string | null;
   };
   success: boolean;
 }

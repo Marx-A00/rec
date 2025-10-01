@@ -1,0 +1,954 @@
+# GraphQL Schema for Rec - Music Recommendation Platform
+# Canonical music entities schema aligned with Prisma models
+
+# =============================================
+# SCALAR TYPES
+# =============================================
+
+scalar DateTime
+scalar UUID
+scalar JSON
+
+# =============================================
+# CORE MUSIC ENTITIES
+# =============================================
+
+type Artist {
+  id: UUID!
+  musicbrainzId: UUID
+  name: String!
+  biography: String
+  formedYear: Int
+  countryCode: String
+  imageUrl: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Enrichment tracking
+  dataQuality: DataQuality
+  enrichmentStatus: EnrichmentStatus
+  lastEnriched: DateTime
+  
+  # Relationships
+  albums: [Album!]!
+  tracks: [Track!]!
+  
+  # Computed fields
+  albumCount: Int!
+  trackCount: Int!
+  popularity: Float
+  needsEnrichment: Boolean!
+}
+
+type Album {
+  id: UUID!
+  musicbrainzId: UUID
+  title: String!
+  releaseDate: DateTime
+  releaseType: String
+  trackCount: Int
+  durationMs: Int
+  coverArtUrl: String
+  barcode: String
+  label: String
+  catalogNumber: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Enrichment tracking
+  dataQuality: DataQuality
+  enrichmentStatus: EnrichmentStatus
+  lastEnriched: DateTime
+  
+  # Relationships
+  artists: [ArtistCredit!]!
+  tracks: [Track!]!
+  collectionAlbums: [CollectionAlbum!]!
+  basisRecommendations: [Recommendation!]!
+  targetRecommendations: [Recommendation!]!
+  
+  # Computed fields
+  duration: String # Formatted duration (e.g., "42:30")
+  averageRating: Float
+  inCollectionsCount: Int!
+  recommendationScore: Float
+  needsEnrichment: Boolean!
+}
+
+type Track {
+  id: UUID!
+  albumId: UUID
+  musicbrainzId: UUID
+  isrc: String
+  title: String!
+  trackNumber: Int!
+  discNumber: Int!
+  durationMs: Int
+  explicit: Boolean!
+  previewUrl: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Audio Features (limited availability)
+  audioFeatures: AudioFeatures
+  
+  # Relationships
+  album: Album
+  artists: [ArtistCredit!]!
+  
+  # Computed fields
+  duration: String # Formatted duration (e.g., "3:42")
+  popularity: Float
+}
+
+# =============================================
+# UNIFIED TYPES (Multi-source Support)
+# =============================================
+
+type UnifiedRelease {
+  id: String!
+  source: DataSource!
+  title: String!
+  releaseDate: DateTime
+  primaryType: String
+  secondaryTypes: [String!]
+  imageUrl: String
+  artistName: String
+  artistCredits: [ArtistCredit!] # Minimal credits for linking
+  trackCount: Int
+  year: Int
+}
+
+enum DataSource {
+  LOCAL
+  MUSICBRAINZ
+  DISCOGS
+}
+
+# =============================================
+# RELATIONSHIP TYPES
+# =============================================
+
+type ArtistCredit {
+  artist: Artist!
+  role: String!
+  position: Int!
+}
+
+type AudioFeatures {
+  energy: Float
+  valence: Float
+  danceability: Float
+  tempo: Float
+  acousticness: Float
+  instrumentalness: Float
+  liveness: Float
+  loudness: Float
+  speechiness: Float
+  key: Int
+  mode: Int
+  timeSignature: Int
+}
+
+# =============================================
+# USER & SOCIAL TYPES
+# =============================================
+
+type OnboardingStatus {
+  isNewUser: Boolean!
+  profileUpdatedAt: DateTime
+  hasCompletedTour: Boolean!
+}
+
+type UserStats {
+  userId: String!
+  followersCount: Int!
+  followingCount: Int!
+  recommendationsCount: Int!
+  collectionsCount: Int!
+  totalAlbumsInCollections: Int!
+  averageRecommendationScore: Float
+  topGenres: [String!]!
+  joinedAt: DateTime!
+}
+
+type User {
+  id: String!
+  name: String
+  email: String
+  emailVerified: DateTime
+  image: String
+  bio: String
+  followersCount: Int!
+  followingCount: Int!
+  recommendationsCount: Int!
+  profileUpdatedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relationships
+  collections: [Collection!]!
+  recommendations: [Recommendation!]!
+  followers: [UserFollow!]!
+  following: [UserFollow!]!
+  settings: UserSettings
+
+  # Computed fields
+  isFollowing: Boolean # Context-dependent based on current user
+  mutualFollowers: [User!]!
+
+  # Count aggregations for admin
+  _count: UserCount
+}
+
+type UserCount {
+  collections: Int!
+  recommendations: Int!
+}
+
+type UserSettings {
+  id: String!
+  userId: String!
+
+  # Dashboard customization
+  dashboardLayout: JSON
+
+  # Display preferences
+  theme: String!
+  language: String!
+
+  # Privacy settings
+  profileVisibility: String!
+  showRecentActivity: Boolean!
+  showCollections: Boolean!
+
+  # Notification preferences
+  emailNotifications: Boolean!
+  recommendationAlerts: Boolean!
+  followAlerts: Boolean!
+
+  # Music preferences
+  defaultCollectionView: String!
+  autoplayPreviews: Boolean!
+
+  # Timestamps
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Collection {
+  id: String!
+  name: String!
+  description: String
+  isPublic: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Relationships
+  user: User!
+  albums: [CollectionAlbum!]!
+  
+  # Computed fields
+  albumCount: Int!
+  totalDuration: Int
+  averageRating: Float
+}
+
+type CollectionAlbum {
+  id: String!
+  personalRating: Int
+  personalNotes: String
+  position: Int!
+  addedAt: DateTime!
+  
+  # Relationships
+  collection: Collection!
+  album: Album!
+}
+
+type Recommendation {
+  id: String!
+  score: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Relationships
+  user: User!
+  basisAlbum: Album!
+  recommendedAlbum: Album!
+  
+  # Computed fields
+  normalizedScore: Float! # Score normalized to 0-1
+  similarity: Float # Computed similarity metric
+}
+
+type UserFollow {
+  id: String!
+  createdAt: DateTime!
+  
+  # Relationships
+  follower: User!
+  followed: User!
+}
+
+# =============================================
+# SEARCH & DISCOVERY TYPES
+# =============================================
+
+union SearchResult = Artist | Album | Track
+
+type SearchResults {
+  artists: [Artist!]!
+  albums: [Album!]!
+  tracks: [Track!]!
+  total: Int!
+  hasMore: Boolean!
+}
+
+type RecommendationFeed {
+  recommendations: [Recommendation!]!
+  cursor: String
+  hasMore: Boolean!
+}
+
+# Social Activity Types
+enum ActivityType {
+  FOLLOW
+  RECOMMENDATION
+  COLLECTION_ADD
+  PROFILE_UPDATE
+}
+
+type Activity {
+  id: String!
+  type: ActivityType!
+  createdAt: DateTime!
+
+  # Actor (who performed the activity)
+  actor: User!
+
+  # Target (for follow activities)
+  targetUser: User
+
+  # Album data (for recommendations and collection adds)
+  album: Album
+
+  # Additional context based on activity type
+  recommendation: Recommendation
+  collection: Collection
+
+  # Metadata
+  metadata: ActivityMetadata
+}
+
+type ActivityMetadata {
+  # For recommendations
+  score: Int
+  basisAlbum: Album
+
+  # For collection adds
+  collectionName: String
+  personalRating: Int
+  position: Int
+}
+
+type ActivityFeed {
+  activities: [Activity!]!
+  cursor: String
+  hasMore: Boolean!
+}
+
+# =============================================
+# INPUT TYPES
+# =============================================
+
+input SearchInput {
+  query: String!
+  type: SearchType
+  limit: Int = 20
+  offset: Int = 0
+  searchMode: SearchMode = LOCAL_ONLY
+}
+
+enum SearchMode {
+  LOCAL_ONLY
+  LOCAL_AND_EXTERNAL
+  EXTERNAL_ONLY
+}
+
+input RecommendationInput {
+  albumId: UUID!
+  limit: Int = 10
+  includeExplicit: Boolean = true
+}
+
+input CollectionAlbumInput {
+  albumId: UUID!
+  personalRating: Int
+  personalNotes: String
+  position: Int
+}
+
+input AlbumInput {
+  title: String!
+  releaseDate: String # ISO date string
+  albumType: String # "ALBUM", "EP", "SINGLE", etc.
+  totalTracks: Int
+  coverImageUrl: String
+  musicbrainzId: String
+  spotifyId: String
+  appleMusicId: String
+  discogsMasterReleaseId: String
+  discogsReleaseId: String
+  
+  # Artist associations
+  artists: [ArtistAlbumInput!]!
+}
+
+input ArtistAlbumInput {
+  artistId: UUID # Use existing artist
+  artistName: String # Create new artist
+  role: String # "PRIMARY", "FEATURED", "PRODUCER", etc.
+}
+
+input TrackInput {
+  title: String!
+  albumId: UUID!
+  trackNumber: Int!
+  discNumber: Int = 1
+  durationMs: Int
+  explicit: Boolean = false
+  previewUrl: String
+  isrc: String
+  musicbrainzId: UUID
+  
+  # Artist associations
+  artists: [ArtistTrackInput!]!
+}
+
+input ArtistTrackInput {
+  artistId: UUID # Use existing artist
+  artistName: String # Create new artist
+  role: String # "PRIMARY", "FEATURED", "PRODUCER", etc.
+}
+
+input UpdateTrackInput {
+  title: String
+  trackNumber: Int
+  discNumber: Int
+  durationMs: Int
+  explicit: Boolean
+  previewUrl: String
+  isrc: String
+  musicbrainzId: UUID
+}
+
+input AlertThresholdsInput {
+  queueDepth: Int
+  errorRatePercent: Float
+  avgProcessingTimeMs: Int
+  memoryUsageMB: Int
+}
+
+type AlertThresholds {
+  queueDepth: Int!
+  errorRatePercent: Float!
+  avgProcessingTimeMs: Int!
+  memoryUsageMB: Int!
+}
+
+# =============================================
+# ENUMS
+# =============================================
+
+enum SearchType {
+  ALL
+  ARTIST
+  ALBUM
+  TRACK
+}
+
+enum RecommendationSort {
+  SCORE_DESC
+  SCORE_ASC
+  DATE_DESC
+  DATE_ASC
+  POPULARITY_DESC
+}
+
+enum CollectionSort {
+  POSITION_ASC
+  POSITION_DESC
+  ADDED_DATE_DESC
+  ADDED_DATE_ASC
+  TITLE_ASC
+  TITLE_DESC
+  RATING_DESC
+  RATING_ASC
+}
+
+enum DataQuality {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum EnrichmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+# =============================================
+# MONITORING & HEALTH TYPES
+# =============================================
+
+type SystemHealth {
+  status: HealthStatus!
+  timestamp: DateTime!
+  uptime: Float!
+  components: HealthComponents!
+  metrics: HealthMetrics!
+  alerts: [String!]!
+}
+
+type HealthComponents {
+  queue: ComponentHealth!
+  redis: ComponentHealth!
+  worker: ComponentHealth!
+  spotify: ComponentHealth!
+  memory: ComponentHealth!
+}
+
+type ComponentHealth {
+  status: HealthStatus!
+  message: String!
+  details: JSON
+  lastCheck: DateTime!
+}
+
+type HealthMetrics {
+  queueDepth: Int!
+  activeJobs: Int!
+  failedJobs: Int!
+  completedJobs: Int!
+  errorRate: Float!
+  avgProcessingTime: Float!
+}
+
+enum HealthStatus {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+}
+
+type QueueStatus {
+  name: String!
+  isPaused: Boolean!
+  stats: QueueStats!
+  rateLimitInfo: RateLimitInfo!
+  workers: [WorkerInfo!]!
+}
+
+type QueueStats {
+  waiting: Int!
+  active: Int!
+  completed: Int!
+  failed: Int!
+  delayed: Int!
+  paused: Int!
+}
+
+type RateLimitInfo {
+  maxRequestsPerSecond: Int!
+  currentWindowRequests: Int!
+  windowResetTime: DateTime!
+}
+
+type WorkerInfo {
+  id: String!
+  isRunning: Boolean!
+  isPaused: Boolean!
+  activeJobCount: Int!
+}
+
+type QueueMetrics {
+  timeRange: TimeRange!
+  jobsProcessed: Int!
+  jobsFailed: Int!
+  avgProcessingTime: Float!
+  successRate: Float!
+  errorRate: Float!
+  throughput: ThroughputMetrics!
+  topErrors: [ErrorMetric!]!
+}
+
+type ThroughputMetrics {
+  jobsPerMinute: Float!
+  jobsPerHour: Float!
+  peakJobsPerMinute: Float!
+}
+
+type ErrorMetric {
+  error: String!
+  count: Int!
+  lastOccurrence: DateTime!
+}
+
+type JobRecord {
+  id: String!
+  type: String!
+  status: JobStatus!
+  data: JSON
+  result: JSON
+  error: String
+  attempts: Int!
+  startedAt: DateTime
+  completedAt: DateTime
+  duration: Int
+  priority: Int!
+}
+
+enum JobStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+  FAILED
+  DELAYED
+}
+
+enum TimeRange {
+  LAST_HOUR
+  LAST_DAY
+  LAST_WEEK
+  LAST_MONTH
+}
+
+# =============================================
+# SPOTIFY INTEGRATION TYPES
+# =============================================
+
+type SpotifyAlbum {
+  id: String!
+  name: String!
+  artists: String!
+  artistIds: [String!]!
+  releaseDate: String!
+  image: String
+  spotifyUrl: String!
+  type: String!
+  totalTracks: Int!
+}
+
+type SpotifyPlaylist {
+  id: String!
+  name: String!
+  description: String
+  image: String
+  tracksTotal: Int!
+  spotifyUrl: String!
+  owner: String!
+}
+
+type SpotifyTrack {
+  id: String!
+  name: String!
+  artists: String!
+  artistIds: [String!]
+  album: String
+  albumId: String
+  popularity: Int
+  image: String
+}
+
+type SpotifyTopChart {
+  playlistName: String!
+  playlistId: String!
+  playlistImage: String
+  tracks: [SpotifyTrack!]!
+}
+
+type SpotifyArtist {
+  id: String!
+  name: String!
+  popularity: Int!
+  followers: Int!
+  genres: [String!]!
+  image: String
+  spotifyUrl: String!
+}
+
+type SpotifyPopularArtists {
+  searchTerm: String!
+  artists: [SpotifyArtist!]!
+}
+
+type SpotifyTrendingData {
+  newReleases: [SpotifyAlbum!]!
+  featuredPlaylists: [SpotifyPlaylist!]!
+  topCharts: [SpotifyTopChart!]!
+  popularArtists: [SpotifyPopularArtists!]!
+  needsSync: Boolean!
+  expires: DateTime
+  lastUpdated: DateTime
+}
+
+enum SpotifySyncType {
+  NEW_RELEASES
+  FEATURED_PLAYLISTS
+  BOTH
+}
+
+# =============================================
+# MUSIC DATABASE TYPES
+# =============================================
+
+type DatabaseStats {
+  totalAlbums: Int!
+  totalArtists: Int!
+  totalTracks: Int!
+  albumsNeedingEnrichment: Int!
+  artistsNeedingEnrichment: Int!
+  recentlyEnriched: Int!
+  failedEnrichments: Int!
+  averageDataQuality: Float!
+}
+
+type EnrichmentResult {
+  success: Boolean!
+  jobId: String
+  message: String!
+}
+
+type BatchEnrichmentResult {
+  success: Boolean!
+  jobsQueued: Int!
+  message: String!
+}
+
+enum EnrichmentPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum EnrichmentType {
+  ALBUM
+  ARTIST
+}
+
+type SpotifySyncResult {
+  success: Boolean!
+  jobId: String
+  message: String!
+  stats: SpotifySyncStats
+}
+
+type SpotifySyncStats {
+  albumsQueued: Int!
+  albumsCreated: Int!
+  albumsUpdated: Int!
+  enrichmentJobsQueued: Int!
+}
+
+# =============================================
+# ROOT QUERY TYPE
+# =============================================
+
+type Query {
+  # Health check
+  health: String!
+  systemHealth: SystemHealth!
+
+  # Monitoring & Queue Management
+  queueStatus: QueueStatus!
+  queueMetrics(timeRange: TimeRange = LAST_HOUR): QueueMetrics!
+  jobHistory(limit: Int = 100, status: JobStatus): [JobRecord!]!
+  activeJobs: [JobRecord!]!
+  failedJobs(limit: Int = 50): [JobRecord!]!
+
+  # Search & Discovery
+  search(input: SearchInput!): SearchResults!
+  albumRecommendations(input: RecommendationInput!): [Album!]!
+  trackRecommendations(trackId: UUID!, limit: Int = 10): [Track!]!
+
+  # Spotify Data
+  spotifyTrending: SpotifyTrendingData!
+  
+  # Entity retrieval
+  artist(id: UUID!): Artist
+  album(id: UUID!): Album
+  track(id: UUID!): Track
+  albumTracks(albumId: UUID!): [Track!]!
+  searchTracks(query: String!, limit: Int = 20): [Track!]!
+  user(id: String!): User
+  collection(id: String!): Collection
+  recommendation(id: String!): Recommendation
+
+  # Unified artist discography (supports local, MusicBrainz, and Discogs IDs)
+  # Note: artistDetails is handled directly by server components
+  artistDiscography(id: String!): [UnifiedRelease!]!
+  
+  # Feed & Social
+  recommendationFeed(cursor: String, limit: Int = 20): RecommendationFeed!
+  trendingAlbums(limit: Int = 20): [Album!]!
+  trendingArtists(limit: Int = 20): [Artist!]!
+  userSuggestions(limit: Int = 10): [User!]!
+  
+  # User-specific queries
+  myCollections: [Collection!]!
+  publicCollections(limit: Int = 20, offset: Int = 0): [Collection!]!
+  userCollections(userId: String!): [Collection!]!
+  myRecommendations(cursor: String, limit: Int = 10, sort: RecommendationSort = SCORE_DESC): RecommendationFeed!
+  followingActivity(limit: Int = 50): [Recommendation!]!
+  socialFeed(type: ActivityType, cursor: String, limit: Int = 20): ActivityFeed!
+
+  # User social queries
+  userFollowers(userId: String!, limit: Int = 50, offset: Int = 0): [User!]!
+  userFollowing(userId: String!, limit: Int = 50, offset: Int = 0): [User!]!
+  mutualConnections(userId: String!): [User!]!
+  isFollowing(userId: String!): Boolean!
+
+  # User status queries
+  onboardingStatus: OnboardingStatus!
+  userStats(userId: String!): UserStats!
+
+  # Admin queries
+  users(offset: Int = 0, limit: Int = 20, search: String): [User!]!
+  usersCount(search: String): Int!
+  mySettings: UserSettings
+
+  # Music Database queries
+  databaseStats: DatabaseStats!
+  searchAlbums(
+    query: String
+    dataQuality: String
+    enrichmentStatus: String
+    needsEnrichment: Boolean
+    sortBy: String
+    sortOrder: String
+    limit: Int
+  ): [Album!]!
+  searchArtists(
+    query: String
+    dataQuality: String
+    enrichmentStatus: String
+    needsEnrichment: Boolean
+    sortBy: String
+    sortOrder: String
+    limit: Int
+  ): [Artist!]!
+}
+
+# =============================================
+# MUTATIONS (Placeholder for future implementation)
+# =============================================
+
+type Mutation {
+  # Queue Management
+  pauseQueue: Boolean!
+  resumeQueue: Boolean!
+  retryJob(jobId: String!): Boolean!
+  retryAllFailed: Int! # Returns count of retried jobs
+  cleanQueue(olderThan: Int): Boolean!
+  clearFailedJobs: Boolean!
+
+  # Spotify Sync
+  triggerSpotifySync(type: SpotifySyncType!): SpotifySyncResult!
+
+  # Alert Configuration
+  updateAlertThresholds(input: AlertThresholdsInput!): AlertThresholds!
+
+  # Album management
+  addAlbum(input: AlbumInput!): Album!
+  updateAlbum(id: UUID!, input: AlbumInput!): Album!
+  
+  # Track management
+  createTrack(input: TrackInput!): Track!
+  updateTrack(id: UUID!, input: UpdateTrackInput!): Track!
+  deleteTrack(id: UUID!): Boolean!
+  
+  # Collection management
+  createCollection(name: String!, description: String, isPublic: Boolean = false): Collection!
+  updateCollection(id: String!, name: String, description: String, isPublic: Boolean): Collection!
+  deleteCollection(id: String!): Boolean!
+  addAlbumToCollection(collectionId: String!, input: CollectionAlbumInput!): CollectionAlbum!
+  removeAlbumFromCollection(collectionId: String!, albumId: UUID!): Boolean!
+  updateCollectionAlbum(id: String!, input: CollectionAlbumInput!): CollectionAlbum!
+  reorderCollectionAlbums(collectionId: String!, albumIds: [UUID!]!): [CollectionAlbum!]!
+  # Listen Later convenience without schema change
+  ensureListenLaterCollection: Collection!
+  addToListenLater(albumId: UUID!): CollectionAlbum!
+  removeFromListenLater(albumId: UUID!): Boolean!
+  
+  # Recommendation system
+  createRecommendation(basisAlbumId: UUID!, recommendedAlbumId: UUID!, score: Int!): Recommendation!
+  updateRecommendation(id: String!, score: Int!): Recommendation!
+  deleteRecommendation(id: String!): Boolean!
+  
+  # Social features
+  followUser(userId: String!): UserFollow!
+  unfollowUser(userId: String!): Boolean!
+  dismissUserSuggestion(userId: String!): Boolean!
+
+  # Profile management
+  updateProfile(name: String, bio: String): User!
+  updateOnboardingStatus(hasCompletedTour: Boolean!): OnboardingStatus!
+  resetOnboardingStatus: OnboardingStatus!
+  updateDashboardLayout(layout: JSON!): UserSettings!
+  updateUserSettings(theme: String, language: String, profileVisibility: String, showRecentActivity: Boolean, showCollections: Boolean): UserSettings!
+
+  # Music Database enrichment mutations
+  triggerAlbumEnrichment(id: UUID!, priority: EnrichmentPriority): EnrichmentResult!
+  triggerArtistEnrichment(id: UUID!, priority: EnrichmentPriority): EnrichmentResult!
+  batchEnrichment(ids: [UUID!]!, type: EnrichmentType!, priority: EnrichmentPriority): BatchEnrichmentResult!
+}
+
+# =============================================
+# SUBSCRIPTIONS
+# =============================================
+
+type Subscription {
+  # Real-time queue monitoring
+  queueStatusUpdates: QueueStatus!
+  jobStatusUpdates(jobId: String): JobStatusUpdate!
+  systemHealthUpdates: SystemHealth!
+  alertStream: Alert!
+  metricsStream(interval: Int = 10): QueueMetrics!
+}
+
+type JobStatusUpdate {
+  jobId: String!
+  type: String!
+  status: JobStatus!
+  progress: Float
+  message: String
+  timestamp: DateTime!
+}
+
+type Alert {
+  id: String!
+  level: AlertLevel!
+  type: AlertType!
+  message: String!
+  details: JSON
+  timestamp: DateTime!
+}
+
+enum AlertLevel {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum AlertType {
+  QUEUE_DEPTH
+  ERROR_RATE
+  MEMORY_USAGE
+  PROCESSING_TIME
+  RATE_LIMIT
+  WORKER_FAILURE
+  REDIS_CONNECTION
+}

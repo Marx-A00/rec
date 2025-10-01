@@ -19,7 +19,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async session({ session, token }) {
       if (session.user && token.sub) {
-        // Check if user still exists in database
+        // Check if user still exists in database and get latest data
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
         });
@@ -28,7 +28,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return { ...session, user: undefined };
         }
 
+        // Update session with latest user data from database
         session.user.id = token.sub;
+        session.user.name = dbUser.name ?? '';
+        session.user.email = dbUser.email ?? '';
+        session.user.image = dbUser.image ?? '';
       }
       return session;
     },

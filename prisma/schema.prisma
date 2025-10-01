@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Account {
@@ -34,33 +34,45 @@ model Session {
 }
 
 model User {
-  id              String           @id @default(cuid())
-  name            String?
-  email           String?          @unique
-  emailVerified   DateTime?
-  image           String?
-  hashedPassword  String?
-  
-  // Essential profile fields
-  bio             String?          @db.Text
-  
-  // Social statistics for music recommendations
-  followersCount  Int              @default(0)
-  followingCount  Int              @default(0)
-  recommendationsCount Int          @default(0)
-  
-  // Profile timestamp
-  profileUpdatedAt DateTime?
-  
-  // Existing relations
-  accounts        Account[]
-  recommendations Recommendation[]
-  sessions        Session[]
-  collections     Collection[]
-  
-  // Social features - following relationships
-  following       UserFollow[]     @relation("UserFollowing")
-  followers       UserFollow[]     @relation("UserFollowers")
+  id                   String           @id @default(cuid())
+  name                 String?
+  email                String?          @unique
+  emailVerified        DateTime?
+  image                String?
+  hashedPassword       String?
+  bio                  String?
+  followersCount       Int              @default(0)
+  followingCount       Int              @default(0)
+  recommendationsCount Int              @default(0)
+  profileUpdatedAt     DateTime?
+  accounts             Account[]
+  collections          Collection[]
+  recommendations      Recommendation[]
+  sessions             Session[]
+  settings             UserSettings?
+  followers            UserFollow[]     @relation("UserFollowers")
+  following            UserFollow[]     @relation("UserFollowing")
+}
+
+model UserSettings {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  dashboardLayout       Json?
+  theme                 String   @default("dark")
+  language              String   @default("en")
+  profileVisibility     String   @default("public")
+  showRecentActivity    Boolean  @default(true)
+  showCollections       Boolean  @default(true)
+  emailNotifications    Boolean  @default(true)
+  recommendationAlerts  Boolean  @default(true)
+  followAlerts          Boolean  @default(true)
+  defaultCollectionView String   @default("grid")
+  autoplayPreviews      Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -72,88 +84,277 @@ model VerificationToken {
 }
 
 model Recommendation {
-  id        String   @id @default(cuid())
-  score     Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  userId    String
-  
-  // Discogs references (source of truth)
-  basisAlbumDiscogsId       String
-  recommendedAlbumDiscogsId String
-  basisAlbumArtistDiscogsId       String?
-  recommendedAlbumArtistDiscogsId String?
-  
-  // Cached display data (to avoid API calls in lists)
-  basisAlbumTitle           String
-  basisAlbumArtist          String
-  basisAlbumImageUrl        String?
-  basisAlbumYear            String?
-  recommendedAlbumTitle     String
-  recommendedAlbumArtist    String
-  recommendedAlbumImageUrl  String?
-  recommendedAlbumYear      String?
-  
-  user User @relation(fields: [userId], references: [id])
-  
+  id                   String   @id @default(cuid())
+  score                Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  userId               String
+  basisAlbumId         String   @map("basis_album_id") @db.Uuid
+  recommendedAlbumId   String   @map("recommended_album_id") @db.Uuid
+  basisDiscogsId       String?  @map("basis_discogs_id")
+  recommendedDiscogsId String?  @map("recommended_discogs_id")
+  basisAlbum           Album    @relation("BasisAlbum", fields: [basisAlbumId], references: [id], onDelete: Cascade)
+  recommendedAlbum     Album    @relation("RecommendedAlbum", fields: [recommendedAlbumId], references: [id], onDelete: Cascade)
+  user                 User     @relation(fields: [userId], references: [id])
+
   @@index([userId])
-  @@index([basisAlbumDiscogsId])
-  @@index([recommendedAlbumDiscogsId])
-  @@index([basisAlbumArtistDiscogsId])
-  @@index([recommendedAlbumArtistDiscogsId])
+  @@index([basisAlbumId])
+  @@index([recommendedAlbumId])
 }
 
 model Collection {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   name        String
   description String?
   userId      String
-  isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  isPublic    Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   albums      CollectionAlbum[]
-  
+
   @@index([userId])
   @@index([isPublic])
-  @@index([userId, updatedAt])  // Optimize user collections ordered by update time
+  @@index([userId, updatedAt])
 }
 
 model CollectionAlbum {
   id             String     @id @default(cuid())
   collectionId   String
-  albumDiscogsId String     // Changed to store Discogs ID directly
+  albumId        String     @map("album_id") @db.Uuid
   personalRating Int?
   personalNotes  String?
   position       Int        @default(0)
   addedAt        DateTime   @default(now())
-  
-  // Cached display data
-  albumTitle     String
-  albumArtist    String
-  albumImageUrl  String?
-  albumYear      String?
-  
+  discogsId      String?    @map("discogs_id")
+  album          Album      @relation(fields: [albumId], references: [id], onDelete: Cascade)
   collection     Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  
-  @@unique([collectionId, albumDiscogsId])
+
+  @@unique([collectionId, albumId])
   @@index([collectionId])
-  @@index([albumDiscogsId])
-  @@index([collectionId, position])  // Optimize ordered album retrieval
+  @@index([albumId])
+  @@index([collectionId, position])
+  @@index([collectionId, discogsId])
 }
 
-// User follow relationships
 model UserFollow {
-  id          String   @id @default(cuid())
-  followerId  String
-  followedId  String
-  createdAt   DateTime @default(now())
-  
-  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
-  followed    User     @relation("UserFollowers", fields: [followedId], references: [id], onDelete: Cascade)
-  
+  id         String   @id @default(cuid())
+  followerId String
+  followedId String
+  createdAt  DateTime @default(now())
+  followed   User     @relation("UserFollowers", fields: [followedId], references: [id], onDelete: Cascade)
+  follower   User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+
   @@unique([followerId, followedId])
   @@index([followerId])
   @@index([followedId])
+  @@map("user_follows")
+}
+
+model UserActivity {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String?  @map("user_id")
+  sessionId     String   @map("session_id") @db.VarChar(255)
+  operation     String   @db.VarChar(100)
+  operationType String   @map("operation_type") @db.VarChar(20)
+  metadata      Json?    @map("metadata")
+  albumIds      String[] @map("album_ids")
+  artistIds     String[] @map("artist_ids")
+  userAgent     String?  @map("user_agent")
+  ipAddress     String?  @map("ip_address") @db.VarChar(45)
+  requestId     String?  @map("request_id") @db.VarChar(255)
+  timestamp     DateTime @default(now())
+
+  @@index([userId, timestamp])
+  @@index([sessionId, timestamp])
+  @@index([operation])
+  @@index([timestamp])
+  @@map("user_activities")
+}
+
+model Artist {
+  id               String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  musicbrainzId    String?                  @unique @map("musicbrainz_id") @db.Uuid
+  spotifyId        String?                  @unique @map("spotify_id")
+  discogsId        String?                  @map("discogs_id") @db.VarChar(20)
+  name             String                   @db.VarChar(255)
+  biography        String?
+  formedYear       Int?                     @map("formed_year")
+  countryCode      String?                  @map("country_code") @db.VarChar(2)
+  area             String?                  @map("area") @db.VarChar(100)
+  artistType       String?                  @map("artist_type") @db.VarChar(20)
+  genres           String[]                 @map("genres")
+  imageUrl         String?                  @map("image_url")
+  searchVector     Unsupported("tsvector")? @map("search_vector")
+  source           ContentSource            @default(MUSICBRAINZ)
+  sourceUrl        String?                  @map("source_url")
+  submittedBy      String?                  @map("submitted_by") @db.Uuid
+  dataQuality      DataQuality?             @default(LOW) @map("data_quality")
+  enrichmentStatus EnrichmentStatus?        @default(PENDING) @map("enrichment_status")
+  lastEnriched     DateTime?                @map("last_enriched")
+  createdAt        DateTime                 @default(now()) @map("created_at")
+  updatedAt        DateTime                 @updatedAt @map("updated_at")
+  albums           AlbumArtist[]
+  tracks           TrackArtist[]
+
+  @@index([name])
+  @@index([musicbrainzId])
+  @@index([searchVector], type: Gin)
+  @@index([source])
+  @@map("artists")
+}
+
+model Album {
+  id                    String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  musicbrainzId         String?                  @unique @map("musicbrainz_id") @db.Uuid
+  title                 String                   @db.VarChar(255)
+  releaseDate           DateTime?                @map("release_date") @db.Date
+  releaseType           String?                  @map("release_type") @db.VarChar(50)
+  releaseStatus         String?                  @map("release_status") @db.VarChar(20)
+  releaseCountry        String?                  @map("release_country") @db.VarChar(2)
+  genres                String[]                 @map("genres")
+  secondaryTypes        String[]                 @map("secondary_types")
+  trackCount            Int?                     @map("track_count")
+  durationMs            Int?                     @map("duration_ms")
+  coverArtUrl           String?                  @map("cover_art_url")
+  barcode               String?                  @db.VarChar(50)
+  label                 String?                  @db.VarChar(255)
+  catalogNumber         String?                  @map("catalog_number") @db.VarChar(100)
+  searchVector          Unsupported("tsvector")? @map("search_vector")
+  spotifyId             String?                  @unique @map("spotify_id") @db.VarChar(50)
+  spotifyUrl            String?                  @map("spotify_url")
+  discogsId             String?                  @map("discogs_id") @db.VarChar(20)
+  source                ContentSource            @default(MUSICBRAINZ)
+  sourceUrl             String?                  @map("source_url")
+  submittedBy           String?                  @map("submitted_by") @db.Uuid
+  dataQuality           DataQuality?             @default(LOW) @map("data_quality")
+  enrichmentStatus      EnrichmentStatus?        @default(PENDING) @map("enrichment_status")
+  lastEnriched          DateTime?                @map("last_enriched")
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  updatedAt             DateTime                 @updatedAt @map("updated_at")
+  collectionAlbums      CollectionAlbum[]
+  basisRecommendations  Recommendation[]         @relation("BasisAlbum")
+  targetRecommendations Recommendation[]         @relation("RecommendedAlbum")
+  artists               AlbumArtist[]
+  tracks                Track[]
+
+  @@index([title])
+  @@index([releaseDate])
+  @@index([musicbrainzId])
+  @@index([searchVector], type: Gin)
+  @@index([source])
+  @@map("albums")
+}
+
+model Track {
+  id               String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  albumId          String                   @map("album_id") @db.Uuid
+  musicbrainzId    String?                  @unique @map("musicbrainz_id") @db.Uuid
+  isrc             String?                  @db.VarChar(12)
+  title            String                   @db.VarChar(255)
+  trackNumber      Int                      @map("track_number")
+  discNumber       Int                      @default(1) @map("disc_number")
+  durationMs       Int?                     @map("duration_ms")
+  explicit         Boolean                  @default(false)
+  previewUrl       String?                  @map("preview_url")
+  spotifyId        String?                  @unique @map("spotify_id") @db.VarChar(50)
+  spotifyUrl       String?                  @map("spotify_url")
+  youtubeUrl       String?                  @map("youtube_url")
+  discogsReleaseId String?                  @map("discogs_release_id") @db.VarChar(20)
+  discogsPosition  String?                  @map("discogs_position") @db.VarChar(10)
+  source           ContentSource            @default(MUSICBRAINZ)
+  sourceUrl        String?                  @map("source_url")
+  submittedBy      String?                  @map("submitted_by") @db.Uuid
+  dataQuality      DataQuality              @default(LOW) @map("data_quality")
+  enrichmentStatus EnrichmentStatus         @default(PENDING) @map("enrichment_status")
+  lastEnriched     DateTime?                @map("last_enriched")
+  energy           Float?
+  valence          Float?
+  danceability     Float?
+  tempo            Float?
+  acousticness     Float?
+  instrumentalness Float?
+  liveness         Float?
+  loudness         Float?
+  speechiness      Float?
+  key              Int?                     @map("key_signature")
+  mode             Int?
+  timeSignature    Int?                     @map("time_signature")
+  searchVector     Unsupported("tsvector")? @map("search_vector")
+  createdAt        DateTime                 @default(now()) @map("created_at")
+  updatedAt        DateTime                 @updatedAt @map("updated_at")
+  artists          TrackArtist[]
+  album            Album                    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@index([albumId, discNumber, trackNumber])
+  @@index([title])
+  @@index([isrc])
+  @@index([searchVector], type: Gin)
+  @@index([source])
+  @@index([discogsReleaseId, discogsPosition])
+  @@map("tracks")
+}
+
+model AlbumArtist {
+  albumId  String @map("album_id") @db.Uuid
+  artistId String @map("artist_id") @db.Uuid
+  role     String @default("primary") @db.VarChar(50)
+  position Int    @default(0)
+  album    Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  artist   Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@id([albumId, artistId, role])
+  @@index([albumId])
+  @@index([artistId])
+  @@map("album_artists")
+}
+
+model TrackArtist {
+  trackId  String @map("track_id") @db.Uuid
+  artistId String @map("artist_id") @db.Uuid
+  role     String @default("primary") @db.VarChar(50)
+  position Int    @default(0)
+  artist   Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  track    Track  @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@id([trackId, artistId, role])
+  @@index([trackId])
+  @@index([artistId])
+  @@map("track_artists")
+}
+
+model CacheData {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  data      Json
+  expires   DateTime
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key, expires])
+  @@map("cache_data")
+}
+
+enum ContentSource {
+  DISCOGS
+  MUSICBRAINZ
+  SPOTIFY
+  YOUTUBE
+  BANDCAMP
+  SOUNDCLOUD
+  USER_SUBMITTED
+}
+
+enum DataQuality {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum EnrichmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
 }

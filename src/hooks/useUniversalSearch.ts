@@ -1,20 +1,15 @@
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useSearchQuery, SearchType, SearchMode as GraphQLSearchMode } from '@/generated/graphql';
+
+export type SearchMode = 'LOCAL_ONLY' | 'LOCAL_AND_EXTERNAL' | 'EXTERNAL_ONLY';
 
 import {
   UnifiedSearchResult,
-  SearchResponse,
   SearchFilters,
   SearchContext,
   SortBy,
   GroupBy,
 } from '@/types/search';
-import {
-  queryKeys,
-  defaultQueryOptions,
-  handleApiResponse,
-  QueryError,
-} from '@/lib/queries';
 
 // ========================================
 // Types from UniversalSearchBar (Phase 3 Enhanced)
@@ -51,6 +46,7 @@ export interface UseUniversalSearchOptions {
   minQueryLength: number;
   maxResults: number;
   enabled: boolean;
+  searchMode?: SearchMode;
 
   // ===========================
   // PHASE 3: Enhanced Options
@@ -86,73 +82,6 @@ export interface UseUniversalSearchOptions {
 }
 
 // ========================================
-// Enhanced API Function (Phase 3)
-// ========================================
-
-const fetchUniversalSearch = async (
-  query: string,
-  options: UseUniversalSearchOptions
-): Promise<SearchResponse> => {
-  const {
-    searchType,
-    maxResults,
-    entityTypes,
-    context = 'global',
-    sortBy = 'relevance',
-    sortOrder = 'desc',
-    deduplicate = true,
-    groupBy = 'type',
-    advancedFilters = {},
-    limit,
-    includeMetadata = false,
-    searchInTracks = false,
-    entityTypeFilter = [],
-  } = options;
-
-  const params = new URLSearchParams({
-    query,
-    type: searchType,
-    ...(maxResults && { per_page: maxResults.toString() }),
-
-    // ===========================
-    // PHASE 3: Enhanced Parameters
-    // ===========================
-
-    // Context and behavior
-    context,
-    sortBy,
-    sortOrder,
-    deduplicate: deduplicate.toString(),
-    groupBy,
-
-    // Metadata and tracking
-    includeMetadata: includeMetadata.toString(),
-    searchInTracks: searchInTracks.toString(),
-  });
-
-  // Entity types filtering
-  if (entityTypeFilter.length > 0) {
-    params.set('entityTypes', entityTypeFilter.join(','));
-  } else if (entityTypes.length > 0 && searchType === 'all') {
-    const typeList = entityTypes.map(et => et.type).join(',');
-    params.set('entityTypes', typeList);
-  }
-
-  // Advanced filters (JSON-based)
-  if (Object.keys(advancedFilters).length > 0) {
-    params.set('filters', JSON.stringify(advancedFilters));
-  }
-
-  // Result limiting
-  if (limit) {
-    params.set('limit', limit.toString());
-  }
-
-  const response = await fetch(`/api/search?${params}`);
-  return handleApiResponse(response);
-};
-
-// ========================================
 // Enhanced Main Hook (Phase 3)
 // ========================================
 
@@ -160,75 +89,188 @@ export function useUniversalSearch(
   query: string,
   options: UseUniversalSearchOptions
 ) {
-  const { enabled, minQueryLength, debounceMs } = options;
+  const { enabled, minQueryLength, searchType, maxResults, limit, searchMode = 'LOCAL_ONLY' } = options;
 
   const shouldQuery = !!query && query.length >= minQueryLength && enabled;
 
-  // Enhanced query key including new parameters
-  const queryKey = useMemo(() => {
-    // Create a comprehensive key that includes Phase 3 parameters
-    const baseKey = queryKeys.search(
-      query,
-      options.searchType,
-      options.maxResults
-    );
+  // Map searchType to GraphQL SearchType enum
+  let type: SearchType = SearchType.All;
+  if (searchType === 'albums') {
+    type = SearchType.Album;
+  } else if (searchType === 'artists') {
+    type = SearchType.Artist;
+  } else if (searchType === 'tracks') {
+    type = SearchType.Track;
+  }
 
-    // Add Phase 3 parameters to create unique cache key
-    const enhancedParams = {
-      context: options.context,
-      sortBy: options.sortBy,
-      sortOrder: options.sortOrder,
-      deduplicate: options.deduplicate,
-      groupBy: options.groupBy,
-      advancedFilters: options.advancedFilters,
-      entityTypeFilter: options.entityTypeFilter,
-      limit: options.limit,
-    };
+  // Map SearchMode to GraphQL enum
+  let graphqlSearchMode: GraphQLSearchMode = GraphQLSearchMode.LocalOnly;
+  if (searchMode === 'LOCAL_AND_EXTERNAL') {
+    graphqlSearchMode = GraphQLSearchMode.LocalAndExternal;
+  } else if (searchMode === 'EXTERNAL_ONLY') {
+    graphqlSearchMode = GraphQLSearchMode.ExternalOnly;
+  }
 
-    // Only add enhanced params if they differ from defaults
-    const hasEnhancedParams = Object.values(enhancedParams).some(
-      value =>
-        value !== undefined &&
-        value !== null &&
-        (Array.isArray(value) ? value.length > 0 : true) &&
-        (typeof value === 'object' && value !== null
-          ? Object.keys(value).length > 0
-          : true)
-    );
+  // Use the generated GraphQL hook
+  const queryResult = useSearchQuery(
+    {
+      input: {
+        query,
+        type,
+        limit: limit || maxResults || 20,
+        searchMode: graphqlSearchMode,
+      },
+    },
+    {
+      enabled: shouldQuery,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 10, // 10 minutes
+    }
+  );
 
-    return hasEnhancedParams
-      ? ([...baseKey, 'enhanced', enhancedParams] as const)
-      : baseKey;
-  }, [
-    query,
-    options.searchType,
-    options.maxResults,
-    options.context,
-    options.sortBy,
-    options.sortOrder,
-    options.deduplicate,
-    options.groupBy,
-    options.advancedFilters,
-    options.entityTypeFilter,
-    options.limit,
-  ]);
-
-  const queryResult = useQuery({
-    queryKey,
-    queryFn: () => fetchUniversalSearch(query, options),
-    enabled: shouldQuery,
-    // Use search options for unified search
-    ...defaultQueryOptions.search,
-  });
-
-  // Extract and normalize results with Phase 3 enhancements
+  // Transform and normalize results
   const results = useMemo(() => {
-    if (!queryResult.data?.results) return [];
+    if (!queryResult.data?.search) return [];
 
-    // Results are already processed by the enhanced API
-    // No need for client-side filtering since server handles it
-    return queryResult.data.results;
-  }, [queryResult.data?.results]);
+    const searchData = queryResult.data.search;
+    const transformedResults: UnifiedSearchResult[] = [];
+
+    // Transform albums
+    if (searchData.albums) {
+      searchData.albums.forEach((album) => {
+        // LOCAL-FIRST: navigate using local UUID and mark as local when present
+        const localId = album.id;
+        const musicbrainzId = album.musicbrainzId || undefined;
+        const navId = localId; // prefer local for routing
+        const inferredSource: 'local' | 'musicbrainz' = 'local';
+        try {
+          // Debug log to trace source/id selection for album results
+          // eslint-disable-next-line no-console
+          console.log(
+            '[useUniversalSearch] Album mapping (local-first)',
+            {
+              localId: String(localId),
+              musicbrainzId: musicbrainzId || null,
+              navId: String(navId),
+              inferredSource,
+              title: album.title,
+            }
+          );
+        } catch {}
+        transformedResults.push({
+          id: navId,
+          type: 'album' as const,
+          title: album.title,
+          subtitle: album.artists?.[0]?.artist?.name || 'Unknown Artist',
+          artist: album.artists?.[0]?.artist?.name || 'Unknown Artist',
+          releaseDate: album.releaseDate instanceof Date ? album.releaseDate.toISOString() : album.releaseDate || '',
+          genre: [],
+          label: '',
+          source: inferredSource,
+          image: {
+            url: album.coverArtUrl || '',
+            width: 300,
+            height: 300,
+            alt: album.title,
+          },
+          cover_image: album.coverArtUrl || undefined,
+          _discogs: {},
+        });
+      });
+    }
+
+    // Transform artists
+    if (searchData.artists) {
+      searchData.artists.forEach((artist) => {
+        const localId = String(artist.id);
+        const musicbrainzId = artist.musicbrainzId || undefined;
+        // Heuristic: if GraphQL returned an MBID equal to id (no local record), treat as external
+        const isExternalOnly = !!musicbrainzId && musicbrainzId === localId;
+
+        const navId = isExternalOnly ? musicbrainzId! : localId;
+        const source: 'local' | 'musicbrainz' = isExternalOnly ? 'musicbrainz' : 'local';
+
+        try {
+          // eslint-disable-next-line no-console
+          console.log('[useUniversalSearch] Artist mapping (classified)', {
+            localId,
+            musicbrainzId: musicbrainzId || null,
+            navId,
+            source,
+            title: artist.name,
+          });
+        } catch {}
+
+        transformedResults.push({
+          id: navId,
+          type: 'artist' as const,
+          title: artist.name,
+          subtitle: 'Artist',
+          artist: artist.name,
+          releaseDate: '',
+          genre: [],
+          label: '',
+          source,
+          image: {
+            url: artist.imageUrl || '',
+            width: 300,
+            height: 300,
+            alt: artist.name,
+          },
+          cover_image: artist.imageUrl || undefined,
+          _discogs: {},
+        });
+      });
+    }
+
+    // Transform tracks
+    if (searchData.tracks) {
+      searchData.tracks.forEach((track) => {
+        const idStr = String(track.id);
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idStr);
+        const isNumeric = /^\d+$/.test(idStr);
+        const inferredSource = isUuid ? 'musicbrainz' : isNumeric ? 'discogs' : 'local';
+        transformedResults.push({
+          id: track.id,
+          type: 'track' as const,
+          title: track.title,
+          subtitle: `Track ${track.trackNumber}${
+            track.album ? ` - ${track.album.title}` : ''
+          }`,
+          artist: track.artists?.[0]?.artist?.name || 'Unknown Artist',
+          releaseDate: '',
+          genre: [],
+          label: '',
+          source: inferredSource,
+          image: {
+            url: track.album?.coverArtUrl || '',
+            width: 300,
+            height: 300,
+            alt: track.title,
+          },
+          cover_image: track.album?.coverArtUrl || undefined,
+          _discogs: {},
+          metadata: {
+            totalDuration: track.durationMs || 0,
+            numberOfTracks: 1,
+          },
+        });
+      });
+    }
+
+    return transformedResults;
+  }, [queryResult.data?.search]);
+
+  // Group results by type
+  const grouped = useMemo(() => {
+    return {
+      albums: results.filter((r) => r.type === 'album'),
+      artists: results.filter((r) => r.type === 'artist'),
+      tracks: results.filter((r) => r.type === 'track'),
+      labels: [],
+      other: [],
+    };
+  }, [results]);
 
   // ===========================
   // PHASE 3: Enhanced Return Data
@@ -239,13 +281,20 @@ export function useUniversalSearch(
     results,
 
     // Phase 3 enhanced data
-    grouped: queryResult.data?.grouped,
-    metadata: queryResult.data?.metadata,
-    deduplication: queryResult.data?.deduplication,
-    filterResults: queryResult.data?.filterResults,
-    performance: queryResult.data?.performance,
-    context: queryResult.data?.context,
-    pagination: queryResult.data?.pagination,
+    grouped,
+    metadata: undefined, // Would need to be added to GraphQL schema
+    deduplication: undefined, // Would need to be added to GraphQL schema
+    filterResults: undefined, // Would need to be added to GraphQL schema
+    performance: undefined, // Would need to be added to GraphQL schema
+    context: undefined, // Would need to be added to GraphQL schema
+    pagination: {
+      total: queryResult.data?.search?.total || 0,
+      per_page: maxResults || 20,
+      page: 1,
+      totalPages: 1,
+      hasNext: false,
+      hasPrev: false,
+    },
   };
 }
 
@@ -262,4 +311,3 @@ export type {
   SortBy,
   GroupBy,
 } from '@/types/search';
-export { QueryError, isQueryError, getErrorMessage } from '@/lib/queries';

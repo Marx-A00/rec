@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, Share2, MoreHorizontal, User } from 'lucide-react';
+import { Heart, Share2, MoreHorizontal, User, Clock } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ import { Release } from '@/types/album';
 import { CollectionAlbum } from '@/types/collection';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
+import { graphqlClient } from '@/lib/graphql-client';
+import { useAddToListenLaterMutation } from '@/generated/graphql';
 
 interface AlbumModalProps {
   isOpen: boolean;
@@ -51,6 +53,10 @@ export default function AlbumModal({
   const {} = useNavigation();
   const { toast, showToast, hideToast } = useToast();
   const { openDrawer } = useRecommendationDrawerContext();
+  const addToListenLater = useAddToListenLaterMutation({
+    onSuccess: () => showToast('Added to Listen Later', 'success'),
+    onError: () => showToast('Failed to add to Listen Later', 'error'),
+  });
 
   const isMasterRelease = useMemo(
     () => isRelease(data) && data.type === 'master',
@@ -126,6 +132,13 @@ export default function AlbumModal({
     return null;
   };
 
+  const getSource = (): 'local' | 'musicbrainz' | 'discogs' | undefined => {
+    if (!data) return undefined;
+    if (isCollectionAlbum(data)) return (data as any).source || 'local';
+    if (isRelease(data)) return (data as any).source as any;
+    return undefined;
+  };
+
   const getArtist = () => {
     if (isCollectionAlbum(data)) {
       return data.albumArtist;
@@ -139,18 +152,24 @@ export default function AlbumModal({
     return 'Unknown Artist';
   };
 
+
   // Convert Release/CollectionAlbum data to Album format for interactions
   const albumForInteractions = useMemo((): Album | null => {
     if (!data) return null;
 
     const albumId = getAlbumId();
     if (!albumId) return null;
+    const source = getSource();
+    const normalizedSource = source ? (source.toLowerCase() as 'local' | 'musicbrainz' | 'discogs') : undefined;
 
     if (isCollectionAlbum(data)) {
       return {
         id: String(albumId),
         title: data.albumTitle,
-        artists: data.albumArtist ? [{ id: '', name: data.albumArtist }] : [],
+        artists: data.albumArtist
+          ? [{ id: (data as any).albumArtistId || '', name: data.albumArtist }]
+          : [],
+        source: 'local',
         year:
           typeof data.albumYear === 'string'
             ? parseInt(data.albumYear)
@@ -168,12 +187,18 @@ export default function AlbumModal({
       return {
         id: String(albumId),
         title: data.title,
-        artists: data.artist
-          ? [{ id: '', name: data.artist }]
-          : data.basic_information?.artists?.map(a => ({
-              id: '',
-              name: a.name,
-            })) || [],
+        artists:
+          (data.basic_information?.artists &&
+            data.basic_information.artists.length > 0)
+            ? data.basic_information.artists.map(a => ({
+                id: (a as any).id || '',
+                name: a.name,
+              }))
+            : data.artist
+              ? [{ id: '', name: data.artist }]
+              : [],
+        source: normalizedSource,
+        musicbrainzId: normalizedSource === 'musicbrainz' ? String(data.id) : undefined,
         year: data.year,
         image: {
           url: getImageUrl() || '',
@@ -193,14 +218,36 @@ export default function AlbumModal({
 
   // Album interaction handlers
   const handleArtistClick = async (artistId: string, artistName: string) => {
-    if (!artistId) {
-      showToast(`Artist ID not available for ${artistName}`, 'error');
-      return;
-    }
-
     try {
-      onClose(); // Close modal first
-      router.push(`/artists/${artistId}`);
+      const source = getSource();
+      const normalizedSource = source ? source.toLowerCase() : undefined;
+
+      let navId = artistId;
+
+      if (!navId) {
+        // Resolve by name → prefer local match
+        const SEARCH_ARTISTS = `
+          query SearchArtists($query: String!, $limit: Int) {
+            searchArtists(query: $query, limit: $limit) { id name musicbrainzId }
+          }
+        `;
+        const res: any = await graphqlClient.request(SEARCH_ARTISTS, {
+          query: artistName,
+          limit: 5,
+        });
+        const results = Array.isArray(res?.searchArtists) ? res.searchArtists : [];
+        const local = results.find((a: any) => a.id && a.id.length > 0);
+        if (local) navId = String(local.id);
+      }
+
+      if (!navId) {
+        showToast(`Artist not found: ${artistName}`, 'error');
+        return;
+      }
+
+      onClose();
+      const suffix = normalizedSource ? `?source=${encodeURIComponent(normalizedSource as string)}` : '';
+      router.push(`/artists/${navId}${suffix}`);
     } catch (error) {
       console.error('Navigation error:', error);
       showToast(
@@ -252,6 +299,16 @@ export default function AlbumModal({
       console.error('Share failed:', error);
       showToast('Failed to share album', 'error');
     }
+  };
+
+  const handleAddToListenLater = async () => {
+    if (!albumForInteractions?.id) {
+      showToast('Album not available', 'error');
+      return;
+    }
+    try {
+      await addToListenLater.mutateAsync({ albumId: albumForInteractions.id });
+    } catch {}
   };
 
   const handleMoreActions = () => {
@@ -321,7 +378,7 @@ export default function AlbumModal({
     };
   }, [isOpen, onClose]);
 
-  // Fetch high-quality image for master releases
+  // Fetch high-quality image for master releases (skip for MusicBrainz; use existing imageUrl)
   useEffect(() => {
     if (!isOpen || !data) {
       setHighQualityImageUrl(null);
@@ -330,6 +387,13 @@ export default function AlbumModal({
 
     // Enhanced high-quality image fetching for master releases
     if (isMasterRelease) {
+      const source = getSource();
+      const normalizedSource = typeof source === 'string' ? source.toLowerCase() : source;
+      // For MusicBrainz release-groups (discography), we already have CAA URLs; avoid extra fetch
+      if (normalizedSource === 'musicbrainz') {
+        return;
+      }
+
       // FIXED: Use same logic as getAlbumId() - for masters, always use master ID!
       const fetchId =
         isRelease(data) && data.type === 'master'
@@ -345,7 +409,8 @@ export default function AlbumModal({
         data.id
       );
 
-      fetch(`/api/albums/${fetchId}`)
+      const suffix = source ? `?source=${encodeURIComponent(source)}` : '';
+      fetch(`/api/albums/${fetchId}${suffix}`)
         .then(res => res.json())
         .then(result => {
           // The API returns the album data directly, not wrapped in {success: true, album: {...}}
@@ -384,8 +449,10 @@ export default function AlbumModal({
         if (onNavigateToAlbum) {
           onNavigateToAlbum(albumIdString);
         } else {
-          // Fallback to internal navigation
-          router.push(`/albums/${albumIdString}`);
+          // Fallback to internal navigation with explicit source
+          const source = getSource();
+          const suffix = source ? `?source=${encodeURIComponent(source)}` : '';
+          router.push(`/albums/${albumIdString}${suffix}`);
         }
       } catch (error) {
         console.error('Navigation error:', error);
@@ -608,9 +675,7 @@ export default function AlbumModal({
                           key={`${artist.id}-${index}`}
                           variant='secondary'
                           size='sm'
-                          onClick={() =>
-                            handleArtistClick(artist.id, artist.name)
-                          }
+                          onClick={() => handleArtistClick(artist.id, artist.name)}
                           className='gap-1.5 text-xs h-7 px-2'
                           aria-label={`View artist ${sanitizeArtistName(artist.name)}`}
                         >
@@ -640,6 +705,17 @@ export default function AlbumModal({
                   size='sm'
                   variant='default'
                 />
+
+                <Button
+                  variant='secondary'
+                  size='sm'
+                  onClick={handleAddToListenLater}
+                  className='gap-1.5 text-sm'
+                  aria-label='Add to Listen Later'
+                >
+                  <Clock className='h-3.5 w-3.5' />
+                  Listen Later
+                </Button>
 
                 <Button
                   variant='outline'

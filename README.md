@@ -159,13 +159,136 @@ The app supports multiple authentication methods:
 6. Adjust the score using the slider
 7. Click "Create Recommendation" to submit your recommendation
 
+## BullMQ Queue System
+
+This application uses **BullMQ** with Redis for handling MusicBrainz API requests with rate limiting (1 request per second).
+
+### Prerequisites
+
+1. **Redis**: Start a Redis server using Docker:
+   ```bash
+   docker run -d --name redis -p 6379:6379 redis:latest
+   ```
+
+2. **Environment Variables**: Add Redis configuration to your `.env`:
+   ```env
+   # Redis Configuration for BullMQ
+   REDIS_URL=redis://localhost:6379
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+   REDIS_PASSWORD=
+   REDIS_DB=0
+   ```
+
+### Queue Development Setup
+
+1. **Start Queue System** (Dashboard + Worker):
+   ```bash
+   pnpm queue:dev
+   ```
+   This starts both the Bull Board dashboard and persistent worker with colored logs.
+
+2. **Monitor Dashboard**: 
+   - **URL**: `http://localhost:3001/admin/queues`
+   - **Features**: Real-time job monitoring, retry management, queue statistics
+
+### Queue Commands
+
+#### Core Services
+- `pnpm worker` - Start persistent production worker
+- `pnpm dashboard` - Start Bull Board monitoring dashboard
+- `pnpm queue:dev` - Start both dashboard + worker together
+
+#### Testing & Development
+- `pnpm queue:add` - Add single fast job (Bladee - Eversince)
+- `pnpm queue:slow` - Add 30-second slow job (perfect for testing Active tab)
+- `pnpm queue:mock` - Generate 10 varied test jobs with different types
+
+#### Legacy Testing Tools
+- `pnpm test:worker` - Start test worker (development only)
+- `pnpm queue:test-service` - Test real MusicBrainz API calls
+
+### Queue Architecture
+
+#### Production Worker (`src/workers/musicbrainz-worker.ts`)
+- ✅ **Always running** - no startup delays
+- ✅ **Auto-restart** - recovers from crashes (max 5 attempts)
+- ✅ **Graceful shutdown** - handles SIGTERM, SIGINT, uncaught exceptions
+- ✅ **Rate limiting** - 1 request per second to MusicBrainz API
+- ✅ **Job retention** - keeps last 100 completed, 50 failed jobs
+- ✅ **Enhanced logging** - ready, active, completed, failed, stalled events
+
+#### Queue Features
+- **Rate Limiting**: 1 req/sec to comply with MusicBrainz API limits
+- **Job Types**: `search-artists`, `search-releases`, `get-artist`, `get-release`
+- **Error Handling**: Automatic retries with exponential backoff
+- **Monitoring**: Professional Bull Board UI with real-time updates
+- **Job Persistence**: Redis-backed reliable job storage
+
+#### Integration
+The `QueuedMusicBrainzService` wraps the original `MusicBrainzService` and provides the same interface while adding:
+- Automatic queuing of all API calls
+- Rate limit compliance
+- Job result caching
+- Promise-based await interface
+
+### Queue Monitoring
+
+**Bull Board Dashboard**: `http://localhost:3001/admin/queues`
+
+**Features**:
+- ✅ **Real-time Updates** - Live job processing without rate limiting
+- ✅ **Active Jobs** - See jobs currently being processed
+- ✅ **Job Management** - Retry, delete, and manage jobs
+- ✅ **Queue Statistics** - Performance metrics and insights  
+- ✅ **Error Tracking** - Detailed error logs and stack traces
+- ✅ **Multiple Tabs** - Waiting, Active, Completed, Failed, Delayed
+- ✅ **Professional UI** - Modern design with dark/light themes
+
+### Development Workflow
+
+1. **Start Development Stack**:
+   ```bash
+   # Terminal 1: Queue system
+   pnpm queue:dev
+   
+   # Terminal 2: Next.js app  
+   pnpm dev
+   ```
+
+2. **Test Queue Functionality**:
+   ```bash
+   # Add fast job
+   pnpm queue:add
+   
+   # Add slow job (30s) - perfect for seeing Active tab
+   pnpm queue:slow
+   
+   # Generate test activity
+   pnpm queue:mock
+   ```
+
+3. **Monitor**: Visit `http://localhost:3001/admin/queues` to see jobs processing
+
+### Production Considerations
+
+- **Persistent Worker**: Always run `pnpm worker` in production
+- **Process Manager**: Use PM2, systemd, or Docker for worker management
+- **Redis**: Use managed Redis service (AWS ElastiCache, Redis Cloud)
+- **Monitoring**: Bull Board dashboard shows health and performance
+- **Scaling**: Add more worker instances for higher throughput (respecting rate limits)
+
 ## Technologies Used
 
 - Next.js
 - React
 - TypeScript
 - Tailwind CSS
+- **BullMQ** - Redis-backed job queue for API rate limiting
+- **Redis** - In-memory data structure store for queue persistence
+- **Bull Board** - Professional queue monitoring dashboard
 - Discogs API (via Disconnect library)
+- MusicBrainz API (rate-limited via BullMQ)
 - Playwright (for testing)
 
 ## License

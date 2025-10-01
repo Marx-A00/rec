@@ -1,40 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { Folder, FolderOpen, Lock, Globe, Calendar } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
-import { CollectionSummary } from '@/types/collection';
+import { useGetUserCollectionListQuery } from '@/generated/graphql';
 
 interface CollectionsListProps {
   userId: string;
 }
 
 export default function CollectionsList({ userId }: CollectionsListProps) {
-  const [collections, setCollections] = useState<CollectionSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchCollections = async () => {
-      try {
-        const response = await fetch('/api/collections');
-        if (!response.ok) {
-          throw new Error('Failed to fetch collections');
-        }
-        const data = await response.json();
-        setCollections(data.collections || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-        console.error('Error fetching collections:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCollections();
-  }, [userId]);
+  const { data, isLoading, error } = useGetUserCollectionListQuery(
+    { userId },
+    { enabled: !!userId }
+  );
+  const collections = useMemo(() => data?.user?.collections ?? [], [data]);
 
   if (isLoading) {
     return (
@@ -51,7 +33,7 @@ export default function CollectionsList({ userId }: CollectionsListProps) {
   if (error) {
     return (
       <div className='text-center py-8'>
-        <p className='text-red-400'>Failed to load collections: {error}</p>
+        <p className='text-red-400'>Failed to load collections</p>
       </div>
     );
   }
@@ -108,30 +90,20 @@ export default function CollectionsList({ userId }: CollectionsListProps) {
               </div>
             </div>
 
-            {/* Collection Cover */}
+            {/* Collection Cover (placeholder) */}
             <div className='aspect-square mb-4 bg-zinc-800 rounded-lg overflow-hidden'>
-              {collection.coverImage ? (
-                <AlbumImage
-                  src={collection.coverImage.url}
-                  alt={collection.coverImage.alt || collection.name}
-                  fill
-                  className='object-cover'
-                  showSkeleton={false}
-                />
-              ) : (
-                <div className='w-full h-full flex items-center justify-center'>
-                  <FolderOpen className='h-12 w-12 text-zinc-600' />
-                </div>
-              )}
+              <div className='w-full h-full flex items-center justify-center'>
+                <FolderOpen className='h-12 w-12 text-zinc-600' />
+              </div>
             </div>
 
             {/* Collection Stats */}
             <div className='flex items-center justify-between text-sm text-zinc-400'>
-              <span>{collection.albumCount} albums</span>
+              <span>{collection.albumCount ?? 0} albums</span>
               <div className='flex items-center gap-1'>
                 <Calendar className='h-3 w-3' />
                 <span>
-                  {new Date(collection.updatedAt).toLocaleDateString()}
+                  {collection.updatedAt ? new Date(collection.updatedAt).toLocaleDateString() : ''}
                 </span>
               </div>
             </div>

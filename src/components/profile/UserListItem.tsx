@@ -38,10 +38,10 @@ export default function UserListItem({
 
   const handleFollowChange = (
     isFollowing: boolean,
-    newCounts: { followersCount: number; followingCount: number }
+    newCounts?: { followersCount: number; followingCount: number }
   ) => {
     if (onFollowChange) {
-      onFollowChange(user.id, isFollowing, newCounts);
+      onFollowChange(user.id, isFollowing, newCounts || { followersCount: 0, followingCount: 0 });
     }
   };
 

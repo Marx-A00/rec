@@ -107,3 +107,45 @@ body {
     width: max-content !important;
   }
 }
+
+/* Mosaic animations and performance optimizations */
+@layer utilities {
+  /* Fade-in animation for grid background */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 0.1;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out forwards;
+  }
+
+  /* Performance optimizations for mosaic tiles */
+  .mosaic-tile {
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+  }
+
+  /* Smooth transitions for drag operations */
+  .mosaic-dragging {
+    transition: none !important;
+    cursor: grabbing !important;
+  }
+
+  /* Optimize resize handle rendering */
+  .resize-handle {
+    will-change: transform;
+    contain: layout style;
+  }
+
+  /* GPU-accelerated hover effects */
+  .mosaic-hover-lift {
+    transform: translateY(-2px) translateZ(0);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+}

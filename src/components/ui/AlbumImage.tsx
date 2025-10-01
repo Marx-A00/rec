@@ -3,7 +3,8 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Music } from 'lucide-react';
-
+import { getImageUrl } from '@/lib/cloudflare-images';
+// TODO: Consolidate image handling
 interface AlbumImageProps {
   src: string | null | undefined;
   alt: string;
@@ -46,7 +47,19 @@ export default function AlbumImage({
       src !== 'https://via.placeholder.com/400x400?text=No+Image' &&
       src !== FALLBACK_IMAGE
     ) {
-      setImgSrc(src);
+      // Check if it's a Cloudflare Images URL and optimize it
+      if (src.includes('imagedelivery.net') && src.includes('/public')) {
+        // Extract the image ID and rebuild with optimal size
+        const matches = src.match(/imagedelivery\.net\/[^\/]+\/([^\/]+)/);
+        if (matches && matches[1]) {
+          const optimizedUrl = getImageUrl(matches[1], { width, height });
+          setImgSrc(optimizedUrl);
+        } else {
+          setImgSrc(src);
+        }
+      } else {
+        setImgSrc(src);
+      }
       setIsLoading(true);
       setHasError(false);
       setRetryCount(0);
@@ -139,6 +152,8 @@ export default function AlbumImage({
         // Disable drag to prevent issues with fallback logic
         draggable={false}
         style={style}
+        // Use unoptimized for external images to avoid loader warnings
+        unoptimized={!imgSrc.includes('imagedelivery.net')}
       />
 
       {/* Error state overlay (only show if fallback image also fails) */}

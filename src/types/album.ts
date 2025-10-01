@@ -8,6 +8,9 @@ export interface Track {
 export interface Album {
   id: string; // This is the Discogs ID
   title: string;
+  // Optional external identifiers and source context
+  musicbrainzId?: string;
+  source?: 'local' | 'musicbrainz' | 'discogs';
   artists: Array<{
     id: string;
     name: string;
@@ -51,6 +54,7 @@ export interface Release {
   resource_url?: string;
   artist?: string;
   thumb?: string;
+  source?: 'local' | 'musicbrainz' | 'discogs';
   status?: string; // For releases
   main_release?: number; // For masters
   basic_information?: {

@@ -1,0 +1,14 @@
+mutation ReorderCollectionAlbums($collectionId: String!, $albumIds: [UUID!]!) {
+  reorderCollectionAlbums(collectionId: $collectionId, albumIds: $albumIds) {
+    id
+    position
+    addedAt
+    album {
+      id
+      title
+      coverArtUrl
+    }
+  }
+}
+
+
