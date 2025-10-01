@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { graphqlClient } from '@/lib/graphql-client';
 import { queryKeys } from '@/lib/queries';
 
 interface UpdateProfileRequest {
@@ -13,27 +14,33 @@ interface UpdateProfileResponse {
   id: string;
 }
 
+const UPDATE_PROFILE_MUTATION = `
+  mutation UpdateProfile($name: String, $bio: String) {
+    updateProfile(name: $name, bio: $bio) {
+      id
+      name
+      bio
+    }
+  }
+`;
+
 const updateUserProfile = async (
-  userId: string,
+  _userId: string,
   profileData: UpdateProfileRequest
 ): Promise<UpdateProfileResponse> => {
-  const response = await fetch(`/api/users/${userId}`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  try {
+    const data: any = await graphqlClient.request(UPDATE_PROFILE_MUTATION, {
       name: profileData.name.trim(),
       bio: profileData.bio.trim(),
-    }),
-  });
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to update profile');
+    return data.updateProfile;
+  } catch (error: any) {
+    if (error.response?.errors?.[0]) {
+      throw new Error(error.response.errors[0].message);
+    }
+    throw new Error('Failed to update profile');
   }
-
-  return response.json();
 };
 
 interface UseUpdateUserProfileMutationOptions {

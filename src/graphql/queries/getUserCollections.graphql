@@ -1,0 +1,27 @@
+query GetUserCollections($userId: String!) {
+  user(id: $userId) {
+    id
+    collections {
+      id
+      name
+      description
+      isPublic
+      albums {
+        id
+        personalRating
+        personalNotes
+        position
+        addedAt
+        album {
+          id
+          title
+          coverArtUrl
+          releaseDate
+          artists {
+            artist { id name }
+          }
+        }
+      }
+    }
+  }
+}

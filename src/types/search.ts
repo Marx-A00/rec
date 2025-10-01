@@ -101,9 +101,11 @@ export interface UnifiedSearchResult {
   title: string;
   subtitle: string;
   artist: string;
-  releaseDate: string;
+  releaseDate: string | null;
   genre: string[];
   label: string;
+  // Preferred data source for this result (used for routing/fetching)
+  source?: 'musicbrainz' | 'discogs' | 'local';
   image: {
     url: string;
     width: number;

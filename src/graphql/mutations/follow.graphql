@@ -1,0 +1,23 @@
+mutation FollowUser($userId: String!) {
+  followUser(userId: $userId) {
+    id
+    follower {
+      id
+    }
+    followed {
+      id
+    }
+    createdAt
+  }
+}
+
+mutation UnfollowUser($userId: String!) {
+  unfollowUser(userId: $userId)
+}
+
+query CheckFollowStatus($userId: String!) {
+  user(id: $userId) {
+    id
+    isFollowing
+  }
+}

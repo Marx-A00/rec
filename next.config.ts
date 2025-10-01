@@ -12,6 +12,8 @@ const apiCSP = `
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts',
     remotePatterns: [
       {
         protocol: 'https',
@@ -46,6 +48,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'i.scdn.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'imagedelivery.net',
         port: '',
         pathname: '/**',
       },

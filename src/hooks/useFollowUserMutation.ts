@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { graphqlClient } from '@/lib/graphql-client';
 import { queryKeys } from '@/lib/queries';
 
 interface FollowActionResponse {
@@ -7,36 +8,56 @@ interface FollowActionResponse {
   message: string;
 }
 
-const followUser = async (userId: string): Promise<FollowActionResponse> => {
-  const response = await fetch(`/api/users/${userId}/follow`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const data = await response.json();
-    throw new Error(data.error || 'Failed to follow user');
+const FOLLOW_USER_MUTATION = `
+  mutation FollowUser($userId: String!) {
+    followUser(userId: $userId) {
+      id
+      follower {
+        id
+        followingCount
+      }
+      followed {
+        id
+        followersCount
+      }
+    }
   }
+`;
 
-  return response.json();
+const UNFOLLOW_USER_MUTATION = `
+  mutation UnfollowUser($userId: String!) {
+    unfollowUser(userId: $userId)
+  }
+`;
+
+const followUser = async (userId: string): Promise<FollowActionResponse> => {
+  try {
+    await graphqlClient.request(FOLLOW_USER_MUTATION, { userId });
+    return {
+      isFollowing: true,
+      message: 'Successfully followed user',
+    };
+  } catch (error: any) {
+    if (error.response?.errors?.[0]) {
+      throw new Error(error.response.errors[0].message);
+    }
+    throw new Error('Failed to follow user');
+  }
 };
 
 const unfollowUser = async (userId: string): Promise<FollowActionResponse> => {
-  const response = await fetch(`/api/users/${userId}/follow`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const data = await response.json();
-    throw new Error(data.error || 'Failed to unfollow user');
+  try {
+    await graphqlClient.request(UNFOLLOW_USER_MUTATION, { userId });
+    return {
+      isFollowing: false,
+      message: 'Successfully unfollowed user',
+    };
+  } catch (error: any) {
+    if (error.response?.errors?.[0]) {
+      throw new Error(error.response.errors[0].message);
+    }
+    throw new Error('Failed to unfollow user');
   }
-
-  return response.json();
 };
 
 interface UseFollowUserMutationOptions {

@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://unpkg.com/@graphql-codegen/cli/config.schema.json
+
+schema: './src/graphql/schema.graphql'
+documents: './src/graphql/**/*.graphql'
+generates:
+  ./src/generated/graphql.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-react-query
+    config:
+      fetcher:
+        endpoint: 'process.env.NEXT_PUBLIC_API_URL || "/api/graphql"'
+        fetchParams:
+          method: 'POST'
+          headers:
+            Content-Type: 'application/json'
+          credentials: 'include'
+      exposeQueryKeys: true
+      exposeMutationKeys: true
+      addInfiniteQuery: true
+      reactQueryVersion: 5
+      scalars:
+        DateTime: 'Date'
+        UUID: 'string'
+        JSON: 'any'
+hooks:
+  afterOneFileWrite:
+    - prettier --write

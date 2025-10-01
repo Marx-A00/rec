@@ -1,4 +1,4 @@
-import { ExternalLink, User } from 'lucide-react';
+import { ExternalLink, User, Music } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -12,12 +12,15 @@ import { CollapsibleBio } from '@/components/artistDetails/CollapsibleBio';
 
 interface ArtistDetailsPageProps {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ source?: string }>;
 }
 
 export default async function ArtistDetailsPage({
   params,
+  searchParams,
 }: ArtistDetailsPageProps) {
   const rawParams = await params;
+  const rawSearch = searchParams ? await searchParams : {};
 
   // Validate parameters
   const paramsResult = artistParamsSchema.safeParse(rawParams);
@@ -31,7 +34,9 @@ export default async function ArtistDetailsPage({
   // Fetch artist data server-side
   let artist;
   try {
-    artist = await getArtistDetails(artistId);
+    const preferredSource = (rawSearch as any)?.source as 'local' | 'musicbrainz' | 'discogs' | undefined;
+    // Pass through preferred source when present
+    artist = await getArtistDetails(artistId, preferredSource ? { source: preferredSource } : undefined);
   } catch (error) {
     console.error('Error fetching artist:', error);
     notFound();
@@ -42,6 +47,19 @@ export default async function ArtistDetailsPage({
       {/* Back Navigation */}
       <BackButton text='Back' fallbackHref='/' />
 
+      {/* Source Badge */}
+      <div className='mb-4 flex items-center gap-2'>
+        <span className='text-sm text-zinc-400'>Data source:</span>
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          artist.source === 'local' ? 'bg-emeraled-green text-black' :
+          artist.source === 'musicbrainz' ? 'bg-blue-500/20 text-blue-400' :
+          'bg-purple-500/20 text-purple-400'
+        }`}>
+          {artist.source === 'local' ? 'Database' :
+           artist.source === 'musicbrainz' ? 'MusicBrainz' : 'Discogs'}
+        </span>
+      </div>
+
       {/* Artist Header */}
       <div
         id='artist-page-header'
@@ -51,11 +69,8 @@ export default async function ArtistDetailsPage({
         <div className='lg:col-span-1'>
           <div className='w-full max-w-md mx-auto'>
             <AlbumImage
-              src={artist.image?.url}
-              alt={
-                artist.image?.alt ||
-                `${sanitizeArtistName(artist.title)} artist photo`
-              }
+              src={artist.imageUrl}
+              alt={`${sanitizeArtistName(artist.name)} artist photo`}
               width={400}
               height={400}
               className='w-full aspect-square object-cover rounded-lg shadow-2xl'
@@ -70,11 +85,26 @@ export default async function ArtistDetailsPage({
         <div className='lg:col-span-2 space-y-6'>
           <div>
             <h1 className='text-4xl font-bold mb-2 text-white'>
-              {sanitizeArtistName(artist.title)}
+              {sanitizeArtistName(artist.name)}
             </h1>
-            {artist.realname && (
+            {artist.disambiguation && (
+              <p className='text-lg text-zinc-500 mb-2'>
+                {artist.disambiguation}
+              </p>
+            )}
+            {artist.realName && (
               <p className='text-lg text-zinc-400 mb-4'>
-                Real name: {artist.realname}
+                Real name: {artist.realName}
+              </p>
+            )}
+            {artist.country && (
+              <p className='text-zinc-400'>
+                <span className='font-medium'>Country:</span> {artist.country}
+              </p>
+            )}
+            {artist.lifeSpan && (
+              <p className='text-zinc-400'>
+                <span className='font-medium'>Active:</span> {artist.lifeSpan.begin || '?'} - {artist.lifeSpan.ended ? (artist.lifeSpan.end || 'Unknown') : 'Present'}
               </p>
             )}
           </div>
@@ -159,7 +189,7 @@ export default async function ArtistDetailsPage({
           value='discography'
           className='focus:outline-none outline-none'
         >
-          <DiscographyTab artistId={artistId} />
+          <DiscographyTab artistId={artistId} artistName={artist.name} />
         </TabsContent>
 
         <TabsContent value='biography'>

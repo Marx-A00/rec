@@ -6,9 +6,13 @@ export interface Recommendation {
   updatedAt: string;
   userId: string;
 
-  // Discogs references
-  basisAlbumDiscogsId: string;
-  recommendedAlbumDiscogsId: string;
+  // Album references (new schema)
+  basisAlbumId: string;
+  recommendedAlbumId: string;
+
+  // Discogs references (legacy/optional)
+  basisAlbumDiscogsId: string | null;
+  recommendedAlbumDiscogsId: string | null;
 
   // Cached display data
   basisAlbumTitle: string;
@@ -58,6 +62,7 @@ export interface RecommendationsResponse {
     per_page: number;
     total: number;
     has_more: boolean;
+    cursor?: string | null;
   };
   success: boolean;
 }

@@ -1,9 +1,39 @@
 'use client';
 
 import Link from 'next/link';
+import { Heart } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AlbumImage from '@/components/ui/AlbumImage';
+
+// TODO: make breakpoint (?) for albums to expand vertically if they need to
+
+// Helper function to get color classes based on score
+const getScoreColors = (score: number) => {
+  if (score >= 10) {
+    return {
+      heartColor: 'text-red-500 fill-red-500',
+      textColor: 'text-red-600',
+      bgGradient: 'from-red-50/10 to-pink-50/10',
+      borderColor: 'border-red-500/30',
+    };
+  } else if (score >= 8) {
+    return {
+      heartColor: 'text-emeraled-green fill-emeraled-green',
+      textColor: 'text-emeraled-green',
+      bgGradient: 'from-green-50/10 to-emerald-50/10',
+      borderColor: 'border-emeraled-green/30',
+    };
+  } else {
+    // 5-7 range (yellow)
+    return {
+      heartColor: 'text-yellow-500 fill-yellow-500',
+      textColor: 'text-yellow-600',
+      bgGradient: 'from-yellow-50/10 to-amber-50/10',
+      borderColor: 'border-yellow-500/30',
+    };
+  }
+};
 
 interface ActivityItemProps {
   activity: {
@@ -47,19 +77,16 @@ export default function ActivityItem({
         );
       case 'recommendation':
         return (
-          <span>
-            recommended{' '}
-            <span className='text-cosmic-latte font-medium'>
+          <>
+            recommends{' '}
+            <span className='text-emeraled-green font-semibold'>
               {activity.albumTitle}
             </span>{' '}
-            by <span className='text-zinc-300'>{activity.albumArtist}</span>
-            {activity.metadata?.basisAlbumTitle && (
-              <span className='text-zinc-400 text-sm block mt-1'>
-                Based on {activity.metadata.basisAlbumTitle} by{' '}
-                {activity.metadata.basisAlbumArtist}
-              </span>
-            )}
-          </span>
+            by{' '}
+            <span className='text-emeraled-green'>
+              {activity.albumArtist}
+            </span>
+          </>
         );
       case 'collection_add':
         return (
@@ -90,21 +117,6 @@ export default function ActivityItem({
     }
   };
 
-  const getTimeAgo = (dateString: string) => {
-    const now = new Date();
-    const activityDate = new Date(dateString);
-    const diffInSeconds = Math.floor(
-      (now.getTime() - activityDate.getTime()) / 1000
-    );
-
-    if (diffInSeconds < 60) return 'just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400)
-      return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800)
-      return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    return activityDate.toLocaleDateString();
-  };
 
   const handleAlbumClick = () => {
     if (activity.albumId && onAlbumClick) {
@@ -114,93 +126,164 @@ export default function ActivityItem({
 
   return (
     <div
-      className={`bg-zinc-900 rounded-lg p-4 border border-zinc-800 hover:border-zinc-700 transition-colors ${className}`}
+      className={`bg-zinc-900 rounded-lg p-3 pb-8 border border-zinc-800 hover:border-zinc-700 transition-colors ${className}`}
     >
-      <div className='flex items-start gap-3'>
-        {/* Actor Avatar */}
-        <Link href={`/profile/${activity.actorId}`}>
-          <Avatar className='h-10 w-10 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0'>
-            <AvatarImage
-              src={activity.actorImage || undefined}
-              alt={activity.actorName}
-            />
-            <AvatarFallback className='bg-zinc-700 text-zinc-200 text-sm'>
-              {activity.actorName.charAt(0)?.toUpperCase() || 'U'}
-            </AvatarFallback>
-          </Avatar>
-        </Link>
+      <div className='relative'>
+        {/* Header with centered text and avatar */}
+        <div className='mb-3'>
+          <div className='flex justify-center items-center gap-2'>
+            <Link href={`/profile/${activity.actorId}`}>
+              <Avatar className='h-6 w-6 hover:opacity-80 transition-opacity cursor-pointer'>
+                <AvatarImage
+                  src={activity.actorImage || undefined}
+                  alt={activity.actorName}
+                />
+                <AvatarFallback className='bg-zinc-700 text-zinc-200 text-[10px]'>
+                  {activity.actorName.charAt(0)?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
 
-        {/* Activity Content */}
-        <div className='flex-1 min-w-0'>
-          <div className='flex items-start justify-between gap-2'>
-            <div className='flex-1 min-w-0'>
-              <p className='text-sm text-zinc-300'>
-                <Link
-                  href={`/profile/${activity.actorId}`}
-                  className='text-cosmic-latte hover:text-emeraled-green font-medium transition-colors'
-                >
-                  {activity.actorName}
-                </Link>{' '}
-                {getActivityText()}
-              </p>
-
-              <p className='text-xs text-zinc-500 mt-1'>
-                {getTimeAgo(activity.createdAt)}
-              </p>
-            </div>
-
-            {/* Timestamp */}
-            <div className='flex-shrink-0'>
-              <span className='text-xs text-zinc-500'>
-                {new Date(activity.createdAt).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
-            </div>
+            <p className='text-sm text-zinc-400 text-center'>
+              <Link
+                href={`/profile/${activity.actorId}`}
+                className='text-cosmic-latte hover:text-emeraled-green font-medium transition-colors'
+              >
+                {activity.actorName}
+              </Link>{' '}
+              {getActivityText()}
+            </p>
           </div>
+        </div>
 
-          {/* Album/Target Visual */}
-          {(activity.type === 'recommendation' ||
-            activity.type === 'collection_add') &&
-            activity.albumImage && (
-              <div className='mt-3 flex items-center gap-3'>
+        {/* Main content area for albums */}
+        <div className='w-full'>
+
+          {/* Recommendation Visual - MASSIVE albums */}
+          {activity.type === 'recommendation' && activity.albumImage && (
+            <div className='flex justify-center relative'>
+              <div className='relative inline-block'>
+                {/* Stacked Album Container - EVEN BIGGER */}
                 <div
-                  className='cursor-pointer hover:opacity-80 transition-opacity'
+                  className='relative w-[280px] h-[260px] transition-all duration-300 ease-out [&:hover]:w-[420px] [&:hover_.rec-album]:left-[200px] [&:hover_.arrow-indicator]:opacity-100 [&:hover_.basis-text]:opacity-100'
+                >
+                  {/* Basis Album (back) */}
+                  {activity.metadata?.basisAlbum && (
+                    <div
+                      className='absolute left-0 top-0 transition-all duration-300 ease-out'
+                      onClick={() => {
+                        // You could add click handler for basis album if needed
+                      }}
+                    >
+                      <div className='relative'>
+                        <AlbumImage
+                          src={activity.metadata.basisAlbum.coverArtUrl || '/placeholder-album.png'}
+                          alt={activity.metadata.basisAlbum.title}
+                          width={180}
+                          height={180}
+                          className='w-[180px] h-[180px] rounded-lg shadow-lg border border-zinc-700/50 transition-all'
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recommended Album (front) */}
+                  <div
+                    className='rec-album absolute left-14 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
+                    onClick={handleAlbumClick}
+                    title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
+                  >
+                    <div className='relative'>
+                      <AlbumImage
+                        src={activity.albumImage}
+                        alt={`${activity.albumTitle} by ${activity.albumArtist}`}
+                        width={220}
+                        height={220}
+                        className='w-[220px] h-[220px] rounded-lg shadow-2xl border-2 border-emeraled-green/30 hover:border-emeraled-green/50 transition-all'
+                      />
+                    </div>
+                  </div>
+
+                  {/* Score indicator with heart - visible on hover between albums */}
+                  {activity.metadata?.score && (
+                    <div className='arrow-indicator absolute left-[155px] top-[75px] opacity-0 transition-all duration-300 z-20'>
+                      <div className='bg-zinc-900 border-2 border-zinc-800 rounded-full shadow-lg'>
+                        <div
+                          className={`flex items-center justify-center w-16 h-16 bg-gradient-to-r ${getScoreColors(activity.metadata.score).bgGradient} rounded-full border-2 ${getScoreColors(activity.metadata.score).borderColor} shadow-md`}
+                        >
+                          <div className='flex flex-col items-center'>
+                            <Heart
+                              className={`h-4 w-4 ${getScoreColors(activity.metadata.score).heartColor} drop-shadow-sm mb-0.5`}
+                            />
+                            <span
+                              className={`text-xs font-bold ${getScoreColors(activity.metadata.score).textColor} tabular-nums leading-none`}
+                            >
+                              {activity.metadata.score}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Basis album text - shows on hover with the albums */}
+                  {activity.metadata?.basisAlbum && (
+                    <div className='basis-text absolute bottom-0 left-0 w-[420px] opacity-0 transition-opacity duration-300 pointer-events-none'>
+                      <p className='text-xs text-zinc-500 text-center w-full px-4 pb-1'>
+                        if you like{' '}
+                        <span className='text-zinc-400'>
+                          {activity.metadata.basisAlbum.title}
+                        </span>{' '}
+                        by{' '}
+                        <span className='text-zinc-400'>
+                          {activity.metadata.basisAlbum.artists?.[0]?.artist?.name}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Collection Add Visual - EVEN BIGGER */}
+          {activity.type === 'collection_add' && activity.albumImage && (
+            <div className='flex justify-center'>
+              <div className='relative'>
+                <div
+                  className='cursor-pointer hover:scale-105 transition-transform'
                   onClick={handleAlbumClick}
                   title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
                 >
                   <AlbumImage
                     src={activity.albumImage}
                     alt={`${activity.albumTitle} by ${activity.albumArtist}`}
-                    width={60}
-                    height={60}
-                    className='w-15 h-15 rounded border border-zinc-700 hover:border-zinc-600 transition-colors'
+                    width={220}
+                    height={220}
+                    className='w-[220px] h-[220px] rounded-lg border-2 border-zinc-700 hover:border-cosmic-latte/50 transition-all shadow-xl'
                   />
                 </div>
-
-                {activity.type === 'recommendation' &&
-                  activity.metadata?.score && (
-                    <div className='text-xs text-zinc-400'>
-                      <span className='text-emeraled-green font-medium'>
-                        {activity.metadata.score}/10
-                      </span>{' '}
-                      similarity
-                    </div>
-                  )}
+                {activity.metadata?.personalRating && (
+                  <div className='absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-zinc-900 border border-cosmic-latte/30 rounded-full px-2 py-0.5'>
+                    <span className='text-[10px] text-cosmic-latte font-medium'>
+                      {activity.metadata.personalRating}/10
+                    </span>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          )}
 
-          {/* Follow Target Avatar */}
+          {/* Follow Target Avatar - EVEN BIGGER to match album size */}
           {activity.type === 'follow' && activity.targetImage && (
-            <div className='mt-3'>
+            <div className='flex justify-center'>
               <Link href={`/profile/${activity.targetId}`}>
-                <Avatar className='h-12 w-12 hover:opacity-80 transition-opacity cursor-pointer'>
+                <Avatar className='h-[220px] w-[220px] hover:opacity-80 hover:scale-105 transition-all cursor-pointer border-2 border-emeraled-green/30'>
                   <AvatarImage
                     src={activity.targetImage}
                     alt={activity.targetName || 'User'}
                   />
-                  <AvatarFallback className='bg-zinc-700 text-zinc-200'>
+                  <AvatarFallback className='bg-zinc-700 text-zinc-200 text-4xl'>
                     {activity.targetName?.charAt(0)?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>

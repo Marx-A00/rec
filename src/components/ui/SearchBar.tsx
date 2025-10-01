@@ -2,7 +2,7 @@
 
 import { Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-
+// TODO: create separate dedicated search page
 interface SearchBarProps {
   placeholder?: string;
   onSearch?: (query: string) => void;

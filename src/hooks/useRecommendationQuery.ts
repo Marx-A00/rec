@@ -1,17 +1,46 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { queryKeys, handleApiResponse } from '@/lib/queries';
+import { graphqlClient } from '@/lib/graphql-client';
+import { queryKeys, QueryError } from '@/lib/queries';
 import { Recommendation } from '@/types/recommendation';
 
-interface RecommendationResponse {
-  recommendation: Recommendation;
-  success: boolean;
-}
+const RECOMMENDATION_QUERY = `
+  query GetRecommendation($id: String!) {
+    recommendation(id: $id) {
+      id
+      score
+      createdAt
+      updatedAt
+      userId
+      basisAlbumDiscogsId
+      recommendedAlbumDiscogsId
+      basisAlbumTitle
+      basisAlbumArtist
+      basisAlbumImageUrl
+      basisAlbumYear
+      recommendedAlbumTitle
+      recommendedAlbumArtist
+      recommendedAlbumImageUrl
+      recommendedAlbumYear
+      user {
+        id
+        name
+        image
+      }
+    }
+  }
+`;
 
 const fetchRecommendation = async (id: string): Promise<Recommendation> => {
-  const response = await fetch(`/api/recommendations/${id}`);
-  const data: RecommendationResponse = await handleApiResponse(response);
-  return data.recommendation;
+  try {
+    const data: any = await graphqlClient.request(RECOMMENDATION_QUERY, { id });
+    return data.recommendation;
+  } catch (error: any) {
+    if (error.response?.errors?.[0]) {
+      throw new QueryError(error.response.errors[0].message);
+    }
+    throw new QueryError('Failed to fetch recommendation');
+  }
 };
 
 export const useRecommendationQuery = (id: string) => {

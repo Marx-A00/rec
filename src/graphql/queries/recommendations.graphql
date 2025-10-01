@@ -1,0 +1,78 @@
+fragment RecommendationFields on Recommendation {
+  id
+  score
+  createdAt
+  user {
+    id
+    name
+    image
+  }
+  basisAlbum {
+    id
+    title
+    coverArtUrl
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+  recommendedAlbum {
+    id
+    title
+    coverArtUrl
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+
+query GetRecommendationFeed($cursor: String, $limit: Int) {
+  recommendationFeed(cursor: $cursor, limit: $limit) {
+    recommendations {
+      ...RecommendationFields
+    }
+    cursor
+    hasMore
+  }
+}
+
+query GetMyRecommendations($cursor: String, $limit: Int, $sort: RecommendationSort) {
+  myRecommendations(cursor: $cursor, limit: $limit, sort: $sort) {
+    recommendations {
+      ...RecommendationFields
+    }
+    cursor
+    hasMore
+  }
+}
+
+mutation CreateRecommendation($basisAlbumId: UUID!, $recommendedAlbumId: UUID!, $score: Int!) {
+  createRecommendation(
+    basisAlbumId: $basisAlbumId
+    recommendedAlbumId: $recommendedAlbumId
+    score: $score
+  ) {
+    ...RecommendationFields
+  }
+}
+
+mutation UpdateRecommendation($id: String!, $score: Int!) {
+  updateRecommendation(id: $id, score: $score) {
+    ...RecommendationFields
+  }
+}
+
+mutation DeleteRecommendation($id: String!) {
+  deleteRecommendation(id: $id)
+}
+
+query GetRecommendation($id: String!) {
+  recommendation(id: $id) {
+    ...RecommendationFields
+  }
+}

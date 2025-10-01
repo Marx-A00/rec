@@ -1,18 +1,23 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { queryKeys, handleApiResponse } from '@/lib/queries';
+import { graphqlClient } from '@/lib/graphql-client';
+import { queryKeys } from '@/lib/queries';
 
-interface DeleteRecommendationResponse {
-  success: boolean;
-  message: string;
-}
+const DELETE_RECOMMENDATION_MUTATION = `
+  mutation DeleteRecommendation($id: String!) {
+    deleteRecommendation(id: $id)
+  }
+`;
 
 const deleteRecommendation = async (id: string): Promise<void> => {
-  const response = await fetch(`/api/recommendations/${id}`, {
-    method: 'DELETE',
-  });
-
-  await handleApiResponse(response);
+  try {
+    await graphqlClient.request(DELETE_RECOMMENDATION_MUTATION, { id });
+  } catch (error: any) {
+    if (error.response?.errors?.[0]) {
+      throw new Error(error.response.errors[0].message);
+    }
+    throw new Error('Failed to delete recommendation');
+  }
 };
 
 interface UseDeleteRecommendationMutationOptions {

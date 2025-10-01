@@ -101,8 +101,8 @@ export function deduplicateResults(
         if (!aIsMaster && bIsMaster) return 1;
 
         // If both are same type, prefer more recent
-        const aYear = parseInt(a.releaseDate) || 0;
-        const bYear = parseInt(b.releaseDate) || 0;
+        const aYear = parseInt((a.releaseDate || '').toString()) || 0;
+        const bYear = parseInt((b.releaseDate || '').toString()) || 0;
         return bYear - aYear;
       });
 
@@ -133,7 +133,7 @@ export function deduplicateResults(
     let duplicatesFound = 0;
 
     for (const result of results) {
-      const key = `${result.artist}:${result.title}`.toLowerCase();
+      const key = `${(result.artist || '').toString()}:${(result.title || '').toString()}`.toLowerCase();
 
       if (seen.has(key)) {
         duplicatesFound++;
@@ -179,7 +179,7 @@ export function applyFilters(
   // Year range filtering
   if (filters.year) {
     filtered = filtered.filter(result => {
-      const year = parseInt(result.releaseDate);
+      const year = parseInt(result.releaseDate || '');
       if (isNaN(year)) return true; // Keep results without year
 
       if (filters.year!.min && year < filters.year!.min) return false;
@@ -192,7 +192,7 @@ export function applyFilters(
   // Decade filtering
   if (filters.decade && filters.decade.length > 0) {
     filtered = filtered.filter(result => {
-      const year = parseInt(result.releaseDate);
+      const year = parseInt(result.releaseDate || '');
       if (isNaN(year)) return true;
 
       const decade = Math.floor(year / 10) * 10;
@@ -203,9 +203,7 @@ export function applyFilters(
   // Label filtering
   if (filters.label && filters.label.length > 0) {
     filtered = filtered.filter(result =>
-      filters.label!.some(label =>
-        result.label.toLowerCase().includes(label.toLowerCase())
-      )
+      filters.label!.some(label => (result.label || '').toLowerCase().includes(label.toLowerCase()))
     );
   }
 
@@ -249,19 +247,19 @@ export function sortResults(
   sorted.sort((a, b) => {
     switch (sortBy) {
       case 'title':
-        return a.title.localeCompare(b.title) * multiplier;
+        return (a.title || '').localeCompare(b.title || '') * multiplier;
 
       case 'artist':
-        return a.artist.localeCompare(b.artist) * multiplier;
+        return (a.artist || '').localeCompare(b.artist || '') * multiplier;
 
       case 'year':
-        const aYear = parseInt(a.releaseDate) || 0;
-        const bYear = parseInt(b.releaseDate) || 0;
+        const aYear = parseInt((a.releaseDate || '').toString()) || 0;
+        const bYear = parseInt((b.releaseDate || '').toString()) || 0;
         return (aYear - bYear) * multiplier;
 
       case 'alphabetical':
         return (
-          `${a.artist} - ${a.title}`.localeCompare(`${b.artist} - ${b.title}`) *
+          `${a.artist || ''} - ${a.title || ''}`.localeCompare(`${b.artist || ''} - ${b.title || ''}`) *
           multiplier
         );
 
@@ -317,7 +315,7 @@ export function groupResults(
         break;
 
       case 'year':
-        const year = parseInt(result.releaseDate);
+        const year = parseInt(result.releaseDate || '');
         groupKey = isNaN(year) ? 'Unknown Year' : year.toString();
         break;
 
@@ -373,9 +371,11 @@ export async function searchTracksInReleases(
           duration: track.duration?.toString(),
           position: track.trackNumber?.toString(),
           releaseId: release.id,
-          releaseTitle: release.title,
-          releaseYear: release.releaseDate,
-          releaseImage: release.image,
+          releaseTitle: release.title || '',
+          releaseYear: release.releaseDate || '',
+          releaseImage: release.image
+            ? { url: String(release.image), width: 300, height: 300, alt: String(release.title || '') }
+            : undefined,
         });
       }
     }

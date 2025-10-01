@@ -7,7 +7,6 @@
 export { useUsersQuery } from './useUsersQuery';
 export { useAlbumDetailsQuery } from './useAlbumDetailsQuery';
 export { useMastersQuery } from './useMastersQuery';
-export { useRecommendationsQuery } from './useRecommendationsQuery';
 export { useRecommendationQuery } from './useRecommendationQuery';
 export { useAlbumSearchQuery } from './useAlbumSearchQuery';
 export { useUnifiedSearchQuery } from './useUnifiedSearchQuery';

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Pencil, Settings } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,9 +11,14 @@ import AlbumModal from '@/components/ui/AlbumModal';
 import RecommendationCard from '@/components/recommendations/RecommendationCard';
 import FollowButton from '@/components/profile/FollowButton';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
+import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useUserCollectionsQuery } from '@/hooks/useUserCollectionsQuery';
+import { useReorderCollectionAlbumsMutation } from '@/generated/graphql';
 import { CollectionAlbum } from '@/types/collection';
-import { Recommendation } from '@/types/recommendation';
+import { RecommendationFieldsFragment } from '@/generated/graphql';
+
+// TODO: fix the whole client and server components shit
 
 interface User {
   id: string;
@@ -29,21 +34,52 @@ interface User {
 
 interface ProfileClientProps {
   user: User;
-  collection: CollectionAlbum[];
-  recommendations: Recommendation[];
+  collection?: CollectionAlbum[]; // Make optional since we'll fetch via GraphQL
+  recommendations: RecommendationFieldsFragment[];
   isOwnProfile: boolean;
 }
 
 export default function ProfileClient({
   user,
-  collection,
+  collection: initialCollection,
   recommendations,
   isOwnProfile,
 }: ProfileClientProps) {
   const { prefetchRoute, navigateToAlbum, goBack } = useNavigation();
 
-  // Flatten collections to get all albums
-  const allAlbums = collection;
+  // Fetch collections using GraphQL
+  const { data: collectionsData, isLoading: collectionsLoading } = useUserCollectionsQuery(user.id);
+
+  // Memoize collection data to prevent infinite re-renders
+  const allAlbums = useMemo(() => {
+    const mapped = collectionsData?.user?.collections?.flatMap(col =>
+      col.albums.map(item => ({
+        id: item.id,
+        albumId: item.album.id,
+        albumTitle: item.album.title,
+        albumArtist: item.album.artists[0]?.artist?.name || 'Unknown Artist',
+        albumArtistId: item.album.artists[0]?.artist?.id || null,
+        albumImageUrl: item.album.coverArtUrl,
+        albumYear: item.album.releaseDate ? String(new Date(item.album.releaseDate).getFullYear()) : null,
+        addedAt: item.addedAt,
+        addedBy: user.id,
+        personalRating: item.personalRating,
+        personalNotes: item.personalNotes,
+        position: item.position,
+      }))
+    ) || initialCollection || [];
+
+    // Deduplicate by albumId (album may appear in multiple collections)
+    const seen = new Set<string>();
+    const unique = [] as typeof mapped;
+    for (const a of mapped) {
+      if (!seen.has(a.albumId)) {
+        seen.add(a.albumId);
+        unique.push(a);
+      }
+    }
+    return unique;
+  }, [collectionsData, initialCollection, user.id]);
 
   // Add state for the selected album and exit animation
   const [selectedAlbum, setSelectedAlbum] = useState<CollectionAlbum | null>(
@@ -61,6 +97,14 @@ export default function ProfileClient({
   // Settings dropdown state
   const [showSettings, setShowSettings] = useState(false);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
+
+  // Collection reordering state
+  const [sortedAlbums, setSortedAlbums] = useState<CollectionAlbum[]>(allAlbums);
+  
+  // Update sorted albums when collection changes
+  useEffect(() => {
+    setSortedAlbums(allAlbums);
+  }, [allAlbums]);
 
   // Strategic prefetching for likely navigation targets
   useEffect(() => {
@@ -119,11 +163,29 @@ export default function ProfileClient({
       }
     }
 
-    // Default behavior: show modal
-    setSelectedAlbum(collectionAlbum);
-  };
+  // Default behavior: show modal
+  setSelectedAlbum(collectionAlbum);
+};
 
-  // Profile editing handlers
+// Handle album reordering (GraphQL)
+const reorderMutation = useReorderCollectionAlbumsMutation();
+const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
+  setSortedAlbums(reorderedAlbums);
+
+  const collectionId = collectionsData?.user?.collections?.[0]?.id;
+  if (!isOwnProfile || !collectionId) return;
+
+  try {
+    await reorderMutation.mutateAsync({
+      collectionId,
+      albumIds: reorderedAlbums.map(a => a.albumId),
+    });
+  } catch (error) {
+    console.error('Error saving album order:', error);
+  }
+};
+
+// Profile editing handlers
   const handleEditProfile = () => {
     setIsEditingProfile(true);
     setShowSettings(false);
@@ -145,10 +207,11 @@ export default function ProfileClient({
   // Handle follow status changes with optimistic updates
   const handleFollowChange = (
     isFollowing: boolean,
-    newCounts: { followersCount: number; followingCount: number }
+    newCounts?: { followersCount: number; followingCount: number }
   ) => {
-    // Update the follower count optimistically
-    setFollowersCount((prev: number) => prev + newCounts.followersCount);
+    if (newCounts) {
+      setFollowersCount((prev: number) => prev + newCounts.followersCount);
+    }
   };
 
   // Close settings menu when clicking outside
@@ -338,6 +401,55 @@ export default function ProfileClient({
           </div>
 
           {/* Collection Section */}
+          {/* TODO: add in DnD grid with varying sizes or whatever */}
+
+          {/* Listen Later (owner-only) */}
+          {isOwnProfile && collectionsData?.user?.collections && (
+            (() => {
+              const listenLater = collectionsData.user.collections.find(
+                c => c.name === 'Listen Later'
+              );
+              if (!listenLater) return null;
+              const albums = listenLater.albums || [];
+              return (
+                <section className='border-t border-zinc-800 pt-8 mb-8'>
+                  <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
+                    Listen Later
+                  </h2>
+                  {albums.length > 0 ? (
+                    <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'>
+                      {albums.map(item => (
+                        <Link key={item.id} href={`/albums/${item.album.id}`}>
+                          <div className='bg-zinc-900 border border-zinc-700 rounded-lg p-3 hover:bg-zinc-800 hover:border-zinc-600 transition-all'>
+                            <div className='aspect-square bg-zinc-800 rounded-lg overflow-hidden mb-2'>
+                              <AlbumImage
+                                src={item.album.coverArtUrl}
+                                alt={item.album.title}
+                                fill
+                                className='object-cover'
+                                showSkeleton={false}
+                              />
+                            </div>
+                            <p className='text-sm font-semibold text-white line-clamp-1'>
+                              {item.album.title}
+                            </p>
+                            <p className='text-xs text-zinc-400 line-clamp-1'>
+                              {item.album.artists?.map(a => a.artist?.name).join(', ')}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className='text-center py-8'>
+                      <p className='text-zinc-400'>No albums saved for later yet.</p>
+                    </div>
+                  )}
+                </section>
+              );
+            })()
+          )}
+          
           <section className='border-t border-zinc-800 pt-8'>
             <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
               Record Collection
@@ -349,49 +461,19 @@ export default function ProfileClient({
                   <p>{allAlbums.length} albums in collection</p>
                 </div>
 
-                {/* Album Grid */}
-                <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
-                  {allAlbums.map(collectionAlbum => (
-                    <div
-                      key={collectionAlbum.id}
-                      className='relative group cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10'
-                      onClick={e => handleAlbumClick(collectionAlbum, e)}
-                      title={`${collectionAlbum.albumTitle} by ${collectionAlbum.albumArtist}\nClick to view details • Ctrl/Cmd+Click to navigate to album page`}
-                    >
-                      <AlbumImage
-                        src={collectionAlbum.albumImageUrl}
-                        alt={`${collectionAlbum.albumTitle} by ${collectionAlbum.albumArtist}`}
-                        width={128}
-                        height={128}
-                        className='w-full aspect-square rounded object-cover border border-zinc-800 group-hover:border-zinc-600 transition-colors'
-                      />
-                      <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-200 rounded flex items-center justify-center'>
-                        <div className='opacity-0 group-hover:opacity-100 text-cosmic-latte text-xs text-center p-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-200'>
-                          <p className='font-medium truncate mb-1'>
-                            {collectionAlbum.albumTitle}
-                          </p>
-                          <p className='text-zinc-300 truncate mb-1'>
-                            {collectionAlbum.albumArtist}
-                          </p>
-                          {collectionAlbum.personalRating && (
-                            <p className='text-emeraled-green text-xs'>
-                              ★ {collectionAlbum.personalRating}/10
-                            </p>
-                          )}
-                          <p className='text-zinc-400 text-xs mt-1'>
-                            Click to view
-                          </p>
-                        </div>
-                      </div>
-                      {/* Added date indicator */}
-                      <div className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity'>
-                        <span className='text-xs bg-black bg-opacity-75 text-zinc-300 px-1 py-0.5 rounded'>
-                          {new Date(collectionAlbum.addedAt).getFullYear()}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {/* Sortable Album Grid */}
+                <SortableAlbumGrid
+                  albums={sortedAlbums}
+                  onReorder={handleAlbumReorder}
+                  onAlbumClick={(albumId) => {
+                    const album = sortedAlbums.find(a => a.albumId === albumId);
+                    if (album) {
+                      setSelectedAlbum(album);
+                    }
+                  }}
+                  isEditable={isOwnProfile}
+                  className="mb-8"
+                />
               </div>
             ) : (
               <div className='text-center py-12'>
@@ -418,7 +500,7 @@ export default function ProfileClient({
                     key={recommendation.id}
                     recommendation={recommendation}
                     currentUserId={user.id}
-                    onAlbumClick={albumId => navigateToAlbum(albumId)}
+                    onAlbumClick={(albumId, _albumType) => navigateToAlbum(albumId)}
                   />
                 ))}
               </div>
@@ -443,6 +525,7 @@ export default function ProfileClient({
             id: currentUser.id,
             name: currentUser.name,
             bio: currentUser.bio,
+            image: currentUser.image,
           }}
           onCancel={handleCancelEdit}
           onSave={handleSaveProfile}

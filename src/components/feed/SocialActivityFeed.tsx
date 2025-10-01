@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import type { Session } from 'next-auth';
 
 import SignInButton from '@/components/auth/SignInButton';
+import { groupActivities } from '@/utils/activity-grouping';
 
 import ActivityItem from './ActivityItem';
+import GroupedActivityItem from './GroupedActivityItem';
 
 interface SocialActivityFeedProps {
   className?: string;
@@ -23,7 +25,7 @@ interface SocialActivityFeedProps {
 export default function SocialActivityFeed({
   className = '',
   activityType,
-  refreshInterval = 30000, // 30 seconds default
+  refreshInterval = 30000, // 30 seconds default - DISABLED TEMPORARILY
   session: sessionProp,
 }: SocialActivityFeedProps) {
   const { data: clientSession } = useSession();
@@ -31,17 +33,130 @@ export default function SocialActivityFeed({
   // Use prop session if provided (server-side), otherwise fall back to client session
   const session = sessionProp ?? clientSession;
 
-  const fetchActivities = async ({ pageParam }: { pageParam?: string }) => {
-    const params = new URLSearchParams();
-    params.append('limit', '20');
-    if (pageParam) params.append('cursor', pageParam);
-    if (activityType) params.append('type', activityType);
+  // TODO: See if there is way that we can abstract this query or make it prettier
 
-    const response = await fetch(`/api/feed/social?${params}`);
+  const fetchActivities = async ({ pageParam }: { pageParam?: string }) => {
+    // GraphQL query for social feed
+    const query = `
+      query GetSocialFeed($type: ActivityType, $cursor: String, $limit: Int) {
+        socialFeed(type: $type, cursor: $cursor, limit: $limit) {
+          activities {
+            id
+            type
+            createdAt
+            actor {
+              id
+              name
+              image
+            }
+            targetUser {
+              id
+              name
+              image
+            }
+            album {
+              id
+              title
+              coverArtUrl
+              artists {
+                artist {
+                  name
+                }
+              }
+            }
+            recommendation {
+              id
+              score
+            }
+            collection {
+              id
+              name
+            }
+            metadata {
+              score
+              basisAlbum {
+                id
+                title
+                coverArtUrl
+                artists {
+                  artist {
+                    name
+                  }
+                }
+              }
+              collectionName
+              personalRating
+              position
+            }
+          }
+          cursor
+          hasMore
+        }
+      }
+    `;
+
+    // Map activity type to GraphQL enum
+    const typeMap: Record<string, string> = {
+      'follow': 'FOLLOW',
+      'recommendation': 'RECOMMENDATION',
+      'collection_add': 'COLLECTION_ADD',
+      'profile_update': 'PROFILE_UPDATE'
+    };
+
+    const response = await fetch('/api/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        query,
+        variables: {
+          type: activityType ? typeMap[activityType] : null,
+          cursor: pageParam,
+          limit: 20
+        }
+      })
+    });
+
     if (!response.ok) {
       throw new Error('Failed to fetch activities');
     }
-    return response.json();
+
+    const { data, errors } = await response.json();
+
+    if (errors) {
+      throw new Error(errors[0].message);
+    }
+
+    // Transform GraphQL response to match existing format
+    const activities = data.socialFeed.activities.map((activity: any) => ({
+      id: activity.id,
+      type: activity.type.toLowerCase().replace('_', '_'),
+      actorId: activity.actor.id,
+      actorName: activity.actor.name,
+      actorImage: activity.actor.image,
+      targetId: activity.targetUser?.id,
+      targetName: activity.targetUser?.name,
+      targetImage: activity.targetUser?.image,
+      albumId: activity.album?.id,
+      albumTitle: activity.album?.title,
+      albumArtist: activity.album?.artists?.[0]?.artist?.name,
+      albumImage: activity.album?.coverArtUrl,
+      createdAt: activity.createdAt,
+      metadata: activity.metadata ? {
+        score: activity.metadata.score,
+        basisAlbum: activity.metadata.basisAlbum,
+        collectionName: activity.metadata.collectionName,
+        personalRating: activity.metadata.personalRating
+      } : undefined
+    }));
+
+    return {
+      activities,
+      nextCursor: data.socialFeed.cursor,
+      hasMore: data.socialFeed.hasMore
+    };
   };
 
   const {
@@ -59,15 +174,20 @@ export default function SocialActivityFeed({
     queryFn: fetchActivities,
     initialPageParam: undefined,
     getNextPageParam: lastPage => lastPage.nextCursor,
-    staleTime: 30000, // 30 seconds
-    refetchInterval: refreshInterval, // Auto-refresh every 30 seconds
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes (increased from 30 seconds)
+    refetchInterval: false, // DISABLED: was refreshInterval - causing performance issues
+    refetchOnWindowFocus: false, // DISABLED: prevent refetch on tab switch
+    refetchOnMount: 'always', // Only fetch on mount
     enabled: !!session, // Only fetch if user is signed in
   });
 
   // Flatten activities from all pages
   const activities = data?.pages?.flatMap(page => page.activities || []) || [];
+
+  // Group activities by user and type within time windows
+  const groupedActivities = useMemo(() => {
+    return groupActivities(activities);
+  }, [activities]);
 
   // Infinite scroll handler
   const handleScroll = useCallback(() => {
@@ -169,7 +289,7 @@ export default function SocialActivityFeed({
     );
   }
 
-  if (activities.length === 0) {
+  if (groupedActivities.length === 0) {
     return (
       <div className={`text-center py-12 ${className}`}>
         <div className='rounded-lg p-8'>
@@ -256,10 +376,10 @@ export default function SocialActivityFeed({
 
       {/* Activities List */}
       <div className='space-y-4'>
-        {activities.map(activity => (
-          <ActivityItem
-            key={activity.id}
-            activity={activity}
+        {groupedActivities.map(group => (
+          <GroupedActivityItem
+            key={group.id}
+            group={group}
             onAlbumClick={handleAlbumClick}
           />
         ))}
@@ -278,7 +398,7 @@ export default function SocialActivityFeed({
       )}
 
       {/* End of Feed */}
-      {!hasNextPage && activities.length > 0 && (
+      {!hasNextPage && groupedActivities.length > 0 && (
         <div className='text-center py-8'>
           <p className='text-zinc-500 text-sm'>
             You&apos;ve reached the end of your social feed

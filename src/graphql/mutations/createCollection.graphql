@@ -1,0 +1,10 @@
+mutation CreateCollection($name: String!, $description: String, $isPublic: Boolean) {
+  createCollection(name: $name, description: $description, isPublic: $isPublic) {
+    id
+    name
+    description
+    isPublic
+    createdAt
+    updatedAt
+  }
+}

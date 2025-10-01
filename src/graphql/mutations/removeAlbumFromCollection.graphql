@@ -1,0 +1,3 @@
+mutation RemoveAlbumFromCollection($collectionId: String!, $albumId: UUID!) {
+  removeAlbumFromCollection(collectionId: $collectionId, albumId: $albumId)
+}

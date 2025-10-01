@@ -1,0 +1,27 @@
+query GetCollection($id: String!) {
+  collection(id: $id) {
+    id
+    name
+    description
+    isPublic
+    albums {
+      id
+      personalRating
+      personalNotes
+      position
+      addedAt
+      album {
+        id
+        title
+        coverArtUrl
+        releaseDate
+        artists {
+          artist {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+}

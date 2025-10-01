@@ -56,7 +56,15 @@ export function useSearchNavigation(options: UseSearchNavigationOptions) {
 
         // Default navigation logic based on type
         if (result.type === 'album') {
-          await navigateToAlbum(result.id, {
+          try {
+            // eslint-disable-next-line no-console
+            console.log('[useSearchNavigation] Navigating to album', {
+              id: result.id,
+              source: result.source || null,
+            });
+          } catch {}
+          const suffix = result.source ? `?source=${encodeURIComponent(result.source)}` : '';
+          await navigateToAlbum(`${result.id}${suffix}`, {
             onError: error => {
               throw new Error(`Failed to navigate to album: ${error.message}`);
             },
@@ -64,7 +72,8 @@ export function useSearchNavigation(options: UseSearchNavigationOptions) {
         } else if (result.type === 'artist') {
           // Store artist data for potential use on the artist page
           sessionStorage.setItem(`artist-${result.id}`, JSON.stringify(result));
-          await navigateToArtist(result.id, {
+          const suffix = result.source ? `?source=${encodeURIComponent(result.source)}` : '';
+          await navigateToArtist(`${result.id}${suffix}`, {
             onError: error => {
               throw new Error(`Failed to navigate to artist: ${error.message}`);
             },
@@ -102,9 +111,11 @@ export function useSearchNavigation(options: UseSearchNavigationOptions) {
       results.forEach(result => {
         try {
           if (result.type === 'album') {
-            prefetchRoute(`/albums/${result.id}`);
+            const suffix = result.source ? `?source=${encodeURIComponent(result.source)}` : '';
+            prefetchRoute(`/albums/${result.id}${suffix}`);
           } else if (result.type === 'artist') {
-            prefetchRoute(`/artists/${result.id}`);
+            const suffix = result.source ? `?source=${encodeURIComponent(result.source)}` : '';
+            prefetchRoute(`/artists/${result.id}${suffix}`);
           } else if (result.type === 'label') {
             prefetchRoute(`/labels/${result.id}`);
           }

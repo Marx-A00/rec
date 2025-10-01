@@ -3,17 +3,18 @@ import { Pencil, Trash2, MoreHorizontal, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { RecommendationFieldsFragment } from '@/generated/graphql';
 import { useDeleteRecommendationMutation } from '@/hooks';
-import { Recommendation } from '@/types/recommendation';
 
 import RecommendationDetailModal from './RecommendationDetailModal';
 
 interface RecommendationCardProps {
-  recommendation: Recommendation;
+  recommendation: RecommendationFieldsFragment;
   currentUserId?: string;
-  onEdit?: (recommendation: Recommendation) => void;
-  onDetail?: (recommendation: Recommendation) => void; // Kept for backward compatibility
+  onEdit?: (recommendation: RecommendationFieldsFragment) => void;
+  onDetail?: (recommendation: RecommendationFieldsFragment) => void; // Kept for backward compatibility
   onAlbumClick?: (albumId: string, albumType: 'source' | 'recommended') => void;
   showDetailModal?: boolean; // New prop to control modal functionality
 }
@@ -71,7 +72,7 @@ export default function RecommendationCard({
     },
   });
 
-  const canEdit = currentUserId && currentUserId === recommendation.userId;
+  const canEdit = currentUserId && currentUserId === recommendation.user.id;
 
   // Get dynamic colors based on score
   const scoreColors = getScoreColors(recommendation.score);
@@ -128,8 +129,8 @@ export default function RecommendationCard({
     if (onAlbumClick) {
       const albumId =
         albumType === 'source'
-          ? recommendation.basisAlbumDiscogsId
-          : recommendation.recommendedAlbumDiscogsId;
+          ? recommendation.basisAlbum?.id
+          : recommendation.recommendedAlbum?.id;
       onAlbumClick(albumId, albumType);
     }
   };
@@ -161,30 +162,24 @@ export default function RecommendationCard({
         }
         tabIndex={showDetailModal || onDetail ? 0 : -1}
         role={showDetailModal || onDetail ? 'button' : 'article'}
-        aria-label={`Music recommendation: ${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist} suggests ${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}, rated ${recommendation.score} out of 10`}
+        aria-label={`Music recommendation: ${recommendation.basisAlbum?.title || 'Unknown album'} by ${recommendation.basisAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'Unknown artist'} suggests ${recommendation.recommendedAlbum?.title || 'Unknown album'} by ${recommendation.recommendedAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'Unknown artist'}, rated ${recommendation.score} out of 10`}
       >
         {/* Compact header with user info */}
         <div className='flex items-center justify-between mb-3'>
           <div className='flex items-center space-x-2'>
-            {recommendation.user?.image ? (
-              <div className='relative'>
-                <AlbumImage
-                  src={recommendation.user.image}
-                  alt={recommendation.user.name || 'User'}
-                  width={24}
-                  height={24}
-                  className='rounded-full ring-2 ring-zinc-600 shadow-sm'
+            <div className='relative'>
+              <Avatar className='h-6 w-6 ring-2 ring-zinc-600 shadow-sm'>
+                <AvatarImage
+                  src={recommendation.user?.image || undefined}
+                  alt={recommendation.user?.name || 'User'}
                 />
-                <div className='absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-black rounded-full shadow-sm'></div>
-              </div>
-            ) : (
-              <div className='w-6 h-6 bg-gradient-to-br from-zinc-600 to-zinc-700 rounded-full ring-2 ring-zinc-600 flex items-center justify-center shadow-sm'>
-                <span className='text-white font-semibold text-xs'>
+                <AvatarFallback className='bg-gradient-to-br from-zinc-600 to-zinc-700 text-white text-xs font-semibold'>
                   {(recommendation.user?.name || 'A').charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
-            <Link href={`/profile/${recommendation.userId}`}>
+                </AvatarFallback>
+              </Avatar>
+              <div className='absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-black rounded-full shadow-sm'></div>
+            </div>
+            <Link href={`/profile/${recommendation.user.id}`}>
               <span className='text-xs font-medium text-cosmic-latte hover:underline cursor-pointer transition-all duration-200'>
                 {recommendation.user?.name || 'Anonymous'}
               </span>
@@ -308,10 +303,10 @@ export default function RecommendationCard({
               {/* Album info on top */}
               <div className='mb-1.5 text-center'>
                 <p className='font-bold text-sm text-white leading-tight line-clamp-1'>
-                  {recommendation.basisAlbumTitle}
+                  {recommendation.basisAlbum?.title || 'Unknown Album'}
                 </p>
                 <p className='text-zinc-300 text-xs font-medium line-clamp-1'>
-                  {recommendation.basisAlbumArtist}
+                  {recommendation.basisAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'Unknown Artist'}
                 </p>
               </div>
               {/* Album image */}
@@ -330,12 +325,12 @@ export default function RecommendationCard({
                     handleAlbumClick('source');
                   }
                 }}
-                aria-label={`View details for ${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist} from ${recommendation.basisAlbumYear || 'unknown year'}`}
+                aria-label={`View details for ${recommendation.basisAlbum?.title || 'album'} by ${recommendation.basisAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'artist'}`}
                 tabIndex={0}
               >
                 <AlbumImage
-                  src={recommendation.basisAlbumImageUrl}
-                  alt={`${recommendation.basisAlbumTitle} by ${recommendation.basisAlbumArtist}`}
+                  src={recommendation.basisAlbum?.coverArtUrl}
+                  alt={`${recommendation.basisAlbum?.title || 'Album'} by ${recommendation.basisAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'Artist'}`}
                   width={400}
                   height={400}
                   sizes='(max-width: 640px) 45vw, (max-width: 768px) 35vw, 400px'
@@ -366,10 +361,10 @@ export default function RecommendationCard({
               {/* Album info on top */}
               <div className='mb-1.5 text-center'>
                 <p className='font-bold text-sm text-white leading-tight line-clamp-1'>
-                  {recommendation.recommendedAlbumTitle}
+                  {recommendation.recommendedAlbum?.title || 'Unknown Album'}
                 </p>
                 <p className='text-zinc-300 text-xs font-medium line-clamp-1'>
-                  {recommendation.recommendedAlbumArtist}
+                  {recommendation.recommendedAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'Unknown Artist'}
                 </p>
               </div>
               {/* Album image */}
@@ -388,12 +383,12 @@ export default function RecommendationCard({
                     handleAlbumClick('recommended');
                   }
                 }}
-                aria-label={`View details for ${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist} from ${recommendation.recommendedAlbumYear || 'unknown year'}`}
+                aria-label={`View details for ${recommendation.recommendedAlbum?.title || 'album'} by ${recommendation.recommendedAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'artist'}`}
                 tabIndex={0}
               >
                 <AlbumImage
-                  src={recommendation.recommendedAlbumImageUrl}
-                  alt={`${recommendation.recommendedAlbumTitle} by ${recommendation.recommendedAlbumArtist}`}
+                  src={recommendation.recommendedAlbum?.coverArtUrl}
+                  alt={`${recommendation.recommendedAlbum?.title || 'Album'} by ${recommendation.recommendedAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'Artist'}`}
                   width={400}
                   height={400}
                   sizes='(max-width: 640px) 45vw, (max-width: 768px) 35vw, 400px'
