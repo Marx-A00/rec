@@ -1,5 +1,5 @@
-// Example: Album caching implementation
-// src/lib/cache/albums.ts
+// @ts-nocheck
+/* example-album-caching.ts - example script not part of production build */
 
 import prisma from '@/lib/prisma';
 

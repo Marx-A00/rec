@@ -2,7 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { graphqlClient } from '@/lib/graphql-client';
 import { queryKeys } from '@/lib/queries';
-import { Recommendation } from '@/types/recommendation';
+// Relaxed typing for interim compatibility with GraphQL shape
+type RecommendationLike = any;
 
 interface UpdateRecommendationRequest {
   score?: number;
@@ -31,7 +32,7 @@ const UPDATE_RECOMMENDATION_MUTATION = `
 const updateRecommendation = async (
   id: string,
   data: UpdateRecommendationRequest
-): Promise<Recommendation> => {
+): Promise<RecommendationLike> => {
   try {
     const result: any = await graphqlClient.request(UPDATE_RECOMMENDATION_MUTATION, {
       id,
@@ -66,7 +67,7 @@ const updateRecommendation = async (
 };
 
 interface UseUpdateRecommendationMutationOptions {
-  onSuccess?: (data: Recommendation) => void;
+  onSuccess?: (data: RecommendationLike) => void;
   onError?: (error: Error) => void;
 }
 

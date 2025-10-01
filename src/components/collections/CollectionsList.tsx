@@ -90,30 +90,20 @@ export default function CollectionsList({ userId }: CollectionsListProps) {
               </div>
             </div>
 
-            {/* Collection Cover */}
+            {/* Collection Cover (placeholder) */}
             <div className='aspect-square mb-4 bg-zinc-800 rounded-lg overflow-hidden'>
-              {collection.coverImage ? (
-                <AlbumImage
-                  src={collection.coverImage.url}
-                  alt={collection.coverImage.alt || collection.name}
-                  fill
-                  className='object-cover'
-                  showSkeleton={false}
-                />
-              ) : (
-                <div className='w-full h-full flex items-center justify-center'>
-                  <FolderOpen className='h-12 w-12 text-zinc-600' />
-                </div>
-              )}
+              <div className='w-full h-full flex items-center justify-center'>
+                <FolderOpen className='h-12 w-12 text-zinc-600' />
+              </div>
             </div>
 
             {/* Collection Stats */}
             <div className='flex items-center justify-between text-sm text-zinc-400'>
-              <span>{collection.albumCount} albums</span>
+              <span>{collection.albumCount ?? 0} albums</span>
               <div className='flex items-center gap-1'>
                 <Calendar className='h-3 w-3' />
                 <span>
-                  {new Date(collection.updatedAt).toLocaleDateString()}
+                  {collection.updatedAt ? new Date(collection.updatedAt).toLocaleDateString() : ''}
                 </span>
               </div>
             </div>

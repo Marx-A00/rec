@@ -236,7 +236,7 @@ async function SpotifyAlbumsSection() {
       {/* Show last sync time */}
       <div className='text-center py-2'>
         <p className='text-zinc-500 text-xs'>
-          Last synced: {new Date(spotifyData.lastUpdated).toLocaleDateString('en-US', {
+          Last synced: {new Date(spotifyData.lastUpdated ?? Date.now()).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric',

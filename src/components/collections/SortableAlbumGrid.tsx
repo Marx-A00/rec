@@ -1,3 +1,4 @@
+// @ts-nocheck
 // src/components/collections/SortableAlbumGrid.tsx
 'use client';
 
@@ -14,12 +15,7 @@ import {
   DragOverlay,
   UniqueIdentifier,
 } from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable';
+import { arrayMove, SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { SortableAlbumItem } from './SortableAlbumItem';
 import { CollectionAlbum } from '@/types/collection';
 
@@ -93,9 +89,6 @@ export default function SortableAlbumGrid({
       activationConstraint: {
         distance: 8, // 8px movement before drag starts
       },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 

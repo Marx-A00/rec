@@ -1,4 +1,4 @@
-// src/app/favicon.ico/route.ts
+// src/app/favicon.ico/route.tsx
 import { NextRequest } from 'next/server';
 import { ImageResponse } from 'next/og';
 
@@ -28,3 +28,5 @@ export async function GET(request: NextRequest) {
     }
   );
 }
+
+

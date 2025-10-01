@@ -207,10 +207,11 @@ const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
   // Handle follow status changes with optimistic updates
   const handleFollowChange = (
     isFollowing: boolean,
-    newCounts: { followersCount: number; followingCount: number }
+    newCounts?: { followersCount: number; followingCount: number }
   ) => {
-    // Update the follower count optimistically
-    setFollowersCount((prev: number) => prev + newCounts.followersCount);
+    if (newCounts) {
+      setFollowersCount((prev: number) => prev + newCounts.followersCount);
+    }
   };
 
   // Close settings menu when clicking outside

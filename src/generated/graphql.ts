@@ -34,11 +34,8 @@ function fetcher<TData, TVariables>(query: string, variables?: TVariables) {
       process.env.NEXT_PUBLIC_API_URL || ('/api/graphql' as string),
       {
         method: 'POST',
-        ...{
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ query, variables }),
       }
     );
@@ -1292,6 +1289,16 @@ export type RemoveFromListenLaterMutation = {
   removeFromListenLater: boolean;
 };
 
+export type RemoveAlbumFromCollectionMutationVariables = Exact<{
+  collectionId: Scalars['String']['input'];
+  albumId: Scalars['UUID']['input'];
+}>;
+
+export type RemoveAlbumFromCollectionMutation = {
+  __typename?: 'Mutation';
+  removeAlbumFromCollection: boolean;
+};
+
 export type ReorderCollectionAlbumsMutationVariables = Exact<{
   collectionId: Scalars['String']['input'];
   albumIds: Array<Scalars['UUID']['input']> | Scalars['UUID']['input'];
@@ -1408,6 +1415,8 @@ export type GetUserCollectionListQuery = {
       name: string;
       description?: string | null;
       isPublic: boolean;
+      updatedAt: Date;
+      albumCount: number;
     }>;
   } | null;
 };
@@ -2191,6 +2200,43 @@ export const useRemoveFromListenLaterMutation = <
 
 useRemoveFromListenLaterMutation.getKey = () => ['RemoveFromListenLater'];
 
+export const RemoveAlbumFromCollectionDocument = `
+    mutation RemoveAlbumFromCollection($collectionId: String!, $albumId: UUID!) {
+  removeAlbumFromCollection(collectionId: $collectionId, albumId: $albumId)
+}
+    `;
+
+export const useRemoveAlbumFromCollectionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    RemoveAlbumFromCollectionMutation,
+    TError,
+    RemoveAlbumFromCollectionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    RemoveAlbumFromCollectionMutation,
+    TError,
+    RemoveAlbumFromCollectionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['RemoveAlbumFromCollection'],
+    mutationFn: (variables?: RemoveAlbumFromCollectionMutationVariables) =>
+      fetcher<
+        RemoveAlbumFromCollectionMutation,
+        RemoveAlbumFromCollectionMutationVariables
+      >(RemoveAlbumFromCollectionDocument, variables)(),
+    ...options,
+  });
+};
+
+useRemoveAlbumFromCollectionMutation.getKey = () => [
+  'RemoveAlbumFromCollection',
+];
+
 export const ReorderCollectionAlbumsDocument = `
     mutation ReorderCollectionAlbums($collectionId: String!, $albumIds: [UUID!]!) {
   reorderCollectionAlbums(collectionId: $collectionId, albumIds: $albumIds) {
@@ -2480,6 +2526,8 @@ export const GetUserCollectionListDocument = `
       name
       description
       isPublic
+      updatedAt
+      albumCount
     }
   }
 }
