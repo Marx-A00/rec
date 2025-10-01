@@ -25,21 +25,21 @@ async function checkRecommendations() {
         include: {
           artists: {
             include: {
-              artist: true
-            }
-          }
-        }
+              artist: true,
+            },
+          },
+        },
       },
       recommendedAlbum: {
         include: {
           artists: {
             include: {
-              artist: true
-            }
-          }
-        }
-      }
-    }
+              artist: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   console.log('\n=== First 5 Recommendations ===\n');
@@ -49,7 +49,9 @@ async function checkRecommendations() {
     console.log(`   Score: ${rec.score}`);
     console.log(`   Created: ${rec.createdAt}`);
     console.log(`   Basis Album: ${rec.basisAlbum?.title || 'Unknown'}`);
-    console.log(`   Recommended Album: ${rec.recommendedAlbum?.title || 'Unknown'}`);
+    console.log(
+      `   Recommended Album: ${rec.recommendedAlbum?.title || 'Unknown'}`
+    );
     console.log('');
   });
 
@@ -59,15 +61,17 @@ async function checkRecommendations() {
     where: { userId },
     include: {
       basisAlbum: true,
-      recommendedAlbum: true
-    }
+      recommendedAlbum: true,
+    },
   });
 
   console.log(`\n=== Recommendations for user ${userId} ===`);
   console.log(`Found ${userRecs.length} recommendations`);
   if (userRecs.length > 0) {
     userRecs.slice(0, 3).forEach(rec => {
-      console.log(`- ${rec.basisAlbum?.title} → ${rec.recommendedAlbum?.title} (score: ${rec.score})`);
+      console.log(
+        `- ${rec.basisAlbum?.title} → ${rec.recommendedAlbum?.title} (score: ${rec.score})`
+      );
     });
   }
 

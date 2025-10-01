@@ -1,4 +1,3 @@
-// @ts-nocheck - Schema migration broke pages, needs GraphQL rewrite
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 

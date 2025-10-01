@@ -58,7 +58,6 @@ export interface UseMastersQueryData {
   pagination?: any; // From ReleasesResponse.pagination
 }
 
-
 // Album Search Query
 export interface UseAlbumSearchQueryOptions extends BaseQueryOptions {
   minQueryLength?: number;

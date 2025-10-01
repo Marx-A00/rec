@@ -1,8 +1,9 @@
+import path from 'path';
+
 import { FullConfig } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-import path from 'path';
 
 async function globalSetup(config: FullConfig) {
   // Force load test environment variables

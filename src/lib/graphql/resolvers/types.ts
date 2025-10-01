@@ -1,8 +1,9 @@
-// @ts-nocheck - Schema migration broke GraphQL resolvers, needs complete rewrite
+// Schema migration broke GraphQL resolvers, needs complete rewrite
 // src/lib/graphql/resolvers/types.ts
 // Type resolvers for GraphQL schema relationships and computed fields
 
 import { Resolvers } from '@/generated/graphql';
+
 import {
   cacheAlbumPopularity,
   cacheAlbumAverageRating,
@@ -34,9 +35,10 @@ export const typeResolvers: Resolvers = {
         'artist',
         parent.id,
         'albumCount',
-        async () => prisma.albumArtist.count({
-          where: { artistId: parent.id },
-        }),
+        async () =>
+          prisma.albumArtist.count({
+            where: { artistId: parent.id },
+          }),
         { ttl: 1800 } // 30 minutes
       );
     },
@@ -46,9 +48,10 @@ export const typeResolvers: Resolvers = {
         'artist',
         parent.id,
         'trackCount',
-        async () => prisma.trackArtist.count({
-          where: { artistId: parent.id },
-        }),
+        async () =>
+          prisma.trackArtist.count({
+            where: { artistId: parent.id },
+          }),
         { ttl: 1800 } // 30 minutes
       );
     },
@@ -123,7 +126,10 @@ export const typeResolvers: Resolvers = {
 
         if (ratings.length === 0) return null;
 
-        const sum = ratings.reduce((acc, r) => acc + (r.personalRating || 0), 0);
+        const sum = ratings.reduce(
+          (acc, r) => acc + (r.personalRating || 0),
+          0
+        );
         return sum / ratings.length;
       });
     },
@@ -133,9 +139,10 @@ export const typeResolvers: Resolvers = {
         'album',
         parent.id,
         'inCollectionsCount',
-        async () => prisma.collectionAlbum.count({
-          where: { albumId: parent.id },
-        }),
+        async () =>
+          prisma.collectionAlbum.count({
+            where: { albumId: parent.id },
+          }),
         { ttl: 600 } // 10 minutes
       );
     },

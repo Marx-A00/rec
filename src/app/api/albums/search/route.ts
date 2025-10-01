@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { SearchOrchestrator, SearchSource, SearchType } from '@/lib/search/SearchOrchestrator';
+
+import {
+  SearchOrchestrator,
+  SearchSource,
+  SearchType,
+} from '@/lib/search/SearchOrchestrator';
 import { prisma } from '@/lib/prisma';
 import type { SearchResponse, GroupedSearchResults } from '@/types/search';
 
@@ -7,7 +12,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
   const sources = searchParams.get('sources')?.split(',') || ['local'];
-  const types = searchParams.get('types')?.split(',') as SearchType[] || ['album', 'artist'];
+  const types = (searchParams.get('types')?.split(',') as SearchType[]) || [
+    'album',
+    'artist',
+  ];
   const limit = parseInt(searchParams.get('limit') || '20', 10);
 
   if (!query) {
@@ -52,7 +60,9 @@ export async function GET(request: Request) {
       artists: searchResult.results.filter(r => r.type === 'artist'),
       labels: [],
       tracks: searchResult.results.filter(r => r.type === 'track'),
-      other: searchResult.results.filter(r => !['album', 'artist', 'track'].includes(r.type)),
+      other: searchResult.results.filter(
+        r => !['album', 'artist', 'track'].includes(r.type)
+      ),
     };
 
     // Format response to match existing SearchResponse interface
@@ -79,7 +89,8 @@ export async function GET(request: Request) {
       },
       deduplication: {
         strategy: 'artist-title',
-        totalBeforeDeduplication: searchResult.totalResults + searchResult.duplicatesRemoved,
+        totalBeforeDeduplication:
+          searchResult.totalResults + searchResult.duplicatesRemoved,
         totalAfterDeduplication: searchResult.totalResults,
         duplicatesRemoved: searchResult.duplicatesRemoved,
         masterPreferenceApplied: false,
@@ -108,7 +119,7 @@ export async function GET(request: Request) {
             totalDuration: 0,
             numberOfTracks: 0,
           },
-        }))
+        })),
       });
     }
 

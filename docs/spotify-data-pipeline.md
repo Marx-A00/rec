@@ -1,12 +1,13 @@
 # Spotify Data Pipeline Architecture
 
 ## Overview
+
 Fetch trending music from Spotify → Cache in DB → Display in UI → Enrich with MusicBrainz (background)
 
 ## Pipeline Flow
 
 ```
-[Spotify API] 
+[Spotify API]
     ↓ (every 6 hours OR on-demand if stale)
 [Cache in Database as JSON]
     ↓ (immediate)
@@ -20,6 +21,7 @@ Fetch trending music from Spotify → Cache in DB → Display in UI → Enrich w
 ## Components
 
 ### 1. Database Schema
+
 ```prisma
 // Simple cache table (starting point)
 model CacheData {
@@ -28,7 +30,7 @@ model CacheData {
   data      Json     // Raw response from Spotify
   expires   DateTime // When to refresh
   metadata  Json?    // Optional: MB matches, processing status, etc.
-  
+
   @@index([key, expires])
 }
 
@@ -45,6 +47,7 @@ model AlbumAppearance {
 ### 2. Data Flow
 
 #### A. Spotify Fetch & Cache (`/api/spotify/sync`)
+
 ```typescript
 // Triggers:
 // - On-demand when user visits Browse page (if data > 6 hours old)
@@ -57,33 +60,33 @@ model AlbumAppearance {
 async function syncSpotifyData() {
   // 1. Check cache freshness
   const cache = await prisma.cacheData.findUnique({
-    where: { key: 'spotify_trending' }
+    where: { key: 'spotify_trending' },
   });
-  
+
   if (cache && cache.expires > new Date()) {
     return { source: 'cache', data: cache.data };
   }
-  
+
   // 2. Fetch from Spotify
   const spotifyData = await fetch('/api/spotify/trending');
-  
+
   // 3. Store in cache
   await prisma.cacheData.upsert({
     where: { key: 'spotify_trending' },
     create: {
       key: 'spotify_trending',
       data: spotifyData,
-      expires: new Date(Date.now() + 6 * 60 * 60 * 1000) // 6 hours
+      expires: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6 hours
     },
     update: {
       data: spotifyData,
-      expires: new Date(Date.now() + 6 * 60 * 60 * 1000)
-    }
+      expires: new Date(Date.now() + 6 * 60 * 60 * 1000),
+    },
   });
-  
+
   // 4. Queue MB enrichment (non-blocking)
   queueMusicBrainzEnrichment(spotifyData);
-  
+
   return { source: 'fresh', data: spotifyData };
 }
 ```
@@ -94,7 +97,7 @@ async function syncSpotifyData() {
 useEffect(() => {
   // 1. Trigger sync (non-blocking)
   fetch('/api/spotify/sync').catch(() => {});
-  
+
   // 2. Load from cache (always fast)
   fetch('/api/cache/trending')
     .then(res => res.json())
@@ -107,6 +110,7 @@ useEffect(() => {
 ```
 
 #### C. MusicBrainz Enrichment (Background)
+
 ```typescript
 // Simple version: Script that runs continuously
 // Future version: Proper queue (BullMQ)
@@ -114,35 +118,35 @@ useEffect(() => {
 async function enrichNextAlbum() {
   // 1. Get cache data
   const cache = await prisma.cacheData.findUnique({
-    where: { key: 'spotify_trending' }
+    where: { key: 'spotify_trending' },
   });
-  
+
   if (!cache) return;
-  
+
   const data = cache.data;
   const metadata = cache.metadata || { processed: [] };
-  
+
   // 2. Find next unprocessed album
   const unprocessed = data.newReleases.find(
     album => !metadata.processed.includes(album.id)
   );
-  
+
   if (!unprocessed) return;
-  
+
   // 3. Search MusicBrainz (rate limited)
   await rateLimiter.wait('musicbrainz');
   const mbResult = await searchMusicBrainz(
     `${unprocessed.name} ${unprocessed.artists}`
   );
-  
+
   // 4. Update metadata
   metadata.processed.push(unprocessed.id);
   metadata.mbMatches = metadata.mbMatches || {};
   metadata.mbMatches[unprocessed.id] = mbResult;
-  
+
   await prisma.cacheData.update({
     where: { key: 'spotify_trending' },
-    data: { metadata }
+    data: { metadata },
   });
 }
 
@@ -153,25 +157,28 @@ setInterval(enrichNextAlbum, 1000);
 ## Spotify Data Structure & Pagination
 
 ### Overview
+
 ✅ **Spotify API responses ARE paginated** for most endpoints. Our current implementation handles basic pagination through the `limit` parameter, but doesn't implement full pagination traversal yet.
 
 ### Current Data Shape (Cached in DB)
+
 Based on `src/lib/spotify/types.ts` and current implementation:
 
 ```typescript
 interface SpotifyCacheData {
-  newReleases: SpotifyAlbumData[];      // 20 items (limit=20)
-  featuredPlaylists: SpotifyPlaylistData[]; // 10 items (limit=10)  
-  topCharts: SpotifyTopChart[];         // 2 playlists × 10 tracks each
+  newReleases: SpotifyAlbumData[]; // 20 items (limit=20)
+  featuredPlaylists: SpotifyPlaylistData[]; // 10 items (limit=10)
+  topCharts: SpotifyTopChart[]; // 2 playlists × 10 tracks each
   popularArtists: SpotifyArtistGroup[]; // 4 search terms × 5 artists each
-  recommendations: any[];               // Currently empty
-  fetchedAt: string;                    // ISO timestamp
+  recommendations: any[]; // Currently empty
+  fetchedAt: string; // ISO timestamp
 }
 ```
 
 ### Spotify API Pagination Patterns
 
 #### 1. New Releases (`/browse/new-releases`)
+
 ```typescript
 // Current: Limited to 20 albums
 const newReleases = await spotifyClient.browse.getNewReleases('US', 20);
@@ -191,6 +198,7 @@ const newReleases = await spotifyClient.browse.getNewReleases('US', 20);
 ```
 
 #### 2. Featured Playlists (`/browse/featured-playlists`)
+
 ```typescript
 // Current: Limited to 10 playlists
 const featured = await spotifyClient.browse.getFeaturedPlaylists('US', 10);
@@ -210,6 +218,7 @@ const featured = await spotifyClient.browse.getFeaturedPlaylists('US', 10);
 ```
 
 #### 3. Playlist Tracks (`/playlists/{id}/tracks`)
+
 ```typescript
 // Current: Limited to 10 tracks per playlist
 const tracks = await spotifyClient.playlists.getPlaylistItems(
@@ -231,35 +240,41 @@ const tracks = await spotifyClient.playlists.getPlaylistItems(
 ### Data Quality & Completeness
 
 #### Current Limitations
+
 - **New Releases**: Only first 20 albums (Spotify returns 500+ per week)
 - **Featured Playlists**: Only first 10 playlists
 - **Top Charts**: Only 2 playlists × 10 tracks = 20 tracks total
 - **Popular Artists**: 4 search terms × 5 artists = 20 artists total
 
 #### Full Pagination Implementation (Future)
+
 ```typescript
 // Example: Fetch all new releases for the week
 async function fetchAllNewReleases(market = 'US') {
   const allAlbums = [];
   let offset = 0;
   const limit = 50; // Max allowed per request
-  
+
   while (true) {
-    const response = await spotifyClient.browse.getNewReleases(market, limit, offset);
-    
+    const response = await spotifyClient.browse.getNewReleases(
+      market,
+      limit,
+      offset
+    );
+
     allAlbums.push(...response.albums.items);
-    
+
     // Check if we have more pages
     if (!response.albums.next || response.albums.items.length < limit) {
       break;
     }
-    
+
     offset += limit;
-    
+
     // Rate limiting protection (Spotify allows ~180 req/min)
     await new Promise(resolve => setTimeout(resolve, 500)); // 2 requests/second
   }
-  
+
   return allAlbums;
 }
 ```
@@ -267,13 +282,15 @@ async function fetchAllNewReleases(market = 'US') {
 ### Rate Limiting Considerations
 
 #### Current Approach (Safe)
+
 - **New Releases**: 1 request per sync
-- **Featured Playlists**: 1 request per sync  
+- **Featured Playlists**: 1 request per sync
 - **Top Charts**: 1 request (categories) + 2 requests (playlist tracks) = 3 total
 - **Artist Search**: 4 requests (search terms)
 - **Total per sync**: ~9 requests every 6 hours
 
 #### Full Pagination (Needs Rate Limiting)
+
 - **New Releases**: Could be 10+ requests for full week data
 - **Featured Playlists**: 2-3 requests for all playlists
 - **Top Charts**: 5-10 requests for full chart data
@@ -282,21 +299,23 @@ async function fetchAllNewReleases(market = 'US') {
 ### Storage Implications
 
 #### Current Storage (~100KB per cache entry)
+
 ```typescript
 // Approximate sizes:
 newReleases: 20 albums × 2KB = 40KB
-featuredPlaylists: 10 playlists × 1KB = 10KB  
+featuredPlaylists: 10 playlists × 1KB = 10KB
 topCharts: 20 tracks × 2KB = 40KB
 popularArtists: 20 artists × 1KB = 20KB
 // Total: ~110KB per cache entry
 ```
 
 #### Full Pagination Storage (~2MB per cache entry)
+
 ```typescript
 // If we paginated everything:
 newReleases: 500 albums × 2KB = 1MB
 featuredPlaylists: 50 playlists × 1KB = 50KB
-topCharts: 500 tracks × 2KB = 1MB  
+topCharts: 500 tracks × 2KB = 1MB
 popularArtists: 100 artists × 1KB = 100KB
 // Total: ~2.15MB per cache entry
 ```
@@ -304,23 +323,27 @@ popularArtists: 100 artists × 1KB = 100KB
 ### Recommended Approach
 
 #### Phase 1: Current (✅ Implemented)
+
 - Limited pagination for quick overview
 - Low storage and API usage
 - Good for browse/discovery UI
 
 #### Phase 2: Smart Pagination (📋 Future)
+
 - Paginate new releases (get 50-100 albums instead of 20)
 - Keep featured playlists limited (10 is sufficient)
 - Expand top charts to 3-5 playlists with 20 tracks each
 - Monitor storage growth and API usage
 
 #### Phase 3: Full Pagination (📋 Advanced)
+
 - Implement background job for full data sync
 - Store historical data for trending analysis
 - Add database indexing for performance
 - Implement proper queue system for API calls
 
 ### Data Structure References
+
 - **Full Type Definitions**: `src/lib/spotify/types.ts`
 - **API Implementation**: `src/app/api/spotify/sync/route.ts`
 - **GraphQL Schema**: `src/graphql/schema.graphql` (lines 598-644)
@@ -329,11 +352,13 @@ popularArtists: 100 artists × 1KB = 100KB
 ## API Endpoints
 
 ### Public Endpoints
+
 - `GET /api/spotify/trending` - Raw Spotify data (rate limited)
 - `GET /api/spotify/sync` - Trigger sync & return cached data
 - `GET /api/cache/trending` - Get cached trending data (fast)
 
 ### Future Endpoints
+
 - `GET /api/albums/appearances/:id` - Get trending history for an album
 - `POST /api/albums/add-from-trending` - Add trending album to user collection
 - `GET /api/stats/trending` - Analytics on trending patterns
@@ -341,11 +366,13 @@ popularArtists: 100 artists × 1KB = 100KB
 ## Rate Limiting Strategy
 
 ### Spotify
+
 - Development: ~180 requests/minute (plenty)
 - Use cache to minimize requests
 - 6-hour cache duration
 
-### MusicBrainz  
+### MusicBrainz
+
 - Hard limit: 1 request/second
 - Simple DB-based rate limiter for now
 - Future: Redis-based distributed lock
@@ -353,23 +380,27 @@ popularArtists: 100 artists × 1KB = 100KB
 ## Migration Path
 
 ### Phase 1: JSON Cache (Current)
+
 - Simple CacheData table
 - Store raw Spotify responses
 - Display in UI
 
 ### Phase 2: MusicBrainz Enrichment
+
 - Background script
 - Add MB IDs to metadata
 - Display when available
 
 ### Phase 3: Historical Tracking
+
 - Parse JSON into AlbumAppearance records
 - Track trending history
 - Build analytics
 
 ### Phase 4: Production Scale
+
 - Redis for rate limiting
-- BullMQ for job queues  
+- BullMQ for job queues
 - Dedicated worker processes
 - Monitoring & alerts
 

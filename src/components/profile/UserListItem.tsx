@@ -41,7 +41,11 @@ export default function UserListItem({
     newCounts?: { followersCount: number; followingCount: number }
   ) => {
     if (onFollowChange) {
-      onFollowChange(user.id, isFollowing, newCounts || { followersCount: 0, followingCount: 0 });
+      onFollowChange(
+        user.id,
+        isFollowing,
+        newCounts || { followersCount: 0, followingCount: 0 }
+      );
     }
   };
 

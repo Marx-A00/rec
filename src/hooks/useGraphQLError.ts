@@ -37,11 +37,14 @@ export function useMutationErrorHandler() {
   const { handleError } = useGraphQLError();
 
   const handleMutationError = useCallback(
-    (error: unknown, options?: {
-      customMessage?: string;
-      retry?: () => void;
-      onError?: (error: unknown) => void;
-    }) => {
+    (
+      error: unknown,
+      options?: {
+        customMessage?: string;
+        retry?: () => void;
+        onError?: (error: unknown) => void;
+      }
+    ) => {
       const { customMessage, retry, onError } = options || {};
 
       // Call custom error handler if provided
@@ -54,15 +57,12 @@ export function useMutationErrorHandler() {
 
       // Offer retry option if provided
       if (retry) {
-        toast.error(
-          customMessage || 'Operation failed',
-          {
-            action: {
-              label: 'Retry',
-              onClick: retry,
-            },
-          }
-        );
+        toast.error(customMessage || 'Operation failed', {
+          action: {
+            label: 'Retry',
+            onClick: retry,
+          },
+        });
       }
     },
     [handleError]

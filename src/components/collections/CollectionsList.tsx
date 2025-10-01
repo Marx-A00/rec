@@ -103,7 +103,9 @@ export default function CollectionsList({ userId }: CollectionsListProps) {
               <div className='flex items-center gap-1'>
                 <Calendar className='h-3 w-3' />
                 <span>
-                  {collection.updatedAt ? new Date(collection.updatedAt).toLocaleDateString() : ''}
+                  {collection.updatedAt
+                    ? new Date(collection.updatedAt).toLocaleDateString()
+                    : ''}
                 </span>
               </div>
             </div>

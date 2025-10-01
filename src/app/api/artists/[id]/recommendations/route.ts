@@ -11,7 +11,10 @@ export async function GET(
   const artistId = params?.id;
 
   if (!artistId) {
-    return NextResponse.json({ error: 'Artist ID is required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Artist ID is required' },
+      { status: 400 }
+    );
   }
 
   const { searchParams } = new URL(request.url);

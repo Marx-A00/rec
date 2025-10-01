@@ -1,15 +1,32 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { useFollowUserMutation, useUnfollowUserMutation } from '@/generated/graphql';
 
-export default function FollowButton({ userId, onFollowChange, className }: { userId: string; onFollowChange?: (isFollowing: boolean, newCounts?: { followersCount: number; followingCount: number }) => void; className?: string; }) {
+import { Button } from '@/components/ui/button';
+import {
+  useFollowUserMutation,
+  useUnfollowUserMutation,
+} from '@/generated/graphql';
+
+export default function FollowButton({
+  userId,
+  onFollowChange,
+  className,
+}: {
+  userId: string;
+  onFollowChange?: (
+    isFollowing: boolean,
+    newCounts?: { followersCount: number; followingCount: number }
+  ) => void;
+  className?: string;
+}) {
   const [isFollowing, setIsFollowing] = useState(false);
   const followMutation = useFollowUserMutation();
   const unfollowMutation = useUnfollowUserMutation();
 
-  const loading = followMutation.status === 'pending' || unfollowMutation.status === 'pending';
+  const loading =
+    followMutation.status === 'pending' ||
+    unfollowMutation.status === 'pending';
 
   const handleToggle = async () => {
     try {

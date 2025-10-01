@@ -97,10 +97,10 @@ export default function SocialActivityFeed({
 
     // Map activity type to GraphQL enum
     const typeMap: Record<string, string> = {
-      'follow': 'FOLLOW',
-      'recommendation': 'RECOMMENDATION',
-      'collection_add': 'COLLECTION_ADD',
-      'profile_update': 'PROFILE_UPDATE'
+      follow: 'FOLLOW',
+      recommendation: 'RECOMMENDATION',
+      collection_add: 'COLLECTION_ADD',
+      profile_update: 'PROFILE_UPDATE',
     };
 
     const response = await fetch('/api/graphql', {
@@ -114,9 +114,9 @@ export default function SocialActivityFeed({
         variables: {
           type: activityType ? typeMap[activityType] : null,
           cursor: pageParam,
-          limit: 20
-        }
-      })
+          limit: 20,
+        },
+      }),
     });
 
     if (!response.ok) {
@@ -144,18 +144,20 @@ export default function SocialActivityFeed({
       albumArtist: activity.album?.artists?.[0]?.artist?.name,
       albumImage: activity.album?.coverArtUrl,
       createdAt: activity.createdAt,
-      metadata: activity.metadata ? {
-        score: activity.metadata.score,
-        basisAlbum: activity.metadata.basisAlbum,
-        collectionName: activity.metadata.collectionName,
-        personalRating: activity.metadata.personalRating
-      } : undefined
+      metadata: activity.metadata
+        ? {
+            score: activity.metadata.score,
+            basisAlbum: activity.metadata.basisAlbum,
+            collectionName: activity.metadata.collectionName,
+            personalRating: activity.metadata.personalRating,
+          }
+        : undefined,
     }));
 
     return {
       activities,
       nextCursor: data.socialFeed.cursor,
-      hasMore: data.socialFeed.hasMore
+      hasMore: data.socialFeed.hasMore,
     };
   };
 

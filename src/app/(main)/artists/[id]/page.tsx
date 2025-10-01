@@ -35,9 +35,16 @@ export default async function ArtistDetailsPage({
   // Fetch artist data server-side
   let artist;
   try {
-    const preferredSource = (rawSearch as any)?.source as 'local' | 'musicbrainz' | 'discogs' | undefined;
+    const preferredSource = (rawSearch as any)?.source as
+      | 'local'
+      | 'musicbrainz'
+      | 'discogs'
+      | undefined;
     // Pass through preferred source when present
-    artist = await getArtistDetails(artistId, preferredSource ? { source: preferredSource } : undefined);
+    artist = await getArtistDetails(
+      artistId,
+      preferredSource ? { source: preferredSource } : undefined
+    );
   } catch (error) {
     console.error('Error fetching artist:', error);
     notFound();
@@ -51,13 +58,20 @@ export default async function ArtistDetailsPage({
       {/* Source Badge */}
       <div className='mb-4 flex items-center gap-2'>
         <span className='text-sm text-zinc-400'>Data source:</span>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          artist.source === 'local' ? 'bg-emeraled-green text-black' :
-          artist.source === 'musicbrainz' ? 'bg-blue-500/20 text-blue-400' :
-          'bg-purple-500/20 text-purple-400'
-        }`}>
-          {artist.source === 'local' ? 'Database' :
-           artist.source === 'musicbrainz' ? 'MusicBrainz' : 'Discogs'}
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            artist.source === 'local'
+              ? 'bg-emeraled-green text-black'
+              : artist.source === 'musicbrainz'
+                ? 'bg-blue-500/20 text-blue-400'
+                : 'bg-purple-500/20 text-purple-400'
+          }`}
+        >
+          {artist.source === 'local'
+            ? 'Database'
+            : artist.source === 'musicbrainz'
+              ? 'MusicBrainz'
+              : 'Discogs'}
         </span>
       </div>
 
@@ -105,7 +119,11 @@ export default async function ArtistDetailsPage({
             )}
             {artist.lifeSpan && (
               <p className='text-zinc-400'>
-                <span className='font-medium'>Active:</span> {artist.lifeSpan.begin || '?'} - {artist.lifeSpan.ended ? (artist.lifeSpan.end || 'Unknown') : 'Present'}
+                <span className='font-medium'>Active:</span>{' '}
+                {artist.lifeSpan.begin || '?'} -{' '}
+                {artist.lifeSpan.ended
+                  ? artist.lifeSpan.end || 'Unknown'
+                  : 'Present'}
               </p>
             )}
           </div>

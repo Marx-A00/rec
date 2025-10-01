@@ -2,16 +2,23 @@
 // Smart priority management for job queues based on user activity
 
 import { PrismaClient } from '@prisma/client';
+
 import { ActivityTracker, UserActivityContext } from './activity-tracker';
 
-export type JobSource = 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
+export type JobSource =
+  | 'collection_add'
+  | 'recommendation_create'
+  | 'search'
+  | 'browse'
+  | 'manual'
+  | 'spotify_sync';
 export type JobPriority = 'low' | 'medium' | 'high';
 
 export interface PriorityBoost {
-  userActivity: number;      // 0-3 points for recent user activity
-  entityRelevance: number;   // 0-3 points for recently viewed entities  
-  actionImportance: number;  // 0-4 points for action type (collection > search > browse)
-  systemLoad: number;        // -2 to 0 points for system load consideration
+  userActivity: number; // 0-3 points for recent user activity
+  entityRelevance: number; // 0-3 points for recently viewed entities
+  actionImportance: number; // 0-4 points for action type (collection > search > browse)
+  systemLoad: number; // -2 to 0 points for system load consideration
 }
 
 export class QueuePriorityManager {
@@ -30,27 +37,38 @@ export class QueuePriorityManager {
     entityType: 'album' | 'artist',
     userId?: string | null,
     sessionId?: string
-  ): Promise<{ priority: number; boost: PriorityBoost; recommendedDelay?: number }> {
+  ): Promise<{
+    priority: number;
+    boost: PriorityBoost;
+    recommendedDelay?: number;
+  }> {
     // Base priority based on action type
     const basePriority = this.getBasePriorityForSource(source);
-    
+
     // Calculate priority boosts
     const boost: PriorityBoost = {
       userActivity: 0,
       entityRelevance: 0,
       actionImportance: basePriority,
-      systemLoad: 0
+      systemLoad: 0,
     };
 
     // User activity boost (if we have user context)
     if (sessionId) {
-      const activityTracker = new ActivityTracker(this.prisma, sessionId, userId);
+      const activityTracker = new ActivityTracker(
+        this.prisma,
+        sessionId,
+        userId
+      );
       const activityContext = await activityTracker.getUserActivityContext();
       boost.userActivity = this.calculateUserActivityBoost(activityContext);
     }
 
     // Entity relevance boost (recently viewed entities get priority)
-    boost.entityRelevance = await this.calculateEntityRelevanceBoost(entityId, entityType);
+    boost.entityRelevance = await this.calculateEntityRelevanceBoost(
+      entityId,
+      entityType
+    );
 
     // System load consideration
     boost.systemLoad = await this.calculateSystemLoadPenalty();
@@ -58,19 +76,25 @@ export class QueuePriorityManager {
     // Calculate final priority (1-10 scale)
     const finalPriority = Math.min(
       Math.max(
-        boost.actionImportance + boost.userActivity + boost.entityRelevance + boost.systemLoad,
+        boost.actionImportance +
+          boost.userActivity +
+          boost.entityRelevance +
+          boost.systemLoad,
         1
       ),
       10
     );
 
     // Recommend delay for low-priority background jobs during high activity
-    const recommendedDelay = this.calculateRecommendedDelay(finalPriority, boost);
+    const recommendedDelay = this.calculateRecommendedDelay(
+      finalPriority,
+      boost
+    );
 
     return {
       priority: finalPriority,
       boost,
-      recommendedDelay
+      recommendedDelay,
     };
   }
 
@@ -79,12 +103,12 @@ export class QueuePriorityManager {
    */
   private getBasePriorityForSource(source: JobSource): number {
     const priorities = {
-      'collection_add': 8,       // High - user is committing to their collection
-      'recommendation_create': 7, // High - user is actively engaging/sharing  
-      'search': 5,               // Medium - user is exploring
-      'browse': 3,               // Medium-low - passive discovery
-      'spotify_sync': 2,         // Low - automated background sync
-      'manual': 2,               // Low - background/admin tasks
+      collection_add: 8, // High - user is committing to their collection
+      recommendation_create: 7, // High - user is actively engaging/sharing
+      search: 5, // Medium - user is exploring
+      browse: 3, // Medium-low - passive discovery
+      spotify_sync: 2, // Low - automated background sync
+      manual: 2, // Low - background/admin tasks
     };
 
     return priorities[source] || 1;
@@ -118,22 +142,24 @@ export class QueuePriorityManager {
     entityType: 'album' | 'artist'
   ): Promise<number> {
     // Check if this entity was recently active across all users
-    const recentlyActiveEntities = await ActivityTracker.getRecentlyActiveEntities(
-      this.prisma,
-      entityType,
-      10 // Last 10 minutes
-    );
+    const recentlyActiveEntities =
+      await ActivityTracker.getRecentlyActiveEntities(
+        this.prisma,
+        entityType,
+        10 // Last 10 minutes
+      );
 
     if (recentlyActiveEntities.includes(entityId)) {
       return 3; // High relevance - multiple users interested
     }
 
     // Check if entity was active in last hour
-    const recentlyActiveEntities1h = await ActivityTracker.getRecentlyActiveEntities(
-      this.prisma,
-      entityType,
-      60 // Last hour
-    );
+    const recentlyActiveEntities1h =
+      await ActivityTracker.getRecentlyActiveEntities(
+        this.prisma,
+        entityType,
+        60 // Last hour
+      );
 
     if (recentlyActiveEntities1h.includes(entityId)) {
       return 1; // Medium relevance
@@ -148,7 +174,7 @@ export class QueuePriorityManager {
   private async calculateSystemLoadPenalty(): Promise<number> {
     // Check number of active users
     const activeUsers = await ActivityTracker.getActiveUserCount(this.prisma);
-    
+
     if (activeUsers > 10) {
       return -2; // High load - deprioritize background work
     } else if (activeUsers > 5) {
@@ -161,7 +187,10 @@ export class QueuePriorityManager {
   /**
    * Calculate recommended delay for job execution
    */
-  private calculateRecommendedDelay(priority: number, boost: PriorityBoost): number | undefined {
+  private calculateRecommendedDelay(
+    priority: number,
+    boost: PriorityBoost
+  ): number | undefined {
     // No delay for high priority jobs
     if (priority >= 7) {
       return undefined;
@@ -185,15 +214,15 @@ export class QueuePriorityManager {
    */
   async shouldPauseBackgroundJobs(): Promise<boolean> {
     const activeUsers = await ActivityTracker.getActiveUserCount(this.prisma);
-    
+
     // Always pause if many users are active (high load scenario)
     if (activeUsers > 8) {
       return true;
     }
-    
+
     // Also pause during ANY recent user activity that could involve MusicBrainz calls
     const recentActivity = await this.hasRecentUserActivity();
-    
+
     return recentActivity;
   }
 
@@ -202,29 +231,29 @@ export class QueuePriorityManager {
    */
   private async hasRecentUserActivity(): Promise<boolean> {
     const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
-    
+
     // Check for recent user actions that might trigger MusicBrainz enrichment
     const recentActions = await (this.prisma as any).userActivity.count({
       where: {
         timestamp: { gte: threeMinutesAgo },
         OR: [
           // High-priority actions that definitely trigger enrichment
-          { operation: { contains: 'search' } },           // Search queries
-          { operation: { contains: 'collection' } },       // Collection actions
-          { operation: { contains: 'recommendation' } },   // Recommendations
-          { operation: { contains: 'view_album' } },       // Album views
-          { operation: { contains: 'view_artist' } },      // Artist views
-          
+          { operation: { contains: 'search' } }, // Search queries
+          { operation: { contains: 'collection' } }, // Collection actions
+          { operation: { contains: 'recommendation' } }, // Recommendations
+          { operation: { contains: 'view_album' } }, // Album views
+          { operation: { contains: 'view_artist' } }, // Artist views
+
           // Browse actions that might trigger enrichment
-          { operation: { contains: 'browse_trending' } },  // Trending browsing
-          { operation: { contains: 'browse_' } },          // General browsing
-          
+          { operation: { contains: 'browse_trending' } }, // Trending browsing
+          { operation: { contains: 'browse_' } }, // General browsing
+
           // Any GraphQL mutation (creates, updates)
           { operationType: 'mutation' },
-        ]
-      }
+        ],
+      },
     });
-    
+
     // Pause background jobs if there's been ANY user activity in last 3 minutes
     return recentActions > 0;
   }
@@ -295,18 +324,20 @@ export class QueuePriorityManager {
 }
 
 // Export helper functions
-export function createQueuePriorityManager(prisma: PrismaClient): QueuePriorityManager {
+export function createQueuePriorityManager(
+  prisma: PrismaClient
+): QueuePriorityManager {
   return new QueuePriorityManager(prisma);
 }
 
 export function mapSourceToUserAction(source: JobSource): string {
   const mapping = {
-    'collection_add': 'Adding album to collection',
-    'recommendation_create': 'Creating recommendation',
-    'search': 'Searching for music',
-    'browse': 'Browsing music',
-    'spotify_sync': 'Syncing from Spotify',
-    'manual': 'Manual operation',
+    collection_add: 'Adding album to collection',
+    recommendation_create: 'Creating recommendation',
+    search: 'Searching for music',
+    browse: 'Browsing music',
+    spotify_sync: 'Syncing from Spotify',
+    manual: 'Manual operation',
   };
 
   return mapping[source] || 'Unknown action';

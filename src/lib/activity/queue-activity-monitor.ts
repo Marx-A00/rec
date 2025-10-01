@@ -2,7 +2,9 @@
 // Automatic queue pause/resume service based on user activity
 
 import { PrismaClient } from '@prisma/client';
+
 import { getMusicBrainzQueue } from '@/lib/queue';
+
 import { QueuePriorityManager } from './queue-priority-manager';
 import { ActivityTracker } from './activity-tracker';
 
@@ -63,7 +65,9 @@ export class QueueActivityMonitor {
       return;
     }
 
-    console.log(`🚀 Starting QueueActivityMonitor (checking every ${checkIntervalMs / 1000}s)`);
+    console.log(
+      `🚀 Starting QueueActivityMonitor (checking every ${checkIntervalMs / 1000}s)`
+    );
     this.isRunning = true;
     this.startTime = new Date();
     this.lastCheckTime = new Date();
@@ -85,7 +89,7 @@ export class QueueActivityMonitor {
       clearInterval(this.monitorInterval);
       this.monitorInterval = null;
     }
-    
+
     this.isRunning = false;
     console.log('⏹️ QueueActivityMonitor stopped');
   }
@@ -95,7 +99,7 @@ export class QueueActivityMonitor {
    */
   private async checkAndManageQueueState(): Promise<void> {
     const shouldPause = await this.priorityManager.shouldPauseBackgroundJobs();
-    
+
     if (shouldPause && !this.backgroundJobsPaused) {
       await this.pauseBackgroundJobs();
     } else if (!shouldPause && this.backgroundJobsPaused) {
@@ -104,7 +108,8 @@ export class QueueActivityMonitor {
 
     // Log status every few minutes for debugging
     const timeSinceLastLog = Date.now() - this.lastCheckTime.getTime();
-    if (timeSinceLastLog > 120000) { // 2 minutes
+    if (timeSinceLastLog > 120000) {
+      // 2 minutes
       await this.logQueueStatus();
       this.lastCheckTime = new Date();
     }
@@ -117,16 +122,18 @@ export class QueueActivityMonitor {
     try {
       const queue = getMusicBrainzQueue();
       const metrics = await queue.getMetrics();
-      
+
       // Get all waiting jobs and delay low-priority ones
       const waitingJobs = await queue.getQueue().getWaiting();
-      const lowPriorityJobs = waitingJobs.filter((job: any) => 
-        (job.opts.priority || 50) <= 30 // Low priority in BullMQ scale (1-100)
+      const lowPriorityJobs = waitingJobs.filter(
+        (job: any) => (job.opts.priority || 50) <= 30 // Low priority in BullMQ scale (1-100)
       );
 
       if (lowPriorityJobs.length > 0) {
-        console.log(`⏸️ Pausing ${lowPriorityJobs.length} low-priority background jobs`);
-        
+        console.log(
+          `⏸️ Pausing ${lowPriorityJobs.length} low-priority background jobs`
+        );
+
         for (const job of lowPriorityJobs) {
           // Delay by 60 seconds to let user activity settle
           await job.moveToDelayed(Date.now() + 60000);
@@ -135,10 +142,11 @@ export class QueueActivityMonitor {
 
       this.backgroundJobsPaused = true;
       this.pauseResumeEventCount++;
-      
+
       // Log activity summary
-      console.log(`🔄 Queue paused - Active: ${metrics.stats.active}, Waiting: ${metrics.stats.waiting}, Delayed: ${metrics.stats.delayed}`);
-      
+      console.log(
+        `🔄 Queue paused - Active: ${metrics.stats.active}, Waiting: ${metrics.stats.waiting}, Delayed: ${metrics.stats.delayed}`
+      );
     } catch (error) {
       console.error('❌ Failed to pause background jobs:', error);
     }
@@ -150,17 +158,18 @@ export class QueueActivityMonitor {
   private async resumeBackgroundJobs(): Promise<void> {
     try {
       const queue = getMusicBrainzQueue();
-      
+
       // Get delayed jobs and promote low-priority background ones
       const delayedJobs = await queue.getQueue().getDelayed();
-      const backgroundJobs = delayedJobs.filter((job: any) => 
-        (job.opts.priority || 50) <= 30 && // Low priority jobs
-        (job.data.source === 'spotify_sync' || job.data.source === 'manual') // Background sources
+      const backgroundJobs = delayedJobs.filter(
+        (job: any) =>
+          (job.opts.priority || 50) <= 30 && // Low priority jobs
+          (job.data.source === 'spotify_sync' || job.data.source === 'manual') // Background sources
       );
 
       if (backgroundJobs.length > 0) {
         console.log(`▶️ Resuming ${backgroundJobs.length} background jobs`);
-        
+
         for (const job of backgroundJobs) {
           await job.promote();
         }
@@ -168,10 +177,11 @@ export class QueueActivityMonitor {
 
       this.backgroundJobsPaused = false;
       this.pauseResumeEventCount++;
-      
+
       const metrics = await queue.getMetrics();
-      console.log(`🔄 Queue resumed - Active: ${metrics.stats.active}, Waiting: ${metrics.stats.waiting}, Delayed: ${metrics.stats.delayed}`);
-      
+      console.log(
+        `🔄 Queue resumed - Active: ${metrics.stats.active}, Waiting: ${metrics.stats.waiting}, Delayed: ${metrics.stats.delayed}`
+      );
     } catch (error) {
       console.error('❌ Failed to resume background jobs:', error);
     }
@@ -182,12 +192,14 @@ export class QueueActivityMonitor {
    */
   private async logQueueStatus(): Promise<void> {
     try {
-      const activeUserCount = await this.priorityManager.shouldPauseBackgroundJobs() ? 
-        'HIGH' : 'NORMAL';
-      
+      const activeUserCount =
+        (await this.priorityManager.shouldPauseBackgroundJobs())
+          ? 'HIGH'
+          : 'NORMAL';
+
       const queue = getMusicBrainzQueue();
       const metrics = await queue.getMetrics();
-      
+
       console.log(`📊 Queue Activity Monitor Status:`, {
         activityLevel: activeUserCount,
         backgroundJobsPaused: this.backgroundJobsPaused,
@@ -196,10 +208,9 @@ export class QueueActivityMonitor {
           waiting: metrics.stats.waiting,
           delayed: metrics.stats.delayed,
           completed: metrics.stats.completed,
-          failed: metrics.stats.failed
-        }
+          failed: metrics.stats.failed,
+        },
       });
-      
     } catch (error) {
       console.error('❌ Failed to log queue status:', error);
     }
@@ -214,7 +225,7 @@ export class QueueActivityMonitor {
       backgroundJobsPaused: this.backgroundJobsPaused,
       lastCheckTime: this.lastCheckTime,
       uptime: this.isRunning ? Date.now() - this.startTime.getTime() : 0,
-      pauseResumeEvents: this.pauseResumeEventCount
+      pauseResumeEvents: this.pauseResumeEventCount,
     };
   }
 
@@ -224,13 +235,23 @@ export class QueueActivityMonitor {
   async getActivityMetrics(): Promise<ActivityBasedQueueMetrics> {
     const queue = getMusicBrainzQueue();
     const metrics = await queue.getMetrics();
-    
+
     // Get activity data
-    const activeUserCount = await ActivityTracker.getActiveUserCount(this.prisma);
+    const activeUserCount = await ActivityTracker.getActiveUserCount(
+      this.prisma
+    );
     const shouldPause = await this.priorityManager.shouldPauseBackgroundJobs();
-    const recentAlbums = await ActivityTracker.getRecentlyActiveEntities(this.prisma, 'album', 10);
-    const recentArtists = await ActivityTracker.getRecentlyActiveEntities(this.prisma, 'artist', 10);
-    
+    const recentAlbums = await ActivityTracker.getRecentlyActiveEntities(
+      this.prisma,
+      'album',
+      10
+    );
+    const recentArtists = await ActivityTracker.getRecentlyActiveEntities(
+      this.prisma,
+      'artist',
+      10
+    );
+
     return {
       queueStats: {
         active: metrics.stats.active,
@@ -248,9 +269,11 @@ export class QueueActivityMonitor {
       },
       performance: {
         lastCheckTime: this.lastCheckTime,
-        monitorUptime: this.isRunning ? Date.now() - this.startTime.getTime() : 0,
+        monitorUptime: this.isRunning
+          ? Date.now() - this.startTime.getTime()
+          : 0,
         pauseResumeEvents: this.pauseResumeEventCount,
-      }
+      },
     };
   }
 
@@ -266,7 +289,10 @@ export class QueueActivityMonitor {
  * Initialize and start the queue activity monitor
  * Call this in your app startup (e.g., in worker or server initialization)
  */
-export function startQueueActivityMonitor(prisma: PrismaClient, checkIntervalMs: number = 15000): QueueActivityMonitor {
+export function startQueueActivityMonitor(
+  prisma: PrismaClient,
+  checkIntervalMs: number = 15000
+): QueueActivityMonitor {
   const monitor = QueueActivityMonitor.getInstance(prisma);
   monitor.start(checkIntervalMs);
   return monitor;
@@ -275,6 +301,8 @@ export function startQueueActivityMonitor(prisma: PrismaClient, checkIntervalMs:
 /**
  * Get the singleton monitor instance
  */
-export function getQueueActivityMonitor(prisma: PrismaClient): QueueActivityMonitor {
+export function getQueueActivityMonitor(
+  prisma: PrismaClient
+): QueueActivityMonitor {
   return QueueActivityMonitor.getInstance(prisma);
 }

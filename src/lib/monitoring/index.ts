@@ -5,7 +5,7 @@ export {
   MetricsCollector,
   type SystemMetrics,
   type JobMetrics,
-  type AlertThresholds
+  type AlertThresholds,
 } from './metrics-collector';
 
 export {
@@ -13,7 +13,7 @@ export {
   HealthChecker,
   HealthStatus,
   type SystemHealth,
-  type ComponentHealth
+  type ComponentHealth,
 } from './health-check';
 
 export { alertManager } from './alert-manager';

@@ -1,8 +1,10 @@
 // @ts-nocheck
 // Test GraphQL collections query directly
-import { ApolloServer } from '@apollo/server';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+
+import { ApolloServer } from '@apollo/server';
+
 import { prisma } from '@/lib/prisma';
 import { resolvers } from '@/lib/graphql/resolvers';
 
@@ -22,7 +24,7 @@ async function testGraphQL() {
   // Mock user context
   const mockUser = {
     id: 'cmfmo8b6900019dwpsf9dsn35',
-    email: 'mnandrade1999@gmail.com'
+    email: 'mnandrade1999@gmail.com',
   };
 
   console.log('\n=== Testing GraphQL myCollections query ===\n');
@@ -64,8 +66,8 @@ async function testGraphQL() {
           prisma,
           dataloaders: {}, // Empty for test
           requestId: 'test-123',
-          timestamp: new Date()
-        }
+          timestamp: new Date(),
+        },
       }
     );
 
@@ -77,7 +79,9 @@ async function testGraphQL() {
       if (data?.myCollections) {
         console.log(`\n✅ Found ${data.myCollections.length} collections`);
         data.myCollections.forEach((col: any) => {
-          console.log(`  - "${col.name}" with ${col.albums?.length || 0} albums`);
+          console.log(
+            `  - "${col.name}" with ${col.albums?.length || 0} albums`
+          );
         });
       }
     }

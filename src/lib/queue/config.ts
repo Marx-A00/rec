@@ -43,7 +43,7 @@ export const defaultQueueConfig: QueueConfig = {
         delay: 2000,
       },
       removeOnComplete: 100, // Keep last 100 completed jobs
-      removeOnFail: 50,      // Keep last 50 failed jobs for debugging
+      removeOnFail: 50, // Keep last 50 failed jobs for debugging
     },
   },
 };
@@ -51,7 +51,10 @@ export const defaultQueueConfig: QueueConfig = {
 /**
  * Validate queue configuration
  */
-export function validateQueueConfig(config: QueueConfig): { isValid: boolean; errors: string[] } {
+export function validateQueueConfig(config: QueueConfig): {
+  isValid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   // Validate Redis configuration
@@ -59,7 +62,11 @@ export function validateQueueConfig(config: QueueConfig): { isValid: boolean; er
     errors.push('Redis host is required');
   }
 
-  if (isNaN(config.redis.port) || config.redis.port <= 0 || config.redis.port > 65535) {
+  if (
+    isNaN(config.redis.port) ||
+    config.redis.port <= 0 ||
+    config.redis.port > 65535
+  ) {
     errors.push('Redis port must be a valid port number (1-65535)');
   }
 
@@ -87,10 +94,12 @@ export function validateQueueConfig(config: QueueConfig): { isValid: boolean; er
  */
 export function getQueueConfig(): QueueConfig {
   const config = { ...defaultQueueConfig };
-  
+
   const validation = validateQueueConfig(config);
   if (!validation.isValid) {
-    throw new Error(`Queue configuration validation failed:\n${validation.errors.join('\n')}`);
+    throw new Error(
+      `Queue configuration validation failed:\n${validation.errors.join('\n')}`
+    );
   }
 
   return config;

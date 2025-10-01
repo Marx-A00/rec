@@ -21,4 +21,4 @@ export const PUBSUB_EVENTS = {
   USER_ACTIVITY: 'USER_ACTIVITY',
 } as const;
 
-export type PubSubEvent = typeof PUBSUB_EVENTS[keyof typeof PUBSUB_EVENTS];
+export type PubSubEvent = (typeof PUBSUB_EVENTS)[keyof typeof PUBSUB_EVENTS];

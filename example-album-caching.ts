@@ -20,13 +20,13 @@ export interface CachedAlbumData {
 export async function getCachedPopularAlbums(): Promise<CachedAlbumData | null> {
   try {
     const cached = await prisma.cacheData.findUnique({
-      where: { key: 'albums_popular' }
+      where: { key: 'albums_popular' },
     });
-    
+
     if (cached && cached.expires > new Date()) {
       return cached.data as CachedAlbumData;
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error fetching cached albums:', error);
@@ -41,12 +41,12 @@ export async function cachePopularAlbums(albumsData: CachedAlbumData) {
       create: {
         key: 'albums_popular',
         data: albumsData,
-        expires: new Date(Date.now() + 2 * 60 * 60 * 1000) // 2 hours
+        expires: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours
       },
       update: {
         data: albumsData,
-        expires: new Date(Date.now() + 2 * 60 * 60 * 1000)
-      }
+        expires: new Date(Date.now() + 2 * 60 * 60 * 1000),
+      },
     });
   } catch (error) {
     console.error('Error caching albums:', error);
@@ -63,7 +63,7 @@ export async function GET() {
         success: true,
         source: 'cache',
         data: cached,
-        expires: cached.fetchedAt
+        expires: cached.fetchedAt,
       });
     }
 
@@ -75,21 +75,21 @@ export async function GET() {
         coverArtUrl: true,
         releaseDate: true,
         artists: {
-          select: { artist: { select: { name: true } } }
+          select: { artist: { select: { name: true } } },
         },
         basisRecommendations: { select: { score: true } },
-        targetRecommendations: { select: { score: true } }
+        targetRecommendations: { select: { score: true } },
       },
       where: {
         // Complex filtering logic
         releaseDate: { gte: new Date('2020-01-01') },
-        basisRecommendations: { some: {} }
+        basisRecommendations: { some: {} },
       },
       orderBy: [
         { basisRecommendations: { _count: 'desc' } },
-        { targetRecommendations: { _count: 'desc' } }
+        { targetRecommendations: { _count: 'desc' } },
       ],
-      take: 50
+      take: 50,
     });
 
     // 3. Process and transform data
@@ -100,10 +100,12 @@ export async function GET() {
         artistNames: album.artists.map(a => a.artist.name).join(', '),
         coverArtUrl: album.coverArtUrl,
         releaseDate: album.releaseDate?.toISOString() || '',
-        totalRecommendations: album.basisRecommendations.length + album.targetRecommendations.length
+        totalRecommendations:
+          album.basisRecommendations.length +
+          album.targetRecommendations.length,
       })),
       total: albums.length,
-      fetchedAt: new Date().toISOString()
+      fetchedAt: new Date().toISOString(),
     };
 
     // 4. Cache the results
@@ -112,9 +114,8 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       source: 'fresh',
-      data: albumsData
+      data: albumsData,
     });
-
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Failed to fetch popular albums' },

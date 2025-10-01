@@ -48,26 +48,32 @@ export default function ProfileClient({
   const { prefetchRoute, navigateToAlbum, goBack } = useNavigation();
 
   // Fetch collections using GraphQL
-  const { data: collectionsData, isLoading: collectionsLoading } = useUserCollectionsQuery(user.id);
+  const { data: collectionsData, isLoading: collectionsLoading } =
+    useUserCollectionsQuery(user.id);
 
   // Memoize collection data to prevent infinite re-renders
   const allAlbums = useMemo(() => {
-    const mapped = collectionsData?.user?.collections?.flatMap(col =>
-      col.albums.map(item => ({
-        id: item.id,
-        albumId: item.album.id,
-        albumTitle: item.album.title,
-        albumArtist: item.album.artists[0]?.artist?.name || 'Unknown Artist',
-        albumArtistId: item.album.artists[0]?.artist?.id || null,
-        albumImageUrl: item.album.coverArtUrl,
-        albumYear: item.album.releaseDate ? String(new Date(item.album.releaseDate).getFullYear()) : null,
-        addedAt: item.addedAt,
-        addedBy: user.id,
-        personalRating: item.personalRating,
-        personalNotes: item.personalNotes,
-        position: item.position,
-      }))
-    ) || initialCollection || [];
+    const mapped =
+      collectionsData?.user?.collections?.flatMap(col =>
+        col.albums.map(item => ({
+          id: item.id,
+          albumId: item.album.id,
+          albumTitle: item.album.title,
+          albumArtist: item.album.artists[0]?.artist?.name || 'Unknown Artist',
+          albumArtistId: item.album.artists[0]?.artist?.id || null,
+          albumImageUrl: item.album.coverArtUrl,
+          albumYear: item.album.releaseDate
+            ? String(new Date(item.album.releaseDate).getFullYear())
+            : null,
+          addedAt: item.addedAt,
+          addedBy: user.id,
+          personalRating: item.personalRating,
+          personalNotes: item.personalNotes,
+          position: item.position,
+        }))
+      ) ||
+      initialCollection ||
+      [];
 
     // Deduplicate by albumId (album may appear in multiple collections)
     const seen = new Set<string>();
@@ -99,8 +105,9 @@ export default function ProfileClient({
   const settingsMenuRef = useRef<HTMLDivElement>(null);
 
   // Collection reordering state
-  const [sortedAlbums, setSortedAlbums] = useState<CollectionAlbum[]>(allAlbums);
-  
+  const [sortedAlbums, setSortedAlbums] =
+    useState<CollectionAlbum[]>(allAlbums);
+
   // Update sorted albums when collection changes
   useEffect(() => {
     setSortedAlbums(allAlbums);
@@ -163,29 +170,29 @@ export default function ProfileClient({
       }
     }
 
-  // Default behavior: show modal
-  setSelectedAlbum(collectionAlbum);
-};
+    // Default behavior: show modal
+    setSelectedAlbum(collectionAlbum);
+  };
 
-// Handle album reordering (GraphQL)
-const reorderMutation = useReorderCollectionAlbumsMutation();
-const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
-  setSortedAlbums(reorderedAlbums);
+  // Handle album reordering (GraphQL)
+  const reorderMutation = useReorderCollectionAlbumsMutation();
+  const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
+    setSortedAlbums(reorderedAlbums);
 
-  const collectionId = collectionsData?.user?.collections?.[0]?.id;
-  if (!isOwnProfile || !collectionId) return;
+    const collectionId = collectionsData?.user?.collections?.[0]?.id;
+    if (!isOwnProfile || !collectionId) return;
 
-  try {
-    await reorderMutation.mutateAsync({
-      collectionId,
-      albumIds: reorderedAlbums.map(a => a.albumId),
-    });
-  } catch (error) {
-    console.error('Error saving album order:', error);
-  }
-};
+    try {
+      await reorderMutation.mutateAsync({
+        collectionId,
+        albumIds: reorderedAlbums.map(a => a.albumId),
+      });
+    } catch (error) {
+      console.error('Error saving album order:', error);
+    }
+  };
 
-// Profile editing handlers
+  // Profile editing handlers
   const handleEditProfile = () => {
     setIsEditingProfile(true);
     setShowSettings(false);
@@ -404,7 +411,8 @@ const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
           {/* TODO: add in DnD grid with varying sizes or whatever */}
 
           {/* Listen Later (owner-only) */}
-          {isOwnProfile && collectionsData?.user?.collections && (
+          {isOwnProfile &&
+            collectionsData?.user?.collections &&
             (() => {
               const listenLater = collectionsData.user.collections.find(
                 c => c.name === 'Listen Later'
@@ -434,7 +442,9 @@ const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
                               {item.album.title}
                             </p>
                             <p className='text-xs text-zinc-400 line-clamp-1'>
-                              {item.album.artists?.map(a => a.artist?.name).join(', ')}
+                              {item.album.artists
+                                ?.map(a => a.artist?.name)
+                                .join(', ')}
                             </p>
                           </div>
                         </Link>
@@ -442,14 +452,15 @@ const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
                     </div>
                   ) : (
                     <div className='text-center py-8'>
-                      <p className='text-zinc-400'>No albums saved for later yet.</p>
+                      <p className='text-zinc-400'>
+                        No albums saved for later yet.
+                      </p>
                     </div>
                   )}
                 </section>
               );
-            })()
-          )}
-          
+            })()}
+
           <section className='border-t border-zinc-800 pt-8'>
             <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
               Record Collection
@@ -465,14 +476,14 @@ const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
                 <SortableAlbumGrid
                   albums={sortedAlbums}
                   onReorder={handleAlbumReorder}
-                  onAlbumClick={(albumId) => {
+                  onAlbumClick={albumId => {
                     const album = sortedAlbums.find(a => a.albumId === albumId);
                     if (album) {
                       setSelectedAlbum(album);
                     }
                   }}
                   isEditable={isOwnProfile}
-                  className="mb-8"
+                  className='mb-8'
                 />
               </div>
             ) : (
@@ -500,7 +511,9 @@ const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
                     key={recommendation.id}
                     recommendation={recommendation}
                     currentUserId={user.id}
-                    onAlbumClick={(albumId, _albumType) => navigateToAlbum(albumId)}
+                    onAlbumClick={(albumId, _albumType) =>
+                      navigateToAlbum(albumId)
+                    }
                   />
                 ))}
               </div>

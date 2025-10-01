@@ -1,9 +1,17 @@
 // src/contexts/DashboardContext.tsx
 'use client';
 
-import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useSession } from 'next-auth/react';
+
 // Using built-in crypto.randomUUID() instead of nanoid to avoid extra dependency
 import {
   DashboardContextType,
@@ -11,7 +19,7 @@ import {
   PanelLayout,
   Panel,
   PanelType,
-  PanelConfig
+  PanelConfig,
 } from '@/types/mosaic';
 import { panelRegistry } from '@/lib/dashboard/PanelRegistry';
 
@@ -20,16 +28,45 @@ type DashboardAction =
   | { type: 'SET_LAYOUT'; payload: PanelLayout }
   | { type: 'TOGGLE_EDIT_MODE' }
   | { type: 'SET_EDIT_MODE'; payload: boolean }
-  | { type: 'ADD_PANEL'; payload: { type: PanelType; config?: PanelConfig; position?: number } }
+  | {
+      type: 'ADD_PANEL';
+      payload: { type: PanelType; config?: PanelConfig; position?: number };
+    }
   | { type: 'REMOVE_PANEL'; payload: { panelId: string } }
-  | { type: 'UPDATE_PANEL_CONFIG'; payload: { panelId: string; config: PanelConfig } }
+  | {
+      type: 'UPDATE_PANEL_CONFIG';
+      payload: { panelId: string; config: PanelConfig };
+    }
   | { type: 'RESIZE_PANEL'; payload: { panelId: string; size: number } }
   | { type: 'MOVE_PANEL'; payload: { panelId: string; targetPosition: number } }
-  | { type: 'REORDER_PANELS'; payload: { activeId: string; overId: string; layoutPath?: string[] } }
-  | { type: 'CREATE_GROUP'; payload: { panelIds: string[]; direction: 'horizontal' | 'vertical'; position?: number } }
-  | { type: 'UNGROUP_PANEL'; payload: { panelId: string; targetPosition?: number } }
-  | { type: 'CHANGE_LAYOUT_DIRECTION'; payload: { layoutPath: string[]; direction: 'horizontal' | 'vertical' } }
-  | { type: 'SMART_DROP'; payload: { draggedPanelId: string; targetPanelId: string; dropZone: 'top' | 'bottom' | 'left' | 'right' | 'center' } }
+  | {
+      type: 'REORDER_PANELS';
+      payload: { activeId: string; overId: string; layoutPath?: string[] };
+    }
+  | {
+      type: 'CREATE_GROUP';
+      payload: {
+        panelIds: string[];
+        direction: 'horizontal' | 'vertical';
+        position?: number;
+      };
+    }
+  | {
+      type: 'UNGROUP_PANEL';
+      payload: { panelId: string; targetPosition?: number };
+    }
+  | {
+      type: 'CHANGE_LAYOUT_DIRECTION';
+      payload: { layoutPath: string[]; direction: 'horizontal' | 'vertical' };
+    }
+  | {
+      type: 'SMART_DROP';
+      payload: {
+        draggedPanelId: string;
+        targetPanelId: string;
+        dropZone: 'top' | 'bottom' | 'left' | 'right' | 'center';
+      };
+    }
   | { type: 'SELECT_PANEL'; payload: { panelId: string | null } };
 
 // Default layout - flattened so all panels can be reordered
@@ -42,7 +79,7 @@ const createDefaultLayout = (): PanelLayout => ({
       size: 40,
       minSize: 25,
       maxSize: 60,
-      config: { showHeader: true, headerTitle: 'Your Collection' }
+      config: { showHeader: true, headerTitle: 'Your Collection' },
     },
     {
       id: 'recommendations-panel',
@@ -50,7 +87,7 @@ const createDefaultLayout = (): PanelLayout => ({
       size: 35,
       minSize: 20,
       maxSize: 50,
-      config: { showHeader: true, headerTitle: 'Recent Recommendations' }
+      config: { showHeader: true, headerTitle: 'Recent Recommendations' },
     },
     {
       id: 'activity-panel',
@@ -58,9 +95,9 @@ const createDefaultLayout = (): PanelLayout => ({
       size: 25,
       minSize: 15,
       maxSize: 40,
-      config: { showHeader: true, headerTitle: 'Recent Activity' }
-    }
-  ]
+      config: { showHeader: true, headerTitle: 'Recent Activity' },
+    },
+  ],
 });
 
 const initialState: DashboardState = {
@@ -71,7 +108,10 @@ const initialState: DashboardState = {
 };
 
 // Reducer function
-function dashboardReducer(state: DashboardState, action: DashboardAction): DashboardState {
+function dashboardReducer(
+  state: DashboardState,
+  action: DashboardAction
+): DashboardState {
   switch (action.type) {
     case 'SET_LAYOUT':
       return {
@@ -96,7 +136,7 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
     case 'ADD_PANEL': {
       const { type, config, position } = action.payload;
       const panelDef = panelRegistry.get(type);
-      
+
       if (!panelDef) {
         console.error(`Panel type "${type}" not found in registry`);
         return state;
@@ -113,7 +153,11 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 
       // Add to the main layout (for now, we'll enhance this later for nested layouts)
       const newPanels = [...state.layout.panels];
-      if (position !== undefined && position >= 0 && position <= newPanels.length) {
+      if (
+        position !== undefined &&
+        position >= 0 &&
+        position <= newPanels.length
+      ) {
         newPanels.splice(position, 0, newPanel);
       } else {
         newPanels.push(newPanel);
@@ -130,14 +174,16 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 
     case 'REMOVE_PANEL': {
       const { panelId } = action.payload;
-      
+
       // Helper function to remove panel recursively
       const removePanelFromLayout = (layout: PanelLayout): PanelLayout => {
         const filteredPanels = layout.panels
           .filter(panel => panel.id !== panelId)
           .map(panel => ({
             ...panel,
-            layout: panel.layout ? removePanelFromLayout(panel.layout) : undefined,
+            layout: panel.layout
+              ? removePanelFromLayout(panel.layout)
+              : undefined,
           }));
 
         return {
@@ -185,13 +231,14 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
       return {
         ...state,
         layout: cleanLayout(layoutAfterRemoval),
-        selectedPanelId: state.selectedPanelId === panelId ? null : state.selectedPanelId,
+        selectedPanelId:
+          state.selectedPanelId === panelId ? null : state.selectedPanelId,
       };
     }
 
     case 'UPDATE_PANEL_CONFIG': {
       const { panelId, config } = action.payload;
-      
+
       // Helper function to update panel config recursively
       const updatePanelInLayout = (layout: PanelLayout): PanelLayout => ({
         ...layout,
@@ -214,13 +261,19 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 
     case 'RESIZE_PANEL': {
       const { panelId, size } = action.payload;
-      
+
       // Helper function to resize panel recursively
       const resizePanelInLayout = (layout: PanelLayout): PanelLayout => ({
         ...layout,
         panels: layout.panels.map(panel => {
           if (panel.id === panelId) {
-            return { ...panel, size: Math.max(panel.minSize || 0, Math.min(panel.maxSize || 100, size)) };
+            return {
+              ...panel,
+              size: Math.max(
+                panel.minSize || 0,
+                Math.min(panel.maxSize || 100, size)
+              ),
+            };
           }
           if (panel.layout) {
             return { ...panel, layout: resizePanelInLayout(panel.layout) };
@@ -248,7 +301,7 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 
     case 'REORDER_PANELS': {
       const { activeId, overId } = action.payload;
-      
+
       if (activeId === overId) return state;
 
       // Helper function to clean up empty layouts and flatten single-panel groups
@@ -287,9 +340,11 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 
       // Helper function to reorder panels within a layout
       const reorderPanelsInLayout = (layout: PanelLayout): PanelLayout => {
-        const activeIndex = layout.panels.findIndex(panel => panel.id === activeId);
+        const activeIndex = layout.panels.findIndex(
+          panel => panel.id === activeId
+        );
         const overIndex = layout.panels.findIndex(panel => panel.id === overId);
-        
+
         if (activeIndex !== -1 && overIndex !== -1) {
           // Both panels are in this layout, reorder them
           return {
@@ -297,13 +352,15 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
             panels: arrayMove(layout.panels, activeIndex, overIndex),
           };
         }
-        
+
         // Check nested layouts
         return {
           ...layout,
           panels: layout.panels.map(panel => ({
             ...panel,
-            layout: panel.layout ? reorderPanelsInLayout(panel.layout) : undefined,
+            layout: panel.layout
+              ? reorderPanelsInLayout(panel.layout)
+              : undefined,
           })),
         };
       };
@@ -316,12 +373,16 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 
     case 'CREATE_GROUP': {
       const { panelIds, direction, position = 0 } = action.payload;
-      
+
       // Helper function to create a group from specified panels
       const createGroupInLayout = (layout: PanelLayout): PanelLayout => {
-        const panelsToGroup = layout.panels.filter(panel => panelIds.includes(panel.id));
-        const remainingPanels = layout.panels.filter(panel => !panelIds.includes(panel.id));
-        
+        const panelsToGroup = layout.panels.filter(panel =>
+          panelIds.includes(panel.id)
+        );
+        const remainingPanels = layout.panels.filter(
+          panel => !panelIds.includes(panel.id)
+        );
+
         if (panelsToGroup.length < 2) {
           // Need at least 2 panels to create a group
           return layout;
@@ -339,7 +400,7 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
             direction,
             panels: panelsToGroup.map(panel => ({
               ...panel,
-              size: panel.size / panelsToGroup.length * 100, // Redistribute sizes
+              size: (panel.size / panelsToGroup.length) * 100, // Redistribute sizes
             })),
           },
         };
@@ -362,23 +423,27 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 
     case 'UNGROUP_PANEL': {
       const { panelId, targetPosition = 0 } = action.payload;
-      
+
       // Helper function to ungroup a panel and move it to main layout
       const ungroupPanelInLayout = (layout: PanelLayout): PanelLayout => {
         let extractedPanel: Panel | null = null;
-        
+
         const processedPanels = layout.panels.reduce((acc: Panel[], panel) => {
           if (panel.layout) {
             // Check if the panel to ungroup is in this nested layout
-            const panelInGroup = panel.layout.panels.find(p => p.id === panelId);
-            
+            const panelInGroup = panel.layout.panels.find(
+              p => p.id === panelId
+            );
+
             if (panelInGroup) {
               // Extract the panel
               extractedPanel = panelInGroup;
-              
+
               // Remove the panel from the group
-              const remainingGroupPanels = panel.layout.panels.filter(p => p.id !== panelId);
-              
+              const remainingGroupPanels = panel.layout.panels.filter(
+                p => p.id !== panelId
+              );
+
               if (remainingGroupPanels.length === 1) {
                 // If only one panel left in group, dissolve the group
                 acc.push(remainingGroupPanels[0]);
@@ -402,7 +467,7 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
           } else {
             acc.push(panel);
           }
-          
+
           return acc;
         }, []);
 
@@ -425,24 +490,32 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 
     case 'CHANGE_LAYOUT_DIRECTION': {
       const { layoutPath, direction } = action.payload;
-      
+
       // Helper function to change direction at a specific path
-      const changeDirectionInLayout = (layout: PanelLayout, path: string[], depth = 0): PanelLayout => {
+      const changeDirectionInLayout = (
+        layout: PanelLayout,
+        path: string[],
+        depth = 0
+      ): PanelLayout => {
         if (depth === path.length) {
           return {
             ...layout,
             direction,
           };
         }
-        
+
         const panelId = path[depth];
         return {
           ...layout,
-          panels: layout.panels.map(panel => 
+          panels: layout.panels.map(panel =>
             panel.id === panelId && panel.layout
               ? {
                   ...panel,
-                  layout: changeDirectionInLayout(panel.layout, path, depth + 1),
+                  layout: changeDirectionInLayout(
+                    panel.layout,
+                    path,
+                    depth + 1
+                  ),
                 }
               : panel
           ),
@@ -451,25 +524,28 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 
       return {
         ...state,
-        layout: layoutPath.length === 0 
-          ? { ...state.layout, direction }
-          : changeDirectionInLayout(state.layout, layoutPath),
+        layout:
+          layoutPath.length === 0
+            ? { ...state.layout, direction }
+            : changeDirectionInLayout(state.layout, layoutPath),
       };
     }
 
     case 'SMART_DROP': {
       const { draggedPanelId, targetPanelId, dropZone } = action.payload;
-      
+
       // Helper function to find and extract a panel from the layout
-      const extractPanel = (layout: PanelLayout): { panel: Panel | null; newLayout: PanelLayout } => {
+      const extractPanel = (
+        layout: PanelLayout
+      ): { panel: Panel | null; newLayout: PanelLayout } => {
         let extractedPanel: Panel | null = null;
-        
+
         const newPanels = layout.panels.reduce((acc: Panel[], panel) => {
           if (panel.id === draggedPanelId) {
             extractedPanel = panel;
             return acc; // Don't include this panel
           }
-          
+
           if (panel.layout) {
             const result = extractPanel(panel.layout);
             if (result.panel) {
@@ -490,7 +566,7 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
           } else {
             acc.push(panel);
           }
-          
+
           return acc;
         }, []);
 
@@ -501,7 +577,10 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
       };
 
       // Helper function to insert panel based on drop zone
-      const insertPanelInLayout = (layout: PanelLayout, draggedPanel: Panel): PanelLayout => {
+      const insertPanelInLayout = (
+        layout: PanelLayout,
+        draggedPanel: Panel
+      ): PanelLayout => {
         const newPanels = layout.panels.map(panel => {
           if (panel.id === targetPanelId) {
             // This is where we need to create the split
@@ -509,13 +588,19 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
               case 'center':
                 // Replace the target panel
                 return draggedPanel;
-                
+
               case 'top':
               case 'bottom': {
                 // Create vertical split - don't create a wrapper panel, just modify the layout
-                const topPanel = dropZone === 'top' ? { ...draggedPanel, size: 50 } : { ...panel, size: 50 };
-                const bottomPanel = dropZone === 'top' ? { ...panel, size: 50 } : { ...draggedPanel, size: 50 };
-                
+                const topPanel =
+                  dropZone === 'top'
+                    ? { ...draggedPanel, size: 50 }
+                    : { ...panel, size: 50 };
+                const bottomPanel =
+                  dropZone === 'top'
+                    ? { ...panel, size: 50 }
+                    : { ...draggedPanel, size: 50 };
+
                 return {
                   id: crypto.randomUUID(),
                   type: panel.type, // Keep the original panel type
@@ -529,13 +614,19 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
                   },
                 };
               }
-              
+
               case 'left':
               case 'right': {
                 // Create horizontal split - don't create a wrapper panel, just modify the layout
-                const leftPanel = dropZone === 'left' ? { ...draggedPanel, size: 50 } : { ...panel, size: 50 };
-                const rightPanel = dropZone === 'left' ? { ...panel, size: 50 } : { ...draggedPanel, size: 50 };
-                
+                const leftPanel =
+                  dropZone === 'left'
+                    ? { ...draggedPanel, size: 50 }
+                    : { ...panel, size: 50 };
+                const rightPanel =
+                  dropZone === 'left'
+                    ? { ...panel, size: 50 }
+                    : { ...draggedPanel, size: 50 };
+
                 return {
                   id: crypto.randomUUID(),
                   type: panel.type, // Keep the original panel type
@@ -549,12 +640,12 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
                   },
                 };
               }
-              
+
               default:
                 return panel;
             }
           }
-          
+
           // Recursively handle nested layouts
           if (panel.layout) {
             return {
@@ -562,7 +653,7 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
               layout: insertPanelInLayout(panel.layout, draggedPanel),
             };
           }
-          
+
           return panel;
         });
 
@@ -571,7 +662,7 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 
       // Extract the dragged panel first
       const { panel: draggedPanel, newLayout } = extractPanel(state.layout);
-      
+
       if (!draggedPanel) {
         console.warn('Could not find dragged panel:', draggedPanelId);
         return state;
@@ -626,7 +717,9 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 }
 
 // Create context
-const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
+const DashboardContext = createContext<DashboardContextType | undefined>(
+  undefined
+);
 
 // Provider component
 // GraphQL queries/mutations for settings
@@ -665,13 +758,16 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            query: LOAD_SETTINGS_QUERY
-          })
+            query: LOAD_SETTINGS_QUERY,
+          }),
         });
 
         const { data } = await response.json();
         if (data?.mySettings?.dashboardLayout) {
-          dispatch({ type: 'SET_LAYOUT', payload: data.mySettings.dashboardLayout });
+          dispatch({
+            type: 'SET_LAYOUT',
+            payload: data.mySettings.dashboardLayout,
+          });
         }
         hasLoadedRef.current = true;
       } catch (error) {
@@ -700,8 +796,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
           credentials: 'include',
           body: JSON.stringify({
             query: SAVE_LAYOUT_MUTATION,
-            variables: { layout: state.layout }
-          })
+            variables: { layout: state.layout },
+          }),
         });
         console.log('Dashboard layout saved');
       } catch (error) {
@@ -726,9 +822,12 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'TOGGLE_EDIT_MODE' });
     }, []),
 
-    addPanel: useCallback((type: PanelType, config?: PanelConfig, position?: number) => {
-      dispatch({ type: 'ADD_PANEL', payload: { type, config, position } });
-    }, []),
+    addPanel: useCallback(
+      (type: PanelType, config?: PanelConfig, position?: number) => {
+        dispatch({ type: 'ADD_PANEL', payload: { type, config, position } });
+      },
+      []
+    ),
 
     removePanel: useCallback((panelId: string) => {
       dispatch({ type: 'REMOVE_PANEL', payload: { panelId } });
@@ -750,25 +849,57 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'SELECT_PANEL', payload: { panelId } });
     }, []),
 
-    reorderPanels: useCallback((activeId: string, overId: string, layoutPath?: string[]) => {
-      dispatch({ type: 'REORDER_PANELS', payload: { activeId, overId, layoutPath } });
-    }, []),
+    reorderPanels: useCallback(
+      (activeId: string, overId: string, layoutPath?: string[]) => {
+        dispatch({
+          type: 'REORDER_PANELS',
+          payload: { activeId, overId, layoutPath },
+        });
+      },
+      []
+    ),
 
-    createGroup: useCallback((panelIds: string[], direction: 'horizontal' | 'vertical', position?: number) => {
-      dispatch({ type: 'CREATE_GROUP', payload: { panelIds, direction, position } });
-    }, []),
+    createGroup: useCallback(
+      (
+        panelIds: string[],
+        direction: 'horizontal' | 'vertical',
+        position?: number
+      ) => {
+        dispatch({
+          type: 'CREATE_GROUP',
+          payload: { panelIds, direction, position },
+        });
+      },
+      []
+    ),
 
     ungroupPanel: useCallback((panelId: string, targetPosition?: number) => {
       dispatch({ type: 'UNGROUP_PANEL', payload: { panelId, targetPosition } });
     }, []),
 
-    changeLayoutDirection: useCallback((layoutPath: string[], direction: 'horizontal' | 'vertical') => {
-      dispatch({ type: 'CHANGE_LAYOUT_DIRECTION', payload: { layoutPath, direction } });
-    }, []),
+    changeLayoutDirection: useCallback(
+      (layoutPath: string[], direction: 'horizontal' | 'vertical') => {
+        dispatch({
+          type: 'CHANGE_LAYOUT_DIRECTION',
+          payload: { layoutPath, direction },
+        });
+      },
+      []
+    ),
 
-    smartDrop: useCallback((draggedPanelId: string, targetPanelId: string, dropZone: 'top' | 'bottom' | 'left' | 'right' | 'center') => {
-      dispatch({ type: 'SMART_DROP', payload: { draggedPanelId, targetPanelId, dropZone } });
-    }, []),
+    smartDrop: useCallback(
+      (
+        draggedPanelId: string,
+        targetPanelId: string,
+        dropZone: 'top' | 'bottom' | 'left' | 'right' | 'center'
+      ) => {
+        dispatch({
+          type: 'SMART_DROP',
+          payload: { draggedPanelId, targetPanelId, dropZone },
+        });
+      },
+      []
+    ),
 
     saveLayout: useCallback(async () => {
       if (!session?.user) {
@@ -786,8 +917,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
           credentials: 'include',
           body: JSON.stringify({
             query: SAVE_LAYOUT_MUTATION,
-            variables: { layout: state.layout }
-          })
+            variables: { layout: state.layout },
+          }),
         });
 
         const result = await response.json();
@@ -798,7 +929,10 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
           throw new Error(result.errors[0].message);
         }
 
-        console.log('Layout saved manually - settings ID:', result.data?.updateDashboardLayout?.id);
+        console.log(
+          'Layout saved manually - settings ID:',
+          result.data?.updateDashboardLayout?.id
+        );
       } catch (error) {
         console.error('Failed to save layout:', error);
         throw error;

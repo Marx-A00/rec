@@ -1,13 +1,29 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { SplitNode, PanelContent, SplitDirection, SplitMosaicState } from '@/types/split-mosaic';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from 'react';
+
+import {
+  SplitNode,
+  PanelContent,
+  SplitDirection,
+  SplitMosaicState,
+} from '@/types/split-mosaic';
 
 interface SplitMosaicContextType {
   state: SplitMosaicState;
   actions: {
     setLayout: (root: SplitNode | null) => void;
-    splitPanel: (panelId: string, direction: SplitDirection, newPanel: PanelContent) => void;
+    splitPanel: (
+      panelId: string,
+      direction: SplitDirection,
+      newPanel: PanelContent
+    ) => void;
     removePanel: (panelId: string) => void;
     toggleEditMode: () => void;
     saveLayout: () => void;
@@ -16,7 +32,9 @@ interface SplitMosaicContextType {
   };
 }
 
-const SplitMosaicContext = createContext<SplitMosaicContextType | undefined>(undefined);
+const SplitMosaicContext = createContext<SplitMosaicContextType | undefined>(
+  undefined
+);
 
 const STORAGE_KEY = 'split-mosaic-layout';
 
@@ -31,7 +49,11 @@ const createDefaultPanel = (): SplitNode => ({
   },
 });
 
-export function SplitMosaicProvider({ children }: { children: React.ReactNode }) {
+export function SplitMosaicProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [state, setState] = useState<SplitMosaicState>({
     root: createDefaultPanel(),
     activePanel: null,
@@ -44,53 +66,56 @@ export function SplitMosaicProvider({ children }: { children: React.ReactNode })
   }, []);
 
   // Helper function to find and split a panel
-  const splitPanel = useCallback((panelId: string, direction: SplitDirection, newPanel: PanelContent) => {
-    setState(prevState => {
-      if (!prevState.root) return prevState;
+  const splitPanel = useCallback(
+    (panelId: string, direction: SplitDirection, newPanel: PanelContent) => {
+      setState(prevState => {
+        if (!prevState.root) return prevState;
 
-      const splitNode = (node: SplitNode): SplitNode => {
-        // If this is the panel to split
-        if (node.id === panelId && node.type === 'panel') {
-          // Create a copy of the original node to preserve it
-          const originalNode: SplitNode = {
-            ...node,
-            id: generateUniqueId('node'),
-          };
+        const splitNode = (node: SplitNode): SplitNode => {
+          // If this is the panel to split
+          if (node.id === panelId && node.type === 'panel') {
+            // Create a copy of the original node to preserve it
+            const originalNode: SplitNode = {
+              ...node,
+              id: generateUniqueId('node'),
+            };
 
-          // Create new panel node
-          const newPanelNode: SplitNode = {
-            id: generateUniqueId('node'),
-            type: 'panel',
-            content: newPanel,
-          };
+            // Create new panel node
+            const newPanelNode: SplitNode = {
+              id: generateUniqueId('node'),
+              type: 'panel',
+              content: newPanel,
+            };
 
-          // Return a split node with the original and new panel
-          return {
-            id: generateUniqueId('split'),
-            type: 'split',
-            direction,
-            children: [originalNode, newPanelNode],
-            sizes: [50, 50], // Start with 50/50 split
-          };
-        }
+            // Return a split node with the original and new panel
+            return {
+              id: generateUniqueId('split'),
+              type: 'split',
+              direction,
+              children: [originalNode, newPanelNode],
+              sizes: [50, 50], // Start with 50/50 split
+            };
+          }
 
-        // Recursively search children
-        if (node.children) {
-          return {
-            ...node,
-            children: node.children.map(splitNode),
-          };
-        }
+          // Recursively search children
+          if (node.children) {
+            return {
+              ...node,
+              children: node.children.map(splitNode),
+            };
+          }
 
-        return node;
-      };
+          return node;
+        };
 
-      return {
-        ...prevState,
-        root: splitNode(prevState.root),
-      };
-    });
-  }, [generateUniqueId]);
+        return {
+          ...prevState,
+          root: splitNode(prevState.root),
+        };
+      });
+    },
+    [generateUniqueId]
+  );
 
   // Helper function to remove a panel
   const removePanel = useCallback((panelId: string) => {
@@ -106,11 +131,15 @@ export function SplitMosaicProvider({ children }: { children: React.ReactNode })
         // If this is a split node
         if (node.type === 'split' && node.children) {
           // Check if any child is the panel to remove
-          const childToRemoveIndex = node.children.findIndex(child => child.id === panelId);
+          const childToRemoveIndex = node.children.findIndex(
+            child => child.id === panelId
+          );
 
           if (childToRemoveIndex !== -1) {
             // Found the panel to remove
-            const remainingChildren = node.children.filter((_, index) => index !== childToRemoveIndex);
+            const remainingChildren = node.children.filter(
+              (_, index) => index !== childToRemoveIndex
+            );
 
             // If only one child remains, return it directly (flatten)
             if (remainingChildren.length === 1) {
@@ -131,7 +160,7 @@ export function SplitMosaicProvider({ children }: { children: React.ReactNode })
 
           // Panel not found at this level, recurse into children
           const newChildren = node.children
-            .map(child => child.type === 'split' ? removeNode(child) : child)
+            .map(child => (child.type === 'split' ? removeNode(child) : child))
             .filter(Boolean) as SplitNode[];
 
           // Check if any child was modified (panel was removed deeper in tree)

@@ -5,9 +5,10 @@ import { GraphQLClient, ClientError } from 'graphql-request';
 
 // Create GraphQL client instance
 // Use absolute URL for client-side requests
-const endpoint = typeof window !== 'undefined'
-  ? `${window.location.origin}/api/graphql`
-  : '/api/graphql';
+const endpoint =
+  typeof window !== 'undefined'
+    ? `${window.location.origin}/api/graphql`
+    : '/api/graphql';
 
 export const graphqlClient = new GraphQLClient(endpoint, {
   headers: {
@@ -65,18 +66,26 @@ export function extractErrorMessage(error: unknown): string {
 export function isAuthError(error: unknown): boolean {
   if (error instanceof ClientError) {
     const message = error.response?.errors?.[0]?.message?.toLowerCase();
-    return message?.includes('authentication') || message?.includes('unauthorized') || false;
+    return (
+      message?.includes('authentication') ||
+      message?.includes('unauthorized') ||
+      false
+    );
   }
   return false;
 }
 
 // Wrapper for GraphQL requests with enhanced error handling
-export async function graphqlRequest<T>(query: string, variables?: any): Promise<T> {
+export async function graphqlRequest<T>(
+  query: string,
+  variables?: any
+): Promise<T> {
   try {
     return await graphqlClient.request<T>(query, variables);
   } catch (error) {
     if (error instanceof ClientError) {
-      const errorMessage = error.response?.errors?.[0]?.message || 'GraphQL request failed';
+      const errorMessage =
+        error.response?.errors?.[0]?.message || 'GraphQL request failed';
       const extensions = error.response?.errors?.[0]?.extensions;
       const statusCode = error.response?.status || 500;
 

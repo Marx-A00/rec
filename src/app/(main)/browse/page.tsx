@@ -1,14 +1,15 @@
 import { Suspense } from 'react';
 import { Calendar, Users, Music, Star } from 'lucide-react';
+import Link from 'next/link';
+
 import { prisma } from '@/lib/prisma';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Link from 'next/link';
 
 // Fetch functions
 async function getSpotifyTrending() {
   const cache = await prisma.cacheData.findUnique({
-    where: { key: 'spotify_trending' }
+    where: { key: 'spotify_trending' },
   });
 
   // If no cache exists at all, return empty state
@@ -18,7 +19,7 @@ async function getSpotifyTrending() {
 
   const data = cache.data as any;
   const isExpired = new Date(cache.expires) < new Date();
-  
+
   return {
     newReleases: data.newReleases || [],
     featuredPlaylists: data.featuredPlaylists || [],
@@ -26,7 +27,7 @@ async function getSpotifyTrending() {
     hasData: true,
     isStale: isExpired,
     expires: cache.expires,
-    lastUpdated: cache.updatedAt
+    lastUpdated: cache.updatedAt,
   };
 }
 // TODO: add Recent Recommendations Section
@@ -41,8 +42,8 @@ async function getNewUsers(limit: number = 15) {
       bio: true,
       followersCount: true,
       followingCount: true,
-      recommendationsCount: true
-    }
+      recommendationsCount: true,
+    },
   });
 
   // Sort by ID descending as a proxy for creation order
@@ -53,7 +54,7 @@ async function getTrendingArtists(limit: number = 12) {
   // Get artists with recent recommendations
   const recentRecs = await prisma.recommendation.findMany({
     where: {
-      createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } // Last 30 days
+      createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }, // Last 30 days
     },
     select: {
       recommendedAlbum: {
@@ -64,24 +65,27 @@ async function getTrendingArtists(limit: number = 12) {
                 select: {
                   id: true,
                   name: true,
-                  imageUrl: true
-                }
-              }
-            }
-          }
-        }
+                  imageUrl: true,
+                },
+              },
+            },
+          },
+        },
       },
-      score: true
+      score: true,
     },
-    take: 100
+    take: 100,
   });
 
   // Aggregate by artist
-  const artistMap = new Map<string, {
-    artist: any;
-    count: number;
-    totalScore: number
-  }>();
+  const artistMap = new Map<
+    string,
+    {
+      artist: any;
+      count: number;
+      totalScore: number;
+    }
+  >();
 
   recentRecs.forEach(rec => {
     rec.recommendedAlbum.artists.forEach(aa => {
@@ -93,7 +97,7 @@ async function getTrendingArtists(limit: number = 12) {
         artistMap.set(aa.artist.id, {
           artist: aa.artist,
           count: 1,
-          totalScore: rec.score
+          totalScore: rec.score,
         });
       }
     });
@@ -106,7 +110,7 @@ async function getTrendingArtists(limit: number = 12) {
     .map(({ artist, count, totalScore }) => ({
       ...artist,
       recommendationCount: count,
-      averageScore: Math.round(totalScore / count * 10) / 10
+      averageScore: Math.round((totalScore / count) * 10) / 10,
     }));
 }
 /* TODO: instead of 'welcome new music lovers' , and then 
@@ -157,8 +161,8 @@ export default async function BrowsePage() {
 
         {/* Hot Albums from Spotify */}
 
-                {/* TODO: Fix invalidation timing or whatever */}
- 
+        {/* TODO: Fix invalidation timing or whatever */}
+
         <ContentRow
           title='Latest Releases'
           subtitle='Recent albums sorted by release date'
@@ -189,10 +193,7 @@ async function NewUsersSection() {
   return (
     <div className='flex gap-6 overflow-x-auto pb-6 scrollbar-hide'>
       {users.map(user => (
-        <UserCard
-          key={user.id}
-          user={user}
-        />
+        <UserCard key={user.id} user={user} />
       ))}
     </div>
   );
@@ -204,7 +205,9 @@ async function TrendingArtistsSection() {
   if (artists.length === 0) {
     return (
       <div className='text-center py-12 bg-zinc-900/50 rounded-lg border border-zinc-800'>
-        <p className='text-zinc-400'>No trending artists yet. Be the first to recommend some albums!</p>
+        <p className='text-zinc-400'>
+          No trending artists yet. Be the first to recommend some albums!
+        </p>
       </div>
     );
   }
@@ -225,8 +228,12 @@ async function SpotifyAlbumsSection() {
   if (!spotifyData.hasData || spotifyData.newReleases.length === 0) {
     return (
       <div className='text-center py-12 bg-zinc-900/50 rounded-lg border border-zinc-800'>
-        <p className='text-zinc-400'>No Spotify data available. Sync may be needed.</p>
-        <p className='text-xs mt-2 text-zinc-500'>Visit the admin dashboard to trigger a sync.</p>
+        <p className='text-zinc-400'>
+          No Spotify data available. Sync may be needed.
+        </p>
+        <p className='text-xs mt-2 text-zinc-500'>
+          Visit the admin dashboard to trigger a sync.
+        </p>
       </div>
     );
   }
@@ -236,16 +243,20 @@ async function SpotifyAlbumsSection() {
       {/* Show last sync time */}
       <div className='text-center py-2'>
         <p className='text-zinc-500 text-xs'>
-          Last synced: {new Date(spotifyData.lastUpdated ?? Date.now()).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-          })}
+          Last synced:{' '}
+          {new Date(spotifyData.lastUpdated ?? Date.now()).toLocaleDateString(
+            'en-US',
+            {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+            }
+          )}
         </p>
       </div>
-      
+
       <div className='flex gap-6 overflow-x-auto pb-6 scrollbar-hide'>
         {spotifyData.newReleases.slice(0, 15).map((album: any) => (
           <SpotifyAlbumCard key={album.id} album={album} />
@@ -260,7 +271,7 @@ function ContentRow({
   title,
   subtitle,
   icon,
-  children
+  children,
 }: {
   title: string;
   subtitle: string;
@@ -270,15 +281,17 @@ function ContentRow({
   return (
     <section className='space-y-8'>
       <div className='flex items-center space-x-4'>
-        <div className='text-cosmic-latte p-3 bg-cosmic-latte/10 rounded-xl border border-cosmic-latte/20'>{icon}</div>
+        <div className='text-cosmic-latte p-3 bg-cosmic-latte/10 rounded-xl border border-cosmic-latte/20'>
+          {icon}
+        </div>
         <div>
           <h2 className='text-3xl font-semibold text-white'>{title}</h2>
-          <p className='text-lg text-zinc-400 mt-2 leading-relaxed'>{subtitle}</p>
+          <p className='text-lg text-zinc-400 mt-2 leading-relaxed'>
+            {subtitle}
+          </p>
         </div>
       </div>
-      <div className='relative'>
-        {children}
-      </div>
+      <div className='relative'>{children}</div>
     </section>
   );
 }
@@ -353,7 +366,9 @@ function TrendingArtistCard({ artist }: { artist: any }) {
             </p>
             <div className='flex items-center justify-center gap-1'>
               <span className='text-yellow-400'>★</span>
-              <span className='text-sm text-zinc-300 font-medium'>{artist.averageScore}/10</span>
+              <span className='text-sm text-zinc-300 font-medium'>
+                {artist.averageScore}/10
+              </span>
             </div>
           </div>
         </div>
@@ -387,12 +402,14 @@ function SpotifyAlbumCard({ album }: { album: any }) {
             <h3 className='font-semibold text-white text-base line-clamp-1 group-hover:text-cosmic-latte transition-colors'>
               {album.name}
             </h3>
-            <p className='text-sm text-zinc-400 line-clamp-1'>{album.artists}</p>
+            <p className='text-sm text-zinc-400 line-clamp-1'>
+              {album.artists}
+            </p>
             <p className='text-xs text-zinc-500'>
               {new Date(album.releaseDate).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
-                year: 'numeric'
+                year: 'numeric',
               })}
             </p>
           </div>
@@ -415,8 +432,8 @@ function ComingSoonCard() {
               New Releases
             </h3>
             <p className='text-zinc-400 text-base mb-6 leading-relaxed'>
-              Fresh music drops coming soon! We&apos;re working on integrating the
-              latest releases from your favorite artists.
+              Fresh music drops coming soon! We&apos;re working on integrating
+              the latest releases from your favorite artists.
             </p>
             <div className='inline-flex items-center space-x-2 text-emeraled-green text-base font-medium bg-emeraled-green/10 px-4 py-2 rounded-full border border-emeraled-green/20'>
               <Calendar className='w-5 h-5' />

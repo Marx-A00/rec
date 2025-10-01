@@ -9,9 +9,7 @@
         "limit": 2
       },
       "responseStructure": {
-        "topLevelKeys": [
-          "albums"
-        ],
+        "topLevelKeys": ["albums"],
         "albumsContainerKeys": [
           "href",
           "items",
@@ -79,14 +77,7 @@
           }
         },
         "artistStructure": {
-          "keys": [
-            "external_urls",
-            "href",
-            "id",
-            "name",
-            "type",
-            "uri"
-          ],
+          "keys": ["external_urls", "href", "id", "name", "type", "uri"],
           "sample": {
             "external_urls": {
               "spotify": "https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02"
@@ -111,9 +102,7 @@
         "limit": 3
       },
       "responseStructure": {
-        "topLevelKeys": [
-          "categories"
-        ],
+        "topLevelKeys": ["categories"],
         "categoriesContainerKeys": [
           "href",
           "items",
@@ -147,10 +136,7 @@
         "limit": 2
       },
       "responseStructure": {
-        "topLevelKeys": [
-          "artists",
-          "albums"
-        ],
+        "topLevelKeys": ["artists", "albums"],
         "artistsKeys": [
           "href",
           "limit",
@@ -178,11 +164,7 @@
           "href": null,
           "total": 10712858
         },
-        "genres": [
-          "french house",
-          "electronic",
-          "electro"
-        ],
+        "genres": ["french house", "electronic", "electro"],
         "href": "https://api.spotify.com/v1/artists/4tZwfgrHOc3mvqYlEYSvVi",
         "id": "4tZwfgrHOc3mvqYlEYSvVi",
         "images": [

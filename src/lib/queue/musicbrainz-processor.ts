@@ -1,13 +1,20 @@
 // src/lib/queue/musicbrainz-processor.ts
 import { Job } from 'bullmq';
-import { musicBrainzService } from '../musicbrainz';
+
 import { prisma } from '@/lib/prisma';
+
+import { musicBrainzService } from '../musicbrainz';
 import {
   shouldEnrichAlbum,
   shouldEnrichArtist,
   calculateEnrichmentPriority,
   mapSourceToUserAction,
 } from '../musicbrainz/enrichment-logic';
+import {
+  MusicBrainzRecordingDetail,
+  MusicBrainzRelation,
+} from '../musicbrainz/schemas';
+
 import {
   JOB_TYPES,
   type MusicBrainzJobData,
@@ -28,7 +35,6 @@ import {
   type SpotifySyncNewReleasesJobData,
   type SpotifySyncFeaturedPlaylistsJobData,
 } from './jobs';
-import { MusicBrainzRecordingDetail, MusicBrainzRelation } from '../musicbrainz/schemas';
 
 /**
  * Process MusicBrainz jobs and make actual API calls
@@ -51,59 +57,75 @@ export async function processMusicBrainzJob(
       const delaySeconds = (job.data as any).delaySeconds || 10;
       const query = (job.data as any).query || 'slow job';
       console.log(`🐌 ${query} (${delaySeconds}s delay)`);
-      
+
       // Simulate slow processing
       await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
-      
+
       // Return mock result for slow job
       return {
         success: true,
         data: {
-          results: [{
-            id: 'bladee-the-fool-slow',
-            title: query,
-            processingType: 'SLOW_MOCK',
-            duration: `${delaySeconds}s`
-          }],
+          results: [
+            {
+              id: 'bladee-the-fool-slow',
+              title: query,
+              processingType: 'SLOW_MOCK',
+              duration: `${delaySeconds}s`,
+            },
+          ],
           totalResults: 1,
-          processingTime: `${delaySeconds * 1000}ms`
+          processingTime: `${delaySeconds * 1000}ms`,
         },
         metadata: {
           duration: delaySeconds * 1000,
           timestamp: new Date().toISOString(),
-          requestId
-        }
+          requestId,
+        },
       };
     }
 
     // Route to appropriate MusicBrainz service method
     switch (job.name) {
       case JOB_TYPES.MUSICBRAINZ_SEARCH_ARTISTS:
-        result = await handleSearchArtists(job.data as MusicBrainzSearchArtistsJobData);
+        result = await handleSearchArtists(
+          job.data as MusicBrainzSearchArtistsJobData
+        );
         break;
 
       case JOB_TYPES.MUSICBRAINZ_SEARCH_RELEASES:
-        result = await handleSearchReleases(job.data as MusicBrainzSearchReleasesJobData);
+        result = await handleSearchReleases(
+          job.data as MusicBrainzSearchReleasesJobData
+        );
         break;
 
       case JOB_TYPES.MUSICBRAINZ_SEARCH_RECORDINGS:
-        result = await handleSearchRecordings(job.data as MusicBrainzSearchRecordingsJobData);
+        result = await handleSearchRecordings(
+          job.data as MusicBrainzSearchRecordingsJobData
+        );
         break;
 
       case JOB_TYPES.MUSICBRAINZ_LOOKUP_ARTIST:
-        result = await handleLookupArtist(job.data as MusicBrainzLookupArtistJobData);
+        result = await handleLookupArtist(
+          job.data as MusicBrainzLookupArtistJobData
+        );
         break;
 
       case JOB_TYPES.MUSICBRAINZ_LOOKUP_RELEASE:
-        result = await handleLookupRelease(job.data as MusicBrainzLookupReleaseJobData);
+        result = await handleLookupRelease(
+          job.data as MusicBrainzLookupReleaseJobData
+        );
         break;
 
       case JOB_TYPES.MUSICBRAINZ_LOOKUP_RECORDING:
-        result = await handleLookupRecording(job.data as MusicBrainzLookupRecordingJobData);
+        result = await handleLookupRecording(
+          job.data as MusicBrainzLookupRecordingJobData
+        );
         break;
 
       case JOB_TYPES.MUSICBRAINZ_LOOKUP_RELEASE_GROUP:
-        result = await handleLookupReleaseGroup(job.data as MusicBrainzLookupReleaseGroupJobData);
+        result = await handleLookupReleaseGroup(
+          job.data as MusicBrainzLookupReleaseGroupJobData
+        );
         break;
 
       case JOB_TYPES.MUSICBRAINZ_BROWSE_RELEASE_GROUPS_BY_ARTIST:
@@ -111,15 +133,21 @@ export async function processMusicBrainzJob(
         break;
 
       case JOB_TYPES.CHECK_ALBUM_ENRICHMENT:
-        result = await handleCheckAlbumEnrichment(job.data as CheckAlbumEnrichmentJobData);
+        result = await handleCheckAlbumEnrichment(
+          job.data as CheckAlbumEnrichmentJobData
+        );
         break;
 
       case JOB_TYPES.CHECK_ARTIST_ENRICHMENT:
-        result = await handleCheckArtistEnrichment(job.data as CheckArtistEnrichmentJobData);
+        result = await handleCheckArtistEnrichment(
+          job.data as CheckArtistEnrichmentJobData
+        );
         break;
 
       case JOB_TYPES.CHECK_TRACK_ENRICHMENT:
-        result = await handleCheckTrackEnrichment(job.data as CheckTrackEnrichmentJobData);
+        result = await handleCheckTrackEnrichment(
+          job.data as CheckTrackEnrichmentJobData
+        );
         break;
 
       case JOB_TYPES.ENRICH_ALBUM:
@@ -135,11 +163,15 @@ export async function processMusicBrainzJob(
         break;
 
       case JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES:
-        result = await handleSpotifySyncNewReleases(job.data as SpotifySyncNewReleasesJobData);
+        result = await handleSpotifySyncNewReleases(
+          job.data as SpotifySyncNewReleasesJobData
+        );
         break;
 
       case JOB_TYPES.SPOTIFY_SYNC_FEATURED_PLAYLISTS:
-        result = await handleSpotifySyncFeaturedPlaylists(job.data as SpotifySyncFeaturedPlaylistsJobData);
+        result = await handleSpotifySyncFeaturedPlaylists(
+          job.data as SpotifySyncFeaturedPlaylistsJobData
+        );
         break;
 
       default:
@@ -163,10 +195,10 @@ export async function processMusicBrainzJob(
         requestId,
       },
     };
-
   } catch (error) {
     const duration = Date.now() - startTime;
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
 
     // Error logging handled by worker
 
@@ -209,7 +241,9 @@ async function handleSearchReleases(data: MusicBrainzSearchReleasesJobData) {
   );
 }
 
-async function handleSearchRecordings(data: MusicBrainzSearchRecordingsJobData) {
+async function handleSearchRecordings(
+  data: MusicBrainzSearchRecordingsJobData
+) {
   return await musicBrainzService.searchRecordings(
     data.query,
     data.limit,
@@ -229,21 +263,33 @@ async function handleLookupRecording(data: MusicBrainzLookupRecordingJobData) {
   return await musicBrainzService.getRecording(data.mbid, data.includes);
 }
 
-async function handleLookupReleaseGroup(data: MusicBrainzLookupReleaseGroupJobData) {
+async function handleLookupReleaseGroup(
+  data: MusicBrainzLookupReleaseGroupJobData
+) {
   return await musicBrainzService.getReleaseGroup(data.mbid, data.includes);
 }
 
-async function handleBrowseReleaseGroupsByArtist(data: { artistMbid: string; limit?: number; offset?: number }) {
-  return await musicBrainzService.getArtistReleaseGroups(data.artistMbid, data.limit || 100, data.offset || 0);
+async function handleBrowseReleaseGroupsByArtist(data: {
+  artistMbid: string;
+  limit?: number;
+  offset?: number;
+}) {
+  return await musicBrainzService.getArtistReleaseGroups(
+    data.artistMbid,
+    data.limit || 100,
+    data.offset || 0
+  );
 }
 
 async function handleCheckAlbumEnrichment(data: CheckAlbumEnrichmentJobData) {
-  console.log(`🔍 Checking if album ${data.albumId} needs enrichment (source: ${data.source})`);
-  
+  console.log(
+    `🔍 Checking if album ${data.albumId} needs enrichment (source: ${data.source})`
+  );
+
   // Get album with current enrichment status
   const album = await prisma.album.findUnique({
     where: { id: data.albumId },
-    include: { artists: { include: { artist: true } } }
+    include: { artists: { include: { artist: true } } },
   });
 
   if (!album) {
@@ -251,46 +297,58 @@ async function handleCheckAlbumEnrichment(data: CheckAlbumEnrichmentJobData) {
     return {
       albumId: data.albumId,
       action: 'skipped',
-      reason: 'album_not_found'
+      reason: 'album_not_found',
     };
   }
 
   // Check if enrichment is needed using our existing logic
   const needsEnrichment = shouldEnrichAlbum(album);
-  
+
   if (needsEnrichment) {
-    console.log(`✅ Album ${data.albumId} needs enrichment, queueing enrichment job`);
-    
+    console.log(
+      `✅ Album ${data.albumId} needs enrichment, queueing enrichment job`
+    );
+
     // Queue the actual enrichment job
-    const queue = await import('./musicbrainz-queue').then(m => m.getMusicBrainzQueue());
-    await queue.addJob(JOB_TYPES.ENRICH_ALBUM, {
-      albumId: data.albumId,
-      priority: data.priority || 'medium',
-      userAction: mapSourceToUserAction(data.source),
-      requestId: data.requestId
-    }, {
-      priority: calculateEnrichmentPriority(data.source, data.priority),
-      attempts: 3
-    });
+    const queue = await import('./musicbrainz-queue').then(m =>
+      m.getMusicBrainzQueue()
+    );
+    await queue.addJob(
+      JOB_TYPES.ENRICH_ALBUM,
+      {
+        albumId: data.albumId,
+        priority: data.priority || 'medium',
+        userAction: mapSourceToUserAction(data.source),
+        requestId: data.requestId,
+      },
+      {
+        priority: calculateEnrichmentPriority(data.source, data.priority),
+        attempts: 3,
+      }
+    );
 
     // Also check artists on this album
     for (const albumArtist of album.artists) {
-      await queue.addJob(JOB_TYPES.CHECK_ARTIST_ENRICHMENT, {
-        artistId: albumArtist.artist.id,
-        source: data.source,
-        priority: 'medium', // Artists get medium priority
-        requestId: `${data.requestId}-artist-${albumArtist.artist.id}`
-      }, {
-        priority: calculateEnrichmentPriority(data.source, 'medium'),
-        attempts: 3
-      });
+      await queue.addJob(
+        JOB_TYPES.CHECK_ARTIST_ENRICHMENT,
+        {
+          artistId: albumArtist.artist.id,
+          source: data.source,
+          priority: 'medium', // Artists get medium priority
+          requestId: `${data.requestId}-artist-${albumArtist.artist.id}`,
+        },
+        {
+          priority: calculateEnrichmentPriority(data.source, 'medium'),
+          attempts: 3,
+        }
+      );
     }
-    
+
     return {
       albumId: data.albumId,
       action: 'queued_for_enrichment',
       artistsAlsoQueued: album.artists.length,
-      source: data.source
+      source: data.source,
     };
   } else {
     console.log(`⏭️ Album ${data.albumId} doesn't need enrichment, skipping`);
@@ -300,17 +358,19 @@ async function handleCheckAlbumEnrichment(data: CheckAlbumEnrichmentJobData) {
       reason: 'enrichment_not_needed',
       currentDataQuality: album.dataQuality,
       lastEnriched: album.lastEnriched,
-      source: data.source
+      source: data.source,
     };
   }
 }
 
 async function handleCheckArtistEnrichment(data: CheckArtistEnrichmentJobData) {
-  console.log(`🔍 Checking if artist ${data.artistId} needs enrichment (source: ${data.source})`);
-  
+  console.log(
+    `🔍 Checking if artist ${data.artistId} needs enrichment (source: ${data.source})`
+  );
+
   // Get artist with current enrichment status
   const artist = await prisma.artist.findUnique({
-    where: { id: data.artistId }
+    where: { id: data.artistId },
   });
 
   if (!artist) {
@@ -318,32 +378,40 @@ async function handleCheckArtistEnrichment(data: CheckArtistEnrichmentJobData) {
     return {
       artistId: data.artistId,
       action: 'skipped',
-      reason: 'artist_not_found'
+      reason: 'artist_not_found',
     };
   }
 
   // Check if enrichment is needed using our existing logic
   const needsEnrichment = shouldEnrichArtist(artist);
-  
+
   if (needsEnrichment) {
-    console.log(`✅ Artist ${data.artistId} needs enrichment, queueing enrichment job`);
-    
+    console.log(
+      `✅ Artist ${data.artistId} needs enrichment, queueing enrichment job`
+    );
+
     // Queue the actual enrichment job
-    const queue = await import('./musicbrainz-queue').then(m => m.getMusicBrainzQueue());
-    await queue.addJob(JOB_TYPES.ENRICH_ARTIST, {
-      artistId: data.artistId,
-      priority: data.priority || 'medium',
-      userAction: mapSourceToUserAction(data.source),
-      requestId: data.requestId
-    }, {
-      priority: calculateEnrichmentPriority(data.source, data.priority),
-      attempts: 3
-    });
-    
+    const queue = await import('./musicbrainz-queue').then(m =>
+      m.getMusicBrainzQueue()
+    );
+    await queue.addJob(
+      JOB_TYPES.ENRICH_ARTIST,
+      {
+        artistId: data.artistId,
+        priority: data.priority || 'medium',
+        userAction: mapSourceToUserAction(data.source),
+        requestId: data.requestId,
+      },
+      {
+        priority: calculateEnrichmentPriority(data.source, data.priority),
+        attempts: 3,
+      }
+    );
+
     return {
       artistId: data.artistId,
       action: 'queued_for_enrichment',
-      source: data.source
+      source: data.source,
     };
   } else {
     console.log(`⏭️ Artist ${data.artistId} doesn't need enrichment, skipping`);
@@ -353,21 +421,21 @@ async function handleCheckArtistEnrichment(data: CheckArtistEnrichmentJobData) {
       reason: 'enrichment_not_needed',
       currentDataQuality: artist.dataQuality,
       lastEnriched: artist.lastEnriched,
-      source: data.source
+      source: data.source,
     };
   }
 }
 
 async function handleEnrichAlbum(data: EnrichAlbumJobData) {
   console.log(`🎵 Starting album enrichment for album ${data.albumId}`);
-  
+
   // Get current album from database
   const album = await prisma.album.findUnique({
     where: { id: data.albumId },
-    include: { 
+    include: {
       artists: { include: { artist: true } },
-      tracks: true  // 🎵 Include tracks for enrichment decision
-    }
+      tracks: true, // 🎵 Include tracks for enrichment decision
+    },
   });
 
   if (!album) {
@@ -383,14 +451,14 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
       action: 'skipped',
       reason: 'enrichment_not_needed',
       currentDataQuality: album.dataQuality,
-      lastEnriched: album.lastEnriched
+      lastEnriched: album.lastEnriched,
     };
   }
 
   // Mark as in progress
   await prisma.album.update({
     where: { id: data.albumId },
-    data: { enrichmentStatus: 'IN_PROGRESS' }
+    data: { enrichmentStatus: 'IN_PROGRESS' },
   });
 
   try {
@@ -400,39 +468,61 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
     // If we have a MusicBrainz ID, fetch detailed data
     if (album.musicbrainzId) {
       try {
-        const mbData = await musicBrainzService.getReleaseGroup(album.musicbrainzId, ['artists', 'releases']);
+        const mbData = await musicBrainzService.getReleaseGroup(
+          album.musicbrainzId,
+          ['artists', 'releases']
+        );
         if (mbData) {
           enrichmentResult = await updateAlbumFromMusicBrainz(album, mbData);
           newDataQuality = 'HIGH';
-          
+
           // 🎵 FETCH TRACKS for albums that already have MusicBrainz IDs
           if (mbData.releases && mbData.releases.length > 0) {
             try {
               const primaryRelease = mbData.releases[0];
-              console.log(`🎵 Fetching tracks for existing MB album: ${primaryRelease.title}`);
-              
-              const releaseWithTracks = await musicBrainzService.getRelease(primaryRelease.id, [
-                'recordings',      // Get all track data
-                'artist-credits', // Track-level artist info
-                'isrcs',          // Track ISRCs
-                'url-rels'        // Track URLs (YouTube, etc.)
-              ]);
-              
+              console.log(
+                `🎵 Fetching tracks for existing MB album: ${primaryRelease.title}`
+              );
+
+              const releaseWithTracks = await musicBrainzService.getRelease(
+                primaryRelease.id,
+                [
+                  'recordings', // Get all track data
+                  'artist-credits', // Track-level artist info
+                  'isrcs', // Track ISRCs
+                  'url-rels', // Track URLs (YouTube, etc.)
+                ]
+              );
+
               if (releaseWithTracks?.media) {
-                const totalTracks = releaseWithTracks.media.reduce((sum: number, medium: any) => 
-                  sum + (medium.tracks?.length || 0), 0);
-                console.log(`✅ Fetched ${totalTracks} tracks for existing album "${album.title}"!`);
-                
+                const totalTracks = releaseWithTracks.media.reduce(
+                  (sum: number, medium: any) =>
+                    sum + (medium.tracks?.length || 0),
+                  0
+                );
+                console.log(
+                  `✅ Fetched ${totalTracks} tracks for existing album "${album.title}"!`
+                );
+
                 // 🚀 PROCESS TRACKS for existing albums too!
-                await processMusicBrainzTracksForAlbum(album.id, releaseWithTracks);
+                await processMusicBrainzTracksForAlbum(
+                  album.id,
+                  releaseWithTracks
+                );
               }
             } catch (error) {
-              console.warn(`⚠️ Failed to fetch tracks for existing album "${album.title}":`, error);
+              console.warn(
+                `⚠️ Failed to fetch tracks for existing album "${album.title}":`,
+                error
+              );
             }
           }
         }
       } catch (mbError) {
-        console.warn(`MusicBrainz lookup failed for album ${data.albumId}:`, mbError);
+        console.warn(
+          `MusicBrainz lookup failed for album ${data.albumId}:`,
+          mbError
+        );
       }
     }
 
@@ -440,56 +530,93 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
     if (!enrichmentResult && album.title) {
       try {
         const searchQuery = buildAlbumSearchQuery(album);
-        const searchResults = await musicBrainzService.searchReleaseGroups(searchQuery, 5);
-        
+        const searchResults = await musicBrainzService.searchReleaseGroups(
+          searchQuery,
+          5
+        );
+
         if (searchResults && searchResults.length > 0) {
           // Debug logging for search results
-          console.log(`🔍 Found ${searchResults.length} search results for "${album.title}"`);
-          console.log(`📊 First result: "${searchResults[0].title}" by ${searchResults[0].artistCredit?.map(ac => ac.name).join(', ')} (score: ${searchResults[0].score})`);
-          
+          console.log(
+            `🔍 Found ${searchResults.length} search results for "${album.title}"`
+          );
+          console.log(
+            `📊 First result: "${searchResults[0].title}" by ${searchResults[0].artistCredit?.map(ac => ac.name).join(', ')} (score: ${searchResults[0].score})`
+          );
+
           // Find best match based on title and artist similarity
           const bestMatch = findBestAlbumMatch(album, searchResults);
-          console.log(`🎯 Best match: ${bestMatch ? 
-            `"${bestMatch.result.title}" - Combined: ${(bestMatch.score * 100).toFixed(1)}% (MB: ${bestMatch.mbScore}, Jaccard: ${(bestMatch.jaccardScore * 100).toFixed(1)}%)` : 
-            'None found'}`);
-          
-          if (bestMatch && bestMatch.score > 0.8) {  // 80% threshold for combined score
-            const mbData = await musicBrainzService.getReleaseGroup(bestMatch.result.id, ['artists', 'tags', 'releases']);
+          console.log(
+            `🎯 Best match: ${
+              bestMatch
+                ? `"${bestMatch.result.title}" - Combined: ${(bestMatch.score * 100).toFixed(1)}% (MB: ${bestMatch.mbScore}, Jaccard: ${(bestMatch.jaccardScore * 100).toFixed(1)}%)`
+                : 'None found'
+            }`
+          );
+
+          if (bestMatch && bestMatch.score > 0.8) {
+            // 80% threshold for combined score
+            const mbData = await musicBrainzService.getReleaseGroup(
+              bestMatch.result.id,
+              ['artists', 'tags', 'releases']
+            );
             if (mbData) {
-              enrichmentResult = await updateAlbumFromMusicBrainz(album, mbData);
+              enrichmentResult = await updateAlbumFromMusicBrainz(
+                album,
+                mbData
+              );
               newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
-              
+
               // 🚀 OPTIMIZATION: Fetch tracks for this album efficiently
               if (mbData.releases && mbData.releases.length > 0) {
                 try {
                   // Get the first release (main edition) with all tracks
                   const primaryRelease = mbData.releases[0];
-                  console.log(`🎵 Fetching tracks for release: ${primaryRelease.title}`);
-                  
-                  const releaseWithTracks = await musicBrainzService.getRelease(primaryRelease.id, [
-                    'recordings',      // Get all track data
-                    'artist-credits', // Track-level artist info
-                    'isrcs',          // Track ISRCs
-                    'url-rels'        // Track URLs (YouTube, etc.)
-                  ]);
-                  
+                  console.log(
+                    `🎵 Fetching tracks for release: ${primaryRelease.title}`
+                  );
+
+                  const releaseWithTracks = await musicBrainzService.getRelease(
+                    primaryRelease.id,
+                    [
+                      'recordings', // Get all track data
+                      'artist-credits', // Track-level artist info
+                      'isrcs', // Track ISRCs
+                      'url-rels', // Track URLs (YouTube, etc.)
+                    ]
+                  );
+
                   if (releaseWithTracks?.media) {
-                    const totalTracks = releaseWithTracks.media.reduce((sum: number, medium: any) => 
-                      sum + (medium.tracks?.length || 0), 0);
-                    console.log(`✅ Fetched ${totalTracks} tracks for "${album.title}" in one API call!`);
-                    
+                    const totalTracks = releaseWithTracks.media.reduce(
+                      (sum: number, medium: any) =>
+                        sum + (medium.tracks?.length || 0),
+                      0
+                    );
+                    console.log(
+                      `✅ Fetched ${totalTracks} tracks for "${album.title}" in one API call!`
+                    );
+
                     // 🚀 BULK PROCESS TRACKS - Much more efficient!
-                    await processMusicBrainzTracksForAlbum(album.id, releaseWithTracks);
+                    await processMusicBrainzTracksForAlbum(
+                      album.id,
+                      releaseWithTracks
+                    );
                   }
                 } catch (error) {
-                  console.warn(`⚠️ Failed to fetch tracks for album "${album.title}":`, error);
+                  console.warn(
+                    `⚠️ Failed to fetch tracks for album "${album.title}":`,
+                    error
+                  );
                 }
               }
             }
           }
         }
       } catch (searchError) {
-        console.warn(`MusicBrainz search failed for album ${data.albumId}:`, searchError);
+        console.warn(
+          `MusicBrainz search failed for album ${data.albumId}:`,
+          searchError
+        );
       }
     }
 
@@ -499,13 +626,13 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
       data: {
         enrichmentStatus: 'COMPLETED',
         dataQuality: newDataQuality,
-        lastEnriched: new Date()
-      }
+        lastEnriched: new Date(),
+      },
     });
 
     console.log(`✅ Album enrichment completed for ${data.albumId}`, {
       hadResult: !!enrichmentResult,
-      dataQuality: newDataQuality
+      dataQuality: newDataQuality,
     });
 
     return {
@@ -513,14 +640,13 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
       action: 'enriched',
       dataQuality: newDataQuality,
       hadMusicBrainzData: !!enrichmentResult,
-      enrichmentTimestamp: new Date()
+      enrichmentTimestamp: new Date(),
     };
-
   } catch (error) {
     // Mark as failed
     await prisma.album.update({
       where: { id: data.albumId },
-      data: { enrichmentStatus: 'FAILED' }
+      data: { enrichmentStatus: 'FAILED' },
     });
     throw error;
   }
@@ -528,10 +654,10 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
 
 async function handleEnrichArtist(data: EnrichArtistJobData) {
   console.log(`🎤 Starting artist enrichment for artist ${data.artistId}`);
-  
+
   // Get current artist from database
   const artist = await prisma.artist.findUnique({
-    where: { id: data.artistId }
+    where: { id: data.artistId },
   });
 
   if (!artist) {
@@ -541,20 +667,22 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
   // Check if enrichment is needed
   const needsEnrichment = shouldEnrichArtist(artist);
   if (!needsEnrichment) {
-    console.log(`⏭️ Artist ${data.artistId} does not need enrichment, skipping`);
+    console.log(
+      `⏭️ Artist ${data.artistId} does not need enrichment, skipping`
+    );
     return {
       artistId: data.artistId,
       action: 'skipped',
       reason: 'enrichment_not_needed',
       currentDataQuality: artist.dataQuality,
-      lastEnriched: artist.lastEnriched
+      lastEnriched: artist.lastEnriched,
     };
   }
 
   // Mark as in progress
   await prisma.artist.update({
     where: { id: data.artistId },
-    data: { enrichmentStatus: 'IN_PROGRESS' }
+    data: { enrichmentStatus: 'IN_PROGRESS' },
   });
 
   try {
@@ -564,41 +692,67 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
     // If we have a MusicBrainz ID, fetch detailed data
     if (artist.musicbrainzId) {
       try {
-        const mbData = await musicBrainzService.getArtist(artist.musicbrainzId, ['url-rels', 'tags']);
+        const mbData = await musicBrainzService.getArtist(
+          artist.musicbrainzId,
+          ['url-rels', 'tags']
+        );
         if (mbData) {
           enrichmentResult = await updateArtistFromMusicBrainz(artist, mbData);
           newDataQuality = 'HIGH';
         }
       } catch (mbError) {
-        console.warn(`MusicBrainz lookup failed for artist ${data.artistId}:`, mbError);
+        console.warn(
+          `MusicBrainz lookup failed for artist ${data.artistId}:`,
+          mbError
+        );
       }
     }
 
     // If no MusicBrainz ID or lookup failed, try searching
     if (!enrichmentResult && artist.name) {
       try {
-        const searchResults = await musicBrainzService.searchArtists(artist.name, 5);
-        
+        const searchResults = await musicBrainzService.searchArtists(
+          artist.name,
+          5
+        );
+
         if (searchResults && searchResults.length > 0) {
-          console.log(`🔍 Found ${searchResults.length} artist search results for "${artist.name}"`);
-          console.log(`📊 First result: "${searchResults[0].name}" (score: ${searchResults[0].score})`);
-          
+          console.log(
+            `🔍 Found ${searchResults.length} artist search results for "${artist.name}"`
+          );
+          console.log(
+            `📊 First result: "${searchResults[0].name}" (score: ${searchResults[0].score})`
+          );
+
           // Find best match based on name similarity
           const bestMatch = findBestArtistMatch(artist, searchResults);
-          console.log(`🎯 Best artist match: ${bestMatch ? 
-            `"${bestMatch.result.name}" - Combined: ${(bestMatch.score * 100).toFixed(1)}% (MB: ${bestMatch.mbScore}, Jaccard: ${(bestMatch.jaccardScore * 100).toFixed(1)}%)` : 
-            'None found'}`);
-          
+          console.log(
+            `🎯 Best artist match: ${
+              bestMatch
+                ? `"${bestMatch.result.name}" - Combined: ${(bestMatch.score * 100).toFixed(1)}% (MB: ${bestMatch.mbScore}, Jaccard: ${(bestMatch.jaccardScore * 100).toFixed(1)}%)`
+                : 'None found'
+            }`
+          );
+
           if (bestMatch && bestMatch.score > 0.8) {
-            const mbData = await musicBrainzService.getArtist(bestMatch.result.id, ['url-rels', 'tags']);
+            const mbData = await musicBrainzService.getArtist(
+              bestMatch.result.id,
+              ['url-rels', 'tags']
+            );
             if (mbData) {
-              enrichmentResult = await updateArtistFromMusicBrainz(artist, mbData);
+              enrichmentResult = await updateArtistFromMusicBrainz(
+                artist,
+                mbData
+              );
               newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
             }
           }
         }
       } catch (searchError) {
-        console.warn(`MusicBrainz search failed for artist ${data.artistId}:`, searchError);
+        console.warn(
+          `MusicBrainz search failed for artist ${data.artistId}:`,
+          searchError
+        );
       }
     }
 
@@ -608,13 +762,13 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
       data: {
         enrichmentStatus: 'COMPLETED',
         dataQuality: newDataQuality,
-        lastEnriched: new Date()
-      }
+        lastEnriched: new Date(),
+      },
     });
 
     console.log(`✅ Artist enrichment completed for ${data.artistId}`, {
       hadResult: !!enrichmentResult,
-      dataQuality: newDataQuality
+      dataQuality: newDataQuality,
     });
 
     return {
@@ -622,14 +776,13 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
       action: 'enriched',
       dataQuality: newDataQuality,
       hadMusicBrainzData: !!enrichmentResult,
-      enrichmentTimestamp: new Date()
+      enrichmentTimestamp: new Date(),
     };
-
   } catch (error) {
     // Mark as failed
     await prisma.artist.update({
       where: { id: data.artistId },
-      data: { enrichmentStatus: 'FAILED' }
+      data: { enrichmentStatus: 'FAILED' },
     });
     throw error;
   }
@@ -639,14 +792,14 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
 // Enrichment Helper Functions
 // ============================================================================
 
-
 function buildAlbumSearchQuery(album: any): string {
   // Use releasegroup field for release group searches
   let query = `releasegroup:"${album.title}"`;
-  
+
   if (album.artists && album.artists.length > 0) {
     // Add primary artist to search
-    const primaryArtist = album.artists.find((a: any) => a.role === 'primary') || album.artists[0];
+    const primaryArtist =
+      album.artists.find((a: any) => a.role === 'primary') || album.artists[0];
     if (primaryArtist?.artist?.name) {
       query += ` AND artist:"${primaryArtist.artist.name}"`;
     }
@@ -655,38 +808,57 @@ function buildAlbumSearchQuery(album: any): string {
   // Add type filter based on the actual release type
   const releaseType = album.releaseType?.toLowerCase() || 'album';
   query += ` AND type:${releaseType}`;
-  
+
   // Add status filter to only include official releases
   query += ` AND status:official`;
 
   return query;
 }
 
-function findBestAlbumMatch(album: any, searchResults: any[]): { result: any; score: number; mbScore: number; jaccardScore: number } | null {
+function findBestAlbumMatch(
+  album: any,
+  searchResults: any[]
+): {
+  result: any;
+  score: number;
+  mbScore: number;
+  jaccardScore: number;
+} | null {
   let bestMatch = null;
   let bestScore = 0;
 
   for (const result of searchResults) {
     // Get MusicBrainz's confidence score (0-100)
     const mbScore = result.score || 0;
-    
+
     // Calculate our Jaccard similarity score (0-1)
     let jaccardScore = 0;
 
     // Title similarity (most important)
     if (result.title && album.title) {
-      jaccardScore += calculateStringSimilarity(result.title.toLowerCase(), album.title.toLowerCase()) * 0.6;
+      jaccardScore +=
+        calculateStringSimilarity(
+          result.title.toLowerCase(),
+          album.title.toLowerCase()
+        ) * 0.6;
     }
 
     // Artist similarity
     if (result.artistCredit && album.artists && album.artists.length > 0) {
-      const resultArtists = result.artistCredit.map((ac: any) => ac.name?.toLowerCase() || '');
-      const albumArtists = album.artists.map((a: any) => a.artist?.name?.toLowerCase() || '');
-      
+      const resultArtists = result.artistCredit.map(
+        (ac: any) => ac.name?.toLowerCase() || ''
+      );
+      const albumArtists = album.artists.map(
+        (a: any) => a.artist?.name?.toLowerCase() || ''
+      );
+
       let artistScore = 0;
       for (const albumArtist of albumArtists) {
         for (const resultArtist of resultArtists) {
-          artistScore = Math.max(artistScore, calculateStringSimilarity(albumArtist, resultArtist));
+          artistScore = Math.max(
+            artistScore,
+            calculateStringSimilarity(albumArtist, resultArtist)
+          );
         }
       }
       jaccardScore += artistScore * 0.4;
@@ -699,11 +871,11 @@ function findBestAlbumMatch(album: any, searchResults: any[]): { result: any; sc
 
     if (combinedScore > bestScore) {
       bestScore = combinedScore;
-      bestMatch = { 
-        result, 
-        score: combinedScore, 
+      bestMatch = {
+        result,
+        score: combinedScore,
         mbScore: mbScore,
-        jaccardScore: jaccardScore 
+        jaccardScore: jaccardScore,
       };
     }
   }
@@ -711,20 +883,31 @@ function findBestAlbumMatch(album: any, searchResults: any[]): { result: any; sc
   return bestMatch;
 }
 
-function findBestArtistMatch(artist: any, searchResults: any[]): { result: any; score: number; mbScore: number; jaccardScore: number } | null {
+function findBestArtistMatch(
+  artist: any,
+  searchResults: any[]
+): {
+  result: any;
+  score: number;
+  mbScore: number;
+  jaccardScore: number;
+} | null {
   let bestMatch = null;
   let bestScore = 0;
 
   for (const result of searchResults) {
     // Get MusicBrainz's confidence score (0-100)
     const mbScore = result.score || 0;
-    
+
     // Calculate our Jaccard similarity score (0-1)
     let jaccardScore = 0;
 
     // Name similarity
     if (result.name && artist.name) {
-      jaccardScore = calculateStringSimilarity(result.name.toLowerCase(), artist.name.toLowerCase());
+      jaccardScore = calculateStringSimilarity(
+        result.name.toLowerCase(),
+        artist.name.toLowerCase()
+      );
     }
 
     // Hybrid scoring: Combine MusicBrainz score with our Jaccard similarity
@@ -734,11 +917,11 @@ function findBestArtistMatch(artist: any, searchResults: any[]): { result: any; 
 
     if (combinedScore > bestScore) {
       bestScore = combinedScore;
-      bestMatch = { 
-        result, 
-        score: combinedScore, 
+      bestMatch = {
+        result,
+        score: combinedScore,
         mbScore: mbScore,
-        jaccardScore: jaccardScore 
+        jaccardScore: jaccardScore,
       };
     }
   }
@@ -748,23 +931,30 @@ function findBestArtistMatch(artist: any, searchResults: any[]): { result: any; 
 
 function calculateStringSimilarity(str1: string, str2: string): number {
   // Simple similarity based on common characters
-  const normalize = (s: string) => s.replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+  const normalize = (s: string) =>
+    s
+      .replace(/[^\w\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
   const s1 = normalize(str1);
   const s2 = normalize(str2);
-  
+
   if (s1 === s2) return 1;
   if (s1.length === 0 || s2.length === 0) return 0;
-  
+
   // Jaccard similarity using word sets
   const words1 = new Set(s1.split(' '));
   const words2 = new Set(s2.split(' '));
   const intersection = new Set([...words1].filter(x => words2.has(x)));
   const union = new Set([...words1, ...words2]);
-  
+
   return intersection.size / union.size;
 }
 
-async function updateAlbumFromMusicBrainz(album: any, mbData: any): Promise<any> {
+async function updateAlbumFromMusicBrainz(
+  album: any,
+  mbData: any
+): Promise<any> {
   const updateData: any = {};
 
   if (mbData.id && !album.musicbrainzId) {
@@ -779,7 +969,10 @@ async function updateAlbumFromMusicBrainz(album: any, mbData: any): Promise<any>
     try {
       updateData.releaseDate = new Date(mbData['first-release-date']);
     } catch (e) {
-      console.warn('Invalid release date from MusicBrainz:', mbData['first-release-date']);
+      console.warn(
+        'Invalid release date from MusicBrainz:',
+        mbData['first-release-date']
+      );
     }
   }
 
@@ -812,7 +1005,9 @@ async function updateAlbumFromMusicBrainz(album: any, mbData: any): Promise<any>
   // Extract release country from releases
   if (mbData.releases && mbData.releases.length > 0) {
     // Get country from the first release that has one
-    const releaseWithCountry = mbData.releases.find((release: any) => release.country);
+    const releaseWithCountry = mbData.releases.find(
+      (release: any) => release.country
+    );
     if (releaseWithCountry?.country) {
       updateData.releaseCountry = releaseWithCountry.country;
     }
@@ -822,20 +1017,28 @@ async function updateAlbumFromMusicBrainz(album: any, mbData: any): Promise<any>
     // Check if another album already has this MusicBrainz ID before updating
     if (updateData.musicbrainzId) {
       const existingAlbum = await prisma.album.findUnique({
-        where: { musicbrainzId: updateData.musicbrainzId }
+        where: { musicbrainzId: updateData.musicbrainzId },
       });
-      
+
       if (existingAlbum && existingAlbum.id !== album.id) {
-        console.log(`⚠️ Duplicate MusicBrainz ID detected: Album ${album.id} ("${album.title}") would get MusicBrainz ID ${updateData.musicbrainzId}, but it's already used by album ${existingAlbum.id} ("${existingAlbum.title}")`);
-        console.log(`   → Skipping MusicBrainz ID update to avoid constraint violation`);
-        console.log(`   → Consider implementing album merging logic for true deduplication`);
-        
+        console.log(
+          `⚠️ Duplicate MusicBrainz ID detected: Album ${album.id} ("${album.title}") would get MusicBrainz ID ${updateData.musicbrainzId}, but it's already used by album ${existingAlbum.id} ("${existingAlbum.title}")`
+        );
+        console.log(
+          `   → Skipping MusicBrainz ID update to avoid constraint violation`
+        );
+        console.log(
+          `   → Consider implementing album merging logic for true deduplication`
+        );
+
         // Remove musicbrainzId from update to avoid constraint error
         delete updateData.musicbrainzId;
-        
+
         // If we removed the only update field, skip the entire update
         if (Object.keys(updateData).length === 0) {
-          console.log(`   → No other fields to update, skipping database update`);
+          console.log(
+            `   → No other fields to update, skipping database update`
+          );
           return null;
         }
       }
@@ -844,7 +1047,7 @@ async function updateAlbumFromMusicBrainz(album: any, mbData: any): Promise<any>
     // Proceed with the update (without conflicting musicbrainzId if removed)
     await prisma.album.update({
       where: { id: album.id },
-      data: updateData
+      data: updateData,
     });
     return updateData;
   }
@@ -852,7 +1055,10 @@ async function updateAlbumFromMusicBrainz(album: any, mbData: any): Promise<any>
   return null;
 }
 
-async function updateArtistFromMusicBrainz(artist: any, mbData: any): Promise<any> {
+async function updateArtistFromMusicBrainz(
+  artist: any,
+  mbData: any
+): Promise<any> {
   const updateData: any = {};
 
   if (mbData.id && !artist.musicbrainzId) {
@@ -865,9 +1071,14 @@ async function updateArtistFromMusicBrainz(artist: any, mbData: any): Promise<an
 
   if (mbData['life-span']?.begin && !artist.formedYear) {
     try {
-      updateData.formedYear = parseInt(mbData['life-span'].begin.substring(0, 4));
+      updateData.formedYear = parseInt(
+        mbData['life-span'].begin.substring(0, 4)
+      );
     } catch (e) {
-      console.warn('Invalid formed year from MusicBrainz:', mbData['life-span']?.begin);
+      console.warn(
+        'Invalid formed year from MusicBrainz:',
+        mbData['life-span']?.begin
+      );
     }
   }
 
@@ -899,20 +1110,28 @@ async function updateArtistFromMusicBrainz(artist: any, mbData: any): Promise<an
     // Check if another artist already has this MusicBrainz ID before updating
     if (updateData.musicbrainzId) {
       const existingArtist = await prisma.artist.findUnique({
-        where: { musicbrainzId: updateData.musicbrainzId }
+        where: { musicbrainzId: updateData.musicbrainzId },
       });
-      
+
       if (existingArtist && existingArtist.id !== artist.id) {
-        console.log(`⚠️ Duplicate MusicBrainz ID detected: Artist ${artist.id} ("${artist.name}") would get MusicBrainz ID ${updateData.musicbrainzId}, but it's already used by artist ${existingArtist.id} ("${existingArtist.name}")`);
-        console.log(`   → Skipping MusicBrainz ID update to avoid constraint violation`);
-        console.log(`   → Consider implementing artist merging logic for true deduplication`);
-        
+        console.log(
+          `⚠️ Duplicate MusicBrainz ID detected: Artist ${artist.id} ("${artist.name}") would get MusicBrainz ID ${updateData.musicbrainzId}, but it's already used by artist ${existingArtist.id} ("${existingArtist.name}")`
+        );
+        console.log(
+          `   → Skipping MusicBrainz ID update to avoid constraint violation`
+        );
+        console.log(
+          `   → Consider implementing artist merging logic for true deduplication`
+        );
+
         // Remove musicbrainzId from update to avoid constraint error
         delete updateData.musicbrainzId;
-        
+
         // If we removed the only update field, skip the entire update
         if (Object.keys(updateData).length === 0) {
-          console.log(`   → No other fields to update, skipping database update`);
+          console.log(
+            `   → No other fields to update, skipping database update`
+          );
           return null;
         }
       }
@@ -921,7 +1140,7 @@ async function updateArtistFromMusicBrainz(artist: any, mbData: any): Promise<an
     // Proceed with the update (without conflicting musicbrainzId if removed)
     await prisma.artist.update({
       where: { id: artist.id },
-      data: updateData
+      data: updateData,
     });
     return updateData;
   }
@@ -942,10 +1161,12 @@ function isRetryableError(error: unknown): boolean {
   const message = error.message.toLowerCase();
 
   // Network errors - retryable
-  if (message.includes('network') || 
-      message.includes('timeout') || 
-      message.includes('econnreset') ||
-      message.includes('enotfound')) {
+  if (
+    message.includes('network') ||
+    message.includes('timeout') ||
+    message.includes('econnreset') ||
+    message.includes('enotfound')
+  ) {
     return true;
   }
 
@@ -1005,37 +1226,44 @@ function getErrorCode(error: unknown): string | undefined {
  * Handle Spotify new releases sync job
  * Fetches fresh data from Spotify API and processes through our mappers
  */
-async function handleSpotifySyncNewReleases(data: SpotifySyncNewReleasesJobData): Promise<any> {
-  console.log(`🎵 Syncing Spotify new releases (limit: ${data.limit || 20}, country: ${data.country || 'US'})`);
+async function handleSpotifySyncNewReleases(
+  data: SpotifySyncNewReleasesJobData
+): Promise<any> {
+  console.log(
+    `🎵 Syncing Spotify new releases (limit: ${data.limit || 20}, country: ${data.country || 'US'})`
+  );
 
   try {
     // Import Spotify client, mappers, and error handling
     const { SpotifyApi } = await import('@spotify/web-api-ts-sdk');
     const { processSpotifyAlbums } = await import('../spotify/mappers');
-    const { withSpotifyRetry, withSpotifyMetrics } = await import('../spotify/error-handling');
+    const { withSpotifyRetry, withSpotifyMetrics } = await import(
+      '../spotify/error-handling'
+    );
 
     // Initialize Spotify client with retry wrapper
-    const createSpotifyClient = () => SpotifyApi.withClientCredentials(
-      process.env.SPOTIFY_CLIENT_ID!,
-      process.env.SPOTIFY_CLIENT_SECRET!
-    );
+    const createSpotifyClient = () =>
+      SpotifyApi.withClientCredentials(
+        process.env.SPOTIFY_CLIENT_ID!,
+        process.env.SPOTIFY_CLIENT_SECRET!
+      );
 
     // Fetch new releases with retry logic and metrics
     const newReleases = await withSpotifyMetrics(
-      () => withSpotifyRetry(
-        async () => {
+      () =>
+        withSpotifyRetry(async () => {
           const spotifyClient = createSpotifyClient();
           return await spotifyClient.browse.getNewReleases(
-            (data.country || 'US') as any, 
+            (data.country || 'US') as any,
             (data.limit || 20) as any
           );
-        },
-        'Spotify getNewReleases API call'
-      ),
+        }, 'Spotify getNewReleases API call'),
       'Spotify New Releases Sync'
     );
 
-    console.log(`📀 Fetched ${newReleases.albums.items.length} new releases from Spotify`);
+    console.log(
+      `📀 Fetched ${newReleases.albums.items.length} new releases from Spotify`
+    );
 
     // Transform Spotify data to our format
     const spotifyAlbums = newReleases.albums.items.map(album => ({
@@ -1047,11 +1275,14 @@ async function handleSpotifySyncNewReleases(data: SpotifySyncNewReleasesJobData)
       image: album.images[0]?.url || null,
       spotifyUrl: album.external_urls.spotify,
       type: album.album_type,
-      totalTracks: album.total_tracks
+      totalTracks: album.total_tracks,
     }));
 
     // Process through our mappers (creates DB records + queues enrichment)
-    const result = await processSpotifyAlbums(spotifyAlbums, data.source || 'spotify_sync');
+    const result = await processSpotifyAlbums(
+      spotifyAlbums,
+      data.source || 'spotify_sync'
+    );
 
     console.log(`✅ Spotify new releases sync complete:`, result.stats);
 
@@ -1065,17 +1296,16 @@ async function handleSpotifySyncNewReleases(data: SpotifySyncNewReleasesJobData)
       spotifyData: {
         totalFetched: newReleases.albums.items.length,
         country: data.country || 'US',
-        limit: data.limit || 20
-      }
+        limit: data.limit || 20,
+      },
     };
-
   } catch (error) {
     console.error('❌ Spotify new releases sync failed:', error);
-    
+
     // Import error handling to get better error info
     const { analyzeSpotifyError } = await import('../spotify/error-handling');
     const errorInfo = analyzeSpotifyError(error);
-    
+
     // Return structured error response
     return {
       success: false,
@@ -1083,12 +1313,12 @@ async function handleSpotifySyncNewReleases(data: SpotifySyncNewReleasesJobData)
         type: errorInfo.type,
         message: errorInfo.message,
         retryable: errorInfo.retryable,
-        statusCode: errorInfo.statusCode
+        statusCode: errorInfo.statusCode,
       },
       albumsProcessed: 0,
       artistsProcessed: 0,
       duplicatesSkipped: 0,
-      errors: [errorInfo.message]
+      errors: [errorInfo.message],
     };
   }
 }
@@ -1097,37 +1327,44 @@ async function handleSpotifySyncNewReleases(data: SpotifySyncNewReleasesJobData)
  * Handle Spotify featured playlists sync job
  * Fetches playlists and extracts albums from tracks
  */
-async function handleSpotifySyncFeaturedPlaylists(data: SpotifySyncFeaturedPlaylistsJobData): Promise<any> {
-  console.log(`🎵 Syncing Spotify featured playlists (limit: ${data.limit || 10}, country: ${data.country || 'US'})`);
+async function handleSpotifySyncFeaturedPlaylists(
+  data: SpotifySyncFeaturedPlaylistsJobData
+): Promise<any> {
+  console.log(
+    `🎵 Syncing Spotify featured playlists (limit: ${data.limit || 10}, country: ${data.country || 'US'})`
+  );
 
   try {
     // Import Spotify client, mappers, and error handling
     const { SpotifyApi } = await import('@spotify/web-api-ts-sdk');
     const { processSpotifyAlbums } = await import('../spotify/mappers');
-    const { withSpotifyRetry, withSpotifyMetrics } = await import('../spotify/error-handling');
+    const { withSpotifyRetry, withSpotifyMetrics } = await import(
+      '../spotify/error-handling'
+    );
 
     // Initialize Spotify client with retry wrapper
-    const createSpotifyClient = () => SpotifyApi.withClientCredentials(
-      process.env.SPOTIFY_CLIENT_ID!,
-      process.env.SPOTIFY_CLIENT_SECRET!
-    );
+    const createSpotifyClient = () =>
+      SpotifyApi.withClientCredentials(
+        process.env.SPOTIFY_CLIENT_ID!,
+        process.env.SPOTIFY_CLIENT_SECRET!
+      );
 
     // Fetch featured playlists with retry logic and metrics
     const featured = await withSpotifyMetrics(
-      () => withSpotifyRetry(
-        async () => {
+      () =>
+        withSpotifyRetry(async () => {
           const spotifyClient = createSpotifyClient();
           return await spotifyClient.browse.getFeaturedPlaylists(
-            (data.country || 'US') as any, 
+            (data.country || 'US') as any,
             (data.limit || 10) as any
           );
-        },
-        'Spotify getFeaturedPlaylists API call'
-      ),
+        }, 'Spotify getFeaturedPlaylists API call'),
       'Spotify Featured Playlists Sync'
     );
 
-    console.log(`📋 Fetched ${featured.playlists.items.length} featured playlists from Spotify`);
+    console.log(
+      `📋 Fetched ${featured.playlists.items.length} featured playlists from Spotify`
+    );
 
     if (!data.extractAlbums) {
       // Just return playlist info without processing albums
@@ -1135,7 +1372,7 @@ async function handleSpotifySyncFeaturedPlaylists(data: SpotifySyncFeaturedPlayl
         success: true,
         playlistsProcessed: featured.playlists.items.length,
         albumsProcessed: 0,
-        message: 'Playlists fetched but album extraction was disabled'
+        message: 'Playlists fetched but album extraction was disabled',
       };
     }
 
@@ -1146,7 +1383,7 @@ async function handleSpotifySyncFeaturedPlaylists(data: SpotifySyncFeaturedPlayl
     for (const playlist of featured.playlists.items) {
       try {
         console.log(`🎧 Processing playlist: "${playlist.name}"`);
-        
+
         // Get playlist tracks (limit to first 50 tracks per playlist)
         const playlistClient = createSpotifyClient();
         const tracks = await playlistClient.playlists.getPlaylistItems(
@@ -1154,7 +1391,7 @@ async function handleSpotifySyncFeaturedPlaylists(data: SpotifySyncFeaturedPlayl
           (data.country || 'US') as any,
           undefined,
           50, // limit
-          0   // offset
+          0 // offset
         );
 
         totalTracks += tracks.items.length;
@@ -1163,7 +1400,7 @@ async function handleSpotifySyncFeaturedPlaylists(data: SpotifySyncFeaturedPlayl
         for (const item of tracks.items) {
           if (item.track && item.track.type === 'track' && item.track.album) {
             const album = item.track.album;
-            
+
             // Skip if we already have this album
             if (albumsMap.has(album.id)) continue;
 
@@ -1176,31 +1413,38 @@ async function handleSpotifySyncFeaturedPlaylists(data: SpotifySyncFeaturedPlayl
               image: album.images[0]?.url || null,
               spotifyUrl: album.external_urls.spotify,
               type: album.album_type,
-              totalTracks: album.total_tracks
+              totalTracks: album.total_tracks,
             });
           }
         }
-
       } catch (error) {
-        console.error(`❌ Failed to process playlist "${playlist.name}":`, error);
+        console.error(
+          `❌ Failed to process playlist "${playlist.name}":`,
+          error
+        );
         // Continue with other playlists
       }
     }
 
     const uniqueAlbums = Array.from(albumsMap.values());
-    console.log(`📀 Extracted ${uniqueAlbums.length} unique albums from ${totalTracks} tracks`);
+    console.log(
+      `📀 Extracted ${uniqueAlbums.length} unique albums from ${totalTracks} tracks`
+    );
 
     if (uniqueAlbums.length === 0) {
       return {
         success: true,
         playlistsProcessed: featured.playlists.items.length,
         albumsProcessed: 0,
-        message: 'No albums found in playlist tracks'
+        message: 'No albums found in playlist tracks',
       };
     }
 
     // Process through our mappers
-    const result = await processSpotifyAlbums(uniqueAlbums, data.source || 'spotify_playlists');
+    const result = await processSpotifyAlbums(
+      uniqueAlbums,
+      data.source || 'spotify_playlists'
+    );
 
     console.log(`✅ Spotify featured playlists sync complete:`, result.stats);
 
@@ -1217,17 +1461,16 @@ async function handleSpotifySyncFeaturedPlaylists(data: SpotifySyncFeaturedPlayl
         totalTracks: totalTracks,
         uniqueAlbums: uniqueAlbums.length,
         country: data.country || 'US',
-        limit: data.limit || 10
-      }
+        limit: data.limit || 10,
+      },
     };
-
   } catch (error) {
     console.error('❌ Spotify featured playlists sync failed:', error);
-    
+
     // Import error handling to get better error info
     const { analyzeSpotifyError } = await import('../spotify/error-handling');
     const errorInfo = analyzeSpotifyError(error);
-    
+
     // Return structured error response
     return {
       success: false,
@@ -1235,13 +1478,13 @@ async function handleSpotifySyncFeaturedPlaylists(data: SpotifySyncFeaturedPlayl
         type: errorInfo.type,
         message: errorInfo.message,
         retryable: errorInfo.retryable,
-        statusCode: errorInfo.statusCode
+        statusCode: errorInfo.statusCode,
       },
       playlistsProcessed: 0,
       albumsProcessed: 0,
       artistsProcessed: 0,
       duplicatesSkipped: 0,
-      errors: [errorInfo.message]
+      errors: [errorInfo.message],
     };
   }
 }
@@ -1254,8 +1497,10 @@ async function handleSpotifySyncFeaturedPlaylists(data: SpotifySyncFeaturedPlayl
  * Check if a track needs enrichment and queue enrichment job if needed
  */
 async function handleCheckTrackEnrichment(data: CheckTrackEnrichmentJobData) {
-  console.log(`🔍 Checking if track ${data.trackId} needs enrichment (source: ${data.source})`);
-  
+  console.log(
+    `🔍 Checking if track ${data.trackId} needs enrichment (source: ${data.source})`
+  );
+
   // Get track with current enrichment status
   const track = await (prisma.track as any).findUnique({
     where: { id: data.trackId },
@@ -1263,8 +1508,8 @@ async function handleCheckTrackEnrichment(data: CheckTrackEnrichmentJobData) {
       id: true,
       title: true,
       musicbrainzId: true,
-      lastEnriched: true
-    }
+      lastEnriched: true,
+    },
   });
 
   if (!track) {
@@ -1274,13 +1519,13 @@ async function handleCheckTrackEnrichment(data: CheckTrackEnrichmentJobData) {
       error: {
         message: `Track ${data.trackId} not found`,
         code: 'TRACK_NOT_FOUND',
-        retryable: false
+        retryable: false,
       },
       metadata: {
         duration: 0,
         timestamp: new Date().toISOString(),
-        requestId: data.requestId
-      }
+        requestId: data.requestId,
+      },
     };
   }
 
@@ -1296,13 +1541,13 @@ async function handleCheckTrackEnrichment(data: CheckTrackEnrichmentJobData) {
         action: 'skipped',
         reason: 'already_enriched',
         dataQuality: 'MEDIUM',
-        hadMusicBrainzData: !!track.musicbrainzId
+        hadMusicBrainzData: !!track.musicbrainzId,
       },
       metadata: {
         duration: 0,
         timestamp: new Date().toISOString(),
-        requestId: data.requestId
-      }
+        requestId: data.requestId,
+      },
     };
   }
 
@@ -1314,7 +1559,7 @@ async function handleCheckTrackEnrichment(data: CheckTrackEnrichmentJobData) {
     trackId: track.id,
     priority: data.priority || 'low',
     userAction: data.source === 'spotify_sync' ? 'browse' : data.source,
-    requestId: data.requestId
+    requestId: data.requestId,
   };
 
   await queue.addJob(JOB_TYPES.ENRICH_TRACK, enrichmentJobData, {
@@ -1332,13 +1577,13 @@ async function handleCheckTrackEnrichment(data: CheckTrackEnrichmentJobData) {
       action: 'queued_enrichment',
       dataQuality: 'LOW',
       hadMusicBrainzData: !!track.musicbrainzId,
-      enqueuedTimestamp: new Date().toISOString()
+      enqueuedTimestamp: new Date().toISOString(),
     },
     metadata: {
       duration: 0,
       timestamp: new Date().toISOString(),
-      requestId: data.requestId
-    }
+      requestId: data.requestId,
+    },
   };
 }
 
@@ -1347,9 +1592,9 @@ async function handleCheckTrackEnrichment(data: CheckTrackEnrichmentJobData) {
  */
 async function handleEnrichTrack(data: EnrichTrackJobData) {
   console.log(`🎵 Enriching track ${data.trackId}`);
-  
+
   const startTime = Date.now();
-  
+
   try {
     // Get track with related data
     const track = await prisma.track.findUnique({
@@ -1360,12 +1605,12 @@ async function handleEnrichTrack(data: EnrichTrackJobData) {
             artist: {
               select: {
                 id: true,
-                name: true
-              }
-            }
-          }
-        }
-      }
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!track) {
@@ -1379,7 +1624,10 @@ async function handleEnrichTrack(data: EnrichTrackJobData) {
     if (track.isrc) {
       try {
         console.log(`🔍 Looking up track by ISRC: ${track.isrc}`);
-        const recordings = await musicBrainzService.searchRecordings(`isrc:${track.isrc}`, 1);
+        const recordings = await musicBrainzService.searchRecordings(
+          `isrc:${track.isrc}`,
+          1
+        );
 
         if (recordings.length > 0) {
           const recording = recordings[0];
@@ -1397,10 +1645,13 @@ async function handleEnrichTrack(data: EnrichTrackJobData) {
       try {
         const artistName = track.artists[0]?.artist?.name || 'Unknown Artist';
         const searchQuery = `recording:"${track.title}" AND artist:"${artistName}"`;
-        
+
         console.log(`🔍 Searching MusicBrainz for: ${searchQuery}`);
-        
-        const recordings = await musicBrainzService.searchRecordings(searchQuery, 10);
+
+        const recordings = await musicBrainzService.searchRecordings(
+          searchQuery,
+          10
+        );
 
         if (recordings.length > 0) {
           // Find best match using title similarity and duration
@@ -1418,22 +1669,25 @@ async function handleEnrichTrack(data: EnrichTrackJobData) {
 
     // Update track with enrichment results
     const updateData: any = {
-      lastEnriched: new Date()
+      lastEnriched: new Date(),
     };
 
     if (matchFound && musicbrainzData) {
       updateData.musicbrainzId = musicbrainzData.id;
-      
+
       // Fetch detailed recording data with relationships
       try {
-        const detailedRecording = await musicBrainzService.getRecording(musicbrainzData.id, [
-          'artist-credits',  // Get artist information
-          'releases',        // Get releases this recording appears on
-          'isrcs',          // Get ISRC codes
-          'url-rels',       // Get URLs (Spotify, YouTube, etc.)
-          'tags'            // Get genre/style tags
-        ]);
-        
+        const detailedRecording = await musicBrainzService.getRecording(
+          musicbrainzData.id,
+          [
+            'artist-credits', // Get artist information
+            'releases', // Get releases this recording appears on
+            'isrcs', // Get ISRC codes
+            'url-rels', // Get URLs (Spotify, YouTube, etc.)
+            'tags', // Get genre/style tags
+          ]
+        );
+
         if (detailedRecording) {
           console.log(`🎵 Enhanced track data fetched for "${track.title}"`);
           // TODO: Update track with additional metadata from detailedRecording
@@ -1446,11 +1700,13 @@ async function handleEnrichTrack(data: EnrichTrackJobData) {
 
     await (prisma.track as any).update({
       where: { id: track.id },
-      data: updateData
+      data: updateData,
     });
 
     const duration = Date.now() - startTime;
-    console.log(`✅ Track enrichment completed in ${duration}ms (${matchFound ? 'enriched' : 'no match'})`);
+    console.log(
+      `✅ Track enrichment completed in ${duration}ms (${matchFound ? 'enriched' : 'no match'})`
+    );
 
     return {
       success: true,
@@ -1459,15 +1715,14 @@ async function handleEnrichTrack(data: EnrichTrackJobData) {
         action: matchFound ? 'enriched' : 'no_match_found',
         dataQuality: matchFound ? 'MEDIUM' : 'LOW',
         hadMusicBrainzData: !!musicbrainzData,
-        enrichmentTimestamp: updateData.lastEnriched.toISOString()
+        enrichmentTimestamp: updateData.lastEnriched.toISOString(),
       },
       metadata: {
         duration,
         timestamp: new Date().toISOString(),
-        requestId: data.requestId
-      }
+        requestId: data.requestId,
+      },
     };
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`❌ Track enrichment failed:`, error);
@@ -1476,22 +1731,25 @@ async function handleEnrichTrack(data: EnrichTrackJobData) {
     await (prisma.track as any).update({
       where: { id: data.trackId },
       data: {
-        lastEnriched: new Date()
-      }
+        lastEnriched: new Date(),
+      },
     });
 
     return {
       success: false,
       error: {
-        message: error instanceof Error ? error.message : 'Unknown error during track enrichment',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Unknown error during track enrichment',
         code: 'ENRICHMENT_ERROR',
-        retryable: true
+        retryable: true,
       },
       metadata: {
         duration,
         timestamp: new Date().toISOString(),
-        requestId: data.requestId
-      }
+        requestId: data.requestId,
+      },
     };
   }
 }
@@ -1511,7 +1769,7 @@ function findBestTrackMatch(track: any, recordings: any[]): any | null {
       const trackDurationSec = Math.round(track.durationMs / 1000);
       const recordingDurationSec = Math.round(recording.length / 1000);
       const durationDiff = Math.abs(trackDurationSec - recordingDurationSec);
-      
+
       if (durationDiff <= 5) {
         score += 10; // Boost for close duration match
       }
@@ -1544,9 +1802,14 @@ function findBestTrackMatch(track: any, recordings: any[]): any | null {
  * Process all tracks for an album from MusicBrainz release data
  * This is MUCH more efficient than individual track enrichment jobs
  */
-async function processMusicBrainzTracksForAlbum(albumId: string, mbRelease: any) {
-  console.log(`🎵 Processing tracks for album ${albumId} from MusicBrainz release`);
-  
+async function processMusicBrainzTracksForAlbum(
+  albumId: string,
+  mbRelease: any
+) {
+  console.log(
+    `🎵 Processing tracks for album ${albumId} from MusicBrainz release`
+  );
+
   try {
     // Get existing tracks for this album from our database
     const existingTracks = await prisma.track.findMany({
@@ -1557,8 +1820,8 @@ async function processMusicBrainzTracksForAlbum(albumId: string, mbRelease: any)
         trackNumber: true,
         discNumber: true,
         durationMs: true,
-        musicbrainzId: true
-      }
+        musicbrainzId: true,
+      },
     });
 
     let tracksProcessed = 0;
@@ -1568,83 +1831,103 @@ async function processMusicBrainzTracksForAlbum(albumId: string, mbRelease: any)
     // Process each disc/medium
     for (const medium of mbRelease.media || []) {
       const discNumber = medium.position || 1;
-      
+
       // Process each track on this disc
       for (const mbTrack of medium.tracks || []) {
         try {
           const trackNumber = mbTrack.position;
           const mbRecording = mbTrack.recording;
-          
+
           if (!mbRecording) continue;
-          
+
           // Find matching existing track by position and title similarity
           const matchingTrack = findMatchingTrack(existingTracks, {
             trackNumber,
             discNumber,
             title: mbRecording.title,
-            durationMs: mbRecording.length ? mbRecording.length * 1000 : null
+            durationMs: mbRecording.length ? mbRecording.length * 1000 : null,
           });
 
           if (matchingTrack) {
             // Update existing track with MusicBrainz data
             const updateData: any = {
-              lastEnriched: new Date()
+              lastEnriched: new Date(),
             };
 
             // Only update if we don't already have MusicBrainz ID
             if (!matchingTrack.musicbrainzId) {
               updateData.musicbrainzId = mbRecording.id;
-              
+
               // Extract ISRC from MusicBrainz data
-              const isrc = mbRecording.isrcs && mbRecording.isrcs.length > 0 ? mbRecording.isrcs[0] : null;
+              const isrc =
+                mbRecording.isrcs && mbRecording.isrcs.length > 0
+                  ? mbRecording.isrcs[0]
+                  : null;
               if (isrc) {
                 updateData.isrc = isrc;
-                console.log(`🏷️ Found ISRC for "${matchingTrack.title}": ${isrc}`);
+                console.log(
+                  `🏷️ Found ISRC for "${matchingTrack.title}": ${isrc}`
+                );
               }
-              
+
               // Extract YouTube URL from MusicBrainz url-rels
               const youtubeUrl = extractYouTubeUrl(mbRecording);
               if (youtubeUrl) {
                 updateData.youtubeUrl = youtubeUrl;
-                console.log(`🎬 Found YouTube URL for "${matchingTrack.title}": ${youtubeUrl}`);
+                console.log(
+                  `🎬 Found YouTube URL for "${matchingTrack.title}": ${youtubeUrl}`
+                );
               }
-              
-              console.log(`🔗 Linking track "${matchingTrack.title}" to MusicBrainz ID: ${mbRecording.id}`);
+
+              console.log(
+                `🔗 Linking track "${matchingTrack.title}" to MusicBrainz ID: ${mbRecording.id}`
+              );
               tracksMatched++;
             }
 
             // Update track
             await (prisma.track as any).update({
               where: { id: matchingTrack.id },
-              data: updateData
+              data: updateData,
             });
 
             tracksUpdated++;
           } else {
             // Create missing track from MusicBrainz data
             try {
-              console.log(`🆕 Creating new track: "${mbRecording.title}" (${trackNumber})`);
-              
+              console.log(
+                `🆕 Creating new track: "${mbRecording.title}" (${trackNumber})`
+              );
+
               // Extract ISRC from MusicBrainz data
-              const isrc = mbRecording.isrcs && mbRecording.isrcs.length > 0 ? mbRecording.isrcs[0] : null;
-              
+              const isrc =
+                mbRecording.isrcs && mbRecording.isrcs.length > 0
+                  ? mbRecording.isrcs[0]
+                  : null;
+
               // Extract YouTube URL from MusicBrainz url-rels
               const youtubeUrl = extractYouTubeUrl(mbRecording);
-              
+
               if (isrc) {
-                console.log(`🏷️ Found ISRC for "${mbRecording.title}": ${isrc}`);
+                console.log(
+                  `🏷️ Found ISRC for "${mbRecording.title}": ${isrc}`
+                );
               }
               if (youtubeUrl) {
-                console.log(`🎬 Found YouTube URL for "${mbRecording.title}": ${youtubeUrl}`);
+                console.log(
+                  `🎬 Found YouTube URL for "${mbRecording.title}": ${youtubeUrl}`
+                );
               }
-              
+
               const newTrack = await (prisma.track as any).create({
                 data: {
                   albumId,
                   title: mbRecording.title,
                   trackNumber,
                   discNumber,
-                  durationMs: mbRecording.length ? mbRecording.length * 1000 : null,
+                  durationMs: mbRecording.length
+                    ? mbRecording.length * 1000
+                    : null,
                   explicit: false, // MusicBrainz doesn't provide explicit flag
                   previewUrl: null, // No preview URL from MusicBrainz
                   musicbrainzId: mbRecording.id,
@@ -1652,27 +1935,31 @@ async function processMusicBrainzTracksForAlbum(albumId: string, mbRelease: any)
                   youtubeUrl,
                   dataQuality: 'HIGH', // Coming from MusicBrainz = high quality
                   enrichmentStatus: 'COMPLETED',
-                  lastEnriched: new Date()
-                }
+                  lastEnriched: new Date(),
+                },
               });
-              
+
               // Create track-artist relationships
               if (mbRecording['artist-credit']) {
-                for (let artistIndex = 0; artistIndex < mbRecording['artist-credit'].length; artistIndex++) {
+                for (
+                  let artistIndex = 0;
+                  artistIndex < mbRecording['artist-credit'].length;
+                  artistIndex++
+                ) {
                   const mbArtist = mbRecording['artist-credit'][artistIndex];
                   const artistName = mbArtist.name || mbArtist.artist?.name;
-                  
+
                   if (artistName) {
                     // Find or create artist in our database
                     let artist = await prisma.artist.findFirst({
                       where: {
                         OR: [
                           { musicbrainzId: mbArtist.artist?.id },
-                          { name: { equals: artistName, mode: 'insensitive' } }
-                        ]
-                      }
+                          { name: { equals: artistName, mode: 'insensitive' } },
+                        ],
+                      },
                     });
-                    
+
                     if (!artist) {
                       // Create artist if not found
                       artist = await prisma.artist.create({
@@ -1681,41 +1968,47 @@ async function processMusicBrainzTracksForAlbum(albumId: string, mbRelease: any)
                           musicbrainzId: mbArtist.artist?.id || null,
                           dataQuality: 'MEDIUM',
                           enrichmentStatus: 'PENDING',
-                          lastEnriched: null
-                        }
+                          lastEnriched: null,
+                        },
                       });
                       console.log(`🎤 Created new artist: "${artistName}"`);
                     }
-                    
+
                     // Create track-artist relationship
                     await prisma.trackArtist.create({
                       data: {
                         trackId: newTrack.id,
                         artistId: artist.id,
                         role: artistIndex === 0 ? 'primary' : 'featured',
-                        position: artistIndex
-                      }
+                        position: artistIndex,
+                      },
                     });
                   }
                 }
               }
-              
+
               tracksMatched++; // Count as matched since we created it
               tracksUpdated++; // Count as updated since it's new
-              
+
               if (youtubeUrl) {
-                console.log(`🎬 Added YouTube URL for new track "${mbRecording.title}": ${youtubeUrl}`);
+                console.log(
+                  `🎬 Added YouTube URL for new track "${mbRecording.title}": ${youtubeUrl}`
+                );
               }
-              
             } catch (trackError) {
-              console.error(`❌ Failed to create track "${mbRecording.title}":`, trackError);
+              console.error(
+                `❌ Failed to create track "${mbRecording.title}":`,
+                trackError
+              );
             }
           }
 
           tracksProcessed++;
-          
         } catch (error) {
-          console.error(`❌ Failed to process track ${mbTrack.position}:`, error);
+          console.error(
+            `❌ Failed to process track ${mbTrack.position}:`,
+            error
+          );
         }
       }
     }
@@ -1724,9 +2017,11 @@ async function processMusicBrainzTracksForAlbum(albumId: string, mbRelease: any)
     console.log(`   - ${tracksProcessed} tracks processed`);
     console.log(`   - ${tracksMatched} tracks matched to MusicBrainz`);
     console.log(`   - ${tracksUpdated} tracks updated`);
-
   } catch (error) {
-    console.error(`❌ Bulk track processing failed for album ${albumId}:`, error);
+    console.error(
+      `❌ Bulk track processing failed for album ${albumId}:`,
+      error
+    );
   }
 }
 
@@ -1738,7 +2033,7 @@ function normalizeTrackTitle(title: string): string {
   return title
     .toLowerCase()
     .replace(/\s*\(feat\.?\s+[^)]+\)/gi, '') // Remove (feat. Artist)
-    .replace(/\s*\(featuring\s+[^)]+\)/gi, '') // Remove (featuring Artist)  
+    .replace(/\s*\(featuring\s+[^)]+\)/gi, '') // Remove (featuring Artist)
     .replace(/\s*feat\.?\s+[^,]+/gi, '') // Remove feat. Artist
     .replace(/\s*featuring\s+[^,]+/gi, '') // Remove featuring Artist
     .replace(/\s*with\s+[^,]+/gi, '') // Remove with Artist
@@ -1751,15 +2046,21 @@ function normalizeTrackTitle(title: string): string {
  * Find existing track that matches MusicBrainz track data
  * Enhanced to handle featuring artist differences between Spotify and MusicBrainz
  */
-function findMatchingTrack(existingTracks: any[], mbTrackData: any): any | null {
+function findMatchingTrack(
+  existingTracks: any[],
+  mbTrackData: any
+): any | null {
   // First try exact position match (most reliable)
-  let match = existingTracks.find(track => 
-    track.trackNumber === mbTrackData.trackNumber && 
-    track.discNumber === mbTrackData.discNumber
+  const match = existingTracks.find(
+    track =>
+      track.trackNumber === mbTrackData.trackNumber &&
+      track.discNumber === mbTrackData.discNumber
   );
 
   if (match) {
-    console.log(`🎯 Position match: Track ${match.trackNumber} "${match.title}" → "${mbTrackData.title}"`);
+    console.log(
+      `🎯 Position match: Track ${match.trackNumber} "${match.title}" → "${mbTrackData.title}"`
+    );
     return match;
   }
 
@@ -1770,23 +2071,26 @@ function findMatchingTrack(existingTracks: any[], mbTrackData: any): any | null 
 
   for (const track of existingTracks) {
     const normalizedSpotifyTitle = normalizeTrackTitle(track.title);
-    
+
     // Try exact normalized match first
     if (normalizedSpotifyTitle === normalizedMBTitle) {
-      console.log(`🎯 Exact normalized match: "${track.title}" → "${mbTrackData.title}"`);
+      console.log(
+        `🎯 Exact normalized match: "${track.title}" → "${mbTrackData.title}"`
+      );
       return track;
     }
-    
+
     // Calculate similarity with normalized titles
     const titleSimilarity = calculateStringSimilarity(
       normalizedSpotifyTitle,
       normalizedMBTitle
     );
-    
+
     // Boost score for duration match (within 5 seconds)
     let score = titleSimilarity;
     if (track.durationMs && mbTrackData.durationMs) {
-      const durationDiff = Math.abs(track.durationMs - mbTrackData.durationMs) / 1000;
+      const durationDiff =
+        Math.abs(track.durationMs - mbTrackData.durationMs) / 1000;
       if (durationDiff <= 5) {
         score += 0.2; // Boost for close duration match
       }
@@ -1804,50 +2108,62 @@ function findMatchingTrack(existingTracks: any[], mbTrackData: any): any | null 
 /**
  * Extract YouTube URL from MusicBrainz recording URL relationships
  */
-function extractYouTubeUrl(mbRecording: MusicBrainzRecordingDetail): string | null {
+function extractYouTubeUrl(
+  mbRecording: MusicBrainzRecordingDetail
+): string | null {
   // Check both 'relations' and 'url-rels' fields (MusicBrainz API can use either)
   // @ts-expect-error - Handling different MusicBrainz API response formats
   const relations = mbRecording.relations || mbRecording['url-rels'] || [];
-  
+
   if (relations.length === 0) return null;
-  
+
   // Look for YouTube URL relationships
   for (const relation of relations) {
     const relationType = relation.type || relation['target-type'];
-    const relationUrl = relation.url?.resource || relation.url || relation.target;
-    
+    const relationUrl =
+      relation.url?.resource || relation.url || relation.target;
+
     if (!relationUrl) continue;
-    
+
     // Direct YouTube relationship
     if (relationType === 'youtube' && relationUrl) {
       console.log(`🎬 Found direct YouTube relation: ${relationUrl}`);
       return relationUrl;
     }
-    
+
     // Streaming music relationships that might be YouTube
     if (relationType === 'streaming music' && relationUrl) {
-      if (relationUrl.includes('youtube.com') || relationUrl.includes('youtu.be')) {
+      if (
+        relationUrl.includes('youtube.com') ||
+        relationUrl.includes('youtu.be')
+      ) {
         console.log(`🎬 Found YouTube in streaming music: ${relationUrl}`);
         return relationUrl;
       }
     }
-    
+
     // Free streaming that might be YouTube
     if (relationType === 'free streaming' && relationUrl) {
-      if (relationUrl.includes('youtube.com') || relationUrl.includes('youtu.be')) {
+      if (
+        relationUrl.includes('youtube.com') ||
+        relationUrl.includes('youtu.be')
+      ) {
         console.log(`🎬 Found YouTube in free streaming: ${relationUrl}`);
         return relationUrl;
       }
     }
-    
+
     // Performance/video relationships
     if (relationType === 'performance' && relationUrl) {
-      if (relationUrl.includes('youtube.com') || relationUrl.includes('youtu.be')) {
+      if (
+        relationUrl.includes('youtube.com') ||
+        relationUrl.includes('youtu.be')
+      ) {
         console.log(`🎬 Found YouTube in performance: ${relationUrl}`);
         return relationUrl;
       }
     }
   }
-  
+
   return null;
 }

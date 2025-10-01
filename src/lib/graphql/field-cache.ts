@@ -1,8 +1,9 @@
 // src/lib/graphql/field-cache.ts
 // Redis-based caching for expensive GraphQL computed fields
 
-import { Redis } from 'ioredis';
 import { createHash } from 'crypto';
+
+import { Redis } from 'ioredis';
 
 // Create Redis client (singleton)
 let redisClient: Redis | null = null;
@@ -135,7 +136,10 @@ export async function warmupCache(
           const cacheKey = getCacheKey(entityType, entity.id, field);
           pipeline.set(cacheKey, JSON.stringify(value), 'EX', 300);
         } catch (error) {
-          console.error(`Warmup error for ${entityType}:${entity.id}:${field}:`, error);
+          console.error(
+            `Warmup error for ${entityType}:${entity.id}:${field}:`,
+            error
+          );
         }
       }
     }

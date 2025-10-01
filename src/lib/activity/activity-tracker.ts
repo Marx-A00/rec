@@ -1,8 +1,9 @@
 // src/lib/activity/activity-tracker.ts
 // User activity tracking system for GraphQL operations
 
-import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
+
+import { PrismaClient } from '@prisma/client';
 
 export interface UserActivityData {
   userId: string | null;
@@ -61,7 +62,7 @@ export class ActivityTracker {
           artistIds: [],
           requestId: this.requestId,
           timestamp: new Date(),
-        }
+        },
       });
     } catch (error) {
       console.warn('Failed to track user activity:', error);
@@ -80,7 +81,7 @@ export class ActivityTracker {
     metadata?: Record<string, any>
   ): Promise<void> {
     const ids = Array.isArray(entityIds) ? entityIds : [entityIds];
-    
+
     try {
       await this.prisma.userActivity.create({
         data: {
@@ -93,7 +94,7 @@ export class ActivityTracker {
           artistIds: entityType === 'artist' ? ids : [],
           requestId: this.requestId,
           timestamp: new Date(),
-        }
+        },
       });
     } catch (error) {
       console.warn('Failed to record entity interaction:', error);
@@ -121,12 +122,19 @@ export class ActivityTracker {
    * Track collection activities (high priority actions)
    */
   async trackCollectionAction(
-    action: 'add_album' | 'remove_album' | 'create_collection' | 'create_recommendation',
+    action:
+      | 'add_album'
+      | 'remove_album'
+      | 'create_collection'
+      | 'create_recommendation',
     entityId: string,
     metadata?: Record<string, any>
   ): Promise<void> {
-    const operationType = action.includes('create') || action.includes('add') ? 'mutation' : 'query';
-    
+    const operationType =
+      action.includes('create') || action.includes('add')
+        ? 'mutation'
+        : 'query';
+
     await this.recordEntityInteraction(
       action,
       action.includes('album') ? 'album' : 'artist',
@@ -140,12 +148,16 @@ export class ActivityTracker {
    * Track browse activities (passive discovery)
    */
   async trackBrowse(
-    browseType: 'trending' | 'recommendations' | 'artist_albums' | 'album_details',
+    browseType:
+      | 'trending'
+      | 'recommendations'
+      | 'artist_albums'
+      | 'album_details',
     entityIds?: string[],
     metadata?: Record<string, any>
   ): Promise<void> {
     await this.trackAction(`browse_${browseType}`, 'query', metadata);
-    
+
     // Also record entity interactions if provided
     if (entityIds && entityIds.length > 0) {
       const entityType = browseType.includes('album') ? 'album' : 'artist';
@@ -164,19 +176,22 @@ export class ActivityTracker {
    */
   async getUserActivityContext(): Promise<UserActivityContext> {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    
+
     const recentActivity = await this.prisma.userActivity.findMany({
       where: {
         sessionId: this.sessionId,
-        timestamp: { gte: fiveMinutesAgo }
+        timestamp: { gte: fiveMinutesAgo },
       },
       orderBy: { timestamp: 'desc' },
-      take: 10
+      take: 10,
     });
 
     // Extract recently viewed entities
     const recentlyViewedEntities = recentActivity
-      .flatMap(activity => [...(activity.albumIds || []), ...(activity.artistIds || [])])
+      .flatMap(activity => [
+        ...(activity.albumIds || []),
+        ...(activity.artistIds || []),
+      ])
       .filter((id, index, arr) => arr.indexOf(id) === index) // Unique
       .slice(0, 5); // Top 5 most recent
 
@@ -186,17 +201,17 @@ export class ActivityTracker {
     // Calculate session duration
     const firstActivity = await this.prisma.userActivity.findFirst({
       where: { sessionId: this.sessionId },
-      orderBy: { timestamp: 'asc' }
+      orderBy: { timestamp: 'asc' },
     });
-    
-    const sessionDuration = firstActivity 
+
+    const sessionDuration = firstActivity
       ? Date.now() - firstActivity.timestamp.getTime()
       : 0;
 
     return {
       isActivelyBrowsing,
       recentlyViewedEntities,
-      sessionDuration
+      sessionDuration,
     };
   }
 
@@ -205,12 +220,12 @@ export class ActivityTracker {
    */
   static async getActiveUserCount(prisma: PrismaClient): Promise<number> {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    
+
     const activeUsers = await prisma.userActivity.groupBy({
       by: ['sessionId'],
       where: {
-        timestamp: { gte: fiveMinutesAgo }
-      }
+        timestamp: { gte: fiveMinutesAgo },
+      },
     });
 
     return activeUsers.length;
@@ -225,22 +240,26 @@ export class ActivityTracker {
     minutes: number = 10
   ): Promise<string[]> {
     const timeAgo = new Date(Date.now() - minutes * 60 * 1000);
-    
+
     const activities = await prisma.userActivity.findMany({
       where: {
         timestamp: { gte: timeAgo },
         OR: [
-          entityType === 'album' ? { albumIds: { isEmpty: false } } : { artistIds: { isEmpty: false } }
-        ]
+          entityType === 'album'
+            ? { albumIds: { isEmpty: false } }
+            : { artistIds: { isEmpty: false } },
+        ],
       },
       select: {
         albumIds: entityType === 'album',
-        artistIds: entityType === 'artist'
-      }
+        artistIds: entityType === 'artist',
+      },
     });
 
     const entityIds = activities
-      .flatMap(activity => entityType === 'album' ? activity.albumIds : activity.artistIds)
+      .flatMap(activity =>
+        entityType === 'album' ? activity.albumIds : activity.artistIds
+      )
       .filter((id, index, arr) => arr.indexOf(id) === index); // Unique
 
     return entityIds || [];
@@ -259,9 +278,10 @@ export function createActivityTracker(
 
 export function extractSessionId(request?: any): string {
   // Try to extract session ID from request headers, cookies, or generate new one
-  const sessionId = request?.headers?.['x-session-id'] || 
-                   request?.cookies?.sessionId ||
-                   randomUUID();
+  const sessionId =
+    request?.headers?.['x-session-id'] ||
+    request?.cookies?.sessionId ||
+    randomUUID();
   return sessionId;
 }
 
@@ -270,8 +290,10 @@ export function extractUserAgent(request?: any): string | undefined {
 }
 
 export function extractIpAddress(request?: any): string | undefined {
-  return request?.headers?.['x-forwarded-for']?.split(',')[0] ||
-         request?.headers?.['x-real-ip'] ||
-         request?.connection?.remoteAddress ||
-         request?.socket?.remoteAddress;
+  return (
+    request?.headers?.['x-forwarded-for']?.split(',')[0] ||
+    request?.headers?.['x-real-ip'] ||
+    request?.connection?.remoteAddress ||
+    request?.socket?.remoteAddress
+  );
 }

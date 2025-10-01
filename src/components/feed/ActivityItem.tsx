@@ -83,9 +83,7 @@ export default function ActivityItem({
               {activity.albumTitle}
             </span>{' '}
             by{' '}
-            <span className='text-emeraled-green'>
-              {activity.albumArtist}
-            </span>
+            <span className='text-emeraled-green'>{activity.albumArtist}</span>
           </>
         );
       case 'collection_add':
@@ -116,7 +114,6 @@ export default function ActivityItem({
         return <span>did something</span>;
     }
   };
-
 
   const handleAlbumClick = () => {
     if (activity.albumId && onAlbumClick) {
@@ -158,15 +155,12 @@ export default function ActivityItem({
 
         {/* Main content area for albums */}
         <div className='w-full'>
-
           {/* Recommendation Visual - MASSIVE albums */}
           {activity.type === 'recommendation' && activity.albumImage && (
             <div className='flex justify-center relative'>
               <div className='relative inline-block'>
                 {/* Stacked Album Container - EVEN BIGGER */}
-                <div
-                  className='relative w-[280px] h-[260px] transition-all duration-300 ease-out [&:hover]:w-[420px] [&:hover_.rec-album]:left-[200px] [&:hover_.arrow-indicator]:opacity-100 [&:hover_.basis-text]:opacity-100'
-                >
+                <div className='relative w-[280px] h-[260px] transition-all duration-300 ease-out [&:hover]:w-[420px] [&:hover_.rec-album]:left-[200px] [&:hover_.arrow-indicator]:opacity-100 [&:hover_.basis-text]:opacity-100'>
                   {/* Basis Album (back) */}
                   {activity.metadata?.basisAlbum && (
                     <div
@@ -177,7 +171,10 @@ export default function ActivityItem({
                     >
                       <div className='relative'>
                         <AlbumImage
-                          src={activity.metadata.basisAlbum.coverArtUrl || '/placeholder-album.png'}
+                          src={
+                            activity.metadata.basisAlbum.coverArtUrl ||
+                            '/placeholder-album.png'
+                          }
                           alt={activity.metadata.basisAlbum.title}
                           width={180}
                           height={180}
@@ -236,7 +233,10 @@ export default function ActivityItem({
                         </span>{' '}
                         by{' '}
                         <span className='text-zinc-400'>
-                          {activity.metadata.basisAlbum.artists?.[0]?.artist?.name}
+                          {
+                            activity.metadata.basisAlbum.artists?.[0]?.artist
+                              ?.name
+                          }
                         </span>
                       </p>
                     </div>

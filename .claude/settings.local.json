@@ -1,13 +1,9 @@
 {
   "permissions": {
-    "allow": [
-      "WebSearch"
-    ],
+    "allow": ["WebSearch"],
     "deny": [],
     "ask": []
   },
-  "enabledMcpjsonServers": [
-    "taskmaster-ai"
-  ],
+  "enabledMcpjsonServers": ["taskmaster-ai"],
   "enableAllProjectMcpServers": true
 }

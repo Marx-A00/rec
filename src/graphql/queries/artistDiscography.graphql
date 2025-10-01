@@ -9,7 +9,10 @@ query GetArtistDiscography($id: String!) {
     imageUrl
     artistName
     artistCredits {
-      artist { id name }
+      artist {
+        id
+        name
+      }
       role
       position
     }

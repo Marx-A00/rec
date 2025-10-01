@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Camera } from 'lucide-react';
+
 import { getImageUrl } from '@/lib/cloudflare-images';
 
 interface AvatarUploadProps {
@@ -10,7 +11,10 @@ interface AvatarUploadProps {
   onUploadSuccess?: (url: string) => void;
 }
 
-export default function AvatarUpload({ currentImage, onUploadSuccess }: AvatarUploadProps) {
+export default function AvatarUpload({
+  currentImage,
+  onUploadSuccess,
+}: AvatarUploadProps) {
   const { data: session, update } = useSession();
   const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState(currentImage);
@@ -38,7 +42,10 @@ export default function AvatarUpload({ currentImage, onUploadSuccess }: AvatarUp
         setImageUrl(newImageUrl);
 
         // Update session
-        await update({ ...session, user: { ...session?.user, image: newImageUrl } });
+        await update({
+          ...session,
+          user: { ...session?.user, image: newImageUrl },
+        });
 
         onUploadSuccess?.(newImageUrl);
       }
@@ -50,35 +57,35 @@ export default function AvatarUpload({ currentImage, onUploadSuccess }: AvatarUp
   };
 
   return (
-    <div className="relative group">
-      <div className="w-32 h-32 rounded-full overflow-hidden bg-zinc-800">
+    <div className='relative group'>
+      <div className='w-32 h-32 rounded-full overflow-hidden bg-zinc-800'>
         {imageUrl ? (
           <img
             src={imageUrl}
-            alt="Profile"
-            className="w-full h-full object-cover"
+            alt='Profile'
+            className='w-full h-full object-cover'
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-zinc-600">
+          <div className='w-full h-full flex items-center justify-center text-zinc-600'>
             <Camera size={32} />
           </div>
         )}
       </div>
 
-      <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer">
+      <label className='absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer'>
         <input
-          type="file"
-          accept="image/*"
+          type='file'
+          accept='image/*'
           onChange={handleFileUpload}
           disabled={uploading}
-          className="hidden"
+          className='hidden'
         />
-        <Camera className="text-white" size={24} />
+        <Camera className='text-white' size={24} />
       </label>
 
       {uploading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        <div className='absolute inset-0 flex items-center justify-center bg-black/50 rounded-full'>
+          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white'></div>
         </div>
       )}
     </div>

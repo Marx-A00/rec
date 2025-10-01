@@ -1,9 +1,10 @@
 // src/lib/monitoring/health-check.ts
 import { getMusicBrainzQueue } from '@/lib/queue';
 import { redis } from '@/lib/queue/redis';
-import { metricsCollector } from './metrics-collector';
 import { spotifyMetrics } from '@/lib/spotify/error-handling';
 import { spotifyScheduler } from '@/lib/spotify/scheduler';
+
+import { metricsCollector } from './metrics-collector';
 
 export enum HealthStatus {
   HEALTHY = 'healthy',
@@ -64,11 +65,23 @@ export class HealthChecker {
       this.checkMemory(),
     ]);
 
-    const [queueHealth, redisHealth, workerHealth, spotifyHealth, memoryHealth] = checks.map((result, index) => {
+    const [
+      queueHealth,
+      redisHealth,
+      workerHealth,
+      spotifyHealth,
+      memoryHealth,
+    ] = checks.map((result, index) => {
       if (result.status === 'fulfilled') {
         return result.value;
       } else {
-        const componentNames = ['queue', 'redis', 'worker', 'spotify', 'memory'];
+        const componentNames = [
+          'queue',
+          'redis',
+          'worker',
+          'spotify',
+          'memory',
+        ];
         return {
           status: HealthStatus.UNHEALTHY,
           message: `Failed to check ${componentNames[index]}: ${result.reason}`,
@@ -83,7 +96,13 @@ export class HealthChecker {
     const stats = await queue.getStats();
 
     // Calculate overall status
-    const statuses = [queueHealth, redisHealth, workerHealth, spotifyHealth, memoryHealth].map(c => c.status);
+    const statuses = [
+      queueHealth,
+      redisHealth,
+      workerHealth,
+      spotifyHealth,
+      memoryHealth,
+    ].map(c => c.status);
     let overallStatus: HealthStatus;
 
     if (statuses.every(s => s === HealthStatus.HEALTHY)) {
@@ -103,7 +122,9 @@ export class HealthChecker {
       alerts.push(`High failure count: ${stats.failed} failed jobs`);
     }
     if (currentMetrics && currentMetrics.queue.errorRate > 10) {
-      alerts.push(`High error rate: ${currentMetrics.queue.errorRate.toFixed(2)}%`);
+      alerts.push(
+        `High error rate: ${currentMetrics.queue.errorRate.toFixed(2)}%`
+      );
     }
 
     return {
@@ -123,7 +144,8 @@ export class HealthChecker {
         failedJobs: stats.failed,
         completedJobs: stats.completed,
         errorRate: currentMetrics?.queue.errorRate || 0,
-        avgProcessingTime: currentMetrics?.queue.throughput.avgProcessingTime || 0,
+        avgProcessingTime:
+          currentMetrics?.queue.throughput.avgProcessingTime || 0,
       },
       alerts,
     };

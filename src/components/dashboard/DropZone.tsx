@@ -7,18 +7,22 @@ import { Plus, ArrowRightLeft, ArrowUpDown } from 'lucide-react';
 
 interface DropZoneProps {
   id: string;
-  type: 'create-horizontal' | 'create-vertical' | 'insert-between' | 'main-layout';
+  type:
+    | 'create-horizontal'
+    | 'create-vertical'
+    | 'insert-between'
+    | 'main-layout';
   isActive?: boolean;
   children?: React.ReactNode;
   className?: string;
 }
 
-export default function DropZone({ 
-  id, 
-  type, 
-  isActive = false, 
-  children, 
-  className = '' 
+export default function DropZone({
+  id,
+  type,
+  isActive = false,
+  children,
+  className = '',
 }: DropZoneProps) {
   const { isOver, setNodeRef } = useDroppable({
     id,
@@ -29,23 +33,23 @@ export default function DropZone({
     switch (type) {
       case 'create-horizontal':
         return (
-          <div className="flex items-center gap-2 text-emerald-400">
-            <ArrowRightLeft className="w-4 h-4" />
-            <span className="text-sm font-medium">Create Horizontal Group</span>
+          <div className='flex items-center gap-2 text-emerald-400'>
+            <ArrowRightLeft className='w-4 h-4' />
+            <span className='text-sm font-medium'>Create Horizontal Group</span>
           </div>
         );
       case 'create-vertical':
         return (
-          <div className="flex items-center gap-2 text-emerald-400">
-            <ArrowUpDown className="w-4 h-4" />
-            <span className="text-sm font-medium">Create Vertical Group</span>
+          <div className='flex items-center gap-2 text-emerald-400'>
+            <ArrowUpDown className='w-4 h-4' />
+            <span className='text-sm font-medium'>Create Vertical Group</span>
           </div>
         );
       case 'insert-between':
         return (
-          <div className="flex items-center gap-2 text-blue-400">
-            <Plus className="w-4 h-4" />
-            <span className="text-sm font-medium">Insert Here</span>
+          <div className='flex items-center gap-2 text-blue-400'>
+            <Plus className='w-4 h-4' />
+            <span className='text-sm font-medium'>Insert Here</span>
           </div>
         );
       case 'main-layout':
@@ -57,14 +61,13 @@ export default function DropZone({
 
   const getDropZoneStyles = () => {
     const baseStyles = 'transition-all duration-200';
-    
+
     if (type === 'main-layout') {
       return `${baseStyles} ${className}`;
     }
 
-    const activeStyles = isActive || isOver 
-      ? 'opacity-100 scale-100' 
-      : 'opacity-0 scale-95';
+    const activeStyles =
+      isActive || isOver ? 'opacity-100 scale-100' : 'opacity-0 scale-95';
 
     const hoverStyles = isOver
       ? 'border-emerald-500 bg-emerald-500/10'
@@ -82,10 +85,7 @@ export default function DropZone({
   };
 
   return (
-    <div 
-      ref={setNodeRef}
-      className={getDropZoneStyles()}
-    >
+    <div ref={setNodeRef} className={getDropZoneStyles()}>
       {getDropZoneContent()}
     </div>
   );

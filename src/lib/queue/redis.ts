@@ -1,6 +1,6 @@
 // src/lib/queue/redis.ts
 import Redis from 'ioredis';
-const chalk = require('chalk');
+import chalk from 'chalk';
 
 export interface RedisConfig {
   host: string;
@@ -100,8 +100,10 @@ class RedisManager {
       // Redis ready (verbose logging disabled)
     });
 
-    client.on('error', (err) => {
-      console.error(chalk.red.bold('💥 Redis Error:') + chalk.red(` ${err.message}`));
+    client.on('error', err => {
+      console.error(
+        chalk.red.bold('💥 Redis Error:') + chalk.red(` ${err.message}`)
+      );
     });
 
     client.on('close', () => {
@@ -127,7 +129,10 @@ class RedisManager {
       // Redis test successful (verbose logging disabled)
       return true;
     } catch (error) {
-      console.error(chalk.red.bold('❌ Redis') + chalk.red(' connection test failed:'), chalk.red(error));
+      console.error(
+        chalk.red.bold('❌ Redis') + chalk.red(' connection test failed:'),
+        chalk.red(error as any)
+      );
       return false;
     }
   }

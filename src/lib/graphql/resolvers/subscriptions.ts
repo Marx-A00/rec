@@ -1,17 +1,19 @@
-// @ts-nocheck - Schema migration broke GraphQL resolvers, needs complete rewrite
+// Schema migration broke GraphQL resolvers, needs complete rewrite
 // src/lib/graphql/resolvers/subscriptions.ts
 // Subscription resolvers for GraphQL API
 
-import { SubscriptionResolvers } from '@/generated/graphql';
 import { GraphQLError } from 'graphql';
+import { withFilter } from 'graphql-subscriptions';
+
+import { SubscriptionResolvers } from '@/generated/graphql';
 import { getMusicBrainzQueue } from '@/lib/queue';
 import {
   healthChecker,
   metricsCollector,
   alertManager,
-  monitoringWebSocket
+  monitoringWebSocket,
 } from '@/lib/monitoring';
-import { withFilter } from 'graphql-subscriptions';
+
 import { pubsub } from '../pubsub';
 
 // PubSub event names
@@ -24,16 +26,20 @@ const METRICS_UPDATE = 'METRICS_UPDATE';
 // Initialize monitoring WebSocket listeners to publish to GraphQL subscriptions
 function initializeMonitoringListeners() {
   // Forward WebSocket messages to GraphQL subscriptions
-  monitoringWebSocket.on('message', (message) => {
+  monitoringWebSocket.on('message', message => {
     switch (message.type) {
       case 'queue-status':
-        pubsub.publish(QUEUE_STATUS_UPDATE, { queueStatusUpdates: message.data });
+        pubsub.publish(QUEUE_STATUS_UPDATE, {
+          queueStatusUpdates: message.data,
+        });
         break;
       case 'job-update':
         pubsub.publish(JOB_STATUS_UPDATE, { jobStatusUpdates: message.data });
         break;
       case 'health-update':
-        pubsub.publish(SYSTEM_HEALTH_UPDATE, { systemHealthUpdates: message.data });
+        pubsub.publish(SYSTEM_HEALTH_UPDATE, {
+          systemHealthUpdates: message.data,
+        });
         break;
       case 'alert':
         pubsub.publish(ALERT_EVENT, { alertStream: message.data });
@@ -50,7 +56,7 @@ function initializeMonitoringListeners() {
   monitoringWebSocket.subscribeToMetrics(10000);
 
   // Listen for alert events directly
-  alertManager.on('alert', (alert) => {
+  alertManager.on('alert', alert => {
     pubsub.publish(ALERT_EVENT, { alertStream: alert });
   });
 
@@ -60,7 +66,7 @@ function initializeMonitoringListeners() {
 // Initialize listeners on module load
 initializeMonitoringListeners();
 
-// @ts-ignore - Temporarily suppress complex GraphQL resolver type issues
+// @ts-expect-error - Temporarily suppress complex GraphQL resolver type issues
 export const subscriptionResolvers: SubscriptionResolvers = {
   // Real-time queue status updates
   queueStatusUpdates: {
@@ -120,11 +126,14 @@ export const subscriptionResolvers: SubscriptionResolvers = {
           const jobsFailed = jobMetrics.filter(j => !j.success).length;
           const totalJobs = jobsProcessed + jobsFailed;
 
-          const avgProcessingTime = jobMetrics.length > 0
-            ? jobMetrics.reduce((sum, j) => sum + (j.duration || 0), 0) / jobMetrics.length
-            : 0;
+          const avgProcessingTime =
+            jobMetrics.length > 0
+              ? jobMetrics.reduce((sum, j) => sum + (j.duration || 0), 0) /
+                jobMetrics.length
+              : 0;
 
-          const successRate = totalJobs > 0 ? (jobsProcessed / totalJobs) * 100 : 100;
+          const successRate =
+            totalJobs > 0 ? (jobsProcessed / totalJobs) * 100 : 100;
           const errorRate = totalJobs > 0 ? (jobsFailed / totalJobs) * 100 : 0;
 
           const metricsData = {
@@ -139,7 +148,8 @@ export const subscriptionResolvers: SubscriptionResolvers = {
               jobsPerHour,
               peakJobsPerMinute: Math.max(
                 jobsPerMinute,
-                ...(history.map(h => h.queue?.throughput?.jobsPerMinute || 0) || [])
+                ...(history.map(h => h.queue?.throughput?.jobsPerMinute || 0) ||
+                  [])
               ),
             },
             topErrors: [],

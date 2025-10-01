@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Album Recommendations', 
+  title: 'Album Recommendations',
   description: 'Share and discover music recommendations',
 };
 

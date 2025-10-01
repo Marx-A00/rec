@@ -1,5 +1,15 @@
-mutation UpdateCollection($id: String!, $name: String, $description: String, $isPublic: Boolean) {
-  updateCollection(id: $id, name: $name, description: $description, isPublic: $isPublic) {
+mutation UpdateCollection(
+  $id: String!
+  $name: String
+  $description: String
+  $isPublic: Boolean
+) {
+  updateCollection(
+    id: $id
+    name: $name
+    description: $description
+    isPublic: $isPublic
+  ) {
     id
     name
     description

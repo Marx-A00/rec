@@ -41,7 +41,11 @@ query GetRecommendationFeed($cursor: String, $limit: Int) {
   }
 }
 
-query GetMyRecommendations($cursor: String, $limit: Int, $sort: RecommendationSort) {
+query GetMyRecommendations(
+  $cursor: String
+  $limit: Int
+  $sort: RecommendationSort
+) {
   myRecommendations(cursor: $cursor, limit: $limit, sort: $sort) {
     recommendations {
       ...RecommendationFields
@@ -51,7 +55,11 @@ query GetMyRecommendations($cursor: String, $limit: Int, $sort: RecommendationSo
   }
 }
 
-mutation CreateRecommendation($basisAlbumId: UUID!, $recommendedAlbumId: UUID!, $score: Int!) {
+mutation CreateRecommendation(
+  $basisAlbumId: UUID!
+  $recommendedAlbumId: UUID!
+  $score: Int!
+) {
   createRecommendation(
     basisAlbumId: $basisAlbumId
     recommendedAlbumId: $recommendedAlbumId

@@ -7,17 +7,17 @@ import { getQueuedMusicBrainzService } from '@/lib/musicbrainz';
 
 async function generateActivity() {
   console.log('🚀 Generating queue activity for dashboard testing...');
-  
+
   const service = getQueuedMusicBrainzService();
-  
+
   try {
     // Generate a few searches to populate the dashboard
     const searches = [
       'Radiohead',
-      'Aphex Twin', 
+      'Aphex Twin',
       'Burial',
       'Flying Lotus',
-      'Thom Yorke'
+      'Thom Yorke',
     ];
 
     console.log(`📋 Queuing ${searches.length} search operations...`);
@@ -32,19 +32,20 @@ async function generateActivity() {
 
     // Wait for all to complete
     await Promise.all(promises);
-    
+
     console.log('🎉 All search operations completed!');
     console.log('\n📊 Queue Statistics:');
     console.log(JSON.stringify(await service.getQueueStats(), null, 2));
-
   } catch (error) {
     console.error('❌ Error generating activity:', error);
   } finally {
     // Keep the service running for dashboard viewing
     console.log('\n🔄 Service will remain active for dashboard monitoring...');
-    console.log('💡 Visit http://localhost:3000/api/queue-dashboard to view the dashboard');
+    console.log(
+      '💡 Visit http://localhost:3000/api/queue-dashboard to view the dashboard'
+    );
     console.log('⏹️  Press Ctrl+C to stop the service');
-    
+
     // Keep process alive
     process.on('SIGINT', async () => {
       console.log('\n🛑 Shutting down service...');

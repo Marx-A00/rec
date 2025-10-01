@@ -62,14 +62,19 @@ export function shouldEnrichAlbum(album: AlbumEnrichmentData): boolean {
 
   // 🎵 NEW: Re-enrich if album has no tracks (for pure MusicBrainz track approach)
   // Check if the album has any tracks at all
-  if ('tracks' in album && Array.isArray(album.tracks) && album.tracks.length === 0) {
+  if (
+    'tracks' in album &&
+    Array.isArray(album.tracks) &&
+    album.tracks.length === 0
+  ) {
     return true;
   }
 
   // Re-enrich if data quality is low and it's been more than 30 days
   if (album.dataQuality === 'LOW' && album.lastEnriched) {
     const daysSinceEnrichment = Math.floor(
-      (Date.now() - new Date(album.lastEnriched).getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - new Date(album.lastEnriched).getTime()) /
+        (1000 * 60 * 60 * 24)
     );
     return daysSinceEnrichment > 30;
   }
@@ -96,7 +101,8 @@ export function shouldEnrichArtist(artist: ArtistEnrichmentData): boolean {
   // Re-enrich if data quality is low and it's been more than 30 days
   if (artist.dataQuality === 'LOW' && artist.lastEnriched) {
     const daysSinceEnrichment = Math.floor(
-      (Date.now() - new Date(artist.lastEnriched).getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - new Date(artist.lastEnriched).getTime()) /
+        (1000 * 60 * 60 * 24)
     );
     return daysSinceEnrichment > 30;
   }
@@ -114,13 +120,15 @@ export function shouldEnrichArtist(artist: ArtistEnrichmentData): boolean {
  * @param album Album data with enrichment metadata
  * @returns detailed enrichment decision
  */
-export function analyzeAlbumEnrichmentNeed(album: AlbumEnrichmentData): EnrichmentDecision {
+export function analyzeAlbumEnrichmentNeed(
+  album: AlbumEnrichmentData
+): EnrichmentDecision {
   // Skip if enrichment is currently in progress
   if (album.enrichmentStatus === 'IN_PROGRESS') {
     return {
       shouldEnrich: false,
       reason: 'Enrichment already in progress',
-      confidence: 1.0
+      confidence: 1.0,
     };
   }
 
@@ -128,8 +136,11 @@ export function analyzeAlbumEnrichmentNeed(album: AlbumEnrichmentData): Enrichme
   if (!album.lastEnriched || album.enrichmentStatus === 'FAILED') {
     return {
       shouldEnrich: true,
-      reason: album.enrichmentStatus === 'FAILED' ? 'Previous enrichment failed' : 'Never enriched',
-      confidence: 0.95
+      reason:
+        album.enrichmentStatus === 'FAILED'
+          ? 'Previous enrichment failed'
+          : 'Never enriched',
+      confidence: 0.95,
     };
   }
 
@@ -137,26 +148,27 @@ export function analyzeAlbumEnrichmentNeed(album: AlbumEnrichmentData): Enrichme
   const missingFields = [];
   if (!album.musicbrainzId) missingFields.push('musicbrainzId');
   if (!album.releaseDate) missingFields.push('releaseDate');
-  
+
   if (missingFields.length > 0) {
     return {
       shouldEnrich: true,
       reason: `Missing critical fields: ${missingFields.join(', ')}`,
-      confidence: 0.9
+      confidence: 0.9,
     };
   }
 
   // Check data quality and recency
   if (album.dataQuality === 'LOW' && album.lastEnriched) {
     const daysSinceEnrichment = Math.floor(
-      (Date.now() - new Date(album.lastEnriched).getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - new Date(album.lastEnriched).getTime()) /
+        (1000 * 60 * 60 * 24)
     );
-    
+
     if (daysSinceEnrichment > 30) {
       return {
         shouldEnrich: true,
         reason: `Low quality data older than 30 days (${daysSinceEnrichment} days)`,
-        confidence: 0.7
+        confidence: 0.7,
       };
     }
   }
@@ -165,7 +177,7 @@ export function analyzeAlbumEnrichmentNeed(album: AlbumEnrichmentData): Enrichme
   return {
     shouldEnrich: false,
     reason: `High quality data enriched ${album.lastEnriched ? 'recently' : 'previously'}`,
-    confidence: 0.8
+    confidence: 0.8,
   };
 }
 
@@ -174,13 +186,15 @@ export function analyzeAlbumEnrichmentNeed(album: AlbumEnrichmentData): Enrichme
  * @param artist Artist data with enrichment metadata
  * @returns detailed enrichment decision
  */
-export function analyzeArtistEnrichmentNeed(artist: ArtistEnrichmentData): EnrichmentDecision {
+export function analyzeArtistEnrichmentNeed(
+  artist: ArtistEnrichmentData
+): EnrichmentDecision {
   // Skip if enrichment is currently in progress
   if (artist.enrichmentStatus === 'IN_PROGRESS') {
     return {
       shouldEnrich: false,
       reason: 'Enrichment already in progress',
-      confidence: 1.0
+      confidence: 1.0,
     };
   }
 
@@ -188,8 +202,11 @@ export function analyzeArtistEnrichmentNeed(artist: ArtistEnrichmentData): Enric
   if (!artist.lastEnriched || artist.enrichmentStatus === 'FAILED') {
     return {
       shouldEnrich: true,
-      reason: artist.enrichmentStatus === 'FAILED' ? 'Previous enrichment failed' : 'Never enriched',
-      confidence: 0.95
+      reason:
+        artist.enrichmentStatus === 'FAILED'
+          ? 'Previous enrichment failed'
+          : 'Never enriched',
+      confidence: 0.95,
     };
   }
 
@@ -197,26 +214,27 @@ export function analyzeArtistEnrichmentNeed(artist: ArtistEnrichmentData): Enric
   const missingFields = [];
   if (!artist.musicbrainzId) missingFields.push('musicbrainzId');
   if (!artist.biography) missingFields.push('biography');
-  
+
   if (missingFields.length > 0) {
     return {
       shouldEnrich: true,
       reason: `Missing critical fields: ${missingFields.join(', ')}`,
-      confidence: 0.9
+      confidence: 0.9,
     };
   }
 
   // Check data quality and recency
   if (artist.dataQuality === 'LOW' && artist.lastEnriched) {
     const daysSinceEnrichment = Math.floor(
-      (Date.now() - new Date(artist.lastEnriched).getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - new Date(artist.lastEnriched).getTime()) /
+        (1000 * 60 * 60 * 24)
     );
-    
+
     if (daysSinceEnrichment > 30) {
       return {
         shouldEnrich: true,
         reason: `Low quality data older than 30 days (${daysSinceEnrichment} days)`,
-        confidence: 0.7
+        confidence: 0.7,
       };
     }
   }
@@ -225,7 +243,7 @@ export function analyzeArtistEnrichmentNeed(artist: ArtistEnrichmentData): Enric
   return {
     shouldEnrich: false,
     reason: `High quality data enriched ${artist.lastEnriched ? 'recently' : 'previously'}`,
-    confidence: 0.8
+    confidence: 0.8,
   };
 }
 
@@ -235,14 +253,24 @@ export function analyzeArtistEnrichmentNeed(artist: ArtistEnrichmentData): Enric
  * @param priority Explicit priority level
  * @returns Priority score (0-10)
  */
-export function calculateEnrichmentPriority(source: string, priority?: string): number {
+export function calculateEnrichmentPriority(
+  source: string,
+  priority?: string
+): number {
   // Base priority from explicit priority setting
   let basePriority = 0;
   switch (priority) {
-    case 'high': basePriority = 8; break;
-    case 'medium': basePriority = 5; break;
-    case 'low': basePriority = 2; break;
-    default: basePriority = 5; // medium default
+    case 'high':
+      basePriority = 8;
+      break;
+    case 'medium':
+      basePriority = 5;
+      break;
+    case 'low':
+      basePriority = 2;
+      break;
+    default:
+      basePriority = 5; // medium default
   }
 
   // Boost priority based on source (user actions get higher priority)
@@ -264,13 +292,21 @@ export function calculateEnrichmentPriority(source: string, priority?: string): 
  * @param source Source of the enrichment request
  * @returns Valid user action for job data
  */
-export function mapSourceToUserAction(source: string): 'collection_add' | 'recommendation_create' | 'search' | 'browse' {
+export function mapSourceToUserAction(
+  source: string
+): 'collection_add' | 'recommendation_create' | 'search' | 'browse' {
   switch (source) {
-    case 'collection_add': return 'collection_add';
-    case 'recommendation_create': return 'recommendation_create';
-    case 'search': return 'search';
-    case 'browse': return 'browse';
-    case 'manual': return 'browse'; // Map manual to browse
-    default: return 'browse'; // Default fallback
+    case 'collection_add':
+      return 'collection_add';
+    case 'recommendation_create':
+      return 'recommendation_create';
+    case 'search':
+      return 'search';
+    case 'browse':
+      return 'browse';
+    case 'manual':
+      return 'browse'; // Map manual to browse
+    default:
+      return 'browse'; // Default fallback
   }
 }

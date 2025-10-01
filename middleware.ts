@@ -512,8 +512,9 @@ export async function middleware(request: NextRequest) {
   let userID: string | undefined;
 
   // Skip auth entirely for public API routes to avoid Prisma edge runtime issues
-  const isPublicApi = pathname.startsWith('/api/') && isPublicApiRoute(pathname);
-  
+  const isPublicApi =
+    pathname.startsWith('/api/') && isPublicApiRoute(pathname);
+
   // 1. Authentication check for protected routes (both pages and API)
   if (!isPublicApi && isProtectedRoute(pathname)) {
     // Development logging for route protection decisions

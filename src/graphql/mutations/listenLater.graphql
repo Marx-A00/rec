@@ -15,5 +15,3 @@ mutation AddToListenLater($albumId: UUID!) {
 mutation RemoveFromListenLater($albumId: UUID!) {
   removeFromListenLater(albumId: $albumId)
 }
-
-

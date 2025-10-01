@@ -40,24 +40,25 @@ export class MosaicErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex flex-col items-center justify-center h-full p-8 bg-zinc-900/50 rounded-lg border border-zinc-800">
-          <div className="flex flex-col items-center max-w-md text-center space-y-4">
-            <div className="p-3 bg-red-900/20 rounded-full">
-              <AlertTriangle className="w-8 h-8 text-red-400" />
+        <div className='flex flex-col items-center justify-center h-full p-8 bg-zinc-900/50 rounded-lg border border-zinc-800'>
+          <div className='flex flex-col items-center max-w-md text-center space-y-4'>
+            <div className='p-3 bg-red-900/20 rounded-full'>
+              <AlertTriangle className='w-8 h-8 text-red-400' />
             </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-zinc-100">
+            <div className='space-y-2'>
+              <h3 className='text-lg font-semibold text-zinc-100'>
                 Something went wrong
               </h3>
-              <p className="text-sm text-zinc-400">
-                {this.state.error?.message || 'An unexpected error occurred in the mosaic panel'}
+              <p className='text-sm text-zinc-400'>
+                {this.state.error?.message ||
+                  'An unexpected error occurred in the mosaic panel'}
               </p>
             </div>
             <button
               onClick={this.handleReset}
-              className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-lg transition-colors duration-200"
+              className='flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-lg transition-colors duration-200'
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className='w-4 h-4' />
               Try Again
             </button>
           </div>

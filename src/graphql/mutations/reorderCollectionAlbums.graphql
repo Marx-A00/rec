@@ -10,5 +10,3 @@ mutation ReorderCollectionAlbums($collectionId: String!, $albumIds: [UUID!]!) {
     }
   }
 }
-
-

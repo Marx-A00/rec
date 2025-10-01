@@ -1,14 +1,19 @@
-// @ts-nocheck - GraphQL resolvers have major type issues after schema migration, need complete rewrite
+// GraphQL resolvers have major type issues after schema migration, need complete rewrite
 // src/lib/graphql/resolvers/index.ts
 // Main resolver map for Apollo Server
 
 import { Resolvers } from '@/generated/graphql';
+import {
+  SearchOrchestrator,
+  SearchSource,
+  SearchType,
+} from '@/lib/search/SearchOrchestrator';
+import { unifiedArtistService } from '@/lib/api/unified-artist-service';
+
 import { scalarResolvers } from './scalars';
 import { queryResolvers } from './queries';
 import { mutationResolvers } from './mutations';
 import { subscriptionResolvers } from './subscriptions';
-import { SearchOrchestrator, SearchSource, SearchType } from '@/lib/search/SearchOrchestrator';
-import { unifiedArtistService } from '@/lib/api/unified-artist-service';
 
 // Production-ready resolvers with DataLoader optimization
 export const resolvers: Resolvers = {
@@ -19,12 +24,14 @@ export const resolvers: Resolvers = {
 
     // Admin users query
     users: async (_, { offset = 0, limit = 20, search }, { prisma }) => {
-      const where = search ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { email: { contains: search, mode: 'insensitive' as const } },
-        ]
-      } : {};
+      const where = search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' as const } },
+              { email: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {};
 
       const users = await prisma.user.findMany({
         where,
@@ -42,8 +49,8 @@ export const resolvers: Resolvers = {
             select: {
               collections: true,
               recommendations: true,
-            }
-          }
+            },
+          },
         },
         orderBy: { id: 'desc' }, // Order by ID since createdAt doesn't exist
       });
@@ -52,12 +59,14 @@ export const resolvers: Resolvers = {
     },
 
     usersCount: async (_, { search }, { prisma }) => {
-      const where = search ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { email: { contains: search, mode: 'insensitive' as const } },
-        ]
-      } : {};
+      const where = search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' as const } },
+              { email: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {};
 
       return prisma.user.count({ where });
     },
@@ -90,8 +99,8 @@ export const resolvers: Resolvers = {
         include: {
           basisAlbum: true,
           recommendedAlbum: true,
-          user: true
-        }
+          user: true,
+        },
       });
     },
 
@@ -107,24 +116,34 @@ export const resolvers: Resolvers = {
         releaseDate: release.releaseDate,
         primaryType: release.primaryType,
         secondaryTypes: release.secondaryTypes || [],
-        imageUrl: release.imageUrl || release.thumb || release.coverImage || null,
+        imageUrl:
+          release.imageUrl || release.thumb || release.coverImage || null,
         artistName: release.artist || release.artistName || '',
-        artistCredits:
-          Array.isArray(release.artistCredits)
-            ? release.artistCredits.map((c: any) => ({
-                artist: { id: c.artist?.id || '', name: c.artist?.name || c.name || '' },
-                role: c.role || null,
-                position: typeof c.position === 'number' ? c.position : null,
-              }))
-            : [],
+        artistCredits: Array.isArray(release.artistCredits)
+          ? release.artistCredits.map((c: any) => ({
+              artist: {
+                id: c.artist?.id || '',
+                name: c.artist?.name || c.name || '',
+              },
+              role: c.role || null,
+              position: typeof c.position === 'number' ? c.position : null,
+            }))
+          : [],
         trackCount: release.trackCount || null,
-        year: release.releaseDate ? new Date(release.releaseDate).getFullYear() : null,
+        year: release.releaseDate
+          ? new Date(release.releaseDate).getFullYear()
+          : null,
       }));
     },
 
     // Enhanced search using SearchOrchestrator
     search: async (_, { input }, { prisma }) => {
-      const { query, type = 'ALL', limit = 20, searchMode = 'LOCAL_ONLY' } = input;
+      const {
+        query,
+        type = 'ALL',
+        limit = 20,
+        searchMode = 'LOCAL_ONLY',
+      } = input;
 
       try {
         // Create SearchOrchestrator instance
@@ -163,77 +182,114 @@ export const resolvers: Resolvers = {
 
         // Separate results by source
         const localResults = searchResult.sources.local?.results || [];
-        const musicbrainzResults = searchResult.sources.musicbrainz?.results || [];
+        const musicbrainzResults =
+          searchResult.sources.musicbrainz?.results || [];
 
         // For local results, fetch from database
-        const localAlbumIds = localResults.filter(r => r.type === 'album').map(r => r.id);
-        const localArtistIds = localResults.filter(r => r.type === 'artist').map(r => r.id);
-        const localTrackIds = localResults.filter(r => r.type === 'track').map(r => r.id);
+        const localAlbumIds = localResults
+          .filter(r => r.type === 'album')
+          .map(r => r.id);
+        const localArtistIds = localResults
+          .filter(r => r.type === 'artist')
+          .map(r => r.id);
+        const localTrackIds = localResults
+          .filter(r => r.type === 'track')
+          .map(r => r.id);
 
-        const dbAlbums = localAlbumIds.length > 0 ? await prisma.album.findMany({
-          where: { id: { in: localAlbumIds } },
-          include: {
-            artists: {
-              include: {
-                artist: true
-              }
-            }
-          }
-        }) : [];
+        const dbAlbums =
+          localAlbumIds.length > 0
+            ? await prisma.album.findMany({
+                where: { id: { in: localAlbumIds } },
+                include: {
+                  artists: {
+                    include: {
+                      artist: true,
+                    },
+                  },
+                },
+              })
+            : [];
 
-        const dbArtists = localArtistIds.length > 0 ? await prisma.artist.findMany({
-          where: { id: { in: localArtistIds } }
-        }) : [];
+        const dbArtists =
+          localArtistIds.length > 0
+            ? await prisma.artist.findMany({
+                where: { id: { in: localArtistIds } },
+              })
+            : [];
 
-        const dbTracks = localTrackIds.length > 0 ? await prisma.track.findMany({
-          where: { id: { in: localTrackIds } },
-          include: {
-            album: true,
-            artists: {
-              include: {
-                artist: true
-              }
-            }
-          }
-        }) : [];
+        const dbTracks =
+          localTrackIds.length > 0
+            ? await prisma.track.findMany({
+                where: { id: { in: localTrackIds } },
+                include: {
+                  album: true,
+                  artists: {
+                    include: {
+                      artist: true,
+                    },
+                  },
+                },
+              })
+            : [];
 
         // For MusicBrainz results, check if they already exist in DB
-        const mbAlbumIds = musicbrainzResults.filter(r => r.type === 'album').map(r => r.id);
-        const mbArtistIds = musicbrainzResults.filter(r => r.type === 'artist').map(r => r.id);
-        const mbTrackIds = musicbrainzResults.filter(r => r.type === 'track').map(r => r.id);
+        const mbAlbumIds = musicbrainzResults
+          .filter(r => r.type === 'album')
+          .map(r => r.id);
+        const mbArtistIds = musicbrainzResults
+          .filter(r => r.type === 'artist')
+          .map(r => r.id);
+        const mbTrackIds = musicbrainzResults
+          .filter(r => r.type === 'track')
+          .map(r => r.id);
 
         // Find which MusicBrainz items already exist in our DB
-        const existingMbAlbums = mbAlbumIds.length > 0 ? await prisma.album.findMany({
-          where: { musicbrainzId: { in: mbAlbumIds } },
-          include: {
-            artists: {
-              include: {
-                artist: true
-              }
-            }
-          }
-        }) : [];
+        const existingMbAlbums =
+          mbAlbumIds.length > 0
+            ? await prisma.album.findMany({
+                where: { musicbrainzId: { in: mbAlbumIds } },
+                include: {
+                  artists: {
+                    include: {
+                      artist: true,
+                    },
+                  },
+                },
+              })
+            : [];
 
-        const existingMbArtists = mbArtistIds.length > 0 ? await prisma.artist.findMany({
-          where: { musicbrainzId: { in: mbArtistIds } }
-        }) : [];
+        const existingMbArtists =
+          mbArtistIds.length > 0
+            ? await prisma.artist.findMany({
+                where: { musicbrainzId: { in: mbArtistIds } },
+              })
+            : [];
 
-        const existingMbTracks = mbTrackIds.length > 0 ? await prisma.track.findMany({
-          where: { musicbrainzId: { in: mbTrackIds } },
-          include: {
-            album: true,
-            artists: {
-              include: {
-                artist: true
-              }
-            }
-          }
-        }) : [];
+        const existingMbTracks =
+          mbTrackIds.length > 0
+            ? await prisma.track.findMany({
+                where: { musicbrainzId: { in: mbTrackIds } },
+                include: {
+                  album: true,
+                  artists: {
+                    include: {
+                      artist: true,
+                    },
+                  },
+                },
+              })
+            : [];
 
         // For MusicBrainz results NOT in DB, create temporary objects
-        const existingMbAlbumIds = new Set(existingMbAlbums.map(a => a.musicbrainzId));
-        const existingMbArtistIds = new Set(existingMbArtists.map(a => a.musicbrainzId));
-        const existingMbTrackIds = new Set(existingMbTracks.map(t => t.musicbrainzId));
+        const existingMbAlbumIds = new Set(
+          existingMbAlbums.map(a => a.musicbrainzId)
+        );
+        const existingMbArtistIds = new Set(
+          existingMbArtists.map(a => a.musicbrainzId)
+        );
+        const existingMbTrackIds = new Set(
+          existingMbTracks.map(t => t.musicbrainzId)
+        );
 
         const newMbAlbums = musicbrainzResults
           .filter(r => r.type === 'album' && !existingMbAlbumIds.has(r.id))
@@ -243,7 +299,7 @@ export const resolvers: Resolvers = {
             title: r.title,
             releaseDate: r.releaseDate || null, // Handle empty strings
             coverArtUrl: null,
-            artists: []
+            artists: [],
           }));
 
         const newMbArtists = musicbrainzResults
@@ -252,7 +308,7 @@ export const resolvers: Resolvers = {
             id: r.id, // Use MusicBrainz ID as temporary ID
             musicbrainzId: r.id,
             name: r.title, // title is the artist name in UnifiedSearchResult
-            imageUrl: null
+            imageUrl: null,
           }));
 
         const newMbTracks = musicbrainzResults
@@ -265,7 +321,7 @@ export const resolvers: Resolvers = {
             trackNumber: 0,
             albumId: null, // Set albumId to null instead of album object
             album: null,
-            artists: []
+            artists: [],
           }));
 
         // Combine all results
@@ -282,10 +338,15 @@ export const resolvers: Resolvers = {
         };
       } catch (error) {
         console.error('Search error:', error);
-        return { artists: [], albums: [], tracks: [], total: 0, hasMore: false };
+        return {
+          artists: [],
+          albums: [],
+          tracks: [],
+          total: 0,
+          hasMore: false,
+        };
       }
     },
-
   },
 
   // Type resolvers for relationships
@@ -311,7 +372,7 @@ export const resolvers: Resolvers = {
       return dataloaders.tracksByAlbumLoader.load(parent.id);
     },
     // Computed fields
-    duration: (parent) => {
+    duration: parent => {
       if (!parent.durationMs) return null;
       const minutes = Math.floor(parent.durationMs / 60000);
       const seconds = Math.floor((parent.durationMs % 60000) / 1000);
@@ -343,7 +404,7 @@ export const resolvers: Resolvers = {
     },
     // Simplified audio features
     audioFeatures: () => null, // Placeholder - would need audio features data
-    duration: (parent) => {
+    duration: parent => {
       if (!parent.durationMs) return null;
       const minutes = Math.floor(parent.durationMs / 60000);
       const seconds = Math.floor((parent.durationMs % 60000) / 1000);
@@ -358,7 +419,7 @@ export const resolvers: Resolvers = {
     },
     isFollowing: () => null, // Placeholder
     mutualFollowers: () => [], // Placeholder
-    _count: async (parent) => {
+    _count: async parent => {
       // Return the _count object if it exists (from Prisma include)
       if (parent._count) {
         return parent._count;
@@ -384,20 +445,22 @@ export const resolvers: Resolvers = {
             include: {
               artists: {
                 include: {
-                  artist: true
-                }
-              }
-            }
-          }
+                  artist: true,
+                },
+              },
+            },
+          },
         },
-        orderBy: { position: 'asc' }
+        orderBy: { position: 'asc' },
       });
 
       return collectionAlbums;
     },
     // Simplified computed fields
     albumCount: async (parent, _, { prisma }) => {
-      return prisma.collectionAlbum.count({ where: { collectionId: parent.id } });
+      return prisma.collectionAlbum.count({
+        where: { collectionId: parent.id },
+      });
     },
     totalDuration: () => 0, // Placeholder
     averageRating: () => null, // Placeholder

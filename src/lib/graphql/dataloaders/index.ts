@@ -60,7 +60,9 @@ export function createCollectionLoader(prisma: PrismaClient) {
       where: { id: { in: [...collectionIds] } },
     });
 
-    const collectionMap = new Map(collections.map(collection => [collection.id, collection]));
+    const collectionMap = new Map(
+      collections.map(collection => [collection.id, collection])
+    );
     return collectionIds.map(id => collectionMap.get(id) || null);
   });
 }
@@ -215,7 +217,6 @@ export function createArtistsByTrackLoader(prisma: PrismaClient) {
   });
 }
 
-
 // Collection Albums DataLoader - batch load albums for multiple collections
 export function createAlbumsByCollectionLoader(prisma: PrismaClient) {
   return new DataLoader(async (collectionIds: readonly string[]) => {
@@ -237,6 +238,8 @@ export function createAlbumsByCollectionLoader(prisma: PrismaClient) {
       });
     }
 
-    return collectionIds.map(collectionId => albumsByCollection.get(collectionId) || []);
+    return collectionIds.map(
+      collectionId => albumsByCollection.get(collectionId) || []
+    );
   });
 }

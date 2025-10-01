@@ -18,7 +18,7 @@ class SpotifySDKClient {
 
   // Search for artists, tracks, albums
   async search(query, types = ['artist', 'track'], limit = 20) {
-    return await this.client.search(query, types, country = 'US', limit);
+    return await this.client.search(query, types, (country = 'US'), limit);
   }
 
   // Get artist details
@@ -54,7 +54,7 @@ class SpotifySDKClient {
       seed_genres: seed_genres ? seed_genres.split(',') : undefined,
       limit,
       market,
-      ...otherParams
+      ...otherParams,
     });
   }
 
@@ -65,7 +65,11 @@ class SpotifySDKClient {
 
   // Get category playlists
   async getCategoryPlaylists(categoryId, country = 'US', limit = 50) {
-    return await this.client.browse.getPlaylistsForCategory(categoryId, country, limit);
+    return await this.client.browse.getPlaylistsForCategory(
+      categoryId,
+      country,
+      limit
+    );
   }
 
   // Get all categories
@@ -80,7 +84,13 @@ class SpotifySDKClient {
 
   // Get playlist tracks
   async getPlaylistTracks(playlistId, limit = 100, offset = 0) {
-    return await this.client.playlists.getPlaylistItems(playlistId, 'US', undefined, limit, offset);
+    return await this.client.playlists.getPlaylistItems(
+      playlistId,
+      'US',
+      undefined,
+      limit,
+      offset
+    );
   }
 
   // Get available genre seeds

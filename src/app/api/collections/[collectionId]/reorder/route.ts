@@ -1,5 +1,6 @@
 // src/app/api/collections/[collectionId]/reorder/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 
@@ -13,7 +14,7 @@ export async function PUT(
 ) {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -22,17 +23,23 @@ export async function PUT(
     const { albumIds }: ReorderAlbumRequest = await request.json();
 
     if (!albumIds || !Array.isArray(albumIds)) {
-      return NextResponse.json({ error: 'Invalid album IDs array' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid album IDs array' },
+        { status: 400 }
+      );
     }
 
     // Verify the collection belongs to the user
     const collection = await prisma.collection.findUnique({
       where: { id: collectionId },
-      select: { userId: true }
+      select: { userId: true },
     });
 
     if (!collection) {
-      return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Collection not found' },
+        { status: 404 }
+      );
     }
 
     if (collection.userId !== session.user.id) {
@@ -54,11 +61,10 @@ export async function PUT(
       )
     );
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Album order updated successfully' 
+    return NextResponse.json({
+      success: true,
+      message: 'Album order updated successfully',
     });
-
   } catch (error) {
     console.error('Error updating album order:', error);
     return NextResponse.json(

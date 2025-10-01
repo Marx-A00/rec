@@ -1,7 +1,7 @@
 // src/lib/musicbrainz/mappers.ts
-import type { 
-  ValidatedArtistSearchResult, 
-  ValidatedReleaseGroupSearchResult 
+import type {
+  ValidatedArtistSearchResult,
+  ValidatedReleaseGroupSearchResult,
 } from './schemas';
 
 /**
@@ -93,7 +93,7 @@ export function extractArtistCreditsFromReleaseGroup(
  */
 function parseLifeSpanYear(lifeSpanString?: string): number | null {
   if (!lifeSpanString) return null;
-  
+
   try {
     const year = parseInt(lifeSpanString.split('-')[0]);
     return isNaN(year) ? null : year;
@@ -108,11 +108,11 @@ function parseLifeSpanYear(lifeSpanString?: string): number | null {
  */
 function parseReleaseDate(dateString?: string): Date | null {
   if (!dateString) return null;
-  
+
   try {
     // Handle partial dates by padding with defaults
     const parts = dateString.split('-');
-    
+
     if (parts.length === 1) {
       // Just year: "1991" -> "1991-01-01"
       return new Date(`${parts[0]}-01-01`);
@@ -133,7 +133,7 @@ function parseReleaseDate(dateString?: string): Date | null {
  * Used when we need to create an artist record from album artist credits
  */
 export function mapArtistCreditToCanonical(artistCredit: {
-  artist: { id: string; name: string }
+  artist: { id: string; name: string };
 }): CreateArtistData {
   return {
     musicbrainzId: artistCredit.artist.id,

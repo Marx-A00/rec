@@ -8,7 +8,7 @@ async function checkUserSettings() {
 
   // Check if settings exist
   const settings = await prisma.userSettings.findUnique({
-    where: { userId }
+    where: { userId },
   });
 
   if (!settings) {
@@ -19,7 +19,9 @@ async function checkUserSettings() {
     console.log(`  ID: ${settings.id}`);
     console.log(`  Theme: ${settings.theme}`);
     console.log(`  Language: ${settings.language}`);
-    console.log(`  Dashboard Layout: ${settings.dashboardLayout ? 'Yes' : 'No'}`);
+    console.log(
+      `  Dashboard Layout: ${settings.dashboardLayout ? 'Yes' : 'No'}`
+    );
 
     if (settings.dashboardLayout) {
       console.log('\nDashboard Layout:');
@@ -37,12 +39,12 @@ async function checkUserSettings() {
       id: true,
       userId: true,
       user: {
-        select: { name: true, email: true }
+        select: { name: true, email: true },
       },
       dashboardLayout: true,
       createdAt: true,
-      updatedAt: true
-    }
+      updatedAt: true,
+    },
   });
 
   console.log(`Total UserSettings records: ${allSettings.length}`);

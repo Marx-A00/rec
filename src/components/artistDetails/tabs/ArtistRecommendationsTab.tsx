@@ -221,10 +221,12 @@ export default function ArtistRecommendationsTab({
             {recommendations.map(recommendation => (
               <RecommendationCard
                 key={recommendation.id}
-                recommendation={{
-                  // Cast temporary shape to GraphQL fragment to satisfy types
-                  ...(recommendation as unknown as RecommendationFieldsFragment),
-                } as RecommendationFieldsFragment}
+                recommendation={
+                  {
+                    // Cast temporary shape to GraphQL fragment to satisfy types
+                    ...(recommendation as unknown as RecommendationFieldsFragment),
+                  } as RecommendationFieldsFragment
+                }
                 onAlbumClick={handleAlbumClick}
                 showDetailModal={false}
               />

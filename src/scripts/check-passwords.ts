@@ -16,7 +16,9 @@ async function main() {
 
   console.log('\n=== Sample Users ===');
   for (const user of users) {
-    console.log(`${user.email}: ${user.hashedPassword ? '✅ Has password' : '❌ NO PASSWORD'}`);
+    console.log(
+      `${user.email}: ${user.hashedPassword ? '✅ Has password' : '❌ NO PASSWORD'}`
+    );
   }
 
   // Count statistics
@@ -36,11 +38,13 @@ async function main() {
 
   if (totalUsers - usersWithPassword > 0) {
     console.log('\n⚠️  Some users are missing passwords!');
-    console.log('This means they won\'t be able to log in.');
+    console.log("This means they won't be able to log in.");
 
     // Check if we have the old production database backup
     console.log('\n=== Checking for password data ===');
-    console.log('Looking for production database backup with password hashes...');
+    console.log(
+      'Looking for production database backup with password hashes...'
+    );
   }
 }
 

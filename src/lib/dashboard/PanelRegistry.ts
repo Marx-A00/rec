@@ -7,7 +7,9 @@ class PanelRegistry {
 
   register(definition: PanelDefinition): void {
     if (this.panels.has(definition.type)) {
-      console.warn(`Panel type "${definition.type}" is already registered. Overwriting.`);
+      console.warn(
+        `Panel type "${definition.type}" is already registered. Overwriting.`
+      );
     }
     this.panels.set(definition.type, definition);
   }
@@ -55,7 +57,9 @@ class PanelRegistry {
 export const panelRegistry = new PanelRegistry();
 
 // Helper function for components to use
-export function getPanelDefinition(type: PanelType): PanelDefinition | undefined {
+export function getPanelDefinition(
+  type: PanelType
+): PanelDefinition | undefined {
   return panelRegistry.get(type);
 }
 
@@ -63,7 +67,9 @@ export function getAllPanelDefinitions(): PanelDefinition[] {
   return panelRegistry.getAll();
 }
 
-export function getPanelsByCategory(category: PanelDefinition['category']): PanelDefinition[] {
+export function getPanelsByCategory(
+  category: PanelDefinition['category']
+): PanelDefinition[] {
   return panelRegistry.getAllByCategory(category);
 }
 

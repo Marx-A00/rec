@@ -15,12 +15,14 @@ async function checkActivities() {
       orderBy: { createdAt: 'desc' },
       include: {
         follower: { select: { name: true } },
-        followed: { select: { name: true } }
-      }
+        followed: { select: { name: true } },
+      },
     });
     console.log('Recent follows:');
     recentFollows.forEach(f => {
-      console.log(`  - ${f.follower.name} followed ${f.followed.name} at ${f.createdAt}`);
+      console.log(
+        `  - ${f.follower.name} followed ${f.followed.name} at ${f.createdAt}`
+      );
     });
   }
 
@@ -39,26 +41,30 @@ async function checkActivities() {
       include: {
         collection: {
           include: {
-            user: { select: { name: true } }
-          }
+            user: { select: { name: true } },
+          },
         },
-        album: { select: { title: true } }
-      }
+        album: { select: { title: true } },
+      },
     });
     console.log('Recent collection adds:');
     recentAdds.forEach(ca => {
-      console.log(`  - ${ca.collection.user.name} added "${ca.album?.title || ca.albumTitle}" at ${ca.addedAt}`);
+      console.log(
+        `  - ${ca.collection.user.name} added "${ca.album?.title || ca.albumTitle}" at ${ca.addedAt}`
+      );
     });
   }
 
   // Check if profile updates are tracked anywhere
   const usersWithBio = await prisma.user.count({
     where: {
-      bio: { not: null }
-    }
+      bio: { not: null },
+    },
   });
   console.log(`\nUsers with bio/profile info: ${usersWithBio}`);
-  console.log('(Note: Profile updates don\'t seem to have a separate activity table)');
+  console.log(
+    "(Note: Profile updates don't seem to have a separate activity table)"
+  );
 
   await prisma.$disconnect();
 }

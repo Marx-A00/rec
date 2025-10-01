@@ -1,5 +1,6 @@
 // src/lib/monitoring/alert-manager.ts
 import { EventEmitter } from 'events';
+
 import { metricsCollector } from './metrics-collector';
 import type { SystemMetrics } from './metrics-collector';
 
@@ -68,8 +69,9 @@ export class AlertManager extends EventEmitter {
     this.rules.set(AlertType.QUEUE_DEPTH, {
       type: AlertType.QUEUE_DEPTH,
       level: AlertLevel.WARNING,
-      condition: (metrics) => metrics.queue.depth > 1000,
-      message: (metrics) => `Queue depth (${metrics.queue.depth}) exceeds threshold (1000)`,
+      condition: metrics => metrics.queue.depth > 1000,
+      message: metrics =>
+        `Queue depth (${metrics.queue.depth}) exceeds threshold (1000)`,
       cooldownMs: 300000, // 5 minutes
     });
 
@@ -77,8 +79,9 @@ export class AlertManager extends EventEmitter {
     this.rules.set(AlertType.QUEUE_DEPTH, {
       type: AlertType.QUEUE_DEPTH,
       level: AlertLevel.CRITICAL,
-      condition: (metrics) => metrics.queue.depth > 5000,
-      message: (metrics) => `CRITICAL: Queue depth (${metrics.queue.depth}) exceeds critical threshold (5000)`,
+      condition: metrics => metrics.queue.depth > 5000,
+      message: metrics =>
+        `CRITICAL: Queue depth (${metrics.queue.depth}) exceeds critical threshold (5000)`,
       cooldownMs: 60000, // 1 minute for critical
     });
 
@@ -86,8 +89,9 @@ export class AlertManager extends EventEmitter {
     this.rules.set(AlertType.ERROR_RATE, {
       type: AlertType.ERROR_RATE,
       level: AlertLevel.WARNING,
-      condition: (metrics) => metrics.queue.errorRate > 10,
-      message: (metrics) => `Error rate (${metrics.queue.errorRate.toFixed(2)}%) exceeds threshold (10%)`,
+      condition: metrics => metrics.queue.errorRate > 10,
+      message: metrics =>
+        `Error rate (${metrics.queue.errorRate.toFixed(2)}%) exceeds threshold (10%)`,
       cooldownMs: 300000,
     });
 
@@ -95,12 +99,14 @@ export class AlertManager extends EventEmitter {
     this.rules.set(AlertType.MEMORY_USAGE, {
       type: AlertType.MEMORY_USAGE,
       level: AlertLevel.WARNING,
-      condition: (metrics) => {
+      condition: metrics => {
         const memoryMB = metrics.system.memory.heapUsed / 1024 / 1024;
         return memoryMB > 600;
       },
-      message: (metrics) => {
-        const memoryMB = (metrics.system.memory.heapUsed / 1024 / 1024).toFixed(2);
+      message: metrics => {
+        const memoryMB = (metrics.system.memory.heapUsed / 1024 / 1024).toFixed(
+          2
+        );
         return `Memory usage (${memoryMB}MB) exceeds threshold (600MB)`;
       },
       cooldownMs: 600000, // 10 minutes
@@ -110,8 +116,9 @@ export class AlertManager extends EventEmitter {
     this.rules.set(AlertType.PROCESSING_TIME, {
       type: AlertType.PROCESSING_TIME,
       level: AlertLevel.WARNING,
-      condition: (metrics) => metrics.queue.throughput.avgProcessingTime > 30000,
-      message: (metrics) => `Average processing time (${metrics.queue.throughput.avgProcessingTime}ms) exceeds threshold (30000ms)`,
+      condition: metrics => metrics.queue.throughput.avgProcessingTime > 30000,
+      message: metrics =>
+        `Average processing time (${metrics.queue.throughput.avgProcessingTime}ms) exceeds threshold (30000ms)`,
       cooldownMs: 300000,
     });
 
@@ -119,7 +126,7 @@ export class AlertManager extends EventEmitter {
     this.rules.set(AlertType.REDIS_CONNECTION, {
       type: AlertType.REDIS_CONNECTION,
       level: AlertLevel.CRITICAL,
-      condition: (metrics) => !metrics.redis.connected,
+      condition: metrics => !metrics.redis.connected,
       message: () => 'Redis connection lost',
       cooldownMs: 60000,
     });
@@ -175,7 +182,12 @@ export class AlertManager extends EventEmitter {
   /**
    * Create a new alert
    */
-  createAlert(type: AlertType, level: AlertLevel, message: string, details?: any): Alert {
+  createAlert(
+    type: AlertType,
+    level: AlertLevel,
+    message: string,
+    details?: any
+  ): Alert {
     const alert: Alert = {
       id: `alert-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type,

@@ -1,12 +1,26 @@
 // src/lib/graphql/context.ts
 // GraphQL context definition for Apollo Server
 
+import { randomUUID } from 'crypto';
+
 import type { PrismaClient } from '@prisma/client';
 // @ts-nocheck - GraphQL context has some type issues after schema migration
 import type { NextRequest } from 'next/server';
-import { randomUUID } from 'crypto';
 import DataLoader from 'dataloader';
+
 import { auth } from '@/../auth';
+import {
+  ActivityTracker,
+  createActivityTracker,
+  extractSessionId,
+  extractUserAgent,
+  extractIpAddress,
+} from '@/lib/activity/activity-tracker';
+import {
+  QueuePriorityManager,
+  createQueuePriorityManager,
+} from '@/lib/activity/queue-priority-manager';
+
 import {
   createArtistLoader,
   createAlbumLoader,
@@ -21,14 +35,6 @@ import {
   createArtistsByTrackLoader,
   createAlbumsByCollectionLoader,
 } from './dataloaders';
-import {
-  ActivityTracker,
-  createActivityTracker,
-  extractSessionId,
-  extractUserAgent,
-  extractIpAddress
-} from '@/lib/activity/activity-tracker';
-import { QueuePriorityManager, createQueuePriorityManager } from '@/lib/activity/queue-priority-manager';
 
 // DataLoader types - strongly typed DataLoader instances
 export interface DataLoaders {
@@ -74,7 +80,7 @@ export interface GraphQLContext {
   sessionId: string;
   activityTracker: ActivityTracker;
   priorityManager: QueuePriorityManager;
-  
+
   // Request context for activity tracking
   userAgent?: string;
   ipAddress?: string;
@@ -101,7 +107,7 @@ export async function createGraphQLContext(
     if (session?.user?.id) {
       user = {
         id: session.user.id,
-        email: session.user.email || undefined
+        email: session.user.email || undefined,
       };
       console.log('User extracted from session:', user);
     } else {
@@ -119,9 +125,9 @@ export async function createGraphQLContext(
 
   // Create activity tracking instances
   const activityTracker = createActivityTracker(
-    prisma, 
-    sessionId, 
-    user && 'id' in user ? (user as any).id : undefined, 
+    prisma,
+    sessionId,
+    user && 'id' in user ? (user as any).id : undefined,
     requestId
   );
   const priorityManager = createQueuePriorityManager(prisma);

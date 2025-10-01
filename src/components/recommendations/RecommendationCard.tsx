@@ -306,7 +306,9 @@ export default function RecommendationCard({
                   {recommendation.basisAlbum?.title || 'Unknown Album'}
                 </p>
                 <p className='text-zinc-300 text-xs font-medium line-clamp-1'>
-                  {recommendation.basisAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'Unknown Artist'}
+                  {recommendation.basisAlbum?.artists
+                    ?.map(a => a.artist?.name)
+                    .join(', ') || 'Unknown Artist'}
                 </p>
               </div>
               {/* Album image */}
@@ -364,7 +366,9 @@ export default function RecommendationCard({
                   {recommendation.recommendedAlbum?.title || 'Unknown Album'}
                 </p>
                 <p className='text-zinc-300 text-xs font-medium line-clamp-1'>
-                  {recommendation.recommendedAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'Unknown Artist'}
+                  {recommendation.recommendedAlbum?.artists
+                    ?.map(a => a.artist?.name)
+                    .join(', ') || 'Unknown Artist'}
                 </p>
               </div>
               {/* Album image */}

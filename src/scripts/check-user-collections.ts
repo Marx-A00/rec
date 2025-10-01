@@ -9,7 +9,7 @@ async function checkUserCollections() {
 
   // First, check if user exists
   const user = await prisma.user.findUnique({
-    where: { id: userId }
+    where: { id: userId },
   });
 
   if (!user) {
@@ -29,14 +29,14 @@ async function checkUserCollections() {
             include: {
               artists: {
                 include: {
-                  artist: true
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+                  artist: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
   console.log(`Found ${collections.length} collections\n`);
@@ -51,7 +51,9 @@ async function checkUserCollections() {
     if (col.albums && col.albums.length > 0) {
       console.log('  - First 3 albums:');
       col.albums.slice(0, 3).forEach(ca => {
-        console.log(`    • ${ca.album?.title || 'No title'} by ${ca.album?.artists?.[0]?.artist?.name || 'Unknown'}`);
+        console.log(
+          `    • ${ca.album?.title || 'No title'} by ${ca.album?.artists?.[0]?.artist?.name || 'Unknown'}`
+        );
       });
     }
     console.log('');
@@ -62,19 +64,21 @@ async function checkUserCollections() {
   const collectionAlbums = await prisma.collectionAlbum.findMany({
     where: {
       collection: {
-        userId
-      }
+        userId,
+      },
     },
     include: {
       album: true,
-      collection: true
+      collection: true,
     },
-    take: 5
+    take: 5,
   });
 
   console.log(`Found ${collectionAlbums.length} CollectionAlbum records`);
   collectionAlbums.forEach(ca => {
-    console.log(`- Album: ${ca.album?.title || ca.albumTitle} in collection "${ca.collection.name}"`);
+    console.log(
+      `- Album: ${ca.album?.title || ca.albumTitle} in collection "${ca.collection.name}"`
+    );
   });
 
   await prisma.$disconnect();

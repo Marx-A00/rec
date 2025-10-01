@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+
 import { useIsMobile, useIsTablet, useIsDesktop } from '@/hooks/useMediaQuery';
+import { cn } from '@/lib/utils';
+
 import DesktopNavigation from './DesktopNavigation';
 import TabletNavigation from './TabletNavigation';
 import MobileNavigation from './MobileNavigation';
-import { cn } from '@/lib/utils';
 
 interface ResponsiveNavigationProps {
   children: React.ReactNode;
@@ -14,7 +16,7 @@ interface ResponsiveNavigationProps {
 
 export default function ResponsiveNavigation({
   children,
-  className
+  className,
 }: ResponsiveNavigationProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -31,8 +33,8 @@ export default function ResponsiveNavigation({
   if (!mounted) {
     return (
       <div className={cn('min-h-screen bg-zinc-950', className)}>
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-pulse text-zinc-500">Loading...</div>
+        <div className='flex items-center justify-center h-screen'>
+          <div className='animate-pulse text-zinc-500'>Loading...</div>
         </div>
       </div>
     );
@@ -41,32 +43,24 @@ export default function ResponsiveNavigation({
   // Render appropriate navigation based on screen size
   if (isMobile) {
     return (
-      <MobileNavigation className={className}>
-        {children}
-      </MobileNavigation>
+      <MobileNavigation className={className}>{children}</MobileNavigation>
     );
   }
 
   if (isTablet) {
     return (
-      <TabletNavigation className={className}>
-        {children}
-      </TabletNavigation>
+      <TabletNavigation className={className}>{children}</TabletNavigation>
     );
   }
 
   if (isDesktop) {
     return (
-      <DesktopNavigation className={className}>
-        {children}
-      </DesktopNavigation>
+      <DesktopNavigation className={className}>{children}</DesktopNavigation>
     );
   }
 
   // Default fallback to desktop view
   return (
-    <DesktopNavigation className={className}>
-      {children}
-    </DesktopNavigation>
+    <DesktopNavigation className={className}>{children}</DesktopNavigation>
   );
 }

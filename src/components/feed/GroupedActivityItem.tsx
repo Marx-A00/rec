@@ -49,7 +49,13 @@ export default function GroupedActivityItem({
 }: GroupedActivityItemProps) {
   // For non-grouped activities, use the original display
   if (!group.isGrouped) {
-    return <SingleActivityDisplay activity={group.activities[0]} onAlbumClick={onAlbumClick} className={className} />;
+    return (
+      <SingleActivityDisplay
+        activity={group.activities[0]}
+        onAlbumClick={onAlbumClick}
+        className={className}
+      />
+    );
   }
 
   // For grouped activities, show a condensed view
@@ -62,7 +68,9 @@ export default function GroupedActivityItem({
         return (
           <span>
             added{' '}
-            <span className='text-emeraled-green font-semibold'>{activityCount} albums</span>{' '}
+            <span className='text-emeraled-green font-semibold'>
+              {activityCount} albums
+            </span>{' '}
             to their collection {timeRange}
           </span>
         );
@@ -70,7 +78,9 @@ export default function GroupedActivityItem({
         return (
           <span>
             made{' '}
-            <span className='text-emeraled-green font-semibold'>{activityCount} recommendations</span>{' '}
+            <span className='text-emeraled-green font-semibold'>
+              {activityCount} recommendations
+            </span>{' '}
             {timeRange}
           </span>
         );
@@ -78,7 +88,9 @@ export default function GroupedActivityItem({
         return (
           <span>
             followed{' '}
-            <span className='text-emeraled-green font-semibold'>{activityCount} users</span>{' '}
+            <span className='text-emeraled-green font-semibold'>
+              {activityCount} users
+            </span>{' '}
             {timeRange}
           </span>
         );
@@ -125,11 +137,13 @@ export default function GroupedActivityItem({
       {/* Album Grid for Collection/Recommendation Activities */}
       {(group.type === 'collection_add' || group.type === 'recommendation') && (
         <div className='grid grid-cols-3 gap-2 max-w-md mx-auto'>
-          {group.activities.slice(0, 6).map((activity) => (
+          {group.activities.slice(0, 6).map(activity => (
             <div
               key={activity.id}
               className='relative group cursor-pointer'
-              onClick={() => activity.albumId && onAlbumClick?.(activity.albumId)}
+              onClick={() =>
+                activity.albumId && onAlbumClick?.(activity.albumId)
+              }
               title={`${activity.albumTitle} by ${activity.albumArtist}`}
             >
               <AlbumImage
@@ -141,11 +155,12 @@ export default function GroupedActivityItem({
               />
 
               {/* Show rating badge for collection adds */}
-              {group.type === 'collection_add' && activity.metadata?.personalRating && (
-                <div className='absolute -bottom-1 -right-1 bg-zinc-900 border border-cosmic-latte/30 rounded-full px-1 py-0.5 text-[8px] text-cosmic-latte font-bold'>
-                  {activity.metadata.personalRating}
-                </div>
-              )}
+              {group.type === 'collection_add' &&
+                activity.metadata?.personalRating && (
+                  <div className='absolute -bottom-1 -right-1 bg-zinc-900 border border-cosmic-latte/30 rounded-full px-1 py-0.5 text-[8px] text-cosmic-latte font-bold'>
+                    {activity.metadata.personalRating}
+                  </div>
+                )}
 
               {/* Show score for recommendations */}
               {group.type === 'recommendation' && activity.metadata?.score && (
@@ -161,7 +176,9 @@ export default function GroupedActivityItem({
           {/* Show "+X more" if there are more than 6 */}
           {activityCount > 6 && (
             <div className='flex items-center justify-center bg-zinc-800 rounded border border-zinc-700'>
-              <span className='text-xs text-zinc-400'>+{activityCount - 6} more</span>
+              <span className='text-xs text-zinc-400'>
+                +{activityCount - 6} more
+              </span>
             </div>
           )}
         </div>
@@ -170,7 +187,7 @@ export default function GroupedActivityItem({
       {/* User Grid for Follow Activities */}
       {group.type === 'follow' && (
         <div className='grid grid-cols-3 gap-2 max-w-md mx-auto'>
-          {group.activities.slice(0, 6).map((activity) => (
+          {group.activities.slice(0, 6).map(activity => (
             <Link
               key={activity.id}
               href={`/profile/${activity.targetId}`}
@@ -194,7 +211,9 @@ export default function GroupedActivityItem({
           {/* Show "+X more" if there are more than 6 */}
           {activityCount > 6 && (
             <div className='flex items-center justify-center bg-zinc-800 rounded'>
-              <span className='text-xs text-zinc-400'>+{activityCount - 6}</span>
+              <span className='text-xs text-zinc-400'>
+                +{activityCount - 6}
+              </span>
             </div>
           )}
         </div>
@@ -235,9 +254,7 @@ function SingleActivityDisplay({
               {activity.albumTitle}
             </span>{' '}
             by{' '}
-            <span className='text-emeraled-green'>
-              {activity.albumArtist}
-            </span>
+            <span className='text-emeraled-green'>{activity.albumArtist}</span>
           </>
         );
       case 'collection_add':
@@ -307,23 +324,25 @@ function SingleActivityDisplay({
       </div>
 
       {/* Album display for single items */}
-      {activity.albumImage && (activity.type === 'recommendation' || activity.type === 'collection_add') && (
-        <div className='flex justify-center'>
-          <div
-            className='cursor-pointer hover:scale-105 transition-transform'
-            onClick={handleAlbumClick}
-            title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
-          >
-            <AlbumImage
-              src={activity.albumImage}
-              alt={`${activity.albumTitle} by ${activity.albumArtist}`}
-              width={150}
-              height={150}
-              className='w-[150px] h-[150px] rounded-lg border-2 border-zinc-700 hover:border-emeraled-green/50 transition-all shadow-xl'
-            />
+      {activity.albumImage &&
+        (activity.type === 'recommendation' ||
+          activity.type === 'collection_add') && (
+          <div className='flex justify-center'>
+            <div
+              className='cursor-pointer hover:scale-105 transition-transform'
+              onClick={handleAlbumClick}
+              title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
+            >
+              <AlbumImage
+                src={activity.albumImage}
+                alt={`${activity.albumTitle} by ${activity.albumArtist}`}
+                width={150}
+                height={150}
+                className='w-[150px] h-[150px] rounded-lg border-2 border-zinc-700 hover:border-emeraled-green/50 transition-all shadow-xl'
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* User avatar for follows */}
       {activity.type === 'follow' && activity.targetImage && (

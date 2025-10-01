@@ -4,13 +4,13 @@
  * Provides logging, metrics, and graceful degradation capabilities
  */
 
-import { 
-  MusicBrainzAPIError, 
-  MusicBrainzRateLimitError, 
+import {
+  MusicBrainzAPIError,
+  MusicBrainzRateLimitError,
   MusicBrainzNotFoundError,
   MusicBrainzServiceUnavailableError,
   MusicBrainzTimeoutError,
-  categorizeMusicBrainzError 
+  categorizeMusicBrainzError,
 } from './errors';
 
 // Enhanced logging interface
@@ -56,11 +56,13 @@ class MusicBrainzErrorHandler {
     try {
       // Check if service is degraded
       if (this.isServiceDegraded) {
-        console.warn(`🚨 MusicBrainz service degraded - proceeding with ${operationName} cautiously`);
+        console.warn(
+          `🚨 MusicBrainz service degraded - proceeding with ${operationName} cautiously`
+        );
       }
 
       const result = await operation();
-      
+
       // Success - reset consecutive failures and log success
       this.metrics.successes++;
       this.metrics.consecutiveFailures = 0;
@@ -70,15 +72,14 @@ class MusicBrainzErrorHandler {
       console.log(`✅ MusicBrainz ${operationName} succeeded`, {
         duration: `${duration}ms`,
         context,
-        metrics: this.getBasicMetrics()
+        metrics: this.getBasicMetrics(),
       });
 
       return result;
-
     } catch (error: any) {
       const duration = Date.now() - startTime;
       const categorizedError = categorizeMusicBrainzError(error, operationName);
-      
+
       // Update metrics
       this.metrics.failures++;
       this.metrics.consecutiveFailures++;
@@ -89,7 +90,9 @@ class MusicBrainzErrorHandler {
         this.metrics.rateLimits++;
       } else if (categorizedError instanceof MusicBrainzNotFoundError) {
         this.metrics.notFound++;
-      } else if (categorizedError instanceof MusicBrainzServiceUnavailableError) {
+      } else if (
+        categorizedError instanceof MusicBrainzServiceUnavailableError
+      ) {
         this.metrics.serviceUnavailable++;
       } else if (categorizedError instanceof MusicBrainzTimeoutError) {
         this.metrics.timeouts++;
@@ -138,14 +141,14 @@ class MusicBrainzErrorHandler {
       // Rate limits are important but handled by library
       console.warn(`⏱️ MusicBrainz rate limit hit:`, {
         ...errorInfo,
-        retryAfter: error.retryAfter
+        retryAfter: error.retryAfter,
       });
     } else if (error instanceof MusicBrainzServiceUnavailableError) {
       // Service issues are concerning
       console.error(`🚨 MusicBrainz service unavailable:`, {
         ...errorInfo,
         retryAfter: error.retryAfter,
-        consecutiveFailures: this.metrics.consecutiveFailures
+        consecutiveFailures: this.metrics.consecutiveFailures,
       });
     } else if (error instanceof MusicBrainzTimeoutError) {
       // Timeouts indicate network/performance issues
@@ -164,16 +167,26 @@ class MusicBrainzErrorHandler {
     operationName: string
   ) {
     if (error instanceof MusicBrainzRateLimitError) {
-      console.log(`🔄 Rate limit recovery: Library will handle retry after ${error.retryAfter}s`);
+      console.log(
+        `🔄 Rate limit recovery: Library will handle retry after ${error.retryAfter}s`
+      );
     } else if (error instanceof MusicBrainzServiceUnavailableError) {
-      console.log(`🔄 Service unavailable recovery: Library will retry with backoff`);
+      console.log(
+        `🔄 Service unavailable recovery: Library will retry with backoff`
+      );
       if (this.metrics.consecutiveFailures >= this.maxConsecutiveFailures) {
-        console.warn(`🚨 Consider switching to degraded mode or fallback data source`);
+        console.warn(
+          `🚨 Consider switching to degraded mode or fallback data source`
+        );
       }
     } else if (error instanceof MusicBrainzTimeoutError) {
-      console.log(`🔄 Timeout recovery: Library will retry with timeout handling`);
+      console.log(
+        `🔄 Timeout recovery: Library will retry with timeout handling`
+      );
     } else if (error instanceof MusicBrainzNotFoundError) {
-      console.log(`🔍 Not found recovery: No retry needed, resource doesn't exist`);
+      console.log(
+        `🔍 Not found recovery: No retry needed, resource doesn't exist`
+      );
     }
   }
 
@@ -183,8 +196,10 @@ class MusicBrainzErrorHandler {
   private markServiceDegraded() {
     if (!this.isServiceDegraded) {
       this.isServiceDegraded = true;
-      console.error(`🚨 MusicBrainz service marked as DEGRADED after ${this.metrics.consecutiveFailures} consecutive failures`);
-      
+      console.error(
+        `🚨 MusicBrainz service marked as DEGRADED after ${this.metrics.consecutiveFailures} consecutive failures`
+      );
+
       // Set timer to check for recovery
       setTimeout(() => {
         console.log(`🔄 Checking MusicBrainz service recovery...`);
@@ -200,24 +215,25 @@ class MusicBrainzErrorHandler {
     const total = this.metrics.requests;
     return {
       total,
-      successRate: total > 0 ? Math.round((this.metrics.successes / total) * 100) : 0,
+      successRate:
+        total > 0 ? Math.round((this.metrics.successes / total) * 100) : 0,
       failures: this.metrics.failures,
       consecutive: this.metrics.consecutiveFailures,
-      degraded: this.isServiceDegraded
+      degraded: this.isServiceDegraded,
     };
   }
 
   /**
    * Get detailed metrics for monitoring dashboards
    */
-  getMetrics(): ApiMetrics & { 
-    successRate: number; 
-    isServiceDegraded: boolean; 
-    uptime: number 
+  getMetrics(): ApiMetrics & {
+    successRate: number;
+    isServiceDegraded: boolean;
+    uptime: number;
   } {
     const total = this.metrics.requests;
     const successRate = total > 0 ? (this.metrics.successes / total) * 100 : 0;
-    
+
     return {
       ...this.metrics,
       successRate: Math.round(successRate * 100) / 100,
@@ -247,7 +263,10 @@ class MusicBrainzErrorHandler {
    * Check if the service is healthy
    */
   isHealthy(): boolean {
-    return !this.isServiceDegraded && this.metrics.consecutiveFailures < this.maxConsecutiveFailures;
+    return (
+      !this.isServiceDegraded &&
+      this.metrics.consecutiveFailures < this.maxConsecutiveFailures
+    );
   }
 
   /**
@@ -263,7 +282,7 @@ class MusicBrainzErrorHandler {
         successRate: metrics.successRate,
         consecutiveFailures: metrics.consecutiveFailures,
         lastFailure: metrics.lastFailure,
-      }
+      },
     };
   }
 }

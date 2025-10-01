@@ -1,4 +1,4 @@
-// @ts-nocheck - Minor Spotify API type issues, needs cleanup  
+// @ts-nocheck - Minor Spotify API type issues, needs cleanup
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { NextResponse } from 'next/server';
 
@@ -15,7 +15,7 @@ export async function GET() {
       featuredPlaylists: [],
       topCharts: [],
       popularArtists: [],
-      recommendations: []
+      recommendations: [],
     };
 
     // 1. Get New Releases
@@ -27,7 +27,7 @@ export async function GET() {
         releaseDate: album.release_date,
         image: album.images[0]?.url,
         spotifyUrl: album.external_urls.spotify,
-        id: album.id
+        id: album.id,
       }));
     } catch (error) {
       console.log('Could not fetch new releases:', error);
@@ -41,7 +41,7 @@ export async function GET() {
         description: playlist.description,
         image: playlist.images[0]?.url,
         tracksTotal: playlist.tracks.total,
-        id: playlist.id
+        id: playlist.id,
       }));
     } catch (error) {
       console.log('Could not fetch featured playlists:', error);
@@ -49,18 +49,30 @@ export async function GET() {
 
     // 3. Get Top Charts (if category exists)
     try {
-      const topLists = await client.browse.getPlaylistsForCategory('toplists', 'US', 3);
+      const topLists = await client.browse.getPlaylistsForCategory(
+        'toplists',
+        'US',
+        3
+      );
       for (const playlist of topLists.playlists.items.slice(0, 2)) {
-        const tracks = await client.playlists.getPlaylistItems(playlist.id, 'US', undefined, 5, 0);
+        const tracks = await client.playlists.getPlaylistItems(
+          playlist.id,
+          'US',
+          undefined,
+          5,
+          0
+        );
         data.topCharts.push({
           playlistName: playlist.name,
           playlistId: playlist.id,
-          tracks: tracks.items.map(item => ({
-            name: item.track?.name,
-            artists: item.track?.artists?.map(a => a.name).join(', '),
-            popularity: item.track?.popularity,
-            id: item.track?.id
-          })).filter(t => t.name) // Filter out null tracks
+          tracks: tracks.items
+            .map(item => ({
+              name: item.track?.name,
+              artists: item.track?.artists?.map(a => a.name).join(', '),
+              popularity: item.track?.popularity,
+              id: item.track?.id,
+            }))
+            .filter(t => t.name), // Filter out null tracks
         });
       }
     } catch (error) {
@@ -81,8 +93,8 @@ export async function GET() {
               followers: artist.followers.total,
               genres: artist.genres,
               image: artist.images[0]?.url,
-              id: artist.id
-            }))
+              id: artist.id,
+            })),
           });
         }
       }
@@ -92,21 +104,24 @@ export async function GET() {
 
     // 5. Get recommendations based on popular artists
     try {
-      if (data.popularArtists.length > 0 && data.popularArtists[0].artists.length > 0) {
+      if (
+        data.popularArtists.length > 0 &&
+        data.popularArtists[0].artists.length > 0
+      ) {
         const seedArtistId = data.popularArtists[0].artists[0].id;
         const recs = await client.recommendations.get({
           seed_artists: [seedArtistId],
           seed_genres: ['pop', 'hip-hop'],
           limit: 10,
-          market: 'US'
+          market: 'US',
         });
-        
+
         data.recommendations = recs.tracks.map(track => ({
           name: track.name,
           artists: track.artists.map(a => a.name).join(', '),
           popularity: track.popularity,
           preview_url: track.preview_url,
-          id: track.id
+          id: track.id,
         }));
       }
     } catch (error) {
@@ -116,16 +131,15 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       data,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error: any) {
     console.error('Spotify API Error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: error.message || 'Failed to fetch Spotify data',
-        details: error.body || error
+        details: error.body || error,
       },
       { status: 500 }
     );

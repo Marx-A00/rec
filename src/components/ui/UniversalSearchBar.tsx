@@ -925,7 +925,11 @@ export default function UniversalSearchBar({
           <CommandList className='absolute top-full left-0 right-0 max-h-80 overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-b-lg shadow-xl z-50'>
             {showExternalHint && searchMode === 'LOCAL_ONLY' && (
               <div className='p-2 text-center text-zinc-400 text-sm border-b border-zinc-800'>
-                Press <kbd className='px-1.5 py-0.5 mx-1 bg-zinc-800 rounded text-xs'>Enter</kbd> to search external sources
+                Press{' '}
+                <kbd className='px-1.5 py-0.5 mx-1 bg-zinc-800 rounded text-xs'>
+                  Enter
+                </kbd>{' '}
+                to search external sources
               </div>
             )}
             {searchMode === 'LOCAL_AND_EXTERNAL' && isLoading && (

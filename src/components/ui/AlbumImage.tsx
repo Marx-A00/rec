@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Music } from 'lucide-react';
+
 import { getImageUrl } from '@/lib/cloudflare-images';
 // TODO: Consolidate image handling
 interface AlbumImageProps {

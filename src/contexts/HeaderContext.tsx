@@ -1,6 +1,13 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, ReactNode, FC } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+  FC,
+} from 'react';
 
 export interface HeaderState {
   leftContent: ReactNode | null;
@@ -22,7 +29,7 @@ const initialState: HeaderState = {
   leftContent: null,
   centerContent: null,
   rightContent: null,
-  isVisible: true
+  isVisible: true,
 };
 
 const HeaderContext = createContext<HeaderContextValue | undefined>(undefined);
@@ -56,13 +63,11 @@ export const HeaderProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setCenterContent,
     setRightContent,
     setHeaderVisible,
-    clearHeader
+    clearHeader,
   };
 
   return (
-    <HeaderContext.Provider value={value}>
-      {children}
-    </HeaderContext.Provider>
+    <HeaderContext.Provider value={value}>{children}</HeaderContext.Provider>
   );
 };
 
@@ -87,34 +92,37 @@ export const useHeaderContent = (
 ) => {
   const header = useHeader();
 
-  React.useEffect(() => {
-    switch (position) {
-      case 'left':
-        header.setLeftContent(content);
-        break;
-      case 'center':
-        header.setCenterContent(content);
-        break;
-      case 'right':
-        header.setRightContent(content);
-        break;
-    }
-
-    // Cleanup on unmount
-    return () => {
+  React.useEffect(
+    () => {
       switch (position) {
         case 'left':
-          header.setLeftContent(null);
+          header.setLeftContent(content);
           break;
         case 'center':
-          header.setCenterContent(null);
+          header.setCenterContent(content);
           break;
         case 'right':
-          header.setRightContent(null);
+          header.setRightContent(content);
           break;
       }
-    };
-  }, deps || [content]); // eslint-disable-line react-hooks/exhaustive-deps
+
+      // Cleanup on unmount
+      return () => {
+        switch (position) {
+          case 'left':
+            header.setLeftContent(null);
+            break;
+          case 'center':
+            header.setCenterContent(null);
+            break;
+          case 'right':
+            header.setRightContent(null);
+            break;
+        }
+      };
+    },
+    deps || [content]
+  );
 };
 
 export default HeaderContext;

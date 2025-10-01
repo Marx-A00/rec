@@ -10,12 +10,7 @@ interface PanelDropZonesProps {
   onPreview: (zone: DropZoneType | null) => void;
 }
 
-export type DropZoneType = 
-  | 'top' 
-  | 'bottom' 
-  | 'left' 
-  | 'right' 
-  | 'center';
+export type DropZoneType = 'top' | 'bottom' | 'left' | 'right' | 'center';
 
 interface DropZoneProps {
   id: string;
@@ -26,10 +21,17 @@ interface DropZoneProps {
   onLeave: () => void;
 }
 
-function DropZone({ id, type, panelId, isActive, onEnter, onLeave }: DropZoneProps) {
+function DropZone({
+  id,
+  type,
+  panelId,
+  isActive,
+  onEnter,
+  onLeave,
+}: DropZoneProps) {
   const { isOver, setNodeRef } = useDroppable({
     id,
-    data: { 
+    data: {
       type: 'panel-drop-zone',
       zoneType: type,
       panelId,
@@ -45,10 +47,12 @@ function DropZone({ id, type, panelId, isActive, onEnter, onLeave }: DropZonePro
   }, [isOver, onEnter, onLeave]);
 
   const getZoneStyles = () => {
-    const baseStyles = 'absolute transition-all duration-200 pointer-events-auto';
-    const activeStyles = isActive && isOver 
-      ? 'bg-emerald-500/20 border-2 border-emerald-500 border-dashed' 
-      : 'bg-transparent border-2 border-transparent';
+    const baseStyles =
+      'absolute transition-all duration-200 pointer-events-auto';
+    const activeStyles =
+      isActive && isOver
+        ? 'bg-emerald-500/20 border-2 border-emerald-500 border-dashed'
+        : 'bg-transparent border-2 border-transparent';
 
     switch (type) {
       case 'top':
@@ -66,15 +70,14 @@ function DropZone({ id, type, panelId, isActive, onEnter, onLeave }: DropZonePro
     }
   };
 
-  return (
-    <div 
-      ref={setNodeRef}
-      className={getZoneStyles()}
-    />
-  );
+  return <div ref={setNodeRef} className={getZoneStyles()} />;
 }
 
-export default function PanelDropZones({ panelId, isActive, onPreview }: PanelDropZonesProps) {
+export default function PanelDropZones({
+  panelId,
+  isActive,
+  onPreview,
+}: PanelDropZonesProps) {
   const [activeZone, setActiveZone] = React.useState<DropZoneType | null>(null);
 
   const handleZoneEnter = (zone: DropZoneType) => {
@@ -92,11 +95,11 @@ export default function PanelDropZones({ panelId, isActive, onPreview }: PanelDr
   }
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-30">
+    <div className='absolute inset-0 pointer-events-none z-30'>
       {/* Top Zone - Creates vertical split above */}
       <DropZone
         id={`${panelId}-drop-top`}
-        type="top"
+        type='top'
         panelId={panelId}
         isActive={isActive}
         onEnter={() => handleZoneEnter('top')}
@@ -106,7 +109,7 @@ export default function PanelDropZones({ panelId, isActive, onPreview }: PanelDr
       {/* Bottom Zone - Creates vertical split below */}
       <DropZone
         id={`${panelId}-drop-bottom`}
-        type="bottom"
+        type='bottom'
         panelId={panelId}
         isActive={isActive}
         onEnter={() => handleZoneEnter('bottom')}
@@ -116,7 +119,7 @@ export default function PanelDropZones({ panelId, isActive, onPreview }: PanelDr
       {/* Left Zone - Creates horizontal split on left */}
       <DropZone
         id={`${panelId}-drop-left`}
-        type="left"
+        type='left'
         panelId={panelId}
         isActive={isActive}
         onEnter={() => handleZoneEnter('left')}
@@ -126,7 +129,7 @@ export default function PanelDropZones({ panelId, isActive, onPreview }: PanelDr
       {/* Right Zone - Creates horizontal split on right */}
       <DropZone
         id={`${panelId}-drop-right`}
-        type="right"
+        type='right'
         panelId={panelId}
         isActive={isActive}
         onEnter={() => handleZoneEnter('right')}
@@ -136,7 +139,7 @@ export default function PanelDropZones({ panelId, isActive, onPreview }: PanelDr
       {/* Center Zone - Replaces panel */}
       <DropZone
         id={`${panelId}-drop-center`}
-        type="center"
+        type='center'
         panelId={panelId}
         isActive={isActive}
         onEnter={() => handleZoneEnter('center')}
@@ -145,7 +148,7 @@ export default function PanelDropZones({ panelId, isActive, onPreview }: PanelDr
 
       {/* Visual Preview Overlay - Show full split layout */}
       {activeZone && (
-        <div className="absolute inset-0 pointer-events-none z-50">
+        <div className='absolute inset-0 pointer-events-none z-50'>
           {renderSplitPreview(activeZone)}
         </div>
       )}
@@ -154,23 +157,35 @@ export default function PanelDropZones({ panelId, isActive, onPreview }: PanelDr
 }
 
 function renderSplitPreview(zone: DropZoneType): React.ReactNode {
-  const existingPanelStyles = 'absolute bg-zinc-700/80 border-4 border-zinc-300 border-dashed rounded-lg transition-all duration-300 backdrop-blur-sm';
-  const newPanelStyles = 'absolute bg-blue-500/80 border-4 border-blue-200 border-dashed rounded-lg transition-all duration-300 backdrop-blur-sm';
-  
+  const existingPanelStyles =
+    'absolute bg-zinc-700/80 border-4 border-zinc-300 border-dashed rounded-lg transition-all duration-300 backdrop-blur-sm';
+  const newPanelStyles =
+    'absolute bg-blue-500/80 border-4 border-blue-200 border-dashed rounded-lg transition-all duration-300 backdrop-blur-sm';
+
   switch (zone) {
     case 'top':
       return (
         <>
           {/* New dragged panel - top half (FULL 50% height) */}
-          <div className={`${newPanelStyles} top-0 left-0 right-0`} style={{ height: '50%' }}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-blue-100 font-semibold text-lg">New Panel</span>
+          <div
+            className={`${newPanelStyles} top-0 left-0 right-0`}
+            style={{ height: '50%' }}
+          >
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <span className='text-blue-100 font-semibold text-lg'>
+                New Panel
+              </span>
             </div>
           </div>
           {/* Existing panel - bottom half (FULL 50% height) */}
-          <div className={`${existingPanelStyles} bottom-0 left-0 right-0`} style={{ height: '50%' }}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-zinc-200 font-semibold text-lg">Current Panel</span>
+          <div
+            className={`${existingPanelStyles} bottom-0 left-0 right-0`}
+            style={{ height: '50%' }}
+          >
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <span className='text-zinc-200 font-semibold text-lg'>
+                Current Panel
+              </span>
             </div>
           </div>
         </>
@@ -179,15 +194,25 @@ function renderSplitPreview(zone: DropZoneType): React.ReactNode {
       return (
         <>
           {/* Existing panel - top half (FULL 50% height) */}
-          <div className={`${existingPanelStyles} top-0 left-0 right-0`} style={{ height: '50%' }}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-zinc-200 font-semibold text-lg">Current Panel</span>
+          <div
+            className={`${existingPanelStyles} top-0 left-0 right-0`}
+            style={{ height: '50%' }}
+          >
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <span className='text-zinc-200 font-semibold text-lg'>
+                Current Panel
+              </span>
             </div>
           </div>
           {/* New dragged panel - bottom half (FULL 50% height) */}
-          <div className={`${newPanelStyles} bottom-0 left-0 right-0`} style={{ height: '50%' }}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-blue-100 font-semibold text-lg">New Panel</span>
+          <div
+            className={`${newPanelStyles} bottom-0 left-0 right-0`}
+            style={{ height: '50%' }}
+          >
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <span className='text-blue-100 font-semibold text-lg'>
+                New Panel
+              </span>
             </div>
           </div>
         </>
@@ -196,15 +221,25 @@ function renderSplitPreview(zone: DropZoneType): React.ReactNode {
       return (
         <>
           {/* New dragged panel - left half (FULL 50% width) */}
-          <div className={`${newPanelStyles} top-0 bottom-0 left-0`} style={{ width: '50%' }}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-blue-100 font-semibold text-lg">New Panel</span>
+          <div
+            className={`${newPanelStyles} top-0 bottom-0 left-0`}
+            style={{ width: '50%' }}
+          >
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <span className='text-blue-100 font-semibold text-lg'>
+                New Panel
+              </span>
             </div>
           </div>
           {/* Existing panel - right half (FULL 50% width) */}
-          <div className={`${existingPanelStyles} top-0 bottom-0 right-0`} style={{ width: '50%' }}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-zinc-200 font-semibold text-lg">Current Panel</span>
+          <div
+            className={`${existingPanelStyles} top-0 bottom-0 right-0`}
+            style={{ width: '50%' }}
+          >
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <span className='text-zinc-200 font-semibold text-lg'>
+                Current Panel
+              </span>
             </div>
           </div>
         </>
@@ -213,15 +248,25 @@ function renderSplitPreview(zone: DropZoneType): React.ReactNode {
       return (
         <>
           {/* Existing panel - left half (FULL 50% width) */}
-          <div className={`${existingPanelStyles} top-0 bottom-0 left-0`} style={{ width: '50%' }}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-zinc-200 font-semibold text-lg">Current Panel</span>
+          <div
+            className={`${existingPanelStyles} top-0 bottom-0 left-0`}
+            style={{ width: '50%' }}
+          >
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <span className='text-zinc-200 font-semibold text-lg'>
+                Current Panel
+              </span>
             </div>
           </div>
           {/* New dragged panel - right half (FULL 50% width) */}
-          <div className={`${newPanelStyles} top-0 bottom-0 right-0`} style={{ width: '50%' }}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-blue-100 font-semibold text-lg">New Panel</span>
+          <div
+            className={`${newPanelStyles} top-0 bottom-0 right-0`}
+            style={{ width: '50%' }}
+          >
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <span className='text-blue-100 font-semibold text-lg'>
+                New Panel
+              </span>
             </div>
           </div>
         </>
@@ -231,8 +276,10 @@ function renderSplitPreview(zone: DropZoneType): React.ReactNode {
         <>
           {/* New dragged panel replaces entirely */}
           <div className={`${newPanelStyles} inset-0`}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-blue-100 font-semibold text-lg">Replacement Panel</span>
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <span className='text-blue-100 font-semibold text-lg'>
+                Replacement Panel
+              </span>
             </div>
           </div>
         </>

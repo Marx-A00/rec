@@ -185,7 +185,9 @@ export default function RecommendationDetailModal({
                   </p>
                 </Link>
                 <p className='text-zinc-300 text-lg'>
-                  {recommendation.basisAlbum.artists.map(a => a.artist.name).join(', ')}
+                  {recommendation.basisAlbum.artists
+                    .map(a => a.artist.name)
+                    .join(', ')}
                 </p>
               </div>
               <Link href={`/albums/${recommendation.basisAlbum.id}`}>
@@ -214,20 +216,18 @@ export default function RecommendationDetailModal({
             {/* Recommended Album */}
             <div className='text-center'>
               <div className='mb-4'>
-                <Link
-                  href={`/albums/${recommendation.recommendedAlbum.id}`}
-                >
+                <Link href={`/albums/${recommendation.recommendedAlbum.id}`}>
                   <p className='font-bold text-cosmic-latte text-xl hover:underline cursor-pointer hover:text-white transition-colors'>
                     {recommendation.recommendedAlbum.title}
                   </p>
                 </Link>
                 <p className='text-zinc-300 text-lg'>
-                  {recommendation.recommendedAlbum.artists.map(a => a.artist.name).join(', ')}
+                  {recommendation.recommendedAlbum.artists
+                    .map(a => a.artist.name)
+                    .join(', ')}
                 </p>
               </div>
-              <Link
-                href={`/albums/${recommendation.recommendedAlbum.id}`}
-              >
+              <Link href={`/albums/${recommendation.recommendedAlbum.id}`}>
                 <div className='group relative cursor-pointer'>
                   <div className='relative w-72 h-72 lg:w-80 lg:h-80 mx-auto aspect-square overflow-hidden rounded-lg shadow-2xl transition-all duration-300 group-hover:shadow-xl group-hover:scale-105 bg-zinc-800 border-2 border-zinc-700'>
                     <AlbumImage

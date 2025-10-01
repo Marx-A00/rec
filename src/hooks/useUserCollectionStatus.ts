@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
+
 import { graphqlClient } from '@/lib/graphql-client';
 
 interface UserAlbum {
@@ -53,19 +54,22 @@ const fetchUserCollectionAlbums = async (): Promise<UserAlbum[]> => {
       for (const collectionAlbum of collection.albums || []) {
         if (collectionAlbum.album) {
           const album = collectionAlbum.album;
-          const artistName = album.artists?.[0]?.artist?.name || 'Unknown Artist';
+          const artistName =
+            album.artists?.[0]?.artist?.name || 'Unknown Artist';
 
           allAlbums.push({
             id: album.id,
             title: album.title,
             artist: artistName,
             releaseDate: album.releaseDate,
-            image: album.coverArtUrl ? {
-              url: album.coverArtUrl,
-              width: 400,
-              height: 400,
-              alt: `${album.title} cover`
-            } : undefined
+            image: album.coverArtUrl
+              ? {
+                  url: album.coverArtUrl,
+                  width: 400,
+                  height: 400,
+                  alt: `${album.title} cover`,
+                }
+              : undefined,
           });
         }
       }

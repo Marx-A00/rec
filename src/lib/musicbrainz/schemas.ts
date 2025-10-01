@@ -52,10 +52,14 @@ export const MusicBrainzRecordingSearchSchema = z.object({
   disambiguation: z.string().optional(),
   length: z.number().optional(),
   artistCredit: z.array(MusicBrainzArtistCreditSchema).optional(),
-  releases: z.array(z.object({
-    id: z.string().uuid(),
-    title: z.string(),
-  })).optional(),
+  releases: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        title: z.string(),
+      })
+    )
+    .optional(),
   score: z.number(),
 });
 
@@ -80,49 +84,69 @@ export const MusicBrainzRecordingDetailSchema = z.object({
   disambiguation: z.string().optional(),
   length: z.number().optional(),
   video: z.boolean().optional(),
-  
+
   // ISRC data
   isrcs: z.array(z.string()).optional(),
-  
+
   // URL relationships
   relations: z.array(MusicBrainzRelationSchema).optional(),
-  
+
   // Artist credits
   'artist-credit': z.array(MusicBrainzArtistCreditSchema).optional(),
-  
+
   // Release information
-  releases: z.array(z.object({
-    id: z.string().uuid(),
-    title: z.string(),
-    status: z.string().optional(),
-    'status-id': z.string().uuid().optional(),
-  })).optional(),
+  releases: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        title: z.string(),
+        status: z.string().optional(),
+        'status-id': z.string().uuid().optional(),
+      })
+    )
+    .optional(),
 });
 
 // Type exports for use in other files
-export type ValidatedArtistSearchResult = z.infer<typeof MusicBrainzArtistSearchSchema>;
-export type ValidatedReleaseGroupSearchResult = z.infer<typeof MusicBrainzReleaseGroupSearchSchema>;
-export type ValidatedRecordingSearchResult = z.infer<typeof MusicBrainzRecordingSearchSchema>;
+export type ValidatedArtistSearchResult = z.infer<
+  typeof MusicBrainzArtistSearchSchema
+>;
+export type ValidatedReleaseGroupSearchResult = z.infer<
+  typeof MusicBrainzReleaseGroupSearchSchema
+>;
+export type ValidatedRecordingSearchResult = z.infer<
+  typeof MusicBrainzRecordingSearchSchema
+>;
 
 // New detailed recording types
 export type MusicBrainzUrl = z.infer<typeof MusicBrainzUrlSchema>;
 export type MusicBrainzRelation = z.infer<typeof MusicBrainzRelationSchema>;
-export type MusicBrainzRecordingDetail = z.infer<typeof MusicBrainzRecordingDetailSchema>;
+export type MusicBrainzRecordingDetail = z.infer<
+  typeof MusicBrainzRecordingDetailSchema
+>;
 
 // Validation helper functions
-export function validateArtistSearchResult(data: unknown): ValidatedArtistSearchResult {
+export function validateArtistSearchResult(
+  data: unknown
+): ValidatedArtistSearchResult {
   return MusicBrainzArtistSearchSchema.parse(data);
 }
 
-export function validateReleaseGroupSearchResult(data: unknown): ValidatedReleaseGroupSearchResult {
+export function validateReleaseGroupSearchResult(
+  data: unknown
+): ValidatedReleaseGroupSearchResult {
   return MusicBrainzReleaseGroupSearchSchema.parse(data);
 }
 
-export function validateRecordingSearchResult(data: unknown): ValidatedRecordingSearchResult {
+export function validateRecordingSearchResult(
+  data: unknown
+): ValidatedRecordingSearchResult {
   return MusicBrainzRecordingSearchSchema.parse(data);
 }
 
-export function validateRecordingDetail(data: unknown): MusicBrainzRecordingDetail {
+export function validateRecordingDetail(
+  data: unknown
+): MusicBrainzRecordingDetail {
   return MusicBrainzRecordingDetailSchema.parse(data);
 }
 

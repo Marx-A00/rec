@@ -22,25 +22,29 @@ async function testRedisConnection() {
 
     if (isConnected) {
       console.log('✅ Redis connection successful!');
-      
+
       // Test basic operations
       const redis = redisManager.getClient();
       await redis.set('test:key', 'test-value', 'EX', 10); // Expire in 10 seconds
       const value = await redis.get('test:key');
-      console.log(`✅ Redis set/get test: ${value === 'test-value' ? 'PASSED' : 'FAILED'}`);
-      
+      console.log(
+        `✅ Redis set/get test: ${value === 'test-value' ? 'PASSED' : 'FAILED'}`
+      );
+
       // Clean up
       await redis.del('test:key');
       console.log('🧹 Test cleanup completed');
-      
     } else {
       console.log('❌ Redis connection failed!');
       console.log('\n💡 Make sure Redis is running:');
-      console.log('   - Install: brew install redis (macOS) or apt install redis (Ubuntu)');
+      console.log(
+        '   - Install: brew install redis (macOS) or apt install redis (Ubuntu)'
+      );
       console.log('   - Start: redis-server');
-      console.log('   - Or use Docker: docker run -d -p 6379:6379 redis:alpine');
+      console.log(
+        '   - Or use Docker: docker run -d -p 6379:6379 redis:alpine'
+      );
     }
-
   } catch (error) {
     console.error('❌ Redis test failed:', error);
   } finally {
@@ -56,7 +60,7 @@ console.log('⚙️ Validating queue configuration...');
 try {
   const queueConfig = getQueueConfig();
   console.log('✅ Queue configuration valid\n');
-  
+
   // Run the test
   testRedisConnection();
 } catch (error) {

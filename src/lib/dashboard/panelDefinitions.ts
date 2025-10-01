@@ -1,6 +1,7 @@
 // src/lib/dashboard/panelDefinitions.ts
 
 import { Folder, Heart, Users, BarChart3, Play, UserPlus } from 'lucide-react';
+
 import { PanelDefinition } from '@/types/mosaic';
 import CollectionAlbumsPanel from '@/components/dashboard/panels/CollectionAlbumsPanel';
 import RecommendationsPanel from '@/components/dashboard/panels/RecommendationsPanel';
@@ -14,7 +15,8 @@ export const panelDefinitions: PanelDefinition[] = [
   {
     type: 'collection-albums',
     displayName: 'Album Collection',
-    description: 'Your personal album collection with quick access to favorites',
+    description:
+      'Your personal album collection with quick access to favorites',
     category: 'music',
     icon: Folder,
     component: CollectionAlbumsPanel,
@@ -82,7 +84,7 @@ export const panelDefinitions: PanelDefinition[] = [
   {
     type: 'recently-played',
     displayName: 'Recently Played',
-    description: 'Albums you\'ve listened to recently with timestamps',
+    description: "Albums you've listened to recently with timestamps",
     category: 'music',
     icon: Play,
     component: RecentlyPlayedPanel,
@@ -99,7 +101,8 @@ export const panelDefinitions: PanelDefinition[] = [
   {
     type: 'friends-activity',
     displayName: 'Friend Activity',
-    description: 'See what your friends are listening to and recommending with friend filtering',
+    description:
+      'See what your friends are listening to and recommending with friend filtering',
     category: 'social',
     icon: Users,
     component: FriendActivityPanel,
@@ -116,7 +119,8 @@ export const panelDefinitions: PanelDefinition[] = [
   {
     type: 'friend-discovery',
     displayName: 'Friend Discovery',
-    description: 'Discover new people to follow based on similar music taste and mutual connections',
+    description:
+      'Discover new people to follow based on similar music taste and mutual connections',
     category: 'social',
     icon: UserPlus,
     component: FriendDiscoveryPanel,

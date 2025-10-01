@@ -1,4 +1,16 @@
-import { LucideIcon, Home, TreePalm, Disc, Plus, Save, Settings, User, ChartBar, MessageCircle, TrendingUp } from 'lucide-react';
+import {
+  LucideIcon,
+  Home,
+  TreePalm,
+  Disc,
+  Plus,
+  Save,
+  Settings,
+  User,
+  ChartBar,
+  MessageCircle,
+  TrendingUp,
+} from 'lucide-react';
 
 export interface NavItem {
   id: string;
@@ -31,22 +43,22 @@ export const getDefaultNavItems = (): NavItem[] => [
     href: '/',
     icon: Home,
     label: 'Home',
-    tooltip: 'Navigate to Home'
+    tooltip: 'Navigate to Home',
   },
   {
     id: 'browse',
     href: '/browse',
     icon: TreePalm,
     label: 'Browse',
-    tooltip: 'Browse & Discover'
+    tooltip: 'Browse & Discover',
   },
   {
     id: 'recommend',
     icon: Disc,
     label: 'Recommend',
     tooltip: 'Create Recommendation',
-    action: (context) => context?.openRecommendationDrawer?.()
-  }
+    action: context => context?.openRecommendationDrawer?.(),
+  },
 ];
 
 export const getDashboardEditModeItems = (): NavItem[] => [
@@ -55,17 +67,17 @@ export const getDashboardEditModeItems = (): NavItem[] => [
     icon: Plus,
     label: 'Add Tile',
     tooltip: 'Add a new tile',
-    showWhen: (ctx) => ctx.isEditMode === true,
-    action: (context) => context?.openTileLibrary?.()
+    showWhen: ctx => ctx.isEditMode === true,
+    action: context => context?.openTileLibrary?.(),
   },
   {
     id: 'save-layout',
     icon: Save,
     label: 'Save Layout',
     tooltip: 'Save current layout',
-    showWhen: (ctx) => ctx.isEditMode === true,
-    action: (context) => context?.saveMosaicLayout?.()
-  }
+    showWhen: ctx => ctx.isEditMode === true,
+    action: context => context?.saveMosaicLayout?.(),
+  },
 ];
 
 export const getUserNavigationItems = (): NavItem[] => [
@@ -75,7 +87,7 @@ export const getUserNavigationItems = (): NavItem[] => [
     icon: User,
     label: 'Profile',
     tooltip: 'View your profile',
-    showWhen: (ctx) => ctx.isAuthenticated
+    showWhen: ctx => ctx.isAuthenticated,
   },
   {
     id: 'settings',
@@ -83,8 +95,8 @@ export const getUserNavigationItems = (): NavItem[] => [
     icon: Settings,
     label: 'Settings',
     tooltip: 'Application settings',
-    showWhen: (ctx) => ctx.isAuthenticated
-  }
+    showWhen: ctx => ctx.isAuthenticated,
+  },
 ];
 
 export const getAnalyticsNavigationItems = (): NavItem[] => [
@@ -99,18 +111,20 @@ export const getAnalyticsNavigationItems = (): NavItem[] => [
         href: '/analytics',
         icon: ChartBar,
         label: 'Overview',
-        tooltip: 'Analytics overview'
+        tooltip: 'Analytics overview',
       },
       {
         id: 'analytics-trends',
         href: '/analytics/trends',
         icon: TrendingUp,
         label: 'Trends',
-        tooltip: 'View trends'
-      }
+        tooltip: 'View trends',
+      },
     ],
-    showWhen: (ctx) => ctx.isAuthenticated && (ctx.userRole === 'admin' || ctx.userRole === 'analyst')
-  }
+    showWhen: ctx =>
+      ctx.isAuthenticated &&
+      (ctx.userRole === 'admin' || ctx.userRole === 'analyst'),
+  },
 ];
 
 export const getSocialNavigationItems = (): NavItem[] => [
@@ -122,10 +136,10 @@ export const getSocialNavigationItems = (): NavItem[] => [
     tooltip: 'Social features',
     badge: {
       count: 3,
-      variant: 'default'
+      variant: 'default',
     },
-    showWhen: (ctx) => ctx.isAuthenticated
-  }
+    showWhen: ctx => ctx.isAuthenticated,
+  },
 ];
 
 /**
@@ -133,13 +147,15 @@ export const getSocialNavigationItems = (): NavItem[] => [
  * @param context - The navigation context
  * @returns Array of navigation items filtered by context
  */
-export const getAllNavigationItems = (context: NavigationContext): NavItem[] => {
+export const getAllNavigationItems = (
+  context: NavigationContext
+): NavItem[] => {
   const allItems = [
     ...getDefaultNavItems(),
     ...getUserNavigationItems(),
     ...getAnalyticsNavigationItems(),
     ...getSocialNavigationItems(),
-    ...(context.isEditMode ? getDashboardEditModeItems() : [])
+    ...(context.isEditMode ? getDashboardEditModeItems() : []),
   ];
 
   // Filter items based on showWhen conditions
@@ -152,7 +168,10 @@ export const getAllNavigationItems = (context: NavigationContext): NavItem[] => 
  * @param context - The navigation context
  * @returns Filtered array of navigation items
  */
-export const filterNavigationItems = (items: NavItem[], context: NavigationContext): NavItem[] => {
+export const filterNavigationItems = (
+  items: NavItem[],
+  context: NavigationContext
+): NavItem[] => {
   return items.filter(item => {
     // Check if item should be shown
     if (item.showWhen && !item.showWhen(context)) {
@@ -180,7 +199,10 @@ export const filterNavigationItems = (items: NavItem[], context: NavigationConte
  * @param id - The ID to search for
  * @returns The found navigation item or undefined
  */
-export const findNavigationItem = (items: NavItem[], id: string): NavItem | undefined => {
+export const findNavigationItem = (
+  items: NavItem[],
+  id: string
+): NavItem | undefined => {
   for (const item of items) {
     if (item.id === id) {
       return item;
@@ -201,7 +223,10 @@ export const findNavigationItem = (items: NavItem[], id: string): NavItem | unde
  * @param currentPath - The current path
  * @returns The active navigation item ID or null
  */
-export const getActiveNavigationItem = (items: NavItem[], currentPath: string): string | null => {
+export const getActiveNavigationItem = (
+  items: NavItem[],
+  currentPath: string
+): string | null => {
   for (const item of items) {
     if (item.href === currentPath) {
       return item.id;

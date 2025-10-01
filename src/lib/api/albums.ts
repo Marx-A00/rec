@@ -1,7 +1,7 @@
 import { Client } from 'disconnect';
+
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { prisma } from '@/lib/prisma';
-
 import {
   mapDiscogsMasterToAlbum,
   mapDiscogsReleaseToAlbum,
@@ -174,10 +174,14 @@ export async function getAlbumDetails(
             for (const t of tracks) {
               const lenMs =
                 (typeof t.length === 'number' && t.length) ||
-                (typeof t.recording?.length === 'number' && t.recording.length) ||
+                (typeof t.recording?.length === 'number' &&
+                  t.recording.length) ||
                 0;
               orderedTracks.push({
-                id: t.id || t.recording?.id || `${representativeRelease.id}-${seq}`,
+                id:
+                  t.id ||
+                  t.recording?.id ||
+                  `${representativeRelease.id}-${seq}`,
                 title: t.title || t.recording?.title || `Track ${seq}`,
                 duration: Math.max(0, Math.floor(lenMs / 1000)),
                 trackNumber: seq,
@@ -197,7 +201,10 @@ export async function getAlbumDetails(
 
       return album;
     } catch (err) {
-      console.warn('MusicBrainz release-group fetch failed, falling back:', err);
+      console.warn(
+        'MusicBrainz release-group fetch failed, falling back:',
+        err
+      );
       // Fall through to Discogs path as ultimate fallback
     }
   }

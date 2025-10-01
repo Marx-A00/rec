@@ -8,8 +8,13 @@ import express from 'express';
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
+
 import { getMusicBrainzQueue } from '@/lib/queue';
-import { healthChecker, metricsCollector, alertManager } from '@/lib/monitoring';
+import {
+  healthChecker,
+  metricsCollector,
+  alertManager,
+} from '@/lib/monitoring';
 
 const PORT = 3001;
 
@@ -22,7 +27,10 @@ app.set('env', 'production');
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept'
+  );
 
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -66,14 +74,18 @@ app.use('/admin/queues', serverAdapter.getRouter());
 app.get('/health', async (_req, res) => {
   try {
     const health = await healthChecker.checkHealth();
-    const statusCode = health.status === 'unhealthy' ? 503 :
-                       health.status === 'degraded' ? 200 : 200;
+    const statusCode =
+      health.status === 'unhealthy'
+        ? 503
+        : health.status === 'degraded'
+          ? 200
+          : 200;
     res.status(statusCode).json(health);
   } catch (error) {
     res.status(503).json({
       status: 'unhealthy',
       error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -88,7 +100,7 @@ app.get('/metrics', (_req, res) => {
     current: metrics,
     history,
     jobs: jobMetrics,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -100,7 +112,7 @@ app.get('/alerts', (_req, res) => {
   res.json({
     active,
     history,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -110,7 +122,9 @@ app.post('/alerts/:alertId/acknowledge', (req, res) => {
 
   res.json({
     success,
-    message: success ? 'Alert acknowledged' : 'Alert not found or already acknowledged'
+    message: success
+      ? 'Alert acknowledged'
+      : 'Alert not found or already acknowledged',
   });
 });
 
@@ -120,7 +134,7 @@ app.post('/alerts/:alertId/resolve', (req, res) => {
 
   res.json({
     success,
-    message: success ? 'Alert resolved' : 'Alert not found or already resolved'
+    message: success ? 'Alert resolved' : 'Alert not found or already resolved',
   });
 });
 
@@ -134,12 +148,12 @@ app.get('/queue/metrics', async (_req, res) => {
     res.json({
       ...metrics,
       queueDepth: stats.waiting + stats.active + stats.delayed,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     res.status(500).json({
       error: 'Failed to get queue metrics',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -153,7 +167,7 @@ app.post('/queue/pause', async (_req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Failed to pause queue',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -166,7 +180,7 @@ app.post('/queue/resume', async (_req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Failed to resume queue',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -180,7 +194,7 @@ app.post('/queue/cleanup', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Failed to cleanup queue',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -190,26 +204,26 @@ app.get('/spotify/metrics', async (req, res) => {
   try {
     const { spotifyMetrics } = await import('@/lib/spotify/error-handling');
     const { spotifyScheduler } = await import('@/lib/spotify/scheduler');
-    
+
     const metrics = spotifyMetrics.getMetrics();
     const status = spotifyScheduler.getStatus();
-    
+
     res.json({
       scheduler: {
         isRunning: status.isRunning,
         activeJobs: status.activeJobs,
-        config: status.config
+        config: status.config,
       },
       metrics: {
         ...metrics,
-        successRate: spotifyMetrics.getSuccessRate()
+        successRate: spotifyMetrics.getSuccessRate(),
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     res.status(500).json({
       error: 'Failed to get Spotify metrics',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -218,37 +232,52 @@ app.get('/spotify/metrics', async (req, res) => {
 app.post('/spotify/:action', async (req, res) => {
   const { action } = req.params;
   const { type } = req.body;
-  
+
   try {
     const { spotifyScheduler } = await import('@/lib/spotify/scheduler');
-    
+
     switch (action) {
       case 'start':
-        const { initializeSpotifyScheduler } = await import('@/lib/spotify/scheduler');
+        const { initializeSpotifyScheduler } = await import(
+          '@/lib/spotify/scheduler'
+        );
         const started = initializeSpotifyScheduler();
-        res.json({ success: started, message: started ? 'Scheduler started' : 'Failed to start (check credentials)' });
+        res.json({
+          success: started,
+          message: started
+            ? 'Scheduler started'
+            : 'Failed to start (check credentials)',
+        });
         break;
-        
+
       case 'stop':
         spotifyScheduler.stop();
         res.json({ success: true, message: 'Scheduler stopped' });
         break;
-        
+
       case 'sync':
-        if (!type || !['new-releases', 'featured-playlists', 'both'].includes(type)) {
-          return res.status(400).json({ error: 'Invalid sync type. Use: new-releases, featured-playlists, or both' });
+        if (
+          !type ||
+          !['new-releases', 'featured-playlists', 'both'].includes(type)
+        ) {
+          return res.status(400).json({
+            error:
+              'Invalid sync type. Use: new-releases, featured-playlists, or both',
+          });
         }
         await spotifyScheduler.triggerSync(type);
         res.json({ success: true, message: `${type} sync triggered` });
         break;
-        
+
       default:
-        res.status(400).json({ error: 'Invalid action. Use: start, stop, or sync' });
+        res
+          .status(400)
+          .json({ error: 'Invalid action. Use: start, stop, or sync' });
     }
   } catch (error) {
     res.status(500).json({
       error: 'Spotify action failed',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -260,7 +289,7 @@ app.get('/jobs/history', async (req, res) => {
       page = '1',
       limit = '20',
       status: statusFilter = '',
-      timeRange = '24h'
+      timeRange = '24h',
     } = req.query;
 
     const queue = getMusicBrainzQueue().getQueue();
@@ -312,26 +341,43 @@ app.get('/jobs/history', async (req, res) => {
       .map(job => ({
         id: job.id,
         name: job.name,
-        status: job.failedReason ? 'failed' :
-                job.finishedOn ? 'completed' :
-                job.processedOn ? 'active' :
-                job.opts?.delay ? 'delayed' : 'waiting',
+        status: job.failedReason
+          ? 'failed'
+          : job.finishedOn
+            ? 'completed'
+            : job.processedOn
+              ? 'active'
+              : job.opts?.delay
+                ? 'delayed'
+                : 'waiting',
         data: job.data,
         result: job.returnvalue,
         error: job.failedReason,
         createdAt: new Date(job.timestamp).toISOString(),
-        completedAt: job.finishedOn ? new Date(job.finishedOn).toISOString() : undefined,
-        processedOn: job.processedOn ? new Date(job.processedOn).toISOString() : undefined,
-        duration: job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : undefined,
+        completedAt: job.finishedOn
+          ? new Date(job.finishedOn).toISOString()
+          : undefined,
+        processedOn: job.processedOn
+          ? new Date(job.processedOn).toISOString()
+          : undefined,
+        duration:
+          job.finishedOn && job.processedOn
+            ? job.finishedOn - job.processedOn
+            : undefined,
         attempts: job.attemptsMade || 0,
         albumId: job.data?.albumId,
-        albumName: job.data?.albumName || job.data?.title
+        albumName: job.data?.albumName || job.data?.title,
       }))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
     // Calculate stats
     const totalJobs = filteredJobs.length;
-    const completedJobs = filteredJobs.filter(j => j.status === 'completed').length;
+    const completedJobs = filteredJobs.filter(
+      j => j.status === 'completed'
+    ).length;
     const failedJobs = filteredJobs.filter(j => j.status === 'failed').length;
     const totalDuration = filteredJobs
       .filter(j => j.duration)
@@ -341,8 +387,12 @@ app.get('/jobs/history', async (req, res) => {
     // Calculate jobs today and this week
     const todayStart = new Date().setHours(0, 0, 0, 0);
     const weekStart = new Date().setDate(new Date().getDate() - 7);
-    const jobsToday = filteredJobs.filter(j => new Date(j.createdAt).getTime() > todayStart).length;
-    const jobsThisWeek = filteredJobs.filter(j => new Date(j.createdAt).getTime() > weekStart).length;
+    const jobsToday = filteredJobs.filter(
+      j => new Date(j.createdAt).getTime() > todayStart
+    ).length;
+    const jobsThisWeek = filteredJobs.filter(
+      j => new Date(j.createdAt).getTime() > weekStart
+    ).length;
 
     // Pagination
     const pageNum = parseInt(page as string);
@@ -361,17 +411,17 @@ app.get('/jobs/history', async (req, res) => {
         successRate: totalJobs > 0 ? completedJobs / totalJobs : 0,
         jobsToday,
         jobsThisWeek,
-        trendsUp: true // Would need historical data to calculate properly
+        trendsUp: true, // Would need historical data to calculate properly
       },
       page: pageNum,
       totalPages: Math.ceil(totalJobs / limitNum),
-      totalItems: totalJobs
+      totalItems: totalJobs,
     });
   } catch (error) {
     console.error('Job history error:', error);
     res.status(500).json({
       error: 'Failed to fetch job history',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -393,12 +443,12 @@ app.post('/jobs/:jobId/retry', async (req, res) => {
 
     res.json({
       success: true,
-      message: `Job ${jobId} queued for retry`
+      message: `Job ${jobId} queued for retry`,
     });
   } catch (error) {
     res.status(500).json({
       error: 'Failed to retry job',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -421,12 +471,12 @@ app.get('/dashboard', async (_req, res) => {
       errorRate: metrics?.queue.errorRate || 0,
       throughput: metrics?.queue.throughput || null,
       activeAlerts: alerts.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     res.status(500).json({
       error: 'Failed to get dashboard data',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -458,20 +508,27 @@ app.use((req, res) => {
       'POST /alerts/:id/resolve - Resolve Alert',
       'POST /spotify/start - Start Spotify Scheduler',
       'POST /spotify/stop - Stop Spotify Scheduler',
-      'POST /spotify/sync - Trigger Spotify Sync'
-    ]
+      'POST /spotify/sync - Trigger Spotify Sync',
+    ],
   });
 });
 
 // Error handler
-app.use((error: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('💥 Express error:', error);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: error.message,
-    timestamp: new Date().toISOString()
-  });
-});
+app.use(
+  (
+    error: any,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction
+  ) => {
+    console.error('💥 Express error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+);
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
@@ -506,7 +563,7 @@ const server = app.listen(PORT, () => {
 });
 
 // Keep the process alive
-server.on('error', (err) => {
+server.on('error', err => {
   console.error('❌ Server error:', err.message);
 });
 

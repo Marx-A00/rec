@@ -7,7 +7,13 @@ import AlbumModal from '@/components/ui/AlbumModal';
 import { useAlbumModal } from '@/hooks/useAlbumModal';
 import { useGetArtistDiscographyQuery } from '@/generated/graphql';
 
-export default function DiscographyTab({ artistId, artistName }: { artistId: string; artistName?: string }) {
+export default function DiscographyTab({
+  artistId,
+  artistName,
+}: {
+  artistId: string;
+  artistName?: string;
+}) {
   const { data, isLoading, error } = useGetArtistDiscographyQuery(
     { id: artistId },
     { enabled: !!artistId }

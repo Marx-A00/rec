@@ -5,10 +5,11 @@
  */
 
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
-import type { 
-  SpotifySyncNewReleasesJobData, 
-  SpotifySyncFeaturedPlaylistsJobData 
+import type {
+  SpotifySyncNewReleasesJobData,
+  SpotifySyncFeaturedPlaylistsJobData,
 } from '../queue/jobs';
+
 import { spotifyMetrics } from './error-handling';
 
 export interface SpotifyScheduleConfig {
@@ -32,15 +33,15 @@ export const DEFAULT_SCHEDULE_CONFIG: SpotifyScheduleConfig = {
     enabled: true,
     intervalMinutes: 60, // Every hour
     limit: 20,
-    country: 'US'
+    country: 'US',
   },
   featuredPlaylists: {
     enabled: true,
     intervalMinutes: 180, // Every 3 hours
     limit: 10,
     country: 'US',
-    extractAlbums: true
-  }
+    extractAlbums: true,
+  },
 };
 
 class SpotifyScheduler {
@@ -106,7 +107,7 @@ class SpotifyScheduler {
    */
   updateConfig(newConfig: Partial<SpotifyScheduleConfig>) {
     const wasRunning = this.isRunning;
-    
+
     if (wasRunning) {
       this.stop();
     }
@@ -129,7 +130,7 @@ class SpotifyScheduler {
       config: this.config,
       activeJobs: Array.from(this.intervals.keys()),
       metrics: spotifyMetrics.getMetrics(),
-      successRate: spotifyMetrics.getSuccessRate()
+      successRate: spotifyMetrics.getSuccessRate(),
     };
   }
 
@@ -138,39 +139,44 @@ class SpotifyScheduler {
    */
   private scheduleNewReleases() {
     const intervalMs = this.config.newReleases.intervalMinutes * 60 * 1000;
-    
+
     // Run immediately on start
     this.queueNewReleasesSync();
-    
+
     // Then schedule recurring
     const interval = setInterval(() => {
       this.queueNewReleasesSync();
     }, intervalMs);
 
     this.intervals.set('new-releases', interval);
-    
-    console.log(`📅 Scheduled new releases sync every ${this.config.newReleases.intervalMinutes} minutes`);
+
+    console.log(
+      `📅 Scheduled new releases sync every ${this.config.newReleases.intervalMinutes} minutes`
+    );
   }
 
   /**
    * Schedule featured playlists sync
    */
   private scheduleFeaturedPlaylists() {
-    const intervalMs = this.config.featuredPlaylists.intervalMinutes * 60 * 1000;
-    
+    const intervalMs =
+      this.config.featuredPlaylists.intervalMinutes * 60 * 1000;
+
     // Run immediately on start (with slight delay to avoid collision)
     setTimeout(() => {
       this.queueFeaturedPlaylistsSync();
     }, 30000); // 30 second delay
-    
+
     // Then schedule recurring
     const interval = setInterval(() => {
       this.queueFeaturedPlaylistsSync();
     }, intervalMs);
 
     this.intervals.set('featured-playlists', interval);
-    
-    console.log(`📅 Scheduled featured playlists sync every ${this.config.featuredPlaylists.intervalMinutes} minutes`);
+
+    console.log(
+      `📅 Scheduled featured playlists sync every ${this.config.featuredPlaylists.intervalMinutes} minutes`
+    );
   }
 
   /**
@@ -179,13 +185,13 @@ class SpotifyScheduler {
   private async queueNewReleasesSync() {
     try {
       const queue = getMusicBrainzQueue();
-      
+
       const jobData: SpotifySyncNewReleasesJobData = {
         limit: this.config.newReleases.limit,
         country: this.config.newReleases.country,
         priority: 'medium',
         source: 'scheduled',
-        requestId: `scheduled_new_releases_${Date.now()}`
+        requestId: `scheduled_new_releases_${Date.now()}`,
       };
 
       const job = await queue.addJob(
@@ -196,12 +202,11 @@ class SpotifyScheduler {
           attempts: 3,
           backoff: { type: 'exponential', delay: 5000 },
           removeOnComplete: 10 as any, // Keep last 10 completed jobs
-          removeOnFail: 5 as any // Keep last 5 failed jobs for debugging
+          removeOnFail: 5 as any, // Keep last 5 failed jobs for debugging
         }
       );
 
       console.log(`🎵 Queued scheduled new releases sync (Job ID: ${job.id})`);
-      
     } catch (error) {
       console.error('❌ Failed to queue new releases sync:', error);
     }
@@ -213,14 +218,14 @@ class SpotifyScheduler {
   private async queueFeaturedPlaylistsSync() {
     try {
       const queue = getMusicBrainzQueue();
-      
+
       const jobData: SpotifySyncFeaturedPlaylistsJobData = {
         limit: this.config.featuredPlaylists.limit,
         country: this.config.featuredPlaylists.country,
         extractAlbums: this.config.featuredPlaylists.extractAlbums,
         priority: 'medium',
         source: 'scheduled',
-        requestId: `scheduled_playlists_${Date.now()}`
+        requestId: `scheduled_playlists_${Date.now()}`,
       };
 
       const job = await queue.addJob(
@@ -231,12 +236,13 @@ class SpotifyScheduler {
           attempts: 3,
           backoff: { type: 'exponential', delay: 5000 },
           removeOnComplete: 10 as any,
-          removeOnFail: 5 as any
+          removeOnFail: 5 as any,
         }
       );
 
-      console.log(`🎧 Queued scheduled featured playlists sync (Job ID: ${job.id})`);
-      
+      console.log(
+        `🎧 Queued scheduled featured playlists sync (Job ID: ${job.id})`
+      );
     } catch (error) {
       console.error('❌ Failed to queue featured playlists sync:', error);
     }
@@ -247,22 +253,32 @@ class SpotifyScheduler {
    */
   private logScheduleInfo() {
     console.log('\n📋 Spotify Sync Schedule:');
-    
+
     if (this.config.newReleases.enabled) {
-      console.log(`  🎵 New Releases: Every ${this.config.newReleases.intervalMinutes} minutes`);
-      console.log(`     Limit: ${this.config.newReleases.limit}, Country: ${this.config.newReleases.country}`);
+      console.log(
+        `  🎵 New Releases: Every ${this.config.newReleases.intervalMinutes} minutes`
+      );
+      console.log(
+        `     Limit: ${this.config.newReleases.limit}, Country: ${this.config.newReleases.country}`
+      );
     } else {
       console.log('  🎵 New Releases: Disabled');
     }
-    
+
     if (this.config.featuredPlaylists.enabled) {
-      console.log(`  🎧 Featured Playlists: Every ${this.config.featuredPlaylists.intervalMinutes} minutes`);
-      console.log(`     Limit: ${this.config.featuredPlaylists.limit}, Country: ${this.config.featuredPlaylists.country}`);
-      console.log(`     Extract Albums: ${this.config.featuredPlaylists.extractAlbums}`);
+      console.log(
+        `  🎧 Featured Playlists: Every ${this.config.featuredPlaylists.intervalMinutes} minutes`
+      );
+      console.log(
+        `     Limit: ${this.config.featuredPlaylists.limit}, Country: ${this.config.featuredPlaylists.country}`
+      );
+      console.log(
+        `     Extract Albums: ${this.config.featuredPlaylists.extractAlbums}`
+      );
     } else {
       console.log('  🎧 Featured Playlists: Disabled');
     }
-    
+
     console.log('');
   }
 
@@ -301,17 +317,21 @@ export function initializeSpotifyScheduler() {
   const config: SpotifyScheduleConfig = {
     newReleases: {
       enabled: process.env.SPOTIFY_SYNC_NEW_RELEASES !== 'false',
-      intervalMinutes: parseInt(process.env.SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES || '60'),
+      intervalMinutes: parseInt(
+        process.env.SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES || '60'
+      ),
       limit: parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '20'),
-      country: process.env.SPOTIFY_COUNTRY || 'US'
+      country: process.env.SPOTIFY_COUNTRY || 'US',
     },
     featuredPlaylists: {
       enabled: process.env.SPOTIFY_SYNC_FEATURED_PLAYLISTS !== 'false',
-      intervalMinutes: parseInt(process.env.SPOTIFY_FEATURED_PLAYLISTS_INTERVAL_MINUTES || '180'),
+      intervalMinutes: parseInt(
+        process.env.SPOTIFY_FEATURED_PLAYLISTS_INTERVAL_MINUTES || '180'
+      ),
       limit: parseInt(process.env.SPOTIFY_FEATURED_PLAYLISTS_LIMIT || '10'),
       country: process.env.SPOTIFY_COUNTRY || 'US',
-      extractAlbums: process.env.SPOTIFY_EXTRACT_ALBUMS !== 'false'
-    }
+      extractAlbums: process.env.SPOTIFY_EXTRACT_ALBUMS !== 'false',
+    },
   };
 
   spotifyScheduler.updateConfig(config);

@@ -1,14 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { graphqlClient } from '@/lib/graphql-client';
 import { SEARCH_MUSIC } from '@/graphql/queries';
-
 import { UnifiedSearchResult } from '@/types/search';
 import { Album } from '@/types/album';
-import {
-  queryKeys,
-  defaultQueryOptions,
-  QueryError,
-} from '@/lib/queries';
+import { queryKeys, defaultQueryOptions, QueryError } from '@/lib/queries';
 
 // ========================================
 // API Functions
@@ -42,7 +38,7 @@ const fetchUnifiedSearchGraphQL = async (
           query,
           type: type === 'labels' ? 'all' : type, // GraphQL doesn't have labels type
           limit: limit || 20,
-        }
+        },
       }
     );
 
@@ -65,14 +61,14 @@ const fetchUnifiedSearchGraphQL = async (
             url: artist.imageUrl || '',
             width: 300,
             height: 300,
-            alt: artist.name
+            alt: artist.name,
           },
           cover_image: artist.imageUrl,
           _discogs: {
             type: 'artist',
             uri: `/artists/${artist.id}`,
-            resource_url: `/api/artists/${artist.id}`
-          }
+            resource_url: `/api/artists/${artist.id}`,
+          },
         });
       });
     }
@@ -80,7 +76,9 @@ const fetchUnifiedSearchGraphQL = async (
     // Add albums to results
     if (type === 'all' || type === 'albums') {
       data.search.albums.forEach(album => {
-        const primaryArtist = album.artists?.find((a: any) => a.isMain)?.artist || album.artists?.[0]?.artist;
+        const primaryArtist =
+          album.artists?.find((a: any) => a.isMain)?.artist ||
+          album.artists?.[0]?.artist;
         results.push({
           id: album.id,
           type: 'album',
@@ -94,18 +92,18 @@ const fetchUnifiedSearchGraphQL = async (
             url: album.coverArtUrl || '',
             width: 300,
             height: 300,
-            alt: album.title
+            alt: album.title,
           },
           cover_image: album.coverArtUrl,
           metadata: {
             totalDuration: 0,
-            numberOfTracks: album.trackCount || 0
+            numberOfTracks: album.trackCount || 0,
           },
           _discogs: {
             type: 'album',
             uri: `/albums/${album.id}`,
-            resource_url: `/api/albums/${album.id}`
-          }
+            resource_url: `/api/albums/${album.id}`,
+          },
         });
       });
     }
@@ -113,7 +111,9 @@ const fetchUnifiedSearchGraphQL = async (
     // Add tracks to results
     if (type === 'all' || type === 'tracks') {
       data.search.tracks.forEach(track => {
-        const primaryArtist = track.artists?.find((a: any) => a.isMain)?.artist || track.artists?.[0]?.artist;
+        const primaryArtist =
+          track.artists?.find((a: any) => a.isMain)?.artist ||
+          track.artists?.[0]?.artist;
         results.push({
           id: track.id,
           type: 'track',
@@ -127,14 +127,14 @@ const fetchUnifiedSearchGraphQL = async (
             url: track.album?.coverArtUrl || '',
             width: 300,
             height: 300,
-            alt: track.title
+            alt: track.title,
           },
           cover_image: track.album?.coverArtUrl,
           _discogs: {
             type: 'track',
             uri: `/tracks/${track.id}`,
-            resource_url: `/api/tracks/${track.id}`
-          }
+            resource_url: `/api/tracks/${track.id}`,
+          },
         });
       });
     }
@@ -143,7 +143,7 @@ const fetchUnifiedSearchGraphQL = async (
     if (type === 'albums') {
       return {
         data: data.search.albums,
-        results
+        results,
       };
     }
 

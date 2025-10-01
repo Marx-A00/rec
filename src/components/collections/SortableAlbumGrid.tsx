@@ -15,9 +15,15 @@ import {
   DragOverlay,
   UniqueIdentifier,
 } from '@dnd-kit/core';
-import { arrayMove, SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
-import { SortableAlbumItem } from './SortableAlbumItem';
+import {
+  arrayMove,
+  SortableContext,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+
 import { CollectionAlbum } from '@/types/collection';
+
+import { SortableAlbumItem } from './SortableAlbumItem';
 
 interface SortableAlbumGridProps {
   albums: CollectionAlbum[];
@@ -30,7 +36,7 @@ interface SortableAlbumGridProps {
 // Variable size configuration like the DnD Kit example
 const GRID_SIZES = {
   small: 'col-span-1 row-span-1',
-  medium: 'col-span-2 row-span-1', 
+  medium: 'col-span-2 row-span-1',
   large: 'col-span-2 row-span-2',
   wide: 'col-span-3 row-span-1',
   tall: 'col-span-1 row-span-2',
@@ -44,22 +50,22 @@ function getAlbumGridSize(album: CollectionAlbum, index: number): GridSize {
   if (album.personalRating && album.personalRating >= 9) {
     return 'large';
   }
-  
+
   // Every 8th album gets wide layout
   if (index % 8 === 0 && index > 0) {
     return 'wide';
   }
-  
-  // Every 12th album gets tall layout  
+
+  // Every 12th album gets tall layout
   if (index % 12 === 0 && index > 0) {
     return 'tall';
   }
-  
+
   // Some albums get medium size
   if (index % 5 === 0) {
     return 'medium';
   }
-  
+
   // Default small size
   return 'small';
 }
@@ -77,7 +83,9 @@ export default function SortableAlbumGrid({
 
   // Update items when albums prop changes (with stable comparison)
   React.useEffect(() => {
-    const albumsHash = JSON.stringify(albums.map(a => ({ id: a.id, albumId: a.albumId })));
+    const albumsHash = JSON.stringify(
+      albums.map(a => ({ id: a.id, albumId: a.albumId }))
+    );
     if (prevAlbumsRef.current !== albumsHash) {
       setItems(albums);
       prevAlbumsRef.current = albumsHash;
@@ -101,8 +109,8 @@ export default function SortableAlbumGrid({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = items.findIndex((item) => item.id === active.id);
-      const newIndex = items.findIndex((item) => item.id === over.id);
+      const oldIndex = items.findIndex(item => item.id === active.id);
+      const newIndex = items.findIndex(item => item.id === over.id);
 
       const reorderedItems = arrayMove(items, oldIndex, newIndex);
       setItems(reorderedItems);
@@ -113,7 +121,9 @@ export default function SortableAlbumGrid({
   }
 
   // Find the active album for drag overlay
-  const activeAlbum = activeId ? items.find((album) => album.id === activeId) : null;
+  const activeAlbum = activeId
+    ? items.find(album => album.id === activeId)
+    : null;
 
   return (
     <DndContext
@@ -122,10 +132,11 @@ export default function SortableAlbumGrid({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <SortableContext items={items.map(album => album.id)} strategy={rectSortingStrategy}>
-        <div
-          className={`grid grid-cols-6 gap-6 auto-rows-auto ${className}`}
-        >
+      <SortableContext
+        items={items.map(album => album.id)}
+        strategy={rectSortingStrategy}
+      >
+        <div className={`grid grid-cols-6 gap-6 auto-rows-auto ${className}`}>
           {items.map((album, index) => {
             const gridSize = getAlbumGridSize(album, index);
             return (
@@ -145,10 +156,13 @@ export default function SortableAlbumGrid({
       {/* Drag Overlay */}
       <DragOverlay>
         {activeAlbum ? (
-          <div className="opacity-80 transform rotate-6 scale-105">
+          <div className='opacity-80 transform rotate-6 scale-105'>
             <SortableAlbumItem
               album={activeAlbum}
-              gridSize={getAlbumGridSize(activeAlbum, items.indexOf(activeAlbum))}
+              gridSize={getAlbumGridSize(
+                activeAlbum,
+                items.indexOf(activeAlbum)
+              )}
               isDragging={true}
               isEditable={isEditable}
               onAlbumClick={onAlbumClick}

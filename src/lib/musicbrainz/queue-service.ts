@@ -5,8 +5,14 @@
  */
 
 import { QueueEvents, Worker } from 'bullmq';
-import { getMusicBrainzQueue, processMusicBrainzJob, JOB_TYPES } from '../queue';
+
+import {
+  getMusicBrainzQueue,
+  processMusicBrainzJob,
+  JOB_TYPES,
+} from '../queue';
 import { createRedisConnection } from '../queue/redis';
+
 import type {
   ArtistSearchResult,
   ReleaseGroupSearchResult,
@@ -21,10 +27,13 @@ export class QueuedMusicBrainzService {
   private queue = getMusicBrainzQueue();
   private worker: Worker | null = null;
   private isWorkerRunning = false;
-  
+
   // 🎯 THE MISSING PIECE: QueueEvents listener!
   private queueEvents: QueueEvents | null = null;
-  private pendingJobs = new Map<string, { resolve: Function, reject: Function }>();
+  private pendingJobs = new Map<
+    string,
+    { resolve: (value: unknown) => void; reject: (reason?: unknown) => void }
+  >();
 
   constructor() {
     // Don't auto-start everything in constructor - wait for first use
@@ -38,10 +47,10 @@ export class QueuedMusicBrainzService {
     if (!this.queueEvents) {
       // Set up the events listener with explicit connection (fixes deprecation warning)
       this.queueEvents = new QueueEvents('musicbrainz', {
-        connection: createRedisConnection()
+        connection: createRedisConnection(),
       });
       this.setupEventListeners();
-      
+
       // Start the worker when first needed
       this.ensureWorkerRunning();
     }
@@ -61,7 +70,7 @@ export class QueuedMusicBrainzService {
     if (!this.queueEvents) return;
     this.queueEvents.on('completed', ({ jobId, returnvalue }) => {
       console.log(`🎉 QueueEvents: Job ${jobId} completed`);
-      
+
       const pending = this.pendingJobs.get(jobId);
       if (pending) {
         console.log(`✅ Resolving pending job ${jobId}`);
@@ -74,7 +83,7 @@ export class QueuedMusicBrainzService {
 
     this.queueEvents.on('failed', ({ jobId, failedReason }) => {
       console.log(`💥 QueueEvents: Job ${jobId} failed: ${failedReason}`);
-      
+
       const pending = this.pendingJobs.get(jobId);
       if (pending) {
         console.log(`❌ Rejecting pending job ${jobId}`);
@@ -85,8 +94,7 @@ export class QueuedMusicBrainzService {
       }
     });
 
-
-    this.queueEvents.on('error', (error) => {
+    this.queueEvents.on('error', error => {
       console.error('❌ QueueEvents error:', error);
     });
   }
@@ -111,7 +119,7 @@ export class QueuedMusicBrainzService {
       const job = await this.queue.addJob(
         JOB_TYPES.MUSICBRAINZ_SEARCH_ARTISTS,
         { query, limit, offset },
-        { 
+        {
           priority: 1, // Higher priority for direct user requests
           requestId: `search-artists-${Date.now()}`,
         }
@@ -119,13 +127,12 @@ export class QueuedMusicBrainzService {
 
       // Use QueueEvents to wait for completion (the proper way!)
       const result = await this.waitForJobViaEvents(job.id!);
-      
+
       if (!result.success) {
         throw new Error(result.error?.message || 'Search failed');
       }
 
       return result.data || [];
-
     } catch (error) {
       console.error('Queued MusicBrainz artist search error:', error);
       throw new Error(
@@ -149,20 +156,19 @@ export class QueuedMusicBrainzService {
       const job = await this.queue.addJob(
         JOB_TYPES.MUSICBRAINZ_SEARCH_RELEASES,
         { query, limit, offset },
-        { 
+        {
           priority: 1,
           requestId: `search-releases-${Date.now()}`,
         }
       );
 
       const result = await this.waitForJobViaEvents(job.id!);
-      
+
       if (!result.success) {
         throw new Error(result.error?.message || 'Search failed');
       }
 
       return result.data || [];
-
     } catch (error) {
       console.error('Queued MusicBrainz release search error:', error);
       throw new Error(
@@ -186,20 +192,19 @@ export class QueuedMusicBrainzService {
       const job = await this.queue.addJob(
         JOB_TYPES.MUSICBRAINZ_SEARCH_RECORDINGS,
         { query, limit, offset },
-        { 
+        {
           priority: 1,
           requestId: `search-recordings-${Date.now()}`,
         }
       );
 
       const result = await this.waitForJobViaEvents(job.id!);
-      
+
       if (!result.success) {
         throw new Error(result.error?.message || 'Search failed');
       }
 
       return result.data || [];
-
     } catch (error) {
       console.error('Queued MusicBrainz recording search error:', error);
       throw new Error(
@@ -219,20 +224,19 @@ export class QueuedMusicBrainzService {
       const job = await this.queue.addJob(
         JOB_TYPES.MUSICBRAINZ_LOOKUP_ARTIST,
         { mbid, includes },
-        { 
+        {
           priority: 1,
           requestId: `lookup-artist-${Date.now()}`,
         }
       );
 
       const result = await this.waitForJobViaEvents(job.id!);
-      
+
       if (!result.success) {
         throw new Error(result.error?.message || 'Lookup failed');
       }
 
       return result.data;
-
     } catch (error) {
       console.error('Queued MusicBrainz artist lookup error:', error);
       throw new Error(
@@ -252,20 +256,19 @@ export class QueuedMusicBrainzService {
       const job = await this.queue.addJob(
         JOB_TYPES.MUSICBRAINZ_LOOKUP_RELEASE,
         { mbid, includes },
-        { 
+        {
           priority: 1,
           requestId: `lookup-release-${Date.now()}`,
         }
       );
 
       const result = await this.waitForJobViaEvents(job.id!);
-      
+
       if (!result.success) {
         throw new Error(result.error?.message || 'Lookup failed');
       }
 
       return result.data;
-
     } catch (error) {
       console.error('Queued MusicBrainz release lookup error:', error);
       throw new Error(
@@ -285,20 +288,19 @@ export class QueuedMusicBrainzService {
       const job = await this.queue.addJob(
         JOB_TYPES.MUSICBRAINZ_LOOKUP_RELEASE_GROUP,
         { mbid, includes },
-        { 
+        {
           priority: 1,
           requestId: `lookup-release-group-${Date.now()}`,
         }
       );
 
       const result = await this.waitForJobViaEvents(job.id!);
-      
+
       if (!result.success) {
         throw new Error(result.error?.message || 'Lookup failed');
       }
 
       return result.data;
-
     } catch (error) {
       console.error('Queued MusicBrainz release group lookup error:', error);
       throw new Error(
@@ -310,7 +312,11 @@ export class QueuedMusicBrainzService {
   /**
    * Browse release groups by artist MBID
    */
-  async browseReleaseGroupsByArtist(artistMbid: string, limit = 100, offset = 0): Promise<any> {
+  async browseReleaseGroupsByArtist(
+    artistMbid: string,
+    limit = 100,
+    offset = 0
+  ): Promise<any> {
     this.ensureInitialized();
     await this.ensureWorkerRunning();
 
@@ -318,7 +324,7 @@ export class QueuedMusicBrainzService {
       const job = await this.queue.addJob(
         JOB_TYPES.MUSICBRAINZ_BROWSE_RELEASE_GROUPS_BY_ARTIST,
         { artistMbid, limit, offset },
-        { 
+        {
           priority: 1,
           requestId: `browse-rg-by-artist-${Date.now()}`,
         }
@@ -335,9 +341,11 @@ export class QueuedMusicBrainzService {
         console.log(`🎶 MB browse RG by artist ${artistMbid}: got ${count}`);
       } catch {}
       return result.data;
-
     } catch (error) {
-      console.error('Queued MusicBrainz browse release-groups by artist error:', error);
+      console.error(
+        'Queued MusicBrainz browse release-groups by artist error:',
+        error
+      );
       throw new Error(
         `Failed to browse release groups: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -355,20 +363,19 @@ export class QueuedMusicBrainzService {
       const job = await this.queue.addJob(
         JOB_TYPES.MUSICBRAINZ_LOOKUP_RECORDING,
         { mbid, includes },
-        { 
+        {
           priority: 1,
           requestId: `lookup-recording-${Date.now()}`,
         }
       );
 
       const result = await this.waitForJobViaEvents(job.id!);
-      
+
       if (!result.success) {
         throw new Error(result.error?.message || 'Lookup failed');
       }
 
       return result.data;
-
     } catch (error) {
       console.error('Queued MusicBrainz recording lookup error:', error);
       throw new Error(
@@ -467,11 +474,14 @@ export class QueuedMusicBrainzService {
    * Wait for job completion using QueueEvents (the proper BullMQ way!)
    * This uses the Promise + Map pattern recommended by the community
    */
-  private async waitForJobViaEvents(jobId: string, timeoutMs = 30000): Promise<any> {
+  private async waitForJobViaEvents(
+    jobId: string,
+    timeoutMs = 30000
+  ): Promise<any> {
     return new Promise((resolve, reject) => {
       // Store the promise resolvers so QueueEvents can call them
       this.pendingJobs.set(jobId, { resolve, reject });
-      
+
       // Cleanup after timeout
       const timeout = setTimeout(() => {
         if (this.pendingJobs.has(jobId)) {
@@ -479,7 +489,7 @@ export class QueuedMusicBrainzService {
           reject(new Error(`Job ${jobId} timed out after ${timeoutMs}ms`));
         }
       }, timeoutMs);
-      
+
       // The QueueEvents listener will call resolve/reject when the job completes
       console.log(`⏳ Waiting for job ${jobId} via QueueEvents...`);
     });
@@ -504,20 +514,20 @@ export class QueuedMusicBrainzService {
    */
   async shutdown(): Promise<void> {
     console.log('🛑 Shutting down MusicBrainz service...');
-    
+
     // Reject any pending jobs
     this.pendingJobs.forEach(({ reject }, jobId) => {
       reject(new Error('Service shutting down'));
     });
     this.pendingJobs.clear();
-    
+
     // Close QueueEvents listener
     if (this.queueEvents) {
       await this.queueEvents.close();
       this.queueEvents = null;
     }
     console.log('✅ QueueEvents closed');
-    
+
     await this.stopWorker();
     await this.queue.close();
     console.log('✅ MusicBrainz service shutdown complete');

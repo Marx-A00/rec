@@ -2,10 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { graphqlClient } from '@/lib/graphql-client';
 import { CreateRecommendationRequest } from '@/types/recommendation';
-import {
-  queryKeys,
-  createMutationOptions,
-} from '@/lib/queries';
+import { queryKeys, createMutationOptions } from '@/lib/queries';
 
 // ========================================
 // API Functions
@@ -33,7 +30,9 @@ const CREATE_RECOMMENDATION_MUTATION = `
   }
 `;
 
-const createRecommendation = async (data: CreateRecommendationRequest): Promise<undefined> => {
+const createRecommendation = async (
+  data: CreateRecommendationRequest
+): Promise<undefined> => {
   try {
     // Note: The GraphQL mutation uses album UUIDs, not Discogs IDs
     // If data contains Discogs IDs, they need to be converted first

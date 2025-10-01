@@ -35,13 +35,23 @@ export default async function AlbumDetailsPage({
   // Fetch album data server-side
   let album;
   try {
-    const preferredSource = (rawSearch as any)?.source as 'musicbrainz' | 'discogs' | 'local' | undefined;
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(albumId);
+    const preferredSource = (rawSearch as any)?.source as
+      | 'musicbrainz'
+      | 'discogs'
+      | 'local'
+      | undefined;
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        albumId
+      );
     const isNumeric = /^\d+$/.test(albumId);
-    const inferredSource = isUuid ? 'musicbrainz' : isNumeric ? 'discogs' : undefined;
+    const inferredSource = isUuid
+      ? 'musicbrainz'
+      : isNumeric
+        ? 'discogs'
+        : undefined;
     const source = preferredSource || inferredSource;
     try {
-      // eslint-disable-next-line no-console
       console.log('[AlbumDetailsPage] Fetching album', {
         albumId,
         preferredSource: preferredSource || null,
@@ -49,7 +59,10 @@ export default async function AlbumDetailsPage({
         finalSource: source || null,
       });
     } catch {}
-    album = await getAlbumDetails(albumId, source ? { source } as any : undefined);
+    album = await getAlbumDetails(
+      albumId,
+      source ? ({ source } as any) : undefined
+    );
   } catch (error) {
     console.error('Error fetching album:', error);
     notFound();

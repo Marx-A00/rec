@@ -6,7 +6,10 @@ import { Save, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { useCreateCollectionMutation, useGetUserCollectionListQuery } from '@/generated/graphql';
+import {
+  useCreateCollectionMutation,
+  useGetUserCollectionListQuery,
+} from '@/generated/graphql';
 
 interface CreateCollectionFormData {
   name: string;
@@ -50,7 +53,8 @@ export default function CreateCollectionForm() {
     },
     onError: error => {
       console.error('Error creating collection:', error);
-      const message = (error as Error)?.message || 'Failed to create collection';
+      const message =
+        (error as Error)?.message || 'Failed to create collection';
       showToast(message, 'error');
     },
   });

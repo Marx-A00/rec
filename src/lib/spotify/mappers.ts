@@ -4,10 +4,16 @@
  * Follows "Add First → Enrich Later" pattern for immediate user feedback
  */
 
+import { SpotifyApi } from '@spotify/web-api-ts-sdk';
+
 import { prisma } from '../prisma';
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
-import type { CheckAlbumEnrichmentJobData, CheckArtistEnrichmentJobData, CheckTrackEnrichmentJobData } from '../queue/jobs';
-import { SpotifyApi } from '@spotify/web-api-ts-sdk';
+import type {
+  CheckAlbumEnrichmentJobData,
+  CheckArtistEnrichmentJobData,
+  CheckTrackEnrichmentJobData,
+} from '../queue/jobs';
+
 import type {
   SpotifyAlbumData,
   SpotifyCacheData,
@@ -19,7 +25,7 @@ import type {
   SpotifyAlbumType,
   PrismaReleaseType,
   SpotifyTrackData,
-  TrackCreationData
+  TrackCreationData,
 } from './types';
 
 // ============================================================================
@@ -36,14 +42,14 @@ export function parseSpotifyDate(dateString: string): DateParseResult {
 
   try {
     const parts = dateString.split('-');
-    
+
     if (parts.length === 1) {
       // Year only: "2025"
       const year = parseInt(parts[0]);
       if (year > 1900 && year <= new Date().getFullYear() + 10) {
-        return { 
+        return {
           date: new Date(year, 0, 1), // January 1st of that year
-          precision: 'year' 
+          precision: 'year',
         };
       }
     } else if (parts.length === 2) {
@@ -51,18 +57,18 @@ export function parseSpotifyDate(dateString: string): DateParseResult {
       const year = parseInt(parts[0]);
       const month = parseInt(parts[1]) - 1; // JS months are 0-indexed
       if (year > 1900 && month >= 0 && month <= 11) {
-        return { 
+        return {
           date: new Date(year, month, 1), // 1st of that month
-          precision: 'month' 
+          precision: 'month',
         };
       }
     } else if (parts.length === 3) {
       // Full date: "2025-01-15"
       const date = new Date(dateString);
       if (!isNaN(date.getTime())) {
-        return { 
+        return {
           date: date,
-          precision: 'day' 
+          precision: 'day',
         };
       }
     }
@@ -102,7 +108,7 @@ export function inferSecondaryTypes(spotifyAlbum: SpotifyAlbumData): string[] {
   const secondaryTypes: string[] = [];
   const title = spotifyAlbum.name.toLowerCase();
   const type = spotifyAlbum.type.toLowerCase();
-  
+
   // Infer secondary types from title/type patterns
   if (type === 'compilation' || title.includes('compilation')) {
     secondaryTypes.push('compilation');
@@ -122,7 +128,7 @@ export function inferSecondaryTypes(spotifyAlbum: SpotifyAlbumData): string[] {
   if (title.includes('mixtape') || title.includes('mix tape')) {
     secondaryTypes.push('mixtape/street');
   }
-  
+
   return secondaryTypes;
 }
 
@@ -130,14 +136,18 @@ export function inferSecondaryTypes(spotifyAlbum: SpotifyAlbumData): string[] {
  * Extract individual artist names from Spotify data
  * Handles both string format "Artist 1, Artist 2" and object array format from API
  */
-export function parseArtistNames(artists: string | Array<{ name: string }>): string[] {
+export function parseArtistNames(
+  artists: string | Array<{ name: string }>
+): string[] {
   if (!artists) return [];
-  
+
   // Handle array of artist objects (from Spotify API)
   if (Array.isArray(artists)) {
-    return artists.map(artist => artist.name).filter(name => name && name.length > 0);
+    return artists
+      .map(artist => artist.name)
+      .filter(name => name && name.length > 0);
   }
-  
+
   // Handle comma-separated string format
   if (typeof artists === 'string') {
     return artists
@@ -145,7 +155,7 @@ export function parseArtistNames(artists: string | Array<{ name: string }>): str
       .map(name => name.trim())
       .filter(name => name.length > 0);
   }
-  
+
   return [];
 }
 
@@ -157,7 +167,7 @@ export function normalizeArtistName(name: string): string {
     .toLowerCase()
     .trim()
     .replace(/[^\w\s]/g, '') // Remove special characters
-    .replace(/\s+/g, ' ');   // Normalize whitespace
+    .replace(/\s+/g, ' '); // Normalize whitespace
 }
 
 // ============================================================================
@@ -168,13 +178,15 @@ export function normalizeArtistName(name: string): string {
  * Transform single Spotify album data to our database format
  * Now includes MusicBrainz-aligned secondary type inference
  */
-export function transformSpotifyAlbum(spotifyAlbum: SpotifyAlbumData): AlbumCreationData & { 
+export function transformSpotifyAlbum(
+  spotifyAlbum: SpotifyAlbumData
+): AlbumCreationData & {
   secondaryTypes: string[];
   inferredStatus: 'official'; // Spotify releases are typically official
 } {
   const { date: releaseDate } = parseSpotifyDate(spotifyAlbum.releaseDate);
   const secondaryTypes = inferSecondaryTypes(spotifyAlbum);
-  
+
   return {
     title: spotifyAlbum.name,
     releaseDate: releaseDate,
@@ -196,11 +208,14 @@ export function transformSpotifyAlbum(spotifyAlbum: SpotifyAlbumData): AlbumCrea
 /**
  * Transform artist name to our database format
  */
-export function transformSpotifyArtist(artistName: string, spotifyId?: string): ArtistCreationData {
+export function transformSpotifyArtist(
+  artistName: string,
+  spotifyId?: string
+): ArtistCreationData {
   return {
     name: artistName.trim(),
     spotifyId: spotifyId,
-    // Initial enrichment state  
+    // Initial enrichment state
     dataQuality: 'LOW',
     enrichmentStatus: 'PENDING',
     lastEnriched: null,
@@ -210,19 +225,23 @@ export function transformSpotifyArtist(artistName: string, spotifyId?: string): 
 /**
  * Find or create artist with deduplication logic (reuses existing pattern)
  */
-export async function findOrCreateArtist(artistData: ArtistCreationData): Promise<string> {
+export async function findOrCreateArtist(
+  artistData: ArtistCreationData
+): Promise<string> {
   // Search for existing artist by name (case-insensitive)
   const existingArtist = await prisma.artist.findFirst({
     where: {
       name: {
         equals: artistData.name,
-        mode: 'insensitive'
-      }
-    }
+        mode: 'insensitive',
+      },
+    },
   });
 
   if (existingArtist) {
-    console.log(`🔄 Reusing existing artist: "${existingArtist.name}" (${existingArtist.id})`);
+    console.log(
+      `🔄 Reusing existing artist: "${existingArtist.name}" (${existingArtist.id})`
+    );
     return existingArtist.id;
   }
 
@@ -233,7 +252,7 @@ export async function findOrCreateArtist(artistData: ArtistCreationData): Promis
       dataQuality: artistData.dataQuality,
       enrichmentStatus: artistData.enrichmentStatus,
       lastEnriched: artistData.lastEnriched,
-    }
+    },
   });
 
   console.log(`✨ Created new artist: "${newArtist.name}" (${newArtist.id})`);
@@ -255,7 +274,7 @@ export async function processSpotifyAlbum(
 
   // 1. Transform album data
   const albumData = transformSpotifyAlbum(spotifyAlbum);
-  
+
   // 2. Create album record immediately
   const album = await prisma.album.create({
     data: {
@@ -269,13 +288,15 @@ export async function processSpotifyAlbum(
       dataQuality: albumData.dataQuality,
       enrichmentStatus: albumData.enrichmentStatus,
       lastEnriched: albumData.lastEnriched,
-    } as any
+    } as any,
   });
 
   console.log(`✅ Created album: "${album.title}" (${album.id})`);
 
   // 3. Tracks will be created later by MusicBrainz enrichment (not from Spotify)
-  console.log(`🎵 Tracks will be created by MusicBrainz enrichment, not from Spotify`);
+  console.log(
+    `🎵 Tracks will be created by MusicBrainz enrichment, not from Spotify`
+  );
 
   // 4. Process artists
   const artistNames = parseArtistNames(spotifyAlbum.artists);
@@ -284,7 +305,7 @@ export async function processSpotifyAlbum(
   for (let i = 0; i < artistNames.length; i++) {
     const artistName = artistNames[i];
     const spotifyArtistId = spotifyAlbum.artistIds?.[i]; // May not exist
-    
+
     // Find or create artist
     const artistData = transformSpotifyArtist(artistName, spotifyArtistId);
     const artistId = await findOrCreateArtist(artistData);
@@ -297,7 +318,7 @@ export async function processSpotifyAlbum(
         artistId: artistId,
         role: i === 0 ? 'primary' : 'featured', // First artist is primary
         position: i,
-      }
+      },
     });
 
     console.log(`🔗 Linked artist "${artistName}" to album (position ${i})`);
@@ -336,15 +357,19 @@ export async function processSpotifyAlbum(
     });
   }
 
-  console.log(`⚡ Queued enrichment jobs for album and ${artistIds.length} artists`);
+  console.log(
+    `⚡ Queued enrichment jobs for album and ${artistIds.length} artists`
+  );
 
   // 5. No track processing - MusicBrainz enrichment will handle tracks
-  console.log(`📋 Album "${album.title}" ready for MusicBrainz enrichment to add tracks`);
+  console.log(
+    `📋 Album "${album.title}" ready for MusicBrainz enrichment to add tracks`
+  );
 
-  return { 
-    albumId: album.id, 
+  return {
+    albumId: album.id,
     artistIds,
-    tracksCreated: 0  // No tracks created from Spotify
+    tracksCreated: 0, // No tracks created from Spotify
   };
 }
 
@@ -366,29 +391,31 @@ export async function processSpotifyAlbums(
       // Check if album already exists (by title + first artist to avoid exact duplicates)
       const artistNames = parseArtistNames(spotifyAlbum.artists);
       const firstArtist = artistNames[0];
-      
+
       if (firstArtist) {
         const existingAlbum = await prisma.album.findFirst({
           where: {
             title: {
               equals: spotifyAlbum.name,
-              mode: 'insensitive'
+              mode: 'insensitive',
             },
             artists: {
               some: {
                 artist: {
                   name: {
                     equals: firstArtist,
-                    mode: 'insensitive'
-                  }
-                }
-              }
-            }
-          }
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            },
+          },
         });
 
         if (existingAlbum) {
-          console.log(`⏭️  Skipping duplicate: "${spotifyAlbum.name}" by ${firstArtist}`);
+          console.log(
+            `⏭️  Skipping duplicate: "${spotifyAlbum.name}" by ${firstArtist}`
+          );
           duplicatesSkipped++;
           continue;
         }
@@ -397,7 +424,6 @@ export async function processSpotifyAlbums(
       // Process the album
       const result = await processSpotifyAlbum(spotifyAlbum, source);
       results.push(result);
-
     } catch (error) {
       const errorMsg = `Failed to process "${spotifyAlbum.name}": ${error instanceof Error ? error.message : String(error)}`;
       console.error(`❌ ${errorMsg}`);
@@ -423,11 +449,13 @@ export async function processSpotifyAlbums(
 /**
  * Process cached Spotify data from database
  */
-export async function processCachedSpotifyData(cacheKey: string = 'spotify_trending'): Promise<SpotifyProcessingResult> {
+export async function processCachedSpotifyData(
+  cacheKey: string = 'spotify_trending'
+): Promise<SpotifyProcessingResult> {
   console.log(`📦 Loading cached Spotify data: ${cacheKey}`);
 
   const cached = await prisma.cacheData.findUnique({
-    where: { key: cacheKey }
+    where: { key: cacheKey },
   });
 
   if (!cached) {
@@ -435,12 +463,14 @@ export async function processCachedSpotifyData(cacheKey: string = 'spotify_trend
   }
 
   const spotifyData = cached.data as unknown as SpotifyCacheData;
-  
+
   if (!spotifyData.newReleases || !Array.isArray(spotifyData.newReleases)) {
     throw new Error('Invalid cached Spotify data structure');
   }
 
-  console.log(`📊 Found ${spotifyData.newReleases.length} new releases in cache`);
+  console.log(
+    `📊 Found ${spotifyData.newReleases.length} new releases in cache`
+  );
 
   return await processSpotifyAlbums(spotifyData.newReleases, 'spotify_cache');
 }
@@ -452,7 +482,9 @@ export async function processCachedSpotifyData(cacheKey: string = 'spotify_trend
 /**
  * Fetch tracks for a Spotify album using the Spotify API
  */
-async function fetchSpotifyAlbumTracks(albumId: string): Promise<SpotifyTrackData[]> {
+async function fetchSpotifyAlbumTracks(
+  albumId: string
+): Promise<SpotifyTrackData[]> {
   try {
     // Create Spotify client with client credentials
     const spotifyClient = SpotifyApi.withClientCredentials(
@@ -462,7 +494,7 @@ async function fetchSpotifyAlbumTracks(albumId: string): Promise<SpotifyTrackDat
 
     // Fetch album tracks (up to 50 tracks per request)
     const albumTracks = await spotifyClient.albums.tracks(albumId, 'US', 50);
-    
+
     // Transform to our SpotifyTrackData format
     const tracks: SpotifyTrackData[] = albumTracks.items.map(track => ({
       id: track.id,
@@ -478,19 +510,18 @@ async function fetchSpotifyAlbumTracks(albumId: string): Promise<SpotifyTrackDat
         type: artist.type,
         uri: artist.uri,
         href: artist.href,
-        external_urls: artist.external_urls
+        external_urls: artist.external_urls,
       })),
       external_urls: track.external_urls,
       href: track.href,
       type: track.type,
       uri: track.uri,
       is_local: track.is_local,
-      is_playable: track.is_playable
+      is_playable: track.is_playable,
     }));
 
     console.log(`🎵 Fetched ${tracks.length} tracks for album ${albumId}`);
     return tracks;
-
   } catch (error) {
     console.error(`❌ Failed to fetch tracks for album ${albumId}:`, error);
     return []; // Return empty array on failure
@@ -505,16 +536,18 @@ async function fetchSpotifyAlbumTracks(albumId: string): Promise<SpotifyTrackDat
  * Transform Spotify track data into our TrackCreationData format
  */
 export function transformSpotifyTrack(
-  spotifyTrack: SpotifyTrackData, 
+  spotifyTrack: SpotifyTrackData,
   albumId: string,
   artistIdMap: Map<string, string> // Map Spotify artist ID -> our artist ID
 ): TrackCreationData {
   // Map track artists to our artist IDs
-  const trackArtists = spotifyTrack.artists.map((artist, index) => ({
-    artistId: artistIdMap.get(artist.id) || '', // Will need to handle missing artists
-    role: index === 0 ? 'primary' : 'featured', // First artist is primary, others featured
-    position: index
-  })).filter(ta => ta.artistId); // Remove artists we don't have IDs for
+  const trackArtists = spotifyTrack.artists
+    .map((artist, index) => ({
+      artistId: artistIdMap.get(artist.id) || '', // Will need to handle missing artists
+      role: index === 0 ? 'primary' : 'featured', // First artist is primary, others featured
+      position: index,
+    }))
+    .filter(ta => ta.artistId); // Remove artists we don't have IDs for
 
   return {
     title: spotifyTrack.name,
@@ -531,14 +564,16 @@ export function transformSpotifyTrack(
     // Start with low quality, will be enriched later
     dataQuality: 'LOW',
     enrichmentStatus: 'PENDING',
-    lastEnriched: null
+    lastEnriched: null,
   };
 }
 
 /**
  * Create track records in database from TrackCreationData
  */
-export async function createTrackRecord(trackData: TrackCreationData): Promise<string> {
+export async function createTrackRecord(
+  trackData: TrackCreationData
+): Promise<string> {
   // Create the track record
   const track = await prisma.track.create({
     data: {
@@ -554,8 +589,8 @@ export async function createTrackRecord(trackData: TrackCreationData): Promise<s
       albumId: trackData.albumId,
       dataQuality: trackData.dataQuality,
       enrichmentStatus: trackData.enrichmentStatus,
-      lastEnriched: trackData.lastEnriched
-    } as any
+      lastEnriched: trackData.lastEnriched,
+    } as any,
   });
 
   // Create track-artist relationships
@@ -565,8 +600,8 @@ export async function createTrackRecord(trackData: TrackCreationData): Promise<s
         trackId: track.id,
         artistId: artist.artistId,
         role: artist.role,
-        position: artist.position
-      }))
+        position: artist.position,
+      })),
     });
   }
 
@@ -580,25 +615,31 @@ export async function processSpotifyTracks(
   spotifyTracks: SpotifyTrackData[],
   albumId: string,
   artistIdMap: Map<string, string>
-): Promise<{ 
-  tracksCreated: number; 
+): Promise<{
+  tracksCreated: number;
   trackIds: string[];
   errors: string[];
 }> {
   const trackIds: string[] = [];
   const errors: string[] = [];
 
-  console.log(`🎵 Processing ${spotifyTracks.length} tracks for album ${albumId}`);
+  console.log(
+    `🎵 Processing ${spotifyTracks.length} tracks for album ${albumId}`
+  );
 
   for (const spotifyTrack of spotifyTracks) {
     try {
       // Transform Spotify track data
-      const trackData = transformSpotifyTrack(spotifyTrack, albumId, artistIdMap);
-      
+      const trackData = transformSpotifyTrack(
+        spotifyTrack,
+        albumId,
+        artistIdMap
+      );
+
       // Create track record
       const trackId = await createTrackRecord(trackData);
       trackIds.push(trackId);
-      
+
       // Queue track enrichment job
       const queue = getMusicBrainzQueue();
       const trackJobData: CheckTrackEnrichmentJobData = {
@@ -613,9 +654,10 @@ export async function processSpotifyTracks(
         attempts: 3,
         backoff: { type: 'exponential', delay: 2000 },
       });
-      
-      console.log(`✅ Created track: "${trackData.title}" (${trackData.trackNumber}) + queued enrichment`);
-      
+
+      console.log(
+        `✅ Created track: "${trackData.title}" (${trackData.trackNumber}) + queued enrichment`
+      );
     } catch (error) {
       const errorMsg = `Failed to create track "${spotifyTrack.name}": ${error instanceof Error ? error.message : 'Unknown error'}`;
       console.error(`❌ ${errorMsg}`);
@@ -623,11 +665,13 @@ export async function processSpotifyTracks(
     }
   }
 
-  console.log(`📊 Track processing complete: ${trackIds.length} created, ${errors.length} errors`);
+  console.log(
+    `📊 Track processing complete: ${trackIds.length} created, ${errors.length} errors`
+  );
 
   return {
     tracksCreated: trackIds.length,
     trackIds,
-    errors
+    errors,
   };
 }

@@ -1,8 +1,10 @@
 // @ts-nocheck
 // Test GraphQL recommendations queries
-import { ApolloServer } from '@apollo/server';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+
+import { ApolloServer } from '@apollo/server';
+
 import { prisma } from '@/lib/prisma';
 import { resolvers } from '@/lib/graphql/resolvers';
 
@@ -51,7 +53,7 @@ async function testGraphQL() {
     const result = await server.executeOperation(
       {
         query: feedQuery,
-        variables: { limit: 5 }
+        variables: { limit: 5 },
       },
       {
         contextValue: {
@@ -59,8 +61,8 @@ async function testGraphQL() {
           prisma,
           dataloaders: {},
           requestId: 'test-feed',
-          timestamp: new Date()
-        }
+          timestamp: new Date(),
+        },
       }
     );
 
@@ -69,9 +71,13 @@ async function testGraphQL() {
       console.log('Feed Response:', JSON.stringify(data, null, 2));
 
       if (data?.recommendationFeed?.recommendations) {
-        console.log(`\n✅ Found ${data.recommendationFeed.recommendations.length} recommendations in feed`);
+        console.log(
+          `\n✅ Found ${data.recommendationFeed.recommendations.length} recommendations in feed`
+        );
         data.recommendationFeed.recommendations.forEach((rec: any) => {
-          console.log(`  - ${rec.basisAlbum?.title} → ${rec.recommendedAlbum?.title} by ${rec.user?.name}`);
+          console.log(
+            `  - ${rec.basisAlbum?.title} → ${rec.recommendedAlbum?.title} by ${rec.user?.name}`
+          );
         });
       }
     }
@@ -106,14 +112,14 @@ async function testGraphQL() {
 
   const mockUser = {
     id: 'cmfmo8b6900019dwpsf9dsn35',
-    email: 'mnandrade1999@gmail.com'
+    email: 'mnandrade1999@gmail.com',
   };
 
   try {
     const result = await server.executeOperation(
       {
         query: myRecsQuery,
-        variables: { limit: 5, sort: 'SCORE_DESC' }
+        variables: { limit: 5, sort: 'SCORE_DESC' },
       },
       {
         contextValue: {
@@ -121,19 +127,26 @@ async function testGraphQL() {
           prisma,
           dataloaders: {},
           requestId: 'test-my-recs',
-          timestamp: new Date()
-        }
+          timestamp: new Date(),
+        },
       }
     );
 
     if ('body' in result && result.body.kind === 'single') {
       const data = result.body.singleResult.data;
-      console.log('My Recommendations Response:', JSON.stringify(data, null, 2));
+      console.log(
+        'My Recommendations Response:',
+        JSON.stringify(data, null, 2)
+      );
 
       if (data?.myRecommendations) {
-        console.log(`\n✅ Found ${data.myRecommendations.length} recommendations for user`);
+        console.log(
+          `\n✅ Found ${data.myRecommendations.length} recommendations for user`
+        );
         data.myRecommendations.forEach((rec: any) => {
-          console.log(`  - ${rec.basisAlbum?.title} → ${rec.recommendedAlbum?.title} (score: ${rec.score})`);
+          console.log(
+            `  - ${rec.basisAlbum?.title} → ${rec.recommendedAlbum?.title} (score: ${rec.score})`
+          );
         });
       }
     }

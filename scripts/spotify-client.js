@@ -16,16 +16,18 @@ class SpotifyClient {
       return this.accessToken;
     }
 
-    const authString = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
-    
+    const authString = Buffer.from(
+      `${this.clientId}:${this.clientSecret}`
+    ).toString('base64');
+
     try {
       const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${authString}`,
-          'Content-Type': 'application/x-www-form-urlencoded'
+          Authorization: `Basic ${authString}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: 'grant_type=client_credentials'
+        body: 'grant_type=client_credentials',
       });
 
       if (!response.ok) {
@@ -35,9 +37,13 @@ class SpotifyClient {
       const data = await response.json();
       this.accessToken = data.access_token;
       // Set expiry to 5 minutes before actual expiry for safety
-      this.tokenExpiry = Date.now() + ((data.expires_in - 300) * 1000);
-      
-      console.log('✓ Access token obtained, expires in', data.expires_in, 'seconds');
+      this.tokenExpiry = Date.now() + (data.expires_in - 300) * 1000;
+
+      console.log(
+        '✓ Access token obtained, expires in',
+        data.expires_in,
+        'seconds'
+      );
       return this.accessToken;
     } catch (error) {
       console.error('Failed to get access token:', error);
@@ -48,16 +54,16 @@ class SpotifyClient {
   // Make authenticated request to Spotify API
   async makeRequest(endpoint, params = {}) {
     const token = await this.getAccessToken();
-    
+
     // Build query string
     const queryString = new URLSearchParams(params).toString();
     const url = `https://api.spotify.com/v1${endpoint}${queryString ? '?' + queryString : ''}`;
-    
+
     try {
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       // Handle rate limiting
@@ -69,7 +75,9 @@ class SpotifyClient {
       }
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} - ${response.statusText}`);
+        throw new Error(
+          `API request failed: ${response.status} - ${response.statusText}`
+        );
       }
 
       return await response.json();
@@ -89,7 +97,7 @@ class SpotifyClient {
     return this.makeRequest('/search', {
       q: query,
       type: types.join(','),
-      limit
+      limit,
     });
   }
 
@@ -126,7 +134,10 @@ class SpotifyClient {
 
   // Get a category's playlists (like "Top Lists" or "Hip-Hop")
   async getCategoryPlaylists(categoryId, country = 'US', limit = 50) {
-    return this.makeRequest(`/browse/categories/${categoryId}/playlists`, { country, limit });
+    return this.makeRequest(`/browse/categories/${categoryId}/playlists`, {
+      country,
+      limit,
+    });
   }
 
   // Get all categories
@@ -143,7 +154,10 @@ class SpotifyClient {
 
   // Get playlist tracks
   async getPlaylistTracks(playlistId, limit = 100, offset = 0) {
-    return this.makeRequest(`/playlists/${playlistId}/tracks`, { limit, offset });
+    return this.makeRequest(`/playlists/${playlistId}/tracks`, {
+      limit,
+      offset,
+    });
   }
 }
 

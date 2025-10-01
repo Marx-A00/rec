@@ -34,10 +34,13 @@ const updateRecommendation = async (
   data: UpdateRecommendationRequest
 ): Promise<RecommendationLike> => {
   try {
-    const result: any = await graphqlClient.request(UPDATE_RECOMMENDATION_MUTATION, {
-      id,
-      score: data.score!,
-    });
+    const result: any = await graphqlClient.request(
+      UPDATE_RECOMMENDATION_MUTATION,
+      {
+        id,
+        score: data.score!,
+      }
+    );
 
     // Transform GraphQL response to match Recommendation type
     return {

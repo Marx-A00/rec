@@ -21,8 +21,8 @@ export class AuthenticationError extends GraphQLError {
     super(message, {
       extensions: {
         code: ErrorCode.AUTHENTICATION_REQUIRED,
-        http: { status: 401 }
-      }
+        http: { status: 401 },
+      },
     });
   }
 }
@@ -32,25 +32,25 @@ export class ForbiddenError extends GraphQLError {
     super(message, {
       extensions: {
         code: ErrorCode.FORBIDDEN,
-        http: { status: 403 }
-      }
+        http: { status: 403 },
+      },
     });
   }
 }
 
 export class NotFoundError extends GraphQLError {
   constructor(resource: string, id?: string) {
-    const message = id 
+    const message = id
       ? `${resource} with ID "${id}" not found`
       : `${resource} not found`;
-    
+
     super(message, {
       extensions: {
         code: ErrorCode.NOT_FOUND,
         http: { status: 404 },
         resource,
-        id
-      }
+        id,
+      },
     });
   }
 }
@@ -61,8 +61,8 @@ export class ValidationError extends GraphQLError {
       extensions: {
         code: ErrorCode.VALIDATION_ERROR,
         http: { status: 400 },
-        field
-      }
+        field,
+      },
     });
   }
 }
@@ -73,8 +73,8 @@ export class DatabaseError extends GraphQLError {
       extensions: {
         code: ErrorCode.DATABASE_ERROR,
         http: { status: 500 },
-        originalError: originalError?.message
-      }
+        originalError: originalError?.message,
+      },
     });
   }
 }
@@ -85,8 +85,8 @@ export class ExternalAPIError extends GraphQLError {
       extensions: {
         code: ErrorCode.EXTERNAL_API_ERROR,
         http: { status: 502 },
-        service
-      }
+        service,
+      },
     });
   }
 }
@@ -163,8 +163,8 @@ export function withErrorHandling<T extends any[], R>(
       throw new GraphQLError('An unexpected error occurred', {
         extensions: {
           code: ErrorCode.INTERNAL_ERROR,
-          originalError: error instanceof Error ? error.message : String(error)
-        }
+          originalError: error instanceof Error ? error.message : String(error),
+        },
       });
     }
   };

@@ -1,14 +1,20 @@
-// @ts-nocheck - Schema migration broke GraphQL resolvers, needs complete rewrite
+// Schema migration broke GraphQL resolvers, needs complete rewrite
 // src/lib/graphql/resolvers/queries.ts
 // Query resolvers for GraphQL API
 
-import { QueryResolvers } from '@/generated/graphql';
 import { GraphQLError } from 'graphql';
+
+import { QueryResolvers } from '@/generated/graphql';
 import { getMusicBrainzQueue } from '@/lib/queue';
-import { healthChecker, metricsCollector, alertManager } from '@/lib/monitoring';
+import {
+  healthChecker,
+  metricsCollector,
+  alertManager,
+} from '@/lib/monitoring';
+
 import { getSearchService } from '../search';
 
-// @ts-ignore - Temporarily suppress complex GraphQL resolver type issues  
+// @ts-expect-error - Temporarily suppress complex GraphQL resolver type issues
 // TODO: Fix GraphQL resolver return types to match generated types
 export const queryResolvers: QueryResolvers = {
   // Health check query
@@ -43,12 +49,16 @@ export const queryResolvers: QueryResolvers = {
           currentWindowRequests: stats.active,
           windowResetTime: new Date(Date.now() + 1000),
         },
-        workers: worker ? [{
-          id: 'worker-1',
-          isRunning: worker.isRunning(),
-          isPaused: worker.isPaused(),
-          activeJobCount: stats.active,
-        }] : [],
+        workers: worker
+          ? [
+              {
+                id: 'worker-1',
+                isRunning: worker.isRunning(),
+                isPaused: worker.isPaused(),
+                activeJobCount: stats.active,
+              },
+            ]
+          : [],
       };
     } catch (error) {
       throw new GraphQLError(`Failed to get queue status: ${error}`);
@@ -80,11 +90,14 @@ export const queryResolvers: QueryResolvers = {
       const jobsFailed = filteredJobs.filter(j => !j.success).length;
       const totalJobs = jobsProcessed + jobsFailed;
 
-      const avgProcessingTime = filteredJobs.length > 0
-        ? filteredJobs.reduce((sum, j) => sum + (j.duration || 0), 0) / filteredJobs.length
-        : 0;
+      const avgProcessingTime =
+        filteredJobs.length > 0
+          ? filteredJobs.reduce((sum, j) => sum + (j.duration || 0), 0) /
+            filteredJobs.length
+          : 0;
 
-      const successRate = totalJobs > 0 ? (jobsProcessed / totalJobs) * 100 : 100;
+      const successRate =
+        totalJobs > 0 ? (jobsProcessed / totalJobs) * 100 : 100;
       const errorRate = totalJobs > 0 ? (jobsFailed / totalJobs) * 100 : 0;
 
       // Calculate throughput
@@ -96,11 +109,17 @@ export const queryResolvers: QueryResolvers = {
       ).length;
 
       // Get top errors
-      const errorMap = new Map<string, { count: number; lastOccurrence: Date }>();
+      const errorMap = new Map<
+        string,
+        { count: number; lastOccurrence: Date }
+      >();
       filteredJobs
         .filter(j => !j.success && j.error)
         .forEach(j => {
-          const existing = errorMap.get(j.error!) || { count: 0, lastOccurrence: j.endTime! };
+          const existing = errorMap.get(j.error!) || {
+            count: 0,
+            lastOccurrence: j.endTime!,
+          };
           existing.count++;
           if (j.endTime! > existing.lastOccurrence) {
             existing.lastOccurrence = j.endTime!;
@@ -123,7 +142,10 @@ export const queryResolvers: QueryResolvers = {
         throughput: {
           jobsPerMinute,
           jobsPerHour,
-          peakJobsPerMinute: Math.max(jobsPerMinute, ...history.map(h => h.queue.throughput.jobsPerMinute)),
+          peakJobsPerMinute: Math.max(
+            jobsPerMinute,
+            ...history.map(h => h.queue.throughput.jobsPerMinute)
+          ),
         },
         topErrors,
       };
@@ -178,7 +200,10 @@ export const queryResolvers: QueryResolvers = {
         attempts: job.attemptsMade,
         startedAt: job.processedOn ? new Date(job.processedOn) : null,
         completedAt: job.finishedOn ? new Date(job.finishedOn) : null,
-        duration: job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : null,
+        duration:
+          job.finishedOn && job.processedOn
+            ? job.finishedOn - job.processedOn
+            : null,
         priority: job.opts?.priority || 0,
       }));
     } catch (error) {
@@ -226,7 +251,10 @@ export const queryResolvers: QueryResolvers = {
         attempts: job.attemptsMade,
         startedAt: job.processedOn ? new Date(job.processedOn) : null,
         completedAt: job.finishedOn ? new Date(job.finishedOn) : null,
-        duration: job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : null,
+        duration:
+          job.finishedOn && job.processedOn
+            ? job.finishedOn - job.processedOn
+            : null,
         priority: job.opts?.priority || 0,
       }));
     } catch (error) {
@@ -239,7 +267,7 @@ export const queryResolvers: QueryResolvers = {
     try {
       // Get cached Spotify data
       const cached = await prisma.cacheData.findUnique({
-        where: { key: 'spotify_trending' }
+        where: { key: 'spotify_trending' },
       });
 
       // If no cache or expired, trigger a sync
@@ -252,7 +280,7 @@ export const queryResolvers: QueryResolvers = {
           popularArtists: [],
           needsSync: true,
           expires: null,
-          lastUpdated: cached?.updatedAt || null
+          lastUpdated: cached?.updatedAt || null,
         };
       }
 
@@ -265,7 +293,7 @@ export const queryResolvers: QueryResolvers = {
         popularArtists: data.popularArtists || [],
         needsSync: false,
         expires: cached.expires,
-        lastUpdated: cached.updatedAt
+        lastUpdated: cached.updatedAt,
       };
     } catch (error) {
       throw new GraphQLError(`Failed to fetch Spotify trending data: ${error}`);
@@ -282,7 +310,7 @@ export const queryResolvers: QueryResolvers = {
         id,
         'query'
       );
-      
+
       const artist = await prisma.artist.findUnique({
         where: { id },
       });
@@ -301,7 +329,7 @@ export const queryResolvers: QueryResolvers = {
         id,
         'query'
       );
-      
+
       const album = await prisma.album.findUnique({
         where: { id },
       });
@@ -326,10 +354,7 @@ export const queryResolvers: QueryResolvers = {
     try {
       const tracks = await prisma.track.findMany({
         where: { albumId },
-        orderBy: [
-          { discNumber: 'asc' },
-          { trackNumber: 'asc' }
-        ],
+        orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }],
       });
       return tracks;
     } catch (error) {
@@ -400,15 +425,16 @@ export const queryResolvers: QueryResolvers = {
       const searchService = getSearchService(prisma);
 
       // Map GraphQL type to search types
-      const searchTypes = type === 'ALL'
-        ? ['artist', 'album', 'track']
-        : type === 'ARTIST'
-        ? ['artist']
-        : type === 'ALBUM'
-        ? ['album']
-        : type === 'TRACK'
-        ? ['track']
-        : ['artist', 'album', 'track'];
+      const searchTypes =
+        type === 'ALL'
+          ? ['artist', 'album', 'track']
+          : type === 'ARTIST'
+            ? ['artist']
+            : type === 'ALBUM'
+              ? ['album']
+              : type === 'TRACK'
+                ? ['track']
+                : ['artist', 'album', 'track'];
 
       const searchResults = await searchService.search({
         query,
@@ -428,23 +454,26 @@ export const queryResolvers: QueryResolvers = {
         .filter(r => r.type === 'track')
         .map(r => r.id);
 
-      const artists = artistIds.length > 0
-        ? await prisma.artist.findMany({
-            where: { id: { in: artistIds } },
-          })
-        : [];
+      const artists =
+        artistIds.length > 0
+          ? await prisma.artist.findMany({
+              where: { id: { in: artistIds } },
+            })
+          : [];
 
-      const albums = albumIds.length > 0
-        ? await prisma.album.findMany({
-            where: { id: { in: albumIds } },
-          })
-        : [];
+      const albums =
+        albumIds.length > 0
+          ? await prisma.album.findMany({
+              where: { id: { in: albumIds } },
+            })
+          : [];
 
-      const tracks = trackIds.length > 0
-        ? await prisma.track.findMany({
-            where: { id: { in: trackIds } },
-          })
-        : [];
+      const tracks =
+        trackIds.length > 0
+          ? await prisma.track.findMany({
+              where: { id: { in: trackIds } },
+            })
+          : [];
 
       return {
         artists,
@@ -484,38 +513,39 @@ export const queryResolvers: QueryResolvers = {
             include: {
               artists: {
                 include: {
-                  artist: true
-                }
-              }
-            }
+                  artist: true,
+                },
+              },
+            },
           },
           recommendedAlbum: {
             include: {
               artists: {
                 include: {
-                  artist: true
-                }
-              }
-            }
-          }
-        }
+                  artist: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       const hasMore = recommendations.length > limit;
       const items = hasMore ? recommendations.slice(0, limit) : recommendations;
-      const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].id : null;
+      const nextCursor =
+        hasMore && items.length > 0 ? items[items.length - 1].id : null;
 
       return {
         recommendations: items,
         cursor: nextCursor,
-        hasMore
+        hasMore,
       };
     } catch (error) {
       console.error('Error fetching recommendation feed:', error);
       return {
         recommendations: [],
         cursor: null,
-        hasMore: false
+        hasMore: false,
       };
     }
   },
@@ -523,17 +553,17 @@ export const queryResolvers: QueryResolvers = {
   trendingAlbums: async (_, { limit = 20 }, { prisma, activityTracker }) => {
     try {
       // Track browse activity for trending content
-      await activityTracker.trackBrowse('trending', undefined, { 
+      await activityTracker.trackBrowse('trending', undefined, {
         contentType: 'albums',
-        limit 
+        limit,
       });
-      
+
       // Simple trending based on creation date for now
       const albums = await prisma.album.findMany({
         take: limit,
         orderBy: { createdAt: 'desc' },
       });
-      
+
       // Track entity interactions if albums returned
       if (albums.length > 0) {
         const albumIds = albums.map(album => album.id);
@@ -545,7 +575,7 @@ export const queryResolvers: QueryResolvers = {
           { resultCount: albums.length }
         );
       }
-      
+
       return albums;
     } catch (error) {
       throw new GraphQLError(`Failed to fetch trending albums: ${error}`);
@@ -725,9 +755,11 @@ export const queryResolvers: QueryResolvers = {
       );
 
       // Calculate average recommendation score
-      const avgScore = user.recommendations.length > 0
-        ? user.recommendations.reduce((sum, rec) => sum + rec.score, 0) / user.recommendations.length
-        : 0;
+      const avgScore =
+        user.recommendations.length > 0
+          ? user.recommendations.reduce((sum, rec) => sum + rec.score, 0) /
+            user.recommendations.length
+          : 0;
 
       return {
         userId,
@@ -760,7 +792,7 @@ export const queryResolvers: QueryResolvers = {
 
     console.log(`Fetching collections for user: ${user.id}`);
     const collections = await prisma.collection.findMany({
-      where: { userId: user.id},
+      where: { userId: user.id },
       include: {
         albums: {
           include: {
@@ -768,20 +800,22 @@ export const queryResolvers: QueryResolvers = {
               include: {
                 artists: {
                   include: {
-                    artist: true
-                  }
-                }
-              }
-            }
+                    artist: true,
+                  },
+                },
+              },
+            },
           },
-          orderBy: { addedAt: 'desc' }
-        }
-      }
+          orderBy: { addedAt: 'desc' },
+        },
+      },
     });
 
     console.log(`Found ${collections.length} collections for user ${user.id}`);
     collections.forEach((col, idx) => {
-      console.log(`  Collection ${idx + 1}: ${col.name} with ${col.albums?.length || 0} albums`);
+      console.log(
+        `  Collection ${idx + 1}: ${col.name} with ${col.albums?.length || 0} albums`
+      );
     });
 
     return collections;
@@ -821,17 +855,22 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-  myRecommendations: async (_, { cursor, limit = 10, sort = 'SCORE_DESC' }, { user, prisma }) => {
+  myRecommendations: async (
+    _,
+    { cursor, limit = 10, sort = 'SCORE_DESC' },
+    { user, prisma }
+  ) => {
     if (!user) {
       throw new GraphQLError('Authentication required');
     }
 
     try {
-      const orderBy = sort === 'SCORE_DESC'
-        ? { score: 'desc' as const }
-        : sort === 'SCORE_ASC'
-        ? { score: 'asc' as const }
-        : { createdAt: 'desc' as const };
+      const orderBy =
+        sort === 'SCORE_DESC'
+          ? { score: 'desc' as const }
+          : sort === 'SCORE_ASC'
+            ? { score: 'asc' as const }
+            : { createdAt: 'desc' as const };
 
       const recommendations = await prisma.recommendation.findMany({
         where: { userId: user.id },
@@ -840,7 +879,7 @@ export const queryResolvers: QueryResolvers = {
         cursor: cursor ? { id: cursor } : undefined,
         orderBy: [
           orderBy,
-          { id: 'desc' } // Secondary sort by ID for stable pagination
+          { id: 'desc' }, // Secondary sort by ID for stable pagination
         ],
         include: {
           user: true,
@@ -848,21 +887,21 @@ export const queryResolvers: QueryResolvers = {
             include: {
               artists: {
                 include: {
-                  artist: true
-                }
-              }
-            }
+                  artist: true,
+                },
+              },
+            },
           },
           recommendedAlbum: {
             include: {
               artists: {
                 include: {
-                  artist: true
-                }
-              }
-            }
-          }
-        }
+                  artist: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       // Check if there are more items
@@ -870,19 +909,21 @@ export const queryResolvers: QueryResolvers = {
       const items = hasMore ? recommendations.slice(0, limit) : recommendations;
       const nextCursor = hasMore ? items[items.length - 1].id : null;
 
-      console.log(`Found ${items.length} recommendations for user ${user.id}, hasMore: ${hasMore}`);
+      console.log(
+        `Found ${items.length} recommendations for user ${user.id}, hasMore: ${hasMore}`
+      );
 
       return {
         recommendations: items,
         cursor: nextCursor,
-        hasMore
+        hasMore,
       };
     } catch (error) {
       console.error('Error fetching user recommendations:', error);
       return {
         recommendations: [],
         cursor: null,
-        hasMore: false
+        hasMore: false,
       };
     }
   },
@@ -896,7 +937,7 @@ export const queryResolvers: QueryResolvers = {
       // Get users that the current user follows
       const followedUsers = await prisma.userFollow.findMany({
         where: { followerId: user.id },
-        select: { followedId: true }
+        select: { followedId: true },
       });
 
       const followedUserIds = followedUsers.map(f => f.followedId);
@@ -905,27 +946,29 @@ export const queryResolvers: QueryResolvers = {
         return {
           activities: [],
           cursor: null,
-          hasMore: false
+          hasMore: false,
         };
       }
 
       const activities: any[] = [];
       const cursorDate = cursor ? new Date(cursor) : null;
-      const cursorCondition = cursorDate ? { createdAt: { lt: cursorDate } } : {};
+      const cursorCondition = cursorDate
+        ? { createdAt: { lt: cursorDate } }
+        : {};
 
       // 1. Get follow activities
       if (!type || type === 'FOLLOW') {
         const followActivities = await prisma.userFollow.findMany({
           where: {
             followerId: { in: followedUserIds },
-            ...cursorCondition
+            ...cursorCondition,
           },
           include: {
             follower: true,
-            followed: true
+            followed: true,
           },
           orderBy: { createdAt: 'desc' },
-          take: limit
+          take: limit,
         });
 
         followActivities.forEach(follow => {
@@ -938,7 +981,7 @@ export const queryResolvers: QueryResolvers = {
             album: null,
             recommendation: null,
             collection: null,
-            metadata: null
+            metadata: null,
           });
         });
       }
@@ -948,7 +991,7 @@ export const queryResolvers: QueryResolvers = {
         const recommendations = await prisma.recommendation.findMany({
           where: {
             userId: { in: followedUserIds },
-            ...cursorCondition
+            ...cursorCondition,
           },
           include: {
             user: true,
@@ -956,23 +999,23 @@ export const queryResolvers: QueryResolvers = {
               include: {
                 artists: {
                   include: {
-                    artist: true
-                  }
-                }
-              }
+                    artist: true,
+                  },
+                },
+              },
             },
             recommendedAlbum: {
               include: {
                 artists: {
                   include: {
-                    artist: true
-                  }
-                }
-              }
-            }
+                    artist: true,
+                  },
+                },
+              },
+            },
           },
           orderBy: { createdAt: 'desc' },
-          take: limit
+          take: limit,
         });
 
         recommendations.forEach(rec => {
@@ -990,8 +1033,8 @@ export const queryResolvers: QueryResolvers = {
               basisAlbum: rec.basisAlbum,
               collectionName: null,
               personalRating: null,
-              position: null
-            }
+              position: null,
+            },
           });
         });
       }
@@ -1001,28 +1044,28 @@ export const queryResolvers: QueryResolvers = {
         const collectionAdds = await prisma.collectionAlbum.findMany({
           where: {
             collection: {
-              userId: { in: followedUserIds }
+              userId: { in: followedUserIds },
             },
-            ...(cursorDate ? { addedAt: { lt: cursorDate } } : {})
+            ...(cursorDate ? { addedAt: { lt: cursorDate } } : {}),
           },
           include: {
             collection: {
               include: {
-                user: true
-              }
+                user: true,
+              },
             },
             album: {
               include: {
                 artists: {
                   include: {
-                    artist: true
-                  }
-                }
-              }
-            }
+                    artist: true,
+                  },
+                },
+              },
+            },
           },
           orderBy: { addedAt: 'desc' },
-          take: limit
+          take: limit,
         });
 
         collectionAdds.forEach(ca => {
@@ -1040,8 +1083,8 @@ export const queryResolvers: QueryResolvers = {
               basisAlbum: null,
               collectionName: ca.collection.name,
               personalRating: ca.personalRating,
-              position: ca.position
-            }
+              position: ca.position,
+            },
           });
         });
       }
@@ -1052,21 +1095,24 @@ export const queryResolvers: QueryResolvers = {
       // Take only the requested limit
       const limitedActivities = activities.slice(0, limit);
       const hasMore = activities.length > limit;
-      const nextCursor = hasMore && limitedActivities.length > 0
-        ? limitedActivities[limitedActivities.length - 1].createdAt.toISOString()
-        : null;
+      const nextCursor =
+        hasMore && limitedActivities.length > 0
+          ? limitedActivities[
+              limitedActivities.length - 1
+            ].createdAt.toISOString()
+          : null;
 
       return {
         activities: limitedActivities,
         cursor: nextCursor,
-        hasMore
+        hasMore,
       };
     } catch (error) {
       console.error('Error fetching social feed:', error);
       return {
         activities: [],
         cursor: null,
-        hasMore: false
+        hasMore: false,
       };
     }
   },
@@ -1079,7 +1125,7 @@ export const queryResolvers: QueryResolvers = {
     try {
       // Get or create user settings
       let settings = await prisma.userSettings.findUnique({
-        where: { userId: user.id }
+        where: { userId: user.id },
       });
 
       // If no settings exist, create default settings
@@ -1096,8 +1142,8 @@ export const queryResolvers: QueryResolvers = {
             recommendationAlerts: true,
             followAlerts: true,
             defaultCollectionView: 'grid',
-            autoplayPreviews: false
-          }
+            autoplayPreviews: false,
+          },
         });
       }
 
@@ -1117,7 +1163,7 @@ export const queryResolvers: QueryResolvers = {
       // Get users that the current user follows
       const followedUsers = await prisma.userFollow.findMany({
         where: { followerId: user.id },
-        select: { followedId: true }
+        select: { followedId: true },
       });
 
       const followedUserIds = followedUsers.map(f => f.followedId);
@@ -1130,7 +1176,7 @@ export const queryResolvers: QueryResolvers = {
       // Get recent recommendations from followed users
       const recommendations = await prisma.recommendation.findMany({
         where: {
-          userId: { in: followedUserIds }
+          userId: { in: followedUserIds },
         },
         take: limit,
         orderBy: { createdAt: 'desc' },
@@ -1140,24 +1186,26 @@ export const queryResolvers: QueryResolvers = {
             include: {
               artists: {
                 include: {
-                  artist: true
-                }
-              }
-            }
+                  artist: true,
+                },
+              },
+            },
           },
           recommendedAlbum: {
             include: {
               artists: {
                 include: {
-                  artist: true
-                }
-              }
-            }
-          }
-        }
+                  artist: true,
+                },
+              },
+            },
+          },
+        },
       });
 
-      console.log(`Found ${recommendations.length} recommendations from ${followedUserIds.length} followed users`);
+      console.log(
+        `Found ${recommendations.length} recommendations from ${followedUserIds.length} followed users`
+      );
       return recommendations;
     } catch (error) {
       console.error('Error fetching following activity:', error);
@@ -1188,42 +1236,42 @@ export const queryResolvers: QueryResolvers = {
             OR: [
               { dataQuality: 'LOW' },
               { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
-              { musicbrainzId: null }
-            ]
-          }
+              { musicbrainzId: null },
+            ],
+          },
         }),
         prisma.artist.count({
           where: {
             OR: [
               { dataQuality: 'LOW' },
               { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
-              { musicbrainzId: null }
-            ]
-          }
+              { musicbrainzId: null },
+            ],
+          },
         }),
         prisma.album.count({
           where: {
             lastEnriched: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-            }
-          }
+              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+            },
+          },
         }),
         prisma.artist.count({
           where: {
             lastEnriched: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
-            }
-          }
+              gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+            },
+          },
         }),
         prisma.album.count({
-          where: { enrichmentStatus: 'FAILED' }
+          where: { enrichmentStatus: 'FAILED' },
         }),
         prisma.artist.count({
-          where: { enrichmentStatus: 'FAILED' }
+          where: { enrichmentStatus: 'FAILED' },
         }),
         prisma.album.groupBy({
           by: ['dataQuality'],
-          _count: true
+          _count: true,
         }),
       ]);
 
@@ -1239,7 +1287,8 @@ export const queryResolvers: QueryResolvers = {
         }
       });
 
-      const averageDataQuality = totalWithQuality > 0 ? totalQualityScore / totalWithQuality : 0;
+      const averageDataQuality =
+        totalWithQuality > 0 ? totalQualityScore / totalWithQuality : 0;
 
       return {
         totalAlbums,
@@ -1258,7 +1307,15 @@ export const queryResolvers: QueryResolvers = {
 
   searchAlbums: async (_, args, { prisma }) => {
     try {
-      const { query, dataQuality, enrichmentStatus, needsEnrichment, sortBy = 'title', sortOrder = 'asc', limit = 50 } = args;
+      const {
+        query,
+        dataQuality,
+        enrichmentStatus,
+        needsEnrichment,
+        sortBy = 'title',
+        sortOrder = 'asc',
+        limit = 50,
+      } = args;
 
       const where: any = {};
 
@@ -1301,10 +1358,10 @@ export const queryResolvers: QueryResolvers = {
         include: {
           albumArtists: {
             include: {
-              artist: true
-            }
-          }
-        }
+              artist: true,
+            },
+          },
+        },
       });
 
       // Transform to match GraphQL schema
@@ -1313,12 +1370,13 @@ export const queryResolvers: QueryResolvers = {
         artists: album.albumArtists.map(aa => ({
           artist: aa.artist,
           role: aa.role,
-          position: aa.position
+          position: aa.position,
         })),
-        needsEnrichment: album.dataQuality === 'LOW' ||
-                        album.enrichmentStatus === 'PENDING' ||
-                        album.enrichmentStatus === 'FAILED' ||
-                        !album.musicbrainzId
+        needsEnrichment:
+          album.dataQuality === 'LOW' ||
+          album.enrichmentStatus === 'PENDING' ||
+          album.enrichmentStatus === 'FAILED' ||
+          !album.musicbrainzId,
       }));
     } catch (error) {
       throw new GraphQLError(`Failed to search albums: ${error}`);
@@ -1327,7 +1385,15 @@ export const queryResolvers: QueryResolvers = {
 
   searchArtists: async (_, args, { prisma }) => {
     try {
-      const { query, dataQuality, enrichmentStatus, needsEnrichment, sortBy = 'name', sortOrder = 'asc', limit = 50 } = args;
+      const {
+        query,
+        dataQuality,
+        enrichmentStatus,
+        needsEnrichment,
+        sortBy = 'name',
+        sortOrder = 'asc',
+        limit = 50,
+      } = args;
 
       const where: any = {};
 
@@ -1366,10 +1432,10 @@ export const queryResolvers: QueryResolvers = {
           _count: {
             select: {
               albumArtists: true,
-              trackArtists: true
-            }
-          }
-        }
+              trackArtists: true,
+            },
+          },
+        },
       });
 
       // Transform to match GraphQL schema
@@ -1377,10 +1443,11 @@ export const queryResolvers: QueryResolvers = {
         ...artist,
         albumCount: artist._count.albumArtists,
         trackCount: artist._count.trackArtists,
-        needsEnrichment: artist.dataQuality === 'LOW' ||
-                        artist.enrichmentStatus === 'PENDING' ||
-                        artist.enrichmentStatus === 'FAILED' ||
-                        !artist.musicbrainzId
+        needsEnrichment:
+          artist.dataQuality === 'LOW' ||
+          artist.enrichmentStatus === 'PENDING' ||
+          artist.enrichmentStatus === 'FAILED' ||
+          !artist.musicbrainzId,
       }));
     } catch (error) {
       throw new GraphQLError(`Failed to search artists: ${error}`);
@@ -1408,10 +1475,10 @@ export const queryResolvers: QueryResolvers = {
           album: true,
           trackArtists: {
             include: {
-              artist: true
-            }
-          }
-        }
+              artist: true,
+            },
+          },
+        },
       });
 
       // Transform to match GraphQL schema
@@ -1419,8 +1486,8 @@ export const queryResolvers: QueryResolvers = {
         ...track,
         artists: track.trackArtists.map(ta => ({
           artist: ta.artist,
-          role: ta.role
-        }))
+          role: ta.role,
+        })),
       }));
     } catch (error) {
       throw new GraphQLError(`Failed to search tracks: ${error}`);

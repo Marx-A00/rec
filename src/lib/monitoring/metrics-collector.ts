@@ -1,5 +1,6 @@
 // src/lib/monitoring/metrics-collector.ts
 import { EventEmitter } from 'events';
+
 import { getMusicBrainzQueue } from '@/lib/queue';
 import type { QueueStats, JobType } from '@/lib/queue/jobs';
 import { redis } from '@/lib/queue/redis';
@@ -56,10 +57,10 @@ export interface JobMetrics {
 }
 
 export interface AlertThresholds {
-  queueDepth: number;          // Alert if queue > this value
-  errorRatePercent: number;     // Alert if error rate > this %
-  avgProcessingTimeMs: number;  // Alert if avg processing > this ms
-  memoryUsageMB: number;        // Alert if memory > this MB
+  queueDepth: number; // Alert if queue > this value
+  errorRatePercent: number; // Alert if error rate > this %
+  avgProcessingTimeMs: number; // Alert if avg processing > this ms
+  memoryUsageMB: number; // Alert if memory > this MB
 }
 
 export class MetricsCollector extends EventEmitter {
@@ -127,23 +128,28 @@ export class MetricsCollector extends EventEmitter {
       const stats = await queue.getStats();
 
       // Calculate throughput metrics
-      const recentJobs = Array.from(this.jobMetrics.values())
-        .filter(j => j.endTime && j.endTime.getTime() > Date.now() - 3600000); // Last hour
+      const recentJobs = Array.from(this.jobMetrics.values()).filter(
+        j => j.endTime && j.endTime.getTime() > Date.now() - 3600000
+      ); // Last hour
 
       const jobsPerHour = recentJobs.length;
-      const jobsPerMinute = recentJobs
-        .filter(j => j.endTime && j.endTime.getTime() > Date.now() - 60000).length;
+      const jobsPerMinute = recentJobs.filter(
+        j => j.endTime && j.endTime.getTime() > Date.now() - 60000
+      ).length;
 
-      const avgProcessingTime = recentJobs.length > 0
-        ? recentJobs.reduce((sum, j) => sum + (j.duration || 0), 0) / recentJobs.length
-        : 0;
+      const avgProcessingTime =
+        recentJobs.length > 0
+          ? recentJobs.reduce((sum, j) => sum + (j.duration || 0), 0) /
+            recentJobs.length
+          : 0;
 
       // Calculate success/error rates
       const successCount = recentJobs.filter(j => j.success).length;
       const errorCount = recentJobs.filter(j => !j.success).length;
       const totalCount = successCount + errorCount;
 
-      const successRate = totalCount > 0 ? (successCount / totalCount) * 100 : 100;
+      const successRate =
+        totalCount > 0 ? (successCount / totalCount) * 100 : 100;
       const errorRate = totalCount > 0 ? (errorCount / totalCount) * 100 : 0;
 
       // Get Redis metrics
@@ -222,7 +228,8 @@ export class MetricsCollector extends EventEmitter {
         connected: true,
         memoryUsage: parseInfo(memInfo, 'used_memory') || undefined,
         connectedClients: parseInfo(info, 'connected_clients') || undefined,
-        commandsPerSecond: parseInfo(info, 'instantaneous_ops_per_sec') || undefined,
+        commandsPerSecond:
+          parseInfo(info, 'instantaneous_ops_per_sec') || undefined,
       };
     } catch (error) {
       console.error('❌ Failed to get Redis metrics:', error);
@@ -238,23 +245,34 @@ export class MetricsCollector extends EventEmitter {
 
     // Check queue depth
     if (metrics.queue.depth > this.thresholds.queueDepth) {
-      alerts.push(`Queue depth (${metrics.queue.depth}) exceeds threshold (${this.thresholds.queueDepth})`);
+      alerts.push(
+        `Queue depth (${metrics.queue.depth}) exceeds threshold (${this.thresholds.queueDepth})`
+      );
     }
 
     // Check error rate
     if (metrics.queue.errorRate > this.thresholds.errorRatePercent) {
-      alerts.push(`Error rate (${metrics.queue.errorRate.toFixed(2)}%) exceeds threshold (${this.thresholds.errorRatePercent}%)`);
+      alerts.push(
+        `Error rate (${metrics.queue.errorRate.toFixed(2)}%) exceeds threshold (${this.thresholds.errorRatePercent}%)`
+      );
     }
 
     // Check processing time
-    if (metrics.queue.throughput.avgProcessingTime > this.thresholds.avgProcessingTimeMs) {
-      alerts.push(`Avg processing time (${metrics.queue.throughput.avgProcessingTime}ms) exceeds threshold (${this.thresholds.avgProcessingTimeMs}ms)`);
+    if (
+      metrics.queue.throughput.avgProcessingTime >
+      this.thresholds.avgProcessingTimeMs
+    ) {
+      alerts.push(
+        `Avg processing time (${metrics.queue.throughput.avgProcessingTime}ms) exceeds threshold (${this.thresholds.avgProcessingTimeMs}ms)`
+      );
     }
 
     // Check memory usage
     const memoryMB = metrics.system.memory.heapUsed / 1024 / 1024;
     if (memoryMB > this.thresholds.memoryUsageMB) {
-      alerts.push(`Memory usage (${memoryMB.toFixed(2)}MB) exceeds threshold (${this.thresholds.memoryUsageMB}MB)`);
+      alerts.push(
+        `Memory usage (${memoryMB.toFixed(2)}MB) exceeds threshold (${this.thresholds.memoryUsageMB}MB)`
+      );
     }
 
     // Emit alerts if any

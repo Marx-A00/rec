@@ -1,5 +1,6 @@
 // src/lib/queue/musicbrainz-queue.ts
 import { Queue, Worker, Job } from 'bullmq';
+
 import { createRedisConnection } from './redis';
 import { getQueueConfig } from './config';
 import {
@@ -31,12 +32,12 @@ export class MusicBrainzQueue {
       defaultJobOptions: {
         ...config.bullmq.defaultJobOptions,
         removeOnComplete: 100, // Keep last 100 completed jobs
-        removeOnFail: 50,      // Keep last 50 failed jobs for debugging
+        removeOnFail: 50, // Keep last 50 failed jobs for debugging
       },
     });
 
     // Set up error handling
-    this.queue.on('error', (error) => {
+    this.queue.on('error', error => {
       console.error('❌ MusicBrainz Queue Error:', error);
     });
   }
@@ -72,9 +73,9 @@ export class MusicBrainzQueue {
       requestId: options.requestId || this.generateRequestId(),
     } as T;
 
-    console.log(`🎯 Queuing ${type} job:`, { 
+    console.log(`🎯 Queuing ${type} job:`, {
       requestId: jobData.requestId,
-      priority: jobOptions.priority 
+      priority: jobOptions.priority,
     });
 
     return this.queue.add(type, jobData, jobOptions);
@@ -83,7 +84,9 @@ export class MusicBrainzQueue {
   /**
    * Create and start the worker with rate limiting
    */
-  createWorker(processor: (job: Job<MusicBrainzJobData, JobResult>) => Promise<JobResult>): Worker {
+  createWorker(
+    processor: (job: Job<MusicBrainzJobData, JobResult>) => Promise<JobResult>
+  ): Worker {
     if (this.worker) {
       throw new Error('Worker already exists. Call destroyWorker() first.');
     }
@@ -92,11 +95,11 @@ export class MusicBrainzQueue {
 
     this.worker = new Worker(this.queueName, processor, {
       connection: redisConnection,
-      
+
       // CRITICAL: Rate limiting to 1 request per second
       limiter: {
-        max: 1,        // Maximum 1 job
-        duration: 1000 // per 1000ms (1 second)
+        max: 1, // Maximum 1 job
+        duration: 1000, // per 1000ms (1 second)
       },
 
       // Concurrency settings
@@ -112,7 +115,7 @@ export class MusicBrainzQueue {
       console.log('✅ MusicBrainz Worker ready (Rate limited: 1 req/sec)');
     });
 
-    this.worker.on('active', (job) => {
+    this.worker.on('active', job => {
       console.log(`🔄 Processing ${job.name} (ID: ${job.id})`);
     });
 
@@ -125,11 +128,11 @@ export class MusicBrainzQueue {
       console.error(`❌ Failed ${job?.name} (ID: ${job?.id}):`, error.message);
     });
 
-    this.worker.on('stalled', (jobId) => {
+    this.worker.on('stalled', jobId => {
       console.warn(`⚠️ Job ${jobId} stalled`);
     });
 
-    this.worker.on('error', (error) => {
+    this.worker.on('error', error => {
       console.error('❌ MusicBrainz Worker Error:', error);
     });
 
@@ -156,7 +159,7 @@ export class MusicBrainzQueue {
       completed: completed.length,
       failed: failed.length,
       delayed: delayed.length,
-      paused: await this.queue.isPaused() ? 1 : 0,
+      paused: (await this.queue.isPaused()) ? 1 : 0,
     };
   }
 
@@ -166,7 +169,7 @@ export class MusicBrainzQueue {
   async getMetrics(): Promise<MusicBrainzQueueMetrics> {
     const stats = await this.getStats();
     const completed = await this.queue.getCompleted(0, 0); // Get most recent completed job
-    
+
     let lastJobProcessed = undefined;
     if (completed.length > 0) {
       const lastJob = completed[0];
@@ -210,11 +213,13 @@ export class MusicBrainzQueue {
    */
   async cleanup(olderThan: number = 24 * 60 * 60 * 1000): Promise<void> {
     const cutoff = Date.now() - olderThan;
-    
+
     await this.queue.clean(cutoff, 100, 'completed');
     await this.queue.clean(cutoff, 50, 'failed');
-    
-    console.log(`🧹 Cleaned up MusicBrainz queue jobs older than ${olderThan}ms`);
+
+    console.log(
+      `🧹 Cleaned up MusicBrainz queue jobs older than ${olderThan}ms`
+    );
   }
 
   // ============================================================================

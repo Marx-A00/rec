@@ -133,7 +133,8 @@ export function deduplicateResults(
     let duplicatesFound = 0;
 
     for (const result of results) {
-      const key = `${(result.artist || '').toString()}:${(result.title || '').toString()}`.toLowerCase();
+      const key =
+        `${(result.artist || '').toString()}:${(result.title || '').toString()}`.toLowerCase();
 
       if (seen.has(key)) {
         duplicatesFound++;
@@ -203,7 +204,9 @@ export function applyFilters(
   // Label filtering
   if (filters.label && filters.label.length > 0) {
     filtered = filtered.filter(result =>
-      filters.label!.some(label => (result.label || '').toLowerCase().includes(label.toLowerCase()))
+      filters.label!.some(label =>
+        (result.label || '').toLowerCase().includes(label.toLowerCase())
+      )
     );
   }
 
@@ -259,8 +262,9 @@ export function sortResults(
 
       case 'alphabetical':
         return (
-          `${a.artist || ''} - ${a.title || ''}`.localeCompare(`${b.artist || ''} - ${b.title || ''}`) *
-          multiplier
+          `${a.artist || ''} - ${a.title || ''}`.localeCompare(
+            `${b.artist || ''} - ${b.title || ''}`
+          ) * multiplier
         );
 
       case 'popularity':
@@ -374,7 +378,12 @@ export async function searchTracksInReleases(
           releaseTitle: release.title || '',
           releaseYear: release.releaseDate || '',
           releaseImage: release.image
-            ? { url: String(release.image), width: 300, height: 300, alt: String(release.title || '') }
+            ? {
+                url: String(release.image),
+                width: 300,
+                height: 300,
+                alt: String(release.title || ''),
+              }
             : undefined,
         });
       }

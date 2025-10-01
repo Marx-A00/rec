@@ -1,24 +1,23 @@
 // src/app/api/graphql/route.ts
 // Apollo Server 5.x integration with Next.js 15 App Router
 
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
 import { ApolloServer } from '@apollo/server';
 import { startServerAndCreateNextHandler } from '@as-integrations/next';
 import { NextRequest } from 'next/server';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { PrismaClient } from '@prisma/client';
+
 import { createGraphQLContext, GraphQLContext } from '@/lib/graphql/context';
 import { resolvers } from '@/lib/graphql/resolvers';
 import { formatError } from '@/lib/graphql/errors';
+import { prisma } from '@/lib/prisma';
 
 // Load GraphQL schema from file
 const typeDefs = readFileSync(
   join(process.cwd(), 'src/graphql/schema.graphql'),
   'utf8'
 );
-
-// Use shared Prisma client from lib
-import { prisma } from '@/lib/prisma';
 
 // Apollo Server configuration
 const server = new ApolloServer<GraphQLContext>({
@@ -42,9 +41,4 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return handler(request);
-}
-
-// Type augmentation for global Prisma client
-declare global {
-  var prisma: PrismaClient | undefined;
 }

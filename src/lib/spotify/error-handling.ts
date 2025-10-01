@@ -23,7 +23,7 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 3,
   baseDelay: 1000, // 1 second
   maxDelay: 30000, // 30 seconds
-  backoffMultiplier: 2
+  backoffMultiplier: 2,
 };
 
 /**
@@ -34,7 +34,7 @@ export function analyzeSpotifyError(error: unknown): SpotifyErrorInfo {
     return {
       type: 'unknown',
       message: 'Unknown error occurred',
-      retryable: false
+      retryable: false,
     };
   }
 
@@ -51,39 +51,51 @@ export function analyzeSpotifyError(error: unknown): SpotifyErrorInfo {
       message: 'Spotify API rate limit exceeded',
       retryable: true,
       retryAfter: retryAfter,
-      statusCode: 429
+      statusCode: 429,
     };
   }
 
   // Authentication errors (401, 403)
-  if (message.includes('401') || message.includes('403') || 
-      message.includes('unauthorized') || message.includes('forbidden')) {
+  if (
+    message.includes('401') ||
+    message.includes('403') ||
+    message.includes('unauthorized') ||
+    message.includes('forbidden')
+  ) {
     return {
       type: 'auth',
       message: 'Spotify API authentication failed',
       retryable: false, // Don't retry auth errors
-      statusCode: message.includes('401') ? 401 : 403
+      statusCode: message.includes('401') ? 401 : 403,
     };
   }
 
   // Network errors
-  if (message.includes('econnreset') || message.includes('enotfound') || 
-      message.includes('timeout') || message.includes('network')) {
+  if (
+    message.includes('econnreset') ||
+    message.includes('enotfound') ||
+    message.includes('timeout') ||
+    message.includes('network')
+  ) {
     return {
       type: 'network',
       message: 'Network error connecting to Spotify API',
-      retryable: true
+      retryable: true,
     };
   }
 
   // Server errors (5xx)
-  if (message.includes('500') || message.includes('502') || 
-      message.includes('503') || message.includes('504')) {
+  if (
+    message.includes('500') ||
+    message.includes('502') ||
+    message.includes('503') ||
+    message.includes('504')
+  ) {
     return {
       type: 'api_error',
       message: 'Spotify API server error',
       retryable: true,
-      statusCode: 500
+      statusCode: 500,
     };
   }
 
@@ -93,7 +105,7 @@ export function analyzeSpotifyError(error: unknown): SpotifyErrorInfo {
       type: 'api_error',
       message: 'Spotify API client error',
       retryable: false,
-      statusCode: 400
+      statusCode: 400,
     };
   }
 
@@ -101,7 +113,7 @@ export function analyzeSpotifyError(error: unknown): SpotifyErrorInfo {
   return {
     type: 'unknown',
     message: error.message || 'Unknown Spotify API error',
-    retryable: true // Be optimistic for unknown errors
+    retryable: true, // Be optimistic for unknown errors
   };
 }
 
@@ -109,7 +121,7 @@ export function analyzeSpotifyError(error: unknown): SpotifyErrorInfo {
  * Calculate delay for exponential backoff with jitter
  */
 export function calculateRetryDelay(
-  attempt: number, 
+  attempt: number,
   config: RetryConfig = DEFAULT_RETRY_CONFIG,
   retryAfter?: number
 ): number {
@@ -119,12 +131,13 @@ export function calculateRetryDelay(
   }
 
   // Exponential backoff: baseDelay * (backoffMultiplier ^ attempt)
-  const exponentialDelay = config.baseDelay * Math.pow(config.backoffMultiplier, attempt - 1);
-  
+  const exponentialDelay =
+    config.baseDelay * Math.pow(config.backoffMultiplier, attempt - 1);
+
   // Add jitter (±25% randomization) to prevent thundering herd
   const jitter = exponentialDelay * 0.25 * (Math.random() - 0.5);
   const delayWithJitter = exponentialDelay + jitter;
-  
+
   // Cap at maxDelay
   return Math.min(delayWithJitter, config.maxDelay);
 }
@@ -138,29 +151,33 @@ export async function withSpotifyRetry<T>(
   config: RetryConfig = DEFAULT_RETRY_CONFIG
 ): Promise<T> {
   let lastError: unknown;
-  
+
   for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
     try {
-      console.log(`🔄 ${operationName} (attempt ${attempt}/${config.maxAttempts})`);
-      
+      console.log(
+        `🔄 ${operationName} (attempt ${attempt}/${config.maxAttempts})`
+      );
+
       const result = await operation();
-      
+
       if (attempt > 1) {
         console.log(`✅ ${operationName} succeeded after ${attempt} attempts`);
       }
-      
+
       return result;
-      
     } catch (error) {
       lastError = error;
       const errorInfo = analyzeSpotifyError(error);
-      
-      console.log(`❌ ${operationName} failed (attempt ${attempt}/${config.maxAttempts}):`, {
-        type: errorInfo.type,
-        message: errorInfo.message,
-        retryable: errorInfo.retryable,
-        statusCode: errorInfo.statusCode
-      });
+
+      console.log(
+        `❌ ${operationName} failed (attempt ${attempt}/${config.maxAttempts}):`,
+        {
+          type: errorInfo.type,
+          message: errorInfo.message,
+          retryable: errorInfo.retryable,
+          statusCode: errorInfo.statusCode,
+        }
+      );
 
       // Don't retry if error is not retryable
       if (!errorInfo.retryable) {
@@ -176,8 +193,10 @@ export async function withSpotifyRetry<T>(
 
       // Calculate delay and wait
       const delay = calculateRetryDelay(attempt, config, errorInfo.retryAfter);
-      console.log(`⏳ ${operationName} - Waiting ${Math.round(delay)}ms before retry...`);
-      
+      console.log(
+        `⏳ ${operationName} - Waiting ${Math.round(delay)}ms before retry...`
+      );
+
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -211,12 +230,16 @@ class SpotifyMetricsTracker {
     authErrors: 0,
     averageResponseTime: 0,
     lastSuccessfulSync: null,
-    lastFailedSync: null
+    lastFailedSync: null,
   };
 
   private responseTimes: number[] = [];
 
-  recordRequest(success: boolean, responseTime: number, errorInfo?: SpotifyErrorInfo) {
+  recordRequest(
+    success: boolean,
+    responseTime: number,
+    errorInfo?: SpotifyErrorInfo
+  ) {
     this.metrics.totalRequests++;
     this.responseTimes.push(responseTime);
 
@@ -226,8 +249,9 @@ class SpotifyMetricsTracker {
     }
 
     // Update average response time
-    this.metrics.averageResponseTime = 
-      this.responseTimes.reduce((sum, time) => sum + time, 0) / this.responseTimes.length;
+    this.metrics.averageResponseTime =
+      this.responseTimes.reduce((sum, time) => sum + time, 0) /
+      this.responseTimes.length;
 
     if (success) {
       this.metrics.successfulRequests++;
@@ -271,7 +295,7 @@ class SpotifyMetricsTracker {
       authErrors: 0,
       averageResponseTime: 0,
       lastSuccessfulSync: null,
-      lastFailedSync: null
+      lastFailedSync: null,
     };
     this.responseTimes = [];
   }
@@ -288,23 +312,25 @@ export async function withSpotifyMetrics<T>(
   operationName: string
 ): Promise<T> {
   const startTime = Date.now();
-  
+
   try {
     const result = await operation();
     const responseTime = Date.now() - startTime;
-    
+
     spotifyMetrics.recordRequest(true, responseTime);
     console.log(`📊 ${operationName} completed in ${responseTime}ms`);
-    
+
     return result;
-    
   } catch (error) {
     const responseTime = Date.now() - startTime;
     const errorInfo = analyzeSpotifyError(error);
-    
+
     spotifyMetrics.recordRequest(false, responseTime, errorInfo);
-    console.log(`📊 ${operationName} failed after ${responseTime}ms:`, errorInfo.type);
-    
+    console.log(
+      `📊 ${operationName} failed after ${responseTime}ms:`,
+      errorInfo.type
+    );
+
     throw error;
   }
 }

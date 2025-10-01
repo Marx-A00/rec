@@ -27,7 +27,12 @@ export class SearchService {
     total: number;
     hasMore: boolean;
   }> {
-    const { query, types = ['artist', 'album', 'track'], limit = 20, offset = 0 } = options;
+    const {
+      query,
+      types = ['artist', 'album', 'track'],
+      limit = 20,
+      offset = 0,
+    } = options;
 
     // Sanitize query for PostgreSQL text search
     const searchQuery = this.sanitizeQuery(query);
@@ -64,7 +69,10 @@ export class SearchService {
     };
   }
 
-  private async searchArtists(query: string, limit: number): Promise<SearchResult[]> {
+  private async searchArtists(
+    query: string,
+    limit: number
+  ): Promise<SearchResult[]> {
     // Use ILIKE for case-insensitive pattern matching
     const artists = await this.prisma.artist.findMany({
       where: {
@@ -87,7 +95,10 @@ export class SearchService {
     }));
   }
 
-  private async searchAlbums(query: string, limit: number): Promise<SearchResult[]> {
+  private async searchAlbums(
+    query: string,
+    limit: number
+  ): Promise<SearchResult[]> {
     const albums = await this.prisma.album.findMany({
       where: {
         OR: [
@@ -114,7 +125,10 @@ export class SearchService {
     }));
   }
 
-  private async searchTracks(query: string, limit: number): Promise<SearchResult[]> {
+  private async searchTracks(
+    query: string,
+    limit: number
+  ): Promise<SearchResult[]> {
     const tracks = await this.prisma.track.findMany({
       where: {
         OR: [
@@ -198,7 +212,16 @@ export class SearchService {
       years: Array<{ year: number; count: number }>;
     };
   }> {
-    const { query, type, artistId, albumId, yearFrom, yearTo, limit = 20, offset = 0 } = options;
+    const {
+      query,
+      type,
+      artistId,
+      albumId,
+      yearFrom,
+      yearTo,
+      limit = 20,
+      offset = 0,
+    } = options;
 
     // Build dynamic where clause
     const where: any = {

@@ -10,13 +10,14 @@
 export const JOB_TYPES = {
   // MusicBrainz API Jobs
   MUSICBRAINZ_SEARCH_ARTISTS: 'musicbrainz:search-artists',
-  MUSICBRAINZ_SEARCH_RELEASES: 'musicbrainz:search-releases', 
+  MUSICBRAINZ_SEARCH_RELEASES: 'musicbrainz:search-releases',
   MUSICBRAINZ_SEARCH_RECORDINGS: 'musicbrainz:search-recordings',
   MUSICBRAINZ_LOOKUP_ARTIST: 'musicbrainz:lookup-artist',
   MUSICBRAINZ_LOOKUP_RELEASE: 'musicbrainz:lookup-release',
   MUSICBRAINZ_LOOKUP_RECORDING: 'musicbrainz:lookup-recording',
   MUSICBRAINZ_LOOKUP_RELEASE_GROUP: 'musicbrainz:lookup-release-group',
-  MUSICBRAINZ_BROWSE_RELEASE_GROUPS_BY_ARTIST: 'musicbrainz:browse-release-groups-by-artist',
+  MUSICBRAINZ_BROWSE_RELEASE_GROUPS_BY_ARTIST:
+    'musicbrainz:browse-release-groups-by-artist',
   // Enrichment Check Jobs (lightweight)
   CHECK_ALBUM_ENRICHMENT: 'check:album-enrichment',
   CHECK_ARTIST_ENRICHMENT: 'check:artist-enrichment',
@@ -32,7 +33,7 @@ export const JOB_TYPES = {
   RUN_DISCOGS_MIGRATION: 'migration:run-discogs-migration',
 } as const;
 
-export type JobType = typeof JOB_TYPES[keyof typeof JOB_TYPES];
+export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
 
 // ============================================================================
 // Job Data Interfaces
@@ -93,21 +94,39 @@ export interface MusicBrainzBrowseReleaseGroupsByArtistJobData {
 
 export interface CheckAlbumEnrichmentJobData {
   albumId: string;
-  source: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
+  source:
+    | 'collection_add'
+    | 'recommendation_create'
+    | 'search'
+    | 'browse'
+    | 'manual'
+    | 'spotify_sync';
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
 }
 
 export interface CheckArtistEnrichmentJobData {
   artistId: string;
-  source: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
+  source:
+    | 'collection_add'
+    | 'recommendation_create'
+    | 'search'
+    | 'browse'
+    | 'manual'
+    | 'spotify_sync';
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
 }
 
 export interface CheckTrackEnrichmentJobData {
   trackId: string;
-  source: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
+  source:
+    | 'collection_add'
+    | 'recommendation_create'
+    | 'search'
+    | 'browse'
+    | 'manual'
+    | 'spotify_sync';
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
 }
@@ -115,21 +134,39 @@ export interface CheckTrackEnrichmentJobData {
 export interface EnrichAlbumJobData {
   albumId: string;
   priority?: 'low' | 'medium' | 'high';
-  userAction?: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
+  userAction?:
+    | 'collection_add'
+    | 'recommendation_create'
+    | 'search'
+    | 'browse'
+    | 'manual'
+    | 'spotify_sync';
   requestId?: string;
 }
 
 export interface EnrichArtistJobData {
   artistId: string;
   priority?: 'low' | 'medium' | 'high';
-  userAction?: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
+  userAction?:
+    | 'collection_add'
+    | 'recommendation_create'
+    | 'search'
+    | 'browse'
+    | 'manual'
+    | 'spotify_sync';
   requestId?: string;
 }
 
 export interface EnrichTrackJobData {
   trackId: string;
   priority?: 'low' | 'medium' | 'high';
-  userAction?: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync';
+  userAction?:
+    | 'collection_add'
+    | 'recommendation_create'
+    | 'search'
+    | 'browse'
+    | 'manual'
+    | 'spotify_sync';
   requestId?: string;
 }
 
@@ -138,17 +175,17 @@ export interface EnrichTrackJobData {
 // ============================================================================
 
 export interface SpotifySyncNewReleasesJobData {
-  limit?: number;           // Number of releases to fetch (default: 20)
-  country?: string;         // Country code (default: 'US')
+  limit?: number; // Number of releases to fetch (default: 20)
+  country?: string; // Country code (default: 'US')
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
   source?: 'scheduled' | 'manual' | 'graphql'; // How this sync was triggered
 }
 
 export interface SpotifySyncFeaturedPlaylistsJobData {
-  limit?: number;           // Number of playlists to process (default: 10)
-  country?: string;         // Country code (default: 'US')
-  extractAlbums?: boolean;  // Whether to extract albums from playlist tracks (default: true)
+  limit?: number; // Number of playlists to process (default: 10)
+  country?: string; // Country code (default: 'US')
+  extractAlbums?: boolean; // Whether to extract albums from playlist tracks (default: true)
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
   source?: 'scheduled' | 'manual' | 'graphql';
@@ -164,13 +201,13 @@ export interface RunDiscogsMigrationJobData {
    * Default: true
    */
   createBackup?: boolean;
-  
+
   /**
    * Batch size for processing
    * Default: 100
    */
   batchSize?: number;
-  
+
   /**
    * Request ID for tracking
    */
@@ -181,9 +218,9 @@ export interface RunDiscogsMigrationJobData {
 // Job Data Union Type
 // ============================================================================
 
-export type MusicBrainzJobData = 
+export type MusicBrainzJobData =
   | MusicBrainzSearchArtistsJobData
-  | MusicBrainzSearchReleasesJobData  
+  | MusicBrainzSearchReleasesJobData
   | MusicBrainzSearchRecordingsJobData
   | MusicBrainzLookupArtistJobData
   | MusicBrainzLookupReleaseJobData
@@ -201,7 +238,7 @@ export type MusicBrainzJobData =
   | RunDiscogsMigrationJobData;
 
 // ============================================================================
-// Job Result Interfaces  
+// Job Result Interfaces
 // ============================================================================
 
 export interface JobResult<T = any> {
@@ -242,19 +279,19 @@ export interface MusicBrainzJobOptions {
    * Default: 0
    */
   priority?: number;
-  
+
   /**
    * Delay before processing (in milliseconds)
    * Default: 0
    */
   delay?: number;
-  
+
   /**
    * Number of retry attempts
    * Default: 3
    */
   attempts?: number;
-  
+
   /**
    * Backoff settings for retries
    */
@@ -262,20 +299,20 @@ export interface MusicBrainzJobOptions {
     type: 'exponential' | 'fixed';
     delay: number;
   };
-  
+
   /**
    * Request tracking ID
    */
   requestId?: string;
-  
+
   /**
    * Number of completed jobs to keep, or boolean for all/none
    * Default: 100
    */
   removeOnComplete?: number | boolean;
-  
+
   /**
-   * Number of failed jobs to keep, or boolean for all/none 
+   * Number of failed jobs to keep, or boolean for all/none
    * Default: 50 (keep for debugging)
    */
   removeOnFail?: number | boolean;

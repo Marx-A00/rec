@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '../../../../../auth';
+
 import {
   uploadImageFromFile,
   uploadImageFromUrl,
-  getDirectUploadUrl
+  getDirectUploadUrl,
 } from '@/lib/cloudflare-images';
 import { prisma } from '@/lib/prisma';
+
+import { auth } from '../../../../../auth';
 
 // Upload image from file
 export async function POST(request: NextRequest) {
@@ -24,18 +26,27 @@ export async function POST(request: NextRequest) {
       const type = formData.get('type') as string; // 'avatar' | 'album'
 
       if (!file) {
-        return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'No file provided' },
+          { status: 400 }
+        );
       }
 
       // Validate file type
       const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
       if (!validTypes.includes(file.type)) {
-        return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Invalid file type' },
+          { status: 400 }
+        );
       }
 
       // Max 10MB for Cloudflare Images
       if (file.size > 10 * 1024 * 1024) {
-        return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'File too large (max 10MB)' },
+          { status: 400 }
+        );
       }
 
       // Generate metadata
@@ -52,7 +63,7 @@ export async function POST(request: NextRequest) {
       if (type === 'avatar') {
         await prisma.user.update({
           where: { id: session.user.id },
-          data: { image: result.url }
+          data: { image: result.url },
         });
       }
 
@@ -60,7 +71,7 @@ export async function POST(request: NextRequest) {
         success: true,
         id: result.id,
         url: result.url,
-        variants: result.variants
+        variants: result.variants,
       });
     }
 
@@ -88,13 +99,15 @@ export async function POST(request: NextRequest) {
       success: true,
       id: result.id,
       url: result.url,
-      variants: result.variants
+      variants: result.variants,
     });
-
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to upload image' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to upload image',
+      },
       { status: 500 }
     );
   }
@@ -115,9 +128,8 @@ export async function GET(request: NextRequest) {
       uploadURL,
       id,
       // The final URL will be available after upload
-      publicUrl: `${process.env.CLOUDFLARE_IMAGES_DELIVERY_URL}/${id}/public`
+      publicUrl: `${process.env.CLOUDFLARE_IMAGES_DELIVERY_URL}/${id}/public`,
     });
-
   } catch (error) {
     console.error('Direct upload URL error:', error);
     return NextResponse.json(

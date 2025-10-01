@@ -4,11 +4,20 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { X, Settings, GripVertical, Ungroup, ArrowRightLeft, ArrowUpDown } from 'lucide-react';
+import {
+  X,
+  Settings,
+  GripVertical,
+  Ungroup,
+  ArrowRightLeft,
+  ArrowUpDown,
+} from 'lucide-react';
+
 import { Panel, PanelComponentProps } from '@/types/mosaic';
 import { useDashboard } from '@/contexts/DashboardContext';
 import { getPanelDefinition } from '@/lib/dashboard/PanelRegistry';
 import { Button } from '@/components/ui/button';
+
 import PanelDropZones, { DropZoneType } from './PanelDropZones';
 
 interface SortablePanelWrapperProps {
@@ -17,12 +26,18 @@ interface SortablePanelWrapperProps {
   isDragActive?: boolean;
 }
 
-export default function SortablePanelWrapper({ panel, children, isDragActive = false }: SortablePanelWrapperProps) {
+export default function SortablePanelWrapper({
+  panel,
+  children,
+  isDragActive = false,
+}: SortablePanelWrapperProps) {
   const { state, actions } = useDashboard();
   const { isEditMode, selectedPanelId } = state;
   const panelDefinition = getPanelDefinition(panel.type);
-  const [previewZone, setPreviewZone] = React.useState<DropZoneType | null>(null);
-  
+  const [previewZone, setPreviewZone] = React.useState<DropZoneType | null>(
+    null
+  );
+
   const {
     attributes,
     listeners,
@@ -42,10 +57,8 @@ export default function SortablePanelWrapper({ panel, children, isDragActive = f
 
   if (!panelDefinition) {
     return (
-      <div className="bg-red-900/20 border border-red-600 rounded-lg p-4">
-        <p className="text-red-400">
-          Unknown panel type: {panel.type}
-        </p>
+      <div className='bg-red-900/20 border border-red-600 rounded-lg p-4'>
+        <p className='text-red-400'>Unknown panel type: {panel.type}</p>
       </div>
     );
   }
@@ -101,7 +114,7 @@ export default function SortablePanelWrapper({ panel, children, isDragActive = f
   };
 
   return (
-    <div 
+    <div
       ref={setNodeRef}
       style={style}
       className={`
@@ -116,74 +129,76 @@ export default function SortablePanelWrapper({ panel, children, isDragActive = f
     >
       {/* Edit Mode Overlay */}
       {isEditMode && (
-        <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none" />
+        <div className='absolute inset-0 bg-black/20 z-10 pointer-events-none' />
       )}
 
       {/* Panel Header - Show on hover in both normal and edit mode */}
-      <div className={`
+      <div
+        className={`
         absolute top-0 left-0 right-0 flex items-center justify-between p-3 z-20
         opacity-0 group-hover:opacity-100 transition-opacity duration-200
         ${isEditMode ? 'bg-zinc-800/80 border-b border-zinc-700 pointer-events-auto' : 'bg-zinc-900/90 pointer-events-none'}
-      `}>
+      `}
+      >
         {/* Left side - Drag handle */}
-        <div className="flex items-center gap-2 w-24">
+        <div className='flex items-center gap-2 w-24'>
           {isEditMode && (
-            <div 
-              className="cursor-grab hover:cursor-grabbing pointer-events-auto"
+            <div
+              className='cursor-grab hover:cursor-grabbing pointer-events-auto'
               {...listeners}
             >
-              <GripVertical className="w-4 h-4 text-zinc-400" />
+              <GripVertical className='w-4 h-4 text-zinc-400' />
             </div>
           )}
         </div>
 
         {/* Center - Title */}
-        <div className="flex-1 flex justify-center">
-          <h3 className="text-sm font-medium text-white">
+        <div className='flex-1 flex justify-center'>
+          <h3 className='text-sm font-medium text-white'>
             {panel.config.headerTitle || panelDefinition.displayName}
           </h3>
         </div>
 
         {/* Right side - Edit controls */}
-        <div className="flex items-center gap-1 w-24 justify-end">
+        <div className='flex items-center gap-1 w-24 justify-end'>
           {isEditMode && (
             <>
               <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 hover:bg-blue-600/20 text-blue-400 pointer-events-auto"
-                onClick={(e) => {
+                variant='ghost'
+                size='sm'
+                className='h-6 w-6 p-0 hover:bg-blue-600/20 text-blue-400 pointer-events-auto'
+                onClick={e => {
                   e.stopPropagation();
                   handleUngroupPanel();
                 }}
-                title="Move to main layout"
+                title='Move to main layout'
               >
-                <Ungroup className="w-3 h-3" />
+                <Ungroup className='w-3 h-3' />
               </Button>
-              
+
               <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 hover:bg-zinc-700 pointer-events-auto"
-                onClick={(e) => {
+                variant='ghost'
+                size='sm'
+                className='h-6 w-6 p-0 hover:bg-zinc-700 pointer-events-auto'
+                onClick={e => {
                   e.stopPropagation();
                   // TODO: Open panel settings modal
                   console.log('Open settings for panel:', panel.id);
                 }}
               >
-                <Settings className="w-3 h-3" />
+                <Settings className='w-3 h-3' />
               </Button>
-              
+
               <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 hover:bg-red-600/20 text-red-400 pointer-events-auto"
-                onClick={(e) => {
+                variant='ghost'
+                size='sm'
+                className='h-6 w-6 p-0 hover:bg-red-600/20 text-red-400 pointer-events-auto'
+                onClick={e => {
                   e.stopPropagation();
                   handleRemovePanel();
                 }}
               >
-                <X className="w-3 h-3" />
+                <X className='w-3 h-3' />
               </Button>
             </>
           )}
@@ -191,24 +206,28 @@ export default function SortablePanelWrapper({ panel, children, isDragActive = f
       </div>
 
       {/* Panel Content */}
-      <div className={`
+      <div
+        className={`
         flex-1 overflow-hidden
         ${isEditMode ? 'relative z-10' : ''}
-      `}>
+      `}
+      >
         {children || <PanelComponent {...panelProps} />}
       </div>
 
       {/* Selection indicator */}
       {isEditMode && isSelected && (
-        <div className="absolute inset-0 border-2 border-emerald-500 rounded-lg pointer-events-none z-30" />
+        <div className='absolute inset-0 border-2 border-emerald-500 rounded-lg pointer-events-none z-30' />
       )}
 
       {/* Drag overlay - shown when this panel is being dragged */}
       {isDragging && (
-        <div className="absolute inset-0 bg-emerald-500/10 border-2 border-dashed border-emerald-500/30 rounded-lg pointer-events-none z-40">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-emerald-500/20 rounded-full px-3 py-1">
-              <span className="text-emerald-300 text-xs font-medium">Dragging...</span>
+        <div className='absolute inset-0 bg-emerald-500/10 border-2 border-dashed border-emerald-500/30 rounded-lg pointer-events-none z-40'>
+          <div className='absolute inset-0 flex items-center justify-center'>
+            <div className='bg-emerald-500/20 rounded-full px-3 py-1'>
+              <span className='text-emerald-300 text-xs font-medium'>
+                Dragging...
+              </span>
             </div>
           </div>
         </div>
@@ -225,30 +244,30 @@ export default function SortablePanelWrapper({ panel, children, isDragActive = f
 
       {/* Group Creation Controls - Show when panel is selected */}
       {isEditMode && isSelected && (
-        <div className="absolute bottom-2 left-2 right-2 flex gap-2 justify-center z-30">
+        <div className='absolute bottom-2 left-2 right-2 flex gap-2 justify-center z-30'>
           <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30"
-            onClick={(e) => {
+            variant='ghost'
+            size='sm'
+            className='h-8 px-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30'
+            onClick={e => {
               e.stopPropagation();
               handleCreateHorizontalGroup();
             }}
           >
-            <ArrowRightLeft className="w-3 h-3 mr-1" />
+            <ArrowRightLeft className='w-3 h-3 mr-1' />
             Horizontal Group
           </Button>
-          
+
           <Button
-            variant="ghost"
-            size="sm" 
-            className="h-8 px-3 bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30"
-            onClick={(e) => {
+            variant='ghost'
+            size='sm'
+            className='h-8 px-3 bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30'
+            onClick={e => {
               e.stopPropagation();
               handleCreateVerticalGroup();
             }}
           >
-            <ArrowUpDown className="w-3 h-3 mr-1" />
+            <ArrowUpDown className='w-3 h-3 mr-1' />
             Vertical Group
           </Button>
         </div>

@@ -5,11 +5,17 @@ const prisma = new PrismaClient();
 
 // Bio data from production backup
 const userBios = [
-  { email: 'julissamarie1120@gmail.com', bio: 'Artist, Music lover. silly gremlin and lover of ethereal music' },
+  {
+    email: 'julissamarie1120@gmail.com',
+    bio: 'Artist, Music lover. silly gremlin and lover of ethereal music',
+  },
   { email: 'mnandrade1999@gmail.com', bio: 'LISTENN && 4GET' },
   { email: 'liam1looper@gmail.com', bio: 'pyra fan' },
   { email: 'marcos.andrade.dev@gmail.com', bio: 'uncle pills' },
-  { email: 'dev.zellner88@gmail.com', bio: 'Music enthusiast | Sharing vibes and discovering new sounds' },
+  {
+    email: 'dev.zellner88@gmail.com',
+    bio: 'Music enthusiast | Sharing vibes and discovering new sounds',
+  },
   { email: 'jamilonealhsct@gmail.com', bio: null },
   { email: 'ashespokeballs@gmail.com', bio: null },
   { email: 'tyler500.beecroft@gmail.com', bio: 'PA Savage' },

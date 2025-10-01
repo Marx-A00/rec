@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { forwardRef, useImperativeHandle, useState, useCallback } from 'react';

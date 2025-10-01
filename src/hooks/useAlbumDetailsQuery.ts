@@ -1,13 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { graphqlClient } from '@/lib/graphql-client';
 import { GET_ALBUM_DETAILS } from '@/graphql/queries';
-
 import { Album } from '@/types/album';
-import {
-  queryKeys,
-  defaultQueryOptions,
-  QueryError,
-} from '@/lib/queries';
+import { queryKeys, defaultQueryOptions, QueryError } from '@/lib/queries';
 import type {
   UseAlbumDetailsQueryOptions,
   UseAlbumDetailsQueryResult,

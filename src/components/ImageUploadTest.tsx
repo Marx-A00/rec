@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+
 import { getImageUrl } from '@/lib/cloudflare-images';
 
 export default function ImageUploadTest() {
@@ -39,49 +40,51 @@ export default function ImageUploadTest() {
   };
 
   return (
-    <div className="p-4 bg-zinc-900 rounded-lg">
-      <h2 className="text-xl font-bold mb-4 text-cosmic-latte">Image Upload Test</h2>
+    <div className='p-4 bg-zinc-900 rounded-lg'>
+      <h2 className='text-xl font-bold mb-4 text-cosmic-latte'>
+        Image Upload Test
+      </h2>
 
       <input
-        type="file"
-        accept="image/*"
+        type='file'
+        accept='image/*'
         onChange={handleFileUpload}
         disabled={uploading}
-        className="mb-4"
+        className='mb-4'
       />
 
-      {uploading && <p className="text-emeraled-green">Uploading...</p>}
+      {uploading && <p className='text-emeraled-green'>Uploading...</p>}
 
       {imageId && (
-        <div className="mt-4 space-y-4">
-          <p className="text-cosmic-latte">Image uploaded! ID: {imageId}</p>
+        <div className='mt-4 space-y-4'>
+          <p className='text-cosmic-latte'>Image uploaded! ID: {imageId}</p>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className='grid grid-cols-2 gap-4'>
             <div>
-              <p className="text-sm text-zinc-400">Thumbnail (150x150)</p>
+              <p className='text-sm text-zinc-400'>Thumbnail (150x150)</p>
               <img
                 src={getImageUrl(imageId, { width: 150, height: 150 })}
-                alt="Thumbnail"
-                className="rounded"
+                alt='Thumbnail'
+                className='rounded'
               />
             </div>
 
             <div>
-              <p className="text-sm text-zinc-400">Medium (400x400)</p>
+              <p className='text-sm text-zinc-400'>Medium (400x400)</p>
               <img
                 src={getImageUrl(imageId, { width: 400, height: 400 })}
-                alt="Medium"
-                className="rounded"
+                alt='Medium'
+                className='rounded'
               />
             </div>
           </div>
 
           <div>
-            <p className="text-sm text-zinc-400">With blur effect</p>
+            <p className='text-sm text-zinc-400'>With blur effect</p>
             <img
               src={getImageUrl(imageId, { width: 400, height: 400, blur: 20 })}
-              alt="Blurred"
-              className="rounded"
+              alt='Blurred'
+              className='rounded'
             />
           </div>
         </div>

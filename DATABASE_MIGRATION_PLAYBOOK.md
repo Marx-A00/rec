@@ -86,6 +86,7 @@ Symptoms: `migrate status` reports drift or prod differs from tracked migrations
 Options:
 
 - Preferred: generate proper migrations now on dev
+
   ```bash
   pnpm prisma migrate dev --name "align_schema_to_migrations"
   # retest on clone → deploy with migrate deploy
@@ -148,5 +149,3 @@ pnpm prisma studio # optional: spot-check tables/data
 ---
 
 If you share your exact deploy method (CI, Docker, Fly, Render, etc.), you can adapt this to a pre-deploy step and a health-check script.
-
-

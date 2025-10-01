@@ -10,7 +10,7 @@ export const prisma =
         ? [
             { level: 'query', emit: 'event' },
             { level: 'error', emit: 'stdout' },
-            { level: 'warn', emit: 'stdout' }
+            { level: 'warn', emit: 'stdout' },
           ]
         : ['error'],
   });

@@ -152,7 +152,6 @@ export default function AlbumModal({
     return 'Unknown Artist';
   };
 
-
   // Convert Release/CollectionAlbum data to Album format for interactions
   const albumForInteractions = useMemo((): Album | null => {
     if (!data) return null;
@@ -160,7 +159,9 @@ export default function AlbumModal({
     const albumId = getAlbumId();
     if (!albumId) return null;
     const source = getSource();
-    const normalizedSource = source ? (source.toLowerCase() as 'local' | 'musicbrainz' | 'discogs') : undefined;
+    const normalizedSource = source
+      ? (source.toLowerCase() as 'local' | 'musicbrainz' | 'discogs')
+      : undefined;
 
     if (isCollectionAlbum(data)) {
       return {
@@ -188,8 +189,8 @@ export default function AlbumModal({
         id: String(albumId),
         title: data.title,
         artists:
-          (data.basic_information?.artists &&
-            data.basic_information.artists.length > 0)
+          data.basic_information?.artists &&
+          data.basic_information.artists.length > 0
             ? data.basic_information.artists.map(a => ({
                 id: (a as any).id || '',
                 name: a.name,
@@ -198,7 +199,8 @@ export default function AlbumModal({
               ? [{ id: '', name: data.artist }]
               : [],
         source: normalizedSource,
-        musicbrainzId: normalizedSource === 'musicbrainz' ? String(data.id) : undefined,
+        musicbrainzId:
+          normalizedSource === 'musicbrainz' ? String(data.id) : undefined,
         year: data.year,
         image: {
           url: getImageUrl() || '',
@@ -235,7 +237,9 @@ export default function AlbumModal({
           query: artistName,
           limit: 5,
         });
-        const results = Array.isArray(res?.searchArtists) ? res.searchArtists : [];
+        const results = Array.isArray(res?.searchArtists)
+          ? res.searchArtists
+          : [];
         const local = results.find((a: any) => a.id && a.id.length > 0);
         if (local) navId = String(local.id);
       }
@@ -246,7 +250,9 @@ export default function AlbumModal({
       }
 
       onClose();
-      const suffix = normalizedSource ? `?source=${encodeURIComponent(normalizedSource as string)}` : '';
+      const suffix = normalizedSource
+        ? `?source=${encodeURIComponent(normalizedSource as string)}`
+        : '';
       router.push(`/artists/${navId}${suffix}`);
     } catch (error) {
       console.error('Navigation error:', error);
@@ -388,7 +394,8 @@ export default function AlbumModal({
     // Enhanced high-quality image fetching for master releases
     if (isMasterRelease) {
       const source = getSource();
-      const normalizedSource = typeof source === 'string' ? source.toLowerCase() : source;
+      const normalizedSource =
+        typeof source === 'string' ? source.toLowerCase() : source;
       // For MusicBrainz release-groups (discography), we already have CAA URLs; avoid extra fetch
       if (normalizedSource === 'musicbrainz') {
         return;
@@ -675,7 +682,9 @@ export default function AlbumModal({
                           key={`${artist.id}-${index}`}
                           variant='secondary'
                           size='sm'
-                          onClick={() => handleArtistClick(artist.id, artist.name)}
+                          onClick={() =>
+                            handleArtistClick(artist.id, artist.name)
+                          }
                           className='gap-1.5 text-xs h-7 px-2'
                           aria-label={`View artist ${sanitizeArtistName(artist.name)}`}
                         >

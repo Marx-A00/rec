@@ -18,7 +18,10 @@ query GetUserCollections($userId: String!) {
           coverArtUrl
           releaseDate
           artists {
-            artist { id name }
+            artist {
+              id
+              name
+            }
           }
         }
       }

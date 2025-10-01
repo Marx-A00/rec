@@ -87,7 +87,7 @@ function createGroupedActivity(activities: Activity[]): GroupedActivity {
     createdAt: latestActivity.createdAt,
     earliestCreatedAt: earliestActivity.createdAt,
     activities: activities,
-    isGrouped: activities.length > 1
+    isGrouped: activities.length > 1,
   };
 }
 
@@ -99,7 +99,9 @@ export function formatActivityTimeRange(group: GroupedActivity): string {
 
   const latest = new Date(group.createdAt);
   const earliest = new Date(group.earliestCreatedAt);
-  const diffMinutes = Math.round((latest.getTime() - earliest.getTime()) / (1000 * 60));
+  const diffMinutes = Math.round(
+    (latest.getTime() - earliest.getTime()) / (1000 * 60)
+  );
 
   if (diffMinutes < 1) {
     return 'just now';

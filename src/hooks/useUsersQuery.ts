@@ -2,11 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { User } from '@prisma/client';
 
 import { graphqlClient } from '@/lib/graphql-client';
-import {
-  queryKeys,
-  defaultQueryOptions,
-  QueryError,
-} from '@/lib/queries';
+import { queryKeys, defaultQueryOptions, QueryError } from '@/lib/queries';
 import type { UseUsersQueryOptions, UseUsersQueryResult } from '@/types/hooks';
 
 // ========================================

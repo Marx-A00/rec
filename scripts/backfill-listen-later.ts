@@ -2,7 +2,9 @@
 import prisma from '@/lib/prisma';
 
 async function main() {
-  const users = await prisma.user.findMany({ select: { id: true, name: true } });
+  const users = await prisma.user.findMany({
+    select: { id: true, name: true },
+  });
   console.log(`Found ${users.length} users`);
 
   for (const user of users) {
@@ -11,14 +13,18 @@ async function main() {
       select: { id: true },
     });
     if (existing) {
-      console.log(`✅ ${user.name || user.id}: already has Listen Later (${existing.id})`);
+      console.log(
+        `✅ ${user.name || user.id}: already has Listen Later (${existing.id})`
+      );
       continue;
     }
     const created = await prisma.collection.create({
       data: { userId: user.id, name: 'Listen Later', isPublic: false },
       select: { id: true },
     });
-    console.log(`➕ ${user.name || user.id}: created Listen Later (${created.id})`);
+    console.log(
+      `➕ ${user.name || user.id}: created Listen Later (${created.id})`
+    );
   }
 }
 
@@ -27,7 +33,7 @@ main()
     await prisma.$disconnect();
     console.log('Done.');
   })
-  .catch(async (e) => {
+  .catch(async e => {
     console.error(e);
     await prisma.$disconnect();
     process.exit(1);

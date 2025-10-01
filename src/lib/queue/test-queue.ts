@@ -33,7 +33,7 @@ async function testMusicBrainzQueue() {
       }
     );
 
-    // Test 2: Search for releases  
+    // Test 2: Search for releases
     console.log('📋 Test 2: Search Releases');
     const releaseJob = await queue.addJob(
       JOB_TYPES.MUSICBRAINZ_SEARCH_RELEASES,
@@ -49,25 +49,35 @@ async function testMusicBrainzQueue() {
     // Test 3: Multiple searches to test rate limiting
     console.log('📋 Test 3: Multiple Jobs (Rate Limiting Test)');
     const jobs = await Promise.all([
-      queue.addJob(JOB_TYPES.MUSICBRAINZ_SEARCH_ARTISTS, { query: 'The Beatles' }),
-      queue.addJob(JOB_TYPES.MUSICBRAINZ_SEARCH_ARTISTS, { query: 'Pink Floyd' }),
-      queue.addJob(JOB_TYPES.MUSICBRAINZ_SEARCH_ARTISTS, { query: 'Led Zeppelin' }),
+      queue.addJob(JOB_TYPES.MUSICBRAINZ_SEARCH_ARTISTS, {
+        query: 'The Beatles',
+      }),
+      queue.addJob(JOB_TYPES.MUSICBRAINZ_SEARCH_ARTISTS, {
+        query: 'Pink Floyd',
+      }),
+      queue.addJob(JOB_TYPES.MUSICBRAINZ_SEARCH_ARTISTS, {
+        query: 'Led Zeppelin',
+      }),
     ]);
 
     console.log(`✅ Queued ${jobs.length + 2} jobs successfully`);
 
     // Wait for jobs to complete and show progress
-    console.log('\n⏳ Waiting for jobs to complete (this will take ~5+ seconds due to 1 req/sec rate limiting)...');
+    console.log(
+      '\n⏳ Waiting for jobs to complete (this will take ~5+ seconds due to 1 req/sec rate limiting)...'
+    );
     console.log('👀 Watch the console for job processing messages...');
-    
+
     // Monitor queue for 10 seconds to see jobs processing
     let completedJobs = 0;
     const totalJobs = 5;
-    
+
     const monitorInterval = setInterval(async () => {
       const stats = await queue.getStats();
-      console.log(`📊 Queue Status: ${stats.completed} completed, ${stats.active} active, ${stats.waiting} waiting`);
-      
+      console.log(
+        `📊 Queue Status: ${stats.completed} completed, ${stats.active} active, ${stats.waiting} waiting`
+      );
+
       if (stats.completed >= totalJobs) {
         completedJobs = stats.completed;
         clearInterval(monitorInterval);
@@ -80,7 +90,7 @@ async function testMusicBrainzQueue() {
         clearInterval(monitorInterval);
         resolve(null);
       }, 15000);
-      
+
       // Check if all jobs are done every second
       const checkInterval = setInterval(async () => {
         const stats = await queue.getStats();
@@ -99,8 +109,9 @@ async function testMusicBrainzQueue() {
     console.log(JSON.stringify(metrics, null, 2));
 
     console.log('\n✅ Queue test completed successfully!');
-    console.log('🎯 Rate limiting working: Jobs processed at ~1 request/second');
-
+    console.log(
+      '🎯 Rate limiting working: Jobs processed at ~1 request/second'
+    );
   } catch (error) {
     console.error('❌ Queue test failed:', error);
   } finally {

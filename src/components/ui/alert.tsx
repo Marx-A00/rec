@@ -6,7 +6,11 @@ interface AlertProps {
   className?: string;
 }
 
-export function Alert({ children, variant = 'default', className = '' }: AlertProps) {
+export function Alert({
+  children,
+  variant = 'default',
+  className = '',
+}: AlertProps) {
   const baseClasses = 'rounded-lg border p-4';
   const variantClasses = {
     default: 'bg-zinc-900 border-zinc-700 text-zinc-100',
@@ -20,10 +24,22 @@ export function Alert({ children, variant = 'default', className = '' }: AlertPr
   );
 }
 
-export function AlertDescription({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+export function AlertDescription({
+  children,
+  className = '',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return <div className={`text-sm ${className}`}>{children}</div>;
 }
 
-export function AlertTitle({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+export function AlertTitle({
+  children,
+  className = '',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return <div className={`text-base font-medium ${className}`}>{children}</div>;
 }

@@ -1,17 +1,20 @@
 // src/lib/musicbrainz/index.ts
 
 // Core MusicBrainz API services
-export { MusicBrainzService as BasicMusicBrainzService, musicbrainzService as basicMusicBrainzService } from './basic-service';
+export {
+  MusicBrainzService as BasicMusicBrainzService,
+  musicbrainzService as basicMusicBrainzService,
+} from './basic-service';
 export { MusicBrainzService, musicBrainzService } from './musicbrainz-service';
-export { 
-  QueuedMusicBrainzService, 
+export {
+  QueuedMusicBrainzService,
   getQueuedMusicBrainzService,
-  destroyQueuedMusicBrainzService 
+  destroyQueuedMusicBrainzService,
 } from './queue-service';
 
 // Factory function available if needed (though getQueuedMusicBrainzService can be used directly)
 export function createMusicBrainzQueueService() {
-  const { getQueuedMusicBrainzService } = require('./queue-service');
+  // Use direct import to avoid require for ESM compatibility
   return getQueuedMusicBrainzService();
 }
 
@@ -69,10 +72,7 @@ export type {
   ValidatedRecordingSearchResult,
 } from './schemas';
 
-export type {
-  CreateArtistData,
-  CreateAlbumData,
-} from './mappers';
+export type { CreateArtistData, CreateAlbumData } from './mappers';
 
 export type {
   EnrichmentDecision,

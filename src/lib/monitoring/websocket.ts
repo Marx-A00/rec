@@ -1,6 +1,8 @@
 // src/lib/monitoring/websocket.ts
 import { EventEmitter } from 'events';
+
 import { getMusicBrainzQueue } from '@/lib/queue';
+
 import { metricsCollector } from './metrics-collector';
 import { healthChecker } from './health-check';
 import { alertManager } from './alert-manager';
@@ -53,7 +55,7 @@ export class MonitoringWebSocket extends EventEmitter {
     });
 
     // Listen for job completions
-    metricsCollector.on('job:complete', (job) => {
+    metricsCollector.on('job:complete', job => {
       this.broadcast({
         type: 'job-update',
         data: {
@@ -151,7 +153,10 @@ export class MonitoringWebSocket extends EventEmitter {
     metricsCollector.startCollecting(intervalMs);
 
     // Metrics are automatically broadcast via event listener
-    this.subscriptions.set('metrics', setInterval(() => {}, intervalMs)); // Placeholder
+    this.subscriptions.set(
+      'metrics',
+      setInterval(() => {}, intervalMs)
+    ); // Placeholder
   }
 
   /**
@@ -183,7 +188,12 @@ export class MonitoringWebSocket extends EventEmitter {
             type: job.name,
             status: state.toUpperCase(),
             progress: typeof progress === 'number' ? progress : 0,
-            message: typeof progress === 'object' && progress !== null && 'message' in progress ? (progress as any).message : undefined,
+            message:
+              typeof progress === 'object' &&
+              progress !== null &&
+              'message' in progress
+                ? (progress as any).message
+                : undefined,
           },
           timestamp: new Date(),
         });

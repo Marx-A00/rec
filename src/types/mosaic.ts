@@ -1,8 +1,8 @@
 // src/types/dashboard.ts
 
-export type PanelType = 
+export type PanelType =
   | 'collection-albums'
-  | 'recommendations' 
+  | 'recommendations'
   | 'activity-feed'
   | 'recently-played'
   | 'quick-stats'
@@ -21,7 +21,7 @@ export interface PanelConfig {
   refreshInterval?: number;
   showHeader?: boolean;
   headerTitle?: string;
-  
+
   // Panel-specific configurations (typed per panel type)
   [key: string]: any;
 }
@@ -105,11 +105,26 @@ export interface DashboardContextType {
     updatePanelConfig: (panelId: string, config: PanelConfig) => void;
     resizePanel: (panelId: string, size: number) => void;
     movePanel: (panelId: string, targetPosition: number) => void;
-    reorderPanels: (activeId: string, overId: string, layoutPath?: string[]) => void;
-    createGroup: (panelIds: string[], direction: 'horizontal' | 'vertical', position?: number) => void;
+    reorderPanels: (
+      activeId: string,
+      overId: string,
+      layoutPath?: string[]
+    ) => void;
+    createGroup: (
+      panelIds: string[],
+      direction: 'horizontal' | 'vertical',
+      position?: number
+    ) => void;
     ungroupPanel: (panelId: string, targetPosition?: number) => void;
-    changeLayoutDirection: (layoutPath: string[], direction: 'horizontal' | 'vertical') => void;
-    smartDrop: (draggedPanelId: string, targetPanelId: string, dropZone: 'top' | 'bottom' | 'left' | 'right' | 'center') => void;
+    changeLayoutDirection: (
+      layoutPath: string[],
+      direction: 'horizontal' | 'vertical'
+    ) => void;
+    smartDrop: (
+      draggedPanelId: string,
+      targetPanelId: string,
+      dropZone: 'top' | 'bottom' | 'left' | 'right' | 'center'
+    ) => void;
     selectPanel: (panelId: string | null) => void;
     saveLayout: () => Promise<void>;
     loadLayout: (layoutId: string) => Promise<void>;

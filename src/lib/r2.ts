@@ -1,4 +1,9 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // R2 client configuration
@@ -12,7 +17,9 @@ const r2Client = new S3Client({
 });
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME || 'rec-images';
-const PUBLIC_URL = process.env.R2_PUBLIC_URL || `https://pub-${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.dev`;
+const PUBLIC_URL =
+  process.env.R2_PUBLIC_URL ||
+  `https://pub-${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.dev`;
 
 // File type configurations
 export const IMAGE_TYPES = {
@@ -21,7 +28,7 @@ export const IMAGE_TYPES = {
   userUploads: 'user-uploads',
 } as const;
 
-type ImageType = typeof IMAGE_TYPES[keyof typeof IMAGE_TYPES];
+type ImageType = (typeof IMAGE_TYPES)[keyof typeof IMAGE_TYPES];
 
 // Helper to generate file key
 function generateFileKey(type: ImageType, fileName: string): string {

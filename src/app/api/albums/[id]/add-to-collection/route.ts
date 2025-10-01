@@ -117,7 +117,7 @@ export async function POST(
     const collectionAlbum = await prisma.collectionAlbum.create({
       data: {
         collectionId: targetCollectionId,
-        discogsId: albumDiscogsId,  // NEW: Store Discogs ID for cross-reference
+        discogsId: albumDiscogsId, // NEW: Store Discogs ID for cross-reference
         // TODO: albumId will be populated during migration from Discogs->MusicBrainz
         personalRating: personalRating
           ? Math.max(1, Math.min(10, personalRating))

@@ -2,6 +2,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  RefreshCw,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  TrendingUp,
+  TrendingDown,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,19 +41,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  CheckCircle,
-  XCircle,
-  Clock,
-  RefreshCw,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  TrendingUp,
-  TrendingDown,
-} from 'lucide-react';
-import { toast } from 'sonner';
 
 // Simple date formatting function
 function formatDistanceToNow(date: Date): string {
@@ -157,16 +158,16 @@ export default function JobHistoryPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className='h-4 w-4 text-green-500' />;
       case 'failed':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <XCircle className='h-4 w-4 text-red-500' />;
       case 'active':
-        return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
+        return <RefreshCw className='h-4 w-4 text-blue-500 animate-spin' />;
       case 'waiting':
       case 'delayed':
-        return <Clock className="h-4 w-4 text-yellow-500" />;
+        return <Clock className='h-4 w-4 text-yellow-500' />;
       default:
-        return <AlertCircle className="h-4 w-4 text-zinc-400" />;
+        return <AlertCircle className='h-4 w-4 text-zinc-400' />;
     }
   };
 
@@ -194,221 +195,235 @@ export default function JobHistoryPage() {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Job History</h1>
-        <p className="text-zinc-400 mt-1">
+    <div className='p-8'>
+      <div className='mb-8'>
+        <h1 className='text-3xl font-bold text-white'>Job History</h1>
+        <p className='text-zinc-400 mt-1'>
           Historical view of all processed jobs and their outcomes
         </p>
       </div>
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-zinc-400">
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6'>
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='pb-3'>
+              <CardTitle className='text-sm font-medium text-zinc-400'>
                 Total Jobs
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalJobs.toLocaleString()}</div>
-              <p className="text-xs text-zinc-500 mt-1">
+              <div className='text-2xl font-bold text-white'>
+                {stats.totalJobs.toLocaleString()}
+              </div>
+              <p className='text-xs text-zinc-500 mt-1'>
                 {stats.jobsToday} today
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-zinc-400">
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='pb-3'>
+              <CardTitle className='text-sm font-medium text-zinc-400'>
                 Success Rate
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2">
-                <div className="text-2xl font-bold text-white">
+              <div className='flex items-center gap-2'>
+                <div className='text-2xl font-bold text-white'>
                   {(stats.successRate * 100).toFixed(1)}%
                 </div>
                 {stats.trendsUp ? (
-                  <TrendingUp className="h-4 w-4 text-green-500" />
+                  <TrendingUp className='h-4 w-4 text-green-500' />
                 ) : (
-                  <TrendingDown className="h-4 w-4 text-red-500" />
+                  <TrendingDown className='h-4 w-4 text-red-500' />
                 )}
               </div>
-              <p className="text-xs text-zinc-500 mt-1">
+              <p className='text-xs text-zinc-500 mt-1'>
                 {stats.completedJobs} completed
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-zinc-400">
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='pb-3'>
+              <CardTitle className='text-sm font-medium text-zinc-400'>
                 Failed Jobs
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-400">{stats.failedJobs}</div>
-              <p className="text-xs text-zinc-500 mt-1">
-                {((stats.failedJobs / stats.totalJobs) * 100).toFixed(1)}% failure rate
+              <div className='text-2xl font-bold text-red-400'>
+                {stats.failedJobs}
+              </div>
+              <p className='text-xs text-zinc-500 mt-1'>
+                {((stats.failedJobs / stats.totalJobs) * 100).toFixed(1)}%
+                failure rate
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-zinc-400">
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='pb-3'>
+              <CardTitle className='text-sm font-medium text-zinc-400'>
                 Avg Duration
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">
+              <div className='text-2xl font-bold text-white'>
                 {formatDuration(stats.avgDuration)}
               </div>
-              <p className="text-xs text-zinc-500 mt-1">
-                Per job processing
-              </p>
+              <p className='text-xs text-zinc-500 mt-1'>Per job processing</p>
             </CardContent>
           </Card>
         </div>
       )}
 
       {/* Filters and Controls */}
-      <Card className="bg-zinc-900 border-zinc-800 mb-6">
+      <Card className='bg-zinc-900 border-zinc-800 mb-6'>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-white">Job History</CardTitle>
-            <div className="flex items-center gap-2">
+          <div className='flex items-center justify-between'>
+            <CardTitle className='text-white'>Job History</CardTitle>
+            <div className='flex items-center gap-2'>
               <Select value={timeFilter} onValueChange={setTimeFilter}>
-                <SelectTrigger className="w-32 bg-zinc-800 border-zinc-700 text-white">
+                <SelectTrigger className='w-32 bg-zinc-800 border-zinc-700 text-white'>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
-                  <SelectItem value="1h">Last Hour</SelectItem>
-                  <SelectItem value="24h">Last 24 Hours</SelectItem>
-                  <SelectItem value="7d">Last 7 Days</SelectItem>
-                  <SelectItem value="30d">Last 30 Days</SelectItem>
-                  <SelectItem value="all">All Time</SelectItem>
+                <SelectContent className='bg-zinc-800 border-zinc-700'>
+                  <SelectItem value='1h'>Last Hour</SelectItem>
+                  <SelectItem value='24h'>Last 24 Hours</SelectItem>
+                  <SelectItem value='7d'>Last 7 Days</SelectItem>
+                  <SelectItem value='30d'>Last 30 Days</SelectItem>
+                  <SelectItem value='all'>All Time</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-32 bg-zinc-800 border-zinc-700 text-white">
+                <SelectTrigger className='w-32 bg-zinc-800 border-zinc-700 text-white'>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="waiting">Waiting</SelectItem>
+                <SelectContent className='bg-zinc-800 border-zinc-700'>
+                  <SelectItem value='all'>All Status</SelectItem>
+                  <SelectItem value='completed'>Completed</SelectItem>
+                  <SelectItem value='failed'>Failed</SelectItem>
+                  <SelectItem value='active'>Active</SelectItem>
+                  <SelectItem value='waiting'>Waiting</SelectItem>
                 </SelectContent>
               </Select>
 
               <Button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                size="sm"
-                variant="outline"
-                className="border-zinc-700 text-white hover:bg-zinc-800"
+                size='sm'
+                variant='outline'
+                className='border-zinc-700 text-white hover:bg-zinc-800'
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`}
+                />
                 Refresh
               </Button>
 
               <Button
-                size="sm"
-                variant="outline"
-                className="border-zinc-700 text-white hover:bg-zinc-800"
+                size='sm'
+                variant='outline'
+                className='border-zinc-700 text-white hover:bg-zinc-800'
               >
-                <Download className="h-4 w-4 mr-2" />
+                <Download className='h-4 w-4 mr-2' />
                 Export
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="h-[600px] overflow-auto">
+          <div className='h-[600px] overflow-auto'>
             <Table>
               <TableHeader>
-                <TableRow className="border-zinc-800">
-                  <TableHead className="text-zinc-400">Status</TableHead>
-                  <TableHead className="text-zinc-400">Job Name</TableHead>
-                  <TableHead className="text-zinc-400">Album</TableHead>
-                  <TableHead className="text-zinc-400">Created</TableHead>
-                  <TableHead className="text-zinc-400">Duration</TableHead>
-                  <TableHead className="text-zinc-400">Attempts</TableHead>
-                  <TableHead className="text-zinc-400">Actions</TableHead>
+                <TableRow className='border-zinc-800'>
+                  <TableHead className='text-zinc-400'>Status</TableHead>
+                  <TableHead className='text-zinc-400'>Job Name</TableHead>
+                  <TableHead className='text-zinc-400'>Album</TableHead>
+                  <TableHead className='text-zinc-400'>Created</TableHead>
+                  <TableHead className='text-zinc-400'>Duration</TableHead>
+                  <TableHead className='text-zinc-400'>Attempts</TableHead>
+                  <TableHead className='text-zinc-400'>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-zinc-500 py-8">
+                    <TableCell
+                      colSpan={7}
+                      className='text-center text-zinc-500 py-8'
+                    >
                       Loading job history...
                     </TableCell>
                   </TableRow>
                 ) : jobs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-zinc-500 py-8">
+                    <TableCell
+                      colSpan={7}
+                      className='text-center text-zinc-500 py-8'
+                    >
                       No jobs found for the selected filters
                     </TableCell>
                   </TableRow>
                 ) : (
-                  jobs.map((job) => (
+                  jobs.map(job => (
                     <TableRow
                       key={job.id}
-                      className="border-zinc-800 cursor-pointer hover:bg-zinc-800/50 transition-colors"
+                      className='border-zinc-800 cursor-pointer hover:bg-zinc-800/50 transition-colors'
                       onClick={() => setSelectedJob(job)}
                     >
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className='flex items-center gap-2'>
                           {getStatusIcon(job.status)}
-                          <Badge variant={getStatusBadgeVariant(job.status) as any} className="text-xs">
+                          <Badge
+                            variant={getStatusBadgeVariant(job.status) as any}
+                            className='text-xs'
+                          >
                             {job.status}
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell className="text-zinc-300 font-medium">
+                      <TableCell className='text-zinc-300 font-medium'>
                         {job.name}
                       </TableCell>
-                      <TableCell className="text-zinc-400">
+                      <TableCell className='text-zinc-400'>
                         {job.albumName || '-'}
                       </TableCell>
-                      <TableCell className="text-zinc-400">
+                      <TableCell className='text-zinc-400'>
                         {formatDistanceToNow(new Date(job.createdAt))}
                       </TableCell>
-                      <TableCell className="text-zinc-400">
+                      <TableCell className='text-zinc-400'>
                         {formatDuration(job.duration)}
                       </TableCell>
-                      <TableCell className="text-zinc-400">
+                      <TableCell className='text-zinc-400'>
                         {job.attempts}
                       </TableCell>
                       <TableCell>
                         {job.status === 'failed' && (
                           <Button
-                            onClick={(e) => {
+                            onClick={e => {
                               e.stopPropagation();
                               handleRetryJob(job.id);
                             }}
-                            size="sm"
-                            variant="ghost"
-                            className="text-zinc-400 hover:text-white"
+                            size='sm'
+                            variant='ghost'
+                            className='text-zinc-400 hover:text-white'
                           >
-                            <RefreshCw className="h-3 w-3 mr-1" />
+                            <RefreshCw className='h-3 w-3 mr-1' />
                             Retry
                           </Button>
                         )}
                         {job.error && (
                           <Button
-                            onClick={(e) => e.stopPropagation()}
-                            size="sm"
-                            variant="ghost"
-                            className="text-zinc-400 hover:text-white"
+                            onClick={e => e.stopPropagation()}
+                            size='sm'
+                            variant='ghost'
+                            className='text-zinc-400 hover:text-white'
                             title={job.error}
                           >
-                            <AlertCircle className="h-3 w-3" />
+                            <AlertCircle className='h-3 w-3' />
                           </Button>
                         )}
                       </TableCell>
@@ -421,30 +436,30 @@ export default function JobHistoryPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-zinc-800">
-              <div className="text-sm text-zinc-400">
+            <div className='flex items-center justify-between mt-4 pt-4 border-t border-zinc-800'>
+              <div className='text-sm text-zinc-400'>
                 Page {page} of {totalPages}
               </div>
-              <div className="flex items-center gap-2">
+              <div className='flex items-center gap-2'>
                 <Button
                   onClick={() => setPage(page - 1)}
                   disabled={page === 1}
-                  size="sm"
-                  variant="outline"
-                  className="border-zinc-700 text-white hover:bg-zinc-800"
+                  size='sm'
+                  variant='outline'
+                  className='border-zinc-700 text-white hover:bg-zinc-800'
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className='h-4 w-4' />
                   Previous
                 </Button>
                 <Button
                   onClick={() => setPage(page + 1)}
                   disabled={page === totalPages}
-                  size="sm"
-                  variant="outline"
-                  className="border-zinc-700 text-white hover:bg-zinc-800"
+                  size='sm'
+                  variant='outline'
+                  className='border-zinc-700 text-white hover:bg-zinc-800'
                 >
                   Next
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className='h-4 w-4' />
                 </Button>
               </div>
             </div>
@@ -453,62 +468,75 @@ export default function JobHistoryPage() {
       </Card>
 
       {/* Job Details Modal */}
-      <Dialog open={!!selectedJob} onOpenChange={(open) => !open && setSelectedJob(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
+      <Dialog
+        open={!!selectedJob}
+        onOpenChange={open => !open && setSelectedJob(null)}
+      >
+        <DialogContent className='max-w-3xl max-h-[80vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white'>
           <DialogHeader>
-            <DialogTitle className="text-white">Job Details</DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogTitle className='text-white'>Job Details</DialogTitle>
+            <DialogDescription className='text-zinc-400'>
               Full details for job {selectedJob?.id}
             </DialogDescription>
           </DialogHeader>
 
           {selectedJob && (
-            <div className="space-y-4">
+            <div className='space-y-4'>
               {/* Job Status and Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="text-sm text-zinc-400">Status</div>
-                  <div className="flex items-center gap-2">
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='space-y-2'>
+                  <div className='text-sm text-zinc-400'>Status</div>
+                  <div className='flex items-center gap-2'>
                     {getStatusIcon(selectedJob.status)}
-                    <Badge variant={getStatusBadgeVariant(selectedJob.status) as any}>
+                    <Badge
+                      variant={getStatusBadgeVariant(selectedJob.status) as any}
+                    >
                       {selectedJob.status}
                     </Badge>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="text-sm text-zinc-400">Job Name</div>
-                  <div className="text-white font-medium">{selectedJob.name}</div>
+                <div className='space-y-2'>
+                  <div className='text-sm text-zinc-400'>Job Name</div>
+                  <div className='text-white font-medium'>
+                    {selectedJob.name}
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="text-sm text-zinc-400">Created</div>
-                  <div className="text-white">{new Date(selectedJob.createdAt).toLocaleString()}</div>
+                <div className='space-y-2'>
+                  <div className='text-sm text-zinc-400'>Created</div>
+                  <div className='text-white'>
+                    {new Date(selectedJob.createdAt).toLocaleString()}
+                  </div>
                 </div>
 
                 {selectedJob.completedAt && (
-                  <div className="space-y-2">
-                    <div className="text-sm text-zinc-400">Completed</div>
-                    <div className="text-white">{new Date(selectedJob.completedAt).toLocaleString()}</div>
+                  <div className='space-y-2'>
+                    <div className='text-sm text-zinc-400'>Completed</div>
+                    <div className='text-white'>
+                      {new Date(selectedJob.completedAt).toLocaleString()}
+                    </div>
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <div className="text-sm text-zinc-400">Duration</div>
-                  <div className="text-white">{formatDuration(selectedJob.duration)}</div>
+                <div className='space-y-2'>
+                  <div className='text-sm text-zinc-400'>Duration</div>
+                  <div className='text-white'>
+                    {formatDuration(selectedJob.duration)}
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="text-sm text-zinc-400">Attempts</div>
-                  <div className="text-white">{selectedJob.attempts}</div>
+                <div className='space-y-2'>
+                  <div className='text-sm text-zinc-400'>Attempts</div>
+                  <div className='text-white'>{selectedJob.attempts}</div>
                 </div>
               </div>
 
               {/* Job Data */}
-              <div className="space-y-2">
-                <div className="text-sm text-zinc-400">Job Data</div>
-                <div className="bg-zinc-800 rounded-lg p-3">
-                  <pre className="text-xs text-zinc-300 overflow-x-auto">
+              <div className='space-y-2'>
+                <div className='text-sm text-zinc-400'>Job Data</div>
+                <div className='bg-zinc-800 rounded-lg p-3'>
+                  <pre className='text-xs text-zinc-300 overflow-x-auto'>
                     {JSON.stringify(selectedJob.data, null, 2)}
                   </pre>
                 </div>
@@ -516,10 +544,10 @@ export default function JobHistoryPage() {
 
               {/* Job Result (if completed) */}
               {selectedJob.result && (
-                <div className="space-y-2">
-                  <div className="text-sm text-zinc-400">Result</div>
-                  <div className="bg-zinc-800 rounded-lg p-3">
-                    <pre className="text-xs text-zinc-300 overflow-x-auto">
+                <div className='space-y-2'>
+                  <div className='text-sm text-zinc-400'>Result</div>
+                  <div className='bg-zinc-800 rounded-lg p-3'>
+                    <pre className='text-xs text-zinc-300 overflow-x-auto'>
                       {JSON.stringify(selectedJob.result, null, 2)}
                     </pre>
                   </div>
@@ -528,10 +556,10 @@ export default function JobHistoryPage() {
 
               {/* Error Details (if failed) */}
               {selectedJob.error && (
-                <div className="space-y-2">
-                  <div className="text-sm text-zinc-400">Error</div>
-                  <div className="bg-red-900/20 border border-red-800 rounded-lg p-3">
-                    <pre className="text-xs text-red-300 overflow-x-auto">
+                <div className='space-y-2'>
+                  <div className='text-sm text-zinc-400'>Error</div>
+                  <div className='bg-red-900/20 border border-red-800 rounded-lg p-3'>
+                    <pre className='text-xs text-red-300 overflow-x-auto'>
                       {selectedJob.error}
                     </pre>
                   </div>
@@ -539,24 +567,24 @@ export default function JobHistoryPage() {
               )}
 
               {/* Actions */}
-              <div className="flex justify-end gap-2 pt-4 border-t border-zinc-800">
+              <div className='flex justify-end gap-2 pt-4 border-t border-zinc-800'>
                 {selectedJob.status === 'failed' && (
                   <Button
                     onClick={() => {
                       handleRetryJob(selectedJob.id);
                       setSelectedJob(null);
                     }}
-                    variant="outline"
-                    className="border-zinc-700 text-white hover:bg-zinc-800"
+                    variant='outline'
+                    className='border-zinc-700 text-white hover:bg-zinc-800'
                   >
-                    <RefreshCw className="h-4 w-4 mr-2" />
+                    <RefreshCw className='h-4 w-4 mr-2' />
                     Retry Job
                   </Button>
                 )}
                 <Button
                   onClick={() => setSelectedJob(null)}
-                  variant="outline"
-                  className="border-zinc-700 text-white hover:bg-zinc-800"
+                  variant='outline'
+                  className='border-zinc-700 text-white hover:bg-zinc-800'
                 >
                   Close
                 </Button>

@@ -11,6 +11,7 @@ const apiCSP = `
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // Do not ignore ESLint during builds; we fix issues instead
   images: {
     loader: 'custom',
     loaderFile: './src/lib/image-loader.ts',

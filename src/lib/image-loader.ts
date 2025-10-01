@@ -6,11 +6,17 @@ interface ImageLoaderProps {
   quality?: number;
 }
 
-export default function cloudflareLoader({ src, width, quality }: ImageLoaderProps) {
+export default function cloudflareLoader({
+  src,
+  width,
+  quality,
+}: ImageLoaderProps) {
   // If it's already a Cloudflare Images URL, modify it with the desired parameters
   if (src.includes('imagedelivery.net')) {
     // Extract the base URL and image ID
-    const urlParts = src.match(/^(https:\/\/imagedelivery\.net\/[^\/]+\/[^\/]+)\/(.*?)(\?.*)?$/);
+    const urlParts = src.match(
+      /^(https:\/\/imagedelivery\.net\/[^\/]+\/[^\/]+)\/(.*?)(\?.*)?$/
+    );
 
     if (urlParts) {
       const baseUrl = urlParts[1];

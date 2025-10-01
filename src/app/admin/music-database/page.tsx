@@ -2,26 +2,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Search,
   Database,
@@ -41,6 +21,33 @@ import {
   Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 
 interface AlbumSearchResult {
@@ -197,7 +204,10 @@ export default function MusicDatabasePage() {
       if (data.data) {
         setSearchResults(prev => ({
           ...prev,
-          [activeTab]: data.data[`search${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`] || [],
+          [activeTab]:
+            data.data[
+              `search${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`
+            ] || [],
         }));
       }
     } catch (error) {
@@ -305,9 +315,14 @@ export default function MusicDatabasePage() {
     }
   };
 
-  const handleEnrichItem = async (itemId: string, type: 'album' | 'artist', priority: EnrichmentPriority = 'MEDIUM') => {
+  const handleEnrichItem = async (
+    itemId: string,
+    type: 'album' | 'artist',
+    priority: EnrichmentPriority = 'MEDIUM'
+  ) => {
     try {
-      const mutation = type === 'album' ? 'triggerAlbumEnrichment' : 'triggerArtistEnrichment';
+      const mutation =
+        type === 'album' ? 'triggerAlbumEnrichment' : 'triggerArtistEnrichment';
       const response = await fetch('/api/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -332,7 +347,9 @@ export default function MusicDatabasePage() {
         // Refresh the search results
         performSearch();
       } else {
-        throw new Error(data.data?.[mutation]?.message || 'Failed to queue enrichment');
+        throw new Error(
+          data.data?.[mutation]?.message || 'Failed to queue enrichment'
+        );
       }
     } catch (error) {
       toast.error(`Failed to queue enrichment: ${error}`);
@@ -346,7 +363,12 @@ export default function MusicDatabasePage() {
     }
 
     const itemsArray = Array.from(selectedItems);
-    const type = activeTab === 'albums' ? 'album' : activeTab === 'artists' ? 'artist' : null;
+    const type =
+      activeTab === 'albums'
+        ? 'album'
+        : activeTab === 'artists'
+          ? 'artist'
+          : null;
 
     if (!type) {
       toast.error('Batch enrichment not available for tracks');
@@ -376,11 +398,16 @@ export default function MusicDatabasePage() {
 
       const data = await response.json();
       if (data.data?.batchEnrichment?.success) {
-        toast.success(`${data.data.batchEnrichment.jobsQueued} enrichment jobs queued`);
+        toast.success(
+          `${data.data.batchEnrichment.jobsQueued} enrichment jobs queued`
+        );
         setSelectedItems(new Set());
         performSearch();
       } else {
-        throw new Error(data.data?.batchEnrichment?.message || 'Failed to queue batch enrichment');
+        throw new Error(
+          data.data?.batchEnrichment?.message ||
+            'Failed to queue batch enrichment'
+        );
       }
     } catch (error) {
       toast.error(`Failed to queue batch enrichment: ${error}`);
@@ -402,19 +429,25 @@ export default function MusicDatabasePage() {
       MEDIUM: 'bg-yellow-500',
       LOW: 'bg-red-500',
     };
-    return <Badge className={colors[quality as keyof typeof colors] || 'bg-gray-500'}>{quality}</Badge>;
+    return (
+      <Badge
+        className={colors[quality as keyof typeof colors] || 'bg-gray-500'}
+      >
+        {quality}
+      </Badge>
+    );
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className='h-4 w-4 text-green-500' />;
       case 'IN_PROGRESS':
-        return <Clock className="h-4 w-4 text-yellow-500 animate-pulse" />;
+        return <Clock className='h-4 w-4 text-yellow-500 animate-pulse' />;
       case 'FAILED':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
+        return <AlertCircle className='h-4 w-4 text-red-500' />;
       default:
-        return <Info className="h-4 w-4 text-zinc-400" />;
+        return <Info className='h-4 w-4 text-zinc-400' />;
     }
   };
 
@@ -426,58 +459,74 @@ export default function MusicDatabasePage() {
   };
 
   return (
-    <div className="p-8">
+    <div className='p-8'>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Music Database</h1>
-        <p className="text-zinc-400 mt-1">
+      <div className='mb-8'>
+        <h1 className='text-3xl font-bold text-white'>Music Database</h1>
+        <p className='text-zinc-400 mt-1'>
           Search, manage, and enrich music metadata
         </p>
       </div>
 
       {/* Database Stats */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-white">Total Albums</CardTitle>
+        <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='pb-2'>
+              <CardTitle className='text-sm font-medium text-white'>
+                Total Albums
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalAlbums.toLocaleString()}</div>
-              <p className="text-xs text-zinc-500">
+              <div className='text-2xl font-bold text-white'>
+                {stats.totalAlbums.toLocaleString()}
+              </div>
+              <p className='text-xs text-zinc-500'>
                 {stats.albumsNeedingEnrichment} need enrichment
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-white">Total Artists</CardTitle>
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='pb-2'>
+              <CardTitle className='text-sm font-medium text-white'>
+                Total Artists
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalArtists.toLocaleString()}</div>
-              <p className="text-xs text-zinc-500">
+              <div className='text-2xl font-bold text-white'>
+                {stats.totalArtists.toLocaleString()}
+              </div>
+              <p className='text-xs text-zinc-500'>
                 {stats.artistsNeedingEnrichment} need enrichment
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-white">Total Tracks</CardTitle>
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='pb-2'>
+              <CardTitle className='text-sm font-medium text-white'>
+                Total Tracks
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalTracks.toLocaleString()}</div>
-              <p className="text-xs text-zinc-500">
+              <div className='text-2xl font-bold text-white'>
+                {stats.totalTracks.toLocaleString()}
+              </div>
+              <p className='text-xs text-zinc-500'>
                 {stats.recentlyEnriched} enriched today
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-white">Data Quality</CardTitle>
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='pb-2'>
+              <CardTitle className='text-sm font-medium text-white'>
+                Data Quality
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{(stats.averageDataQuality * 100).toFixed(0)}%</div>
-              <p className="text-xs text-zinc-500">
+              <div className='text-2xl font-bold text-white'>
+                {(stats.averageDataQuality * 100).toFixed(0)}%
+              </div>
+              <p className='text-xs text-zinc-500'>
                 {stats.failedEnrichments} failed enrichments
               </p>
             </CardContent>
@@ -486,83 +535,108 @@ export default function MusicDatabasePage() {
       )}
 
       {/* Search and Filters */}
-      <Card className="mb-6 bg-zinc-900 border-zinc-800">
+      <Card className='mb-6 bg-zinc-900 border-zinc-800'>
         <CardHeader>
-          <CardTitle className="text-white">Search & Filter</CardTitle>
+          <CardTitle className='text-white'>Search & Filter</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 h-4 w-4" />
+          <div className='space-y-4'>
+            <div className='flex gap-2'>
+              <div className='relative flex-1'>
+                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 h-4 w-4' />
                 <Input
                   placeholder={`Search ${activeTab}...`}
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500"
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className='pl-10 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500'
                 />
               </div>
-              <Button onClick={performSearch} disabled={loading} className="bg-zinc-700 hover:bg-zinc-600 text-white">
+              <Button
+                onClick={performSearch}
+                disabled={loading}
+                className='bg-zinc-700 hover:bg-zinc-600 text-white'
+              >
                 {loading ? (
-                  <RefreshCcw className="h-4 w-4 animate-spin" />
+                  <RefreshCcw className='h-4 w-4 animate-spin' />
                 ) : (
                   'Search'
                 )}
               </Button>
             </div>
 
-            <div className="flex gap-2 flex-wrap">
-              <Select value={filters.dataQuality} onValueChange={(value: string) => setFilters(prev => ({ ...prev, dataQuality: value }))}>
-                <SelectTrigger className="w-[180px] bg-zinc-800 border-zinc-700 text-white">
-                  <SelectValue placeholder="Data Quality" />
+            <div className='flex gap-2 flex-wrap'>
+              <Select
+                value={filters.dataQuality}
+                onValueChange={(value: string) =>
+                  setFilters(prev => ({ ...prev, dataQuality: value }))
+                }
+              >
+                <SelectTrigger className='w-[180px] bg-zinc-800 border-zinc-700 text-white'>
+                  <SelectValue placeholder='Data Quality' />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Quality</SelectItem>
-                  <SelectItem value="HIGH">High Quality</SelectItem>
-                  <SelectItem value="MEDIUM">Medium Quality</SelectItem>
-                  <SelectItem value="LOW">Low Quality</SelectItem>
+                  <SelectItem value='all'>All Quality</SelectItem>
+                  <SelectItem value='HIGH'>High Quality</SelectItem>
+                  <SelectItem value='MEDIUM'>Medium Quality</SelectItem>
+                  <SelectItem value='LOW'>Low Quality</SelectItem>
                 </SelectContent>
               </Select>
 
-              <Select value={filters.enrichmentStatus} onValueChange={(value: string) => setFilters(prev => ({ ...prev, enrichmentStatus: value }))}>
-                <SelectTrigger className="w-[180px] bg-zinc-800 border-zinc-700 text-white">
-                  <SelectValue placeholder="Enrichment Status" />
+              <Select
+                value={filters.enrichmentStatus}
+                onValueChange={(value: string) =>
+                  setFilters(prev => ({ ...prev, enrichmentStatus: value }))
+                }
+              >
+                <SelectTrigger className='w-[180px] bg-zinc-800 border-zinc-700 text-white'>
+                  <SelectValue placeholder='Enrichment Status' />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="COMPLETED">Completed</SelectItem>
-                  <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="FAILED">Failed</SelectItem>
+                  <SelectItem value='all'>All Status</SelectItem>
+                  <SelectItem value='COMPLETED'>Completed</SelectItem>
+                  <SelectItem value='IN_PROGRESS'>In Progress</SelectItem>
+                  <SelectItem value='PENDING'>Pending</SelectItem>
+                  <SelectItem value='FAILED'>Failed</SelectItem>
                 </SelectContent>
               </Select>
 
               <Button
                 variant={filters.needsEnrichment ? 'default' : 'outline'}
-                onClick={() => setFilters(prev => ({ ...prev, needsEnrichment: !prev.needsEnrichment }))}
-                className={filters.needsEnrichment ? 'bg-zinc-700 hover:bg-zinc-600 text-white' : 'text-white border-zinc-700 hover:bg-zinc-700'}
+                onClick={() =>
+                  setFilters(prev => ({
+                    ...prev,
+                    needsEnrichment: !prev.needsEnrichment,
+                  }))
+                }
+                className={
+                  filters.needsEnrichment
+                    ? 'bg-zinc-700 hover:bg-zinc-600 text-white'
+                    : 'text-white border-zinc-700 hover:bg-zinc-700'
+                }
               >
-                <Filter className="h-4 w-4 mr-2" />
+                <Filter className='h-4 w-4 mr-2' />
                 Needs Enrichment
               </Button>
 
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[180px] bg-zinc-800 border-zinc-700 text-white">
-                  <SelectValue placeholder="Sort By" />
+                <SelectTrigger className='w-[180px] bg-zinc-800 border-zinc-700 text-white'>
+                  <SelectValue placeholder='Sort By' />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="title">Title/Name</SelectItem>
-                  <SelectItem value="releaseDate">Release Date</SelectItem>
-                  <SelectItem value="lastEnriched">Last Enriched</SelectItem>
-                  <SelectItem value="dataQuality">Data Quality</SelectItem>
+                  <SelectItem value='title'>Title/Name</SelectItem>
+                  <SelectItem value='releaseDate'>Release Date</SelectItem>
+                  <SelectItem value='lastEnriched'>Last Enriched</SelectItem>
+                  <SelectItem value='dataQuality'>Data Quality</SelectItem>
                 </SelectContent>
               </Select>
 
               <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                className="text-white border-zinc-700 hover:bg-zinc-700"
+                variant='outline'
+                size='icon'
+                onClick={() =>
+                  setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+                }
+                className='text-white border-zinc-700 hover:bg-zinc-700'
               >
                 {sortOrder === 'asc' ? '↑' : '↓'}
               </Button>
@@ -572,68 +646,86 @@ export default function MusicDatabasePage() {
       </Card>
 
       {/* Results Tabs */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as SearchType)}>
-        <TabsList className="grid w-full grid-cols-3 mb-4 bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="albums" className="flex items-center gap-2">
-            <AlbumIcon className="h-4 w-4" />
+      <Tabs
+        value={activeTab}
+        onValueChange={value => setActiveTab(value as SearchType)}
+      >
+        <TabsList className='grid w-full grid-cols-3 mb-4 bg-zinc-900 border border-zinc-800'>
+          <TabsTrigger value='albums' className='flex items-center gap-2'>
+            <AlbumIcon className='h-4 w-4' />
             Albums
           </TabsTrigger>
-          <TabsTrigger value="artists" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
+          <TabsTrigger value='artists' className='flex items-center gap-2'>
+            <User className='h-4 w-4' />
             Artists
           </TabsTrigger>
-          <TabsTrigger value="tracks" className="flex items-center gap-2">
-            <Music className="h-4 w-4" />
+          <TabsTrigger value='tracks' className='flex items-center gap-2'>
+            <Music className='h-4 w-4' />
             Tracks
           </TabsTrigger>
         </TabsList>
 
         {/* Action Bar */}
-        {(activeTab === 'albums' || activeTab === 'artists') && searchResults[activeTab].length > 0 && (
-          <div className="mb-4 flex gap-2">
-            <Button variant="outline" onClick={handleSelectAll} className="text-white border-zinc-700 hover:bg-zinc-700">
-              {selectedItems.size === searchResults[activeTab].length ? 'Deselect All' : 'Select All'}
-            </Button>
-            <Button
-              onClick={handleBatchEnrichment}
-              disabled={selectedItems.size === 0}
-              className="bg-zinc-700 hover:bg-zinc-600 text-white"
-            >
-              <Zap className="h-4 w-4 mr-2" />
-              Enrich Selected ({selectedItems.size})
-            </Button>
-          </div>
-        )}
+        {(activeTab === 'albums' || activeTab === 'artists') &&
+          searchResults[activeTab].length > 0 && (
+            <div className='mb-4 flex gap-2'>
+              <Button
+                variant='outline'
+                onClick={handleSelectAll}
+                className='text-white border-zinc-700 hover:bg-zinc-700'
+              >
+                {selectedItems.size === searchResults[activeTab].length
+                  ? 'Deselect All'
+                  : 'Select All'}
+              </Button>
+              <Button
+                onClick={handleBatchEnrichment}
+                disabled={selectedItems.size === 0}
+                className='bg-zinc-700 hover:bg-zinc-600 text-white'
+              >
+                <Zap className='h-4 w-4 mr-2' />
+                Enrich Selected ({selectedItems.size})
+              </Button>
+            </div>
+          )}
 
         {/* Albums Tab */}
-        <TabsContent value="albums">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-0">
+        <TabsContent value='albums'>
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardContent className='p-0'>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12 text-zinc-400">
+                    <TableHead className='w-12 text-zinc-400'>
                       <input
-                        type="checkbox"
-                        checked={selectedItems.size === searchResults.albums.length && searchResults.albums.length > 0}
+                        type='checkbox'
+                        checked={
+                          selectedItems.size === searchResults.albums.length &&
+                          searchResults.albums.length > 0
+                        }
                         onChange={handleSelectAll}
                       />
                     </TableHead>
-                    <TableHead className="text-zinc-400">Album</TableHead>
-                    <TableHead className="text-zinc-400">Artists</TableHead>
-                    <TableHead className="text-zinc-400">Release Date</TableHead>
-                    <TableHead className="text-zinc-400">Tracks</TableHead>
-                    <TableHead className="text-zinc-400">Quality</TableHead>
-                    <TableHead className="text-zinc-400">Status</TableHead>
-                    <TableHead className="text-zinc-400">Actions</TableHead>
+                    <TableHead className='text-zinc-400'>Album</TableHead>
+                    <TableHead className='text-zinc-400'>Artists</TableHead>
+                    <TableHead className='text-zinc-400'>
+                      Release Date
+                    </TableHead>
+                    <TableHead className='text-zinc-400'>Tracks</TableHead>
+                    <TableHead className='text-zinc-400'>Quality</TableHead>
+                    <TableHead className='text-zinc-400'>Status</TableHead>
+                    <TableHead className='text-zinc-400'>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {searchResults.albums.map((album) => (
-                    <TableRow key={album.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
+                  {searchResults.albums.map(album => (
+                    <TableRow
+                      key={album.id}
+                      className='border-b border-zinc-800 hover:bg-zinc-800/50'
+                    >
                       <TableCell>
                         <input
-                          type="checkbox"
+                          type='checkbox'
                           checked={selectedItems.has(album.id)}
                           onChange={() => {
                             const newSelected = new Set(selectedItems);
@@ -647,38 +739,65 @@ export default function MusicDatabasePage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className='flex items-center gap-2'>
                           {album.coverArtUrl && (
-                            <img src={album.coverArtUrl} alt={album.title} className="h-10 w-10 rounded" />
+                            <img
+                              src={album.coverArtUrl}
+                              alt={album.title}
+                              className='h-10 w-10 rounded'
+                            />
                           )}
                           <div>
-                            <div className="font-medium text-white">{album.title}</div>
-                            {album.label && <div className="text-xs text-zinc-500">{album.label}</div>}
+                            <div className='font-medium text-white'>
+                              {album.title}
+                            </div>
+                            {album.label && (
+                              <div className='text-xs text-zinc-500'>
+                                {album.label}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-zinc-300">
-                        {album.artists.slice(0, 2).map(a => a.artist.name).join(', ')}
-                        {album.artists.length > 2 && ` +${album.artists.length - 2}`}
+                      <TableCell className='text-zinc-300'>
+                        {album.artists
+                          .slice(0, 2)
+                          .map(a => a.artist.name)
+                          .join(', ')}
+                        {album.artists.length > 2 &&
+                          ` +${album.artists.length - 2}`}
                       </TableCell>
-                      <TableCell className="text-zinc-300">{album.releaseDate ? new Date(album.releaseDate).toLocaleDateString() : '-'}</TableCell>
-                      <TableCell className="text-zinc-300">{album.trackCount || '-'}</TableCell>
-                      <TableCell>{getQualityBadge(album.dataQuality)}</TableCell>
+                      <TableCell className='text-zinc-300'>
+                        {album.releaseDate
+                          ? new Date(album.releaseDate).toLocaleDateString()
+                          : '-'}
+                      </TableCell>
+                      <TableCell className='text-zinc-300'>
+                        {album.trackCount || '-'}
+                      </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        {getQualityBadge(album.dataQuality)}
+                      </TableCell>
+                      <TableCell>
+                        <div className='flex items-center gap-1'>
                           {getStatusIcon(album.enrichmentStatus)}
-                          <span className="text-xs text-zinc-300">{album.enrichmentStatus}</span>
+                          <span className='text-xs text-zinc-300'>
+                            {album.enrichmentStatus}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Button
-                          size="sm"
-                          variant="outline"
+                          size='sm'
+                          variant='outline'
                           onClick={() => handleEnrichItem(album.id, 'album')}
-                          disabled={album.enrichmentStatus === 'IN_PROGRESS' || !album.needsEnrichment}
-                          className="text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50"
+                          disabled={
+                            album.enrichmentStatus === 'IN_PROGRESS' ||
+                            !album.needsEnrichment
+                          }
+                          className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
                         >
-                          <RefreshCcw className="h-3 w-3 mr-1" />
+                          <RefreshCcw className='h-3 w-3 mr-1' />
                           Enrich
                         </Button>
                       </TableCell>
@@ -687,8 +806,10 @@ export default function MusicDatabasePage() {
                 </TableBody>
               </Table>
               {searchResults.albums.length === 0 && !loading && (
-                <div className="text-center py-8 text-zinc-500">
-                  {searchQuery ? 'No albums found' : 'Enter a search query to find albums'}
+                <div className='text-center py-8 text-zinc-500'>
+                  {searchQuery
+                    ? 'No albums found'
+                    : 'Enter a search query to find albums'}
                 </div>
               )}
             </CardContent>
@@ -696,35 +817,41 @@ export default function MusicDatabasePage() {
         </TabsContent>
 
         {/* Artists Tab */}
-        <TabsContent value="artists">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-0">
+        <TabsContent value='artists'>
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardContent className='p-0'>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12 text-zinc-400">
+                    <TableHead className='w-12 text-zinc-400'>
                       <input
-                        type="checkbox"
-                        checked={selectedItems.size === searchResults.artists.length && searchResults.artists.length > 0}
+                        type='checkbox'
+                        checked={
+                          selectedItems.size === searchResults.artists.length &&
+                          searchResults.artists.length > 0
+                        }
                         onChange={handleSelectAll}
                       />
                     </TableHead>
-                    <TableHead className="text-zinc-400">Artist</TableHead>
-                    <TableHead className="text-zinc-400">Country</TableHead>
-                    <TableHead className="text-zinc-400">Formed</TableHead>
-                    <TableHead className="text-zinc-400">Albums</TableHead>
-                    <TableHead className="text-zinc-400">Tracks</TableHead>
-                    <TableHead className="text-zinc-400">Quality</TableHead>
-                    <TableHead className="text-zinc-400">Status</TableHead>
-                    <TableHead className="text-zinc-400">Actions</TableHead>
+                    <TableHead className='text-zinc-400'>Artist</TableHead>
+                    <TableHead className='text-zinc-400'>Country</TableHead>
+                    <TableHead className='text-zinc-400'>Formed</TableHead>
+                    <TableHead className='text-zinc-400'>Albums</TableHead>
+                    <TableHead className='text-zinc-400'>Tracks</TableHead>
+                    <TableHead className='text-zinc-400'>Quality</TableHead>
+                    <TableHead className='text-zinc-400'>Status</TableHead>
+                    <TableHead className='text-zinc-400'>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {searchResults.artists.map((artist) => (
-                    <TableRow key={artist.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
+                  {searchResults.artists.map(artist => (
+                    <TableRow
+                      key={artist.id}
+                      className='border-b border-zinc-800 hover:bg-zinc-800/50'
+                    >
                       <TableCell>
                         <input
-                          type="checkbox"
+                          type='checkbox'
                           checked={selectedItems.has(artist.id)}
                           onChange={() => {
                             const newSelected = new Set(selectedItems);
@@ -738,33 +865,54 @@ export default function MusicDatabasePage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className='flex items-center gap-2'>
                           {artist.imageUrl && (
-                            <img src={artist.imageUrl} alt={artist.name} className="h-10 w-10 rounded-full" />
+                            <img
+                              src={artist.imageUrl}
+                              alt={artist.name}
+                              className='h-10 w-10 rounded-full'
+                            />
                           )}
-                          <div className="font-medium text-white">{artist.name}</div>
+                          <div className='font-medium text-white'>
+                            {artist.name}
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-zinc-300">{artist.countryCode || '-'}</TableCell>
-                      <TableCell className="text-zinc-300">{artist.formedYear || '-'}</TableCell>
-                      <TableCell className="text-zinc-300">{artist.albumCount}</TableCell>
-                      <TableCell className="text-zinc-300">{artist.trackCount}</TableCell>
-                      <TableCell>{getQualityBadge(artist.dataQuality)}</TableCell>
+                      <TableCell className='text-zinc-300'>
+                        {artist.countryCode || '-'}
+                      </TableCell>
+                      <TableCell className='text-zinc-300'>
+                        {artist.formedYear || '-'}
+                      </TableCell>
+                      <TableCell className='text-zinc-300'>
+                        {artist.albumCount}
+                      </TableCell>
+                      <TableCell className='text-zinc-300'>
+                        {artist.trackCount}
+                      </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        {getQualityBadge(artist.dataQuality)}
+                      </TableCell>
+                      <TableCell>
+                        <div className='flex items-center gap-1'>
                           {getStatusIcon(artist.enrichmentStatus)}
-                          <span className="text-xs text-zinc-300">{artist.enrichmentStatus}</span>
+                          <span className='text-xs text-zinc-300'>
+                            {artist.enrichmentStatus}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Button
-                          size="sm"
-                          variant="outline"
+                          size='sm'
+                          variant='outline'
                           onClick={() => handleEnrichItem(artist.id, 'artist')}
-                          disabled={artist.enrichmentStatus === 'IN_PROGRESS' || !artist.needsEnrichment}
-                          className="text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50"
+                          disabled={
+                            artist.enrichmentStatus === 'IN_PROGRESS' ||
+                            !artist.needsEnrichment
+                          }
+                          className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
                         >
-                          <RefreshCcw className="h-3 w-3 mr-1" />
+                          <RefreshCcw className='h-3 w-3 mr-1' />
                           Enrich
                         </Button>
                       </TableCell>
@@ -773,8 +921,10 @@ export default function MusicDatabasePage() {
                 </TableBody>
               </Table>
               {searchResults.artists.length === 0 && !loading && (
-                <div className="text-center py-8 text-zinc-500">
-                  {searchQuery ? 'No artists found' : 'Enter a search query to find artists'}
+                <div className='text-center py-8 text-zinc-500'>
+                  {searchQuery
+                    ? 'No artists found'
+                    : 'Enter a search query to find artists'}
                 </div>
               )}
             </CardContent>
@@ -782,50 +932,72 @@ export default function MusicDatabasePage() {
         </TabsContent>
 
         {/* Tracks Tab */}
-        <TabsContent value="tracks">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-0">
+        <TabsContent value='tracks'>
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardContent className='p-0'>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-zinc-400">Track</TableHead>
-                    <TableHead className="text-zinc-400">Artists</TableHead>
-                    <TableHead className="text-zinc-400">Album</TableHead>
-                    <TableHead className="text-zinc-400">Track #</TableHead>
-                    <TableHead className="text-zinc-400">Duration</TableHead>
-                    <TableHead className="text-zinc-400">ISRC</TableHead>
+                    <TableHead className='text-zinc-400'>Track</TableHead>
+                    <TableHead className='text-zinc-400'>Artists</TableHead>
+                    <TableHead className='text-zinc-400'>Album</TableHead>
+                    <TableHead className='text-zinc-400'>Track #</TableHead>
+                    <TableHead className='text-zinc-400'>Duration</TableHead>
+                    <TableHead className='text-zinc-400'>ISRC</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {searchResults.tracks.map((track) => (
-                    <TableRow key={track.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
+                  {searchResults.tracks.map(track => (
+                    <TableRow
+                      key={track.id}
+                      className='border-b border-zinc-800 hover:bg-zinc-800/50'
+                    >
                       <TableCell>
-                        <div className="font-medium text-white">{track.title}</div>
-                      </TableCell>
-                      <TableCell className="text-zinc-300">
-                        {track.artists.slice(0, 2).map(a => a.artist.name).join(', ')}
-                        {track.artists.length > 2 && ` +${track.artists.length - 2}`}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {track.album.coverArtUrl && (
-                            <img src={track.album.coverArtUrl} alt={track.album.title} className="h-8 w-8 rounded" />
-                          )}
-                          <span className="text-sm text-zinc-300">{track.album.title}</span>
+                        <div className='font-medium text-white'>
+                          {track.title}
                         </div>
                       </TableCell>
-                      <TableCell className="text-zinc-300">
-                        {track.discNumber > 1 && `${track.discNumber}-`}{track.trackNumber}
+                      <TableCell className='text-zinc-300'>
+                        {track.artists
+                          .slice(0, 2)
+                          .map(a => a.artist.name)
+                          .join(', ')}
+                        {track.artists.length > 2 &&
+                          ` +${track.artists.length - 2}`}
                       </TableCell>
-                      <TableCell className="text-zinc-300">{formatDuration(track.durationMs)}</TableCell>
-                      <TableCell className="text-xs font-mono text-zinc-300">{track.isrc || '-'}</TableCell>
+                      <TableCell>
+                        <div className='flex items-center gap-2'>
+                          {track.album.coverArtUrl && (
+                            <img
+                              src={track.album.coverArtUrl}
+                              alt={track.album.title}
+                              className='h-8 w-8 rounded'
+                            />
+                          )}
+                          <span className='text-sm text-zinc-300'>
+                            {track.album.title}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className='text-zinc-300'>
+                        {track.discNumber > 1 && `${track.discNumber}-`}
+                        {track.trackNumber}
+                      </TableCell>
+                      <TableCell className='text-zinc-300'>
+                        {formatDuration(track.durationMs)}
+                      </TableCell>
+                      <TableCell className='text-xs font-mono text-zinc-300'>
+                        {track.isrc || '-'}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
               {searchResults.tracks.length === 0 && !loading && (
-                <div className="text-center py-8 text-zinc-500">
-                  {searchQuery ? 'No tracks found' : 'Enter a search query to find tracks'}
+                <div className='text-center py-8 text-zinc-500'>
+                  {searchQuery
+                    ? 'No tracks found'
+                    : 'Enter a search query to find tracks'}
                 </div>
               )}
             </CardContent>
@@ -834,35 +1006,55 @@ export default function MusicDatabasePage() {
       </Tabs>
 
       {/* Quick Actions */}
-      <Card className="mt-6 bg-zinc-900 border-zinc-800">
+      <Card className='mt-6 bg-zinc-900 border-zinc-800'>
         <CardHeader>
-          <CardTitle className="text-white">Quick Actions</CardTitle>
-          <CardDescription className="text-zinc-400">Bulk operations and maintenance tasks</CardDescription>
+          <CardTitle className='text-white'>Quick Actions</CardTitle>
+          <CardDescription className='text-zinc-400'>
+            Bulk operations and maintenance tasks
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Button variant="outline" className="justify-start text-white border-zinc-700 hover:bg-zinc-700">
-              <Upload className="h-4 w-4 mr-2" />
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+            <Button
+              variant='outline'
+              className='justify-start text-white border-zinc-700 hover:bg-zinc-700'
+            >
+              <Upload className='h-4 w-4 mr-2' />
               Import CSV Data
             </Button>
-            <Button variant="outline" className="justify-start text-white border-zinc-700 hover:bg-zinc-700">
-              <Download className="h-4 w-4 mr-2" />
+            <Button
+              variant='outline'
+              className='justify-start text-white border-zinc-700 hover:bg-zinc-700'
+            >
+              <Download className='h-4 w-4 mr-2' />
               Export Database
             </Button>
-            <Button variant="outline" className="justify-start text-white border-zinc-700 hover:bg-zinc-700">
-              <TrendingUp className="h-4 w-4 mr-2" />
+            <Button
+              variant='outline'
+              className='justify-start text-white border-zinc-700 hover:bg-zinc-700'
+            >
+              <TrendingUp className='h-4 w-4 mr-2' />
               Enrich Popular Items
             </Button>
-            <Button variant="outline" className="justify-start text-white border-zinc-700 hover:bg-zinc-700">
-              <Calendar className="h-4 w-4 mr-2" />
+            <Button
+              variant='outline'
+              className='justify-start text-white border-zinc-700 hover:bg-zinc-700'
+            >
+              <Calendar className='h-4 w-4 mr-2' />
               Schedule Enrichment
             </Button>
-            <Button variant="outline" className="justify-start text-white border-zinc-700 hover:bg-zinc-700">
-              <Database className="h-4 w-4 mr-2" />
+            <Button
+              variant='outline'
+              className='justify-start text-white border-zinc-700 hover:bg-zinc-700'
+            >
+              <Database className='h-4 w-4 mr-2' />
               Database Cleanup
             </Button>
-            <Button variant="outline" className="justify-start text-white border-zinc-700 hover:bg-zinc-700">
-              <AlertCircle className="h-4 w-4 mr-2" />
+            <Button
+              variant='outline'
+              className='justify-start text-white border-zinc-700 hover:bg-zinc-700'
+            >
+              <AlertCircle className='h-4 w-4 mr-2' />
               Retry Failed Jobs
             </Button>
           </div>

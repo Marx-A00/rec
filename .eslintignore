@@ -1,0 +1,5 @@
+scripts/
+src/workers/
+src/lib/queue/
+src/scripts/
+test-spotify-response.js

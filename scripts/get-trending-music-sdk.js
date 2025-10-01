@@ -5,7 +5,7 @@ const SpotifySDKClient = require('./spotify-sdk-client');
 
 async function getTrendingMusic() {
   const client = new SpotifySDKClient();
-  
+
   console.log('\n🎵 FETCHING TRENDING MUSIC DATA (Using Official SDK) 🎵\n');
 
   try {
@@ -21,7 +21,9 @@ async function getTrendingMusic() {
     console.log('\n🎧 FEATURED PLAYLISTS:');
     const featured = await client.getFeaturedPlaylists('US', 5);
     featured.playlists.items.forEach(playlist => {
-      console.log(`  - ${playlist.name}: ${playlist.description || 'No description'}`);
+      console.log(
+        `  - ${playlist.name}: ${playlist.description || 'No description'}`
+      );
     });
 
     // 3. Get Top Charts Playlists
@@ -30,7 +32,7 @@ async function getTrendingMusic() {
       const topLists = await client.getCategoryPlaylists('toplists', 'US', 5);
       for (const playlist of topLists.playlists.items) {
         console.log(`  - ${playlist.name}`);
-        
+
         // Get first few tracks
         const tracks = await client.getPlaylistTracks(playlist.id, 5);
         tracks.items.forEach(item => {
@@ -47,7 +49,7 @@ async function getTrendingMusic() {
     // 4. Search for viral/trending artists
     console.log('\n🔥 SEARCHING POPULAR ARTISTS:');
     const searchTerms = ['viral', '2025', 'trending'];
-    
+
     for (const term of searchTerms) {
       const results = await client.search(term, ['artist'], 3);
       if (results.artists.items.length > 0) {
@@ -55,7 +57,9 @@ async function getTrendingMusic() {
         results.artists.items.forEach(artist => {
           const popularity = artist.popularity;
           const followers = artist.followers.total.toLocaleString();
-          console.log(`    - ${artist.name} (Popularity: ${popularity}/100, Followers: ${followers})`);
+          console.log(
+            `    - ${artist.name} (Popularity: ${popularity}/100, Followers: ${followers})`
+          );
         });
       }
     }
@@ -66,10 +70,12 @@ async function getTrendingMusic() {
     if (searchResult.artists.items.length > 0) {
       const artist = searchResult.artists.items[0];
       console.log(`  ${artist.name}'s top tracks:`);
-      
+
       const topTracks = await client.getArtistTopTracks(artist.id, 'US');
       topTracks.tracks.slice(0, 5).forEach(track => {
-        console.log(`    - "${track.name}" (Popularity: ${track.popularity}/100)`);
+        console.log(
+          `    - "${track.name}" (Popularity: ${track.popularity}/100)`
+        );
       });
     }
 
@@ -90,15 +96,14 @@ async function getTrendingMusic() {
       const recs = await client.getRecommendations({
         seed_artists: searchResult.artists.items[0].id,
         seed_genres: 'hip-hop,rap',
-        limit: 5
+        limit: 5,
       });
-      
+
       recs.tracks.forEach(track => {
         const artists = track.artists.map(a => a.name).join(', ');
         console.log(`  - "${track.name}" by ${artists}`);
       });
     }
-
   } catch (error) {
     console.error('Error:', error.message || error);
     if (error.body) {

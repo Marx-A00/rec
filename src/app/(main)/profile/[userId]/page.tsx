@@ -1,4 +1,3 @@
-// @ts-nocheck - Schema migration broke pages, needs GraphQL rewrite
 import { notFound } from 'next/navigation';
 import type { User } from '@prisma/client';
 
@@ -24,10 +23,10 @@ async function getUserRecommendations(userId: string) {
           releaseDate: true,
           artists: {
             select: {
-              artist: { select: { id: true, name: true } }
-            }
-          }
-        }
+              artist: { select: { id: true, name: true } },
+            },
+          },
+        },
       },
       recommendedAlbum: {
         select: {
@@ -37,11 +36,11 @@ async function getUserRecommendations(userId: string) {
           releaseDate: true,
           artists: {
             select: {
-              artist: { select: { id: true, name: true } }
-            }
-          }
-        }
-      }
+              artist: { select: { id: true, name: true } },
+            },
+          },
+        },
+      },
     },
   });
 

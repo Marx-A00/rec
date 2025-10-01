@@ -4,7 +4,10 @@
  * Provides manual control, status checking, and monitoring for Spotify pipeline
  */
 
-import { spotifyScheduler, initializeSpotifyScheduler } from '../lib/spotify/scheduler';
+import {
+  spotifyScheduler,
+  initializeSpotifyScheduler,
+} from '../lib/spotify/scheduler';
 import { spotifyMetrics } from '../lib/spotify/error-handling';
 import { getMusicBrainzQueue, JOB_TYPES } from '../lib/queue';
 import { prisma } from '../lib/prisma';
@@ -14,36 +17,44 @@ import { prisma } from '../lib/prisma';
 // ============================================================================
 
 const COMMANDS = {
-  'status': 'Show Spotify sync status and metrics',
-  'start': 'Start the automated Spotify scheduler',
-  'stop': 'Stop the automated Spotify scheduler',
-  'sync': 'Manually trigger sync (new-releases|featured-playlists|both)',
-  'metrics': 'Show detailed Spotify API metrics',
-  'queue': 'Show Spotify job queue status',
-  'recent': 'Show recently synced albums with Spotify IDs',
-  'config': 'Show current scheduler configuration',
-  'help': 'Show this help message'
+  status: 'Show Spotify sync status and metrics',
+  start: 'Start the automated Spotify scheduler',
+  stop: 'Stop the automated Spotify scheduler',
+  sync: 'Manually trigger sync (new-releases|featured-playlists|both)',
+  metrics: 'Show detailed Spotify API metrics',
+  queue: 'Show Spotify job queue status',
+  recent: 'Show recently synced albums with Spotify IDs',
+  config: 'Show current scheduler configuration',
+  help: 'Show this help message',
 };
 
 async function showStatus() {
   console.log('📊 Spotify Sync Status\n');
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
 
   const status = spotifyScheduler.getStatus();
-  
-  console.log(`🔄 Scheduler: ${status.isRunning ? '✅ Running' : '❌ Stopped'}`);
+
+  console.log(
+    `🔄 Scheduler: ${status.isRunning ? '✅ Running' : '❌ Stopped'}`
+  );
   console.log(`📈 Success Rate: ${status.successRate.toFixed(1)}%`);
   console.log(`📊 Total Requests: ${status.metrics.totalRequests}`);
   console.log(`✅ Successful: ${status.metrics.successfulRequests}`);
   console.log(`❌ Failed: ${status.metrics.failedRequests}`);
-  console.log(`⏱️  Avg Response Time: ${Math.round(status.metrics.averageResponseTime)}ms`);
-  
+  console.log(
+    `⏱️  Avg Response Time: ${Math.round(status.metrics.averageResponseTime)}ms`
+  );
+
   if (status.metrics.lastSuccessfulSync) {
-    console.log(`🕐 Last Success: ${status.metrics.lastSuccessfulSync.toISOString()}`);
+    console.log(
+      `🕐 Last Success: ${status.metrics.lastSuccessfulSync.toISOString()}`
+    );
   }
-  
+
   if (status.metrics.lastFailedSync) {
-    console.log(`🕐 Last Failure: ${status.metrics.lastFailedSync.toISOString()}`);
+    console.log(
+      `🕐 Last Failure: ${status.metrics.lastFailedSync.toISOString()}`
+    );
   }
 
   console.log(`\n🎯 Active Jobs: ${status.activeJobs.join(', ') || 'None'}`);
@@ -51,36 +62,46 @@ async function showStatus() {
 
 async function showMetrics() {
   console.log('📈 Detailed Spotify Metrics\n');
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
 
   const metrics = spotifyMetrics.getMetrics();
-  
+
   console.log('📊 Request Statistics:');
   console.log(`  Total Requests: ${metrics.totalRequests}`);
-  console.log(`  Successful: ${metrics.successfulRequests} (${((metrics.successfulRequests / metrics.totalRequests) * 100).toFixed(1)}%)`);
-  console.log(`  Failed: ${metrics.failedRequests} (${((metrics.failedRequests / metrics.totalRequests) * 100).toFixed(1)}%)`);
-  
+  console.log(
+    `  Successful: ${metrics.successfulRequests} (${((metrics.successfulRequests / metrics.totalRequests) * 100).toFixed(1)}%)`
+  );
+  console.log(
+    `  Failed: ${metrics.failedRequests} (${((metrics.failedRequests / metrics.totalRequests) * 100).toFixed(1)}%)`
+  );
+
   console.log('\n❌ Error Breakdown:');
   console.log(`  Rate Limit Hits: ${metrics.rateLimitHits}`);
   console.log(`  Network Errors: ${metrics.networkErrors}`);
   console.log(`  Auth Errors: ${metrics.authErrors}`);
-  
+
   console.log('\n⏱️  Performance:');
-  console.log(`  Average Response Time: ${Math.round(metrics.averageResponseTime)}ms`);
-  
+  console.log(
+    `  Average Response Time: ${Math.round(metrics.averageResponseTime)}ms`
+  );
+
   console.log('\n🕐 Timestamps:');
-  console.log(`  Last Successful Sync: ${metrics.lastSuccessfulSync?.toISOString() || 'Never'}`);
-  console.log(`  Last Failed Sync: ${metrics.lastFailedSync?.toISOString() || 'Never'}`);
+  console.log(
+    `  Last Successful Sync: ${metrics.lastSuccessfulSync?.toISOString() || 'Never'}`
+  );
+  console.log(
+    `  Last Failed Sync: ${metrics.lastFailedSync?.toISOString() || 'Never'}`
+  );
 }
 
 async function showQueueStatus() {
   console.log('🔄 Spotify Job Queue Status\n');
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
 
   try {
     const musicBrainzQueue = getMusicBrainzQueue();
     const queue = musicBrainzQueue.getQueue();
-    
+
     // Get job counts by status
     const waiting = await queue.getWaiting();
     const active = await queue.getActive();
@@ -94,22 +115,29 @@ async function showQueueStatus() {
     console.log(`  ❌ Failed: ${failed.length}`);
 
     // Show recent Spotify jobs
-    const allJobs = [...waiting, ...active, ...completed.slice(-5), ...failed.slice(-3)];
-    const spotifyJobs = allJobs.filter(job => 
-      job.name.includes('spotify') || 
-      job.name === JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES ||
-      job.name === JOB_TYPES.SPOTIFY_SYNC_FEATURED_PLAYLISTS
+    const allJobs = [
+      ...waiting,
+      ...active,
+      ...completed.slice(-5),
+      ...failed.slice(-3),
+    ];
+    const spotifyJobs = allJobs.filter(
+      job =>
+        job.name.includes('spotify') ||
+        job.name === JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES ||
+        job.name === JOB_TYPES.SPOTIFY_SYNC_FEATURED_PLAYLISTS
     );
 
     if (spotifyJobs.length > 0) {
       console.log('\n🎵 Recent Spotify Jobs:');
       for (const job of spotifyJobs.slice(-10)) {
         const status = job.finishedOn ? (job.failedReason ? '❌' : '✅') : '🔄';
-        const timestamp = job.finishedOn ? new Date(job.finishedOn).toLocaleTimeString() : 'Running';
+        const timestamp = job.finishedOn
+          ? new Date(job.finishedOn).toLocaleTimeString()
+          : 'Running';
         console.log(`  ${status} ${job.name} (${job.id}) - ${timestamp}`);
       }
     }
-
   } catch (error) {
     console.error('❌ Failed to get queue status:', error);
   }
@@ -117,26 +145,26 @@ async function showQueueStatus() {
 
 async function showRecentAlbums() {
   console.log('🎵 Recently Synced Albums\n');
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
 
   try {
     const recentAlbums = await prisma.album.findMany({
       where: {
         spotifyId: {
-          not: null
-        }
+          not: null,
+        },
       },
       include: {
         artists: {
           include: {
-            artist: true
-          }
-        }
+            artist: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'desc',
       },
-      take: 10
+      take: 10,
     });
 
     if (recentAlbums.length === 0) {
@@ -144,18 +172,21 @@ async function showRecentAlbums() {
       return;
     }
 
-    console.log(`📀 Found ${recentAlbums.length} recent albums with Spotify IDs:\n`);
+    console.log(
+      `📀 Found ${recentAlbums.length} recent albums with Spotify IDs:\n`
+    );
 
     for (const album of recentAlbums) {
       const artists = album.artists.map(a => a.artist.name).join(', ');
       const timeAgo = getTimeAgo(album.createdAt);
-      
+
       console.log(`🎵 "${album.title}" by ${artists}`);
       console.log(`   Spotify ID: ${album.spotifyId}`);
-      console.log(`   Quality: ${album.dataQuality}, Status: ${album.enrichmentStatus}`);
+      console.log(
+        `   Quality: ${album.dataQuality}, Status: ${album.enrichmentStatus}`
+      );
       console.log(`   Added: ${timeAgo}\n`);
     }
-
   } catch (error) {
     console.error('❌ Failed to get recent albums:', error);
   }
@@ -163,7 +194,7 @@ async function showRecentAlbums() {
 
 async function showConfig() {
   console.log('⚙️  Spotify Scheduler Configuration\n');
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
 
   const status = spotifyScheduler.getStatus();
   const config = status.config;
@@ -176,20 +207,30 @@ async function showConfig() {
 
   console.log('\n🎧 Featured Playlists:');
   console.log(`  Enabled: ${config.featuredPlaylists.enabled ? '✅' : '❌'}`);
-  console.log(`  Interval: ${config.featuredPlaylists.intervalMinutes} minutes`);
+  console.log(
+    `  Interval: ${config.featuredPlaylists.intervalMinutes} minutes`
+  );
   console.log(`  Limit: ${config.featuredPlaylists.limit} playlists`);
   console.log(`  Country: ${config.featuredPlaylists.country}`);
-  console.log(`  Extract Albums: ${config.featuredPlaylists.extractAlbums ? '✅' : '❌'}`);
+  console.log(
+    `  Extract Albums: ${config.featuredPlaylists.extractAlbums ? '✅' : '❌'}`
+  );
 
   console.log('\n🔧 Environment Variables:');
-  console.log(`  SPOTIFY_CLIENT_ID: ${process.env.SPOTIFY_CLIENT_ID ? '✅ Set' : '❌ Missing'}`);
-  console.log(`  SPOTIFY_CLIENT_SECRET: ${process.env.SPOTIFY_CLIENT_SECRET ? '✅ Set' : '❌ Missing'}`);
-  console.log(`  SPOTIFY_COUNTRY: ${process.env.SPOTIFY_COUNTRY || 'US (default)'}`);
+  console.log(
+    `  SPOTIFY_CLIENT_ID: ${process.env.SPOTIFY_CLIENT_ID ? '✅ Set' : '❌ Missing'}`
+  );
+  console.log(
+    `  SPOTIFY_CLIENT_SECRET: ${process.env.SPOTIFY_CLIENT_SECRET ? '✅ Set' : '❌ Missing'}`
+  );
+  console.log(
+    `  SPOTIFY_COUNTRY: ${process.env.SPOTIFY_COUNTRY || 'US (default)'}`
+  );
 }
 
 function showHelp() {
   console.log('🎵 Spotify Operations CLI\n');
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
   console.log('\nAvailable commands:\n');
 
   for (const [command, description] of Object.entries(COMMANDS)) {
@@ -218,7 +259,7 @@ function getTimeAgo(date: Date): string {
   if (diffMins < 60) return `${diffMins} minutes ago`;
   if (diffHours < 24) return `${diffHours} hours ago`;
   if (diffDays < 7) return `${diffDays} days ago`;
-  
+
   return date.toLocaleDateString();
 }
 
@@ -253,7 +294,9 @@ async function main() {
         if (started) {
           console.log('✅ Spotify scheduler started successfully');
         } else {
-          console.log('❌ Failed to start scheduler (check Spotify credentials)');
+          console.log(
+            '❌ Failed to start scheduler (check Spotify credentials)'
+          );
         }
         break;
 
@@ -264,8 +307,13 @@ async function main() {
         break;
 
       case 'sync':
-        if (!arg || !['new-releases', 'featured-playlists', 'both'].includes(arg)) {
-          console.error('❌ Sync command requires: new-releases|featured-playlists|both');
+        if (
+          !arg ||
+          !['new-releases', 'featured-playlists', 'both'].includes(arg)
+        ) {
+          console.error(
+            '❌ Sync command requires: new-releases|featured-playlists|both'
+          );
           process.exit(1);
         }
         await spotifyScheduler.triggerSync(arg as any);
@@ -291,7 +339,6 @@ async function main() {
         console.error(`❌ Command not implemented: ${command}`);
         process.exit(1);
     }
-
   } catch (error) {
     console.error('❌ Command failed:', error);
     process.exit(1);

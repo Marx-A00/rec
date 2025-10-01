@@ -57,16 +57,18 @@ class SpotifyClient {
       return this.accessToken;
     }
 
-    const authString = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
-    
+    const authString = Buffer.from(
+      `${this.clientId}:${this.clientSecret}`
+    ).toString('base64');
+
     try {
       const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${authString}`,
-          'Content-Type': 'application/x-www-form-urlencoded'
+          Authorization: `Basic ${authString}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: 'grant_type=client_credentials'
+        body: 'grant_type=client_credentials',
       });
 
       if (!response.ok) {
@@ -76,9 +78,13 @@ class SpotifyClient {
       const data = await response.json();
       this.accessToken = data.access_token;
       // Set expiry to 5 minutes before actual expiry for safety
-      this.tokenExpiry = Date.now() + ((data.expires_in - 300) * 1000);
-      
-      console.log('✓ Access token obtained, expires in', data.expires_in, 'seconds');
+      this.tokenExpiry = Date.now() + (data.expires_in - 300) * 1000;
+
+      console.log(
+        '✓ Access token obtained, expires in',
+        data.expires_in,
+        'seconds'
+      );
       return this.accessToken;
     } catch (error) {
       console.error('Failed to get access token:', error);
@@ -89,16 +95,16 @@ class SpotifyClient {
   // Make authenticated request to Spotify API
   async makeRequest(endpoint, params = {}) {
     const token = await this.getAccessToken();
-    
+
     // Build query string
     const queryString = new URLSearchParams(params).toString();
     const url = `https://api.spotify.com/v1${endpoint}${queryString ? '?' + queryString : ''}`;
-    
+
     try {
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       // Handle rate limiting
@@ -110,7 +116,9 @@ class SpotifyClient {
       }
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} - ${response.statusText}`);
+        throw new Error(
+          `API request failed: ${response.status} - ${response.statusText}`
+        );
       }
 
       return await response.json();
@@ -130,7 +138,7 @@ class SpotifyClient {
     return this.makeRequest('/search', {
       q: query,
       type: types.join(','),
-      limit
+      limit,
     });
   }
 
@@ -167,7 +175,10 @@ class SpotifyClient {
 
   // Get a category's playlists (like "Top Lists" or "Hip-Hop")
   async getCategoryPlaylists(categoryId, country = 'US', limit = 50) {
-    return this.makeRequest(`/browse/categories/${categoryId}/playlists`, { country, limit });
+    return this.makeRequest(`/browse/categories/${categoryId}/playlists`, {
+      country,
+      limit,
+    });
   }
 
   // Get all categories
@@ -184,7 +195,10 @@ class SpotifyClient {
 
   // Get playlist tracks
   async getPlaylistTracks(playlistId, limit = 100, offset = 0) {
-    return this.makeRequest(`/playlists/${playlistId}/tracks`, { limit, offset });
+    return this.makeRequest(`/playlists/${playlistId}/tracks`, {
+      limit,
+      offset,
+    });
   }
 }
 
@@ -200,7 +214,7 @@ const SpotifyClient = require('./spotify-client');
 
 async function getTrendingMusic() {
   const client = new SpotifyClient();
-  
+
   console.log('\n🎵 FETCHING TRENDING MUSIC DATA 🎵\n');
 
   try {
@@ -216,7 +230,9 @@ async function getTrendingMusic() {
     console.log('\n🎧 FEATURED PLAYLISTS:');
     const featured = await client.getFeaturedPlaylists('US', 5);
     for (const playlist of featured.playlists.items) {
-      console.log(`  - ${playlist.name}: ${playlist.description || 'No description'}`);
+      console.log(
+        `  - ${playlist.name}: ${playlist.description || 'No description'}`
+      );
     }
 
     // 3. Get "Top Lists" Category Playlists (Usually has charts)
@@ -225,7 +241,7 @@ async function getTrendingMusic() {
     const topLists = await client.getCategoryPlaylists('toplists', 'US', 5);
     for (const playlist of topLists.playlists.items) {
       console.log(`  - ${playlist.name}`);
-      
+
       // Get first few tracks from the playlist
       const tracks = await client.getPlaylistTracks(playlist.id, 5);
       tracks.items.forEach(item => {
@@ -239,7 +255,7 @@ async function getTrendingMusic() {
     // 4. Search for currently popular artists
     console.log('\n🔥 SEARCHING POPULAR ARTISTS:');
     const popularSearchTerms = ['viral', '2024', 'trending'];
-    
+
     for (const term of popularSearchTerms) {
       const results = await client.search(term, ['artist'], 3);
       if (results.artists.items.length > 0) {
@@ -247,7 +263,9 @@ async function getTrendingMusic() {
         results.artists.items.forEach(artist => {
           const popularity = artist.popularity; // 0-100 score
           const followers = artist.followers.total.toLocaleString();
-          console.log(`    - ${artist.name} (Popularity: ${popularity}/100, Followers: ${followers})`);
+          console.log(
+            `    - ${artist.name} (Popularity: ${popularity}/100, Followers: ${followers})`
+          );
         });
       }
     }
@@ -259,10 +277,12 @@ async function getTrendingMusic() {
     if (searchResult.artists.items.length > 0) {
       const artist = searchResult.artists.items[0];
       console.log(`  ${artist.name}'s top tracks:`);
-      
+
       const topTracks = await client.getArtistTopTracks(artist.id, 'US');
       topTracks.tracks.slice(0, 5).forEach(track => {
-        console.log(`    - "${track.name}" (Popularity: ${track.popularity}/100)`);
+        console.log(
+          `    - "${track.name}" (Popularity: ${track.popularity}/100)`
+        );
       });
     }
 
@@ -280,14 +300,13 @@ async function getTrendingMusic() {
       seed_artists: searchResult.artists.items[0].id,
       seed_genres: 'pop',
       limit: 5,
-      market: 'US'
+      market: 'US',
     });
-    
+
     recs.tracks.forEach(track => {
       const artists = track.artists.map(a => a.name).join(', ');
       console.log(`  - "${track.name}" by ${artists}`);
     });
-
   } catch (error) {
     console.error('Error:', error);
   }
@@ -306,12 +325,12 @@ const SpotifyClient = require('./spotify-client');
 
 async function analyzePopularity() {
   const client = new SpotifyClient();
-  
+
   // Collect popularity data from different sources
   const popularityData = {
     newReleases: [],
     topPlaylistTracks: [],
-    searchResults: []
+    searchResults: [],
   };
 
   try {
@@ -325,32 +344,35 @@ async function analyzePopularity() {
         artists: album.artists.map(a => a.name).join(', '),
         popularity: fullAlbum.popularity,
         releaseDate: album.release_date,
-        type: album.album_type
+        type: album.album_type,
       });
-      
+
       // Rate limit protection
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     // Sort by popularity
     popularityData.newReleases.sort((a, b) => b.popularity - a.popularity);
-    
+
     console.log('\n📊 NEW RELEASES BY POPULARITY:');
     popularityData.newReleases.slice(0, 10).forEach(album => {
-      console.log(`  ${album.popularity}/100 - "${album.name}" by ${album.artists}`);
+      console.log(
+        `  ${album.popularity}/100 - "${album.name}" by ${album.artists}`
+      );
     });
 
     // Get global top 50 playlist (if available)
     const topLists = await client.getCategoryPlaylists('toplists', 'US', 20);
-    const globalTop50 = topLists.playlists.items.find(p => 
-      p.name.toLowerCase().includes('top 50') || 
-      p.name.toLowerCase().includes('viral')
+    const globalTop50 = topLists.playlists.items.find(
+      p =>
+        p.name.toLowerCase().includes('top 50') ||
+        p.name.toLowerCase().includes('viral')
     );
-    
+
     if (globalTop50) {
       console.log(`\n🌍 ANALYZING: ${globalTop50.name}`);
       const tracks = await client.getPlaylistTracks(globalTop50.id, 50);
-      
+
       // Collect artist IDs
       const artistIds = new Set();
       tracks.items.forEach(item => {
@@ -362,7 +384,7 @@ async function analyzePopularity() {
       // Get artist details in batches
       const artistArray = Array.from(artistIds);
       const artistDetails = [];
-      
+
       for (let i = 0; i < artistArray.length; i += 50) {
         const batch = artistArray.slice(i, i + 50);
         const artists = await client.getMultipleArtists(batch);
@@ -372,11 +394,13 @@ async function analyzePopularity() {
 
       // Sort artists by popularity
       artistDetails.sort((a, b) => b.popularity - a.popularity);
-      
+
       console.log('\n🎤 TOP ARTISTS BY POPULARITY:');
       artistDetails.slice(0, 15).forEach(artist => {
         const followers = artist.followers.total.toLocaleString();
-        console.log(`  ${artist.popularity}/100 - ${artist.name} (${followers} followers)`);
+        console.log(
+          `  ${artist.popularity}/100 - ${artist.name} (${followers} followers)`
+        );
       });
 
       // Analyze genres
@@ -396,7 +420,6 @@ async function analyzePopularity() {
         console.log(`  ${genre}: ${count} artists`);
       });
     }
-
   } catch (error) {
     console.error('Error analyzing popularity:', error);
   }
@@ -417,16 +440,19 @@ node analyze-popularity.js
 
 ## 8. Rate Limiting & Best Practices
 
-1. **Respect Rate Limits**: 
+1. **Respect Rate Limits**:
+
    - The code includes retry logic for 429 errors
    - Add delays between requests when doing bulk operations
    - Cache tokens (already implemented)
 
 2. **Batch Requests**:
+
    - Use `getMultipleArtists()` to get up to 50 artists at once
    - Use higher limits (up to 50-100) when fetching lists
 
 3. **Error Handling**:
+
    - Always wrap API calls in try-catch blocks
    - Log errors for debugging
    - Implement exponential backoff for retries
@@ -441,6 +467,7 @@ node analyze-popularity.js
 ## 9. What You Can Find
 
 ### Popularity Metrics Available:
+
 - **Artist Popularity**: 0-100 score based on all the artist's tracks
 - **Track Popularity**: 0-100 score based on recent plays
 - **Album Popularity**: 0-100 score for albums
@@ -448,6 +475,7 @@ node analyze-popularity.js
 - **Playlist Followers**: For public playlists
 
 ### Trending Data Sources:
+
 - **New Releases**: Latest albums and singles
 - **Featured Playlists**: Spotify's editorial picks
 - **Category Playlists**: "Top Lists", "Viral", genre-specific
@@ -455,6 +483,7 @@ node analyze-popularity.js
 - **Recommendations**: Based on popular seed artists/tracks
 
 ### Limitations:
+
 - No real-time play counts
 - No user-specific data without auth
 - No historical trending data
@@ -464,7 +493,7 @@ node analyze-popularity.js
 
 1. **Store Data**: Save results to database for tracking trends over time
 2. **Schedule Updates**: Run scripts periodically (cron job) to track changes
-3. **Combine with Other APIs**: 
+3. **Combine with Other APIs**:
    - Last.fm for scrobble data
    - MusicBrainz for metadata
    - ListenBrainz for listening statistics
@@ -474,18 +503,22 @@ node analyze-popularity.js
 ## Troubleshooting
 
 ### "Invalid client" error
+
 - Check your Client ID and Secret are correct
 - Make sure they're properly loaded from .env
 
 ### 429 Rate Limit errors
+
 - Add more delays between requests
 - Reduce the number of items fetched
 - Consider applying for extended quota
 
 ### Empty results
+
 - Some playlists/categories might be region-specific
 - Try changing the 'country' parameter
 - Check if the category IDs are correct (use getCategories() to list all)
 
 ### Token expiry issues
+
 - Token caching is implemented, but if issues persist, force refresh by setting `this.accessToken = null`

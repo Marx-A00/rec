@@ -6,33 +6,38 @@
 
 import { getMusicBrainzQueue } from '@/lib/queue';
 import { processMusicBrainzJob } from '@/lib/queue/musicbrainz-processor';
-import { initializeSpotifyScheduler, shutdownSpotifyScheduler } from '@/lib/spotify/scheduler';
+import {
+  initializeSpotifyScheduler,
+  shutdownSpotifyScheduler,
+} from '@/lib/spotify/scheduler';
 
 async function startWorker() {
   console.log('🔄 Starting persistent MusicBrainz worker...');
 
   try {
     const musicBrainzQueue = getMusicBrainzQueue();
-    
+
     // Create the worker
     const worker = musicBrainzQueue.createWorker(processMusicBrainzJob);
-    
+
     console.log('✅ MusicBrainz Worker started successfully!');
     console.log('📊 Monitoring queue: musicbrainz');
     console.log('⚡ Rate limited to 1 request per second');
     console.log('🎯 Bull Board: http://localhost:3001/admin/queues');
-    
+
     // Start Spotify automated scheduler
     console.log('');
     console.log('🎵 Starting Spotify automated scheduler...');
     const spotifyStarted = initializeSpotifyScheduler();
     if (spotifyStarted) {
       console.log('✅ Spotify scheduler started successfully!');
-      console.log('📅 Automated syncing: New releases (hourly), Featured playlists (3-hourly)');
+      console.log(
+        '📅 Automated syncing: New releases (hourly), Featured playlists (3-hourly)'
+      );
     } else {
       console.log('⚠️  Spotify scheduler not started (missing credentials)');
     }
-    
+
     console.log('');
     console.log('💡 Press Ctrl+C to stop worker and scheduler');
 
@@ -52,7 +57,6 @@ async function startWorker() {
       console.log('✅ Worker and scheduler stopped gracefully');
       process.exit(0);
     });
-
   } catch (error) {
     console.error('❌ Failed to start worker:', error);
     process.exit(1);
@@ -60,7 +64,7 @@ async function startWorker() {
 }
 
 // Start the worker
-startWorker().catch((error) => {
+startWorker().catch(error => {
   console.error('❌ Worker startup failed:', error);
   process.exit(1);
 });
@@ -69,4 +73,3 @@ startWorker().catch((error) => {
 setInterval(() => {
   // Just keep alive, worker handles jobs automatically
 }, 1000);
-

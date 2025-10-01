@@ -4,6 +4,7 @@ import React, { FC, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+
 import { NavItem, NavigationContext } from '@/config/navigation';
 import { cn } from '@/lib/utils';
 import {
@@ -25,7 +26,7 @@ export const NavigationItem: FC<NavigationItemProps> = ({
   isCollapsed = false,
   context,
   depth = 0,
-  onItemClick
+  onItemClick,
 }) => {
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -48,36 +49,43 @@ export const NavigationItem: FC<NavigationItemProps> = ({
     <div
       className={cn(
         'transition-all duration-200',
-        isCollapsed ? 'flex items-center justify-center p-3 rounded-xl' : 'flex items-center gap-2 px-3 py-2 rounded-lg',
+        isCollapsed
+          ? 'flex items-center justify-center p-3 rounded-xl'
+          : 'flex items-center gap-2 px-3 py-2 rounded-lg',
         'hover:bg-zinc-800/50',
         isActive && 'bg-zinc-800 text-emeraled-green',
         !isActive && 'text-zinc-400 hover:text-white',
         depth > 0 && !isCollapsed && 'ml-6'
       )}
     >
-      <ItemIcon className={cn(
-        isCollapsed ? 'w-6 h-6' : 'w-5 h-5',
-        'flex-shrink-0'
-      )} />
+      <ItemIcon
+        className={cn(isCollapsed ? 'w-6 h-6' : 'w-5 h-5', 'flex-shrink-0')}
+      />
       {!isCollapsed && (
         <>
-          <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
+          <span className='text-sm font-medium whitespace-nowrap'>
+            {item.label}
+          </span>
           {item.badge && (
-            <span className={cn(
-              'px-2 py-0.5 text-xs rounded-full',
-              item.badge.variant === 'danger' && 'bg-red-500/20 text-red-400',
-              item.badge.variant === 'warning' && 'bg-yellow-500/20 text-yellow-400',
-              (!item.badge.variant || item.badge.variant === 'default') && 'bg-zinc-700 text-zinc-300'
-            )}>
+            <span
+              className={cn(
+                'px-2 py-0.5 text-xs rounded-full',
+                item.badge.variant === 'danger' && 'bg-red-500/20 text-red-400',
+                item.badge.variant === 'warning' &&
+                  'bg-yellow-500/20 text-yellow-400',
+                (!item.badge.variant || item.badge.variant === 'default') &&
+                  'bg-zinc-700 text-zinc-300'
+              )}
+            >
               {item.badge.count}
             </span>
           )}
           {hasChildren && (
-            <div className="ml-auto">
+            <div className='ml-auto'>
               {isExpanded ? (
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className='w-4 h-4' />
               ) : (
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className='w-4 h-4' />
               )}
             </div>
           )}
@@ -87,11 +95,11 @@ export const NavigationItem: FC<NavigationItemProps> = ({
   );
 
   const wrapperElement = item.href ? (
-    <Link href={item.href} onClick={handleClick} className="block">
+    <Link href={item.href} onClick={handleClick} className='block'>
       {itemContent}
     </Link>
   ) : (
-    <button onClick={handleClick} className="w-full text-left">
+    <button onClick={handleClick} className='w-full text-left'>
       {itemContent}
     </button>
   );
@@ -100,10 +108,8 @@ export const NavigationItem: FC<NavigationItemProps> = ({
     <>
       {isCollapsed ? (
         <Tooltip>
-          <TooltipTrigger asChild>
-            {wrapperElement}
-          </TooltipTrigger>
-          <TooltipContent side="right" className="font-medium">
+          <TooltipTrigger asChild>{wrapperElement}</TooltipTrigger>
+          <TooltipContent side='right' className='font-medium'>
             {item.tooltip || item.label}
           </TooltipContent>
         </Tooltip>
@@ -113,7 +119,7 @@ export const NavigationItem: FC<NavigationItemProps> = ({
 
       {/* Render children if expanded */}
       {!isCollapsed && hasChildren && isExpanded && (
-        <div className="mt-1">
+        <div className='mt-1'>
           {item.children!.map(child => (
             <NavigationItem
               key={child.id}

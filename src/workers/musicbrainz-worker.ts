@@ -6,10 +6,11 @@
  * Auto-restarts on failures, production-ready
  */
 
+import { PrismaClient } from '@prisma/client';
+
 import { getMusicBrainzQueue } from '@/lib/queue';
 import { processMusicBrainzJob } from '@/lib/queue/musicbrainz-processor';
 import { startQueueActivityMonitor } from '@/lib/activity/queue-activity-monitor';
-import { PrismaClient } from '@prisma/client';
 
 class MusicBrainzWorkerService {
   private worker: any;
@@ -20,18 +21,20 @@ class MusicBrainzWorkerService {
   private prisma: PrismaClient;
 
   async start() {
-    console.log('🎵 Worker started | Rate: 1/sec | Dashboard: http://localhost:3001');
+    console.log(
+      '🎵 Worker started | Rate: 1/sec | Dashboard: http://localhost:3001'
+    );
 
     // Initialize Prisma
     this.prisma = new PrismaClient();
 
     await this.createWorker();
     this.setupGracefulShutdown();
-    
+
     // Start queue activity monitor
     startQueueActivityMonitor(this.prisma, 15000); // Check every 15 seconds
     console.log('🔄 Queue activity monitor started');
-    
+
     // Keep process alive
     this.keepAlive();
   }
@@ -39,7 +42,7 @@ class MusicBrainzWorkerService {
   private async createWorker() {
     try {
       const musicBrainzQueue = getMusicBrainzQueue();
-      
+
       // Create production worker
       this.worker = musicBrainzQueue.createWorker(processMusicBrainzJob, {
         concurrency: 1, // Process one job at a time (rate limiting)
@@ -81,7 +84,6 @@ class MusicBrainzWorkerService {
       });
 
       // Worker initialized - no extra logging needed
-
     } catch (error) {
       console.error('❌ Failed to create worker:', error);
       if (!this.isShuttingDown) {
@@ -92,14 +94,18 @@ class MusicBrainzWorkerService {
 
   private async handleWorkerCrash(error: Error) {
     this.restartAttempts++;
-    
+
     if (this.restartAttempts > this.maxRestartAttempts) {
-      console.error(`💀 Worker failed ${this.maxRestartAttempts} times. Giving up.`);
+      console.error(
+        `💀 Worker failed ${this.maxRestartAttempts} times. Giving up.`
+      );
       process.exit(1);
     }
 
-    console.warn(`🔄 Restarting worker (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`);
-    
+    console.warn(
+      `🔄 Restarting worker (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`
+    );
+
     // Clean up current worker
     try {
       await this.worker?.close();
@@ -109,7 +115,7 @@ class MusicBrainzWorkerService {
 
     // Wait before restart
     await new Promise(resolve => setTimeout(resolve, this.restartDelay));
-    
+
     // Recreate worker
     await this.createWorker();
   }
@@ -137,9 +143,9 @@ class MusicBrainzWorkerService {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
     process.on('SIGINT', () => shutdown('SIGINT'));
     process.on('SIGUSR2', () => shutdown('SIGUSR2')); // nodemon restart
-    
+
     // Handle uncaught exceptions
-    process.on('uncaughtException', (error) => {
+    process.on('uncaughtException', error => {
       console.error('💥 Uncaught Exception:', error);
       shutdown('uncaughtException');
     });
@@ -172,7 +178,7 @@ class MusicBrainzWorkerService {
 // Auto-start if this file is run directly
 if (require.main === module) {
   const worker = new MusicBrainzWorkerService();
-  worker.start().catch((error) => {
+  worker.start().catch(error => {
     console.error('❌ Failed to start MusicBrainz Worker:', error);
     process.exit(1);
   });

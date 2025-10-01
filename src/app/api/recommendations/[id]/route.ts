@@ -8,7 +8,10 @@ export async function GET(
   // Temporary stub while migrating to GraphQL
   const { id } = await params;
   if (!id) {
-    return NextResponse.json({ error: 'Recommendation ID required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Recommendation ID required' },
+      { status: 400 }
+    );
   }
   return NextResponse.json({ recommendation: null, success: true });
 }
@@ -21,7 +24,10 @@ export async function PATCH(
   // Temporary stub: accept but do nothing
   const { id } = await params;
   if (!id) {
-    return NextResponse.json({ error: 'Recommendation ID required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Recommendation ID required' },
+      { status: 400 }
+    );
   }
   return NextResponse.json({ success: true });
 }
@@ -34,7 +40,10 @@ export async function DELETE(
   // Temporary stub: accept but do nothing
   const { id } = await params;
   if (!id) {
-    return NextResponse.json({ error: 'Recommendation ID required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Recommendation ID required' },
+      { status: 400 }
+    );
   }
   return NextResponse.json({ success: true });
 }

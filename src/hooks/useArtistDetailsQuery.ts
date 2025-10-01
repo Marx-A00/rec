@@ -1,13 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { graphqlClient } from '@/lib/graphql-client';
 import { GET_ARTIST_DETAILS } from '@/graphql/queries';
-
 import { Artist } from '@/types/artist';
-import {
-  queryKeys,
-  defaultQueryOptions,
-  QueryError,
-} from '@/lib/queries';
+import { queryKeys, defaultQueryOptions, QueryError } from '@/lib/queries';
 
 // ========================================
 // Types

@@ -1,6 +1,9 @@
 import { unifiedArtistService } from './unified-artist-service';
 
-export async function getArtistDetails(id: string, options?: { source?: 'local' | 'musicbrainz' | 'discogs' }) {
+export async function getArtistDetails(
+  id: string,
+  options?: { source?: 'local' | 'musicbrainz' | 'discogs' }
+) {
   return unifiedArtistService.getArtistDetails(id, options);
 }
 

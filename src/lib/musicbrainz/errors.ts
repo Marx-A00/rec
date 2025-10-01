@@ -20,7 +20,7 @@ export class MusicBrainzAPIError extends Error {
     this.statusCode = statusCode;
     this.endpoint = endpoint;
     this.retryable = retryable;
-    
+
     // Maintain proper stack trace for where our error was thrown
     Error.captureStackTrace(this, MusicBrainzAPIError);
   }
@@ -80,12 +80,12 @@ export function categorizeMusicBrainzError(
   }
 
   const message = error.message || 'Unknown MusicBrainz API error';
-  
+
   // Handle different error types based on status code or error type
   if (error.response) {
     const statusCode = error.response.status;
     const retryAfter = error.response.headers?.['retry-after'];
-    
+
     switch (statusCode) {
       case 429:
         return new MusicBrainzRateLimitError(
@@ -93,20 +93,20 @@ export function categorizeMusicBrainzError(
           retryAfter ? parseInt(retryAfter, 10) : undefined,
           endpoint
         );
-      
+
       case 503:
         return new MusicBrainzServiceUnavailableError(
           `Service unavailable: ${message}`,
           retryAfter ? parseInt(retryAfter, 10) : undefined,
           endpoint
         );
-      
+
       case 404:
         return new MusicBrainzNotFoundError(
           `Resource not found: ${message}`,
           endpoint
         );
-      
+
       default:
         return new MusicBrainzAPIError(
           `HTTP ${statusCode}: ${message}`,
@@ -116,15 +116,12 @@ export function categorizeMusicBrainzError(
         );
     }
   }
-  
+
   // Handle timeout errors
   if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-    return new MusicBrainzTimeoutError(
-      `Request timeout: ${message}`,
-      endpoint
-    );
+    return new MusicBrainzTimeoutError(`Request timeout: ${message}`, endpoint);
   }
-  
+
   // Handle network errors (generally retryable)
   if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
     return new MusicBrainzAPIError(
@@ -134,7 +131,7 @@ export function categorizeMusicBrainzError(
       true
     );
   }
-  
+
   // Default to non-retryable API error
   return new MusicBrainzAPIError(message, undefined, endpoint, false);
 }
