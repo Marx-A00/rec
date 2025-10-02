@@ -878,27 +878,27 @@ type Mutation {
     name: String!
     description: String
     isPublic: Boolean = false
-  ): Collection!
+  ): CreateCollectionPayload!
   updateCollection(
     id: String!
     name: String
     description: String
     isPublic: Boolean
-  ): Collection!
+  ): UpdateCollectionPayload!
   deleteCollection(id: String!): Boolean!
   addAlbumToCollection(
     collectionId: String!
     input: CollectionAlbumInput!
-  ): CollectionAlbum!
+  ): AddAlbumToCollectionPayload!
   removeAlbumFromCollection(collectionId: String!, albumId: UUID!): Boolean!
   updateCollectionAlbum(
     id: String!
     input: CollectionAlbumInput!
-  ): CollectionAlbum!
+  ): UpdateCollectionAlbumPayload!
   reorderCollectionAlbums(
     collectionId: String!
     albumIds: [UUID!]!
-  ): [CollectionAlbum!]!
+  ): ReorderCollectionAlbumsPayload!
   # Listen Later convenience without schema change
   ensureListenLaterCollection: Collection!
   addToListenLater(albumId: UUID!): CollectionAlbum!
@@ -909,17 +909,17 @@ type Mutation {
     basisAlbumId: UUID!
     recommendedAlbumId: UUID!
     score: Int!
-  ): Recommendation!
-  updateRecommendation(id: String!, score: Int!): Recommendation!
+  ): CreateRecommendationPayload!
+  updateRecommendation(id: String!, score: Int!): UpdateRecommendationPayload!
   deleteRecommendation(id: String!): Boolean!
 
   # Social features
-  followUser(userId: String!): UserFollow!
+  followUser(userId: String!): FollowUserPayload!
   unfollowUser(userId: String!): Boolean!
   dismissUserSuggestion(userId: String!): Boolean!
 
   # Profile management
-  updateProfile(name: String, bio: String): User!
+  updateProfile(name: String, bio: String): UpdateProfilePayload!
   updateOnboardingStatus(hasCompletedTour: Boolean!): OnboardingStatus!
   resetOnboardingStatus: OnboardingStatus!
   updateDashboardLayout(layout: JSON!): UserSettings!
@@ -945,6 +945,47 @@ type Mutation {
     type: EnrichmentType!
     priority: EnrichmentPriority
   ): BatchEnrichmentResult!
+}
+
+type FollowUserPayload {
+  id: String!
+  followerId: String!
+  followedId: String!
+  createdAt: DateTime!
+}
+
+type UpdateProfilePayload {
+  id: String!
+  name: String
+  bio: String
+}
+
+type CreateRecommendationPayload {
+  id: String!
+}
+type UpdateRecommendationPayload {
+  id: String!
+}
+
+type ReorderCollectionAlbumsPayload {
+  ids: [String!]!
+}
+
+type UpdateCollectionAlbumPayload {
+  id: String!
+}
+
+type AddAlbumToCollectionPayload {
+  id: String!
+}
+
+type UpdateCollectionPayload {
+  id: String!
+}
+
+# Minimal payload for collection creation
+type CreateCollectionPayload {
+  id: String!
 }
 
 # =============================================

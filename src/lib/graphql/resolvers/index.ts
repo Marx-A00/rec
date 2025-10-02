@@ -2,7 +2,8 @@
 // src/lib/graphql/resolvers/index.ts
 // Main resolver map for Apollo Server
 
-import { Resolvers } from '@/generated/graphql';
+import { Resolvers } from '@/generated/resolvers-types';
+import type { ResolversTypes } from '@/generated/resolvers-types';
 import {
   SearchOrchestrator,
   SearchSource,
@@ -55,7 +56,7 @@ export const resolvers: Resolvers = {
         orderBy: { id: 'desc' }, // Order by ID since createdAt doesn't exist
       });
 
-      return users;
+      return users as unknown as ResolversTypes['User'][];
     },
 
     usersCount: async (_, { search }, { prisma }) => {
@@ -94,7 +95,7 @@ export const resolvers: Resolvers = {
     },
 
     recommendation: async (_, { id }, { prisma }) => {
-      return await prisma.recommendation.findUnique({
+      const rec = await prisma.recommendation.findUnique({
         where: { id },
         include: {
           basisAlbum: true,
@@ -102,14 +103,36 @@ export const resolvers: Resolvers = {
           user: true,
         },
       });
+      return rec as unknown as ResolversTypes['Recommendation'] | null;
     },
 
     // Unified artist discography for client components
     artistDiscography: async (_, { id }) => {
       const discography = await unifiedArtistService.getArtistDiscography(id);
 
+      type UnifiedDiscographyItem = {
+        id: string;
+        source?: string | null;
+        title: string;
+        releaseDate?: string | null;
+        primaryType?: string | null;
+        secondaryTypes?: string[] | null;
+        imageUrl?: string | null;
+        thumb?: string | null;
+        coverImage?: string | null;
+        artist?: string | null;
+        artistName?: string | null;
+        artistCredits?: Array<{
+          artist?: { id?: string; name?: string } | null;
+          name?: string | null;
+          role?: string | null;
+          position?: number | null;
+        }>;
+        trackCount?: number | null;
+      };
+
       // Map to GraphQL UnifiedRelease type
-      return discography.map(release => ({
+      return discography.map((release: UnifiedDiscographyItem) => ({
         id: release.id,
         source: release.source?.toUpperCase() || 'UNKNOWN',
         title: release.title,
@@ -176,7 +199,7 @@ export const resolvers: Resolvers = {
           query,
           types: searchTypes,
           sources,
-          limit,
+          limit: limit ?? 20,
           deduplicateResults: true,
         });
 
@@ -335,7 +358,7 @@ export const resolvers: Resolvers = {
           tracks,
           total: searchResult.totalResults,
           hasMore: false,
-        };
+        } as unknown as ResolversTypes['SearchResults'];
       } catch (error) {
         console.error('Search error:', error);
         return {
@@ -344,7 +367,7 @@ export const resolvers: Resolvers = {
           tracks: [],
           total: 0,
           hasMore: false,
-        };
+        } as unknown as ResolversTypes['SearchResults'];
       }
     },
   },
@@ -396,11 +419,12 @@ export const resolvers: Resolvers = {
         include: { artist: true },
         orderBy: { position: 'asc' },
       });
-      return trackArtists.map(ta => ({
+      const credits = trackArtists.map(ta => ({
         artist: ta.artist,
         role: ta.role || 'performer',
         position: ta.position,
       }));
+      return credits as unknown as ResolversTypes['ArtistCredit'][];
     },
     // Simplified audio features
     audioFeatures: () => null, // Placeholder - would need audio features data
@@ -454,7 +478,7 @@ export const resolvers: Resolvers = {
         orderBy: { position: 'asc' },
       });
 
-      return collectionAlbums;
+      return collectionAlbums as unknown as ResolversTypes['CollectionAlbum'][];
     },
     // Simplified computed fields
     albumCount: async (parent, _, { prisma }) => {
@@ -468,19 +492,16 @@ export const resolvers: Resolvers = {
 
   // Resolve nested fields for collection-album pivot
   CollectionAlbum: {
-    collection: async (parent, _, { prisma }) => {
-      const collection = await prisma.collection.findUnique({
-        where: { id: parent.collectionId },
-      });
-      if (!collection) throw new Error('Collection not found');
-      return collection;
+    collection: async parent => {
+      // Return minimal object; field resolvers will populate related fields
+      return {
+        id: (parent as any).collection.id,
+      } as unknown as ResolversTypes['Collection'];
     },
-    album: async (parent, _, { prisma }) => {
-      const album = await prisma.album.findUnique({
-        where: { id: parent.albumId },
-      });
-      if (!album) throw new Error('Album not found');
-      return album;
+    album: async parent => {
+      return {
+        id: (parent as any).album.id,
+      } as unknown as ResolversTypes['Album'];
     },
   },
 

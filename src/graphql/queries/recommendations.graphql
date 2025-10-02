@@ -65,13 +65,13 @@ mutation CreateRecommendation(
     recommendedAlbumId: $recommendedAlbumId
     score: $score
   ) {
-    ...RecommendationFields
+    id
   }
 }
 
 mutation UpdateRecommendation($id: String!, $score: Int!) {
   updateRecommendation(id: $id, score: $score) {
-    ...RecommendationFields
+    id
   }
 }
 

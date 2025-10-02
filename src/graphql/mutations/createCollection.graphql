@@ -9,10 +9,5 @@ mutation CreateCollection(
     isPublic: $isPublic
   ) {
     id
-    name
-    description
-    isPublic
-    createdAt
-    updatedAt
   }
 }

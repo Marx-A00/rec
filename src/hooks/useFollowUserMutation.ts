@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { graphqlClient } from '@/lib/graphql-client';
+import {
+  useFollowUserMutation as useFollowUserGQL,
+  useUnfollowUserMutation,
+} from '@/generated/graphql';
 import { queryKeys } from '@/lib/queries';
 
 interface FollowActionResponse {
@@ -8,57 +11,12 @@ interface FollowActionResponse {
   message: string;
 }
 
-const FOLLOW_USER_MUTATION = `
-  mutation FollowUser($userId: String!) {
-    followUser(userId: $userId) {
-      id
-      follower {
-        id
-        followingCount
-      }
-      followed {
-        id
-        followersCount
-      }
-    }
-  }
-`;
-
-const UNFOLLOW_USER_MUTATION = `
-  mutation UnfollowUser($userId: String!) {
-    unfollowUser(userId: $userId)
-  }
-`;
-
-const followUser = async (userId: string): Promise<FollowActionResponse> => {
-  try {
-    await graphqlClient.request(FOLLOW_USER_MUTATION, { userId });
-    return {
-      isFollowing: true,
-      message: 'Successfully followed user',
-    };
-  } catch (error: any) {
-    if (error.response?.errors?.[0]) {
-      throw new Error(error.response.errors[0].message);
-    }
-    throw new Error('Failed to follow user');
-  }
-};
-
-const unfollowUser = async (userId: string): Promise<FollowActionResponse> => {
-  try {
-    await graphqlClient.request(UNFOLLOW_USER_MUTATION, { userId });
-    return {
-      isFollowing: false,
-      message: 'Successfully unfollowed user',
-    };
-  } catch (error: any) {
-    if (error.response?.errors?.[0]) {
-      throw new Error(error.response.errors[0].message);
-    }
-    throw new Error('Failed to unfollow user');
-  }
-};
+function mapGQLError(error: unknown): Error {
+  const e = error as any;
+  const message =
+    e?.response?.errors?.[0]?.message || e?.message || 'Request failed';
+  return new Error(message);
+}
 
 interface UseFollowUserMutationOptions {
   onSuccess?: (
@@ -73,10 +31,27 @@ export const useFollowUserMutation = (
   options: UseFollowUserMutationOptions = {}
 ) => {
   const queryClient = useQueryClient();
+  const followGQL = useFollowUserGQL();
+  const unfollowGQL = useUnfollowUserMutation();
 
   return useMutation({
-    mutationFn: ({ action }: { action: 'follow' | 'unfollow' }) => {
-      return action === 'follow' ? followUser(userId) : unfollowUser(userId);
+    mutationFn: async ({ action }: { action: 'follow' | 'unfollow' }) => {
+      try {
+        if (action === 'follow') {
+          await followGQL.mutateAsync({ userId });
+          return {
+            isFollowing: true,
+            message: 'Successfully followed user',
+          } as FollowActionResponse;
+        }
+        await unfollowGQL.mutateAsync({ userId });
+        return {
+          isFollowing: false,
+          message: 'Successfully unfollowed user',
+        } as FollowActionResponse;
+      } catch (error) {
+        throw mapGQLError(error);
+      }
     },
     onSuccess: data => {
       // Invalidate user data to refetch updated follower counts

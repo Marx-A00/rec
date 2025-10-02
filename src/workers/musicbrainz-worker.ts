@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck - Worker class has type issues, needs refactor
 // src/workers/musicbrainz-worker.ts
 /**

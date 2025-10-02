@@ -14,8 +14,11 @@ export {
 
 // Factory function available if needed (though getQueuedMusicBrainzService can be used directly)
 export function createMusicBrainzQueueService() {
-  // Use direct import to avoid require for ESM compatibility
-  return getQueuedMusicBrainzService();
+  // Import locally to avoid circular dependency with the re-export above
+  const {
+    getQueuedMusicBrainzService: getService,
+  } = require('./queue-service');
+  return getService();
 }
 
 // Error handling and monitoring

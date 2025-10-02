@@ -76,6 +76,20 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
     include: {
       albums: {
         orderBy: { addedAt: 'desc' },
+        include: {
+          album: {
+            select: {
+              title: true,
+              coverArtUrl: true,
+              releaseDate: true,
+              artists: {
+                select: {
+                  artist: { select: { id: true, name: true } },
+                },
+              },
+            },
+          },
+        },
       },
     },
     orderBy: { updatedAt: 'desc' },
@@ -85,11 +99,13 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
     collection.albums.map(
       (album): CollectionAlbum => ({
         id: album.id,
-        albumId: String((album as { albumId?: string } | null)?.albumId ?? album.discogsId ?? ''),
-        albumTitle: album.albumTitle ?? 'Unknown Album',
-        albumArtist: album.albumArtist ?? 'Unknown Artist',
-        albumImageUrl: album.albumImageUrl ?? null,
-        albumYear: album.albumYear ?? null,
+        albumId: String(album.albumId ?? album.discogsId ?? ''),
+        albumTitle: album.album.title,
+        albumArtist: album.album.artists.map(a => a.artist.name).join(', '),
+        albumImageUrl: album.album.coverArtUrl ?? null,
+        albumYear: album.album.releaseDate
+          ? String(new Date(album.album.releaseDate).getFullYear())
+          : null,
         addedAt: album.addedAt.toISOString(),
         addedBy: collection.userId,
         personalRating: album.personalRating ?? null,

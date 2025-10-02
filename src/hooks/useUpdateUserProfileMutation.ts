@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { graphqlClient } from '@/lib/graphql-client';
+import { useUpdateProfileMutation } from '@/generated/graphql';
 import { queryKeys } from '@/lib/queries';
 
 interface UpdateProfileRequest {
@@ -14,34 +14,9 @@ interface UpdateProfileResponse {
   id: string;
 }
 
-const UPDATE_PROFILE_MUTATION = `
-  mutation UpdateProfile($name: String, $bio: String) {
-    updateProfile(name: $name, bio: $bio) {
-      id
-      name
-      bio
-    }
-  }
-`;
-
-const updateUserProfile = async (
-  _userId: string,
-  profileData: UpdateProfileRequest
-): Promise<UpdateProfileResponse> => {
-  try {
-    const data: any = await graphqlClient.request(UPDATE_PROFILE_MUTATION, {
-      name: profileData.name.trim(),
-      bio: profileData.bio.trim(),
-    });
-
-    return data.updateProfile;
-  } catch (error: any) {
-    if (error.response?.errors?.[0]) {
-      throw new Error(error.response.errors[0].message);
-    }
-    throw new Error('Failed to update profile');
-  }
-};
+function normalizeProfileInput(p: UpdateProfileRequest) {
+  return { name: p.name.trim(), bio: p.bio.trim() };
+}
 
 interface UseUpdateUserProfileMutationOptions {
   onSuccess?: (updatedUser: { name: string; bio: string }) => void;
@@ -53,10 +28,14 @@ export const useUpdateUserProfileMutation = (
   options: UseUpdateUserProfileMutationOptions = {}
 ) => {
   const queryClient = useQueryClient();
+  const updateProfileGQL = useUpdateProfileMutation();
 
   return useMutation({
-    mutationFn: (profileData: UpdateProfileRequest) =>
-      updateUserProfile(userId, profileData),
+    mutationFn: async (profileData: UpdateProfileRequest) => {
+      const input = normalizeProfileInput(profileData);
+      const res = await updateProfileGQL.mutateAsync(input);
+      return res.updateProfile as UpdateProfileResponse;
+    },
     onSuccess: data => {
       // Invalidate user queries to refetch updated profile data
       queryClient.invalidateQueries({ queryKey: queryKeys.user(userId) });

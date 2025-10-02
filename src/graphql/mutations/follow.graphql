@@ -1,12 +1,8 @@
 mutation FollowUser($userId: String!) {
   followUser(userId: $userId) {
     id
-    follower {
-      id
-    }
-    followed {
-      id
-    }
+    followerId
+    followedId
     createdAt
   }
 }

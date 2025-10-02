@@ -17,7 +17,7 @@ const eslintConfig = [
       'playwright-report/**',
       'test-results/**',
       'node_modules/**',
-      'public/**'
+      'public/**',
     ],
   },
   ...compat.config({

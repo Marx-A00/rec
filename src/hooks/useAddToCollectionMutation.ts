@@ -14,14 +14,6 @@ const ADD_ALBUM_TO_COLLECTION = `
       }
     ) {
       id
-      collection {
-        id
-        name
-      }
-      album {
-        id
-        title
-      }
     }
   }
 `;
@@ -102,7 +94,6 @@ const addToCollection = async (album: Album): Promise<string> => {
         mutation CreateCollection {
           createCollection(name: "My Collection", description: "My music collection", isPublic: false) {
             id
-            name
           }
         }
       `;

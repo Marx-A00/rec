@@ -34,8 +34,10 @@ function fetcher<TData, TVariables>(query: string, variables?: TVariables) {
       process.env.NEXT_PUBLIC_API_URL || ('/api/graphql' as string),
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        ...{
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        },
         body: JSON.stringify({ query, variables }),
       }
     );
@@ -98,6 +100,11 @@ export enum ActivityType {
   ProfileUpdate = 'PROFILE_UPDATE',
   Recommendation = 'RECOMMENDATION',
 }
+
+export type AddAlbumToCollectionPayload = {
+  __typename?: 'AddAlbumToCollectionPayload';
+  id: Scalars['String']['output'];
+};
 
 export type Album = {
   __typename?: 'Album';
@@ -301,6 +308,16 @@ export type ComponentHealth = {
   status: HealthStatus;
 };
 
+export type CreateCollectionPayload = {
+  __typename?: 'CreateCollectionPayload';
+  id: Scalars['String']['output'];
+};
+
+export type CreateRecommendationPayload = {
+  __typename?: 'CreateRecommendationPayload';
+  id: Scalars['String']['output'];
+};
+
 export enum DataQuality {
   High = 'HIGH',
   Low = 'LOW',
@@ -355,6 +372,14 @@ export type ErrorMetric = {
   count: Scalars['Int']['output'];
   error: Scalars['String']['output'];
   lastOccurrence: Scalars['DateTime']['output'];
+};
+
+export type FollowUserPayload = {
+  __typename?: 'FollowUserPayload';
+  createdAt: Scalars['DateTime']['output'];
+  followedId: Scalars['String']['output'];
+  followerId: Scalars['String']['output'];
+  id: Scalars['String']['output'];
 };
 
 export type HealthComponents = {
@@ -418,24 +443,24 @@ export type JobStatusUpdate = {
 export type Mutation = {
   __typename?: 'Mutation';
   addAlbum: Album;
-  addAlbumToCollection: CollectionAlbum;
+  addAlbumToCollection: AddAlbumToCollectionPayload;
   addToListenLater: CollectionAlbum;
   batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
   clearFailedJobs: Scalars['Boolean']['output'];
-  createCollection: Collection;
-  createRecommendation: Recommendation;
+  createCollection: CreateCollectionPayload;
+  createRecommendation: CreateRecommendationPayload;
   createTrack: Track;
   deleteCollection: Scalars['Boolean']['output'];
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
   dismissUserSuggestion: Scalars['Boolean']['output'];
   ensureListenLaterCollection: Collection;
-  followUser: UserFollow;
+  followUser: FollowUserPayload;
   pauseQueue: Scalars['Boolean']['output'];
   removeAlbumFromCollection: Scalars['Boolean']['output'];
   removeFromListenLater: Scalars['Boolean']['output'];
-  reorderCollectionAlbums: Array<CollectionAlbum>;
+  reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
   resetOnboardingStatus: OnboardingStatus;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
@@ -446,12 +471,12 @@ export type Mutation = {
   unfollowUser: Scalars['Boolean']['output'];
   updateAlbum: Album;
   updateAlertThresholds: AlertThresholds;
-  updateCollection: Collection;
-  updateCollectionAlbum: CollectionAlbum;
+  updateCollection: UpdateCollectionPayload;
+  updateCollectionAlbum: UpdateCollectionAlbumPayload;
   updateDashboardLayout: UserSettings;
   updateOnboardingStatus: OnboardingStatus;
-  updateProfile: User;
-  updateRecommendation: Recommendation;
+  updateProfile: UpdateProfilePayload;
+  updateRecommendation: UpdateRecommendationPayload;
   updateTrack: Track;
   updateUserSettings: UserSettings;
 };
@@ -887,6 +912,11 @@ export enum RecommendationSort {
   ScoreDesc = 'SCORE_DESC',
 }
 
+export type ReorderCollectionAlbumsPayload = {
+  __typename?: 'ReorderCollectionAlbumsPayload';
+  ids: Array<Scalars['String']['output']>;
+};
+
 export type SearchInput = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
@@ -1103,6 +1133,28 @@ export type UnifiedRelease = {
   year?: Maybe<Scalars['Int']['output']>;
 };
 
+export type UpdateCollectionAlbumPayload = {
+  __typename?: 'UpdateCollectionAlbumPayload';
+  id: Scalars['String']['output'];
+};
+
+export type UpdateCollectionPayload = {
+  __typename?: 'UpdateCollectionPayload';
+  id: Scalars['String']['output'];
+};
+
+export type UpdateProfilePayload = {
+  __typename?: 'UpdateProfilePayload';
+  bio?: Maybe<Scalars['String']['output']>;
+  id: Scalars['String']['output'];
+  name?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateRecommendationPayload = {
+  __typename?: 'UpdateRecommendationPayload';
+  id: Scalars['String']['output'];
+};
+
 export type UpdateTrackInput = {
   discNumber?: InputMaybe<Scalars['Int']['input']>;
   durationMs?: InputMaybe<Scalars['Int']['input']>;
@@ -1200,15 +1252,7 @@ export type CreateCollectionMutationVariables = Exact<{
 
 export type CreateCollectionMutation = {
   __typename?: 'Mutation';
-  createCollection: {
-    __typename?: 'Collection';
-    id: string;
-    name: string;
-    description?: string | null;
-    isPublic: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  };
+  createCollection: { __typename?: 'CreateCollectionPayload'; id: string };
 };
 
 export type DeleteCollectionMutationVariables = Exact<{
@@ -1227,11 +1271,11 @@ export type FollowUserMutationVariables = Exact<{
 export type FollowUserMutation = {
   __typename?: 'Mutation';
   followUser: {
-    __typename?: 'UserFollow';
+    __typename?: 'FollowUserPayload';
     id: string;
+    followerId: string;
+    followedId: string;
     createdAt: Date;
-    follower: { __typename?: 'User'; id: string };
-    followed: { __typename?: 'User'; id: string };
   };
 };
 
@@ -1306,18 +1350,10 @@ export type ReorderCollectionAlbumsMutationVariables = Exact<{
 
 export type ReorderCollectionAlbumsMutation = {
   __typename?: 'Mutation';
-  reorderCollectionAlbums: Array<{
-    __typename?: 'CollectionAlbum';
-    id: string;
-    position: number;
-    addedAt: Date;
-    album: {
-      __typename?: 'Album';
-      id: string;
-      title: string;
-      coverArtUrl?: string | null;
-    };
-  }>;
+  reorderCollectionAlbums: {
+    __typename?: 'ReorderCollectionAlbumsPayload';
+    ids: Array<string>;
+  };
 };
 
 export type UpdateCollectionMutationVariables = Exact<{
@@ -1329,13 +1365,21 @@ export type UpdateCollectionMutationVariables = Exact<{
 
 export type UpdateCollectionMutation = {
   __typename?: 'Mutation';
-  updateCollection: {
-    __typename?: 'Collection';
+  updateCollection: { __typename?: 'UpdateCollectionPayload'; id: string };
+};
+
+export type UpdateProfileMutationVariables = Exact<{
+  name?: InputMaybe<Scalars['String']['input']>;
+  bio?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type UpdateProfileMutation = {
+  __typename?: 'Mutation';
+  updateProfile: {
+    __typename?: 'UpdateProfilePayload';
     id: string;
-    name: string;
-    description?: string | null;
-    isPublic: boolean;
-    updatedAt: Date;
+    name?: string | null;
+    bio?: string | null;
   };
 };
 
@@ -1594,36 +1638,8 @@ export type CreateRecommendationMutationVariables = Exact<{
 export type CreateRecommendationMutation = {
   __typename?: 'Mutation';
   createRecommendation: {
-    __typename?: 'Recommendation';
+    __typename?: 'CreateRecommendationPayload';
     id: string;
-    score: number;
-    createdAt: Date;
-    user: {
-      __typename?: 'User';
-      id: string;
-      name?: string | null;
-      image?: string | null;
-    };
-    basisAlbum: {
-      __typename?: 'Album';
-      id: string;
-      title: string;
-      coverArtUrl?: string | null;
-      artists: Array<{
-        __typename?: 'ArtistCredit';
-        artist: { __typename?: 'Artist'; id: string; name: string };
-      }>;
-    };
-    recommendedAlbum: {
-      __typename?: 'Album';
-      id: string;
-      title: string;
-      coverArtUrl?: string | null;
-      artists: Array<{
-        __typename?: 'ArtistCredit';
-        artist: { __typename?: 'Artist'; id: string; name: string };
-      }>;
-    };
   };
 };
 
@@ -1635,36 +1651,8 @@ export type UpdateRecommendationMutationVariables = Exact<{
 export type UpdateRecommendationMutation = {
   __typename?: 'Mutation';
   updateRecommendation: {
-    __typename?: 'Recommendation';
+    __typename?: 'UpdateRecommendationPayload';
     id: string;
-    score: number;
-    createdAt: Date;
-    user: {
-      __typename?: 'User';
-      id: string;
-      name?: string | null;
-      image?: string | null;
-    };
-    basisAlbum: {
-      __typename?: 'Album';
-      id: string;
-      title: string;
-      coverArtUrl?: string | null;
-      artists: Array<{
-        __typename?: 'ArtistCredit';
-        artist: { __typename?: 'Artist'; id: string; name: string };
-      }>;
-    };
-    recommendedAlbum: {
-      __typename?: 'Album';
-      id: string;
-      title: string;
-      coverArtUrl?: string | null;
-      artists: Array<{
-        __typename?: 'ArtistCredit';
-        artist: { __typename?: 'Artist'; id: string; name: string };
-      }>;
-    };
   };
 };
 
@@ -1868,11 +1856,6 @@ export const CreateCollectionDocument = `
     mutation CreateCollection($name: String!, $description: String, $isPublic: Boolean) {
   createCollection(name: $name, description: $description, isPublic: $isPublic) {
     id
-    name
-    description
-    isPublic
-    createdAt
-    updatedAt
   }
 }
     `;
@@ -1945,12 +1928,8 @@ export const FollowUserDocument = `
     mutation FollowUser($userId: String!) {
   followUser(userId: $userId) {
     id
-    follower {
-      id
-    }
-    followed {
-      id
-    }
+    followerId
+    followedId
     createdAt
   }
 }
@@ -2240,14 +2219,7 @@ useRemoveAlbumFromCollectionMutation.getKey = () => [
 export const ReorderCollectionAlbumsDocument = `
     mutation ReorderCollectionAlbums($collectionId: String!, $albumIds: [UUID!]!) {
   reorderCollectionAlbums(collectionId: $collectionId, albumIds: $albumIds) {
-    id
-    position
-    addedAt
-    album {
-      id
-      title
-      coverArtUrl
-    }
+    ids
   }
 }
     `;
@@ -2290,10 +2262,6 @@ export const UpdateCollectionDocument = `
     isPublic: $isPublic
   ) {
     id
-    name
-    description
-    isPublic
-    updatedAt
   }
 }
     `;
@@ -2326,6 +2294,42 @@ export const useUpdateCollectionMutation = <
 };
 
 useUpdateCollectionMutation.getKey = () => ['UpdateCollection'];
+
+export const UpdateProfileDocument = `
+    mutation UpdateProfile($name: String, $bio: String) {
+  updateProfile(name: $name, bio: $bio) {
+    id
+    name
+    bio
+  }
+}
+    `;
+
+export const useUpdateProfileMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    UpdateProfileMutation,
+    TError,
+    UpdateProfileMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateProfileMutation,
+    TError,
+    UpdateProfileMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateProfile'],
+    mutationFn: (variables?: UpdateProfileMutationVariables) =>
+      fetcher<UpdateProfileMutation, UpdateProfileMutationVariables>(
+        UpdateProfileDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useUpdateProfileMutation.getKey = () => ['UpdateProfile'];
 
 export const GetArtistDiscographyDocument = `
     query GetArtistDiscography($id: String!) {
@@ -2897,10 +2901,10 @@ export const CreateRecommendationDocument = `
     recommendedAlbumId: $recommendedAlbumId
     score: $score
   ) {
-    ...RecommendationFields
+    id
   }
 }
-    ${RecommendationFieldsFragmentDoc}`;
+    `;
 
 export const useCreateRecommendationMutation = <
   TError = unknown,
@@ -2934,10 +2938,10 @@ useCreateRecommendationMutation.getKey = () => ['CreateRecommendation'];
 export const UpdateRecommendationDocument = `
     mutation UpdateRecommendation($id: String!, $score: Int!) {
   updateRecommendation(id: $id, score: $score) {
-    ...RecommendationFields
+    id
   }
 }
-    ${RecommendationFieldsFragmentDoc}`;
+    `;
 
 export const useUpdateRecommendationMutation = <
   TError = unknown,

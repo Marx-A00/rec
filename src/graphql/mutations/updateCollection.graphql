@@ -11,9 +11,5 @@ mutation UpdateCollection(
     isPublic: $isPublic
   ) {
     id
-    name
-    description
-    isPublic
-    updatedAt
   }
 }

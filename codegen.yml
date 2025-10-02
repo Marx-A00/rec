@@ -12,7 +12,6 @@ generates:
       fetcher:
         endpoint: 'process.env.NEXT_PUBLIC_API_URL || "/api/graphql"'
         fetchParams:
-          method: 'POST'
           headers:
             Content-Type: 'application/json'
           credentials: 'include'
@@ -24,6 +23,13 @@ generates:
         DateTime: 'Date'
         UUID: 'string'
         JSON: 'any'
+  ./src/generated/resolvers-types.ts:
+    plugins:
+      - typescript
+      - typescript-resolvers
+    config:
+      contextType: '@/lib/graphql/context#GraphQLContext'
+      useIndexSignature: true
 hooks:
   afterOneFileWrite:
     - prettier --write

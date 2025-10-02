@@ -7,7 +7,10 @@ import CollectionAlbums from '@/components/collections/CollectionAlbums';
 import { ListSkeleton } from '@/components/ui/skeletons';
 import BackButton from '@/components/ui/BackButton';
 import prisma from '@/lib/prisma';
-import type { Collection as UICollection, CollectionAlbum as UICollectionAlbum } from '@/types/collection';
+import type {
+  Collection as UICollection,
+  CollectionAlbum as UICollectionAlbum,
+} from '@/types/collection';
 
 interface CollectionPageProps {
   params: Promise<{ id: string }>;
@@ -39,20 +42,35 @@ async function getCollection(id: string, userId?: string) {
       ...collection,
       createdAt: collection.createdAt.toISOString(),
       updatedAt: collection.updatedAt.toISOString(),
-      albums: collection.albums.map((album): UICollectionAlbum => ({
-        id: album.id,
-        // Prefer canonical albumId if present, fallback to legacy discogsId
-        albumId: String((album as { albumId?: string } | null)?.albumId ?? album.discogsId ?? ''),
-        albumTitle: album.albumTitle ?? 'Unknown Album',
-        albumArtist: album.albumArtist ?? 'Unknown Artist',
-        albumImageUrl: album.albumImageUrl ?? null,
-        albumYear: album.albumYear ?? null,
-        addedBy: collection.userId,
-        addedAt: album.addedAt.toISOString(),
-        personalRating: album.personalRating ?? null,
-        personalNotes: album.personalNotes ?? null,
-        position: album.position,
-      })),
+      albums: collection.albums.map((album): UICollectionAlbum => {
+        type LegacyAlbumProps = {
+          albumId?: string | null;
+          albumTitle?: string | null;
+          albumArtist?: string | null;
+          albumImageUrl?: string | null;
+          albumYear?: string | number | null;
+          discogsId?: string | null;
+        };
+        const legacy = album as unknown as LegacyAlbumProps;
+
+        return {
+          id: album.id,
+          // Prefer canonical albumId if present, fallback to legacy discogsId
+          albumId: String(legacy.albumId ?? album.discogsId ?? ''),
+          albumTitle: legacy.albumTitle ?? 'Unknown Album',
+          albumArtist: legacy.albumArtist ?? 'Unknown Artist',
+          albumImageUrl: legacy.albumImageUrl ?? null,
+          albumYear:
+            legacy.albumYear !== undefined && legacy.albumYear !== null
+              ? String(legacy.albumYear)
+              : null,
+          addedBy: collection.userId,
+          addedAt: album.addedAt.toISOString(),
+          personalRating: album.personalRating ?? null,
+          personalNotes: album.personalNotes ?? null,
+          position: album.position,
+        };
+      }),
       metadata: {
         totalAlbums: collection.albums.length,
         totalDuration: 0, // Not computed for now

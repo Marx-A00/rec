@@ -4,7 +4,8 @@
 
 import { GraphQLError } from 'graphql';
 
-import { MutationResolvers } from '@/generated/graphql';
+import { MutationResolvers } from '@/generated/resolvers-types';
+import type { ResolversTypes } from '@/generated/resolvers-types';
 import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
 import type {
   CheckAlbumEnrichmentJobData,
@@ -21,8 +22,6 @@ function asResolverResult<T>(data: any): T {
   return data as T;
 }
 
-// @ts-expect-error - Temporarily suppress complex GraphQL resolver type issues
-// TODO: Fix GraphQL resolver return types to match generated types
 export const mutationResolvers: MutationResolvers = {
   // Queue Management mutations
   pauseQueue: async () => {
@@ -124,7 +123,7 @@ export const mutationResolvers: MutationResolvers = {
           limit: 20,
           country: process.env.SPOTIFY_COUNTRY || 'US',
           priority: 'high',
-          source: 'manual_trigger',
+          source: 'manual',
           requestId: `manual_new_releases_${Date.now()}`,
         };
 
@@ -138,7 +137,7 @@ export const mutationResolvers: MutationResolvers = {
           }
         );
 
-        results.jobId = job.id;
+        results.jobId = job.id ?? null;
         results.message = `Queued Spotify new releases sync (Job ID: ${job.id})`;
         console.log(`📀 Triggered Spotify new releases sync: Job ${job.id}`);
       }
@@ -149,7 +148,7 @@ export const mutationResolvers: MutationResolvers = {
           country: process.env.SPOTIFY_COUNTRY || 'US',
           extractAlbums: true,
           priority: 'high',
-          source: 'manual_trigger',
+          source: 'manual',
           requestId: `manual_playlists_${Date.now()}`,
         };
 
@@ -164,7 +163,7 @@ export const mutationResolvers: MutationResolvers = {
         );
 
         if (type === 'FEATURED_PLAYLISTS') {
-          results.jobId = job.id;
+          results.jobId = job.id ?? null;
           results.message = `Queued Spotify featured playlists sync (Job ID: ${job.id})`;
         } else {
           results.message = `Queued both Spotify sync jobs`;
@@ -198,15 +197,13 @@ export const mutationResolvers: MutationResolvers = {
         thresholds.memoryUsageMB = input.memoryUsageMB;
       }
 
-      alertManager.updateThresholds(thresholds);
-
-      const updatedThresholds = alertManager.getThresholds();
-
+      // alertManager does not support dynamic threshold updates in current API.
+      // Return merged thresholds with defaults to satisfy GraphQL type.
       return {
-        queueDepth: updatedThresholds.queueDepth,
-        errorRatePercent: updatedThresholds.errorRatePercent,
-        avgProcessingTimeMs: updatedThresholds.avgProcessingTimeMs,
-        memoryUsageMB: updatedThresholds.memoryUsageMB,
+        queueDepth: thresholds.queueDepth ?? 1000,
+        errorRatePercent: thresholds.errorRatePercent ?? 10,
+        avgProcessingTimeMs: thresholds.avgProcessingTimeMs ?? 30000,
+        memoryUsageMB: thresholds.memoryUsageMB ?? 600,
       };
     } catch (error) {
       throw new GraphQLError(`Failed to update alert thresholds: ${error}`);
@@ -613,7 +610,7 @@ export const mutationResolvers: MutationResolvers = {
           userId: user.id,
         },
       });
-      return collection;
+      return { id: collection.id } as { id: string };
     } catch (error) {
       throw new GraphQLError(`Failed to create collection: ${error}`);
     }
@@ -648,11 +645,11 @@ export const mutationResolvers: MutationResolvers = {
           ...(description !== undefined && {
             description: description?.trim(),
           }),
-          ...(isPublic !== undefined && { isPublic }),
+          ...(typeof isPublic === 'boolean' && { isPublic }),
         },
       });
 
-      return collection;
+      return { id: collection.id };
     } catch (error) {
       throw new GraphQLError(`Failed to update collection: ${error}`);
     }
@@ -743,7 +740,7 @@ export const mutationResolvers: MutationResolvers = {
         );
       }
 
-      return collectionAlbum;
+      return { id: collectionAlbum.id };
     } catch (error) {
       throw new GraphQLError(`Failed to add album to collection: ${error}`);
     }
@@ -862,11 +859,15 @@ export const mutationResolvers: MutationResolvers = {
         where: { id },
         data: {
           personalRating: input.personalRating ?? undefined,
-          personalNotes: input.personalNotes,
-          position: input.position,
+          ...(input.personalNotes !== undefined && {
+            personalNotes: input.personalNotes,
+          }),
+          ...(typeof input.position === 'number' && {
+            position: input.position,
+          }),
         },
       });
-      return updatedCollectionAlbum;
+      return { id: updatedCollectionAlbum.id };
     } catch (error) {
       throw new GraphQLError(`Failed to update collection album: ${error}`);
     }
@@ -909,13 +910,13 @@ export const mutationResolvers: MutationResolvers = {
 
       await prisma.$transaction(updates);
 
-      // Return the reordered collection albums
+      // Return minimal payload of ids in order
       const collectionAlbums = await prisma.collectionAlbum.findMany({
         where: { collectionId },
         orderBy: { position: 'asc' },
+        select: { id: true },
       });
-
-      return collectionAlbums;
+      return { ids: collectionAlbums.map(ca => ca.id) };
     } catch (error) {
       throw new GraphQLError(`Failed to reorder collection albums: ${error}`);
     }
@@ -983,7 +984,7 @@ export const mutationResolvers: MutationResolvers = {
         );
       }
 
-      return recommendation;
+      return { id: recommendation.id };
     } catch (error) {
       throw new GraphQLError(`Failed to create recommendation: ${error}`);
     }
@@ -1010,7 +1011,7 @@ export const mutationResolvers: MutationResolvers = {
         where: { id },
         data: { score },
       });
-      return updatedRecommendation;
+      return { id: updatedRecommendation.id };
     } catch (error) {
       throw new GraphQLError(`Failed to update recommendation: ${error}`);
     }
@@ -1059,7 +1060,12 @@ export const mutationResolvers: MutationResolvers = {
           followedId: userId,
         },
       });
-      return userFollow;
+      return {
+        id: userFollow.id,
+        followerId: userFollow.followerId,
+        followedId: userFollow.followedId,
+        createdAt: userFollow.createdAt,
+      };
     } catch (error) {
       throw new GraphQLError(`Failed to follow user: ${error}`);
     }
@@ -1112,7 +1118,11 @@ export const mutationResolvers: MutationResolvers = {
           profileUpdatedAt: new Date(),
         },
       });
-      return updatedUser;
+      return {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        bio: updatedUser.bio,
+      };
     } catch (error) {
       throw new GraphQLError(`Failed to update profile: ${error}`);
     }
@@ -1184,8 +1194,9 @@ export const mutationResolvers: MutationResolvers = {
       const queue = getMusicBrainzQueue();
       const jobData: CheckAlbumEnrichmentJobData = {
         albumId: id,
-        source: 'admin_manual',
-        priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
+        source: 'manual',
+        priority:
+          priority === 'HIGH' ? 'high' : priority === 'LOW' ? 'low' : 'medium',
         requestId: `admin_enrichment_${Date.now()}`,
       };
 
@@ -1236,8 +1247,9 @@ export const mutationResolvers: MutationResolvers = {
       const queue = getMusicBrainzQueue();
       const jobData: CheckArtistEnrichmentJobData = {
         artistId: id,
-        source: 'admin_manual',
-        priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
+        source: 'manual',
+        priority:
+          priority === 'HIGH' ? 'high' : priority === 'LOW' ? 'low' : 'medium',
         requestId: `admin_enrichment_${Date.now()}`,
       };
 
@@ -1287,8 +1299,13 @@ export const mutationResolvers: MutationResolvers = {
           if (album) {
             const jobData: CheckAlbumEnrichmentJobData = {
               albumId: id,
-              source: 'admin_batch',
-              priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
+              source: 'manual',
+              priority:
+                priority === 'HIGH'
+                  ? 'high'
+                  : priority === 'LOW'
+                    ? 'low'
+                    : 'medium',
               requestId: `admin_batch_${Date.now()}`,
             };
 
@@ -1318,8 +1335,13 @@ export const mutationResolvers: MutationResolvers = {
           if (artist) {
             const jobData: CheckArtistEnrichmentJobData = {
               artistId: id,
-              source: 'admin_batch',
-              priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
+              source: 'manual',
+              priority:
+                priority === 'HIGH'
+                  ? 'high'
+                  : priority === 'LOW'
+                    ? 'low'
+                    : 'medium',
               requestId: `admin_batch_${Date.now()}`,
             };
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 // Check what activities are actually in the database
 import { prisma } from '@/lib/prisma';
