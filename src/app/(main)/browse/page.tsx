@@ -6,6 +6,9 @@ import { prisma } from '@/lib/prisma';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
+// Force dynamic rendering - don't prerender at build time
+export const dynamic = 'force-dynamic';
+
 // Fetch functions
 async function getSpotifyTrending() {
   const cache = await prisma.cacheData.findUnique({

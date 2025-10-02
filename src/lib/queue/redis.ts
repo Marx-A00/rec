@@ -67,8 +67,14 @@ class RedisManager {
 
   /**
    * Get Redis client instance with automatic connection management
+   * Returns a mock client during build time to avoid connection errors
    */
   public getClient(): Redis {
+    // Skip Redis connection during build time
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return this.getMockClient();
+    }
+
     if (!this.redis) {
       this.redis = new Redis(this.config);
       this.setupEventHandlers();
@@ -77,9 +83,30 @@ class RedisManager {
   }
 
   /**
+   * Get a mock Redis client for build time
+   */
+  private getMockClient(): Redis {
+    return {
+      ping: async () => 'PONG',
+      get: async () => null,
+      set: async () => 'OK',
+      del: async () => 0,
+      quit: async () => 'OK',
+      disconnect: () => {},
+      on: () => {},
+    } as unknown as Redis;
+  }
+
+  /**
    * Create a new Redis connection (for BullMQ which needs separate connections)
+   * Returns a mock client during build time
    */
   public createConnection(): Redis {
+    // Skip Redis connection during build time
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return this.getMockClient();
+    }
+
     const redis = new Redis(this.config);
     this.setupEventHandlers(redis);
     return redis;
