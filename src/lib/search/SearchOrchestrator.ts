@@ -620,6 +620,9 @@ export class SearchOrchestrator {
       releaseDate: release.firstReleaseDate || release['first-release-date'] || null,
       genre: release.tags?.map((t: any) => t.name) || [],
       label: '',
+      source: 'musicbrainz', // Mark as external MusicBrainz result
+      primaryType: release.primaryType || undefined, // Include primary type
+      secondaryTypes: release.secondaryTypes || [], // Include secondary types
       image: {
         url: '',
         width: 300,
