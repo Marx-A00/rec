@@ -10,10 +10,15 @@ export default async function AdminLayout({
 }) {
   const session = await auth();
 
-  // TODO: Add proper admin role check
-  // For now, just check if user is authenticated
+  // Check if user is authenticated
   if (!session?.user) {
     redirect('/signin');
+  }
+
+  // Admin access restricted to your email only
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'your-email@example.com';
+  if (session.user.email !== ADMIN_EMAIL) {
+    redirect('/'); // Redirect to home if not admin
   }
 
   return (

@@ -54,14 +54,10 @@ export function SortableAlbumItem({
     const isWide = gridSize === 'wide';
     
     return (
-      <div className="group">
-        {/* Drag Handle - only show if editable */}
+      <div className="group relative">
+        {/* Drag indicator - only show if editable */}
         {isEditable && (
-          <div
-            className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing bg-black/50 rounded p-1"
-            {...attributes}
-            {...listeners}
-          >
+          <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded p-1 pointer-events-none">
             <GripVertical className="w-4 h-4 text-white" />
           </div>
         )}
@@ -100,6 +96,7 @@ export function SortableAlbumItem({
         ${isEditable ? 'cursor-grab active:cursor-grabbing' : ''}
         transition-opacity duration-200
       `}
+      {...(isEditable ? { ...attributes, ...listeners } : {})}
     >
       {renderContent()}
     </div>

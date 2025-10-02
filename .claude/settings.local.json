@@ -1,13 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "WebSearch"
+      "WebSearch",
+      "Bash(pnpm dev:*)"
     ],
     "deny": [],
     "ask": []
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "taskmaster-ai"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

@@ -4,7 +4,7 @@ import React, { FC } from 'react';
 import { useHeader } from '@/contexts/HeaderContext';
 import { useIsHomePage } from '@/hooks/useIsHomePage';
 import UserAvatar from './UserAvatar';
-import UniversalSearchBar from '@/components/ui/UniversalSearchBar';
+import SimpleSearchBar from '@/components/ui/SimpleSearchBar';
 import { cn } from '@/lib/utils';
 
 interface TopBarProps {
@@ -56,6 +56,18 @@ export const TopBar: FC<TopBarProps> = ({
   const { leftContent, centerContent, rightContent, isVisible } = state;
   const isHomePage = useIsHomePage();
 
+  // Check if we're in edit mode on homepage (to hide search bar)
+  let isEditMode = false;
+  if (isHomePage) {
+    try {
+      const { useSplitMosaic } = require('@/contexts/SplitMosaicContext');
+      const { state: mosaicState } = useSplitMosaic();
+      isEditMode = mosaicState.isEditMode;
+    } catch {
+      // Context not available, not in edit mode
+    }
+  }
+
   if (!isVisible) {
     return null;
   }
@@ -83,11 +95,11 @@ export const TopBar: FC<TopBarProps> = ({
           {leftContent || (showAvatar && <UserAvatar />)}
         </div>
 
-        {/* Center Section - Search/Title */}
+        {/* Center Section - Search/Title (hidden in edit mode) */}
         <div className="flex-1 flex justify-center px-4">
-          {centerContent || (showSearch && (
+          {centerContent || (showSearch && !isEditMode && (
             <div className="w-full max-w-2xl">
-              <UniversalSearchBar className="w-full" />
+              <SimpleSearchBar className="w-full" />
             </div>
           ))}
         </div>
