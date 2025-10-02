@@ -34,8 +34,11 @@ function fetcher<TData, TVariables>(query: string, variables?: TVariables) {
       process.env.NEXT_PUBLIC_API_URL || ('/api/graphql' as string),
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        ...{
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        },
         body: JSON.stringify({ query, variables }),
       }
     );
@@ -905,7 +908,7 @@ export type SearchResult = Album | Artist | Track;
 
 export type SearchResults = {
   __typename?: 'SearchResults';
-  albums: Array<Album>;
+  albums: Array<UnifiedRelease>;
   artists: Array<Artist>;
   hasMore: Scalars['Boolean']['output'];
   total: Scalars['Int']['output'];
@@ -1727,16 +1730,23 @@ export type SearchQuery = {
     __typename?: 'SearchResults';
     total: number;
     albums: Array<{
-      __typename?: 'Album';
+      __typename?: 'UnifiedRelease';
       id: string;
-      musicbrainzId?: string | null;
+      source: DataSource;
       title: string;
       releaseDate?: Date | null;
-      coverArtUrl?: string | null;
-      artists: Array<{
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
         __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
         artist: { __typename?: 'Artist'; id: string; name: string };
-      }>;
+      }> | null;
     }>;
     artists: Array<{
       __typename?: 'Artist';
@@ -3083,16 +3093,23 @@ export const SearchDocument = `
     total
     albums {
       id
-      musicbrainzId
+      source
       title
       releaseDate
-      coverArtUrl
-      artists {
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
         artist {
           id
           name
         }
+        role
+        position
       }
+      trackCount
+      year
     }
     artists {
       id

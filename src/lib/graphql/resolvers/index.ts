@@ -239,11 +239,16 @@ export const resolvers: Resolvers = {
           .filter(r => r.type === 'album' && !existingMbAlbumIds.has(r.id))
           .map(r => ({
             id: r.id, // Use MusicBrainz ID as temporary ID
-            musicbrainzId: r.id,
+            source: 'MUSICBRAINZ' as const,
             title: r.title,
-            releaseDate: r.releaseDate || null, // Handle empty strings
-            coverArtUrl: null,
-            artists: []
+            releaseDate: r.releaseDate || null,
+            primaryType: r.primaryType || null,
+            secondaryTypes: r.secondaryTypes || [],
+            imageUrl: r.image?.url || r.cover_image || null,
+            artistName: r.artist || 'Unknown Artist',
+            artistCredits: [], // Will be populated if needed
+            trackCount: r.metadata?.numberOfTracks || null,
+            year: r.releaseDate ? new Date(r.releaseDate).getFullYear() : null,
           }));
 
         const newMbArtists = musicbrainzResults
@@ -252,7 +257,7 @@ export const resolvers: Resolvers = {
             id: r.id, // Use MusicBrainz ID as temporary ID
             musicbrainzId: r.id,
             name: r.title, // title is the artist name in UnifiedSearchResult
-            imageUrl: null
+            imageUrl: r.image?.url || r.cover_image || null
           }));
 
         const newMbTracks = musicbrainzResults
@@ -261,15 +266,45 @@ export const resolvers: Resolvers = {
             id: r.id, // Use MusicBrainz ID as temporary ID
             musicbrainzId: r.id,
             title: r.title,
-            durationMs: 0,
+            durationMs: r.metadata?.totalDuration || 0,
             trackNumber: 0,
-            albumId: null, // Set albumId to null instead of album object
+            albumId: null,
             album: null,
             artists: []
           }));
 
-        // Combine all results
-        const albums = [...dbAlbums, ...existingMbAlbums, ...newMbAlbums];
+        // Transform local DB albums to UnifiedRelease format
+        const localAlbumsAsUnified = dbAlbums.map(album => ({
+          id: album.id,
+          source: 'LOCAL' as const,
+          title: album.title,
+          releaseDate: album.releaseDate,
+          primaryType: null, // Local DB albums don't have this yet
+          secondaryTypes: [],
+          imageUrl: album.coverArtUrl,
+          artistName: album.artists?.[0]?.artist?.name || 'Unknown Artist',
+          artistCredits: album.artists || [],
+          trackCount: album.trackCount,
+          year: album.releaseDate ? new Date(album.releaseDate).getFullYear() : null,
+        }));
+
+        // Transform existing MB albums in DB to UnifiedRelease format
+        const existingMbAlbumsAsUnified = existingMbAlbums.map(album => ({
+          id: album.id,
+          source: 'LOCAL' as const, // In DB, so treat as local for routing
+          title: album.title,
+          releaseDate: album.releaseDate,
+          primaryType: null, // Would need to be stored in DB
+          secondaryTypes: [],
+          imageUrl: album.coverArtUrl,
+          artistName: album.artists?.[0]?.artist?.name || 'Unknown Artist',
+          artistCredits: album.artists || [],
+          trackCount: album.trackCount,
+          year: album.releaseDate ? new Date(album.releaseDate).getFullYear() : null,
+        }));
+
+        // Combine all results as UnifiedRelease
+        const albums = [...localAlbumsAsUnified, ...existingMbAlbumsAsUnified, ...newMbAlbums];
         const artists = [...dbArtists, ...existingMbArtists, ...newMbArtists];
         const tracks = [...dbTracks, ...existingMbTracks, ...newMbTracks];
 

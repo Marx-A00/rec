@@ -3,16 +3,23 @@ query Search($input: SearchInput!) {
     total
     albums {
       id
-      musicbrainzId
+      source
       title
       releaseDate
-      coverArtUrl
-      artists {
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
         artist {
           id
           name
         }
+        role
+        position
       }
+      trackCount
+      year
     }
     artists {
       id

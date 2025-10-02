@@ -93,6 +93,15 @@ export class SearchService {
         OR: [
           { title: { contains: query, mode: 'insensitive' } },
           { label: { contains: query, mode: 'insensitive' } },
+          {
+            artists: {
+              some: {
+                artist: {
+                  name: { contains: query, mode: 'insensitive' },
+                },
+              },
+            },
+          },
         ],
       },
       include: {
@@ -101,17 +110,32 @@ export class SearchService {
           take: 1,
         },
       },
-      take: limit,
+      take: limit * 3, // Get more results to properly score and filter
     });
 
-    return albums.map((album, index) => ({
-      type: 'album' as const,
-      id: album.id,
-      title: album.title,
-      subtitle: album.artists[0]?.artist.name,
-      imageUrl: album.coverArtUrl || undefined,
-      score: this.calculateScore(query, album.title) + (limit - index) * 0.1,
-    }));
+    return albums
+      .map((album, index) => {
+        const artistName = album.artists[0]?.artist.name || '';
+
+        // Calculate scores for title, artist, and label
+        const titleScore = this.calculateScore(query, album.title);
+        const artistScore = this.calculateScore(query, artistName) * 1.5; // Artist matches are more important
+        const labelScore = album.label ? this.calculateScore(query, album.label) * 0.5 : 0;
+
+        // Use the best match score
+        const bestScore = Math.max(titleScore, artistScore, labelScore);
+
+        return {
+          type: 'album' as const,
+          id: album.id,
+          title: album.title,
+          subtitle: artistName,
+          imageUrl: album.coverArtUrl || undefined,
+          score: bestScore + (limit - index) * 0.01,
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
   }
 
   private async searchTracks(query: string, limit: number): Promise<SearchResult[]> {

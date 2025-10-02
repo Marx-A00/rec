@@ -54,19 +54,19 @@ type Album {
   catalogNumber: String
   createdAt: DateTime!
   updatedAt: DateTime!
-  
+
   # Enrichment tracking
   dataQuality: DataQuality
   enrichmentStatus: EnrichmentStatus
   lastEnriched: DateTime
-  
+
   # Relationships
   artists: [ArtistCredit!]!
   tracks: [Track!]!
   collectionAlbums: [CollectionAlbum!]!
   basisRecommendations: [Recommendation!]!
   targetRecommendations: [Recommendation!]!
-  
+
   # Computed fields
   duration: String # Formatted duration (e.g., "42:30")
   averageRating: Float
@@ -299,7 +299,7 @@ union SearchResult = Artist | Album | Track
 
 type SearchResults {
   artists: [Artist!]!
-  albums: [Album!]!
+  albums: [UnifiedRelease!]!
   tracks: [Track!]!
   total: Int!
   hasMore: Boolean!

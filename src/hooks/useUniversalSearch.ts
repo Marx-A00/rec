@@ -135,45 +135,36 @@ export function useUniversalSearch(
     const searchData = queryResult.data.search;
     const transformedResults: UnifiedSearchResult[] = [];
 
-    // Transform albums
+    // Transform albums (now UnifiedRelease type)
     if (searchData.albums) {
       searchData.albums.forEach((album) => {
-        // LOCAL-FIRST: navigate using local UUID and mark as local when present
-        const localId = album.id;
-        const musicbrainzId = album.musicbrainzId || undefined;
-        const navId = localId; // prefer local for routing
-        const inferredSource: 'local' | 'musicbrainz' = 'local';
-        try {
-          // Debug log to trace source/id selection for album results
-          // eslint-disable-next-line no-console
-          console.log(
-            '[useUniversalSearch] Album mapping (local-first)',
-            {
-              localId: String(localId),
-              musicbrainzId: musicbrainzId || null,
-              navId: String(navId),
-              inferredSource,
-              title: album.title,
-            }
-          );
-        } catch {}
+        // Map DataSource enum to lowercase string
+        const sourceMap: Record<string, 'local' | 'musicbrainz' | 'discogs'> = {
+          'LOCAL': 'local',
+          'MUSICBRAINZ': 'musicbrainz',
+          'DISCOGS': 'discogs',
+        };
+        const source = sourceMap[album.source] || 'local';
+
         transformedResults.push({
-          id: navId,
+          id: album.id,
           type: 'album' as const,
           title: album.title,
-          subtitle: album.artists?.[0]?.artist?.name || 'Unknown Artist',
-          artist: album.artists?.[0]?.artist?.name || 'Unknown Artist',
+          subtitle: album.artistName || 'Unknown Artist',
+          artist: album.artistName || 'Unknown Artist',
           releaseDate: album.releaseDate instanceof Date ? album.releaseDate.toISOString() : album.releaseDate || '',
           genre: [],
           label: '',
-          source: inferredSource,
+          source,
+          primaryType: album.primaryType || undefined,
+          secondaryTypes: album.secondaryTypes || [],
           image: {
-            url: album.coverArtUrl || '',
+            url: album.imageUrl || '',
             width: 300,
             height: 300,
             alt: album.title,
           },
-          cover_image: album.coverArtUrl || undefined,
+          cover_image: album.imageUrl || undefined,
           _discogs: {},
         });
       });
@@ -189,17 +180,6 @@ export function useUniversalSearch(
 
         const navId = isExternalOnly ? musicbrainzId! : localId;
         const source: 'local' | 'musicbrainz' = isExternalOnly ? 'musicbrainz' : 'local';
-
-        try {
-          // eslint-disable-next-line no-console
-          console.log('[useUniversalSearch] Artist mapping (classified)', {
-            localId,
-            musicbrainzId: musicbrainzId || null,
-            navId,
-            source,
-            title: artist.name,
-          });
-        } catch {}
 
         transformedResults.push({
           id: navId,
