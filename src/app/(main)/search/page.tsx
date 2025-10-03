@@ -72,6 +72,24 @@ function SearchResults() {
       : {};
   }, [filteredResults]);
 
+  // Debug: identify duplicate keys before rendering
+  useEffect(() => {
+    const counts = new Map<string, number>();
+    const dupes: Record<string, number> = {};
+    filteredResults.forEach((r) => {
+      const key = `${r.type}:${(r as any).source || 'unknown'}:${r.id}`;
+      const next = (counts.get(key) || 0) + 1;
+      counts.set(key, next);
+      if (next > 1) {
+        dupes[key] = next;
+      }
+    });
+    if (Object.keys(dupes).length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn('[Search] Duplicate render keys detected:', dupes);
+    }
+  }, [filteredResults]);
+
   // Further group albums by release type (Album, Single, EP, etc.)
   const groupedByReleaseType = useMemo(() => {
     const albumResults = filteredResults.filter(r => r.type === 'album');
@@ -327,7 +345,7 @@ function SearchResults() {
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                   {groupedByReleaseType.albums.slice(0, 10).map(result => (
                     <button
-                      key={result.id}
+                      key={`album:${result.id}`}
                       onClick={() => handleResultClick(result)}
                       className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
                     >
@@ -378,7 +396,7 @@ function SearchResults() {
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                   {groupedByReleaseType.singles.slice(0, 10).map(result => (
                     <button
-                      key={result.id}
+                      key={`single:${result.id}`}
                       onClick={() => handleResultClick(result)}
                       className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
                     >
@@ -429,7 +447,7 @@ function SearchResults() {
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                   {groupedByReleaseType.eps.slice(0, 10).map(result => (
                     <button
-                      key={result.id}
+                      key={`ep:${result.id}`}
                       onClick={() => handleResultClick(result)}
                       className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
                     >
@@ -480,7 +498,7 @@ function SearchResults() {
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                   {groupedByReleaseType.mixtapes.slice(0, 10).map(result => (
                     <button
-                      key={result.id}
+                      key={`mixtape:${result.id}`}
                       onClick={() => handleResultClick(result)}
                       className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
                     >
@@ -535,7 +553,7 @@ function SearchResults() {
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                 {groupedByEntityType.artist.slice(0, 10).map(result => (
                   <button
-                    key={result.id}
+                    key={`artist:${result.id}`}
                     onClick={() => handleResultClick(result)}
                     className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
                   >
@@ -589,7 +607,7 @@ function SearchResults() {
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                 {groupedByEntityType.track.slice(0, 10).map(result => (
                   <button
-                    key={result.id}
+                    key={`track:${result.id}`}
                     onClick={() => handleResultClick(result)}
                     className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
                   >

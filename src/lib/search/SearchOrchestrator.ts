@@ -20,6 +20,16 @@ export interface SearchOptions {
   sortBy?: SortBy;
   deduplicateResults?: boolean;
   timeout?: number;
+  // Controls whether to resolve external images (expensive) for artists
+  resolveArtistImages?: boolean;
+  // Cap how many artists we attempt image resolution for (if enabled)
+  artistImageLimit?: number;
+  // Max number of artist results to return (independent of album/track limits)
+  artistMaxResults?: number;
+  // Minimum MB score required to consider an artist (0-100)
+  minMusicBrainzArtistScore?: number;
+  // Token Jaccard similarity threshold between query and artist name (0-1)
+  artistSimilarityThreshold?: number;
 }
 
 export interface SearchResult {
@@ -69,7 +79,13 @@ export class SearchOrchestrator {
       limit = 20,
       sources = [SearchSource.LOCAL, SearchSource.MUSICBRAINZ],
       deduplicateResults = true,
+      resolveArtistImages = false,
     } = options;
+
+    const artistImageLimit = options.artistImageLimit ?? Math.min(limit, 12);
+    const artistMaxResults = options.artistMaxResults ?? Math.min(limit, 5);
+    const minArtistScore = options.minMusicBrainzArtistScore ?? 80;
+    const nameSimThreshold = options.artistSimilarityThreshold ?? 0.82;
 
     const searchPromises: Promise<SearchResult>[] = [];
 
@@ -78,7 +94,7 @@ export class SearchOrchestrator {
     }
 
     if (sources.includes(SearchSource.MUSICBRAINZ)) {
-      searchPromises.push(this.searchMusicBrainz(query, types, limit));
+      searchPromises.push(this.searchMusicBrainz(query, types, limit, { resolveArtistImages, artistImageLimit }));
     }
 
     if (sources.includes(SearchSource.DISCOGS)) {
@@ -261,7 +277,15 @@ export class SearchOrchestrator {
   private async searchMusicBrainz(
     query: string,
     types: SearchType[],
-    limit: number
+    limit: number,
+    opts?: {
+      resolveArtistImages?: boolean;
+      artistImageLimit?: number;
+      // Optional filtering hints (will fallback to defaults when absent)
+      minArtistScore?: number;
+      nameSimThreshold?: number;
+      artistMaxResults?: number;
+    }
   ): Promise<SearchResult> {
     const startTime = Date.now();
 
@@ -310,8 +334,32 @@ export class SearchOrchestrator {
       if (types.includes('artist')) {
         promises.push(
           this.musicbrainzService.searchArtists(query, limit)
-            .then(artists => {
-              results.push(...artists.map(artist => this.mapMusicBrainzArtistToUnifiedResult(artist)));
+            .then(async (artists) => {
+              const resolveImages = opts?.resolveArtistImages === true;
+              const imageCap = Math.max(0, Math.min(artists.length, opts?.artistImageLimit ?? limit));
+
+              // Filter artists by MB score and name similarity
+              const filtered = this.filterArtistResults(query, artists, {
+                minScore: (opts as any)?.minArtistScore ?? 80,
+                nameThreshold: (opts as any)?.nameSimThreshold ?? 0.82,
+                limit: (opts as any)?.artistMaxResults ?? Math.min(limit, 5),
+              });
+
+              if (resolveImages && imageCap > 0) {
+                const withImages = filtered.slice(0, Math.min(imageCap, filtered.length));
+                const withoutImages = filtered.slice(withImages.length);
+
+                const artistResultsWithImages = await Promise.all(
+                  withImages.map(artist => this.mapMusicBrainzArtistToUnifiedResult(artist, true))
+                );
+                const artistResultsWithoutImages = withoutImages.map(artist => this.mapMusicBrainzArtistToUnifiedResultSync(artist));
+
+                results.push(...artistResultsWithImages, ...artistResultsWithoutImages);
+              } else {
+                // Fast path: no external lookups, no queue churn
+                const fastResults = filtered.map(artist => this.mapMusicBrainzArtistToUnifiedResultSync(artist));
+                results.push(...fastResults);
+              }
             })
             .catch(err => {
               console.error('Error searching MusicBrainz artists:', err);
@@ -600,6 +648,56 @@ export class SearchOrchestrator {
     };
   }
 
+  /**
+   * Wikimedia image resolution helpers (copied from unified-artist-service.ts)
+   */
+  private extractWikidataQid(mbArtist: any): string | undefined {
+    const rels = mbArtist?.relations || [];
+    for (const rel of rels) {
+      if (rel.type === 'wikidata' && rel.url?.resource) {
+        const match = rel.url.resource.match(/\/wiki\/(Q\d+)/);
+        if (match) return match[1];
+      }
+    }
+    return undefined;
+  }
+
+  private async fetchWikidataP18Filename(qid: string): Promise<string | undefined> {
+    try {
+      const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`;
+      const res = await fetch(url);
+      if (!res.ok) return undefined;
+      const data = await res.json();
+      const entity = data?.entities?.[qid];
+      const p18 = entity?.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
+      if (typeof p18 === 'string' && p18.length > 0) return p18; // filename
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private buildWikimediaThumbUrl(filename: string, width: number = 600): string {
+    const encoded = encodeURIComponent(filename);
+    return `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=${width}`;
+  }
+
+  private async resolveArtistImageFromWikidata(mbArtist: any): Promise<string | undefined> {
+    try {
+      const qid = this.extractWikidataQid(mbArtist);
+      if (!qid) return undefined;
+
+      const filename = await this.fetchWikidataP18Filename(qid);
+      if (!filename) return undefined;
+
+      const url = this.buildWikimediaThumbUrl(filename, 600);
+      return url;
+    } catch (error) {
+      console.warn('Wikidata image resolution failed:', error);
+      return undefined;
+    }
+  }
+
   private mapMusicBrainzReleaseToUnifiedResult(release: any): UnifiedSearchResult {
     // Build subtitle showing release type
     let subtitle = release.primaryType || 'Release';
@@ -642,7 +740,21 @@ export class SearchOrchestrator {
     };
   }
 
-  private mapMusicBrainzArtistToUnifiedResult(artist: any): UnifiedSearchResult {
+  private async mapMusicBrainzArtistToUnifiedResult(artist: any, resolveImage: boolean = false): Promise<UnifiedSearchResult> {
+    // Try to get Wikimedia image: search results don't include relations,
+    // so fetch full artist with url-rels to extract Wikidata QID
+    let wikimediaImage: string | undefined;
+    if (resolveImage) {
+      try {
+        const fullArtist = await this.musicbrainzService.getArtist(artist.id, ['url-rels']);
+        wikimediaImage = await this.resolveArtistImageFromWikidata(fullArtist);
+      } catch {
+        try {
+          wikimediaImage = await this.resolveArtistImageFromWikidata(artist);
+        } catch {}
+      }
+    }
+
     return {
       id: artist.id,
       type: 'artist',
@@ -653,13 +765,71 @@ export class SearchOrchestrator {
       genre: artist.tags?.map((t: any) => t.name) || [],
       label: '',
       image: {
-        url: '',
-        width: 300,
-        height: 300,
+        url: wikimediaImage || '', // Use Wikimedia or empty (fallback)
+        width: 600,
+        height: 600,
         alt: artist.name,
       },
       _discogs: {},
     };
+  }
+
+  private mapMusicBrainzArtistToUnifiedResultSync(artist: any): UnifiedSearchResult {
+    return {
+      id: artist.id,
+      type: 'artist',
+      title: artist.name,
+      subtitle: artist.type || 'Artist',
+      artist: artist.name,
+      releaseDate: '',
+      genre: Array.isArray(artist.tags) ? artist.tags.map((t: any) => t.name) : [],
+      label: '',
+      image: {
+        url: '',
+        width: 600,
+        height: 600,
+        alt: artist.name,
+      },
+      relevanceScore: artist.score,
+      _discogs: {},
+    };
+  }
+
+  private filterArtistResults(
+    query: string,
+    artists: Array<{ id: string; name: string; score?: number; type?: string; tags?: any[] }>,
+    opts: { minScore: number; nameThreshold: number; limit: number }
+  ) {
+    const normalizedQuery = query.trim().toLowerCase();
+    const queryTokens = new Set(normalizedQuery.split(/\s+/).filter(Boolean));
+
+    const jaccard = (a: Set<string>, b: Set<string>): number => {
+      const intersection = new Set([...a].filter(x => b.has(x))).size;
+      const union = new Set([...a, ...b]).size;
+      return union === 0 ? 0 : intersection / union;
+    };
+
+    const decorated = artists.map(a => {
+      const nameTokens = new Set((a.name || '').toLowerCase().split(/\s+/).filter(Boolean));
+      const sim = jaccard(queryTokens, nameTokens);
+      const mbScore = typeof a.score === 'number' ? a.score : 0;
+      // Combined score emphasizing MB score, with a boost from name similarity
+      const combined = (mbScore / 100) * 0.8 + sim * 0.2;
+      return { base: a, sim, mbScore, combined };
+    });
+
+    const filtered = decorated
+      .filter(d => d.mbScore >= opts.minScore || d.sim >= opts.nameThreshold)
+      .sort((a, b) => b.combined - a.combined)
+      .slice(0, Math.max(1, opts.limit))
+      .map(d => d.base);
+
+    // If everything was filtered out (rare), keep the top 1 by MB score to avoid empty UI
+    if (filtered.length === 0 && artists.length > 0) {
+      return artists.slice(0, Math.max(1, Math.min(1, opts.limit)));
+    }
+
+    return filtered;
   }
 
   private mapMusicBrainzRecordingToUnifiedResult(recording: any): UnifiedSearchResult {

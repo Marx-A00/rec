@@ -1,24 +1,47 @@
 // src/app/admin/layout.tsx
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { auth } from '@/../auth';
+'use client';
 
-export default async function AdminLayout({
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  // Check if user is authenticated
-  if (!session?.user) {
-    redirect('/signin');
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    // Check if user is authenticated
+    if (!session?.user) {
+      router.push('/signin');
+      return;
+    }
+
+    // Admin access restricted to your email only
+    const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'your-email@example.com';
+    if (session.user.email !== ADMIN_EMAIL) {
+      router.push('/'); // Redirect to home if not admin
+    }
+  }, [session, status, router]);
+
+  // Show loading state while checking auth
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
   }
 
-  // Admin access restricted to your email only
-  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'your-email@example.com';
-  if (session.user.email !== ADMIN_EMAIL) {
-    redirect('/'); // Redirect to home if not admin
+  // Don't render admin UI if not authenticated
+  if (!session?.user) {
+    return null;
   }
 
   return (

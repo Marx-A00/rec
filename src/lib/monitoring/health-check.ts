@@ -244,38 +244,33 @@ export class HealthChecker {
   private async checkWorker(): Promise<ComponentHealth> {
     try {
       const queue = getMusicBrainzQueue();
-      const worker = queue.getWorker();
 
-      if (!worker) {
-        return {
-          status: HealthStatus.DEGRADED,
-          message: 'Worker not running',
-          lastCheck: new Date(),
-        };
-      }
+      // Check for active workers by looking at BullMQ worker metadata in Redis
+      const workers = await queue.getQueue().getWorkers();
+      const hasActiveWorkers = workers && workers.length > 0;
 
-      const isRunning = worker.isRunning();
-      const isPaused = worker.isPaused();
+      // Check if queue is paused
+      const isPaused = await queue.getQueue().isPaused();
 
       let status: HealthStatus;
       let message: string;
 
-      if (!isRunning) {
-        status = HealthStatus.UNHEALTHY;
-        message = 'Worker is not running';
+      if (!hasActiveWorkers) {
+        status = HealthStatus.DEGRADED;
+        message = 'No active workers detected';
       } else if (isPaused) {
         status = HealthStatus.DEGRADED;
         message = 'Worker is paused';
       } else {
         status = HealthStatus.HEALTHY;
-        message = 'Worker is healthy';
+        message = `${workers.length} worker(s) active`;
       }
 
       return {
         status,
         message,
         details: {
-          isRunning,
+          workerCount: workers?.length || 0,
           isPaused,
         },
         lastCheck: new Date(),
@@ -295,15 +290,24 @@ export class HealthChecker {
   private async checkSpotify(): Promise<ComponentHealth> {
     try {
       const metrics = spotifyMetrics.getMetrics();
-      const schedulerStatus = spotifyScheduler.getStatus();
       const successRate = spotifyMetrics.getSuccessRate();
+
+      // Check for recent scheduled Spotify jobs in the queue to detect if scheduler is running
+      const queue = getMusicBrainzQueue();
+      const jobs = await queue.getQueue().getJobs(['completed', 'active', 'waiting'], 0, 10);
+      const recentScheduledJobs = jobs.filter(job =>
+        (job.name === 'spotify-sync-new-releases' || job.name === 'spotify-sync-featured-playlists') &&
+        (job.data as any)?.source === 'scheduled' &&
+        job.timestamp > Date.now() - 3600000 // Within last hour
+      );
+      const schedulerRunning = recentScheduledJobs.length > 0;
 
       let status: HealthStatus;
       let message: string;
 
-      if (!schedulerStatus.isRunning) {
+      if (!schedulerRunning) {
         status = HealthStatus.DEGRADED;
-        message = 'Spotify scheduler not running';
+        message = 'Spotify scheduler not running (no recent scheduled jobs)';
       } else if (successRate < 80) {
         status = HealthStatus.DEGRADED;
         message = `Low Spotify API success rate: ${successRate.toFixed(2)}%`;
@@ -321,7 +325,8 @@ export class HealthChecker {
         details: {
           ...metrics,
           successRate,
-          schedulerStatus,
+          schedulerRunning,
+          recentScheduledJobs: recentScheduledJobs.length,
         },
         lastCheck: new Date(),
       };

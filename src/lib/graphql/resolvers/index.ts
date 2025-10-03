@@ -204,7 +204,10 @@ export const resolvers: Resolvers = {
 
         // Find which MusicBrainz items already exist in our DB
         const existingMbAlbums = mbAlbumIds.length > 0 ? await prisma.album.findMany({
-          where: { musicbrainzId: { in: mbAlbumIds } },
+          where: {
+            musicbrainzId: { in: mbAlbumIds },
+            id: { notIn: localAlbumIds },
+          },
           include: {
             artists: {
               include: {
@@ -215,11 +218,17 @@ export const resolvers: Resolvers = {
         }) : [];
 
         const existingMbArtists = mbArtistIds.length > 0 ? await prisma.artist.findMany({
-          where: { musicbrainzId: { in: mbArtistIds } }
+          where: {
+            musicbrainzId: { in: mbArtistIds },
+            id: { notIn: localArtistIds },
+          }
         }) : [];
 
         const existingMbTracks = mbTrackIds.length > 0 ? await prisma.track.findMany({
-          where: { musicbrainzId: { in: mbTrackIds } },
+          where: {
+            musicbrainzId: { in: mbTrackIds },
+            id: { notIn: localTrackIds },
+          },
           include: {
             album: true,
             artists: {
@@ -235,8 +244,9 @@ export const resolvers: Resolvers = {
         const existingMbArtistIds = new Set(existingMbArtists.map(a => a.musicbrainzId));
         const existingMbTrackIds = new Set(existingMbTracks.map(t => t.musicbrainzId));
 
+        const dbAlbumIds = new Set(dbAlbums.map(a => String(a.id)));
         const newMbAlbums = musicbrainzResults
-          .filter(r => r.type === 'album' && !existingMbAlbumIds.has(r.id))
+          .filter(r => r.type === 'album' && !existingMbAlbumIds.has(r.id) && !dbAlbumIds.has(r.id))
           .map(r => ({
             id: r.id, // Use MusicBrainz ID as temporary ID
             source: 'MUSICBRAINZ' as const,
@@ -251,8 +261,9 @@ export const resolvers: Resolvers = {
             year: r.releaseDate ? new Date(r.releaseDate).getFullYear() : null,
           }));
 
+        const dbArtistIds = new Set(dbArtists.map(a => String(a.id)));
         const newMbArtists = musicbrainzResults
-          .filter(r => r.type === 'artist' && !existingMbArtistIds.has(r.id))
+          .filter(r => r.type === 'artist' && !existingMbArtistIds.has(r.id) && !dbArtistIds.has(r.id))
           .map(r => ({
             id: r.id, // Use MusicBrainz ID as temporary ID
             musicbrainzId: r.id,
@@ -260,8 +271,9 @@ export const resolvers: Resolvers = {
             imageUrl: r.image?.url || r.cover_image || null
           }));
 
+        const dbTrackIds = new Set(dbTracks.map(t => String(t.id)));
         const newMbTracks = musicbrainzResults
-          .filter(r => r.type === 'track' && !existingMbTrackIds.has(r.id))
+          .filter(r => r.type === 'track' && !existingMbTrackIds.has(r.id) && !dbTrackIds.has(r.id))
           .map(r => ({
             id: r.id, // Use MusicBrainz ID as temporary ID
             musicbrainzId: r.id,
@@ -303,10 +315,84 @@ export const resolvers: Resolvers = {
           year: album.releaseDate ? new Date(album.releaseDate).getFullYear() : null,
         }));
 
-        // Combine all results as UnifiedRelease
-        const albums = [...localAlbumsAsUnified, ...existingMbAlbumsAsUnified, ...newMbAlbums];
-        const artists = [...dbArtists, ...existingMbArtists, ...newMbArtists];
-        const tracks = [...dbTracks, ...existingMbTracks, ...newMbTracks];
+        // Combine with preference order: local > existingMb > newMb (dedupe by id)
+        const albumsMap = new Map<string, any>();
+        for (const a of [...localAlbumsAsUnified, ...existingMbAlbumsAsUnified, ...newMbAlbums]) {
+          const idStr = String(a.id);
+          if (!albumsMap.has(idStr)) albumsMap.set(idStr, a);
+        }
+        const albums = Array.from(albumsMap.values());
+
+        const artistsMap = new Map<string, any>();
+        for (const a of [...dbArtists, ...existingMbArtists, ...newMbArtists]) {
+          const idStr = String((a as any).id);
+          if (!artistsMap.has(idStr)) artistsMap.set(idStr, a);
+        }
+        let artists = Array.from(artistsMap.values());
+
+        // ============================
+        // Canonical artist ranking
+        // ============================
+        const normalize = (s: string) => (s || '').trim().toLowerCase();
+        const jaccard = (a: string, b: string) => {
+          const as = new Set(a.split(/\s+/).filter(Boolean));
+          const bs = new Set(b.split(/\s+/).filter(Boolean));
+          const inter = new Set([...as].filter(x => bs.has(x))).size;
+          const uni = new Set([...as, ...bs]).size;
+          return uni === 0 ? 0 : inter / uni;
+        };
+
+        // Build MB artist score map from orchestrator results
+        const mbArtistScore = new Map<string, number>();
+        musicbrainzResults
+          .filter(r => r.type === 'artist')
+          .forEach(r => mbArtistScore.set(String(r.id), (r.relevanceScore as number) || 0));
+
+        const qNorm = normalize(query);
+        const scoreArtist = (a: any): number => {
+          const name: string = a.name || a.title || '';
+          const nNorm = normalize(name);
+          const exact = qNorm && nNorm && qNorm === nNorm ? 1 : 0;
+          const sim = jaccard(qNorm, nNorm);
+          const hasMb = !!a.musicbrainzId;
+          const mbScore = mbArtistScore.get(String(a.musicbrainzId || a.id)) || 0;
+          const mbScoreNorm = Math.max(0, Math.min(1, mbScore / 100));
+          // Weights: exact 0.5, sim 0.2, hasMb 0.2, mbScore 0.1
+          return exact * 0.5 + sim * 0.2 + (hasMb ? 0.2 : 0) + mbScoreNorm * 0.1;
+        };
+
+        const rankedArtists = artists
+          .map(a => ({ a, s: scoreArtist(a) }))
+          .sort((x, y) => y.s - x.s)
+          .map(x => x.a);
+
+        // Name-level deduplication: keep one per normalized name
+        const byName = new Map<string, any>();
+        for (const a of rankedArtists) {
+          const nameKey = normalize(a.name || a.title || '');
+          const existing = byName.get(nameKey);
+          if (!existing) {
+            byName.set(nameKey, a);
+            continue;
+          }
+          // Prefer local with MBID, then local, then keep existing order
+          const candHasMb = !!a.musicbrainzId;
+          const candIsLocal = !(typeof a.source === 'string' && a.source.toUpperCase?.() === 'MUSICBRAINZ');
+          const existHasMb = !!existing.musicbrainzId;
+          const existIsLocal = !(typeof existing.source === 'string' && existing.source.toUpperCase?.() === 'MUSICBRAINZ');
+
+          if ((candIsLocal && !existIsLocal) || (candHasMb && !existHasMb) || (candIsLocal && candHasMb && !(existIsLocal && existHasMb))) {
+            byName.set(nameKey, a);
+          }
+        }
+        artists = Array.from(byName.values());
+
+        const tracksMap = new Map<string, any>();
+        for (const t of [...dbTracks, ...existingMbTracks, ...newMbTracks]) {
+          const idStr = String((t as any).id);
+          if (!tracksMap.has(idStr)) tracksMap.set(idStr, t);
+        }
+        const tracks = Array.from(tracksMap.values());
 
         return {
           artists,
