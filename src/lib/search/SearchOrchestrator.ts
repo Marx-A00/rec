@@ -833,13 +833,21 @@ export class SearchOrchestrator {
   }
 
   private mapMusicBrainzRecordingToUnifiedResult(recording: any): UnifiedSearchResult {
+    // Support both raw MB keys ('artist-credit') and our normalized service ('artistCredit')
+    const ac = recording.artistCredit || recording['artist-credit'] || [];
+    const primaryArtist = ac?.[0]?.artist;
+    const primaryArtistId = primaryArtist?.id;
+    const primaryArtistName = primaryArtist?.name || ac?.[0]?.name;
+
+    // Support both 'firstReleaseDate' and 'first-release-date'
+    const firstRelease = recording.firstReleaseDate || recording['first-release-date'] || null;
     return {
       id: recording.id,
       type: 'track',
       title: recording.title,
       subtitle: 'Recording',
-      artist: recording['artist-credit']?.[0]?.artist?.name || 'Unknown Artist',
-      releaseDate: recording['first-release-date'] || null, // Return null instead of empty string
+      artist: primaryArtistName || 'Unknown Artist',
+      releaseDate: firstRelease, // Return null instead of empty string
       genre: recording.tags?.map((t: any) => t.name) || [],
       label: '',
       image: {
@@ -848,7 +856,10 @@ export class SearchOrchestrator {
         height: 300,
         alt: recording.title,
       },
+      relevanceScore: recording.score, // include MB score for filtering downstream
       _discogs: {},
+      // Non-schema field used internally by GraphQL resolver to attach artist id
+      ...(primaryArtistId ? { primaryArtistMbId: primaryArtistId } as any : {}),
     };
   }
 

@@ -159,6 +159,9 @@ export const resolvers: Resolvers = {
           sources,
           limit,
           deduplicateResults: true,
+          // Enable Wikimedia image resolution for MB artists with a small cap
+          resolveArtistImages: searchTypes.includes('artist') && sources.includes(SearchSource.MUSICBRAINZ),
+          artistImageLimit: 6,
         });
 
         // Separate results by source
@@ -272,8 +275,17 @@ export const resolvers: Resolvers = {
           }));
 
         const dbTrackIds = new Set(dbTracks.map(t => String(t.id)));
+        const MIN_TRACK_MB_SCORE = 70; // tune as needed
         const newMbTracks = musicbrainzResults
           .filter(r => r.type === 'track' && !existingMbTrackIds.has(r.id) && !dbTrackIds.has(r.id))
+          // Require a minimum MB score for recordings
+          .filter(r => (typeof r.relevanceScore === 'number' ? r.relevanceScore : 0) >= MIN_TRACK_MB_SCORE)
+          // Filter out obvious noise where the recording title equals the artist name
+          .filter(r => {
+            const a = (r.artist || '').trim().toLowerCase();
+            const t = (r.title || '').trim().toLowerCase();
+            return !(a && t && a === t);
+          })
           .map(r => ({
             id: r.id, // Use MusicBrainz ID as temporary ID
             musicbrainzId: r.id,
@@ -282,7 +294,10 @@ export const resolvers: Resolvers = {
             trackNumber: 0,
             albumId: null,
             album: null,
-            artists: []
+            // Provide minimal artist credit so UI can display the artist name
+            artists: r.artist
+              ? [{ artist: { id: (r as any).primaryArtistMbId || r.primaryArtistMbId || r.musicbrainzArtistId || r.artistId || r.artist?.id || r.id, name: r.artist } }]
+              : []
           }));
 
         // Transform local DB albums to UnifiedRelease format
@@ -451,6 +466,18 @@ export const resolvers: Resolvers = {
       return dataloaders.albumLoader.load(parent.albumId);
     },
     artists: async (parent, _, { prisma }) => {
+      // If artists were provided inline (e.g., external MB results), use them
+      if (Array.isArray((parent as any).artists) && (parent as any).artists.length > 0) {
+        // Normalize to { artist, role, position }
+        return (parent as any).artists.map((a: any, idx: number) => {
+          if (a && a.artist) {
+            return { artist: a.artist, role: a.role || 'performer', position: typeof a.position === 'number' ? a.position : idx };
+          }
+          const name = a?.name || a?.title || '';
+          return { artist: { id: a?.id || '', name }, role: 'performer', position: idx };
+        });
+      }
+
       const trackArtists = await prisma.trackArtist.findMany({
         where: { trackId: parent.id },
         include: { artist: true },

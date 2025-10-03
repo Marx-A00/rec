@@ -44,6 +44,8 @@ export async function GET(request: Request) {
       sources: searchSources,
       limit,
       deduplicateResults: true,
+      resolveArtistImages: types.includes('artist') && searchSources.includes(SearchSource.MUSICBRAINZ),
+      artistImageLimit: 6,
     });
 
     // Group results by type for compatibility with existing UI
