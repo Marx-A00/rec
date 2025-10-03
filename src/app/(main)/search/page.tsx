@@ -330,7 +330,7 @@ function SearchResults() {
 
       <div className='space-y-8'>
         {/* Albums Section - Show by release type */}
-        {activeFilter === 'all' || activeFilter === 'albums' ? (
+        {(activeFilter === 'all' || activeFilter === 'albums') ? (
           <>
             {/* Studio Albums */}
             {groupedByReleaseType.albums.length > 0 && (
@@ -382,6 +382,8 @@ function SearchResults() {
                 </div>
               </div>
             )}
+
+            {/* Artists moved below main Albums but outside of Albums-only conditional */}
 
             {/* Singles */}
             {groupedByReleaseType.singles.length > 0 && (
@@ -538,7 +540,7 @@ function SearchResults() {
           </>
         ) : null}
 
-        {/* Artists Section */}
+        {/* Artists Section - moved just after Albums */}
         {(activeFilter === 'all' || activeFilter === 'artists') &&
           groupedByEntityType.artist &&
           groupedByEntityType.artist.length > 0 && (

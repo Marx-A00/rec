@@ -1,6 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 
 import {
   useInfiniteGetRecommendationFeedQuery,
@@ -126,12 +127,24 @@ export default function RecommendationsList({
       </div>
 
       {hasNextPage && (
-        <div className='text-center mt-8'>
+        <div className='mt-8'>
           <button
             onClick={handleLoadMore}
             disabled={isFetchingNextPage}
-            className='bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg transition-colors'>
-            {isFetchingNextPage ? 'Loading...' : 'Load More'}
+            className='w-full block rounded-md px-4 py-2 h-10 bg-zinc-800/60 hover:bg-cosmic-latte text-zinc-100 hover:text-black border border-zinc-700/60 hover:border-cosmic-latte backdrop-blur-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
+            <span className='flex items-center justify-center gap-2'>
+              {isFetchingNextPage ? (
+                <>
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                  Loading…
+                </>
+              ) : (
+                <>
+                  Load More
+                  <ChevronDown className='h-4 w-4' />
+                </>
+              )}
+            </span>
           </button>
         </div>
       )}
