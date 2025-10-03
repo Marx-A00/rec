@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "Bash(pnpm dev:*)"
+      "Bash(pnpm dev:*)",
+      "Bash(curl -s \"https://musicbrainz.org/ws/2/release-group/88f4f8e5-ee88-4050-84ad-cf73f7c2b19a?inc=releases&fmt=json\")"
     ],
     "deny": [],
     "ask": []

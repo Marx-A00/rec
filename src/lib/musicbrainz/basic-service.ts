@@ -118,6 +118,10 @@ export class MusicBrainzService {
     offset = 0
   ): Promise<ReleaseGroupSearchResult[]> {
     try {
+      // TODO: Improve search quality by filtering out unwanted results
+      // Current filters exclude bootlegs, compilations, and DJ mixes
+      // Consider adding: score threshold, date range, better ranking algorithm
+
       // Enhanced query with filters to exclude junk:
       // - status:official (exclude bootlegs and promotional)
       // - NOT secondarytype:compilation (exclude unofficial compilations)

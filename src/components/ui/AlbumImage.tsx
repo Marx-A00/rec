@@ -77,11 +77,13 @@ export default function AlbumImage({
   }, [src]);
 
   const handleImageLoad = () => {
+    console.log(`[AlbumImage] Image loaded successfully: ${imgSrc}`);
     setIsLoading(false);
     setHasError(false);
   };
 
   const handleImageError = () => {
+    console.log(`[AlbumImage] Image load error for: ${imgSrc}`);
     setIsLoading(false);
 
     if (retryCount < MAX_RETRIES && imgSrc !== FALLBACK_IMAGE) {

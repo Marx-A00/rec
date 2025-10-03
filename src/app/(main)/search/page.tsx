@@ -138,6 +138,8 @@ function SearchResults() {
         console.log(`   Source: ${r.source}`);
         console.log(`   PrimaryType: ${r.primaryType}`);
         console.log(`   SecondaryTypes: ${JSON.stringify(r.secondaryTypes)}`);
+        console.log(`   Image URL: ${r.image?.url}`);
+        console.log(`   Cover Image: ${r.cover_image}`);
       });
       console.log('====================================');
     }

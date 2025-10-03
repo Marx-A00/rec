@@ -57,6 +57,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'coverartarchive.org',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   reactStrictMode: true,

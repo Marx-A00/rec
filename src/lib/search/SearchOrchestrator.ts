@@ -609,6 +609,13 @@ export class SearchOrchestrator {
       subtitle = `${subtitle} • ${secondaryType}`;
     }
 
+    // Use Cover Art Archive direct URLs - browser will fetch in parallel
+    // Falls back to placeholder image via AlbumImage component error handling
+    // Use release-group endpoint which works with MusicBrainz release group IDs
+    const coverArtUrl = `https://coverartarchive.org/release-group/${release.id}/front-250`;
+
+    console.log(`[SearchOrchestrator] Generating cover art URL for "${release.title}": ${coverArtUrl}`);
+
     return {
       id: release.id,
       type: 'album',
@@ -624,11 +631,12 @@ export class SearchOrchestrator {
       primaryType: release.primaryType || undefined, // Include primary type
       secondaryTypes: release.secondaryTypes || [], // Include secondary types
       image: {
-        url: '',
-        width: 300,
-        height: 300,
+        url: coverArtUrl,
+        width: 250,
+        height: 250,
         alt: release.title,
       },
+      cover_image: coverArtUrl, // For backwards compatibility
       relevanceScore: release.score, // Pass through MusicBrainz's score
       _discogs: {},
     };
