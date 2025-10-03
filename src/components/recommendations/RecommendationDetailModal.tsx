@@ -185,7 +185,17 @@ export default function RecommendationDetailModal({
                   </p>
                 </Link>
                 <p className='text-zinc-300 text-lg'>
-                  {recommendation.basisAlbum.artists.map(a => a.artist.name).join(', ')}
+                  {recommendation.basisAlbum.artists.map((a, idx) => (
+                    <span key={a.artist.id}>
+                      {idx > 0 && ', '}
+                      <Link
+                        href={`/artists/${a.artist.id}`}
+                        className='hover:text-white hover:underline transition-colors'
+                      >
+                        {a.artist.name}
+                      </Link>
+                    </span>
+                  ))}
                 </p>
               </div>
               <Link href={`/albums/${recommendation.basisAlbum.id}?source=local`}>
@@ -222,7 +232,17 @@ export default function RecommendationDetailModal({
                   </p>
                 </Link>
                 <p className='text-zinc-300 text-lg'>
-                  {recommendation.recommendedAlbum.artists.map(a => a.artist.name).join(', ')}
+                  {recommendation.recommendedAlbum.artists.map((a, idx) => (
+                    <span key={a.artist.id}>
+                      {idx > 0 && ', '}
+                      <Link
+                        href={`/artists/${a.artist.id}`}
+                        className='hover:text-white hover:underline transition-colors'
+                      >
+                        {a.artist.name}
+                      </Link>
+                    </span>
+                  ))}
                 </p>
               </div>
               <Link
