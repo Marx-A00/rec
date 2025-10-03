@@ -27,6 +27,7 @@ import {
   type EnrichTrackJobData,
   type SpotifySyncNewReleasesJobData,
   type SpotifySyncFeaturedPlaylistsJobData,
+  type CacheAlbumCoverArtJobData,
 } from './jobs';
 import { MusicBrainzRecordingDetail, MusicBrainzRelation } from '../musicbrainz/schemas';
 
@@ -140,6 +141,10 @@ export async function processMusicBrainzJob(
 
       case JOB_TYPES.SPOTIFY_SYNC_FEATURED_PLAYLISTS:
         result = await handleSpotifySyncFeaturedPlaylists(job.data as SpotifySyncFeaturedPlaylistsJobData);
+        break;
+
+      case JOB_TYPES.CACHE_ALBUM_COVER_ART:
+        result = await handleCacheAlbumCoverArt(job.data as CacheAlbumCoverArtJobData);
         break;
 
       default:
@@ -1848,6 +1853,107 @@ function extractYouTubeUrl(mbRecording: MusicBrainzRecordingDetail): string | nu
       }
     }
   }
-  
+
   return null;
+}
+
+// ============================================================================
+// Cover Art Caching Handler
+// ============================================================================
+
+async function handleCacheAlbumCoverArt(
+  data: CacheAlbumCoverArtJobData
+): Promise<any> {
+  const { albumId, requestId } = data;
+
+  try {
+    // Fetch album from database
+    const album = await prisma.album.findUnique({
+      where: { id: albumId },
+      select: {
+        id: true,
+        title: true,
+        coverArtUrl: true,
+        cloudflareImageId: true,
+      },
+    });
+
+    if (!album) {
+      // Non-retryable error: album doesn't exist
+      throw new Error(`Album ${albumId} not found`);
+    }
+
+    // Skip if already cached
+    if (album.cloudflareImageId && album.cloudflareImageId !== 'none') {
+      return {
+        success: true,
+        cached: true,
+        albumId,
+        cloudflareImageId: album.cloudflareImageId,
+        message: 'Already cached',
+      };
+    }
+
+    // Skip if no cover art URL (mark as 'none')
+    if (!album.coverArtUrl) {
+      await prisma.album.update({
+        where: { id: albumId },
+        data: { cloudflareImageId: 'none' },
+      });
+
+      return {
+        success: true, // Don't retry - this is expected
+        cached: false,
+        albumId,
+        cloudflareImageId: 'none',
+        message: 'No cover art URL available',
+      };
+    }
+
+    // Import cacheAlbumArt lazily to avoid circular dependencies
+    const { cacheAlbumArt } = await import('@/lib/cloudflare-images');
+
+    // Upload to Cloudflare
+    const result = await cacheAlbumArt(album.coverArtUrl, album.id, album.title);
+
+    if (!result) {
+      // Check if it's a 404 (non-retryable) or transient error (retryable)
+      // For now, mark as 'none' and don't retry
+      await prisma.album.update({
+        where: { id: albumId },
+        data: { cloudflareImageId: 'none' },
+      });
+
+      return {
+        success: true, // Don't retry - mark as processed
+        cached: false,
+        albumId,
+        cloudflareImageId: 'none',
+        message: 'Failed to fetch image from source (404 or invalid URL)',
+      };
+    }
+
+    // Update database with Cloudflare image ID
+    await prisma.album.update({
+      where: { id: albumId },
+      data: { cloudflareImageId: result.id },
+    });
+
+    console.log(`✅ Cached cover art for "${album.title}" (${albumId})`);
+
+    return {
+      success: true,
+      cached: false,
+      albumId,
+      cloudflareImageId: result.id,
+      cloudflareUrl: result.url,
+      message: 'Successfully cached',
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`❌ Error caching cover art for album ${albumId}:`, errorMessage);
+
+    // Throw to trigger BullMQ retry with exponential backoff
+    throw new Error(`Failed to cache album ${albumId}: ${errorMessage}`);
+  }
 }

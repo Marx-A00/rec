@@ -49,6 +49,7 @@ type Album {
   trackCount: Int
   durationMs: Int
   coverArtUrl: String
+  cloudflareImageId: String
   barcode: String
   label: String
   catalogNumber: String

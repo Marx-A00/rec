@@ -11,6 +11,7 @@ fragment RecommendationFields on Recommendation {
     id
     title
     coverArtUrl
+    cloudflareImageId
     artists {
       artist {
         id
@@ -22,6 +23,7 @@ fragment RecommendationFields on Recommendation {
     id
     title
     coverArtUrl
+    cloudflareImageId
     artists {
       artist {
         id

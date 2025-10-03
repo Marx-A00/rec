@@ -154,7 +154,7 @@ export async function cacheAlbumArt(
   externalUrl: string,
   albumId: string,
   albumTitle?: string
-): Promise<string | null> {
+): Promise<{ id: string; url: string } | null> {
   try {
     const result = await uploadImageFromUrl(
       externalUrl,
@@ -166,9 +166,33 @@ export async function cacheAlbumArt(
       }
     );
 
-    return result.url;
+    return { id: result.id, url: result.url };
   } catch (error) {
     console.error('Failed to cache album art:', error);
+    return null;
+  }
+}
+
+// Cache external artist image
+export async function cacheArtistImage(
+  externalUrl: string,
+  artistId: string,
+  artistName?: string
+): Promise<{ id: string; url: string } | null> {
+  try {
+    const result = await uploadImageFromUrl(
+      externalUrl,
+      `artist-${artistId}`,
+      {
+        type: 'artist-image',
+        artistId,
+        artistName: artistName || '',
+      }
+    );
+
+    return { id: result.id, url: result.url };
+  } catch (error) {
+    console.error('Failed to cache artist image:', error);
     return null;
   }
 }

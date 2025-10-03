@@ -67,6 +67,7 @@ export function SortableAlbumItem({
           <div className={`relative ${isLarge || isWide ? 'h-full' : 'aspect-square'} overflow-hidden rounded-lg`}>
             <AlbumImage
               src={album.albumImageUrl}
+              cloudflareImageId={album.cloudflareImageId}
               alt={album.albumTitle}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
