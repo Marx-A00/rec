@@ -129,8 +129,11 @@ export function getImageUrl(
 ) {
   if (!imageId) return '/placeholder-album.png';
 
-  // Fallback if DELIVERY_URL is not set properly
-  const deliveryUrl = DELIVERY_URL || `https://imagedelivery.net/F-PXhcq4KOZZUABhQIYZ4Q`;
+  // Use NEXT_PUBLIC_ prefixed env var for client-side, fallback to server-side or hardcoded
+  const deliveryUrl =
+    process.env.NEXT_PUBLIC_CLOUDFLARE_IMAGES_DELIVERY_URL ||
+    DELIVERY_URL ||
+    `https://imagedelivery.net/F-PXhcq4KOZZUABhQIYZ4Q`;
 
   // Use variant if specified
   if (options?.variant) {

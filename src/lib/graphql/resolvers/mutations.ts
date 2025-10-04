@@ -10,7 +10,8 @@ import type {
   CheckArtistEnrichmentJobData,
   CheckTrackEnrichmentJobData,
   SpotifySyncNewReleasesJobData,
-  SpotifySyncFeaturedPlaylistsJobData
+  SpotifySyncFeaturedPlaylistsJobData,
+  CacheAlbumCoverArtJobData,
 } from '@/lib/queue/jobs';
 import { alertManager } from '@/lib/monitoring';
 
@@ -678,7 +679,7 @@ export const mutationResolvers: MutationResolvers = {
       // Queue lightweight enrichment check (non-blocking)
       try {
         const queue = getMusicBrainzQueue();
-        
+
         // Queue album enrichment check
         const albumCheckData: CheckAlbumEnrichmentJobData = {
           albumId: input.albumId,
@@ -690,6 +691,21 @@ export const mutationResolvers: MutationResolvers = {
         await queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, albumCheckData, {
           priority: 10, // High priority for user actions
           attempts: 3,
+        });
+
+        // Queue cover art caching (non-blocking)
+        const cacheData: CacheAlbumCoverArtJobData = {
+          albumId: input.albumId,
+          requestId: `cache-cover-${collectionAlbum.id}`,
+        };
+
+        await queue.addJob(JOB_TYPES.CACHE_ALBUM_COVER_ART, cacheData, {
+          priority: 5, // Medium priority
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 2000,
+          },
         });
 
       } catch (queueError) {
