@@ -21,6 +21,7 @@ type Artist {
   formedYear: Int
   countryCode: String
   imageUrl: String
+  cloudflareImageId: String
   createdAt: DateTime!
   updatedAt: DateTime!
   

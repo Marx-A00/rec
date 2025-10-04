@@ -562,6 +562,7 @@ function SearchResults() {
                     <div className='flex-shrink-0 relative w-16 h-16'>
                       <AlbumImage
                         src={result.image?.url || result.cover_image}
+                        cloudflareImageId={(result as any).cloudflareImageId}
                         alt={
                           result.image?.alt ||
                           (result.type === 'artist'

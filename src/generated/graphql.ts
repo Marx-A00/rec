@@ -194,6 +194,7 @@ export type Artist = {
   albumCount: Scalars['Int']['output'];
   albums: Array<Album>;
   biography?: Maybe<Scalars['String']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
   countryCode?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
@@ -1769,6 +1770,7 @@ export type SearchQuery = {
       musicbrainzId?: string | null;
       name: string;
       imageUrl?: string | null;
+      cloudflareImageId?: string | null;
     }>;
     tracks: Array<{
       __typename?: 'Track';
@@ -1827,6 +1829,7 @@ export type SearchArtistsQuery = {
     musicbrainzId?: string | null;
     name: string;
     imageUrl?: string | null;
+    cloudflareImageId?: string | null;
   }>;
 };
 
@@ -3138,6 +3141,7 @@ export const SearchDocument = `
       musicbrainzId
       name
       imageUrl
+      cloudflareImageId
     }
     tracks {
       id
@@ -3305,6 +3309,7 @@ export const SearchArtistsDocument = `
     musicbrainzId
     name
     imageUrl
+    cloudflareImageId
   }
 }
     `;

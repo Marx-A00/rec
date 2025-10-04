@@ -26,6 +26,7 @@ query Search($input: SearchInput!) {
       musicbrainzId
       name
       imageUrl
+      cloudflareImageId
     }
     tracks {
       id
@@ -72,6 +73,7 @@ query SearchArtists($query: String!, $limit: Int) {
     musicbrainzId
     name
     imageUrl
+    cloudflareImageId
   }
 }
 

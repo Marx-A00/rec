@@ -137,7 +137,10 @@ class UnifiedArtistService {
    */
   async getArtistDetails(
     id: string,
-    options?: { source?: 'local' | 'musicbrainz' | 'discogs' }
+    options?: {
+      source?: 'local' | 'musicbrainz' | 'discogs';
+      skipLocalCache?: boolean;
+    }
   ): Promise<UnifiedArtistDetails> {
     const source = options?.source || this.detectSource(id);
 
@@ -147,7 +150,7 @@ class UnifiedArtistService {
       case 'musicbrainz':
         return this.getMusicBrainzArtist(id);
       case 'discogs':
-        return this.getDiscogsArtist(id);
+        return this.getDiscogsArtist(id, options?.skipLocalCache);
       default:
         throw new Error(`Unable to determine source for artist ID: ${id}`);
     }
@@ -266,20 +269,22 @@ class UnifiedArtistService {
   /**
    * Get artist from Discogs
    */
-  private async getDiscogsArtist(discogsId: string): Promise<UnifiedArtistDetails> {
+  private async getDiscogsArtist(discogsId: string, skipLocalCache = false): Promise<UnifiedArtistDetails> {
     if (!this.discogsClient) {
       throw new Error('Discogs client not configured');
     }
 
     try {
-      // First check if we have this artist in our database
-      const localArtist = await prisma.artist.findFirst({
-        where: { discogsId },
-      });
+      // First check if we have this artist in our database (unless skipLocalCache is true)
+      if (!skipLocalCache) {
+        const localArtist = await prisma.artist.findFirst({
+          where: { discogsId },
+        });
 
-      if (localArtist) {
-        // Return local data with Discogs ID preserved
-        return this.getLocalArtist(localArtist.id);
+        if (localArtist) {
+          // Return local data with Discogs ID preserved
+          return this.getLocalArtist(localArtist.id);
+        }
       }
 
       // Fetch from Discogs API
