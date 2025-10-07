@@ -11,7 +11,7 @@
  */
 
 import { prisma } from '../src/lib/prisma';
-import { musicBrainzQueue } from '../src/lib/queue/queue-service';
+import { getMusicBrainzQueue } from '../src/lib/queue/musicbrainz-queue';
 import { JOB_TYPES, CacheArtistImageJobData } from '../src/lib/queue/jobs';
 
 async function main() {
@@ -86,7 +86,8 @@ async function main() {
       requestId: `batch-cache-artist-${artist.id}`,
     };
 
-    await musicBrainzQueue.addJob(
+    const queue = getMusicBrainzQueue();
+    await queue.addJob(
       JOB_TYPES.CACHE_ARTIST_IMAGE,
       jobData,
       {
