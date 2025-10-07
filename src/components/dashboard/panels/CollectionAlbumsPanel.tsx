@@ -4,9 +4,7 @@
 import { Suspense, useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Folder } from 'lucide-react';
-// TODO: fix text overflow 
-// TODO: Think about sizing, also allowing this to be vertical
+import { Folder, ArrowLeftRight, ArrowUpDown } from 'lucide-react';
 import { PanelComponentProps } from '@/types/mosaic';
 import { CollectionAlbum } from '@/types/collection';
 import { Collection } from '@/generated/graphql';
@@ -30,12 +28,14 @@ export default function CollectionAlbumsPanel({
   const [isLoadingAlbums, setIsLoadingAlbums] = useState(false);
   const [selectedAlbum, setSelectedAlbum] = useState<CollectionAlbum | null>(null);
   const [isExiting, setIsExiting] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<'horizontal' | 'vertical'>('horizontal');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Add smooth horizontal scroll with mouse wheel
+  // Add smooth horizontal scroll with mouse wheel (only in horizontal mode)
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (scrollContainerRef.current && scrollContainerRef.current.contains(e.target as Node)) {
+      // Only hijack wheel events in horizontal mode
+      if (layoutMode === 'horizontal' && scrollContainerRef.current && scrollContainerRef.current.contains(e.target as Node)) {
         e.preventDefault();
 
         // Simply scroll horizontally by the vertical delta
@@ -52,7 +52,7 @@ export default function CollectionAlbumsPanel({
       container.addEventListener('wheel', handleWheel, { passive: false });
       return () => container.removeEventListener('wheel', handleWheel);
     }
-  }, [userAlbums]); // Re-attach when albums change
+  }, [userAlbums, layoutMode]); // Re-attach when albums or layout changes
 
   // Fetch user's collection albums
   // TODO: stop it from refreshing and auto fetching
@@ -234,9 +234,24 @@ export default function CollectionAlbumsPanel({
         {user ? (
           // Show user's album collection
           <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {/* Layout Toggle */}
+            <div className="flex justify-end mb-3">
+              <button
+                onClick={() => setLayoutMode(layoutMode === 'horizontal' ? 'vertical' : 'horizontal')}
+                className="p-2 rounded hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-cosmic-latte"
+                title={layoutMode === 'horizontal' ? 'Switch to vertical layout' : 'Switch to horizontal layout'}
+              >
+                {layoutMode === 'horizontal' ? (
+                  <ArrowUpDown className="w-4 h-4" />
+                ) : (
+                  <ArrowLeftRight className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+
+            <div className="flex-1 h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {isLoadingAlbums ? (
-                <div className="flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="h-full flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   {Array.from({ length: 10 }).map((_, i) => (
                     <div
                       key={i}
@@ -256,20 +271,27 @@ export default function CollectionAlbumsPanel({
               ) : userAlbums?.length > 0 ? (
                 <div
                   ref={scrollContainerRef}
-                  className="flex gap-2 overflow-x-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  className={
+                    layoutMode === 'horizontal'
+                      ? 'h-full flex gap-2 overflow-x-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'
+                      : 'h-full flex flex-col gap-2 overflow-y-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'
+                  }
+                >
                   {userAlbums.map(collectionAlbum => (
                     <div
                       key={collectionAlbum.id}
-                      className="relative group/album cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10 flex-shrink-0 w-32"
+                      className={`relative group/album cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10 flex-shrink-0 ${
+                        layoutMode === 'horizontal' ? 'w-[clamp(8rem,15vw,12rem)] h-[clamp(8rem,15vw,12rem)]' : 'w-[clamp(8rem,15vw,12rem)] h-[clamp(8rem,15vw,12rem)]'
+                      }`}
                       onClick={e => handleAlbumClick(collectionAlbum, e)}
                       title={`${collectionAlbum.albumTitle} by ${collectionAlbum.albumArtist}\nClick to view details • Ctrl/Cmd+Click to navigate to album page`}
                     >
                       <AlbumImage
                         src={collectionAlbum.albumImageUrl}
                         alt={`${collectionAlbum.albumTitle} by ${collectionAlbum.albumArtist}`}
-                        width={128}
-                        height={128}
-                        className="w-full aspect-square rounded object-cover border border-zinc-800 group-hover/album:border-zinc-600 transition-colors"
+                        width={256}
+                        height={256}
+                        className="w-full h-full rounded object-cover border border-zinc-800 group-hover/album:border-zinc-600 transition-colors"
                         showSkeleton={true}
                       />
                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover/album:bg-opacity-70 transition-all duration-200 rounded flex items-center justify-center">

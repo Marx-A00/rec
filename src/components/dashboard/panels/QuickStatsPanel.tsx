@@ -76,6 +76,7 @@ export default function QuickStatsPanel({
                 <li> follows </li>
                 <li> genres is collection</li>
                 <li> genres recommended</li>
+                <li> Quick Recommend </li>
                 </ul> 
             </h2>
           </div>
