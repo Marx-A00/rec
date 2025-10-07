@@ -3,7 +3,6 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig,
 } from 'graphql';
-
 import { GraphQLContext } from '@/lib/graphql/context';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -88,6 +87,7 @@ export type Album = {
   barcode?: Maybe<Scalars['String']['output']>;
   basisRecommendations: Array<Recommendation>;
   catalogNumber?: Maybe<Scalars['String']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
   collectionAlbums: Array<CollectionAlbum>;
   coverArtUrl?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
@@ -172,6 +172,7 @@ export type Artist = {
   albumCount: Scalars['Int']['output'];
   albums: Array<Album>;
   biography?: Maybe<Scalars['String']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
   countryCode?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
@@ -910,7 +911,7 @@ export type SearchResult = Album | Artist | Track;
 
 export type SearchResults = {
   __typename?: 'SearchResults';
-  albums: Array<Album>;
+  albums: Array<UnifiedRelease>;
   artists: Array<Artist>;
   hasMore: Scalars['Boolean']['output'];
   total: Scalars['Int']['output'];
@@ -1615,6 +1616,11 @@ export type AlbumResolvers<
     ParentType,
     ContextType
   >;
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   collectionAlbums?: Resolver<
     Array<ResolversTypes['CollectionAlbum']>,
     ParentType,
@@ -1721,6 +1727,11 @@ export type ArtistResolvers<
   albumCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   albums?: Resolver<Array<ResolversTypes['Album']>, ParentType, ContextType>;
   biography?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  cloudflareImageId?: Resolver<
     Maybe<ResolversTypes['String']>,
     ParentType,
     ContextType
@@ -2706,7 +2717,11 @@ export type SearchResultsResolvers<
   ParentType extends
     ResolversParentTypes['SearchResults'] = ResolversParentTypes['SearchResults'],
 > = ResolversObject<{
-  albums?: Resolver<Array<ResolversTypes['Album']>, ParentType, ContextType>;
+  albums?: Resolver<
+    Array<ResolversTypes['UnifiedRelease']>,
+    ParentType,
+    ContextType
+  >;
   artists?: Resolver<Array<ResolversTypes['Artist']>, ParentType, ContextType>;
   hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
