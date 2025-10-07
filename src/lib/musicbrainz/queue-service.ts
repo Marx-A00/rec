@@ -435,6 +435,12 @@ export class QueuedMusicBrainzService {
       return;
     }
 
+    // Don't start worker in web process - only in dedicated worker service
+    if (process.env.DISABLE_EMBEDDED_WORKER === 'true') {
+      console.log('⏭️  Embedded worker disabled, using separate worker service');
+      return;
+    }
+
     try {
       console.log('🔧 Starting MusicBrainz queue worker...');
       this.worker = this.queue.createWorker(processMusicBrainzJob);
