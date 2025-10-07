@@ -136,10 +136,19 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
   // Check if viewing own profile
   const isOwnProfile = session?.user?.id === userId;
 
-  // Fetch user data from database
-  const userData = (await prisma.user.findUnique({
+  // Fetch user data from database with calculated counts
+  const userData = await prisma.user.findUnique({
     where: { id: userId },
-  })) as User;
+    include: {
+      _count: {
+        select: {
+          followers: true,
+          following: true,
+          recommendations: true,
+        },
+      },
+    },
+  });
 
   if (!userData) {
     notFound();
@@ -161,9 +170,9 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     bio:
       userData.bio ||
       'Music enthusiast | Sharing vibes and discovering new sounds',
-    followersCount: userData.followersCount || 0,
-    followingCount: userData.followingCount || 0,
-    recommendationsCount: userData.recommendationsCount || 0,
+    followersCount: userData._count.followers,
+    followingCount: userData._count.following,
+    recommendationsCount: userData._count.recommendations,
   };
 
   return (

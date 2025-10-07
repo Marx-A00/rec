@@ -16,6 +16,7 @@ query GetUserCollections($userId: String!) {
           id
           title
           coverArtUrl
+          cloudflareImageId
           releaseDate
           artists {
             artist {

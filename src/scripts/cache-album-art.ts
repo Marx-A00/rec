@@ -40,17 +40,20 @@ async function cacheAllAlbumArt() {
       // Use MusicBrainz ID if available, otherwise use internal ID
       const identifier = album.musicbrainzId || album.id;
 
-      const cachedUrl = await cacheAlbumArt(
+      const cached = await cacheAlbumArt(
         album.coverArtUrl,
         identifier,
         album.title
       );
 
-      if (cachedUrl) {
-        // Update album with new Cloudflare Images URL
+      if (cached) {
+        // Update album with new Cloudflare Images URL and ID
         await prisma.album.update({
           where: { id: album.id },
-          data: { coverArtUrl: cachedUrl },
+          data: {
+            coverArtUrl: cached.url,
+            cloudflareImageId: cached.id,
+          },
         });
 
         successCount++;

@@ -332,12 +332,13 @@ export default function RecommendationCard({
               >
                 <AlbumImage
                   src={recommendation.basisAlbum?.coverArtUrl}
+                  cloudflareImageId={recommendation.basisAlbum?.cloudflareImageId}
                   alt={`${recommendation.basisAlbum?.title || 'Album'} by ${recommendation.basisAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'Artist'}`}
                   width={400}
                   height={400}
                   sizes='(max-width: 640px) 45vw, (max-width: 768px) 35vw, 400px'
                   className='
-                    w-full h-full object-cover 
+                    w-full h-full object-cover
                     transition-all duration-500 ease-out
                     group-hover:scale-105 group-hover:brightness-110
                     shadow-lg hover:shadow-xl
@@ -392,12 +393,13 @@ export default function RecommendationCard({
               >
                 <AlbumImage
                   src={recommendation.recommendedAlbum?.coverArtUrl}
+                  cloudflareImageId={recommendation.recommendedAlbum?.cloudflareImageId}
                   alt={`${recommendation.recommendedAlbum?.title || 'Album'} by ${recommendation.recommendedAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'Artist'}`}
                   width={400}
                   height={400}
                   sizes='(max-width: 640px) 45vw, (max-width: 768px) 35vw, 400px'
                   className='
-                    w-full h-full object-cover 
+                    w-full h-full object-cover
                     transition-all duration-500 ease-out
                     group-hover:scale-105 group-hover:brightness-110
                     shadow-lg hover:shadow-xl

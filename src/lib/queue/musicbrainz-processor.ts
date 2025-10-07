@@ -34,6 +34,8 @@ import {
   type EnrichTrackJobData,
   type SpotifySyncNewReleasesJobData,
   type SpotifySyncFeaturedPlaylistsJobData,
+  type CacheAlbumCoverArtJobData,
+  type CacheArtistImageJobData,
 } from './jobs';
 
 /**
@@ -172,6 +174,14 @@ export async function processMusicBrainzJob(
         result = await handleSpotifySyncFeaturedPlaylists(
           job.data as SpotifySyncFeaturedPlaylistsJobData
         );
+        break;
+
+      case JOB_TYPES.CACHE_ALBUM_COVER_ART:
+        result = await handleCacheAlbumCoverArt(job.data as CacheAlbumCoverArtJobData);
+        break;
+
+      case JOB_TYPES.CACHE_ARTIST_IMAGE:
+        result = await handleCacheArtistImage(job.data as CacheArtistImageJobData);
         break;
 
       default:
@@ -771,6 +781,34 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
       dataQuality: newDataQuality,
     });
 
+    // Queue artist image caching to Cloudflare (non-blocking)
+    // Only queue if artist now has an imageUrl after enrichment
+    const enrichedArtist = await prisma.artist.findUnique({
+      where: { id: data.artistId },
+      select: { imageUrl: true, cloudflareImageId: true }
+    });
+
+    if (enrichedArtist?.imageUrl && !enrichedArtist.cloudflareImageId) {
+      try {
+        const queue = await import('./musicbrainz-queue').then(m => m.getMusicBrainzQueue());
+        const cacheJobData: CacheArtistImageJobData = {
+          artistId: data.artistId,
+          requestId: `enrich-cache-artist-${data.artistId}`,
+        };
+
+        await queue.addJob(JOB_TYPES.CACHE_ARTIST_IMAGE, cacheJobData, {
+          priority: 5, // Medium priority
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 2000 },
+        });
+
+        console.log(`📤 Queued artist image caching for ${data.artistId}`);
+      } catch (cacheError) {
+        // Don't fail enrichment if caching queue fails
+        console.warn(`Failed to queue artist image caching for ${data.artistId}:`, cacheError);
+      }
+    }
+
     return {
       artistId: data.artistId,
       action: 'enriched',
@@ -1104,6 +1142,77 @@ async function updateArtistFromMusicBrainz(
       .slice(0, 5)
       .map((tag: any) => tag.name);
     updateData.genres = genres;
+  }
+
+  // Extract Discogs ID from MusicBrainz relations
+  if (mbData.relations && !artist.discogsId) {
+    const discogsRel = mbData.relations.find((rel: any) => rel.type === 'discogs');
+    if (discogsRel?.url?.resource) {
+      // Extract ID from URL like "https://www.discogs.com/artist/125246"
+      const discogsMatch = discogsRel.url.resource.match(/\/artist\/(\d+)/);
+      if (discogsMatch) {
+        updateData.discogsId = discogsMatch[1];
+        console.log(`🔗 Found Discogs ID ${discogsMatch[1]} for "${artist.name}"`);
+      }
+    }
+  }
+
+  // Enrich artist image
+  // Priority: Discogs > Wikimedia Commons > Keep existing
+  // Always upgrade Wikimedia to Discogs if possible
+  let imageUrl: string | undefined;
+
+  // Try Discogs first (best quality artist photos)
+  // Use the discogsId we just extracted from MB relations, or existing discogsId
+  const discogsId = updateData.discogsId || artist.discogsId;
+  const hasDiscogsImage = artist.imageUrl?.includes('discogs.com');
+
+  if (discogsId && !hasDiscogsImage) {
+    // Fetch Discogs image if we have ID and don't already have a Discogs image
+    try {
+      const { unifiedArtistService } = await import('@/lib/api/unified-artist-service');
+      const discogsArtist = await unifiedArtistService.getArtistDetails(
+        discogsId,
+        { source: 'discogs', skipLocalCache: true }
+      );
+      if (discogsArtist.imageUrl) {
+        imageUrl = discogsArtist.imageUrl;
+        console.log(`📸 Got artist image from Discogs for "${artist.name}" ${artist.imageUrl ? '(upgrading from Wikimedia)' : ''}`);
+      }
+    } catch (error) {
+      console.warn(`Failed to fetch Discogs image for artist ${artist.id}:`, error);
+    }
+  }
+
+  // Fallback to Wikimedia Commons (via Wikidata) - only if no image at all
+  if (!imageUrl && !artist.imageUrl && mbData.relations) {
+      try {
+        // Extract Wikidata QID from MusicBrainz relations
+        const wikidataRel = mbData.relations.find((rel: any) => rel.type === 'wikidata');
+        if (wikidataRel?.url?.resource) {
+          const qidMatch = wikidataRel.url.resource.match(/\/wiki\/(Q\d+)/);
+          if (qidMatch) {
+            const qid = qidMatch[1];
+            // Fetch Wikimedia image filename from Wikidata P18 property
+            const wikidataUrl = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`;
+            const response = await fetch(wikidataUrl);
+            const data = await response.json();
+            const filename = data?.entities?.[qid]?.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
+
+            if (filename) {
+              const encoded = encodeURIComponent(filename);
+              imageUrl = `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=600`;
+              console.log(`📸 Got artist image from Wikimedia Commons for "${artist.name}"`);
+            }
+          }
+        }
+    } catch (error) {
+      console.warn(`Failed to fetch Wikimedia image for artist ${artist.id}:`, error);
+    }
+  }
+
+  if (imageUrl) {
+    updateData.imageUrl = imageUrl;
   }
 
   if (Object.keys(updateData).length > 0) {
@@ -2166,4 +2275,206 @@ function extractYouTubeUrl(
   }
 
   return null;
+}
+
+// ============================================================================
+// Cover Art Caching Handler
+// ============================================================================
+
+async function handleCacheAlbumCoverArt(
+  data: CacheAlbumCoverArtJobData
+): Promise<any> {
+  const { albumId, requestId } = data;
+
+  try {
+    // Fetch album from database
+    const album = await prisma.album.findUnique({
+      where: { id: albumId },
+      select: {
+        id: true,
+        title: true,
+        coverArtUrl: true,
+        cloudflareImageId: true,
+      },
+    });
+
+    if (!album) {
+      // Non-retryable error: album doesn't exist
+      throw new Error(`Album ${albumId} not found`);
+    }
+
+    // Skip if already cached
+    if (album.cloudflareImageId && album.cloudflareImageId !== 'none') {
+      return {
+        success: true,
+        cached: true,
+        albumId,
+        cloudflareImageId: album.cloudflareImageId,
+        message: 'Already cached',
+      };
+    }
+
+    // Skip if no cover art URL (mark as 'none')
+    if (!album.coverArtUrl) {
+      await prisma.album.update({
+        where: { id: albumId },
+        data: { cloudflareImageId: 'none' },
+      });
+
+      return {
+        success: true, // Don't retry - this is expected
+        cached: false,
+        albumId,
+        cloudflareImageId: 'none',
+        message: 'No cover art URL available',
+      };
+    }
+
+    // Import cacheAlbumArt lazily to avoid circular dependencies
+    const { cacheAlbumArt } = await import('@/lib/cloudflare-images');
+
+    // Upload to Cloudflare
+    const result = await cacheAlbumArt(album.coverArtUrl, album.id, album.title);
+
+    if (!result) {
+      // Check if it's a 404 (non-retryable) or transient error (retryable)
+      // For now, mark as 'none' and don't retry
+      await prisma.album.update({
+        where: { id: albumId },
+        data: { cloudflareImageId: 'none' },
+      });
+
+      return {
+        success: true, // Don't retry - mark as processed
+        cached: false,
+        albumId,
+        cloudflareImageId: 'none',
+        message: 'Failed to fetch image from source (404 or invalid URL)',
+      };
+    }
+
+    // Update database with Cloudflare image ID
+    await prisma.album.update({
+      where: { id: albumId },
+      data: { cloudflareImageId: result.id },
+    });
+
+    console.log(`✅ Cached cover art for "${album.title}" (${albumId})`);
+
+    return {
+      success: true,
+      cached: false,
+      albumId,
+      cloudflareImageId: result.id,
+      cloudflareUrl: result.url,
+      message: 'Successfully cached',
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`❌ Error caching cover art for album ${albumId}:`, errorMessage);
+
+    // Throw to trigger BullMQ retry with exponential backoff
+    throw new Error(`Failed to cache album ${albumId}: ${errorMessage}`);
+  }
+}
+
+/**
+ * Handle CACHE_ARTIST_IMAGE job
+ * Caches artist images from external sources to Cloudflare Images CDN
+ */
+async function handleCacheArtistImage(
+  data: CacheArtistImageJobData
+): Promise<any> {
+  const { artistId, requestId } = data;
+
+  try {
+    // Fetch artist from database
+    const artist = await prisma.artist.findUnique({
+      where: { id: artistId },
+      select: {
+        id: true,
+        name: true,
+        imageUrl: true,
+        cloudflareImageId: true,
+      },
+    });
+
+    if (!artist) {
+      // Non-retryable error: artist doesn't exist
+      throw new Error(`Artist ${artistId} not found`);
+    }
+
+    // Skip if already cached
+    if (artist.cloudflareImageId && artist.cloudflareImageId !== 'none') {
+      return {
+        success: true,
+        cached: true,
+        artistId,
+        cloudflareImageId: artist.cloudflareImageId,
+        message: 'Already cached',
+      };
+    }
+
+    // Skip if no image URL (mark as 'none')
+    if (!artist.imageUrl) {
+      await prisma.artist.update({
+        where: { id: artistId },
+        data: { cloudflareImageId: 'none' },
+      });
+
+      return {
+        success: true, // Don't retry - this is expected
+        cached: false,
+        artistId,
+        cloudflareImageId: 'none',
+        message: 'No image URL available',
+      };
+    }
+
+    // Import cacheArtistImage lazily to avoid circular dependencies
+    const { cacheArtistImage } = await import('@/lib/cloudflare-images');
+
+    // Upload to Cloudflare
+    const result = await cacheArtistImage(artist.imageUrl, artist.id, artist.name);
+
+    if (!result) {
+      // Check if it's a 404 (non-retryable) or transient error (retryable)
+      // For now, mark as 'none' and don't retry
+      await prisma.artist.update({
+        where: { id: artistId },
+        data: { cloudflareImageId: 'none' },
+      });
+
+      return {
+        success: true, // Don't retry - mark as processed
+        cached: false,
+        artistId,
+        cloudflareImageId: 'none',
+        message: 'Failed to fetch image from source (404 or invalid URL)',
+      };
+    }
+
+    // Update database with Cloudflare image ID
+    await prisma.artist.update({
+      where: { id: artistId },
+      data: { cloudflareImageId: result.id },
+    });
+
+    console.log(`✅ Cached image for "${artist.name}" (${artistId})`);
+
+    return {
+      success: true,
+      cached: false,
+      artistId,
+      cloudflareImageId: result.id,
+      cloudflareUrl: result.url,
+      message: 'Successfully cached',
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`❌ Error caching image for artist ${artistId}:`, errorMessage);
+
+    // Throw to trigger BullMQ retry with exponential backoff
+    throw new Error(`Failed to cache artist ${artistId}: ${errorMessage}`);
+  }
 }

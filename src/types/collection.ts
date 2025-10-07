@@ -29,6 +29,7 @@ export interface CollectionAlbum {
   albumTitle: string;
   albumArtist: string;
   albumImageUrl: string | null;
+  cloudflareImageId?: string | null;
   albumYear: string | null;
 
   addedAt: string; // ISO 8601 format

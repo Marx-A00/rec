@@ -1,19 +1,12 @@
 // Cloudflare Images API wrapper
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID!;
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN!;
-const DELIVERY_URL =
-  process.env.CLOUDFLARE_IMAGES_DELIVERY_URL ||
-  `https://imagedelivery.net/${process.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH}`;
+const DELIVERY_URL = process.env.CLOUDFLARE_IMAGES_DELIVERY_URL || `https://imagedelivery.net/${process.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH}`;
 
 const API_BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/images/v1`;
 // TODO: add images for albums to cloudflare
 // TODO: Think about monitoring who can upload images and shit
-export type ImageVariant =
-  | 'thumbnail'
-  | 'small'
-  | 'medium'
-  | 'large'
-  | 'public';
+export type ImageVariant = 'thumbnail' | 'small' | 'medium' | 'large' | 'public';
 
 // Upload image from URL (for caching external images)
 export async function uploadImageFromUrl(
@@ -31,7 +24,7 @@ export async function uploadImageFromUrl(
   const response = await fetch(API_BASE_URL, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${API_TOKEN}`,
+      'Authorization': `Bearer ${API_TOKEN}`,
     },
     body: formData,
   });
@@ -65,7 +58,7 @@ export async function uploadImageFromFile(
   const response = await fetch(API_BASE_URL, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${API_TOKEN}`,
+      'Authorization': `Bearer ${API_TOKEN}`,
     },
     body: formData,
   });
@@ -88,7 +81,7 @@ export async function getDirectUploadUrl() {
   const response = await fetch(`${API_BASE_URL}/direct_upload`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${API_TOKEN}`,
+      'Authorization': `Bearer ${API_TOKEN}`,
     },
   });
 
@@ -109,7 +102,7 @@ export async function deleteImage(imageId: string) {
   const response = await fetch(`${API_BASE_URL}/${imageId}`, {
     method: 'DELETE',
     headers: {
-      Authorization: `Bearer ${API_TOKEN}`,
+      'Authorization': `Bearer ${API_TOKEN}`,
     },
   });
 
@@ -136,9 +129,11 @@ export function getImageUrl(
 ) {
   if (!imageId) return '/placeholder-album.png';
 
-  // Fallback if DELIVERY_URL is not set properly
+  // Use NEXT_PUBLIC_ prefixed env var for client-side, fallback to server-side or hardcoded
   const deliveryUrl =
-    DELIVERY_URL || `https://imagedelivery.net/F-PXhcq4KOZZUABhQIYZ4Q`;
+    process.env.NEXT_PUBLIC_CLOUDFLARE_IMAGES_DELIVERY_URL ||
+    DELIVERY_URL ||
+    `https://imagedelivery.net/F-PXhcq4KOZZUABhQIYZ4Q`;
 
   // Use variant if specified
   if (options?.variant) {
@@ -162,17 +157,45 @@ export async function cacheAlbumArt(
   externalUrl: string,
   albumId: string,
   albumTitle?: string
-): Promise<string | null> {
+): Promise<{ id: string; url: string } | null> {
   try {
-    const result = await uploadImageFromUrl(externalUrl, `album-${albumId}`, {
-      type: 'album-art',
-      albumId,
-      albumTitle: albumTitle || '',
-    });
+    const result = await uploadImageFromUrl(
+      externalUrl,
+      `album-${albumId}`,
+      {
+        type: 'album-art',
+        albumId,
+        albumTitle: albumTitle || '',
+      }
+    );
 
-    return result.url;
+    return { id: result.id, url: result.url };
   } catch (error) {
     console.error('Failed to cache album art:', error);
+    return null;
+  }
+}
+
+// Cache external artist image
+export async function cacheArtistImage(
+  externalUrl: string,
+  artistId: string,
+  artistName?: string
+): Promise<{ id: string; url: string } | null> {
+  try {
+    const result = await uploadImageFromUrl(
+      externalUrl,
+      `artist-${artistId}`,
+      {
+        type: 'artist-image',
+        artistId,
+        artistName: artistName || '',
+      }
+    );
+
+    return { id: result.id, url: result.url };
+  } catch (error) {
+    console.error('Failed to cache artist image:', error);
     return null;
   }
 }

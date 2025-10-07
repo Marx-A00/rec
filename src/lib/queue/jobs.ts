@@ -31,6 +31,9 @@ export const JOB_TYPES = {
   SPOTIFY_SYNC_FEATURED_PLAYLISTS: 'spotify:sync-featured-playlists',
   // Simple Migration Job (one-time use)
   RUN_DISCOGS_MIGRATION: 'migration:run-discogs-migration',
+  // Cover Art Caching Jobs
+  CACHE_ALBUM_COVER_ART: 'cache:album-cover-art',
+  CACHE_ARTIST_IMAGE: 'cache:artist-image',
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -215,6 +218,22 @@ export interface RunDiscogsMigrationJobData {
 }
 
 // ============================================================================
+// Cover Art Caching Job Data Interface
+// ============================================================================
+
+export interface CacheAlbumCoverArtJobData {
+  albumId: string;
+  priority?: 'low' | 'medium' | 'high';
+  requestId?: string;
+}
+
+export interface CacheArtistImageJobData {
+  artistId: string;
+  priority?: 'low' | 'medium' | 'high';
+  requestId?: string;
+}
+
+// ============================================================================
 // Job Data Union Type
 // ============================================================================
 
@@ -235,7 +254,9 @@ export type MusicBrainzJobData =
   | EnrichTrackJobData
   | SpotifySyncNewReleasesJobData
   | SpotifySyncFeaturedPlaylistsJobData
-  | RunDiscogsMigrationJobData;
+  | RunDiscogsMigrationJobData
+  | CacheAlbumCoverArtJobData
+  | CacheArtistImageJobData;
 
 // ============================================================================
 // Job Result Interfaces

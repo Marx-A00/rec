@@ -9,6 +9,7 @@ import { getImageUrl } from '@/lib/cloudflare-images';
 interface AlbumImageProps {
   src: string | null | undefined;
   alt: string;
+  cloudflareImageId?: string | null; // Cloudflare image ID for optimized delivery
   width?: number;
   height?: number;
   className?: string;
@@ -23,6 +24,7 @@ interface AlbumImageProps {
 export default function AlbumImage({
   src,
   alt,
+  cloudflareImageId,
   width = 400,
   height = 400,
   className = '',
@@ -41,8 +43,19 @@ export default function AlbumImage({
   const FALLBACK_IMAGE = '/default-album.svg';
   const MAX_RETRIES = 2;
 
-  // Update imgSrc when src prop changes
+  // Update imgSrc when src or cloudflareImageId prop changes
   useEffect(() => {
+    // Priority 1: Use Cloudflare image ID if available (skip 'none' marker)
+    if (cloudflareImageId && cloudflareImageId !== 'none') {
+      const optimizedUrl = getImageUrl(cloudflareImageId, { width, height });
+      setImgSrc(optimizedUrl);
+      setIsLoading(true);
+      setHasError(false);
+      setRetryCount(0);
+      return;
+    }
+
+    // Priority 2: Use src URL if available
     if (
       src &&
       src !== 'https://via.placeholder.com/400x400?text=No+Image' &&
@@ -75,14 +88,16 @@ export default function AlbumImage({
       setIsLoading(false);
       setHasError(false);
     }
-  }, [src]);
+  }, [src, cloudflareImageId, width, height]);
 
   const handleImageLoad = () => {
+    console.log(`[AlbumImage] Image loaded successfully: ${imgSrc}`);
     setIsLoading(false);
     setHasError(false);
   };
 
   const handleImageError = () => {
+    console.log(`[AlbumImage] Image load error for: ${imgSrc}`);
     setIsLoading(false);
 
     if (retryCount < MAX_RETRIES && imgSrc !== FALLBACK_IMAGE) {

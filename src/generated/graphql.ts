@@ -113,6 +113,7 @@ export type Album = {
   barcode?: Maybe<Scalars['String']['output']>;
   basisRecommendations: Array<Recommendation>;
   catalogNumber?: Maybe<Scalars['String']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
   collectionAlbums: Array<CollectionAlbum>;
   coverArtUrl?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
@@ -197,6 +198,7 @@ export type Artist = {
   albumCount: Scalars['Int']['output'];
   albums: Array<Album>;
   biography?: Maybe<Scalars['String']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
   countryCode?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
@@ -935,7 +937,7 @@ export type SearchResult = Album | Artist | Track;
 
 export type SearchResults = {
   __typename?: 'SearchResults';
-  albums: Array<Album>;
+  albums: Array<UnifiedRelease>;
   artists: Array<Artist>;
   hasMore: Scalars['Boolean']['output'];
   total: Scalars['Int']['output'];
@@ -1434,6 +1436,7 @@ export type GetCollectionQuery = {
         id: string;
         title: string;
         coverArtUrl?: string | null;
+        cloudflareImageId?: string | null;
         releaseDate?: Date | null;
         artists: Array<{
           __typename?: 'ArtistCredit';
@@ -1492,6 +1495,7 @@ export type GetUserCollectionsQuery = {
           id: string;
           title: string;
           coverArtUrl?: string | null;
+          cloudflareImageId?: string | null;
           releaseDate?: Date | null;
           artists: Array<{
             __typename?: 'ArtistCredit';
@@ -1519,6 +1523,7 @@ export type RecommendationFieldsFragment = {
     id: string;
     title: string;
     coverArtUrl?: string | null;
+    cloudflareImageId?: string | null;
     artists: Array<{
       __typename?: 'ArtistCredit';
       artist: { __typename?: 'Artist'; id: string; name: string };
@@ -1529,6 +1534,7 @@ export type RecommendationFieldsFragment = {
     id: string;
     title: string;
     coverArtUrl?: string | null;
+    cloudflareImageId?: string | null;
     artists: Array<{
       __typename?: 'ArtistCredit';
       artist: { __typename?: 'Artist'; id: string; name: string };
@@ -1563,6 +1569,7 @@ export type GetRecommendationFeedQuery = {
         id: string;
         title: string;
         coverArtUrl?: string | null;
+        cloudflareImageId?: string | null;
         artists: Array<{
           __typename?: 'ArtistCredit';
           artist: { __typename?: 'Artist'; id: string; name: string };
@@ -1573,6 +1580,7 @@ export type GetRecommendationFeedQuery = {
         id: string;
         title: string;
         coverArtUrl?: string | null;
+        cloudflareImageId?: string | null;
         artists: Array<{
           __typename?: 'ArtistCredit';
           artist: { __typename?: 'Artist'; id: string; name: string };
@@ -1610,6 +1618,7 @@ export type GetMyRecommendationsQuery = {
         id: string;
         title: string;
         coverArtUrl?: string | null;
+        cloudflareImageId?: string | null;
         artists: Array<{
           __typename?: 'ArtistCredit';
           artist: { __typename?: 'Artist'; id: string; name: string };
@@ -1620,6 +1629,7 @@ export type GetMyRecommendationsQuery = {
         id: string;
         title: string;
         coverArtUrl?: string | null;
+        cloudflareImageId?: string | null;
         artists: Array<{
           __typename?: 'ArtistCredit';
           artist: { __typename?: 'Artist'; id: string; name: string };
@@ -1687,6 +1697,7 @@ export type GetRecommendationQuery = {
       id: string;
       title: string;
       coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
       artists: Array<{
         __typename?: 'ArtistCredit';
         artist: { __typename?: 'Artist'; id: string; name: string };
@@ -1697,6 +1708,7 @@ export type GetRecommendationQuery = {
       id: string;
       title: string;
       coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
       artists: Array<{
         __typename?: 'ArtistCredit';
         artist: { __typename?: 'Artist'; id: string; name: string };
@@ -1715,16 +1727,23 @@ export type SearchQuery = {
     __typename?: 'SearchResults';
     total: number;
     albums: Array<{
-      __typename?: 'Album';
+      __typename?: 'UnifiedRelease';
       id: string;
-      musicbrainzId?: string | null;
+      source: DataSource;
       title: string;
       releaseDate?: Date | null;
-      coverArtUrl?: string | null;
-      artists: Array<{
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
         __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
         artist: { __typename?: 'Artist'; id: string; name: string };
-      }>;
+      }> | null;
     }>;
     artists: Array<{
       __typename?: 'Artist';
@@ -1732,6 +1751,7 @@ export type SearchQuery = {
       musicbrainzId?: string | null;
       name: string;
       imageUrl?: string | null;
+      cloudflareImageId?: string | null;
     }>;
     tracks: Array<{
       __typename?: 'Track';
@@ -1745,6 +1765,7 @@ export type SearchQuery = {
         id: string;
         title: string;
         coverArtUrl?: string | null;
+        cloudflareImageId?: string | null;
       } | null;
       artists: Array<{
         __typename?: 'ArtistCredit';
@@ -1768,6 +1789,7 @@ export type SearchAlbumsQuery = {
     title: string;
     releaseDate?: Date | null;
     coverArtUrl?: string | null;
+    cloudflareImageId?: string | null;
     artists: Array<{
       __typename?: 'ArtistCredit';
       artist: { __typename?: 'Artist'; id: string; name: string };
@@ -1788,6 +1810,7 @@ export type SearchArtistsQuery = {
     musicbrainzId?: string | null;
     name: string;
     imageUrl?: string | null;
+    cloudflareImageId?: string | null;
   }>;
 };
 
@@ -1810,6 +1833,7 @@ export type SearchTracksQuery = {
       id: string;
       title: string;
       coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
     } | null;
     artists: Array<{
       __typename?: 'ArtistCredit';
@@ -1832,6 +1856,7 @@ export const RecommendationFieldsFragmentDoc = `
     id
     title
     coverArtUrl
+    cloudflareImageId
     artists {
       artist {
         id
@@ -1843,6 +1868,7 @@ export const RecommendationFieldsFragmentDoc = `
     id
     title
     coverArtUrl
+    cloudflareImageId
     artists {
       artist {
         id
@@ -2445,6 +2471,7 @@ export const GetCollectionDocument = `
         id
         title
         coverArtUrl
+        cloudflareImageId
         releaseDate
         artists {
           artist {
@@ -2628,6 +2655,7 @@ export const GetUserCollectionsDocument = `
           id
           title
           coverArtUrl
+          cloudflareImageId
           releaseDate
           artists {
             artist {
@@ -3087,22 +3115,30 @@ export const SearchDocument = `
     total
     albums {
       id
-      musicbrainzId
+      source
       title
       releaseDate
-      coverArtUrl
-      artists {
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
         artist {
           id
           name
         }
+        role
+        position
       }
+      trackCount
+      year
     }
     artists {
       id
       musicbrainzId
       name
       imageUrl
+      cloudflareImageId
     }
     tracks {
       id
@@ -3114,6 +3150,7 @@ export const SearchDocument = `
         id
         title
         coverArtUrl
+        cloudflareImageId
       }
       artists {
         artist {
@@ -3188,6 +3225,7 @@ export const SearchAlbumsDocument = `
     title
     releaseDate
     coverArtUrl
+    cloudflareImageId
     artists {
       artist {
         id
@@ -3268,6 +3306,7 @@ export const SearchArtistsDocument = `
     musicbrainzId
     name
     imageUrl
+    cloudflareImageId
   }
 }
     `;
@@ -3347,6 +3386,7 @@ export const SearchTracksDocument = `
       id
       title
       coverArtUrl
+      cloudflareImageId
     }
     artists {
       artist {

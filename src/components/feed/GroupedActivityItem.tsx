@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
+import { Heart, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -47,15 +48,11 @@ export default function GroupedActivityItem({
   onAlbumClick,
   className = '',
 }: GroupedActivityItemProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   // For non-grouped activities, use the original display
   if (!group.isGrouped) {
-    return (
-      <SingleActivityDisplay
-        activity={group.activities[0]}
-        onAlbumClick={onAlbumClick}
-        className={className}
-      />
-    );
+    return <SingleActivityDisplay activity={group.activities[0]} onAlbumClick={onAlbumClick} className={className} />;
   }
 
   // For grouped activities, show a condensed view
@@ -68,9 +65,7 @@ export default function GroupedActivityItem({
         return (
           <span>
             added{' '}
-            <span className='text-emeraled-green font-semibold'>
-              {activityCount} albums
-            </span>{' '}
+            <span className='text-emeraled-green font-semibold'>{activityCount} albums</span>{' '}
             to their collection {timeRange}
           </span>
         );
@@ -78,9 +73,7 @@ export default function GroupedActivityItem({
         return (
           <span>
             made{' '}
-            <span className='text-emeraled-green font-semibold'>
-              {activityCount} recommendations
-            </span>{' '}
+            <span className='text-emeraled-green font-semibold'>{activityCount} recommendations</span>{' '}
             {timeRange}
           </span>
         );
@@ -88,9 +81,7 @@ export default function GroupedActivityItem({
         return (
           <span>
             followed{' '}
-            <span className='text-emeraled-green font-semibold'>
-              {activityCount} users
-            </span>{' '}
+            <span className='text-emeraled-green font-semibold'>{activityCount} users</span>{' '}
             {timeRange}
           </span>
         );
@@ -134,88 +125,161 @@ export default function GroupedActivityItem({
         </div>
       </div>
 
-      {/* Album Grid for Collection/Recommendation Activities */}
+      {/* Albums for Collection/Recommendation Activities */}
       {(group.type === 'collection_add' || group.type === 'recommendation') && (
-        <div className='grid grid-cols-3 gap-2 max-w-md mx-auto'>
-          {group.activities.slice(0, 6).map(activity => (
-            <div
-              key={activity.id}
-              className='relative group cursor-pointer'
-              onClick={() =>
-                activity.albumId && onAlbumClick?.(activity.albumId)
-              }
-              title={`${activity.albumTitle} by ${activity.albumArtist}`}
-            >
-              <AlbumImage
-                src={activity.albumImage || '/placeholder-album.png'}
-                alt={`${activity.albumTitle} by ${activity.albumArtist}`}
-                width={100}
-                height={100}
-                className='w-full h-full rounded border border-zinc-700 group-hover:border-emeraled-green/50 transition-all group-hover:scale-105'
-              />
+        <div>
+          {/* Stacked view (collapsed) */}
+          {!isExpanded && (
+            <div className='flex justify-center'>
+              <div className='flex -space-x-6'>
+                {group.activities.slice(0, 5).map((activity, index) => (
+                  <Link
+                    key={activity.id}
+                    href={activity.albumId ? `/album/${activity.albumId}` : '#'}
+                    className='relative group cursor-pointer block'
+                    style={{ zIndex: 5 - index }}
+                  >
+                    <AlbumImage
+                      src={activity.albumImage || '/placeholder-album.png'}
+                      alt={`${activity.albumTitle} by ${activity.albumArtist}`}
+                      width={96}
+                      height={96}
+                      className='w-24 h-24 rounded-lg ring-2 ring-zinc-900 transition-all group-hover:scale-110 group-hover:ring-cosmic-latte/80 group-hover:z-10'
+                    />
 
-              {/* Show rating badge for collection adds */}
-              {group.type === 'collection_add' &&
-                activity.metadata?.personalRating && (
-                  <div className='absolute -bottom-1 -right-1 bg-zinc-900 border border-cosmic-latte/30 rounded-full px-1 py-0.5 text-[8px] text-cosmic-latte font-bold'>
-                    {activity.metadata.personalRating}
+                    {/* Show rating badge for collection adds */}
+                    {group.type === 'collection_add' && activity.metadata?.personalRating && (
+                      <div className='absolute -top-1 -right-1 bg-zinc-900 border border-cosmic-latte/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900'>
+                        <span className='text-[10px] text-cosmic-latte font-bold'>
+                          {activity.metadata.personalRating}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Show score for recommendations */}
+                    {group.type === 'recommendation' && activity.metadata?.score && (
+                      <div className='absolute -top-1 -right-1 bg-zinc-900 border border-emeraled-green/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900'>
+                        <span className='text-[10px] text-emeraled-green font-bold'>
+                          {activity.metadata.score}
+                        </span>
+                      </div>
+                    )}
+                  </Link>
+                ))}
+
+                {/* Show "+X more" if there are more than 5 */}
+                {activityCount > 5 && (
+                  <div className='flex items-center justify-center w-24 h-24 rounded-lg bg-zinc-800 ring-2 ring-zinc-900 text-xs text-zinc-400 font-medium'>
+                    +{activityCount - 5}
                   </div>
                 )}
-
-              {/* Show score for recommendations */}
-              {group.type === 'recommendation' && activity.metadata?.score && (
-                <div className='absolute -bottom-1 -right-1 bg-zinc-900 border border-emeraled-green/30 rounded-full w-5 h-5 flex items-center justify-center'>
-                  <span className='text-[8px] text-emeraled-green font-bold'>
-                    {activity.metadata.score}
-                  </span>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* Show "+X more" if there are more than 6 */}
-          {activityCount > 6 && (
-            <div className='flex items-center justify-center bg-zinc-800 rounded border border-zinc-700'>
-              <span className='text-xs text-zinc-400'>
-                +{activityCount - 6} more
-              </span>
+              </div>
             </div>
           )}
+
+          {/* Grid view (expanded) */}
+          {isExpanded && (
+            <div className='grid grid-cols-3 gap-3 max-w-md mx-auto'>
+              {group.activities.map((activity) => (
+                <Link
+                  key={activity.id}
+                  href={activity.albumId ? `/album/${activity.albumId}` : '#'}
+                  className='flex flex-col gap-1'
+                >
+                  <div className='relative group cursor-pointer'>
+                    <AlbumImage
+                      src={activity.albumImage || '/placeholder-album.png'}
+                      alt={`${activity.albumTitle} by ${activity.albumArtist}`}
+                      width={100}
+                      height={100}
+                      className='w-full h-full rounded-lg border border-zinc-700 group-hover:border-cosmic-latte/80 transition-all group-hover:scale-105'
+                    />
+
+                    {/* Show rating badge for collection adds */}
+                    {group.type === 'collection_add' && activity.metadata?.personalRating && (
+                      <div className='absolute -top-1 -right-1 bg-zinc-900 border border-cosmic-latte/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900'>
+                        <span className='text-[10px] text-cosmic-latte font-bold'>
+                          {activity.metadata.personalRating}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Show score for recommendations */}
+                    {group.type === 'recommendation' && activity.metadata?.score && (
+                      <div className='absolute -top-1 -right-1 bg-zinc-900 border border-emeraled-green/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900'>
+                        <span className='text-[10px] text-emeraled-green font-bold'>
+                          {activity.metadata.score}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Album title and artist (truncated) */}
+                  <div className='text-center px-1'>
+                    <p className='text-[10px] text-zinc-300 truncate'>
+                      {activity.albumTitle}
+                    </p>
+                    <p className='text-[9px] text-zinc-500 truncate'>
+                      {activity.albumArtist}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Expand/Collapse button */}
+          <div className='flex justify-center mt-3'>
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className='flex items-center gap-1 text-xs text-zinc-400 hover:text-emeraled-green transition-colors'
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className='w-4 h-4' />
+                  Show less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className='w-4 h-4' />
+                  Show all {activityCount}
+                </>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
-      {/* User Grid for Follow Activities */}
+      {/* Stacked Avatars for Follow Activities */}
       {group.type === 'follow' && (
-        <div className='grid grid-cols-3 gap-2 max-w-md mx-auto'>
-          {group.activities.slice(0, 6).map(activity => (
-            <Link
-              key={activity.id}
-              href={`/profile/${activity.targetId}`}
-              className='flex flex-col items-center gap-1 p-2 rounded hover:bg-zinc-800 transition-colors'
-            >
-              <Avatar className='h-16 w-16'>
-                <AvatarImage
-                  src={activity.targetImage || undefined}
-                  alt={activity.targetName || 'User'}
-                />
-                <AvatarFallback className='bg-zinc-700 text-zinc-200 text-xs'>
-                  {activity.targetName?.charAt(0)?.toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <span className='text-[10px] text-zinc-400 text-center truncate max-w-full'>
-                {activity.targetName}
-              </span>
-            </Link>
-          ))}
+        <div className='flex justify-center'>
+          <div className='flex -space-x-3'>
+            {group.activities.slice(0, 5).map((activity, index) => (
+              <Link
+                key={activity.id}
+                href={`/profile/${activity.targetId}`}
+                className='group relative'
+                style={{ zIndex: 5 - index }}
+              >
+                <Avatar className='h-12 w-12 ring-2 ring-zinc-900 transition-all group-hover:scale-110 group-hover:ring-cosmic-latte/80 group-hover:z-10'>
+                  <AvatarImage
+                    src={activity.targetImage || undefined}
+                    alt={activity.targetName || 'User'}
+                  />
+                  <AvatarFallback className='bg-zinc-700 text-zinc-200 text-xs'>
+                    {activity.targetName?.charAt(0)?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+            ))}
 
-          {/* Show "+X more" if there are more than 6 */}
-          {activityCount > 6 && (
-            <div className='flex items-center justify-center bg-zinc-800 rounded'>
-              <span className='text-xs text-zinc-400'>
-                +{activityCount - 6}
-              </span>
-            </div>
-          )}
+            {/* Show "+X more" if there are more than 5 */}
+            {activityCount > 5 && (
+              <div className='flex items-center justify-center h-12 w-12 rounded-full bg-zinc-800 ring-2 ring-zinc-900 text-xs text-zinc-400 font-medium'>
+                +{activityCount - 5}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -254,7 +318,9 @@ function SingleActivityDisplay({
               {activity.albumTitle}
             </span>{' '}
             by{' '}
-            <span className='text-emeraled-green'>{activity.albumArtist}</span>
+            <span className='text-emeraled-green'>
+              {activity.albumArtist}
+            </span>
           </>
         );
       case 'collection_add':
@@ -324,25 +390,23 @@ function SingleActivityDisplay({
       </div>
 
       {/* Album display for single items */}
-      {activity.albumImage &&
-        (activity.type === 'recommendation' ||
-          activity.type === 'collection_add') && (
-          <div className='flex justify-center'>
-            <div
-              className='cursor-pointer hover:scale-105 transition-transform'
-              onClick={handleAlbumClick}
-              title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
-            >
-              <AlbumImage
-                src={activity.albumImage}
-                alt={`${activity.albumTitle} by ${activity.albumArtist}`}
-                width={150}
-                height={150}
-                className='w-[150px] h-[150px] rounded-lg border-2 border-zinc-700 hover:border-emeraled-green/50 transition-all shadow-xl'
-              />
-            </div>
+      {activity.albumImage && (activity.type === 'recommendation' || activity.type === 'collection_add') && (
+        <div className='flex justify-center'>
+          <div
+            className='cursor-pointer hover:scale-105 transition-transform'
+            onClick={handleAlbumClick}
+            title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
+          >
+            <AlbumImage
+              src={activity.albumImage}
+              alt={`${activity.albumTitle} by ${activity.albumArtist}`}
+              width={150}
+              height={150}
+              className='w-[150px] h-[150px] rounded-lg border-2 border-zinc-700 hover:border-emeraled-green/50 transition-all shadow-xl'
+            />
           </div>
-        )}
+        </div>
+      )}
 
       {/* User avatar for follows */}
       {activity.type === 'follow' && activity.targetImage && (

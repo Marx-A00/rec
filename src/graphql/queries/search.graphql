@@ -3,22 +3,30 @@ query Search($input: SearchInput!) {
     total
     albums {
       id
-      musicbrainzId
+      source
       title
       releaseDate
-      coverArtUrl
-      artists {
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
         artist {
           id
           name
         }
+        role
+        position
       }
+      trackCount
+      year
     }
     artists {
       id
       musicbrainzId
       name
       imageUrl
+      cloudflareImageId
     }
     tracks {
       id
@@ -30,6 +38,7 @@ query Search($input: SearchInput!) {
         id
         title
         coverArtUrl
+        cloudflareImageId
       }
       artists {
         artist {
@@ -48,6 +57,7 @@ query SearchAlbums($query: String!, $limit: Int) {
     title
     releaseDate
     coverArtUrl
+    cloudflareImageId
     artists {
       artist {
         id
@@ -63,6 +73,7 @@ query SearchArtists($query: String!, $limit: Int) {
     musicbrainzId
     name
     imageUrl
+    cloudflareImageId
   }
 }
 
@@ -77,6 +88,7 @@ query SearchTracks($query: String!, $limit: Int) {
       id
       title
       coverArtUrl
+      cloudflareImageId
     }
     artists {
       artist {

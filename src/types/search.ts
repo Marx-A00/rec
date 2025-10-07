@@ -106,6 +106,9 @@ export interface UnifiedSearchResult {
   label: string;
   // Preferred data source for this result (used for routing/fetching)
   source?: 'musicbrainz' | 'discogs' | 'local';
+  // MusicBrainz release type information
+  primaryType?: string; // 'Album', 'Single', 'EP', 'Broadcast', 'Other'
+  secondaryTypes?: string[]; // 'Compilation', 'Soundtrack', 'Live', 'Remix', 'DJ-mix', 'Mixtape/Street', etc.
   image: {
     url: string;
     width: number;

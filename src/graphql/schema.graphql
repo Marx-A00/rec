@@ -21,6 +21,7 @@ type Artist {
   formedYear: Int
   countryCode: String
   imageUrl: String
+  cloudflareImageId: String
   createdAt: DateTime!
   updatedAt: DateTime!
 
@@ -49,6 +50,7 @@ type Album {
   trackCount: Int
   durationMs: Int
   coverArtUrl: String
+  cloudflareImageId: String
   barcode: String
   label: String
   catalogNumber: String
@@ -299,7 +301,7 @@ union SearchResult = Artist | Album | Track
 
 type SearchResults {
   artists: [Artist!]!
-  albums: [Album!]!
+  albums: [UnifiedRelease!]!
   tracks: [Track!]!
   total: Int!
   hasMore: Boolean!

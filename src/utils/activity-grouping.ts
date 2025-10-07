@@ -78,8 +78,12 @@ function createGroupedActivity(activities: Activity[]): GroupedActivity {
   const latestActivity = activities[0];
   const earliestActivity = activities[activities.length - 1];
 
+  // Create stable ID from activity IDs instead of Date.now() to prevent duplicates
+  const activityIds = activities.map(a => a.id).sort().join('-');
+  const groupId = `group-${latestActivity.actorId}-${latestActivity.type}-${activityIds}`;
+
   return {
-    id: `group-${latestActivity.actorId}-${latestActivity.type}-${Date.now()}`,
+    id: groupId,
     type: latestActivity.type,
     actorId: latestActivity.actorId,
     actorName: latestActivity.actorName,

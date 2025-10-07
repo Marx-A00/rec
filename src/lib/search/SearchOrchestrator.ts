@@ -1,16 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-
-import type {
-  UnifiedSearchResult,
-  SearchContext,
-  SearchFilters,
-  SortBy,
-} from '@/types/search';
-
-import {
-  QueuedMusicBrainzService,
-  getQueuedMusicBrainzService,
-} from '../musicbrainz/queue-service';
+import { QueuedMusicBrainzService, getQueuedMusicBrainzService } from '../musicbrainz/queue-service';
+import type { UnifiedSearchResult, SearchContext, SearchFilters, SortBy } from '@/types/search';
 
 export enum SearchSource {
   LOCAL = 'LOCAL',
@@ -30,6 +20,16 @@ export interface SearchOptions {
   sortBy?: SortBy;
   deduplicateResults?: boolean;
   timeout?: number;
+  // Controls whether to resolve external images (expensive) for artists
+  resolveArtistImages?: boolean;
+  // Cap how many artists we attempt image resolution for (if enabled)
+  artistImageLimit?: number;
+  // Max number of artist results to return (independent of album/track limits)
+  artistMaxResults?: number;
+  // Minimum MB score required to consider an artist (0-100)
+  minMusicBrainzArtistScore?: number;
+  // Token Jaccard similarity threshold between query and artist name (0-1)
+  artistSimilarityThreshold?: number;
 }
 
 export interface SearchResult {
@@ -66,13 +66,9 @@ export class SearchOrchestrator {
   private prisma: PrismaClient;
   private musicbrainzService: QueuedMusicBrainzService;
 
-  constructor(
-    prisma: PrismaClient,
-    musicbrainzService?: QueuedMusicBrainzService
-  ) {
+  constructor(prisma: PrismaClient, musicbrainzService?: QueuedMusicBrainzService) {
     this.prisma = prisma;
-    this.musicbrainzService =
-      musicbrainzService || getQueuedMusicBrainzService();
+    this.musicbrainzService = musicbrainzService || getQueuedMusicBrainzService();
   }
 
   async search(options: SearchOptions): Promise<OrchestratedSearchResult> {
@@ -83,7 +79,13 @@ export class SearchOrchestrator {
       limit = 20,
       sources = [SearchSource.LOCAL, SearchSource.MUSICBRAINZ],
       deduplicateResults = true,
+      resolveArtistImages = false,
     } = options;
+
+    const artistImageLimit = options.artistImageLimit ?? Math.min(limit, 12);
+    const artistMaxResults = options.artistMaxResults ?? Math.min(limit, 5);
+    const minArtistScore = options.minMusicBrainzArtistScore ?? 80;
+    const nameSimThreshold = options.artistSimilarityThreshold ?? 0.82;
 
     const searchPromises: Promise<SearchResult>[] = [];
 
@@ -92,7 +94,7 @@ export class SearchOrchestrator {
     }
 
     if (sources.includes(SearchSource.MUSICBRAINZ)) {
-      searchPromises.push(this.searchMusicBrainz(query, types, limit));
+      searchPromises.push(this.searchMusicBrainz(query, types, limit, { resolveArtistImages, artistImageLimit }));
     }
 
     if (sources.includes(SearchSource.DISCOGS)) {
@@ -166,42 +168,42 @@ export class SearchOrchestrator {
                 artists: {
                   some: {
                     artist: {
-                      name: { contains: query, mode: 'insensitive' },
-                    },
-                  },
-                },
-              },
-            ],
+                      name: { contains: query, mode: 'insensitive' }
+                    }
+                  }
+                }
+              }
+            ]
           },
           include: {
             artists: {
               include: {
-                artist: true,
-              },
-            },
+                artist: true
+              }
+            }
           },
           take: limit,
-          orderBy: [{ title: 'asc' }],
+          orderBy: [
+            { title: 'asc' }
+          ]
         });
 
-        results.push(
-          ...albums.map(album => this.mapAlbumToUnifiedResult(album))
-        );
+        results.push(...albums.map(album => this.mapAlbumToUnifiedResult(album)));
       }
 
       if (types.includes('artist')) {
         // Use Prisma's regular query for artists
         const artists = await this.prisma.artist.findMany({
           where: {
-            name: { contains: query, mode: 'insensitive' },
+            name: { contains: query, mode: 'insensitive' }
           },
           take: limit,
-          orderBy: [{ name: 'asc' }],
+          orderBy: [
+            { name: 'asc' }
+          ]
         });
 
-        results.push(
-          ...artists.map(artist => this.mapArtistToUnifiedResult(artist))
-        );
+        results.push(...artists.map(artist => this.mapArtistToUnifiedResult(artist)));
       }
 
       if (types.includes('track')) {
@@ -214,36 +216,36 @@ export class SearchOrchestrator {
                 artists: {
                   some: {
                     artist: {
-                      name: { contains: query, mode: 'insensitive' },
-                    },
-                  },
-                },
-              },
-            ],
+                      name: { contains: query, mode: 'insensitive' }
+                    }
+                  }
+                }
+              }
+            ]
           },
           include: {
             album: {
               include: {
                 artists: {
                   include: {
-                    artist: true,
-                  },
-                },
-              },
+                    artist: true
+                  }
+                }
+              }
             },
             artists: {
               include: {
-                artist: true,
-              },
-            },
+                artist: true
+              }
+            }
           },
           take: limit,
-          orderBy: [{ title: 'asc' }],
+          orderBy: [
+            { title: 'asc' }
+          ]
         });
 
-        results.push(
-          ...tracks.map(track => this.mapTrackToUnifiedResult(track))
-        );
+        results.push(...tracks.map(track => this.mapTrackToUnifiedResult(track)));
       }
 
       const endTime = Date.now();
@@ -275,7 +277,15 @@ export class SearchOrchestrator {
   private async searchMusicBrainz(
     query: string,
     types: SearchType[],
-    limit: number
+    limit: number,
+    opts?: {
+      resolveArtistImages?: boolean;
+      artistImageLimit?: number;
+      // Optional filtering hints (will fallback to defaults when absent)
+      minArtistScore?: number;
+      nameSimThreshold?: number;
+      artistMaxResults?: number;
+    }
   ): Promise<SearchResult> {
     const startTime = Date.now();
 
@@ -307,18 +317,13 @@ export class SearchOrchestrator {
 
       if (types.includes('album')) {
         promises.push(
-          this.musicbrainzService
-            .searchReleaseGroups(query, limit * 2) // Get extra to filter
+          this.musicbrainzService.searchReleaseGroups(query, limit * 2) // Get extra to filter
             .then(releaseGroups => {
               // Sort by MusicBrainz score and filter by quality
               const sorted = releaseGroups
                 .sort((a, b) => (b.score || 0) - (a.score || 0))
                 .slice(0, limit);
-              results.push(
-                ...sorted.map(rg =>
-                  this.mapMusicBrainzReleaseToUnifiedResult(rg)
-                )
-              );
+              results.push(...sorted.map(rg => this.mapMusicBrainzReleaseToUnifiedResult(rg)));
             })
             .catch(err => {
               console.error('Error searching MusicBrainz albums:', err);
@@ -328,14 +333,33 @@ export class SearchOrchestrator {
 
       if (types.includes('artist')) {
         promises.push(
-          this.musicbrainzService
-            .searchArtists(query, limit)
-            .then(artists => {
-              results.push(
-                ...artists.map(artist =>
-                  this.mapMusicBrainzArtistToUnifiedResult(artist)
-                )
-              );
+          this.musicbrainzService.searchArtists(query, limit)
+            .then(async (artists) => {
+              const resolveImages = opts?.resolveArtistImages === true;
+              const imageCap = Math.max(0, Math.min(artists.length, opts?.artistImageLimit ?? limit));
+
+              // Filter artists by MB score and name similarity
+              const filtered = this.filterArtistResults(query, artists, {
+                minScore: (opts as any)?.minArtistScore ?? 80,
+                nameThreshold: (opts as any)?.nameSimThreshold ?? 0.82,
+                limit: (opts as any)?.artistMaxResults ?? Math.min(limit, 5),
+              });
+
+              if (resolveImages && imageCap > 0) {
+                const withImages = filtered.slice(0, Math.min(imageCap, filtered.length));
+                const withoutImages = filtered.slice(withImages.length);
+
+                const artistResultsWithImages = await Promise.all(
+                  withImages.map(artist => this.mapMusicBrainzArtistToUnifiedResult(artist, true))
+                );
+                const artistResultsWithoutImages = withoutImages.map(artist => this.mapMusicBrainzArtistToUnifiedResultSync(artist));
+
+                results.push(...artistResultsWithImages, ...artistResultsWithoutImages);
+              } else {
+                // Fast path: no external lookups, no queue churn
+                const fastResults = filtered.map(artist => this.mapMusicBrainzArtistToUnifiedResultSync(artist));
+                results.push(...fastResults);
+              }
             })
             .catch(err => {
               console.error('Error searching MusicBrainz artists:', err);
@@ -345,14 +369,9 @@ export class SearchOrchestrator {
 
       if (types.includes('track')) {
         promises.push(
-          this.musicbrainzService
-            .searchRecordings(query, limit)
+          this.musicbrainzService.searchRecordings(query, limit)
             .then(recordings => {
-              results.push(
-                ...recordings.map(rec =>
-                  this.mapMusicBrainzRecordingToUnifiedResult(rec)
-                )
-              );
+              results.push(...recordings.map(rec => this.mapMusicBrainzRecordingToUnifiedResult(rec)));
             })
             .catch(err => {
               console.error('Error searching MusicBrainz tracks:', err);
@@ -400,12 +419,10 @@ export class SearchOrchestrator {
     try {
       // TODO: Move Discogs client initialization to a service class
       // For now, create client inline (same as old route.ts)
-      const { Client: Discogs } = await import('disconnect');
+      const Discogs = require('disconnect').Client;
       const db = new Discogs({
         userAgent: 'RecProject/1.0',
-        userToken:
-          process.env.DISCOGS_TOKEN ||
-          'QJRXBuUbvTQccgvYSRgKPPjJEPHAZoRJVkRQSRXW',
+        userToken: process.env.DISCOGS_TOKEN || 'QJRXBuUbvTQccgvYSRgKPPjJEPHAZoRJVkRQSRXW'
       }).database();
 
       const results: UnifiedSearchResult[] = [];
@@ -418,11 +435,9 @@ export class SearchOrchestrator {
         });
 
         if (searchResults.results && searchResults.results.length > 0) {
-          results.push(
-            ...searchResults.results.map((result: any) =>
-              this.mapDiscogsToUnifiedResult(result)
-            )
-          );
+          results.push(...searchResults.results.map((result: any) =>
+            this.mapDiscogsToUnifiedResult(result)
+          ));
         }
       }
 
@@ -539,13 +554,7 @@ export class SearchOrchestrator {
 
     // Priority 1: Check for exact ID matches (most reliable)
     // Check if the result has a MusicBrainz ID (either as main ID for MB results, or in metadata)
-    if (
-      result.id &&
-      result.type === 'album' &&
-      result.id.match(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-      )
-    ) {
+    if (result.id && result.type === 'album' && result.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)) {
       // This is a MusicBrainz ID (UUID format)
       keys.push(`musicbrainz:${result.id}`);
     }
@@ -561,10 +570,7 @@ export class SearchOrchestrator {
     return keys;
   }
 
-  private shouldReplaceResult(
-    existing: UnifiedSearchResult,
-    candidate: UnifiedSearchResult
-  ): boolean {
+  private shouldReplaceResult(existing: UnifiedSearchResult, candidate: UnifiedSearchResult): boolean {
     // Prefer local database results over external (they have richer data)
     if (existing.id.startsWith('cm') && !candidate.id.startsWith('cm')) {
       return false; // Keep local result
@@ -642,9 +648,57 @@ export class SearchOrchestrator {
     };
   }
 
-  private mapMusicBrainzReleaseToUnifiedResult(
-    release: any
-  ): UnifiedSearchResult {
+  /**
+   * Wikimedia image resolution helpers (copied from unified-artist-service.ts)
+   */
+  private extractWikidataQid(mbArtist: any): string | undefined {
+    const rels = mbArtist?.relations || [];
+    for (const rel of rels) {
+      if (rel.type === 'wikidata' && rel.url?.resource) {
+        const match = rel.url.resource.match(/\/wiki\/(Q\d+)/);
+        if (match) return match[1];
+      }
+    }
+    return undefined;
+  }
+
+  private async fetchWikidataP18Filename(qid: string): Promise<string | undefined> {
+    try {
+      const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`;
+      const res = await fetch(url);
+      if (!res.ok) return undefined;
+      const data = await res.json();
+      const entity = data?.entities?.[qid];
+      const p18 = entity?.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
+      if (typeof p18 === 'string' && p18.length > 0) return p18; // filename
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private buildWikimediaThumbUrl(filename: string, width: number = 600): string {
+    const encoded = encodeURIComponent(filename);
+    return `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=${width}`;
+  }
+
+  private async resolveArtistImageFromWikidata(mbArtist: any): Promise<string | undefined> {
+    try {
+      const qid = this.extractWikidataQid(mbArtist);
+      if (!qid) return undefined;
+
+      const filename = await this.fetchWikidataP18Filename(qid);
+      if (!filename) return undefined;
+
+      const url = this.buildWikimediaThumbUrl(filename, 600);
+      return url;
+    } catch (error) {
+      console.warn('Wikidata image resolution failed:', error);
+      return undefined;
+    }
+  }
+
+  private mapMusicBrainzReleaseToUnifiedResult(release: any): UnifiedSearchResult {
     // Build subtitle showing release type
     let subtitle = release.primaryType || 'Release';
     if (release.secondaryTypes && release.secondaryTypes.length > 0) {
@@ -653,33 +707,54 @@ export class SearchOrchestrator {
       subtitle = `${subtitle} • ${secondaryType}`;
     }
 
+    // Use Cover Art Archive direct URLs - browser will fetch in parallel
+    // Falls back to placeholder image via AlbumImage component error handling
+    // Use release-group endpoint which works with MusicBrainz release group IDs
+    const coverArtUrl = `https://coverartarchive.org/release-group/${release.id}/front-250`;
+
+    console.log(`[SearchOrchestrator] Generating cover art URL for "${release.title}": ${coverArtUrl}`);
+
     return {
       id: release.id,
       type: 'album',
       title: release.title,
       subtitle,
-      artist:
-        release.artistCredit?.[0]?.artist?.name ||
-        release['artist-credit']?.[0]?.artist?.name ||
-        'Unknown Artist',
-      releaseDate:
-        release.firstReleaseDate || release['first-release-date'] || null,
+      artist: release.artistCredit?.[0]?.artist?.name ||
+              release['artist-credit']?.[0]?.artist?.name ||
+              'Unknown Artist',
+      releaseDate: release.firstReleaseDate || release['first-release-date'] || null,
       genre: release.tags?.map((t: any) => t.name) || [],
       label: '',
+      source: 'musicbrainz', // Mark as external MusicBrainz result
+      primaryType: release.primaryType || undefined, // Include primary type
+      secondaryTypes: release.secondaryTypes || [], // Include secondary types
       image: {
-        url: '',
-        width: 300,
-        height: 300,
+        url: coverArtUrl,
+        width: 250,
+        height: 250,
         alt: release.title,
       },
+      cover_image: coverArtUrl, // For backwards compatibility
       relevanceScore: release.score, // Pass through MusicBrainz's score
       _discogs: {},
     };
   }
 
-  private mapMusicBrainzArtistToUnifiedResult(
-    artist: any
-  ): UnifiedSearchResult {
+  private async mapMusicBrainzArtistToUnifiedResult(artist: any, resolveImage: boolean = false): Promise<UnifiedSearchResult> {
+    // Try to get Wikimedia image: search results don't include relations,
+    // so fetch full artist with url-rels to extract Wikidata QID
+    let wikimediaImage: string | undefined;
+    if (resolveImage) {
+      try {
+        const fullArtist = await this.musicbrainzService.getArtist(artist.id, ['url-rels']);
+        wikimediaImage = await this.resolveArtistImageFromWikidata(fullArtist);
+      } catch {
+        try {
+          wikimediaImage = await this.resolveArtistImageFromWikidata(artist);
+        } catch {}
+      }
+    }
+
     return {
       id: artist.id,
       type: 'artist',
@@ -690,25 +765,89 @@ export class SearchOrchestrator {
       genre: artist.tags?.map((t: any) => t.name) || [],
       label: '',
       image: {
-        url: '',
-        width: 300,
-        height: 300,
+        url: wikimediaImage || '', // Use Wikimedia or empty (fallback)
+        width: 600,
+        height: 600,
         alt: artist.name,
       },
       _discogs: {},
     };
   }
 
-  private mapMusicBrainzRecordingToUnifiedResult(
-    recording: any
-  ): UnifiedSearchResult {
+  private mapMusicBrainzArtistToUnifiedResultSync(artist: any): UnifiedSearchResult {
+    return {
+      id: artist.id,
+      type: 'artist',
+      title: artist.name,
+      subtitle: artist.type || 'Artist',
+      artist: artist.name,
+      releaseDate: '',
+      genre: Array.isArray(artist.tags) ? artist.tags.map((t: any) => t.name) : [],
+      label: '',
+      image: {
+        url: '',
+        width: 600,
+        height: 600,
+        alt: artist.name,
+      },
+      relevanceScore: artist.score,
+      _discogs: {},
+    };
+  }
+
+  private filterArtistResults(
+    query: string,
+    artists: Array<{ id: string; name: string; score?: number; type?: string; tags?: any[] }>,
+    opts: { minScore: number; nameThreshold: number; limit: number }
+  ) {
+    const normalizedQuery = query.trim().toLowerCase();
+    const queryTokens = new Set(normalizedQuery.split(/\s+/).filter(Boolean));
+
+    const jaccard = (a: Set<string>, b: Set<string>): number => {
+      const intersection = new Set([...a].filter(x => b.has(x))).size;
+      const union = new Set([...a, ...b]).size;
+      return union === 0 ? 0 : intersection / union;
+    };
+
+    const decorated = artists.map(a => {
+      const nameTokens = new Set((a.name || '').toLowerCase().split(/\s+/).filter(Boolean));
+      const sim = jaccard(queryTokens, nameTokens);
+      const mbScore = typeof a.score === 'number' ? a.score : 0;
+      // Combined score emphasizing MB score, with a boost from name similarity
+      const combined = (mbScore / 100) * 0.8 + sim * 0.2;
+      return { base: a, sim, mbScore, combined };
+    });
+
+    const filtered = decorated
+      .filter(d => d.mbScore >= opts.minScore || d.sim >= opts.nameThreshold)
+      .sort((a, b) => b.combined - a.combined)
+      .slice(0, Math.max(1, opts.limit))
+      .map(d => d.base);
+
+    // If everything was filtered out (rare), keep the top 1 by MB score to avoid empty UI
+    if (filtered.length === 0 && artists.length > 0) {
+      return artists.slice(0, Math.max(1, Math.min(1, opts.limit)));
+    }
+
+    return filtered;
+  }
+
+  private mapMusicBrainzRecordingToUnifiedResult(recording: any): UnifiedSearchResult {
+    // Support both raw MB keys ('artist-credit') and our normalized service ('artistCredit')
+    const ac = recording.artistCredit || recording['artist-credit'] || [];
+    const primaryArtist = ac?.[0]?.artist;
+    const primaryArtistId = primaryArtist?.id;
+    const primaryArtistName = primaryArtist?.name || ac?.[0]?.name;
+
+    // Support both 'firstReleaseDate' and 'first-release-date'
+    const firstRelease = recording.firstReleaseDate || recording['first-release-date'] || null;
     return {
       id: recording.id,
       type: 'track',
       title: recording.title,
       subtitle: 'Recording',
-      artist: recording['artist-credit']?.[0]?.artist?.name || 'Unknown Artist',
-      releaseDate: recording['first-release-date'] || null, // Return null instead of empty string
+      artist: primaryArtistName || 'Unknown Artist',
+      releaseDate: firstRelease, // Return null instead of empty string
       genre: recording.tags?.map((t: any) => t.name) || [],
       label: '',
       image: {
@@ -717,13 +856,15 @@ export class SearchOrchestrator {
         height: 300,
         alt: recording.title,
       },
+      relevanceScore: recording.score, // include MB score for filtering downstream
       _discogs: {},
+      // Non-schema field used internally by GraphQL resolver to attach artist id
+      ...(primaryArtistId ? { primaryArtistMbId: primaryArtistId } as any : {}),
     };
   }
 
   private mapTrackToUnifiedResult(track: any): UnifiedSearchResult {
-    const primaryArtist =
-      track.artists?.[0]?.artist || track.album?.artists?.[0]?.artist;
+    const primaryArtist = track.artists?.[0]?.artist || track.album?.artists?.[0]?.artist;
 
     return {
       id: track.id,
@@ -745,9 +886,7 @@ export class SearchOrchestrator {
         numberOfTracks: 1,
       },
       _discogs: {
-        uri: track.discogsReleaseId
-          ? `/releases/${track.discogsReleaseId}`
-          : undefined,
+        uri: track.discogsReleaseId ? `/releases/${track.discogsReleaseId}` : undefined,
       },
     };
   }

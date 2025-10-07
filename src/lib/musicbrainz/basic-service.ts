@@ -110,6 +110,7 @@ export class MusicBrainzService {
 
   /**
    * Search for release groups (albums) by title
+   * Filters out bootlegs, unofficial compilations, and DJ mixes
    */
   async searchReleaseGroups(
     query: string,
@@ -117,9 +118,15 @@ export class MusicBrainzService {
     offset = 0
   ): Promise<ReleaseGroupSearchResult[]> {
     try {
-      // Enhance query to search both artist and release title
-      // This finds albums BY the artist OR albums with the query in the title
-      const enhancedQuery = `artist:"${query}" OR releasegroup:"${query}"`;
+      // TODO: Improve search quality by filtering out unwanted results
+      // Current filters exclude bootlegs, compilations, and DJ mixes
+      // Consider adding: score threshold, date range, better ranking algorithm
+
+      // Enhanced query with filters to exclude junk:
+      // - status:official (exclude bootlegs and promotional)
+      // - NOT secondarytype:compilation (exclude unofficial compilations)
+      // - NOT secondarytype:dj-mix (exclude DJ mixes)
+      const enhancedQuery = `(artist:"${query}" OR releasegroup:"${query}") AND status:official AND NOT secondarytype:compilation AND NOT secondarytype:dj-mix`;
 
       const response = await this.api.search('release-group', {
         query: enhancedQuery,
@@ -150,6 +157,138 @@ export class MusicBrainzService {
       console.error('MusicBrainz release group search error:', error);
       throw new Error(
         `Failed to search release groups: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Search for albums only (no compilations)
+   */
+  async searchAlbums(
+    query: string,
+    limit = 10,
+    offset = 0
+  ): Promise<ReleaseGroupSearchResult[]> {
+    try {
+      const albumQuery = `artist:"${query}" AND status:official AND primarytype:album AND NOT secondarytype:compilation`;
+
+      const response = await this.api.search('release-group', {
+        query: albumQuery,
+        limit,
+        offset,
+        inc: ['artist-credits'],
+      });
+
+      return (
+        response['release-groups']?.map(rg => ({
+          id: rg.id,
+          title: rg.title,
+          disambiguation: rg.disambiguation,
+          primaryType: rg['primary-type'],
+          secondaryTypes: rg['secondary-types'],
+          firstReleaseDate: rg['first-release-date'],
+          artistCredit: rg['artist-credit']?.map(ac => ({
+            name: ac.name,
+            artist: {
+              id: ac.artist.id,
+              name: ac.artist.name,
+            },
+          })),
+          score: rg.score || 0,
+        })) || []
+      );
+    } catch (error) {
+      console.error('MusicBrainz album search error:', error);
+      throw new Error(
+        `Failed to search albums: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Search for singles only
+   */
+  async searchSingles(
+    query: string,
+    limit = 10,
+    offset = 0
+  ): Promise<ReleaseGroupSearchResult[]> {
+    try {
+      const singleQuery = `artist:"${query}" AND status:official AND primarytype:single`;
+
+      const response = await this.api.search('release-group', {
+        query: singleQuery,
+        limit,
+        offset,
+        inc: ['artist-credits'],
+      });
+
+      return (
+        response['release-groups']?.map(rg => ({
+          id: rg.id,
+          title: rg.title,
+          disambiguation: rg.disambiguation,
+          primaryType: rg['primary-type'],
+          secondaryTypes: rg['secondary-types'],
+          firstReleaseDate: rg['first-release-date'],
+          artistCredit: rg['artist-credit']?.map(ac => ({
+            name: ac.name,
+            artist: {
+              id: ac.artist.id,
+              name: ac.artist.name,
+            },
+          })),
+          score: rg.score || 0,
+        })) || []
+      );
+    } catch (error) {
+      console.error('MusicBrainz single search error:', error);
+      throw new Error(
+        `Failed to search singles: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Search for EPs only
+   */
+  async searchEPs(
+    query: string,
+    limit = 10,
+    offset = 0
+  ): Promise<ReleaseGroupSearchResult[]> {
+    try {
+      const epQuery = `artist:"${query}" AND status:official AND primarytype:ep`;
+
+      const response = await this.api.search('release-group', {
+        query: epQuery,
+        limit,
+        offset,
+        inc: ['artist-credits'],
+      });
+
+      return (
+        response['release-groups']?.map(rg => ({
+          id: rg.id,
+          title: rg.title,
+          disambiguation: rg.disambiguation,
+          primaryType: rg['primary-type'],
+          secondaryTypes: rg['secondary-types'],
+          firstReleaseDate: rg['first-release-date'],
+          artistCredit: rg['artist-credit']?.map(ac => ({
+            name: ac.name,
+            artist: {
+              id: ac.artist.id,
+              name: ac.artist.name,
+            },
+          })),
+          score: rg.score || 0,
+        })) || []
+      );
+    } catch (error) {
+      console.error('MusicBrainz EP search error:', error);
+      throw new Error(
+        `Failed to search EPs: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
