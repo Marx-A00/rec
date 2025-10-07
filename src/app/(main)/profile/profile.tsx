@@ -68,7 +68,7 @@ export default function ProfileClient({
         personalNotes: item.personalNotes,
         position: item.position,
       }))
-    ) || initialCollection || [];
+    ) || [];
 
     // Deduplicate by albumId (album may appear in multiple collections)
     const seen = new Set<string>();
