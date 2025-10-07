@@ -60,7 +60,7 @@ export default function ProfileClient({
         albumArtist: item.album.artists[0]?.artist?.name || 'Unknown Artist',
         albumArtistId: item.album.artists[0]?.artist?.id || null,
         albumImageUrl: item.album.coverArtUrl,
-        cloudflareImageId: item.album.cloudflareImageId,
+        cloudflareImageId: (item.album as any).cloudflareImageId || null,
         albumYear: item.album.releaseDate ? String(new Date(item.album.releaseDate).getFullYear()) : null,
         addedAt: item.addedAt,
         addedBy: user.id,

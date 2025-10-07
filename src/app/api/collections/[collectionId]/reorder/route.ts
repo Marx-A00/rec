@@ -9,16 +9,16 @@ interface ReorderAlbumRequest {
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { collectionId: string } }
+  { params }: { params: Promise<{ collectionId: string }> }
 ) {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { collectionId } = params;
+    const { collectionId } = await params;
     const { albumIds }: ReorderAlbumRequest = await request.json();
 
     if (!albumIds || !Array.isArray(albumIds)) {
