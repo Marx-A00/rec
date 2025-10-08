@@ -171,6 +171,17 @@ export async function cacheAlbumArt(
 
     return { id: result.id, url: result.url };
   } catch (error) {
+    // If resource already exists, construct the expected ID and URL
+    const errorMessage = error instanceof Error ? error.message : '';
+    if (errorMessage.includes('Resource already exists')) {
+      console.log(`Image already exists in Cloudflare for album ${albumId}, returning existing ID`);
+      const cloudflareId = `album-${albumId}`;
+      return {
+        id: cloudflareId,
+        url: `${DELIVERY_URL}/${cloudflareId}/public`
+      };
+    }
+
     console.error('Failed to cache album art:', error);
     return null;
   }
@@ -195,6 +206,17 @@ export async function cacheArtistImage(
 
     return { id: result.id, url: result.url };
   } catch (error) {
+    // If resource already exists, construct the expected ID and URL
+    const errorMessage = error instanceof Error ? error.message : '';
+    if (errorMessage.includes('Resource already exists')) {
+      console.log(`Image already exists in Cloudflare for artist ${artistId}, returning existing ID`);
+      const cloudflareId = `artist-${artistId}`;
+      return {
+        id: cloudflareId,
+        url: `${DELIVERY_URL}/${cloudflareId}/public`
+      };
+    }
+
     console.error('Failed to cache artist image:', error);
     return null;
   }
