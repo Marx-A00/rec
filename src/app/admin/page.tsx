@@ -59,7 +59,7 @@ interface HealthData {
   alerts: string[];
 }
 
-const MONITORING_API = 'http://localhost:3001';
+const MONITORING_API = process.env.NEXT_PUBLIC_MONITORING_API_URL || 'http://localhost:3001';
 
 export default function AdminDashboard() {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
