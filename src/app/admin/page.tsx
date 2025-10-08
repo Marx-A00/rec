@@ -71,22 +71,29 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [dashboardRes, healthRes] = await Promise.all([
-        fetch(`${MONITORING_API}/dashboard`),
-        fetch(`${MONITORING_API}/health`),
-      ]);
+      // Only fetch monitoring data in development
+      if (process.env.NODE_ENV === 'development') {
+        const [dashboardRes, healthRes] = await Promise.all([
+          fetch(`${MONITORING_API}/dashboard`),
+          fetch(`${MONITORING_API}/health`),
+        ]);
 
-      if (!dashboardRes.ok || !healthRes.ok) {
-        throw new Error('Failed to fetch monitoring data');
+        if (!dashboardRes.ok || !healthRes.ok) {
+          throw new Error('Failed to fetch monitoring data');
+        }
+
+        const [dashboardData, healthData] = await Promise.all([
+          dashboardRes.json(),
+          healthRes.json(),
+        ]);
+
+        setDashboard(dashboardData);
+        setHealth(healthData);
+      } else {
+        // In production, show simplified view without monitoring dashboard
+        setDashboard(null);
+        setHealth(null);
       }
-
-      const [dashboardData, healthData] = await Promise.all([
-        dashboardRes.json(),
-        healthRes.json(),
-      ]);
-
-      setDashboard(dashboardData);
-      setHealth(healthData);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -216,107 +223,112 @@ export default function AdminDashboard() {
         <p className='text-zinc-400 mt-1'>System monitoring and management</p>
       </div>
 
-      {/* Overall Health Status */}
-      <div className='mb-6'>
-        <Card className='bg-zinc-900 border-zinc-800'>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium text-white'>
-              System Health
-            </CardTitle>
-            {health && getHealthBadge(health.status)}
-          </CardHeader>
-          <CardContent>
-            {health?.alerts && health.alerts.length > 0 && (
-              <div className='mt-2 space-y-1'>
-                {health.alerts.map((alert, i) => (
-                  <div key={i} className='text-sm text-yellow-400'>
-                    ⚠️ {alert}
-                  </div>
-                ))}
+      {/* Overall Health Status - Only in Development */}
+      {process.env.NODE_ENV === 'development' && health && (
+        <div className='mb-6'>
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+              <CardTitle className='text-sm font-medium text-white'>
+                System Health
+              </CardTitle>
+              {getHealthBadge(health.status)}
+            </CardHeader>
+            <CardContent>
+              {health.alerts && health.alerts.length > 0 && (
+                <div className='mt-2 space-y-1'>
+                  {health.alerts.map((alert, i) => (
+                    <div key={i} className='text-sm text-yellow-400'>
+                      ⚠️ {alert}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Stats Grid - Only in Development */}
+      {process.env.NODE_ENV === 'development' && dashboard && (
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+              <CardTitle className='text-sm font-medium text-white'>
+                Queue Depth
+              </CardTitle>
+              <Activity className='h-4 w-4 text-zinc-400' />
+            </CardHeader>
+            <CardContent>
+              <div className='text-2xl font-bold text-white'>
+                {dashboard.queueDepth || 0}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              <p className='text-xs text-zinc-500'>
+                {dashboard.activeJobs || 0} active
+              </p>
+            </CardContent>
+          </Card>
 
-      {/* Stats Grid */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
-        <Card className='bg-zinc-900 border-zinc-800'>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium text-white'>
-              Queue Depth
-            </CardTitle>
-            <Activity className='h-4 w-4 text-zinc-400' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-white'>
-              {dashboard?.queueDepth || 0}
-            </div>
-            <p className='text-xs text-zinc-500'>
-              {dashboard?.activeJobs || 0} active
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+              <CardTitle className='text-sm font-medium text-white'>
+                Completed Jobs
+              </CardTitle>
+              <CheckCircle className='h-4 w-4 text-green-500' />
+            </CardHeader>
+            <CardContent>
+              <div className='text-2xl font-bold text-white'>
+                {dashboard.completedJobs || 0}
+              </div>
+              <p className='text-xs text-zinc-500'>
+                {dashboard.throughput?.jobsPerHour || 0}/hour
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+              <CardTitle className='text-sm font-medium text-white'>
+                Failed Jobs
+              </CardTitle>
+              <XCircle className='h-4 w-4 text-red-500' />
+            </CardHeader>
+            <CardContent>
+              <div className='text-2xl font-bold text-white'>
+                {dashboard.failedJobs || 0}
+              </div>
+              <p className='text-xs text-zinc-500'>
+                {dashboard.errorRate?.toFixed(1) || 0}% error rate
             </p>
           </CardContent>
         </Card>
 
-        <Card className='bg-zinc-900 border-zinc-800'>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium text-white'>
-              Completed Jobs
-            </CardTitle>
-            <CheckCircle className='h-4 w-4 text-green-500' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-white'>
-              {dashboard?.completedJobs || 0}
-            </div>
-            <p className='text-xs text-zinc-500'>
-              {dashboard?.throughput?.jobsPerHour || 0}/hour
-            </p>
-          </CardContent>
-        </Card>
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+              <CardTitle className='text-sm font-medium text-white'>
+                Active Alerts
+              </CardTitle>
+              <AlertCircle className='h-4 w-4 text-yellow-500' />
+            </CardHeader>
+            <CardContent>
+              <div className='text-2xl font-bold text-white'>
+                {dashboard.activeAlerts || 0}
+              </div>
+              <p className='text-xs text-zinc-500'>
+                {dashboard.activeAlerts === 0 ? 'All clear' : 'Needs attention'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-        <Card className='bg-zinc-900 border-zinc-800'>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium text-white'>
-              Failed Jobs
-            </CardTitle>
-            <XCircle className='h-4 w-4 text-red-500' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-white'>
-              {dashboard?.failedJobs || 0}
-            </div>
-            <p className='text-xs text-zinc-500'>
-              {dashboard?.errorRate?.toFixed(1) || 0}% error rate
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className='bg-zinc-900 border-zinc-800'>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium text-white'>
-              Active Alerts
-            </CardTitle>
-            <AlertCircle className='h-4 w-4 text-yellow-500' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-white'>
-              {dashboard?.activeAlerts || 0}
-            </div>
-            <p className='text-xs text-zinc-500'>
-              {dashboard?.activeAlerts === 0 ? 'All clear' : 'Needs attention'}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Component Health */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8'>
-        <Card className='bg-zinc-900 border-zinc-800'>
-          <CardHeader>
-            <CardTitle className='text-white'>Component Health</CardTitle>
-            <CardDescription className='text-zinc-400'>
-              Status of system components
+      {/* Component Health - Only in Development */}
+      {process.env.NODE_ENV === 'development' && dashboard && (
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8'>
+          <Card className='bg-zinc-900 border-zinc-800'>
+            <CardHeader>
+              <CardTitle className='text-white'>Component Health</CardTitle>
+              <CardDescription className='text-zinc-400'>
+                Status of system components
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -383,7 +395,8 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <Card className='bg-zinc-900 border-zinc-800'>
