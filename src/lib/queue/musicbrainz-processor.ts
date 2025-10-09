@@ -1,5 +1,6 @@
 // src/lib/queue/musicbrainz-processor.ts
 import { Job } from 'bullmq';
+import chalk from 'chalk';
 
 import { prisma } from '@/lib/prisma';
 
@@ -199,12 +200,15 @@ export async function processMusicBrainzJob(
     }
 
     const duration = Date.now() - startTime;
+    const resultCount = Array.isArray(result) ? result.length : 1;
 
-    console.log(`✅ MusicBrainz job completed: ${job.name}`, {
-      requestId,
-      duration: `${duration}ms`,
-      resultCount: Array.isArray(result) ? result.length : 1,
-    });
+    // Success logging with colored borders
+    const border = chalk.yellow('─'.repeat(60));
+    console.log(border);
+    console.log(
+      `${chalk.green('✅ Completed')} ${chalk.white(job.name)} ${chalk.gray(`(ID: ${job.id})`)} ${chalk.cyan(`in ${duration}ms`)} ${chalk.gray(`• Results: ${resultCount}`)}`
+    );
+    console.log(border + '\n');
 
     return {
       success: true,
