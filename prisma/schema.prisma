@@ -45,6 +45,8 @@ model User {
   followingCount       Int              @default(0)
   recommendationsCount Int              @default(0)
   profileUpdatedAt     DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
   accounts             Account[]
   collections          Collection[]
   recommendations      Recommendation[]
