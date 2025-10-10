@@ -939,6 +939,7 @@ export type SearchResults = {
   __typename?: 'SearchResults';
   albums: Array<UnifiedRelease>;
   artists: Array<Artist>;
+  currentCount: Scalars['Int']['output'];
   hasMore: Scalars['Boolean']['output'];
   total: Scalars['Int']['output'];
   tracks: Array<Track>;
@@ -1726,6 +1727,8 @@ export type SearchQuery = {
   search: {
     __typename?: 'SearchResults';
     total: number;
+    hasMore: boolean;
+    currentCount: number;
     albums: Array<{
       __typename?: 'UnifiedRelease';
       id: string;
@@ -3113,6 +3116,8 @@ export const SearchDocument = `
     query Search($input: SearchInput!) {
   search(input: $input) {
     total
+    hasMore
+    currentCount
     albums {
       id
       source

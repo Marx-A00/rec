@@ -4,6 +4,8 @@
  * Provides logging, metrics, and graceful degradation capabilities
  */
 
+import chalk from 'chalk';
+
 import {
   MusicBrainzAPIError,
   MusicBrainzRateLimitError,
@@ -69,11 +71,14 @@ class MusicBrainzErrorHandler {
       this.isServiceDegraded = false;
 
       const duration = Date.now() - startTime;
-      console.log(`✅ MusicBrainz ${operationName} succeeded`, {
-        duration: `${duration}ms`,
-        context,
-        metrics: this.getBasicMetrics(),
-      });
+      const metrics = this.getBasicMetrics();
+
+      const border = chalk.magenta('─'.repeat(60));
+      console.log(border);
+      console.log(
+        `${chalk.green('✅')} MusicBrainz ${chalk.white(operationName)} ${chalk.cyan(`in ${duration}ms`)} ${chalk.gray(`• Success: ${metrics.successRate}% • Failures: ${metrics.failures}`)}`
+      );
+      console.log(border);
 
       return result;
     } catch (error: any) {

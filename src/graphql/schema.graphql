@@ -305,6 +305,7 @@ type SearchResults {
   tracks: [Track!]!
   total: Int!
   hasMore: Boolean!
+  currentCount: Int!
 }
 
 type RecommendationFeed {

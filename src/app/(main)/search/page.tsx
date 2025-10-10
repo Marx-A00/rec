@@ -16,9 +16,12 @@ function SearchResults() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get('q') || '';
-  const filterParam = (searchParams.get('filter') || 'all') as SearchFilter;
+  // Support both 'type' (from SimpleSearchBar) and 'filter' (from page tabs) params
+  const typeParam = searchParams.get('type') || searchParams.get('filter') || 'all';
+  const filterParam = typeParam as SearchFilter;
   const [activeFilter, setActiveFilter] = useState<SearchFilter>(filterParam);
   const [searchMode, setSearchMode] = useState<SearchMode>('LOCAL_AND_EXTERNAL');
+  const [currentLimit, setCurrentLimit] = useState(20);
 
   // Map filter to searchType
   const searchType = activeFilter === 'all' ? 'all' : activeFilter;
@@ -27,16 +30,26 @@ function SearchResults() {
     results = [],
     isLoading,
     error,
+    hasMore,
   } = useUniversalSearch(query, {
     entityTypes: defaultEntityTypes,
     searchType,
     filters: [],
     debounceMs: 300,
     minQueryLength: 2,
-    maxResults: 50,
+    maxResults: currentLimit,
     enabled: query.length >= 2,
     searchMode,
   });
+
+  // Reset limit when query changes
+  useEffect(() => {
+    setCurrentLimit(20);
+  }, [query, activeFilter]);
+
+  const loadMore = () => {
+    setCurrentLimit(prev => prev + 20);
+  };
 
   const { navigateToResult } = useSearchNavigation({
     entityTypes: defaultEntityTypes,
@@ -640,6 +653,25 @@ function SearchResults() {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Load More Button */}
+          {hasMore && !isLoading && filteredResults.length > 0 && (
+            <div className="flex justify-center mt-8 mb-4">
+              <button
+                onClick={loadMore}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+              >
+                Load More Results
+              </button>
+            </div>
+          )}
+
+          {/* Loading state for load more */}
+          {isLoading && currentLimit > 20 && (
+            <div className="flex justify-center mt-8 mb-4">
+              <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
             </div>
           )}
       </div>

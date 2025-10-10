@@ -259,6 +259,7 @@ export function useUniversalSearch(
   return {
     ...queryResult,
     results,
+    hasMore: queryResult.data?.search?.hasMore || false,
 
     // Phase 3 enhanced data
     grouped,
@@ -272,7 +273,7 @@ export function useUniversalSearch(
       per_page: maxResults || 20,
       page: 1,
       totalPages: 1,
-      hasNext: false,
+      hasNext: queryResult.data?.search?.hasMore || false,
       hasPrev: false,
     },
   };

@@ -3,9 +3,11 @@
  * Re-enrich existing artists to fetch images from Discogs/Wikimedia
  *
  * This script queues artist enrichment jobs to:
- * 1. Fetch images from Discogs (if discogsId exists)
- * 2. Fallback to Wikimedia Commons
- * 3. Auto-cache to Cloudflare CDN
+ * 1. Fetch artist data from MusicBrainz (extracts Discogs ID if available)
+ * 2. Fetch images from Discogs (if discogsId exists in MusicBrainz relations)
+ * 3. Search Discogs by artist name (if no discogsId, uses fuzzy matching at 85%+ confidence)
+ * 4. Fallback to Wikimedia Commons (if still no image)
+ * 5. Auto-queue Cloudflare CDN caching job
  *
  * Usage:
  *   tsx scripts/enrich-artist-images.ts [--limit=N] [--dry-run] [--force]
@@ -82,7 +84,7 @@ async function main() {
     console.log(`  ... and ${artists.length - 5} more\n`);
   }
 
-  console.log('\n💡 Tip: Run backfill-discogs-ids.ts first to get Discogs IDs!\n');
+  console.log('\n💡 New: Artists without Discogs IDs will be automatically searched on Discogs!\n');
 
   if (isDryRun) {
     console.log('🏃 DRY RUN - No jobs will be queued');
@@ -127,9 +129,12 @@ async function main() {
   console.log('   Jobs will process at ~1 per second due to rate limiting');
   console.log(`   Estimated completion time: ~${Math.ceil(queued / 60)} minutes`);
   console.log('\n📋 Each enrichment will:');
-  console.log('   1. Fetch artist image from Discogs (if has discogsId)');
-  console.log('   2. Fallback to Wikimedia Commons');
-  console.log('   3. Auto-queue Cloudflare caching job\n');
+  console.log('   1. Fetch artist data from MusicBrainz');
+  console.log('   2. Extract Discogs ID from MusicBrainz relations (if available)');
+  console.log('   3. Fetch image from Discogs (if has discogsId)');
+  console.log('   4. Search Discogs by name (if no discogsId, 85%+ confidence match)');
+  console.log('   5. Fallback to Wikimedia Commons (if still no image)');
+  console.log('   6. Auto-queue Cloudflare CDN caching job\n');
 
   await prisma.$disconnect();
 }

@@ -2,6 +2,7 @@
 // Automatic queue pause/resume service based on user activity
 
 import { PrismaClient } from '@prisma/client';
+import chalk from 'chalk';
 
 import { getMusicBrainzQueue } from '@/lib/queue';
 
@@ -200,17 +201,29 @@ export class QueueActivityMonitor {
       const queue = getMusicBrainzQueue();
       const metrics = await queue.getMetrics();
 
-      console.log(`📊 Queue Activity Monitor Status:`, {
-        activityLevel: activeUserCount,
-        backgroundJobsPaused: this.backgroundJobsPaused,
-        queueStats: {
-          active: metrics.stats.active,
-          waiting: metrics.stats.waiting,
-          delayed: metrics.stats.delayed,
-          completed: metrics.stats.completed,
-          failed: metrics.stats.failed,
-        },
-      });
+      // Build pretty formatted log
+      const border = chalk.gray('─'.repeat(60));
+      const activityColor = activeUserCount === 'HIGH' ? chalk.red : chalk.green;
+      const pausedColor = this.backgroundJobsPaused ? chalk.yellow : chalk.green;
+
+      console.log('\n' + border);
+      console.log(chalk.bold.cyan('📊 Queue Activity Monitor Status'));
+      console.log(border);
+
+      console.log(chalk.bold('\n  Activity Level:'));
+      console.log(`    ${activityColor(activeUserCount)}`);
+
+      console.log(chalk.bold('\n  Background Jobs:'));
+      console.log(`    ${pausedColor(this.backgroundJobsPaused ? '⏸️  PAUSED' : '▶️  RUNNING')}`);
+
+      console.log(chalk.bold('\n  Queue Stats:'));
+      console.log(`    ${chalk.blue('Active:')}    ${chalk.white(metrics.stats.active)}`);
+      console.log(`    ${chalk.yellow('Waiting:')}   ${chalk.white(metrics.stats.waiting)}`);
+      console.log(`    ${chalk.magenta('Delayed:')}   ${chalk.white(metrics.stats.delayed)}`);
+      console.log(`    ${chalk.green('Completed:')} ${chalk.white(metrics.stats.completed)}`);
+      console.log(`    ${chalk.red('Failed:')}    ${chalk.white(metrics.stats.failed)}`);
+
+      console.log('\n' + border + '\n');
     } catch (error) {
       console.error('❌ Failed to log queue status:', error);
     }

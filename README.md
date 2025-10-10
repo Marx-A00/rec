@@ -225,6 +225,49 @@ This application uses **BullMQ** with Redis for handling MusicBrainz API request
 - ✅ **Job retention** - keeps last 100 completed, 50 failed jobs
 - ✅ **Enhanced logging** - ready, active, completed, failed, stalled events
 
+#### Worker Log Color Coding
+
+The queue system uses color-coded borders to help visually distinguish different logging layers:
+
+- 🔵 **Blue borders** - Worker starts processing job (`PROCESSING`)
+- 🟣 **Magenta borders** - MusicBrainz API call completed (low-level API operations)
+- 🟡 **Yellow borders** - Job processor completed (mid-level job completion)
+- 🟢 **Green borders** - Worker finished job (`COMPLETED`)
+- 🔴 **Red borders** - Job failed with errors (`FAILED`)
+
+**Log Prefixes**:
+- `[Queue]` - Queue layer events (job becomes active)
+- No prefix - Worker layer events (job processing stages)
+
+**Example Log Flow**:
+```
+🔄 [Queue] Processing musicbrainz:search-releases (ID: 3863)
+
+──────────────────────────────────────────────────  (Blue)
+PROCESSING
+──────────────────────────────────────────────────
+  Job:      tupac
+  ID:       #3863
+──────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────── (Magenta)
+✅ MusicBrainz searchReleaseGroups in 497ms • Success: 100% • Failures: 0
+────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────── (Yellow)
+✅ Completed musicbrainz:search-releases (ID: 3863) in 497ms • Results: 23
+────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────  (Green)
+COMPLETED
+──────────────────────────────────────────────────
+  Job:      tupac
+  Duration: 503ms
+──────────────────────────────────────────────────
+```
+
+This layered approach makes it easy to trace which part of the system (Queue → Worker → Processor → API) is generating each log message.
+
 #### Queue Features
 
 - **Rate Limiting**: 1 req/sec to comply with MusicBrainz API limits

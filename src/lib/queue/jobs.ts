@@ -34,6 +34,9 @@ export const JOB_TYPES = {
   // Cover Art Caching Jobs
   CACHE_ALBUM_COVER_ART: 'cache:album-cover-art',
   CACHE_ARTIST_IMAGE: 'cache:artist-image',
+  // Discogs Jobs
+  DISCOGS_SEARCH_ARTIST: 'discogs:search-artist',
+  DISCOGS_GET_ARTIST: 'discogs:get-artist',
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -234,6 +237,23 @@ export interface CacheArtistImageJobData {
 }
 
 // ============================================================================
+// Discogs Job Data Interfaces
+// ============================================================================
+
+export interface DiscogsSearchArtistJobData {
+  artistId: string; // Local database artist ID
+  artistName: string; // Name to search for
+  musicbrainzData?: any; // Optional MB data for better matching
+  requestId?: string;
+}
+
+export interface DiscogsGetArtistJobData {
+  artistId: string; // Local database artist ID
+  discogsId: string; // Discogs artist ID to fetch
+  requestId?: string;
+}
+
+// ============================================================================
 // Job Data Union Type
 // ============================================================================
 
@@ -256,7 +276,9 @@ export type MusicBrainzJobData =
   | SpotifySyncFeaturedPlaylistsJobData
   | RunDiscogsMigrationJobData
   | CacheAlbumCoverArtJobData
-  | CacheArtistImageJobData;
+  | CacheArtistImageJobData
+  | DiscogsSearchArtistJobData
+  | DiscogsGetArtistJobData;
 
 // ============================================================================
 // Job Result Interfaces

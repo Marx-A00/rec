@@ -51,18 +51,18 @@ const AlbumSearchBackwardCompatible = forwardRef<
         searchFields: ['title', 'artist', 'year'],
         weight: 1,
         deduplicate: true,
-        maxResults: 50, // Increased from 10 to show more albums
+        maxResults: 50,
       },
     ],
     searchType: 'albums',
     filters: [],
     debounceMs: 300,
     minQueryLength: 2,
-    maxResults: 50, // Increased from 10 to show more albums
+    maxResults: 50,
     enabled: !disabled && searchQuery.length >= 2,
     context: 'recommendations',
     deduplicate: true,
-    searchMode: 'LOCAL_AND_EXTERNAL', // Enable external API searches (Discogs/MusicBrainz)
+    searchMode: 'LOCAL_AND_EXTERNAL',
   };
 
   // Use the universal search hook directly with album-only configuration

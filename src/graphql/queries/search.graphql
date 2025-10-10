@@ -1,6 +1,8 @@
 query Search($input: SearchInput!) {
   search(input: $input) {
     total
+    hasMore
+    currentCount
     albums {
       id
       source

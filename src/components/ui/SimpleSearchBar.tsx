@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Command, CommandInput } from '@/components/ui/command';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
 
 export interface SimpleSearchBarProps {
@@ -16,6 +17,7 @@ export default function SimpleSearchBar({
   minQueryLength = 2,
 }: SimpleSearchBarProps) {
   const [query, setQuery] = useState('');
+  const [searchType, setSearchType] = useState<'all' | 'albums' | 'artists' | 'tracks' | 'users'>('all');
   const router = useRouter();
 
   // Handle search input changes
@@ -23,16 +25,16 @@ export default function SimpleSearchBar({
     setQuery(value);
   }, []);
 
-  // Handle Enter key to navigate to search page
+  // Handle Enter key to navigate to search page with type parameter
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (event.key === 'Enter' && query.length >= minQueryLength) {
         event.preventDefault();
-        // Navigate to dedicated search page
-        router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+        // Navigate to dedicated search page with type filter
+        router.push(`/search?q=${encodeURIComponent(query.trim())}&type=${searchType}`);
       }
     },
-    [query, minQueryLength, router]
+    [query, minQueryLength, router, searchType]
   );
 
   // Handle Escape key to unfocus
@@ -55,21 +57,40 @@ export default function SimpleSearchBar({
 
   return (
     <div className={`relative ${className}`}>
-      <Command
-        className='border-zinc-700 shadow-lg bg-zinc-900'
-        shouldFilter={false}
-      >
-        <div className='[&_.border-b]:border-cosmic-latte [&_[cmdk-input-wrapper]]:border-cosmic-latte [&_svg]:text-cosmic-latte [&_svg]:opacity-100'>
-          <CommandInput
-            id='main-search-bar'
-            placeholder={placeholder}
-            value={query}
-            onValueChange={handleValueChange}
-            onKeyDown={handleKeyDown}
-            className='h-9 text-white placeholder:text-zinc-400'
-          />
+      <div className='flex border border-zinc-700 rounded-lg shadow-lg bg-zinc-900 overflow-hidden'>
+        {/* Search Type Dropdown */}
+        <div className='border-r border-zinc-700'>
+          <Select value={searchType} onValueChange={(value) => setSearchType(value as any)}>
+            <SelectTrigger className='h-9 border-0 bg-zinc-800 text-white rounded-none rounded-l-lg focus:ring-2 focus:ring-inset focus:ring-cosmic-latte w-[110px]'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className='bg-zinc-800 border-zinc-700 text-white'>
+              <SelectItem value='all'>All</SelectItem>
+              <SelectItem value='albums'>Albums</SelectItem>
+              <SelectItem value='artists'>Artists</SelectItem>
+              <SelectItem value='tracks'>Tracks</SelectItem>
+              <SelectItem value='users'>Users</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </Command>
+
+        {/* Search Input */}
+        <Command
+          className='border-0 shadow-none bg-transparent flex-1'
+          shouldFilter={false}
+        >
+          <div className='[&_.border-b]:border-0 [&_[cmdk-input-wrapper]]:border-0 [&_svg]:text-cosmic-latte [&_svg]:opacity-100'>
+            <CommandInput
+              id='main-search-bar'
+              placeholder={placeholder}
+              value={query}
+              onValueChange={handleValueChange}
+              onKeyDown={handleKeyDown}
+              className='h-9 text-white placeholder:text-zinc-400'
+            />
+          </div>
+        </Command>
+      </div>
     </div>
   );
 }

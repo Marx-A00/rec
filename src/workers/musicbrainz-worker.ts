@@ -8,6 +8,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import chalk from 'chalk';
 
 import { getMusicBrainzQueue } from '@/lib/queue';
 import { processMusicBrainzJob } from '@/lib/queue/musicbrainz-processor';
@@ -58,19 +59,54 @@ class MusicBrainzWorkerService {
       });
 
       this.worker.on('active', (job: any) => {
-        const query = (job.data as any).query || job.name;
-        console.log(`🔄 ${query} (#${job.id})`);
+        const jobData = job.data as any;
+        const query = jobData.query || job.name;
+        const queryInfo = jobData.query
+          ? `Query: "${jobData.query}"`
+          : jobData.mbid
+            ? `MBID: ${jobData.mbid}`
+            : jobData.albumId
+              ? `Album ID: ${jobData.albumId}`
+              : jobData.artistId
+                ? `Artist ID: ${jobData.artistId}`
+                : null;
+
+        const border = chalk.blue('─'.repeat(50));
+
+        console.log('\n' + border);
+        console.log(chalk.bold.white('PROCESSING'));
+        console.log(border);
+        console.log(`  ${chalk.cyan('Job:')}      ${chalk.white(job.name)}`);
+        console.log(`  ${chalk.cyan('ID:')}       ${chalk.white(`#${job.id}`)}`);
+        if (queryInfo) {
+          console.log(`  ${chalk.cyan('Details:')}  ${chalk.white(queryInfo)}`);
+        }
+        console.log(border + '\n');
       });
 
       this.worker.on('completed', (job: any, result: any) => {
         const query = (job.data as any).query || job.name;
         const duration = Date.now() - job.processedOn;
-        console.log(`✅ ${query} (${duration}ms)`);
+        const border = chalk.green('─'.repeat(50));
+
+        console.log('\n' + border);
+        console.log(chalk.bold.green('COMPLETED'));
+        console.log(border);
+        console.log(`  ${chalk.cyan('Job:')}      ${chalk.white(query)}`);
+        console.log(`  ${chalk.cyan('Duration:')} ${chalk.white(`${duration}ms`)}`);
+        console.log(border + '\n');
       });
 
       this.worker.on('failed', (job: any, err: Error) => {
         const query = (job.data as any).query || job?.name;
-        console.error(`❌ ${query} - ${err.message}`);
+        const border = chalk.red('─'.repeat(50));
+
+        console.log('\n' + border);
+        console.log(chalk.bold.red('FAILED'));
+        console.log(border);
+        console.log(`  ${chalk.cyan('Job:')}   ${chalk.white(query)}`);
+        console.log(`  ${chalk.cyan('Error:')} ${chalk.red(err.message)}`);
+        console.log(border + '\n');
       });
 
       this.worker.on('error', (err: Error) => {

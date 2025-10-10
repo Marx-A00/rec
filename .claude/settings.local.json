@@ -1,9 +1,14 @@
 {
   "permissions": {
-    "allow": ["WebSearch"],
+    "allow": [
+      "WebSearch",
+      "Read(//Users/marcosandrade/roaming/projects/rec/.taskmaster/docs/PRDs/**)"
+    ],
     "deny": [],
     "ask": []
   },
-  "enabledMcpjsonServers": ["taskmaster-ai"],
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "taskmaster-ai"
+  ]
 }

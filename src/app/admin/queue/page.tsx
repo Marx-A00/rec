@@ -21,7 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-const MONITORING_API = 'http://localhost:3001';
+const MONITORING_API = process.env.NEXT_PUBLIC_MONITORING_API_URL || 'http://localhost:3001';
 
 export default function QueueManagementPage() {
   const [loading, setLoading] = useState<string | null>(null);
