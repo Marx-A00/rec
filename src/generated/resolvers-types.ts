@@ -913,6 +913,7 @@ export type SearchResults = {
   __typename?: 'SearchResults';
   albums: Array<UnifiedRelease>;
   artists: Array<Artist>;
+  currentCount: Scalars['Int']['output'];
   hasMore: Scalars['Boolean']['output'];
   total: Scalars['Int']['output'];
   tracks: Array<Track>;
@@ -2723,6 +2724,7 @@ export type SearchResultsResolvers<
     ContextType
   >;
   artists?: Resolver<Array<ResolversTypes['Artist']>, ParentType, ContextType>;
+  currentCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   tracks?: Resolver<Array<ResolversTypes['Track']>, ParentType, ContextType>;

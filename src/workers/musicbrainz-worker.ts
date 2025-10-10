@@ -59,14 +59,28 @@ class MusicBrainzWorkerService {
       });
 
       this.worker.on('active', (job: any) => {
-        const query = (job.data as any).query || job.name;
+        const jobData = job.data as any;
+        const query = jobData.query || job.name;
+        const queryInfo = jobData.query
+          ? `Query: "${jobData.query}"`
+          : jobData.mbid
+            ? `MBID: ${jobData.mbid}`
+            : jobData.albumId
+              ? `Album ID: ${jobData.albumId}`
+              : jobData.artistId
+                ? `Artist ID: ${jobData.artistId}`
+                : null;
+
         const border = chalk.blue('─'.repeat(50));
 
         console.log('\n' + border);
         console.log(chalk.bold.white('PROCESSING'));
         console.log(border);
-        console.log(`  ${chalk.cyan('Job:')}      ${chalk.white(query)}`);
+        console.log(`  ${chalk.cyan('Job:')}      ${chalk.white(job.name)}`);
         console.log(`  ${chalk.cyan('ID:')}       ${chalk.white(`#${job.id}`)}`);
+        if (queryInfo) {
+          console.log(`  ${chalk.cyan('Details:')}  ${chalk.white(queryInfo)}`);
+        }
         console.log(border + '\n');
       });
 

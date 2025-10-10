@@ -153,15 +153,18 @@ export const resolvers: Resolvers = {
         }
 
         // Perform orchestrated search
+        // When searching ALL types, divide limit across entity types
+        const perTypeLimit = type === 'ALL' ? Math.ceil(limit / 3) : limit;
+
         const searchResult = await orchestrator.search({
           query,
           types: searchTypes,
           sources,
-          limit,
+          limit: perTypeLimit,
           deduplicateResults: true,
           // Enable Wikimedia image resolution for MB artists with a small cap
           resolveArtistImages: searchTypes.includes('artist') && sources.includes(SearchSource.MUSICBRAINZ),
-          artistImageLimit: 6,
+          artistImageLimit: 3,
         });
 
         // Separate results by source
@@ -409,16 +412,20 @@ export const resolvers: Resolvers = {
         }
         const tracks = Array.from(tracksMap.values());
 
+        const currentCount = artists.length + albums.length + tracks.length;
+        const totalAvailable = searchResult.totalResults;
+
         return {
           artists,
           albums,
           tracks,
-          total: searchResult.totalResults,
-          hasMore: false,
+          total: totalAvailable,
+          currentCount,
+          hasMore: currentCount < totalAvailable,
         };
       } catch (error) {
         console.error('Search error:', error);
-        return { artists: [], albums: [], tracks: [], total: 0, hasMore: false };
+        return { artists: [], albums: [], tracks: [], total: 0, currentCount: 0, hasMore: false };
       }
     },
 

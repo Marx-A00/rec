@@ -202,11 +202,37 @@ export async function processMusicBrainzJob(
     const duration = Date.now() - startTime;
     const resultCount = Array.isArray(result) ? result.length : 1;
 
+    // Extract query/identifier info for logging
+    const jobData = job.data as any;
+    let queryInfo = '';
+
+    if (jobData.query) {
+      queryInfo = `"${jobData.query}"`;
+    } else if (jobData.mbid) {
+      // For lookup jobs, try to extract the name from the result
+      let entityName = '';
+      if (job.name.includes('artist') && result?.name) {
+        entityName = result.name;
+      } else if (job.name.includes('release') && result?.title) {
+        entityName = result.title;
+      } else if (job.name.includes('recording') && result?.title) {
+        entityName = result.title;
+      }
+
+      queryInfo = entityName
+        ? `"${entityName}" • MBID: ${jobData.mbid.substring(0, 8)}...`
+        : `MBID: ${jobData.mbid.substring(0, 8)}...`;
+    } else if (jobData.albumId) {
+      queryInfo = `Album: ${jobData.albumId}`;
+    } else if (jobData.artistId) {
+      queryInfo = `Artist: ${jobData.artistId}`;
+    }
+
     // Success logging with colored borders
     const border = chalk.yellow('─'.repeat(60));
     console.log(border);
     console.log(
-      `${chalk.green('✅ Completed')} ${chalk.white(job.name)} ${chalk.gray(`(ID: ${job.id})`)} ${chalk.cyan(`in ${duration}ms`)} ${chalk.gray(`• Results: ${resultCount}`)}`
+      `${chalk.green('✅ Completed')} ${chalk.white(job.name)} ${queryInfo ? chalk.magenta(`[${queryInfo}]`) + ' ' : ''}${chalk.gray(`(ID: ${job.id})`)} ${chalk.cyan(`in ${duration}ms`)} ${chalk.gray(`• Results: ${resultCount}`)}`
     );
     console.log(border + '\n');
 

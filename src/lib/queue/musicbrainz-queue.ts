@@ -116,7 +116,7 @@ export class MusicBrainzQueue {
     });
 
     this.worker.on('active', job => {
-      console.log(`🔄 Processing ${job.name} (ID: ${job.id})`);
+      console.log(`🔄 [Queue] Processing ${job.name} (ID: ${job.id})`);
     });
 
     this.worker.on('completed', (job, result) => {

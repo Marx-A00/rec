@@ -39,6 +39,7 @@ const AlbumSearchBackwardCompatible = forwardRef<
   },
   ref
 ) {
+  const [inputValue, setInputValue] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Create proper search options with album entity type
@@ -50,17 +51,18 @@ const AlbumSearchBackwardCompatible = forwardRef<
         searchFields: ['title', 'artist', 'year'],
         weight: 1,
         deduplicate: true,
-        maxResults: 50, // Increased from 10 to show more albums
+        maxResults: 50,
       },
     ],
     searchType: 'albums',
     filters: [],
     debounceMs: 300,
     minQueryLength: 2,
-    maxResults: 50, // Increased from 10 to show more albums
+    maxResults: 50,
     enabled: !disabled && searchQuery.length >= 2,
     context: 'recommendations',
     deduplicate: true,
+    searchMode: 'LOCAL_AND_EXTERNAL',
   };
 
   // Use the universal search hook directly with album-only configuration
@@ -73,6 +75,7 @@ const AlbumSearchBackwardCompatible = forwardRef<
   // Expose clearInput method to parent components (exact API match)
   useImperativeHandle(ref, () => ({
     clearInput: () => {
+      setInputValue('');
       setSearchQuery('');
     },
   }));
@@ -111,17 +114,14 @@ const AlbumSearchBackwardCompatible = forwardRef<
     ) || [];
 
   const handleInputChange = (value: string) => {
-    setSearchQuery(value);
-    console.log(
-      'Album Search:',
-      value,
-      'Raw Results:',
-      searchResults?.length || 0,
-      'Album Results:',
-      albumResults.length
-    );
-    if (value.toLowerCase().includes('charli')) {
-      console.log('Charli XCX search results:', albumResults.slice(0, 5));
+    setInputValue(value);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputValue.trim()) {
+      e.preventDefault();
+      setSearchQuery(inputValue.trim());
+      console.log('Executing search for:', inputValue.trim());
     }
   };
 
@@ -137,8 +137,9 @@ const AlbumSearchBackwardCompatible = forwardRef<
             id='recommendation-search-input'
             type='text'
             placeholder={placeholder}
-            value={searchQuery}
+            value={inputValue}
             onChange={e => handleInputChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             disabled={disabled}
             className={`w-full pl-10 pr-4 py-2 bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses()}`}
           />
@@ -203,6 +204,14 @@ const AlbumSearchBackwardCompatible = forwardRef<
         <div className='text-center py-4'>
           <p className='text-white font-medium'>
             No albums found for &quot;{searchQuery}&quot;
+          </p>
+        </div>
+      )}
+
+      {!searchQuery && inputValue && (
+        <div className='text-center py-2'>
+          <p className='text-zinc-400 text-sm'>
+            Press Enter to search
           </p>
         </div>
       )}
