@@ -334,6 +334,67 @@ The `QueuedMusicBrainzService` wraps the original `MusicBrainzService` and provi
 - **Monitoring**: Bull Board dashboard shows health and performance
 - **Scaling**: Add more worker instances for higher throughput (respecting rate limits)
 
+## Database & Deployment
+
+### Database Schema Migrations
+
+**Local Development:**
+```bash
+# 1. Edit prisma/schema.prisma with your changes
+# 2. Create and apply migration
+pnpm prisma migrate dev --name describe_your_change
+
+# This will:
+# - Create a migration file in prisma/migrations/
+# - Apply it to your local database
+# - Regenerate Prisma client
+```
+
+**Production Deployment (Railway):**
+```bash
+# 1. Commit your schema changes and migrations
+git add prisma/schema.prisma prisma/migrations/
+git commit -m "feat: add new database field"
+
+# 2. Push to main
+git push origin main
+
+# Railway automatically:
+# - Detects the new commit
+# - Builds the application
+# - Runs `prisma migrate deploy` (via railway-start.sh)
+# - Deploys with updated schema
+```
+
+**⚠️ Important Notes:**
+- **Never use `prisma db push` in production** - it bypasses migrations and can cause issues
+- **Always use migrations** for production database changes
+- **Test migrations locally** before pushing to production
+- Migrations run automatically on Railway deployment - no manual intervention needed
+
+**Manual Migration (Emergency Only):**
+
+If you need to manually run migrations in Railway:
+1. Go to Railway dashboard → Your service
+2. Click "Deploy" → "Run command"
+3. Execute: `pnpm prisma migrate deploy`
+
+### Deployment Architecture
+
+**Railway Services:**
+- **Web Service**: Next.js frontend (runs on push to `main`)
+- **Worker Service**: BullMQ background jobs (separate service with `SERVICE_TYPE=worker`)
+
+**Environment Variables:**
+- Local: `.env.local` (Supabase development database)
+- Test: `.env.test` (Supabase test database)
+- Production: Railway environment variables (PostgreSQL production database)
+
+**Database Environments:**
+- **Local**: Supabase PostgreSQL (development)
+- **Test**: Supabase PostgreSQL (separate test database)
+- **Production**: Railway PostgreSQL (production)
+
 ## Technologies Used
 
 - Next.js
