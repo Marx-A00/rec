@@ -1,3 +1,9 @@
+/**
+ * @deprecated This component is no longer used. Use SimpleSearchBar instead.
+ * Location: src/components/ui/SimpleSearchBar.tsx
+ * TODO: Remove this file in next cleanup sprint (safe to delete - no imports found)
+ */
+
 'use client';
 
 import { Search, X } from 'lucide-react';

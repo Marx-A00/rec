@@ -1,3 +1,9 @@
+/**
+ * @deprecated This component is no longer used. Use AlbumSearchBackwardCompatible instead.
+ * Location: src/components/recommendations/AlbumSearchBackwardCompatible.tsx
+ * TODO: Remove this file in next cleanup sprint (safe to delete - no imports found)
+ */
+
 'use client';
 
 import { forwardRef, useImperativeHandle, useState, useCallback } from 'react';
