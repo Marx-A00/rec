@@ -5,6 +5,7 @@
  */
 
 import { QueueEvents, Worker } from 'bullmq';
+import chalk from 'chalk';
 
 import {
   getMusicBrainzQueue,
@@ -69,28 +70,67 @@ export class QueuedMusicBrainzService {
 
     if (!this.queueEvents) return;
     this.queueEvents.on('completed', ({ jobId, returnvalue }) => {
-      console.log(`🎉 QueueEvents: Job ${jobId} completed`);
+      // Extract result info for display
+      const resultCount = returnvalue?.data
+        ? (Array.isArray(returnvalue.data) ? returnvalue.data.length : 1)
+        : 0;
+      const success = returnvalue?.success ?? false;
+
+      // Try to get a preview of the results
+      let resultPreview = '';
+      if (returnvalue?.data && Array.isArray(returnvalue.data) && returnvalue.data.length > 0) {
+        const first = returnvalue.data[0];
+        const preview = first.name || first.title || first.id || '';
+        if (preview) {
+          resultPreview = returnvalue.data.length > 1
+            ? `"${preview}" + ${returnvalue.data.length - 1} more`
+            : `"${preview}"`;
+        }
+      } else if (returnvalue?.data && !Array.isArray(returnvalue.data)) {
+        const preview = returnvalue.data.name || returnvalue.data.title || '';
+        if (preview) resultPreview = `"${preview}"`;
+      }
+
+      // Green borders for job completion events
+      const border = chalk.green('─'.repeat(60));
+      console.log('\n' + border);
+      console.log(`${chalk.bold.green('✅ JOB COMPLETED')} ${chalk.green('[QUEUE EVENTS LAYER]')}`);
+      console.log(border);
+      console.log(`  ${chalk.green('Job ID:')}     ${chalk.white(jobId)}`);
+      console.log(`  ${chalk.green('Success:')}    ${success ? chalk.green('Yes') : chalk.red('No')}`);
+      console.log(`  ${chalk.green('Results:')}    ${chalk.white(resultCount)}`);
+      if (resultPreview) {
+        console.log(`  ${chalk.green('Preview:')}    ${chalk.cyan(resultPreview)}`);
+      }
+      console.log(border + '\n');
 
       const pending = this.pendingJobs.get(jobId);
       if (pending) {
-        console.log(`✅ Resolving pending job ${jobId}`);
+        console.log(chalk.green(`✅ Resolving pending job ${jobId}`));
         pending.resolve(returnvalue);
         this.pendingJobs.delete(jobId);
       } else {
-        console.log(`⚠️ No pending promise found for job ${jobId}`);
+        console.log(chalk.yellow(`⚠️ No pending promise found for job ${jobId}`));
       }
     });
 
     this.queueEvents.on('failed', ({ jobId, failedReason }) => {
-      console.log(`💥 QueueEvents: Job ${jobId} failed: ${failedReason}`);
+      // Red borders for job failure events
+      const border = chalk.red('─'.repeat(60));
+      console.log('\n' + border);
+      console.log(`${chalk.bold.red('❌ JOB FAILED')} ${chalk.red('[QUEUE EVENTS LAYER]')}`);
+      console.log(border);
+      console.log(`  ${chalk.red('Job ID:')} ${chalk.white(jobId)}`);
+      console.log(`  ${chalk.red('Reason:')} ${chalk.white(failedReason)}`);
+      console.log(border + '\n');
 
       const pending = this.pendingJobs.get(jobId);
       if (pending) {
-        console.log(`❌ Rejecting pending job ${jobId}`);
+        console.log(chalk.red(`❌ Rejecting pending job ${jobId}`));
         pending.reject(new Error(failedReason));
         this.pendingJobs.delete(jobId);
       } else {
-        console.log(`⚠️ No pending promise found for failed job ${jobId}`);
+        console.log(chalk.yellow(`⚠️ No pending promise found for failed job ${jobId}`));
       }
     });
 
@@ -496,8 +536,14 @@ export class QueuedMusicBrainzService {
         }
       }, timeoutMs);
 
-      // The QueueEvents listener will call resolve/reject when the job completes
-      console.log(`⏳ Waiting for job ${jobId} via QueueEvents...`);
+      // Yellow borders for waiting events
+      const border = chalk.yellow('─'.repeat(60));
+      console.log('\n' + border);
+      console.log(`${chalk.bold.yellow('⏳ WAITING FOR JOB')} ${chalk.yellow('[QUEUE EVENTS LAYER]')}`);
+      console.log(border);
+      console.log(`  ${chalk.yellow('Job ID:')} ${chalk.white(jobId)}`);
+      console.log(`  ${chalk.yellow('Timeout:')} ${chalk.white(timeoutMs + 'ms')}`);
+      console.log(border + '\n');
     });
   }
 

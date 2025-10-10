@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import chalk from 'chalk';
 import { QueuedMusicBrainzService, getQueuedMusicBrainzService } from '../musicbrainz/queue-service';
 import type { UnifiedSearchResult, SearchContext, SearchFilters, SortBy } from '@/types/search';
 
@@ -712,7 +713,11 @@ export class SearchOrchestrator {
     // Use release-group endpoint which works with MusicBrainz release group IDs
     const coverArtUrl = `https://coverartarchive.org/release-group/${release.id}/front-250`;
 
-    console.log(`[SearchOrchestrator] Generating cover art URL for "${release.title}": ${coverArtUrl}`);
+    // Purple borders for cover art URL generation (distinct from other logs)
+    const border = chalk.magenta('─'.repeat(60));
+    console.log(border);
+    console.log(`${chalk.magenta('🎨 [SEARCH LAYER]')} ${chalk.white('Cover Art URL')} ${chalk.magenta('•')} ${chalk.cyan(`"${release.title}"`)} ${chalk.gray('→')} ${chalk.blue(coverArtUrl)}`);
+    console.log(border);
 
     return {
       id: release.id,

@@ -227,46 +227,97 @@ This application uses **BullMQ** with Redis for handling MusicBrainz API request
 
 #### Worker Log Color Coding
 
-The queue system uses color-coded borders to help visually distinguish different logging layers:
+The queue system uses color-coded borders AND layer labels to help you easily identify which part of the system is logging. Each log now shows its layer in the header!
 
-- 🔵 **Blue borders** - Worker starts processing job (`PROCESSING`)
-- 🟣 **Magenta borders** - MusicBrainz API call completed (low-level API operations)
-- 🟡 **Yellow borders** - Job processor completed (mid-level job completion)
-- 🟢 **Green borders** - Worker finished job (`COMPLETED`)
-- 🔴 **Red borders** - Job failed with errors (`FAILED`)
+**Queue Layer:**
+- 🔵 **Cyan borders** - `QUEUING JOB [QUEUE LAYER]` - Job queued to Redis
 
-**Log Prefixes**:
+**Queue Events Layer:**
+- 🟡 **Yellow borders** - `⏳ WAITING FOR JOB [QUEUE EVENTS LAYER]` - Waiting for job completion
+- 🟢 **Green borders** - `✅ JOB COMPLETED [QUEUE EVENTS LAYER]` - Job completed successfully
+- 🔴 **Red borders** - `❌ JOB FAILED [QUEUE EVENTS LAYER]` - Job failed with errors
+
+**Worker Layer:**
+- 🔵 **Blue borders** - `PROCESSING [WORKER LAYER]` - Worker starts processing job
+- 🟢 **Green borders** - `COMPLETED [WORKER LAYER]` - Worker finished job
+
+**Processor Layer:**
+- 🟡 **Yellow borders** - `✅ Completed [PROCESSOR LAYER]` - Job processor completed
+
+**API Layer:**
+- 🟣 **Magenta borders** - `✅ [API LAYER] MusicBrainz` - MusicBrainz API call completed
+
+**Search Layer:**
+- 🟣 **Magenta borders** - `🎨 [SEARCH LAYER]` - Cover art URL generation (SearchOrchestrator)
+
+**Log Prefixes** (plain text logs):
 - `[Queue]` - Queue layer events (job becomes active)
-- No prefix - Worker layer events (job processing stages)
+- No prefix - Worker/Processor/API layer events
 
 **Example Log Flow**:
 ```
-🔄 [Queue] Processing musicbrainz:search-releases (ID: 3863)
-
-──────────────────────────────────────────────────  (Blue)
-PROCESSING
-──────────────────────────────────────────────────
-  Job:      tupac
-  ID:       #3863
-──────────────────────────────────────────────────
-
-──────────────────────────────────────────────────────────── (Magenta)
-✅ MusicBrainz searchReleaseGroups in 497ms • Success: 100% • Failures: 0
+──────────────────────────────────────────────────────────── (Cyan)
+QUEUING JOB [QUEUE LAYER]
+────────────────────────────────────────────────────────────
+  Job ID:     4003
+  Type:       musicbrainz:search-releases
+  Request ID: search-releases-1760110137509
+  Priority:   1
+  Details:    Query: "tupac" • Limit: 7 • Offset: 0
 ────────────────────────────────────────────────────────────
 
 ──────────────────────────────────────────────────────────── (Yellow)
-✅ Completed musicbrainz:search-releases (ID: 3863) in 497ms • Results: 23
+⏳ WAITING FOR JOB [QUEUE EVENTS LAYER]
+────────────────────────────────────────────────────────────
+  Job ID:   4003
+  Timeout:  30000ms
 ────────────────────────────────────────────────────────────
 
+🔄 [Queue] Processing musicbrainz:search-releases (ID: 4003) • Query: "tupac"
+
+──────────────────────────────────────────────────  (Blue)
+PROCESSING [WORKER LAYER]
+──────────────────────────────────────────────────
+  Job:      musicbrainz:search-releases
+  ID:       #4003
+  Details:  Query: "tupac"
+──────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────── (Magenta)
+✅ [API LAYER] MusicBrainz searchReleaseGroups in 497ms • Success: 100% • Failures: 0
+────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────── (Yellow)
+✅ Completed [PROCESSOR LAYER] musicbrainz:search-releases ["tupac"] (ID: 4003) in 497ms • Results: 23
+────────────────────────────────────────────────────────────
+
+✅ Completed musicbrainz:search-releases (ID: 4003) in 478ms • Results: 23
+
 ──────────────────────────────────────────────────  (Green)
-COMPLETED
+COMPLETED [WORKER LAYER]
 ──────────────────────────────────────────────────
-  Job:      tupac
+  Job ID:   4003
+  Job:      musicbrainz:search-releases • Query: "tupac"
   Duration: 503ms
+  Results:  23
 ──────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────── (Green)
+✅ JOB COMPLETED [QUEUE EVENTS LAYER]
+────────────────────────────────────────────────────────────
+  Job ID:     4003
+  Success:    Yes
+  Results:    23
+  Preview:    "All Eyez on Me" + 22 more
+────────────────────────────────────────────────────────────
+✅ Resolving pending job 4003
+
+──────────────────────────────────────────────────────────── (Magenta)
+🎨 [SEARCH LAYER] Cover Art URL • "All Eyez on Me" → https://coverartarchive.org/...
+────────────────────────────────────────────────────────────
 ```
 
-This layered approach makes it easy to trace which part of the system (Queue → Worker → Processor → API) is generating each log message.
+This layered approach makes it easy to trace which part of the system (Queue → QueueEvents → Worker → Processor → API → Search) is generating each log message.
 
 #### Queue Features
 
