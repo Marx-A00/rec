@@ -73,7 +73,7 @@ export class MusicBrainzService {
     query: string,
     limit = 25,
     offset = 0
-  ): Promise<{ results: ArtistSearchResult[]; total: number }> {
+  ): Promise<ArtistSearchResult[]> {
     try {
       const response = await this.api.search('artist', {
         query,
@@ -82,7 +82,7 @@ export class MusicBrainzService {
         inc: ['aliases'], // Include artist aliases for better matching
       });
 
-      const results = (
+      return (
         response.artists?.map(artist => ({
           id: artist.id,
           name: artist.name,
@@ -100,11 +100,6 @@ export class MusicBrainzService {
           score: artist.score || 0,
         })) || []
       );
-
-      return {
-        results,
-        total: response.count || results.length,
-      };
     } catch (error) {
       console.error('MusicBrainz artist search error:', error);
       throw new Error(
