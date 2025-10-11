@@ -2,8 +2,9 @@ import { PrismaClient } from '@prisma/client';
 import chalk from 'chalk';
 import { QueuedMusicBrainzService, getQueuedMusicBrainzService } from '../musicbrainz/queue-service';
 import type { UnifiedSearchResult, SearchContext, SearchFilters, SortBy, IntelligentSearchResult } from '@/types/search';
-import { IntentDetector } from './IntentDetector';
+import { IntentDetector, type IntentAnalysis } from './IntentDetector';
 import { RecordingDataExtractor } from './RecordingDataExtractor';
+import type { RecordingSearchResult } from '../musicbrainz/basic-service';
 
 export enum SearchSource {
   LOCAL = 'LOCAL',
@@ -965,13 +966,30 @@ export class SearchOrchestrator {
       // Step 2: Analyze intent using IntentDetector
       const intentAnalysis = this.intentDetector.analyze(query, recordings);
 
-      // TODO: Subtask 3 - Add routing to handlers
-      // TODO: Subtask 4 - Use RecordingDataExtractor in handlers
-      // TODO: Subtask 5 - Add final mapping improvements
+      // Step 3: Route to appropriate handler based on intent
+      let results: UnifiedSearchResult[];
 
-      // Temporary: Return recordings as-is for subtask 2
+      switch (intentAnalysis.intent) {
+        case 'TRACK':
+          results = await this.handleTrackIntent(query, recordings, limit, intentAnalysis);
+          break;
+
+        case 'ARTIST':
+          results = await this.handleArtistIntent(query, recordings, limit, intentAnalysis);
+          break;
+
+        case 'ALBUM':
+          results = await this.handleAlbumIntent(query, recordings, limit, intentAnalysis);
+          break;
+
+        case 'MIXED':
+        default:
+          results = await this.handleMixedIntent(query, recordings, limit, intentAnalysis);
+          break;
+      }
+
+      // Step 4: Build final response with metadata
       const endTime = Date.now();
-      const results = recordings.map(rec => this.mapMusicBrainzRecordingToUnifiedResult(rec));
 
       return {
         query,
@@ -1033,5 +1051,152 @@ export class SearchOrchestrator {
         }
       };
     }
+  }
+
+  /**
+   * Handle TRACK intent: User is searching for a specific song/recording
+   * Strategy: Prioritize exact track title matches, then fuzzy matches
+   */
+  private async handleTrackIntent(
+    query: string,
+    recordings: RecordingSearchResult[],
+    limit: number,
+    intentAnalysis: IntentAnalysis
+  ): Promise<UnifiedSearchResult[]> {
+    // For track intent, the top recordings are already sorted by MusicBrainz relevance
+    // We trust the MB score + our intent detection to give us the best results
+    // TODO: Use RecordingDataExtractor in subtask 14.4 for enhanced data extraction
+
+    // Map to unified results, prioritizing the matched track
+    const results: UnifiedSearchResult[] = [];
+
+    // Add the primary matched track first (from intentAnalysis)
+    const matchedRecording = recordings.find(r => r.id === intentAnalysis.matchedEntity.id);
+    if (matchedRecording) {
+      results.push(this.mapMusicBrainzRecordingToUnifiedResult(matchedRecording));
+    }
+
+    // Add remaining recordings (skip the one we already added)
+    for (const recording of recordings) {
+      if (recording.id !== intentAnalysis.matchedEntity.id) {
+        results.push(this.mapMusicBrainzRecordingToUnifiedResult(recording));
+      }
+
+      if (results.length >= limit * 2) break; // Get extra for deduplication
+    }
+
+    return results;
+  }
+
+  /**
+   * Handle ARTIST intent: User is searching for an artist
+   * Strategy: Group recordings by artist, return artist-centric results
+   */
+  private async handleArtistIntent(
+    query: string,
+    recordings: RecordingSearchResult[],
+    limit: number,
+    intentAnalysis: IntentAnalysis
+  ): Promise<UnifiedSearchResult[]> {
+    // TODO: Use RecordingDataExtractor in subtask 14.4 for enhanced data extraction
+
+    // For artist intent, we want to show:
+    // 1. The matched artist's most relevant tracks/albums
+    // 2. Group results by the artist to avoid showing too many tracks from other artists
+
+    const results: UnifiedSearchResult[] = [];
+    const matchedArtistId = intentAnalysis.matchedEntity.id;
+
+    // First, add recordings from the matched artist
+    for (const recording of recordings) {
+      const artistCredit = recording.artistCredit?.[0];
+      if (artistCredit?.artist.id === matchedArtistId) {
+        results.push(this.mapMusicBrainzRecordingToUnifiedResult(recording));
+      }
+
+      if (results.length >= limit) break;
+    }
+
+    // If we don't have enough results, add other recordings
+    if (results.length < limit) {
+      for (const recording of recordings) {
+        const artistCredit = recording.artistCredit?.[0];
+        if (artistCredit?.artist.id !== matchedArtistId) {
+          results.push(this.mapMusicBrainzRecordingToUnifiedResult(recording));
+        }
+
+        if (results.length >= limit * 2) break;
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Handle ALBUM intent: User is searching for an album/release
+   * Strategy: Group recordings by release, prioritize matched album
+   */
+  private async handleAlbumIntent(
+    query: string,
+    recordings: RecordingSearchResult[],
+    limit: number,
+    intentAnalysis: IntentAnalysis
+  ): Promise<UnifiedSearchResult[]> {
+    // TODO: Use RecordingDataExtractor in subtask 14.4 for enhanced data extraction
+
+    // For album intent, we want to show:
+    // 1. Tracks from the matched album first
+    // 2. Then other similar albums
+
+    const results: UnifiedSearchResult[] = [];
+    const matchedAlbumId = intentAnalysis.matchedEntity.id;
+
+    // First, add recordings from the matched album
+    for (const recording of recordings) {
+      const hasMatchedAlbum = recording.releases?.some(r => r.id === matchedAlbumId);
+      if (hasMatchedAlbum) {
+        results.push(this.mapMusicBrainzRecordingToUnifiedResult(recording));
+      }
+
+      if (results.length >= limit) break;
+    }
+
+    // If we don't have enough results, add recordings from other albums
+    if (results.length < limit) {
+      for (const recording of recordings) {
+        const hasMatchedAlbum = recording.releases?.some(r => r.id === matchedAlbumId);
+        if (!hasMatchedAlbum) {
+          results.push(this.mapMusicBrainzRecordingToUnifiedResult(recording));
+        }
+
+        if (results.length >= limit * 2) break;
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Handle MIXED intent: Ambiguous search or general exploration
+   * Strategy: Return diverse results (tracks, artists, albums mixed)
+   */
+  private async handleMixedIntent(
+    query: string,
+    recordings: RecordingSearchResult[],
+    limit: number,
+    intentAnalysis: IntentAnalysis
+  ): Promise<UnifiedSearchResult[]> {
+    // For mixed intent, we want a balanced mix of results
+    // Just return recordings as-is, trusting MusicBrainz relevance scoring
+
+    const results: UnifiedSearchResult[] = [];
+
+    for (const recording of recordings) {
+      results.push(this.mapMusicBrainzRecordingToUnifiedResult(recording));
+
+      if (results.length >= limit * 2) break; // Get extra for deduplication
+    }
+
+    return results;
   }
 }
