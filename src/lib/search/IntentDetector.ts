@@ -1,5 +1,6 @@
 // src/lib/search/IntentDetector.ts
 import Fuzzysort from 'fuzzysort';
+import type { MusicBrainzRecording } from './RecordingDataExtractor';
 
 export enum SearchIntent {
   TRACK = 'TRACK',
@@ -35,7 +36,7 @@ export class IntentDetector {
   /**
    * Analyze recordings to determine search intent
    */
-  analyze(query: string, recordings: any[]): IntentAnalysis {
+  analyze(query: string, recordings: MusicBrainzRecording[]): IntentAnalysis {
     const normalizedQuery = query.toLowerCase().trim();
     const topRecording = recordings[0];
 
@@ -154,7 +155,7 @@ export class IntentDetector {
    */
   private matchArtist(
     query: string,
-    artistCredit: any
+    artistCredit: MusicBrainzRecording['artist-credit']
   ): { score: number; artistId: string; artistName: string } {
     const artist = artistCredit?.[0]?.artist;
 
@@ -165,7 +166,7 @@ export class IntentDetector {
     // Build array of names to check (primary name + aliases)
     const namesToCheck = [
       artist.name,
-      ...(artist.aliases || []).map((a: any) => a.name)
+      ...(artist.aliases || []).map((a) => a.name)
     ];
 
     // Find best fuzzy match using fuzzysort
@@ -194,22 +195,22 @@ export class IntentDetector {
    */
   private matchAlbums(
     query: string,
-    releases: any[]
+    releases: MusicBrainzRecording['releases']
   ): { similarity: number; releaseGroupId: string; title: string } {
-    if (releases.length === 0) {
+    if (!releases || releases.length === 0) {
       return { similarity: 0, releaseGroupId: '', title: '' };
     }
 
     // Extract unique album titles
     const albumTitles = releases
-      .map(r => ({
+      .map((r) => ({
         title: r['release-group']?.title || r.title,
         releaseGroupId: r['release-group']?.id || r.id
       }))
-      .filter((v, i, a) => a.findIndex(t => t.releaseGroupId === v.releaseGroupId) === i);
+      .filter((v, i, a) => a.findIndex((t) => t.releaseGroupId === v.releaseGroupId) === i);
 
     // Find best fuzzy match
-    const titleStrings = albumTitles.map(a => a.title);
+    const titleStrings = albumTitles.map((a) => a.title);
     const results = Fuzzysort.go(query, titleStrings, {
       limit: 1,
       threshold: -5000
