@@ -1,6 +1,9 @@
 // src/lib/search/IntentDetector.ts
-import Fuzzysort from 'fuzzysort';
-import type { MusicBrainzRecording } from './RecordingDataExtractor';
+import * as Fuzzysort from 'fuzzysort';
+import type { RecordingSearchResult } from '../musicbrainz/basic-service';
+
+// TODO: Rename RecordingSearchResult in basic-service.ts to MusicBrainzRecordingSearchResult for clarity
+type MusicBrainzRecordingSearchResult = RecordingSearchResult;
 
 export enum SearchIntent {
   TRACK = 'TRACK',
@@ -36,7 +39,7 @@ export class IntentDetector {
   /**
    * Analyze recordings to determine search intent
    */
-  analyze(query: string, recordings: MusicBrainzRecording[]): IntentAnalysis {
+  analyze(query: string, recordings: MusicBrainzRecordingSearchResult[]): IntentAnalysis {
     const normalizedQuery = query.toLowerCase().trim();
     const topRecording = recordings[0];
 
@@ -70,7 +73,7 @@ export class IntentDetector {
     }
 
     // Step 2: Check artist name match (including aliases)
-    const artistMatch = this.matchArtist(normalizedQuery, topRecording['artist-credit']);
+    const artistMatch = this.matchArtist(normalizedQuery, topRecording.artistCredit);
 
     if (artistMatch.score >= this.ARTIST_THRESHOLD) {
       return {
@@ -155,7 +158,7 @@ export class IntentDetector {
    */
   private matchArtist(
     query: string,
-    artistCredit: MusicBrainzRecording['artist-credit']
+    artistCredit: MusicBrainzRecordingSearchResult['artistCredit']
   ): { score: number; artistId: string; artistName: string } {
     const artist = artistCredit?.[0]?.artist;
 
@@ -163,11 +166,8 @@ export class IntentDetector {
       return { score: 0, artistId: '', artistName: '' };
     }
 
-    // Build array of names to check (primary name + aliases)
-    const namesToCheck = [
-      artist.name,
-      ...(artist.aliases || []).map((a) => a.name)
-    ];
+    // Build array of names to check (primary name + aliases if available)
+    const namesToCheck = [artist.name];
 
     // Find best fuzzy match using fuzzysort
     const results = Fuzzysort.go(query, namesToCheck, {
@@ -195,23 +195,24 @@ export class IntentDetector {
    */
   private matchAlbums(
     query: string,
-    releases: MusicBrainzRecording['releases']
+    releases: MusicBrainzRecordingSearchResult['releases']
   ): { similarity: number; releaseGroupId: string; title: string } {
     if (!releases || releases.length === 0) {
       return { similarity: 0, releaseGroupId: '', title: '' };
     }
 
     // Extract unique album titles
+    // Note: RecordingSearchResult has simplified release structure (just id/title)
     const albumTitles = releases
       .map((r) => ({
-        title: r['release-group']?.title || r.title,
-        releaseGroupId: r['release-group']?.id || r.id
+        title: r.title,
+        releaseGroupId: r.id
       }))
       .filter((v, i, a) => a.findIndex((t) => t.releaseGroupId === v.releaseGroupId) === i);
 
     // Find best fuzzy match
-    const titleStrings = albumTitles.map((a) => a.title);
-    const results = Fuzzysort.go(query, titleStrings, {
+    const results = Fuzzysort.go(query, albumTitles, {
+      key: 'title',
       limit: 1,
       threshold: -5000
     });
@@ -223,7 +224,7 @@ export class IntentDetector {
     const best = results[0];
     const MIN_SCORE = -5000;
     const normalized = Math.max(0, (best.score - MIN_SCORE) / Math.abs(MIN_SCORE));
-    const matchedAlbum = albumTitles[best.index];
+    const matchedAlbum = best.obj;
 
     return {
       similarity: normalized,

@@ -255,3 +255,44 @@ export interface SearchResponse {
 
 // Legacy compatibility - maintain existing interface
 export type { SearchResponse as LegacySearchResponse };
+
+// ===========================
+// INTELLIGENT SEARCH TYPES
+// ===========================
+
+/**
+ * Intelligent search metadata for recording-first search with intent detection
+ */
+export interface IntelligentSearchMetadata {
+  intent: {
+    detected: 'TRACK' | 'ARTIST' | 'ALBUM' | 'MIXED';
+    confidence: number; // 0.0 - 1.0
+    reasoning: string;
+  };
+  performance: {
+    apiCalls: number; // Number of API calls made
+    apiCallsSaved: number; // Number of API calls saved vs old approach
+    totalDuration: number; // Total execution time in ms
+  };
+  matching: {
+    trackMatchScore: number; // 0.0 - 1.0
+    artistMatchScore: number; // 0.0 - 1.0
+    albumMatchScore: number; // 0.0 - 1.0
+  };
+}
+
+/**
+ * Search result with intelligent search metadata
+ * Extends the standard search response with intent detection and performance metrics
+ */
+export interface IntelligentSearchResult {
+  query: string;
+  totalResults: number;
+  results: UnifiedSearchResult[];
+  intelligentMetadata?: IntelligentSearchMetadata;
+  deduplicationApplied: boolean;
+  duplicatesRemoved: number;
+  timing: {
+    totalDuration: number;
+  };
+}

@@ -1,7 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import chalk from 'chalk';
 import { QueuedMusicBrainzService, getQueuedMusicBrainzService } from '../musicbrainz/queue-service';
-import type { UnifiedSearchResult, SearchContext, SearchFilters, SortBy } from '@/types/search';
+import type { UnifiedSearchResult, SearchContext, SearchFilters, SortBy, IntelligentSearchResult } from '@/types/search';
+import { IntentDetector } from './IntentDetector';
+import { RecordingDataExtractor } from './RecordingDataExtractor';
 
 export enum SearchSource {
   LOCAL = 'LOCAL',
@@ -66,10 +68,14 @@ export interface OrchestratedSearchResult {
 export class SearchOrchestrator {
   private prisma: PrismaClient;
   private musicbrainzService: QueuedMusicBrainzService;
+  private intentDetector: IntentDetector;
+  private dataExtractor: RecordingDataExtractor;
 
   constructor(prisma: PrismaClient, musicbrainzService?: QueuedMusicBrainzService) {
     this.prisma = prisma;
     this.musicbrainzService = musicbrainzService || getQueuedMusicBrainzService();
+    this.intentDetector = new IntentDetector();
+    this.dataExtractor = new RecordingDataExtractor();
   }
 
   async search(options: SearchOptions): Promise<OrchestratedSearchResult> {
@@ -894,5 +900,138 @@ export class SearchOrchestrator {
         uri: track.discogsReleaseId ? `/releases/${track.discogsReleaseId}` : undefined,
       },
     };
+  }
+
+  /**
+   * Intelligent recording-first search with intent detection
+   * Replaces 3 parallel API calls with 1 single recording search + intent analysis
+   *
+   * @param query - Search query string
+   * @param limit - Maximum number of results to return
+   * @param options - Optional search configuration
+   * @returns IntelligentSearchResult with intent metadata and performance metrics
+   */
+  async intelligentSearch(
+    query: string,
+    limit: number = 20,
+    options?: {
+      includeMetadata?: boolean;
+      minConfidence?: number;
+    }
+  ): Promise<IntelligentSearchResult> {
+    const startTime = Date.now();
+
+    try {
+      // Step 1: Single recording search with optimized Lucene query
+      // Using "query AND status:official" instead of "artist:query" based on testing
+      const luceneQuery = `${query} AND status:official`;
+      const recordings = await this.musicbrainzService.searchRecordings(
+        luceneQuery,
+        limit * 2 // Get extra for better intent detection
+      );
+
+      // If no results, return empty response
+      if (recordings.length === 0) {
+        const endTime = Date.now();
+        return {
+          query,
+          totalResults: 0,
+          results: [],
+          intelligentMetadata: options?.includeMetadata ? {
+            intent: {
+              detected: 'MIXED',
+              confidence: 0,
+              reasoning: 'No recordings found'
+            },
+            performance: {
+              apiCalls: 1,
+              apiCallsSaved: 2,
+              totalDuration: endTime - startTime
+            },
+            matching: {
+              trackMatchScore: 0,
+              artistMatchScore: 0,
+              albumMatchScore: 0
+            }
+          } : undefined,
+          deduplicationApplied: false,
+          duplicatesRemoved: 0,
+          timing: {
+            totalDuration: endTime - startTime
+          }
+        };
+      }
+
+      // Step 2: Analyze intent using IntentDetector
+      const intentAnalysis = this.intentDetector.analyze(query, recordings);
+
+      // TODO: Subtask 3 - Add routing to handlers
+      // TODO: Subtask 4 - Use RecordingDataExtractor in handlers
+      // TODO: Subtask 5 - Add final mapping improvements
+
+      // Temporary: Return recordings as-is for subtask 2
+      const endTime = Date.now();
+      const results = recordings.map(rec => this.mapMusicBrainzRecordingToUnifiedResult(rec));
+
+      return {
+        query,
+        totalResults: results.length,
+        results: results.slice(0, limit),
+        intelligentMetadata: options?.includeMetadata ? {
+          intent: {
+            detected: intentAnalysis.intent,
+            confidence: intentAnalysis.confidence,
+            reasoning: intentAnalysis.reasoning
+          },
+          performance: {
+            apiCalls: 1,
+            apiCallsSaved: 2, // Old system used 3 calls for "ALL" search
+            totalDuration: endTime - startTime
+          },
+          matching: {
+            trackMatchScore: intentAnalysis.metadata.trackScore,
+            artistMatchScore: intentAnalysis.metadata.artistScore,
+            albumMatchScore: intentAnalysis.metadata.albumScore
+          }
+        } : undefined,
+        deduplicationApplied: false,
+        duplicatesRemoved: 0,
+        timing: {
+          totalDuration: endTime - startTime
+        }
+      };
+    } catch (error) {
+      const endTime = Date.now();
+      console.error('Error in intelligentSearch:', error);
+
+      // Return empty result with error handling
+      return {
+        query,
+        totalResults: 0,
+        results: [],
+        intelligentMetadata: options?.includeMetadata ? {
+          intent: {
+            detected: 'MIXED',
+            confidence: 0,
+            reasoning: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+          },
+          performance: {
+            apiCalls: 1,
+            apiCallsSaved: 2,
+            totalDuration: endTime - startTime
+          },
+          matching: {
+            trackMatchScore: 0,
+            artistMatchScore: 0,
+            albumMatchScore: 0
+          }
+        } : undefined,
+        deduplicationApplied: false,
+        duplicatesRemoved: 0,
+        timing: {
+          totalDuration: endTime - startTime
+        }
+      };
+    }
   }
 }
