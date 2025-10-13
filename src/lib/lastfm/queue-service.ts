@@ -259,7 +259,7 @@ export class QueuedLastFmService {
 
       // Extract job details
       let jobInfo = job?.name || 'Unknown';
-      if (jobData?.query) {
+      if (jobData?.query && job) {
         jobInfo = `${job.name} • Query: "${jobData.query}"`;
       }
 

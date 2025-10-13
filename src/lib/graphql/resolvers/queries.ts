@@ -1434,7 +1434,7 @@ export const queryResolvers: QueryResolvers = {
         // MusicBrainz search
         (async () => {
           try {
-            const { getQueuedMusicBrainzService } = await import('../musicbrainz/queue-service');
+            const { getQueuedMusicBrainzService } = await import('../../musicbrainz/queue-service');
             const mbService = getQueuedMusicBrainzService();
             const results = await mbService.searchArtists(query, searchLimit);
             console.log(`✅ [MusicBrainz] Found ${results.length} artists for "${query}"`);
@@ -1447,7 +1447,7 @@ export const queryResolvers: QueryResolvers = {
         // Last.fm search
         (async () => {
           try {
-            const { getQueuedLastFmService } = await import('../lastfm/queue-service');
+            const { getQueuedLastFmService } = await import('../../lastfm/queue-service');
             const lfmService = getQueuedLastFmService();
             const results = await lfmService.searchArtists(query);
             console.log(`✅ [Last.fm] Found ${results.length} artists for "${query}"`);
@@ -1493,7 +1493,7 @@ export const queryResolvers: QueryResolvers = {
       }
 
       // Merge results with fuzzy matching
-      const { findLastFmMatch } = await import('../utils/fuzzy-match');
+      const { findLastFmMatch } = await import('../../utils/fuzzy-match');
       const mergedResults = mbResults.map((mbArtist: any) => {
         // Try to find matching Last.fm data
         const lfmMatch = findLastFmMatch(mbArtist.name, lfmResults);
