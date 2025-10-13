@@ -27,6 +27,12 @@ export interface IntentAnalysis {
     albumScore: number;
     mbScore: number;
   };
+  // Weights for mixing different result types (track/artist/album)
+  weights: {
+    track: number;    // 0.0 - 1.0
+    artist: number;   // 0.0 - 1.0
+    album: number;    // 0.0 - 1.0
+  };
 }
 
 export class IntentDetector {
@@ -49,74 +55,151 @@ export class IntentDetector {
         confidence: 0,
         matchedEntity: { type: 'recording', id: '', name: '' },
         reasoning: 'No recordings found',
-        metadata: { trackScore: 0, artistScore: 0, albumScore: 0, mbScore: 0 }
+        metadata: { trackScore: 0, artistScore: 0, albumScore: 0, mbScore: 0 },
+        weights: { track: 0.33, artist: 0.33, album: 0.34 }
       };
     }
 
     const mbScore = topRecording.score || 0;
 
-    // Step 1: Check track title match
+    // Calculate all scores first
     const trackScore = this.fuzzySimilarity(normalizedQuery, topRecording.title);
-
-    if (trackScore >= this.TRACK_THRESHOLD || mbScore >= this.MB_SCORE_HIGH) {
-      return {
-        intent: SearchIntent.TRACK,
-        confidence: Math.max(trackScore, mbScore / 100),
-        matchedEntity: {
-          type: 'recording',
-          id: topRecording.id,
-          name: topRecording.title
-        },
-        reasoning: `High similarity to track title "${topRecording.title}" (score: ${trackScore.toFixed(2)}, MB score: ${mbScore})`,
-        metadata: { trackScore, artistScore: 0, albumScore: 0, mbScore }
-      };
-    }
-
-    // Step 2: Check artist name match (including aliases)
     const artistMatch = this.matchArtist(normalizedQuery, topRecording.artistCredit);
-
-    if (artistMatch.score >= this.ARTIST_THRESHOLD) {
-      return {
-        intent: SearchIntent.ARTIST,
-        confidence: artistMatch.score,
-        matchedEntity: {
-          type: 'artist',
-          id: artistMatch.artistId,
-          name: artistMatch.artistName
-        },
-        reasoning: `High similarity to artist name "${artistMatch.artistName}" (score: ${artistMatch.score.toFixed(2)})`,
-        metadata: { trackScore, artistScore: artistMatch.score, albumScore: 0, mbScore }
-      };
-    }
-
-    // Step 3: Check album title match
     const albumMatch = this.matchAlbums(normalizedQuery, topRecording.releases || []);
 
-    if (albumMatch.similarity >= this.ALBUM_THRESHOLD) {
-      return {
-        intent: SearchIntent.ALBUM,
-        confidence: albumMatch.similarity,
-        matchedEntity: {
-          type: 'album',
-          id: albumMatch.releaseGroupId,
-          name: albumMatch.title
-        },
-        reasoning: `High similarity to album title "${albumMatch.title}" (score: ${albumMatch.similarity.toFixed(2)})`,
-        metadata: { trackScore, artistScore: artistMatch.score, albumScore: albumMatch.similarity, mbScore }
-      };
-    }
+    // Determine primary intent (highest score)
+    const scores = {
+      track: trackScore,
+      artist: artistMatch.score,
+      album: albumMatch.similarity
+    };
 
-    // Step 4: No strong match - mixed intent
-    return {
-      intent: SearchIntent.MIXED,
-      confidence: 0.5,
-      matchedEntity: {
+    const primaryIntent = this.determinePrimaryIntent(scores, mbScore);
+
+    // Calculate weights based on all scores
+    const weights = this.calculateWeights(scores);
+
+    // Build response based on primary intent
+    const confidence = Math.max(scores[primaryIntent], mbScore / 100);
+
+    let matchedEntity: { type: 'recording' | 'artist' | 'album'; id: string; name: string };
+    let reasoning: string;
+
+    if (primaryIntent === 'track') {
+      matchedEntity = {
         type: 'recording',
         id: topRecording.id,
         name: topRecording.title
+      };
+      reasoning = `Primary match: Track "${topRecording.title}" (score: ${trackScore.toFixed(2)}, MB: ${mbScore})`;
+
+      // If artist also matches well, mention it
+      if (scores.artist >= 0.7) {
+        reasoning += ` | Also matches artist "${artistMatch.artistName}"`;
+      }
+    } else if (primaryIntent === 'artist') {
+      matchedEntity = {
+        type: 'artist',
+        id: artistMatch.artistId,
+        name: artistMatch.artistName
+      };
+      reasoning = `Primary match: Artist "${artistMatch.artistName}" (score: ${artistMatch.score.toFixed(2)})`;
+
+      // If track title also matches, mention it
+      if (scores.track >= 0.7) {
+        reasoning += ` | Also found track "${topRecording.title}"`;
+      }
+    } else if (primaryIntent === 'album') {
+      matchedEntity = {
+        type: 'album',
+        id: albumMatch.releaseGroupId,
+        name: albumMatch.title
+      };
+      reasoning = `Primary match: Album "${albumMatch.title}" (score: ${albumMatch.similarity.toFixed(2)})`;
+    } else {
+      matchedEntity = {
+        type: 'recording',
+        id: topRecording.id,
+        name: topRecording.title
+      };
+      reasoning = `Mixed intent (track: ${trackScore.toFixed(2)}, artist: ${artistMatch.score.toFixed(2)}, album: ${albumMatch.similarity.toFixed(2)})`;
+    }
+
+    return {
+      intent: primaryIntent === 'track' ? SearchIntent.TRACK :
+              primaryIntent === 'artist' ? SearchIntent.ARTIST :
+              primaryIntent === 'album' ? SearchIntent.ALBUM : SearchIntent.MIXED,
+      confidence,
+      matchedEntity,
+      reasoning,
+      metadata: {
+        trackScore,
+        artistScore: artistMatch.score,
+        albumScore: albumMatch.similarity,
+        mbScore
       },
-      reasoning: `No strong match (track: ${trackScore.toFixed(2)}, artist: ${artistMatch.score.toFixed(2)}, album: ${albumMatch.similarity.toFixed(2)})`,
-      metadata: { trackScore, artistScore: artistMatch.score, albumScore: albumMatch.similarity, mbScore }
+      weights
+    };
+  }
+
+  /**
+   * Determine primary intent based on scores
+   */
+  private determinePrimaryIntent(
+    scores: { track: number; artist: number; album: number },
+    mbScore: number
+  ): 'track' | 'artist' | 'album' | 'mixed' {
+    const maxScore = Math.max(scores.track, scores.artist, scores.album);
+
+    // If MusicBrainz score is very high, trust it
+    if (mbScore >= this.MB_SCORE_HIGH && scores.track >= this.TRACK_THRESHOLD) {
+      return 'track';
+    }
+
+    // If highest score is above threshold, use it
+    if (maxScore >= this.TRACK_THRESHOLD) {
+      if (scores.track === maxScore) return 'track';
+      if (scores.artist === maxScore) return 'artist';
+      if (scores.album === maxScore) return 'album';
+    }
+
+    // Otherwise, mixed intent
+    return 'mixed';
+  }
+
+  /**
+   * Calculate weights for mixing result types
+   * Weights should sum to 1.0
+   */
+  private calculateWeights(scores: { track: number; artist: number; album: number }): {
+    track: number;
+    artist: number;
+    album: number;
+  } {
+    // Normalize scores to weights
+    const total = scores.track + scores.artist + scores.album;
+
+    if (total === 0) {
+      // No matches, equal weights
+      return { track: 0.33, artist: 0.33, album: 0.34 };
+    }
+
+    // Convert scores to weights (higher score = higher weight)
+    // Add a minimum weight of 0.1 for each type to ensure diversity
+    const MIN_WEIGHT = 0.1;
+    const AVAILABLE_WEIGHT = 1.0 - (MIN_WEIGHT * 3);
+
+    const trackWeight = MIN_WEIGHT + (scores.track / total) * AVAILABLE_WEIGHT;
+    const artistWeight = MIN_WEIGHT + (scores.artist / total) * AVAILABLE_WEIGHT;
+    const albumWeight = MIN_WEIGHT + (scores.album / total) * AVAILABLE_WEIGHT;
+
+    // Normalize to ensure sum = 1.0
+    const sum = trackWeight + artistWeight + albumWeight;
+
+    return {
+      track: trackWeight / sum,
+      artist: artistWeight / sum,
+      album: albumWeight / sum
     };
   }
 

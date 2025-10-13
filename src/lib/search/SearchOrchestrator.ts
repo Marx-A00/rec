@@ -942,7 +942,8 @@ export class SearchOrchestrator {
             intent: {
               detected: 'MIXED',
               confidence: 0,
-              reasoning: 'No recordings found'
+              reasoning: 'No recordings found',
+              weights: { track: 0.33, artist: 0.33, album: 0.34 }
             },
             performance: {
               apiCalls: 1,
@@ -999,7 +1000,8 @@ export class SearchOrchestrator {
           intent: {
             detected: intentAnalysis.intent,
             confidence: intentAnalysis.confidence,
-            reasoning: intentAnalysis.reasoning
+            reasoning: intentAnalysis.reasoning,
+            weights: intentAnalysis.weights
           },
           performance: {
             apiCalls: 1,
@@ -1031,7 +1033,8 @@ export class SearchOrchestrator {
           intent: {
             detected: 'MIXED',
             confidence: 0,
-            reasoning: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+            reasoning: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            weights: { track: 0.33, artist: 0.33, album: 0.34 }
           },
           performance: {
             apiCalls: 1,
@@ -1063,26 +1066,32 @@ export class SearchOrchestrator {
     limit: number,
     intentAnalysis: IntentAnalysis
   ): Promise<UnifiedSearchResult[]> {
-    // For track intent, the top recordings are already sorted by MusicBrainz relevance
-    // We trust the MB score + our intent detection to give us the best results
-    // TODO: Use RecordingDataExtractor in subtask 14.4 for enhanced data extraction
+    // For track intent, show the matched track PLUS related content
+    // If weights indicate strong artist match too, use weighted interleaving
 
-    // Map to unified results, prioritizing the matched track
+    const { weights } = intentAnalysis;
+
+    // If artist weight is significant (>30%), use weighted interleaving
+    if (weights.artist > 0.3) {
+      return this.interleaveResults(recordings, weights, intentAnalysis.matchedEntity.id, limit);
+    }
+
+    // Otherwise, just prioritize the matched track
     const results: UnifiedSearchResult[] = [];
 
-    // Add the primary matched track first (from intentAnalysis)
+    // Add the primary matched track first
     const matchedRecording = recordings.find(r => r.id === intentAnalysis.matchedEntity.id);
     if (matchedRecording) {
       results.push(this.mapMusicBrainzRecordingToUnifiedResult(matchedRecording));
     }
 
-    // Add remaining recordings (skip the one we already added)
+    // Add remaining recordings
     for (const recording of recordings) {
       if (recording.id !== intentAnalysis.matchedEntity.id) {
         results.push(this.mapMusicBrainzRecordingToUnifiedResult(recording));
       }
 
-      if (results.length >= limit * 2) break; // Get extra for deduplication
+      if (results.length >= limit * 2) break;
     }
 
     return results;
@@ -1098,38 +1107,15 @@ export class SearchOrchestrator {
     limit: number,
     intentAnalysis: IntentAnalysis
   ): Promise<UnifiedSearchResult[]> {
-    // TODO: Use RecordingDataExtractor in subtask 14.4 for enhanced data extraction
+    // For artist intent, show the artist's content
+    // Use weighted interleaving to show tracks AND albums by the artist
 
-    // For artist intent, we want to show:
-    // 1. The matched artist's most relevant tracks/albums
-    // 2. Group results by the artist to avoid showing too many tracks from other artists
-
-    const results: UnifiedSearchResult[] = [];
-    const matchedArtistId = intentAnalysis.matchedEntity.id;
-
-    // First, add recordings from the matched artist
-    for (const recording of recordings) {
-      const artistCredit = recording.artistCredit?.[0];
-      if (artistCredit?.artist.id === matchedArtistId) {
-        results.push(this.mapMusicBrainzRecordingToUnifiedResult(recording));
-      }
-
-      if (results.length >= limit) break;
-    }
-
-    // If we don't have enough results, add other recordings
-    if (results.length < limit) {
-      for (const recording of recordings) {
-        const artistCredit = recording.artistCredit?.[0];
-        if (artistCredit?.artist.id !== matchedArtistId) {
-          results.push(this.mapMusicBrainzRecordingToUnifiedResult(recording));
-        }
-
-        if (results.length >= limit * 2) break;
-      }
-    }
-
-    return results;
+    return this.interleaveResults(
+      recordings,
+      intentAnalysis.weights,
+      intentAnalysis.matchedEntity.id,
+      limit
+    );
   }
 
   /**
@@ -1142,38 +1128,15 @@ export class SearchOrchestrator {
     limit: number,
     intentAnalysis: IntentAnalysis
   ): Promise<UnifiedSearchResult[]> {
-    // TODO: Use RecordingDataExtractor in subtask 14.4 for enhanced data extraction
+    // For album intent, show tracks from the album
+    // Use weighted interleaving to also show related content
 
-    // For album intent, we want to show:
-    // 1. Tracks from the matched album first
-    // 2. Then other similar albums
-
-    const results: UnifiedSearchResult[] = [];
-    const matchedAlbumId = intentAnalysis.matchedEntity.id;
-
-    // First, add recordings from the matched album
-    for (const recording of recordings) {
-      const hasMatchedAlbum = recording.releases?.some(r => r.id === matchedAlbumId);
-      if (hasMatchedAlbum) {
-        results.push(this.mapMusicBrainzRecordingToUnifiedResult(recording));
-      }
-
-      if (results.length >= limit) break;
-    }
-
-    // If we don't have enough results, add recordings from other albums
-    if (results.length < limit) {
-      for (const recording of recordings) {
-        const hasMatchedAlbum = recording.releases?.some(r => r.id === matchedAlbumId);
-        if (!hasMatchedAlbum) {
-          results.push(this.mapMusicBrainzRecordingToUnifiedResult(recording));
-        }
-
-        if (results.length >= limit * 2) break;
-      }
-    }
-
-    return results;
+    return this.interleaveResults(
+      recordings,
+      intentAnalysis.weights,
+      intentAnalysis.matchedEntity.id,
+      limit
+    );
   }
 
   /**
@@ -1186,15 +1149,88 @@ export class SearchOrchestrator {
     limit: number,
     intentAnalysis: IntentAnalysis
   ): Promise<UnifiedSearchResult[]> {
-    // For mixed intent, we want a balanced mix of results
-    // Just return recordings as-is, trusting MusicBrainz relevance scoring
+    // Use weighted interleaving to show diverse results
+    return this.interleaveResults(
+      recordings,
+      intentAnalysis.weights,
+      intentAnalysis.matchedEntity.id,
+      limit
+    );
+  }
 
-    const results: UnifiedSearchResult[] = [];
+  /**
+   * Interleave results based on weights to show diverse result types
+   * This ensures users see tracks, artists, and albums mixed appropriately
+   */
+  private interleaveResults(
+    recordings: RecordingSearchResult[],
+    weights: { track: number; artist: number; album: number },
+    matchedEntityId: string,
+    limit: number
+  ): UnifiedSearchResult[] {
+    // Group recordings by their relationship to the query
+    const trackResults: UnifiedSearchResult[] = [];
+    const artistRelatedResults: UnifiedSearchResult[] = [];
+    const albumRelatedResults: UnifiedSearchResult[] = [];
 
+    // Categorize each recording
     for (const recording of recordings) {
-      results.push(this.mapMusicBrainzRecordingToUnifiedResult(recording));
+      const result = this.mapMusicBrainzRecordingToUnifiedResult(recording);
 
-      if (results.length >= limit * 2) break; // Get extra for deduplication
+      // Check if this recording is related to the matched entity
+      const isMatchedTrack = recording.id === matchedEntityId;
+      const isMatchedArtist = recording.artistCredit?.some(ac => ac.artist.id === matchedEntityId);
+      const isMatchedAlbum = recording.releases?.some(r => r.id === matchedEntityId);
+
+      if (isMatchedTrack) {
+        trackResults.unshift(result); // Matched track goes first
+      } else if (isMatchedArtist) {
+        artistRelatedResults.push(result);
+      } else if (isMatchedAlbum) {
+        albumRelatedResults.push(result);
+      } else {
+        trackResults.push(result); // Other tracks go to general track pool
+      }
+    }
+
+    // Calculate how many results to take from each category
+    const totalNeeded = limit * 2; // Get extra for deduplication
+    const trackCount = Math.round(totalNeeded * weights.track);
+    const artistCount = Math.round(totalNeeded * weights.artist);
+    const albumCount = Math.round(totalNeeded * weights.album);
+
+    // Interleave results proportionally
+    const results: UnifiedSearchResult[] = [];
+    let trackIndex = 0;
+    let artistIndex = 0;
+    let albumIndex = 0;
+
+    // Add results in weighted order
+    while (results.length < totalNeeded) {
+      // Add tracks based on weight
+      for (let i = 0; i < Math.ceil(weights.track * 10) && trackIndex < trackResults.length; i++) {
+        if (results.length >= totalNeeded) break;
+        results.push(trackResults[trackIndex++]);
+      }
+
+      // Add artist-related results based on weight
+      for (let i = 0; i < Math.ceil(weights.artist * 10) && artistIndex < artistRelatedResults.length; i++) {
+        if (results.length >= totalNeeded) break;
+        results.push(artistRelatedResults[artistIndex++]);
+      }
+
+      // Add album-related results based on weight
+      for (let i = 0; i < Math.ceil(weights.album * 10) && albumIndex < albumRelatedResults.length; i++) {
+        if (results.length >= totalNeeded) break;
+        results.push(albumRelatedResults[albumIndex++]);
+      }
+
+      // Safety check: if we've exhausted all categories, break
+      if (trackIndex >= trackResults.length &&
+          artistIndex >= artistRelatedResults.length &&
+          albumIndex >= albumRelatedResults.length) {
+        break;
+      }
     }
 
     return results;

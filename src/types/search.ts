@@ -268,6 +268,11 @@ export interface IntelligentSearchMetadata {
     detected: 'TRACK' | 'ARTIST' | 'ALBUM' | 'MIXED';
     confidence: number; // 0.0 - 1.0
     reasoning: string;
+    weights: {
+      track: number;  // 0.0 - 1.0
+      artist: number; // 0.0 - 1.0
+      album: number;  // 0.0 - 1.0
+    };
   };
   performance: {
     apiCalls: number; // Number of API calls made
