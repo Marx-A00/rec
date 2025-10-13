@@ -40,7 +40,7 @@ export function extractBestImage(images?: LastFmArtistImage[]): string | undefin
 
   for (const size of sizeOrder) {
     const img = images.find(i => i.size === size);
-    if (img && img['#text']) {
+    if (img && img['#text'] && img['#text'].trim() !== '') {
       return img['#text'];
     }
   }
@@ -97,13 +97,17 @@ export async function searchLastFmArtists(query: string): Promise<LastFmSearchRe
       return [];
     }
 
-    const results: LastFmSearchResult[] = artists.map((artist: LastFmArtist) => ({
-      name: artist.name,
-      mbid: artist.mbid || undefined,
-      listeners: artist.listeners ? parseInt(artist.listeners, 10) : undefined,
-      imageUrl: extractBestImage(artist.image),
-      match: artist.match ? parseFloat(artist.match) : undefined,
-    }));
+    const results: LastFmSearchResult[] = artists.map((artist: LastFmArtist) => {
+      const imageUrl = extractBestImage(artist.image);
+      console.log(`🖼️ [Last.fm] ${artist.name}: imageUrl = "${imageUrl || 'NONE'}"`, artist.image);
+      return {
+        name: artist.name,
+        mbid: artist.mbid || undefined,
+        listeners: artist.listeners ? parseInt(artist.listeners, 10) : undefined,
+        imageUrl,
+        match: artist.match ? parseFloat(artist.match) : undefined,
+      };
+    });
 
     console.log(`✅ [Last.fm] Found ${results.length} artists for "${query}" (${duration}ms)`);
 

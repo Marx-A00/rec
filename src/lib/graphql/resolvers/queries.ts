@@ -428,8 +428,9 @@ export const queryResolvers: QueryResolvers = {
     const { query, type = 'ALL', limit = 20, offset = 0 } = input;
 
     try {
-      // Use the search service for better results
-      const searchService = getSearchService(prisma);
+      // Use SearchOrchestrator for multi-source search including Last.fm
+      const { SearchOrchestrator, SearchSource } = await import('../../search/SearchOrchestrator');
+      const orchestrator = new SearchOrchestrator(prisma);
 
       // Map GraphQL type to search types
       const searchTypes =
@@ -443,11 +444,12 @@ export const queryResolvers: QueryResolvers = {
                 ? ['track']
                 : ['artist', 'album', 'track'];
 
-      const searchResults = await searchService.search({
+      // Perform multi-source search with Last.fm
+      const searchResults = await orchestrator.search({
         query,
         types: searchTypes as Array<'artist' | 'album' | 'track'>,
         limit: limit || 20,
-        offset: offset || 0,
+        sources: [SearchSource.LOCAL, SearchSource.MUSICBRAINZ, SearchSource.LASTFM],
       });
 
       // Track search activity with result count
@@ -462,7 +464,7 @@ export const queryResolvers: QueryResolvers = {
       await activityTracker.trackSearch(
         searchType as 'albums' | 'artists' | 'tracks',
         query,
-        searchResults.total
+        searchResults.totalResults
       );
 
       // Map search results back to entity objects
@@ -1530,8 +1532,7 @@ export const queryResolvers: QueryResolvers = {
       const matchRate = mbResults.length > 0 ? ((matchCount / mbResults.length) * 100).toFixed(1) : '0';
       console.log(`✅ [Merge] Matched ${matchCount}/${mbResults.length} MusicBrainz artists with Last.fm data (${matchRate}%)`);
 
-      // Cache merged results with metadata
-      const cacheKey = `artist-search:${query.toLowerCase().trim()}`;
+      // Cache merged results with metadata (reuse cacheKey from above)
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
 
       try {

@@ -1,12 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import chalk from 'chalk';
 import { QueuedMusicBrainzService, getQueuedMusicBrainzService } from '../musicbrainz/queue-service';
+import { searchSpotifyArtists } from '../spotify/search';
 import type { UnifiedSearchResult, SearchContext, SearchFilters, SortBy } from '@/types/search';
 
 export enum SearchSource {
   LOCAL = 'LOCAL',
   MUSICBRAINZ = 'MUSICBRAINZ',
   DISCOGS = 'DISCOGS',
+  SPOTIFY = 'SPOTIFY',
 }
 
 export type SearchType = 'album' | 'artist' | 'track';
@@ -52,6 +54,7 @@ export interface OrchestratedSearchResult {
     local?: SearchResult;
     musicbrainz?: SearchResult;
     discogs?: SearchResult;
+    spotify?: SearchResult;
   };
   deduplicationApplied: boolean;
   duplicatesRemoved: number;
@@ -60,6 +63,7 @@ export interface OrchestratedSearchResult {
     localDuration?: number;
     musicbrainzDuration?: number;
     discogsDuration?: number;
+    lastfmDuration?: number;
   };
 }
 
@@ -67,7 +71,10 @@ export class SearchOrchestrator {
   private prisma: PrismaClient;
   private musicbrainzService: QueuedMusicBrainzService;
 
-  constructor(prisma: PrismaClient, musicbrainzService?: QueuedMusicBrainzService) {
+  constructor(
+    prisma: PrismaClient,
+    musicbrainzService?: QueuedMusicBrainzService
+  ) {
     this.prisma = prisma;
     this.musicbrainzService = musicbrainzService || getQueuedMusicBrainzService();
   }
@@ -78,10 +85,17 @@ export class SearchOrchestrator {
       query,
       types = ['album', 'artist'],
       limit = 20,
-      sources = [SearchSource.LOCAL, SearchSource.MUSICBRAINZ],
+      sources = [SearchSource.LOCAL, SearchSource.MUSICBRAINZ, SearchSource.SPOTIFY],
       deduplicateResults = true,
       resolveArtistImages = false,
     } = options;
+
+    console.log(`🔍 [SearchOrchestrator] Search called with:`, {
+      query,
+      types,
+      sources,
+      limit
+    });
 
     const artistImageLimit = options.artistImageLimit ?? Math.min(limit, 12);
     const artistMaxResults = options.artistMaxResults ?? Math.min(limit, 5);
@@ -102,6 +116,10 @@ export class SearchOrchestrator {
       searchPromises.push(this.searchDiscogs(query, types, limit));
     }
 
+    if (sources.includes(SearchSource.SPOTIFY)) {
+      searchPromises.push(this.searchSpotify(query, types, limit));
+    }
+
     const results = await Promise.allSettled(searchPromises);
 
     const sourceResults: OrchestratedSearchResult['sources'] = {};
@@ -118,6 +136,8 @@ export class SearchOrchestrator {
           sourceResults.musicbrainz = searchResult;
         } else if (sources[index] === SearchSource.DISCOGS) {
           sourceResults.discogs = searchResult;
+        } else if (sources[index] === SearchSource.SPOTIFY) {
+          sourceResults.spotify = searchResult;
         }
       }
     });
@@ -125,10 +145,17 @@ export class SearchOrchestrator {
     let finalResults = allResults;
     let duplicatesRemoved = 0;
 
+    console.log(`📦 [SearchOrchestrator] Before dedup: ${allResults.length} results from sources:`,
+      { local: sourceResults.local?.results.length || 0,
+        musicbrainz: sourceResults.musicbrainz?.results.length || 0,
+        spotify: sourceResults.spotify?.results.length || 0 }
+    );
+
     if (deduplicateResults && allResults.length > 0) {
       const dedupeResult = this.deduplicateResults(allResults);
       finalResults = dedupeResult.results;
       duplicatesRemoved = dedupeResult.duplicatesRemoved;
+      console.log(`🔗 [SearchOrchestrator] After dedup: ${finalResults.length} results (removed ${duplicatesRemoved} duplicates)`);
     }
 
     const endTime = Date.now();
@@ -145,6 +172,7 @@ export class SearchOrchestrator {
         localDuration: sourceResults.local?.timing.duration,
         musicbrainzDuration: sourceResults.musicbrainz?.timing.duration,
         discogsDuration: sourceResults.discogs?.timing.duration,
+        lastfmDuration: sourceResults.lastfm?.timing.duration,
       },
     };
   }
@@ -475,6 +503,56 @@ export class SearchOrchestrator {
     }
   }
 
+  private async searchSpotify(
+    query: string,
+    types: SearchType[],
+    limit: number
+  ): Promise<SearchResult> {
+    const startTime = Date.now();
+
+    try {
+      const results: UnifiedSearchResult[] = [];
+
+      // Spotify only supports artist search currently
+      if (types.includes('artist')) {
+        console.log(`🔍 [SearchOrchestrator] Searching Spotify for artists: "${query}"`);
+
+        const artists = await searchSpotifyArtists(query);
+        console.log(`✅ [SearchOrchestrator] Spotify returned ${artists.length} artists`);
+
+        results.push(...artists.map(artist => this.mapSpotifyArtistToUnifiedResult(artist)));
+        console.log(`📊 [SearchOrchestrator] Mapped ${results.length} Spotify results with images:`,
+          results.map(r => ({ name: r.title, hasImage: !!r.image.url }))
+        );
+      }
+
+      const endTime = Date.now();
+
+      return {
+        source: SearchSource.SPOTIFY,
+        results,
+        timing: {
+          startTime,
+          endTime,
+          duration: endTime - startTime,
+        },
+      };
+    } catch (error) {
+      const endTime = Date.now();
+      console.error('Spotify search error:', error);
+      return {
+        source: SearchSource.SPOTIFY,
+        results: [],
+        error: error as Error,
+        timing: {
+          startTime,
+          endTime,
+          duration: endTime - startTime,
+        },
+      };
+    }
+  }
+
   private mapDiscogsToUnifiedResult(result: any): UnifiedSearchResult {
     // Extract title and artist from the result
     let title = result.title;
@@ -508,6 +586,32 @@ export class SearchOrchestrator {
         type: result.type,
         uri: result.uri,
         resource_url: result.resource_url,
+      },
+    };
+  }
+
+  private mapSpotifyArtistToUnifiedResult(artist: any): UnifiedSearchResult {
+    return {
+      id: `spotify:${artist.spotifyId}`,
+      type: 'artist',
+      title: artist.name,
+      subtitle: 'Artist',
+      artist: artist.name,
+      releaseDate: '',
+      genre: artist.genres || [],
+      label: '',
+      image: {
+        url: artist.imageUrl || '',
+        width: 640,
+        height: 640,
+        alt: artist.name,
+      },
+      relevanceScore: artist.popularity ? artist.popularity / 100 : 0,
+      _discogs: {},
+      _spotify: {
+        spotifyId: artist.spotifyId,
+        popularity: artist.popularity,
+        genres: artist.genres,
       },
     };
   }
@@ -568,6 +672,17 @@ export class SearchOrchestrator {
       keys.push(`discogs:${result._discogs.uri}`);
     }
 
+    // For artist results, add Spotify matching
+    if (result.type === 'artist') {
+      const normalizedName = result.artist.toLowerCase().trim();
+      keys.push(`artist:${normalizedName}`);
+
+      // If Spotify result has Spotify ID, use it for matching
+      if (result._spotify?.spotifyId) {
+        keys.push(`spotify:${result._spotify.spotifyId}`);
+      }
+    }
+
     // Priority 2: Fallback to artist-title matching
     const normalizedArtist = result.artist.toLowerCase().trim();
     const normalizedTitle = result.title.toLowerCase().trim();
@@ -583,6 +698,16 @@ export class SearchOrchestrator {
     }
     if (!existing.id.startsWith('cm') && candidate.id.startsWith('cm')) {
       return true; // Replace with local result
+    }
+
+    // Prefer Spotify images over no images (they're high quality artist photos)
+    if (candidate.image?.url && candidate.id.startsWith('spotify:') && !existing.image?.url) {
+      return true;
+    }
+
+    // When both have images, keep MusicBrainz/Local over Spotify (more complete data)
+    if (existing.image?.url && candidate.id.startsWith('spotify:')) {
+      return false;
     }
 
     // Prefer results with images

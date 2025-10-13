@@ -174,9 +174,9 @@ export const resolvers: Resolvers = {
         if (searchMode === 'LOCAL_ONLY') {
           sources = [SearchSource.LOCAL];
         } else if (searchMode === 'LOCAL_AND_EXTERNAL') {
-          sources = [SearchSource.LOCAL, SearchSource.MUSICBRAINZ];
+          sources = [SearchSource.LOCAL, SearchSource.MUSICBRAINZ, SearchSource.SPOTIFY];
         } else if (searchMode === 'EXTERNAL_ONLY') {
-          sources = [SearchSource.MUSICBRAINZ];
+          sources = [SearchSource.MUSICBRAINZ, SearchSource.SPOTIFY];
         }
 
         // Perform orchestrated search
@@ -197,6 +197,7 @@ export const resolvers: Resolvers = {
         // Separate results by source
         const localResults = searchResult.sources.local?.results || [];
         const musicbrainzResults = searchResult.sources.musicbrainz?.results || [];
+        const spotifyResults = searchResult.sources.spotify?.results || [];
 
         // For local results, fetch from database
         const localAlbumIds = localResults.filter(r => r.type === 'album').map(r => r.id);
@@ -304,6 +305,37 @@ export const resolvers: Resolvers = {
             imageUrl: r.image?.url || r.cover_image || null
           }));
 
+        // Process Spotify artists - enrich MusicBrainz results with Spotify images
+        // Use fuzzy matching to pair Spotify results with MusicBrainz results
+        // Build a map of Spotify images by normalized name
+        const normalizeName = (s: string) => (s || '').trim().toLowerCase();
+        const spotifyByName = new Map<string, { imageUrl: string; popularity: number | null }>();
+
+        spotifyResults
+          .filter(r => r.type === 'artist' && r.image?.url)
+          .forEach(r => {
+            const data = {
+              imageUrl: r.image!.url!,
+              popularity: r._spotify?.popularity || null
+            };
+            spotifyByName.set(normalizeName(r.title), data);
+          });
+
+        // Enrich MusicBrainz artists with Spotify images
+        const enrichedMbArtists = newMbArtists.map(artist => {
+          // Try fuzzy name matching with Spotify
+          const normalizedName = normalizeName(artist.name);
+          const spotifyData = spotifyByName.get(normalizedName);
+
+          // PREFER Spotify images over Wikimedia (Spotify has better artist photos)
+          // Fall back to existing image only if Spotify doesn't have one
+          return {
+            ...artist,
+            imageUrl: spotifyData?.imageUrl || artist.imageUrl || null,
+            popularity: spotifyData?.popularity || null
+          };
+        });
+
         const dbTrackIds = new Set(dbTracks.map(t => String(t.id)));
         const MIN_TRACK_MB_SCORE = 70; // tune as needed
         const newMbTracks = musicbrainzResults
@@ -369,7 +401,7 @@ export const resolvers: Resolvers = {
         const albums = Array.from(albumsMap.values());
 
         const artistsMap = new Map<string, any>();
-        for (const a of [...dbArtists, ...existingMbArtists, ...newMbArtists]) {
+        for (const a of [...dbArtists, ...existingMbArtists, ...enrichedMbArtists]) {
           const idStr = String((a as any).id);
           if (!artistsMap.has(idStr)) artistsMap.set(idStr, a);
         }
