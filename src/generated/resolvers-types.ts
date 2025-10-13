@@ -232,6 +232,18 @@ export type BatchEnrichmentResult = {
   success: Scalars['Boolean']['output'];
 };
 
+export type CategorizedDiscography = {
+  __typename?: 'CategorizedDiscography';
+  albums: Array<UnifiedRelease>;
+  compilations: Array<UnifiedRelease>;
+  eps: Array<UnifiedRelease>;
+  liveAlbums: Array<UnifiedRelease>;
+  other: Array<UnifiedRelease>;
+  remixes: Array<UnifiedRelease>;
+  singles: Array<UnifiedRelease>;
+  soundtracks: Array<UnifiedRelease>;
+};
+
 export type Collection = {
   __typename?: 'Collection';
   albumCount: Scalars['Int']['output'];
@@ -618,7 +630,7 @@ export type Query = {
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
   artist?: Maybe<Artist>;
-  artistDiscography: Array<UnifiedRelease>;
+  artistDiscography: CategorizedDiscography;
   collection?: Maybe<Collection>;
   databaseStats: DatabaseStats;
   failedJobs: Array<JobRecord>;
@@ -1356,6 +1368,7 @@ export type ResolversTypes = ResolversObject<{
   AudioFeatures: ResolverTypeWrapper<AudioFeatures>;
   BatchEnrichmentResult: ResolverTypeWrapper<BatchEnrichmentResult>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
+  CategorizedDiscography: ResolverTypeWrapper<CategorizedDiscography>;
   Collection: ResolverTypeWrapper<Collection>;
   CollectionAlbum: ResolverTypeWrapper<CollectionAlbum>;
   CollectionAlbumInput: CollectionAlbumInput;
@@ -1451,6 +1464,7 @@ export type ResolversParentTypes = ResolversObject<{
   AudioFeatures: AudioFeatures;
   BatchEnrichmentResult: BatchEnrichmentResult;
   Boolean: Scalars['Boolean']['output'];
+  CategorizedDiscography: CategorizedDiscography;
   Collection: Collection;
   CollectionAlbum: CollectionAlbum;
   CollectionAlbumInput: CollectionAlbumInput;
@@ -1842,6 +1856,54 @@ export type BatchEnrichmentResultResolvers<
   jobsQueued?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type CategorizedDiscographyResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['CategorizedDiscography'] = ResolversParentTypes['CategorizedDiscography'],
+> = ResolversObject<{
+  albums?: Resolver<
+    Array<ResolversTypes['UnifiedRelease']>,
+    ParentType,
+    ContextType
+  >;
+  compilations?: Resolver<
+    Array<ResolversTypes['UnifiedRelease']>,
+    ParentType,
+    ContextType
+  >;
+  eps?: Resolver<
+    Array<ResolversTypes['UnifiedRelease']>,
+    ParentType,
+    ContextType
+  >;
+  liveAlbums?: Resolver<
+    Array<ResolversTypes['UnifiedRelease']>,
+    ParentType,
+    ContextType
+  >;
+  other?: Resolver<
+    Array<ResolversTypes['UnifiedRelease']>,
+    ParentType,
+    ContextType
+  >;
+  remixes?: Resolver<
+    Array<ResolversTypes['UnifiedRelease']>,
+    ParentType,
+    ContextType
+  >;
+  singles?: Resolver<
+    Array<ResolversTypes['UnifiedRelease']>,
+    ParentType,
+    ContextType
+  >;
+  soundtracks?: Resolver<
+    Array<ResolversTypes['UnifiedRelease']>,
+    ParentType,
+    ContextType
+  >;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -2359,7 +2421,7 @@ export type QueryResolvers<
     RequireFields<QueryArtistArgs, 'id'>
   >;
   artistDiscography?: Resolver<
-    Array<ResolversTypes['UnifiedRelease']>,
+    ResolversTypes['CategorizedDiscography'],
     ParentType,
     ContextType,
     RequireFields<QueryArtistDiscographyArgs, 'id'>
@@ -3316,6 +3378,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   ArtistCredit?: ArtistCreditResolvers<ContextType>;
   AudioFeatures?: AudioFeaturesResolvers<ContextType>;
   BatchEnrichmentResult?: BatchEnrichmentResultResolvers<ContextType>;
+  CategorizedDiscography?: CategorizedDiscographyResolvers<ContextType>;
   Collection?: CollectionResolvers<ContextType>;
   CollectionAlbum?: CollectionAlbumResolvers<ContextType>;
   ComponentHealth?: ComponentHealthResolvers<ContextType>;

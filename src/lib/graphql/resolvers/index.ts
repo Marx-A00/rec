@@ -99,8 +99,8 @@ export const resolvers: Resolvers = {
     artistDiscography: async (_, { id }) => {
       const discography = await unifiedArtistService.getArtistDiscography(id);
 
-      // Map to GraphQL UnifiedRelease type
-      return discography.map(release => ({
+      // Helper to map a release to GraphQL UnifiedRelease type
+      const mapRelease = (release: any) => ({
         id: release.id,
         source: release.source?.toUpperCase() || 'UNKNOWN',
         title: release.title,
@@ -119,7 +119,34 @@ export const resolvers: Resolvers = {
             : [],
         trackCount: release.trackCount || null,
         year: release.releaseDate ? new Date(release.releaseDate).getFullYear() : null,
-      }));
+      });
+
+      // If discography is already categorized (from MusicBrainz), return it
+      if (discography && typeof discography === 'object' && 'albums' in discography) {
+        return {
+          albums: discography.albums.map(mapRelease),
+          eps: discography.eps.map(mapRelease),
+          singles: discography.singles.map(mapRelease),
+          compilations: discography.compilations.map(mapRelease),
+          liveAlbums: discography.liveAlbums.map(mapRelease),
+          remixes: discography.remixes.map(mapRelease),
+          soundtracks: discography.soundtracks.map(mapRelease),
+          other: discography.other.map(mapRelease),
+        };
+      }
+
+      // Fallback: if it's a flat array (from Discogs or old format), categorize it here
+      const releases = Array.isArray(discography) ? discography : [];
+      return {
+        albums: releases.filter(r => r.primaryType?.toLowerCase() === 'album').map(mapRelease),
+        eps: releases.filter(r => r.primaryType?.toLowerCase() === 'ep').map(mapRelease),
+        singles: releases.filter(r => r.primaryType?.toLowerCase() === 'single').map(mapRelease),
+        compilations: [],
+        liveAlbums: [],
+        remixes: [],
+        soundtracks: [],
+        other: releases.filter(r => !['album', 'ep', 'single'].includes(r.primaryType?.toLowerCase() || '')).map(mapRelease),
+      };
     },
 
     // Enhanced search using SearchOrchestrator

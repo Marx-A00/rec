@@ -391,16 +391,7 @@ class UnifiedArtistService {
     console.log('🎶 MB queue browse sample item:', groupsResp?.['release-groups']?.[0]);
     const groups: any[] = groupsResp['release-groups'] || [];
 
-    // Normalize, filter to main albums, and sort newest -> oldest
-    const excludedSecondaryTypes = new Set<string>([
-      'compilation',
-      'live',
-      'remix',
-      'soundtrack',
-      'dj-mix',
-      'mixtape/street',
-    ]);
-
+    // Normalize all releases (no filtering)
     const normalized = groups.map((rg: any) => ({
       id: rg.id,
       title: rg.title,
@@ -420,30 +411,62 @@ class UnifiedArtistService {
       source: 'musicbrainz' as const,
     }));
 
-    const mainAlbums = normalized.filter((item: { primaryType?: string; secondaryTypes: string[] }) => {
-      const isAlbum = (item.primaryType || '').toLowerCase() === 'album';
-      if (!isAlbum) return false;
-      const hasExcludedSecondary = item.secondaryTypes.some((t: string) => excludedSecondaryTypes.has(t.toLowerCase()));
-      return !hasExcludedSecondary;
-    });
-
-    mainAlbums.sort((a: { releaseDate: string | null }, b: { releaseDate: string | null }) => {
-      const aTime = a.releaseDate ? Date.parse(a.releaseDate) : -Infinity as any;
-      const bTime = b.releaseDate ? Date.parse(b.releaseDate) : -Infinity as any;
-      return (bTime as number) - (aTime as number);
-    });
-
-    // Fallback: if filtering yields nothing (API missing primaryType), show all normalized sorted
-    if (mainAlbums.length === 0) {
-      const sorted = [...normalized].sort((a: any, b: any) => {
+    // Helper to sort by date (newest first)
+    const sortByDate = (releases: any[]) => {
+      return releases.sort((a, b) => {
         const aTime = a.releaseDate ? Date.parse(a.releaseDate) : -Infinity;
         const bTime = b.releaseDate ? Date.parse(b.releaseDate) : -Infinity;
         return bTime - aTime;
       });
-      return sorted;
-    }
+    };
 
-    return mainAlbums;
+    // Helper to check if release has a specific secondary type
+    const hasSecondaryType = (release: any, type: string) => {
+      return release.secondaryTypes.some((t: string) => t.toLowerCase() === type.toLowerCase());
+    };
+
+    // Categorize releases by type
+    const categorized = {
+      albums: [] as any[],
+      eps: [] as any[],
+      singles: [] as any[],
+      compilations: [] as any[],
+      liveAlbums: [] as any[],
+      remixes: [] as any[],
+      soundtracks: [] as any[],
+      other: [] as any[],
+    };
+
+    normalized.forEach(release => {
+      const primary = (release.primaryType || '').toLowerCase();
+
+      // Secondary types take precedence for categorization
+      if (hasSecondaryType(release, 'compilation')) {
+        categorized.compilations.push(release);
+      } else if (hasSecondaryType(release, 'live')) {
+        categorized.liveAlbums.push(release);
+      } else if (hasSecondaryType(release, 'remix')) {
+        categorized.remixes.push(release);
+      } else if (hasSecondaryType(release, 'soundtrack')) {
+        categorized.soundtracks.push(release);
+      } else if (primary === 'album') {
+        categorized.albums.push(release);
+      } else if (primary === 'ep') {
+        categorized.eps.push(release);
+      } else if (primary === 'single') {
+        categorized.singles.push(release);
+      } else {
+        // Broadcast, Other, or anything else
+        categorized.other.push(release);
+      }
+    });
+
+    // Sort each category by date
+    Object.keys(categorized).forEach(key => {
+      categorized[key as keyof typeof categorized] = sortByDate(categorized[key as keyof typeof categorized]);
+    });
+
+    return categorized;
   }
 
   private async getDiscogsDiscography(discogsId: string) {

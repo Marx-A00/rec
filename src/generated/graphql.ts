@@ -258,6 +258,18 @@ export type BatchEnrichmentResult = {
   success: Scalars['Boolean']['output'];
 };
 
+export type CategorizedDiscography = {
+  __typename?: 'CategorizedDiscography';
+  albums: Array<UnifiedRelease>;
+  compilations: Array<UnifiedRelease>;
+  eps: Array<UnifiedRelease>;
+  liveAlbums: Array<UnifiedRelease>;
+  other: Array<UnifiedRelease>;
+  remixes: Array<UnifiedRelease>;
+  singles: Array<UnifiedRelease>;
+  soundtracks: Array<UnifiedRelease>;
+};
+
 export type Collection = {
   __typename?: 'Collection';
   albumCount: Scalars['Int']['output'];
@@ -644,7 +656,7 @@ export type Query = {
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
   artist?: Maybe<Artist>;
-  artistDiscography: Array<UnifiedRelease>;
+  artistDiscography: CategorizedDiscography;
   collection?: Maybe<Collection>;
   databaseStats: DatabaseStats;
   failedJobs: Array<JobRecord>;
@@ -1392,25 +1404,161 @@ export type GetArtistDiscographyQueryVariables = Exact<{
 
 export type GetArtistDiscographyQuery = {
   __typename?: 'Query';
-  artistDiscography: Array<{
-    __typename?: 'UnifiedRelease';
-    id: string;
-    source: DataSource;
-    title: string;
-    releaseDate?: Date | null;
-    primaryType?: string | null;
-    secondaryTypes?: Array<string> | null;
-    imageUrl?: string | null;
-    artistName?: string | null;
-    trackCount?: number | null;
-    year?: number | null;
-    artistCredits?: Array<{
-      __typename?: 'ArtistCredit';
-      role: string;
-      position: number;
-      artist: { __typename?: 'Artist'; id: string; name: string };
-    }> | null;
-  }>;
+  artistDiscography: {
+    __typename?: 'CategorizedDiscography';
+    albums: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    eps: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    singles: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    compilations: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    liveAlbums: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    remixes: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    soundtracks: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    other: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+  };
 };
 
 export type GetCollectionQueryVariables = Exact<{
@@ -2363,24 +2511,166 @@ useUpdateProfileMutation.getKey = () => ['UpdateProfile'];
 export const GetArtistDiscographyDocument = `
     query GetArtistDiscography($id: String!) {
   artistDiscography(id: $id) {
-    id
-    source
-    title
-    releaseDate
-    primaryType
-    secondaryTypes
-    imageUrl
-    artistName
-    artistCredits {
-      artist {
-        id
-        name
+    albums {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
       }
-      role
-      position
+      trackCount
+      year
     }
-    trackCount
-    year
+    eps {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    singles {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    compilations {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    liveAlbums {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    remixes {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    soundtracks {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    other {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
   }
 }
     `;

@@ -1,22 +1,164 @@
 query GetArtistDiscography($id: String!) {
   artistDiscography(id: $id) {
-    id
-    source
-    title
-    releaseDate
-    primaryType
-    secondaryTypes
-    imageUrl
-    artistName
-    artistCredits {
-      artist {
-        id
-        name
+    albums {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
       }
-      role
-      position
+      trackCount
+      year
     }
-    trackCount
-    year
+    eps {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    singles {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    compilations {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    liveAlbums {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    remixes {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    soundtracks {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    other {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
   }
 }
