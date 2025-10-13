@@ -55,26 +55,6 @@ export default async function ArtistDetailsPage({
       {/* Back Navigation */}
       <BackButton text='Back' fallbackHref='/' />
 
-      {/* Source Badge */}
-      <div className='mb-4 flex items-center gap-2'>
-        <span className='text-sm text-zinc-400'>Data source:</span>
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${
-            artist.source === 'local'
-              ? 'bg-emeraled-green text-black'
-              : artist.source === 'musicbrainz'
-                ? 'bg-blue-500/20 text-blue-400'
-                : 'bg-purple-500/20 text-purple-400'
-          }`}
-        >
-          {artist.source === 'local'
-            ? 'Database'
-            : artist.source === 'musicbrainz'
-              ? 'MusicBrainz'
-              : 'Discogs'}
-        </span>
-      </div>
-
       {/* Artist Header */}
       <div
         id='artist-page-header'
@@ -126,6 +106,25 @@ export default async function ArtistDetailsPage({
                   : 'Present'}
               </p>
             )}
+            {/* Source Badge */}
+            <div className='mt-4 flex items-center gap-2'>
+              <span className='text-sm text-zinc-400'>Data source:</span>
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  artist.source === 'local'
+                    ? 'bg-emeraled-green text-black'
+                    : artist.source === 'musicbrainz'
+                      ? 'bg-blue-500/20 text-blue-400'
+                      : 'bg-purple-500/20 text-purple-400'
+                }`}
+              >
+                {artist.source === 'local'
+                  ? 'Database'
+                  : artist.source === 'musicbrainz'
+                    ? 'MusicBrainz'
+                    : 'Discogs'}
+              </span>
+            </div>
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
