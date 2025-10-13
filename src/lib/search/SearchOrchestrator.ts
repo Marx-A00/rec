@@ -282,7 +282,6 @@ export class SearchOrchestrator {
     opts?: {
       resolveArtistImages?: boolean;
       artistImageLimit?: number;
-      // Optional filtering hints (will fallback to defaults when absent)
       minArtistScore?: number;
       nameSimThreshold?: number;
       artistMaxResults?: number;
@@ -316,6 +315,7 @@ export class SearchOrchestrator {
       // Execute searches in parallel for better performance
       const promises: Promise<any>[] = [];
 
+      // Only search albums when explicitly requested
       if (types.includes('album')) {
         promises.push(
           this.musicbrainzService.searchReleaseGroups(query, limit * 2) // Get extra to filter
@@ -333,17 +333,22 @@ export class SearchOrchestrator {
       }
 
       if (types.includes('artist')) {
+        // Calculate expected final results count to avoid over-fetching
+        const artistMaxResults = opts?.artistMaxResults ?? Math.min(limit, 5);
+        // Request 2x what we need to account for filtering, but cap it
+        const artistSearchLimit = Math.min(artistMaxResults * 2, 10);
+
         promises.push(
-          this.musicbrainzService.searchArtists(query, limit)
+          this.musicbrainzService.searchArtists(query, artistSearchLimit)
             .then(async (artists) => {
               const resolveImages = opts?.resolveArtistImages === true;
               const imageCap = Math.max(0, Math.min(artists.length, opts?.artistImageLimit ?? limit));
 
               // Filter artists by MB score and name similarity
               const filtered = this.filterArtistResults(query, artists, {
-                minScore: (opts as any)?.minArtistScore ?? 80,
-                nameThreshold: (opts as any)?.nameSimThreshold ?? 0.82,
-                limit: (opts as any)?.artistMaxResults ?? Math.min(limit, 5),
+                minScore: opts?.minArtistScore ?? 80,
+                nameThreshold: opts?.nameSimThreshold ?? 0.82,
+                limit: artistMaxResults,
               });
 
               if (resolveImages && imageCap > 0) {
