@@ -1406,25 +1406,32 @@ export const queryResolvers: QueryResolvers = {
         limit = 50,
       } = args;
 
-      // Check cache first for external API search results
-      if (query) {
-        const cacheKey = `artist-search:${query.toLowerCase().trim()}`;
-        const cached = await prisma.cacheData.findUnique({
-          where: { key: cacheKey },
-        });
-
-        if (cached && cached.expires > new Date()) {
-          console.log(`✅ [Cache] Hit for artist search: "${query}"`);
-          return cached.data as any[]; // Return cached results
-        }
-
-        console.log(`❌ [Cache] Miss for artist search: "${query}"`);
-      }
-
       // If no query, return empty results (external API search requires query)
       if (!query) {
         return [];
       }
+
+      // Check cache first for external API search results
+      const cacheKey = `artist-search:${query.toLowerCase().trim()}`;
+      const cached = await prisma.cacheData.findUnique({
+        where: { key: cacheKey },
+      });
+
+      if (cached) {
+        const now = new Date();
+        if (cached.expires > now) {
+          console.log(`✅ [Cache] Hit for artist search: "${query}" (expires: ${cached.expires.toISOString()})`);
+          return cached.data as any[]; // Return cached results
+        } else {
+          // Delete expired cache entry
+          console.log(`🗑️ [Cache] Expired entry found for "${query}", cleaning up...`);
+          await prisma.cacheData.delete({ where: { key: cacheKey } }).catch(() => {
+            // Ignore deletion errors
+          });
+        }
+      }
+
+      console.log(`❌ [Cache] Miss for artist search: "${query}"`);
 
       // Parallel API calls to MusicBrainz and Last.fm using Promise.allSettled
       const startTime = Date.now();
