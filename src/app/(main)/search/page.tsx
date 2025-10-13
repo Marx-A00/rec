@@ -60,13 +60,11 @@ function SearchResults() {
   // IMPORTANT: All hooks must be called before any early returns!
   // Filter results based on active filter
   const filteredResults = useMemo(() => {
-    return activeFilter === 'all'
-      ? results
-      : results.filter(r => {
-          if (activeFilter === 'albums') return r.type === 'album';
-          if (activeFilter === 'artists') return r.type === 'artist';
-          if (activeFilter === 'tracks') return r.type === 'track';
-          return true;
+    return results.filter(r => {
+      if (activeFilter === 'albums') return r.type === 'album';
+      if (activeFilter === 'artists') return r.type === 'artist';
+      if (activeFilter === 'tracks') return r.type === 'track';
+      return true;
         });
   }, [activeFilter, results]);
 
@@ -345,7 +343,7 @@ function SearchResults() {
 
       <div className='space-y-8'>
         {/* Albums Section - Show by release type */}
-        {(activeFilter === 'all' || activeFilter === 'albums') ? (
+        {activeFilter === 'albums' ? (
           <>
             {/* Studio Albums */}
             {groupedByReleaseType.albums.length > 0 && (
@@ -556,7 +554,7 @@ function SearchResults() {
         ) : null}
 
         {/* Artists Section - moved just after Albums */}
-        {(activeFilter === 'all' || activeFilter === 'artists') &&
+        {activeFilter === 'artists' &&
           groupedByEntityType.artist &&
           groupedByEntityType.artist.length > 0 && (
             <div>
@@ -611,7 +609,7 @@ function SearchResults() {
           )}
 
         {/* Tracks Section */}
-        {(activeFilter === 'all' || activeFilter === 'tracks') &&
+        {activeFilter === 'tracks' &&
           groupedByEntityType.track &&
           groupedByEntityType.track.length > 0 && (
             <div>
