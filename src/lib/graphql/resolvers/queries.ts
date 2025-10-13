@@ -1392,6 +1392,9 @@ export const queryResolvers: QueryResolvers = {
   },
 
   searchArtists: async (_, args, { prisma }) => {
+    const requestId = `search-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`🔍 [Search Request] ID: ${requestId} | Query: "${args.query}" | Limit: ${args.limit || 50}`);
+
     try {
       const {
         query,
@@ -1403,62 +1406,171 @@ export const queryResolvers: QueryResolvers = {
         limit = 50,
       } = args;
 
-      const where: any = {};
-
-      // Search query
+      // Check cache first for external API search results
       if (query) {
-        where.name = { contains: query, mode: 'insensitive' };
+        const cacheKey = `artist-search:${query.toLowerCase().trim()}`;
+        const cached = await prisma.cacheData.findUnique({
+          where: { key: cacheKey },
+        });
+
+        if (cached && cached.expires > new Date()) {
+          console.log(`✅ [Cache] Hit for artist search: "${query}"`);
+          return cached.data as any[]; // Return cached results
+        }
+
+        console.log(`❌ [Cache] Miss for artist search: "${query}"`);
       }
 
-      // Filters
-      if (dataQuality && dataQuality !== 'all') {
-        where.dataQuality = dataQuality;
-      }
-      if (enrichmentStatus && enrichmentStatus !== 'all') {
-        where.enrichmentStatus = enrichmentStatus;
-      }
-      if (needsEnrichment) {
-        where.OR = where.OR || [];
-        where.OR.push(
-          { dataQuality: 'LOW' },
-          { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
-          { musicbrainzId: null }
-        );
+      // If no query, return empty results (external API search requires query)
+      if (!query) {
+        return [];
       }
 
-      // Sorting
-      const orderBy: any = {};
-      if (sortBy === 'name') orderBy.name = sortOrder;
-      else if (sortBy === 'lastEnriched') orderBy.lastEnriched = sortOrder;
-      else if (sortBy === 'dataQuality') orderBy.dataQuality = sortOrder;
+      // Parallel API calls to MusicBrainz and Last.fm using Promise.allSettled
+      const startTime = Date.now();
+      const searchLimit = Math.min(limit, 25); // Limit API calls
 
-      const artists = await prisma.artist.findMany({
-        where,
-        orderBy,
-        take: limit,
-        include: {
-          _count: {
-            select: {
-              albumArtists: true,
-              trackArtists: true,
+      const searchPromises = [
+        // MusicBrainz search
+        (async () => {
+          try {
+            const { getQueuedMusicBrainzService } = await import('../musicbrainz/queue-service');
+            const mbService = getQueuedMusicBrainzService();
+            const results = await mbService.searchArtists(query, searchLimit);
+            console.log(`✅ [MusicBrainz] Found ${results.length} artists for "${query}"`);
+            return { source: 'musicbrainz', results, error: null };
+          } catch (error) {
+            console.error(`❌ [MusicBrainz] Search failed:`, error);
+            return { source: 'musicbrainz', results: [], error };
+          }
+        })(),
+        // Last.fm search
+        (async () => {
+          try {
+            const { getQueuedLastFmService } = await import('../lastfm/queue-service');
+            const lfmService = getQueuedLastFmService();
+            const results = await lfmService.searchArtists(query);
+            console.log(`✅ [Last.fm] Found ${results.length} artists for "${query}"`);
+            return { source: 'lastfm', results, error: null };
+          } catch (error) {
+            console.error(`❌ [Last.fm] Search failed:`, error);
+            return { source: 'lastfm', results: [], error };
+          }
+        })(),
+      ];
+
+      const settledResults = await Promise.allSettled(searchPromises);
+      const duration = Date.now() - startTime;
+
+      // Extract results from settled promises with detailed error tracking
+      const mbResult = settledResults[0].status === 'fulfilled' ? settledResults[0].value : null;
+      const lfmResult = settledResults[1].status === 'fulfilled' ? settledResults[1].value : null;
+
+      const mbResults = mbResult?.results || [];
+      const lfmResults = lfmResult?.results || [];
+
+      // Log partial failures
+      const mbFailed = settledResults[0].status === 'rejected' || mbResult?.error;
+      const lfmFailed = settledResults[1].status === 'rejected' || lfmResult?.error;
+
+      if (mbFailed || lfmFailed) {
+        const failures = [];
+        if (mbFailed) failures.push('MusicBrainz');
+        if (lfmFailed) failures.push('Last.fm');
+        console.warn(`⚠️ [Search] Partial failure - ${failures.join(', ')} API(s) failed`);
+      }
+
+      console.log(
+        `🔍 [Search] Completed in ${duration}ms - MusicBrainz: ${mbResults.length}, Last.fm: ${lfmResults.length}, Success rate: ${
+          ((mbFailed ? 0 : 1) + (lfmFailed ? 0 : 1)) / 2 * 100
+        }%`
+      );
+
+      // If both APIs failed, return empty array
+      if (mbFailed && lfmFailed) {
+        console.error(`❌ [Search] Both APIs failed for query: "${query}"`);
+        return [];
+      }
+
+      // Merge results with fuzzy matching
+      const { findLastFmMatch } = await import('../utils/fuzzy-match');
+      const mergedResults = mbResults.map((mbArtist: any) => {
+        // Try to find matching Last.fm data
+        const lfmMatch = findLastFmMatch(mbArtist.name, lfmResults);
+
+        if (lfmMatch) {
+          console.log(
+            `🔗 [Fuzzy Match] "${mbArtist.name}" → "${lfmMatch.match.name}" (confidence: ${lfmMatch.confidence}, score: ${lfmMatch.score})`
+          );
+
+          // Merge: Prioritize Last.fm image and add listener count
+          return {
+            ...mbArtist,
+            imageUrl: lfmMatch.match.imageUrl || mbArtist.imageUrl,
+            listeners: lfmMatch.match.listeners,
+            lastFmMatch: {
+              confidence: lfmMatch.confidence,
+              score: lfmMatch.score,
             },
-          },
-        },
+          };
+        }
+
+        // No Last.fm match found
+        return mbArtist;
       });
 
-      // Transform to match GraphQL schema
-      return artists.map(artist => ({
-        ...artist,
-        albumCount: artist._count.albumArtists,
-        trackCount: artist._count.trackArtists,
-        needsEnrichment:
-          artist.dataQuality === 'LOW' ||
-          artist.enrichmentStatus === 'PENDING' ||
-          artist.enrichmentStatus === 'FAILED' ||
-          !artist.musicbrainzId,
-      }));
+      const matchCount = mergedResults.filter((r: any) => r.lastFmMatch).length;
+      const matchRate = mbResults.length > 0 ? ((matchCount / mbResults.length) * 100).toFixed(1) : '0';
+      console.log(`✅ [Merge] Matched ${matchCount}/${mbResults.length} MusicBrainz artists with Last.fm data (${matchRate}%)`);
+
+      // Cache merged results with metadata
+      const cacheKey = `artist-search:${query.toLowerCase().trim()}`;
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+
+      try {
+        await prisma.cacheData.upsert({
+          where: { key: cacheKey },
+          create: {
+            key: cacheKey,
+            data: mergedResults as any,
+            expires: expiresAt,
+            metadata: {
+              mbCount: mbResults.length,
+              lfmCount: lfmResults.length,
+              matchedCount: matchCount,
+              searchDuration: duration,
+              cachedAt: new Date().toISOString(),
+            },
+          },
+          update: {
+            data: mergedResults as any,
+            expires: expiresAt,
+            metadata: {
+              mbCount: mbResults.length,
+              lfmCount: lfmResults.length,
+              matchedCount: matchCount,
+              searchDuration: duration,
+              cachedAt: new Date().toISOString(),
+            },
+          },
+        });
+        console.log(`💾 [Cache] Stored results for "${query}" (expires: ${expiresAt.toISOString()})`);
+      } catch (cacheError) {
+        console.error(`⚠️ [Cache] Failed to store results:`, cacheError);
+        // Don't fail the request if caching fails
+      }
+
+      // Final summary log
+      console.log(
+        `📊 [Search Summary] Query: "${query}" | Total: ${mergedResults.length} | MB: ${mbResults.length} | LFM: ${lfmResults.length} | Matched: ${matchCount} (${matchRate}%) | Duration: ${duration}ms | Cached: ${!mbFailed && !lfmFailed}`
+      );
+
+      return mergedResults;
     } catch (error) {
-      throw new GraphQLError(`Failed to search artists: ${error}`);
+      console.error(`❌ [Search Error] Failed to search artists for "${args.query}":`, error);
+      throw new GraphQLError(
+        `Failed to search artists: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   },
 

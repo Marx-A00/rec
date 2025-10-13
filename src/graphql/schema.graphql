@@ -39,6 +39,9 @@ type Artist {
   trackCount: Int!
   popularity: Float
   needsEnrichment: Boolean!
+
+  # Last.fm data
+  listeners: Int
 }
 
 type Album {
