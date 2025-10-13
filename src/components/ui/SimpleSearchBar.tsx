@@ -17,7 +17,8 @@ export default function SimpleSearchBar({
   minQueryLength = 2,
 }: SimpleSearchBarProps) {
   const [query, setQuery] = useState('');
-  const [searchType, setSearchType] = useState<'all' | 'albums' | 'artists' | 'tracks' | 'users'>('all');
+  // TODO: Re-add 'all' when we figure out the "ALL" search
+  const [searchType, setSearchType] = useState<'albums' | 'artists' | 'tracks' | 'users'>('albums');
   const router = useRouter();
 
   // Handle search input changes
@@ -65,7 +66,8 @@ export default function SimpleSearchBar({
               <SelectValue />
             </SelectTrigger>
             <SelectContent className='bg-zinc-800 border-zinc-700 text-white'>
-              <SelectItem value='all'>All</SelectItem>
+              {/* TODO: Re-enable when we figure out the "ALL" search */}
+              {/* <SelectItem value='all'>All</SelectItem> */}
               <SelectItem value='albums'>Albums</SelectItem>
               <SelectItem value='artists'>Artists</SelectItem>
               <SelectItem value='tracks'>Tracks</SelectItem>

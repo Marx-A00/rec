@@ -10,21 +10,22 @@ import { UnifiedSearchResult } from '@/types/search';
 import { sanitizeArtistName } from '@/lib/utils';
 import { defaultEntityTypes } from '@/components/ui/UniversalSearchBar';
 
-type SearchFilter = 'all' | 'albums' | 'artists' | 'tracks';
+// TODO: Re-add 'all' when we figure out the "ALL" search
+type SearchFilter = 'albums' | 'artists' | 'tracks';
 
 function SearchResults() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get('q') || '';
   // Support both 'type' (from SimpleSearchBar) and 'filter' (from page tabs) params
-  const typeParam = searchParams.get('type') || searchParams.get('filter') || 'all';
+  const typeParam = searchParams.get('type') || searchParams.get('filter') || 'albums';
   const filterParam = typeParam as SearchFilter;
   const [activeFilter, setActiveFilter] = useState<SearchFilter>(filterParam);
   const [searchMode, setSearchMode] = useState<SearchMode>('LOCAL_AND_EXTERNAL');
   const [currentLimit, setCurrentLimit] = useState(20);
 
   // Map filter to searchType
-  const searchType = activeFilter === 'all' ? 'all' : activeFilter;
+  const searchType = activeFilter;
 
   const {
     results = [],
@@ -299,7 +300,8 @@ function SearchResults() {
 
       {/* Filter Tabs */}
       <div className='flex items-center gap-2 mb-8 border-b border-zinc-800'>
-        <button
+        {/* TODO: Re-enable when we figure out the "ALL" search */}
+        {/* <button
           onClick={() => handleFilterChange('all')}
           className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
             activeFilter === 'all'
@@ -308,7 +310,7 @@ function SearchResults() {
           }`}
         >
           All
-        </button>
+        </button> */}
         <button
           onClick={() => handleFilterChange('albums')}
           className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
