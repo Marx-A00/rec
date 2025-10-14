@@ -62,7 +62,9 @@ async function getAccessToken(): Promise<string> {
   });
 
   if (!response.ok) {
-    throw new Error(`Spotify auth failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Spotify auth failed: ${response.status} ${response.statusText}`
+    );
   }
 
   const data = await response.json();
@@ -80,7 +82,9 @@ async function getAccessToken(): Promise<string> {
  * Extract the best quality image URL from Spotify image array
  * Preference: largest image
  */
-export function extractBestImage(images?: SpotifyArtistImage[]): string | undefined {
+export function extractBestImage(
+  images?: SpotifyArtistImage[]
+): string | undefined {
   if (!images || images.length === 0) return undefined;
 
   // Sort by size (largest first)
@@ -97,7 +101,9 @@ export function extractBestImage(images?: SpotifyArtistImage[]): string | undefi
  * Search for artists on Spotify
  * Returns artist info with high-quality images
  */
-export async function searchSpotifyArtists(query: string): Promise<SpotifySearchResult[]> {
+export async function searchSpotifyArtists(
+  query: string
+): Promise<SpotifySearchResult[]> {
   const startTime = Date.now();
 
   try {
@@ -123,7 +129,9 @@ export async function searchSpotifyArtists(query: string): Promise<SpotifySearch
 
     if (!response.ok) {
       const duration = Date.now() - startTime;
-      console.error(`❌ [Spotify] API error: ${response.status} ${response.statusText} (${duration}ms)`);
+      console.error(
+        `❌ [Spotify] API error: ${response.status} ${response.statusText} (${duration}ms)`
+      );
       return [];
     }
 
@@ -133,20 +141,24 @@ export async function searchSpotifyArtists(query: string): Promise<SpotifySearch
     const artists = data?.artists?.items || [];
 
     if (!Array.isArray(artists)) {
-      console.warn(`⚠️ [Spotify] Unexpected response format for query "${query}"`);
+      console.warn(
+        `⚠️ [Spotify] Unexpected response format for query "${query}"`
+      );
       return [];
     }
 
-    const results: SpotifySearchResult[] = artists.map((artist: SpotifyArtist) => {
-      const imageUrl = extractBestImage(artist.images);
-      return {
-        name: artist.name,
-        spotifyId: artist.id,
-        imageUrl,
-        popularity: artist.popularity,
-        genres: artist.genres,
-      };
-    });
+    const results: SpotifySearchResult[] = artists.map(
+      (artist: SpotifyArtist) => {
+        const imageUrl = extractBestImage(artist.images);
+        return {
+          name: artist.name,
+          spotifyId: artist.id,
+          imageUrl,
+          popularity: artist.popularity,
+          genres: artist.genres,
+        };
+      }
+    );
 
     return results;
   } catch (error: unknown) {
@@ -154,7 +166,9 @@ export async function searchSpotifyArtists(query: string): Promise<SpotifySearch
 
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
-        console.error(`⏱️ [Spotify] Request timeout after ${TIMEOUT_MS}ms for query "${query}"`);
+        console.error(
+          `⏱️ [Spotify] Request timeout after ${TIMEOUT_MS}ms for query "${query}"`
+        );
       } else {
         console.error(`❌ [Spotify] Error: ${error.message} (${duration}ms)`);
       }

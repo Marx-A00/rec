@@ -1,4 +1,5 @@
 import { Client } from 'disconnect';
+
 import { prisma } from '@/lib/prisma';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { musicbrainzService as baseMusicbrainzService } from '@/lib/musicbrainz/basic-service';
@@ -50,7 +51,11 @@ class UnifiedArtistService {
    */
   private detectSource(id: string): 'local' | 'musicbrainz' | 'discogs' {
     // MusicBrainz UUIDs
-    if (id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+    if (
+      id.match(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      )
+    ) {
       return 'musicbrainz';
     }
 
@@ -71,29 +76,39 @@ class UnifiedArtistService {
   /**
    * Attempt to resolve an artist image via MusicBrainz → Wikidata → Wikimedia
    */
-  private async resolveArtistImageFromWikidata(mbid: string): Promise<string | undefined> {
+  private async resolveArtistImageFromWikidata(
+    mbid: string
+  ): Promise<string | undefined> {
     try {
       const mbService = getQueuedMusicBrainzService();
       const mbArtist = await mbService.getArtist(mbid, ['url-rels']);
       try {
-        const rels = Array.isArray(mbArtist?.relations) ? mbArtist.relations : [];
-        // eslint-disable-next-line no-console
+        const rels = Array.isArray(mbArtist?.relations)
+          ? mbArtist.relations
+          : [];
+
         console.log('[WikidataImage] MB artist relations', {
           mbid,
           relationCount: rels.length,
-          relationTypes: rels.slice(0, 5).map((r: any) => r?.type).filter(Boolean),
+          relationTypes: rels
+            .slice(0, 5)
+            .map((r: any) => r?.type)
+            .filter(Boolean),
         });
       } catch {}
       const qid = this.extractWikidataQid(mbArtist);
-      // eslint-disable-next-line no-console
+
       console.log('[WikidataImage] Extracted QID', { mbid, qid: qid || null });
       if (!qid) return undefined;
       const filename = await this.fetchWikidataP18Filename(qid);
-      // eslint-disable-next-line no-console
-      console.log('[WikidataImage] P18 filename', { qid, filename: filename || null });
+
+      console.log('[WikidataImage] P18 filename', {
+        qid,
+        filename: filename || null,
+      });
       if (!filename) return undefined;
       const url = this.buildWikimediaThumbUrl(filename, 600);
-      // eslint-disable-next-line no-console
+
       console.log('[WikidataImage] Wikimedia URL', { qid, url });
       return url;
     } catch (error) {
@@ -113,7 +128,9 @@ class UnifiedArtistService {
     return undefined;
   }
 
-  private async fetchWikidataP18Filename(qid: string): Promise<string | undefined> {
+  private async fetchWikidataP18Filename(
+    qid: string
+  ): Promise<string | undefined> {
     try {
       const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`;
       const res = await fetch(url);
@@ -128,7 +145,10 @@ class UnifiedArtistService {
     }
   }
 
-  private buildWikimediaThumbUrl(filename: string, width: number = 600): string {
+  private buildWikimediaThumbUrl(
+    filename: string,
+    width: number = 600
+  ): string {
     const encoded = encodeURIComponent(filename);
     return `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=${width}`;
   }
@@ -188,7 +208,9 @@ class UnifiedArtistService {
   /**
    * Get artist from MusicBrainz
    */
-  private async getMusicBrainzArtist(mbid: string): Promise<UnifiedArtistDetails> {
+  private async getMusicBrainzArtist(
+    mbid: string
+  ): Promise<UnifiedArtistDetails> {
     try {
       const mbService = getQueuedMusicBrainzService();
       // First check if we have this artist in our database
@@ -198,8 +220,10 @@ class UnifiedArtistService {
 
       if (localArtist) {
         if (localArtist.imageUrl) {
-          // eslint-disable-next-line no-console
-          console.log('[MBArtist] Returning existing local with image', { id: localArtist.id, mbid });
+          console.log('[MBArtist] Returning existing local with image', {
+            id: localArtist.id,
+            mbid,
+          });
           return this.getLocalArtist(localArtist.id);
         }
 
@@ -211,14 +235,19 @@ class UnifiedArtistService {
               where: { id: localArtist.id },
               data: { imageUrl: enrichedImage },
             });
-            // eslint-disable-next-line no-console
-            console.log('[MBArtist] Persisted enriched image for local artist', { id: localArtist.id });
+
+            console.log(
+              '[MBArtist] Persisted enriched image for local artist',
+              { id: localArtist.id }
+            );
           } catch (e) {
             console.warn('Failed to persist enriched artist image:', e);
           }
         }
-        // eslint-disable-next-line no-console
-        console.log('[MBArtist] Returning local after attempted image enrich', { id: localArtist.id });
+
+        console.log('[MBArtist] Returning local after attempted image enrich', {
+          id: localArtist.id,
+        });
         return this.getLocalArtist(localArtist.id);
       }
 
@@ -226,13 +255,18 @@ class UnifiedArtistService {
       const includes = ['aliases', 'url-rels', 'tags'];
       const mbArtist = await mbService.getArtist(mbid, includes);
       try {
-        const rels = Array.isArray(mbArtist?.relations) ? mbArtist.relations : [];
-        // eslint-disable-next-line no-console
+        const rels = Array.isArray(mbArtist?.relations)
+          ? mbArtist.relations
+          : [];
+
         console.log('[MBArtist] getArtist response', {
           mbid,
           includes,
           relationCount: rels.length,
-          relationTypes: rels.slice(0, 5).map((r: any) => r?.type).filter(Boolean),
+          relationTypes: rels
+            .slice(0, 5)
+            .map((r: any) => r?.type)
+            .filter(Boolean),
         });
       } catch {}
 
@@ -242,8 +276,11 @@ class UnifiedArtistService {
         const spotifyResults = await searchSpotifyArtists(mbArtist.name);
         if (spotifyResults.length > 0 && spotifyResults[0].imageUrl) {
           finalImageUrl = spotifyResults[0].imageUrl;
-          // eslint-disable-next-line no-console
-          console.log('[MBArtist] Spotify image found', { mbid, artistName: mbArtist.name });
+
+          console.log('[MBArtist] Spotify image found', {
+            mbid,
+            artistName: mbArtist.name,
+          });
         }
       } catch (error) {
         console.warn('[MBArtist] Spotify image fetch failed:', error);
@@ -252,8 +289,11 @@ class UnifiedArtistService {
       // Fallback to Wikidata if no Spotify image
       if (!finalImageUrl) {
         finalImageUrl = await this.resolveArtistImageFromWikidata(mbid);
-        // eslint-disable-next-line no-console
-        console.log('[MBArtist] Wikidata image resolved', { mbid, hasImage: !!finalImageUrl });
+
+        console.log('[MBArtist] Wikidata image resolved', {
+          mbid,
+          hasImage: !!finalImageUrl,
+        });
       }
 
       return {
@@ -264,18 +304,22 @@ class UnifiedArtistService {
         imageUrl: finalImageUrl || undefined,
         // MusicBrainz artist lookup may not include annotations reliably; omit profile
         country: mbArtist.country || undefined,
-        lifeSpan: mbArtist['life-span'] ? {
-          begin: mbArtist['life-span'].begin,
-          end: mbArtist['life-span'].end,
-          ended: mbArtist['life-span'].ended,
-        } : undefined,
+        lifeSpan: mbArtist['life-span']
+          ? {
+              begin: mbArtist['life-span'].begin,
+              end: mbArtist['life-span'].end,
+              ended: mbArtist['life-span'].ended,
+            }
+          : undefined,
         musicbrainzId: mbid,
-        urls: mbArtist.relations
-          ?.filter((rel: any) => rel.type === 'official homepage')
-          .map((rel: any) => rel.url?.resource) || [],
-        aliases: mbArtist.aliases?.map((alias: any) => ({
-          name: alias.name,
-        })) || [],
+        urls:
+          mbArtist.relations
+            ?.filter((rel: any) => rel.type === 'official homepage')
+            .map((rel: any) => rel.url?.resource) || [],
+        aliases:
+          mbArtist.aliases?.map((alias: any) => ({
+            name: alias.name,
+          })) || [],
       };
     } catch (error) {
       console.error('Error fetching MusicBrainz artist:', error);
@@ -286,7 +330,10 @@ class UnifiedArtistService {
   /**
    * Get artist from Discogs
    */
-  private async getDiscogsArtist(discogsId: string, skipLocalCache = false): Promise<UnifiedArtistDetails> {
+  private async getDiscogsArtist(
+    discogsId: string,
+    skipLocalCache = false
+  ): Promise<UnifiedArtistDetails> {
     if (!this.discogsClient) {
       throw new Error('Discogs client not configured');
     }
@@ -361,7 +408,10 @@ class UnifiedArtistService {
         return [];
       }
     } catch (e) {
-      console.warn('[UnifiedArtistService] Local lookup failed in getArtistDiscography:', e);
+      console.warn(
+        '[UnifiedArtistService] Local lookup failed in getArtistDiscography:',
+        e
+      );
     }
 
     // Not a local UUID; detect by format
@@ -403,9 +453,20 @@ class UnifiedArtistService {
 
   private async getMusicBrainzDiscography(mbid: string) {
     // Use queued browse for artist release-groups
-    const groupsResp = await getQueuedMusicBrainzService().browseReleaseGroupsByArtist(mbid, 100, 0);
-    console.log('🎶 MB queue browse response keys:', Object.keys(groupsResp || {}));
-    console.log('🎶 MB queue browse sample item:', groupsResp?.['release-groups']?.[0]);
+    const groupsResp =
+      await getQueuedMusicBrainzService().browseReleaseGroupsByArtist(
+        mbid,
+        100,
+        0
+      );
+    console.log(
+      '🎶 MB queue browse response keys:',
+      Object.keys(groupsResp || {})
+    );
+    console.log(
+      '🎶 MB queue browse sample item:',
+      groupsResp?.['release-groups']?.[0]
+    );
     const groups: any[] = groupsResp['release-groups'] || [];
 
     // Normalize all releases (no filtering)
@@ -439,7 +500,9 @@ class UnifiedArtistService {
 
     // Helper to check if release has a specific secondary type
     const hasSecondaryType = (release: any, type: string) => {
-      return release.secondaryTypes.some((t: string) => t.toLowerCase() === type.toLowerCase());
+      return release.secondaryTypes.some(
+        (t: string) => t.toLowerCase() === type.toLowerCase()
+      );
     };
 
     // Categorize releases by type
@@ -480,7 +543,9 @@ class UnifiedArtistService {
 
     // Sort each category by date
     Object.keys(categorized).forEach(key => {
-      categorized[key as keyof typeof categorized] = sortByDate(categorized[key as keyof typeof categorized]);
+      categorized[key as keyof typeof categorized] = sortByDate(
+        categorized[key as keyof typeof categorized]
+      );
     });
 
     return categorized;
@@ -498,13 +563,15 @@ class UnifiedArtistService {
       sort_order: 'desc',
     });
 
-    return releases.releases?.map((release: any) => ({
-      id: release.id.toString(),
-      title: release.title,
-      releaseDate: release.year ? `${release.year}-01-01` : null,
-      type: release.type,
-      source: 'discogs',
-    })) || [];
+    return (
+      releases.releases?.map((release: any) => ({
+        id: release.id.toString(),
+        title: release.title,
+        releaseDate: release.year ? `${release.year}-01-01` : null,
+        type: release.type,
+        source: 'discogs',
+      })) || []
+    );
   }
 }
 

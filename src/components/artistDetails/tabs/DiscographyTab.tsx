@@ -6,9 +6,14 @@ import { Calendar, Disc, ChevronDown, ChevronUp } from 'lucide-react';
 import AlbumImage from '@/components/ui/AlbumImage';
 import AlbumModal from '@/components/ui/AlbumModal';
 import { useAlbumModal } from '@/hooks/useAlbumModal';
-import { useGetArtistDiscographyQuery, type GetArtistDiscographyQuery } from '@/generated/graphql';
+import {
+  useGetArtistDiscographyQuery,
+  type GetArtistDiscographyQuery,
+} from '@/generated/graphql';
 
-type ReleaseType = NonNullable<GetArtistDiscographyQuery['artistDiscography']['albums']>[number];
+type ReleaseType = NonNullable<
+  GetArtistDiscographyQuery['artistDiscography']['albums']
+>[number];
 
 export default function DiscographyTab({
   artistId,
@@ -109,14 +114,15 @@ export default function DiscographyTab({
             )}
 
             {/* Compilations Section */}
-            {discography?.compilations && discography.compilations.length > 0 && (
-              <ReleaseSection
-                title='Compilations'
-                releases={discography.compilations}
-                artistName={artistName}
-                openModal={openModal}
-              />
-            )}
+            {discography?.compilations &&
+              discography.compilations.length > 0 && (
+                <ReleaseSection
+                  title='Compilations'
+                  releases={discography.compilations}
+                  artistName={artistName}
+                  openModal={openModal}
+                />
+              )}
 
             {/* Live Albums Section */}
             {discography?.liveAlbums && discography.liveAlbums.length > 0 && (

@@ -429,7 +429,9 @@ export const queryResolvers: QueryResolvers = {
 
     try {
       // Use SearchOrchestrator for multi-source search including Last.fm
-      const { SearchOrchestrator, SearchSource } = await import('../../search/SearchOrchestrator');
+      const { SearchOrchestrator, SearchSource } = await import(
+        '../../search/SearchOrchestrator'
+      );
       const orchestrator = new SearchOrchestrator(prisma);
 
       // Map GraphQL type to search types
@@ -449,7 +451,11 @@ export const queryResolvers: QueryResolvers = {
         query,
         types: searchTypes as Array<'artist' | 'album' | 'track'>,
         limit: limit || 20,
-        sources: [SearchSource.LOCAL, SearchSource.MUSICBRAINZ, SearchSource.LASTFM],
+        sources: [
+          SearchSource.LOCAL,
+          SearchSource.MUSICBRAINZ,
+          SearchSource.LASTFM,
+        ],
       });
 
       // Track search activity with result count
@@ -1512,7 +1518,9 @@ export const queryResolvers: QueryResolvers = {
 
   searchArtists: async (_, args, { prisma }) => {
     const requestId = `search-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    console.log(`🔍 [Search Request] ID: ${requestId} | Query: "${args.query}" | Limit: ${args.limit || 50}`);
+    console.log(
+      `🔍 [Search Request] ID: ${requestId} | Query: "${args.query}" | Limit: ${args.limit || 50}`
+    );
 
     try {
       const {
@@ -1540,14 +1548,20 @@ export const queryResolvers: QueryResolvers = {
       if (cached) {
         const now = new Date();
         if (cached.expires > now) {
-          console.log(`✅ [Cache] Hit for artist search: "${query}" (expires: ${cached.expires.toISOString()})`);
+          console.log(
+            `✅ [Cache] Hit for artist search: "${query}" (expires: ${cached.expires.toISOString()})`
+          );
           return cached.data as any[]; // Return cached results
         } else {
           // Delete expired cache entry
-          console.log(`🗑️ [Cache] Expired entry found for "${query}", cleaning up...`);
-          await prisma.cacheData.delete({ where: { key: cacheKey } }).catch(() => {
-            // Ignore deletion errors
-          });
+          console.log(
+            `🗑️ [Cache] Expired entry found for "${query}", cleaning up...`
+          );
+          await prisma.cacheData
+            .delete({ where: { key: cacheKey } })
+            .catch(() => {
+              // Ignore deletion errors
+            });
         }
       }
 
@@ -1561,10 +1575,14 @@ export const queryResolvers: QueryResolvers = {
         // MusicBrainz search
         (async () => {
           try {
-            const { getQueuedMusicBrainzService } = await import('../../musicbrainz/queue-service');
+            const { getQueuedMusicBrainzService } = await import(
+              '../../musicbrainz/queue-service'
+            );
             const mbService = getQueuedMusicBrainzService();
             const results = await mbService.searchArtists(query, searchLimit);
-            console.log(`✅ [MusicBrainz] Found ${results.length} artists for "${query}"`);
+            console.log(
+              `✅ [MusicBrainz] Found ${results.length} artists for "${query}"`
+            );
             return { source: 'musicbrainz', results, error: null };
           } catch (error) {
             console.error(`❌ [MusicBrainz] Search failed:`, error);
@@ -1574,10 +1592,14 @@ export const queryResolvers: QueryResolvers = {
         // Last.fm search
         (async () => {
           try {
-            const { getQueuedLastFmService } = await import('../../lastfm/queue-service');
+            const { getQueuedLastFmService } = await import(
+              '../../lastfm/queue-service'
+            );
             const lfmService = getQueuedLastFmService();
             const results = await lfmService.searchArtists(query);
-            console.log(`✅ [Last.fm] Found ${results.length} artists for "${query}"`);
+            console.log(
+              `✅ [Last.fm] Found ${results.length} artists for "${query}"`
+            );
             return { source: 'lastfm', results, error: null };
           } catch (error) {
             console.error(`❌ [Last.fm] Search failed:`, error);
@@ -1590,26 +1612,36 @@ export const queryResolvers: QueryResolvers = {
       const duration = Date.now() - startTime;
 
       // Extract results from settled promises with detailed error tracking
-      const mbResult = settledResults[0].status === 'fulfilled' ? settledResults[0].value : null;
-      const lfmResult = settledResults[1].status === 'fulfilled' ? settledResults[1].value : null;
+      const mbResult =
+        settledResults[0].status === 'fulfilled'
+          ? settledResults[0].value
+          : null;
+      const lfmResult =
+        settledResults[1].status === 'fulfilled'
+          ? settledResults[1].value
+          : null;
 
       const mbResults = mbResult?.results || [];
       const lfmResults = lfmResult?.results || [];
 
       // Log partial failures
-      const mbFailed = settledResults[0].status === 'rejected' || mbResult?.error;
-      const lfmFailed = settledResults[1].status === 'rejected' || lfmResult?.error;
+      const mbFailed =
+        settledResults[0].status === 'rejected' || mbResult?.error;
+      const lfmFailed =
+        settledResults[1].status === 'rejected' || lfmResult?.error;
 
       if (mbFailed || lfmFailed) {
         const failures = [];
         if (mbFailed) failures.push('MusicBrainz');
         if (lfmFailed) failures.push('Last.fm');
-        console.warn(`⚠️ [Search] Partial failure - ${failures.join(', ')} API(s) failed`);
+        console.warn(
+          `⚠️ [Search] Partial failure - ${failures.join(', ')} API(s) failed`
+        );
       }
 
       console.log(
         `🔍 [Search] Completed in ${duration}ms - MusicBrainz: ${mbResults.length}, Last.fm: ${lfmResults.length}, Success rate: ${
-          ((mbFailed ? 0 : 1) + (lfmFailed ? 0 : 1)) / 2 * 100
+          (((mbFailed ? 0 : 1) + (lfmFailed ? 0 : 1)) / 2) * 100
         }%`
       );
 
@@ -1647,8 +1679,13 @@ export const queryResolvers: QueryResolvers = {
       });
 
       const matchCount = mergedResults.filter((r: any) => r.lastFmMatch).length;
-      const matchRate = mbResults.length > 0 ? ((matchCount / mbResults.length) * 100).toFixed(1) : '0';
-      console.log(`✅ [Merge] Matched ${matchCount}/${mbResults.length} MusicBrainz artists with Last.fm data (${matchRate}%)`);
+      const matchRate =
+        mbResults.length > 0
+          ? ((matchCount / mbResults.length) * 100).toFixed(1)
+          : '0';
+      console.log(
+        `✅ [Merge] Matched ${matchCount}/${mbResults.length} MusicBrainz artists with Last.fm data (${matchRate}%)`
+      );
 
       // Cache merged results with metadata (reuse cacheKey from above)
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
@@ -1680,7 +1717,9 @@ export const queryResolvers: QueryResolvers = {
             },
           },
         });
-        console.log(`💾 [Cache] Stored results for "${query}" (expires: ${expiresAt.toISOString()})`);
+        console.log(
+          `💾 [Cache] Stored results for "${query}" (expires: ${expiresAt.toISOString()})`
+        );
       } catch (cacheError) {
         console.error(`⚠️ [Cache] Failed to store results:`, cacheError);
         // Don't fail the request if caching fails
@@ -1694,7 +1733,10 @@ export const queryResolvers: QueryResolvers = {
       // Apply pagination (skip and limit)
       return mergedResults.slice(skip, skip + limit);
     } catch (error) {
-      console.error(`❌ [Search Error] Failed to search artists for "${args.query}":`, error);
+      console.error(
+        `❌ [Search Error] Failed to search artists for "${args.query}":`,
+        error
+      );
       throw new GraphQLError(
         `Failed to search artists: ${error instanceof Error ? error.message : 'Unknown error'}`
       );

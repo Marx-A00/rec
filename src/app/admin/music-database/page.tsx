@@ -238,9 +238,10 @@ export default function MusicDatabasePage() {
       const data = await response.json();
 
       if (data.data) {
-        const results = data.data[
-          `search${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`
-        ] || [];
+        const results =
+          data.data[
+            `search${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`
+          ] || [];
 
         // Check if there are more results (we request limit+1 to check)
         setHasMore(results.length > itemsPerPage);
@@ -559,9 +560,7 @@ export default function MusicDatabasePage() {
           >
             <ChevronLeft className='h-4 w-4' />
           </Button>
-          <span className='px-3 text-sm text-zinc-300'>
-            Page {page}
-          </span>
+          <span className='px-3 text-sm text-zinc-300'>Page {page}</span>
           <Button
             variant='outline'
             size='sm'
@@ -757,11 +756,13 @@ export default function MusicDatabasePage() {
           <div className='mt-3 flex items-center gap-2 text-sm text-yellow-400'>
             <RefreshCcw className='h-4 w-4 animate-spin' />
             <span>
-              Auto-refreshing every 3 seconds - {' '}
-              {hasInProgressAlbums && `${searchResults.albums.filter(a => a.enrichmentStatus === 'IN_PROGRESS').length} album(s)`}
+              Auto-refreshing every 3 seconds -{' '}
+              {hasInProgressAlbums &&
+                `${searchResults.albums.filter(a => a.enrichmentStatus === 'IN_PROGRESS').length} album(s)`}
               {hasInProgressAlbums && hasInProgressArtists && ' and '}
-              {hasInProgressArtists && `${searchResults.artists.filter(a => a.enrichmentStatus === 'IN_PROGRESS').length} artist(s)`}
-              {' '}currently enriching
+              {hasInProgressArtists &&
+                `${searchResults.artists.filter(a => a.enrichmentStatus === 'IN_PROGRESS').length} artist(s)`}{' '}
+              currently enriching
             </span>
           </div>
         )}
@@ -1057,91 +1058,89 @@ export default function MusicDatabasePage() {
                             }}
                           />
                         </TableCell>
-                      <TableCell>
-                        <div className='flex items-center gap-2'>
-                          {expandedRows.has(album.id) ? (
-                            <ChevronDown className='h-4 w-4 text-zinc-400 flex-shrink-0' />
-                          ) : (
-                            <ChevronRight className='h-4 w-4 text-zinc-400 flex-shrink-0' />
-                          )}
-                          {album.coverArtUrl && (
-                            <img
-                              src={album.coverArtUrl}
-                              alt={album.title}
-                              className='h-10 w-10 rounded'
-                            />
-                          )}
-                          <div>
-                            <div className='font-medium text-white'>
-                              {album.title}
-                            </div>
-                            {album.label && (
-                              <div className='text-xs text-zinc-500'>
-                                {album.label}
-                              </div>
+                        <TableCell>
+                          <div className='flex items-center gap-2'>
+                            {expandedRows.has(album.id) ? (
+                              <ChevronDown className='h-4 w-4 text-zinc-400 flex-shrink-0' />
+                            ) : (
+                              <ChevronRight className='h-4 w-4 text-zinc-400 flex-shrink-0' />
                             )}
+                            {album.coverArtUrl && (
+                              <img
+                                src={album.coverArtUrl}
+                                alt={album.title}
+                                className='h-10 w-10 rounded'
+                              />
+                            )}
+                            <div>
+                              <div className='font-medium text-white'>
+                                {album.title}
+                              </div>
+                              {album.label && (
+                                <div className='text-xs text-zinc-500'>
+                                  {album.label}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className='text-zinc-300'>
-                        {album.artists
-                          .slice(0, 2)
-                          .map(a => a.artist.name)
-                          .join(', ')}
-                        {album.artists.length > 2 &&
-                          ` +${album.artists.length - 2}`}
-                      </TableCell>
-                      <TableCell className='text-zinc-300'>
-                        {album.releaseDate
-                          ? new Date(album.releaseDate).toLocaleDateString()
-                          : '-'}
-                      </TableCell>
-                      <TableCell className='text-zinc-300'>
-                        {album.trackCount || '-'}
-                      </TableCell>
-                      <TableCell>
-                        {getQualityBadge(album.dataQuality)}
-                      </TableCell>
-                      <TableCell>
-                        <div className='flex items-center gap-1'>
-                          {getStatusIcon(album.enrichmentStatus)}
-                          <span className='text-xs text-zinc-300'>
-                            {album.enrichmentStatus}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell onClick={e => e.stopPropagation()}>
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          onClick={() => handleEnrichItem(album.id, 'album')}
-                          disabled={
-                            album.enrichmentStatus === 'IN_PROGRESS' ||
-                            !album.needsEnrichment
-                          }
-                          className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
-                        >
-                          <RefreshCcw className='h-3 w-3 mr-1' />
-                          Enrich
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    {expandedRows.has(album.id) && (
-                      <TableRow key={`${album.id}-expanded`}>
-                        <TableCell colSpan={8} className='p-0 border-none'>
-                          <AlbumExpandedContent album={album} />
+                        </TableCell>
+                        <TableCell className='text-zinc-300'>
+                          {album.artists
+                            .slice(0, 2)
+                            .map(a => a.artist.name)
+                            .join(', ')}
+                          {album.artists.length > 2 &&
+                            ` +${album.artists.length - 2}`}
+                        </TableCell>
+                        <TableCell className='text-zinc-300'>
+                          {album.releaseDate
+                            ? new Date(album.releaseDate).toLocaleDateString()
+                            : '-'}
+                        </TableCell>
+                        <TableCell className='text-zinc-300'>
+                          {album.trackCount || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {getQualityBadge(album.dataQuality)}
+                        </TableCell>
+                        <TableCell>
+                          <div className='flex items-center gap-1'>
+                            {getStatusIcon(album.enrichmentStatus)}
+                            <span className='text-xs text-zinc-300'>
+                              {album.enrichmentStatus}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell onClick={e => e.stopPropagation()}>
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            onClick={() => handleEnrichItem(album.id, 'album')}
+                            disabled={
+                              album.enrichmentStatus === 'IN_PROGRESS' ||
+                              !album.needsEnrichment
+                            }
+                            className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
+                          >
+                            <RefreshCcw className='h-3 w-3 mr-1' />
+                            Enrich
+                          </Button>
                         </TableCell>
                       </TableRow>
-                    )}
-                  </>
+                      {expandedRows.has(album.id) && (
+                        <TableRow key={`${album.id}-expanded`}>
+                          <TableCell colSpan={8} className='p-0 border-none'>
+                            <AlbumExpandedContent album={album} />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
                   ))}
                 </TableBody>
               </Table>
               {searchResults.albums.length === 0 && !loading && (
                 <div className='text-center py-8 text-zinc-500'>
-                  {searchQuery
-                    ? 'No albums found'
-                    : 'Loading albums...'}
+                  {searchQuery ? 'No albums found' : 'Loading albums...'}
                 </div>
               )}
             </CardContent>
@@ -1255,9 +1254,7 @@ export default function MusicDatabasePage() {
               </Table>
               {searchResults.artists.length === 0 && !loading && (
                 <div className='text-center py-8 text-zinc-500'>
-                  {searchQuery
-                    ? 'No artists found'
-                    : 'Loading artists...'}
+                  {searchQuery ? 'No artists found' : 'Loading artists...'}
                 </div>
               )}
             </CardContent>
@@ -1329,9 +1326,7 @@ export default function MusicDatabasePage() {
               </Table>
               {searchResults.tracks.length === 0 && !loading && (
                 <div className='text-center py-8 text-zinc-500'>
-                  {searchQuery
-                    ? 'No tracks found'
-                    : 'Loading tracks...'}
+                  {searchQuery ? 'No tracks found' : 'Loading tracks...'}
                 </div>
               )}
             </CardContent>

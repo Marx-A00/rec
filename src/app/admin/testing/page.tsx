@@ -2,6 +2,9 @@
 'use client';
 
 import { Trash2, ArrowRight, Activity } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import Image from 'next/image';
+
 import {
   Card,
   CardContent,
@@ -11,9 +14,10 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useGetMyRecommendationsQuery, useDeleteRecommendationMutation } from '@/generated/graphql';
-import { useQueryClient } from '@tanstack/react-query';
-import Image from 'next/image';
+import {
+  useGetMyRecommendationsQuery,
+  useDeleteRecommendationMutation,
+} from '@/generated/graphql';
 
 export default function TestingPage() {
   const queryClient = useQueryClient();
@@ -51,7 +55,10 @@ export default function TestingPage() {
     return (
       <div className='p-8'>
         <div className='bg-red-950/50 border border-red-900 text-red-400 px-4 py-3 rounded-lg'>
-          <strong>Error:</strong> {error.message}
+          <strong>Error:</strong>{' '}
+          {error instanceof Error
+            ? error.message
+            : 'Failed to load recommendations'}
         </div>
       </div>
     );
@@ -74,12 +81,15 @@ export default function TestingPage() {
         <CardHeader>
           <CardTitle className='text-white'>Test Recommendations</CardTitle>
           <CardDescription className='text-zinc-400'>
-            Your recommendations ({HARDCODED_USER_ID}) - {recommendations.length} total
+            Your recommendations ({HARDCODED_USER_ID}) -{' '}
+            {recommendations.length} total
           </CardDescription>
         </CardHeader>
         <CardContent>
           {recommendations.length === 0 ? (
-            <p className='text-zinc-500 text-center py-8'>No recommendations yet</p>
+            <p className='text-zinc-500 text-center py-8'>
+              No recommendations yet
+            </p>
           ) : (
             <div className='space-y-4'>
               {recommendations.map(rec => (
@@ -104,7 +114,8 @@ export default function TestingPage() {
                         {rec.basisAlbum.title}
                       </p>
                       <p className='text-xs text-zinc-400 truncate'>
-                        {rec.basisAlbum.artists?.[0]?.artist.name || 'Unknown Artist'}
+                        {rec.basisAlbum.artists?.[0]?.artist.name ||
+                          'Unknown Artist'}
                       </p>
                     </div>
                   </div>
@@ -129,7 +140,8 @@ export default function TestingPage() {
                         {rec.recommendedAlbum.title}
                       </p>
                       <p className='text-xs text-zinc-400 truncate'>
-                        {rec.recommendedAlbum.artists?.[0]?.artist.name || 'Unknown Artist'}
+                        {rec.recommendedAlbum.artists?.[0]?.artist.name ||
+                          'Unknown Artist'}
                       </p>
                     </div>
                   </div>

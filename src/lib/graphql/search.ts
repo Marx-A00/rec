@@ -131,7 +131,9 @@ export class SearchService {
         // Calculate scores for title, artist, and label
         const titleScore = this.calculateScore(query, album.title);
         const artistScore = this.calculateScore(query, artistName) * 1.5; // Artist matches are more important
-        const labelScore = album.label ? this.calculateScore(query, album.label) * 0.5 : 0;
+        const labelScore = album.label
+          ? this.calculateScore(query, album.label) * 0.5
+          : 0;
 
         // Use the best match score
         const bestScore = Math.max(titleScore, artistScore, labelScore);

@@ -11,7 +11,6 @@ function formatArtists(artists: Array<{ name: string }> | undefined): string {
   return artists.map(artist => artist.name).join(', ');
 }
 
-
 interface SimilarityRatingDialProps {
   value: number;
   onChange: (value: number) => void;

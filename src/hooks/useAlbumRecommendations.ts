@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
+
 import { useGetAlbumRecommendationsQuery } from '@/generated/graphql';
 
 export interface AlbumRecommendation {
@@ -111,8 +112,14 @@ export function useAlbumRecommendations(
       recommendations: recommendations.map(rec => ({
         id: rec.id,
         score: rec.score,
-        createdAt: typeof rec.createdAt === 'string' ? rec.createdAt : rec.createdAt.toISOString(),
-        updatedAt: typeof rec.updatedAt === 'string' ? rec.updatedAt : rec.updatedAt.toISOString(),
+        createdAt:
+          typeof rec.createdAt === 'string'
+            ? rec.createdAt
+            : rec.createdAt.toISOString(),
+        updatedAt:
+          typeof rec.updatedAt === 'string'
+            ? rec.updatedAt
+            : rec.updatedAt.toISOString(),
         userId: rec.userId,
         albumRole: rec.albumRole as 'basis' | 'recommended',
         otherAlbum: {

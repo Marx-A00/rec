@@ -129,7 +129,9 @@ export default function AlbumRecommendationsTab({
             basisAlbum:
               rec.albumRole === 'basis' ? currentAlbumData : otherAlbumData,
             recommendedAlbum:
-              rec.albumRole === 'recommended' ? currentAlbumData : otherAlbumData,
+              rec.albumRole === 'recommended'
+                ? currentAlbumData
+                : otherAlbumData,
           },
         };
       }),
@@ -151,7 +153,9 @@ export default function AlbumRecommendationsTab({
             <RefreshCw className='h-12 w-12 text-red-500 mx-auto' />
           </div>
           <p className='text-red-400 text-lg mb-2'>
-            {error instanceof Error ? error.message : 'Failed to load recommendations'}
+            {error instanceof Error
+              ? error.message
+              : 'Failed to load recommendations'}
           </p>
           <p className='text-zinc-500 mb-4'>
             There was an error loading the recommendations. Please try again.

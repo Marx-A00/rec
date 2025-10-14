@@ -210,9 +210,7 @@ const AlbumSearchBackwardCompatible = forwardRef<
 
       {!searchQuery && inputValue && (
         <div className='text-center py-2'>
-          <p className='text-zinc-400 text-sm'>
-            Press Enter to search
-          </p>
+          <p className='text-zinc-400 text-sm'>Press Enter to search</p>
         </div>
       )}
     </div>

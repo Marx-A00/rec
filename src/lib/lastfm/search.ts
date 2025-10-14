@@ -33,10 +33,18 @@ export interface LastFmSearchResult {
  * Extract the best quality image URL from Last.fm image array
  * Preference order: mega > extralarge > large > medium > small
  */
-export function extractBestImage(images?: LastFmArtistImage[]): string | undefined {
+export function extractBestImage(
+  images?: LastFmArtistImage[]
+): string | undefined {
   if (!images || images.length === 0) return undefined;
 
-  const sizeOrder: LastFmArtistImage['size'][] = ['mega', 'extralarge', 'large', 'medium', 'small'];
+  const sizeOrder: LastFmArtistImage['size'][] = [
+    'mega',
+    'extralarge',
+    'large',
+    'medium',
+    'small',
+  ];
 
   for (const size of sizeOrder) {
     const img = images.find(i => i.size === size);
@@ -52,11 +60,15 @@ export function extractBestImage(images?: LastFmArtistImage[]): string | undefin
  * Search for artists on Last.fm
  * Returns empty array on any error to allow graceful degradation
  */
-export async function searchLastFmArtists(query: string): Promise<LastFmSearchResult[]> {
+export async function searchLastFmArtists(
+  query: string
+): Promise<LastFmSearchResult[]> {
   const apiKey = process.env.LASTFM_API_KEY;
 
   if (!apiKey) {
-    console.warn('⚠️ [Last.fm] API key not configured, skipping Last.fm search');
+    console.warn(
+      '⚠️ [Last.fm] API key not configured, skipping Last.fm search'
+    );
     return [];
   }
 
@@ -82,7 +94,9 @@ export async function searchLastFmArtists(query: string): Promise<LastFmSearchRe
 
     if (!response.ok) {
       const duration = Date.now() - startTime;
-      console.error(`❌ [Last.fm] API error: ${response.status} ${response.statusText} (${duration}ms)`);
+      console.error(
+        `❌ [Last.fm] API error: ${response.status} ${response.statusText} (${duration}ms)`
+      );
       return [];
     }
 
@@ -93,32 +107,44 @@ export async function searchLastFmArtists(query: string): Promise<LastFmSearchRe
     const artists = data?.results?.artistmatches?.artist || [];
 
     if (!Array.isArray(artists)) {
-      console.warn(`⚠️ [Last.fm] Unexpected response format for query "${query}"`);
+      console.warn(
+        `⚠️ [Last.fm] Unexpected response format for query "${query}"`
+      );
       return [];
     }
 
-    const results: LastFmSearchResult[] = artists.map((artist: LastFmArtist) => {
-      const imageUrl = extractBestImage(artist.image);
-      console.log(`🖼️ [Last.fm] ${artist.name}: imageUrl = "${imageUrl || 'NONE'}"`, artist.image);
-      return {
-        name: artist.name,
-        mbid: artist.mbid || undefined,
-        listeners: artist.listeners ? parseInt(artist.listeners, 10) : undefined,
-        imageUrl,
-        match: artist.match ? parseFloat(artist.match) : undefined,
-      };
-    });
+    const results: LastFmSearchResult[] = artists.map(
+      (artist: LastFmArtist) => {
+        const imageUrl = extractBestImage(artist.image);
+        console.log(
+          `🖼️ [Last.fm] ${artist.name}: imageUrl = "${imageUrl || 'NONE'}"`,
+          artist.image
+        );
+        return {
+          name: artist.name,
+          mbid: artist.mbid || undefined,
+          listeners: artist.listeners
+            ? parseInt(artist.listeners, 10)
+            : undefined,
+          imageUrl,
+          match: artist.match ? parseFloat(artist.match) : undefined,
+        };
+      }
+    );
 
-    console.log(`✅ [Last.fm] Found ${results.length} artists for "${query}" (${duration}ms)`);
+    console.log(
+      `✅ [Last.fm] Found ${results.length} artists for "${query}" (${duration}ms)`
+    );
 
     return results;
-
   } catch (error: unknown) {
     const duration = Date.now() - startTime;
 
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
-        console.error(`⏱️ [Last.fm] Request timeout after ${TIMEOUT_MS}ms for query "${query}"`);
+        console.error(
+          `⏱️ [Last.fm] Request timeout after ${TIMEOUT_MS}ms for query "${query}"`
+        );
       } else {
         console.error(`❌ [Last.fm] Error: ${error.message} (${duration}ms)`);
       }
@@ -134,7 +160,9 @@ export async function searchLastFmArtists(query: string): Promise<LastFmSearchRe
  * Get detailed artist information from Last.fm
  * Useful for fetching high-quality images and listener counts
  */
-export async function getLastFmArtistInfo(artistName: string): Promise<LastFmSearchResult | null> {
+export async function getLastFmArtistInfo(
+  artistName: string
+): Promise<LastFmSearchResult | null> {
   const apiKey = process.env.LASTFM_API_KEY;
 
   if (!apiKey) {
@@ -162,7 +190,9 @@ export async function getLastFmArtistInfo(artistName: string): Promise<LastFmSea
 
     if (!response.ok) {
       const duration = Date.now() - startTime;
-      console.error(`❌ [Last.fm] getinfo error: ${response.status} ${response.statusText} (${duration}ms)`);
+      console.error(
+        `❌ [Last.fm] getinfo error: ${response.status} ${response.statusText} (${duration}ms)`
+      );
       return null;
     }
 
@@ -179,22 +209,29 @@ export async function getLastFmArtistInfo(artistName: string): Promise<LastFmSea
     const result: LastFmSearchResult = {
       name: artist.name,
       mbid: artist.mbid || undefined,
-      listeners: artist.stats?.listeners ? parseInt(artist.stats.listeners, 10) : undefined,
+      listeners: artist.stats?.listeners
+        ? parseInt(artist.stats.listeners, 10)
+        : undefined,
       imageUrl: extractBestImage(artist.image),
     };
 
-    console.log(`✅ [Last.fm] Got artist info for "${artistName}" (${duration}ms)`);
+    console.log(
+      `✅ [Last.fm] Got artist info for "${artistName}" (${duration}ms)`
+    );
 
     return result;
-
   } catch (error: unknown) {
     const duration = Date.now() - startTime;
 
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
-        console.error(`⏱️ [Last.fm] getinfo timeout after ${TIMEOUT_MS}ms for "${artistName}"`);
+        console.error(
+          `⏱️ [Last.fm] getinfo timeout after ${TIMEOUT_MS}ms for "${artistName}"`
+        );
       } else {
-        console.error(`❌ [Last.fm] getinfo error: ${error.message} (${duration}ms)`);
+        console.error(
+          `❌ [Last.fm] getinfo error: ${error.message} (${duration}ms)`
+        );
       }
     }
 

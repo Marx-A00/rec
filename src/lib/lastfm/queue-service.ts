@@ -6,8 +6,14 @@
 
 import { Queue, Worker, QueueEvents } from 'bullmq';
 import chalk from 'chalk';
+
 import { createRedisConnection } from '../queue/redis';
-import { searchLastFmArtists, getLastFmArtistInfo, type LastFmSearchResult } from './search';
+
+import {
+  searchLastFmArtists,
+  getLastFmArtistInfo,
+  type LastFmSearchResult,
+} from './search';
 
 const QUEUE_NAME = 'lastfm';
 const RATE_LIMIT_DELAY = 200; // 200ms between jobs = 5 req/sec
@@ -16,7 +22,8 @@ const RATE_LIMIT_DELAY = 200; // 200ms between jobs = 5 req/sec
  * Format listener count for display (e.g. 896000 -> "896K")
  */
 function formatListeners(listeners: string | number): string {
-  const num = typeof listeners === 'string' ? parseInt(listeners, 10) : listeners;
+  const num =
+    typeof listeners === 'string' ? parseInt(listeners, 10) : listeners;
   if (isNaN(num)) return String(listeners);
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
   if (num >= 1000) return `${(num / 1000).toFixed(0)}K`;
@@ -96,21 +103,28 @@ export class QueuedLastFmService {
 
       // Extract result info for display
       const resultCount = result?.data
-        ? (Array.isArray(result.data) ? result.data.length : 1)
+        ? Array.isArray(result.data)
+          ? result.data.length
+          : 1
         : 0;
       const success = result?.success ?? false;
 
       // Try to get a preview of the results
       let resultPreview = '';
-      if (result?.data && Array.isArray(result.data) && result.data.length > 0) {
+      if (
+        result?.data &&
+        Array.isArray(result.data) &&
+        result.data.length > 0
+      ) {
         const first = result.data[0];
         const preview = first.name
           ? `${first.name}${first.listeners ? ` (${formatListeners(first.listeners)} listeners)` : ''}`
           : first.mbid || '';
         if (preview) {
-          resultPreview = result.data.length > 1
-            ? `"${preview}" + ${result.data.length - 1} more`
-            : `"${preview}"`;
+          resultPreview =
+            result.data.length > 1
+              ? `"${preview}" + ${result.data.length - 1} more`
+              : `"${preview}"`;
         }
       } else if (result?.data && !Array.isArray(result.data)) {
         const preview = result.data.name
@@ -122,13 +136,21 @@ export class QueuedLastFmService {
       // Green borders for job completion events
       const border = chalk.green('─'.repeat(60));
       console.log('\n' + border);
-      console.log(`${chalk.bold.green('✅ JOB COMPLETED')} ${chalk.green('[QUEUE EVENTS LAYER]')}`);
+      console.log(
+        `${chalk.bold.green('✅ JOB COMPLETED')} ${chalk.green('[QUEUE EVENTS LAYER]')}`
+      );
       console.log(border);
       console.log(`  ${chalk.green('Job ID:')}     ${chalk.white(jobId)}`);
-      console.log(`  ${chalk.green('Success:')}    ${success ? chalk.green('Yes') : chalk.red('No')}`);
-      console.log(`  ${chalk.green('Results:')}    ${chalk.white(resultCount)}`);
+      console.log(
+        `  ${chalk.green('Success:')}    ${success ? chalk.green('Yes') : chalk.red('No')}`
+      );
+      console.log(
+        `  ${chalk.green('Results:')}    ${chalk.white(resultCount)}`
+      );
       if (resultPreview) {
-        console.log(`  ${chalk.green('Preview:')}    ${chalk.cyan(resultPreview)}`);
+        console.log(
+          `  ${chalk.green('Preview:')}    ${chalk.cyan(resultPreview)}`
+        );
       }
       console.log(border + '\n');
 
@@ -138,7 +160,9 @@ export class QueuedLastFmService {
         pending.resolve(result);
         this.pendingJobs.delete(jobId);
       } else {
-        console.log(chalk.yellow(`⚠️ No pending promise found for job ${jobId}`));
+        console.log(
+          chalk.yellow(`⚠️ No pending promise found for job ${jobId}`)
+        );
       }
     });
 
@@ -146,7 +170,9 @@ export class QueuedLastFmService {
       // Red borders for job failure events
       const border = chalk.red('─'.repeat(60));
       console.log('\n' + border);
-      console.log(`${chalk.bold.red('❌ JOB FAILED')} ${chalk.red('[QUEUE EVENTS LAYER]')}`);
+      console.log(
+        `${chalk.bold.red('❌ JOB FAILED')} ${chalk.red('[QUEUE EVENTS LAYER]')}`
+      );
       console.log(border);
       console.log(`  ${chalk.red('Job ID:')} ${chalk.white(jobId)}`);
       console.log(`  ${chalk.red('Reason:')} ${chalk.white(failedReason)}`);
@@ -158,7 +184,9 @@ export class QueuedLastFmService {
         pending.reject(new Error(failedReason));
         this.pendingJobs.delete(jobId);
       } else {
-        console.log(chalk.yellow(`⚠️ No pending promise found for failed job ${jobId}`));
+        console.log(
+          chalk.yellow(`⚠️ No pending promise found for failed job ${jobId}`)
+        );
       }
     });
   }
@@ -190,8 +218,12 @@ export class QueuedLastFmService {
             data,
           };
         } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.error(`❌ [Last.fm Worker] Job ${job.id} failed:`, errorMessage);
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
+          console.error(
+            `❌ [Last.fm Worker] Job ${job.id} failed:`,
+            errorMessage
+          );
 
           return {
             success: false,
@@ -217,7 +249,9 @@ export class QueuedLastFmService {
       const border = chalk.blue('─'.repeat(50));
 
       console.log('\n' + border);
-      console.log(`${chalk.bold.white('PROCESSING')} ${chalk.blue('[WORKER LAYER]')}`);
+      console.log(
+        `${chalk.bold.white('PROCESSING')} ${chalk.blue('[WORKER LAYER]')}`
+      );
       console.log(border);
       console.log(`  ${chalk.cyan('Job:')}      ${chalk.white(job.name)}`);
       console.log(`  ${chalk.cyan('ID:')}       ${chalk.white(`#${job.id}`)}`);
@@ -232,7 +266,9 @@ export class QueuedLastFmService {
       const jobData = job.data as LastFmJobData;
       const duration = Date.now() - (job.processedOn ?? Date.now());
       const resultCount = result?.data
-        ? (Array.isArray(result.data) ? result.data.length : 1)
+        ? Array.isArray(result.data)
+          ? result.data.length
+          : 1
         : 0;
 
       // Extract job details
@@ -244,11 +280,15 @@ export class QueuedLastFmService {
       const border = chalk.green('─'.repeat(50));
 
       console.log('\n' + border);
-      console.log(`${chalk.bold.green('COMPLETED')} ${chalk.green('[WORKER LAYER]')}`);
+      console.log(
+        `${chalk.bold.green('COMPLETED')} ${chalk.green('[WORKER LAYER]')}`
+      );
       console.log(border);
       console.log(`  ${chalk.cyan('Job ID:')}   ${chalk.white(job.id)}`);
       console.log(`  ${chalk.cyan('Job:')}      ${chalk.white(jobInfo)}`);
-      console.log(`  ${chalk.cyan('Duration:')} ${chalk.white(`${duration}ms`)}`);
+      console.log(
+        `  ${chalk.cyan('Duration:')} ${chalk.white(`${duration}ms`)}`
+      );
       console.log(`  ${chalk.cyan('Results:')}  ${chalk.white(resultCount)}`);
       console.log(border + '\n');
     });
@@ -268,7 +308,9 @@ export class QueuedLastFmService {
       console.log('\n' + border);
       console.log(`${chalk.bold.red('FAILED')} ${chalk.red('[WORKER LAYER]')}`);
       console.log(border);
-      console.log(`  ${chalk.cyan('Job ID:')} ${chalk.white(job?.id || 'Unknown')}`);
+      console.log(
+        `  ${chalk.cyan('Job ID:')} ${chalk.white(job?.id || 'Unknown')}`
+      );
       console.log(`  ${chalk.cyan('Job:')}    ${chalk.white(jobInfo)}`);
       console.log(`  ${chalk.cyan('Error:')}  ${chalk.red(err.message)}`);
       console.log(border + '\n');
@@ -344,7 +386,11 @@ export class QueuedLastFmService {
       }, 10000);
     }).then((result: unknown) => {
       const typedResult = result as LastFmJobResult;
-      if (typedResult.success && typedResult.data && !Array.isArray(typedResult.data)) {
+      if (
+        typedResult.success &&
+        typedResult.data &&
+        !Array.isArray(typedResult.data)
+      ) {
         return typedResult.data;
       }
       return null;

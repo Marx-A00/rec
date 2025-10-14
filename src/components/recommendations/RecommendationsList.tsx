@@ -27,7 +27,7 @@ export default function RecommendationsList({
     {
       enabled: !!userId,
       initialPageParam: undefined as string | undefined,
-      getNextPageParam: (lastPage) => {
+      getNextPageParam: lastPage => {
         return lastPage.myRecommendations?.hasMore
           ? { cursor: lastPage.myRecommendations.cursor }
           : undefined;
@@ -40,7 +40,7 @@ export default function RecommendationsList({
     {
       enabled: !userId,
       initialPageParam: undefined as string | undefined,
-      getNextPageParam: (lastPage) => {
+      getNextPageParam: lastPage => {
         return lastPage.recommendationFeed?.hasMore
           ? { cursor: lastPage.recommendationFeed.cursor }
           : undefined;
@@ -51,12 +51,23 @@ export default function RecommendationsList({
   // Select the active query based on userId and extract recommendations
   const isUserQuery = !!userId;
   const activeQuery = isUserQuery ? myRecsQuery : feedQuery;
-  const { isLoading, error, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = activeQuery;
+  const {
+    isLoading,
+    error,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = activeQuery;
 
   // Extract recommendations based on which query is active
   const allRecommendations = isUserQuery
-    ? myRecsQuery.data?.pages.flatMap((page) => page.myRecommendations?.recommendations || []) || []
-    : feedQuery.data?.pages.flatMap((page) => page.recommendationFeed?.recommendations || []) || [];
+    ? myRecsQuery.data?.pages.flatMap(
+        page => page.myRecommendations?.recommendations || []
+      ) || []
+    : feedQuery.data?.pages.flatMap(
+        page => page.recommendationFeed?.recommendations || []
+      ) || [];
 
   const handleEditRecommendation = (recommendation: any) => {
     // TODO: Implement edit modal/form
@@ -70,7 +81,8 @@ export default function RecommendationsList({
   };
 
   // Initial loading state (only for the very first fetch)
-  if (isLoading && allRecommendations.length === 0) { // Check length to avoid flickering if some data already present
+  if (isLoading && allRecommendations.length === 0) {
+    // Check length to avoid flickering if some data already present
     return (
       <div className='space-y-4'>
         <h2 className='text-2xl font-bold text-white mb-6'>{title}</h2>
@@ -90,7 +102,8 @@ export default function RecommendationsList({
       <div className='space-y-4'>
         <h2 className='text-2xl font-bold text-white mb-6'>{title}</h2>
         <div className='bg-red-950 border border-red-800 text-red-200 px-4 py-3 rounded-lg'>
-          Error loading recommendations: {error instanceof Error ? error.message : 'Unknown error'}
+          Error loading recommendations:{' '}
+          {error instanceof Error ? error.message : 'Unknown error'}
         </div>
       </div>
     );
@@ -131,7 +144,8 @@ export default function RecommendationsList({
           <button
             onClick={handleLoadMore}
             disabled={isFetchingNextPage}
-            className='w-full block rounded-md px-4 py-2 h-10 bg-zinc-800/60 hover:bg-cosmic-latte text-zinc-100 hover:text-black border border-zinc-700/60 hover:border-cosmic-latte backdrop-blur-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
+            className='w-full block rounded-md px-4 py-2 h-10 bg-zinc-800/60 hover:bg-cosmic-latte text-zinc-100 hover:text-black border border-zinc-700/60 hover:border-cosmic-latte backdrop-blur-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+          >
             <span className='flex items-center justify-center gap-2'>
               {isFetchingNextPage ? (
                 <>

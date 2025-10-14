@@ -180,19 +180,27 @@ export async function processMusicBrainzJob(
         break;
 
       case JOB_TYPES.CACHE_ALBUM_COVER_ART:
-        result = await handleCacheAlbumCoverArt(job.data as CacheAlbumCoverArtJobData);
+        result = await handleCacheAlbumCoverArt(
+          job.data as CacheAlbumCoverArtJobData
+        );
         break;
 
       case JOB_TYPES.CACHE_ARTIST_IMAGE:
-        result = await handleCacheArtistImage(job.data as CacheArtistImageJobData);
+        result = await handleCacheArtistImage(
+          job.data as CacheArtistImageJobData
+        );
         break;
 
       case JOB_TYPES.DISCOGS_SEARCH_ARTIST:
-        result = await handleDiscogsSearchArtist(job.data as DiscogsSearchArtistJobData);
+        result = await handleDiscogsSearchArtist(
+          job.data as DiscogsSearchArtistJobData
+        );
         break;
 
       case JOB_TYPES.DISCOGS_GET_ARTIST:
-        result = await handleDiscogsGetArtist(job.data as DiscogsGetArtistJobData);
+        result = await handleDiscogsGetArtist(
+          job.data as DiscogsGetArtistJobData
+        );
         break;
 
       default:
@@ -341,7 +349,7 @@ async function handleCheckAlbumEnrichment(data: CheckAlbumEnrichmentJobData) {
     where: { id: data.albumId },
     include: {
       artists: { include: { artist: true } },
-      tracks: true,  // Include tracks for shouldEnrichAlbum check
+      tracks: true, // Include tracks for shouldEnrichAlbum check
     },
   });
 
@@ -811,9 +819,13 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
 
     // Queue Discogs search as fallback if no Discogs ID and no image yet
     if (!enrichmentResult && !artist.discogsId && !artist.imageUrl) {
-      console.log(`🔍 No Discogs ID found for "${artist.name}", queueing Discogs search as fallback`);
+      console.log(
+        `🔍 No Discogs ID found for "${artist.name}", queueing Discogs search as fallback`
+      );
       try {
-        const queue = await import('./musicbrainz-queue').then(m => m.getMusicBrainzQueue());
+        const queue = await import('./musicbrainz-queue').then(m =>
+          m.getMusicBrainzQueue()
+        );
         await queue.addJob(
           JOB_TYPES.DISCOGS_SEARCH_ARTIST,
           {
@@ -829,7 +841,10 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
         );
         console.log(`📤 Queued Discogs search for "${artist.name}"`);
       } catch (searchError) {
-        console.warn(`Failed to queue Discogs search for artist ${artist.id}:`, searchError);
+        console.warn(
+          `Failed to queue Discogs search for artist ${artist.id}:`,
+          searchError
+        );
       }
     }
 
@@ -852,12 +867,14 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
     // Only queue if artist now has an imageUrl after enrichment
     const enrichedArtist = await prisma.artist.findUnique({
       where: { id: data.artistId },
-      select: { imageUrl: true, cloudflareImageId: true }
+      select: { imageUrl: true, cloudflareImageId: true },
     });
 
     if (enrichedArtist?.imageUrl && !enrichedArtist.cloudflareImageId) {
       try {
-        const queue = await import('./musicbrainz-queue').then(m => m.getMusicBrainzQueue());
+        const queue = await import('./musicbrainz-queue').then(m =>
+          m.getMusicBrainzQueue()
+        );
         const cacheJobData: CacheArtistImageJobData = {
           artistId: data.artistId,
           requestId: `enrich-cache-artist-${data.artistId}`,
@@ -872,7 +889,10 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
         console.log(`📤 Queued artist image caching for ${data.artistId}`);
       } catch (cacheError) {
         // Don't fail enrichment if caching queue fails
-        console.warn(`Failed to queue artist image caching for ${data.artistId}:`, cacheError);
+        console.warn(
+          `Failed to queue artist image caching for ${data.artistId}:`,
+          cacheError
+        );
       }
     }
 
@@ -1213,13 +1233,17 @@ async function updateArtistFromMusicBrainz(
 
   // Extract Discogs ID from MusicBrainz relations
   if (mbData.relations && !artist.discogsId) {
-    const discogsRel = mbData.relations.find((rel: any) => rel.type === 'discogs');
+    const discogsRel = mbData.relations.find(
+      (rel: any) => rel.type === 'discogs'
+    );
     if (discogsRel?.url?.resource) {
       // Extract ID from URL like "https://www.discogs.com/artist/125246"
       const discogsMatch = discogsRel.url.resource.match(/\/artist\/(\d+)/);
       if (discogsMatch) {
         updateData.discogsId = discogsMatch[1];
-        console.log(`🔗 Found Discogs ID ${discogsMatch[1]} for "${artist.name}"`);
+        console.log(
+          `🔗 Found Discogs ID ${discogsMatch[1]} for "${artist.name}"`
+        );
       }
     }
   }
@@ -1237,44 +1261,59 @@ async function updateArtistFromMusicBrainz(
   if (discogsId && !hasDiscogsImage) {
     // Fetch Discogs image if we have ID and don't already have a Discogs image
     try {
-      const { unifiedArtistService } = await import('@/lib/api/unified-artist-service');
+      const { unifiedArtistService } = await import(
+        '@/lib/api/unified-artist-service'
+      );
       const discogsArtist = await unifiedArtistService.getArtistDetails(
         discogsId,
         { source: 'discogs', skipLocalCache: true }
       );
       if (discogsArtist.imageUrl) {
         imageUrl = discogsArtist.imageUrl;
-        console.log(`📸 Got artist image from Discogs for "${artist.name}" ${artist.imageUrl ? '(upgrading from Wikimedia)' : ''}`);
+        console.log(
+          `📸 Got artist image from Discogs for "${artist.name}" ${artist.imageUrl ? '(upgrading from Wikimedia)' : ''}`
+        );
       }
     } catch (error) {
-      console.warn(`Failed to fetch Discogs image for artist ${artist.id}:`, error);
+      console.warn(
+        `Failed to fetch Discogs image for artist ${artist.id}:`,
+        error
+      );
     }
   }
 
   // Fallback to Wikimedia Commons (via Wikidata) - only if no image at all
   if (!imageUrl && !artist.imageUrl && mbData.relations) {
-      try {
-        // Extract Wikidata QID from MusicBrainz relations
-        const wikidataRel = mbData.relations.find((rel: any) => rel.type === 'wikidata');
-        if (wikidataRel?.url?.resource) {
-          const qidMatch = wikidataRel.url.resource.match(/\/wiki\/(Q\d+)/);
-          if (qidMatch) {
-            const qid = qidMatch[1];
-            // Fetch Wikimedia image filename from Wikidata P18 property
-            const wikidataUrl = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`;
-            const response = await fetch(wikidataUrl);
-            const data = await response.json();
-            const filename = data?.entities?.[qid]?.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
+    try {
+      // Extract Wikidata QID from MusicBrainz relations
+      const wikidataRel = mbData.relations.find(
+        (rel: any) => rel.type === 'wikidata'
+      );
+      if (wikidataRel?.url?.resource) {
+        const qidMatch = wikidataRel.url.resource.match(/\/wiki\/(Q\d+)/);
+        if (qidMatch) {
+          const qid = qidMatch[1];
+          // Fetch Wikimedia image filename from Wikidata P18 property
+          const wikidataUrl = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`;
+          const response = await fetch(wikidataUrl);
+          const data = await response.json();
+          const filename =
+            data?.entities?.[qid]?.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
 
-            if (filename) {
-              const encoded = encodeURIComponent(filename);
-              imageUrl = `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=600`;
-              console.log(`📸 Got artist image from Wikimedia Commons for "${artist.name}"`);
-            }
+          if (filename) {
+            const encoded = encodeURIComponent(filename);
+            imageUrl = `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=600`;
+            console.log(
+              `📸 Got artist image from Wikimedia Commons for "${artist.name}"`
+            );
           }
         }
+      }
     } catch (error) {
-      console.warn(`Failed to fetch Wikimedia image for artist ${artist.id}:`, error);
+      console.warn(
+        `Failed to fetch Wikimedia image for artist ${artist.id}:`,
+        error
+      );
     }
   }
 
@@ -2401,7 +2440,11 @@ async function handleCacheAlbumCoverArt(
     const { cacheAlbumArt } = await import('@/lib/cloudflare-images');
 
     // Upload to Cloudflare
-    const result = await cacheAlbumArt(album.coverArtUrl, album.id, album.title);
+    const result = await cacheAlbumArt(
+      album.coverArtUrl,
+      album.id,
+      album.title
+    );
 
     if (!result) {
       // Check if it's a 404 (non-retryable) or transient error (retryable)
@@ -2437,8 +2480,12 @@ async function handleCacheAlbumCoverArt(
       message: 'Successfully cached',
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`❌ Error caching cover art for album ${albumId}:`, errorMessage);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    console.error(
+      `❌ Error caching cover art for album ${albumId}:`,
+      errorMessage
+    );
 
     // Throw to trigger BullMQ retry with exponential backoff
     throw new Error(`Failed to cache album ${albumId}: ${errorMessage}`);
@@ -2502,7 +2549,11 @@ async function handleCacheArtistImage(
     const { cacheArtistImage } = await import('@/lib/cloudflare-images');
 
     // Upload to Cloudflare
-    const result = await cacheArtistImage(artist.imageUrl, artist.id, artist.name);
+    const result = await cacheArtistImage(
+      artist.imageUrl,
+      artist.id,
+      artist.name
+    );
 
     if (!result) {
       // Check if it's a 404 (non-retryable) or transient error (retryable)
@@ -2538,8 +2589,12 @@ async function handleCacheArtistImage(
       message: 'Successfully cached',
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`❌ Error caching image for artist ${artistId}:`, errorMessage);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    console.error(
+      `❌ Error caching image for artist ${artistId}:`,
+      errorMessage
+    );
 
     // Throw to trigger BullMQ retry with exponential backoff
     throw new Error(`Failed to cache artist ${artistId}: ${errorMessage}`);
@@ -2583,10 +2638,15 @@ async function handleDiscogsSearchArtist(
       };
     }
 
-    console.log(`📊 Found ${searchResults.results.length} Discogs results for "${data.artistName}"`);
+    console.log(
+      `📊 Found ${searchResults.results.length} Discogs results for "${data.artistName}"`
+    );
 
     // Find best match using fuzzy matching
-    const bestMatch = findBestDiscogsArtistMatch(data.artistName, searchResults.results);
+    const bestMatch = findBestDiscogsArtistMatch(
+      data.artistName,
+      searchResults.results
+    );
 
     if (!bestMatch) {
       console.log(`❌ No confident match found for "${data.artistName}"`);
@@ -2598,7 +2658,9 @@ async function handleDiscogsSearchArtist(
       };
     }
 
-    console.log(`✅ Found Discogs match: "${bestMatch.result.title}" (ID: ${bestMatch.result.id}, confidence: ${(bestMatch.score * 100).toFixed(1)}%)`);
+    console.log(
+      `✅ Found Discogs match: "${bestMatch.result.title}" (ID: ${bestMatch.result.id}, confidence: ${(bestMatch.score * 100).toFixed(1)}%)`
+    );
 
     // Extract Discogs ID and queue fetch job
     const discogsId = bestMatch.result.id;
@@ -2610,7 +2672,9 @@ async function handleDiscogsSearchArtist(
     });
 
     // Queue job to fetch artist details and image
-    const queue = await import('./musicbrainz-queue').then(m => m.getMusicBrainzQueue());
+    const queue = await import('./musicbrainz-queue').then(m =>
+      m.getMusicBrainzQueue()
+    );
     await queue.addJob(
       JOB_TYPES.DISCOGS_GET_ARTIST,
       {
@@ -2650,7 +2714,9 @@ async function handleDiscogsGetArtist(
 
   try {
     // Use unified artist service to fetch Discogs data
-    const { unifiedArtistService } = await import('@/lib/api/unified-artist-service');
+    const { unifiedArtistService } = await import(
+      '@/lib/api/unified-artist-service'
+    );
     const discogsArtist = await unifiedArtistService.getArtistDetails(
       data.discogsId,
       { source: 'discogs', skipLocalCache: true }
@@ -2674,7 +2740,9 @@ async function handleDiscogsGetArtist(
     console.log(`📸 Updated artist ${data.artistId} with Discogs image`);
 
     // Queue Cloudflare caching job
-    const queue = await import('./musicbrainz-queue').then(m => m.getMusicBrainzQueue());
+    const queue = await import('./musicbrainz-queue').then(m =>
+      m.getMusicBrainzQueue()
+    );
     await queue.addJob(
       JOB_TYPES.CACHE_ARTIST_IMAGE,
       {
@@ -2697,7 +2765,10 @@ async function handleDiscogsGetArtist(
       imageUrl: discogsArtist.imageUrl,
     };
   } catch (error) {
-    console.error(`❌ Failed to fetch Discogs artist ${data.discogsId}:`, error);
+    console.error(
+      `❌ Failed to fetch Discogs artist ${data.discogsId}:`,
+      error
+    );
     throw error;
   }
 }

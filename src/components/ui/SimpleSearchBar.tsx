@@ -1,9 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Command, CommandInput } from '@/components/ui/command';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
+
+import { Command, CommandInput } from '@/components/ui/command';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export interface SimpleSearchBarProps {
   placeholder?: string;
@@ -18,7 +25,9 @@ export default function SimpleSearchBar({
 }: SimpleSearchBarProps) {
   const [query, setQuery] = useState('');
   // TODO: Re-add 'all' when we figure out the "ALL" search
-  const [searchType, setSearchType] = useState<'albums' | 'artists' | 'tracks' | 'users'>('albums');
+  const [searchType, setSearchType] = useState<
+    'albums' | 'artists' | 'tracks' | 'users'
+  >('albums');
   const router = useRouter();
 
   // Handle search input changes
@@ -32,7 +41,9 @@ export default function SimpleSearchBar({
       if (event.key === 'Enter' && query.length >= minQueryLength) {
         event.preventDefault();
         // Navigate to dedicated search page with type filter
-        router.push(`/search?q=${encodeURIComponent(query.trim())}&type=${searchType}`);
+        router.push(
+          `/search?q=${encodeURIComponent(query.trim())}&type=${searchType}`
+        );
       }
     },
     [query, minQueryLength, router, searchType]
@@ -61,7 +72,10 @@ export default function SimpleSearchBar({
       <div className='flex border border-zinc-700 rounded-lg shadow-lg bg-zinc-900 overflow-hidden'>
         {/* Search Type Dropdown */}
         <div className='border-r border-zinc-700'>
-          <Select value={searchType} onValueChange={(value) => setSearchType(value as any)}>
+          <Select
+            value={searchType}
+            onValueChange={value => setSearchType(value as any)}
+          >
             <SelectTrigger className='h-9 border-0 bg-zinc-800 text-white rounded-none rounded-l-lg focus:ring-2 focus:ring-inset focus:ring-cosmic-latte w-[110px]'>
               <SelectValue />
             </SelectTrigger>

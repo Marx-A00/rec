@@ -2,8 +2,8 @@
 // GraphQL context definition for Apollo Server
 
 import { randomUUID } from 'crypto';
-import chalk from 'chalk';
 
+import chalk from 'chalk';
 import type { PrismaClient } from '@prisma/client';
 // @ts-nocheck - GraphQL context has some type issues after schema migration
 import type { NextRequest } from 'next/server';
@@ -110,7 +110,9 @@ export async function createGraphQLContext(
       // Condensed, prettified auth log
       const border = chalk.gray('─'.repeat(50));
       console.log('\n' + border);
-      console.log(`${chalk.blue('🔐 Auth')} ${chalk.gray('•')} ${chalk.white(user.email || 'No email')} ${chalk.gray('•')} ${chalk.cyan(user.id.substring(0, 12) + '...')}`);
+      console.log(
+        `${chalk.blue('🔐 Auth')} ${chalk.gray('•')} ${chalk.white(user.email || 'No email')} ${chalk.gray('•')} ${chalk.cyan(user.id.substring(0, 12) + '...')}`
+      );
       console.log(border + '\n');
     }
   } catch (error) {

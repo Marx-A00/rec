@@ -71,23 +71,32 @@ export class QueuedMusicBrainzService {
     if (!this.queueEvents) return;
     this.queueEvents.on('completed', ({ jobId, returnvalue }) => {
       // Type assertion for returnvalue
-      const result = returnvalue as unknown as { success?: boolean; data?: any } | undefined;
+      const result = returnvalue as unknown as
+        | { success?: boolean; data?: any }
+        | undefined;
 
       // Extract result info for display
       const resultCount = result?.data
-        ? (Array.isArray(result.data) ? result.data.length : 1)
+        ? Array.isArray(result.data)
+          ? result.data.length
+          : 1
         : 0;
       const success = result?.success ?? false;
 
       // Try to get a preview of the results
       let resultPreview = '';
-      if (result?.data && Array.isArray(result.data) && result.data.length > 0) {
+      if (
+        result?.data &&
+        Array.isArray(result.data) &&
+        result.data.length > 0
+      ) {
         const first = result.data[0];
         const preview = first.name || first.title || first.id || '';
         if (preview) {
-          resultPreview = result.data.length > 1
-            ? `"${preview}" + ${result.data.length - 1} more`
-            : `"${preview}"`;
+          resultPreview =
+            result.data.length > 1
+              ? `"${preview}" + ${result.data.length - 1} more`
+              : `"${preview}"`;
         }
       } else if (result?.data && !Array.isArray(result.data)) {
         const preview = result.data.name || result.data.title || '';
@@ -97,13 +106,21 @@ export class QueuedMusicBrainzService {
       // Green borders for job completion events
       const border = chalk.green('─'.repeat(60));
       console.log('\n' + border);
-      console.log(`${chalk.bold.green('✅ JOB COMPLETED')} ${chalk.green('[QUEUE EVENTS LAYER]')}`);
+      console.log(
+        `${chalk.bold.green('✅ JOB COMPLETED')} ${chalk.green('[QUEUE EVENTS LAYER]')}`
+      );
       console.log(border);
       console.log(`  ${chalk.green('Job ID:')}     ${chalk.white(jobId)}`);
-      console.log(`  ${chalk.green('Success:')}    ${success ? chalk.green('Yes') : chalk.red('No')}`);
-      console.log(`  ${chalk.green('Results:')}    ${chalk.white(resultCount)}`);
+      console.log(
+        `  ${chalk.green('Success:')}    ${success ? chalk.green('Yes') : chalk.red('No')}`
+      );
+      console.log(
+        `  ${chalk.green('Results:')}    ${chalk.white(resultCount)}`
+      );
       if (resultPreview) {
-        console.log(`  ${chalk.green('Preview:')}    ${chalk.cyan(resultPreview)}`);
+        console.log(
+          `  ${chalk.green('Preview:')}    ${chalk.cyan(resultPreview)}`
+        );
       }
       console.log(border + '\n');
 
@@ -113,7 +130,9 @@ export class QueuedMusicBrainzService {
         pending.resolve(returnvalue);
         this.pendingJobs.delete(jobId);
       } else {
-        console.log(chalk.yellow(`⚠️ No pending promise found for job ${jobId}`));
+        console.log(
+          chalk.yellow(`⚠️ No pending promise found for job ${jobId}`)
+        );
       }
     });
 
@@ -121,7 +140,9 @@ export class QueuedMusicBrainzService {
       // Red borders for job failure events
       const border = chalk.red('─'.repeat(60));
       console.log('\n' + border);
-      console.log(`${chalk.bold.red('❌ JOB FAILED')} ${chalk.red('[QUEUE EVENTS LAYER]')}`);
+      console.log(
+        `${chalk.bold.red('❌ JOB FAILED')} ${chalk.red('[QUEUE EVENTS LAYER]')}`
+      );
       console.log(border);
       console.log(`  ${chalk.red('Job ID:')} ${chalk.white(jobId)}`);
       console.log(`  ${chalk.red('Reason:')} ${chalk.white(failedReason)}`);
@@ -133,7 +154,9 @@ export class QueuedMusicBrainzService {
         pending.reject(new Error(failedReason));
         this.pendingJobs.delete(jobId);
       } else {
-        console.log(chalk.yellow(`⚠️ No pending promise found for failed job ${jobId}`));
+        console.log(
+          chalk.yellow(`⚠️ No pending promise found for failed job ${jobId}`)
+        );
       }
     });
 
@@ -480,7 +503,9 @@ export class QueuedMusicBrainzService {
 
     // Don't start worker in web process - only in dedicated worker service
     if (process.env.DISABLE_EMBEDDED_WORKER === 'true') {
-      console.log('⏭️  Embedded worker disabled, using separate worker service');
+      console.log(
+        '⏭️  Embedded worker disabled, using separate worker service'
+      );
       return;
     }
 
@@ -542,10 +567,14 @@ export class QueuedMusicBrainzService {
       // Yellow borders for waiting events
       const border = chalk.yellow('─'.repeat(60));
       console.log('\n' + border);
-      console.log(`${chalk.bold.yellow('⏳ WAITING FOR JOB')} ${chalk.yellow('[QUEUE EVENTS LAYER]')}`);
+      console.log(
+        `${chalk.bold.yellow('⏳ WAITING FOR JOB')} ${chalk.yellow('[QUEUE EVENTS LAYER]')}`
+      );
       console.log(border);
       console.log(`  ${chalk.yellow('Job ID:')} ${chalk.white(jobId)}`);
-      console.log(`  ${chalk.yellow('Timeout:')} ${chalk.white(timeoutMs + 'ms')}`);
+      console.log(
+        `  ${chalk.yellow('Timeout:')} ${chalk.white(timeoutMs + 'ms')}`
+      );
       console.log(border + '\n');
     });
   }
@@ -604,7 +633,8 @@ const globalForMusicBrainz = globalThis as unknown as {
  */
 export function getQueuedMusicBrainzService(): QueuedMusicBrainzService {
   if (!globalForMusicBrainz.queuedMusicBrainzServiceInstance) {
-    globalForMusicBrainz.queuedMusicBrainzServiceInstance = new QueuedMusicBrainzService();
+    globalForMusicBrainz.queuedMusicBrainzServiceInstance =
+      new QueuedMusicBrainzService();
   }
   return globalForMusicBrainz.queuedMusicBrainzServiceInstance;
 }

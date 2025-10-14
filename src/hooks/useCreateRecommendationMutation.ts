@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   useCreateRecommendationMutation as useGeneratedCreateRecommendationMutation,
   useAddAlbumMutation,
-  type AddAlbumMutationVariables
+  type AddAlbumMutationVariables,
 } from '@/generated/graphql';
 import { queryKeys } from '@/lib/queries';
 import type { Album } from '@/types/album';
@@ -33,7 +33,8 @@ export interface UseCreateRecommendationMutationOptions {
 function albumToGraphQLInput(album: Album): AddAlbumMutationVariables['input'] {
   return {
     title: album.title,
-    releaseDate: album.releaseDate || (album.year ? album.year.toString() : null),
+    releaseDate:
+      album.releaseDate || (album.year ? album.year.toString() : null),
     albumType: album.type || 'ALBUM',
     totalTracks: album.metadata?.numberOfTracks || album.tracks?.length || null,
     coverImageUrl: album.image?.url || null,
@@ -65,7 +66,8 @@ export function useCreateRecommendationMutation(
   const { onSuccess, onError } = options;
 
   const addAlbumMutation = useAddAlbumMutation();
-  const createRecommendationMutation = useGeneratedCreateRecommendationMutation();
+  const createRecommendationMutation =
+    useGeneratedCreateRecommendationMutation();
 
   return useMutation({
     mutationFn: async (input: CreateRecommendationWithAlbumsInput) => {
@@ -74,8 +76,12 @@ export function useCreateRecommendationMutation(
 
       // Step 1 & 2: Add both albums in parallel for faster processing
       const [basisAlbumResult, recommendedAlbumResult] = await Promise.all([
-        addAlbumMutation.mutateAsync({ input: albumToGraphQLInput(input.basisAlbum) }),
-        addAlbumMutation.mutateAsync({ input: albumToGraphQLInput(input.recommendedAlbum) }),
+        addAlbumMutation.mutateAsync({
+          input: albumToGraphQLInput(input.basisAlbum),
+        }),
+        addAlbumMutation.mutateAsync({
+          input: albumToGraphQLInput(input.recommendedAlbum),
+        }),
       ]);
 
       // Step 3: Create recommendation with database UUIDs

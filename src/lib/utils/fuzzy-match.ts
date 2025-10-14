@@ -5,6 +5,7 @@
  */
 
 import fuzzysort from 'fuzzysort';
+
 import type { LastFmSearchResult } from '../lastfm/search';
 
 /**
@@ -96,15 +97,11 @@ export function findLastFmMatch(
   }));
 
   // Use fuzzysort to find best match
-  const searchResults = fuzzysort.go(
-    normalizedQuery,
-    normalizedResults,
-    {
-      key: 'normalized',
-      threshold: MATCH_THRESHOLD, // Only return matches with score >= -5000
-      limit: 1, // Only need the best match
-    }
-  );
+  const searchResults = fuzzysort.go(normalizedQuery, normalizedResults, {
+    key: 'normalized',
+    threshold: MATCH_THRESHOLD, // Only return matches with score >= -5000
+    limit: 1, // Only need the best match
+  });
 
   // No matches found or score below threshold
   if (searchResults.length === 0 || !searchResults[0]) {
