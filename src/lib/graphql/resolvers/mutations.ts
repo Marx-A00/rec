@@ -1212,13 +1212,8 @@ export const mutationResolvers: MutationResolvers = {
         }
       );
 
-      // Update album enrichment status
-      await prisma.album.update({
-        where: { id },
-        data: {
-          enrichmentStatus: 'IN_PROGRESS'
-        }
-      });
+      // Don't set to IN_PROGRESS here - let the job do it after checking if enrichment is needed
+      // Otherwise shouldEnrichAlbum will see IN_PROGRESS and skip enrichment
 
       return {
         success: true,

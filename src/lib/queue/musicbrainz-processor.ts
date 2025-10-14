@@ -336,10 +336,13 @@ async function handleCheckAlbumEnrichment(data: CheckAlbumEnrichmentJobData) {
     `🔍 Checking if album ${data.albumId} needs enrichment (source: ${data.source})`
   );
 
-  // Get album with current enrichment status
+  // Get album with current enrichment status (include tracks to check if enrichment needed)
   const album = await prisma.album.findUnique({
     where: { id: data.albumId },
-    include: { artists: { include: { artist: true } } },
+    include: {
+      artists: { include: { artist: true } },
+      tracks: true,  // Include tracks for shouldEnrichAlbum check
+    },
   });
 
   if (!album) {
