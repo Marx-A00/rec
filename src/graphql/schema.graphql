@@ -798,7 +798,7 @@ type Query {
   album(id: UUID!): Album
   track(id: UUID!): Track
   albumTracks(albumId: UUID!): [Track!]!
-  searchTracks(query: String!, limit: Int = 20): [Track!]!
+  searchTracks(query: String!, skip: Int, limit: Int = 20): [Track!]!
   user(id: String!): User
   collection(id: String!): Collection
   recommendation(id: String!): Recommendation
@@ -850,6 +850,7 @@ type Query {
     needsEnrichment: Boolean
     sortBy: String
     sortOrder: String
+    skip: Int
     limit: Int
   ): [Album!]!
   searchArtists(
@@ -859,6 +860,7 @@ type Query {
     needsEnrichment: Boolean
     sortBy: String
     sortOrder: String
+    skip: Int
     limit: Int
   ): [Artist!]!
 }

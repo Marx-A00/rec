@@ -19,6 +19,13 @@ import {
   TrendingUp,
   Calendar,
   Info,
+  ChevronDown,
+  ChevronRight,
+  Disc,
+  Hash,
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -144,20 +151,49 @@ export default function MusicDatabasePage() {
   });
   const [sortBy, setSortBy] = useState('title');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const itemsPerPage = 50;
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  // Check if any albums are currently being enriched
+  const hasInProgressAlbums = searchResults.albums.some(
+    album => album.enrichmentStatus === 'IN_PROGRESS'
+  );
+  const hasInProgressArtists = searchResults.artists.some(
+    artist => artist.enrichmentStatus === 'IN_PROGRESS'
+  );
 
   // Fetch database statistics
   useEffect(() => {
     fetchDatabaseStats();
   }, []);
 
-  // Search when query changes
+  // Initial load - fetch albums on mount
   useEffect(() => {
-    if (debouncedSearchQuery) {
-      performSearch();
+    performSearch();
+  }, []);
+
+  // Search when query, filters, or pagination changes
+  useEffect(() => {
+    performSearch();
+  }, [debouncedSearchQuery, activeTab, filters, sortBy, sortOrder, page]);
+
+  // Real-time polling when enrichment is in progress
+  useEffect(() => {
+    if (!hasInProgressAlbums && !hasInProgressArtists) {
+      return;
     }
-  }, [debouncedSearchQuery, activeTab, filters, sortBy, sortOrder]);
+
+    const pollInterval = setInterval(() => {
+      console.log('🔄 Polling for enrichment updates...');
+      performSearch();
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [hasInProgressAlbums, hasInProgressArtists]);
 
   const fetchDatabaseStats = async () => {
     try {
@@ -202,12 +238,19 @@ export default function MusicDatabasePage() {
       const data = await response.json();
 
       if (data.data) {
+        const results = data.data[
+          `search${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`
+        ] || [];
+
+        // Check if there are more results (we request limit+1 to check)
+        setHasMore(results.length > itemsPerPage);
+
+        // Only show itemsPerPage results
+        const displayResults = results.slice(0, itemsPerPage);
+
         setSearchResults(prev => ({
           ...prev,
-          [activeTab]:
-            data.data[
-              `search${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`
-            ] || [],
+          [activeTab]: displayResults,
         }));
       }
     } catch (error) {
@@ -219,6 +262,7 @@ export default function MusicDatabasePage() {
   };
 
   const getSearchQuery = () => {
+    const skip = (page - 1) * itemsPerPage;
     const commonFilters = `
       ${filters.dataQuality !== 'all' ? `dataQuality: ${filters.dataQuality}` : ''}
       ${filters.enrichmentStatus !== 'all' ? `enrichmentStatus: ${filters.enrichmentStatus}` : ''}
@@ -234,7 +278,8 @@ export default function MusicDatabasePage() {
               ${commonFilters}
               sortBy: "${sortBy}"
               sortOrder: "${sortOrder}"
-              limit: 50
+              skip: ${skip}
+              limit: ${itemsPerPage + 1}
             ) {
               id
               title
@@ -265,7 +310,8 @@ export default function MusicDatabasePage() {
               ${commonFilters}
               sortBy: "${sortBy}"
               sortOrder: "${sortOrder}"
-              limit: 50
+              skip: ${skip}
+              limit: ${itemsPerPage + 1}
             ) {
               id
               name
@@ -287,7 +333,8 @@ export default function MusicDatabasePage() {
           query SearchTracks {
             searchTracks(
               query: "${debouncedSearchQuery}"
-              limit: 50
+              skip: ${skip}
+              limit: ${itemsPerPage + 1}
             ) {
               id
               title
@@ -458,6 +505,246 @@ export default function MusicDatabasePage() {
     return `${minutes}:${seconds.padStart(2, '0')}`;
   };
 
+  const toggleExpanded = (id: string) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    setExpandedRows(new Set()); // Clear expanded rows when changing pages
+  };
+
+  const handleTabChange = (newTab: SearchType) => {
+    setActiveTab(newTab);
+    setPage(1); // Reset to page 1 when switching tabs
+    setExpandedRows(new Set()); // Clear expanded rows
+  };
+
+  // Pagination component
+  const PaginationControls = () => {
+    const totalResults = searchResults[activeTab].length;
+    const showPagination = totalResults > 0 || page > 1;
+
+    if (!showPagination) return null;
+
+    return (
+      <div className='flex items-center justify-between px-4 py-3 border-t border-zinc-800'>
+        <div className='text-sm text-zinc-400'>
+          Page {page} {hasMore && '• More results available'}
+        </div>
+        <div className='flex items-center gap-2'>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => handlePageChange(1)}
+            disabled={page === 1 || loading}
+            className='text-white border-zinc-700 hover:bg-zinc-700'
+          >
+            <ChevronsLeft className='h-4 w-4' />
+          </Button>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page === 1 || loading}
+            className='text-white border-zinc-700 hover:bg-zinc-700'
+          >
+            <ChevronLeft className='h-4 w-4' />
+          </Button>
+          <span className='px-3 text-sm text-zinc-300'>
+            Page {page}
+          </span>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => handlePageChange(page + 1)}
+            disabled={!hasMore || loading}
+            className='text-white border-zinc-700 hover:bg-zinc-700'
+          >
+            <ChevronRight className='h-4 w-4' />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Component for expanded album details
+  const AlbumExpandedContent = ({ album }: { album: AlbumSearchResult }) => {
+    const [albumDetails, setAlbumDetails] = useState<any>(null);
+    const [loadingDetails, setLoadingDetails] = useState(true);
+
+    useEffect(() => {
+      const fetchAlbumDetails = async () => {
+        try {
+          const response = await fetch('/api/graphql', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: `
+                query GetAlbumDetails($id: ID!) {
+                  album(id: $id) {
+                    id
+                    title
+                    musicbrainzId
+                    releaseDate
+                    label
+                    barcode
+                    dataQuality
+                    enrichmentStatus
+                    lastEnriched
+                    tracks {
+                      id
+                      title
+                      trackNumber
+                      discNumber
+                      durationMs
+                      isrc
+                    }
+                  }
+                }
+              `,
+              variables: { id: album.id },
+            }),
+          });
+          const data = await response.json();
+          if (data.data?.album) {
+            setAlbumDetails(data.data.album);
+          }
+        } catch (error) {
+          console.error('Failed to fetch album details:', error);
+        } finally {
+          setLoadingDetails(false);
+        }
+      };
+
+      fetchAlbumDetails();
+    }, [album.id]);
+
+    if (loadingDetails) {
+      return (
+        <div className='p-4 text-center text-zinc-400'>
+          <RefreshCcw className='h-5 w-5 animate-spin mx-auto mb-2' />
+          Loading details...
+        </div>
+      );
+    }
+
+    if (!albumDetails) {
+      return (
+        <div className='p-4 text-center text-zinc-400'>
+          Failed to load album details
+        </div>
+      );
+    }
+
+    return (
+      <div className='p-4 bg-zinc-800/50 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
+        {/* Metadata Section */}
+        <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              MusicBrainz ID
+            </div>
+            <div className='text-sm text-zinc-300 font-mono'>
+              {albumDetails.musicbrainzId || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Release Date
+            </div>
+            <div className='text-sm text-zinc-300'>
+              {albumDetails.releaseDate
+                ? new Date(albumDetails.releaseDate).toLocaleDateString()
+                : 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>Label</div>
+            <div className='text-sm text-zinc-300'>
+              {albumDetails.label || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>Barcode</div>
+            <div className='text-sm text-zinc-300 font-mono'>
+              {albumDetails.barcode || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Last Enriched
+            </div>
+            <div className='text-sm text-zinc-300'>
+              {albumDetails.lastEnriched
+                ? new Date(albumDetails.lastEnriched).toLocaleString()
+                : 'Never'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Track Count
+            </div>
+            <div className='text-sm text-zinc-300'>
+              {albumDetails.tracks?.length || 0} tracks
+            </div>
+          </div>
+        </div>
+
+        {/* Tracks Section */}
+        {albumDetails.tracks && albumDetails.tracks.length > 0 && (
+          <div>
+            <div className='text-sm font-semibold text-white mb-2 flex items-center gap-2'>
+              <Disc className='h-4 w-4' />
+              Tracks
+            </div>
+            <div className='space-y-1 max-h-60 overflow-y-auto'>
+              {albumDetails.tracks.map((track: any) => (
+                <div
+                  key={track.id}
+                  className='flex items-center justify-between p-2 bg-zinc-900/50 rounded text-xs'
+                >
+                  <div className='flex items-center gap-3 flex-1'>
+                    <span className='text-zinc-500 w-8'>
+                      {track.discNumber > 1 && `${track.discNumber}-`}
+                      {track.trackNumber}
+                    </span>
+                    <span className='text-zinc-300'>{track.title}</span>
+                  </div>
+                  <div className='flex items-center gap-4'>
+                    {track.isrc && (
+                      <span className='text-zinc-500 font-mono'>
+                        {track.isrc}
+                      </span>
+                    )}
+                    <span className='text-zinc-400'>
+                      {formatDuration(track.durationMs)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(!albumDetails.tracks || albumDetails.tracks.length === 0) && (
+          <div className='text-center py-4 text-zinc-500 text-sm'>
+            <Music className='h-8 w-8 mx-auto mb-2 opacity-50' />
+            No tracks available
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className='p-8'>
       {/* Header */}
@@ -466,6 +753,18 @@ export default function MusicDatabasePage() {
         <p className='text-zinc-400 mt-1'>
           Search, manage, and enrich music metadata
         </p>
+        {(hasInProgressAlbums || hasInProgressArtists) && (
+          <div className='mt-3 flex items-center gap-2 text-sm text-yellow-400'>
+            <RefreshCcw className='h-4 w-4 animate-spin' />
+            <span>
+              Auto-refreshing every 3 seconds - {' '}
+              {hasInProgressAlbums && `${searchResults.albums.filter(a => a.enrichmentStatus === 'IN_PROGRESS').length} album(s)`}
+              {hasInProgressAlbums && hasInProgressArtists && ' and '}
+              {hasInProgressArtists && `${searchResults.artists.filter(a => a.enrichmentStatus === 'IN_PROGRESS').length} artist(s)`}
+              {' '}currently enriching
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Database Stats */}
@@ -648,7 +947,7 @@ export default function MusicDatabasePage() {
       {/* Results Tabs */}
       <Tabs
         value={activeTab}
-        onValueChange={value => setActiveTab(value as SearchType)}
+        onValueChange={value => handleTabChange(value as SearchType)}
       >
         <TabsList className='grid w-full grid-cols-3 mb-4 bg-zinc-900 border border-zinc-800'>
           <TabsTrigger value='albums' className='flex items-center gap-2'>
@@ -692,6 +991,14 @@ export default function MusicDatabasePage() {
         {/* Albums Tab */}
         <TabsContent value='albums'>
           <Card className='bg-zinc-900 border-zinc-800'>
+            {searchResults.albums.length > 0 && (
+              <div className='px-4 pt-3 pb-2 border-b border-zinc-800'>
+                <p className='text-xs text-zinc-500 flex items-center gap-1'>
+                  <Info className='h-3 w-3' />
+                  Click on any row to view detailed metadata and tracks
+                </p>
+              </div>
+            )}
             <CardContent className='p-0'>
               <Table>
                 <TableHeader>
@@ -719,27 +1026,44 @@ export default function MusicDatabasePage() {
                 </TableHeader>
                 <TableBody>
                   {searchResults.albums.map(album => (
-                    <TableRow
-                      key={album.id}
-                      className='border-b border-zinc-800 hover:bg-zinc-800/50'
-                    >
-                      <TableCell>
-                        <input
-                          type='checkbox'
-                          checked={selectedItems.has(album.id)}
-                          onChange={() => {
-                            const newSelected = new Set(selectedItems);
-                            if (newSelected.has(album.id)) {
-                              newSelected.delete(album.id);
-                            } else {
-                              newSelected.add(album.id);
-                            }
-                            setSelectedItems(newSelected);
-                          }}
-                        />
-                      </TableCell>
+                    <>
+                      <TableRow
+                        key={album.id}
+                        className='border-b border-zinc-800 hover:bg-zinc-800/50 cursor-pointer transition-colors'
+                        onClick={e => {
+                          // Don't toggle if clicking checkbox or action button
+                          if (
+                            (e.target as HTMLElement).closest(
+                              'input[type="checkbox"], button'
+                            )
+                          ) {
+                            return;
+                          }
+                          toggleExpanded(album.id);
+                        }}
+                      >
+                        <TableCell onClick={e => e.stopPropagation()}>
+                          <input
+                            type='checkbox'
+                            checked={selectedItems.has(album.id)}
+                            onChange={() => {
+                              const newSelected = new Set(selectedItems);
+                              if (newSelected.has(album.id)) {
+                                newSelected.delete(album.id);
+                              } else {
+                                newSelected.add(album.id);
+                              }
+                              setSelectedItems(newSelected);
+                            }}
+                          />
+                        </TableCell>
                       <TableCell>
                         <div className='flex items-center gap-2'>
+                          {expandedRows.has(album.id) ? (
+                            <ChevronDown className='h-4 w-4 text-zinc-400 flex-shrink-0' />
+                          ) : (
+                            <ChevronRight className='h-4 w-4 text-zinc-400 flex-shrink-0' />
+                          )}
                           {album.coverArtUrl && (
                             <img
                               src={album.coverArtUrl}
@@ -786,7 +1110,7 @@ export default function MusicDatabasePage() {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={e => e.stopPropagation()}>
                         <Button
                           size='sm'
                           variant='outline'
@@ -802,6 +1126,14 @@ export default function MusicDatabasePage() {
                         </Button>
                       </TableCell>
                     </TableRow>
+                    {expandedRows.has(album.id) && (
+                      <TableRow key={`${album.id}-expanded`}>
+                        <TableCell colSpan={8} className='p-0 border-none'>
+                          <AlbumExpandedContent album={album} />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                   ))}
                 </TableBody>
               </Table>
@@ -809,10 +1141,11 @@ export default function MusicDatabasePage() {
                 <div className='text-center py-8 text-zinc-500'>
                   {searchQuery
                     ? 'No albums found'
-                    : 'Enter a search query to find albums'}
+                    : 'Loading albums...'}
                 </div>
               )}
             </CardContent>
+            <PaginationControls />
           </Card>
         </TabsContent>
 
@@ -924,10 +1257,11 @@ export default function MusicDatabasePage() {
                 <div className='text-center py-8 text-zinc-500'>
                   {searchQuery
                     ? 'No artists found'
-                    : 'Enter a search query to find artists'}
+                    : 'Loading artists...'}
                 </div>
               )}
             </CardContent>
+            <PaginationControls />
           </Card>
         </TabsContent>
 
@@ -997,10 +1331,11 @@ export default function MusicDatabasePage() {
                 <div className='text-center py-8 text-zinc-500'>
                   {searchQuery
                     ? 'No tracks found'
-                    : 'Enter a search query to find tracks'}
+                    : 'Loading tracks...'}
                 </div>
               )}
             </CardContent>
+            <PaginationControls />
           </Card>
         </TabsContent>
       </Tabs>

@@ -1324,6 +1324,7 @@ export const queryResolvers: QueryResolvers = {
         needsEnrichment,
         sortBy = 'title',
         sortOrder = 'asc',
+        skip = 0,
         limit = 50,
       } = args;
 
@@ -1364,6 +1365,7 @@ export const queryResolvers: QueryResolvers = {
       const albums = await prisma.album.findMany({
         where,
         orderBy,
+        skip,
         take: limit,
         include: {
           artists: {
@@ -1405,6 +1407,7 @@ export const queryResolvers: QueryResolvers = {
         needsEnrichment,
         sortBy = 'name',
         sortOrder = 'asc',
+        skip = 0,
         limit = 50,
       } = args;
 
@@ -1573,7 +1576,8 @@ export const queryResolvers: QueryResolvers = {
         `📊 [Search Summary] Query: "${query}" | Total: ${mergedResults.length} | MB: ${mbResults.length} | LFM: ${lfmResults.length} | Matched: ${matchCount} (${matchRate}%) | Duration: ${duration}ms | Cached: ${!mbFailed && !lfmFailed}`
       );
 
-      return mergedResults;
+      // Apply pagination (skip and limit)
+      return mergedResults.slice(skip, skip + limit);
     } catch (error) {
       console.error(`❌ [Search Error] Failed to search artists for "${args.query}":`, error);
       throw new GraphQLError(
@@ -1584,7 +1588,7 @@ export const queryResolvers: QueryResolvers = {
 
   searchTracks: async (_, args, { prisma }) => {
     try {
-      const { query, limit = 50 } = args;
+      const { query, skip = 0, limit = 50 } = args;
 
       const where: any = {};
 
@@ -1598,6 +1602,7 @@ export const queryResolvers: QueryResolvers = {
 
       const tracks = await prisma.track.findMany({
         where,
+        skip,
         take: limit,
         include: {
           album: true,
