@@ -1366,7 +1366,7 @@ export const queryResolvers: QueryResolvers = {
         orderBy,
         take: limit,
         include: {
-          albumArtists: {
+          artists: {
             include: {
               artist: true,
             },
@@ -1377,7 +1377,7 @@ export const queryResolvers: QueryResolvers = {
       // Transform to match GraphQL schema
       return albums.map(album => ({
         ...album,
-        artists: album.albumArtists.map(aa => ({
+        artists: album.artists.map(aa => ({
           artist: aa.artist,
           role: aa.role,
           position: aa.position,

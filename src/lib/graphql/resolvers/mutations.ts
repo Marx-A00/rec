@@ -435,8 +435,42 @@ export const mutationResolvers: MutationResolvers = {
         });
 
         if (existingAlbum) {
-          console.log(`🔄 Album already exists: "${existingAlbum.title}" (${existingAlbum.id})`);
+          console.log(`🔄 Album already exists by MBID: "${existingAlbum.title}" (${existingAlbum.id})`);
           return existingAlbum;
+        }
+      }
+
+      // Also check for existing album by title + primary artist (prevent duplicates)
+      const primaryArtistName = input.artists?.[0]?.artistName;
+      if (primaryArtistName) {
+        const existingByTitleArtist = await prisma.album.findFirst({
+          where: {
+            title: {
+              equals: input.title,
+              mode: 'insensitive'
+            },
+            artists: {
+              some: {
+                role: 'PRIMARY',
+                artist: {
+                  name: {
+                    equals: primaryArtistName,
+                    mode: 'insensitive'
+                  }
+                }
+              }
+            }
+          },
+          include: {
+            artists: {
+              include: { artist: true }
+            }
+          }
+        });
+
+        if (existingByTitleArtist) {
+          console.log(`🔄 Album already exists by title+artist: "${existingByTitleArtist.title}" by ${primaryArtistName} (${existingByTitleArtist.id})`);
+          return existingByTitleArtist;
         }
       }
 
@@ -505,48 +539,50 @@ export const mutationResolvers: MutationResolvers = {
         }
       }
 
-      // Queue enrichment check for the new album using smart priority management
-      try {
-        const queue = getMusicBrainzQueue();
-        
-        // Track collection action for priority management
-        await activityTracker.trackCollectionAction('add_album', album.id);
-        
-        // Get smart job options based on user activity
-        const jobOptions = await priorityManager.getJobOptions(
-          'manual', // Source for manually added albums
-          album.id,
-          'album',
-          user?.id,
-          sessionId
-        );
-        
-        const albumCheckData: CheckAlbumEnrichmentJobData = {
-          albumId: album.id,
-          source: 'manual',
-          priority: 'high', // Manual additions get high priority
-          requestId: requestId,
-        };
-        
-        await queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, albumCheckData, jobOptions);
-        
-        // Log priority decision for debugging
-        priorityManager.logPriorityDecision(
-          'manual',
-          album.id,
-          jobOptions.priority / 10, // Convert back to 1-10 scale
-          { 
-            actionImportance: 8,
-            userActivity: 0, 
-            entityRelevance: 0, 
-            systemLoad: 0 
-          },
-          jobOptions.delay
-        );
-        
-      } catch (queueError) {
-        console.warn('Failed to queue enrichment check for new album:', queueError);
-      }
+      // Queue enrichment check in background (non-blocking for faster response)
+      setImmediate(async () => {
+        try {
+          const queue = getMusicBrainzQueue();
+
+          // Track collection action for priority management
+          await activityTracker.trackCollectionAction('add_album', album.id);
+
+          // Get smart job options based on user activity
+          const jobOptions = await priorityManager.getJobOptions(
+            'manual', // Source for manually added albums
+            album.id,
+            'album',
+            user?.id,
+            sessionId
+          );
+
+          const albumCheckData: CheckAlbumEnrichmentJobData = {
+            albumId: album.id,
+            source: 'manual',
+            priority: 'high', // Manual additions get high priority
+            requestId: requestId,
+          };
+
+          await queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, albumCheckData, jobOptions);
+
+          // Log priority decision for debugging
+          priorityManager.logPriorityDecision(
+            'manual',
+            album.id,
+            jobOptions.priority / 10, // Convert back to 1-10 scale
+            {
+              actionImportance: 8,
+              userActivity: 0,
+              entityRelevance: 0,
+              systemLoad: 0
+            },
+            jobOptions.delay
+          );
+
+        } catch (queueError) {
+          console.warn('Failed to queue enrichment check for new album:', queueError);
+        }
+      });
 
       // Return the album with its relationships
       return await prisma.album.findUnique({
@@ -927,40 +963,42 @@ export const mutationResolvers: MutationResolvers = {
         },
       });
 
-      // Queue lightweight enrichment checks (non-blocking)
-      try {
-        const queue = getMusicBrainzQueue();
-        
-        // Queue enrichment checks for both albums
-        const basisAlbumCheckData: CheckAlbumEnrichmentJobData = {
-          albumId: basisAlbumId,
-          source: 'recommendation_create',
-          priority: 'high',
-          requestId: `recommendation-basis-${recommendation.id}`,
-        };
+      // Queue enrichment checks in background (non-blocking for faster response)
+      setImmediate(async () => {
+        try {
+          const queue = getMusicBrainzQueue();
 
-        const recommendedAlbumCheckData: CheckAlbumEnrichmentJobData = {
-          albumId: recommendedAlbumId,
-          source: 'recommendation_create',
-          priority: 'high',
-          requestId: `recommendation-target-${recommendation.id}`,
-        };
+          // Queue enrichment checks for both albums
+          const basisAlbumCheckData: CheckAlbumEnrichmentJobData = {
+            albumId: basisAlbumId,
+            source: 'recommendation_create',
+            priority: 'high',
+            requestId: `recommendation-basis-${recommendation.id}`,
+          };
 
-        await Promise.all([
-          queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, basisAlbumCheckData, {
-            priority: 8, // High priority for recommendation creation
-            attempts: 3,
-          }),
-          queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, recommendedAlbumCheckData, {
-            priority: 8, // High priority for recommendation creation
-            attempts: 3,
-          })
-        ]);
+          const recommendedAlbumCheckData: CheckAlbumEnrichmentJobData = {
+            albumId: recommendedAlbumId,
+            source: 'recommendation_create',
+            priority: 'high',
+            requestId: `recommendation-target-${recommendation.id}`,
+          };
 
-      } catch (queueError) {
-        // Log queue errors but don't fail the user operation
-        console.warn('Failed to queue enrichment checks for recommendation creation:', queueError);
-      }
+          await Promise.all([
+            queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, basisAlbumCheckData, {
+              priority: 8, // High priority for recommendation creation
+              attempts: 3,
+            }),
+            queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, recommendedAlbumCheckData, {
+              priority: 8, // High priority for recommendation creation
+              attempts: 3,
+            })
+          ]);
+
+        } catch (queueError) {
+          // Log queue errors but don't fail the user operation
+          console.warn('Failed to queue enrichment checks for recommendation creation:', queueError);
+        }
+      });
 
       return recommendation;
     } catch (error) {

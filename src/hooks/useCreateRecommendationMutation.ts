@@ -37,7 +37,8 @@ function albumToGraphQLInput(album: Album): AddAlbumMutationVariables['input'] {
     albumType: album.type || 'ALBUM',
     totalTracks: album.metadata?.numberOfTracks || album.tracks?.length || null,
     coverImageUrl: album.image?.url || null,
-    musicbrainzId: album.musicbrainzId || (album.id.match(/^[0-9a-f-]{36}$/i) ? album.id : null),
+    // Only use actual MusicBrainz IDs, never fall back to database UUIDs
+    musicbrainzId: album.musicbrainzId || null,
     artists: [
       {
         artistName: album.artists?.[0]?.name || 'Unknown Artist',
@@ -68,13 +69,14 @@ export function useCreateRecommendationMutation(
 
   return useMutation({
     mutationFn: async (input: CreateRecommendationWithAlbumsInput) => {
-      // Step 1: Ensure basisAlbum exists in database
-      const basisAlbumInput = albumToGraphQLInput(input.basisAlbum);
-      const basisAlbumResult = await addAlbumMutation.mutateAsync({ input: basisAlbumInput });
+      // Call onSuccess immediately for optimistic UI (close drawer right away)
+      onSuccess?.();
 
-      // Step 2: Ensure recommendedAlbum exists in database
-      const recommendedAlbumInput = albumToGraphQLInput(input.recommendedAlbum);
-      const recommendedAlbumResult = await addAlbumMutation.mutateAsync({ input: recommendedAlbumInput });
+      // Step 1 & 2: Add both albums in parallel for faster processing
+      const [basisAlbumResult, recommendedAlbumResult] = await Promise.all([
+        addAlbumMutation.mutateAsync({ input: albumToGraphQLInput(input.basisAlbum) }),
+        addAlbumMutation.mutateAsync({ input: albumToGraphQLInput(input.recommendedAlbum) }),
+      ]);
 
       // Step 3: Create recommendation with database UUIDs
       const recommendation = await createRecommendationMutation.mutateAsync({
@@ -86,11 +88,10 @@ export function useCreateRecommendationMutation(
       return recommendation;
     },
     onSuccess: () => {
-      // Invalidate and refetch recommendations
+      // Invalidate and refetch recommendations after mutation completes
       queryClient.invalidateQueries({
         queryKey: queryKeys.recommendations(),
       });
-      onSuccess?.();
     },
     onError: error => {
       onError?.(error);
