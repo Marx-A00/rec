@@ -131,6 +131,12 @@ export default function CollectionAlbumsPanel({
     }, 300);
   };
 
+  // Custom navigation handler that adds source=local
+  const handleNavigateToAlbum = (albumId: string) => {
+    const albumPath = `/albums/${albumId}?source=local`;
+    navigateTo(albumPath, { validate: false });
+  };
+
   // Show preview content in edit mode
   if (isEditMode) {
     return (
@@ -175,7 +181,7 @@ export default function CollectionAlbumsPanel({
         onClose={handleCloseModal}
         data={selectedAlbum}
         isExiting={isExiting}
-        onNavigateToAlbum={navigateToAlbum}
+        onNavigateToAlbum={handleNavigateToAlbum}
       />
 
       <div className='bg-zinc-900/50 p-6 h-full overflow-hidden'>
