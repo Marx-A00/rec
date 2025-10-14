@@ -134,7 +134,7 @@ export default function AlbumModal({
 
   const getSource = (): 'local' | 'musicbrainz' | 'discogs' | undefined => {
     if (!data) return undefined;
-    if (isCollectionAlbum(data)) return (data as any).source || 'local';
+    if (isCollectionAlbum(data)) return 'local'; // Always local for collection albums
     if (isRelease(data)) return (data as any).source as any;
     return undefined;
   };
