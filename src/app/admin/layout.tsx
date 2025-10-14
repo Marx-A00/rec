@@ -71,6 +71,9 @@ export default function AdminLayout({
             <Link href="/admin/users" className="flex items-center px-4 py-2 mb-1 text-zinc-400 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors">
               <span>Users</span>
             </Link>
+            <Link href="/admin/testing" className="flex items-center px-4 py-2 mb-1 text-zinc-400 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors">
+              <span>Testing</span>
+            </Link>
             <hr className="my-4 border-zinc-800" />
             <Link href="/" className="flex items-center px-4 py-2 text-zinc-400 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors">
               <span>← Back to App</span>

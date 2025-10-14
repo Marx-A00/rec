@@ -453,10 +453,10 @@ export const mutationResolvers: MutationResolvers = {
           coverArtUrl: input.coverImageUrl,
           musicbrainzId: input.musicbrainzId,
           // Note: Spotify/Apple/Discogs IDs would need schema updates to store
-          // Set initial enrichment data
+          // Set initial enrichment data - always PENDING so tracks get fetched
           dataQuality: input.musicbrainzId ? 'MEDIUM' : 'LOW',
-          enrichmentStatus: input.musicbrainzId ? 'COMPLETED' : 'PENDING',
-          lastEnriched: input.musicbrainzId ? new Date() : null,
+          enrichmentStatus: 'PENDING',
+          lastEnriched: null,
         }
       });
 
