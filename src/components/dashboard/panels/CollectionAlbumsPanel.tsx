@@ -22,7 +22,7 @@ export default function CollectionAlbumsPanel({
 }: PanelComponentProps) {
   const { data: session } = useSession();
   const user = session?.user;
-  const { navigateToAlbum } = useNavigation();
+  const { navigateTo, navigateToAlbum } = useNavigation();
 
   // Use GraphQL hook with proper caching
   const { data, isLoading } = useGetMyCollectionAlbumsQuery(
@@ -106,7 +106,10 @@ export default function CollectionAlbumsPanel({
     if (event.ctrlKey || event.metaKey) {
       if (collectionAlbum.albumId) {
         try {
-          await navigateToAlbum(collectionAlbum.albumId, {
+          // Navigate to local album with source parameter
+          const albumPath = `/albums/${collectionAlbum.albumId}?source=local`;
+          await navigateTo(albumPath, {
+            validate: false,
             onError: () => {
               setSelectedAlbum(collectionAlbum);
             },
