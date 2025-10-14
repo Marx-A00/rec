@@ -168,7 +168,7 @@ export default function AlbumModal({
         id: String(albumId),
         title: data.albumTitle,
         artists: data.albumArtist
-          ? [{ id: (data as any).albumArtistId || '', name: data.albumArtist }]
+          ? [{ id: data.albumArtistId || '', name: data.albumArtist }]
           : [],
         source: 'local',
         year:
@@ -221,10 +221,8 @@ export default function AlbumModal({
   // Album interaction handlers
   const handleArtistClick = async (artistId: string, artistName: string) => {
     try {
-      const source = getSource();
-      const normalizedSource = source ? source.toLowerCase() : undefined;
-
       let navId = artistId;
+      let artistSource: string | undefined;
 
       if (!navId) {
         // Resolve by name → prefer local match
@@ -240,8 +238,27 @@ export default function AlbumModal({
         const results = Array.isArray(res?.searchArtists)
           ? res.searchArtists
           : [];
-        const local = results.find((a: any) => a.id && a.id.length > 0);
-        if (local) navId = String(local.id);
+
+        // Try to find local artist first
+        const local = results.find((a: any) => a.id && !a.musicbrainzId);
+        if (local) {
+          navId = String(local.id);
+          artistSource = 'local';
+        } else {
+          // Fall back to first result (likely MusicBrainz)
+          const firstResult = results[0];
+          if (firstResult?.musicbrainzId) {
+            navId = String(firstResult.musicbrainzId);
+            artistSource = 'musicbrainz';
+          } else if (firstResult?.id) {
+            navId = String(firstResult.id);
+            artistSource = 'local';
+          }
+        }
+      } else {
+        // Use source from album data
+        const source = getSource();
+        artistSource = source ? source.toLowerCase() : undefined;
       }
 
       if (!navId) {
@@ -250,8 +267,8 @@ export default function AlbumModal({
       }
 
       onClose();
-      const suffix = normalizedSource
-        ? `?source=${encodeURIComponent(normalizedSource as string)}`
+      const suffix = artistSource
+        ? `?source=${encodeURIComponent(artistSource)}`
         : '';
       router.push(`/artists/${navId}${suffix}`);
     } catch (error) {

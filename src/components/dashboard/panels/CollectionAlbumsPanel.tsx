@@ -45,6 +45,7 @@ export default function CollectionAlbumsPanel({
       albumTitle: collectionAlbum.album.title,
       albumArtist:
         collectionAlbum.album.artists?.[0]?.artist?.name || 'Unknown Artist',
+      albumArtistId: collectionAlbum.album.artists?.[0]?.artist?.id,
       albumImageUrl: collectionAlbum.album.coverArtUrl || null,
       albumYear: collectionAlbum.album.releaseDate
         ? new Date(collectionAlbum.album.releaseDate).getFullYear().toString()
