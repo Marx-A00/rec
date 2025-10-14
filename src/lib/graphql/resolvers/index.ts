@@ -302,37 +302,112 @@ export const resolvers: Resolvers = {
             id: r.id, // Use MusicBrainz ID as temporary ID
             musicbrainzId: r.id,
             name: r.title, // title is the artist name in UnifiedSearchResult
-            imageUrl: r.image?.url || r.cover_image || null
+            imageUrl: r.image?.url || r.cover_image || null,
+            subtitle: r.subtitle, // e.g., "Person", "Group"
+            genre: r.genre || [], // MusicBrainz tags
           }));
 
         // Process Spotify artists - enrich MusicBrainz results with Spotify images
-        // Use fuzzy matching to pair Spotify results with MusicBrainz results
-        // Build a map of Spotify images by normalized name
+        // Use intelligent 1:1 matching to avoid mismatches
         const normalizeName = (s: string) => (s || '').trim().toLowerCase();
-        const spotifyByName = new Map<string, { imageUrl: string; popularity: number | null }>();
 
-        spotifyResults
+        // Prepare Spotify results for matching
+        const spotifyArtistsAvailable = spotifyResults
           .filter(r => r.type === 'artist' && r.image?.url)
-          .forEach(r => {
-            const data = {
-              imageUrl: r.image!.url!,
-              popularity: r._spotify?.popularity || null
+          .map(r => ({
+            name: r.title,
+            normalizedName: normalizeName(r.title),
+            imageUrl: r.image!.url!,
+            popularity: r._spotify?.popularity || 0,
+            genres: r._spotify?.genres || [],
+            spotifyId: r._spotify?.spotifyId || '',
+            matched: false, // Track if already used
+          }));
+
+        // Helper: Check if disambiguation/subtitle matches genres
+        const genreMatchesContext = (mbContext: string, spotifyGenres: string[]): boolean => {
+          if (!mbContext || spotifyGenres.length === 0) return false;
+          const contextLower = mbContext.toLowerCase();
+
+          // Common genre mappings for disambiguation
+          const genreKeywords: Record<string, string[]> = {
+            'hip-hop': ['rapper', 'hip hop', 'hip-hop', 'rap'],
+            'hip hop': ['rapper', 'hip hop', 'hip-hop', 'rap'],
+            'rap': ['rapper', 'hip hop', 'hip-hop', 'rap'],
+            'rock': ['rock', 'punk', 'metal'],
+            'jazz': ['jazz', 'blues'],
+            'pop': ['pop', 'singer'],
+            'electronic': ['electronic', 'edm', 'techno', 'house'],
+            'country': ['country', 'folk'],
+            'r&b': ['r&b', 'soul', 'rnb'],
+          };
+
+          for (const spotifyGenre of spotifyGenres) {
+            const genreLower = spotifyGenre.toLowerCase();
+            const keywords = genreKeywords[genreLower] || [genreLower];
+            if (keywords.some(keyword => contextLower.includes(keyword))) {
+              return true;
+            }
+          }
+          return false;
+        };
+
+        // Match each MusicBrainz artist to best Spotify candidate
+        const enrichedMbArtists = newMbArtists.map(mbArtist => {
+          const normalizedMbName = normalizeName(mbArtist.name);
+
+          // Find all Spotify artists with matching name
+          const candidates = spotifyArtistsAvailable.filter(
+            sa => !sa.matched && sa.normalizedName === normalizedMbName
+          );
+
+          if (candidates.length === 0) {
+            // No match found, keep original image
+            return mbArtist;
+          }
+
+          if (candidates.length === 1) {
+            // Single match, use it
+            const match = candidates[0];
+            match.matched = true;
+            console.log(`✅ [Spotify Match] "${mbArtist.name}" (${mbArtist.subtitle}) → Spotify (pop:${match.popularity})`);
+            return {
+              ...mbArtist,
+              imageUrl: match.imageUrl,
+              popularity: match.popularity,
             };
-            spotifyByName.set(normalizeName(r.title), data);
+          }
+
+          // Multiple candidates - score them
+          const scored = candidates.map(candidate => {
+            let score = 0;
+
+            // Base score from popularity (0-2 points)
+            score += (candidate.popularity / 50);
+
+            // Bonus if genres match context (subtitle/tags) (+3 points)
+            const context = [mbArtist.subtitle, ...(mbArtist.genre || [])].join(' ');
+            if (genreMatchesContext(context, candidate.genres)) {
+              score += 3;
+            }
+
+            return { candidate, score };
           });
 
-        // Enrich MusicBrainz artists with Spotify images
-        const enrichedMbArtists = newMbArtists.map(artist => {
-          // Try fuzzy name matching with Spotify
-          const normalizedName = normalizeName(artist.name);
-          const spotifyData = spotifyByName.get(normalizedName);
+          // Pick highest scoring candidate
+          scored.sort((a, b) => b.score - a.score);
+          const bestMatch = scored[0].candidate;
+          bestMatch.matched = true;
 
-          // PREFER Spotify images over Wikimedia (Spotify has better artist photos)
-          // Fall back to existing image only if Spotify doesn't have one
+          console.log(
+            `✅ [Spotify Match] "${mbArtist.name}" (${mbArtist.subtitle}, ${mbArtist.genre?.slice(0, 2).join(', ') || 'no tags'}) → ` +
+            `Spotify (genres: ${bestMatch.genres.slice(0, 2).join(', ')}, pop:${bestMatch.popularity}, score:${scored[0].score.toFixed(1)})`
+          );
+
           return {
-            ...artist,
-            imageUrl: spotifyData?.imageUrl || artist.imageUrl || null,
-            popularity: spotifyData?.popularity || null
+            ...mbArtist,
+            imageUrl: bestMatch.imageUrl,
+            popularity: bestMatch.popularity,
           };
         });
 

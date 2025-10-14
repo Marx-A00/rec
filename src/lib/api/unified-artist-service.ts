@@ -2,6 +2,7 @@ import { Client } from 'disconnect';
 import { prisma } from '@/lib/prisma';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { musicbrainzService as baseMusicbrainzService } from '@/lib/musicbrainz/basic-service';
+import { searchSpotifyArtists } from '@/lib/spotify/search';
 
 export interface UnifiedArtistDetails {
   id: string;
@@ -235,16 +236,32 @@ class UnifiedArtistService {
         });
       } catch {}
 
-      const wikidataImage = await this.resolveArtistImageFromWikidata(mbid);
-      // eslint-disable-next-line no-console
-      console.log('[MBArtist] Wikidata image resolved', { mbid, hasImage: !!wikidataImage });
+      // Try Spotify first (preferred, better images)
+      let finalImageUrl: string | undefined;
+      try {
+        const spotifyResults = await searchSpotifyArtists(mbArtist.name);
+        if (spotifyResults.length > 0 && spotifyResults[0].imageUrl) {
+          finalImageUrl = spotifyResults[0].imageUrl;
+          // eslint-disable-next-line no-console
+          console.log('[MBArtist] Spotify image found', { mbid, artistName: mbArtist.name });
+        }
+      } catch (error) {
+        console.warn('[MBArtist] Spotify image fetch failed:', error);
+      }
+
+      // Fallback to Wikidata if no Spotify image
+      if (!finalImageUrl) {
+        finalImageUrl = await this.resolveArtistImageFromWikidata(mbid);
+        // eslint-disable-next-line no-console
+        console.log('[MBArtist] Wikidata image resolved', { mbid, hasImage: !!finalImageUrl });
+      }
 
       return {
         id: mbid,
         source: 'musicbrainz',
         name: mbArtist.name,
         disambiguation: mbArtist.disambiguation || undefined,
-        imageUrl: wikidataImage || undefined,
+        imageUrl: finalImageUrl || undefined,
         // MusicBrainz artist lookup may not include annotations reliably; omit profile
         country: mbArtist.country || undefined,
         lifeSpan: mbArtist['life-span'] ? {
