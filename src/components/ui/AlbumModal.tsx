@@ -653,12 +653,21 @@ export default function AlbumModal({
           >
             {getTitle()}
           </button>
-          <p
-            className='text-xl text-zinc-300 mb-4'
-            id='album-modal-description'
-          >
-            By {getArtist()}
-          </p>
+          <div className='text-xl mb-4' id='album-modal-description'>
+            <span className='text-zinc-400'>By </span>
+            <button
+              onClick={() => {
+                const artist = albumForInteractions?.artists?.[0];
+                if (artist) {
+                  handleArtistClick(artist.id, artist.name);
+                }
+              }}
+              className='text-cosmic-latte hover:underline cursor-pointer hover:text-white transition-all duration-200 rounded-md px-1 focus:outline-none'
+              aria-label={`Navigate to artist ${getArtist()}`}
+            >
+              {getArtist()}
+            </button>
+          </div>
 
           {/* Album Interactions */}
           {albumForInteractions && (
