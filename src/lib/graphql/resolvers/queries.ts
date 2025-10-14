@@ -938,6 +938,121 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  getAlbumRecommendations: async (
+    _,
+    { albumId, filter = 'all', sort = 'newest', skip = 0, limit = 12 },
+    { prisma }
+  ) => {
+    try {
+      // Build where clause based on filter
+      const where: Prisma.RecommendationWhereInput = {
+        OR: [{ basisAlbumId: albumId }, { recommendedAlbumId: albumId }],
+      };
+
+      // Apply filter
+      if (filter === 'basis') {
+        where.OR = [{ basisAlbumId: albumId }];
+      } else if (filter === 'recommended') {
+        where.OR = [{ recommendedAlbumId: albumId }];
+      }
+
+      // Build orderBy clause based on sort
+      let orderBy: Prisma.RecommendationOrderByWithRelationInput;
+      switch (sort) {
+        case 'oldest':
+          orderBy = { createdAt: 'asc' };
+          break;
+        case 'highest_score':
+          orderBy = { score: 'desc' };
+          break;
+        case 'lowest_score':
+          orderBy = { score: 'asc' };
+          break;
+        case 'newest':
+        default:
+          orderBy = { createdAt: 'desc' };
+          break;
+      }
+
+      // Get total count for pagination
+      const total = await prisma.recommendation.count({ where });
+
+      // Fetch recommendations
+      const recommendations = await prisma.recommendation.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          user: true,
+          basisAlbum: {
+            include: {
+              artists: {
+                include: { artist: true },
+                orderBy: { position: 'asc' },
+                take: 1,
+              },
+            },
+          },
+          recommendedAlbum: {
+            include: {
+              artists: {
+                include: { artist: true },
+                orderBy: { position: 'asc' },
+                take: 1,
+              },
+            },
+          },
+        },
+      });
+
+      // Transform recommendations to include albumRole and otherAlbum
+      const transformedRecommendations = recommendations.map(rec => {
+        const isBasis = rec.basisAlbumId === albumId;
+        const otherAlbum = isBasis ? rec.recommendedAlbum : rec.basisAlbum;
+        const primaryArtist = otherAlbum.artists[0]?.artist;
+
+        return {
+          id: rec.id,
+          score: rec.score,
+          createdAt: rec.createdAt,
+          updatedAt: rec.updatedAt,
+          userId: rec.userId,
+          albumRole: isBasis ? 'basis' : 'recommended',
+          otherAlbum: {
+            id: otherAlbum.id,
+            title: otherAlbum.title,
+            artist: primaryArtist?.name || 'Unknown Artist',
+            imageUrl: otherAlbum.coverArtUrl,
+            year: otherAlbum.releaseDate
+              ? new Date(otherAlbum.releaseDate).getFullYear().toString()
+              : null,
+          },
+          user: rec.user,
+        };
+      });
+
+      // Calculate pagination
+      const page = Math.floor(skip / limit) + 1;
+      const hasMore = skip + limit < total;
+
+      return {
+        recommendations: transformedRecommendations,
+        pagination: {
+          page,
+          perPage: limit,
+          total,
+          hasMore,
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching album recommendations:', error);
+      throw new GraphQLError(
+        `Failed to fetch album recommendations: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
+
   socialFeed: async (_, { type, cursor, limit = 20 }, { user, prisma }) => {
     if (!user) {
       throw new GraphQLError('Authentication required');

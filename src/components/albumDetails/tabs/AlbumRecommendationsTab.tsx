@@ -89,48 +89,51 @@ export default function AlbumRecommendationsTab({
   // Memoize recommendation card props transformation
   const transformedRecommendations = useMemo(
     () =>
-      recommendations.map(rec => ({
-        key: rec.id,
-        recommendation: {
-          ...rec,
-          basisAlbumDiscogsId:
-            rec.albumRole === 'basis' ? albumId : rec.otherAlbum.discogsId,
-          recommendedAlbumDiscogsId:
-            rec.albumRole === 'recommended'
-              ? albumId
-              : rec.otherAlbum.discogsId,
-          basisAlbumTitle:
-            rec.albumRole === 'basis' ? albumTitle : rec.otherAlbum.title,
-          recommendedAlbumTitle:
-            rec.albumRole === 'recommended' ? albumTitle : rec.otherAlbum.title,
-          basisAlbumArtist:
-            rec.albumRole === 'basis' ? albumArtist : rec.otherAlbum.artist,
-          recommendedAlbumArtist:
-            rec.albumRole === 'recommended'
-              ? albumArtist
-              : rec.otherAlbum.artist,
-          basisAlbumArtistDiscogsId: null, // Not available from this API
-          recommendedAlbumArtistDiscogsId: null, // Not available from this API
-          basisAlbumImageUrl:
-            rec.albumRole === 'basis' ? albumImageUrl : rec.otherAlbum.imageUrl,
-          recommendedAlbumImageUrl:
-            rec.albumRole === 'recommended'
-              ? albumImageUrl
-              : rec.otherAlbum.imageUrl,
-          basisAlbumYear:
-            rec.albumRole === 'basis' ? albumYear : rec.otherAlbum.year,
-          recommendedAlbumYear:
-            rec.albumRole === 'recommended' ? albumYear : rec.otherAlbum.year,
-        },
-      })),
-    [
-      recommendations,
-      albumId,
-      albumTitle,
-      albumArtist,
-      albumImageUrl,
-      albumYear,
-    ]
+      recommendations.map(rec => {
+        // Build the current album object
+        const currentAlbumData = {
+          id: albumId,
+          title: albumTitle,
+          coverArtUrl: albumImageUrl,
+          cloudflareImageId: null,
+          artists: [
+            {
+              artist: {
+                id: albumId, // Using album ID as placeholder
+                name: albumArtist,
+              },
+            },
+          ],
+        };
+
+        // Build the other album object
+        const otherAlbumData = {
+          id: rec.otherAlbum.discogsId,
+          title: rec.otherAlbum.title,
+          coverArtUrl: rec.otherAlbum.imageUrl,
+          cloudflareImageId: null,
+          artists: [
+            {
+              artist: {
+                id: rec.otherAlbum.discogsId, // Using album ID as placeholder
+                name: rec.otherAlbum.artist,
+              },
+            },
+          ],
+        };
+
+        return {
+          key: rec.id,
+          recommendation: {
+            ...rec,
+            basisAlbum:
+              rec.albumRole === 'basis' ? currentAlbumData : otherAlbumData,
+            recommendedAlbum:
+              rec.albumRole === 'recommended' ? currentAlbumData : otherAlbumData,
+          },
+        };
+      }),
+    [recommendations, albumId, albumTitle, albumArtist, albumImageUrl]
   );
 
   if (isLoading) {
@@ -148,7 +151,7 @@ export default function AlbumRecommendationsTab({
             <RefreshCw className='h-12 w-12 text-red-500 mx-auto' />
           </div>
           <p className='text-red-400 text-lg mb-2'>
-            {error?.message || 'Failed to load recommendations'}
+            {error instanceof Error ? error.message : 'Failed to load recommendations'}
           </p>
           <p className='text-zinc-500 mb-4'>
             There was an error loading the recommendations. Please try again.

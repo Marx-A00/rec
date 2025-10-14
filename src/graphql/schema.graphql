@@ -328,6 +328,37 @@ type RecommendationFeed {
   hasMore: Boolean!
 }
 
+type AlbumRecommendationsResponse {
+  recommendations: [AlbumRecommendation!]!
+  pagination: PaginationInfo!
+}
+
+type AlbumRecommendation {
+  id: String!
+  score: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  userId: String!
+  albumRole: String! # 'basis' or 'recommended'
+  otherAlbum: OtherAlbumInfo!
+  user: User!
+}
+
+type OtherAlbumInfo {
+  id: String!
+  title: String!
+  artist: String!
+  imageUrl: String
+  year: String
+}
+
+type PaginationInfo {
+  page: Int!
+  perPage: Int!
+  total: Int!
+  hasMore: Boolean!
+}
+
 # Social Activity Types
 enum ActivityType {
   FOLLOW
@@ -813,6 +844,15 @@ type Query {
   trendingAlbums(limit: Int = 20): [Album!]!
   trendingArtists(limit: Int = 20): [Artist!]!
   userSuggestions(limit: Int = 10): [User!]!
+
+  # Album-specific queries
+  getAlbumRecommendations(
+    albumId: UUID!
+    filter: String # 'all', 'basis', 'recommended'
+    sort: String # 'newest', 'oldest', 'highest_score', 'lowest_score'
+    skip: Int
+    limit: Int = 12
+  ): AlbumRecommendationsResponse!
 
   # User-specific queries
   myCollections: [Collection!]!
