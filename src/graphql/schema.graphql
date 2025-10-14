@@ -856,6 +856,7 @@ type Query {
 
   # User-specific queries
   myCollections: [Collection!]!
+  myCollectionAlbums: [CollectionAlbum!]! # All albums across all user collections
   publicCollections(limit: Int = 20, offset: Int = 0): [Collection!]!
   userCollections(userId: String!): [Collection!]!
   myRecommendations(

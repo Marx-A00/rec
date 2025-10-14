@@ -837,6 +837,41 @@ export const queryResolvers: QueryResolvers = {
     return collections;
   },
 
+  myCollectionAlbums: async (_, __, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    const collectionAlbums = await prisma.collectionAlbum.findMany({
+      where: {
+        collection: {
+          userId: user.id,
+        },
+      },
+      include: {
+        album: {
+          include: {
+            artists: {
+              include: {
+                artist: true,
+              },
+              orderBy: { position: 'asc' },
+            },
+          },
+        },
+        collection: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: { addedAt: 'desc' },
+    });
+
+    return collectionAlbums;
+  },
+
   publicCollections: async (_, { limit = 20, offset = 0 }, { prisma }) => {
     try {
       const collections = await prisma.collection.findMany({

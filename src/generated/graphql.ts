@@ -702,6 +702,7 @@ export type Query = {
   isFollowing: Scalars['Boolean']['output'];
   jobHistory: Array<JobRecord>;
   mutualConnections: Array<User>;
+  myCollectionAlbums: Array<CollectionAlbum>;
   myCollections: Array<Collection>;
   myRecommendations: RecommendationFeed;
   mySettings?: Maybe<UserSettings>;
@@ -1707,6 +1708,34 @@ export type GetCollectionQuery = {
       };
     }>;
   } | null;
+};
+
+export type GetMyCollectionAlbumsQueryVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type GetMyCollectionAlbumsQuery = {
+  __typename?: 'Query';
+  myCollectionAlbums: Array<{
+    __typename?: 'CollectionAlbum';
+    id: string;
+    position: number;
+    personalRating?: number | null;
+    personalNotes?: string | null;
+    addedAt: Date;
+    album: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      releaseDate?: Date | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+    collection: { __typename?: 'Collection'; id: string; name: string };
+  }>;
 };
 
 export type GetUserCollectionListQueryVariables = Exact<{
@@ -3108,6 +3137,115 @@ export const useInfiniteGetCollectionQuery = <
 useInfiniteGetCollectionQuery.getKey = (
   variables: GetCollectionQueryVariables
 ) => ['GetCollection.infinite', variables];
+
+export const GetMyCollectionAlbumsDocument = `
+    query GetMyCollectionAlbums {
+  myCollectionAlbums {
+    id
+    position
+    personalRating
+    personalNotes
+    addedAt
+    album {
+      id
+      title
+      coverArtUrl
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+    collection {
+      id
+      name
+    }
+  }
+}
+    `;
+
+export const useGetMyCollectionAlbumsQuery = <
+  TData = GetMyCollectionAlbumsQuery,
+  TError = unknown,
+>(
+  variables?: GetMyCollectionAlbumsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetMyCollectionAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetMyCollectionAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetMyCollectionAlbumsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetMyCollectionAlbums']
+        : ['GetMyCollectionAlbums', variables],
+    queryFn: fetcher<
+      GetMyCollectionAlbumsQuery,
+      GetMyCollectionAlbumsQueryVariables
+    >(GetMyCollectionAlbumsDocument, variables),
+    ...options,
+  });
+};
+
+useGetMyCollectionAlbumsQuery.getKey = (
+  variables?: GetMyCollectionAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetMyCollectionAlbums']
+    : ['GetMyCollectionAlbums', variables];
+
+export const useInfiniteGetMyCollectionAlbumsQuery = <
+  TData = InfiniteData<GetMyCollectionAlbumsQuery>,
+  TError = unknown,
+>(
+  variables: GetMyCollectionAlbumsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetMyCollectionAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetMyCollectionAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetMyCollectionAlbumsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetMyCollectionAlbums.infinite']
+            : ['GetMyCollectionAlbums.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            GetMyCollectionAlbumsQuery,
+            GetMyCollectionAlbumsQueryVariables
+          >(GetMyCollectionAlbumsDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetMyCollectionAlbumsQuery.getKey = (
+  variables?: GetMyCollectionAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetMyCollectionAlbums.infinite']
+    : ['GetMyCollectionAlbums.infinite', variables];
 
 export const GetUserCollectionListDocument = `
     query GetUserCollectionList($userId: String!) {

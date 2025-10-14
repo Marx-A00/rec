@@ -1,0 +1,25 @@
+query GetMyCollectionAlbums {
+  myCollectionAlbums {
+    id
+    position
+    personalRating
+    personalNotes
+    addedAt
+    album {
+      id
+      title
+      coverArtUrl
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+    collection {
+      id
+      name
+    }
+  }
+}

@@ -1,14 +1,14 @@
 // src/components/dashboard/panels/CollectionAlbumsPanel.tsx
 'use client';
 
-import { Suspense, useEffect, useState, useRef } from 'react';
+import { Suspense, useEffect, useState, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Folder, ArrowLeftRight, ArrowUpDown } from 'lucide-react';
 
 import { PanelComponentProps } from '@/types/mosaic';
 import { CollectionAlbum } from '@/types/collection';
-import { Collection } from '@/generated/graphql';
+import { useGetMyCollectionAlbumsQuery } from '@/generated/graphql';
 import { useNavigation } from '@/hooks/useNavigation';
 import SignInButton from '@/components/auth/SignInButton';
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -24,9 +24,42 @@ export default function CollectionAlbumsPanel({
   const user = session?.user;
   const { navigateToAlbum } = useNavigation();
 
-  // State for user's album collection
-  const [userAlbums, setUserAlbums] = useState<CollectionAlbum[]>([]);
-  const [isLoadingAlbums, setIsLoadingAlbums] = useState(false);
+  // Use GraphQL hook with proper caching
+  const { data, isLoading } = useGetMyCollectionAlbumsQuery(
+    {},
+    {
+      enabled: !!user?.id && !isEditMode,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 30 * 60 * 1000, // 30 minutes
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  // Transform GraphQL data to CollectionAlbum format
+  const userAlbums = useMemo(() => {
+    if (!data?.myCollectionAlbums) return [];
+
+    return data.myCollectionAlbums.map((collectionAlbum, index) => ({
+      id: collectionAlbum.id,
+      albumId: collectionAlbum.album.id,
+      albumTitle: collectionAlbum.album.title,
+      albumArtist:
+        collectionAlbum.album.artists?.[0]?.artist?.name || 'Unknown Artist',
+      albumImageUrl: collectionAlbum.album.coverArtUrl || null,
+      albumYear: collectionAlbum.album.releaseDate
+        ? new Date(collectionAlbum.album.releaseDate).getFullYear().toString()
+        : null,
+      addedAt:
+        typeof collectionAlbum.addedAt === 'string'
+          ? collectionAlbum.addedAt
+          : collectionAlbum.addedAt.toISOString(),
+      addedBy: user?.id || 'unknown',
+      personalRating: collectionAlbum.personalRating || null,
+      personalNotes: collectionAlbum.personalNotes || null,
+      position: collectionAlbum.position || index,
+    }));
+  }, [data, user?.id]);
+
   const [selectedAlbum, setSelectedAlbum] = useState<CollectionAlbum | null>(
     null
   );
@@ -62,109 +95,6 @@ export default function CollectionAlbumsPanel({
       return () => container.removeEventListener('wheel', handleWheel);
     }
   }, [userAlbums, layoutMode]); // Re-attach when albums or layout changes
-
-  // Fetch user's collection albums
-  // TODO: stop it from refreshing and auto fetching
-  useEffect(() => {
-    if (user && !isEditMode) {
-      const fetchUserCollection = async () => {
-        setIsLoadingAlbums(true);
-        try {
-          // const response = await fetch('/api/collections/user/albums');
-          const query = `
-          query GetMyCollections {
-            myCollections {
-              id
-              name
-              albums {
-                id
-                position
-                personalRating
-                personalNotes
-                addedAt
-                album {
-                  id
-                  title
-                  coverArtUrl
-                  releaseDate
-                  artists {
-                    artist {
-                      name
-                    }
-                  }
-                }
-              }
-            }
-          }
-        `;
-
-          const response = await fetch('/api/graphql', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ query }),
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-
-            // Debug logging
-            console.log('GraphQL Response:', data);
-            console.log('Collections:', data.data?.myCollections);
-
-            const collections: Collection[] = data.data?.myCollections || [];
-            const allAlbums = collections.flatMap(
-              (collection: Collection) => collection.albums || []
-            );
-
-            console.log('All Albums extracted:', allAlbums);
-            console.log('Number of albums:', allAlbums.length);
-
-            // Transform the simplified format to CollectionAlbum format
-            // FIX: Use allAlbums instead of data.albums!
-            const transformedAlbums = allAlbums.map(
-              (collectionAlbum: any, index: number) => ({
-                id: collectionAlbum.id,
-                albumId: collectionAlbum.album.id,
-                albumTitle: collectionAlbum.album.title,
-                albumArtist:
-                  collectionAlbum.album.artists?.[0]?.artist?.name ||
-                  'Unknown Artist',
-                albumImageUrl: collectionAlbum.album.coverArtUrl || null,
-                albumYear: collectionAlbum.album.releaseDate
-                  ? new Date(collectionAlbum.album.releaseDate)
-                      .getFullYear()
-                      .toString()
-                  : null,
-                addedAt: collectionAlbum.addedAt,
-                addedBy: user?.id || 'unknown',
-                personalRating: collectionAlbum.personalRating,
-                personalNotes: collectionAlbum.personalNotes,
-                position: collectionAlbum.position || index,
-              })
-            );
-
-            console.log('Transformed albums:', transformedAlbums);
-
-            setUserAlbums(transformedAlbums);
-          } else {
-            console.error(
-              'API responded with error:',
-              response.status,
-              response.statusText
-            );
-          }
-        } catch (error) {
-          console.error('Error fetching user collection:', error);
-        } finally {
-          setIsLoadingAlbums(false);
-        }
-      };
-
-      fetchUserCollection();
-    }
-  }, [user, isEditMode]);
 
   // Album modal handlers
   const handleAlbumClick = async (
@@ -273,7 +203,7 @@ export default function CollectionAlbumsPanel({
             </div>
 
             <div className='flex-1 h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
-              {isLoadingAlbums ? (
+              {isLoading ? (
                 <div className='h-full flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
                   {Array.from({ length: 10 }).map((_, i) => (
                     <div

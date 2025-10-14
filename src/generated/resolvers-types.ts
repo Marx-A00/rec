@@ -3,7 +3,6 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig,
 } from 'graphql';
-
 import { GraphQLContext } from '@/lib/graphql/context';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -677,6 +676,7 @@ export type Query = {
   isFollowing: Scalars['Boolean']['output'];
   jobHistory: Array<JobRecord>;
   mutualConnections: Array<User>;
+  myCollectionAlbums: Array<CollectionAlbum>;
   myCollections: Array<Collection>;
   myRecommendations: RecommendationFeed;
   mySettings?: Maybe<UserSettings>;
@@ -2594,6 +2594,11 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryMutualConnectionsArgs, 'userId'>
+  >;
+  myCollectionAlbums?: Resolver<
+    Array<ResolversTypes['CollectionAlbum']>,
+    ParentType,
+    ContextType
   >;
   myCollections?: Resolver<
     Array<ResolversTypes['Collection']>,
