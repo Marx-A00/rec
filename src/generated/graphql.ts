@@ -1399,6 +1399,26 @@ export type UpdateProfileMutation = {
   };
 };
 
+export type AddAlbumMutationVariables = Exact<{
+  input: AlbumInput;
+}>;
+
+export type AddAlbumMutation = {
+  __typename?: 'Mutation';
+  addAlbum: {
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    releaseDate?: Date | null;
+    coverArtUrl?: string | null;
+    musicbrainzId?: string | null;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  };
+};
+
 export type GetArtistDiscographyQueryVariables = Exact<{
   id: Scalars['String']['input'];
 }>;
@@ -2508,6 +2528,50 @@ export const useUpdateProfileMutation = <TError = unknown, TContext = unknown>(
 };
 
 useUpdateProfileMutation.getKey = () => ['UpdateProfile'];
+
+export const AddAlbumDocument = `
+    mutation AddAlbum($input: AlbumInput!) {
+  addAlbum(input: $input) {
+    id
+    title
+    releaseDate
+    coverArtUrl
+    musicbrainzId
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+
+export const useAddAlbumMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    AddAlbumMutation,
+    TError,
+    AddAlbumMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AddAlbumMutation,
+    TError,
+    AddAlbumMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AddAlbum'],
+    mutationFn: (variables?: AddAlbumMutationVariables) =>
+      fetcher<AddAlbumMutation, AddAlbumMutationVariables>(
+        AddAlbumDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useAddAlbumMutation.getKey = () => ['AddAlbum'];
 
 export const GetArtistDiscographyDocument = `
     query GetArtistDiscography($id: String!) {

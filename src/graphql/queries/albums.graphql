@@ -1,0 +1,15 @@
+mutation AddAlbum($input: AlbumInput!) {
+  addAlbum(input: $input) {
+    id
+    title
+    releaseDate
+    coverArtUrl
+    musicbrainzId
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}

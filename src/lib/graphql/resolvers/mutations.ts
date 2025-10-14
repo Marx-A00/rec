@@ -422,9 +422,24 @@ export const mutationResolvers: MutationResolvers = {
       });
     }
 
-    // TODO shouldn't we first check if the album already exists?
-
     try {
+      // Check if album already exists by MusicBrainz ID (if provided)
+      if (input.musicbrainzId) {
+        const existingAlbum = await prisma.album.findFirst({
+          where: { musicbrainzId: input.musicbrainzId },
+          include: {
+            artists: {
+              include: { artist: true }
+            }
+          }
+        });
+
+        if (existingAlbum) {
+          console.log(`🔄 Album already exists: "${existingAlbum.title}" (${existingAlbum.id})`);
+          return existingAlbum;
+        }
+      }
+
       // Parse release date if provided
       const releaseDate = input.releaseDate ? new Date(input.releaseDate) : null;
 

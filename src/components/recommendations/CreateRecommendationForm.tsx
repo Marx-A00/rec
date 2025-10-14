@@ -11,37 +11,6 @@ function formatArtists(artists: Array<{ name: string }> | undefined): string {
   return artists.map(artist => artist.name).join(', ');
 }
 
-/**
- * Extract the best ID for album navigation - prefers master ID over release ID
- */
-function extractBestAlbumId(album: Album): string {
-  // Check if the album has Discogs metadata stored
-  const discogsData = (album as any)._discogs;
-
-  if (discogsData) {
-    const uri = discogsData.uri || discogsData.resource_url || '';
-
-    // If this is a release, try to get the master ID
-    if (uri.includes('/releases/')) {
-      // If we have access to master_id from the original data, use that
-      const masterIdFromData = (album as any).master_id;
-      if (masterIdFromData) {
-        return masterIdFromData.toString();
-      }
-    }
-
-    // If this is already a master or we don't have master_id, use the current ID
-    if (uri.includes('/masters/')) {
-      const masterId = uri.match(/\/masters\/(\d+)/)?.[1];
-      if (masterId) {
-        return masterId;
-      }
-    }
-  }
-
-  // Fallback to the regular ID
-  return album.id;
-}
 
 interface SimilarityRatingDialProps {
   value: number;
@@ -241,23 +210,12 @@ export default function CreateRecommendationForm({
       return;
     }
 
-    const request: CreateRecommendationRequest = {
-      basisAlbumDiscogsId: extractBestAlbumId(basisAlbum),
-      recommendedAlbumDiscogsId: extractBestAlbumId(recommendedAlbum),
+    // Pass full album objects - mutation will handle adding them to DB first
+    createMutation.mutate({
+      basisAlbum,
+      recommendedAlbum,
       score: finalScore,
-      basisAlbumTitle: basisAlbum.title,
-      basisAlbumArtist: formatArtists(basisAlbum.artists),
-      basisAlbumImageUrl: basisAlbum.image.url,
-      basisAlbumYear: basisAlbum.year?.toString() ?? null,
-      recommendedAlbumTitle: recommendedAlbum.title,
-      recommendedAlbumArtist: formatArtists(recommendedAlbum.artists),
-      recommendedAlbumImageUrl: recommendedAlbum.image.url,
-      recommendedAlbumYear: recommendedAlbum.year?.toString() ?? null,
-      // Legacy fields removed from CreateRecommendationRequest in GraphQL version
-      // Keeping local derivations but not sending them
-    };
-
-    createMutation.mutate(request);
+    });
   };
 
   const isDisabled =
