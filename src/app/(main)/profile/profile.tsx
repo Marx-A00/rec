@@ -45,7 +45,7 @@ export default function ProfileClient({
   recommendations,
   isOwnProfile,
 }: ProfileClientProps) {
-  const { prefetchRoute, navigateToAlbum, goBack } = useNavigation();
+  const { prefetchRoute, navigateTo, navigateToAlbum, goBack } = useNavigation();
 
   // Fetch collections using GraphQL
   const { data: collectionsData, isLoading: collectionsLoading } =
@@ -136,6 +136,12 @@ export default function ProfileClient({
       setSelectedAlbum(null);
       setIsExiting(false);
     }, 300); // Match the animation duration
+  };
+
+  // Custom navigation handler that adds source=local for collection albums
+  const handleNavigateToAlbum = (albumId: string) => {
+    const albumPath = `/albums/${albumId}?source=local`;
+    navigateTo(albumPath, { validate: false });
   };
 
   // Enhanced album click handler with navigation option
@@ -269,7 +275,7 @@ export default function ProfileClient({
         onClose={handleClose}
         data={selectedAlbum}
         isExiting={isExiting}
-        onNavigateToAlbum={navigateToAlbum}
+        onNavigateToAlbum={handleNavigateToAlbum}
       />
 
       <div className='container mx-auto px-4 py-8'>
