@@ -590,27 +590,31 @@ export class QueuedMusicBrainzService {
 }
 
 // ============================================================================
-// Singleton Instance
+// Singleton Instance (HMR-safe)
 // ============================================================================
 
-let queuedMusicBrainzServiceInstance: QueuedMusicBrainzService | null = null;
+// Use globalThis to survive hot module reloads in dev mode
+const globalForMusicBrainz = globalThis as unknown as {
+  queuedMusicBrainzServiceInstance: QueuedMusicBrainzService | undefined;
+};
 
 /**
  * Get the singleton queued MusicBrainz service instance
+ * HMR-safe: Uses globalThis to persist instance across hot reloads
  */
 export function getQueuedMusicBrainzService(): QueuedMusicBrainzService {
-  if (!queuedMusicBrainzServiceInstance) {
-    queuedMusicBrainzServiceInstance = new QueuedMusicBrainzService();
+  if (!globalForMusicBrainz.queuedMusicBrainzServiceInstance) {
+    globalForMusicBrainz.queuedMusicBrainzServiceInstance = new QueuedMusicBrainzService();
   }
-  return queuedMusicBrainzServiceInstance;
+  return globalForMusicBrainz.queuedMusicBrainzServiceInstance;
 }
 
 /**
  * Destroy the singleton instance (useful for testing)
  */
 export async function destroyQueuedMusicBrainzService(): Promise<void> {
-  if (queuedMusicBrainzServiceInstance) {
-    await queuedMusicBrainzServiceInstance.shutdown();
-    queuedMusicBrainzServiceInstance = null;
+  if (globalForMusicBrainz.queuedMusicBrainzServiceInstance) {
+    await globalForMusicBrainz.queuedMusicBrainzServiceInstance.shutdown();
+    globalForMusicBrainz.queuedMusicBrainzServiceInstance = undefined;
   }
 }

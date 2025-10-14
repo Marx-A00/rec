@@ -2,6 +2,7 @@
 // src/lib/graphql/resolvers/index.ts
 // Main resolver map for Apollo Server
 
+import chalk from 'chalk';
 import { Resolvers } from '@/generated/graphql';
 import { scalarResolvers } from './scalars';
 import { queryResolvers } from './queries';
@@ -363,6 +364,10 @@ export const resolvers: Resolvers = {
 
           if (candidates.length === 0) {
             // No match found, keep original image
+            console.log(
+              chalk.yellow(`⚠️  [Spotify Enrich]`) + ` No Spotify match for ${chalk.cyan(`"${mbArtist.name}"`)} ` +
+              chalk.dim(`(mbid: ${mbArtist.musicbrainzId?.slice(0, 8)}..., type: ${mbArtist.subtitle})`)
+            );
             return mbArtist;
           }
 
@@ -370,7 +375,10 @@ export const resolvers: Resolvers = {
             // Single match, use it
             const match = candidates[0];
             match.matched = true;
-            console.log(`✅ [Spotify Match] "${mbArtist.name}" (${mbArtist.subtitle}) → Spotify (pop:${match.popularity})`);
+            console.log(
+              chalk.green(`✅ [Spotify Enrich]`) + ` ${chalk.cyan(`"${mbArtist.name}"`)} → Spotify ` +
+              chalk.dim(`(pop: ${match.popularity}, genres: ${match.genres.slice(0, 2).join(', ') || 'none'})`)
+            );
             return {
               ...mbArtist,
               imageUrl: match.imageUrl,
@@ -400,8 +408,10 @@ export const resolvers: Resolvers = {
           bestMatch.matched = true;
 
           console.log(
-            `✅ [Spotify Match] "${mbArtist.name}" (${mbArtist.subtitle}, ${mbArtist.genre?.slice(0, 2).join(', ') || 'no tags'}) → ` +
-            `Spotify (genres: ${bestMatch.genres.slice(0, 2).join(', ')}, pop:${bestMatch.popularity}, score:${scored[0].score.toFixed(1)})`
+            chalk.magenta(`🎯 [Spotify Enrich]`) + ` ${chalk.cyan(`"${mbArtist.name}"`)} ` +
+            chalk.dim(`(${mbArtist.subtitle}, tags: ${mbArtist.genre?.slice(0, 2).join(', ') || 'none'})`) + ` → ` +
+            `Spotify ` + chalk.dim(`(pop: ${bestMatch.popularity}, genres: ${bestMatch.genres.slice(0, 2).join(', ')}, score: ${scored[0].score.toFixed(1)})`) + ` ` +
+            chalk.yellow(`[${candidates.length} candidates]`)
           );
 
           return {
@@ -509,12 +519,20 @@ export const resolvers: Resolvers = {
           const hasMb = !!a.musicbrainzId;
           const mbScore = mbArtistScore.get(String(a.musicbrainzId || a.id)) || 0;
           const mbScoreNorm = Math.max(0, Math.min(1, mbScore / 100));
-          // Weights: exact 0.5, sim 0.2, hasMb 0.2, mbScore 0.1
-          return exact * 0.5 + sim * 0.2 + (hasMb ? 0.2 : 0) + mbScoreNorm * 0.1;
+          const hasImage = !!(a.imageUrl && a.imageUrl.trim());
+          // Weights: exact 0.5, sim 0.15, hasMb 0.15, mbScore 0.1, hasImage 0.1
+          return exact * 0.5 + sim * 0.15 + (hasMb ? 0.15 : 0) + mbScoreNorm * 0.1 + (hasImage ? 0.1 : 0);
         };
 
         const rankedArtists = artists
-          .map(a => ({ a, s: scoreArtist(a) }))
+          .map(a => {
+            const score = scoreArtist(a);
+            console.log(
+              chalk.dim(`📊 [Artist Ranking]`) + ` ${chalk.cyan(`"${a.name}"`)} ` +
+              chalk.dim(`(mbid: ${a.musicbrainzId?.slice(0, 8) || 'none'}, score: ${score.toFixed(3)}, hasImage: ${!!a.imageUrl})`)
+            );
+            return { a, s: score };
+          })
           .sort((x, y) => y.s - x.s)
           .map(x => x.a);
 
@@ -525,6 +543,10 @@ export const resolvers: Resolvers = {
           const existing = byName.get(nameKey);
           if (!existing) {
             byName.set(nameKey, a);
+            console.log(
+              chalk.blue(`🎯 [Artist Dedup]`) + ` Keeping ${chalk.cyan(`"${a.name}"`)} ` +
+              chalk.dim(`(mbid: ${a.musicbrainzId?.slice(0, 8) || 'none'}, hasImage: ${!!a.imageUrl})`)
+            );
             continue;
           }
           // Prefer local with MBID, then local, then keep existing order
@@ -534,7 +556,16 @@ export const resolvers: Resolvers = {
           const existIsLocal = !(typeof existing.source === 'string' && existing.source.toUpperCase?.() === 'MUSICBRAINZ');
 
           if ((candIsLocal && !existIsLocal) || (candHasMb && !existHasMb) || (candIsLocal && candHasMb && !(existIsLocal && existHasMb))) {
+            console.log(
+              chalk.yellow(`🔄 [Artist Dedup]`) + ` Replacing ${chalk.cyan(`"${existing.name}"`)} with ${chalk.cyan(`"${a.name}"`)} ` +
+              chalk.dim(`(mbid: ${a.musicbrainzId?.slice(0, 8) || 'none'}, hasImage: ${!!a.imageUrl})`)
+            );
             byName.set(nameKey, a);
+          } else {
+            console.log(
+              chalk.gray(`⏭️  [Artist Dedup]`) + ` Skipping ${chalk.cyan(`"${a.name}"`)} ` +
+              chalk.dim(`(keeping existing mbid: ${existing.musicbrainzId?.slice(0, 8) || 'none'})`)
+            );
           }
         }
         artists = Array.from(byName.values());

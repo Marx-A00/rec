@@ -90,12 +90,16 @@ export class SearchOrchestrator {
       resolveArtistImages = false,
     } = options;
 
-    console.log(`🔍 [SearchOrchestrator] Search called with:`, {
-      query,
-      types,
-      sources,
-      limit
-    });
+    // Prettified search start log with background
+    const border = chalk.bgCyan.black('═'.repeat(60));
+    console.log('\n' + border);
+    console.log(chalk.bgCyan.black.bold('  🔍 SEARCH ORCHESTRATOR START  '));
+    console.log(border);
+    console.log(chalk.cyan('  Query:   ') + chalk.white(`"${query}"`));
+    console.log(chalk.cyan('  Types:   ') + chalk.white(types.join(', ')));
+    console.log(chalk.cyan('  Sources: ') + chalk.white(sources.join(', ')));
+    console.log(chalk.cyan('  Limit:   ') + chalk.white(limit));
+    console.log(border + '\n');
 
     const artistImageLimit = options.artistImageLimit ?? Math.min(limit, 12);
     const artistMaxResults = options.artistMaxResults ?? Math.min(limit, 5);
@@ -145,17 +149,28 @@ export class SearchOrchestrator {
     let finalResults = allResults;
     let duplicatesRemoved = 0;
 
-    console.log(`📦 [SearchOrchestrator] Before dedup: ${allResults.length} results from sources:`,
-      { local: sourceResults.local?.results.length || 0,
-        musicbrainz: sourceResults.musicbrainz?.results.length || 0,
-        spotify: sourceResults.spotify?.results.length || 0 }
-    );
+    // Prettified results summary
+    const resultsBorder = chalk.cyan('─'.repeat(60));
+    console.log('\n' + resultsBorder);
+    console.log(chalk.bold.cyan('📦 RESULTS BEFORE DEDUPLICATION'));
+    console.log(resultsBorder);
+    console.log(chalk.cyan('  Total:       ') + chalk.white(allResults.length));
+    console.log(chalk.cyan('  Local:       ') + chalk.white(sourceResults.local?.results.length || 0));
+    console.log(chalk.cyan('  MusicBrainz: ') + chalk.white(sourceResults.musicbrainz?.results.length || 0));
+    console.log(chalk.cyan('  Spotify:     ') + chalk.white(sourceResults.spotify?.results.length || 0));
+    console.log(resultsBorder + '\n');
 
     if (deduplicateResults && allResults.length > 0) {
       const dedupeResult = this.deduplicateResults(allResults);
       finalResults = dedupeResult.results;
       duplicatesRemoved = dedupeResult.duplicatesRemoved;
-      console.log(`🔗 [SearchOrchestrator] After dedup: ${finalResults.length} results (removed ${duplicatesRemoved} duplicates)`);
+
+      console.log(resultsBorder);
+      console.log(chalk.bold.cyan('🔗 RESULTS AFTER DEDUPLICATION'));
+      console.log(resultsBorder);
+      console.log(chalk.cyan('  Final:    ') + chalk.white(finalResults.length));
+      console.log(chalk.cyan('  Removed:  ') + chalk.yellow(duplicatesRemoved));
+      console.log(resultsBorder + '\n');
     }
 
     const endTime = Date.now();
@@ -172,7 +187,6 @@ export class SearchOrchestrator {
         localDuration: sourceResults.local?.timing.duration,
         musicbrainzDuration: sourceResults.musicbrainz?.timing.duration,
         discogsDuration: sourceResults.discogs?.timing.duration,
-        lastfmDuration: sourceResults.lastfm?.timing.duration,
       },
     };
   }
@@ -515,15 +529,22 @@ export class SearchOrchestrator {
 
       // Spotify only supports artist search currently
       if (types.includes('artist')) {
-        console.log(`🔍 [SearchOrchestrator] Searching Spotify for artists: "${query}"`);
+        const spotifyBorder = chalk.magenta('─'.repeat(60));
+        console.log('\n' + spotifyBorder);
+        console.log(chalk.bold.magenta('🎵 SEARCHING SPOTIFY'));
+        console.log(spotifyBorder);
+        console.log(chalk.magenta('  Query: ') + chalk.white(`"${query}"`));
+        console.log(spotifyBorder + '\n');
 
         const artists = await searchSpotifyArtists(query);
-        console.log(`✅ [SearchOrchestrator] Spotify returned ${artists.length} artists`);
+
+        console.log(spotifyBorder);
+        console.log(chalk.bold.green('✅ SPOTIFY RESULTS'));
+        console.log(spotifyBorder);
+        console.log(chalk.green('  Artists found: ') + chalk.white(artists.length));
+        console.log(spotifyBorder + '\n');
 
         results.push(...artists.map(artist => this.mapSpotifyArtistToUnifiedResult(artist)));
-        console.log(`📊 [SearchOrchestrator] Mapped ${results.length} Spotify results with images:`,
-          results.map(r => ({ name: r.title, hasImage: !!r.image.url }))
-        );
       }
 
       const endTime = Date.now();

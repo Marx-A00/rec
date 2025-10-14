@@ -135,7 +135,6 @@ export async function searchSpotifyArtists(query: string): Promise<SpotifySearch
 
     const results: SpotifySearchResult[] = artists.map((artist: SpotifyArtist) => {
       const imageUrl = extractBestImage(artist.images);
-      console.log(`🖼️ [Spotify] ${artist.name}: imageUrl = "${imageUrl || 'NONE'}"`, artist.images);
       return {
         name: artist.name,
         spotifyId: artist.id,
@@ -144,8 +143,6 @@ export async function searchSpotifyArtists(query: string): Promise<SpotifySearch
         genres: artist.genres,
       };
     });
-
-    console.log(`✅ [Spotify] Found ${results.length} artists for "${query}" (${duration}ms)`);
 
     return results;
   } catch (error: unknown) {
