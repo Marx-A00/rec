@@ -259,6 +259,11 @@ export default function AlbumModal({
         // Use source from album data
         const source = getSource();
         artistSource = source ? source.toLowerCase() : undefined;
+
+        // IMPORTANT: For collection albums, artists are ALWAYS local
+        if (isCollectionAlbum(data)) {
+          artistSource = 'local';
+        }
       }
 
       if (!navId) {

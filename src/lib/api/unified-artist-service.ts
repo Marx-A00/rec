@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { musicbrainzService as baseMusicbrainzService } from '@/lib/musicbrainz/basic-service';
 import { searchSpotifyArtists } from '@/lib/spotify/search';
+import { calculateStringSimilarity } from '@/lib/utils/string-similarity';
 
 export interface UnifiedArtistDetails {
   id: string;
@@ -44,33 +45,6 @@ class UnifiedArtistService {
         consumerSecret: process.env.CONSUMER_SECRET,
       }).database();
     }
-  }
-
-  /**
-   * Detects the source of an artist ID based on its format
-   */
-  private detectSource(id: string): 'local' | 'musicbrainz' | 'discogs' {
-    // MusicBrainz UUIDs
-    if (
-      id.match(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      )
-    ) {
-      return 'musicbrainz';
-    }
-
-    // Local database IDs (usually start with 'cm' from Prisma)
-    if (id.startsWith('cm') || id.startsWith('ck') || id.startsWith('cl')) {
-      return 'local';
-    }
-
-    // Discogs IDs are numeric
-    if (/^\d+$/.test(id)) {
-      return 'discogs';
-    }
-
-    // Default to local if uncertain
-    return 'local';
   }
 
   /**
@@ -155,15 +129,17 @@ class UnifiedArtistService {
 
   /**
    * Get artist details from any source based on ID
+   * @param id Artist ID
+   * @param options REQUIRED source parameter - no auto-detection
    */
   async getArtistDetails(
     id: string,
-    options?: {
-      source?: 'local' | 'musicbrainz' | 'discogs';
+    options: {
+      source: 'local' | 'musicbrainz' | 'discogs';
       skipLocalCache?: boolean;
     }
   ): Promise<UnifiedArtistDetails> {
-    const source = options?.source || this.detectSource(id);
+    const source = options.source;
 
     switch (source) {
       case 'local':
@@ -274,13 +250,51 @@ class UnifiedArtistService {
       let finalImageUrl: string | undefined;
       try {
         const spotifyResults = await searchSpotifyArtists(mbArtist.name);
-        if (spotifyResults.length > 0 && spotifyResults[0].imageUrl) {
-          finalImageUrl = spotifyResults[0].imageUrl;
 
-          console.log('[MBArtist] Spotify image found', {
-            mbid,
-            artistName: mbArtist.name,
-          });
+        if (spotifyResults.length > 0) {
+          // Find best match using name similarity
+          let bestMatch = null;
+          let bestScore = 0;
+
+          for (const result of spotifyResults) {
+            // Use fuzzy matching for better typo tolerance
+            const nameScore = calculateStringSimilarity(
+              mbArtist.name,
+              result.name
+            );
+
+            const popularityBoost = (result.popularity || 0) / 100;
+            const combinedScore = nameScore * 0.6 + popularityBoost * 0.1;
+
+            // Accept if exact name match (100%) with 60%+ score, or 80%+ combined
+            const isAcceptable =
+              combinedScore >= 0.8 || (nameScore === 1.0 && combinedScore >= 0.6);
+
+            if (isAcceptable && combinedScore > bestScore) {
+              bestScore = combinedScore;
+              bestMatch = result;
+            }
+          }
+
+          if (bestMatch?.imageUrl) {
+            finalImageUrl = bestMatch.imageUrl;
+            const matchType = bestMatch.name.toLowerCase() === mbArtist.name.toLowerCase()
+              ? 'exact'
+              : 'fuzzy';
+            console.log('[MBArtist] Spotify image found', {
+              mbid,
+              artistName: mbArtist.name,
+              spotifyMatch: bestMatch.name,
+              matchType,
+              score: `${(bestScore * 100).toFixed(1)}%`,
+            });
+          } else if (spotifyResults.length > 0) {
+            console.log('[MBArtist] Spotify returned results but no match met threshold', {
+              mbid,
+              artistName: mbArtist.name,
+              resultCount: spotifyResults.length,
+            });
+          }
         }
       } catch (error) {
         console.warn('[MBArtist] Spotify image fetch failed:', error);
@@ -395,38 +409,56 @@ class UnifiedArtistService {
   /**
    * Get artist discography based on source
    */
-  async getArtistDiscography(id: string) {
-    // Local-first resolution: if this is a local UUID, resolve MusicBrainz ID then browse
-    try {
-      const localArtist = await prisma.artist.findUnique({ where: { id } });
-      if (localArtist) {
-        // If we have an MBID on the local artist, browse MB by that MBID
-        if (localArtist.musicbrainzId) {
-          return this.getMusicBrainzDiscography(localArtist.musicbrainzId);
+  async getArtistDiscography(
+    id: string,
+    options: {
+      source: 'local' | 'musicbrainz' | 'discogs';
+    }
+  ) {
+    const { source } = options;
+
+    if (source === 'local') {
+      // Look up local artist by UUID, then fetch discography via their MBID
+      try {
+        const localArtist = await prisma.artist.findUnique({ where: { id } });
+        if (localArtist) {
+          if (localArtist.musicbrainzId) {
+            return this.getMusicBrainzDiscography(localArtist.musicbrainzId);
+          }
+          // No MBID available → return empty
+          console.warn(
+            `[UnifiedArtistService] Local artist has no MusicBrainz ID: ${id}`
+          );
+          return [];
         }
-        // No MBID available → return empty for now (UI will show a message)
+        // Artist not found in local DB
+        console.warn(
+          `[UnifiedArtistService] Artist not found in local DB: ${id}`
+        );
+        return [];
+      } catch (e) {
+        console.error(
+          '[UnifiedArtistService] Error fetching local artist discography:',
+          e
+        );
         return [];
       }
-    } catch (e) {
-      console.warn(
-        '[UnifiedArtistService] Local lookup failed in getArtistDiscography:',
-        e
-      );
     }
 
-    // Not a local UUID; detect by format
-    const source = this.detectSource(id);
-    switch (source) {
-      case 'musicbrainz':
-        return this.getMusicBrainzDiscography(id);
-      case 'discogs':
-        return this.getDiscogsDiscography(id);
-      case 'local':
-        // Fallback safety; treat as no results
-        return [];
-      default:
-        return [];
+    if (source === 'musicbrainz') {
+      // ID is already a MusicBrainz ID, use it directly
+      return this.getMusicBrainzDiscography(id);
     }
+
+    if (source === 'discogs') {
+      // TODO: Implement Discogs discography fetching
+      console.warn(
+        '[UnifiedArtistService] Discogs discography not yet implemented'
+      );
+      return [];
+    }
+
+    return [];
   }
 
   private async getLocalDiscography(artistId: string) {

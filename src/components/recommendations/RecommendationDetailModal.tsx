@@ -191,7 +191,8 @@ export default function RecommendationDetailModal({
                     <span key={a.artist.id}>
                       {idx > 0 && ', '}
                       <Link
-                        href={`/artists/${a.artist.id}`}
+                        href={`/artists/${a.artist.id}?source=local`}
+                        // TODO: There should be a better way to attatch source rather than just hardcoding
                         className='hover:text-white hover:underline transition-colors'
                       >
                         {a.artist.name}
@@ -240,7 +241,7 @@ export default function RecommendationDetailModal({
                     <span key={a.artist.id}>
                       {idx > 0 && ', '}
                       <Link
-                        href={`/artists/${a.artist.id}`}
+                        href={`/artists/${a.artist.id}?source=local`}
                         className='hover:text-white hover:underline transition-colors'
                       >
                         {a.artist.name}

@@ -751,6 +751,7 @@ export type QueryArtistArgs = {
 
 export type QueryArtistDiscographyArgs = {
   id: Scalars['String']['input'];
+  source: DataSource;
 };
 
 export type QueryCollectionArgs = {
@@ -1469,6 +1470,7 @@ export type AddAlbumMutation = {
 
 export type GetArtistDiscographyQueryVariables = Exact<{
   id: Scalars['String']['input'];
+  source: DataSource;
 }>;
 
 export type GetArtistDiscographyQuery = {
@@ -2695,8 +2697,8 @@ export const useAddAlbumMutation = <TError = unknown, TContext = unknown>(
 useAddAlbumMutation.getKey = () => ['AddAlbum'];
 
 export const GetArtistDiscographyDocument = `
-    query GetArtistDiscography($id: String!) {
-  artistDiscography(id: $id) {
+    query GetArtistDiscography($id: String!, $source: DataSource!) {
+  artistDiscography(id: $id, source: $source) {
     albums {
       id
       source

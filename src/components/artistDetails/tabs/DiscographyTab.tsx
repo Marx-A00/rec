@@ -9,6 +9,7 @@ import { useAlbumModal } from '@/hooks/useAlbumModal';
 import {
   useGetArtistDiscographyQuery,
   type GetArtistDiscographyQuery,
+  DataSource,
 } from '@/generated/graphql';
 
 type ReleaseType = NonNullable<
@@ -18,12 +19,22 @@ type ReleaseType = NonNullable<
 export default function DiscographyTab({
   artistId,
   artistName,
+  source,
 }: {
   artistId: string;
   artistName?: string;
+  source: 'local' | 'musicbrainz' | 'discogs';
 }) {
+  // Map source string to DataSource enum
+  const sourceEnum =
+    source === 'local'
+      ? DataSource.Local
+      : source === 'musicbrainz'
+        ? DataSource.Musicbrainz
+        : DataSource.Discogs;
+
   const { data, isLoading, error } = useGetArtistDiscographyQuery(
-    { id: artistId },
+    { id: artistId, source: sourceEnum },
     { enabled: !!artistId }
   );
 

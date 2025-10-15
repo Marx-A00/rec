@@ -40,11 +40,9 @@ export default async function ArtistDetailsPage({
       | 'musicbrainz'
       | 'discogs'
       | undefined;
-    // Pass through preferred source when present
-    artist = await getArtistDetails(
-      artistId,
-      preferredSource ? { source: preferredSource } : undefined
-    );
+    // Default to 'local' if no source provided
+    const source = preferredSource || 'local';
+    artist = await getArtistDetails(artistId, { source });
   } catch (error) {
     console.error('Error fetching artist:', error);
     notFound();
@@ -213,7 +211,11 @@ export default async function ArtistDetailsPage({
           value='discography'
           className='focus:outline-none outline-none'
         >
-          <DiscographyTab artistId={artistId} artistName={artist.name} />
+          <DiscographyTab
+            artistId={artist.id}
+            artistName={artist.name}
+            source={artist.source}
+          />
         </TabsContent>
 
         <TabsContent
@@ -221,7 +223,7 @@ export default async function ArtistDetailsPage({
           className='focus:outline-none outline-none'
         >
           <ArtistRecommendationsTab
-            artistId={artistId}
+            artistId={artist.id}
             artistName={sanitizeArtistName(artist.name)}
           />
         </TabsContent>

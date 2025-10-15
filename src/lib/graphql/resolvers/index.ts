@@ -107,8 +107,11 @@ export const resolvers: Resolvers = {
     },
 
     // Unified artist discography for client components
-    artistDiscography: async (_, { id }) => {
-      const discography = await unifiedArtistService.getArtistDiscography(id);
+    artistDiscography: async (_, { id, source }) => {
+      const normalizedSource = source.toLowerCase() as 'local' | 'musicbrainz' | 'discogs';
+      const discography = await unifiedArtistService.getArtistDiscography(id, {
+        source: normalizedSource,
+      });
 
       // Helper to map a release to GraphQL UnifiedRelease type
       const mapRelease = (release: any) => ({

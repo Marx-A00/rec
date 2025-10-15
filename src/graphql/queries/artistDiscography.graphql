@@ -1,5 +1,5 @@
-query GetArtistDiscography($id: String!) {
-  artistDiscography(id: $id) {
+query GetArtistDiscography($id: String!, $source: DataSource!) {
+  artistDiscography(id: $id, source: $source) {
     albums {
       id
       source

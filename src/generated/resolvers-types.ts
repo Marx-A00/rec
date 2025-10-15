@@ -725,6 +725,7 @@ export type QueryArtistArgs = {
 
 export type QueryArtistDiscographyArgs = {
   id: Scalars['String']['input'];
+  source: DataSource;
 };
 
 export type QueryCollectionArgs = {
@@ -2545,7 +2546,7 @@ export type QueryResolvers<
     ResolversTypes['CategorizedDiscography'],
     ParentType,
     ContextType,
-    RequireFields<QueryArtistDiscographyArgs, 'id'>
+    RequireFields<QueryArtistDiscographyArgs, 'id' | 'source'>
   >;
   collection?: Resolver<
     Maybe<ResolversTypes['Collection']>,

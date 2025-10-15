@@ -11,6 +11,8 @@ import {
   calculateEnrichmentPriority,
   mapSourceToUserAction,
 } from '../musicbrainz/enrichment-logic';
+import { searchSpotifyArtists } from '../spotify/search';
+import { calculateStringSimilarity as fuzzyMatch } from '../utils/string-similarity';
 import {
   MusicBrainzRecordingDetail,
   MusicBrainzRelation,
@@ -758,7 +760,7 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
           ['url-rels', 'tags']
         );
         if (mbData) {
-          enrichmentResult = await updateArtistFromMusicBrainz(artist, mbData);
+          enrichmentResult = await enrichArtistMetadata(artist, mbData);
           newDataQuality = 'HIGH';
         }
       } catch (mbError) {
@@ -801,7 +803,7 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
               ['url-rels', 'tags']
             );
             if (mbData) {
-              enrichmentResult = await updateArtistFromMusicBrainz(
+              enrichmentResult = await enrichArtistMetadata(
                 artist,
                 mbData
               );
@@ -1054,27 +1056,8 @@ function findBestArtistMatch(
   return bestMatch;
 }
 
-function calculateStringSimilarity(str1: string, str2: string): number {
-  // Simple similarity based on common characters
-  const normalize = (s: string) =>
-    s
-      .replace(/[^\w\s]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  const s1 = normalize(str1);
-  const s2 = normalize(str2);
-
-  if (s1 === s2) return 1;
-  if (s1.length === 0 || s2.length === 0) return 0;
-
-  // Jaccard similarity using word sets
-  const words1 = new Set(s1.split(' '));
-  const words2 = new Set(s2.split(' '));
-  const intersection = new Set([...words1].filter(x => words2.has(x)));
-  const union = new Set([...words1, ...words2]);
-
-  return intersection.size / union.size;
-}
+// Use fuzzy matching instead of Jaccard similarity - better for typos and variations
+const calculateStringSimilarity = fuzzyMatch;
 
 async function updateAlbumFromMusicBrainz(
   album: any,
@@ -1180,7 +1163,7 @@ async function updateAlbumFromMusicBrainz(
   return null;
 }
 
-async function updateArtistFromMusicBrainz(
+async function enrichArtistMetadata(
   artist: any,
   mbData: any
 ): Promise<any> {
@@ -1249,16 +1232,95 @@ async function updateArtistFromMusicBrainz(
   }
 
   // Enrich artist image
-  // Priority: Discogs > Wikimedia Commons > Keep existing
-  // Always upgrade Wikimedia to Discogs if possible
+  // Priority: Spotify > Discogs > Wikimedia Commons
   let imageUrl: string | undefined;
 
-  // Try Discogs first (best quality artist photos)
+  // 1. Try Spotify first (best quality + most reliable)
+  try {
+    const spotifyResults = await searchSpotifyArtists(artist.name);
+
+    if (spotifyResults.length > 0) {
+      // Find best match using multi-factor scoring
+      let bestMatch = null;
+      let bestScore = 0;
+
+      for (const result of spotifyResults) {
+        // Name similarity (60% weight)
+        const nameScore = calculateStringSimilarity(
+          artist.name.toLowerCase(),
+          result.name.toLowerCase()
+        );
+
+        // Genre overlap (30% weight) - Jaccard similarity of genre sets
+        let genreScore = 0;
+        if (
+          artist.genres?.length > 0 &&
+          result.genres &&
+          result.genres.length > 0
+        ) {
+          const artistGenres = new Set(
+            (artist.genres as string[]).map((g: string) => g.toLowerCase())
+          );
+          const spotifyGenres = new Set(
+            (result.genres as string[]).map((g: string) => g.toLowerCase())
+          );
+          const intersection = new Set(
+            [...artistGenres].filter(g => spotifyGenres.has(g))
+          );
+          const union = new Set([...artistGenres, ...spotifyGenres]);
+          genreScore = intersection.size / union.size;
+        }
+
+        // Popularity boost (10% weight) - normalized 0-1
+        const popularityBoost = (result.popularity || 0) / 100;
+
+        // Combined score
+        const combinedScore =
+          nameScore * 0.6 + genreScore * 0.3 + popularityBoost * 0.1;
+
+        // Accept if:
+        // 1. Combined score >= 80%, OR
+        // 2. Exact name match (100%) with any popularity
+        const isAcceptable =
+          combinedScore >= 0.8 || (nameScore === 1.0 && combinedScore >= 0.6);
+
+        if (isAcceptable && combinedScore > bestScore) {
+          bestScore = combinedScore;
+          bestMatch = { result, nameScore, genreScore, popularityBoost };
+        }
+      }
+
+      if (bestMatch?.result.imageUrl) {
+        imageUrl = bestMatch.result.imageUrl;
+        const matchType =
+          bestMatch.nameScore === 1.0 ? 'exact name match' : 'multi-factor match';
+        console.log(
+          `📸 Got artist image from Spotify for "${artist.name}" ` +
+            `(${matchType}: ${(bestScore * 100).toFixed(1)}% - ` +
+            `name: ${(bestMatch.nameScore * 100).toFixed(0)}%, ` +
+            `genre: ${(bestMatch.genreScore * 100).toFixed(0)}%, ` +
+            `popularity: ${(bestMatch.popularityBoost * 100).toFixed(0)}%)`
+        );
+      } else if (spotifyResults.length > 0) {
+        console.log(
+          `⚠️ Spotify returned ${spotifyResults.length} results for "${artist.name}" ` +
+            `but no match met threshold (need 80% combined or 100% name match)`
+        );
+      }
+    }
+  } catch (error) {
+    console.warn(
+      `Failed to fetch Spotify image for artist ${artist.id}:`,
+      error
+    );
+  }
+
+  // 2. Try Discogs (only if no Spotify image)
   // Use the discogsId we just extracted from MB relations, or existing discogsId
   const discogsId = updateData.discogsId || artist.discogsId;
   const hasDiscogsImage = artist.imageUrl?.includes('discogs.com');
 
-  if (discogsId && !hasDiscogsImage) {
+  if (!imageUrl && discogsId && !hasDiscogsImage) {
     // Fetch Discogs image if we have ID and don't already have a Discogs image
     try {
       const { unifiedArtistService } = await import(
@@ -1282,7 +1344,7 @@ async function updateArtistFromMusicBrainz(
     }
   }
 
-  // Fallback to Wikimedia Commons (via Wikidata) - only if no image at all
+  // 3. Fallback to Wikimedia Commons (via Wikidata) - only if no Spotify or Discogs
   if (!imageUrl && !artist.imageUrl && mbData.relations) {
     try {
       // Extract Wikidata QID from MusicBrainz relations

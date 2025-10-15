@@ -837,7 +837,7 @@ type Query {
   # Unified artist discography (supports local, MusicBrainz, and Discogs IDs)
   # Note: artistDetails is handled directly by server components
   # Returns all releases categorized by type (albums, EPs, singles, etc.)
-  artistDiscography(id: String!): CategorizedDiscography!
+  artistDiscography(id: String!, source: DataSource!): CategorizedDiscography!
 
   # Feed & Social
   recommendationFeed(cursor: String, limit: Int = 20): RecommendationFeed!
