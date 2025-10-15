@@ -13,6 +13,7 @@ import {
   getQueuedMusicBrainzService,
 } from '../musicbrainz/queue-service';
 import { searchSpotifyArtists } from '../spotify/search';
+import { calculateStringSimilarity } from '../utils/string-similarity';
 
 export enum SearchSource {
   LOCAL = 'LOCAL',
@@ -41,7 +42,7 @@ export interface SearchOptions {
   artistMaxResults?: number;
   // Minimum MB score required to consider an artist (0-100)
   minMusicBrainzArtistScore?: number;
-  // Token Jaccard similarity threshold between query and artist name (0-1)
+  // Fuzzy match similarity threshold between query and artist name (0-1, using fuzzysort)
   artistSimilarityThreshold?: number;
 }
 
@@ -119,7 +120,8 @@ export class SearchOrchestrator {
     const artistImageLimit = options.artistImageLimit ?? Math.min(limit, 12);
     const artistMaxResults = options.artistMaxResults ?? Math.min(limit, 5);
     const minArtistScore = options.minMusicBrainzArtistScore ?? 80;
-    const nameSimThreshold = options.artistSimilarityThreshold ?? 0.82;
+    // Lowered from 0.82 to 0.75 for fuzzysort - handles typos and variations better
+    const nameSimThreshold = options.artistSimilarityThreshold ?? 0.75;
 
     const searchPromises: Promise<SearchResult>[] = [];
 
@@ -1062,20 +1064,9 @@ export class SearchOrchestrator {
     }>,
     opts: { minScore: number; nameThreshold: number; limit: number }
   ) {
-    const normalizedQuery = query.trim().toLowerCase();
-    const queryTokens = new Set(normalizedQuery.split(/\s+/).filter(Boolean));
-
-    const jaccard = (a: Set<string>, b: Set<string>): number => {
-      const intersection = new Set([...a].filter(x => b.has(x))).size;
-      const union = new Set([...a, ...b]).size;
-      return union === 0 ? 0 : intersection / union;
-    };
-
+    // Use fuzzy matching for better search results with typo tolerance
     const decorated = artists.map(a => {
-      const nameTokens = new Set(
-        (a.name || '').toLowerCase().split(/\s+/).filter(Boolean)
-      );
-      const sim = jaccard(queryTokens, nameTokens);
+      const sim = calculateStringSimilarity(query, a.name || '');
       const mbScore = typeof a.score === 'number' ? a.score : 0;
       // Combined score emphasizing MB score, with a boost from name similarity
       const combined = (mbScore / 100) * 0.8 + sim * 0.2;
