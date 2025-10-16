@@ -692,6 +692,7 @@ export type Query = {
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
   artist?: Maybe<Artist>;
+  artistByMusicBrainzId?: Maybe<Artist>;
   artistDiscography: CategorizedDiscography;
   collection?: Maybe<Collection>;
   databaseStats: DatabaseStats;
@@ -747,6 +748,10 @@ export type QueryAlbumTracksArgs = {
 
 export type QueryArtistArgs = {
   id: Scalars['UUID']['input'];
+};
+
+export type QueryArtistByMusicBrainzIdArgs = {
+  musicbrainzId: Scalars['UUID']['input'];
 };
 
 export type QueryArtistDiscographyArgs = {
@@ -1466,6 +1471,21 @@ export type AddAlbumMutation = {
       artist: { __typename?: 'Artist'; id: string; name: string };
     }>;
   };
+};
+
+export type GetArtistByMusicBrainzIdQueryVariables = Exact<{
+  musicbrainzId: Scalars['UUID']['input'];
+}>;
+
+export type GetArtistByMusicBrainzIdQuery = {
+  __typename?: 'Query';
+  artistByMusicBrainzId?: {
+    __typename?: 'Artist';
+    id: string;
+    musicbrainzId?: string | null;
+    name: string;
+    imageUrl?: string | null;
+  } | null;
 };
 
 export type GetArtistDiscographyQueryVariables = Exact<{
@@ -2695,6 +2715,89 @@ export const useAddAlbumMutation = <TError = unknown, TContext = unknown>(
 };
 
 useAddAlbumMutation.getKey = () => ['AddAlbum'];
+
+export const GetArtistByMusicBrainzIdDocument = `
+    query GetArtistByMusicBrainzId($musicbrainzId: UUID!) {
+  artistByMusicBrainzId(musicbrainzId: $musicbrainzId) {
+    id
+    musicbrainzId
+    name
+    imageUrl
+  }
+}
+    `;
+
+export const useGetArtistByMusicBrainzIdQuery = <
+  TData = GetArtistByMusicBrainzIdQuery,
+  TError = unknown,
+>(
+  variables: GetArtistByMusicBrainzIdQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetArtistByMusicBrainzIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetArtistByMusicBrainzIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetArtistByMusicBrainzIdQuery, TError, TData>({
+    queryKey: ['GetArtistByMusicBrainzId', variables],
+    queryFn: fetcher<
+      GetArtistByMusicBrainzIdQuery,
+      GetArtistByMusicBrainzIdQueryVariables
+    >(GetArtistByMusicBrainzIdDocument, variables),
+    ...options,
+  });
+};
+
+useGetArtistByMusicBrainzIdQuery.getKey = (
+  variables: GetArtistByMusicBrainzIdQueryVariables
+) => ['GetArtistByMusicBrainzId', variables];
+
+export const useInfiniteGetArtistByMusicBrainzIdQuery = <
+  TData = InfiniteData<GetArtistByMusicBrainzIdQuery>,
+  TError = unknown,
+>(
+  variables: GetArtistByMusicBrainzIdQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetArtistByMusicBrainzIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetArtistByMusicBrainzIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetArtistByMusicBrainzIdQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'GetArtistByMusicBrainzId.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            GetArtistByMusicBrainzIdQuery,
+            GetArtistByMusicBrainzIdQueryVariables
+          >(GetArtistByMusicBrainzIdDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetArtistByMusicBrainzIdQuery.getKey = (
+  variables: GetArtistByMusicBrainzIdQueryVariables
+) => ['GetArtistByMusicBrainzId.infinite', variables];
 
 export const GetArtistDiscographyDocument = `
     query GetArtistDiscography($id: String!, $source: DataSource!) {

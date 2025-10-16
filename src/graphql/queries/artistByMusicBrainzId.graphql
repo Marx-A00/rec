@@ -1,0 +1,8 @@
+query GetArtistByMusicBrainzId($musicbrainzId: UUID!) {
+  artistByMusicBrainzId(musicbrainzId: $musicbrainzId) {
+    id
+    musicbrainzId
+    name
+    imageUrl
+  }
+}

@@ -666,6 +666,7 @@ export type Query = {
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
   artist?: Maybe<Artist>;
+  artistByMusicBrainzId?: Maybe<Artist>;
   artistDiscography: CategorizedDiscography;
   collection?: Maybe<Collection>;
   databaseStats: DatabaseStats;
@@ -721,6 +722,10 @@ export type QueryAlbumTracksArgs = {
 
 export type QueryArtistArgs = {
   id: Scalars['UUID']['input'];
+};
+
+export type QueryArtistByMusicBrainzIdArgs = {
+  musicbrainzId: Scalars['UUID']['input'];
 };
 
 export type QueryArtistDiscographyArgs = {
@@ -2541,6 +2546,12 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryArtistArgs, 'id'>
+  >;
+  artistByMusicBrainzId?: Resolver<
+    Maybe<ResolversTypes['Artist']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryArtistByMusicBrainzIdArgs, 'musicbrainzId'>
   >;
   artistDiscography?: Resolver<
     ResolversTypes['CategorizedDiscography'],

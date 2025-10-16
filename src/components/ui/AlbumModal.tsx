@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Heart, Share2, MoreHorizontal, User, Clock } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,11 @@ import { CollectionAlbum } from '@/types/collection';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
 import { graphqlClient } from '@/lib/graphql-client';
-import { useAddToListenLaterMutation } from '@/generated/graphql';
+import {
+  useAddToListenLaterMutation,
+  GetArtistByMusicBrainzIdDocument,
+  type GetArtistByMusicBrainzIdQuery,
+} from '@/generated/graphql';
 
 interface AlbumModalProps {
   isOpen: boolean;
@@ -53,6 +58,7 @@ export default function AlbumModal({
   const {} = useNavigation();
   const { toast, showToast, hideToast } = useToast();
   const { openDrawer } = useRecommendationDrawerContext();
+  const queryClient = useQueryClient();
   const addToListenLater = useAddToListenLaterMutation({
     onSuccess: () => showToast('Added to Listen Later', 'success'),
     onError: () => showToast('Failed to add to Listen Later', 'error'),
@@ -185,16 +191,25 @@ export default function AlbumModal({
         genre: [],
       };
     } else if (isRelease(data)) {
+      console.log('🎨 [AlbumModal] albumForInteractions - Release data:', {
+        basicInfoArtists: data.basic_information?.artists,
+        artist: data.artist,
+      });
+
       return {
         id: String(albumId),
         title: data.title,
         artists:
           data.basic_information?.artists &&
           data.basic_information.artists.length > 0
-            ? data.basic_information.artists.map(a => ({
-                id: (a as any).id || '',
-                name: a.name,
-              }))
+            ? data.basic_information.artists.map(a => {
+                const artistId = a.id ? String(a.id) : '';
+                console.log('🎯 [AlbumModal] Mapping artist:', { name: a.name, id: a.id, resultId: artistId });
+                return {
+                  id: artistId,
+                  name: a.name,
+                };
+              })
             : data.artist
               ? [{ id: '', name: data.artist }]
               : [],
@@ -219,63 +234,66 @@ export default function AlbumModal({
   }, [data, highQualityImageUrl]);
 
   // Album interaction handlers
+  // TODO: Performance optimization - Pass currentArtistContext from DiscographyTab
+  // to skip the GetArtistByMusicBrainzId lookup when clicking artist button while
+  // already viewing that artist's page. Currently cached by React Query for 5min,
+  // but could eliminate the query entirely in this scenario.
   const handleArtistClick = async (artistId: string, artistName: string) => {
+    console.log('[AlbumModal] handleArtistClick called:', { artistId, artistName, data });
+
+    if (!artistId || artistId === '') {
+      console.warn('[AlbumModal] Artist ID is missing or empty:', { artistId, artistName });
+      showToast(`Artist ID not available for ${artistName}`, 'error');
+      return;
+    }
+
     try {
-      let navId = artistId;
-      let artistSource: string | undefined;
+      let finalArtistId = artistId;
+      let artistSource: string;
 
-      if (!navId) {
-        // Resolve by name → prefer local match
-        const SEARCH_ARTISTS = `
-          query SearchArtists($query: String!, $limit: Int) {
-            searchArtists(query: $query, limit: $limit) { id name musicbrainzId }
-          }
-        `;
-        const res: any = await graphqlClient.request(SEARCH_ARTISTS, {
-          query: artistName,
-          limit: 5,
-        });
-        const results = Array.isArray(res?.searchArtists)
-          ? res.searchArtists
-          : [];
-
-        // Try to find local artist first
-        const local = results.find((a: any) => a.id && !a.musicbrainzId);
-        if (local) {
-          navId = String(local.id);
-          artistSource = 'local';
-        } else {
-          // Fall back to first result (likely MusicBrainz)
-          const firstResult = results[0];
-          if (firstResult?.musicbrainzId) {
-            navId = String(firstResult.musicbrainzId);
-            artistSource = 'musicbrainz';
-          } else if (firstResult?.id) {
-            navId = String(firstResult.id);
-            artistSource = 'local';
-          }
-        }
+      // If album is from local DB (collection album), artists are definitely local
+      if (isCollectionAlbum(data)) {
+        artistSource = 'local';
       } else {
-        // Use source from album data
-        const source = getSource();
-        artistSource = source ? source.toLowerCase() : undefined;
+        // Album is from external source (MusicBrainz/Discogs)
+        // Try to find artist in local DB by MusicBrainz ID first
+        try {
+          const result = await queryClient.fetchQuery<GetArtistByMusicBrainzIdQuery>({
+            queryKey: ['artistByMusicBrainzId', artistId],
+            queryFn: () =>
+              graphqlClient.request(GetArtistByMusicBrainzIdDocument, {
+                musicbrainzId: artistId,
+              }),
+            staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+          });
 
-        // IMPORTANT: For collection albums, artists are ALWAYS local
-        if (isCollectionAlbum(data)) {
-          artistSource = 'local';
+          if (result?.artistByMusicBrainzId?.id) {
+            // Found in local DB! Use local ID
+            finalArtistId = result.artistByMusicBrainzId.id;
+            artistSource = 'local';
+            console.log(`[AlbumModal] Found artist locally: ${artistName}`, {
+              mbid: artistId,
+              localId: finalArtistId,
+            });
+          } else {
+            // Not in local DB, use external source
+            const source = getSource();
+            artistSource = source?.toLowerCase() || 'musicbrainz';
+            console.log(
+              `[AlbumModal] Artist not in local DB, using ${artistSource}: ${artistName}`
+            );
+          }
+        } catch (error) {
+          // Query failed, fall back to external source
+          const source = getSource();
+          artistSource = source?.toLowerCase() || 'musicbrainz';
+          console.warn('[AlbumModal] Failed to check local DB for artist:', error);
         }
       }
 
-      if (!navId) {
-        showToast(`Artist not found: ${artistName}`, 'error');
-        return;
-      }
-
+      // Navigate to artist page with appropriate source
       onClose();
-      const suffix = artistSource
-        ? `?source=${encodeURIComponent(artistSource)}`
-        : '';
-      router.push(`/artists/${navId}${suffix}`);
+      router.push(`/artists/${finalArtistId}?source=${artistSource}`);
     } catch (error) {
       console.error('Navigation error:', error);
       showToast(

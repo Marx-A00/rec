@@ -98,6 +98,7 @@ export default function DiscographyTab({
               <ReleaseSection
                 title='Albums'
                 releases={discography.albums}
+                artistId={artistId}
                 artistName={artistName}
                 openModal={openModal}
                 defaultExpanded={true}
@@ -109,6 +110,7 @@ export default function DiscographyTab({
               <ReleaseSection
                 title='EPs'
                 releases={discography.eps}
+                artistId={artistId}
                 artistName={artistName}
                 openModal={openModal}
               />
@@ -119,6 +121,7 @@ export default function DiscographyTab({
               <ReleaseSection
                 title='Singles'
                 releases={discography.singles}
+                artistId={artistId}
                 artistName={artistName}
                 openModal={openModal}
               />
@@ -130,6 +133,7 @@ export default function DiscographyTab({
                 <ReleaseSection
                   title='Compilations'
                   releases={discography.compilations}
+                  artistId={artistId}
                   artistName={artistName}
                   openModal={openModal}
                 />
@@ -140,6 +144,7 @@ export default function DiscographyTab({
               <ReleaseSection
                 title='Live Albums'
                 releases={discography.liveAlbums}
+                artistId={artistId}
                 artistName={artistName}
                 openModal={openModal}
               />
@@ -150,6 +155,7 @@ export default function DiscographyTab({
               <ReleaseSection
                 title='Remixes'
                 releases={discography.remixes}
+                artistId={artistId}
                 artistName={artistName}
                 openModal={openModal}
               />
@@ -160,6 +166,7 @@ export default function DiscographyTab({
               <ReleaseSection
                 title='Soundtracks'
                 releases={discography.soundtracks}
+                artistId={artistId}
                 artistName={artistName}
                 openModal={openModal}
               />
@@ -170,6 +177,7 @@ export default function DiscographyTab({
               <ReleaseSection
                 title='Other Releases'
                 releases={discography.other}
+                artistId={artistId}
                 artistName={artistName}
                 openModal={openModal}
               />
@@ -184,12 +192,14 @@ export default function DiscographyTab({
 function ReleaseSection({
   title,
   releases,
+  artistId,
   artistName,
   openModal,
   defaultExpanded = false,
 }: {
   title: string;
   releases: ReleaseType[];
+  artistId: string;
   artistName?: string;
   openModal: (data: any) => void;
   defaultExpanded?: boolean;
@@ -232,12 +242,15 @@ function ReleaseSection({
                   artist: release.artistName || artistName || undefined,
                   source: release.source || 'musicbrainz',
                   basic_information: {
-                    artists: Array.isArray(release.artistCredits)
-                      ? release.artistCredits.map(c => ({
-                          id: c?.artist?.id,
-                          name: c?.artist?.name,
-                        }))
-                      : undefined,
+                    artists:
+                      Array.isArray(release.artistCredits) &&
+                      release.artistCredits.length > 0
+                        ? release.artistCredits.map(c => ({
+                            // Use the current page's artistId since we're on the artist page
+                            id: c?.artist?.id || artistId,
+                            name: c?.artist?.name || artistName,
+                          }))
+                        : [{ id: artistId, name: artistName || '' }],
                   },
                 })
               }

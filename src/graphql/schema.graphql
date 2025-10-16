@@ -826,6 +826,7 @@ type Query {
 
   # Entity retrieval
   artist(id: UUID!): Artist
+  artistByMusicBrainzId(musicbrainzId: UUID!): Artist
   album(id: UUID!): Album
   track(id: UUID!): Track
   albumTracks(albumId: UUID!): [Track!]!

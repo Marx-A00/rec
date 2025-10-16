@@ -332,6 +332,18 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  artistByMusicBrainzId: async (_, { musicbrainzId }, { prisma }) => {
+    try {
+      const artist = await prisma.artist.findFirst({
+        where: { musicbrainzId },
+      });
+      if (!artist) return null;
+      return { id: artist.id } as ResolversTypes['Artist'];
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch artist by MusicBrainz ID: ${error}`);
+    }
+  },
+
   album: async (_, { id }, { prisma, activityTracker }) => {
     try {
       // Track entity interaction for priority management

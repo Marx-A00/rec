@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Heart, Share2, MoreHorizontal, User } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import Toast, { useToast } from '@/components/ui/toast';
@@ -10,6 +11,11 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
+import { graphqlClient } from '@/lib/graphql-client';
+import {
+  GetArtistByMusicBrainzIdDocument,
+  type GetArtistByMusicBrainzIdQuery,
+} from '@/generated/graphql';
 
 interface AlbumInteractionsProps {
   album: Album;
@@ -20,6 +26,7 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
   const { toast, showToast, hideToast } = useToast();
   const router = useRouter();
   const { openDrawer } = useRecommendationDrawerContext();
+  const queryClient = useQueryClient();
 
   const handleArtistClick = async (artistId: string, artistName: string) => {
     if (!artistId) {
@@ -28,8 +35,49 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
     }
 
     try {
-      // Navigate to artist page
-      router.push(`/artists/${artistId}`);
+      let finalArtistId = artistId;
+      let artistSource: string;
+
+      // If album is from local DB, artists are definitely local
+      if (album.source === 'local') {
+        artistSource = 'local';
+      } else {
+        // Album is from external source (MusicBrainz/Discogs)
+        // Try to find artist in local DB by MusicBrainz ID first
+        try {
+          const result = await queryClient.fetchQuery<GetArtistByMusicBrainzIdQuery>({
+            queryKey: ['artistByMusicBrainzId', artistId],
+            queryFn: () =>
+              graphqlClient.request(GetArtistByMusicBrainzIdDocument, {
+                musicbrainzId: artistId,
+              }),
+            staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+          });
+
+          if (result?.artistByMusicBrainzId?.id) {
+            // Found in local DB! Use local ID
+            finalArtistId = result.artistByMusicBrainzId.id;
+            artistSource = 'local';
+            console.log(`[AlbumInteractions] Found artist locally: ${artistName}`, {
+              mbid: artistId,
+              localId: finalArtistId,
+            });
+          } else {
+            // Not in local DB, use external source
+            artistSource = album.source?.toLowerCase() || 'musicbrainz';
+            console.log(
+              `[AlbumInteractions] Artist not in local DB, using ${artistSource}: ${artistName}`
+            );
+          }
+        } catch (error) {
+          // Query failed, fall back to external source
+          artistSource = album.source?.toLowerCase() || 'musicbrainz';
+          console.warn('[AlbumInteractions] Failed to check local DB for artist:', error);
+        }
+      }
+
+      // Navigate to artist page with appropriate source
+      router.push(`/artists/${finalArtistId}?source=${artistSource}`);
     } catch (error) {
       console.error('Navigation error:', error);
       showToast(
