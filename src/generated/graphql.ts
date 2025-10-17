@@ -151,6 +151,24 @@ export type AlbumInput = {
   totalTracks?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type AlbumRecommendation = {
+  __typename?: 'AlbumRecommendation';
+  albumRole: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['String']['output'];
+  otherAlbum: OtherAlbumInfo;
+  score: Scalars['Int']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  user: User;
+  userId: Scalars['String']['output'];
+};
+
+export type AlbumRecommendationsResponse = {
+  __typename?: 'AlbumRecommendationsResponse';
+  pagination: PaginationInfo;
+  recommendations: Array<AlbumRecommendation>;
+};
+
 export type Alert = {
   __typename?: 'Alert';
   details?: Maybe<Scalars['JSON']['output']>;
@@ -207,6 +225,7 @@ export type Artist = {
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
+  listeners?: Maybe<Scalars['Int']['output']>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   name: Scalars['String']['output'];
   needsEnrichment: Scalars['Boolean']['output'];
@@ -256,6 +275,18 @@ export type BatchEnrichmentResult = {
   jobsQueued: Scalars['Int']['output'];
   message: Scalars['String']['output'];
   success: Scalars['Boolean']['output'];
+};
+
+export type CategorizedDiscography = {
+  __typename?: 'CategorizedDiscography';
+  albums: Array<UnifiedRelease>;
+  compilations: Array<UnifiedRelease>;
+  eps: Array<UnifiedRelease>;
+  liveAlbums: Array<UnifiedRelease>;
+  other: Array<UnifiedRelease>;
+  remixes: Array<UnifiedRelease>;
+  singles: Array<UnifiedRelease>;
+  soundtracks: Array<UnifiedRelease>;
 };
 
 export type Collection = {
@@ -637,6 +668,23 @@ export type OnboardingStatus = {
   profileUpdatedAt?: Maybe<Scalars['DateTime']['output']>;
 };
 
+export type OtherAlbumInfo = {
+  __typename?: 'OtherAlbumInfo';
+  artist: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  year?: Maybe<Scalars['String']['output']>;
+};
+
+export type PaginationInfo = {
+  __typename?: 'PaginationInfo';
+  hasMore: Scalars['Boolean']['output'];
+  page: Scalars['Int']['output'];
+  perPage: Scalars['Int']['output'];
+  total: Scalars['Int']['output'];
+};
+
 export type Query = {
   __typename?: 'Query';
   activeJobs: Array<JobRecord>;
@@ -644,15 +692,18 @@ export type Query = {
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
   artist?: Maybe<Artist>;
-  artistDiscography: Array<UnifiedRelease>;
+  artistByMusicBrainzId?: Maybe<Artist>;
+  artistDiscography: CategorizedDiscography;
   collection?: Maybe<Collection>;
   databaseStats: DatabaseStats;
   failedJobs: Array<JobRecord>;
   followingActivity: Array<Recommendation>;
+  getAlbumRecommendations: AlbumRecommendationsResponse;
   health: Scalars['String']['output'];
   isFollowing: Scalars['Boolean']['output'];
   jobHistory: Array<JobRecord>;
   mutualConnections: Array<User>;
+  myCollectionAlbums: Array<CollectionAlbum>;
   myCollections: Array<Collection>;
   myRecommendations: RecommendationFeed;
   mySettings?: Maybe<UserSettings>;
@@ -699,8 +750,13 @@ export type QueryArtistArgs = {
   id: Scalars['UUID']['input'];
 };
 
+export type QueryArtistByMusicBrainzIdArgs = {
+  musicbrainzId: Scalars['UUID']['input'];
+};
+
 export type QueryArtistDiscographyArgs = {
   id: Scalars['String']['input'];
+  source: DataSource;
 };
 
 export type QueryCollectionArgs = {
@@ -713,6 +769,14 @@ export type QueryFailedJobsArgs = {
 
 export type QueryFollowingActivityArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryGetAlbumRecommendationsArgs = {
+  albumId: Scalars['UUID']['input'];
+  filter?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryIsFollowingArgs = {
@@ -762,6 +826,7 @@ export type QuerySearchAlbumsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
   query?: InputMaybe<Scalars['String']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
   sortBy?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['String']['input']>;
 };
@@ -772,6 +837,7 @@ export type QuerySearchArtistsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
   query?: InputMaybe<Scalars['String']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
   sortBy?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['String']['input']>;
 };
@@ -779,6 +845,7 @@ export type QuerySearchArtistsArgs = {
 export type QuerySearchTracksArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
+  skip?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QuerySocialFeedArgs = {
@@ -1386,31 +1453,248 @@ export type UpdateProfileMutation = {
   };
 };
 
+export type AddAlbumMutationVariables = Exact<{
+  input: AlbumInput;
+}>;
+
+export type AddAlbumMutation = {
+  __typename?: 'Mutation';
+  addAlbum: {
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    releaseDate?: Date | null;
+    coverArtUrl?: string | null;
+    musicbrainzId?: string | null;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  };
+};
+
+export type GetArtistByMusicBrainzIdQueryVariables = Exact<{
+  musicbrainzId: Scalars['UUID']['input'];
+}>;
+
+export type GetArtistByMusicBrainzIdQuery = {
+  __typename?: 'Query';
+  artistByMusicBrainzId?: {
+    __typename?: 'Artist';
+    id: string;
+    musicbrainzId?: string | null;
+    name: string;
+    imageUrl?: string | null;
+  } | null;
+};
+
 export type GetArtistDiscographyQueryVariables = Exact<{
   id: Scalars['String']['input'];
+  source: DataSource;
 }>;
 
 export type GetArtistDiscographyQuery = {
   __typename?: 'Query';
-  artistDiscography: Array<{
-    __typename?: 'UnifiedRelease';
-    id: string;
-    source: DataSource;
-    title: string;
-    releaseDate?: Date | null;
-    primaryType?: string | null;
-    secondaryTypes?: Array<string> | null;
-    imageUrl?: string | null;
-    artistName?: string | null;
-    trackCount?: number | null;
-    year?: number | null;
-    artistCredits?: Array<{
-      __typename?: 'ArtistCredit';
-      role: string;
-      position: number;
-      artist: { __typename?: 'Artist'; id: string; name: string };
-    }> | null;
-  }>;
+  artistDiscography: {
+    __typename?: 'CategorizedDiscography';
+    albums: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    eps: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    singles: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    compilations: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    liveAlbums: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    remixes: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    soundtracks: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+    other: Array<{
+      __typename?: 'UnifiedRelease';
+      id: string;
+      source: DataSource;
+      title: string;
+      releaseDate?: Date | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      imageUrl?: string | null;
+      artistName?: string | null;
+      trackCount?: number | null;
+      year?: number | null;
+      artistCredits?: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }> | null;
+    }>;
+  };
+};
+
+export type GetAlbumRecommendationsQueryVariables = Exact<{
+  albumId: Scalars['UUID']['input'];
+  filter?: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<Scalars['String']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetAlbumRecommendationsQuery = {
+  __typename?: 'Query';
+  getAlbumRecommendations: {
+    __typename?: 'AlbumRecommendationsResponse';
+    recommendations: Array<{
+      __typename?: 'AlbumRecommendation';
+      id: string;
+      score: number;
+      createdAt: Date;
+      updatedAt: Date;
+      userId: string;
+      albumRole: string;
+      otherAlbum: {
+        __typename?: 'OtherAlbumInfo';
+        id: string;
+        title: string;
+        artist: string;
+        imageUrl?: string | null;
+        year?: string | null;
+      };
+      user: {
+        __typename?: 'User';
+        id: string;
+        name?: string | null;
+        image?: string | null;
+      };
+    }>;
+    pagination: {
+      __typename?: 'PaginationInfo';
+      page: number;
+      perPage: number;
+      total: number;
+      hasMore: boolean;
+    };
+  };
 };
 
 export type GetCollectionQueryVariables = Exact<{
@@ -1446,6 +1730,34 @@ export type GetCollectionQuery = {
       };
     }>;
   } | null;
+};
+
+export type GetMyCollectionAlbumsQueryVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type GetMyCollectionAlbumsQuery = {
+  __typename?: 'Query';
+  myCollectionAlbums: Array<{
+    __typename?: 'CollectionAlbum';
+    id: string;
+    position: number;
+    personalRating?: number | null;
+    personalNotes?: string | null;
+    addedAt: Date;
+    album: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      releaseDate?: Date | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+    collection: { __typename?: 'Collection'; id: string; name: string };
+  }>;
 };
 
 export type GetUserCollectionListQueryVariables = Exact<{
@@ -2360,27 +2672,296 @@ export const useUpdateProfileMutation = <TError = unknown, TContext = unknown>(
 
 useUpdateProfileMutation.getKey = () => ['UpdateProfile'];
 
-export const GetArtistDiscographyDocument = `
-    query GetArtistDiscography($id: String!) {
-  artistDiscography(id: $id) {
+export const AddAlbumDocument = `
+    mutation AddAlbum($input: AlbumInput!) {
+  addAlbum(input: $input) {
     id
-    source
     title
     releaseDate
-    primaryType
-    secondaryTypes
-    imageUrl
-    artistName
-    artistCredits {
+    coverArtUrl
+    musicbrainzId
+    artists {
       artist {
         id
         name
       }
-      role
-      position
     }
-    trackCount
-    year
+  }
+}
+    `;
+
+export const useAddAlbumMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    AddAlbumMutation,
+    TError,
+    AddAlbumMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AddAlbumMutation,
+    TError,
+    AddAlbumMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AddAlbum'],
+    mutationFn: (variables?: AddAlbumMutationVariables) =>
+      fetcher<AddAlbumMutation, AddAlbumMutationVariables>(
+        AddAlbumDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useAddAlbumMutation.getKey = () => ['AddAlbum'];
+
+export const GetArtistByMusicBrainzIdDocument = `
+    query GetArtistByMusicBrainzId($musicbrainzId: UUID!) {
+  artistByMusicBrainzId(musicbrainzId: $musicbrainzId) {
+    id
+    musicbrainzId
+    name
+    imageUrl
+  }
+}
+    `;
+
+export const useGetArtistByMusicBrainzIdQuery = <
+  TData = GetArtistByMusicBrainzIdQuery,
+  TError = unknown,
+>(
+  variables: GetArtistByMusicBrainzIdQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetArtistByMusicBrainzIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetArtistByMusicBrainzIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetArtistByMusicBrainzIdQuery, TError, TData>({
+    queryKey: ['GetArtistByMusicBrainzId', variables],
+    queryFn: fetcher<
+      GetArtistByMusicBrainzIdQuery,
+      GetArtistByMusicBrainzIdQueryVariables
+    >(GetArtistByMusicBrainzIdDocument, variables),
+    ...options,
+  });
+};
+
+useGetArtistByMusicBrainzIdQuery.getKey = (
+  variables: GetArtistByMusicBrainzIdQueryVariables
+) => ['GetArtistByMusicBrainzId', variables];
+
+export const useInfiniteGetArtistByMusicBrainzIdQuery = <
+  TData = InfiniteData<GetArtistByMusicBrainzIdQuery>,
+  TError = unknown,
+>(
+  variables: GetArtistByMusicBrainzIdQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetArtistByMusicBrainzIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetArtistByMusicBrainzIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetArtistByMusicBrainzIdQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'GetArtistByMusicBrainzId.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            GetArtistByMusicBrainzIdQuery,
+            GetArtistByMusicBrainzIdQueryVariables
+          >(GetArtistByMusicBrainzIdDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetArtistByMusicBrainzIdQuery.getKey = (
+  variables: GetArtistByMusicBrainzIdQueryVariables
+) => ['GetArtistByMusicBrainzId.infinite', variables];
+
+export const GetArtistDiscographyDocument = `
+    query GetArtistDiscography($id: String!, $source: DataSource!) {
+  artistDiscography(id: $id, source: $source) {
+    albums {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    eps {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    singles {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    compilations {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    liveAlbums {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    remixes {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    soundtracks {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
+    other {
+      id
+      source
+      title
+      releaseDate
+      primaryType
+      secondaryTypes
+      imageUrl
+      artistName
+      artistCredits {
+        artist {
+          id
+          name
+        }
+        role
+        position
+      }
+      trackCount
+      year
+    }
   }
 }
     `;
@@ -2456,6 +3037,117 @@ export const useInfiniteGetArtistDiscographyQuery = <
 useInfiniteGetArtistDiscographyQuery.getKey = (
   variables: GetArtistDiscographyQueryVariables
 ) => ['GetArtistDiscography.infinite', variables];
+
+export const GetAlbumRecommendationsDocument = `
+    query GetAlbumRecommendations($albumId: UUID!, $filter: String, $sort: String, $skip: Int, $limit: Int) {
+  getAlbumRecommendations(
+    albumId: $albumId
+    filter: $filter
+    sort: $sort
+    skip: $skip
+    limit: $limit
+  ) {
+    recommendations {
+      id
+      score
+      createdAt
+      updatedAt
+      userId
+      albumRole
+      otherAlbum {
+        id
+        title
+        artist
+        imageUrl
+        year
+      }
+      user {
+        id
+        name
+        image
+      }
+    }
+    pagination {
+      page
+      perPage
+      total
+      hasMore
+    }
+  }
+}
+    `;
+
+export const useGetAlbumRecommendationsQuery = <
+  TData = GetAlbumRecommendationsQuery,
+  TError = unknown,
+>(
+  variables: GetAlbumRecommendationsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetAlbumRecommendationsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetAlbumRecommendationsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetAlbumRecommendationsQuery, TError, TData>({
+    queryKey: ['GetAlbumRecommendations', variables],
+    queryFn: fetcher<
+      GetAlbumRecommendationsQuery,
+      GetAlbumRecommendationsQueryVariables
+    >(GetAlbumRecommendationsDocument, variables),
+    ...options,
+  });
+};
+
+useGetAlbumRecommendationsQuery.getKey = (
+  variables: GetAlbumRecommendationsQueryVariables
+) => ['GetAlbumRecommendations', variables];
+
+export const useInfiniteGetAlbumRecommendationsQuery = <
+  TData = InfiniteData<GetAlbumRecommendationsQuery>,
+  TError = unknown,
+>(
+  variables: GetAlbumRecommendationsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetAlbumRecommendationsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetAlbumRecommendationsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetAlbumRecommendationsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'GetAlbumRecommendations.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            GetAlbumRecommendationsQuery,
+            GetAlbumRecommendationsQueryVariables
+          >(GetAlbumRecommendationsDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetAlbumRecommendationsQuery.getKey = (
+  variables: GetAlbumRecommendationsQueryVariables
+) => ['GetAlbumRecommendations.infinite', variables];
 
 export const GetCollectionDocument = `
     query GetCollection($id: String!) {
@@ -2550,6 +3242,115 @@ export const useInfiniteGetCollectionQuery = <
 useInfiniteGetCollectionQuery.getKey = (
   variables: GetCollectionQueryVariables
 ) => ['GetCollection.infinite', variables];
+
+export const GetMyCollectionAlbumsDocument = `
+    query GetMyCollectionAlbums {
+  myCollectionAlbums {
+    id
+    position
+    personalRating
+    personalNotes
+    addedAt
+    album {
+      id
+      title
+      coverArtUrl
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+    collection {
+      id
+      name
+    }
+  }
+}
+    `;
+
+export const useGetMyCollectionAlbumsQuery = <
+  TData = GetMyCollectionAlbumsQuery,
+  TError = unknown,
+>(
+  variables?: GetMyCollectionAlbumsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetMyCollectionAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetMyCollectionAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetMyCollectionAlbumsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetMyCollectionAlbums']
+        : ['GetMyCollectionAlbums', variables],
+    queryFn: fetcher<
+      GetMyCollectionAlbumsQuery,
+      GetMyCollectionAlbumsQueryVariables
+    >(GetMyCollectionAlbumsDocument, variables),
+    ...options,
+  });
+};
+
+useGetMyCollectionAlbumsQuery.getKey = (
+  variables?: GetMyCollectionAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetMyCollectionAlbums']
+    : ['GetMyCollectionAlbums', variables];
+
+export const useInfiniteGetMyCollectionAlbumsQuery = <
+  TData = InfiniteData<GetMyCollectionAlbumsQuery>,
+  TError = unknown,
+>(
+  variables: GetMyCollectionAlbumsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetMyCollectionAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetMyCollectionAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetMyCollectionAlbumsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetMyCollectionAlbums.infinite']
+            : ['GetMyCollectionAlbums.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            GetMyCollectionAlbumsQuery,
+            GetMyCollectionAlbumsQueryVariables
+          >(GetMyCollectionAlbumsDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetMyCollectionAlbumsQuery.getKey = (
+  variables?: GetMyCollectionAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetMyCollectionAlbums.infinite']
+    : ['GetMyCollectionAlbums.infinite', variables];
 
 export const GetUserCollectionListDocument = `
     query GetUserCollectionList($userId: String!) {

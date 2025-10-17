@@ -1,5 +1,6 @@
 // src/lib/queue/musicbrainz-queue.ts
 import { Queue, Worker, Job } from 'bullmq';
+import chalk from 'chalk';
 
 import { createRedisConnection } from './redis';
 import { getQueueConfig } from './config';
@@ -73,12 +74,45 @@ export class MusicBrainzQueue {
       requestId: options.requestId || this.generateRequestId(),
     } as T;
 
-    console.log(`🎯 Queuing ${type} job:`, {
-      requestId: jobData.requestId,
-      priority: jobOptions.priority,
-    });
+    const job = await this.queue.add(type, jobData, jobOptions);
 
-    return this.queue.add(type, jobData, jobOptions);
+    // Extract query/search parameters for display
+    const jobDataAny = jobData as any;
+    let queryInfo = '';
+    if (jobDataAny.query) {
+      queryInfo = `Query: "${jobDataAny.query}"`;
+      if (jobDataAny.limit) queryInfo += ` • Limit: ${jobDataAny.limit}`;
+      if (jobDataAny.offset) queryInfo += ` • Offset: ${jobDataAny.offset}`;
+    } else if (jobDataAny.mbid) {
+      queryInfo = `MBID: ${jobDataAny.mbid.substring(0, 8)}...`;
+      if (jobDataAny.includes)
+        queryInfo += ` • Includes: ${jobDataAny.includes.join(', ')}`;
+    } else if (jobDataAny.artistMbid) {
+      queryInfo = `Artist MBID: ${jobDataAny.artistMbid.substring(0, 8)}...`;
+      if (jobDataAny.limit) queryInfo += ` • Limit: ${jobDataAny.limit}`;
+    }
+
+    // Color-coded queue logging (cyan borders for job queuing)
+    const border = chalk.cyan('─'.repeat(60));
+    console.log('\n' + border);
+    console.log(
+      `${chalk.bold.white('QUEUING JOB')} ${chalk.cyan('[QUEUE LAYER]')}`
+    );
+    console.log(border);
+    console.log(`  ${chalk.cyan('Job ID:')}     ${chalk.white(job.id)}`);
+    console.log(`  ${chalk.cyan('Type:')}       ${chalk.white(type)}`);
+    console.log(
+      `  ${chalk.cyan('Request ID:')} ${chalk.white(jobData.requestId)}`
+    );
+    console.log(
+      `  ${chalk.cyan('Priority:')}   ${chalk.white(jobOptions.priority)}`
+    );
+    if (queryInfo) {
+      console.log(`  ${chalk.cyan('Details:')}    ${chalk.white(queryInfo)}`);
+    }
+    console.log(border + '\n');
+
+    return job;
   }
 
   /**
@@ -116,16 +150,49 @@ export class MusicBrainzQueue {
     });
 
     this.worker.on('active', job => {
-      console.log(`🔄 [Queue] Processing ${job.name} (ID: ${job.id})`);
+      // Extract query info for active job
+      const jobData = job.data as any;
+      let queryInfo = '';
+      if (jobData.query) {
+        queryInfo = ` • Query: "${jobData.query}"`;
+      } else if (jobData.mbid) {
+        queryInfo = ` • MBID: ${jobData.mbid.substring(0, 8)}...`;
+      } else if (jobData.artistMbid) {
+        queryInfo = ` • Artist MBID: ${jobData.artistMbid.substring(0, 8)}...`;
+      }
+
+      console.log(
+        `🔄 [Queue] Processing ${job.name} (ID: ${job.id})${queryInfo}`
+      );
     });
 
     this.worker.on('completed', (job, result) => {
       const duration = Date.now() - job.processedOn!;
-      console.log(`✅ Completed ${job.name} (ID: ${job.id}) in ${duration}ms`);
+      const resultCount = result?.data
+        ? Array.isArray(result.data)
+          ? result.data.length
+          : 1
+        : 0;
+
+      console.log(
+        `✅ Completed ${job.name} (ID: ${job.id}) in ${duration}ms • Results: ${resultCount}`
+      );
     });
 
     this.worker.on('failed', (job, error) => {
-      console.error(`❌ Failed ${job?.name} (ID: ${job?.id}):`, error.message);
+      // Extract query info for failed job
+      const jobData = job?.data as any;
+      let queryInfo = '';
+      if (jobData?.query) {
+        queryInfo = ` • Query: "${jobData.query}"`;
+      } else if (jobData?.mbid) {
+        queryInfo = ` • MBID: ${jobData.mbid.substring(0, 8)}...`;
+      }
+
+      console.error(
+        `❌ Failed ${job?.name} (ID: ${job?.id})${queryInfo}:`,
+        error.message
+      );
     });
 
     this.worker.on('stalled', jobId => {

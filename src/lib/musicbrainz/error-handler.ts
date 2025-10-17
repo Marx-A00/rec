@@ -76,7 +76,7 @@ class MusicBrainzErrorHandler {
       const border = chalk.magenta('─'.repeat(60));
       console.log(border);
       console.log(
-        `${chalk.green('✅')} MusicBrainz ${chalk.white(operationName)} ${chalk.cyan(`in ${duration}ms`)} ${chalk.gray(`• Success: ${metrics.successRate}% • Failures: ${metrics.failures}`)}`
+        `${chalk.green('✅')} ${chalk.magenta('[API LAYER]')} MusicBrainz ${chalk.white(operationName)} ${chalk.cyan(`in ${duration}ms`)} ${chalk.gray(`• Success: ${metrics.successRate}% • Failures: ${metrics.failures}`)}`
       );
       console.log(border);
 

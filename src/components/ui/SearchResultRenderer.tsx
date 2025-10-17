@@ -1,3 +1,9 @@
+/**
+ * @deprecated This component is no longer used. Search results are now rendered inline in search pages.
+ * Main search: src/app/(main)/search/page.tsx
+ * TODO: Remove this file in next cleanup sprint (safe to delete - no imports found)
+ */
+
 'use client';
 
 import { ReactNode } from 'react';

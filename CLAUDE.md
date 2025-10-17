@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🔍 Search Components - IMPORTANT
+
+**ACTIVE Search Components (Use These):**
+- `src/components/ui/SimpleSearchBar.tsx` - Main search bar in header/topbar
+- `src/components/ui/UniversalSearchBar.tsx` - Used in mobile navigation and search page
+- `src/components/recommendations/AlbumSearchBackwardCompatible.tsx` - Used in recommendation flows
+
+**DEPRECATED Search Components (Do NOT Use):**
+- `src/components/ui/SearchBar.tsx` ❌
+- `src/components/ui/AlbumSearch.tsx` ❌
+- `src/components/ui/AlbumSearchWrapper.tsx` ❌
+- `src/components/ui/SearchResultRenderer.tsx` ❌
+- `src/components/ui/SearchResults.tsx` ❌
+
+All deprecated files are marked with `@deprecated` comments at the top.
+
 ## Core Development Commands
 
 ### Daily Development

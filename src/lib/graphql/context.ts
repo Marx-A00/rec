@@ -3,6 +3,7 @@
 
 import { randomUUID } from 'crypto';
 
+import chalk from 'chalk';
 import type { PrismaClient } from '@prisma/client';
 // @ts-nocheck - GraphQL context has some type issues after schema migration
 import type { NextRequest } from 'next/server';
@@ -98,23 +99,24 @@ export async function createGraphQLContext(
   // Extract user from authentication session
   let user = null;
   try {
-    console.log('=== GraphQL Context Creation ===');
-    console.log('Attempting to get auth session...');
     const session = await auth();
-    console.log('Session:', session);
-    console.log('Session user:', session?.user);
 
     if (session?.user?.id) {
       user = {
         id: session.user.id,
         email: session.user.email || undefined,
       };
-      console.log('User extracted from session:', user);
-    } else {
-      console.log('No authenticated user in session');
+
+      // Condensed, prettified auth log
+      const border = chalk.gray('─'.repeat(50));
+      console.log('\n' + border);
+      console.log(
+        `${chalk.blue('🔐 Auth')} ${chalk.gray('•')} ${chalk.white(user.email || 'No email')} ${chalk.gray('•')} ${chalk.cyan(user.id.substring(0, 12) + '...')}`
+      );
+      console.log(border + '\n');
     }
   } catch (error) {
-    console.error('Error extracting user from session:', error);
+    console.error(chalk.red('❌ Auth error:'), error);
   }
 
   // Extract request metadata for activity tracking

@@ -1,85 +1,110 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { graphqlClient } from '@/lib/graphql-client';
-import { CreateRecommendationRequest } from '@/types/recommendation';
-import { queryKeys, createMutationOptions } from '@/lib/queries';
+import {
+  useCreateRecommendationMutation as useGeneratedCreateRecommendationMutation,
+  useAddAlbumMutation,
+  type AddAlbumMutationVariables,
+} from '@/generated/graphql';
+import { queryKeys } from '@/lib/queries';
+import type { Album } from '@/types/album';
 
 // ========================================
-// API Functions
+// Types
 // ========================================
 
-const CREATE_RECOMMENDATION_MUTATION = `
-  mutation CreateRecommendation($basisAlbumId: UUID!, $recommendedAlbumId: UUID!, $score: Int!) {
-    createRecommendation(
-      basisAlbumId: $basisAlbumId,
-      recommendedAlbumId: $recommendedAlbumId,
-      score: $score
-    ) {
-      id
-      score
-      createdAt
-      basisAlbum {
-        id
-        title
-      }
-      recommendedAlbum {
-        id
-        title
-      }
-    }
-  }
-`;
-
-const createRecommendation = async (
-  data: CreateRecommendationRequest
-): Promise<undefined> => {
-  try {
-    // Note: The GraphQL mutation uses album UUIDs, not Discogs IDs
-    // If data contains Discogs IDs, they need to be converted first
-    await graphqlClient.request(CREATE_RECOMMENDATION_MUTATION, {
-      basisAlbumId: data.basisAlbumDiscogsId, // This might need conversion
-      recommendedAlbumId: data.recommendedAlbumDiscogsId, // This might need conversion
-      score: data.score,
-    });
-  } catch (error: any) {
-    if (error.response?.errors?.[0]) {
-      throw new Error(error.response.errors[0].message);
-    }
-    throw new Error('Failed to create recommendation');
-  }
-};
-
-// ========================================
-// Hook
-// ========================================
+export interface CreateRecommendationWithAlbumsInput {
+  basisAlbum: Album;
+  recommendedAlbum: Album;
+  score: number;
+}
 
 export interface UseCreateRecommendationMutationOptions {
   onSuccess?: () => void;
   onError?: (error: unknown) => void;
 }
 
+// ========================================
+// Helper Functions
+// ========================================
+
+/**
+ * Convert Album from search results to AlbumInput for GraphQL
+ */
+function albumToGraphQLInput(album: Album): AddAlbumMutationVariables['input'] {
+  return {
+    title: album.title,
+    releaseDate:
+      album.releaseDate || (album.year ? album.year.toString() : null),
+    albumType: album.type || 'ALBUM',
+    totalTracks: album.metadata?.numberOfTracks || album.tracks?.length || null,
+    coverImageUrl: album.image?.url || null,
+    // Only use actual MusicBrainz IDs, never fall back to database UUIDs
+    musicbrainzId: album.musicbrainzId || null,
+    artists: [
+      {
+        artistName: album.artists?.[0]?.name || 'Unknown Artist',
+        role: 'PRIMARY',
+      },
+    ],
+  };
+}
+
+// ========================================
+// Wrapper Hook
+// ========================================
+
+/**
+ * Wrapper that handles the full recommendation creation flow:
+ * 1. Add basisAlbum to database (or get existing)
+ * 2. Add recommendedAlbum to database (or get existing)
+ * 3. Create recommendation with database UUIDs
+ */
 export function useCreateRecommendationMutation(
   options: UseCreateRecommendationMutationOptions = {}
 ) {
   const queryClient = useQueryClient();
   const { onSuccess, onError } = options;
 
+  const addAlbumMutation = useAddAlbumMutation();
+  const createRecommendationMutation =
+    useGeneratedCreateRecommendationMutation();
+
   return useMutation({
-    mutationFn: createRecommendation,
+    mutationFn: async (input: CreateRecommendationWithAlbumsInput) => {
+      // Call onSuccess immediately for optimistic UI (close drawer right away)
+      onSuccess?.();
+
+      // Step 1 & 2: Add both albums in parallel for faster processing
+      const [basisAlbumResult, recommendedAlbumResult] = await Promise.all([
+        addAlbumMutation.mutateAsync({
+          input: albumToGraphQLInput(input.basisAlbum),
+        }),
+        addAlbumMutation.mutateAsync({
+          input: albumToGraphQLInput(input.recommendedAlbum),
+        }),
+      ]);
+
+      // Step 3: Create recommendation with database UUIDs
+      const recommendation = await createRecommendationMutation.mutateAsync({
+        basisAlbumId: basisAlbumResult.addAlbum.id,
+        recommendedAlbumId: recommendedAlbumResult.addAlbum.id,
+        score: input.score,
+      });
+
+      return recommendation;
+    },
     onSuccess: () => {
-      // Invalidate and refetch recommendations
+      // Invalidate and refetch recommendations after mutation completes
       queryClient.invalidateQueries({
         queryKey: queryKeys.recommendations(),
       });
-      onSuccess?.();
     },
     onError: error => {
       onError?.(error);
     },
-    ...createMutationOptions(),
   });
 }
 
-// Re-export types for convenience
-export type { CreateRecommendationRequest } from '@/types/recommendation';
+// Re-export generated types for convenience
+export type { CreateRecommendationMutationVariables } from '@/generated/graphql';
 export { QueryError, isQueryError, getErrorMessage } from '@/lib/queries';

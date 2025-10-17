@@ -1,12 +1,19 @@
 // Cloudflare Images API wrapper
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID!;
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN!;
-const DELIVERY_URL = process.env.CLOUDFLARE_IMAGES_DELIVERY_URL || `https://imagedelivery.net/${process.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH}`;
+const DELIVERY_URL =
+  process.env.CLOUDFLARE_IMAGES_DELIVERY_URL ||
+  `https://imagedelivery.net/${process.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH}`;
 
 const API_BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/images/v1`;
 // TODO: add images for albums to cloudflare
 // TODO: Think about monitoring who can upload images and shit
-export type ImageVariant = 'thumbnail' | 'small' | 'medium' | 'large' | 'public';
+export type ImageVariant =
+  | 'thumbnail'
+  | 'small'
+  | 'medium'
+  | 'large'
+  | 'public';
 
 // Upload image from URL (for caching external images)
 export async function uploadImageFromUrl(
@@ -24,7 +31,7 @@ export async function uploadImageFromUrl(
   const response = await fetch(API_BASE_URL, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${API_TOKEN}`,
+      Authorization: `Bearer ${API_TOKEN}`,
     },
     body: formData,
   });
@@ -58,7 +65,7 @@ export async function uploadImageFromFile(
   const response = await fetch(API_BASE_URL, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${API_TOKEN}`,
+      Authorization: `Bearer ${API_TOKEN}`,
     },
     body: formData,
   });
@@ -81,7 +88,7 @@ export async function getDirectUploadUrl() {
   const response = await fetch(`${API_BASE_URL}/direct_upload`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${API_TOKEN}`,
+      Authorization: `Bearer ${API_TOKEN}`,
     },
   });
 
@@ -102,7 +109,7 @@ export async function deleteImage(imageId: string) {
   const response = await fetch(`${API_BASE_URL}/${imageId}`, {
     method: 'DELETE',
     headers: {
-      'Authorization': `Bearer ${API_TOKEN}`,
+      Authorization: `Bearer ${API_TOKEN}`,
     },
   });
 
@@ -159,26 +166,24 @@ export async function cacheAlbumArt(
   albumTitle?: string
 ): Promise<{ id: string; url: string } | null> {
   try {
-    const result = await uploadImageFromUrl(
-      externalUrl,
-      `album-${albumId}`,
-      {
-        type: 'album-art',
-        albumId,
-        albumTitle: albumTitle || '',
-      }
-    );
+    const result = await uploadImageFromUrl(externalUrl, `album-${albumId}`, {
+      type: 'album-art',
+      albumId,
+      albumTitle: albumTitle || '',
+    });
 
     return { id: result.id, url: result.url };
   } catch (error) {
     // If resource already exists, construct the expected ID and URL
     const errorMessage = error instanceof Error ? error.message : '';
     if (errorMessage.includes('Resource already exists')) {
-      console.log(`Image already exists in Cloudflare for album ${albumId}, returning existing ID`);
+      console.log(
+        `Image already exists in Cloudflare for album ${albumId}, returning existing ID`
+      );
       const cloudflareId = `album-${albumId}`;
       return {
         id: cloudflareId,
-        url: `${DELIVERY_URL}/${cloudflareId}/public`
+        url: `${DELIVERY_URL}/${cloudflareId}/public`,
       };
     }
 
@@ -194,26 +199,24 @@ export async function cacheArtistImage(
   artistName?: string
 ): Promise<{ id: string; url: string } | null> {
   try {
-    const result = await uploadImageFromUrl(
-      externalUrl,
-      `artist-${artistId}`,
-      {
-        type: 'artist-image',
-        artistId,
-        artistName: artistName || '',
-      }
-    );
+    const result = await uploadImageFromUrl(externalUrl, `artist-${artistId}`, {
+      type: 'artist-image',
+      artistId,
+      artistName: artistName || '',
+    });
 
     return { id: result.id, url: result.url };
   } catch (error) {
     // If resource already exists, construct the expected ID and URL
     const errorMessage = error instanceof Error ? error.message : '';
     if (errorMessage.includes('Resource already exists')) {
-      console.log(`Image already exists in Cloudflare for artist ${artistId}, returning existing ID`);
+      console.log(
+        `Image already exists in Cloudflare for artist ${artistId}, returning existing ID`
+      );
       const cloudflareId = `artist-${artistId}`;
       return {
         id: cloudflareId,
-        url: `${DELIVERY_URL}/${cloudflareId}/public`
+        url: `${DELIVERY_URL}/${cloudflareId}/public`,
       };
     }
 

@@ -74,6 +74,7 @@ export interface Release {
       catno: string;
     }>;
     artists?: Array<{
+      id?: string; // MusicBrainz artist ID when source is MusicBrainz
       name: string;
       role?: string;
     }>;

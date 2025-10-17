@@ -316,11 +316,15 @@ export class HealthChecker {
 
       // Check for recent scheduled Spotify jobs in the queue to detect if scheduler is running
       const queue = getMusicBrainzQueue();
-      const jobs = await queue.getQueue().getJobs(['completed', 'active', 'waiting'], 0, 10);
-      const recentScheduledJobs = jobs.filter(job =>
-        (job.name === 'spotify-sync-new-releases' || job.name === 'spotify-sync-featured-playlists') &&
-        (job.data as any)?.source === 'scheduled' &&
-        job.timestamp > Date.now() - 3600000 // Within last hour
+      const jobs = await queue
+        .getQueue()
+        .getJobs(['completed', 'active', 'waiting'], 0, 10);
+      const recentScheduledJobs = jobs.filter(
+        job =>
+          (job.name === 'spotify-sync-new-releases' ||
+            job.name === 'spotify-sync-featured-playlists') &&
+          (job.data as any)?.source === 'scheduled' &&
+          job.timestamp > Date.now() - 3600000 // Within last hour
       );
       const schedulerRunning = recentScheduledJobs.length > 0;
 

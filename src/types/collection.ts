@@ -28,6 +28,7 @@ export interface CollectionAlbum {
 
   albumTitle: string;
   albumArtist: string;
+  albumArtistId?: string; // Local artist ID
   albumImageUrl: string | null;
   cloudflareImageId?: string | null;
   albumYear: string | null;
