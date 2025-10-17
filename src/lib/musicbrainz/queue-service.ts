@@ -70,24 +70,27 @@ export class QueuedMusicBrainzService {
 
     if (!this.queueEvents) return;
     this.queueEvents.on('completed', ({ jobId, returnvalue }) => {
+      // Parse returnvalue (BullMQ returns it as string)
+      const result = typeof returnvalue === 'string' ? JSON.parse(returnvalue) : returnvalue;
+
       // Extract result info for display
-      const resultCount = returnvalue?.data
-        ? (Array.isArray(returnvalue.data) ? returnvalue.data.length : 1)
+      const resultCount = result?.data
+        ? (Array.isArray(result.data) ? result.data.length : 1)
         : 0;
-      const success = returnvalue?.success ?? false;
+      const success = result?.success ?? false;
 
       // Try to get a preview of the results
       let resultPreview = '';
-      if (returnvalue?.data && Array.isArray(returnvalue.data) && returnvalue.data.length > 0) {
-        const first = returnvalue.data[0];
+      if (result?.data && Array.isArray(result.data) && result.data.length > 0) {
+        const first = result.data[0];
         const preview = first.name || first.title || first.id || '';
         if (preview) {
-          resultPreview = returnvalue.data.length > 1
-            ? `"${preview}" + ${returnvalue.data.length - 1} more`
+          resultPreview = result.data.length > 1
+            ? `"${preview}" + ${result.data.length - 1} more`
             : `"${preview}"`;
         }
-      } else if (returnvalue?.data && !Array.isArray(returnvalue.data)) {
-        const preview = returnvalue.data.name || returnvalue.data.title || '';
+      } else if (result?.data && !Array.isArray(result.data)) {
+        const preview = result.data.name || result.data.title || '';
         if (preview) resultPreview = `"${preview}"`;
       }
 
@@ -107,7 +110,7 @@ export class QueuedMusicBrainzService {
       const pending = this.pendingJobs.get(jobId);
       if (pending) {
         console.log(chalk.green(`✅ Resolving pending job ${jobId}`));
-        pending.resolve(returnvalue);
+        pending.resolve(result);
         this.pendingJobs.delete(jobId);
       } else {
         console.log(chalk.yellow(`⚠️ No pending promise found for job ${jobId}`));
