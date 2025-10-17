@@ -80,7 +80,9 @@ export class IntentDetector {
     const weights = this.calculateWeights(scores);
 
     // Build response based on primary intent
-    const confidence = Math.max(scores[primaryIntent], mbScore / 100);
+    const confidence = primaryIntent === 'mixed'
+      ? Math.max(scores.track, scores.artist, scores.album, mbScore / 100)
+      : Math.max(scores[primaryIntent], mbScore / 100);
 
     let matchedEntity: { type: 'recording' | 'artist' | 'album'; id: string; name: string };
     let reasoning: string;
