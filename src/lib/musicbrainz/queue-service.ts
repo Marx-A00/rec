@@ -70,10 +70,8 @@ export class QueuedMusicBrainzService {
 
     if (!this.queueEvents) return;
     this.queueEvents.on('completed', ({ jobId, returnvalue }) => {
-      // Type assertion for returnvalue
-      const result = returnvalue as unknown as
-        | { success?: boolean; data?: any }
-        | undefined;
+      // Parse returnvalue (BullMQ returns it as string)
+      const result = typeof returnvalue === 'string' ? JSON.parse(returnvalue) : returnvalue;
 
       // Extract result info for display
       const resultCount = result?.data
@@ -127,7 +125,7 @@ export class QueuedMusicBrainzService {
       const pending = this.pendingJobs.get(jobId);
       if (pending) {
         console.log(chalk.green(`✅ Resolving pending job ${jobId}`));
-        pending.resolve(returnvalue);
+        pending.resolve(result);
         this.pendingJobs.delete(jobId);
       } else {
         console.log(
