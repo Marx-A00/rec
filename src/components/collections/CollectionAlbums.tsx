@@ -5,11 +5,15 @@ import { Plus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { Collection, CollectionAlbum as CollectionAlbumType } from '@/types/collection';
+import {
+  Collection,
+  CollectionAlbum as CollectionAlbumType,
+} from '@/types/collection';
 import {
   useRemoveAlbumFromCollectionMutation,
-  useReorderCollectionAlbumsMutation
+  useReorderCollectionAlbumsMutation,
 } from '@/generated/graphql';
+
 import SortableAlbumGrid from './SortableAlbumGrid';
 
 interface CollectionAlbumsProps {

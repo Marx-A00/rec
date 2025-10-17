@@ -203,8 +203,11 @@ export class QueueActivityMonitor {
 
       // Build pretty formatted log
       const border = chalk.gray('─'.repeat(60));
-      const activityColor = activeUserCount === 'HIGH' ? chalk.red : chalk.green;
-      const pausedColor = this.backgroundJobsPaused ? chalk.yellow : chalk.green;
+      const activityColor =
+        activeUserCount === 'HIGH' ? chalk.red : chalk.green;
+      const pausedColor = this.backgroundJobsPaused
+        ? chalk.yellow
+        : chalk.green;
 
       console.log('\n' + border);
       console.log(chalk.bold.cyan('📊 Queue Activity Monitor Status'));
@@ -214,14 +217,26 @@ export class QueueActivityMonitor {
       console.log(`    ${activityColor(activeUserCount)}`);
 
       console.log(chalk.bold('\n  Background Jobs:'));
-      console.log(`    ${pausedColor(this.backgroundJobsPaused ? '⏸️  PAUSED' : '▶️  RUNNING')}`);
+      console.log(
+        `    ${pausedColor(this.backgroundJobsPaused ? '⏸️  PAUSED' : '▶️  RUNNING')}`
+      );
 
       console.log(chalk.bold('\n  Queue Stats:'));
-      console.log(`    ${chalk.blue('Active:')}    ${chalk.white(metrics.stats.active)}`);
-      console.log(`    ${chalk.yellow('Waiting:')}   ${chalk.white(metrics.stats.waiting)}`);
-      console.log(`    ${chalk.magenta('Delayed:')}   ${chalk.white(metrics.stats.delayed)}`);
-      console.log(`    ${chalk.green('Completed:')} ${chalk.white(metrics.stats.completed)}`);
-      console.log(`    ${chalk.red('Failed:')}    ${chalk.white(metrics.stats.failed)}`);
+      console.log(
+        `    ${chalk.blue('Active:')}    ${chalk.white(metrics.stats.active)}`
+      );
+      console.log(
+        `    ${chalk.yellow('Waiting:')}   ${chalk.white(metrics.stats.waiting)}`
+      );
+      console.log(
+        `    ${chalk.magenta('Delayed:')}   ${chalk.white(metrics.stats.delayed)}`
+      );
+      console.log(
+        `    ${chalk.green('Completed:')} ${chalk.white(metrics.stats.completed)}`
+      );
+      console.log(
+        `    ${chalk.red('Failed:')}    ${chalk.white(metrics.stats.failed)}`
+      );
 
       console.log('\n' + border + '\n');
     } catch (error) {

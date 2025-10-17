@@ -127,6 +127,17 @@ export interface UnifiedSearchResult {
     resource_url?: string;
   };
 
+  _lastfm?: {
+    listeners?: string;
+    mbid?: string;
+  };
+
+  _spotify?: {
+    spotifyId?: string;
+    popularity?: number;
+    genres?: string[];
+  };
+
   // ===========================
   // PHASE 3: Enhanced result fields
   // ===========================

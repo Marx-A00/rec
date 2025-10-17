@@ -332,6 +332,18 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  artistByMusicBrainzId: async (_, { musicbrainzId }, { prisma }) => {
+    try {
+      const artist = await prisma.artist.findFirst({
+        where: { musicbrainzId },
+      });
+      if (!artist) return null;
+      return { id: artist.id } as ResolversTypes['Artist'];
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch artist by MusicBrainz ID: ${error}`);
+    }
+  },
+
   album: async (_, { id }, { prisma, activityTracker }) => {
     try {
       // Track entity interaction for priority management
@@ -428,8 +440,11 @@ export const queryResolvers: QueryResolvers = {
     const { query, type = 'ALL', limit = 20, offset = 0 } = input;
 
     try {
-      // Use the search service for better results
-      const searchService = getSearchService(prisma);
+      // Use SearchOrchestrator for multi-source search including Last.fm
+      const { SearchOrchestrator, SearchSource } = await import(
+        '../../search/SearchOrchestrator'
+      );
+      const orchestrator = new SearchOrchestrator(prisma);
 
       // Map GraphQL type to search types
       const searchTypes =
@@ -443,11 +458,16 @@ export const queryResolvers: QueryResolvers = {
                 ? ['track']
                 : ['artist', 'album', 'track'];
 
-      const searchResults = await searchService.search({
+      // Perform multi-source search with Last.fm
+      const searchResults = await orchestrator.search({
         query,
         types: searchTypes as Array<'artist' | 'album' | 'track'>,
         limit: limit || 20,
-        offset: offset || 0,
+        sources: [
+          SearchSource.LOCAL,
+          SearchSource.MUSICBRAINZ,
+          SearchSource.LASTFM,
+        ],
       });
 
       // Track search activity with result count
@@ -462,7 +482,7 @@ export const queryResolvers: QueryResolvers = {
       await activityTracker.trackSearch(
         searchType as 'albums' | 'artists' | 'tracks',
         query,
-        searchResults.total
+        searchResults.totalResults
       );
 
       // Map search results back to entity objects
@@ -829,6 +849,41 @@ export const queryResolvers: QueryResolvers = {
     return collections;
   },
 
+  myCollectionAlbums: async (_, __, { user, prisma }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    const collectionAlbums = await prisma.collectionAlbum.findMany({
+      where: {
+        collection: {
+          userId: user.id,
+        },
+      },
+      include: {
+        album: {
+          include: {
+            artists: {
+              include: {
+                artist: true,
+              },
+              orderBy: { position: 'asc' },
+            },
+          },
+        },
+        collection: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: { addedAt: 'desc' },
+    });
+
+    return collectionAlbums;
+  },
+
   publicCollections: async (_, { limit = 20, offset = 0 }, { prisma }) => {
     try {
       const collections = await prisma.collection.findMany({
@@ -933,6 +988,121 @@ export const queryResolvers: QueryResolvers = {
         cursor: null,
         hasMore: false,
       };
+    }
+  },
+
+  getAlbumRecommendations: async (
+    _,
+    { albumId, filter = 'all', sort = 'newest', skip = 0, limit = 12 },
+    { prisma }
+  ) => {
+    try {
+      // Build where clause based on filter
+      const where: Prisma.RecommendationWhereInput = {
+        OR: [{ basisAlbumId: albumId }, { recommendedAlbumId: albumId }],
+      };
+
+      // Apply filter
+      if (filter === 'basis') {
+        where.OR = [{ basisAlbumId: albumId }];
+      } else if (filter === 'recommended') {
+        where.OR = [{ recommendedAlbumId: albumId }];
+      }
+
+      // Build orderBy clause based on sort
+      let orderBy: Prisma.RecommendationOrderByWithRelationInput;
+      switch (sort) {
+        case 'oldest':
+          orderBy = { createdAt: 'asc' };
+          break;
+        case 'highest_score':
+          orderBy = { score: 'desc' };
+          break;
+        case 'lowest_score':
+          orderBy = { score: 'asc' };
+          break;
+        case 'newest':
+        default:
+          orderBy = { createdAt: 'desc' };
+          break;
+      }
+
+      // Get total count for pagination
+      const total = await prisma.recommendation.count({ where });
+
+      // Fetch recommendations
+      const recommendations = await prisma.recommendation.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          user: true,
+          basisAlbum: {
+            include: {
+              artists: {
+                include: { artist: true },
+                orderBy: { position: 'asc' },
+                take: 1,
+              },
+            },
+          },
+          recommendedAlbum: {
+            include: {
+              artists: {
+                include: { artist: true },
+                orderBy: { position: 'asc' },
+                take: 1,
+              },
+            },
+          },
+        },
+      });
+
+      // Transform recommendations to include albumRole and otherAlbum
+      const transformedRecommendations = recommendations.map(rec => {
+        const isBasis = rec.basisAlbumId === albumId;
+        const otherAlbum = isBasis ? rec.recommendedAlbum : rec.basisAlbum;
+        const primaryArtist = otherAlbum.artists[0]?.artist;
+
+        return {
+          id: rec.id,
+          score: rec.score,
+          createdAt: rec.createdAt,
+          updatedAt: rec.updatedAt,
+          userId: rec.userId,
+          albumRole: isBasis ? 'basis' : 'recommended',
+          otherAlbum: {
+            id: otherAlbum.id,
+            title: otherAlbum.title,
+            artist: primaryArtist?.name || 'Unknown Artist',
+            imageUrl: otherAlbum.coverArtUrl,
+            year: otherAlbum.releaseDate
+              ? new Date(otherAlbum.releaseDate).getFullYear().toString()
+              : null,
+          },
+          user: rec.user,
+        };
+      });
+
+      // Calculate pagination
+      const page = Math.floor(skip / limit) + 1;
+      const hasMore = skip + limit < total;
+
+      return {
+        recommendations: transformedRecommendations,
+        pagination: {
+          page,
+          perPage: limit,
+          total,
+          hasMore,
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching album recommendations:', error);
+      throw new GraphQLError(
+        `Failed to fetch album recommendations: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   },
 
@@ -1322,6 +1492,7 @@ export const queryResolvers: QueryResolvers = {
         needsEnrichment,
         sortBy = 'title',
         sortOrder = 'asc',
+        skip = 0,
         limit = 50,
       } = args;
 
@@ -1362,9 +1533,10 @@ export const queryResolvers: QueryResolvers = {
       const albums = await prisma.album.findMany({
         where,
         orderBy,
+        skip,
         take: limit,
         include: {
-          albumArtists: {
+          artists: {
             include: {
               artist: true,
             },
@@ -1375,7 +1547,7 @@ export const queryResolvers: QueryResolvers = {
       // Transform to match GraphQL schema
       return albums.map(album => ({
         ...album,
-        artists: album.albumArtists.map(aa => ({
+        artists: album.artists.map(aa => ({
           artist: aa.artist,
           role: aa.role,
           position: aa.position,
@@ -1392,6 +1564,11 @@ export const queryResolvers: QueryResolvers = {
   },
 
   searchArtists: async (_, args, { prisma }) => {
+    const requestId = `search-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    console.log(
+      `🔍 [Search Request] ID: ${requestId} | Query: "${args.query}" | Limit: ${args.limit || 50}`
+    );
+
     try {
       const {
         query,
@@ -1400,71 +1577,222 @@ export const queryResolvers: QueryResolvers = {
         needsEnrichment,
         sortBy = 'name',
         sortOrder = 'asc',
+        skip = 0,
         limit = 50,
       } = args;
 
-      const where: any = {};
-
-      // Search query
-      if (query) {
-        where.name = { contains: query, mode: 'insensitive' };
+      // If no query, return empty results (external API search requires query)
+      if (!query) {
+        return [];
       }
 
-      // Filters
-      if (dataQuality && dataQuality !== 'all') {
-        where.dataQuality = dataQuality;
+      // Check cache first for external API search results
+      const cacheKey = `artist-search:${query.toLowerCase().trim()}`;
+      const cached = await prisma.cacheData.findUnique({
+        where: { key: cacheKey },
+      });
+
+      if (cached) {
+        const now = new Date();
+        if (cached.expires > now) {
+          console.log(
+            `✅ [Cache] Hit for artist search: "${query}" (expires: ${cached.expires.toISOString()})`
+          );
+          return cached.data as any[]; // Return cached results
+        } else {
+          // Delete expired cache entry
+          console.log(
+            `🗑️ [Cache] Expired entry found for "${query}", cleaning up...`
+          );
+          await prisma.cacheData
+            .delete({ where: { key: cacheKey } })
+            .catch(() => {
+              // Ignore deletion errors
+            });
+        }
       }
-      if (enrichmentStatus && enrichmentStatus !== 'all') {
-        where.enrichmentStatus = enrichmentStatus;
-      }
-      if (needsEnrichment) {
-        where.OR = where.OR || [];
-        where.OR.push(
-          { dataQuality: 'LOW' },
-          { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
-          { musicbrainzId: null }
+
+      console.log(`❌ [Cache] Miss for artist search: "${query}"`);
+
+      // Parallel API calls to MusicBrainz and Last.fm using Promise.allSettled
+      const startTime = Date.now();
+      const searchLimit = Math.min(limit, 25); // Limit API calls
+
+      const searchPromises = [
+        // MusicBrainz search
+        (async () => {
+          try {
+            const { getQueuedMusicBrainzService } = await import(
+              '../../musicbrainz/queue-service'
+            );
+            const mbService = getQueuedMusicBrainzService();
+            const results = await mbService.searchArtists(query, searchLimit);
+            console.log(
+              `✅ [MusicBrainz] Found ${results.length} artists for "${query}"`
+            );
+            return { source: 'musicbrainz', results, error: null };
+          } catch (error) {
+            console.error(`❌ [MusicBrainz] Search failed:`, error);
+            return { source: 'musicbrainz', results: [], error };
+          }
+        })(),
+        // Last.fm search
+        (async () => {
+          try {
+            const { getQueuedLastFmService } = await import(
+              '../../lastfm/queue-service'
+            );
+            const lfmService = getQueuedLastFmService();
+            const results = await lfmService.searchArtists(query);
+            console.log(
+              `✅ [Last.fm] Found ${results.length} artists for "${query}"`
+            );
+            return { source: 'lastfm', results, error: null };
+          } catch (error) {
+            console.error(`❌ [Last.fm] Search failed:`, error);
+            return { source: 'lastfm', results: [], error };
+          }
+        })(),
+      ];
+
+      const settledResults = await Promise.allSettled(searchPromises);
+      const duration = Date.now() - startTime;
+
+      // Extract results from settled promises with detailed error tracking
+      const mbResult =
+        settledResults[0].status === 'fulfilled'
+          ? settledResults[0].value
+          : null;
+      const lfmResult =
+        settledResults[1].status === 'fulfilled'
+          ? settledResults[1].value
+          : null;
+
+      const mbResults = mbResult?.results || [];
+      const lfmResults = lfmResult?.results || [];
+
+      // Log partial failures
+      const mbFailed =
+        settledResults[0].status === 'rejected' || mbResult?.error;
+      const lfmFailed =
+        settledResults[1].status === 'rejected' || lfmResult?.error;
+
+      if (mbFailed || lfmFailed) {
+        const failures = [];
+        if (mbFailed) failures.push('MusicBrainz');
+        if (lfmFailed) failures.push('Last.fm');
+        console.warn(
+          `⚠️ [Search] Partial failure - ${failures.join(', ')} API(s) failed`
         );
       }
 
-      // Sorting
-      const orderBy: any = {};
-      if (sortBy === 'name') orderBy.name = sortOrder;
-      else if (sortBy === 'lastEnriched') orderBy.lastEnriched = sortOrder;
-      else if (sortBy === 'dataQuality') orderBy.dataQuality = sortOrder;
+      console.log(
+        `🔍 [Search] Completed in ${duration}ms - MusicBrainz: ${mbResults.length}, Last.fm: ${lfmResults.length}, Success rate: ${
+          (((mbFailed ? 0 : 1) + (lfmFailed ? 0 : 1)) / 2) * 100
+        }%`
+      );
 
-      const artists = await prisma.artist.findMany({
-        where,
-        orderBy,
-        take: limit,
-        include: {
-          _count: {
-            select: {
-              albumArtists: true,
-              trackArtists: true,
+      // If both APIs failed, return empty array
+      if (mbFailed && lfmFailed) {
+        console.error(`❌ [Search] Both APIs failed for query: "${query}"`);
+        return [];
+      }
+
+      // Merge results with fuzzy matching
+      const { findLastFmMatch } = await import('../../utils/fuzzy-match');
+      const mergedResults = mbResults.map((mbArtist: any) => {
+        // Try to find matching Last.fm data
+        const lfmMatch = findLastFmMatch(mbArtist.name, lfmResults);
+
+        if (lfmMatch) {
+          console.log(
+            `🔗 [Fuzzy Match] "${mbArtist.name}" → "${lfmMatch.match.name}" (confidence: ${lfmMatch.confidence}, score: ${lfmMatch.score})`
+          );
+
+          // Merge: Prioritize Last.fm image and add listener count
+          return {
+            ...mbArtist,
+            imageUrl: lfmMatch.match.imageUrl || mbArtist.imageUrl,
+            listeners: lfmMatch.match.listeners,
+            lastFmMatch: {
+              confidence: lfmMatch.confidence,
+              score: lfmMatch.score,
             },
-          },
-        },
+          };
+        }
+
+        // No Last.fm match found
+        return mbArtist;
       });
 
-      // Transform to match GraphQL schema
-      return artists.map(artist => ({
-        ...artist,
-        albumCount: artist._count.albumArtists,
-        trackCount: artist._count.trackArtists,
-        needsEnrichment:
-          artist.dataQuality === 'LOW' ||
-          artist.enrichmentStatus === 'PENDING' ||
-          artist.enrichmentStatus === 'FAILED' ||
-          !artist.musicbrainzId,
-      }));
+      const matchCount = mergedResults.filter((r: any) => r.lastFmMatch).length;
+      const matchRate =
+        mbResults.length > 0
+          ? ((matchCount / mbResults.length) * 100).toFixed(1)
+          : '0';
+      console.log(
+        `✅ [Merge] Matched ${matchCount}/${mbResults.length} MusicBrainz artists with Last.fm data (${matchRate}%)`
+      );
+
+      // Cache merged results with metadata (reuse cacheKey from above)
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+
+      try {
+        await prisma.cacheData.upsert({
+          where: { key: cacheKey },
+          create: {
+            key: cacheKey,
+            data: mergedResults as any,
+            expires: expiresAt,
+            metadata: {
+              mbCount: mbResults.length,
+              lfmCount: lfmResults.length,
+              matchedCount: matchCount,
+              searchDuration: duration,
+              cachedAt: new Date().toISOString(),
+            },
+          },
+          update: {
+            data: mergedResults as any,
+            expires: expiresAt,
+            metadata: {
+              mbCount: mbResults.length,
+              lfmCount: lfmResults.length,
+              matchedCount: matchCount,
+              searchDuration: duration,
+              cachedAt: new Date().toISOString(),
+            },
+          },
+        });
+        console.log(
+          `💾 [Cache] Stored results for "${query}" (expires: ${expiresAt.toISOString()})`
+        );
+      } catch (cacheError) {
+        console.error(`⚠️ [Cache] Failed to store results:`, cacheError);
+        // Don't fail the request if caching fails
+      }
+
+      // Final summary log
+      console.log(
+        `📊 [Search Summary] Query: "${query}" | Total: ${mergedResults.length} | MB: ${mbResults.length} | LFM: ${lfmResults.length} | Matched: ${matchCount} (${matchRate}%) | Duration: ${duration}ms | Cached: ${!mbFailed && !lfmFailed}`
+      );
+
+      // Apply pagination (skip and limit)
+      return mergedResults.slice(skip, skip + limit);
     } catch (error) {
-      throw new GraphQLError(`Failed to search artists: ${error}`);
+      console.error(
+        `❌ [Search Error] Failed to search artists for "${args.query}":`,
+        error
+      );
+      throw new GraphQLError(
+        `Failed to search artists: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   },
 
   searchTracks: async (_, args, { prisma }) => {
     try {
-      const { query, limit = 50 } = args;
+      const { query, skip = 0, limit = 50 } = args;
 
       const where: any = {};
 
@@ -1478,6 +1806,7 @@ export const queryResolvers: QueryResolvers = {
 
       const tracks = await prisma.track.findMany({
         where,
+        skip,
         take: limit,
         include: {
           album: true,

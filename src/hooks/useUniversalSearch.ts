@@ -1,5 +1,10 @@
 import { useMemo } from 'react';
-import { useSearchQuery, SearchType, SearchMode as GraphQLSearchMode } from '@/generated/graphql';
+
+import {
+  useSearchQuery,
+  SearchType,
+  SearchMode as GraphQLSearchMode,
+} from '@/generated/graphql';
 
 export type SearchMode = 'LOCAL_ONLY' | 'LOCAL_AND_EXTERNAL' | 'EXTERNAL_ONLY';
 
@@ -89,7 +94,14 @@ export function useUniversalSearch(
   query: string,
   options: UseUniversalSearchOptions
 ) {
-  const { enabled, minQueryLength, searchType, maxResults, limit, searchMode = 'LOCAL_ONLY' } = options;
+  const {
+    enabled,
+    minQueryLength,
+    searchType,
+    maxResults,
+    limit,
+    searchMode = 'LOCAL_ONLY',
+  } = options;
 
   const shouldQuery = !!query && query.length >= minQueryLength && enabled;
 
@@ -137,12 +149,12 @@ export function useUniversalSearch(
 
     // Transform albums (now UnifiedRelease type)
     if (searchData.albums) {
-      searchData.albums.forEach((album) => {
+      searchData.albums.forEach(album => {
         // Map DataSource enum to lowercase string
         const sourceMap: Record<string, 'local' | 'musicbrainz' | 'discogs'> = {
-          'LOCAL': 'local',
-          'MUSICBRAINZ': 'musicbrainz',
-          'DISCOGS': 'discogs',
+          LOCAL: 'local',
+          MUSICBRAINZ: 'musicbrainz',
+          DISCOGS: 'discogs',
         };
         const source = sourceMap[album.source] || 'local';
 
@@ -152,7 +164,10 @@ export function useUniversalSearch(
           title: album.title,
           subtitle: album.artistName || 'Unknown Artist',
           artist: album.artistName || 'Unknown Artist',
-          releaseDate: album.releaseDate instanceof Date ? album.releaseDate.toISOString() : album.releaseDate || '',
+          releaseDate:
+            album.releaseDate instanceof Date
+              ? album.releaseDate.toISOString()
+              : album.releaseDate || '',
           genre: [],
           label: '',
           source,
@@ -172,14 +187,16 @@ export function useUniversalSearch(
 
     // Transform artists
     if (searchData.artists) {
-      searchData.artists.forEach((artist) => {
+      searchData.artists.forEach(artist => {
         const localId = String(artist.id);
         const musicbrainzId = artist.musicbrainzId || undefined;
         // Heuristic: if GraphQL returned an MBID equal to id (no local record), treat as external
         const isExternalOnly = !!musicbrainzId && musicbrainzId === localId;
 
         const navId = isExternalOnly ? musicbrainzId! : localId;
-        const source: 'local' | 'musicbrainz' = isExternalOnly ? 'musicbrainz' : 'local';
+        const source: 'local' | 'musicbrainz' = isExternalOnly
+          ? 'musicbrainz'
+          : 'local';
 
         transformedResults.push({
           id: navId,
@@ -205,11 +222,18 @@ export function useUniversalSearch(
 
     // Transform tracks
     if (searchData.tracks) {
-      searchData.tracks.forEach((track) => {
+      searchData.tracks.forEach(track => {
         const idStr = String(track.id);
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idStr);
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            idStr
+          );
         const isNumeric = /^\d+$/.test(idStr);
-        const inferredSource = isUuid ? 'musicbrainz' : isNumeric ? 'discogs' : 'local';
+        const inferredSource = isUuid
+          ? 'musicbrainz'
+          : isNumeric
+            ? 'discogs'
+            : 'local';
         transformedResults.push({
           id: track.id,
           type: 'track' as const,
@@ -244,9 +268,9 @@ export function useUniversalSearch(
   // Group results by type
   const grouped = useMemo(() => {
     return {
-      albums: results.filter((r) => r.type === 'album'),
-      artists: results.filter((r) => r.type === 'artist'),
-      tracks: results.filter((r) => r.type === 'track'),
+      albums: results.filter(r => r.type === 'album'),
+      artists: results.filter(r => r.type === 'artist'),
+      tracks: results.filter(r => r.type === 'track'),
       labels: [],
       other: [],
     };

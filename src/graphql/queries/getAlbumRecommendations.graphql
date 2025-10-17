@@ -1,0 +1,42 @@
+query GetAlbumRecommendations(
+  $albumId: UUID!
+  $filter: String
+  $sort: String
+  $skip: Int
+  $limit: Int
+) {
+  getAlbumRecommendations(
+    albumId: $albumId
+    filter: $filter
+    sort: $sort
+    skip: $skip
+    limit: $limit
+  ) {
+    recommendations {
+      id
+      score
+      createdAt
+      updatedAt
+      userId
+      albumRole
+      otherAlbum {
+        id
+        title
+        artist
+        imageUrl
+        year
+      }
+      user {
+        id
+        name
+        image
+      }
+    }
+    pagination {
+      page
+      perPage
+      total
+      hasMore
+    }
+  }
+}

@@ -39,6 +39,9 @@ type Artist {
   trackCount: Int!
   popularity: Float
   needsEnrichment: Boolean!
+
+  # Last.fm data
+  listeners: Int
 }
 
 type Album {
@@ -119,6 +122,17 @@ type UnifiedRelease {
   artistCredits: [ArtistCredit!] # Minimal credits for linking
   trackCount: Int
   year: Int
+}
+
+type CategorizedDiscography {
+  albums: [UnifiedRelease!]!
+  eps: [UnifiedRelease!]!
+  singles: [UnifiedRelease!]!
+  compilations: [UnifiedRelease!]!
+  liveAlbums: [UnifiedRelease!]!
+  remixes: [UnifiedRelease!]!
+  soundtracks: [UnifiedRelease!]!
+  other: [UnifiedRelease!]!
 }
 
 enum DataSource {
@@ -311,6 +325,37 @@ type SearchResults {
 type RecommendationFeed {
   recommendations: [Recommendation!]!
   cursor: String
+  hasMore: Boolean!
+}
+
+type AlbumRecommendationsResponse {
+  recommendations: [AlbumRecommendation!]!
+  pagination: PaginationInfo!
+}
+
+type AlbumRecommendation {
+  id: String!
+  score: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  userId: String!
+  albumRole: String! # 'basis' or 'recommended'
+  otherAlbum: OtherAlbumInfo!
+  user: User!
+}
+
+type OtherAlbumInfo {
+  id: String!
+  title: String!
+  artist: String!
+  imageUrl: String
+  year: String
+}
+
+type PaginationInfo {
+  page: Int!
+  perPage: Int!
+  total: Int!
   hasMore: Boolean!
 }
 
@@ -781,17 +826,19 @@ type Query {
 
   # Entity retrieval
   artist(id: UUID!): Artist
+  artistByMusicBrainzId(musicbrainzId: UUID!): Artist
   album(id: UUID!): Album
   track(id: UUID!): Track
   albumTracks(albumId: UUID!): [Track!]!
-  searchTracks(query: String!, limit: Int = 20): [Track!]!
+  searchTracks(query: String!, skip: Int, limit: Int = 20): [Track!]!
   user(id: String!): User
   collection(id: String!): Collection
   recommendation(id: String!): Recommendation
 
   # Unified artist discography (supports local, MusicBrainz, and Discogs IDs)
   # Note: artistDetails is handled directly by server components
-  artistDiscography(id: String!): [UnifiedRelease!]!
+  # Returns all releases categorized by type (albums, EPs, singles, etc.)
+  artistDiscography(id: String!, source: DataSource!): CategorizedDiscography!
 
   # Feed & Social
   recommendationFeed(cursor: String, limit: Int = 20): RecommendationFeed!
@@ -799,8 +846,18 @@ type Query {
   trendingArtists(limit: Int = 20): [Artist!]!
   userSuggestions(limit: Int = 10): [User!]!
 
+  # Album-specific queries
+  getAlbumRecommendations(
+    albumId: UUID!
+    filter: String # 'all', 'basis', 'recommended'
+    sort: String # 'newest', 'oldest', 'highest_score', 'lowest_score'
+    skip: Int
+    limit: Int = 12
+  ): AlbumRecommendationsResponse!
+
   # User-specific queries
   myCollections: [Collection!]!
+  myCollectionAlbums: [CollectionAlbum!]! # All albums across all user collections
   publicCollections(limit: Int = 20, offset: Int = 0): [Collection!]!
   userCollections(userId: String!): [Collection!]!
   myRecommendations(
@@ -835,6 +892,7 @@ type Query {
     needsEnrichment: Boolean
     sortBy: String
     sortOrder: String
+    skip: Int
     limit: Int
   ): [Album!]!
   searchArtists(
@@ -844,6 +902,7 @@ type Query {
     needsEnrichment: Boolean
     sortBy: String
     sortOrder: String
+    skip: Int
     limit: Int
   ): [Artist!]!
 }

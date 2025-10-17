@@ -1,8 +1,9 @@
 // src/hooks/useAlbumRecommendations.ts
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+
+import { useGetAlbumRecommendationsQuery } from '@/generated/graphql';
 
 export interface AlbumRecommendation {
   id: string;
@@ -47,37 +48,13 @@ interface UseAlbumRecommendationsOptions {
   perPage?: number;
 }
 
-async function fetchAlbumRecommendations({
-  albumId,
-  filter = 'all',
-  sort = 'newest',
-  page = 1,
-  perPage = 12,
-}: UseAlbumRecommendationsOptions): Promise<AlbumRecommendationsResponse> {
-  const params = new URLSearchParams({
-    page: page.toString(),
-    per_page: perPage.toString(),
-    filter,
-    sort,
-  });
-
-  const response = await fetch(
-    `/api/albums/${albumId}/recommendations?${params}`
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch album recommendations');
-  }
-
-  return response.json();
-}
-
 export function useAlbumRecommendations(
   options: UseAlbumRecommendationsOptions
 ) {
   const [filter, setFilter] = useState<FilterType>(options.filter || 'all');
   const [sort, setSort] = useState<SortType>(options.sort || 'newest');
   const [page, setPage] = useState(options.page || 1);
+  const perPage = options.perPage || 12;
 
   // Debounced values for API calls
   const [debouncedFilter, setDebouncedFilter] = useState(filter);
@@ -101,38 +78,78 @@ export function useAlbumRecommendations(
     return () => clearTimeout(timer);
   }, [sort]);
 
-  const queryKey = [
-    'album-recommendations',
-    options.albumId,
-    debouncedFilter,
-    debouncedSort,
-    page,
-  ];
+  // Calculate skip for pagination
+  const skip = (page - 1) * perPage;
 
-  const query = useQuery({
-    queryKey,
-    queryFn: () =>
-      fetchAlbumRecommendations({
-        ...options,
-        filter: debouncedFilter,
-        sort: debouncedSort,
-        page,
-      }),
-    enabled: !!options.albumId,
-    staleTime: 10 * 60 * 1000, // 10 minutes - increased for better performance
-    gcTime: 30 * 60 * 1000, // 30 minutes - keep data in cache longer
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-    refetchOnWindowFocus: false,
-    refetchOnMount: false, // Don't refetch on component remount
-    refetchInterval: false, // No automatic refetching
-  });
+  // Use generated GraphQL query hook
+  const query = useGetAlbumRecommendationsQuery(
+    {
+      albumId: options.albumId,
+      filter: debouncedFilter,
+      sort: debouncedSort,
+      skip,
+      limit: perPage,
+    },
+    {
+      enabled: !!options.albumId,
+      staleTime: 10 * 60 * 1000, // 10 minutes
+      gcTime: 30 * 60 * 1000, // 30 minutes
+      retry: 2,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchInterval: false,
+    }
+  );
+
+  // Transform GraphQL data to match the expected interface
+  const data: AlbumRecommendationsResponse | undefined = useMemo(() => {
+    if (!query.data?.getAlbumRecommendations) return undefined;
+
+    const { recommendations, pagination } = query.data.getAlbumRecommendations;
+
+    return {
+      recommendations: recommendations.map(rec => ({
+        id: rec.id,
+        score: rec.score,
+        createdAt:
+          typeof rec.createdAt === 'string'
+            ? rec.createdAt
+            : rec.createdAt.toISOString(),
+        updatedAt:
+          typeof rec.updatedAt === 'string'
+            ? rec.updatedAt
+            : rec.updatedAt.toISOString(),
+        userId: rec.userId,
+        albumRole: rec.albumRole as 'basis' | 'recommended',
+        otherAlbum: {
+          discogsId: rec.otherAlbum.id, // Using album ID as discogsId for compatibility
+          title: rec.otherAlbum.title,
+          artist: rec.otherAlbum.artist,
+          imageUrl: rec.otherAlbum.imageUrl || null,
+          year: rec.otherAlbum.year || null,
+        },
+        user: {
+          id: rec.user.id,
+          name: rec.user.name || null,
+          image: rec.user.image || null,
+        },
+      })),
+      pagination: {
+        page: pagination.page,
+        per_page: pagination.perPage,
+        total: pagination.total,
+        has_more: pagination.hasMore,
+      },
+      success: true,
+    };
+  }, [query.data]);
 
   const loadMore = useCallback(() => {
-    if (query.data?.pagination.has_more) {
+    if (data?.pagination.has_more) {
       setPage(prev => prev + 1);
     }
-  }, [query.data?.pagination.has_more]);
+  }, [data?.pagination.has_more]);
 
   const resetFilters = useCallback(() => {
     setFilter('all');
@@ -141,7 +158,11 @@ export function useAlbumRecommendations(
   }, []);
 
   return {
-    ...query,
+    data,
+    isLoading: query.isLoading,
+    error: query.error,
+    isError: query.isError,
+    refetch: query.refetch,
     filter,
     setFilter: useCallback((newFilter: FilterType) => {
       setFilter(newFilter);
@@ -155,8 +176,8 @@ export function useAlbumRecommendations(
     page,
     loadMore,
     resetFilters,
-    hasMore: query.data?.pagination.has_more || false,
-    total: query.data?.pagination.total || 0,
+    hasMore: data?.pagination.has_more || false,
+    total: data?.pagination.total || 0,
     isFetching: query.isFetching,
   };
 }

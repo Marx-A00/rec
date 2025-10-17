@@ -85,7 +85,8 @@ export class MusicBrainzQueue {
       if (jobDataAny.offset) queryInfo += ` • Offset: ${jobDataAny.offset}`;
     } else if (jobDataAny.mbid) {
       queryInfo = `MBID: ${jobDataAny.mbid.substring(0, 8)}...`;
-      if (jobDataAny.includes) queryInfo += ` • Includes: ${jobDataAny.includes.join(', ')}`;
+      if (jobDataAny.includes)
+        queryInfo += ` • Includes: ${jobDataAny.includes.join(', ')}`;
     } else if (jobDataAny.artistMbid) {
       queryInfo = `Artist MBID: ${jobDataAny.artistMbid.substring(0, 8)}...`;
       if (jobDataAny.limit) queryInfo += ` • Limit: ${jobDataAny.limit}`;
@@ -94,12 +95,18 @@ export class MusicBrainzQueue {
     // Color-coded queue logging (cyan borders for job queuing)
     const border = chalk.cyan('─'.repeat(60));
     console.log('\n' + border);
-    console.log(`${chalk.bold.white('QUEUING JOB')} ${chalk.cyan('[QUEUE LAYER]')}`);
+    console.log(
+      `${chalk.bold.white('QUEUING JOB')} ${chalk.cyan('[QUEUE LAYER]')}`
+    );
     console.log(border);
     console.log(`  ${chalk.cyan('Job ID:')}     ${chalk.white(job.id)}`);
     console.log(`  ${chalk.cyan('Type:')}       ${chalk.white(type)}`);
-    console.log(`  ${chalk.cyan('Request ID:')} ${chalk.white(jobData.requestId)}`);
-    console.log(`  ${chalk.cyan('Priority:')}   ${chalk.white(jobOptions.priority)}`);
+    console.log(
+      `  ${chalk.cyan('Request ID:')} ${chalk.white(jobData.requestId)}`
+    );
+    console.log(
+      `  ${chalk.cyan('Priority:')}   ${chalk.white(jobOptions.priority)}`
+    );
     if (queryInfo) {
       console.log(`  ${chalk.cyan('Details:')}    ${chalk.white(queryInfo)}`);
     }
@@ -154,16 +161,22 @@ export class MusicBrainzQueue {
         queryInfo = ` • Artist MBID: ${jobData.artistMbid.substring(0, 8)}...`;
       }
 
-      console.log(`🔄 [Queue] Processing ${job.name} (ID: ${job.id})${queryInfo}`);
+      console.log(
+        `🔄 [Queue] Processing ${job.name} (ID: ${job.id})${queryInfo}`
+      );
     });
 
     this.worker.on('completed', (job, result) => {
       const duration = Date.now() - job.processedOn!;
       const resultCount = result?.data
-        ? (Array.isArray(result.data) ? result.data.length : 1)
+        ? Array.isArray(result.data)
+          ? result.data.length
+          : 1
         : 0;
 
-      console.log(`✅ Completed ${job.name} (ID: ${job.id}) in ${duration}ms • Results: ${resultCount}`);
+      console.log(
+        `✅ Completed ${job.name} (ID: ${job.id}) in ${duration}ms • Results: ${resultCount}`
+      );
     });
 
     this.worker.on('failed', (job, error) => {
@@ -176,7 +189,10 @@ export class MusicBrainzQueue {
         queryInfo = ` • MBID: ${jobData.mbid.substring(0, 8)}...`;
       }
 
-      console.error(`❌ Failed ${job?.name} (ID: ${job?.id})${queryInfo}:`, error.message);
+      console.error(
+        `❌ Failed ${job?.name} (ID: ${job?.id})${queryInfo}:`,
+        error.message
+      );
     });
 
     this.worker.on('stalled', jobId => {

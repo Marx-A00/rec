@@ -57,7 +57,11 @@ export async function POST(
     }
 
     // Upload to Cloudflare
-    const result = await cacheAlbumArt(album.coverArtUrl, album.id, album.title);
+    const result = await cacheAlbumArt(
+      album.coverArtUrl,
+      album.id,
+      album.title
+    );
 
     if (!result) {
       // Mark as 'none' if upload failed (e.g., 404 from CAA)

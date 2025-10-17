@@ -1,28 +1,47 @@
 'use client';
 
-import { Calendar, Disc } from 'lucide-react';
+import { useState } from 'react';
+import { Calendar, Disc, ChevronDown, ChevronUp } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import AlbumModal from '@/components/ui/AlbumModal';
 import { useAlbumModal } from '@/hooks/useAlbumModal';
-import { useGetArtistDiscographyQuery } from '@/generated/graphql';
+import {
+  useGetArtistDiscographyQuery,
+  type GetArtistDiscographyQuery,
+  DataSource,
+} from '@/generated/graphql';
+
+type ReleaseType = NonNullable<
+  GetArtistDiscographyQuery['artistDiscography']['albums']
+>[number];
 
 export default function DiscographyTab({
   artistId,
   artistName,
+  source,
 }: {
   artistId: string;
   artistName?: string;
+  source: 'local' | 'musicbrainz' | 'discogs';
 }) {
+  // Map source string to DataSource enum
+  const sourceEnum =
+    source === 'local'
+      ? DataSource.Local
+      : source === 'musicbrainz'
+        ? DataSource.Musicbrainz
+        : DataSource.Discogs;
+
   const { data, isLoading, error } = useGetArtistDiscographyQuery(
-    { id: artistId },
+    { id: artistId, source: sourceEnum },
     { enabled: !!artistId }
   );
 
   const { selectedItem, isExiting, isOpen, openModal, closeModal } =
     useAlbumModal();
 
-  const releases = data?.artistDiscography || [];
+  const discography = data?.artistDiscography;
 
   if (isLoading) {
     return (
@@ -45,6 +64,17 @@ export default function DiscographyTab({
     );
   }
 
+  // Calculate total releases
+  const totalReleases =
+    (discography?.albums?.length || 0) +
+    (discography?.eps?.length || 0) +
+    (discography?.singles?.length || 0) +
+    (discography?.compilations?.length || 0) +
+    (discography?.liveAlbums?.length || 0) +
+    (discography?.remixes?.length || 0) +
+    (discography?.soundtracks?.length || 0) +
+    (discography?.other?.length || 0);
+
   return (
     <>
       <AlbumModal
@@ -54,46 +84,104 @@ export default function DiscographyTab({
         isExiting={isExiting}
       />
 
-      <div className='bg-zinc-900 p-4 rounded-lg'>
-        <h3 className='text-lg font-semibold mb-4 text-white'>
-          Discography ({releases.length})
+      <div className='bg-zinc-900 p-4 rounded-lg space-y-6'>
+        <h3 className='text-lg font-semibold text-white'>
+          Discography ({totalReleases})
         </h3>
 
-        {releases.length === 0 ? (
+        {totalReleases === 0 ? (
           <p className='text-zinc-400'>No releases found for this artist.</p>
         ) : (
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-            {releases.map(release => (
-              <ReleaseCard
-                key={release.id}
-                release={release}
-                onOpen={() =>
-                  openModal({
-                    id: String(release.id),
-                    title: release.title,
-                    year:
-                      (release as any).year ||
-                      (release.releaseDate
-                        ? new Date(release.releaseDate as any).getFullYear()
-                        : undefined),
-                    type: 'master',
-                    thumb: (release as any).imageUrl || undefined,
-                    artist:
-                      (release as any).artistName || artistName || undefined,
-                    source: (release as any).source || 'musicbrainz',
-                    // carry credits for UI if needed later
-                    basic_information: {
-                      artists: Array.isArray((release as any).artistCredits)
-                        ? (release as any).artistCredits.map((c: any) => ({
-                            id: c?.artist?.id,
-                            name: c?.artist?.name,
-                          }))
-                        : undefined,
-                    },
-                  } as any)
-                }
+          <div className='space-y-6'>
+            {/* Albums Section */}
+            {discography?.albums && discography.albums.length > 0 && (
+              <ReleaseSection
+                title='Albums'
+                releases={discography.albums}
+                artistId={artistId}
+                artistName={artistName}
+                openModal={openModal}
+                defaultExpanded={true}
               />
-            ))}
+            )}
+
+            {/* EPs Section */}
+            {discography?.eps && discography.eps.length > 0 && (
+              <ReleaseSection
+                title='EPs'
+                releases={discography.eps}
+                artistId={artistId}
+                artistName={artistName}
+                openModal={openModal}
+              />
+            )}
+
+            {/* Singles Section */}
+            {discography?.singles && discography.singles.length > 0 && (
+              <ReleaseSection
+                title='Singles'
+                releases={discography.singles}
+                artistId={artistId}
+                artistName={artistName}
+                openModal={openModal}
+              />
+            )}
+
+            {/* Compilations Section */}
+            {discography?.compilations &&
+              discography.compilations.length > 0 && (
+                <ReleaseSection
+                  title='Compilations'
+                  releases={discography.compilations}
+                  artistId={artistId}
+                  artistName={artistName}
+                  openModal={openModal}
+                />
+              )}
+
+            {/* Live Albums Section */}
+            {discography?.liveAlbums && discography.liveAlbums.length > 0 && (
+              <ReleaseSection
+                title='Live Albums'
+                releases={discography.liveAlbums}
+                artistId={artistId}
+                artistName={artistName}
+                openModal={openModal}
+              />
+            )}
+
+            {/* Remixes Section */}
+            {discography?.remixes && discography.remixes.length > 0 && (
+              <ReleaseSection
+                title='Remixes'
+                releases={discography.remixes}
+                artistId={artistId}
+                artistName={artistName}
+                openModal={openModal}
+              />
+            )}
+
+            {/* Soundtracks Section */}
+            {discography?.soundtracks && discography.soundtracks.length > 0 && (
+              <ReleaseSection
+                title='Soundtracks'
+                releases={discography.soundtracks}
+                artistId={artistId}
+                artistName={artistName}
+                openModal={openModal}
+              />
+            )}
+
+            {/* Other Section */}
+            {discography?.other && discography.other.length > 0 && (
+              <ReleaseSection
+                title='Other Releases'
+                releases={discography.other}
+                artistId={artistId}
+                artistName={artistName}
+                openModal={openModal}
+              />
+            )}
           </div>
         )}
       </div>
@@ -101,15 +189,88 @@ export default function DiscographyTab({
   );
 }
 
+function ReleaseSection({
+  title,
+  releases,
+  artistId,
+  artistName,
+  openModal,
+  defaultExpanded = false,
+}: {
+  title: string;
+  releases: ReleaseType[];
+  artistId: string;
+  artistName?: string;
+  openModal: (data: any) => void;
+  defaultExpanded?: boolean;
+}) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  return (
+    <div className='border-t border-zinc-800 pt-4'>
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className='flex items-center justify-between w-full mb-4 hover:text-emerald-400 transition-colors'
+      >
+        <h4 className='text-base font-semibold text-white'>
+          {title} ({releases.length})
+        </h4>
+        {isExpanded ? (
+          <ChevronUp className='h-5 w-5 text-zinc-400' />
+        ) : (
+          <ChevronDown className='h-5 w-5 text-zinc-400' />
+        )}
+      </button>
+
+      {isExpanded && (
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+          {releases.map(release => (
+            <ReleaseCard
+              key={release.id}
+              release={release}
+              onOpen={() =>
+                openModal({
+                  id: String(release.id),
+                  title: release.title,
+                  year:
+                    release.year ||
+                    (release.releaseDate
+                      ? new Date(release.releaseDate).getFullYear()
+                      : undefined),
+                  type: 'master',
+                  thumb: release.imageUrl || undefined,
+                  artist: release.artistName || artistName || undefined,
+                  source: release.source || 'musicbrainz',
+                  basic_information: {
+                    artists:
+                      Array.isArray(release.artistCredits) &&
+                      release.artistCredits.length > 0
+                        ? release.artistCredits.map(c => ({
+                            // Use the current page's artistId since we're on the artist page
+                            id: c?.artist?.id || artistId,
+                            name: c?.artist?.name || artistName,
+                          }))
+                        : [{ id: artistId, name: artistName || '' }],
+                  },
+                })
+              }
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReleaseCard({
   release,
   onOpen,
 }: {
-  release: any;
+  release: ReleaseType;
   onOpen: () => void;
 }) {
   const credits = Array.isArray(release.artistCredits)
-    ? (release.artistCredits as any[])
+    ? release.artistCredits
     : [];
 
   return (
@@ -128,7 +289,7 @@ function ReleaseCard({
       <div className='flex h-24'>
         <div className='relative w-24 h-24 flex-shrink-0'>
           <AlbumImage
-            src={(release as any).imageUrl}
+            src={release.imageUrl || ''}
             alt={release.title}
             width={96}
             height={96}
@@ -160,7 +321,7 @@ function ReleaseCard({
             {credits.length > 0 && (
               <div className='text-xs text-zinc-400 truncate'>
                 {credits
-                  .map((c: any) => c?.artist?.name)
+                  .map(c => c?.artist?.name)
                   .filter(Boolean)
                   .slice(0, 3)
                   .join(', ')}
@@ -169,7 +330,7 @@ function ReleaseCard({
             )}
 
             <div className='text-xs text-zinc-500'>
-              Source: {(release as any).source?.toLowerCase() || 'unknown'}
+              Source: {release.source?.toLowerCase() || 'unknown'}
             </div>
           </div>
         </div>

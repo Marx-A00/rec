@@ -40,11 +40,9 @@ export default async function ArtistDetailsPage({
       | 'musicbrainz'
       | 'discogs'
       | undefined;
-    // Pass through preferred source when present
-    artist = await getArtistDetails(
-      artistId,
-      preferredSource ? { source: preferredSource } : undefined
-    );
+    // Default to 'local' if no source provided
+    const source = preferredSource || 'local';
+    artist = await getArtistDetails(artistId, { source });
   } catch (error) {
     console.error('Error fetching artist:', error);
     notFound();
@@ -54,26 +52,6 @@ export default async function ArtistDetailsPage({
     <div className='px-4 py-8'>
       {/* Back Navigation */}
       <BackButton text='Back' fallbackHref='/' />
-
-      {/* Source Badge */}
-      <div className='mb-4 flex items-center gap-2'>
-        <span className='text-sm text-zinc-400'>Data source:</span>
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${
-            artist.source === 'local'
-              ? 'bg-emeraled-green text-black'
-              : artist.source === 'musicbrainz'
-                ? 'bg-blue-500/20 text-blue-400'
-                : 'bg-purple-500/20 text-purple-400'
-          }`}
-        >
-          {artist.source === 'local'
-            ? 'Database'
-            : artist.source === 'musicbrainz'
-              ? 'MusicBrainz'
-              : 'Discogs'}
-        </span>
-      </div>
 
       {/* Artist Header */}
       <div
@@ -126,6 +104,25 @@ export default async function ArtistDetailsPage({
                   : 'Present'}
               </p>
             )}
+            {/* Source Badge */}
+            <div className='mt-4 flex items-center gap-2'>
+              <span className='text-sm text-zinc-400'>Data source:</span>
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  artist.source === 'local'
+                    ? 'bg-emeraled-green text-black'
+                    : artist.source === 'musicbrainz'
+                      ? 'bg-blue-500/20 text-blue-400'
+                      : 'bg-purple-500/20 text-purple-400'
+                }`}
+              >
+                {artist.source === 'local'
+                  ? 'Database'
+                  : artist.source === 'musicbrainz'
+                    ? 'MusicBrainz'
+                    : 'Discogs'}
+              </span>
+            </div>
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -214,7 +211,11 @@ export default async function ArtistDetailsPage({
           value='discography'
           className='focus:outline-none outline-none'
         >
-          <DiscographyTab artistId={artistId} artistName={artist.name} />
+          <DiscographyTab
+            artistId={artist.id}
+            artistName={artist.name}
+            source={artist.source}
+          />
         </TabsContent>
 
         <TabsContent
@@ -222,7 +223,7 @@ export default async function ArtistDetailsPage({
           className='focus:outline-none outline-none'
         >
           <ArtistRecommendationsTab
-            artistId={artistId}
+            artistId={artist.id}
             artistName={sanitizeArtistName(artist.name)}
           />
         </TabsContent>

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Music, User, Building2, Loader2 } from 'lucide-react';
+
 import AlbumImage from '@/components/ui/AlbumImage';
 import { useUniversalSearch, SearchMode } from '@/hooks/useUniversalSearch';
 import { useSearchNavigation } from '@/hooks/useSearchNavigation';
@@ -10,21 +11,24 @@ import { UnifiedSearchResult } from '@/types/search';
 import { sanitizeArtistName } from '@/lib/utils';
 import { defaultEntityTypes } from '@/components/ui/UniversalSearchBar';
 
-type SearchFilter = 'all' | 'albums' | 'artists' | 'tracks';
+// TODO: Re-add 'all' when we figure out the "ALL" search
+type SearchFilter = 'albums' | 'artists' | 'tracks';
 
 function SearchResults() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get('q') || '';
   // Support both 'type' (from SimpleSearchBar) and 'filter' (from page tabs) params
-  const typeParam = searchParams.get('type') || searchParams.get('filter') || 'all';
+  const typeParam =
+    searchParams.get('type') || searchParams.get('filter') || 'albums';
   const filterParam = typeParam as SearchFilter;
   const [activeFilter, setActiveFilter] = useState<SearchFilter>(filterParam);
-  const [searchMode, setSearchMode] = useState<SearchMode>('LOCAL_AND_EXTERNAL');
+  const [searchMode, setSearchMode] =
+    useState<SearchMode>('LOCAL_AND_EXTERNAL');
   const [currentLimit, setCurrentLimit] = useState(20);
 
   // Map filter to searchType
-  const searchType = activeFilter === 'all' ? 'all' : activeFilter;
+  const searchType = activeFilter;
 
   const {
     results = [],
@@ -59,14 +63,12 @@ function SearchResults() {
   // IMPORTANT: All hooks must be called before any early returns!
   // Filter results based on active filter
   const filteredResults = useMemo(() => {
-    return activeFilter === 'all'
-      ? results
-      : results.filter(r => {
-          if (activeFilter === 'albums') return r.type === 'album';
-          if (activeFilter === 'artists') return r.type === 'artist';
-          if (activeFilter === 'tracks') return r.type === 'track';
-          return true;
-        });
+    return results.filter(r => {
+      if (activeFilter === 'albums') return r.type === 'album';
+      if (activeFilter === 'artists') return r.type === 'artist';
+      if (activeFilter === 'tracks') return r.type === 'track';
+      return true;
+    });
   }, [activeFilter, results]);
 
   // Group results by entity type (artist, album, track)
@@ -89,7 +91,7 @@ function SearchResults() {
   useEffect(() => {
     const counts = new Map<string, number>();
     const dupes: Record<string, number> = {};
-    filteredResults.forEach((r) => {
+    filteredResults.forEach(r => {
       const key = `${r.type}:${(r as any).source || 'unknown'}:${r.id}`;
       const next = (counts.get(key) || 0) + 1;
       counts.set(key, next);
@@ -98,7 +100,6 @@ function SearchResults() {
       }
     });
     if (Object.keys(dupes).length > 0) {
-      // eslint-disable-next-line no-console
       console.warn('[Search] Duplicate render keys detected:', dupes);
     }
   }, [filteredResults]);
@@ -124,7 +125,10 @@ function SearchResults() {
         return false;
       }),
       mixtapes: albumResults.filter(r => {
-        if (r.secondaryTypes?.includes('Mixtape/Street') && !usedIds.has(r.id)) {
+        if (
+          r.secondaryTypes?.includes('Mixtape/Street') &&
+          !usedIds.has(r.id)
+        ) {
           usedIds.add(r.id);
           return true;
         }
@@ -154,8 +158,14 @@ function SearchResults() {
     if (albumResults.length > 0) {
       console.log('=== GROUPED BY RELEASE TYPE DEBUG ===');
       console.log('Total album results:', albumResults.length);
-      console.log('All album results sources:', albumResults.map(r => r.source));
-      console.log('All album results primaryTypes:', albumResults.map(r => r.primaryType));
+      console.log(
+        'All album results sources:',
+        albumResults.map(r => r.source)
+      );
+      console.log(
+        'All album results primaryTypes:',
+        albumResults.map(r => r.primaryType)
+      );
       console.log('Singles:', grouped.singles.length);
       console.log('EPs:', grouped.eps.length);
       console.log('Mixtapes:', grouped.mixtapes.length);
@@ -293,13 +303,15 @@ function SearchResults() {
       <div className='mb-8'>
         <h1 className='text-3xl font-bold text-white mb-2'>Search Results</h1>
         <p className='text-zinc-400'>
-          Found {filteredResults.length} result{filteredResults.length !== 1 ? 's' : ''} for &quot;{query}&quot;
+          Found {filteredResults.length} result
+          {filteredResults.length !== 1 ? 's' : ''} for &quot;{query}&quot;
         </p>
       </div>
 
       {/* Filter Tabs */}
       <div className='flex items-center gap-2 mb-8 border-b border-zinc-800'>
-        <button
+        {/* TODO: Re-enable when we figure out the "ALL" search */}
+        {/* <button
           onClick={() => handleFilterChange('all')}
           className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
             activeFilter === 'all'
@@ -308,7 +320,7 @@ function SearchResults() {
           }`}
         >
           All
-        </button>
+        </button> */}
         <button
           onClick={() => handleFilterChange('albums')}
           className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
@@ -343,13 +355,15 @@ function SearchResults() {
 
       <div className='space-y-8'>
         {/* Albums Section - Show by release type */}
-        {(activeFilter === 'all' || activeFilter === 'albums') ? (
+        {activeFilter === 'albums' ? (
           <>
             {/* Studio Albums */}
             {groupedByReleaseType.albums.length > 0 && (
               <div>
                 <div className='flex items-center gap-2 mb-4'>
-                  <div className='text-zinc-400'><Music className='h-5 w-5' /></div>
+                  <div className='text-zinc-400'>
+                    <Music className='h-5 w-5' />
+                  </div>
                   <h2 className='text-xl font-semibold text-white'>Albums</h2>
                   <span className='text-sm text-zinc-500'>
                     ({groupedByReleaseType.albums.length})
@@ -402,7 +416,9 @@ function SearchResults() {
             {groupedByReleaseType.singles.length > 0 && (
               <div>
                 <div className='flex items-center gap-2 mb-4'>
-                  <div className='text-zinc-400'><Music className='h-5 w-5' /></div>
+                  <div className='text-zinc-400'>
+                    <Music className='h-5 w-5' />
+                  </div>
                   <h2 className='text-xl font-semibold text-white'>Singles</h2>
                   <span className='text-sm text-zinc-500'>
                     ({groupedByReleaseType.singles.length})
@@ -453,7 +469,9 @@ function SearchResults() {
             {groupedByReleaseType.eps.length > 0 && (
               <div>
                 <div className='flex items-center gap-2 mb-4'>
-                  <div className='text-zinc-400'><Music className='h-5 w-5' /></div>
+                  <div className='text-zinc-400'>
+                    <Music className='h-5 w-5' />
+                  </div>
                   <h2 className='text-xl font-semibold text-white'>EPs</h2>
                   <span className='text-sm text-zinc-500'>
                     ({groupedByReleaseType.eps.length})
@@ -504,7 +522,9 @@ function SearchResults() {
             {groupedByReleaseType.mixtapes.length > 0 && (
               <div>
                 <div className='flex items-center gap-2 mb-4'>
-                  <div className='text-zinc-400'><Music className='h-5 w-5' /></div>
+                  <div className='text-zinc-400'>
+                    <Music className='h-5 w-5' />
+                  </div>
                   <h2 className='text-xl font-semibold text-white'>Mixtapes</h2>
                   <span className='text-sm text-zinc-500'>
                     ({groupedByReleaseType.mixtapes.length})
@@ -554,12 +574,14 @@ function SearchResults() {
         ) : null}
 
         {/* Artists Section - moved just after Albums */}
-        {(activeFilter === 'all' || activeFilter === 'artists') &&
+        {activeFilter === 'artists' &&
           groupedByEntityType.artist &&
           groupedByEntityType.artist.length > 0 && (
             <div>
               <div className='flex items-center gap-2 mb-4'>
-                <div className='text-zinc-400'><User className='h-5 w-5' /></div>
+                <div className='text-zinc-400'>
+                  <User className='h-5 w-5' />
+                </div>
                 <h2 className='text-xl font-semibold text-white'>Artists</h2>
                 <span className='text-sm text-zinc-500'>
                   ({groupedByEntityType.artist.length})
@@ -609,12 +631,14 @@ function SearchResults() {
           )}
 
         {/* Tracks Section */}
-        {(activeFilter === 'all' || activeFilter === 'tracks') &&
+        {activeFilter === 'tracks' &&
           groupedByEntityType.track &&
           groupedByEntityType.track.length > 0 && (
             <div>
               <div className='flex items-center gap-2 mb-4'>
-                <div className='text-zinc-400'><Music className='h-5 w-5' /></div>
+                <div className='text-zinc-400'>
+                  <Music className='h-5 w-5' />
+                </div>
                 <h2 className='text-xl font-semibold text-white'>Tracks</h2>
                 <span className='text-sm text-zinc-500'>
                   ({groupedByEntityType.track.length})
@@ -656,24 +680,24 @@ function SearchResults() {
             </div>
           )}
 
-          {/* Load More Button */}
-          {hasMore && !isLoading && filteredResults.length > 0 && (
-            <div className="flex justify-center mt-8 mb-4">
-              <button
-                onClick={loadMore}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-              >
-                Load More Results
-              </button>
-            </div>
-          )}
+        {/* Load More Button */}
+        {hasMore && !isLoading && filteredResults.length > 0 && (
+          <div className='flex justify-center mt-8 mb-4'>
+            <button
+              onClick={loadMore}
+              className='px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105'
+            >
+              Load More Results
+            </button>
+          </div>
+        )}
 
-          {/* Loading state for load more */}
-          {isLoading && currentLimit > 20 && (
-            <div className="flex justify-center mt-8 mb-4">
-              <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
-            </div>
-          )}
+        {/* Loading state for load more */}
+        {isLoading && currentLimit > 20 && (
+          <div className='flex justify-center mt-8 mb-4'>
+            <Loader2 className='h-8 w-8 text-blue-500 animate-spin' />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -332,7 +332,9 @@ export default function RecommendationCard({
               >
                 <AlbumImage
                   src={recommendation.basisAlbum?.coverArtUrl}
-                  cloudflareImageId={recommendation.basisAlbum?.cloudflareImageId}
+                  cloudflareImageId={
+                    recommendation.basisAlbum?.cloudflareImageId
+                  }
                   alt={`${recommendation.basisAlbum?.title || 'Album'} by ${recommendation.basisAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'Artist'}`}
                   width={400}
                   height={400}
@@ -393,7 +395,9 @@ export default function RecommendationCard({
               >
                 <AlbumImage
                   src={recommendation.recommendedAlbum?.coverArtUrl}
-                  cloudflareImageId={recommendation.recommendedAlbum?.cloudflareImageId}
+                  cloudflareImageId={
+                    recommendation.recommendedAlbum?.cloudflareImageId
+                  }
                   alt={`${recommendation.recommendedAlbum?.title || 'Album'} by ${recommendation.recommendedAlbum?.artists?.map(a => a.artist?.name).join(', ') || 'Artist'}`}
                   width={400}
                   height={400}

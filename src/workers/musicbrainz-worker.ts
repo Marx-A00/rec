@@ -74,10 +74,14 @@ class MusicBrainzWorkerService {
         const border = chalk.blue('─'.repeat(50));
 
         console.log('\n' + border);
-        console.log(`${chalk.bold.white('PROCESSING')} ${chalk.blue('[WORKER LAYER]')}`);
+        console.log(
+          `${chalk.bold.white('PROCESSING')} ${chalk.blue('[WORKER LAYER]')}`
+        );
         console.log(border);
         console.log(`  ${chalk.cyan('Job:')}      ${chalk.white(job.name)}`);
-        console.log(`  ${chalk.cyan('ID:')}       ${chalk.white(`#${job.id}`)}`);
+        console.log(
+          `  ${chalk.cyan('ID:')}       ${chalk.white(`#${job.id}`)}`
+        );
         if (queryInfo) {
           console.log(`  ${chalk.cyan('Details:')}  ${chalk.white(queryInfo)}`);
         }
@@ -88,7 +92,9 @@ class MusicBrainzWorkerService {
         const jobData = job.data as any;
         const duration = Date.now() - job.processedOn;
         const resultCount = result?.data
-          ? (Array.isArray(result.data) ? result.data.length : 1)
+          ? Array.isArray(result.data)
+            ? result.data.length
+            : 1
           : 0;
 
         // Extract job details
@@ -104,11 +110,15 @@ class MusicBrainzWorkerService {
         const border = chalk.green('─'.repeat(50));
 
         console.log('\n' + border);
-        console.log(`${chalk.bold.green('COMPLETED')} ${chalk.green('[WORKER LAYER]')}`);
+        console.log(
+          `${chalk.bold.green('COMPLETED')} ${chalk.green('[WORKER LAYER]')}`
+        );
         console.log(border);
         console.log(`  ${chalk.cyan('Job ID:')}   ${chalk.white(job.id)}`);
         console.log(`  ${chalk.cyan('Job:')}      ${chalk.white(jobInfo)}`);
-        console.log(`  ${chalk.cyan('Duration:')} ${chalk.white(`${duration}ms`)}`);
+        console.log(
+          `  ${chalk.cyan('Duration:')} ${chalk.white(`${duration}ms`)}`
+        );
         console.log(`  ${chalk.cyan('Results:')}  ${chalk.white(resultCount)}`);
         console.log(border + '\n');
       });
@@ -129,9 +139,13 @@ class MusicBrainzWorkerService {
         const border = chalk.red('─'.repeat(50));
 
         console.log('\n' + border);
-        console.log(`${chalk.bold.red('FAILED')} ${chalk.red('[WORKER LAYER]')}`);
+        console.log(
+          `${chalk.bold.red('FAILED')} ${chalk.red('[WORKER LAYER]')}`
+        );
         console.log(border);
-        console.log(`  ${chalk.cyan('Job ID:')} ${chalk.white(job?.id || 'Unknown')}`);
+        console.log(
+          `  ${chalk.cyan('Job ID:')} ${chalk.white(job?.id || 'Unknown')}`
+        );
         console.log(`  ${chalk.cyan('Job:')}    ${chalk.white(jobInfo)}`);
         console.log(`  ${chalk.cyan('Error:')}  ${chalk.red(err.message)}`);
         console.log(border + '\n');
