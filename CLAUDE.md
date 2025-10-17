@@ -244,3 +244,54 @@ Required environment variables:
 - MusicBrainz API requires rate limiting (1 req/sec)
 - Prisma UUID fields require `@db.Uuid` for PostgreSQL
 - Next.js Image requires `unoptimized` prop for external images
+
+## TypeScript Standards
+
+### NEVER Use `any` Type
+
+**CRITICAL**: The `any` type is **BANNED** in this codebase. Always use proper TypeScript types.
+
+**Instead of `any`, use:**
+
+1. **Specific interfaces/types** - Define proper types for your data
+2. **`unknown`** - When you truly don't know the type (then use type guards)
+3. **Generic types** - `<T>` for reusable functions
+4. **`Record<string, unknown>`** - For objects with unknown structure
+5. **Import existing types** - Check `src/types/` or generated types first
+
+**Example - BAD:**
+```typescript
+function processRecording(recording: any) {  // ❌ NEVER DO THIS
+  return recording.title;
+}
+```
+
+**Example - GOOD:**
+```typescript
+interface MusicBrainzRecording {
+  id: string;
+  title: string;
+  score?: number;
+  'artist-credit': ArtistCredit[];
+  releases: Release[];
+}
+
+function processRecording(recording: MusicBrainzRecording) {  // ✅ CORRECT
+  return recording.title;
+}
+```
+
+**For third-party API responses:**
+```typescript
+// Define the exact structure you expect
+interface MusicBrainzArtistCredit {
+  name: string;
+  artist: {
+    id: string;
+    name: string;
+    'sort-name'?: string;
+    disambiguation?: string;
+    aliases?: Array<{ name: string; type?: string }>;
+  };
+}
+```
