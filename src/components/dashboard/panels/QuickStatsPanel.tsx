@@ -69,6 +69,7 @@ export default function QuickStatsPanel({
               <br />
               <ul>
                 <li>Albums</li>
+                <li>Browse page could be removed, and could just added as segments into mosaic...?</li>
                 <li>Recommendations</li>
                 <li>consecutive days logged in</li>
                 <li>recommendations receive</li>
