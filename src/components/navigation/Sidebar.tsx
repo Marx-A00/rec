@@ -71,7 +71,7 @@ export const Sidebar: FC<SidebarProps> = ({
     >
       {/* Navigation Items */}
       <TooltipProvider>
-        <div className='flex-1 flex flex-col items-center py-4 space-y-2'>
+        <div className='flex-1 flex flex-col items-center justify-center space-y-2'>
           {navigationItems.map(item => (
             <NavigationItem
               key={item.id}
