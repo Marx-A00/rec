@@ -268,7 +268,8 @@ class UnifiedArtistService {
 
             // Accept if exact name match (100%) with 60%+ score, or 80%+ combined
             const isAcceptable =
-              combinedScore >= 0.8 || (nameScore === 1.0 && combinedScore >= 0.6);
+              combinedScore >= 0.8 ||
+              (nameScore === 1.0 && combinedScore >= 0.6);
 
             if (isAcceptable && combinedScore > bestScore) {
               bestScore = combinedScore;
@@ -278,9 +279,10 @@ class UnifiedArtistService {
 
           if (bestMatch?.imageUrl) {
             finalImageUrl = bestMatch.imageUrl;
-            const matchType = bestMatch.name.toLowerCase() === mbArtist.name.toLowerCase()
-              ? 'exact'
-              : 'fuzzy';
+            const matchType =
+              bestMatch.name.toLowerCase() === mbArtist.name.toLowerCase()
+                ? 'exact'
+                : 'fuzzy';
             console.log('[MBArtist] Spotify image found', {
               mbid,
               artistName: mbArtist.name,
@@ -289,11 +291,14 @@ class UnifiedArtistService {
               score: `${(bestScore * 100).toFixed(1)}%`,
             });
           } else if (spotifyResults.length > 0) {
-            console.log('[MBArtist] Spotify returned results but no match met threshold', {
-              mbid,
-              artistName: mbArtist.name,
-              resultCount: spotifyResults.length,
-            });
+            console.log(
+              '[MBArtist] Spotify returned results but no match met threshold',
+              {
+                mbid,
+                artistName: mbArtist.name,
+                resultCount: spotifyResults.length,
+              }
+            );
           }
         }
       } catch (error) {

@@ -18,7 +18,10 @@ export function isModerator(role?: UserRole | null): boolean {
 /**
  * Check if a user has a specific role
  */
-export function hasRole(userRole?: UserRole | null, requiredRole?: UserRole): boolean {
+export function hasRole(
+  userRole?: UserRole | null,
+  requiredRole?: UserRole
+): boolean {
   if (!userRole || !requiredRole) return false;
 
   const roleHierarchy: Record<UserRole, number> = {

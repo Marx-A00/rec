@@ -45,7 +45,8 @@ export default function ProfileClient({
   recommendations,
   isOwnProfile,
 }: ProfileClientProps) {
-  const { prefetchRoute, navigateTo, navigateToAlbum, goBack } = useNavigation();
+  const { prefetchRoute, navigateTo, navigateToAlbum, goBack } =
+    useNavigation();
 
   // Fetch collections using GraphQL
   const { data: collectionsData, isLoading: collectionsLoading } =

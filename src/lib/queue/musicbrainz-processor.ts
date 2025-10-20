@@ -803,10 +803,7 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
               ['url-rels', 'tags']
             );
             if (mbData) {
-              enrichmentResult = await enrichArtistMetadata(
-                artist,
-                mbData
-              );
+              enrichmentResult = await enrichArtistMetadata(artist, mbData);
               newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
             }
           }
@@ -1163,10 +1160,7 @@ async function updateAlbumFromMusicBrainz(
   return null;
 }
 
-async function enrichArtistMetadata(
-  artist: any,
-  mbData: any
-): Promise<any> {
+async function enrichArtistMetadata(artist: any, mbData: any): Promise<any> {
   const updateData: any = {};
 
   if (mbData.id && !artist.musicbrainzId) {
@@ -1293,7 +1287,9 @@ async function enrichArtistMetadata(
       if (bestMatch?.result.imageUrl) {
         imageUrl = bestMatch.result.imageUrl;
         const matchType =
-          bestMatch.nameScore === 1.0 ? 'exact name match' : 'multi-factor match';
+          bestMatch.nameScore === 1.0
+            ? 'exact name match'
+            : 'multi-factor match';
         console.log(
           `📸 Got artist image from Spotify for "${artist.name}" ` +
             `(${matchType}: ${(bestScore * 100).toFixed(1)}% - ` +
