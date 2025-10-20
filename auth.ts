@@ -9,7 +9,7 @@ import type { User } from '@prisma/client';
 import prisma from '@/lib/prisma';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as any, // Custom 'role' field not in standard AdapterUser type
   debug: true,
   trustHost: true,
   session: { strategy: 'jwt' },
@@ -33,6 +33,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.name = dbUser.name ?? '';
         session.user.email = dbUser.email ?? '';
         session.user.image = dbUser.image ?? '';
+        session.user.role = dbUser.role;
       }
       return session;
     },
@@ -87,6 +88,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           name: user.name,
           image: user.image,
+          role: user.role,
         };
       },
     }),

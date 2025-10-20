@@ -1256,6 +1256,7 @@ export type User = {
   profileUpdatedAt?: Maybe<Scalars['DateTime']['output']>;
   recommendations: Array<Recommendation>;
   recommendationsCount: Scalars['Int']['output'];
+  role: UserRole;
   settings?: Maybe<UserSettings>;
   updatedAt: Scalars['DateTime']['output'];
 };
@@ -1273,6 +1274,12 @@ export type UserFollow = {
   follower: User;
   id: Scalars['String']['output'];
 };
+
+export enum UserRole {
+  Admin = 'ADMIN',
+  Moderator = 'MODERATOR',
+  User = 'USER',
+}
 
 export type UserSettings = {
   __typename?: 'UserSettings';

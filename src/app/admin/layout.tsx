@@ -23,10 +23,8 @@ export default function AdminLayout({
       return;
     }
 
-    // Admin access restricted to your email only
-    const ADMIN_EMAIL =
-      process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'your-email@example.com';
-    if (session.user.email !== ADMIN_EMAIL) {
+    // Admin access restricted to ADMIN role
+    if (session.user.role !== 'ADMIN') {
       router.push('/'); // Redirect to home if not admin
     }
   }, [session, status, router]);
