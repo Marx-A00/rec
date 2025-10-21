@@ -340,7 +340,9 @@ export const queryResolvers: QueryResolvers = {
       if (!artist) return null;
       return { id: artist.id } as ResolversTypes['Artist'];
     } catch (error) {
-      throw new GraphQLError(`Failed to fetch artist by MusicBrainz ID: ${error}`);
+      throw new GraphQLError(
+        `Failed to fetch artist by MusicBrainz ID: ${error}`
+      );
     }
   },
 

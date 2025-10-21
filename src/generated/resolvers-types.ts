@@ -3,6 +3,7 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig,
 } from 'graphql';
+
 import { GraphQLContext } from '@/lib/graphql/context';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -1230,6 +1231,7 @@ export type User = {
   profileUpdatedAt?: Maybe<Scalars['DateTime']['output']>;
   recommendations: Array<Recommendation>;
   recommendationsCount: Scalars['Int']['output'];
+  role: UserRole;
   settings?: Maybe<UserSettings>;
   updatedAt: Scalars['DateTime']['output'];
 };
@@ -1247,6 +1249,12 @@ export type UserFollow = {
   follower: User;
   id: Scalars['String']['output'];
 };
+
+export enum UserRole {
+  Admin = 'ADMIN',
+  Moderator = 'MODERATOR',
+  User = 'USER',
+}
 
 export type UserSettings = {
   __typename?: 'UserSettings';
@@ -1500,6 +1508,7 @@ export type ResolversTypes = ResolversObject<{
   User: ResolverTypeWrapper<User>;
   UserCount: ResolverTypeWrapper<UserCount>;
   UserFollow: ResolverTypeWrapper<UserFollow>;
+  UserRole: UserRole;
   UserSettings: ResolverTypeWrapper<UserSettings>;
   UserStats: ResolverTypeWrapper<UserStats>;
   WorkerInfo: ResolverTypeWrapper<WorkerInfo>;
@@ -3379,6 +3388,7 @@ export type UserResolvers<
     ParentType,
     ContextType
   >;
+  role?: Resolver<ResolversTypes['UserRole'], ParentType, ContextType>;
   settings?: Resolver<
     Maybe<ResolversTypes['UserSettings']>,
     ParentType,

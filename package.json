@@ -97,7 +97,7 @@
     "motion": "^12.23.0",
     "musicbrainz-api": "^0.25.1",
     "next": "15.1.4",
-    "next-auth": "5.0.0-beta.25",
+    "next-auth": "5.0.0-beta.29",
     "nextstepjs": "^2.1.1",
     "pg": "^8.14.1",
     "react": "^19.0.0",
