@@ -15,8 +15,15 @@ if [ $current_branch = $protected_branch ]; then
     
     # Build check (ensures code compiles and types are valid)
     echo "🏗️  Build checking..."
-    pnpm build || exit 1
-    
+    pnpm build
+    BUILD_EXIT_CODE=$?
+    echo "🔍 Build exit code: $BUILD_EXIT_CODE"
+
+    if [ $BUILD_EXIT_CODE -ne 0 ]; then
+        echo "❌ Build failed with exit code $BUILD_EXIT_CODE"
+        exit 1
+    fi
+
     echo "✅ All checks passed! Pushing to $protected_branch"
 else
     echo "📝 Quick checks for feature branch..."
