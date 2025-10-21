@@ -204,7 +204,11 @@ export default function AlbumModal({
           data.basic_information.artists.length > 0
             ? data.basic_information.artists.map(a => {
                 const artistId = a.id ? String(a.id) : '';
-                console.log('🎯 [AlbumModal] Mapping artist:', { name: a.name, id: a.id, resultId: artistId });
+                console.log('🎯 [AlbumModal] Mapping artist:', {
+                  name: a.name,
+                  id: a.id,
+                  resultId: artistId,
+                });
                 return {
                   id: artistId,
                   name: a.name,
@@ -239,10 +243,17 @@ export default function AlbumModal({
   // already viewing that artist's page. Currently cached by React Query for 5min,
   // but could eliminate the query entirely in this scenario.
   const handleArtistClick = async (artistId: string, artistName: string) => {
-    console.log('[AlbumModal] handleArtistClick called:', { artistId, artistName, data });
+    console.log('[AlbumModal] handleArtistClick called:', {
+      artistId,
+      artistName,
+      data,
+    });
 
     if (!artistId || artistId === '') {
-      console.warn('[AlbumModal] Artist ID is missing or empty:', { artistId, artistName });
+      console.warn('[AlbumModal] Artist ID is missing or empty:', {
+        artistId,
+        artistName,
+      });
       showToast(`Artist ID not available for ${artistName}`, 'error');
       return;
     }
@@ -258,14 +269,15 @@ export default function AlbumModal({
         // Album is from external source (MusicBrainz/Discogs)
         // Try to find artist in local DB by MusicBrainz ID first
         try {
-          const result = await queryClient.fetchQuery<GetArtistByMusicBrainzIdQuery>({
-            queryKey: ['artistByMusicBrainzId', artistId],
-            queryFn: () =>
-              graphqlClient.request(GetArtistByMusicBrainzIdDocument, {
-                musicbrainzId: artistId,
-              }),
-            staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-          });
+          const result =
+            await queryClient.fetchQuery<GetArtistByMusicBrainzIdQuery>({
+              queryKey: ['artistByMusicBrainzId', artistId],
+              queryFn: () =>
+                graphqlClient.request(GetArtistByMusicBrainzIdDocument, {
+                  musicbrainzId: artistId,
+                }),
+              staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+            });
 
           if (result?.artistByMusicBrainzId?.id) {
             // Found in local DB! Use local ID
@@ -287,7 +299,10 @@ export default function AlbumModal({
           // Query failed, fall back to external source
           const source = getSource();
           artistSource = source?.toLowerCase() || 'musicbrainz';
-          console.warn('[AlbumModal] Failed to check local DB for artist:', error);
+          console.warn(
+            '[AlbumModal] Failed to check local DB for artist:',
+            error
+          );
         }
       }
 

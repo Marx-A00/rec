@@ -6,15 +6,12 @@ import { Pencil, Settings } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import AlbumImage from '@/components/ui/AlbumImage';
 import AlbumModal from '@/components/ui/AlbumModal';
 import RecommendationCard from '@/components/recommendations/RecommendationCard';
 import FollowButton from '@/components/profile/FollowButton';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
 import { useNavigation } from '@/hooks/useNavigation';
-import { useUserCollectionsQuery } from '@/hooks/useUserCollectionsQuery';
-import { useReorderCollectionAlbumsMutation } from '@/generated/graphql';
 import { CollectionAlbum } from '@/types/collection';
 import { RecommendationFieldsFragment } from '@/generated/graphql';
 
@@ -34,57 +31,25 @@ interface User {
 
 interface ProfileClientProps {
   user: User;
-  collection?: CollectionAlbum[]; // Make optional since we'll fetch via GraphQL
+  collection: CollectionAlbum[];
   recommendations: RecommendationFieldsFragment[];
   isOwnProfile: boolean;
 }
 
 export default function ProfileClient({
   user,
-  collection: initialCollection,
+  collection,
   recommendations,
   isOwnProfile,
 }: ProfileClientProps) {
-  const { prefetchRoute, navigateTo, navigateToAlbum, goBack } = useNavigation();
+  const { prefetchRoute, navigateTo, navigateToAlbum, goBack } =
+    useNavigation();
 
-  // Fetch collections using GraphQL
-  const { data: collectionsData, isLoading: collectionsLoading } =
-    useUserCollectionsQuery(user.id);
-
-  // Memoize collection data to prevent infinite re-renders
+  // Use the collection data passed from server component
   const allAlbums = useMemo(() => {
-    const mapped =
-      collectionsData?.user?.collections?.flatMap(col =>
-        col.albums.map(item => ({
-          id: item.id,
-          albumId: item.album.id,
-          albumTitle: item.album.title,
-          albumArtist: item.album.artists[0]?.artist?.name || 'Unknown Artist',
-          albumArtistId: item.album.artists[0]?.artist?.id,
-          albumImageUrl: item.album.coverArtUrl,
-          cloudflareImageId: (item.album as any).cloudflareImageId || null,
-          albumYear: item.album.releaseDate
-            ? String(new Date(item.album.releaseDate).getFullYear())
-            : null,
-          addedAt: item.addedAt,
-          addedBy: user.id,
-          personalRating: item.personalRating,
-          personalNotes: item.personalNotes,
-          position: item.position,
-        }))
-      ) || [];
-
-    // Deduplicate by albumId (album may appear in multiple collections)
-    const seen = new Set<string>();
-    const unique = [] as typeof mapped;
-    for (const a of mapped) {
-      if (!seen.has(a.albumId)) {
-        seen.add(a.albumId);
-        unique.push(a);
-      }
-    }
-    return unique;
-  }, [collectionsData, initialCollection, user.id]);
+    // Already deduplicated and formatted from server
+    return collection;
+  }, [collection]);
 
   // Add state for the selected album and exit animation
   const [selectedAlbum, setSelectedAlbum] = useState<CollectionAlbum | null>(
@@ -179,22 +144,16 @@ export default function ProfileClient({
     setSelectedAlbum(collectionAlbum);
   };
 
-  // Handle album reordering (GraphQL)
-  const reorderMutation = useReorderCollectionAlbumsMutation();
+  // Handle album reordering
   const handleAlbumReorder = async (reorderedAlbums: CollectionAlbum[]) => {
     setSortedAlbums(reorderedAlbums);
 
-    const collectionId = collectionsData?.user?.collections?.[0]?.id;
-    if (!isOwnProfile || !collectionId) return;
+    // TODO: Need collectionId from server to enable reordering persistence
+    // For now, just update local state
+    if (!isOwnProfile) return;
 
-    try {
-      await reorderMutation.mutateAsync({
-        collectionId,
-        albumIds: reorderedAlbums.map(a => a.albumId),
-      });
-    } catch (error) {
-      console.error('Error saving album order:', error);
-    }
+    // Temporarily disabled until we pass collection metadata from server
+    console.log('Album reorder disabled - need collection metadata from server');
   };
 
   // Profile editing handlers
@@ -415,56 +374,8 @@ export default function ProfileClient({
           {/* Collection Section */}
           {/* TODO: add in DnD grid with varying sizes or whatever */}
 
-          {/* Listen Later (owner-only) */}
-          {isOwnProfile &&
-            collectionsData?.user?.collections &&
-            (() => {
-              const listenLater = collectionsData.user.collections.find(
-                c => c.name === 'Listen Later'
-              );
-              if (!listenLater) return null;
-              const albums = listenLater.albums || [];
-              return (
-                <section className='border-t border-zinc-800 pt-8 mb-8'>
-                  <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
-                    Listen Later
-                  </h2>
-                  {albums.length > 0 ? (
-                    <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'>
-                      {albums.map(item => (
-                        <Link key={item.id} href={`/albums/${item.album.id}`}>
-                          <div className='bg-zinc-900 border border-zinc-700 rounded-lg p-3 hover:bg-zinc-800 hover:border-zinc-600 transition-all'>
-                            <div className='aspect-square bg-zinc-800 rounded-lg overflow-hidden mb-2'>
-                              <AlbumImage
-                                src={item.album.coverArtUrl}
-                                alt={item.album.title}
-                                fill
-                                className='object-cover'
-                                showSkeleton={false}
-                              />
-                            </div>
-                            <p className='text-sm font-semibold text-white line-clamp-1'>
-                              {item.album.title}
-                            </p>
-                            <p className='text-xs text-zinc-400 line-clamp-1'>
-                              {item.album.artists
-                                ?.map(a => a.artist?.name)
-                                .join(', ')}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className='text-center py-8'>
-                      <p className='text-zinc-400'>
-                        No albums saved for later yet.
-                      </p>
-                    </div>
-                  )}
-                </section>
-              );
-            })()}
+          {/* Listen Later section removed - need to refactor to use collection metadata from server */}
+          {/* TODO: Pass full collection data structure from server to support "Listen Later" feature */}
 
           <section className='border-t border-zinc-800 pt-8'>
             <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>

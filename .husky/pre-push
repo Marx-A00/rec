@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
+set -e  # Exit immediately if any command fails
+
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
-# Load nvm if it exists
-[ -s "$HOME/.nvm/nvm.sh" ] && \. "$HOME/.nvm/nvm.sh"
 
 echo "🚀 Running pre-push checks..."
 
@@ -9,10 +9,10 @@ echo "🚀 Running pre-push checks..."
 protected_branch='main'
 current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
 
-if [ $current_branch = $protected_branch ]; then
+if [ "$current_branch" = "$protected_branch" ]; then
     echo "🛡️  Pushing to protected branch $protected_branch"
     echo "🔄 Running full test suite..."
-    
+
     # Build check (ensures code compiles and types are valid)
     echo "🏗️  Build checking..."
     pnpm build
@@ -28,6 +28,8 @@ if [ $current_branch = $protected_branch ]; then
 else
     echo "📝 Quick checks for feature branch..."
     # Type check (must pass)
-    pnpm type-check || exit 1
+    pnpm type-check
     echo "✅ Feature branch checks passed!"
-fi 
+fi
+
+exit 0 

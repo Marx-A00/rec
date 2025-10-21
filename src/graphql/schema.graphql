@@ -188,6 +188,12 @@ type UserStats {
   joinedAt: DateTime!
 }
 
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
 type User {
   id: String!
   name: String
@@ -195,6 +201,7 @@ type User {
   emailVerified: DateTime
   image: String
   bio: String
+  role: UserRole!
   followersCount: Int!
   followingCount: Int!
   recommendationsCount: Int!

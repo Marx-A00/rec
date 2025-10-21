@@ -41,6 +41,7 @@ model User {
   image                String?
   hashedPassword       String?
   bio                  String?
+  role                 UserRole         @default(USER)
   followersCount       Int              @default(0)
   followingCount       Int              @default(0)
   recommendationsCount Int              @default(0)
@@ -361,4 +362,10 @@ enum EnrichmentStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
 }

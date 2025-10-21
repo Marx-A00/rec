@@ -71,7 +71,8 @@ export class QueuedMusicBrainzService {
     if (!this.queueEvents) return;
     this.queueEvents.on('completed', ({ jobId, returnvalue }) => {
       // Parse returnvalue (BullMQ returns it as string)
-      const result = typeof returnvalue === 'string' ? JSON.parse(returnvalue) : returnvalue;
+      const result =
+        typeof returnvalue === 'string' ? JSON.parse(returnvalue) : returnvalue;
 
       // Extract result info for display
       const resultCount = result?.data

@@ -165,13 +165,19 @@ This application uses **BullMQ** with Redis for handling MusicBrainz API request
 
 ### Prerequisites
 
-1. **Redis**: Start a Redis server using Docker:
+1. **Docker**: Ensure Docker is running. If using Colima:
+
+   ```bash
+   colima start
+   ```
+
+2. **Redis**: Start a Redis server using Docker:
 
    ```bash
    docker run -d --name redis -p 6379:6379 redis:latest
    ```
 
-2. **Environment Variables**: Add Redis configuration to your `.env`:
+3. **Environment Variables**: Add Redis configuration to your `.env`:
    ```env
    # Redis Configuration for BullMQ
    REDIS_URL=redis://localhost:6379

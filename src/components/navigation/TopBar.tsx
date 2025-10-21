@@ -17,6 +17,14 @@ interface TopBarProps {
 
 // Separate component for mosaic controls that uses SplitMosaicContext
 const MosaicControls: FC = () => {
+  // Feature flag check - don't render controls in production
+  const isMosaicEditorEnabled =
+    process.env.NEXT_PUBLIC_ENABLE_MOSAIC_EDITOR === 'true';
+
+  if (!isMosaicEditorEnabled) {
+    return null;
+  }
+
   const { useSplitMosaic } = require('@/contexts/SplitMosaicContext');
   const MosaicHeaderControls =
     require('@/components/dashboard/MosaicHeaderControls').default;

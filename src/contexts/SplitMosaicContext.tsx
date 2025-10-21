@@ -39,15 +39,34 @@ const SplitMosaicContext = createContext<SplitMosaicContextType | undefined>(
 const STORAGE_KEY = 'split-mosaic-layout';
 
 // Default initial panel
-const createDefaultPanel = (): SplitNode => ({
-  id: 'panel-default',
-  type: 'panel',
-  content: {
-    id: 'content-default',
-    type: 'quick-stats',
-    title: 'Dashboard Overview',
-  },
-});
+const createDefaultPanel = (): SplitNode => {
+  // In production (when mosaic editor is disabled), default to activity feed
+  const isMosaicEditorEnabled =
+    process.env.NEXT_PUBLIC_ENABLE_MOSAIC_EDITOR === 'true';
+
+  if (!isMosaicEditorEnabled) {
+    return {
+      id: 'panel-default',
+      type: 'panel',
+      content: {
+        id: 'content-default',
+        type: 'activity-feed',
+        title: 'Activity Feed',
+      },
+    };
+  }
+
+  // In dev, use the original quick-stats default
+  return {
+    id: 'panel-default',
+    type: 'panel',
+    content: {
+      id: 'content-default',
+      type: 'quick-stats',
+      title: 'Dashboard Overview',
+    },
+  };
+};
 
 export function SplitMosaicProvider({
   children,
@@ -194,6 +213,14 @@ export function SplitMosaicProvider({
 
   // Toggle edit mode
   const toggleEditMode = useCallback(() => {
+    // Disable edit mode toggle in production
+    const isMosaicEditorEnabled =
+      process.env.NEXT_PUBLIC_ENABLE_MOSAIC_EDITOR === 'true';
+
+    if (!isMosaicEditorEnabled) {
+      return; // No-op in production
+    }
+
     setState(prev => ({ ...prev, isEditMode: !prev.isEditMode }));
   }, []);
 
@@ -230,10 +257,16 @@ export function SplitMosaicProvider({
     setState(prev => ({ ...prev, root }));
   }, []);
 
-  // Load saved layout on mount
+  // Load saved layout on mount (only in dev when mosaic editor is enabled)
   useEffect(() => {
-    loadLayout();
-  }, []);
+    const isMosaicEditorEnabled =
+      process.env.NEXT_PUBLIC_ENABLE_MOSAIC_EDITOR === 'true';
+
+    if (isMosaicEditorEnabled) {
+      loadLayout();
+    }
+    // In production, don't load saved layouts - always use default
+  }, [loadLayout]);
 
   const value: SplitMosaicContextType = {
     state,

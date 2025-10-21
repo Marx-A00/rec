@@ -45,23 +45,27 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
         // Album is from external source (MusicBrainz/Discogs)
         // Try to find artist in local DB by MusicBrainz ID first
         try {
-          const result = await queryClient.fetchQuery<GetArtistByMusicBrainzIdQuery>({
-            queryKey: ['artistByMusicBrainzId', artistId],
-            queryFn: () =>
-              graphqlClient.request(GetArtistByMusicBrainzIdDocument, {
-                musicbrainzId: artistId,
-              }),
-            staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-          });
+          const result =
+            await queryClient.fetchQuery<GetArtistByMusicBrainzIdQuery>({
+              queryKey: ['artistByMusicBrainzId', artistId],
+              queryFn: () =>
+                graphqlClient.request(GetArtistByMusicBrainzIdDocument, {
+                  musicbrainzId: artistId,
+                }),
+              staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+            });
 
           if (result?.artistByMusicBrainzId?.id) {
             // Found in local DB! Use local ID
             finalArtistId = result.artistByMusicBrainzId.id;
             artistSource = 'local';
-            console.log(`[AlbumInteractions] Found artist locally: ${artistName}`, {
-              mbid: artistId,
-              localId: finalArtistId,
-            });
+            console.log(
+              `[AlbumInteractions] Found artist locally: ${artistName}`,
+              {
+                mbid: artistId,
+                localId: finalArtistId,
+              }
+            );
           } else {
             // Not in local DB, use external source
             artistSource = album.source?.toLowerCase() || 'musicbrainz';
@@ -72,7 +76,10 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
         } catch (error) {
           // Query failed, fall back to external source
           artistSource = album.source?.toLowerCase() || 'musicbrainz';
-          console.warn('[AlbumInteractions] Failed to check local DB for artist:', error);
+          console.warn(
+            '[AlbumInteractions] Failed to check local DB for artist:',
+            error
+          );
         }
       }
 
