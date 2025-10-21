@@ -557,35 +557,49 @@ export const resolvers: Resolvers = {
             const t = (r.title || '').trim().toLowerCase();
             return !(a && t && a === t);
           })
-          .map(r => ({
-            id: r.id, // Use MusicBrainz ID as temporary ID
-            musicbrainzId: r.id,
-            title: r.title,
-            durationMs: r.metadata?.totalDuration || 0,
-            trackNumber: 0,
-            albumId: null,
-            album: null,
-            // NEW: Include search metadata for MusicBrainz tracks
-            searchCoverArtUrl: r.image?.url || null,
-            searchArtistName: r.artist || null,
-            // Provide minimal artist credit so UI can display the artist name
-            artists: r.artist
-              ? [
-                  {
-                    artist: {
-                      id:
-                        (r as any).primaryArtistMbId ||
-                        r.primaryArtistMbId ||
-                        r.musicbrainzArtistId ||
-                        r.artistId ||
-                        r.artist?.id ||
-                        r.id,
-                      name: r.artist,
+          .map(r => {
+            // Extract album info from MusicBrainz releases
+            const mbData = (r as any)._musicbrainz;
+            const releases = mbData?.releases || [];
+            const firstRelease = releases.length > 0 ? releases[0] : null;
+
+            return {
+              id: r.id, // Use MusicBrainz recording ID
+              musicbrainzId: r.id,
+              title: r.title,
+              durationMs: r.metadata?.totalDuration || 0,
+              trackNumber: 0,
+              albumId: firstRelease?.id || null,
+              album: firstRelease
+                ? {
+                    id: firstRelease.id, // Use actual MusicBrainz release ID
+                    title: firstRelease.title,
+                    coverArtUrl: r.image?.url || null,
+                    cloudflareImageId: null,
+                  }
+                : null,
+              // NEW: Include search metadata for MusicBrainz tracks
+              searchCoverArtUrl: r.image?.url || null,
+              searchArtistName: r.artist || null,
+              // Provide minimal artist credit so UI can display the artist name
+              artists: r.artist
+                ? [
+                    {
+                      artist: {
+                        id:
+                          (r as any).primaryArtistMbId ||
+                          r.primaryArtistMbId ||
+                          r.musicbrainzArtistId ||
+                          r.artistId ||
+                          r.artist?.id ||
+                          r.id,
+                        name: r.artist,
+                      },
                     },
-                  },
-                ]
-              : [],
-          }));
+                  ]
+                : [],
+            };
+          });
 
         // Log MusicBrainz track data for debugging
         if (newMbTracks.length > 0) {

@@ -665,9 +665,14 @@ function SearchResults() {
                       <h3 className='text-base font-medium text-white truncate mb-1'>
                         {result.title}
                       </h3>
-                      <p className='text-sm text-zinc-400 truncate mb-2'>
+                      <p className='text-sm text-zinc-400 truncate mb-1'>
                         {sanitizeArtistName(result.artist)}
                       </p>
+                      {result.subtitle && (
+                        <p className='text-xs text-zinc-500 truncate mb-2'>
+                          {result.subtitle}
+                        </p>
+                      )}
                       <div className='flex items-center gap-2'>
                         <span className='px-2 py-1 text-xs rounded bg-orange-900 text-orange-200'>
                           Track
