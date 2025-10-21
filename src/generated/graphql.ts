@@ -1170,6 +1170,8 @@ export type Track = {
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   popularity?: Maybe<Scalars['Float']['output']>;
   previewUrl?: Maybe<Scalars['String']['output']>;
+  searchArtistName?: Maybe<Scalars['String']['output']>;
+  searchCoverArtUrl?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   trackNumber: Scalars['Int']['output'];
   updatedAt: Scalars['DateTime']['output'];
@@ -2082,6 +2084,8 @@ export type SearchQuery = {
       title: string;
       durationMs?: number | null;
       trackNumber: number;
+      searchCoverArtUrl?: string | null;
+      searchArtistName?: string | null;
       album?: {
         __typename?: 'Album';
         id: string;
@@ -3959,6 +3963,8 @@ export const SearchDocument = `
       title
       durationMs
       trackNumber
+      searchCoverArtUrl
+      searchArtistName
       album {
         id
         title

@@ -460,16 +460,19 @@ export const queryResolvers: QueryResolvers = {
                 ? ['track']
                 : ['artist', 'album', 'track'];
 
-      // Perform multi-source search with Last.fm
+      // Determine appropriate sources based on search type
+      // Spotify only supports artist image search, not tracks or albums
+      const sources =
+        type === 'ARTIST'
+          ? [SearchSource.LOCAL, SearchSource.MUSICBRAINZ, SearchSource.SPOTIFY]
+          : [SearchSource.LOCAL, SearchSource.MUSICBRAINZ]; // Tracks and albums only need LOCAL + MB
+
+      // Perform multi-source search
       const searchResults = await orchestrator.search({
         query,
         types: searchTypes as Array<'artist' | 'album' | 'track'>,
         limit: limit || 20,
-        sources: [
-          SearchSource.LOCAL,
-          SearchSource.MUSICBRAINZ,
-          SearchSource.LASTFM,
-        ],
+        sources,
       });
 
       // Track search activity with result count
@@ -488,7 +491,8 @@ export const queryResolvers: QueryResolvers = {
       );
 
       // Map search results back to entity objects
-      // Field resolvers will populate nested data as needed
+      // For tracks, include the full search result data (including cover art URL)
+      // so that the frontend can display it without needing to resolve album relations
       const artists = searchResults.results
         .filter(r => r.type === 'artist')
         .map(r => ({ id: r.id }) as ResolversTypes['Artist']);
@@ -497,7 +501,31 @@ export const queryResolvers: QueryResolvers = {
         .map(r => ({ id: r.id }) as ResolversTypes['Album']);
       const tracks = searchResults.results
         .filter(r => r.type === 'track')
-        .map(r => ({ id: r.id }) as ResolversTypes['Track']);
+        .map(r => {
+          // Include search result metadata for external tracks (MusicBrainz, etc.)
+          const track: any = {
+            id: r.id,
+            title: r.title,
+            trackNumber: 0, // Default for search results
+            durationMs: r.metadata?.totalDuration || null,
+            // NEW: Populate schema fields for search metadata
+            searchCoverArtUrl: r.image?.url || null,
+            searchArtistName: r.artist || null,
+          };
+          return track as ResolversTypes['Track'];
+        });
+
+      console.log(
+        `[GraphQL Resolver] Returning ${tracks.length} tracks to GraphQL response`
+      );
+      if (tracks.length > 0) {
+        console.log(`[GraphQL Resolver] First track:`, {
+          id: tracks[0].id,
+          title: tracks[0].title,
+          searchCoverArtUrl: (tracks[0] as any).searchCoverArtUrl,
+          searchArtistName: (tracks[0] as any).searchArtistName,
+        });
+      }
 
       return {
         artists,

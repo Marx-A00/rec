@@ -56,6 +56,7 @@ export interface RecordingSearchResult {
     id: string;
     title: string;
   }>;
+  isrcs?: string[];
   score: number;
 }
 
@@ -306,7 +307,7 @@ export class MusicBrainzService {
         query,
         limit,
         offset,
-        inc: ['artist-credits', 'releases'], // Include artist and release info
+        inc: ['artist-credits', 'releases', 'isrcs'], // Include artist, release, and ISRC info
       });
 
       return (
@@ -326,6 +327,7 @@ export class MusicBrainzService {
             id: release.id,
             title: release.title,
           })),
+          isrcs: recording.isrcs || [],
           score: recording.score || 0,
         })) || []
       );

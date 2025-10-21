@@ -3,7 +3,6 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig,
 } from 'graphql';
-
 import { GraphQLContext } from '@/lib/graphql/context';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -1145,6 +1144,8 @@ export type Track = {
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   popularity?: Maybe<Scalars['Float']['output']>;
   previewUrl?: Maybe<Scalars['String']['output']>;
+  searchArtistName?: Maybe<Scalars['String']['output']>;
+  searchCoverArtUrl?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   trackNumber: Scalars['Int']['output'];
   updatedAt: Scalars['DateTime']['output'];
@@ -3233,6 +3234,16 @@ export type TrackResolvers<
     ContextType
   >;
   previewUrl?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  searchArtistName?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  searchCoverArtUrl?: Resolver<
     Maybe<ResolversTypes['String']>,
     ParentType,
     ContextType

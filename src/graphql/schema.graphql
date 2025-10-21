@@ -104,6 +104,10 @@ type Track {
   # Computed fields
   duration: String # Formatted duration (e.g., "3:42")
   popularity: Float
+
+  # Search metadata (populated for MusicBrainz/external search results)
+  searchCoverArtUrl: String
+  searchArtistName: String
 }
 
 # =============================================

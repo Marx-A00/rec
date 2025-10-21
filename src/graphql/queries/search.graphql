@@ -36,6 +36,8 @@ query Search($input: SearchInput!) {
       title
       durationMs
       trackNumber
+      searchCoverArtUrl
+      searchArtistName
       album {
         id
         title

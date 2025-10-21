@@ -565,6 +565,9 @@ export const resolvers: Resolvers = {
             trackNumber: 0,
             albumId: null,
             album: null,
+            // NEW: Include search metadata for MusicBrainz tracks
+            searchCoverArtUrl: r.image?.url || null,
+            searchArtistName: r.artist || null,
             // Provide minimal artist credit so UI can display the artist name
             artists: r.artist
               ? [
@@ -583,6 +586,17 @@ export const resolvers: Resolvers = {
                 ]
               : [],
           }));
+
+        // Log MusicBrainz track data for debugging
+        if (newMbTracks.length > 0) {
+          console.log('[GraphQL index.ts] Created', newMbTracks.length, 'MusicBrainz tracks');
+          console.log('[GraphQL index.ts] First MusicBrainz track:', {
+            id: newMbTracks[0].id,
+            title: newMbTracks[0].title,
+            searchCoverArtUrl: newMbTracks[0].searchCoverArtUrl,
+            searchArtistName: newMbTracks[0].searchArtistName,
+          });
+        }
 
         // Transform local DB albums to UnifiedRelease format
         const localAlbumsAsUnified = dbAlbums.map(album => ({

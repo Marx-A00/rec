@@ -222,6 +222,19 @@ export function useUniversalSearch(
 
     // Transform tracks
     if (searchData.tracks) {
+      console.log(
+        `[useUniversalSearch] Received ${searchData.tracks.length} tracks from GraphQL`
+      );
+      if (searchData.tracks.length > 0) {
+        console.log(`[useUniversalSearch] First track from GraphQL:`, {
+          id: searchData.tracks[0].id,
+          title: searchData.tracks[0].title,
+          searchCoverArtUrl: searchData.tracks[0].searchCoverArtUrl,
+          searchArtistName: searchData.tracks[0].searchArtistName,
+          albumCoverUrl: searchData.tracks[0].album?.coverArtUrl,
+        });
+      }
+
       searchData.tracks.forEach(track => {
         const idStr = String(track.id);
         const isUuid =
@@ -234,6 +247,26 @@ export function useUniversalSearch(
           : isNumeric
             ? 'discogs'
             : 'local';
+
+        // Prefer searchCoverArtUrl for external search results, fall back to album.coverArtUrl
+        const coverArtUrl =
+          track.searchCoverArtUrl || track.album?.coverArtUrl || '';
+        // Prefer searchArtistName for external search results, fall back to artists relation
+        const artistName =
+          track.searchArtistName ||
+          track.artists?.[0]?.artist?.name ||
+          'Unknown Artist';
+
+        console.log(`[useUniversalSearch] Track ${track.id}:`, {
+          title: track.title,
+          searchCoverArtUrl: track.searchCoverArtUrl,
+          albumCoverArtUrl: track.album?.coverArtUrl,
+          finalCoverArtUrl: coverArtUrl,
+          searchArtistName: track.searchArtistName,
+          artistsName: track.artists?.[0]?.artist?.name,
+          finalArtistName: artistName,
+        });
+
         transformedResults.push({
           id: track.id,
           type: 'track' as const,
@@ -241,18 +274,18 @@ export function useUniversalSearch(
           subtitle: `Track ${track.trackNumber}${
             track.album ? ` - ${track.album.title}` : ''
           }`,
-          artist: track.artists?.[0]?.artist?.name || 'Unknown Artist',
+          artist: artistName,
           releaseDate: '',
           genre: [],
           label: '',
           source: inferredSource,
           image: {
-            url: track.album?.coverArtUrl || '',
+            url: coverArtUrl,
             width: 300,
             height: 300,
             alt: track.title,
           },
-          cover_image: track.album?.coverArtUrl || undefined,
+          cover_image: coverArtUrl || undefined,
           _discogs: {},
           metadata: {
             totalDuration: track.durationMs || 0,
@@ -260,6 +293,10 @@ export function useUniversalSearch(
           },
         });
       });
+
+      console.log(
+        `[useUniversalSearch] Transformed ${transformedResults.filter(r => r.type === 'track').length} tracks`
+      );
     }
 
     return transformedResults;
