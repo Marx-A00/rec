@@ -307,7 +307,7 @@ export class MusicBrainzService {
         query,
         limit,
         offset,
-        inc: ['artist-credits', 'releases', 'isrcs'], // Include artist, release, and ISRC info
+        inc: ['artist-credits', 'releases', 'release-groups', 'isrcs'] as any, // Include release-group info nested in releases
       });
 
       return (
@@ -326,6 +326,7 @@ export class MusicBrainzService {
           releases: recording.releases?.map(release => ({
             id: release.id,
             title: release.title,
+            'release-group': (release as any)['release-group'],
           })),
           isrcs: recording.isrcs || [],
           score: recording.score || 0,

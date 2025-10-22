@@ -563,18 +563,32 @@ export const resolvers: Resolvers = {
             const releases = mbData?.releases || [];
             const firstRelease = releases.length > 0 ? releases[0] : null;
 
+            // Debug: log the first release structure
+            if (firstRelease) {
+              console.log('[GraphQL index.ts] First release structure:', {
+                id: firstRelease.id,
+                title: firstRelease.title,
+                releaseGroup: firstRelease['release-group'],
+                fullObject: JSON.stringify(firstRelease, null, 2),
+              });
+            }
+
+            // Use release-group ID for navigation, release ID for cover art
+            const releaseGroupId = firstRelease?.['release-group']?.id;
+            const albumId = releaseGroupId || firstRelease?.id || null;
+
             return {
               id: r.id, // Use MusicBrainz recording ID
               musicbrainzId: r.id,
               title: r.title,
               durationMs: r.metadata?.totalDuration || 0,
               trackNumber: 0,
-              albumId: firstRelease?.id || null,
+              albumId,
               album: firstRelease
                 ? {
-                    id: firstRelease.id, // Use actual MusicBrainz release ID
+                    id: albumId, // Use release-group ID for navigation
                     title: firstRelease.title,
-                    coverArtUrl: r.image?.url || null,
+                    coverArtUrl: r.image?.url || null, // Still uses release ID in URL
                     cloudflareImageId: null,
                   }
                 : null,
@@ -607,6 +621,8 @@ export const resolvers: Resolvers = {
           console.log('[GraphQL index.ts] First MusicBrainz track:', {
             id: newMbTracks[0].id,
             title: newMbTracks[0].title,
+            albumId: newMbTracks[0].albumId,
+            album: newMbTracks[0].album,
             searchCoverArtUrl: newMbTracks[0].searchCoverArtUrl,
             searchArtistName: newMbTracks[0].searchArtistName,
           });

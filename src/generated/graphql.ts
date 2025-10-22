@@ -2080,6 +2080,7 @@ export type SearchQuery = {
     tracks: Array<{
       __typename?: 'Track';
       id: string;
+      albumId?: string | null;
       musicbrainzId?: string | null;
       title: string;
       durationMs?: number | null;
@@ -2150,6 +2151,7 @@ export type SearchTracksQuery = {
   searchTracks: Array<{
     __typename?: 'Track';
     id: string;
+    albumId?: string | null;
     musicbrainzId?: string | null;
     title: string;
     durationMs?: number | null;
@@ -3959,6 +3961,7 @@ export const SearchDocument = `
     }
     tracks {
       id
+      albumId
       musicbrainzId
       title
       durationMs
@@ -4197,6 +4200,7 @@ export const SearchTracksDocument = `
     query SearchTracks($query: String!, $limit: Int) {
   searchTracks(query: $query, limit: $limit) {
     id
+    albumId
     musicbrainzId
     title
     durationMs

@@ -153,6 +153,21 @@ export function useNavigation() {
     [navigateTo]
   );
 
+  const navigateToTrack = useCallback(
+    (
+      albumId: string,
+      trackId?: string,
+      options?: Omit<NavigationOptions, 'validate'>
+    ) => {
+      const hash = trackId ? `#track-${trackId}` : '';
+      return navigateTo(`/albums/${albumId}${hash}`, {
+        ...options,
+        validate: true,
+      });
+    },
+    [navigateTo]
+  );
+
   // Prefetch utility
   const prefetchRoute = useCallback(
     (path: string) => {
@@ -244,6 +259,7 @@ export function useNavigation() {
     navigateToArtist,
     navigateToProfile,
     navigateToLabel,
+    navigateToTrack,
 
     // Utility methods
     goBack,

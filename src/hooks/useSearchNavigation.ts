@@ -34,8 +34,13 @@ export interface UseSearchNavigationOptions {
 
 export function useSearchNavigation(options: UseSearchNavigationOptions) {
   const { entityTypes, customHandlers = {}, enablePrefetching } = options;
-  const { navigateToAlbum, navigateToArtist, navigateToLabel, prefetchRoute } =
-    useNavigation();
+  const {
+    navigateToAlbum,
+    navigateToArtist,
+    navigateToLabel,
+    navigateToTrack,
+    prefetchRoute,
+  } = useNavigation();
 
   // Navigate to a search result
   const navigateToResult = useCallback(
@@ -89,6 +94,21 @@ export function useSearchNavigation(options: UseSearchNavigationOptions) {
               throw new Error(`Failed to navigate to label: ${error.message}`);
             },
           });
+        } else if (result.type === 'track') {
+          // Navigate to the track's album page
+          const albumId = (result as any).albumId || (result as any).album?.id;
+          if (!albumId) {
+            throw new Error('Track result missing album information');
+          }
+          console.log('[useSearchNavigation] Navigating to track album', {
+            trackId: result.id,
+            albumId,
+          });
+          await navigateToTrack(albumId, result.id, {
+            onError: error => {
+              throw new Error(`Failed to navigate to track: ${error.message}`);
+            },
+          });
         } else {
           throw new Error(`Unknown result type: ${result.type}`);
         }
@@ -103,6 +123,7 @@ export function useSearchNavigation(options: UseSearchNavigationOptions) {
       navigateToAlbum,
       navigateToArtist,
       navigateToLabel,
+      navigateToTrack,
     ]
   );
 
@@ -125,6 +146,13 @@ export function useSearchNavigation(options: UseSearchNavigationOptions) {
             prefetchRoute(`/artists/${result.id}${suffix}`);
           } else if (result.type === 'label') {
             prefetchRoute(`/labels/${result.id}`);
+          } else if (result.type === 'track') {
+            // Prefetch the track's album page
+            const albumId =
+              (result as any).albumId || (result as any).album?.id;
+            if (albumId) {
+              prefetchRoute(`/albums/${albumId}`);
+            }
           }
         } catch (error) {
           // Silently fail prefetching - it's not critical

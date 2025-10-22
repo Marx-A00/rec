@@ -1230,6 +1230,7 @@ export class SearchOrchestrator {
       _musicbrainz: {
         recordingId: recording.id,
         isrc,
+        releases: recording.releases || [], // Preserve releases array for GraphQL resolver
       },
       // Non-schema field used internally by GraphQL resolver to attach artist id
       ...(primaryArtistId

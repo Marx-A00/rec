@@ -117,6 +117,13 @@ export interface UnifiedSearchResult {
   };
   cover_image?: string; // For backwards compatibility
   tracks?: Track[];
+  // Track-specific fields (when type is 'track')
+  albumId?: string; // The album this track belongs to
+  album?: {
+    id: string;
+    title: string;
+    coverArtUrl?: string | null;
+  };
   metadata?: {
     totalDuration: number;
     numberOfTracks: number;

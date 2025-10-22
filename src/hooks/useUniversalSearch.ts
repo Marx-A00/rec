@@ -286,6 +286,8 @@ export function useUniversalSearch(
             alt: track.title,
           },
           cover_image: coverArtUrl || undefined,
+          albumId: track.albumId || track.album?.id,
+          album: track.album,
           _discogs: {},
           metadata: {
             totalDuration: track.durationMs || 0,
