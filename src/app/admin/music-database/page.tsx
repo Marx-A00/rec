@@ -1,7 +1,7 @@
 // src/app/admin/music-database/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search,
   Database,
@@ -588,7 +588,7 @@ export default function MusicDatabasePage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               query: `
-                query GetAlbumDetails($id: ID!) {
+                query GetAlbumDetails($id: UUID!) {
                   album(id: $id) {
                     id
                     title
@@ -1027,10 +1027,9 @@ export default function MusicDatabasePage() {
                 </TableHeader>
                 <TableBody>
                   {searchResults.albums.map(album => (
-                    <>
+                    <React.Fragment key={album.id}>
                       <TableRow
-                        key={album.id}
-                        className='border-b border-zinc-800 hover:bg-zinc-800/50 cursor-pointer transition-colors'
+                        className='border-b border-zinc-800 hover:bg-zinc-800/10 cursor-pointer transition-colors'
                         onClick={e => {
                           // Don't toggle if clicking checkbox or action button
                           if (
@@ -1134,7 +1133,7 @@ export default function MusicDatabasePage() {
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </React.Fragment>
                   ))}
                 </TableBody>
               </Table>
