@@ -5,6 +5,7 @@
 import chalk from 'chalk';
 
 import { Resolvers } from '@/generated/graphql';
+import { graphqlLogger } from '@/lib/logger';
 import {
   SearchOrchestrator,
   SearchSource,
@@ -463,13 +464,12 @@ export const resolvers: Resolvers = {
 
           if (candidates.length === 0) {
             // No match found, keep original image
-            console.log(
-              chalk.yellow(`⚠️  [Spotify Enrich]`) +
-                ` No Spotify match for ${chalk.cyan(`"${mbArtist.name}"`)} ` +
-                chalk.dim(
-                  `(mbid: ${mbArtist.musicbrainzId?.slice(0, 8)}..., type: ${mbArtist.subtitle})`
-                )
-            );
+            graphqlLogger.warn({
+              context: 'spotify_enrich',
+              artistName: mbArtist.name,
+              musicbrainzId: mbArtist.musicbrainzId,
+              artistType: mbArtist.subtitle,
+            }, 'No Spotify match found for artist');
             return mbArtist;
           }
 
@@ -477,13 +477,12 @@ export const resolvers: Resolvers = {
             // Single match, use it
             const match = candidates[0];
             match.matched = true;
-            console.log(
-              chalk.green(`✅ [Spotify Enrich]`) +
-                ` ${chalk.cyan(`"${mbArtist.name}"`)} → Spotify ` +
-                chalk.dim(
-                  `(pop: ${match.popularity}, genres: ${match.genres.slice(0, 2).join(', ') || 'none'})`
-                )
-            );
+            graphqlLogger.info({
+              context: 'spotify_enrich',
+              artistName: mbArtist.name,
+              spotifyPopularity: match.popularity,
+              spotifyGenres: match.genres.slice(0, 2),
+            }, 'Successfully matched artist with Spotify');
             return {
               ...mbArtist,
               imageUrl: match.imageUrl,
@@ -514,20 +513,16 @@ export const resolvers: Resolvers = {
           const bestMatch = scored[0].candidate;
           bestMatch.matched = true;
 
-          console.log(
-            chalk.magenta(`🎯 [Spotify Enrich]`) +
-              ` ${chalk.cyan(`"${mbArtist.name}"`)} ` +
-              chalk.dim(
-                `(${mbArtist.subtitle}, tags: ${mbArtist.genre?.slice(0, 2).join(', ') || 'none'})`
-              ) +
-              ` → ` +
-              `Spotify ` +
-              chalk.dim(
-                `(pop: ${bestMatch.popularity}, genres: ${bestMatch.genres.slice(0, 2).join(', ')}, score: ${scored[0].score.toFixed(1)})`
-              ) +
-              ` ` +
-              chalk.yellow(`[${candidates.length} candidates]`)
-          );
+          graphqlLogger.info({
+            context: 'spotify_enrich',
+            artistName: mbArtist.name,
+            mbArtistType: mbArtist.subtitle,
+            mbTags: mbArtist.genre?.slice(0, 2),
+            spotifyPopularity: bestMatch.popularity,
+            spotifyGenres: bestMatch.genres.slice(0, 2),
+            matchScore: scored[0].score,
+            candidateCount: candidates.length,
+          }, 'Matched artist from multiple Spotify candidates');
 
           return {
             ...mbArtist,
@@ -565,12 +560,12 @@ export const resolvers: Resolvers = {
 
             // Debug: log the first release structure
             if (firstRelease) {
-              console.log('[GraphQL index.ts] First release structure:', {
-                id: firstRelease.id,
-                title: firstRelease.title,
+              graphqlLogger.debug({
+                context: 'track_search',
+                releaseId: firstRelease.id,
+                releaseTitle: firstRelease.title,
                 releaseGroup: firstRelease['release-group'],
-                fullObject: JSON.stringify(firstRelease, null, 2),
-              });
+              }, 'Track release structure');
             }
 
             // Use release-group ID for navigation, release ID for cover art
@@ -617,15 +612,17 @@ export const resolvers: Resolvers = {
 
         // Log MusicBrainz track data for debugging
         if (newMbTracks.length > 0) {
-          console.log('[GraphQL index.ts] Created', newMbTracks.length, 'MusicBrainz tracks');
-          console.log('[GraphQL index.ts] First MusicBrainz track:', {
-            id: newMbTracks[0].id,
-            title: newMbTracks[0].title,
-            albumId: newMbTracks[0].albumId,
-            album: newMbTracks[0].album,
-            searchCoverArtUrl: newMbTracks[0].searchCoverArtUrl,
-            searchArtistName: newMbTracks[0].searchArtistName,
-          });
+          graphqlLogger.debug({
+            context: 'track_search',
+            trackCount: newMbTracks.length,
+            firstTrack: {
+              id: newMbTracks[0].id,
+              title: newMbTracks[0].title,
+              albumId: newMbTracks[0].albumId,
+              hasAlbum: !!newMbTracks[0].album,
+              hasCoverArt: !!newMbTracks[0].searchCoverArtUrl,
+            },
+          }, 'Created MusicBrainz tracks from search');
         }
 
         // Transform local DB albums to UnifiedRelease format
@@ -729,13 +726,13 @@ export const resolvers: Resolvers = {
         const rankedArtists = artists
           .map(a => {
             const score = scoreArtist(a);
-            console.log(
-              chalk.dim(`📊 [Artist Ranking]`) +
-                ` ${chalk.cyan(`"${a.name}"`)} ` +
-                chalk.dim(
-                  `(mbid: ${a.musicbrainzId?.slice(0, 8) || 'none'}, score: ${score.toFixed(3)}, hasImage: ${!!a.imageUrl})`
-                )
-            );
+            graphqlLogger.debug({
+              context: 'artist_ranking',
+              artistName: a.name,
+              musicbrainzId: a.musicbrainzId,
+              score,
+              hasImage: !!a.imageUrl,
+            }, 'Ranked artist');
             return { a, s: score };
           })
           .sort((x, y) => y.s - x.s)
@@ -748,13 +745,13 @@ export const resolvers: Resolvers = {
           const existing = byName.get(nameKey);
           if (!existing) {
             byName.set(nameKey, a);
-            console.log(
-              chalk.blue(`🎯 [Artist Dedup]`) +
-                ` Keeping ${chalk.cyan(`"${a.name}"`)} ` +
-                chalk.dim(
-                  `(mbid: ${a.musicbrainzId?.slice(0, 8) || 'none'}, hasImage: ${!!a.imageUrl})`
-                )
-            );
+            graphqlLogger.debug({
+              context: 'artist_dedup',
+              artistName: a.name,
+              musicbrainzId: a.musicbrainzId,
+              hasImage: !!a.imageUrl,
+              action: 'keeping',
+            }, 'Artist deduplication: keeping first');
             continue;
           }
           // Prefer local with MBID, then local, then keep existing order
@@ -774,22 +771,23 @@ export const resolvers: Resolvers = {
             (candHasMb && !existHasMb) ||
             (candIsLocal && candHasMb && !(existIsLocal && existHasMb))
           ) {
-            console.log(
-              chalk.yellow(`🔄 [Artist Dedup]`) +
-                ` Replacing ${chalk.cyan(`"${existing.name}"`)} with ${chalk.cyan(`"${a.name}"`)} ` +
-                chalk.dim(
-                  `(mbid: ${a.musicbrainzId?.slice(0, 8) || 'none'}, hasImage: ${!!a.imageUrl})`
-                )
-            );
+            graphqlLogger.debug({
+              context: 'artist_dedup',
+              existingName: existing.name,
+              replacementName: a.name,
+              musicbrainzId: a.musicbrainzId,
+              hasImage: !!a.imageUrl,
+              action: 'replacing',
+            }, 'Artist deduplication: replacing with better match');
             byName.set(nameKey, a);
           } else {
-            console.log(
-              chalk.gray(`⏭️  [Artist Dedup]`) +
-                ` Skipping ${chalk.cyan(`"${a.name}"`)} ` +
-                chalk.dim(
-                  `(keeping existing mbid: ${existing.musicbrainzId?.slice(0, 8) || 'none'})`
-                )
-            );
+            graphqlLogger.debug({
+              context: 'artist_dedup',
+              skippedName: a.name,
+              keptName: existing.name,
+              keptMusicbrainzId: existing.musicbrainzId,
+              action: 'skipping',
+            }, 'Artist deduplication: skipping duplicate');
           }
         }
         artists = Array.from(byName.values());

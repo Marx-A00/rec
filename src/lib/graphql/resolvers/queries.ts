@@ -6,6 +6,7 @@
 import { GraphQLError } from 'graphql';
 
 import { QueryResolvers } from '@/generated/resolvers-types';
+import { graphqlLogger } from '@/lib/logger';
 import { getMusicBrainzQueue } from '@/lib/queue';
 import {
   healthChecker,
