@@ -13,3 +13,62 @@ mutation AddAlbum($input: AlbumInput!) {
     }
   }
 }
+
+# Admin-specific query for detailed album information with full metadata and tracks
+query GetAlbumDetailsAdmin($id: UUID!) {
+  album(id: $id) {
+    id
+    musicbrainzId
+    title
+    releaseDate
+    releaseType
+    trackCount
+    durationMs
+    coverArtUrl
+    cloudflareImageId
+    barcode
+    label
+    catalogNumber
+    createdAt
+    updatedAt
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    needsEnrichment
+    duration
+    averageRating
+    inCollectionsCount
+    recommendationScore
+    artists {
+      artist {
+        id
+        name
+        musicbrainzId
+        imageUrl
+      }
+      role
+      position
+    }
+    tracks {
+      id
+      musicbrainzId
+      isrc
+      title
+      trackNumber
+      discNumber
+      durationMs
+      explicit
+      previewUrl
+      createdAt
+      updatedAt
+      duration
+      artists {
+        artist {
+          id
+          name
+        }
+        role
+      }
+    }
+  }
+}
