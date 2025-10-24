@@ -56,6 +56,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useDebounce } from '@/lib/hooks/useDebounce';
+import {
+  useSearchAlbumsAdminQuery,
+  useSearchArtistsAdminQuery,
+  useSearchTracksAdminQuery,
+  useGetDatabaseStatsQuery,
+  useGetAlbumDetailsAdminQuery,
+} from '@/generated/graphql';
 
 interface AlbumSearchResult {
   id: string;
@@ -131,19 +138,7 @@ type EnrichmentPriority = 'HIGH' | 'MEDIUM' | 'LOW';
 export default function MusicDatabasePage() {
   const [activeTab, setActiveTab] = useState<SearchType>('albums');
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<{
-    albums: AlbumSearchResult[];
-    artists: ArtistSearchResult[];
-    tracks: TrackSearchResult[];
-  }>({
-    albums: [],
-    artists: [],
-    tracks: [],
-  });
-  const [loading, setLoading] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [enrichmentQueue, setEnrichmentQueue] = useState<string[]>([]);
-  const [stats, setStats] = useState<DatabaseStats | null>(null);
   const [filters, setFilters] = useState({
     dataQuality: 'all',
     enrichmentStatus: 'all',
@@ -153,214 +148,121 @@ export default function MusicDatabasePage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
   const itemsPerPage = 50;
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-  // Check if any albums are currently being enriched
-  const hasInProgressAlbums = searchResults.albums.some(
-    album => album.enrichmentStatus === 'IN_PROGRESS'
+  // Calculate skip for pagination
+  const skip = (page - 1) * itemsPerPage;
+
+  // Fetch database stats
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+    error: statsError,
+  } = useGetDatabaseStatsQuery();
+
+  // Search albums with React Query
+  const {
+    data: albumsData,
+    isLoading: albumsLoading,
+    refetch: refetchAlbums,
+  } = useSearchAlbumsAdminQuery(
+    {
+      query: debouncedSearchQuery || undefined,
+      dataQuality: filters.dataQuality !== 'all' ? filters.dataQuality : undefined,
+      enrichmentStatus: filters.enrichmentStatus !== 'all' ? filters.enrichmentStatus : undefined,
+      needsEnrichment: filters.needsEnrichment || undefined,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      skip: skip,
+      limit: itemsPerPage + 1, // Request +1 to check if there are more results
+    },
+    {
+      enabled: activeTab === 'albums',
+      refetchInterval: (query) => {
+        // Enable polling if any albums are in progress
+        const albums = query.state.data?.searchAlbums || [];
+        const hasInProgress = albums.some((a: any) => a.enrichmentStatus === 'IN_PROGRESS');
+        return hasInProgress ? 3000 : false; // Poll every 3 seconds
+      },
+    }
   );
-  const hasInProgressArtists = searchResults.artists.some(
-    artist => artist.enrichmentStatus === 'IN_PROGRESS'
+
+  // Search artists with React Query
+  const {
+    data: artistsData,
+    isLoading: artistsLoading,
+    refetch: refetchArtists,
+  } = useSearchArtistsAdminQuery(
+    {
+      query: debouncedSearchQuery || undefined,
+      dataQuality: filters.dataQuality !== 'all' ? filters.dataQuality : undefined,
+      enrichmentStatus: filters.enrichmentStatus !== 'all' ? filters.enrichmentStatus : undefined,
+      needsEnrichment: filters.needsEnrichment || undefined,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      skip: skip,
+      limit: itemsPerPage + 1,
+    },
+    {
+      enabled: activeTab === 'artists',
+      refetchInterval: (query) => {
+        const artists = query.state.data?.searchArtists || [];
+        const hasInProgress = artists.some((a: any) => a.enrichmentStatus === 'IN_PROGRESS');
+        return hasInProgress ? 3000 : false;
+      },
+    }
   );
 
-  // Fetch database statistics
-  useEffect(() => {
-    fetchDatabaseStats();
-  }, []);
-
-  // Initial load - fetch albums on mount
-  useEffect(() => {
-    performSearch();
-  }, []);
-
-  // Search when query, filters, or pagination changes
-  useEffect(() => {
-    performSearch();
-  }, [debouncedSearchQuery, activeTab, filters, sortBy, sortOrder, page]);
-
-  // Real-time polling when enrichment is in progress
-  useEffect(() => {
-    if (!hasInProgressAlbums && !hasInProgressArtists) {
-      return;
+  // Search tracks with React Query
+  const {
+    data: tracksData,
+    isLoading: tracksLoading,
+    refetch: refetchTracks,
+  } = useSearchTracksAdminQuery(
+    {
+      query: debouncedSearchQuery || '',
+      skip: skip,
+      limit: itemsPerPage + 1,
+    },
+    {
+      enabled: activeTab === 'tracks',
     }
+  );
 
-    const pollInterval = setInterval(() => {
-      console.log('🔄 Polling for enrichment updates...');
-      performSearch();
-    }, 3000); // Poll every 3 seconds
+  // Extract results and check for more pages
+  const albums = albumsData?.searchAlbums || [];
+  const artists = artistsData?.searchArtists || [];
+  const tracks = tracksData?.searchTracks || [];
+  const stats = statsData?.databaseStats;
 
-    return () => clearInterval(pollInterval);
-  }, [hasInProgressAlbums, hasInProgressArtists]);
+  const hasMore =
+    (activeTab === 'albums' && albums.length > itemsPerPage) ||
+    (activeTab === 'artists' && artists.length > itemsPerPage) ||
+    (activeTab === 'tracks' && tracks.length > itemsPerPage);
 
-  const fetchDatabaseStats = async () => {
-    try {
-      const response = await fetch('/api/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query GetDatabaseStats {
-              databaseStats {
-                totalAlbums
-                totalArtists
-                totalTracks
-                albumsNeedingEnrichment
-                artistsNeedingEnrichment
-                recentlyEnriched
-                failedEnrichments
-                averageDataQuality
-              }
-            }
-          `,
-        }),
-      });
-      const data = await response.json();
-      if (data.data?.databaseStats) {
-        setStats(data.data.databaseStats);
-      }
-    } catch (error) {
-      console.error('Failed to fetch database stats:', error);
-    }
-  };
+  // Display results (remove the extra item used for pagination check)
+  const displayAlbums = albums.slice(0, itemsPerPage);
+  const displayArtists = artists.slice(0, itemsPerPage);
+  const displayTracks = tracks.slice(0, itemsPerPage);
 
-  const performSearch = async () => {
-    setLoading(true);
-    try {
-      const query = getSearchQuery();
-      const response = await fetch('/api/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
-      });
-      const data = await response.json();
+  // Check if any items are currently being enriched
+  const hasInProgressAlbums = displayAlbums.some(
+    (album: any) => album.enrichmentStatus === 'IN_PROGRESS'
+  );
+  const hasInProgressArtists = displayArtists.some(
+    (artist: any) => artist.enrichmentStatus === 'IN_PROGRESS'
+  );
 
-      if (data.data) {
-        const results =
-          data.data[
-            `search${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`
-          ] || [];
+  // Loading state
+  const loading = albumsLoading || artistsLoading || tracksLoading;
 
-        // Check if there are more results (we request limit+1 to check)
-        setHasMore(results.length > itemsPerPage);
-
-        // Only show itemsPerPage results
-        const displayResults = results.slice(0, itemsPerPage);
-
-        setSearchResults(prev => ({
-          ...prev,
-          [activeTab]: displayResults,
-        }));
-      }
-    } catch (error) {
-      toast.error('Failed to search database');
-      console.error('Search error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getSearchQuery = () => {
-    const skip = (page - 1) * itemsPerPage;
-    const commonFilters = `
-      ${filters.dataQuality !== 'all' ? `dataQuality: ${filters.dataQuality}` : ''}
-      ${filters.enrichmentStatus !== 'all' ? `enrichmentStatus: ${filters.enrichmentStatus}` : ''}
-      ${filters.needsEnrichment ? 'needsEnrichment: true' : ''}
-    `.trim();
-
-    switch (activeTab) {
-      case 'albums':
-        return `
-          query SearchAlbums {
-            searchAlbums(
-              query: "${debouncedSearchQuery}"
-              ${commonFilters}
-              sortBy: "${sortBy}"
-              sortOrder: "${sortOrder}"
-              skip: ${skip}
-              limit: ${itemsPerPage + 1}
-            ) {
-              id
-              title
-              releaseDate
-              coverArtUrl
-              musicbrainzId
-              dataQuality
-              enrichmentStatus
-              lastEnriched
-              needsEnrichment
-              artists {
-                artist {
-                  id
-                  name
-                }
-                role
-              }
-              trackCount
-              label
-            }
-          }
-        `;
-      case 'artists':
-        return `
-          query SearchArtists {
-            searchArtists(
-              query: "${debouncedSearchQuery}"
-              ${commonFilters}
-              sortBy: "${sortBy}"
-              sortOrder: "${sortOrder}"
-              skip: ${skip}
-              limit: ${itemsPerPage + 1}
-            ) {
-              id
-              name
-              musicbrainzId
-              imageUrl
-              dataQuality
-              enrichmentStatus
-              lastEnriched
-              needsEnrichment
-              albumCount
-              trackCount
-              formedYear
-              countryCode
-            }
-          }
-        `;
-      case 'tracks':
-        return `
-          query SearchTracks {
-            searchTracks(
-              query: "${debouncedSearchQuery}"
-              skip: ${skip}
-              limit: ${itemsPerPage + 1}
-            ) {
-              id
-              title
-              trackNumber
-              discNumber
-              durationMs
-              isrc
-              album {
-                id
-                title
-                coverArtUrl
-              }
-              artists {
-                artist {
-                  id
-                  name
-                }
-                role
-              }
-            }
-          }
-        `;
-      default:
-        return '';
-    }
+  // Get current results based on active tab
+  const getCurrentResults = () => {
+    if (activeTab === 'albums') return displayAlbums;
+    if (activeTab === 'artists') return displayArtists;
+    return displayTracks;
   };
 
   const handleEnrichItem = async (
@@ -391,9 +293,12 @@ export default function MusicDatabasePage() {
       const data = await response.json();
       if (data.data?.[mutation]?.success) {
         toast.success(`Enrichment job queued for ${type}`);
-        setEnrichmentQueue(prev => [...prev, itemId]);
-        // Refresh the search results
-        performSearch();
+        // Refresh the search results based on active tab
+        if (activeTab === 'albums') {
+          refetchAlbums();
+        } else if (activeTab === 'artists') {
+          refetchArtists();
+        }
       } else {
         throw new Error(
           data.data?.[mutation]?.message || 'Failed to queue enrichment'
@@ -450,7 +355,12 @@ export default function MusicDatabasePage() {
           `${data.data.batchEnrichment.jobsQueued} enrichment jobs queued`
         );
         setSelectedItems(new Set());
-        performSearch();
+        // Refresh the search results based on active tab
+        if (activeTab === 'albums') {
+          refetchAlbums();
+        } else if (activeTab === 'artists') {
+          refetchArtists();
+        }
       } else {
         throw new Error(
           data.data?.batchEnrichment?.message ||
@@ -463,11 +373,11 @@ export default function MusicDatabasePage() {
   };
 
   const handleSelectAll = () => {
-    const currentResults = searchResults[activeTab] as any[];
+    const currentResults = getCurrentResults();
     if (selectedItems.size === currentResults.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(currentResults.map(item => item.id)));
+      setSelectedItems(new Set(currentResults.map((item: any) => item.id)));
     }
   };
 
@@ -531,7 +441,7 @@ export default function MusicDatabasePage() {
 
   // Pagination component
   const PaginationControls = () => {
-    const totalResults = searchResults[activeTab].length;
+    const totalResults = getCurrentResults().length;
     const showPagination = totalResults > 0 || page > 1;
 
     if (!showPagination) return null;
@@ -758,10 +668,10 @@ export default function MusicDatabasePage() {
             <span>
               Auto-refreshing every 3 seconds -{' '}
               {hasInProgressAlbums &&
-                `${searchResults.albums.filter(a => a.enrichmentStatus === 'IN_PROGRESS').length} album(s)`}
+                `${displayAlbums.filter((a: any) => a.enrichmentStatus === 'IN_PROGRESS').length} album(s)`}
               {hasInProgressAlbums && hasInProgressArtists && ' and '}
               {hasInProgressArtists &&
-                `${searchResults.artists.filter(a => a.enrichmentStatus === 'IN_PROGRESS').length} artist(s)`}{' '}
+                `${displayArtists.filter((a: any) => a.enrichmentStatus === 'IN_PROGRESS').length} artist(s)`}{' '}
               currently enriching
             </span>
           </div>
@@ -852,7 +762,11 @@ export default function MusicDatabasePage() {
                 />
               </div>
               <Button
-                onClick={performSearch}
+                onClick={() => {
+                  if (activeTab === 'albums') refetchAlbums();
+                  else if (activeTab === 'artists') refetchArtists();
+                  else if (activeTab === 'tracks') refetchTracks();
+                }}
                 disabled={loading}
                 className='bg-zinc-700 hover:bg-zinc-600 text-white'
               >
@@ -967,14 +881,14 @@ export default function MusicDatabasePage() {
 
         {/* Action Bar */}
         {(activeTab === 'albums' || activeTab === 'artists') &&
-          searchResults[activeTab].length > 0 && (
+          getCurrentResults().length > 0 && (
             <div className='mb-4 flex gap-2'>
               <Button
                 variant='outline'
                 onClick={handleSelectAll}
                 className='text-white border-zinc-700 hover:bg-zinc-700'
               >
-                {selectedItems.size === searchResults[activeTab].length
+                {selectedItems.size === getCurrentResults().length
                   ? 'Deselect All'
                   : 'Select All'}
               </Button>
@@ -992,7 +906,7 @@ export default function MusicDatabasePage() {
         {/* Albums Tab */}
         <TabsContent value='albums'>
           <Card className='bg-zinc-900 border-zinc-800'>
-            {searchResults.albums.length > 0 && (
+            {displayAlbums.length > 0 && (
               <div className='px-4 pt-3 pb-2 border-b border-zinc-800'>
                 <p className='text-xs text-zinc-500 flex items-center gap-1'>
                   <Info className='h-3 w-3' />
@@ -1008,8 +922,8 @@ export default function MusicDatabasePage() {
                       <input
                         type='checkbox'
                         checked={
-                          selectedItems.size === searchResults.albums.length &&
-                          searchResults.albums.length > 0
+                          selectedItems.size === displayAlbums.length &&
+                          displayAlbums.length > 0
                         }
                         onChange={handleSelectAll}
                       />
@@ -1026,7 +940,7 @@ export default function MusicDatabasePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {searchResults.albums.map(album => (
+                  {displayAlbums.map((album: any) => (
                     <React.Fragment key={album.id}>
                       <TableRow
                         className='border-b border-zinc-800 hover:bg-zinc-800/10 cursor-pointer transition-colors'
@@ -1086,7 +1000,7 @@ export default function MusicDatabasePage() {
                         <TableCell className='text-zinc-300'>
                           {album.artists
                             .slice(0, 2)
-                            .map(a => a.artist.name)
+                            .map((a: any) => a.artist.name)
                             .join(', ')}
                           {album.artists.length > 2 &&
                             ` +${album.artists.length - 2}`}
@@ -1137,7 +1051,7 @@ export default function MusicDatabasePage() {
                   ))}
                 </TableBody>
               </Table>
-              {searchResults.albums.length === 0 && !loading && (
+              {displayAlbums.length === 0 && !loading && (
                 <div className='text-center py-8 text-zinc-500'>
                   {searchQuery ? 'No albums found' : 'Loading albums...'}
                 </div>
@@ -1158,8 +1072,8 @@ export default function MusicDatabasePage() {
                       <input
                         type='checkbox'
                         checked={
-                          selectedItems.size === searchResults.artists.length &&
-                          searchResults.artists.length > 0
+                          selectedItems.size === displayArtists.length &&
+                          displayArtists.length > 0
                         }
                         onChange={handleSelectAll}
                       />
@@ -1175,7 +1089,7 @@ export default function MusicDatabasePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {searchResults.artists.map(artist => (
+                  {displayArtists.map((artist: any) => (
                     <TableRow
                       key={artist.id}
                       className='border-b border-zinc-800 hover:bg-zinc-800/50'
@@ -1251,7 +1165,7 @@ export default function MusicDatabasePage() {
                   ))}
                 </TableBody>
               </Table>
-              {searchResults.artists.length === 0 && !loading && (
+              {displayArtists.length === 0 && !loading && (
                 <div className='text-center py-8 text-zinc-500'>
                   {searchQuery ? 'No artists found' : 'Loading artists...'}
                 </div>
@@ -1277,7 +1191,7 @@ export default function MusicDatabasePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {searchResults.tracks.map(track => (
+                  {displayTracks.map((track: any) => (
                     <TableRow
                       key={track.id}
                       className='border-b border-zinc-800 hover:bg-zinc-800/50'
@@ -1290,7 +1204,7 @@ export default function MusicDatabasePage() {
                       <TableCell className='text-zinc-300'>
                         {track.artists
                           .slice(0, 2)
-                          .map(a => a.artist.name)
+                          .map((a: any) => a.artist.name)
                           .join(', ')}
                         {track.artists.length > 2 &&
                           ` +${track.artists.length - 2}`}
@@ -1323,7 +1237,7 @@ export default function MusicDatabasePage() {
                   ))}
                 </TableBody>
               </Table>
-              {searchResults.tracks.length === 0 && !loading && (
+              {displayTracks.length === 0 && !loading && (
                 <div className='text-center py-8 text-zinc-500'>
                   {searchQuery ? 'No tracks found' : 'Loading tracks...'}
                 </div>
