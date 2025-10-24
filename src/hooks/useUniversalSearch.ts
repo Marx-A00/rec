@@ -267,13 +267,18 @@ export function useUniversalSearch(
           finalArtistName: artistName,
         });
 
+        // For external tracks (trackNumber = 0), show album title without track number
+        const subtitle = track.trackNumber > 0
+          ? `Track ${track.trackNumber}${track.album ? ` - ${track.album.title}` : ''}`
+          : track.album?.title
+            ? `from ${track.album.title}`
+            : 'Track';
+
         transformedResults.push({
           id: track.id,
           type: 'track' as const,
           title: track.title,
-          subtitle: `Track ${track.trackNumber}${
-            track.album ? ` - ${track.album.title}` : ''
-          }`,
+          subtitle,
           artist: artistName,
           releaseDate: '',
           genre: [],
@@ -287,7 +292,7 @@ export function useUniversalSearch(
           },
           cover_image: coverArtUrl || undefined,
           albumId: track.albumId || track.album?.id,
-          album: track.album,
+          album: track.album || undefined,
           _discogs: {},
           metadata: {
             totalDuration: track.durationMs || 0,

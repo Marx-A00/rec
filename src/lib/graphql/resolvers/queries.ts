@@ -476,6 +476,10 @@ export const queryResolvers: QueryResolvers = {
         sources,
       });
 
+      // DEBUG: Log what we received from SearchOrchestrator
+      console.log(`\n🔍 [GraphQL] Received from SearchOrchestrator: ${searchResults.results.length} results`);
+      console.log(`   Breakdown: ${searchResults.results.filter(r => r.type === 'track').length} tracks, ${searchResults.results.filter(r => r.type === 'album').length} albums, ${searchResults.results.filter(r => r.type === 'artist').length} artists`);
+
       // Track search activity with result count
       const searchType =
         type === 'ARTIST'
@@ -494,6 +498,19 @@ export const queryResolvers: QueryResolvers = {
       // Map search results back to entity objects
       // For tracks, include the full search result data (including cover art URL)
       // so that the frontend can display it without needing to resolve album relations
+      console.log(
+        `[GraphQL Resolver] searchResults.results.length: ${searchResults.results.length}`
+      );
+      console.log(
+        `[GraphQL Resolver] Track results: ${searchResults.results.filter(r => r.type === 'track').length}`
+      );
+      if (searchResults.results.length > 0) {
+        console.log(
+          `[GraphQL Resolver] First 3 result types:`,
+          searchResults.results.slice(0, 3).map(r => ({ type: r.type, id: r.id, title: r.title }))
+        );
+      }
+
       const artists = searchResults.results
         .filter(r => r.type === 'artist')
         .map(r => ({ id: r.id }) as ResolversTypes['Artist']);
@@ -517,24 +534,30 @@ export const queryResolvers: QueryResolvers = {
         });
 
       console.log(
-        `[GraphQL Resolver] Returning ${tracks.length} tracks to GraphQL response`
+        `\n📤 [GraphQL Resolver] FINAL RETURN: ${tracks.length} tracks, ${albums.length} albums, ${artists.length} artists`
       );
       if (tracks.length > 0) {
-        console.log(`[GraphQL Resolver] First track:`, {
+        console.log(`   First track:`, {
           id: tracks[0].id,
           title: tracks[0].title,
-          searchCoverArtUrl: (tracks[0] as any).searchCoverArtUrl,
-          searchArtistName: (tracks[0] as any).searchArtistName,
+        });
+        console.log(`   Last track:`, {
+          id: tracks[tracks.length - 1].id,
+          title: tracks[tracks.length - 1].title,
         });
       }
 
-      return {
+      const returnValue = {
         artists,
         albums,
         tracks,
         total: artists.length + albums.length + tracks.length,
         hasMore: false, // Simplified for now
       };
+
+      console.log(`   Return value tracks.length: ${returnValue.tracks.length}\n`);
+
+      return returnValue;
     } catch (error) {
       throw new GraphQLError(`Search failed: ${error}`);
     }

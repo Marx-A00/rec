@@ -208,10 +208,18 @@ export class SearchOrchestrator {
 
     const endTime = Date.now();
 
+    const slicedResults = finalResults.slice(0, limit);
+    console.log(
+      `\n🎯 [SearchOrchestrator] RETURNING RESULTS: ${slicedResults.length} of ${finalResults.length} (limit: ${limit})`
+    );
+    console.log(
+      `   Track breakdown: ${slicedResults.filter(r => r.type === 'track').length} tracks, ${slicedResults.filter(r => r.type === 'album').length} albums, ${slicedResults.filter(r => r.type === 'artist').length} artists\n`
+    );
+
     return {
       query,
       totalResults: finalResults.length,
-      results: finalResults.slice(0, limit),
+      results: slicedResults,
       sources: sourceResults,
       deduplicationApplied: deduplicateResults,
       duplicatesRemoved,
@@ -1209,11 +1217,17 @@ export class SearchOrchestrator {
         ? recording.isrcs[0]
         : undefined;
 
+    // Generate subtitle from release info if available
+    const firstReleaseTitle = recording.releases?.[0]?.title;
+    const subtitle = firstReleaseTitle
+      ? `from ${firstReleaseTitle}`
+      : 'Recording';
+
     return {
       id: recording.id,
       type: 'track',
       title: recording.title,
-      subtitle: 'Recording',
+      subtitle,
       artist: primaryArtistName || 'Unknown Artist',
       releaseDate: firstRelease, // Return null instead of empty string
       genre: recording.tags?.map((t: any) => t.name) || [],

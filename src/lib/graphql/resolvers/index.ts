@@ -245,11 +245,34 @@ export const resolvers: Resolvers = {
           artistImageLimit: 3,
         });
 
-        // Separate results by source
-        const localResults = searchResult.sources.local?.results || [];
-        const musicbrainzResults =
-          searchResult.sources.musicbrainz?.results || [];
-        const spotifyResults = searchResult.sources.spotify?.results || [];
+        // Use deduplicated results from orchestrator instead of raw source results
+        console.log(`\n🔍 [GraphQL Resolver] Using deduplicated results from orchestrator`);
+        console.log(`   Total deduplicated results: ${searchResult.results.length}`);
+        console.log(`   Breakdown: ${searchResult.results.filter(r => r.type === 'track').length} tracks, ${searchResult.results.filter(r => r.type === 'album').length} albums, ${searchResult.results.filter(r => r.type === 'artist').length} artists`);
+
+        // Debug: log source values
+        if (searchResult.results.length > 0) {
+          console.log(`   First result source: "${searchResult.results[0].source}"`);
+          console.log(`   Source distribution:`, {
+            local: searchResult.results.filter(r => r.source === 'local').length,
+            musicbrainz: searchResult.results.filter(r => r.source === 'musicbrainz').length,
+            spotify: searchResult.results.filter(r => r.source === 'spotify').length,
+            undefined: searchResult.results.filter(r => !r.source).length,
+          });
+        }
+        console.log();
+
+        // Separate deduplicated results by source
+        // Since these are external MB results, they won't have 'source' set in the result object
+        // Instead, we know they came from MusicBrainz based on the search context
+        const allResults = searchResult.results;
+        const localResults = allResults.filter(r => r.source === 'local');
+        // For MusicBrainz results, we need to check both the source field and fallback to context
+        const musicbrainzResults = allResults.filter(r =>
+          r.source === 'musicbrainz' ||
+          (!r.source && sources.includes(SearchSource.MUSICBRAINZ))
+        );
+        const spotifyResults = allResults.filter(r => r.source === 'spotify');
 
         // For local results, fetch from database
         const localAlbumIds = localResults
@@ -533,19 +556,32 @@ export const resolvers: Resolvers = {
 
         const dbTrackIds = new Set(dbTracks.map(t => String(t.id)));
         const MIN_TRACK_MB_SCORE = 70; // tune as needed
-        const newMbTracks = musicbrainzResults
-          .filter(
+
+        // Debug: log track filtering
+        const mbTracks = musicbrainzResults.filter(
+          r =>
+            r.type === 'track' &&
+            !existingMbTrackIds.has(r.id) &&
+            !dbTrackIds.has(r.id)
+        );
+        console.log(`\n🎵 [Track Filtering] Found ${mbTracks.length} MusicBrainz tracks before score filter`);
+        const scoreFiltered = mbTracks.filter(
+          r =>
+            (typeof r.relevanceScore === 'number' ? r.relevanceScore : 0) >=
+            MIN_TRACK_MB_SCORE
+        );
+        console.log(`   After score filter (>=${MIN_TRACK_MB_SCORE}): ${scoreFiltered.length} tracks`);
+        console.log(`   Filtered out: ${mbTracks.length - scoreFiltered.length} tracks`);
+        if (mbTracks.length > scoreFiltered.length) {
+          const rejected = mbTracks.filter(
             r =>
-              r.type === 'track' &&
-              !existingMbTrackIds.has(r.id) &&
-              !dbTrackIds.has(r.id)
-          )
-          // Require a minimum MB score for recordings
-          .filter(
-            r =>
-              (typeof r.relevanceScore === 'number' ? r.relevanceScore : 0) >=
+              (typeof r.relevanceScore === 'number' ? r.relevanceScore : 0) <
               MIN_TRACK_MB_SCORE
-          )
+          );
+          console.log(`   Rejected track scores: ${rejected.map(r => `"${r.title}" (${r.relevanceScore || 0})`).join(', ')}\n`);
+        }
+
+        const newMbTracks = scoreFiltered
           // Filter out obvious noise where the recording title equals the artist name
           .filter(r => {
             const a = (r.artist || '').trim().toLowerCase();
