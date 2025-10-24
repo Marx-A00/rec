@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:pretty": "next dev --turbopack | pnpm exec pino-pretty",
+    "dev:logs": "mkdir -p logs && next dev --turbopack > logs/app.log 2>&1",
     "build": "next build",
     "build:production": "prisma generate && next build",
     "start": "next start",
+    "start:logs": "mkdir -p logs && next start > logs/app.log 2> logs/error.log",
     "prestart": "prisma migrate deploy",
     "start:production": "prisma migrate deploy && next start",
     "lint": "next lint",

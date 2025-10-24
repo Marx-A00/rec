@@ -1,11 +1,12 @@
 import pino from 'pino';
-import path from 'path';
 import { getCorrelationContext } from './correlation-context';
 
 const isDev = process.env.NODE_ENV === 'development';
 const logLevel = process.env.LOG_LEVEL || (isDev ? 'debug' : 'info');
 
 // Base logger configuration
+// Note: We're using simple console output instead of transports
+// because Next.js bundler has issues with worker threads
 export const logger = pino({
   level: logLevel,
   formatters: {
@@ -22,33 +23,8 @@ export const logger = pino({
         }
       : {};
   },
-  transport: isDev
-    ? {
-        // Development: Pretty print to console
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'HH:MM:ss.l',
-          ignore: 'pid,hostname',
-        },
-      }
-    : {
-        // Production: Write to files
-        targets: [
-          {
-            target: 'pino/file',
-            level: 'debug',
-            options: { destination: path.join(process.cwd(), 'logs', 'app.log') },
-          },
-          {
-            target: 'pino/file',
-            level: 'error',
-            options: {
-              destination: path.join(process.cwd(), 'logs', 'error.log'),
-            },
-          },
-        ],
-      },
+  // Simple console output - can be redirected to files in production
+  // Use: pnpm dev > logs/app.log 2> logs/error.log
 });
 
 // Module-specific loggers
