@@ -1530,4 +1530,68 @@ export const mutationResolvers: MutationResolvers = {
       throw new GraphQLError(`Failed to update settings: ${error}`);
     }
   },
+
+  // Admin mutations
+  updateUserRole: async (
+    _: unknown,
+    { userId, role }: { userId: string; role: string },
+    context: any
+  ) => {
+    const { user, prisma } = context;
+
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    if (!prisma) {
+      throw new GraphQLError('Database connection error');
+    }
+
+    // Check if user is admin or owner
+    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+      throw new GraphQLError('Unauthorized: Admin access required');
+    }
+
+    try {
+      // Prevent non-owners from changing owner roles
+      const targetUser = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!targetUser) {
+        throw new GraphQLError('User not found');
+      }
+
+      // Only owners can assign/remove OWNER role
+      if (
+        (role === 'OWNER' || targetUser.role === 'OWNER') &&
+        user.role !== 'OWNER'
+      ) {
+        throw new GraphQLError(
+          'Unauthorized: Only owners can manage owner roles'
+        );
+      }
+
+      // Prevent users from changing their own role
+      if (userId === user.id) {
+        throw new GraphQLError('Cannot change your own role');
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { role },
+      });
+
+      return {
+        success: true,
+        user: updatedUser,
+        message: `User role updated to ${role}`,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) {
+        throw error;
+      }
+      throw new GraphQLError(`Failed to update user role: ${error}`);
+    }
+  },
 };

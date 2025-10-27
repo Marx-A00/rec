@@ -196,6 +196,7 @@ enum UserRole {
   USER
   MODERATOR
   ADMIN
+  OWNER
 }
 
 type User {
@@ -1018,6 +1019,9 @@ type Mutation {
     type: EnrichmentType!
     priority: EnrichmentPriority
   ): BatchEnrichmentResult!
+
+  # Admin mutations
+  updateUserRole(userId: String!, role: UserRole!): UpdateUserRolePayload!
 }
 
 type FollowUserPayload {
@@ -1031,6 +1035,12 @@ type UpdateProfilePayload {
   id: String!
   name: String
   bio: String
+}
+
+type UpdateUserRolePayload {
+  success: Boolean!
+  user: User
+  message: String
 }
 
 type CreateRecommendationPayload {

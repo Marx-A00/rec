@@ -1,0 +1,12 @@
+mutation UpdateUserRole($userId: String!, $role: UserRole!) {
+  updateUserRole(userId: $userId, role: $role) {
+    success
+    message
+    user {
+      id
+      role
+      name
+      email
+    }
+  }
+}

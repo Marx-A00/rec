@@ -511,6 +511,7 @@ export type Mutation = {
   updateProfile: UpdateProfilePayload;
   updateRecommendation: UpdateRecommendationPayload;
   updateTrack: Track;
+  updateUserRole: UpdateUserRolePayload;
   updateUserSettings: UserSettings;
 };
 
@@ -651,6 +652,11 @@ export type MutationUpdateRecommendationArgs = {
 export type MutationUpdateTrackArgs = {
   id: Scalars['UUID']['input'];
   input: UpdateTrackInput;
+};
+
+export type MutationUpdateUserRoleArgs = {
+  role: UserRole;
+  userId: Scalars['String']['input'];
 };
 
 export type MutationUpdateUserSettingsArgs = {
@@ -1238,6 +1244,13 @@ export type UpdateTrackInput = {
   trackNumber?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type UpdateUserRolePayload = {
+  __typename?: 'UpdateUserRolePayload';
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+  user?: Maybe<User>;
+};
+
 export type User = {
   __typename?: 'User';
   _count?: Maybe<UserCount>;
@@ -1280,6 +1293,7 @@ export type UserFollow = {
 export enum UserRole {
   Admin = 'ADMIN',
   Moderator = 'MODERATOR',
+  Owner = 'OWNER',
   User = 'USER',
 }
 
@@ -2349,6 +2363,27 @@ export type GetDatabaseStatsQuery = {
     recentlyEnriched: number;
     failedEnrichments: number;
     averageDataQuality: number;
+  };
+};
+
+export type UpdateUserRoleMutationVariables = Exact<{
+  userId: Scalars['String']['input'];
+  role: UserRole;
+}>;
+
+export type UpdateUserRoleMutation = {
+  __typename?: 'Mutation';
+  updateUserRole: {
+    __typename?: 'UpdateUserRolePayload';
+    success: boolean;
+    message?: string | null;
+    user?: {
+      __typename?: 'User';
+      id: string;
+      role: UserRole;
+      name?: string | null;
+      email?: string | null;
+    } | null;
   };
 };
 
@@ -5005,3 +5040,44 @@ useInfiniteGetDatabaseStatsQuery.getKey = (
   variables === undefined
     ? ['GetDatabaseStats.infinite']
     : ['GetDatabaseStats.infinite', variables];
+
+export const UpdateUserRoleDocument = `
+    mutation UpdateUserRole($userId: String!, $role: UserRole!) {
+  updateUserRole(userId: $userId, role: $role) {
+    success
+    message
+    user {
+      id
+      role
+      name
+      email
+    }
+  }
+}
+    `;
+
+export const useUpdateUserRoleMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    UpdateUserRoleMutation,
+    TError,
+    UpdateUserRoleMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateUserRoleMutation,
+    TError,
+    UpdateUserRoleMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateUserRole'],
+    mutationFn: (variables?: UpdateUserRoleMutationVariables) =>
+      fetcher<UpdateUserRoleMutation, UpdateUserRoleMutationVariables>(
+        UpdateUserRoleDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useUpdateUserRoleMutation.getKey = () => ['UpdateUserRole'];
