@@ -49,7 +49,7 @@ interface MosaicContainerProps {
 }
 
 export default function MosaicContainer({
-  className = 'fixed top-16 bottom-0 left-20 right-0 overflow-hidden p-4',
+  className = 'fixed top-16 bottom-0 left-20 right-0 overflow-hidden',
 }: MosaicContainerProps) {
   return (
     <div className={className}>
