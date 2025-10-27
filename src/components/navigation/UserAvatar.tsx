@@ -3,7 +3,8 @@
 import React, { FC } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Settings, User } from 'lucide-react';
+import { Settings, User, Shield } from 'lucide-react';
+import { UserRole } from '@prisma/client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -25,6 +26,8 @@ export const UserAvatar: FC<UserAvatarProps> = ({
 }) => {
   const { data: session } = useSession();
   const user = session?.user;
+  const isAdminOrOwner =
+    user?.role === UserRole.ADMIN || user?.role === UserRole.OWNER;
 
   if (!user) {
     return (
@@ -87,6 +90,15 @@ export const UserAvatar: FC<UserAvatarProps> = ({
               <User className='h-4 w-4' />
               <span>Your Profile</span>
             </Link>
+            {isAdminOrOwner && (
+              <Link
+                href='/admin'
+                className='flex items-center gap-3 px-2 py-2 text-sm text-zinc-300 hover:text-cosmic-latte hover:bg-zinc-800 rounded-md transition-colors'
+              >
+                <Shield className='h-4 w-4' />
+                <span>Admin Panel</span>
+              </Link>
+            )}
             <Link
               href='/settings'
               className='flex items-center gap-3 px-2 py-2 text-sm text-zinc-300 hover:text-cosmic-latte hover:bg-zinc-800 rounded-md transition-colors'

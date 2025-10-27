@@ -2,9 +2,10 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Music, User, Building2, Loader2 } from 'lucide-react';
+import { Music, User, Building2 } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
+import AnimatedLoader from '@/components/ui/AnimatedLoader';
 import { useUniversalSearch, SearchMode } from '@/hooks/useUniversalSearch';
 import { useSearchNavigation } from '@/hooks/useSearchNavigation';
 import { UnifiedSearchResult } from '@/types/search';
@@ -259,12 +260,7 @@ function SearchResults() {
   if (isLoading) {
     return (
       <div className='flex flex-col items-center justify-center min-h-[60vh]'>
-        <Loader2 className='h-12 w-12 text-blue-500 animate-spin mb-4' />
-        <p className='text-zinc-400'>
-          {searchMode === 'LOCAL_AND_EXTERNAL'
-            ? 'Searching MusicBrainz... (may take 10-15 seconds)'
-            : 'Searching...'}
-        </p>
+        <AnimatedLoader />
       </div>
     );
   }
@@ -700,7 +696,7 @@ function SearchResults() {
         {/* Loading state for load more */}
         {isLoading && currentLimit > 20 && (
           <div className='flex justify-center mt-8 mb-4'>
-            <Loader2 className='h-8 w-8 text-blue-500 animate-spin' />
+            <AnimatedLoader className='scale-50' />
           </div>
         )}
       </div>
@@ -713,7 +709,7 @@ export default function SearchPage() {
     <Suspense
       fallback={
         <div className='flex items-center justify-center min-h-[60vh]'>
-          <Loader2 className='h-12 w-12 text-blue-500 animate-spin' />
+          <AnimatedLoader />
         </div>
       }
     >
