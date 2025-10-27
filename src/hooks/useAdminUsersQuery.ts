@@ -7,10 +7,12 @@ interface User {
   image: string | null;
   emailVerified: string | null;
   bio: string | null;
+  role: string;
   followersCount: number;
   followingCount: number;
   recommendationsCount: number;
   profileUpdatedAt: string | null;
+  createdAt: string | null;
   collections: {
     id: string;
     name: string;
@@ -43,10 +45,12 @@ export function useAdminUsersQuery(
             image
             emailVerified
             bio
+            role
             followersCount
             followingCount
             recommendationsCount
             profileUpdatedAt
+            createdAt
             collections {
               id
               name

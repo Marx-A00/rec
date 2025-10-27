@@ -165,12 +165,43 @@ export const typeResolvers: Resolvers = {
   Track: {
     // Relationship resolvers
     album: async (parent, _, { dataloaders }) => {
+      // If this is a search result track (from MusicBrainz, etc.), return a mock album with cover art
+      // Use the new schema fields instead of private fields
+      if ((parent as any).searchCoverArtUrl) {
+        console.log('[Track.album resolver] Found searchCoverArtUrl:', (parent as any).searchCoverArtUrl);
+        return {
+          id: parent.id, // Use track ID as placeholder
+          title: '', // Will be populated if needed
+          coverArtUrl: (parent as any).searchCoverArtUrl,
+          cloudflareImageId: null,
+        };
+      }
+
+      // Otherwise, load the album from database
+      if (!parent.albumId) return null;
       const album = await dataloaders.albumLoader.load(parent.albumId);
       if (!album) throw new Error('Album not found');
       return album;
     },
 
     artists: async (parent, _, { prisma }) => {
+      // If this is a search result track, return mock artist from search
+      // Use the new schema field instead of private field
+      if ((parent as any).searchArtistName) {
+        console.log('[Track.artists resolver] Found searchArtistName:', (parent as any).searchArtistName);
+        return [
+          {
+            artist: {
+              id: parent.id, // Use track ID as placeholder
+              name: (parent as any).searchArtistName,
+            },
+            role: null,
+            position: 0,
+          },
+        ];
+      }
+
+      // Otherwise, load artists from database
       const trackArtists = await prisma.trackArtist.findMany({
         where: { trackId: parent.id },
         include: { artist: true },

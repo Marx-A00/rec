@@ -104,6 +104,10 @@ type Track {
   # Computed fields
   duration: String # Formatted duration (e.g., "3:42")
   popularity: Float
+
+  # Search metadata (populated for MusicBrainz/external search results)
+  searchCoverArtUrl: String
+  searchArtistName: String
 }
 
 # =============================================
@@ -192,6 +196,7 @@ enum UserRole {
   USER
   MODERATOR
   ADMIN
+  OWNER
 }
 
 type User {
@@ -1014,6 +1019,9 @@ type Mutation {
     type: EnrichmentType!
     priority: EnrichmentPriority
   ): BatchEnrichmentResult!
+
+  # Admin mutations
+  updateUserRole(userId: String!, role: UserRole!): UpdateUserRolePayload!
 }
 
 type FollowUserPayload {
@@ -1027,6 +1035,12 @@ type UpdateProfilePayload {
   id: String!
   name: String
   bio: String
+}
+
+type UpdateUserRolePayload {
+  success: Boolean!
+  user: User
+  message: String
 }
 
 type CreateRecommendationPayload {

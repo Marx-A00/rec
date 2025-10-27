@@ -71,6 +71,7 @@ export interface GraphQLContext {
   user?: {
     id: string;
     email?: string;
+    role?: string;
   } | null;
 
   // Request metadata
@@ -105,13 +106,14 @@ export async function createGraphQLContext(
       user = {
         id: session.user.id,
         email: session.user.email || undefined,
+        role: session.user.role || undefined,
       };
 
       // Condensed, prettified auth log
       const border = chalk.gray('─'.repeat(50));
       console.log('\n' + border);
       console.log(
-        `${chalk.blue('🔐 Auth')} ${chalk.gray('•')} ${chalk.white(user.email || 'No email')} ${chalk.gray('•')} ${chalk.cyan(user.id.substring(0, 12) + '...')}`
+        `${chalk.blue('🔐 Auth')} ${chalk.gray('•')} ${chalk.white(user.email || 'No email')} ${chalk.gray('•')} ${chalk.cyan(user.id.substring(0, 12) + '...')} ${chalk.gray('•')} ${chalk.yellow(user.role || 'USER')}`
       );
       console.log(border + '\n');
     }

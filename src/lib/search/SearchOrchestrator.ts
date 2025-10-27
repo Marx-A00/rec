@@ -208,10 +208,18 @@ export class SearchOrchestrator {
 
     const endTime = Date.now();
 
+    const slicedResults = finalResults.slice(0, limit);
+    console.log(
+      `\n🎯 [SearchOrchestrator] RETURNING RESULTS: ${slicedResults.length} of ${finalResults.length} (limit: ${limit})`
+    );
+    console.log(
+      `   Track breakdown: ${slicedResults.filter(r => r.type === 'track').length} tracks, ${slicedResults.filter(r => r.type === 'album').length} albums, ${slicedResults.filter(r => r.type === 'artist').length} artists\n`
+    );
+
     return {
       query,
       totalResults: finalResults.length,
-      results: finalResults.slice(0, limit),
+      results: slicedResults,
       sources: sourceResults,
       deduplicationApplied: deduplicateResults,
       duplicatesRemoved,
@@ -284,6 +292,7 @@ export class SearchOrchestrator {
 
       if (types.includes('track')) {
         // Use Prisma's regular query for tracks
+        // Note: Prisma automatically includes all scalar fields (musicbrainzId, isrc, etc.)
         const tracks = await this.prisma.track.findMany({
           where: {
             OR: [
@@ -318,6 +327,25 @@ export class SearchOrchestrator {
           take: limit,
           orderBy: [{ title: 'asc' }],
         });
+
+        console.log(
+          `[SearchOrchestrator] Local track search: Found ${tracks.length} tracks for "${query}"`
+        );
+        if (tracks.length > 0) {
+          console.log(
+            `[SearchOrchestrator] Sample track data:`,
+            JSON.stringify(
+              {
+                id: tracks[0].id,
+                musicbrainzId: tracks[0].musicbrainzId,
+                isrc: tracks[0].isrc,
+                title: tracks[0].title,
+              },
+              null,
+              2
+            )
+          );
+        }
 
         results.push(
           ...tracks.map(track => this.mapTrackToUnifiedResult(track))
@@ -474,11 +502,46 @@ export class SearchOrchestrator {
           this.musicbrainzService
             .searchRecordings(query, limit)
             .then(recordings => {
-              results.push(
-                ...recordings.map(rec =>
-                  this.mapMusicBrainzRecordingToUnifiedResult(rec)
-                )
+              console.log(
+                `[SearchOrchestrator] MusicBrainz found ${recordings.length} recordings for "${query}"`
               );
+              if (recordings.length > 0) {
+                console.log(
+                  `[SearchOrchestrator] First recording:`,
+                  JSON.stringify(
+                    {
+                      id: recordings[0].id,
+                      title: recordings[0].title,
+                      releases: recordings[0].releases,
+                      isrcs: recordings[0].isrcs,
+                    },
+                    null,
+                    2
+                  )
+                );
+              }
+
+              const mapped = recordings.map(rec =>
+                this.mapMusicBrainzRecordingToUnifiedResult(rec)
+              );
+
+              if (mapped.length > 0) {
+                console.log(
+                  `[SearchOrchestrator] First mapped result:`,
+                  JSON.stringify(
+                    {
+                      id: mapped[0].id,
+                      title: mapped[0].title,
+                      imageUrl: mapped[0].image?.url,
+                      _musicbrainz: (mapped[0] as any)._musicbrainz,
+                    },
+                    null,
+                    2
+                  )
+                );
+              }
+
+              results.push(...mapped);
             })
             .catch(err => {
               console.error('Error searching MusicBrainz tracks:', err);
@@ -712,14 +775,28 @@ export class SearchOrchestrator {
     const dedupedResults: UnifiedSearchResult[] = [];
     let duplicatesRemoved = 0;
 
+    console.log(
+      `[Deduplication] Starting with ${results.length} results (${results.filter(r => r.type === 'track').length} tracks)`
+    );
+
     for (const result of results) {
       const keys = this.getDeduplicationKeys(result);
+
+      if (result.type === 'track' && dedupedResults.length < 3) {
+        console.log(`[Deduplication] Track "${result.title}" keys:`, keys);
+      }
 
       let isDuplicate = false;
       for (const key of keys) {
         if (seen.has(key)) {
           duplicatesRemoved++;
           isDuplicate = true;
+
+          if (result.type === 'track') {
+            console.log(
+              `[Deduplication] ❌ Track "${result.title}" is duplicate (matched key: ${key})`
+            );
+          }
 
           const existing = seen.get(key)!;
           if (this.shouldReplaceResult(existing, result)) {
@@ -740,6 +817,13 @@ export class SearchOrchestrator {
         }
       }
     }
+
+    console.log(
+      `[Deduplication] Result: ${dedupedResults.length} unique (removed ${duplicatesRemoved} duplicates)`
+    );
+    console.log(
+      `[Deduplication] Final track count: ${dedupedResults.filter(r => r.type === 'track').length}`
+    );
 
     return {
       results: dedupedResults,
@@ -766,6 +850,27 @@ export class SearchOrchestrator {
       keys.push(`discogs:${result._discogs.uri}`);
     }
 
+    // For track results, prioritize MusicBrainz Recording ID and ISRC
+    if (result.type === 'track') {
+      const mbData = (result as any)._musicbrainz;
+
+      // Priority 1: MusicBrainz Recording ID (from either result.id or metadata)
+      const recordingId = mbData?.recordingId || result.id;
+      if (
+        recordingId &&
+        recordingId.match(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+        )
+      ) {
+        keys.push(`mbid-recording:${recordingId}`);
+      }
+
+      // Priority 2: ISRC (International Standard Recording Code)
+      if (mbData?.isrc) {
+        keys.push(`isrc:${mbData.isrc}`);
+      }
+    }
+
     // For artist results, add Spotify matching
     if (result.type === 'artist') {
       const normalizedName = result.artist.toLowerCase().trim();
@@ -777,7 +882,7 @@ export class SearchOrchestrator {
       }
     }
 
-    // Priority 2: Fallback to artist-title matching
+    // Priority 3: Fallback to artist-title matching
     const normalizedArtist = result.artist.toLowerCase().trim();
     const normalizedTitle = result.title.toLowerCase().trim();
     keys.push(`${normalizedArtist}:${normalizedTitle}`);
@@ -1099,23 +1204,48 @@ export class SearchOrchestrator {
     // Support both 'firstReleaseDate' and 'first-release-date'
     const firstRelease =
       recording.firstReleaseDate || recording['first-release-date'] || null;
+
+    // Generate Cover Art Archive URL from first release MBID
+    const firstReleaseMbid = recording.releases?.[0]?.id;
+    const coverArtUrl = firstReleaseMbid
+      ? `https://coverartarchive.org/release/${firstReleaseMbid}/front-250`
+      : '';
+
+    // Extract first ISRC if available
+    const isrc =
+      recording.isrcs && recording.isrcs.length > 0
+        ? recording.isrcs[0]
+        : undefined;
+
+    // Generate subtitle from release info if available
+    const firstReleaseTitle = recording.releases?.[0]?.title;
+    const subtitle = firstReleaseTitle
+      ? `from ${firstReleaseTitle}`
+      : 'Recording';
+
     return {
       id: recording.id,
       type: 'track',
       title: recording.title,
-      subtitle: 'Recording',
+      subtitle,
       artist: primaryArtistName || 'Unknown Artist',
       releaseDate: firstRelease, // Return null instead of empty string
       genre: recording.tags?.map((t: any) => t.name) || [],
       label: '',
       image: {
-        url: '',
-        width: 300,
-        height: 300,
+        url: coverArtUrl,
+        width: 250,
+        height: 250,
         alt: recording.title,
       },
       relevanceScore: recording.score, // include MB score for filtering downstream
       _discogs: {},
+      // Include MusicBrainz metadata for deduplication
+      _musicbrainz: {
+        recordingId: recording.id,
+        isrc,
+        releases: recording.releases || [], // Preserve releases array for GraphQL resolver
+      },
       // Non-schema field used internally by GraphQL resolver to attach artist id
       ...(primaryArtistId
         ? ({ primaryArtistMbId: primaryArtistId } as any)
@@ -1151,6 +1281,15 @@ export class SearchOrchestrator {
           ? `/releases/${track.discogsReleaseId}`
           : undefined,
       },
+      // Include MusicBrainz metadata for deduplication
+      ...(track.musicbrainzId || track.isrc
+        ? {
+            _musicbrainz: {
+              recordingId: track.musicbrainzId,
+              isrc: track.isrc,
+            },
+          }
+        : {}),
     };
   }
 }

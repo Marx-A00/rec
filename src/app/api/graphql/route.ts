@@ -12,6 +12,7 @@ import { createGraphQLContext, GraphQLContext } from '@/lib/graphql/context';
 import { resolvers } from '@/lib/graphql/resolvers';
 import { formatError } from '@/lib/graphql/errors';
 import { prisma } from '@/lib/prisma';
+import { runWithCorrelationId, generateCorrelationId } from '@/lib/correlation-context';
 
 // Load GraphQL schema from file
 const typeDefs = readFileSync(
@@ -34,11 +35,31 @@ const handler = startServerAndCreateNextHandler(server, {
   context: async (req: NextRequest) => createGraphQLContext(req, prisma),
 });
 
-// Export route handlers for Next.js App Router
+// Export route handlers for Next.js App Router with correlation ID context
 export async function GET(request: NextRequest) {
-  return handler(request);
+  const correlationId = request.headers.get('x-correlation-id') || generateCorrelationId();
+
+  const response = await runWithCorrelationId(
+    correlationId,
+    { requestPath: request.nextUrl.pathname },
+    async () => await handler(request)
+  );
+
+  // Add correlation ID to response headers for client tracking
+  response.headers.set('x-correlation-id', correlationId);
+  return response;
 }
 
 export async function POST(request: NextRequest) {
-  return handler(request);
+  const correlationId = request.headers.get('x-correlation-id') || generateCorrelationId();
+
+  const response = await runWithCorrelationId(
+    correlationId,
+    { requestPath: request.nextUrl.pathname },
+    async () => await handler(request)
+  );
+
+  // Add correlation ID to response headers for client tracking
+  response.headers.set('x-correlation-id', correlationId);
+  return response;
 }

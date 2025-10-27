@@ -368,4 +368,5 @@ enum UserRole {
   USER
   MODERATOR
   ADMIN
+  OWNER
 }

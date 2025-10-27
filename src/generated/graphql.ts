@@ -511,6 +511,7 @@ export type Mutation = {
   updateProfile: UpdateProfilePayload;
   updateRecommendation: UpdateRecommendationPayload;
   updateTrack: Track;
+  updateUserRole: UpdateUserRolePayload;
   updateUserSettings: UserSettings;
 };
 
@@ -651,6 +652,11 @@ export type MutationUpdateRecommendationArgs = {
 export type MutationUpdateTrackArgs = {
   id: Scalars['UUID']['input'];
   input: UpdateTrackInput;
+};
+
+export type MutationUpdateUserRoleArgs = {
+  role: UserRole;
+  userId: Scalars['String']['input'];
 };
 
 export type MutationUpdateUserSettingsArgs = {
@@ -1170,6 +1176,8 @@ export type Track = {
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   popularity?: Maybe<Scalars['Float']['output']>;
   previewUrl?: Maybe<Scalars['String']['output']>;
+  searchArtistName?: Maybe<Scalars['String']['output']>;
+  searchCoverArtUrl?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   trackNumber: Scalars['Int']['output'];
   updatedAt: Scalars['DateTime']['output'];
@@ -1236,6 +1244,13 @@ export type UpdateTrackInput = {
   trackNumber?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type UpdateUserRolePayload = {
+  __typename?: 'UpdateUserRolePayload';
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+  user?: Maybe<User>;
+};
+
 export type User = {
   __typename?: 'User';
   _count?: Maybe<UserCount>;
@@ -1278,6 +1293,7 @@ export type UserFollow = {
 export enum UserRole {
   Admin = 'ADMIN',
   Moderator = 'MODERATOR',
+  Owner = 'OWNER',
   User = 'USER',
 }
 
@@ -1478,6 +1494,71 @@ export type AddAlbumMutation = {
       artist: { __typename?: 'Artist'; id: string; name: string };
     }>;
   };
+};
+
+export type GetAlbumDetailsAdminQueryVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type GetAlbumDetailsAdminQuery = {
+  __typename?: 'Query';
+  album?: {
+    __typename?: 'Album';
+    id: string;
+    musicbrainzId?: string | null;
+    title: string;
+    releaseDate?: Date | null;
+    releaseType?: string | null;
+    trackCount?: number | null;
+    durationMs?: number | null;
+    coverArtUrl?: string | null;
+    cloudflareImageId?: string | null;
+    barcode?: string | null;
+    label?: string | null;
+    catalogNumber?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    dataQuality?: DataQuality | null;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+    needsEnrichment: boolean;
+    duration?: string | null;
+    averageRating?: number | null;
+    inCollectionsCount: number;
+    recommendationScore?: number | null;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      role: string;
+      position: number;
+      artist: {
+        __typename?: 'Artist';
+        id: string;
+        name: string;
+        musicbrainzId?: string | null;
+        imageUrl?: string | null;
+      };
+    }>;
+    tracks: Array<{
+      __typename?: 'Track';
+      id: string;
+      musicbrainzId?: string | null;
+      isrc?: string | null;
+      title: string;
+      trackNumber: number;
+      discNumber: number;
+      durationMs?: number | null;
+      explicit: boolean;
+      previewUrl?: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+      duration?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    }>;
+  } | null;
 };
 
 export type GetArtistByMusicBrainzIdQueryVariables = Exact<{
@@ -2078,10 +2159,13 @@ export type SearchQuery = {
     tracks: Array<{
       __typename?: 'Track';
       id: string;
+      albumId?: string | null;
       musicbrainzId?: string | null;
       title: string;
       durationMs?: number | null;
       trackNumber: number;
+      searchCoverArtUrl?: string | null;
+      searchArtistName?: string | null;
       album?: {
         __typename?: 'Album';
         id: string;
@@ -2146,6 +2230,7 @@ export type SearchTracksQuery = {
   searchTracks: Array<{
     __typename?: 'Track';
     id: string;
+    albumId?: string | null;
     musicbrainzId?: string | null;
     title: string;
     durationMs?: number | null;
@@ -2162,6 +2247,144 @@ export type SearchTracksQuery = {
       artist: { __typename?: 'Artist'; id: string; name: string };
     }>;
   }>;
+};
+
+export type SearchAlbumsAdminQueryVariables = Exact<{
+  query?: InputMaybe<Scalars['String']['input']>;
+  dataQuality?: InputMaybe<Scalars['String']['input']>;
+  enrichmentStatus?: InputMaybe<Scalars['String']['input']>;
+  needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortOrder?: InputMaybe<Scalars['String']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type SearchAlbumsAdminQuery = {
+  __typename?: 'Query';
+  searchAlbums: Array<{
+    __typename?: 'Album';
+    id: string;
+    musicbrainzId?: string | null;
+    title: string;
+    releaseDate?: Date | null;
+    coverArtUrl?: string | null;
+    cloudflareImageId?: string | null;
+    dataQuality?: DataQuality | null;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+    needsEnrichment: boolean;
+    trackCount?: number | null;
+    label?: string | null;
+    barcode?: string | null;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      role: string;
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  }>;
+};
+
+export type SearchArtistsAdminQueryVariables = Exact<{
+  query?: InputMaybe<Scalars['String']['input']>;
+  dataQuality?: InputMaybe<Scalars['String']['input']>;
+  enrichmentStatus?: InputMaybe<Scalars['String']['input']>;
+  needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortOrder?: InputMaybe<Scalars['String']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type SearchArtistsAdminQuery = {
+  __typename?: 'Query';
+  searchArtists: Array<{
+    __typename?: 'Artist';
+    id: string;
+    musicbrainzId?: string | null;
+    name: string;
+    imageUrl?: string | null;
+    cloudflareImageId?: string | null;
+    dataQuality?: DataQuality | null;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+    needsEnrichment: boolean;
+    albumCount: number;
+    trackCount: number;
+    formedYear?: number | null;
+    countryCode?: string | null;
+  }>;
+};
+
+export type SearchTracksAdminQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type SearchTracksAdminQuery = {
+  __typename?: 'Query';
+  searchTracks: Array<{
+    __typename?: 'Track';
+    id: string;
+    albumId?: string | null;
+    musicbrainzId?: string | null;
+    title: string;
+    trackNumber: number;
+    discNumber: number;
+    durationMs?: number | null;
+    isrc?: string | null;
+    album?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+    } | null;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      role: string;
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  }>;
+};
+
+export type GetDatabaseStatsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type GetDatabaseStatsQuery = {
+  __typename?: 'Query';
+  databaseStats: {
+    __typename?: 'DatabaseStats';
+    totalAlbums: number;
+    totalArtists: number;
+    totalTracks: number;
+    albumsNeedingEnrichment: number;
+    artistsNeedingEnrichment: number;
+    recentlyEnriched: number;
+    failedEnrichments: number;
+    averageDataQuality: number;
+  };
+};
+
+export type UpdateUserRoleMutationVariables = Exact<{
+  userId: Scalars['String']['input'];
+  role: UserRole;
+}>;
+
+export type UpdateUserRoleMutation = {
+  __typename?: 'Mutation';
+  updateUserRole: {
+    __typename?: 'UpdateUserRolePayload';
+    success: boolean;
+    message?: string | null;
+    user?: {
+      __typename?: 'User';
+      id: string;
+      role: UserRole;
+      name?: string | null;
+      email?: string | null;
+    } | null;
+  };
 };
 
 export const RecommendationFieldsFragmentDoc = `
@@ -2722,6 +2945,138 @@ export const useAddAlbumMutation = <TError = unknown, TContext = unknown>(
 };
 
 useAddAlbumMutation.getKey = () => ['AddAlbum'];
+
+export const GetAlbumDetailsAdminDocument = `
+    query GetAlbumDetailsAdmin($id: UUID!) {
+  album(id: $id) {
+    id
+    musicbrainzId
+    title
+    releaseDate
+    releaseType
+    trackCount
+    durationMs
+    coverArtUrl
+    cloudflareImageId
+    barcode
+    label
+    catalogNumber
+    createdAt
+    updatedAt
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    needsEnrichment
+    duration
+    averageRating
+    inCollectionsCount
+    recommendationScore
+    artists {
+      artist {
+        id
+        name
+        musicbrainzId
+        imageUrl
+      }
+      role
+      position
+    }
+    tracks {
+      id
+      musicbrainzId
+      isrc
+      title
+      trackNumber
+      discNumber
+      durationMs
+      explicit
+      previewUrl
+      createdAt
+      updatedAt
+      duration
+      artists {
+        artist {
+          id
+          name
+        }
+        role
+      }
+    }
+  }
+}
+    `;
+
+export const useGetAlbumDetailsAdminQuery = <
+  TData = GetAlbumDetailsAdminQuery,
+  TError = unknown,
+>(
+  variables: GetAlbumDetailsAdminQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetAlbumDetailsAdminQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetAlbumDetailsAdminQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetAlbumDetailsAdminQuery, TError, TData>({
+    queryKey: ['GetAlbumDetailsAdmin', variables],
+    queryFn: fetcher<
+      GetAlbumDetailsAdminQuery,
+      GetAlbumDetailsAdminQueryVariables
+    >(GetAlbumDetailsAdminDocument, variables),
+    ...options,
+  });
+};
+
+useGetAlbumDetailsAdminQuery.getKey = (
+  variables: GetAlbumDetailsAdminQueryVariables
+) => ['GetAlbumDetailsAdmin', variables];
+
+export const useInfiniteGetAlbumDetailsAdminQuery = <
+  TData = InfiniteData<GetAlbumDetailsAdminQuery>,
+  TError = unknown,
+>(
+  variables: GetAlbumDetailsAdminQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetAlbumDetailsAdminQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetAlbumDetailsAdminQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetAlbumDetailsAdminQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'GetAlbumDetailsAdmin.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            GetAlbumDetailsAdminQuery,
+            GetAlbumDetailsAdminQueryVariables
+          >(GetAlbumDetailsAdminDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetAlbumDetailsAdminQuery.getKey = (
+  variables: GetAlbumDetailsAdminQueryVariables
+) => ['GetAlbumDetailsAdmin.infinite', variables];
 
 export const GetArtistByMusicBrainzIdDocument = `
     query GetArtistByMusicBrainzId($musicbrainzId: UUID!) {
@@ -3955,10 +4310,13 @@ export const SearchDocument = `
     }
     tracks {
       id
+      albumId
       musicbrainzId
       title
       durationMs
       trackNumber
+      searchCoverArtUrl
+      searchArtistName
       album {
         id
         title
@@ -4191,6 +4549,7 @@ export const SearchTracksDocument = `
     query SearchTracks($query: String!, $limit: Int) {
   searchTracks(query: $query, limit: $limit) {
     id
+    albumId
     musicbrainzId
     title
     durationMs
@@ -4273,3 +4632,452 @@ export const useInfiniteSearchTracksQuery = <
 useInfiniteSearchTracksQuery.getKey = (
   variables: SearchTracksQueryVariables
 ) => ['SearchTracks.infinite', variables];
+
+export const SearchAlbumsAdminDocument = `
+    query SearchAlbumsAdmin($query: String, $dataQuality: String, $enrichmentStatus: String, $needsEnrichment: Boolean, $sortBy: String, $sortOrder: String, $skip: Int, $limit: Int) {
+  searchAlbums(
+    query: $query
+    dataQuality: $dataQuality
+    enrichmentStatus: $enrichmentStatus
+    needsEnrichment: $needsEnrichment
+    sortBy: $sortBy
+    sortOrder: $sortOrder
+    skip: $skip
+    limit: $limit
+  ) {
+    id
+    musicbrainzId
+    title
+    releaseDate
+    coverArtUrl
+    cloudflareImageId
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    needsEnrichment
+    trackCount
+    label
+    barcode
+    artists {
+      artist {
+        id
+        name
+      }
+      role
+    }
+  }
+}
+    `;
+
+export const useSearchAlbumsAdminQuery = <
+  TData = SearchAlbumsAdminQuery,
+  TError = unknown,
+>(
+  variables?: SearchAlbumsAdminQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SearchAlbumsAdminQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      SearchAlbumsAdminQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<SearchAlbumsAdminQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['SearchAlbumsAdmin']
+        : ['SearchAlbumsAdmin', variables],
+    queryFn: fetcher<SearchAlbumsAdminQuery, SearchAlbumsAdminQueryVariables>(
+      SearchAlbumsAdminDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useSearchAlbumsAdminQuery.getKey = (
+  variables?: SearchAlbumsAdminQueryVariables
+) =>
+  variables === undefined
+    ? ['SearchAlbumsAdmin']
+    : ['SearchAlbumsAdmin', variables];
+
+export const useInfiniteSearchAlbumsAdminQuery = <
+  TData = InfiniteData<SearchAlbumsAdminQuery>,
+  TError = unknown,
+>(
+  variables: SearchAlbumsAdminQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SearchAlbumsAdminQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SearchAlbumsAdminQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SearchAlbumsAdminQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['SearchAlbumsAdmin.infinite']
+            : ['SearchAlbumsAdmin.infinite', variables],
+        queryFn: metaData =>
+          fetcher<SearchAlbumsAdminQuery, SearchAlbumsAdminQueryVariables>(
+            SearchAlbumsAdminDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSearchAlbumsAdminQuery.getKey = (
+  variables?: SearchAlbumsAdminQueryVariables
+) =>
+  variables === undefined
+    ? ['SearchAlbumsAdmin.infinite']
+    : ['SearchAlbumsAdmin.infinite', variables];
+
+export const SearchArtistsAdminDocument = `
+    query SearchArtistsAdmin($query: String, $dataQuality: String, $enrichmentStatus: String, $needsEnrichment: Boolean, $sortBy: String, $sortOrder: String, $skip: Int, $limit: Int) {
+  searchArtists(
+    query: $query
+    dataQuality: $dataQuality
+    enrichmentStatus: $enrichmentStatus
+    needsEnrichment: $needsEnrichment
+    sortBy: $sortBy
+    sortOrder: $sortOrder
+    skip: $skip
+    limit: $limit
+  ) {
+    id
+    musicbrainzId
+    name
+    imageUrl
+    cloudflareImageId
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    needsEnrichment
+    albumCount
+    trackCount
+    formedYear
+    countryCode
+  }
+}
+    `;
+
+export const useSearchArtistsAdminQuery = <
+  TData = SearchArtistsAdminQuery,
+  TError = unknown,
+>(
+  variables?: SearchArtistsAdminQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SearchArtistsAdminQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      SearchArtistsAdminQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<SearchArtistsAdminQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['SearchArtistsAdmin']
+        : ['SearchArtistsAdmin', variables],
+    queryFn: fetcher<SearchArtistsAdminQuery, SearchArtistsAdminQueryVariables>(
+      SearchArtistsAdminDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useSearchArtistsAdminQuery.getKey = (
+  variables?: SearchArtistsAdminQueryVariables
+) =>
+  variables === undefined
+    ? ['SearchArtistsAdmin']
+    : ['SearchArtistsAdmin', variables];
+
+export const useInfiniteSearchArtistsAdminQuery = <
+  TData = InfiniteData<SearchArtistsAdminQuery>,
+  TError = unknown,
+>(
+  variables: SearchArtistsAdminQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SearchArtistsAdminQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SearchArtistsAdminQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SearchArtistsAdminQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['SearchArtistsAdmin.infinite']
+            : ['SearchArtistsAdmin.infinite', variables],
+        queryFn: metaData =>
+          fetcher<SearchArtistsAdminQuery, SearchArtistsAdminQueryVariables>(
+            SearchArtistsAdminDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSearchArtistsAdminQuery.getKey = (
+  variables?: SearchArtistsAdminQueryVariables
+) =>
+  variables === undefined
+    ? ['SearchArtistsAdmin.infinite']
+    : ['SearchArtistsAdmin.infinite', variables];
+
+export const SearchTracksAdminDocument = `
+    query SearchTracksAdmin($query: String!, $skip: Int, $limit: Int) {
+  searchTracks(query: $query, skip: $skip, limit: $limit) {
+    id
+    albumId
+    musicbrainzId
+    title
+    trackNumber
+    discNumber
+    durationMs
+    isrc
+    album {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+    }
+    artists {
+      artist {
+        id
+        name
+      }
+      role
+    }
+  }
+}
+    `;
+
+export const useSearchTracksAdminQuery = <
+  TData = SearchTracksAdminQuery,
+  TError = unknown,
+>(
+  variables: SearchTracksAdminQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SearchTracksAdminQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      SearchTracksAdminQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<SearchTracksAdminQuery, TError, TData>({
+    queryKey: ['SearchTracksAdmin', variables],
+    queryFn: fetcher<SearchTracksAdminQuery, SearchTracksAdminQueryVariables>(
+      SearchTracksAdminDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useSearchTracksAdminQuery.getKey = (
+  variables: SearchTracksAdminQueryVariables
+) => ['SearchTracksAdmin', variables];
+
+export const useInfiniteSearchTracksAdminQuery = <
+  TData = InfiniteData<SearchTracksAdminQuery>,
+  TError = unknown,
+>(
+  variables: SearchTracksAdminQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SearchTracksAdminQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SearchTracksAdminQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SearchTracksAdminQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['SearchTracksAdmin.infinite', variables],
+        queryFn: metaData =>
+          fetcher<SearchTracksAdminQuery, SearchTracksAdminQueryVariables>(
+            SearchTracksAdminDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSearchTracksAdminQuery.getKey = (
+  variables: SearchTracksAdminQueryVariables
+) => ['SearchTracksAdmin.infinite', variables];
+
+export const GetDatabaseStatsDocument = `
+    query GetDatabaseStats {
+  databaseStats {
+    totalAlbums
+    totalArtists
+    totalTracks
+    albumsNeedingEnrichment
+    artistsNeedingEnrichment
+    recentlyEnriched
+    failedEnrichments
+    averageDataQuality
+  }
+}
+    `;
+
+export const useGetDatabaseStatsQuery = <
+  TData = GetDatabaseStatsQuery,
+  TError = unknown,
+>(
+  variables?: GetDatabaseStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetDatabaseStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetDatabaseStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetDatabaseStatsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetDatabaseStats']
+        : ['GetDatabaseStats', variables],
+    queryFn: fetcher<GetDatabaseStatsQuery, GetDatabaseStatsQueryVariables>(
+      GetDatabaseStatsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetDatabaseStatsQuery.getKey = (
+  variables?: GetDatabaseStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetDatabaseStats']
+    : ['GetDatabaseStats', variables];
+
+export const useInfiniteGetDatabaseStatsQuery = <
+  TData = InfiniteData<GetDatabaseStatsQuery>,
+  TError = unknown,
+>(
+  variables: GetDatabaseStatsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetDatabaseStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetDatabaseStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetDatabaseStatsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetDatabaseStats.infinite']
+            : ['GetDatabaseStats.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetDatabaseStatsQuery, GetDatabaseStatsQueryVariables>(
+            GetDatabaseStatsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetDatabaseStatsQuery.getKey = (
+  variables?: GetDatabaseStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetDatabaseStats.infinite']
+    : ['GetDatabaseStats.infinite', variables];
+
+export const UpdateUserRoleDocument = `
+    mutation UpdateUserRole($userId: String!, $role: UserRole!) {
+  updateUserRole(userId: $userId, role: $role) {
+    success
+    message
+    user {
+      id
+      role
+      name
+      email
+    }
+  }
+}
+    `;
+
+export const useUpdateUserRoleMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    UpdateUserRoleMutation,
+    TError,
+    UpdateUserRoleMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateUserRoleMutation,
+    TError,
+    UpdateUserRoleMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateUserRole'],
+    mutationFn: (variables?: UpdateUserRoleMutationVariables) =>
+      fetcher<UpdateUserRoleMutation, UpdateUserRoleMutationVariables>(
+        UpdateUserRoleDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useUpdateUserRoleMutation.getKey = () => ['UpdateUserRole'];

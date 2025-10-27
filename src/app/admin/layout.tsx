@@ -2,9 +2,10 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { isAdmin } from '@/lib/permissions';
 
 export default function AdminLayout({
   children,
@@ -13,6 +14,7 @@ export default function AdminLayout({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -23,9 +25,9 @@ export default function AdminLayout({
       return;
     }
 
-    // Admin access restricted to ADMIN role
-    if (session.user.role !== 'ADMIN') {
-      router.push('/'); // Redirect to home if not admin
+    // Admin access restricted to ADMIN and OWNER roles
+    if (!isAdmin(session.user.role)) {
+      router.push('/'); // Redirect to home if not admin or owner
     }
   }, [session, status, router]);
 
@@ -54,43 +56,61 @@ export default function AdminLayout({
           <nav className='px-4 py-6'>
             <Link
               href='/admin'
-              className='flex items-center px-4 py-2 mb-1 text-white bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors'
+              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
+                pathname === '/admin'
+                  ? 'text-white bg-zinc-800'
+                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+              }`}
             >
               <span>Overview</span>
             </Link>
             <Link
               href='/admin/queue'
-              className='flex items-center px-4 py-2 mb-1 text-zinc-400 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors'
+              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
+                pathname === '/admin/queue'
+                  ? 'text-white bg-zinc-800'
+                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+              }`}
             >
               <span>Queue Management</span>
             </Link>
             <Link
               href='/admin/music-database'
-              className='flex items-center px-4 py-2 mb-1 text-zinc-400 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors'
+              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
+                pathname === '/admin/music-database'
+                  ? 'text-white bg-zinc-800'
+                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+              }`}
             >
               <span>Music Database</span>
             </Link>
             <Link
               href='/admin/job-history'
-              className='flex items-center px-4 py-2 mb-1 text-zinc-400 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors'
+              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
+                pathname === '/admin/job-history'
+                  ? 'text-white bg-zinc-800'
+                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+              }`}
             >
               <span>Job History</span>
             </Link>
             <Link
-              href='/admin/alerts'
-              className='flex items-center px-4 py-2 mb-1 text-zinc-400 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors'
-            >
-              <span>Alerts</span>
-            </Link>
-            <Link
               href='/admin/users'
-              className='flex items-center px-4 py-2 mb-1 text-zinc-400 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors'
+              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
+                pathname === '/admin/users'
+                  ? 'text-white bg-zinc-800'
+                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+              }`}
             >
               <span>Users</span>
             </Link>
             <Link
               href='/admin/testing'
-              className='flex items-center px-4 py-2 mb-1 text-zinc-400 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors'
+              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
+                pathname === '/admin/testing'
+                  ? 'text-white bg-zinc-800'
+                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+              }`}
             >
               <span>Testing</span>
             </Link>

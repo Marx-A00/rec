@@ -266,15 +266,15 @@ export class QueuedMusicBrainzService {
       const result = await this.waitForJobViaEvents(job.id!);
 
       if (!result.success) {
-        throw new Error(result.error?.message || 'Search failed');
+        console.warn('MusicBrainz recording search failed:', result.error?.message);
+        return []; // Return empty array instead of throwing - allow search to continue
       }
 
       return result.data || [];
     } catch (error) {
       console.error('Queued MusicBrainz recording search error:', error);
-      throw new Error(
-        `Failed to search recordings: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      // Return empty array instead of throwing - allow search to continue with other sources
+      return [];
     }
   }
 

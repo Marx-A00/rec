@@ -16,6 +16,7 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import AlbumImage from '@/components/ui/AlbumImage';
+import AnimatedLoader from '@/components/ui/AnimatedLoader';
 import {
   displayModeConfigs,
   DisplayModeConfig,

@@ -32,10 +32,13 @@ query Search($input: SearchInput!) {
     }
     tracks {
       id
+      albumId
       musicbrainzId
       title
       durationMs
       trackNumber
+      searchCoverArtUrl
+      searchArtistName
       album {
         id
         title
@@ -82,6 +85,7 @@ query SearchArtists($query: String!, $limit: Int) {
 query SearchTracks($query: String!, $limit: Int) {
   searchTracks(query: $query, limit: $limit) {
     id
+    albumId
     musicbrainzId
     title
     durationMs
@@ -98,5 +102,133 @@ query SearchTracks($query: String!, $limit: Int) {
         name
       }
     }
+  }
+}
+
+# Admin-specific queries for music database management
+
+query SearchAlbumsAdmin(
+  $query: String
+  $dataQuality: String
+  $enrichmentStatus: String
+  $needsEnrichment: Boolean
+  $sortBy: String
+  $sortOrder: String
+  $skip: Int
+  $limit: Int
+) {
+  searchAlbums(
+    query: $query
+    dataQuality: $dataQuality
+    enrichmentStatus: $enrichmentStatus
+    needsEnrichment: $needsEnrichment
+    sortBy: $sortBy
+    sortOrder: $sortOrder
+    skip: $skip
+    limit: $limit
+  ) {
+    id
+    musicbrainzId
+    title
+    releaseDate
+    coverArtUrl
+    cloudflareImageId
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    needsEnrichment
+    trackCount
+    label
+    barcode
+    artists {
+      artist {
+        id
+        name
+      }
+      role
+    }
+  }
+}
+
+query SearchArtistsAdmin(
+  $query: String
+  $dataQuality: String
+  $enrichmentStatus: String
+  $needsEnrichment: Boolean
+  $sortBy: String
+  $sortOrder: String
+  $skip: Int
+  $limit: Int
+) {
+  searchArtists(
+    query: $query
+    dataQuality: $dataQuality
+    enrichmentStatus: $enrichmentStatus
+    needsEnrichment: $needsEnrichment
+    sortBy: $sortBy
+    sortOrder: $sortOrder
+    skip: $skip
+    limit: $limit
+  ) {
+    id
+    musicbrainzId
+    name
+    imageUrl
+    cloudflareImageId
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    needsEnrichment
+    albumCount
+    trackCount
+    formedYear
+    countryCode
+  }
+}
+
+query SearchTracksAdmin(
+  $query: String!
+  $skip: Int
+  $limit: Int
+) {
+  searchTracks(
+    query: $query
+    skip: $skip
+    limit: $limit
+  ) {
+    id
+    albumId
+    musicbrainzId
+    title
+    trackNumber
+    discNumber
+    durationMs
+    isrc
+    album {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+    }
+    artists {
+      artist {
+        id
+        name
+      }
+      role
+    }
+  }
+}
+
+query GetDatabaseStats {
+  databaseStats {
+    totalAlbums
+    totalArtists
+    totalTracks
+    albumsNeedingEnrichment
+    artistsNeedingEnrichment
+    recentlyEnriched
+    failedEnrichments
+    averageDataQuality
   }
 }

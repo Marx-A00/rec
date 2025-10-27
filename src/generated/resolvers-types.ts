@@ -3,7 +3,6 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig,
 } from 'graphql';
-
 import { GraphQLContext } from '@/lib/graphql/context';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -486,6 +485,7 @@ export type Mutation = {
   updateProfile: UpdateProfilePayload;
   updateRecommendation: UpdateRecommendationPayload;
   updateTrack: Track;
+  updateUserRole: UpdateUserRolePayload;
   updateUserSettings: UserSettings;
 };
 
@@ -626,6 +626,11 @@ export type MutationUpdateRecommendationArgs = {
 export type MutationUpdateTrackArgs = {
   id: Scalars['UUID']['input'];
   input: UpdateTrackInput;
+};
+
+export type MutationUpdateUserRoleArgs = {
+  role: UserRole;
+  userId: Scalars['String']['input'];
 };
 
 export type MutationUpdateUserSettingsArgs = {
@@ -1145,6 +1150,8 @@ export type Track = {
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   popularity?: Maybe<Scalars['Float']['output']>;
   previewUrl?: Maybe<Scalars['String']['output']>;
+  searchArtistName?: Maybe<Scalars['String']['output']>;
+  searchCoverArtUrl?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   trackNumber: Scalars['Int']['output'];
   updatedAt: Scalars['DateTime']['output'];
@@ -1211,6 +1218,13 @@ export type UpdateTrackInput = {
   trackNumber?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type UpdateUserRolePayload = {
+  __typename?: 'UpdateUserRolePayload';
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+  user?: Maybe<User>;
+};
+
 export type User = {
   __typename?: 'User';
   _count?: Maybe<UserCount>;
@@ -1253,6 +1267,7 @@ export type UserFollow = {
 export enum UserRole {
   Admin = 'ADMIN',
   Moderator = 'MODERATOR',
+  Owner = 'OWNER',
   User = 'USER',
 }
 
@@ -1505,6 +1520,7 @@ export type ResolversTypes = ResolversObject<{
   UpdateProfilePayload: ResolverTypeWrapper<UpdateProfilePayload>;
   UpdateRecommendationPayload: ResolverTypeWrapper<UpdateRecommendationPayload>;
   UpdateTrackInput: UpdateTrackInput;
+  UpdateUserRolePayload: ResolverTypeWrapper<UpdateUserRolePayload>;
   User: ResolverTypeWrapper<User>;
   UserCount: ResolverTypeWrapper<UserCount>;
   UserFollow: ResolverTypeWrapper<UserFollow>;
@@ -1591,6 +1607,7 @@ export type ResolversParentTypes = ResolversObject<{
   UpdateProfilePayload: UpdateProfilePayload;
   UpdateRecommendationPayload: UpdateRecommendationPayload;
   UpdateTrackInput: UpdateTrackInput;
+  UpdateUserRolePayload: UpdateUserRolePayload;
   User: User;
   UserCount: UserCount;
   UserFollow: UserFollow;
@@ -2470,6 +2487,12 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationUpdateTrackArgs, 'id' | 'input'>
   >;
+  updateUserRole?: Resolver<
+    ResolversTypes['UpdateUserRolePayload'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationUpdateUserRoleArgs, 'role' | 'userId'>
+  >;
   updateUserSettings?: Resolver<
     ResolversTypes['UserSettings'],
     ParentType,
@@ -3237,6 +3260,16 @@ export type TrackResolvers<
     ParentType,
     ContextType
   >;
+  searchArtistName?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  searchCoverArtUrl?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   trackNumber?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
@@ -3322,6 +3355,17 @@ export type UpdateRecommendationPayloadResolvers<
     ResolversParentTypes['UpdateRecommendationPayload'] = ResolversParentTypes['UpdateRecommendationPayload'],
 > = ResolversObject<{
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type UpdateUserRolePayloadResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UpdateUserRolePayload'] = ResolversParentTypes['UpdateUserRolePayload'],
+> = ResolversObject<{
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -3583,6 +3627,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   UpdateCollectionPayload?: UpdateCollectionPayloadResolvers<ContextType>;
   UpdateProfilePayload?: UpdateProfilePayloadResolvers<ContextType>;
   UpdateRecommendationPayload?: UpdateRecommendationPayloadResolvers<ContextType>;
+  UpdateUserRolePayload?: UpdateUserRolePayloadResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
   UserCount?: UserCountResolvers<ContextType>;
   UserFollow?: UserFollowResolvers<ContextType>;

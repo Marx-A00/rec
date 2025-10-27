@@ -2,17 +2,24 @@
 import { UserRole } from '@prisma/client';
 
 /**
- * Check if a user has admin privileges
+ * Check if a user has owner privileges
+ */
+export function isOwner(role?: UserRole | null): boolean {
+  return role === UserRole.OWNER;
+}
+
+/**
+ * Check if a user has admin privileges or higher
  */
 export function isAdmin(role?: UserRole | null): boolean {
-  return role === UserRole.ADMIN;
+  return role === UserRole.ADMIN || role === UserRole.OWNER;
 }
 
 /**
  * Check if a user has moderator privileges or higher
  */
 export function isModerator(role?: UserRole | null): boolean {
-  return role === UserRole.MODERATOR || role === UserRole.ADMIN;
+  return role === UserRole.MODERATOR || role === UserRole.ADMIN || role === UserRole.OWNER;
 }
 
 /**
@@ -28,6 +35,7 @@ export function hasRole(
     [UserRole.USER]: 0,
     [UserRole.MODERATOR]: 1,
     [UserRole.ADMIN]: 2,
+    [UserRole.OWNER]: 3,
   };
 
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
