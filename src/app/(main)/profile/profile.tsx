@@ -269,6 +269,7 @@ export default function ProfileClient({
                     </h1>
                     <AdminBadge role={currentUser.role} />
                   </div>
+                  </div>
                 <div className='flex-shrink-0 flex gap-3'>
                   {isOwnProfile ? (
                     <div className='relative' ref={settingsMenuRef}>
@@ -324,7 +325,6 @@ export default function ProfileClient({
                     )
                   )}
                 </div>
-              </div>
               </div>
 
               <p className='mb-6 max-w-md text-zinc-300'>
