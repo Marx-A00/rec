@@ -13,7 +13,7 @@ import {
   Loader2,
   Play,
 } from 'lucide-react';
-import { useNextStep } from 'nextstepjs';
+// import { useNextStep } from 'nextstepjs';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,7 +44,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   const { showToast } = useToast();
   const updateProfileMutation = useUpdateUserProfileMutation(user.id);
   const router = useRouter();
-  const { startNextStep } = useNextStep();
+  // const { startNextStep } = useNextStep();
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -113,34 +113,36 @@ export default function SettingsClient({ user }: SettingsClientProps) {
   };
 
   const handleRestartTour = async () => {
-    try {
-      setIsStartingTour(true);
-      showToast('Starting tour...', 'success');
+    // TODO: Re-enable when NextStepProvider is properly set up
+    showToast('Tour feature temporarily disabled', 'error');
+    // try {
+    //   setIsStartingTour(true);
+    //   showToast('Starting tour...', 'success');
 
-      // Navigate to home page first
-      router.push('/');
+    //   // Navigate to home page first
+    //   router.push('/');
 
-      // Wait for navigation to complete, then start the tour
-      setTimeout(() => {
-        try {
-          // Clear any existing tour state to ensure a fresh start
-          localStorage.removeItem('nextstep-welcome-onboarding');
+    //   // Wait for navigation to complete, then start the tour
+    //   setTimeout(() => {
+    //     try {
+    //       // Clear any existing tour state to ensure a fresh start
+    //       localStorage.removeItem('nextstep-welcome-onboarding');
 
-          // Start the welcome onboarding tour
-          startNextStep('welcome-onboarding');
-          console.log('🚀 Tour restarted from settings');
-        } catch (error) {
-          console.error('❌ Error starting tour:', error);
-          showToast('Failed to start tour', 'error');
-        } finally {
-          setIsStartingTour(false);
-        }
-      }, 1500); // Give enough time for navigation and page load
-    } catch (error) {
-      console.error('❌ Error restarting tour:', error);
-      showToast('Failed to restart tour', 'error');
-      setIsStartingTour(false);
-    }
+    //       // Start the welcome onboarding tour
+    //       startNextStep('welcome-onboarding');
+    //       console.log('🚀 Tour restarted from settings');
+    //     } catch (error) {
+    //       console.error('❌ Error starting tour:', error);
+    //       showToast('Failed to start tour', 'error');
+    //     } finally {
+    //       setIsStartingTour(false);
+    //     }
+    //   }, 1500); // Give enough time for navigation and page load
+    // } catch (error) {
+    //   console.error('❌ Error restarting tour:', error);
+    //   showToast('Failed to restart tour', 'error');
+    //   setIsStartingTour(false);
+    // }
   };
 
   return (
