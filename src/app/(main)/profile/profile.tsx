@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Pencil, Settings } from 'lucide-react';
+import { UserRole } from '@prisma/client';
+import Image from 'next/image';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,7 @@ interface User {
   followersCount: number;
   followingCount: number;
   recommendationsCount: number;
+  role: UserRole;
 }
 
 interface ProfileClientProps {
@@ -259,13 +262,25 @@ export default function ProfileClient({
             </Avatar>
             <div className='text-center md:text-left flex-1'>
               <div className='flex flex-col md:flex-row md:items-start md:justify-between gap-4'>
-                <div>
-                  <h1 className='text-4xl font-bold mb-2 text-cosmic-latte'>
+                <div className='flex items-center gap-4'>
+                  <h1 className='text-4xl font-bold text-cosmic-latte mb-2'>
                     {currentUser.name}
                   </h1>
-                  <p className='text-zinc-400 mb-4 text-lg'>
-                    {currentUser.username}
-                  </p>
+                  {(currentUser.role === UserRole.ADMIN ||
+                    currentUser.role === UserRole.OWNER) && (
+                    <div className='flex-shrink-0'>
+                      <Image
+                        src='/tape_real_01.svg'
+                        alt='Admin badge'
+                        width={150}
+                        height={150}
+                        className='flex-shrink-0'
+                        title={
+                          currentUser.role === UserRole.OWNER ? 'Owner' : 'Admin'
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className='flex-shrink-0 flex gap-3'>
                   {isOwnProfile ? (

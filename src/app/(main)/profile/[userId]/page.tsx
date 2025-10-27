@@ -173,6 +173,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     followersCount: userData._count.followers,
     followingCount: userData._count.following,
     recommendationsCount: userData._count.recommendations,
+    role: userData.role,
   };
 
   return (
