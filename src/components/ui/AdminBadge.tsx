@@ -13,14 +13,27 @@ export default function AdminBadge({ role }: AdminBadgeProps) {
   return (
     <div
       className='flex items-center gap-0 px-1 rounded-lg border border-zinc-700 bg-cosmic-latte transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/50 hover:scale-105 hover:border-orange-500 cursor-pointer'
-      style={{ paddingTop: '0px', paddingBottom: '0px' }}
+      style={{
+        paddingTop: '0px',
+        paddingBottom: '0px'
+      }}
       title={role === UserRole.OWNER ? 'Owner' : 'Admin'}
     >
       <div
-        className='flex-shrink-0'
-        style={{ width: '50px', height: '50px', marginLeft: '-5px' }}
+        className='flex items-center gap-0'
+        style={{
+          animation: 'floatBadge 3s ease-in-out infinite'
+        }}
       >
-        <svg viewBox="0 0 2000 2000" className='w-full h-full'>
+        <div
+          className='flex-shrink-0'
+          style={{
+            width: '50px',
+            height: '50px',
+            marginLeft: '-5px'
+          }}
+        >
+          <svg viewBox="0 0 2000 2000" className='w-full h-full'>
           <style>{`
             @keyframes cls1 {
               0% { fill: #f15a24; }
@@ -39,6 +52,10 @@ export default function AdminBadge({ role }: AdminBadgeProps) {
               34% { fill: #f7931e; }
               66% { fill: #f15a24; }
               100% { fill: #ed1c24; }
+            }
+            @keyframes floatBadge {
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(-3px); }
             }
             .tri-1 { animation: cls1 4s ease infinite both; }
             .tri-2 { animation: cls2 4s ease infinite both; }
@@ -68,6 +85,7 @@ export default function AdminBadge({ role }: AdminBadgeProps) {
       >
         {role === UserRole.OWNER ? 'Owner' : 'Admin'}
       </span>
+      </div>
     </div>
   );
 }
