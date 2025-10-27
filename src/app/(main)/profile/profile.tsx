@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Pencil, Settings } from 'lucide-react';
 import { UserRole } from '@prisma/client';
-import Image from 'next/image';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import RecommendationCard from '@/components/recommendations/RecommendationCard'
 import FollowButton from '@/components/profile/FollowButton';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
+import AdminBadge from '@/components/ui/AdminBadge';
 import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
 import { RecommendationFieldsFragment } from '@/generated/graphql';
@@ -262,26 +262,13 @@ export default function ProfileClient({
             </Avatar>
             <div className='text-center md:text-left flex-1'>
               <div className='flex flex-col md:flex-row md:items-start md:justify-between gap-4'>
-                <div className='flex items-center gap-4'>
-                  <h1 className='text-4xl font-bold text-cosmic-latte mb-2'>
-                    {currentUser.name}
-                  </h1>
-                  {(currentUser.role === UserRole.ADMIN ||
-                    currentUser.role === UserRole.OWNER) && (
-                    <div className='flex-shrink-0'>
-                      <Image
-                        src='/tape_real_01.svg'
-                        alt='Admin badge'
-                        width={150}
-                        height={150}
-                        className='flex-shrink-0'
-                        title={
-                          currentUser.role === UserRole.OWNER ? 'Owner' : 'Admin'
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
+                <div>
+                  <div className='flex items-center gap-3 mb-2'>
+                    <h1 className='text-4xl font-bold text-cosmic-latte'>
+                      {currentUser.name}
+                    </h1>
+                    <AdminBadge role={currentUser.role} />
+                  </div>
                 <div className='flex-shrink-0 flex gap-3'>
                   {isOwnProfile ? (
                     <div className='relative' ref={settingsMenuRef}>
@@ -337,6 +324,7 @@ export default function ProfileClient({
                     )
                   )}
                 </div>
+              </div>
               </div>
 
               <p className='mb-6 max-w-md text-zinc-300'>
