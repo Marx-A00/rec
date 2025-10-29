@@ -118,28 +118,29 @@ export default function SortablePanelWrapper({
       ref={setNodeRef}
       style={style}
       className={`
-        relative h-full flex flex-col group
+        relative h-full flex flex-col ${isEditMode ? 'group' : ''}
         ${isEditMode ? 'border-2 border-dashed border-zinc-700 hover:border-zinc-600' : ''}
         ${isSelected ? 'border-emerald-500' : ''}
         ${isDragging ? 'opacity-30 scale-95' : ''}
         ${isDragActive ? 'transition-none' : 'transition-all duration-200'}
       `}
-      onClick={handleSelectPanel}
-      {...attributes}
+      onClick={isEditMode ? handleSelectPanel : undefined}
+      {...(isEditMode ? attributes : {})}
     >
       {/* Edit Mode Overlay */}
       {isEditMode && (
         <div className='absolute inset-0 bg-black/20 z-10 pointer-events-none' />
       )}
 
-      {/* Panel Header - Show on hover in both normal and edit mode */}
-      <div
-        className={`
-        absolute top-0 left-0 right-0 flex items-center justify-between p-3 z-20
-        opacity-0 group-hover:opacity-100 transition-opacity duration-200
-        ${isEditMode ? 'bg-zinc-800/80 border-b border-zinc-700 pointer-events-auto' : 'bg-zinc-900/90 pointer-events-none'}
-      `}
-      >
+      {/* Panel Header - Show on hover only in edit mode */}
+      {isEditMode && (
+        <div
+          className={`
+          absolute top-0 left-0 right-0 flex items-center justify-between p-3 z-20
+          opacity-0 group-hover:opacity-100 transition-opacity duration-200
+          bg-zinc-800/80 border-b border-zinc-700 pointer-events-auto
+        `}
+        >
         {/* Left side - Drag handle */}
         <div className='flex items-center gap-2 w-24'>
           {isEditMode && (
@@ -203,7 +204,8 @@ export default function SortablePanelWrapper({
             </>
           )}
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Panel Content */}
       <div

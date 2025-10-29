@@ -733,6 +733,7 @@ export class SearchOrchestrator {
         height: 400,
         alt: title,
       },
+      source: 'discogs',
       _discogs: {
         type: result.type,
         uri: result.uri,
@@ -757,6 +758,7 @@ export class SearchOrchestrator {
         height: 640,
         alt: artist.name,
       },
+      source: 'spotify',
       relevanceScore: artist.popularity ? artist.popularity / 100 : 0,
       _discogs: {},
       _spotify: {
@@ -957,6 +959,7 @@ export class SearchOrchestrator {
         height: 300,
         alt: album.title,
       },
+      source: 'local',
       _discogs: {
         uri: album.discogsId ? `/releases/${album.discogsId}` : undefined,
       },
@@ -979,6 +982,7 @@ export class SearchOrchestrator {
         height: 300,
         alt: artist.name,
       },
+      source: 'local',
       _discogs: {
         uri: artist.discogsId ? `/artists/${artist.discogsId}` : undefined,
       },
@@ -1129,6 +1133,7 @@ export class SearchOrchestrator {
         height: 600,
         alt: artist.name,
       },
+      source: 'musicbrainz',
       _discogs: {},
     };
   }
@@ -1153,6 +1158,7 @@ export class SearchOrchestrator {
         height: 600,
         alt: artist.name,
       },
+      source: 'musicbrainz',
       relevanceScore: artist.score,
       _discogs: {},
     };
@@ -1238,6 +1244,7 @@ export class SearchOrchestrator {
         height: 250,
         alt: recording.title,
       },
+      source: 'musicbrainz',
       relevanceScore: recording.score, // include MB score for filtering downstream
       _discogs: {},
       // Include MusicBrainz metadata for deduplication
@@ -1272,6 +1279,7 @@ export class SearchOrchestrator {
         height: 300,
         alt: track.album?.title || track.title,
       },
+      source: 'local',
       metadata: {
         totalDuration: track.durationMs || 0,
         numberOfTracks: 1,

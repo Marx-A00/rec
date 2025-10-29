@@ -123,7 +123,7 @@ export default function ActivityItem({
 
   return (
     <div
-      className={`bg-zinc-900 rounded-lg p-3 pb-8 border border-zinc-800 hover:border-zinc-700 transition-colors ${className}`}
+      className={`bg-zinc-900 rounded-lg p-3 pb-8 border border-zinc-800 ${className}`}
     >
       <div className='relative'>
         {/* Header with centered text and avatar */}

@@ -53,7 +53,7 @@ export const NavigationItem: FC<NavigationItemProps> = ({
           ? 'flex items-center justify-center p-3 rounded-xl'
           : 'flex items-center gap-2 px-3 py-2 rounded-lg',
         'hover:bg-zinc-800/50',
-        isActive && 'bg-zinc-800 text-emeraled-green',
+        isActive && 'bg-zinc-800 text-cosmic-latte',
         !isActive && 'text-zinc-400 hover:text-white',
         depth > 0 && !isCollapsed && 'ml-6'
       )}

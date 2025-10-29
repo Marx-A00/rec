@@ -933,13 +933,10 @@ export default function UniversalSearchBar({
                 to search external sources
               </div>
             )}
-            {searchMode === 'LOCAL_AND_EXTERNAL' && isLoading && (
-              <div className='p-2 text-center text-blue-400 text-sm border-b border-zinc-800'>
-                Searching MusicBrainz... (may take 10-15 seconds)
+            {isLoading && (
+              <div className='flex justify-center items-center p-4'>
+                <AnimatedLoader className='scale-50' />
               </div>
-            )}
-            {searchMode === 'LOCAL_ONLY' && isLoading && (
-              <div className='p-4 text-center text-zinc-400'>Searching...</div>
             )}
 
             {!isLoading &&
