@@ -88,7 +88,7 @@ const Panel: React.FC<PanelProps> = ({
   }
 
   return (
-    <div className={`relative h-full bg-zinc-900/50 rounded-lg border border-zinc-800 overflow-hidden transition-all duration-200 ${isEditMode ? 'group' : ''}`}>
+    <div className={`relative h-full bg-zinc-900/50 rounded-lg overflow-hidden transition-all duration-200 ${isEditMode ? 'group' : ''}`}>
       {/* Edit Mode Controls */}
       {isEditMode && (
         <div className='absolute top-2 right-2 z-10 flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity'>
@@ -134,39 +134,33 @@ const Panel: React.FC<PanelProps> = ({
         </div>
       )}
 
-      {/* Panel Title with Dropdown */}
-      {node.content.title && (
+      {/* Panel Type Dropdown - Only in Edit Mode */}
+      {isEditMode && node.content.title && (
         <div className='absolute top-2 left-2 z-10'>
-          {isEditMode ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className='flex items-center gap-1 px-2 py-1 bg-zinc-800/80 hover:bg-zinc-700/80 rounded text-sm text-zinc-300 transition-colors'>
-                  {node.content.title}
-                  <ChevronDown className='w-3 h-3' />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className='w-48 bg-zinc-800 border-zinc-700'>
-                {getAllPanelDefinitions().map(panelDef => (
-                  <DropdownMenuItem
-                    key={panelDef.type}
-                    onClick={() => onChangeType(panelDef.type)}
-                    className='text-zinc-300 hover:bg-zinc-700 hover:text-white focus:bg-zinc-700 focus:text-white'
-                  >
-                    {panelDef.displayName}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className='px-2 py-1 bg-zinc-800/80 rounded text-sm text-zinc-300'>
-              {node.content.title}
-            </div>
-          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className='flex items-center gap-1 px-2 py-1 bg-zinc-800/80 hover:bg-zinc-700/80 rounded text-sm text-zinc-300 transition-colors opacity-60 hover:opacity-100'>
+                {node.content.title}
+                <ChevronDown className='w-3 h-3' />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className='w-48 bg-zinc-800 border-zinc-700'>
+              {getAllPanelDefinitions().map(panelDef => (
+                <DropdownMenuItem
+                  key={panelDef.type}
+                  onClick={() => onChangeType(panelDef.type)}
+                  className='text-zinc-300 hover:bg-zinc-700 hover:text-white focus:bg-zinc-700 focus:text-white'
+                >
+                  {panelDef.displayName}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
 
       {/* Panel Content */}
-      <div className={`h-full ${isEditMode ? 'pt-12' : 'pt-8'} p-4`}>
+      <div className={`h-full ${isEditMode ? 'pt-12' : ''}`}>
         <PanelComponent
           panelId={node.id}
           config={node.content.config || {}}
