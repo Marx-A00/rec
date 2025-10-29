@@ -174,7 +174,7 @@ export default function GroupedActivityItem({
                 {group.activities.slice(0, 5).map((activity, index) => (
                   <Link
                     key={activity.id}
-                    href={activity.albumId ? `/album/${activity.albumId}` : '#'}
+                    href={activity.albumId ? `/albums/${activity.albumId}?source=local` : '#'}
                     className='relative group cursor-pointer block'
                     style={{ zIndex: 5 - index }}
                   >
@@ -224,7 +224,7 @@ export default function GroupedActivityItem({
               {group.activities.map(activity => (
                 <Link
                   key={activity.id}
-                  href={activity.albumId ? `/album/${activity.albumId}` : '#'}
+                  href={activity.albumId ? `/albums/${activity.albumId}?source=local` : '#'}
                   className='flex flex-col gap-1'
                 >
                   <div className='relative group cursor-pointer'>
@@ -438,11 +438,10 @@ function SingleActivityDisplay({
             <div className='relative w-[280px] h-[260px] transition-all duration-300 ease-out [&:hover]:w-[420px] [&:hover_.rec-album]:left-[200px] [&:hover_.arrow-indicator]:opacity-100 [&:hover_.basis-text]:opacity-100'>
               {/* Basis Album (back) */}
               {activity.metadata?.basisAlbum && (
-                <div
-                  className='absolute left-0 top-0 transition-all duration-300 ease-out'
-                  onClick={() => {
-                    // You could add click handler for basis album if needed
-                  }}
+                <Link
+                  href={`/albums/${activity.metadata.basisAlbum.id}?source=local`}
+                  className='absolute left-0 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
+                  title={`View ${activity.metadata.basisAlbum.title}`}
                 >
                   <div className='relative'>
                     <AlbumImage
@@ -453,16 +452,16 @@ function SingleActivityDisplay({
                       alt={activity.metadata.basisAlbum.title}
                       width={180}
                       height={180}
-                      className='w-[180px] h-[180px] rounded-lg shadow-lg border border-zinc-700/50 transition-all'
+                      className='w-[180px] h-[180px] rounded-lg shadow-lg border border-zinc-700/50 hover:border-zinc-600 transition-all'
                     />
                   </div>
-                </div>
+                </Link>
               )}
 
               {/* Recommended Album (front) */}
-              <div
+              <Link
+                href={`/albums/${activity.albumId}?source=local`}
                 className='rec-album absolute left-14 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
-                onClick={handleAlbumClick}
                 title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
               >
                 <div className='relative'>
@@ -474,7 +473,7 @@ function SingleActivityDisplay({
                     className='w-[220px] h-[220px] rounded-lg shadow-2xl border-2 border-emeraled-green/30 hover:border-emeraled-green/50 transition-all'
                   />
                 </div>
-              </div>
+              </Link>
 
               {/* Score indicator with heart - visible on hover between albums */}
               {activity.metadata?.score && (
