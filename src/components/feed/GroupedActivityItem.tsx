@@ -108,7 +108,7 @@ export default function GroupedActivityItem({
 
   return (
     <div
-      className={`bg-zinc-900 rounded-lg p-3 pb-4 border border-zinc-800 hover:border-zinc-700 transition-colors ${className}`}
+      className={`bg-zinc-900 rounded-lg p-3 pb-4 border border-zinc-800 ${className}`}
     >
       {/* Header with user and summary */}
       <div className='mb-3'>
@@ -374,7 +374,7 @@ function SingleActivityDisplay({
 
   return (
     <div
-      className={`bg-zinc-900 rounded-lg p-3 pb-4 border border-zinc-800 hover:border-zinc-700 transition-colors ${className}`}
+      className={`bg-zinc-900 rounded-lg p-3 pb-4 border border-zinc-800 ${className}`}
     >
       {/* Header */}
       <div className='mb-3'>

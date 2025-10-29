@@ -331,7 +331,7 @@ export default function SocialActivityFeed({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Header with refresh status */}
-      <div className='flex justify-between items-center mb-6'>
+      <div className='relative flex justify-center items-center mb-6'>
         <div className='flex items-center gap-3'>
           <h2 className='text-xl font-semibold text-cosmic-latte'>
             Social Activity
@@ -353,7 +353,7 @@ export default function SocialActivityFeed({
 
         <button
           onClick={handleRefresh}
-          className='p-2 text-zinc-300 rounded hover:bg-zinc-800 hover:text-cosmic-latte transition-colors group'
+          className='absolute right-0 p-2 text-zinc-300 rounded hover:bg-zinc-800 hover:text-cosmic-latte transition-colors group'
           disabled={isLoading}
           aria-label={isLoading ? 'Refreshing...' : 'Refresh feed'}
         >
