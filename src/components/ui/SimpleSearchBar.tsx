@@ -25,9 +25,9 @@ export default function SimpleSearchBar({
 }: SimpleSearchBarProps) {
   const [query, setQuery] = useState('');
   // TODO: Re-add 'all' when we figure out the "ALL" search
-  const [searchType, setSearchType] = useState<'albums' | 'artists' | 'tracks'>(
-    'albums'
-  );
+  const [searchType, setSearchType] = useState<
+    'albums' | 'artists' | 'tracks' | 'users'
+  >('albums');
   const router = useRouter();
 
   // Handle search input changes
@@ -85,7 +85,14 @@ export default function SimpleSearchBar({
               <SelectItem value='albums'>Albums</SelectItem>
               <SelectItem value='artists'>Artists</SelectItem>
               <SelectItem value='tracks'>Tracks</SelectItem>
-              {/** Users option temporarily disabled */}
+              <SelectItem
+                value='users'
+                disabled
+                className='opacity-50 cursor-not-allowed text-zinc-400'
+                title='Coming soon'
+              >
+                Users (coming soon)
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
