@@ -45,6 +45,10 @@ export default function ProfileClient({
   recommendations,
   isOwnProfile,
 }: ProfileClientProps) {
+  // Feature flag check for collection editor
+  const isCollectionEditorEnabled =
+    process.env.NEXT_PUBLIC_ENABLE_COLLECTION_EDITOR === 'true';
+
   const { prefetchRoute, navigateTo, navigateToAlbum, goBack } =
     useNavigation();
 
@@ -75,10 +79,24 @@ export default function ProfileClient({
   const [sortedAlbums, setSortedAlbums] =
     useState<CollectionAlbum[]>(allAlbums);
 
+  // Collection expansion state (for non-editable mode)
+  const [isCollectionExpanded, setIsCollectionExpanded] = useState(false);
+
   // Update sorted albums when collection changes
   useEffect(() => {
     setSortedAlbums(allAlbums);
   }, [allAlbums]);
+
+  // Determine which albums to display (truncate to top row when not editable)
+  const displayedAlbums = useMemo(() => {
+    // If editable mode OR expanded, show all
+    if (isCollectionEditorEnabled || isCollectionExpanded) {
+      return sortedAlbums;
+    }
+
+    // Otherwise, show only top row (first 6 albums)
+    return sortedAlbums.slice(0, 6);
+  }, [sortedAlbums, isCollectionEditorEnabled, isCollectionExpanded]);
 
   // Strategic prefetching for likely navigation targets
   useEffect(() => {
@@ -393,7 +411,7 @@ export default function ProfileClient({
 
                 {/* Sortable Album Grid */}
                 <SortableAlbumGrid
-                  albums={sortedAlbums}
+                  albums={displayedAlbums}
                   onReorder={handleAlbumReorder}
                   onAlbumClick={albumId => {
                     const album = sortedAlbums.find(a => a.albumId === albumId);
@@ -401,9 +419,55 @@ export default function ProfileClient({
                       setSelectedAlbum(album);
                     }
                   }}
-                  isEditable={isOwnProfile}
-                  className='mb-8'
+                  isEditable={isOwnProfile && isCollectionEditorEnabled}
+                  className='mb-2'
                 />
+
+                {/* Show expand/collapse link when not in editable mode and collection is truncated */}
+                {!isCollectionEditorEnabled && sortedAlbums.length > 6 && (
+                  <div className='flex justify-center mb-8 mt-8'>
+                    <button
+                      onClick={() => setIsCollectionExpanded(!isCollectionExpanded)}
+                      className='flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-300 transition-colors'
+                    >
+                      {isCollectionExpanded ? (
+                        <>
+                          <span>Show Less</span>
+                          <svg
+                            className='w-3.5 h-3.5'
+                            fill='none'
+                            stroke='currentColor'
+                            viewBox='0 0 24 24'
+                          >
+                            <path
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                              strokeWidth={2}
+                              d='M5 15l7-7 7 7'
+                            />
+                          </svg>
+                        </>
+                      ) : (
+                        <>
+                          <span>See All {sortedAlbums.length} Albums</span>
+                          <svg
+                            className='w-3.5 h-3.5'
+                            fill='none'
+                            stroke='currentColor'
+                            viewBox='0 0 24 24'
+                          >
+                            <path
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                              strokeWidth={2}
+                              d='M19 9l-7 7-7-7'
+                            />
+                          </svg>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className='text-center py-12'>

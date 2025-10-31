@@ -45,7 +45,17 @@ const GRID_SIZES = {
 type GridSize = keyof typeof GRID_SIZES;
 
 // Assign sizes based on position/rating/preference
-function getAlbumGridSize(album: CollectionAlbum, index: number): GridSize {
+function getAlbumGridSize(
+  album: CollectionAlbum,
+  index: number,
+  isEditable: boolean
+): GridSize {
+  // When not editable, use uniform sizing for cleaner look
+  if (!isEditable) {
+    return 'small';
+  }
+
+  // Editable mode: use fancy variable sizing based on rating/position
   // Featured albums (high rating or manually featured)
   if (album.personalRating && album.personalRating >= 9) {
     return 'large';
@@ -138,7 +148,7 @@ export default function SortableAlbumGrid({
       >
         <div className={`grid grid-cols-6 gap-6 auto-rows-auto ${className}`}>
           {items.map((album, index) => {
-            const gridSize = getAlbumGridSize(album, index);
+            const gridSize = getAlbumGridSize(album, index, isEditable);
             return (
               <SortableAlbumItem
                 key={album.id}
@@ -161,7 +171,8 @@ export default function SortableAlbumGrid({
               album={activeAlbum}
               gridSize={getAlbumGridSize(
                 activeAlbum,
-                items.indexOf(activeAlbum)
+                items.indexOf(activeAlbum),
+                isEditable
               )}
               isDragging={true}
               isEditable={isEditable}
