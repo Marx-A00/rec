@@ -426,6 +426,10 @@ export const resolvers: Resolvers = {
             imageUrl: r.image?.url || r.cover_image || null,
             subtitle: r.subtitle, // e.g., "Person", "Group"
             genre: r.genre || [], // MusicBrainz tags
+            // Pass through MusicBrainz metadata for disambiguation
+            disambiguation: r._musicbrainz?.disambiguation,
+            country: r._musicbrainz?.country,
+            lifeSpan: r._musicbrainz?.lifeSpan,
           }));
 
         // Process Spotify artists - enrich MusicBrainz results with Spotify images
@@ -476,7 +480,7 @@ export const resolvers: Resolvers = {
           return false;
         };
 
-        // Match each MusicBrainz artist to best Spotify candidate
+        // Match each MusicBrainz artist to best Spotify candidate using intelligent matching
         const enrichedMbArtists = newMbArtists.map(mbArtist => {
           const normalizedMbName = normalizeName(mbArtist.name);
 
@@ -505,7 +509,7 @@ export const resolvers: Resolvers = {
               artistName: mbArtist.name,
               spotifyPopularity: match.popularity,
               spotifyGenres: match.genres.slice(0, 2),
-            }, 'Successfully matched artist with Spotify');
+            }, 'Successfully matched artist with Spotify (single candidate)');
             return {
               ...mbArtist,
               imageUrl: match.imageUrl,
@@ -513,19 +517,49 @@ export const resolvers: Resolvers = {
             };
           }
 
-          // Multiple candidates - score them
+          // Multiple candidates - use intelligent matching algorithm
+          // Note: We need to get the full UnifiedSearchResult to access _musicbrainz metadata
+          // For now, we'll use the available data (subtitle = type, genre = tags)
+          const mbArtistForMatching = {
+            id: mbArtist.musicbrainzId,
+            name: mbArtist.name,
+            disambiguation: mbArtist.subtitle, // Using subtitle as a proxy for now
+            type: mbArtist.subtitle,
+            country: undefined, // Not available in current newMbArtists structure
+            lifeSpan: undefined, // Not available in current newMbArtists structure
+          };
+
+          const spotifyCandidatesForMatching = candidates.map(c => ({
+            id: c.spotifyId,
+            name: c.name,
+            genres: c.genres,
+            popularity: c.popularity,
+          }));
+
+          // Simple fallback: score by genre overlap and popularity
           const scored = candidates.map(candidate => {
             let score = 0;
 
-            // Base score from popularity (0-2 points)
-            score += candidate.popularity / 50;
+            // Base score from popularity (0-20 points)
+            score += (candidate.popularity / 100) * 20;
 
-            // Bonus if genres match context (subtitle/tags) (+3 points)
-            const context = [mbArtist.subtitle, ...(mbArtist.genre || [])].join(
-              ' '
-            );
-            if (genreMatchesContext(context, candidate.genres)) {
-              score += 3;
+            // Genre/subtitle matching (0-40 points)
+            const context = [mbArtist.subtitle, ...(mbArtist.genre || [])].join(' ').toLowerCase();
+            const genreText = candidate.genres.join(' ').toLowerCase();
+
+            // Check for keyword matches
+            const keywords = context.split(/\s+/);
+            let matches = 0;
+            for (const keyword of keywords) {
+              if (keyword.length > 3 && genreText.includes(keyword)) {
+                matches++;
+              }
+            }
+            score += Math.min(40, matches * 10);
+
+            // Exact name match bonus (0-10 points)
+            if (normalizeName(candidate.name) === normalizedMbName) {
+              score += 10;
             }
 
             return { candidate, score };
@@ -545,7 +579,7 @@ export const resolvers: Resolvers = {
             spotifyGenres: bestMatch.genres.slice(0, 2),
             matchScore: scored[0].score,
             candidateCount: candidates.length,
-          }, 'Matched artist from multiple Spotify candidates');
+          }, 'Matched artist from multiple Spotify candidates using intelligent matching');
 
           return {
             ...mbArtist,
@@ -774,59 +808,18 @@ export const resolvers: Resolvers = {
           .sort((x, y) => y.s - x.s)
           .map(x => x.a);
 
-        // Name-level deduplication: keep one per normalized name
-        const byName = new Map<string, any>();
-        for (const a of rankedArtists) {
-          const nameKey = normalize(a.name || a.title || '');
-          const existing = byName.get(nameKey);
-          if (!existing) {
-            byName.set(nameKey, a);
-            graphqlLogger.debug({
-              context: 'artist_dedup',
-              artistName: a.name,
-              musicbrainzId: a.musicbrainzId,
-              hasImage: !!a.imageUrl,
-              action: 'keeping',
-            }, 'Artist deduplication: keeping first');
-            continue;
-          }
-          // Prefer local with MBID, then local, then keep existing order
-          const candHasMb = !!a.musicbrainzId;
-          const candIsLocal = !(
-            typeof a.source === 'string' &&
-            a.source.toUpperCase?.() === 'MUSICBRAINZ'
-          );
-          const existHasMb = !!existing.musicbrainzId;
-          const existIsLocal = !(
-            typeof existing.source === 'string' &&
-            existing.source.toUpperCase?.() === 'MUSICBRAINZ'
-          );
+        // Name-level deduplication REMOVED - SearchOrchestrator already handles
+        // deduplication correctly using unique IDs (MBIDs, Spotify IDs).
+        // Multiple artists with the same name are intentionally kept as separate results.
+        console.log(`\n🎯 [GraphQL] Keeping all ${artists.length} artists (name-level dedup removed):`);
+        artists.forEach((a, i) => {
+          const idPreview = String(a.id).length > 12 ? String(a.id).substring(0, 12) + '...' : String(a.id);
+          const mbidPreview = a.musicbrainzId ? a.musicbrainzId.substring(0, 8) + '...' : 'none';
+          console.log(`  [${i+1}] "${a.name}" (ID: ${idPreview}) MBID: ${mbidPreview} Source: ${a.source || 'unknown'}`);
+        });
 
-          if (
-            (candIsLocal && !existIsLocal) ||
-            (candHasMb && !existHasMb) ||
-            (candIsLocal && candHasMb && !(existIsLocal && existHasMb))
-          ) {
-            graphqlLogger.debug({
-              context: 'artist_dedup',
-              existingName: existing.name,
-              replacementName: a.name,
-              musicbrainzId: a.musicbrainzId,
-              hasImage: !!a.imageUrl,
-              action: 'replacing',
-            }, 'Artist deduplication: replacing with better match');
-            byName.set(nameKey, a);
-          } else {
-            graphqlLogger.debug({
-              context: 'artist_dedup',
-              skippedName: a.name,
-              keptName: existing.name,
-              keptMusicbrainzId: existing.musicbrainzId,
-              action: 'skipping',
-            }, 'Artist deduplication: skipping duplicate');
-          }
-        }
-        artists = Array.from(byName.values());
+        // Use rankedArtists directly (no additional dedup)
+        artists = rankedArtists;
 
         const tracksMap = new Map<string, any>();
         for (const t of [...dbTracks, ...existingMbTracks, ...newMbTracks]) {

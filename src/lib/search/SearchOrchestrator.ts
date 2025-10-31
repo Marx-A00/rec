@@ -208,12 +208,25 @@ export class SearchOrchestrator {
 
     const endTime = Date.now();
 
-    const slicedResults = finalResults.slice(0, limit);
+    // Separate display results (count against limit) from enrichment results (Spotify artists for image matching)
+    // Spotify artists are never displayed directly - they only enrich MusicBrainz results with images
+    const displayResults = finalResults.filter(r => r.source !== 'spotify');
+    const enrichmentResults = finalResults.filter(r => r.source === 'spotify');
+
+    // Apply limit only to display results
+    const limitedDisplayResults = displayResults.slice(0, limit);
+
+    // Combine limited display results with ALL enrichment results (don't limit Spotify)
+    const slicedResults = [...limitedDisplayResults, ...enrichmentResults];
+
     console.log(
-      `\n🎯 [SearchOrchestrator] RETURNING RESULTS: ${slicedResults.length} of ${finalResults.length} (limit: ${limit})`
+      `\n🎯 [SearchOrchestrator] RETURNING RESULTS: ${slicedResults.length} total (${limitedDisplayResults.length} display + ${enrichmentResults.length} enrichment)`
     );
     console.log(
-      `   Track breakdown: ${slicedResults.filter(r => r.type === 'track').length} tracks, ${slicedResults.filter(r => r.type === 'album').length} albums, ${slicedResults.filter(r => r.type === 'artist').length} artists\n`
+      `   Display results (limited to ${limit}): ${limitedDisplayResults.filter(r => r.type === 'track').length} tracks, ${limitedDisplayResults.filter(r => r.type === 'album').length} albums, ${limitedDisplayResults.filter(r => r.type === 'artist').length} artists`
+    );
+    console.log(
+      `   Enrichment results (Spotify, no limit): ${enrichmentResults.length} artists for image matching\n`
     );
 
     return {
@@ -441,15 +454,22 @@ export class SearchOrchestrator {
       }
 
       if (types.includes('artist')) {
-        // Calculate expected final results count to avoid over-fetching
-        const artistMaxResults = opts?.artistMaxResults ?? Math.min(limit, 5);
-        // Request 2x what we need to account for filtering, but cap it
-        const artistSearchLimit = Math.min(artistMaxResults * 2, 10);
+        // Use requested limit for artists (no artificial cap)
+        const artistMaxResults = opts?.artistMaxResults ?? limit;
+        // Request 2x what we need to account for filtering
+        const artistSearchLimit = artistMaxResults * 2;
 
         promises.push(
           this.musicbrainzService
             .searchArtists(query, artistSearchLimit)
             .then(async artists => {
+              // === LOGGING: MusicBrainz Raw Results ===
+              console.log(`\n🎵 [MB Raw] MusicBrainz returned ${artists.length} artists for "${query}"`);
+              artists.forEach((a, i) => {
+                console.log(`  [${i+1}] "${a.name}" (MBID: ${a.id.substring(0, 8)}...) Score: ${a.score} Type: ${a.type || 'unknown'}`);
+              });
+              // === END LOGGING ===
+
               const resolveImages = opts?.resolveArtistImages === true;
               const imageCap = Math.max(
                 0,
@@ -462,6 +482,13 @@ export class SearchOrchestrator {
                 nameThreshold: opts?.nameSimThreshold ?? 0.82,
                 limit: artistMaxResults,
               });
+
+              // === LOGGING: After Filtering ===
+              console.log(`\n🔍 [MB Filter] After filtering: ${filtered.length}/${artists.length} artists kept (limit: ${artistMaxResults})`);
+              filtered.forEach((a, i) => {
+                console.log(`  [${i+1}] "${a.name}" (MBID: ${a.id.substring(0, 8)}...) Score: ${a.score}`);
+              });
+              // === END LOGGING ===
 
               if (resolveImages && imageCap > 0) {
                 const withImages = filtered.slice(
@@ -781,22 +808,54 @@ export class SearchOrchestrator {
       `[Deduplication] Starting with ${results.length} results (${results.filter(r => r.type === 'track').length} tracks)`
     );
 
+    // === LOGGING: Before Deduplication ===
+    if (results.some(r => r.type === 'artist')) {
+      const artists = results.filter(r => r.type === 'artist');
+      console.log(`\n🎨 [Before Dedup] ${artists.length} artists before deduplication:`);
+      artists.forEach((a, i) => {
+        const idPreview = a.id.length > 12 ? a.id.substring(0, 12) + '...' : a.id;
+        console.log(`  [${i+1}] "${a.title}" (ID: ${idPreview}) Source: ${a.source}`);
+      });
+    }
+    // === END LOGGING ===
+
     for (const result of results) {
       const keys = this.getDeduplicationKeys(result);
+
+      // === LOGGING: Deduplication Keys ===
+      if (result.type === 'artist') {
+        const idPreview = result.id.length > 12 ? result.id.substring(0, 12) + '...' : result.id;
+        console.log(`\n[Dedup Keys] Artist: "${result.title}" (ID: ${idPreview})`);
+        console.log(`  Keys: [${keys.join(', ')}]`);
+      }
+      // === END LOGGING ===
 
       if (result.type === 'track' && dedupedResults.length < 3) {
         console.log(`[Deduplication] Track "${result.title}" keys:`, keys);
       }
 
+      // Separate keys into unique IDs (high-confidence) and name-based (low-confidence)
+      const uniqueIdKeys = keys.filter(
+        k =>
+          k.startsWith('mbid-artist:') ||
+          k.startsWith('mbid-recording:') ||
+          k.startsWith('spotify:') ||
+          k.startsWith('isrc:') ||
+          k.startsWith('musicbrainz:') ||
+          k.startsWith('discogs:')
+      );
+
+      // Check if ANY unique ID key matches - if so, it's a true duplicate
       let isDuplicate = false;
-      for (const key of keys) {
+
+      for (const key of uniqueIdKeys) {
         if (seen.has(key)) {
           duplicatesRemoved++;
           isDuplicate = true;
 
-          if (result.type === 'track') {
+          if (result.type === 'artist') {
             console.log(
-              `[Deduplication] ❌ Track "${result.title}" is duplicate (matched key: ${key})`
+              `[Deduplication] ❌ Artist "${result.title}" is duplicate (matched unique ID key: ${key})`
             );
           }
 
@@ -812,10 +871,20 @@ export class SearchOrchestrator {
         }
       }
 
+      // If no unique ID key matched, it's NOT a duplicate (even if name matches)
+      // This allows multiple artists with the same name to coexist
       if (!isDuplicate) {
         dedupedResults.push(result);
+
+        // Register ALL keys (both unique ID and name-based) for this result
         for (const key of keys) {
           seen.set(key, result);
+        }
+
+        if (result.type === 'artist') {
+          console.log(
+            `[Deduplication] ✅ Artist "${result.title}" added (unique ID keys: [${uniqueIdKeys.join(', ')}])`
+          );
         }
       }
     }
@@ -826,6 +895,17 @@ export class SearchOrchestrator {
     console.log(
       `[Deduplication] Final track count: ${dedupedResults.filter(r => r.type === 'track').length}`
     );
+
+    // === LOGGING: After Deduplication ===
+    if (dedupedResults.some(r => r.type === 'artist')) {
+      const artists = dedupedResults.filter(r => r.type === 'artist');
+      console.log(`\n✅ [After Dedup] ${artists.length} artists after deduplication:`);
+      artists.forEach((a, i) => {
+        const idPreview = a.id.length > 12 ? a.id.substring(0, 12) + '...' : a.id;
+        console.log(`  [${i+1}] "${a.title}" (ID: ${idPreview}) Source: ${a.source}`);
+      });
+    }
+    // === END LOGGING ===
 
     return {
       results: dedupedResults,
@@ -873,15 +953,21 @@ export class SearchOrchestrator {
       }
     }
 
-    // For artist results, add Spotify matching
+    // For artist results, add source-specific IDs and name-based matching
     if (result.type === 'artist') {
-      const normalizedName = result.artist.toLowerCase().trim();
-      keys.push(`artist:${normalizedName}`);
+      // Priority 1: MusicBrainz Artist ID (UUID) - matches track pattern
+      if (result.id && result.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)) {
+        keys.push(`mbid-artist:${result.id}`);
+      }
 
-      // If Spotify result has Spotify ID, use it for matching
+      // Priority 2: Spotify ID
       if (result._spotify?.spotifyId) {
         keys.push(`spotify:${result._spotify.spotifyId}`);
       }
+
+      // Priority 3: Name-based matching (for cross-source deduplication)
+      const normalizedName = result.artist.toLowerCase().trim();
+      keys.push(`artist:${normalizedName}`);
     }
 
     // Priority 3: Fallback to artist-title matching
@@ -1161,6 +1247,17 @@ export class SearchOrchestrator {
       source: 'musicbrainz',
       relevanceScore: artist.score,
       _discogs: {},
+      _musicbrainz: {
+        disambiguation: artist.disambiguation,
+        country: artist.country,
+        lifeSpan: artist.lifeSpan
+          ? {
+              begin: artist.lifeSpan.begin,
+              end: artist.lifeSpan.end,
+              ended: artist.lifeSpan.ended,
+            }
+          : undefined,
+      },
     };
   }
 

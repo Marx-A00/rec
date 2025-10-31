@@ -105,7 +105,7 @@ export interface UnifiedSearchResult {
   genre: string[];
   label: string;
   // Preferred data source for this result (used for routing/fetching)
-  source?: 'musicbrainz' | 'discogs' | 'local';
+  source?: 'musicbrainz' | 'discogs' | 'local' | 'spotify';
   // MusicBrainz release type information
   primaryType?: string; // 'Album', 'Single', 'EP', 'Broadcast', 'Other'
   secondaryTypes?: string[]; // 'Compilation', 'Soundtrack', 'Live', 'Remix', 'DJ-mix', 'Mixtape/Street', etc.
@@ -143,6 +143,20 @@ export interface UnifiedSearchResult {
     spotifyId?: string;
     popularity?: number;
     genres?: string[];
+  };
+
+  _musicbrainz?: {
+    // Artist-specific fields
+    disambiguation?: string; // e.g., "UK death metal band"
+    country?: string; // ISO country code (GB, US, CA, etc.)
+    lifeSpan?: {
+      begin?: string; // Formation year (YYYY or YYYY-MM-DD)
+      end?: string;
+      ended?: boolean;
+    };
+    // Track-specific fields
+    recordingId?: string; // MusicBrainz Recording ID
+    isrc?: string; // International Standard Recording Code
   };
 
   // ===========================

@@ -673,7 +673,50 @@ const ContextAwareResult = ({
             {result.type === 'album' && result.artist
               ? truncateText(sanitizeArtistName(result.artist), maxArtistLength)
               : result.type === 'artist'
-                ? 'Artist'
+                ? (() => {
+                    // Build artist subtitle with disambiguation and metadata
+                    const parts: string[] = [];
+
+                    // Priority 1: MusicBrainz disambiguation (e.g., "UK death metal band")
+                    if ((result as any).disambiguation) {
+                      parts.push((result as any).disambiguation);
+                    }
+
+                    // Priority 2: Country (if no disambiguation)
+                    else if ((result as any).country) {
+                      const countryEmojis: Record<string, string> = {
+                        'US': '🇺🇸', 'GB': '🇬🇧', 'CA': '🇨🇦', 'AU': '🇦🇺',
+                        'DE': '🇩🇪', 'FR': '🇫🇷', 'SE': '🇸🇪', 'NO': '🇳🇴',
+                        'FI': '🇫🇮', 'DK': '🇩🇰', 'NL': '🇳🇱', 'BE': '🇧🇪',
+                        'IT': '🇮🇹', 'ES': '🇪🇸', 'JP': '🇯🇵', 'BR': '🇧🇷',
+                        'MX': '🇲🇽',
+                      };
+                      const emoji = countryEmojis[(result as any).country];
+                      const countryText = emoji ? `${emoji} ${(result as any).country}` : (result as any).country;
+                      parts.push(countryText);
+
+                      // Add type if available
+                      if (result.subtitle && result.subtitle !== 'Artist') {
+                        parts.push(result.subtitle);
+                      }
+                    }
+
+                    // Priority 3: Just type (Group/Person)
+                    else if (result.subtitle && result.subtitle !== 'Artist') {
+                      parts.push(result.subtitle);
+                    }
+
+                    // Add formation year if available
+                    if ((result as any).lifeSpan?.begin) {
+                      const year = (result as any).lifeSpan.begin.match(/^(\d{4})/)?.[1];
+                      if (year) {
+                        parts.push(`Since ${year}`);
+                      }
+                    }
+
+                    // Return formatted string or fallback
+                    return parts.length > 0 ? parts.join(' • ') : 'Artist';
+                  })()
                 : result.type === 'label'
                   ? 'Label'
                   : result.type === 'track'
