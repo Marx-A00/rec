@@ -1003,14 +1003,25 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      // Perform immediate database operation
-      const recommendation = await prisma.recommendation.create({
-        data: {
-          userId: user.id,
-          basisAlbumId,
-          recommendedAlbumId,
-          score,
-        },
+      // Perform immediate database operation and increment user's recommendations count
+      const recommendation = await prisma.$transaction(async tx => {
+        // Create the recommendation
+        const rec = await tx.recommendation.create({
+          data: {
+            userId: user.id,
+            basisAlbumId,
+            recommendedAlbumId,
+            score,
+          },
+        });
+
+        // Increment the user's recommendations count
+        await tx.user.update({
+          where: { id: user.id },
+          data: { recommendationsCount: { increment: 1 } },
+        });
+
+        return rec;
       });
 
       // Queue enrichment checks in background (non-blocking for faster response)
@@ -1099,20 +1110,31 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      const recommendation = await prisma.recommendation.findFirst({
-        where: {
-          id,
-          userId: user.id,
-        },
+      // Delete recommendation and update count in a transaction
+      await prisma.$transaction(async tx => {
+        const recommendation = await tx.recommendation.findFirst({
+          where: {
+            id,
+            userId: user.id,
+          },
+        });
+
+        if (!recommendation) {
+          throw new GraphQLError('Recommendation not found or access denied');
+        }
+
+        // Delete the recommendation
+        await tx.recommendation.delete({
+          where: { id },
+        });
+
+        // Decrement the user's recommendations count
+        await tx.user.update({
+          where: { id: user.id },
+          data: { recommendationsCount: { decrement: 1 } },
+        });
       });
 
-      if (!recommendation) {
-        throw new GraphQLError('Recommendation not found or access denied');
-      }
-
-      await prisma.recommendation.delete({
-        where: { id },
-      });
       return true;
     } catch (error) {
       throw new GraphQLError(`Failed to delete recommendation: ${error}`);
@@ -1130,12 +1152,31 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      const userFollow = await prisma.userFollow.create({
-        data: {
-          followerId: user.id,
-          followedId: userId,
-        },
+      // Create the follow relationship and update counts in a transaction
+      const userFollow = await prisma.$transaction(async tx => {
+        // Create the follow relationship
+        const follow = await tx.userFollow.create({
+          data: {
+            followerId: user.id,
+            followedId: userId,
+          },
+        });
+
+        // Increment the followed user's followers count
+        await tx.user.update({
+          where: { id: userId },
+          data: { followersCount: { increment: 1 } },
+        });
+
+        // Increment the current user's following count
+        await tx.user.update({
+          where: { id: user.id },
+          data: { followingCount: { increment: 1 } },
+        });
+
+        return follow;
       });
+
       return userFollow;
     } catch (error) {
       throw new GraphQLError(`Failed to follow user: ${error}`);
@@ -1148,12 +1189,32 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      await prisma.userFollow.deleteMany({
-        where: {
-          followerId: user.id,
-          followedId: userId,
-        },
+      // Delete the follow relationship and update counts in a transaction
+      await prisma.$transaction(async tx => {
+        // Delete the follow relationship
+        const result = await tx.userFollow.deleteMany({
+          where: {
+            followerId: user.id,
+            followedId: userId,
+          },
+        });
+
+        // Only decrement counts if a follow relationship was actually deleted
+        if (result.count > 0) {
+          // Decrement the followed user's followers count
+          await tx.user.update({
+            where: { id: userId },
+            data: { followersCount: { decrement: 1 } },
+          });
+
+          // Decrement the current user's following count
+          await tx.user.update({
+            where: { id: user.id },
+            data: { followingCount: { decrement: 1 } },
+          });
+        }
       });
+
       return true;
     } catch (error) {
       throw new GraphQLError(`Failed to unfollow user: ${error}`);

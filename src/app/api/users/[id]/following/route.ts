@@ -85,6 +85,15 @@ export async function GET(
     // Get next cursor
     const nextCursor = hasMore ? results[results.length - 1]?.id : null;
 
+    // Get the IDs of users that the current user follows
+    const currentUserFollowing = await prisma.userFollow.findMany({
+      where: { followerId: session.user.id },
+      select: { followedId: true },
+    });
+    const followedIds = new Set(
+      currentUserFollowing.map(f => f.followedId)
+    );
+
     // Transform the data for the response
     const followingData = results.map((follow: any) => ({
       id: follow.followed.id,
@@ -96,6 +105,7 @@ export async function GET(
       followingCount: follow.followed.followingCount,
       recommendationsCount: follow.followed.recommendationsCount,
       followedAt: follow.createdAt.toISOString(),
+      isFollowing: followedIds.has(follow.followed.id),
     }));
 
     return NextResponse.json({

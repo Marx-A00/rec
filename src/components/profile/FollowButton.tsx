@@ -10,17 +10,19 @@ import {
 
 export default function FollowButton({
   userId,
+  initialFollowing = false,
   onFollowChange,
   className,
 }: {
   userId: string;
+  initialFollowing?: boolean;
   onFollowChange?: (
     isFollowing: boolean,
     newCounts?: { followersCount: number; followingCount: number }
   ) => void;
   className?: string;
 }) {
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(initialFollowing);
   const followMutation = useFollowUserMutation();
   const unfollowMutation = useUnfollowUserMutation();
 

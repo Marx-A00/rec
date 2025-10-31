@@ -16,6 +16,7 @@ interface UserListItemProps {
     followingCount: number;
     recommendationsCount: number;
     followedAt?: string;
+    isFollowing?: boolean;
   };
   currentUserId?: string;
   showFollowButton?: boolean;
@@ -119,6 +120,7 @@ export default function UserListItem({
               <div className='flex-shrink-0'>
                 <FollowButton
                   userId={user.id}
+                  initialFollowing={user.isFollowing}
                   onFollowChange={handleFollowChange}
                   className='text-sm px-3 py-1.5'
                 />
