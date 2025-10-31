@@ -109,56 +109,58 @@ function extractDisambiguationKeywords(disambiguation?: string): string[] {
  * e.g., "UK death metal band" → "gb"
  * e.g., "Canadian rock band" → "ca"
  */
-function extractCountryFromDisambiguation(disambiguation?: string): string | undefined {
+function extractCountryFromDisambiguation(
+  disambiguation?: string
+): string | undefined {
   if (!disambiguation) return undefined;
 
   const normalized = disambiguation.toLowerCase();
 
   // Country name mappings
   const countryMappings: Record<string, string> = {
-    'uk': 'GB',
+    uk: 'GB',
     'united kingdom': 'GB',
-    'british': 'GB',
-    'england': 'GB',
-    'english': 'GB',
-    'scotland': 'GB',
-    'scottish': 'GB',
-    'wales': 'GB',
-    'welsh': 'GB',
-    'us': 'US',
-    'usa': 'US',
+    british: 'GB',
+    england: 'GB',
+    english: 'GB',
+    scotland: 'GB',
+    scottish: 'GB',
+    wales: 'GB',
+    welsh: 'GB',
+    us: 'US',
+    usa: 'US',
     'united states': 'US',
-    'american': 'US',
-    'canada': 'CA',
-    'canadian': 'CA',
-    'australia': 'AU',
-    'australian': 'AU',
-    'germany': 'DE',
-    'german': 'DE',
-    'france': 'FR',
-    'french': 'FR',
-    'sweden': 'SE',
-    'swedish': 'SE',
-    'norway': 'NO',
-    'norwegian': 'NO',
-    'finland': 'FI',
-    'finnish': 'FI',
-    'denmark': 'DK',
-    'danish': 'DK',
-    'netherlands': 'NL',
-    'dutch': 'NL',
-    'belgium': 'BE',
-    'belgian': 'BE',
-    'italy': 'IT',
-    'italian': 'IT',
-    'spain': 'ES',
-    'spanish': 'ES',
-    'japan': 'JP',
-    'japanese': 'JP',
-    'brazil': 'BR',
-    'brazilian': 'BR',
-    'mexico': 'MX',
-    'mexican': 'MX',
+    american: 'US',
+    canada: 'CA',
+    canadian: 'CA',
+    australia: 'AU',
+    australian: 'AU',
+    germany: 'DE',
+    german: 'DE',
+    france: 'FR',
+    french: 'FR',
+    sweden: 'SE',
+    swedish: 'SE',
+    norway: 'NO',
+    norwegian: 'NO',
+    finland: 'FI',
+    finnish: 'FI',
+    denmark: 'DK',
+    danish: 'DK',
+    netherlands: 'NL',
+    dutch: 'NL',
+    belgium: 'BE',
+    belgian: 'BE',
+    italy: 'IT',
+    italian: 'IT',
+    spain: 'ES',
+    spanish: 'ES',
+    japan: 'JP',
+    japanese: 'JP',
+    brazil: 'BR',
+    brazilian: 'BR',
+    mexico: 'MX',
+    mexican: 'MX',
   };
 
   for (const [keyword, countryCode] of Object.entries(countryMappings)) {
@@ -197,7 +199,10 @@ function calculateGenreOverlap(
   for (const mbKeyword of normalizedMbKeywords) {
     for (const spotifyGenre of normalizedSpotifyGenres) {
       // Check if keyword is contained in genre or vice versa
-      if (spotifyGenre.includes(mbKeyword) || mbKeyword.includes(spotifyGenre)) {
+      if (
+        spotifyGenre.includes(mbKeyword) ||
+        mbKeyword.includes(spotifyGenre)
+      ) {
         matches++;
         break;
       }
@@ -205,7 +210,8 @@ function calculateGenreOverlap(
   }
 
   // Jaccard similarity
-  const union = normalizedSpotifyGenres.length + normalizedMbKeywords.length - matches;
+  const union =
+    normalizedSpotifyGenres.length + normalizedMbKeywords.length - matches;
   return union > 0 ? matches / union : 0;
 }
 
@@ -269,9 +275,10 @@ function matchCountry(
  * Calculate similarity based on formation year
  * Prefer artists formed in similar time periods
  */
-function calculateFormationYearSimilarity(
-  mbLifeSpan?: { begin?: string; end?: string }
-): number {
+function calculateFormationYearSimilarity(mbLifeSpan?: {
+  begin?: string;
+  end?: string;
+}): number {
   if (!mbLifeSpan?.begin) return 0.5; // Neutral score if unknown
 
   // Extract year from lifeSpan.begin (format: "YYYY" or "YYYY-MM-DD")

@@ -19,7 +19,11 @@ export function isAdmin(role?: UserRole | null): boolean {
  * Check if a user has moderator privileges or higher
  */
 export function isModerator(role?: UserRole | null): boolean {
-  return role === UserRole.MODERATOR || role === UserRole.ADMIN || role === UserRole.OWNER;
+  return (
+    role === UserRole.MODERATOR ||
+    role === UserRole.ADMIN ||
+    role === UserRole.OWNER
+  );
 }
 
 /**

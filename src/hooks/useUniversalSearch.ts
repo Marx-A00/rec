@@ -5,9 +5,6 @@ import {
   SearchType,
   SearchMode as GraphQLSearchMode,
 } from '@/generated/graphql';
-
-export type SearchMode = 'LOCAL_ONLY' | 'LOCAL_AND_EXTERNAL' | 'EXTERNAL_ONLY';
-
 import {
   UnifiedSearchResult,
   SearchFilters,
@@ -15,6 +12,8 @@ import {
   SortBy,
   GroupBy,
 } from '@/types/search';
+
+export type SearchMode = 'LOCAL_ONLY' | 'LOCAL_AND_EXTERNAL' | 'EXTERNAL_ONLY';
 
 // ========================================
 // Types from UniversalSearchBar (Phase 3 Enhanced)
@@ -268,11 +267,12 @@ export function useUniversalSearch(
         });
 
         // For external tracks (trackNumber = 0), show album title without track number
-        const subtitle = track.trackNumber > 0
-          ? `Track ${track.trackNumber}${track.album ? ` - ${track.album.title}` : ''}`
-          : track.album?.title
-            ? `from ${track.album.title}`
-            : 'Track';
+        const subtitle =
+          track.trackNumber > 0
+            ? `Track ${track.trackNumber}${track.album ? ` - ${track.album.title}` : ''}`
+            : track.album?.title
+              ? `from ${track.album.title}`
+              : 'Track';
 
         transformedResults.push({
           id: track.id,

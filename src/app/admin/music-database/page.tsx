@@ -170,8 +170,12 @@ export default function MusicDatabasePage() {
   } = useSearchAlbumsAdminQuery(
     {
       query: debouncedSearchQuery || undefined,
-      dataQuality: filters.dataQuality !== 'all' ? filters.dataQuality : undefined,
-      enrichmentStatus: filters.enrichmentStatus !== 'all' ? filters.enrichmentStatus : undefined,
+      dataQuality:
+        filters.dataQuality !== 'all' ? filters.dataQuality : undefined,
+      enrichmentStatus:
+        filters.enrichmentStatus !== 'all'
+          ? filters.enrichmentStatus
+          : undefined,
       needsEnrichment: filters.needsEnrichment || undefined,
       sortBy: sortBy,
       sortOrder: sortOrder,
@@ -180,10 +184,12 @@ export default function MusicDatabasePage() {
     },
     {
       enabled: activeTab === 'albums',
-      refetchInterval: (query) => {
+      refetchInterval: query => {
         // Enable polling if any albums are in progress
         const albums = query.state.data?.searchAlbums || [];
-        const hasInProgress = albums.some((a: any) => a.enrichmentStatus === 'IN_PROGRESS');
+        const hasInProgress = albums.some(
+          (a: any) => a.enrichmentStatus === 'IN_PROGRESS'
+        );
         return hasInProgress ? 3000 : false; // Poll every 3 seconds
       },
     }
@@ -197,8 +203,12 @@ export default function MusicDatabasePage() {
   } = useSearchArtistsAdminQuery(
     {
       query: debouncedSearchQuery || undefined,
-      dataQuality: filters.dataQuality !== 'all' ? filters.dataQuality : undefined,
-      enrichmentStatus: filters.enrichmentStatus !== 'all' ? filters.enrichmentStatus : undefined,
+      dataQuality:
+        filters.dataQuality !== 'all' ? filters.dataQuality : undefined,
+      enrichmentStatus:
+        filters.enrichmentStatus !== 'all'
+          ? filters.enrichmentStatus
+          : undefined,
       needsEnrichment: filters.needsEnrichment || undefined,
       sortBy: sortBy,
       sortOrder: sortOrder,
@@ -207,9 +217,11 @@ export default function MusicDatabasePage() {
     },
     {
       enabled: activeTab === 'artists',
-      refetchInterval: (query) => {
+      refetchInterval: query => {
         const artists = query.state.data?.searchArtists || [];
-        const hasInProgress = artists.some((a: any) => a.enrichmentStatus === 'IN_PROGRESS');
+        const hasInProgress = artists.some(
+          (a: any) => a.enrichmentStatus === 'IN_PROGRESS'
+        );
         return hasInProgress ? 3000 : false;
       },
     }

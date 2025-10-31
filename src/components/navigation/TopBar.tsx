@@ -25,10 +25,14 @@ const MosaicControls: FC = () => {
     return null;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const { useSplitMosaic } = require('@/contexts/SplitMosaicContext');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const MosaicHeaderControls =
     require('@/components/dashboard/MosaicHeaderControls').default;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const WidgetLibrary = require('@/components/dashboard/WidgetLibrary').default;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const { createPortal } = require('react-dom');
 
   const [showWidgetLibrary, setShowWidgetLibrary] = React.useState(false);
@@ -73,6 +77,7 @@ export const TopBar: FC<TopBarProps> = ({
   let isEditMode = false;
   if (isHomePage) {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
       const { useSplitMosaic } = require('@/contexts/SplitMosaicContext');
       const { state: mosaicState } = useSplitMosaic();
       isEditMode = mosaicState.isEditMode;

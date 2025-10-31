@@ -16,6 +16,7 @@ import {
   Info,
   Shield,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { useAdminUsersQuery } from '@/hooks/useAdminUsersQuery';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -35,7 +36,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 import { useUpdateUserRoleMutation, UserRole } from '@/generated/graphql';
 
 export default function AdminUsersPage() {
@@ -47,7 +47,11 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedRole, setSelectedRole] = useState<string>('');
 
-  const { data, isLoading, error, refetch } = useAdminUsersQuery(page, 20, search);
+  const { data, isLoading, error, refetch } = useAdminUsersQuery(
+    page,
+    20,
+    search
+  );
   const updateUserRoleMutation = useUpdateUserRoleMutation();
 
   const toggleExpanded = (id: string) => {
@@ -92,7 +96,9 @@ export default function AdminUsersPage() {
       });
 
       if (result.updateUserRole?.success) {
-        toast.success(result.updateUserRole.message || 'Role updated successfully');
+        toast.success(
+          result.updateUserRole.message || 'Role updated successfully'
+        );
         setRoleModalOpen(false);
         // Refresh the data
         await refetch();
@@ -116,14 +122,10 @@ export default function AdminUsersPage() {
                 <div className='text-xs text-zinc-500 uppercase mb-1'>
                   User ID
                 </div>
-                <div className='text-sm text-zinc-300 font-mono'>
-                  {user.id}
-                </div>
+                <div className='text-sm text-zinc-300 font-mono'>{user.id}</div>
               </div>
               <div>
-                <div className='text-xs text-zinc-500 uppercase mb-1'>
-                  Role
-                </div>
+                <div className='text-xs text-zinc-500 uppercase mb-1'>Role</div>
                 <div className='text-sm text-zinc-300 flex items-center gap-2'>
                   {(user.role === 'ADMIN' || user.role === 'OWNER') && (
                     <Shield className='h-3 w-3 text-emeraled-green' />
@@ -470,7 +472,10 @@ export default function AdminUsersPage() {
                       </td>
                     </tr>
                     {expandedRows.has(user.id) && (
-                      <UserExpandedContent key={`${user.id}-expanded`} user={user} />
+                      <UserExpandedContent
+                        key={`${user.id}-expanded`}
+                        user={user}
+                      />
                     )}
                   </React.Fragment>
                 ))

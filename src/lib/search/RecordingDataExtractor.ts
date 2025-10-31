@@ -137,7 +137,7 @@ export class RecordingDataExtractor {
       name: artist.name,
       sortName: artist['sort-name'] || artist.name,
       disambiguation: artist.disambiguation,
-      aliases: (artist.aliases || []).map((a) => a.name),
+      aliases: (artist.aliases || []).map(a => a.name),
     };
   }
 
@@ -149,7 +149,7 @@ export class RecordingDataExtractor {
     const releases = recording.releases || [];
     const releaseGroupMap = new Map<string, ExtractedAlbum>();
 
-    releases.forEach((release) => {
+    releases.forEach(release => {
       const rg = release['release-group'];
       if (!rg?.id) return;
 
@@ -157,7 +157,7 @@ export class RecordingDataExtractor {
       if (releaseGroupMap.has(rg.id)) return;
 
       const isCompilation = (rg['secondary-types'] || []).some(
-        (t) => t.toLowerCase() === 'compilation'
+        t => t.toLowerCase() === 'compilation'
       );
 
       releaseGroupMap.set(rg.id, {
@@ -175,9 +175,7 @@ export class RecordingDataExtractor {
       if (a.isCompilation !== b.isCompilation) {
         return a.isCompilation ? 1 : -1;
       }
-      return (b.firstReleaseDate || '').localeCompare(
-        a.firstReleaseDate || ''
-      );
+      return (b.firstReleaseDate || '').localeCompare(a.firstReleaseDate || '');
     });
   }
 
@@ -201,7 +199,7 @@ export class RecordingDataExtractor {
     const albums = this.extractAlbums(recording);
 
     // Filter to non-compilations
-    const nonCompilations = albums.filter((a) => !a.isCompilation);
+    const nonCompilations = albums.filter(a => !a.isCompilation);
 
     // Return first non-compilation, or first overall if only compilations exist
     return nonCompilations[0] || albums[0] || null;

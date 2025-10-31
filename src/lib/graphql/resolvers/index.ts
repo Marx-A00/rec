@@ -246,17 +246,29 @@ export const resolvers: Resolvers = {
         });
 
         // Use deduplicated results from orchestrator instead of raw source results
-        console.log(`\n🔍 [GraphQL Resolver] Using deduplicated results from orchestrator`);
-        console.log(`   Total deduplicated results: ${searchResult.results.length}`);
-        console.log(`   Breakdown: ${searchResult.results.filter(r => r.type === 'track').length} tracks, ${searchResult.results.filter(r => r.type === 'album').length} albums, ${searchResult.results.filter(r => r.type === 'artist').length} artists`);
+        console.log(
+          `\n🔍 [GraphQL Resolver] Using deduplicated results from orchestrator`
+        );
+        console.log(
+          `   Total deduplicated results: ${searchResult.results.length}`
+        );
+        console.log(
+          `   Breakdown: ${searchResult.results.filter(r => r.type === 'track').length} tracks, ${searchResult.results.filter(r => r.type === 'album').length} albums, ${searchResult.results.filter(r => r.type === 'artist').length} artists`
+        );
 
         // Debug: log source values
         if (searchResult.results.length > 0) {
-          console.log(`   First result source: "${searchResult.results[0].source}"`);
+          console.log(
+            `   First result source: "${searchResult.results[0].source}"`
+          );
           console.log(`   Source distribution:`, {
-            local: searchResult.results.filter(r => r.source === 'local').length,
-            musicbrainz: searchResult.results.filter(r => r.source === 'musicbrainz').length,
-            spotify: searchResult.results.filter(r => r.source === 'spotify').length,
+            local: searchResult.results.filter(r => r.source === 'local')
+              .length,
+            musicbrainz: searchResult.results.filter(
+              r => r.source === 'musicbrainz'
+            ).length,
+            spotify: searchResult.results.filter(r => r.source === 'spotify')
+              .length,
             undefined: searchResult.results.filter(r => !r.source).length,
           });
         }
@@ -268,9 +280,10 @@ export const resolvers: Resolvers = {
         const allResults = searchResult.results;
         const localResults = allResults.filter(r => r.source === 'local');
         // For MusicBrainz results, we need to check both the source field and fallback to context
-        const musicbrainzResults = allResults.filter(r =>
-          r.source === 'musicbrainz' ||
-          (!r.source && sources.includes(SearchSource.MUSICBRAINZ))
+        const musicbrainzResults = allResults.filter(
+          r =>
+            r.source === 'musicbrainz' ||
+            (!r.source && sources.includes(SearchSource.MUSICBRAINZ))
         );
         const spotifyResults = allResults.filter(r => r.source === 'spotify');
 
@@ -491,12 +504,15 @@ export const resolvers: Resolvers = {
 
           if (candidates.length === 0) {
             // No match found, keep original image
-            graphqlLogger.warn({
-              context: 'spotify_enrich',
-              artistName: mbArtist.name,
-              musicbrainzId: mbArtist.musicbrainzId,
-              artistType: mbArtist.subtitle,
-            }, 'No Spotify match found for artist');
+            graphqlLogger.warn(
+              {
+                context: 'spotify_enrich',
+                artistName: mbArtist.name,
+                musicbrainzId: mbArtist.musicbrainzId,
+                artistType: mbArtist.subtitle,
+              },
+              'No Spotify match found for artist'
+            );
             return mbArtist;
           }
 
@@ -504,12 +520,15 @@ export const resolvers: Resolvers = {
             // Single match, use it
             const match = candidates[0];
             match.matched = true;
-            graphqlLogger.info({
-              context: 'spotify_enrich',
-              artistName: mbArtist.name,
-              spotifyPopularity: match.popularity,
-              spotifyGenres: match.genres.slice(0, 2),
-            }, 'Successfully matched artist with Spotify (single candidate)');
+            graphqlLogger.info(
+              {
+                context: 'spotify_enrich',
+                artistName: mbArtist.name,
+                spotifyPopularity: match.popularity,
+                spotifyGenres: match.genres.slice(0, 2),
+              },
+              'Successfully matched artist with Spotify (single candidate)'
+            );
             return {
               ...mbArtist,
               imageUrl: match.imageUrl,
@@ -544,7 +563,9 @@ export const resolvers: Resolvers = {
             score += (candidate.popularity / 100) * 20;
 
             // Genre/subtitle matching (0-40 points)
-            const context = [mbArtist.subtitle, ...(mbArtist.genre || [])].join(' ').toLowerCase();
+            const context = [mbArtist.subtitle, ...(mbArtist.genre || [])]
+              .join(' ')
+              .toLowerCase();
             const genreText = candidate.genres.join(' ').toLowerCase();
 
             // Check for keyword matches
@@ -570,16 +591,19 @@ export const resolvers: Resolvers = {
           const bestMatch = scored[0].candidate;
           bestMatch.matched = true;
 
-          graphqlLogger.info({
-            context: 'spotify_enrich',
-            artistName: mbArtist.name,
-            mbArtistType: mbArtist.subtitle,
-            mbTags: mbArtist.genre?.slice(0, 2),
-            spotifyPopularity: bestMatch.popularity,
-            spotifyGenres: bestMatch.genres.slice(0, 2),
-            matchScore: scored[0].score,
-            candidateCount: candidates.length,
-          }, 'Matched artist from multiple Spotify candidates using intelligent matching');
+          graphqlLogger.info(
+            {
+              context: 'spotify_enrich',
+              artistName: mbArtist.name,
+              mbArtistType: mbArtist.subtitle,
+              mbTags: mbArtist.genre?.slice(0, 2),
+              spotifyPopularity: bestMatch.popularity,
+              spotifyGenres: bestMatch.genres.slice(0, 2),
+              matchScore: scored[0].score,
+              candidateCount: candidates.length,
+            },
+            'Matched artist from multiple Spotify candidates using intelligent matching'
+          );
 
           return {
             ...mbArtist,
@@ -598,21 +622,29 @@ export const resolvers: Resolvers = {
             !existingMbTrackIds.has(r.id) &&
             !dbTrackIds.has(r.id)
         );
-        console.log(`\n🎵 [Track Filtering] Found ${mbTracks.length} MusicBrainz tracks before score filter`);
+        console.log(
+          `\n🎵 [Track Filtering] Found ${mbTracks.length} MusicBrainz tracks before score filter`
+        );
         const scoreFiltered = mbTracks.filter(
           r =>
             (typeof r.relevanceScore === 'number' ? r.relevanceScore : 0) >=
             MIN_TRACK_MB_SCORE
         );
-        console.log(`   After score filter (>=${MIN_TRACK_MB_SCORE}): ${scoreFiltered.length} tracks`);
-        console.log(`   Filtered out: ${mbTracks.length - scoreFiltered.length} tracks`);
+        console.log(
+          `   After score filter (>=${MIN_TRACK_MB_SCORE}): ${scoreFiltered.length} tracks`
+        );
+        console.log(
+          `   Filtered out: ${mbTracks.length - scoreFiltered.length} tracks`
+        );
         if (mbTracks.length > scoreFiltered.length) {
           const rejected = mbTracks.filter(
             r =>
               (typeof r.relevanceScore === 'number' ? r.relevanceScore : 0) <
               MIN_TRACK_MB_SCORE
           );
-          console.log(`   Rejected track scores: ${rejected.map(r => `"${r.title}" (${r.relevanceScore || 0})`).join(', ')}\n`);
+          console.log(
+            `   Rejected track scores: ${rejected.map(r => `"${r.title}" (${r.relevanceScore || 0})`).join(', ')}\n`
+          );
         }
 
         const newMbTracks = scoreFiltered
@@ -630,12 +662,15 @@ export const resolvers: Resolvers = {
 
             // Debug: log the first release structure
             if (firstRelease) {
-              graphqlLogger.debug({
-                context: 'track_search',
-                releaseId: firstRelease.id,
-                releaseTitle: firstRelease.title,
-                releaseGroup: firstRelease['release-group'],
-              }, 'Track release structure');
+              graphqlLogger.debug(
+                {
+                  context: 'track_search',
+                  releaseId: firstRelease.id,
+                  releaseTitle: firstRelease.title,
+                  releaseGroup: firstRelease['release-group'],
+                },
+                'Track release structure'
+              );
             }
 
             // Use release-group ID for navigation, release ID for cover art
@@ -682,17 +717,20 @@ export const resolvers: Resolvers = {
 
         // Log MusicBrainz track data for debugging
         if (newMbTracks.length > 0) {
-          graphqlLogger.debug({
-            context: 'track_search',
-            trackCount: newMbTracks.length,
-            firstTrack: {
-              id: newMbTracks[0].id,
-              title: newMbTracks[0].title,
-              albumId: newMbTracks[0].albumId,
-              hasAlbum: !!newMbTracks[0].album,
-              hasCoverArt: !!newMbTracks[0].searchCoverArtUrl,
+          graphqlLogger.debug(
+            {
+              context: 'track_search',
+              trackCount: newMbTracks.length,
+              firstTrack: {
+                id: newMbTracks[0].id,
+                title: newMbTracks[0].title,
+                albumId: newMbTracks[0].albumId,
+                hasAlbum: !!newMbTracks[0].album,
+                hasCoverArt: !!newMbTracks[0].searchCoverArtUrl,
+              },
             },
-          }, 'Created MusicBrainz tracks from search');
+            'Created MusicBrainz tracks from search'
+          );
         }
 
         // Transform local DB albums to UnifiedRelease format
@@ -796,13 +834,16 @@ export const resolvers: Resolvers = {
         const rankedArtists = artists
           .map(a => {
             const score = scoreArtist(a);
-            graphqlLogger.debug({
-              context: 'artist_ranking',
-              artistName: a.name,
-              musicbrainzId: a.musicbrainzId,
-              score,
-              hasImage: !!a.imageUrl,
-            }, 'Ranked artist');
+            graphqlLogger.debug(
+              {
+                context: 'artist_ranking',
+                artistName: a.name,
+                musicbrainzId: a.musicbrainzId,
+                score,
+                hasImage: !!a.imageUrl,
+              },
+              'Ranked artist'
+            );
             return { a, s: score };
           })
           .sort((x, y) => y.s - x.s)
@@ -811,11 +852,20 @@ export const resolvers: Resolvers = {
         // Name-level deduplication REMOVED - SearchOrchestrator already handles
         // deduplication correctly using unique IDs (MBIDs, Spotify IDs).
         // Multiple artists with the same name are intentionally kept as separate results.
-        console.log(`\n🎯 [GraphQL] Keeping all ${artists.length} artists (name-level dedup removed):`);
+        console.log(
+          `\n🎯 [GraphQL] Keeping all ${artists.length} artists (name-level dedup removed):`
+        );
         artists.forEach((a, i) => {
-          const idPreview = String(a.id).length > 12 ? String(a.id).substring(0, 12) + '...' : String(a.id);
-          const mbidPreview = a.musicbrainzId ? a.musicbrainzId.substring(0, 8) + '...' : 'none';
-          console.log(`  [${i+1}] "${a.name}" (ID: ${idPreview}) MBID: ${mbidPreview} Source: ${a.source || 'unknown'}`);
+          const idPreview =
+            String(a.id).length > 12
+              ? String(a.id).substring(0, 12) + '...'
+              : String(a.id);
+          const mbidPreview = a.musicbrainzId
+            ? a.musicbrainzId.substring(0, 8) + '...'
+            : 'none';
+          console.log(
+            `  [${i + 1}] "${a.name}" (ID: ${idPreview}) MBID: ${mbidPreview} Source: ${a.source || 'unknown'}`
+          );
         });
 
         // Use rankedArtists directly (no additional dedup)

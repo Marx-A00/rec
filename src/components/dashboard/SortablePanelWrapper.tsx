@@ -141,69 +141,69 @@ export default function SortablePanelWrapper({
           bg-zinc-800/80 border-b border-zinc-700 pointer-events-auto
         `}
         >
-        {/* Left side - Drag handle */}
-        <div className='flex items-center gap-2 w-24'>
-          {isEditMode && (
-            <div
-              className='cursor-grab hover:cursor-grabbing pointer-events-auto'
-              {...listeners}
-            >
-              <GripVertical className='w-4 h-4 text-zinc-400' />
-            </div>
-          )}
-        </div>
-
-        {/* Center - Title */}
-        <div className='flex-1 flex justify-center'>
-          <h3 className='text-sm font-medium text-white'>
-            {panel.config.headerTitle || panelDefinition.displayName}
-          </h3>
-        </div>
-
-        {/* Right side - Edit controls */}
-        <div className='flex items-center gap-1 w-24 justify-end'>
-          {isEditMode && (
-            <>
-              <Button
-                variant='ghost'
-                size='sm'
-                className='h-6 w-6 p-0 hover:bg-blue-600/20 text-blue-400 pointer-events-auto'
-                onClick={e => {
-                  e.stopPropagation();
-                  handleUngroupPanel();
-                }}
-                title='Move to main layout'
+          {/* Left side - Drag handle */}
+          <div className='flex items-center gap-2 w-24'>
+            {isEditMode && (
+              <div
+                className='cursor-grab hover:cursor-grabbing pointer-events-auto'
+                {...listeners}
               >
-                <Ungroup className='w-3 h-3' />
-              </Button>
+                <GripVertical className='w-4 h-4 text-zinc-400' />
+              </div>
+            )}
+          </div>
 
-              <Button
-                variant='ghost'
-                size='sm'
-                className='h-6 w-6 p-0 hover:bg-zinc-700 pointer-events-auto'
-                onClick={e => {
-                  e.stopPropagation();
-                  // TODO: Open panel settings modal
-                  console.log('Open settings for panel:', panel.id);
-                }}
-              >
-                <Settings className='w-3 h-3' />
-              </Button>
+          {/* Center - Title */}
+          <div className='flex-1 flex justify-center'>
+            <h3 className='text-sm font-medium text-white'>
+              {panel.config.headerTitle || panelDefinition.displayName}
+            </h3>
+          </div>
 
-              <Button
-                variant='ghost'
-                size='sm'
-                className='h-6 w-6 p-0 hover:bg-red-600/20 text-red-400 pointer-events-auto'
-                onClick={e => {
-                  e.stopPropagation();
-                  handleRemovePanel();
-                }}
-              >
-                <X className='w-3 h-3' />
-              </Button>
-            </>
-          )}
-        </div>
+          {/* Right side - Edit controls */}
+          <div className='flex items-center gap-1 w-24 justify-end'>
+            {isEditMode && (
+              <>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  className='h-6 w-6 p-0 hover:bg-blue-600/20 text-blue-400 pointer-events-auto'
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleUngroupPanel();
+                  }}
+                  title='Move to main layout'
+                >
+                  <Ungroup className='w-3 h-3' />
+                </Button>
+
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  className='h-6 w-6 p-0 hover:bg-zinc-700 pointer-events-auto'
+                  onClick={e => {
+                    e.stopPropagation();
+                    // TODO: Open panel settings modal
+                    console.log('Open settings for panel:', panel.id);
+                  }}
+                >
+                  <Settings className='w-3 h-3' />
+                </Button>
+
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  className='h-6 w-6 p-0 hover:bg-red-600/20 text-red-400 pointer-events-auto'
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleRemovePanel();
+                  }}
+                >
+                  <X className='w-3 h-3' />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       )}
 

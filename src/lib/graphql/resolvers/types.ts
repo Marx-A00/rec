@@ -168,7 +168,10 @@ export const typeResolvers: Resolvers = {
       // If this is a search result track (from MusicBrainz, etc.), return a mock album with cover art
       // Use the new schema fields instead of private fields
       if ((parent as any).searchCoverArtUrl) {
-        console.log('[Track.album resolver] Found searchCoverArtUrl:', (parent as any).searchCoverArtUrl);
+        console.log(
+          '[Track.album resolver] Found searchCoverArtUrl:',
+          (parent as any).searchCoverArtUrl
+        );
         return {
           id: parent.id, // Use track ID as placeholder
           title: '', // Will be populated if needed
@@ -188,7 +191,10 @@ export const typeResolvers: Resolvers = {
       // If this is a search result track, return mock artist from search
       // Use the new schema field instead of private field
       if ((parent as any).searchArtistName) {
-        console.log('[Track.artists resolver] Found searchArtistName:', (parent as any).searchArtistName);
+        console.log(
+          '[Track.artists resolver] Found searchArtistName:',
+          (parent as any).searchArtistName
+        );
         return [
           {
             artist: {

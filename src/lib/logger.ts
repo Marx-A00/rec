@@ -1,4 +1,5 @@
 import pino from 'pino';
+
 import { getCorrelationContext } from './correlation-context';
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -10,7 +11,7 @@ const logLevel = process.env.LOG_LEVEL || (isDev ? 'debug' : 'info');
 export const logger = pino({
   level: logLevel,
   formatters: {
-    level: (label) => ({ level: label.toUpperCase() }),
+    level: label => ({ level: label.toUpperCase() }),
   },
   // Automatically include correlation ID in all logs
   mixin: () => {

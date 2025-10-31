@@ -266,7 +266,10 @@ export class QueuedMusicBrainzService {
       const result = await this.waitForJobViaEvents(job.id!);
 
       if (!result.success) {
-        console.warn('MusicBrainz recording search failed:', result.error?.message);
+        console.warn(
+          'MusicBrainz recording search failed:',
+          result.error?.message
+        );
         return []; // Return empty array instead of throwing - allow search to continue
       }
 

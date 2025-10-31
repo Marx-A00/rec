@@ -12,7 +12,10 @@ import { createGraphQLContext, GraphQLContext } from '@/lib/graphql/context';
 import { resolvers } from '@/lib/graphql/resolvers';
 import { formatError } from '@/lib/graphql/errors';
 import { prisma } from '@/lib/prisma';
-import { runWithCorrelationId, generateCorrelationId } from '@/lib/correlation-context';
+import {
+  runWithCorrelationId,
+  generateCorrelationId,
+} from '@/lib/correlation-context';
 
 // Load GraphQL schema from file
 const typeDefs = readFileSync(
@@ -37,7 +40,8 @@ const handler = startServerAndCreateNextHandler(server, {
 
 // Export route handlers for Next.js App Router with correlation ID context
 export async function GET(request: NextRequest) {
-  const correlationId = request.headers.get('x-correlation-id') || generateCorrelationId();
+  const correlationId =
+    request.headers.get('x-correlation-id') || generateCorrelationId();
 
   const response = await runWithCorrelationId(
     correlationId,
@@ -51,7 +55,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const correlationId = request.headers.get('x-correlation-id') || generateCorrelationId();
+  const correlationId =
+    request.headers.get('x-correlation-id') || generateCorrelationId();
 
   const response = await runWithCorrelationId(
     correlationId,

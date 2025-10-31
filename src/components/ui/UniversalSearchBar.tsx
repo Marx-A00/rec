@@ -685,14 +685,28 @@ const ContextAwareResult = ({
                     // Priority 2: Country (if no disambiguation)
                     else if ((result as any).country) {
                       const countryEmojis: Record<string, string> = {
-                        'US': '🇺🇸', 'GB': '🇬🇧', 'CA': '🇨🇦', 'AU': '🇦🇺',
-                        'DE': '🇩🇪', 'FR': '🇫🇷', 'SE': '🇸🇪', 'NO': '🇳🇴',
-                        'FI': '🇫🇮', 'DK': '🇩🇰', 'NL': '🇳🇱', 'BE': '🇧🇪',
-                        'IT': '🇮🇹', 'ES': '🇪🇸', 'JP': '🇯🇵', 'BR': '🇧🇷',
-                        'MX': '🇲🇽',
+                        US: '🇺🇸',
+                        GB: '🇬🇧',
+                        CA: '🇨🇦',
+                        AU: '🇦🇺',
+                        DE: '🇩🇪',
+                        FR: '🇫🇷',
+                        SE: '🇸🇪',
+                        NO: '🇳🇴',
+                        FI: '🇫🇮',
+                        DK: '🇩🇰',
+                        NL: '🇳🇱',
+                        BE: '🇧🇪',
+                        IT: '🇮🇹',
+                        ES: '🇪🇸',
+                        JP: '🇯🇵',
+                        BR: '🇧🇷',
+                        MX: '🇲🇽',
                       };
                       const emoji = countryEmojis[(result as any).country];
-                      const countryText = emoji ? `${emoji} ${(result as any).country}` : (result as any).country;
+                      const countryText = emoji
+                        ? `${emoji} ${(result as any).country}`
+                        : (result as any).country;
                       parts.push(countryText);
 
                       // Add type if available
@@ -708,7 +722,9 @@ const ContextAwareResult = ({
 
                     // Add formation year if available
                     if ((result as any).lifeSpan?.begin) {
-                      const year = (result as any).lifeSpan.begin.match(/^(\d{4})/)?.[1];
+                      const year = (result as any).lifeSpan.begin.match(
+                        /^(\d{4})/
+                      )?.[1];
                       if (year) {
                         parts.push(`Since ${year}`);
                       }

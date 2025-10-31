@@ -2672,9 +2672,9 @@ async function handleDiscogsSearchArtist(
   console.log(`🔍 Searching Discogs for artist: "${data.artistName}"`);
 
   try {
-    // Initialize Discogs client (using require for CommonJS module)
-    const Discogs = require('disconnect');
-    const discogsClient = new Discogs.Client({
+    // Initialize Discogs client via dynamic import (ESM-friendly)
+    const { Client: DiscogsClient } = await import('disconnect');
+    const discogsClient = new DiscogsClient({
       userAgent: 'RecProject/1.0 +https://rec-music.org',
       consumerKey: process.env.CONSUMER_KEY!,
       consumerSecret: process.env.CONSUMER_SECRET!,

@@ -9,8 +9,7 @@ interface CorrelationContext {
 }
 
 // AsyncLocalStorage instance for correlation context
-export const correlationStorage =
-  new AsyncLocalStorage<CorrelationContext>();
+export const correlationStorage = new AsyncLocalStorage<CorrelationContext>();
 
 /**
  * Get the current correlation ID from the async context

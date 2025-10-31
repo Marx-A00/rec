@@ -174,7 +174,11 @@ export default function GroupedActivityItem({
                 {group.activities.slice(0, 5).map((activity, index) => (
                   <Link
                     key={activity.id}
-                    href={activity.albumId ? `/albums/${activity.albumId}?source=local` : '#'}
+                    href={
+                      activity.albumId
+                        ? `/albums/${activity.albumId}?source=local`
+                        : '#'
+                    }
                     className='relative group cursor-pointer block'
                     style={{ zIndex: 5 - index }}
                   >
@@ -199,8 +203,12 @@ export default function GroupedActivityItem({
                     {/* Show score for recommendations */}
                     {group.type === 'recommendation' &&
                       activity.metadata?.score && (
-                        <div className={`absolute -top-1 -right-1 bg-zinc-900 border ${getScoreColors(activity.metadata.score).borderColor} rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900`}>
-                          <span className={`text-[10px] font-bold ${getScoreColors(activity.metadata.score).textColor}`}>
+                        <div
+                          className={`absolute -top-1 -right-1 bg-zinc-900 border ${getScoreColors(activity.metadata.score).borderColor} rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900`}
+                        >
+                          <span
+                            className={`text-[10px] font-bold ${getScoreColors(activity.metadata.score).textColor}`}
+                          >
                             {activity.metadata.score}
                           </span>
                         </div>
@@ -553,10 +561,7 @@ function SingleActivityDisplay({
                     </span>{' '}
                     by{' '}
                     <span className='text-zinc-400'>
-                      {
-                        activity.metadata.basisAlbum.artists?.[0]?.artist
-                          ?.name
-                      }
+                      {activity.metadata.basisAlbum.artists?.[0]?.artist?.name}
                     </span>
                   </p>
                 </div>

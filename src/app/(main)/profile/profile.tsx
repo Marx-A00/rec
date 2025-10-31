@@ -174,7 +174,9 @@ export default function ProfileClient({
     if (!isOwnProfile) return;
 
     // Temporarily disabled until we pass collection metadata from server
-    console.log('Album reorder disabled - need collection metadata from server');
+    console.log(
+      'Album reorder disabled - need collection metadata from server'
+    );
   };
 
   // Profile editing handlers
@@ -287,7 +289,7 @@ export default function ProfileClient({
                     </h1>
                     <AdminBadge role={currentUser.role} />
                   </div>
-                  </div>
+                </div>
                 <div className='flex-shrink-0 flex gap-3'>
                   {isOwnProfile ? (
                     <div className='relative' ref={settingsMenuRef}>
@@ -427,7 +429,9 @@ export default function ProfileClient({
                 {!isCollectionEditorEnabled && sortedAlbums.length > 6 && (
                   <div className='flex justify-center mb-8 mt-8'>
                     <button
-                      onClick={() => setIsCollectionExpanded(!isCollectionExpanded)}
+                      onClick={() =>
+                        setIsCollectionExpanded(!isCollectionExpanded)
+                      }
                       className='flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-300 transition-colors'
                     >
                       {isCollectionExpanded ? (

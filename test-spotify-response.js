@@ -1,4 +1,5 @@
 // Comprehensive test of Spotify API response structures across different endpoints
+/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires */
 require('dotenv').config(); // Load environment variables
 const fs = require('fs');
 const path = require('path');

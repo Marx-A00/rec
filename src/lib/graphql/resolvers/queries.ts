@@ -477,8 +477,12 @@ export const queryResolvers: QueryResolvers = {
       });
 
       // DEBUG: Log what we received from SearchOrchestrator
-      console.log(`\n🔍 [GraphQL] Received from SearchOrchestrator: ${searchResults.results.length} results`);
-      console.log(`   Breakdown: ${searchResults.results.filter(r => r.type === 'track').length} tracks, ${searchResults.results.filter(r => r.type === 'album').length} albums, ${searchResults.results.filter(r => r.type === 'artist').length} artists`);
+      console.log(
+        `\n🔍 [GraphQL] Received from SearchOrchestrator: ${searchResults.results.length} results`
+      );
+      console.log(
+        `   Breakdown: ${searchResults.results.filter(r => r.type === 'track').length} tracks, ${searchResults.results.filter(r => r.type === 'album').length} albums, ${searchResults.results.filter(r => r.type === 'artist').length} artists`
+      );
 
       // Track search activity with result count
       const searchType =
@@ -507,7 +511,9 @@ export const queryResolvers: QueryResolvers = {
       if (searchResults.results.length > 0) {
         console.log(
           `[GraphQL Resolver] First 3 result types:`,
-          searchResults.results.slice(0, 3).map(r => ({ type: r.type, id: r.id, title: r.title }))
+          searchResults.results
+            .slice(0, 3)
+            .map(r => ({ type: r.type, id: r.id, title: r.title }))
         );
       }
 
@@ -555,7 +561,9 @@ export const queryResolvers: QueryResolvers = {
         hasMore: false, // Simplified for now
       };
 
-      console.log(`   Return value tracks.length: ${returnValue.tracks.length}\n`);
+      console.log(
+        `   Return value tracks.length: ${returnValue.tracks.length}\n`
+      );
 
       return returnValue;
     } catch (error) {

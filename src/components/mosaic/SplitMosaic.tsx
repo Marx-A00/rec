@@ -88,7 +88,9 @@ const Panel: React.FC<PanelProps> = ({
   }
 
   return (
-    <div className={`relative h-full bg-zinc-900/50 rounded-lg overflow-hidden transition-all duration-200 ${isEditMode ? 'group' : ''}`}>
+    <div
+      className={`relative h-full bg-zinc-900/50 rounded-lg overflow-hidden transition-all duration-200 ${isEditMode ? 'group' : ''}`}
+    >
       {/* Edit Mode Controls */}
       {isEditMode && (
         <div className='absolute top-2 right-2 z-10 flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity'>

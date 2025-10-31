@@ -464,9 +464,13 @@ export class SearchOrchestrator {
             .searchArtists(query, artistSearchLimit)
             .then(async artists => {
               // === LOGGING: MusicBrainz Raw Results ===
-              console.log(`\n🎵 [MB Raw] MusicBrainz returned ${artists.length} artists for "${query}"`);
+              console.log(
+                `\n🎵 [MB Raw] MusicBrainz returned ${artists.length} artists for "${query}"`
+              );
               artists.forEach((a, i) => {
-                console.log(`  [${i+1}] "${a.name}" (MBID: ${a.id.substring(0, 8)}...) Score: ${a.score} Type: ${a.type || 'unknown'}`);
+                console.log(
+                  `  [${i + 1}] "${a.name}" (MBID: ${a.id.substring(0, 8)}...) Score: ${a.score} Type: ${a.type || 'unknown'}`
+                );
               });
               // === END LOGGING ===
 
@@ -484,9 +488,13 @@ export class SearchOrchestrator {
               });
 
               // === LOGGING: After Filtering ===
-              console.log(`\n🔍 [MB Filter] After filtering: ${filtered.length}/${artists.length} artists kept (limit: ${artistMaxResults})`);
+              console.log(
+                `\n🔍 [MB Filter] After filtering: ${filtered.length}/${artists.length} artists kept (limit: ${artistMaxResults})`
+              );
               filtered.forEach((a, i) => {
-                console.log(`  [${i+1}] "${a.name}" (MBID: ${a.id.substring(0, 8)}...) Score: ${a.score}`);
+                console.log(
+                  `  [${i + 1}] "${a.name}" (MBID: ${a.id.substring(0, 8)}...) Score: ${a.score}`
+                );
               });
               // === END LOGGING ===
 
@@ -616,8 +624,8 @@ export class SearchOrchestrator {
     try {
       // TODO: Move Discogs client initialization to a service class
       // For now, create client inline (same as old route.ts)
-      const Discogs = require('disconnect').Client;
-      const db = new Discogs({
+      const { Client: DiscogsClient } = await import('disconnect');
+      const db = new DiscogsClient({
         userAgent: 'RecProject/1.0',
         userToken:
           process.env.DISCOGS_TOKEN ||
@@ -811,10 +819,15 @@ export class SearchOrchestrator {
     // === LOGGING: Before Deduplication ===
     if (results.some(r => r.type === 'artist')) {
       const artists = results.filter(r => r.type === 'artist');
-      console.log(`\n🎨 [Before Dedup] ${artists.length} artists before deduplication:`);
+      console.log(
+        `\n🎨 [Before Dedup] ${artists.length} artists before deduplication:`
+      );
       artists.forEach((a, i) => {
-        const idPreview = a.id.length > 12 ? a.id.substring(0, 12) + '...' : a.id;
-        console.log(`  [${i+1}] "${a.title}" (ID: ${idPreview}) Source: ${a.source}`);
+        const idPreview =
+          a.id.length > 12 ? a.id.substring(0, 12) + '...' : a.id;
+        console.log(
+          `  [${i + 1}] "${a.title}" (ID: ${idPreview}) Source: ${a.source}`
+        );
       });
     }
     // === END LOGGING ===
@@ -824,8 +837,13 @@ export class SearchOrchestrator {
 
       // === LOGGING: Deduplication Keys ===
       if (result.type === 'artist') {
-        const idPreview = result.id.length > 12 ? result.id.substring(0, 12) + '...' : result.id;
-        console.log(`\n[Dedup Keys] Artist: "${result.title}" (ID: ${idPreview})`);
+        const idPreview =
+          result.id.length > 12
+            ? result.id.substring(0, 12) + '...'
+            : result.id;
+        console.log(
+          `\n[Dedup Keys] Artist: "${result.title}" (ID: ${idPreview})`
+        );
         console.log(`  Keys: [${keys.join(', ')}]`);
       }
       // === END LOGGING ===
@@ -899,10 +917,15 @@ export class SearchOrchestrator {
     // === LOGGING: After Deduplication ===
     if (dedupedResults.some(r => r.type === 'artist')) {
       const artists = dedupedResults.filter(r => r.type === 'artist');
-      console.log(`\n✅ [After Dedup] ${artists.length} artists after deduplication:`);
+      console.log(
+        `\n✅ [After Dedup] ${artists.length} artists after deduplication:`
+      );
       artists.forEach((a, i) => {
-        const idPreview = a.id.length > 12 ? a.id.substring(0, 12) + '...' : a.id;
-        console.log(`  [${i+1}] "${a.title}" (ID: ${idPreview}) Source: ${a.source}`);
+        const idPreview =
+          a.id.length > 12 ? a.id.substring(0, 12) + '...' : a.id;
+        console.log(
+          `  [${i + 1}] "${a.title}" (ID: ${idPreview}) Source: ${a.source}`
+        );
       });
     }
     // === END LOGGING ===
@@ -956,7 +979,12 @@ export class SearchOrchestrator {
     // For artist results, add source-specific IDs and name-based matching
     if (result.type === 'artist') {
       // Priority 1: MusicBrainz Artist ID (UUID) - matches track pattern
-      if (result.id && result.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)) {
+      if (
+        result.id &&
+        result.id.match(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+        )
+      ) {
         keys.push(`mbid-artist:${result.id}`);
       }
 

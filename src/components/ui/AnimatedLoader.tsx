@@ -41,7 +41,13 @@ export const AnimatedLoader: React.FC<{ className?: string }> = ({
             cy={124}
             r={105}
           />
-          <circle fill='#fff' cx={0} cy={0} r={36} transform='translate(124 124)'>
+          <circle
+            fill='#fff'
+            cx={0}
+            cy={0}
+            r={36}
+            transform='translate(124 124)'
+          >
             <animateTransform
               attributeName='transform'
               type='scale'
