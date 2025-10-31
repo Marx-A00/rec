@@ -199,8 +199,8 @@ export default function GroupedActivityItem({
                     {/* Show score for recommendations */}
                     {group.type === 'recommendation' &&
                       activity.metadata?.score && (
-                        <div className='absolute -top-1 -right-1 bg-zinc-900 border border-emeraled-green/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900'>
-                          <span className='text-[10px] text-emeraled-green font-bold'>
+                        <div className={`absolute -top-1 -right-1 bg-zinc-900 border ${getScoreColors(activity.metadata.score).borderColor} rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900`}>
+                          <span className={`text-[10px] font-bold ${getScoreColors(activity.metadata.score).textColor}`}>
                             {activity.metadata.score}
                           </span>
                         </div>
@@ -218,55 +218,101 @@ export default function GroupedActivityItem({
             </div>
           )}
 
-          {/* Grid view (expanded) */}
+          {/* Expanded view - Horizontal layout with stacked hover effect */}
           {isExpanded && (
-            <div className='grid grid-cols-3 gap-3 max-w-md mx-auto'>
+            <div className='flex flex-wrap justify-center gap-6'>
               {group.activities.map(activity => (
-                <Link
-                  key={activity.id}
-                  href={activity.albumId ? `/albums/${activity.albumId}?source=local` : '#'}
-                  className='flex flex-col gap-1'
-                >
-                  <div className='relative group cursor-pointer'>
-                    <AlbumImage
-                      src={activity.albumImage || '/placeholder-album.png'}
-                      alt={`${activity.albumTitle} by ${activity.albumArtist}`}
-                      width={100}
-                      height={100}
-                      className='w-full h-full rounded-lg border border-zinc-700 group-hover:border-cosmic-latte/80 transition-all group-hover:scale-105'
-                    />
+                <div key={activity.id} className='flex-shrink-0'>
+                  {/* Recommendation: Stacked albums that separate on hover */}
+                  {group.type === 'recommendation' && activity.albumImage && (
+                    <div className='relative inline-block'>
+                      {/* Stacked Album Container - smaller version */}
+                      <div className='relative w-[140px] h-[130px] transition-all duration-300 ease-out [&:hover]:w-[210px] [&:hover_.rec-album]:left-[100px] [&:hover_.arrow-indicator]:opacity-100'>
+                        {/* Basis Album (back) */}
+                        {activity.metadata?.basisAlbum && (
+                          <Link
+                            href={`/albums/${activity.metadata.basisAlbum.id}?source=local`}
+                            className='absolute left-0 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
+                            title={`View ${activity.metadata.basisAlbum.title}`}
+                          >
+                            <AlbumImage
+                              src={
+                                activity.metadata.basisAlbum.coverArtUrl ||
+                                '/placeholder-album.png'
+                              }
+                              alt={activity.metadata.basisAlbum.title}
+                              width={90}
+                              height={90}
+                              className='w-[90px] h-[90px] rounded-lg shadow-lg border border-zinc-700/50 hover:border-zinc-600 transition-all'
+                            />
+                          </Link>
+                        )}
 
-                    {/* Show rating badge for collection adds */}
-                    {group.type === 'collection_add' &&
-                      activity.metadata?.personalRating && (
-                        <div className='absolute -top-1 -right-1 bg-zinc-900 border border-cosmic-latte/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900'>
+                        {/* Recommended Album (front) */}
+                        <Link
+                          href={`/albums/${activity.albumId}?source=local`}
+                          className='rec-album absolute left-7 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
+                          title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
+                        >
+                          <AlbumImage
+                            src={activity.albumImage}
+                            alt={`${activity.albumTitle} by ${activity.albumArtist}`}
+                            width={110}
+                            height={110}
+                            className='w-[110px] h-[110px] rounded-lg shadow-2xl border-2 border-emeraled-green/30 hover:border-emeraled-green/50 transition-all'
+                          />
+                        </Link>
+
+                        {/* Score indicator with heart - visible on hover between albums */}
+                        {activity.metadata?.score && (
+                          <div className='arrow-indicator absolute left-[77px] top-[37px] opacity-0 transition-all duration-300 z-20'>
+                            <div className='bg-zinc-900 border-2 border-zinc-800 rounded-full shadow-lg'>
+                              <div
+                                className={`flex items-center justify-center w-12 h-12 bg-gradient-to-r ${getScoreColors(activity.metadata.score).bgGradient} rounded-full border-2 ${getScoreColors(activity.metadata.score).borderColor} shadow-md`}
+                              >
+                                <div className='flex flex-col items-center'>
+                                  <Heart
+                                    className={`h-3 w-3 ${getScoreColors(activity.metadata.score).heartColor} drop-shadow-sm mb-0.5`}
+                                  />
+                                  <span
+                                    className={`text-[10px] font-bold ${getScoreColors(activity.metadata.score).textColor} tabular-nums leading-none`}
+                                  >
+                                    {activity.metadata.score}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Collection Add: Show single album */}
+                  {group.type === 'collection_add' && activity.albumImage && (
+                    <Link
+                      href={`/albums/${activity.albumId}?source=local`}
+                      className='relative group cursor-pointer inline-block'
+                    >
+                      <AlbumImage
+                        src={activity.albumImage || '/placeholder-album.png'}
+                        alt={`${activity.albumTitle} by ${activity.albumArtist}`}
+                        width={110}
+                        height={110}
+                        className='w-[110px] h-[110px] rounded-lg border border-zinc-700 group-hover:border-cosmic-latte/80 transition-all group-hover:scale-105 shadow-lg'
+                      />
+
+                      {/* Show rating badge for collection adds */}
+                      {activity.metadata?.personalRating && (
+                        <div className='absolute -top-1 -right-1 bg-zinc-900 border border-cosmic-latte/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900 shadow-md'>
                           <span className='text-[10px] text-cosmic-latte font-bold'>
                             {activity.metadata.personalRating}
                           </span>
                         </div>
                       )}
-
-                    {/* Show score for recommendations */}
-                    {group.type === 'recommendation' &&
-                      activity.metadata?.score && (
-                        <div className='absolute -top-1 -right-1 bg-zinc-900 border border-emeraled-green/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900'>
-                          <span className='text-[10px] text-emeraled-green font-bold'>
-                            {activity.metadata.score}
-                          </span>
-                        </div>
-                      )}
-                  </div>
-
-                  {/* Album title and artist (truncated) */}
-                  <div className='text-center px-1'>
-                    <p className='text-[10px] text-zinc-300 truncate'>
-                      {activity.albumTitle}
-                    </p>
-                    <p className='text-[9px] text-zinc-500 truncate'>
-                      {activity.albumArtist}
-                    </p>
-                  </div>
-                </Link>
+                    </Link>
+                  )}
+                </div>
               ))}
             </div>
           )}
