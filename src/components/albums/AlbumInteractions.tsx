@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Heart, Share2, MoreHorizontal, User } from 'lucide-react';
+import { Heart, Share2, MoreHorizontal, User, Clock } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { graphqlClient } from '@/lib/graphql-client';
 import {
   GetArtistByMusicBrainzIdDocument,
   type GetArtistByMusicBrainzIdQuery,
+  useAddToListenLaterMutation,
 } from '@/generated/graphql';
 
 interface AlbumInteractionsProps {
@@ -27,6 +28,10 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
   const router = useRouter();
   const { openDrawer } = useRecommendationDrawerContext();
   const queryClient = useQueryClient();
+  const addToListenLater = useAddToListenLaterMutation({
+    onSuccess: () => showToast('Added to Listen Later', 'success'),
+    onError: () => showToast('Failed to add to Listen Later', 'error'),
+  });
 
   const handleArtistClick = async (artistId: string, artistName: string) => {
     if (!artistId) {
@@ -124,6 +129,32 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
     }
   };
 
+  const handleAddToListenLater = async () => {
+    if (!album?.id) {
+      showToast('Album not available', 'error');
+      return;
+    }
+    try {
+      // Prepare album data with artists
+      const albumData = {
+        title: album.title,
+        artists: album.artists.map(artist => ({
+          artistName: artist.name,
+          artistId: artist.id || undefined,
+        })),
+        coverImageUrl: album.image?.url || undefined,
+        musicbrainzId: album.musicbrainzId || undefined,
+        releaseDate: album.year ? `${album.year}-01-01` : undefined,
+        totalTracks: album.metadata?.numberOfTracks || undefined,
+      };
+
+      await addToListenLater.mutateAsync({
+        albumId: album.id,
+        albumData,
+      });
+    } catch {}
+  };
+
   const handleMoreActions = () => {
     showToast('More actions coming soon!', 'success');
   };
@@ -166,6 +197,18 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
         </Button>
 
         <AddToCollectionButton album={album} size='lg' variant='default' />
+
+        <Button
+          variant='outline'
+          size='lg'
+          onClick={handleAddToListenLater}
+          className='gap-2'
+          disabled={addToListenLater.isPending}
+          aria-label='Add to Listen Later'
+        >
+          <Clock className='h-4 w-4' />
+          {addToListenLater.isPending ? 'Adding...' : 'Listen Later'}
+        </Button>
 
         <Button
           variant='outline'

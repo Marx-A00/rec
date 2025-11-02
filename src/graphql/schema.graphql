@@ -899,6 +899,7 @@ type Query {
   databaseStats: DatabaseStats!
   searchAlbums(
     query: String
+    id: UUID
     dataQuality: String
     enrichmentStatus: String
     needsEnrichment: Boolean
@@ -975,7 +976,7 @@ type Mutation {
   ): ReorderCollectionAlbumsPayload!
   # Listen Later convenience without schema change
   ensureListenLaterCollection: Collection!
-  addToListenLater(albumId: UUID!): CollectionAlbum!
+  addToListenLater(albumId: UUID!, albumData: AlbumInput): CollectionAlbum!
   removeFromListenLater(albumId: UUID!): Boolean!
 
   # Recommendation system

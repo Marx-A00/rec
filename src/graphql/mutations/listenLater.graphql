@@ -6,8 +6,8 @@ mutation EnsureListenLater {
   }
 }
 
-mutation AddToListenLater($albumId: UUID!) {
-  addToListenLater(albumId: $albumId) {
+mutation AddToListenLater($albumId: UUID!, $albumData: AlbumInput) {
+  addToListenLater(albumId: $albumId, albumData: $albumData) {
     id
   }
 }

@@ -109,6 +109,7 @@ query SearchTracks($query: String!, $limit: Int) {
 
 query SearchAlbumsAdmin(
   $query: String
+  $id: UUID
   $dataQuality: String
   $enrichmentStatus: String
   $needsEnrichment: Boolean
@@ -119,6 +120,7 @@ query SearchAlbumsAdmin(
 ) {
   searchAlbums(
     query: $query
+    id: $id
     dataQuality: $dataQuality
     enrichmentStatus: $enrichmentStatus
     needsEnrichment: $needsEnrichment

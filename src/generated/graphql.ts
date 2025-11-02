@@ -525,6 +525,7 @@ export type MutationAddAlbumToCollectionArgs = {
 };
 
 export type MutationAddToListenLaterArgs = {
+  albumData?: InputMaybe<AlbumInput>;
   albumId: Scalars['UUID']['input'];
 };
 
@@ -829,6 +830,7 @@ export type QuerySearchArgs = {
 export type QuerySearchAlbumsArgs = {
   dataQuality?: InputMaybe<Scalars['String']['input']>;
   enrichmentStatus?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
   query?: InputMaybe<Scalars['String']['input']>;
@@ -1410,6 +1412,7 @@ export type EnsureListenLaterMutation = {
 
 export type AddToListenLaterMutationVariables = Exact<{
   albumId: Scalars['UUID']['input'];
+  albumData?: InputMaybe<AlbumInput>;
 }>;
 
 export type AddToListenLaterMutation = {
@@ -2251,6 +2254,7 @@ export type SearchTracksQuery = {
 
 export type SearchAlbumsAdminQueryVariables = Exact<{
   query?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
   dataQuality?: InputMaybe<Scalars['String']['input']>;
   enrichmentStatus?: InputMaybe<Scalars['String']['input']>;
   needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
@@ -2679,8 +2683,8 @@ export const useEnsureListenLaterMutation = <
 useEnsureListenLaterMutation.getKey = () => ['EnsureListenLater'];
 
 export const AddToListenLaterDocument = `
-    mutation AddToListenLater($albumId: UUID!) {
-  addToListenLater(albumId: $albumId) {
+    mutation AddToListenLater($albumId: UUID!, $albumData: AlbumInput) {
+  addToListenLater(albumId: $albumId, albumData: $albumData) {
     id
   }
 }
@@ -4634,9 +4638,10 @@ useInfiniteSearchTracksQuery.getKey = (
 ) => ['SearchTracks.infinite', variables];
 
 export const SearchAlbumsAdminDocument = `
-    query SearchAlbumsAdmin($query: String, $dataQuality: String, $enrichmentStatus: String, $needsEnrichment: Boolean, $sortBy: String, $sortOrder: String, $skip: Int, $limit: Int) {
+    query SearchAlbumsAdmin($query: String, $id: UUID, $dataQuality: String, $enrichmentStatus: String, $needsEnrichment: Boolean, $sortBy: String, $sortOrder: String, $skip: Int, $limit: Int) {
   searchAlbums(
     query: $query
+    id: $id
     dataQuality: $dataQuality
     enrichmentStatus: $enrichmentStatus
     needsEnrichment: $needsEnrichment

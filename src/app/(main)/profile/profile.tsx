@@ -35,6 +35,7 @@ interface User {
 interface ProfileClientProps {
   user: User;
   collection: CollectionAlbum[];
+  listenLater: CollectionAlbum[];
   recommendations: RecommendationFieldsFragment[];
   isOwnProfile: boolean;
 }
@@ -42,6 +43,7 @@ interface ProfileClientProps {
 export default function ProfileClient({
   user,
   collection,
+  listenLater,
   recommendations,
   isOwnProfile,
 }: ProfileClientProps) {
@@ -397,8 +399,33 @@ export default function ProfileClient({
           {/* Collection Section */}
           {/* TODO: add in DnD grid with varying sizes or whatever */}
 
-          {/* Listen Later section removed - need to refactor to use collection metadata from server */}
-          {/* TODO: Pass full collection data structure from server to support "Listen Later" feature */}
+          {/* Listen Later Section */}
+          {listenLater.length > 0 && (
+            <section className='border-t border-zinc-800 pt-8'>
+              <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte flex items-center gap-2'>
+                <span>Listen Later</span>
+                <span className='text-sm font-normal text-zinc-400'>
+                  ({listenLater.length})
+                </span>
+              </h2>
+              <SortableAlbumGrid
+                albums={listenLater.slice(0, 6)}
+                onAlbumClick={albumId => {
+                  const album = listenLater.find(a => a.albumId === albumId);
+                  if (album) {
+                    setSelectedAlbum(album);
+                  }
+                }}
+                isEditable={false}
+                className='mb-8'
+              />
+              {listenLater.length > 6 && (
+                <div className='text-center text-sm text-zinc-400 mb-8'>
+                  +{listenLater.length - 6} more albums
+                </div>
+              )}
+            </section>
+          )}
 
           <section className='border-t border-zinc-800 pt-8'>
             <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>

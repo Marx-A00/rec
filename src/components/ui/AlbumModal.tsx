@@ -368,7 +368,23 @@ export default function AlbumModal({
       return;
     }
     try {
-      await addToListenLater.mutateAsync({ albumId: albumForInteractions.id });
+      // Prepare album data with artists
+      const albumData = {
+        title: albumForInteractions.title,
+        artists: albumForInteractions.artists.map(artist => ({
+          artistName: artist.name,
+          artistId: artist.id || undefined,
+        })),
+        coverImageUrl: albumForInteractions.image?.url || undefined,
+        musicbrainzId: albumForInteractions.musicbrainzId || undefined,
+        releaseDate: albumForInteractions.year ? `${albumForInteractions.year}-01-01` : undefined,
+        totalTracks: albumForInteractions.metadata?.numberOfTracks || undefined,
+      };
+
+      await addToListenLater.mutateAsync({
+        albumId: albumForInteractions.id,
+        albumData,
+      });
     } catch {}
   };
 

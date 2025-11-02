@@ -870,8 +870,125 @@ export const mutationResolvers: MutationResolvers = {
     return created as any;
   },
 
-  addToListenLater: async (_, { albumId }, { user, prisma }) => {
+  addToListenLater: async (_, { albumId, albumData }, { user, prisma }) => {
     if (!user) throw new GraphQLError('Authentication required');
+
+    let dbAlbumId: string;
+
+    // First try to find by internal ID
+    let album = await prisma.album.findUnique({
+      where: { id: albumId },
+      include: {
+        artists: {
+          include: { artist: true },
+        },
+      },
+    });
+
+    if (album) {
+      // Album exists by internal ID
+      dbAlbumId = album.id;
+    } else {
+      // Try to find by MusicBrainz ID
+      album = await prisma.album.findFirst({
+        where: { musicbrainzId: albumId },
+        include: {
+          artists: {
+            include: { artist: true },
+          },
+        },
+      });
+
+      if (album) {
+        // Album exists by MusicBrainz ID
+        dbAlbumId = album.id;
+      } else {
+        // Album doesn't exist - create it with full data if provided
+        if (albumData) {
+          // Parse release date if provided
+          const releaseDate = albumData.releaseDate
+            ? new Date(albumData.releaseDate)
+            : null;
+
+          // Create the album with full data
+          album = await prisma.album.create({
+            data: {
+              title: albumData.title,
+              releaseDate,
+              releaseType: albumData.albumType || 'ALBUM',
+              trackCount: albumData.totalTracks,
+              coverArtUrl: albumData.coverImageUrl,
+              musicbrainzId: albumData.musicbrainzId || albumId,
+              dataQuality: albumData.musicbrainzId ? 'MEDIUM' : 'LOW',
+              enrichmentStatus: 'PENDING',
+              lastEnriched: null,
+            },
+          });
+
+          // Handle artist associations
+          if (albumData.artists && albumData.artists.length > 0) {
+            for (const artistInput of albumData.artists) {
+              let artistId: string | undefined;
+
+              // Always try to find/create artist by name (required field)
+              if (artistInput.artistName) {
+                const existingArtist = await prisma.artist.findFirst({
+                  where: {
+                    name: {
+                      equals: artistInput.artistName,
+                      mode: 'insensitive',
+                    },
+                  },
+                });
+
+                if (existingArtist) {
+                  artistId = existingArtist.id;
+                } else {
+                  // Create new artist
+                  const newArtist = await prisma.artist.create({
+                    data: {
+                      name: artistInput.artistName,
+                      dataQuality: 'LOW',
+                      enrichmentStatus: 'PENDING',
+                    },
+                  });
+                  artistId = newArtist.id;
+                }
+
+                // Create or update the album-artist relationship (upsert to handle duplicates)
+                const role = artistInput.role || 'PRIMARY';
+                await prisma.albumArtist.upsert({
+                  where: {
+                    albumId_artistId_role: {
+                      albumId: album.id,
+                      artistId: artistId,
+                      role: role,
+                    },
+                  },
+                  update: {}, // No update needed, just ensure it exists
+                  create: {
+                    albumId: album.id,
+                    artistId: artistId,
+                    role: role,
+                  },
+                });
+              }
+            }
+          }
+        } else {
+          // No album data provided - create stub album (fallback behavior)
+          album = await prisma.album.create({
+            data: {
+              musicbrainzId: albumId,
+              title: 'Loading...',
+              enrichmentStatus: 'PENDING',
+            },
+          });
+        }
+        dbAlbumId = album.id;
+      }
+    }
+
     const name = 'Listen Later';
     let collection = await prisma.collection.findFirst({
       where: { userId: user.id, name },
@@ -881,16 +998,35 @@ export const mutationResolvers: MutationResolvers = {
         data: { userId: user.id, name, isPublic: false },
       });
     }
+
     // Upsert-like behavior: ignore if already exists
     try {
       const ca = await prisma.collectionAlbum.create({
-        data: { collectionId: collection.id, albumId },
+        data: { collectionId: collection.id, albumId: dbAlbumId },
       });
+
+      // Queue enrichment for the newly added album
+      try {
+        const queue = getMusicBrainzQueue();
+        const albumCheckData: CheckAlbumEnrichmentJobData = {
+          albumId: dbAlbumId,
+          source: 'listen_later_add',
+          priority: 'high',
+          requestId: `listen-later-${ca.id}`,
+        };
+        await queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, albumCheckData, {
+          priority: 10,
+          attempts: 3,
+        });
+      } catch (queueError) {
+        console.warn('Failed to queue enrichment for Listen Later album:', queueError);
+      }
+
       return ca as any;
     } catch (e: any) {
       // Unique violation => already in list, fetch and return
       const existing = await prisma.collectionAlbum.findFirst({
-        where: { collectionId: collection.id, albumId },
+        where: { collectionId: collection.id, albumId: dbAlbumId },
       });
       if (existing) return existing as any;
       throw new GraphQLError('Failed to add to Listen Later');

@@ -66,13 +66,11 @@ interface GroupedActivity {
 
 interface GroupedActivityItemProps {
   group: GroupedActivity;
-  onAlbumClick?: (albumId: string) => void;
   className?: string;
 }
 
 export default function GroupedActivityItem({
   group,
-  onAlbumClick,
   className = '',
 }: GroupedActivityItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -82,7 +80,6 @@ export default function GroupedActivityItem({
     return (
       <SingleActivityDisplay
         activity={group.activities[0]}
-        onAlbumClick={onAlbumClick}
         className={className}
       />
     );
@@ -386,11 +383,9 @@ export default function GroupedActivityItem({
 // Component for single activity display (non-grouped)
 function SingleActivityDisplay({
   activity,
-  onAlbumClick,
   className = '',
 }: {
   activity: Activity;
-  onAlbumClick?: (albumId: string) => void;
   className?: string;
 }) {
   const getActivityText = () => {
@@ -444,12 +439,6 @@ function SingleActivityDisplay({
         return <span>updated their profile</span>;
       default:
         return <span>did something</span>;
-    }
-  };
-
-  const handleAlbumClick = () => {
-    if (activity.albumId && onAlbumClick) {
-      onAlbumClick(activity.albumId);
     }
   };
 
@@ -574,9 +563,9 @@ function SingleActivityDisplay({
       {/* Collection Add Visual - Single Album */}
       {activity.type === 'collection_add' && activity.albumImage && (
         <div className='flex justify-center'>
-          <div
-            className='cursor-pointer hover:scale-105 transition-transform'
-            onClick={handleAlbumClick}
+          <Link
+            href={`/albums/${activity.albumId}?source=local`}
+            className='cursor-pointer hover:scale-105 transition-transform inline-block'
             title={`View ${activity.albumTitle} by ${activity.albumArtist}`}
           >
             <AlbumImage
@@ -586,7 +575,7 @@ function SingleActivityDisplay({
               height={150}
               className='w-[150px] h-[150px] rounded-lg border-2 border-zinc-700 hover:border-cosmic-latte/50 transition-all shadow-xl'
             />
-          </div>
+          </Link>
         </div>
       )}
 

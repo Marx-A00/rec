@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation';
-import type { User } from '@prisma/client';
 
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
@@ -69,10 +68,13 @@ async function getUserRecommendations(userId: string) {
   }));
 }
 
-// Helper function to get user collections
+// Helper function to get user collections (excluding Listen Later)
 async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
   const collections = await prisma.collection.findMany({
-    where: { userId },
+    where: {
+      userId,
+      name: { not: 'Listen Later' }, // Exclude Listen Later
+    },
     include: {
       albums: {
         orderBy: { addedAt: 'desc' },
@@ -116,6 +118,60 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
   );
 }
 
+// Helper function to get Listen Later collection
+async function getListenLater(userId: string): Promise<CollectionAlbum[]> {
+  const listenLater = await prisma.collection.findFirst({
+    where: {
+      userId,
+      name: 'Listen Later',
+    },
+    include: {
+      albums: {
+        orderBy: { addedAt: 'desc' },
+        include: {
+          album: {
+            select: {
+              title: true,
+              coverArtUrl: true,
+              releaseDate: true,
+              artists: {
+                select: {
+                  artist: { select: { id: true, name: true } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!listenLater) return [];
+
+  return listenLater.albums
+    .filter(album => album.album) // Filter out albums that couldn't be loaded
+    .map(
+      (album): CollectionAlbum => ({
+        id: album.id,
+        albumId: String(album.albumId ?? album.discogsId ?? ''),
+        albumTitle: album.album.title || 'Loading...', // Handle empty titles from newly created albums
+        albumArtist:
+          album.album.artists.length > 0
+            ? album.album.artists.map(a => a.artist.name).join(', ')
+            : 'Unknown Artist', // Handle albums without artists yet
+        albumImageUrl: album.album.coverArtUrl ?? null,
+        albumYear: album.album.releaseDate
+          ? String(new Date(album.album.releaseDate).getFullYear())
+          : null,
+        addedAt: album.addedAt.toISOString(),
+        addedBy: listenLater.userId,
+        personalRating: album.personalRating ?? null,
+        personalNotes: album.personalNotes ?? null,
+        position: album.position,
+      })
+    );
+}
+
 interface ProfilePageProps {
   params: Promise<{ userId: string }>;
 }
@@ -154,9 +210,10 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     notFound();
   }
 
-  // Get collections and recommendations
-  const [collection, recommendations] = await Promise.all([
+  // Get collections, listen later, and recommendations
+  const [collection, listenLater, recommendations] = await Promise.all([
     getUserCollections(userId),
+    getListenLater(userId),
     getUserRecommendations(userId),
   ]);
 
@@ -180,6 +237,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     <Profile
       user={user}
       collection={collection}
+      listenLater={listenLater}
       recommendations={recommendations}
       isOwnProfile={isOwnProfile}
     />

@@ -3,7 +3,6 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig,
 } from 'graphql';
-
 import { GraphQLContext } from '@/lib/graphql/context';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -500,6 +499,7 @@ export type MutationAddAlbumToCollectionArgs = {
 };
 
 export type MutationAddToListenLaterArgs = {
+  albumData?: InputMaybe<AlbumInput>;
   albumId: Scalars['UUID']['input'];
 };
 
@@ -804,6 +804,7 @@ export type QuerySearchArgs = {
 export type QuerySearchAlbumsArgs = {
   dataQuality?: InputMaybe<Scalars['String']['input']>;
   enrichmentStatus?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
   query?: InputMaybe<Scalars['String']['input']>;

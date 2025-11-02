@@ -1549,6 +1549,7 @@ export const queryResolvers: QueryResolvers = {
     try {
       const {
         query,
+        id,
         dataQuality,
         enrichmentStatus,
         needsEnrichment,
@@ -1560,8 +1561,12 @@ export const queryResolvers: QueryResolvers = {
 
       const where: any = {};
 
-      // Search query
-      if (query) {
+      // Search by ID (explicit parameter - highest priority)
+      if (id) {
+        where.id = id;
+      }
+      // Search query (text search)
+      else if (query) {
         where.OR = [
           { title: { contains: query, mode: 'insensitive' } },
           { label: { contains: query, mode: 'insensitive' } },

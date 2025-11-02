@@ -8,7 +8,6 @@ import type { Session } from 'next-auth';
 import SignInButton from '@/components/auth/SignInButton';
 import { groupActivities } from '@/utils/activity-grouping';
 
-import ActivityItem from './ActivityItem';
 import GroupedActivityItem from './GroupedActivityItem';
 
 interface SocialActivityFeedProps {
@@ -208,12 +207,6 @@ export default function SocialActivityFeed({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  const handleAlbumClick = (albumId: string) => {
-    // TODO: Implement album modal functionality
-    // Need to convert albumId to Release/CollectionAlbum object for openModal
-    console.log('Album clicked:', albumId);
-  };
-
   const handleRefresh = () => {
     refetch();
   };
@@ -382,7 +375,6 @@ export default function SocialActivityFeed({
           <GroupedActivityItem
             key={group.id}
             group={group}
-            onAlbumClick={handleAlbumClick}
           />
         ))}
       </div>

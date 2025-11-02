@@ -49,6 +49,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -138,6 +146,7 @@ type EnrichmentPriority = 'HIGH' | 'MEDIUM' | 'LOW';
 export default function MusicDatabasePage() {
   const [activeTab, setActiveTab] = useState<SearchType>('albums');
   const [searchQuery, setSearchQuery] = useState('');
+  const [idSearch, setIdSearch] = useState('');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState({
     dataQuality: 'all',
@@ -149,6 +158,8 @@ export default function MusicDatabasePage() {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const itemsPerPage = 50;
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [albumToDelete, setAlbumToDelete] = useState<{ id: string; title: string } | null>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
@@ -170,6 +181,7 @@ export default function MusicDatabasePage() {
   } = useSearchAlbumsAdminQuery(
     {
       query: debouncedSearchQuery || undefined,
+      id: idSearch.trim() || undefined,
       dataQuality:
         filters.dataQuality !== 'all' ? filters.dataQuality : undefined,
       enrichmentStatus:
@@ -275,6 +287,41 @@ export default function MusicDatabasePage() {
     if (activeTab === 'albums') return displayAlbums;
     if (activeTab === 'artists') return displayArtists;
     return displayTracks;
+  };
+
+  const handleDeleteAlbum = async () => {
+    if (!albumToDelete) return;
+
+    try {
+      const response = await fetch('/api/admin/albums/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ albumId: albumToDelete.id }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.details || 'Failed to delete album');
+      }
+
+      toast.success(`Successfully deleted "${albumToDelete.title}"`);
+
+      // Collapse the row and refetch data
+      setExpandedRows(prev => {
+        const next = new Set(prev);
+        next.delete(albumToDelete.id);
+        return next;
+      });
+
+      setDeleteModalOpen(false);
+      setAlbumToDelete(null);
+      refetchAlbums();
+    } catch (error) {
+      console.error('Delete error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete album';
+      toast.error(errorMessage);
+    }
   };
 
   const handleEnrichItem = async (
@@ -572,9 +619,17 @@ export default function MusicDatabasePage() {
         <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
           <div>
             <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Database ID
+            </div>
+            <div className='text-sm text-zinc-300 font-mono text-xs'>
+              {albumDetails.id}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
               MusicBrainz ID
             </div>
-            <div className='text-sm text-zinc-300 font-mono'>
+            <div className='text-sm text-zinc-300 font-mono text-xs'>
               {albumDetails.musicbrainzId || 'N/A'}
             </div>
           </div>
@@ -618,6 +673,37 @@ export default function MusicDatabasePage() {
               {albumDetails.tracks?.length || 0} tracks
             </div>
           </div>
+        </div>
+
+        {/* Delete Button */}
+        <div className='flex justify-end pt-4 border-t border-zinc-700'>
+          <Button
+            onClick={() => {
+              setAlbumToDelete({
+                id: albumDetails.id,
+                title: albumDetails.title,
+              });
+              setDeleteModalOpen(true);
+            }}
+            variant='destructive'
+            size='sm'
+            className='gap-2'
+          >
+            <svg
+              className='h-4 w-4'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+              />
+            </svg>
+            Delete Album
+          </Button>
         </div>
 
         {/* Tracks Section */}
@@ -771,6 +857,22 @@ export default function MusicDatabasePage() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className='pl-10 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500'
+                />
+              </div>
+              <div className='relative flex-1'>
+                <Hash className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 h-4 w-4' />
+                <Input
+                  placeholder='Or search by ID...'
+                  value={idSearch}
+                  onChange={e => {
+                    const value = e.target.value;
+                    setIdSearch(value);
+                    // Clear text search when using ID search
+                    if (value.trim()) {
+                      setSearchQuery('');
+                    }
+                  }}
+                  className='pl-10 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500 font-mono text-sm'
                 />
               </div>
               <Button
@@ -1315,6 +1417,79 @@ export default function MusicDatabasePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className='bg-zinc-900 border-zinc-800 text-white'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2 text-red-500'>
+              <AlertCircle className='h-5 w-5' />
+              Delete Album
+            </DialogTitle>
+            <DialogDescription className='text-zinc-400'>
+              This action cannot be undone. This will permanently delete the album
+              and all associated data.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className='space-y-4 py-4'>
+            <div className='bg-zinc-800 border border-zinc-700 rounded-lg p-4'>
+              <div className='font-semibold text-white mb-2'>
+                {albumToDelete?.title}
+              </div>
+              <div className='text-sm text-zinc-400'>
+                Database ID: <span className='font-mono text-xs'>{albumToDelete?.id}</span>
+              </div>
+            </div>
+
+            <div className='bg-red-950/20 border border-red-900/50 rounded-lg p-4'>
+              <div className='font-medium text-red-400 mb-2 flex items-center gap-2'>
+                <AlertCircle className='h-4 w-4' />
+                Warning
+              </div>
+              <ul className='text-sm text-red-300/80 space-y-1 list-disc list-inside'>
+                <li>Album will be removed from all user collections</li>
+                <li>All recommendations referencing this album will be deleted</li>
+                <li>All associated tracks and artist relationships will be removed</li>
+                <li>This operation cannot be reversed</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => {
+                setDeleteModalOpen(false);
+                setAlbumToDelete(null);
+              }}
+              className='border-zinc-700 text-white hover:bg-zinc-800'
+            >
+              Cancel
+            </Button>
+            <Button
+              variant='destructive'
+              onClick={handleDeleteAlbum}
+              className='gap-2'
+            >
+              <svg
+                className='h-4 w-4'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+                />
+              </svg>
+              Delete Permanently
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

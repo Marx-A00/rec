@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
 import { isAdmin } from '@/lib/permissions';
+import { UserAvatar } from '@/components/navigation/UserAvatar';
 
 export default function AdminLayout({
   children,
@@ -51,8 +52,9 @@ export default function AdminLayout({
       <div className='flex'>
         {/* Sidebar */}
         <aside className='w-64 bg-zinc-950 border-r border-zinc-800'>
-          <div className='p-6 border-b border-zinc-800'>
+          <div className='p-6 border-b border-zinc-800 space-y-4'>
             <h2 className='text-xl font-bold text-white'>Admin Dashboard</h2>
+            <UserAvatar />
           </div>
           <nav className='px-4 py-6'>
             <Link
