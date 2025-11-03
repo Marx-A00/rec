@@ -979,6 +979,7 @@ export class SearchOrchestrator {
     // For artist results, add source-specific IDs and name-based matching
     if (result.type === 'artist') {
       // Priority 1: MusicBrainz Artist ID (UUID) - matches track pattern
+      // Check both result.id (for external MusicBrainz results) and _musicbrainz.artistId (for local DB artists)
       if (
         result.id &&
         result.id.match(
@@ -986,6 +987,17 @@ export class SearchOrchestrator {
         )
       ) {
         keys.push(`mbid-artist:${result.id}`);
+      }
+
+      // Also check if local artist has a stored MusicBrainz ID (for deduplication with external results)
+      const mbData = (result as any)._musicbrainz;
+      if (
+        mbData?.artistId &&
+        mbData.artistId.match(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+        )
+      ) {
+        keys.push(`mbid-artist:${mbData.artistId}`);
       }
 
       // Priority 2: Spotify ID
@@ -1100,6 +1112,12 @@ export class SearchOrchestrator {
       _discogs: {
         uri: artist.discogsId ? `/artists/${artist.discogsId}` : undefined,
       },
+      // Include MusicBrainz ID for deduplication with external results
+      ...(artist.musicbrainzId && {
+        _musicbrainz: {
+          artistId: artist.musicbrainzId,
+        },
+      }),
     };
   }
 
