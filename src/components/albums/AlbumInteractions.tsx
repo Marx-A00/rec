@@ -1,14 +1,16 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Heart, Share2, MoreHorizontal, User, Clock } from 'lucide-react';
+import { Heart, Share2, MoreHorizontal, User, Clock, Check, Loader2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 
 import { Button } from '@/components/ui/button';
 import Toast, { useToast } from '@/components/ui/toast';
 import AddToCollectionButton from '@/components/collections/AddToCollectionButton';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
+import { useListenLaterStatus } from '@/hooks/useListenLaterStatus';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
 import { graphqlClient } from '@/lib/graphql-client';
@@ -28,10 +30,20 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
   const router = useRouter();
   const { openDrawer } = useRecommendationDrawerContext();
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
   const addToListenLater = useAddToListenLaterMutation({
-    onSuccess: () => showToast('Added to Listen Later', 'success'),
+    onSuccess: () => {
+      showToast('Added to Listen Later', 'success');
+      // Invalidate Listen Later cache to refetch
+      queryClient.invalidateQueries({ queryKey: ['collections', 'listen-later', 'albums'] });
+    },
     onError: () => showToast('Failed to add to Listen Later', 'error'),
   });
+
+  // Check if album is already in Listen Later
+  const { isInListenLater, isLoading: isCheckingListenLater } = useListenLaterStatus(
+    album?.id || ''
+  );
 
   const handleArtistClick = async (artistId: string, artistName: string) => {
     if (!artistId) {
@@ -130,10 +142,22 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
   };
 
   const handleAddToListenLater = async () => {
+    if (!session?.user) {
+      showToast('Please sign in to add to Listen Later', 'error');
+      return;
+    }
+
     if (!album?.id) {
       showToast('Album not available', 'error');
       return;
     }
+
+    // If already in Listen Later, navigate to profile
+    if (isInListenLater) {
+      router.push('/profile');
+      return;
+    }
+
     try {
       // Prepare album data with artists
       const albumData = {
@@ -199,15 +223,40 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
         <AddToCollectionButton album={album} size='lg' variant='default' />
 
         <Button
-          variant='outline'
+          variant={isInListenLater && session?.user ? 'success' : 'outline'}
           size='lg'
           onClick={handleAddToListenLater}
           className='gap-2'
-          disabled={addToListenLater.isPending}
-          aria-label='Add to Listen Later'
+          disabled={addToListenLater.isPending || (isCheckingListenLater && !!session?.user)}
+          aria-label={
+            isCheckingListenLater
+              ? 'Checking Listen Later status...'
+              : isInListenLater
+                ? 'In Listen Later'
+                : 'Add to Listen Later'
+          }
         >
-          <Clock className='h-4 w-4' />
-          {addToListenLater.isPending ? 'Adding...' : 'Listen Later'}
+          {isCheckingListenLater && !!session?.user ? (
+            <>
+              <Loader2 className='h-4 w-4 animate-spin' />
+              Checking...
+            </>
+          ) : addToListenLater.isPending ? (
+            <>
+              <Loader2 className='h-4 w-4 animate-spin' />
+              Adding...
+            </>
+          ) : isInListenLater && session?.user ? (
+            <>
+              <Check className='h-4 w-4' />
+              In Listen Later
+            </>
+          ) : (
+            <>
+              <Clock className='h-4 w-4' />
+              Listen Later
+            </>
+          )}
         </Button>
 
         <Button

@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
+import { useMemo } from 'react';
 
-import { graphqlClient } from '@/lib/graphql-client';
+import { useGetMyCollectionsQuery } from '@/generated/graphql';
 
 interface UserAlbum {
   id: string;
@@ -16,41 +16,31 @@ interface UserAlbum {
   };
 }
 
-const MY_COLLECTIONS_ALBUMS_QUERY = `
-  query GetMyCollectionAlbums {
-    myCollections {
-      id
-      name
-      albums {
-        id
-        album {
-          id
-          title
-          releaseDate
-          coverArtUrl
-          artists {
-            artist {
-              name
-            }
-          }
-        }
-      }
+export const useUserCollectionStatus = (albumId: string) => {
+  const { data: session } = useSession();
+
+  // Use the generated GraphQL hook
+  const { data, isLoading } = useGetMyCollectionsQuery(
+    {},
+    {
+      enabled: !!session?.user, // Only fetch if user is authenticated
+      staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     }
-  }
-`;
+  );
 
-const fetchUserCollectionAlbums = async (): Promise<UserAlbum[]> => {
-  try {
-    const data: any = await graphqlClient.request(MY_COLLECTIONS_ALBUMS_QUERY);
-
-    if (!data.myCollections) {
+  // Transform and filter the data
+  const userAlbums = useMemo((): UserAlbum[] => {
+    if (!data?.myCollections) {
       return [];
     }
 
-    // Flatten all albums from all collections
+    // Get albums only from "My Collection" (not Listen Later or other collections)
     const allAlbums: UserAlbum[] = [];
 
     for (const collection of data.myCollections) {
+      // Only check the "My Collection" collection (not Listen Later or other collections)
+      if (collection.name !== 'My Collection') continue;
+
       for (const collectionAlbum of collection.albums || []) {
         if (collectionAlbum.album) {
           const album = collectionAlbum.album;
@@ -61,7 +51,9 @@ const fetchUserCollectionAlbums = async (): Promise<UserAlbum[]> => {
             id: album.id,
             title: album.title,
             artist: artistName,
-            releaseDate: album.releaseDate,
+            releaseDate: album.releaseDate
+              ? album.releaseDate.toString()
+              : undefined,
             image: album.coverArtUrl
               ? {
                   url: album.coverArtUrl,
@@ -76,21 +68,7 @@ const fetchUserCollectionAlbums = async (): Promise<UserAlbum[]> => {
     }
 
     return allAlbums;
-  } catch (error) {
-    console.error('Failed to fetch collection albums:', error);
-    return [];
-  }
-};
-
-export const useUserCollectionStatus = (albumId: string) => {
-  const { data: session } = useSession();
-
-  const { data: userAlbums = [], isLoading } = useQuery({
-    queryKey: ['collections', 'user', 'albums'],
-    queryFn: fetchUserCollectionAlbums,
-    enabled: !!session?.user, // Only fetch if user is authenticated
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-  });
+  }, [data]);
 
   const isInCollection = userAlbums.some(album => album.id === albumId);
 

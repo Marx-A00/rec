@@ -1,0 +1,20 @@
+query GetMyCollections {
+  myCollections {
+    id
+    name
+    albums {
+      id
+      album {
+        id
+        title
+        releaseDate
+        coverArtUrl
+        artists {
+          artist {
+            name
+          }
+        }
+      }
+    }
+  }
+}
