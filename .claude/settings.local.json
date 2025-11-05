@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "Read(//Users/marcosandrade/roaming/projects/rec/.taskmaster/docs/PRDs/**)"
+      "Read(//Users/marcosandrade/roaming/projects/rec/.taskmaster/docs/PRDs/**)",
+      "Read(//Users/marcosandrade/roaming/projects/rec/.taskmaster/docs/**)"
     ],
     "deny": [],
     "ask": []

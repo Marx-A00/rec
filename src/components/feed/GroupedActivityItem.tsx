@@ -406,22 +406,39 @@ function SingleActivityDisplay({
         return (
           <>
             recommends{' '}
-            <span className='text-emeraled-green font-semibold'>
+            <Link
+              href={`/albums/${activity.albumId}?source=local`}
+              className='text-emeraled-green hover:text-emeraled-green/80 font-semibold transition-colors'
+            >
               {activity.albumTitle}
-            </span>{' '}
+            </Link>{' '}
             by{' '}
-            <span className='text-emeraled-green'>{activity.albumArtist}</span>
+            <Link
+              href={`/artists/${activity.artistId}`}
+              className='text-emeraled-green hover:text-emeraled-green/80 transition-colors'
+            >
+              {activity.albumArtist}
+            </Link>
           </>
         );
       case 'collection_add':
         return (
           <span>
             added{' '}
-            <span className='text-cosmic-latte font-medium'>
+            <Link
+              href={`/albums/${activity.albumId}?source=local`}
+              className='text-cosmic-latte hover:text-cosmic-latte/80 font-medium transition-colors'
+            >
               {activity.albumTitle}
-            </span>{' '}
-            by <span className='text-zinc-300'>{activity.albumArtist}</span> to
-            collection
+            </Link>{' '}
+            by{' '}
+            <Link
+              href={`/artists/${activity.artistId}`}
+              className='text-zinc-300 hover:text-emeraled-green transition-colors'
+            >
+              {activity.albumArtist}
+            </Link>{' '}
+            to collection
             {activity.metadata?.collectionName && (
               <span className='text-emeraled-green font-medium'>
                 {' '}

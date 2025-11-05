@@ -59,6 +59,7 @@ export default function SocialActivityFeed({
               coverArtUrl
               artists {
                 artist {
+                  id
                   name
                 }
               }
@@ -79,6 +80,7 @@ export default function SocialActivityFeed({
                 coverArtUrl
                 artists {
                   artist {
+                    id
                     name
                   }
                 }
@@ -141,6 +143,7 @@ export default function SocialActivityFeed({
       albumId: activity.album?.id,
       albumTitle: activity.album?.title,
       albumArtist: activity.album?.artists?.[0]?.artist?.name,
+      artistId: activity.album?.artists?.[0]?.artist?.id,
       albumImage: activity.album?.coverArtUrl,
       createdAt: activity.createdAt,
       metadata: activity.metadata

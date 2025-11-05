@@ -222,7 +222,7 @@ This application uses **BullMQ** with Redis for handling MusicBrainz API request
 
 ### Queue Architecture
 
-#### Production Worker (`src/workers/musicbrainz-worker.ts`)
+#### Production Worker (`src/workers/queue-worker.ts`)
 
 - ✅ **Always running** - no startup delays
 - ✅ **Auto-restart** - recovers from crashes (max 5 attempts)
@@ -230,6 +230,7 @@ This application uses **BullMQ** with Redis for handling MusicBrainz API request
 - ✅ **Rate limiting** - 1 request per second to MusicBrainz API
 - ✅ **Job retention** - keeps last 100 completed, 50 failed jobs
 - ✅ **Enhanced logging** - ready, active, completed, failed, stalled events
+- ✅ **Multi-service** - handles 21 job types across 6 services (MusicBrainz, Spotify, enrichment, etc.)
 
 #### Worker Log Color Coding
 

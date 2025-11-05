@@ -132,7 +132,7 @@ task-master update-subtask --id=<id> --prompt="notes"  # Log progress
 
 - **Rate Limiting**: 1 request/second via BullMQ
 - **Queue Service**: `/src/lib/musicbrainz/queue-service.ts`
-- **Worker**: `/src/workers/musicbrainz-worker.ts`
+- **Worker**: `/src/workers/queue-worker.ts` (handles all background jobs)
 - **Job Types**: `search-artists`, `search-releases`, `get-artist`, `get-release`
 
 ### Component Patterns
