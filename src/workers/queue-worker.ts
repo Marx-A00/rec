@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck - Worker class has type issues, needs refactor
-// src/workers/musicbrainz-worker.ts
+// src/workers/queue-worker.ts
 /**
- * Production MusicBrainz Worker - Always Running
- * Handles all MusicBrainz API calls with rate limiting
+ * Production Queue Worker - Always Running
+ * Handles all background job processing across 6 services (21 job types)
+ * Includes MusicBrainz, Spotify, enrichment, and more
  * Auto-restarts on failures, production-ready
  */
 
@@ -13,6 +14,10 @@ import chalk from 'chalk';
 import { getMusicBrainzQueue } from '@/lib/queue';
 import { processMusicBrainzJob } from '@/lib/queue/musicbrainz-processor';
 import { startQueueActivityMonitor } from '@/lib/activity/queue-activity-monitor';
+import {
+  initializeSpotifyScheduler,
+  shutdownSpotifyScheduler,
+} from '@/lib/spotify/scheduler';
 
 class MusicBrainzWorkerService {
   private worker: any;
@@ -36,6 +41,15 @@ class MusicBrainzWorkerService {
     // Start queue activity monitor
     startQueueActivityMonitor(this.prisma, 15000); // Check every 15 seconds
     console.log('🔄 Queue activity monitor started');
+
+    // Initialize Spotify scheduler (weekly automated syncs)
+    console.log('🎧 Initializing Spotify scheduler...');
+    const schedulerStarted = await initializeSpotifyScheduler();
+    if (schedulerStarted) {
+      console.log('✅ Spotify scheduler started successfully (weekly sync)');
+    } else {
+      console.log('⏭️  Spotify scheduler disabled (check environment variables)');
+    }
 
     // Keep process alive
     this.keepAlive();
@@ -205,6 +219,10 @@ class MusicBrainzWorkerService {
       this.isShuttingDown = true;
 
       try {
+        // Stop Spotify scheduler first
+        console.log('🛑 Stopping Spotify scheduler...');
+        shutdownSpotifyScheduler();
+
         if (this.worker) {
           console.log('⏳ Waiting for current jobs to complete...');
           await this.worker.close();
@@ -214,7 +232,7 @@ class MusicBrainzWorkerService {
         console.error('❌ Error during shutdown:', error);
       }
 
-      console.log('👋 MusicBrainz Worker shutdown complete');
+      console.log('👋 Queue Worker shutdown complete');
       process.exit(0);
     };
 
@@ -258,7 +276,7 @@ class MusicBrainzWorkerService {
 if (require.main === module) {
   const worker = new MusicBrainzWorkerService();
   worker.start().catch(error => {
-    console.error('❌ Failed to start MusicBrainz Worker:', error);
+    console.error('❌ Failed to start Queue Worker:', error);
     process.exit(1);
   });
 }
