@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useSearchStore, SearchType } from '@/stores/useSearchStore';
 
 export interface SimpleSearchBarProps {
   placeholder?: string;
@@ -24,11 +25,20 @@ export default function SimpleSearchBar({
   minQueryLength = 2,
 }: SimpleSearchBarProps) {
   const [query, setQuery] = useState('');
-  // TODO: Re-add 'all' when we figure out the "ALL" search
-  const [searchType, setSearchType] = useState<
-    'albums' | 'artists' | 'tracks' | 'users'
-  >('albums');
   const router = useRouter();
+
+  // Use Zustand store for search type persistence
+  const preferredSearchType = useSearchStore(
+    (state) => state.preferredSearchType
+  );
+  const setPreferredSearchType = useSearchStore(
+    (state) => state.setPreferredSearchType
+  );
+  const addRecentSearch = useSearchStore((state) => state.addRecentSearch);
+
+  // Initialize local search type from store
+  // TODO: Re-add 'all' when we figure out the "ALL" search
+  const [searchType, setSearchType] = useState<SearchType>(preferredSearchType);
 
   // Handle search input changes
   const handleValueChange = useCallback((value: string) => {
@@ -40,13 +50,26 @@ export default function SimpleSearchBar({
     (event: React.KeyboardEvent) => {
       if (event.key === 'Enter' && query.length >= minQueryLength) {
         event.preventDefault();
+
+        // Save search to recent searches
+        addRecentSearch(query.trim());
+
         // Navigate to dedicated search page with type filter
         router.push(
           `/search?q=${encodeURIComponent(query.trim())}&type=${searchType}`
         );
       }
     },
-    [query, minQueryLength, router, searchType]
+    [query, minQueryLength, router, searchType, addRecentSearch]
+  );
+
+  // Handle search type change and persist to store
+  const handleSearchTypeChange = useCallback(
+    (value: SearchType) => {
+      setSearchType(value);
+      setPreferredSearchType(value);
+    },
+    [setPreferredSearchType]
   );
 
   // Handle Escape key to unfocus
@@ -72,10 +95,7 @@ export default function SimpleSearchBar({
       <div className='flex border border-zinc-700 rounded-lg shadow-lg bg-zinc-900 overflow-hidden'>
         {/* Search Type Dropdown */}
         <div className='border-r border-zinc-700'>
-          <Select
-            value={searchType}
-            onValueChange={value => setSearchType(value as any)}
-          >
+          <Select value={searchType} onValueChange={handleSearchTypeChange}>
             <SelectTrigger className='h-9 border-0 bg-zinc-800 text-white rounded-none rounded-l-lg focus:ring-2 focus:ring-inset focus:ring-cosmic-latte w-[110px]'>
               <SelectValue />
             </SelectTrigger>
