@@ -49,6 +49,7 @@
     "queue:worker": "tsx src/scripts/start-worker.ts",
     "test:worker": "tsx src/scripts/test-worker.ts",
     "test:musicbrainz": "tsx src/scripts/test-musicbrainz.ts",
+    "test:spotify-scheduler": "tsx src/scripts/test-spotify-scheduler.ts",
     "worker": "tsx src/workers/queue-worker.ts",
     "dashboard": "tsx src/scripts/bull-board-server.ts",
     "queue:dev": "concurrently \"pnpm dashboard\" \"pnpm worker\" --names \"dashboard,worker\" --prefix-colors \"cyan,yellow\""

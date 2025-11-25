@@ -18,6 +18,10 @@ import {
   initializeSpotifyScheduler,
   shutdownSpotifyScheduler,
 } from '@/lib/spotify/scheduler';
+import {
+  initializeMusicBrainzScheduler,
+  shutdownMusicBrainzScheduler,
+} from '@/lib/musicbrainz/new-releases-scheduler';
 
 class MusicBrainzWorkerService {
   private worker: any;
@@ -44,11 +48,20 @@ class MusicBrainzWorkerService {
 
     // Initialize Spotify scheduler (weekly automated syncs)
     console.log('🎧 Initializing Spotify scheduler...');
-    const schedulerStarted = await initializeSpotifyScheduler();
-    if (schedulerStarted) {
+    const spotifySchedulerStarted = await initializeSpotifyScheduler();
+    if (spotifySchedulerStarted) {
       console.log('✅ Spotify scheduler started successfully (weekly sync)');
     } else {
       console.log('⏭️  Spotify scheduler disabled (check environment variables)');
+    }
+
+    // Initialize MusicBrainz scheduler (weekly automated syncs)
+    console.log('🎵 Initializing MusicBrainz scheduler...');
+    const mbSchedulerStarted = await initializeMusicBrainzScheduler();
+    if (mbSchedulerStarted) {
+      console.log('✅ MusicBrainz scheduler started successfully (weekly sync)');
+    } else {
+      console.log('⏭️  MusicBrainz scheduler disabled');
     }
 
     // Keep process alive
@@ -222,6 +235,10 @@ class MusicBrainzWorkerService {
         // Stop Spotify scheduler first
         console.log('🛑 Stopping Spotify scheduler...');
         shutdownSpotifyScheduler();
+
+        // Stop MusicBrainz scheduler
+        console.log('🛑 Stopping MusicBrainz scheduler...');
+        shutdownMusicBrainzScheduler();
 
         if (this.worker) {
           console.log('⏳ Waiting for current jobs to complete...');
