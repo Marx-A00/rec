@@ -48,8 +48,9 @@ interface Activity {
   albumTitle?: string;
   albumArtist?: string;
   albumImage?: string | null;
+  artistId?: string;
   createdAt: string;
-  metadata?: any;
+  metadata?: unknown;
 }
 
 interface GroupedActivity {
