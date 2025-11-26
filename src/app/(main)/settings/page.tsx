@@ -66,6 +66,22 @@ export default function SettingsPage() {
     }
   }, [userData]);
 
+  // Dirty state detection for profile
+  const hasProfileChanges =
+    profileForm.name !== (userData?.user?.name || '') ||
+    profileForm.bio !== (userData?.user?.bio || '');
+
+  // Dirty state detection for preferences/privacy
+  const _hasPreferencesChanges = false; // TODO: implement when we load actual settings
+
+  // Reset profile form to original values
+  const handleDiscardProfileChanges = () => {
+    setProfileForm({
+      name: userData?.user?.name || '',
+      bio: userData?.user?.bio || '',
+    });
+  };
+
   // Redirect if not authenticated
   if (status === 'loading') {
     return (
@@ -218,7 +234,9 @@ export default function SettingsPage() {
             setShowEmail={setShowEmail}
             isLoading={isLoading}
             updateProfileMutation={updateProfileMutation}
+            hasChanges={hasProfileChanges}
             onSave={handleProfileSave}
+            onDiscard={handleDiscardProfileChanges}
           />
 
           <PreferencesTab

@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, EyeOff, Loader2, Save } from 'lucide-react';
+import { Eye, EyeOff, Loader2, RotateCcw, Save } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,9 @@ interface ProfileTabProps {
   updateProfileMutation: {
     isPending: boolean;
   };
+  hasChanges: boolean;
   onSave: () => Promise<void>;
+  onDiscard: () => void;
 }
 
 export default function ProfileTab({
@@ -40,7 +42,9 @@ export default function ProfileTab({
   setShowEmail,
   isLoading,
   updateProfileMutation,
+  hasChanges,
   onSave,
+  onDiscard,
 }: ProfileTabProps) {
   return (
     <TabsContent value='profile' className='p-6 space-y-6'>
@@ -123,18 +127,39 @@ export default function ProfileTab({
           </div>
         </div>
 
-        <Button
-          onClick={onSave}
-          disabled={isLoading || updateProfileMutation.isPending}
-          className='flex items-center gap-2'
-        >
-          {isLoading || updateProfileMutation.isPending ? (
-            <Loader2 className='w-4 h-4 animate-spin' />
-          ) : (
-            <Save className='w-4 h-4' />
-          )}
-          Save Profile
-        </Button>
+        {/* Action Buttons */}
+        <div className='flex items-center gap-3'>
+          <Button
+            onClick={onDiscard}
+            disabled={
+              !hasChanges || isLoading || updateProfileMutation.isPending
+            }
+            className='flex items-center gap-2 bg-dark-pastel-red text-white hover:bg-dark-pastel-red/90'
+          >
+            <RotateCcw className='w-4 h-4' />
+            Discard Changes
+          </Button>
+          <Button
+            onClick={onSave}
+            disabled={
+              !hasChanges || isLoading || updateProfileMutation.isPending
+            }
+            className='flex items-center gap-2'
+          >
+            {isLoading || updateProfileMutation.isPending ? (
+              <Loader2 className='w-4 h-4 animate-spin' />
+            ) : (
+              <Save className='w-4 h-4' />
+            )}
+            {hasChanges ? 'Save Changes' : 'No Changes'}
+          </Button>
+        </div>
+
+        {hasChanges && (
+          <p className='text-sm text-yellow-400'>
+            You have unsaved changes to your profile.
+          </p>
+        )}
       </div>
     </TabsContent>
   );
