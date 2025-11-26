@@ -1,0 +1,30 @@
+mutation UpdateUserSettings(
+  $theme: String
+  $language: String
+  $profileVisibility: String
+  $showRecentActivity: Boolean
+  $showCollections: Boolean
+) {
+  updateUserSettings(
+    theme: $theme
+    language: $language
+    profileVisibility: $profileVisibility
+    showRecentActivity: $showRecentActivity
+    showCollections: $showCollections
+  ) {
+    id
+    userId
+    theme
+    language
+    profileVisibility
+    showRecentActivity
+    showCollections
+    emailNotifications
+    recommendationAlerts
+    followAlerts
+    defaultCollectionView
+    autoplayPreviews
+    createdAt
+    updatedAt
+  }
+}

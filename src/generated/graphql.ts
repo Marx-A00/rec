@@ -1479,6 +1479,35 @@ export type UpdateProfileMutation = {
   };
 };
 
+export type UpdateUserSettingsMutationVariables = Exact<{
+  theme?: InputMaybe<Scalars['String']['input']>;
+  language?: InputMaybe<Scalars['String']['input']>;
+  profileVisibility?: InputMaybe<Scalars['String']['input']>;
+  showRecentActivity?: InputMaybe<Scalars['Boolean']['input']>;
+  showCollections?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+export type UpdateUserSettingsMutation = {
+  __typename?: 'Mutation';
+  updateUserSettings: {
+    __typename?: 'UserSettings';
+    id: string;
+    userId: string;
+    theme: string;
+    language: string;
+    profileVisibility: string;
+    showRecentActivity: boolean;
+    showCollections: boolean;
+    emailNotifications: boolean;
+    recommendationAlerts: boolean;
+    followAlerts: boolean;
+    defaultCollectionView: string;
+    autoplayPreviews: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+};
+
 export type AddAlbumMutationVariables = Exact<{
   input: AlbumInput;
 }>;
@@ -1934,6 +1963,25 @@ export type GetUserCollectionsQuery = {
         };
       }>;
     }>;
+  } | null;
+};
+
+export type GetUserProfileQueryVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+export type GetUserProfileQuery = {
+  __typename?: 'Query';
+  user?: {
+    __typename?: 'User';
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    bio?: string | null;
+    followersCount: number;
+    followingCount: number;
+    recommendationsCount: number;
   } | null;
 };
 
@@ -2931,6 +2979,62 @@ export const useUpdateProfileMutation = <TError = unknown, TContext = unknown>(
 };
 
 useUpdateProfileMutation.getKey = () => ['UpdateProfile'];
+
+export const UpdateUserSettingsDocument = `
+    mutation UpdateUserSettings($theme: String, $language: String, $profileVisibility: String, $showRecentActivity: Boolean, $showCollections: Boolean) {
+  updateUserSettings(
+    theme: $theme
+    language: $language
+    profileVisibility: $profileVisibility
+    showRecentActivity: $showRecentActivity
+    showCollections: $showCollections
+  ) {
+    id
+    userId
+    theme
+    language
+    profileVisibility
+    showRecentActivity
+    showCollections
+    emailNotifications
+    recommendationAlerts
+    followAlerts
+    defaultCollectionView
+    autoplayPreviews
+    createdAt
+    updatedAt
+  }
+}
+    `;
+
+export const useUpdateUserSettingsMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateUserSettingsMutation,
+    TError,
+    UpdateUserSettingsMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateUserSettingsMutation,
+    TError,
+    UpdateUserSettingsMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateUserSettings'],
+    mutationFn: (variables?: UpdateUserSettingsMutationVariables) =>
+      fetcher<UpdateUserSettingsMutation, UpdateUserSettingsMutationVariables>(
+        UpdateUserSettingsDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useUpdateUserSettingsMutation.getKey = () => ['UpdateUserSettings'];
 
 export const AddAlbumDocument = `
     mutation AddAlbum($input: AlbumInput!) {
@@ -4032,6 +4136,84 @@ export const useInfiniteGetUserCollectionsQuery = <
 useInfiniteGetUserCollectionsQuery.getKey = (
   variables: GetUserCollectionsQueryVariables
 ) => ['GetUserCollections.infinite', variables];
+
+export const GetUserProfileDocument = `
+    query GetUserProfile($userId: String!) {
+  user(id: $userId) {
+    id
+    name
+    email
+    image
+    bio
+    followersCount
+    followingCount
+    recommendationsCount
+  }
+}
+    `;
+
+export const useGetUserProfileQuery = <
+  TData = GetUserProfileQuery,
+  TError = unknown,
+>(
+  variables: GetUserProfileQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetUserProfileQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<GetUserProfileQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<GetUserProfileQuery, TError, TData>({
+    queryKey: ['GetUserProfile', variables],
+    queryFn: fetcher<GetUserProfileQuery, GetUserProfileQueryVariables>(
+      GetUserProfileDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetUserProfileQuery.getKey = (variables: GetUserProfileQueryVariables) => [
+  'GetUserProfile',
+  variables,
+];
+
+export const useInfiniteGetUserProfileQuery = <
+  TData = InfiniteData<GetUserProfileQuery>,
+  TError = unknown,
+>(
+  variables: GetUserProfileQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetUserProfileQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetUserProfileQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetUserProfileQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetUserProfile.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetUserProfileQuery, GetUserProfileQueryVariables>(
+            GetUserProfileDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetUserProfileQuery.getKey = (
+  variables: GetUserProfileQueryVariables
+) => ['GetUserProfile.infinite', variables];
 
 export const GetRecommendationFeedDocument = `
     query GetRecommendationFeed($cursor: String, $limit: Int) {
