@@ -1,0 +1,108 @@
+/* Driver.js Custom Theme - Matching Rec Design System */
+
+/* Popover Container */
+.driver-popover {
+  @apply bg-zinc-900 border-2 border-zinc-700 rounded-xl shadow-2xl;
+  max-width: 420px !important;
+}
+
+/* Title */
+.driver-popover-title {
+  @apply text-xl font-bold text-white mb-3;
+  font-size: 1.25rem !important;
+}
+
+/* Description */
+.driver-popover-description {
+  @apply text-zinc-300 text-sm leading-relaxed mb-6;
+  line-height: 1.6 !important;
+}
+
+/* Footer */
+.driver-popover-footer {
+  @apply pt-4 border-t border-zinc-800;
+}
+
+/* Progress Text */
+.driver-popover-progress-text {
+  @apply text-xs text-zinc-500 font-medium;
+}
+
+/* Buttons */
+.driver-popover-next-btn,
+.driver-popover-prev-btn,
+.driver-popover-close-btn {
+  @apply px-4 py-2 text-sm rounded-lg font-medium transition-colors;
+  border: none !important;
+  outline: none !important;
+}
+
+.driver-popover-next-btn {
+  @apply bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg;
+}
+
+.driver-popover-prev-btn {
+  @apply bg-zinc-700 hover:bg-zinc-600 text-zinc-300;
+}
+
+.driver-popover-close-btn {
+  @apply text-zinc-400 hover:text-white;
+  background: transparent !important;
+  padding: 0.5rem !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+.driver-popover-close-btn:hover {
+  @apply text-white bg-zinc-800;
+  border-radius: 0.375rem;
+}
+
+/* Arrow */
+.driver-popover-arrow {
+  @apply border-zinc-700;
+}
+
+.driver-popover-arrow-side-left.driver-popover-arrow {
+  border-right-color: #3f3f46 !important; /* zinc-700 */
+}
+
+.driver-popover-arrow-side-right.driver-popover-arrow {
+  border-left-color: #3f3f46 !important;
+}
+
+.driver-popover-arrow-side-top.driver-popover-arrow {
+  border-bottom-color: #3f3f46 !important;
+}
+
+.driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-top-color: #3f3f46 !important;
+}
+
+/* Highlighted Element */
+.driver-active-element {
+  @apply ring-2 ring-cosmic-latte ring-offset-2 ring-offset-zinc-900;
+}
+
+/* Overlay */
+.driver-overlay {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(2px);
+}
+
+/* Animation */
+.driver-popover {
+  animation: popoverFadeIn 0.2s ease-in-out;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
