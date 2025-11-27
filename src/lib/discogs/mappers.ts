@@ -38,6 +38,7 @@ export function mapDiscogsMasterToAlbum(discogsMaster: DiscogsMaster): Album {
   return {
     id: discogsMaster.id.toString(),
     title: discogsMaster.title,
+    source: 'discogs',
     artists: discogsMaster.artists.map(artist => ({
       id: artist.id.toString(),
       name: artist.name,
@@ -127,6 +128,7 @@ export function mapDiscogsReleaseToAlbum(
   return {
     id: discogsRelease.id.toString(),
     title: discogsRelease.title,
+    source: 'discogs',
     artists: discogsRelease.artists.map(artist => ({
       id: artist.id.toString(),
       name: artist.name,

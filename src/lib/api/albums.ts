@@ -61,6 +61,7 @@ export async function getAlbumDetails(
     const album: Album = {
       id: dbAlbum.id,
       title: dbAlbum.title,
+      source: 'local',
       artists:
         dbAlbum.artists?.map(a => ({
           id: a.artist.id,
@@ -118,6 +119,7 @@ export async function getAlbumDetails(
       const album: Album = {
         id,
         title: mb.title,
+        source: 'musicbrainz',
         artists:
           mb['artist-credit']?.map((ac: any) => ({
             id: ac.artist?.id || '',
