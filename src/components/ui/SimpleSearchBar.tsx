@@ -105,14 +105,7 @@ export default function SimpleSearchBar({
               <SelectItem value='albums'>Albums</SelectItem>
               <SelectItem value='artists'>Artists</SelectItem>
               <SelectItem value='tracks'>Tracks</SelectItem>
-              <SelectItem
-                value='users'
-                disabled
-                className='opacity-50 cursor-not-allowed text-zinc-400'
-                title='Coming soon'
-              >
-                Users (coming soon)
-              </SelectItem>
+              <SelectItem value='users'>Users</SelectItem>
             </SelectContent>
           </Select>
         </div>

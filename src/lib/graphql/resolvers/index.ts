@@ -204,14 +204,18 @@ export const resolvers: Resolvers = {
 
         // Map GraphQL search type to SearchType[]
         let searchTypes: SearchType[] = [];
+        let searchUsers = false;
         if (type === 'ALL') {
           searchTypes = ['album', 'artist', 'track'];
+          searchUsers = true;
         } else if (type === 'ARTIST') {
           searchTypes = ['artist'];
         } else if (type === 'ALBUM') {
           searchTypes = ['album'];
         } else if (type === 'TRACK') {
           searchTypes = ['track'];
+        } else if (type === 'USER') {
+          searchUsers = true;
         }
 
         // Determine which sources to search based on searchMode
@@ -878,13 +882,44 @@ export const resolvers: Resolvers = {
         }
         const tracks = Array.from(tracksMap.values());
 
-        const currentCount = artists.length + albums.length + tracks.length;
-        const totalAvailable = searchResult.totalResults;
+        // Search users if requested (only local search)
+        let users = [];
+        if (searchUsers) {
+          const userWhere = {
+            OR: [
+              { name: { contains: query, mode: 'insensitive' as const } },
+              { bio: { contains: query, mode: 'insensitive' as const } },
+            ],
+          };
+
+          users = await prisma.user.findMany({
+            where: userWhere,
+            take: type === 'USER' ? limit : Math.ceil(limit / 4), // Divide by 4 for ALL searches (albums, artists, tracks, users)
+            include: {
+              _count: {
+                select: {
+                  collections: true,
+                  recommendations: true,
+                  followers: true,
+                  following: true,
+                },
+              },
+            },
+            orderBy: [
+              { followersCount: 'desc' }, // Popular users first
+              { createdAt: 'desc' },
+            ],
+          });
+        }
+
+        const currentCount = artists.length + albums.length + tracks.length + users.length;
+        const totalAvailable = searchResult.totalResults + users.length;
 
         return {
           artists,
           albums,
           tracks,
+          users,
           total: totalAvailable,
           currentCount,
           hasMore: currentCount < totalAvailable,
@@ -895,6 +930,7 @@ export const resolvers: Resolvers = {
           artists: [],
           albums: [],
           tracks: [],
+          users: [],
           total: 0,
           currentCount: 0,
           hasMore: false,

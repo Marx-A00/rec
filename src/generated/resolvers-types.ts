@@ -992,6 +992,7 @@ export type SearchResults = {
   hasMore: Scalars['Boolean']['output'];
   total: Scalars['Int']['output'];
   tracks: Array<Track>;
+  users: Array<User>;
 };
 
 export enum SearchType {
@@ -999,6 +1000,7 @@ export enum SearchType {
   All = 'ALL',
   Artist = 'ARTIST',
   Track = 'TRACK',
+  User = 'USER',
 }
 
 export type SpotifyAlbum = {
@@ -2968,6 +2970,7 @@ export type SearchResultsResolvers<
   hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   tracks?: Resolver<Array<ResolversTypes['Track']>, ParentType, ContextType>;
+  users?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

@@ -112,6 +112,8 @@ export function useUniversalSearch(
     type = SearchType.Artist;
   } else if (searchType === 'tracks') {
     type = SearchType.Track;
+  } else if (searchType === 'users') {
+    type = SearchType.User;
   }
 
   // Map SearchMode to GraphQL enum
@@ -306,6 +308,37 @@ export function useUniversalSearch(
       );
     }
 
+    // Transform users
+    if (searchData.users) {
+      searchData.users.forEach(user => {
+        transformedResults.push({
+          id: user.id,
+          type: 'user' as const,
+          title: user.name || 'Unknown User',
+          subtitle: user.bio || 'User',
+          artist: '', // Not applicable for users
+          releaseDate: '',
+          genre: [],
+          label: '',
+          source: 'local',
+          image: {
+            url: user.image || '',
+            width: 300,
+            height: 300,
+            alt: user.name || 'User',
+          },
+          cover_image: user.image || undefined,
+          _discogs: {},
+          // Add user-specific context data
+          contextData: {
+            followersCount: user.followersCount,
+            followingCount: user.followingCount,
+            recommendationsCount: user.recommendationsCount,
+          },
+        });
+      });
+    }
+
     return transformedResults;
   }, [queryResult.data?.search]);
 
@@ -315,6 +348,7 @@ export function useUniversalSearch(
       albums: results.filter(r => r.type === 'album'),
       artists: results.filter(r => r.type === 'artist'),
       tracks: results.filter(r => r.type === 'track'),
+      users: results.filter(r => r.type === 'user'),
       labels: [],
       other: [],
     };

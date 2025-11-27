@@ -1018,6 +1018,7 @@ export type SearchResults = {
   hasMore: Scalars['Boolean']['output'];
   total: Scalars['Int']['output'];
   tracks: Array<Track>;
+  users: Array<User>;
 };
 
 export enum SearchType {
@@ -1025,6 +1026,7 @@ export enum SearchType {
   All = 'ALL',
   Artist = 'ARTIST',
   Track = 'TRACK',
+  User = 'USER',
 }
 
 export type SpotifyAlbum = {
@@ -2254,6 +2256,16 @@ export type SearchQuery = {
         __typename?: 'ArtistCredit';
         artist: { __typename?: 'Artist'; id: string; name: string };
       }>;
+    }>;
+    users: Array<{
+      __typename?: 'User';
+      id: string;
+      name?: string | null;
+      image?: string | null;
+      bio?: string | null;
+      followersCount: number;
+      followingCount: number;
+      recommendationsCount: number;
     }>;
   };
 };
@@ -4642,6 +4654,15 @@ export const SearchDocument = `
           name
         }
       }
+    }
+    users {
+      id
+      name
+      image
+      bio
+      followersCount
+      followingCount
+      recommendationsCount
     }
   }
 }

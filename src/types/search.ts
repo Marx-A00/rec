@@ -184,6 +184,10 @@ export interface UnifiedSearchResult {
     recommendationScore?: number;
     collectionStatus?: string;
     userRating?: number;
+    // User-specific fields
+    followersCount?: number;
+    followingCount?: number;
+    recommendationsCount?: number;
   };
 
   // Enhanced genre and classification
