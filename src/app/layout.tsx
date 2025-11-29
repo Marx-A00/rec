@@ -7,7 +7,7 @@ import '@/styles/driver-custom.css';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { CollectionToastProvider } from '@/components/ui/CollectionToastProvider';
-import { OnboardingTour } from '@/components/OnboardingTour';
+import { TourProvider } from '@/contexts/TourContext';
 import { TourDebugPanel } from '@/components/TourDebugPanel';
 
 const geistSans = Geist({
@@ -38,9 +38,10 @@ export default function RootLayout({
       >
         <SessionProvider>
           <QueryProvider>
-            <OnboardingTour />
-            <CollectionToastProvider>{children}</CollectionToastProvider>
-            <TourDebugPanel />
+            <TourProvider>
+              <CollectionToastProvider>{children}</CollectionToastProvider>
+              <TourDebugPanel />
+            </TourProvider>
           </QueryProvider>
         </SessionProvider>
       </body>

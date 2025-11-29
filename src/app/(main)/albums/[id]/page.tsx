@@ -97,7 +97,7 @@ export default async function AlbumDetailsPage({
         {/* Album Info */}
         <div className='lg:col-span-2 space-y-6'>
           <div>
-            <h1 className='text-4xl font-bold mb-2 text-white'>
+            <h1 data-tour-step="album-header" className='text-4xl font-bold mb-2 text-white'>
               {album.title}
             </h1>
             <p className='text-xl text-zinc-300 mb-4'>{album.subtitle}</p>

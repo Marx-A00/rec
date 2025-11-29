@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Play, RotateCcw, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react';
+
+import { useTour } from '@/contexts/TourContext';
 
 /**
  * Tour Debug Panel - Development Testing Tool
@@ -11,7 +13,7 @@ import { Play, RotateCcw, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react
  *
  * Features:
  * - Start tour manually
- * - Restart current tour
+ * - Stop current tour
  * - Reset onboarding status (to test new user flow)
  * - Collapsible to stay out of the way
  */
@@ -19,67 +21,28 @@ export function TourDebugPanel() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
 
+  const { startTour, stopTour, resetOnboarding, startFromStep, currentStep, isTourActive } = useTour();
+
+  // Expose button check function globally
+  useEffect(() => {
+    (window as unknown as { checkButton: () => Element | null }).checkButton = () => {
+      const el = document.querySelector('[data-tour-step="create-recommendation"]');
+      console.log('🔍 Button check:', {
+        found: !!el,
+        element: el,
+        id: (el as HTMLElement)?.id,
+        opacity: el ? window.getComputedStyle(el).opacity : 'N/A',
+        visibility: el ? window.getComputedStyle(el).visibility : 'N/A',
+        display: el ? window.getComputedStyle(el).display : 'N/A'
+      });
+      return el;
+    };
+  }, []);
+
   // Only show in development
   if (process.env.NODE_ENV !== 'development') {
     return null;
   }
-
-  const handleStartTour = () => {
-    console.log('🎯 Starting tour...');
-    // This will work with both NextStepJS (current) and Driver.js (future)
-    if ((window as any).startNextStep) {
-      (window as any).startNextStep('welcome-onboarding');
-    } else if ((window as any).startTour) {
-      (window as any).startTour();
-    } else {
-      alert('⚠️ Tour system not initialized. Refresh the page and try again.');
-    }
-  };
-
-  const handleRestartTour = () => {
-    console.log('🔄 Restarting tour...');
-    // First try to stop current tour
-    if ((window as any).debugTour?.restartTour) {
-      (window as any).debugTour.restartTour();
-    } else {
-      // Fallback: just start from beginning
-      handleStartTour();
-    }
-  };
-
-  const handleResetOnboarding = async () => {
-    const confirmed = confirm(
-      '🔄 This will reset your onboarding status to make you appear as a "new user".\n\n' +
-      'After clicking OK, refresh the page to trigger the auto-start tour.\n\n' +
-      'Continue?'
-    );
-
-    if (!confirmed) return;
-
-    try {
-      console.log('🗑️ Resetting onboarding status...');
-      const response = await fetch('/api/users/onboarding-status/reset', {
-        method: 'POST',
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log('✅ Onboarding status reset!', data);
-        alert(
-          '✅ Success!\n\n' +
-          'Your onboarding status has been reset.\n' +
-          'Refresh the page to trigger the tour automatically.'
-        );
-      } else {
-        console.error('❌ Failed to reset onboarding:', data);
-        alert(`❌ Error: ${data.error || 'Failed to reset onboarding status'}`);
-      }
-    } catch (error) {
-      console.error('❌ Error resetting onboarding:', error);
-      alert('❌ Network error. Check console for details.');
-    }
-  };
 
   const handleCheckOnboardingStatus = async () => {
     try {
@@ -109,7 +72,7 @@ export function TourDebugPanel() {
     return (
       <button
         onClick={() => setIsVisible(true)}
-        className='fixed bottom-4 left-4 z-[9999] p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg transition-all'
+        className='fixed bottom-4 right-4 z-[9999] p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg transition-all'
         title='Show Tour Debug Panel'
       >
         <Play className='w-5 h-5' />
@@ -118,12 +81,17 @@ export function TourDebugPanel() {
   }
 
   return (
-    <div className='fixed bottom-4 left-4 z-[9999] bg-zinc-900 border-2 border-purple-600 rounded-xl shadow-2xl overflow-hidden transition-all'>
+    <div className='fixed bottom-4 right-4 z-[9999] bg-zinc-900 border-2 border-purple-600 rounded-xl shadow-2xl overflow-hidden transition-all'>
       {/* Header */}
       <div className='flex items-center justify-between gap-3 px-4 py-3 bg-purple-600 text-white'>
         <div className='flex items-center gap-2'>
           <Play className='w-4 h-4' />
           <span className='font-bold text-sm'>Tour Debug Panel</span>
+          {isTourActive && (
+            <span className='text-xs bg-emerald-500 px-2 py-1 rounded-full'>
+              Active: Step {currentStep !== null ? currentStep + 1 : '?'}
+            </span>
+          )}
         </div>
         <div className='flex items-center gap-2'>
           <button
@@ -158,19 +126,63 @@ export function TourDebugPanel() {
           {/* Primary Actions */}
           <div className='space-y-2'>
             <button
-              onClick={handleStartTour}
-              className='w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-all shadow-lg'
+              onClick={startTour}
+              className='w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
+              disabled={isTourActive}
             >
               <Play className='w-4 h-4' />
-              Start Tour
+              {isTourActive ? 'Tour Running...' : 'Start Tour'}
             </button>
 
             <button
-              onClick={handleRestartTour}
-              className='w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all'
+              onClick={() => startFromStep(1)}
+              className='w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
+              disabled={isTourActive}
             >
-              <RotateCcw className='w-4 h-4' />
-              Restart Tour
+              🎯 Test Step 2 (Recommend Button)
+            </button>
+
+            <button
+              onClick={stopTour}
+              className='w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+              disabled={!isTourActive}
+            >
+              <X className='w-4 h-4' />
+              Stop Tour
+            </button>
+          </div>
+
+          {/* Element Detection Diagnostic */}
+          <div className='border-t border-zinc-700 pt-3'>
+            <div className='text-xs text-zinc-400 font-medium mb-2'>
+              Element Detection
+            </div>
+            <button
+              onClick={() => {
+                const el = document.querySelector('[data-tour-step="create-recommendation"]');
+                const details = {
+                  found: !!el,
+                  id: (el as HTMLElement)?.id || 'N/A',
+                  opacity: el ? window.getComputedStyle(el).opacity : 'N/A',
+                  visibility: el ? window.getComputedStyle(el).visibility : 'N/A',
+                  display: el ? window.getComputedStyle(el).display : 'N/A',
+                };
+
+                console.log('🔍 Button Detection Test:', details);
+
+                alert(
+                  `Button Detection Test\n\n` +
+                  `Found: ${el ? '✅ YES' : '❌ NO'}\n` +
+                  `ID: ${details.id}\n` +
+                  `Opacity: ${details.opacity}\n` +
+                  `Visibility: ${details.visibility}\n` +
+                  `Display: ${details.display}\n\n` +
+                  `Check console for full details.`
+                );
+              }}
+              className='w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-all'
+            >
+              🔍 Check Button Now
             </button>
           </div>
 
@@ -189,27 +201,33 @@ export function TourDebugPanel() {
               </button>
 
               <button
-                onClick={handleResetOnboarding}
+                onClick={resetOnboarding}
                 className='w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-all'
               >
                 <Trash2 className='w-4 h-4' />
-                Reset Onboarding
+                Reset & Restart Tour
               </button>
             </div>
           </div>
 
           {/* Info */}
           <div className='text-xs text-zinc-500 leading-relaxed pt-2 border-t border-zinc-800'>
-            💡 <strong>Tip:</strong> Reset onboarding to test the new user auto-start flow. Refresh the page after resetting.
+            💡 <strong>Tip:</strong> Reset onboarding automatically restarts the tour after 500ms.
           </div>
 
           {/* Console Commands */}
           <div className='text-xs text-zinc-500 pt-2 border-t border-zinc-800'>
             <div className='font-medium mb-1'>Console Commands:</div>
             <code className='block bg-zinc-800 p-2 rounded text-zinc-400 font-mono text-xs'>
-              window.startTour()
+              window.checkButton()
               <br />
-              window.debugTour.restartTour()
+              window.debugTour.start()
+              <br />
+              window.debugTour.jumpToStep(1)
+              <br />
+              window.debugTour.stop()
+              <br />
+              window.debugTour.reset()
             </code>
           </div>
         </div>

@@ -56,6 +56,7 @@ export default async function ArtistDetailsPage({
       {/* Artist Header */}
       <div
         id='artist-page-header'
+        data-tour-step="artist-header"
         className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'
       >
         {/* Artist Image */}
@@ -209,6 +210,7 @@ export default async function ArtistDetailsPage({
 
         <TabsContent
           value='discography'
+          data-tour-step="artist-discography"
           className='focus:outline-none outline-none'
         >
           <DiscographyTab

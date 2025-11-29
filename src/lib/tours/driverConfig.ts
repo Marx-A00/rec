@@ -19,7 +19,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '#create-recommendation-button',
+    element: '[data-tour-step="create-recommendation"]',
     popover: {
       title: '🎤 Share Your Music Taste',
       description: 'Click this button to create your first recommendation! Share albums you love and discover what others are listening to.',
@@ -28,7 +28,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '#recommendation-drawer',
+    element: '[data-tour-step="recommendation-drawer"]',
     popover: {
       title: '✨ Create Your First Recommendation',
       description: 'Great! Now you can search for an album and add your personal recommendation. This is how you share your music taste with the community.',
@@ -37,7 +37,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '#recommendation-search-input',
+    element: '[data-tour-step="recommendation-search"]',
     popover: {
       title: '🎯 Demo Recommendation',
       description: 'check this shit out cuh',
@@ -46,7 +46,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '#similarity-rating-dial',
+    element: '[data-tour-step="similarity-dial"]',
     popover: {
       title: '⭐ Rate the Similarity',
       description: 'Use the rating dial to score how similar the albums are! Drag the dial or click to set a rating from 1-10. This helps other users understand your recommendation.',
@@ -55,7 +55,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '#submit-recommendation-button',
+    element: '[data-tour-step="submit-recommendation"]',
     popover: {
       title: '🚀 Submit Your Recommendation',
       description: 'Hit this green button cuh',
@@ -64,7 +64,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '#discover-nav-button',
+    element: '[data-tour-step="discover-nav"]',
     popover: {
       title: '🌟 Discover New Music',
       description: 'Amazing! Now that you know how to recommend music, explore what others are sharing. Click Next to go to the Browse & Discover page!',
@@ -73,7 +73,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '#browse-page-header',
+    element: '[data-tour-step="browse-header"]',
     popover: {
       title: '🎵 Welcome to Discovery',
       description: 'Perfect! This is where the magic happens. Browse through trending albums, discover new artists, and explore recommendations from other music lovers. Everything is organized to help you find your next favorite album!',
@@ -82,7 +82,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '#main-search-bar',
+    element: '[data-tour-step="main-search"]',
     popover: {
       title: '🔍 Search for Music',
       description: "Use the search bar to find albums, artists, and tracks. This is your gateway to discovering new music. Click Next and I'll show you by searching for the legendary electronic duo Daft Punk!",
@@ -91,7 +91,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '#artist-page-header',
+    element: '[data-tour-step="artist-header"]',
     popover: {
       title: '🤖 Welcome to Artist Pages',
       description: "Fantastic! This is an artist page where you can explore everything about an artist. Here you can see their biography, discography, collaborations, and discover similar artists. This is where you dive deep into an artist's world!",
@@ -100,7 +100,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '#artist-discography',
+    element: '[data-tour-step="artist-discography"]',
     popover: {
       title: '💿 Explore Albums',
       description: "Now let's explore Daft Punk's legendary discography! I'll show you how to interact with albums. Click Next and I'll demonstrate by opening the iconic \"Random Access Memories\" album details.",
@@ -109,7 +109,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: 'h1',
+    element: '[data-tour-step="album-header"]',
     popover: {
       title: '🎵 Album Details & Interactions',
       description: 'Perfect! This is a dedicated album page where you can explore everything about this album. Here you can see detailed information, track listings, reviews, add to your collection, and discover what others are saying about it. These interactions are the heart of music discovery!',
@@ -118,7 +118,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: 'nav',
+    element: '[data-tour-step="profile-nav"]',
     popover: {
       title: '👤 Explore Your Profile',
       description: "Now let's explore your personal music profile! This is where you can showcase your music taste, connect with other music lovers, and track your listening journey. Click Next and I'll take you to your profile page.",
@@ -127,7 +127,7 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: 'h1',
+    element: '[data-tour-step="profile-header"]',
     popover: {
       title: '✨ Welcome to Your Profile!',
       description: 'Amazing! This is your personal music profile page. Here you can see your recommendations, followers, music stats, create collages, manage your collections, and showcase your unique music taste to the community. This is your musical identity hub!',

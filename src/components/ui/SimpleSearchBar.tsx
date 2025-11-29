@@ -118,6 +118,7 @@ export default function SimpleSearchBar({
           <div className='[&_.border-b]:border-0 [&_[cmdk-input-wrapper]]:border-0 [&_svg]:text-cosmic-latte [&_svg]:opacity-100'>
             <CommandInput
               id='main-search-bar'
+              data-tour-step="main-search"
               placeholder={placeholder}
               value={query}
               onValueChange={handleValueChange}

@@ -47,6 +47,7 @@ export const NavigationItem: FC<NavigationItemProps> = ({
   const ItemIcon = item.icon;
   const itemContent = (
     <div
+      data-tour-step={item.id === 'recommend' ? 'create-recommendation' : undefined}
       className={cn(
         'transition-all duration-200',
         isCollapsed
