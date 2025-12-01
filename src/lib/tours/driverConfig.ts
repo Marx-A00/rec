@@ -24,7 +24,7 @@ export const tourSteps: DriveStep[] = [
       title: '🎤 Share Your Music Taste',
       description: 'Click this button to create your first recommendation! Share albums you love and discover what others are listening to.',
       side: 'right',
-      align: 'start'
+      align: 'center'
     }
   },
   {
@@ -148,10 +148,19 @@ export const driverConfig: Config = {
   // Smooth animations
   animate: true,
 
-  // Allow close via X button, ESC key, or clicking overlay
+  // Staging and padding for better visibility
+  stagePadding: 10,          // More padding around highlighted element
+  stageRadius: 8,            // Border radius of highlight cutout
+
+  // Popover styling
+  popoverClass: 'driver-popover-custom',
+
+  // Disable overlay - just show popovers pointing to elements
+  overlayOpacity: 0,         // No dark overlay (set to 0)
+
+  // Allow close via X button, ESC key
   allowClose: true,
   allowKeyboardControl: true, // Enable ESC key to close
-  overlayClickBehavior: 'close', // Clicking overlay closes the tour
   disableActiveInteraction: false, // Allow interacting with highlighted element
 
   // Callbacks for navigation between pages

@@ -160,29 +160,61 @@ export function TourDebugPanel() {
             <button
               onClick={() => {
                 const el = document.querySelector('[data-tour-step="create-recommendation"]');
+
+                if (!el) {
+                  alert('❌ Element NOT FOUND!');
+                  return;
+                }
+
+                const rect = el.getBoundingClientRect();
+                const computed = window.getComputedStyle(el);
                 const details = {
                   found: !!el,
-                  id: (el as HTMLElement)?.id || 'N/A',
-                  opacity: el ? window.getComputedStyle(el).opacity : 'N/A',
-                  visibility: el ? window.getComputedStyle(el).visibility : 'N/A',
-                  display: el ? window.getComputedStyle(el).display : 'N/A',
+                  tagName: (el as HTMLElement).tagName,
+                  id: (el as HTMLElement).id || 'N/A',
+                  className: (el as HTMLElement).className,
+                  rect: {
+                    x: Math.round(rect.x),
+                    y: Math.round(rect.y),
+                    width: Math.round(rect.width),
+                    height: Math.round(rect.height),
+                  },
+                  computed: {
+                    display: computed.display,
+                    position: computed.position,
+                    width: computed.width,
+                    height: computed.height,
+                    padding: computed.padding,
+                    opacity: computed.opacity,
+                    visibility: computed.visibility,
+                  },
+                  parent: {
+                    tagName: el.parentElement?.tagName,
+                    className: el.parentElement?.className,
+                  }
                 };
 
-                console.log('🔍 Button Detection Test:', details);
+                console.log('🔍 FULL Element Diagnostic:', details);
+                console.log('📐 Raw element:', el);
 
                 alert(
-                  `Button Detection Test\n\n` +
-                  `Found: ${el ? '✅ YES' : '❌ NO'}\n` +
-                  `ID: ${details.id}\n` +
-                  `Opacity: ${details.opacity}\n` +
-                  `Visibility: ${details.visibility}\n` +
-                  `Display: ${details.display}\n\n` +
-                  `Check console for full details.`
+                  `Element Diagnostic\n\n` +
+                  `Tag: ${details.tagName}\n` +
+                  `Class: ${details.className.substring(0, 50)}...\n\n` +
+                  `BOUNDING RECT:\n` +
+                  `Width: ${details.rect.width}px\n` +
+                  `Height: ${details.rect.height}px\n` +
+                  `X: ${details.rect.x}px, Y: ${details.rect.y}px\n\n` +
+                  `COMPUTED STYLES:\n` +
+                  `Display: ${details.computed.display}\n` +
+                  `Position: ${details.computed.position}\n` +
+                  `Opacity: ${details.computed.opacity}\n\n` +
+                  `Check console for FULL details!`
                 );
               }}
               className='w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-all'
             >
-              🔍 Check Button Now
+              🔍 Check Button Dimensions
             </button>
           </div>
 
