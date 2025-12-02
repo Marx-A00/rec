@@ -167,6 +167,26 @@ export const driverConfig: Config = {
   onNextClick: (element, step, options) => {
     const stepIndex = options.state.activeIndex ?? 0;
 
+    // Step 2: Auto-click "Create Recommendation" button to open drawer
+    if (stepIndex === 1) {
+      console.log('🎵 Auto-opening recommendation drawer...');
+
+      // Find the button element - it's the parent of the div with data-tour-step
+      const buttonDiv = document.querySelector('[data-tour-step="create-recommendation"]');
+      const button = buttonDiv?.parentElement;
+
+      if (button instanceof HTMLElement) {
+        button.click();
+        console.log('✅ Clicked recommendation button');
+        // Move to next step immediately
+        options.driver.moveNext();
+      } else {
+        console.error('❌ Could not find recommendation button');
+        options.driver.moveNext();
+      }
+      return;
+    }
+
     // Step 6: Navigate to /browse
     if (stepIndex === 6) {
       console.log('🌟 Navigating to /browse page...');
