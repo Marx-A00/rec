@@ -79,7 +79,7 @@ export function TourDebugPanel() {
           <span className='font-bold text-sm'>Tour Debug Panel</span>
           {isTourActive && (
             <span className='text-xs bg-emerald-500 px-2 py-1 rounded-full'>
-              Active: Step {currentStep !== null ? currentStep + 1 : '?'}
+              Active: Step {(currentStep ?? 0) + 1}
             </span>
           )}
         </div>
