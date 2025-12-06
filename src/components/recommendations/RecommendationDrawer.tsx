@@ -261,6 +261,7 @@ export default function RecommendationDrawer({
     <Drawer open={isOpen} onOpenChange={handleDrawerClose} handleOnly={true}>
       <DrawerContent
         id='recommendation-drawer'
+        data-tour-step="recommendation-drawer"
         className='h-[90vh] bg-zinc-900 border-zinc-700'
       >
         <DrawerHeader className='flex-shrink-0'>

@@ -39,6 +39,7 @@ export function useSearchNavigation(options: UseSearchNavigationOptions) {
     navigateToArtist,
     navigateToLabel,
     navigateToTrack,
+    navigateToProfile,
     prefetchRoute,
   } = useNavigation();
 
@@ -109,6 +110,13 @@ export function useSearchNavigation(options: UseSearchNavigationOptions) {
               throw new Error(`Failed to navigate to track: ${error.message}`);
             },
           });
+        } else if (result.type === 'user') {
+          // Navigate to user profile page
+          await navigateToProfile(result.id, {
+            onError: error => {
+              throw new Error(`Failed to navigate to user profile: ${error.message}`);
+            },
+          });
         } else {
           throw new Error(`Unknown result type: ${result.type}`);
         }
@@ -124,6 +132,7 @@ export function useSearchNavigation(options: UseSearchNavigationOptions) {
       navigateToArtist,
       navigateToLabel,
       navigateToTrack,
+      navigateToProfile,
     ]
   );
 
@@ -153,6 +162,8 @@ export function useSearchNavigation(options: UseSearchNavigationOptions) {
             if (albumId) {
               prefetchRoute(`/albums/${albumId}`);
             }
+          } else if (result.type === 'user') {
+            prefetchRoute(`/profile/${result.id}`);
           }
         } catch (error) {
           // Silently fail prefetching - it's not critical

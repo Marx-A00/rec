@@ -29,6 +29,8 @@ export const JOB_TYPES = {
   // Spotify Sync Jobs (batch processing)
   SPOTIFY_SYNC_NEW_RELEASES: 'spotify:sync-new-releases',
   SPOTIFY_SYNC_FEATURED_PLAYLISTS: 'spotify:sync-featured-playlists',
+  // MusicBrainz Sync Jobs (batch processing)
+  MUSICBRAINZ_SYNC_NEW_RELEASES: 'musicbrainz:sync-new-releases',
   // Simple Migration Job (one-time use)
   RUN_DISCOGS_MIGRATION: 'migration:run-discogs-migration',
   // Cover Art Caching Jobs
@@ -198,6 +200,23 @@ export interface SpotifySyncFeaturedPlaylistsJobData {
 }
 
 // ============================================================================
+// MusicBrainz Sync Job Data Interfaces
+// ============================================================================
+
+export interface MusicBrainzSyncNewReleasesJobData {
+  query: string; // Lucene query with date range and genre filters
+  limit?: number; // Number of releases to fetch (default: 50)
+  dateRange?: {
+    from: string; // ISO date string (YYYY-MM-DD)
+    to: string; // ISO date string (YYYY-MM-DD)
+  };
+  genres?: string[]; // List of genres to filter by
+  priority?: 'low' | 'medium' | 'high';
+  requestId?: string;
+  source?: 'scheduled' | 'manual' | 'graphql'; // How this sync was triggered
+}
+
+// ============================================================================
 // Simple Migration Job (one-time use)
 // ============================================================================
 
@@ -274,6 +293,7 @@ export type MusicBrainzJobData =
   | EnrichTrackJobData
   | SpotifySyncNewReleasesJobData
   | SpotifySyncFeaturedPlaylistsJobData
+  | MusicBrainzSyncNewReleasesJobData
   | RunDiscogsMigrationJobData
   | CacheAlbumCoverArtJobData
   | CacheArtistImageJobData

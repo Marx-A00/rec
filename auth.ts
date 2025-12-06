@@ -5,8 +5,10 @@ import Spotify from 'next-auth/providers/spotify';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import type { User } from '@prisma/client';
+import { CredentialsSignin } from 'next-auth';
 
 import prisma from '@/lib/prisma';
+import { AUTH_ERROR_CODES } from '@/types/auth';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma) as any, // Custom 'role' field not in standard AdapterUser type
@@ -57,38 +59,69 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        // Validate credentials are provided
         if (!credentials?.email || !credentials?.password) {
-          return null;
+          console.error(
+            '[auth] Sign-in attempt with missing credentials',
+            new Date().toISOString()
+          );
+          throw new CredentialsSignin(AUTH_ERROR_CODES.MISSING_CREDENTIALS);
         }
 
         const email = credentials.email as string;
         const password = credentials.password as string;
 
+        // Find user in database
         const user = (await prisma.user.findUnique({
           where: {
             email: email.toLowerCase(),
           },
-        })) as (User & { hashedPassword: string }) | null;
+        })) as (User & { hashedPassword?: string | null }) | null;
 
-        if (!user?.hashedPassword) {
-          return null;
+        // User not found
+        if (!user) {
+          console.error(
+            `[auth] Sign-in attempt for non-existent user: ${email}`,
+            new Date().toISOString()
+          );
+          throw new CredentialsSignin(AUTH_ERROR_CODES.USER_NOT_FOUND);
         }
 
+        // User exists but has no password (OAuth-only account)
+        if (!user.hashedPassword) {
+          console.error(
+            `[auth] Sign-in attempt with password for OAuth-only account: ${email}`,
+            new Date().toISOString()
+          );
+          throw new CredentialsSignin(AUTH_ERROR_CODES.NO_PASSWORD_SET);
+        }
+
+        // Verify password
         const passwordMatch = await bcrypt.compare(
           password,
           user.hashedPassword
         );
 
         if (!passwordMatch) {
-          return null;
+          console.error(
+            `[auth] Failed sign-in attempt for user: ${email}`,
+            new Date().toISOString()
+          );
+          throw new CredentialsSignin(AUTH_ERROR_CODES.INVALID_PASSWORD);
         }
 
+        // Success - return user data
+        console.log(
+          `[auth] Successful sign-in for user: ${email}`,
+          new Date().toISOString()
+        );
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.image,
           role: user.role,
+          profileUpdatedAt: user.profileUpdatedAt,
         };
       },
     }),

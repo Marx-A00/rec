@@ -4,6 +4,8 @@ import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import Link from 'next/link';
 
+import { getAuthErrorMessage } from '@/types/auth';
+
 export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   // const [isSpotifyLoading, setIsSpotifyLoading] = useState(false);
@@ -35,11 +37,19 @@ export default function SignIn() {
       });
 
       if (result?.error) {
-        setCredentialsError('Invalid credentials. Please try again.');
-      } else {
+        // Parse the error and show a user-friendly message
+        const errorMessage = getAuthErrorMessage(result.error);
+        setCredentialsError(errorMessage);
+        console.error('[signin] Authentication failed:', result.error);
+      } else if (result?.ok) {
+        // Successful sign-in
         window.location.href = '/';
+      } else {
+        // Unexpected state
+        setCredentialsError('An unexpected error occurred. Please try again.');
       }
-    } catch {
+    } catch (error) {
+      console.error('[signin] Unexpected error during sign-in:', error);
       setCredentialsError('An error occurred. Please try again.');
     } finally {
       setIsCredentialsLoading(false);

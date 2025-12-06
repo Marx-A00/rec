@@ -249,6 +249,8 @@ export async function findOrCreateArtist(
   const newArtist = await prisma.artist.create({
     data: {
       name: artistData.name,
+      spotifyId: artistData.spotifyId, // CRITICAL: Prevents duplicate artists
+      source: 'SPOTIFY', // CRITICAL: Mark source as Spotify, not MusicBrainz
       dataQuality: artistData.dataQuality,
       enrichmentStatus: artistData.enrichmentStatus,
       lastEnriched: artistData.lastEnriched,
@@ -281,14 +283,18 @@ export async function processSpotifyAlbum(
       title: albumData.title,
       releaseDate: albumData.releaseDate,
       releaseType: albumData.releaseType,
+      releaseStatus: albumData.inferredStatus, // Official releases from Spotify
       trackCount: albumData.trackCount,
       coverArtUrl: albumData.coverArtUrl,
       spotifyId: albumData.spotifyId,
       spotifyUrl: albumData.spotifyUrl,
+      source: 'SPOTIFY', // CRITICAL: Mark source as Spotify, not MusicBrainz
+      sourceUrl: albumData.spotifyUrl, // Audit trail for data origin
+      secondaryTypes: albumData.secondaryTypes, // Improves MusicBrainz matching
       dataQuality: albumData.dataQuality,
       enrichmentStatus: albumData.enrichmentStatus,
       lastEnriched: albumData.lastEnriched,
-    } as any,
+    },
   });
 
   console.log(`✅ Created album: "${album.title}" (${album.id})`);

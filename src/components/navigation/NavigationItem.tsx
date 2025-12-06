@@ -19,6 +19,7 @@ interface NavigationItemProps {
   context?: NavigationContext;
   depth?: number;
   onItemClick?: (item: NavItem) => void;
+  'data-tour-step'?: string;
 }
 
 export const NavigationItem: FC<NavigationItemProps> = ({
@@ -27,6 +28,7 @@ export const NavigationItem: FC<NavigationItemProps> = ({
   context,
   depth = 0,
   onItemClick,
+  'data-tour-step': dataTourStep,
 }) => {
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -45,8 +47,10 @@ export const NavigationItem: FC<NavigationItemProps> = ({
   };
 
   const ItemIcon = item.icon;
+
   const itemContent = (
     <div
+      data-tour-step={dataTourStep}
       className={cn(
         'transition-all duration-200',
         isCollapsed
@@ -95,11 +99,20 @@ export const NavigationItem: FC<NavigationItemProps> = ({
   );
 
   const wrapperElement = item.href ? (
-    <Link href={item.href} onClick={handleClick} className='block'>
+    <Link
+      href={item.href}
+      onClick={handleClick}
+      className='block'
+      id={item.id === 'recommend' ? 'create-recommendation-button' : undefined}
+    >
       {itemContent}
     </Link>
   ) : (
-    <button onClick={handleClick} className='w-full text-left'>
+    <button
+      onClick={handleClick}
+      className='w-full text-left'
+      id={item.id === 'recommend' ? 'create-recommendation-button' : undefined}
+    >
       {itemContent}
     </button>
   );
@@ -108,7 +121,9 @@ export const NavigationItem: FC<NavigationItemProps> = ({
     <>
       {isCollapsed ? (
         <Tooltip>
-          <TooltipTrigger asChild>{wrapperElement}</TooltipTrigger>
+          <TooltipTrigger asChild>
+            {wrapperElement}
+          </TooltipTrigger>
           <TooltipContent side='right' className='font-medium'>
             {item.tooltip || item.label}
           </TooltipContent>

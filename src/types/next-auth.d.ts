@@ -14,5 +14,6 @@ declare module 'next-auth' {
 
   interface User {
     role: UserRole;
+    profileUpdatedAt: Date | null;
   }
 }

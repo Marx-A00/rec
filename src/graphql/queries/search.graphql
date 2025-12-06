@@ -52,6 +52,15 @@ query Search($input: SearchInput!) {
         }
       }
     }
+    users {
+      id
+      name
+      image
+      bio
+      followersCount
+      followingCount
+      recommendationsCount
+    }
   }
 }
 

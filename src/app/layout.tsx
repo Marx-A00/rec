@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import 'driver.js/dist/driver.css';
+import '@/styles/driver-custom.css';
 
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { CollectionToastProvider } from '@/components/ui/CollectionToastProvider';
+import { TourProvider } from '@/contexts/TourContext';
+import { TourDebugPanel } from '@/components/TourDebugPanel';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -34,7 +38,10 @@ export default function RootLayout({
       >
         <SessionProvider>
           <QueryProvider>
-            <CollectionToastProvider>{children}</CollectionToastProvider>
+            <TourProvider>
+              <CollectionToastProvider>{children}</CollectionToastProvider>
+              <TourDebugPanel />
+            </TourProvider>
           </QueryProvider>
         </SessionProvider>
       </body>

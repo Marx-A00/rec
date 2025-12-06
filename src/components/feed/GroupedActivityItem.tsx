@@ -35,6 +35,29 @@ const getScoreColors = (score: number) => {
   }
 };
 
+interface BasisAlbum {
+  id: string;
+  title: string;
+  coverArtUrl?: string;
+  artists?: Array<{
+    artist?: {
+      name?: string;
+    };
+  }>;
+}
+
+interface CollectionMetadata {
+  personalRating?: number;
+  collectionName?: string;
+}
+
+interface RecommendationMetadata {
+  score?: number;
+  basisAlbum?: BasisAlbum;
+}
+
+type ActivityMetadata = CollectionMetadata | RecommendationMetadata | Record<string, unknown>;
+
 interface Activity {
   id: string;
   type: 'follow' | 'recommendation' | 'profile_update' | 'collection_add';
@@ -48,8 +71,9 @@ interface Activity {
   albumTitle?: string;
   albumArtist?: string;
   albumImage?: string | null;
+  artistId?: string;
   createdAt: string;
-  metadata?: any;
+  metadata?: ActivityMetadata;
 }
 
 interface GroupedActivity {
@@ -189,24 +213,24 @@ export default function GroupedActivityItem({
 
                     {/* Show rating badge for collection adds */}
                     {group.type === 'collection_add' &&
-                      activity.metadata?.personalRating && (
+                      (activity.metadata as CollectionMetadata)?.personalRating && (
                         <div className='absolute -top-1 -right-1 bg-zinc-900 border border-cosmic-latte/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900'>
                           <span className='text-[10px] text-cosmic-latte font-bold'>
-                            {activity.metadata.personalRating}
+                            {(activity.metadata as CollectionMetadata).personalRating}
                           </span>
                         </div>
                       )}
 
                     {/* Show score for recommendations */}
                     {group.type === 'recommendation' &&
-                      activity.metadata?.score && (
+                      (activity.metadata as RecommendationMetadata)?.score && (
                         <div
-                          className={`absolute -top-1 -right-1 bg-zinc-900 border ${getScoreColors(activity.metadata.score).borderColor} rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900`}
+                          className={`absolute -top-1 -right-1 bg-zinc-900 border ${getScoreColors((activity.metadata as RecommendationMetadata).score!).borderColor} rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900`}
                         >
                           <span
-                            className={`text-[10px] font-bold ${getScoreColors(activity.metadata.score).textColor}`}
+                            className={`text-[10px] font-bold ${getScoreColors((activity.metadata as RecommendationMetadata).score!).textColor}`}
                           >
-                            {activity.metadata.score}
+                            {(activity.metadata as RecommendationMetadata).score}
                           </span>
                         </div>
                       )}
@@ -234,18 +258,18 @@ export default function GroupedActivityItem({
                       {/* Stacked Album Container - smaller version */}
                       <div className='relative w-[140px] h-[130px] transition-all duration-300 ease-out [&:hover]:w-[210px] [&:hover_.rec-album]:left-[100px] [&:hover_.arrow-indicator]:opacity-100'>
                         {/* Basis Album (back) */}
-                        {activity.metadata?.basisAlbum && (
+                        {(activity.metadata as RecommendationMetadata)?.basisAlbum && (
                           <Link
-                            href={`/albums/${activity.metadata.basisAlbum.id}?source=local`}
+                            href={`/albums/${(activity.metadata as RecommendationMetadata).basisAlbum!.id}?source=local`}
                             className='absolute left-0 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
-                            title={`View ${activity.metadata.basisAlbum.title}`}
+                            title={`View ${(activity.metadata as RecommendationMetadata).basisAlbum!.title}`}
                           >
                             <AlbumImage
                               src={
-                                activity.metadata.basisAlbum.coverArtUrl ||
+                                (activity.metadata as RecommendationMetadata).basisAlbum!.coverArtUrl ||
                                 '/placeholder-album.png'
                               }
-                              alt={activity.metadata.basisAlbum.title}
+                              alt={(activity.metadata as RecommendationMetadata).basisAlbum!.title}
                               width={90}
                               height={90}
                               className='w-[90px] h-[90px] rounded-lg shadow-lg border border-zinc-700/50 hover:border-zinc-600 transition-all'
@@ -269,20 +293,20 @@ export default function GroupedActivityItem({
                         </Link>
 
                         {/* Score indicator with heart - visible on hover between albums */}
-                        {activity.metadata?.score && (
+                        {(activity.metadata as RecommendationMetadata)?.score && (
                           <div className='arrow-indicator absolute left-[77px] top-[37px] opacity-0 transition-all duration-300 z-20'>
                             <div className='bg-zinc-900 border-2 border-zinc-800 rounded-full shadow-lg'>
                               <div
-                                className={`flex items-center justify-center w-12 h-12 bg-gradient-to-r ${getScoreColors(activity.metadata.score).bgGradient} rounded-full border-2 ${getScoreColors(activity.metadata.score).borderColor} shadow-md`}
+                                className={`flex items-center justify-center w-12 h-12 bg-gradient-to-r ${getScoreColors((activity.metadata as RecommendationMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as RecommendationMetadata).score!).borderColor} shadow-md`}
                               >
                                 <div className='flex flex-col items-center'>
                                   <Heart
-                                    className={`h-3 w-3 ${getScoreColors(activity.metadata.score).heartColor} drop-shadow-sm mb-0.5`}
+                                    className={`h-3 w-3 ${getScoreColors((activity.metadata as RecommendationMetadata).score!).heartColor} drop-shadow-sm mb-0.5`}
                                   />
                                   <span
-                                    className={`text-[10px] font-bold ${getScoreColors(activity.metadata.score).textColor} tabular-nums leading-none`}
+                                    className={`text-[10px] font-bold ${getScoreColors((activity.metadata as RecommendationMetadata).score!).textColor} tabular-nums leading-none`}
                                   >
-                                    {activity.metadata.score}
+                                    {(activity.metadata as RecommendationMetadata).score}
                                   </span>
                                 </div>
                               </div>
@@ -308,10 +332,10 @@ export default function GroupedActivityItem({
                       />
 
                       {/* Show rating badge for collection adds */}
-                      {activity.metadata?.personalRating && (
+                      {(activity.metadata as CollectionMetadata)?.personalRating && (
                         <div className='absolute -top-1 -right-1 bg-zinc-900 border border-cosmic-latte/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900 shadow-md'>
                           <span className='text-[10px] text-cosmic-latte font-bold'>
-                            {activity.metadata.personalRating}
+                            {(activity.metadata as CollectionMetadata).personalRating}
                           </span>
                         </div>
                       )}
@@ -406,31 +430,48 @@ function SingleActivityDisplay({
         return (
           <>
             recommends{' '}
-            <span className='text-emeraled-green font-semibold'>
+            <Link
+              href={`/albums/${activity.albumId}?source=local`}
+              className='text-emeraled-green hover:text-emeraled-green/80 font-semibold transition-colors'
+            >
               {activity.albumTitle}
-            </span>{' '}
+            </Link>{' '}
             by{' '}
-            <span className='text-emeraled-green'>{activity.albumArtist}</span>
+            <Link
+              href={`/artists/${activity.artistId}`}
+              className='text-emeraled-green hover:text-emeraled-green/80 transition-colors'
+            >
+              {activity.albumArtist}
+            </Link>
           </>
         );
       case 'collection_add':
         return (
           <span>
             added{' '}
-            <span className='text-cosmic-latte font-medium'>
+            <Link
+              href={`/albums/${activity.albumId}?source=local`}
+              className='text-cosmic-latte hover:text-cosmic-latte/80 font-medium transition-colors'
+            >
               {activity.albumTitle}
-            </span>{' '}
-            by <span className='text-zinc-300'>{activity.albumArtist}</span> to
-            collection
-            {activity.metadata?.collectionName && (
+            </Link>{' '}
+            by{' '}
+            <Link
+              href={`/artists/${activity.artistId}`}
+              className='text-zinc-300 hover:text-emeraled-green transition-colors'
+            >
+              {activity.albumArtist}
+            </Link>{' '}
+            to collection
+            {(activity.metadata as CollectionMetadata)?.collectionName && (
               <span className='text-emeraled-green font-medium'>
                 {' '}
-                {activity.metadata.collectionName}
+                {(activity.metadata as CollectionMetadata).collectionName}
               </span>
             )}
-            {activity.metadata?.personalRating && (
+            {(activity.metadata as CollectionMetadata)?.personalRating && (
               <span className='text-yellow-400 text-sm block mt-1'>
-                ★ {activity.metadata.personalRating}/10
+                ★ {(activity.metadata as CollectionMetadata).personalRating}/10
               </span>
             )}
           </span>
@@ -480,19 +521,19 @@ function SingleActivityDisplay({
             {/* Stacked Album Container */}
             <div className='relative w-[280px] h-[260px] transition-all duration-300 ease-out [&:hover]:w-[420px] [&:hover_.rec-album]:left-[200px] [&:hover_.arrow-indicator]:opacity-100 [&:hover_.basis-text]:opacity-100'>
               {/* Basis Album (back) */}
-              {activity.metadata?.basisAlbum && (
+              {(activity.metadata as RecommendationMetadata)?.basisAlbum && (
                 <Link
-                  href={`/albums/${activity.metadata.basisAlbum.id}?source=local`}
+                  href={`/albums/${(activity.metadata as RecommendationMetadata).basisAlbum!.id}?source=local`}
                   className='absolute left-0 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
-                  title={`View ${activity.metadata.basisAlbum.title}`}
+                  title={`View ${(activity.metadata as RecommendationMetadata).basisAlbum!.title}`}
                 >
                   <div className='relative'>
                     <AlbumImage
                       src={
-                        activity.metadata.basisAlbum.coverArtUrl ||
+                        (activity.metadata as RecommendationMetadata).basisAlbum!.coverArtUrl ||
                         '/placeholder-album.png'
                       }
-                      alt={activity.metadata.basisAlbum.title}
+                      alt={(activity.metadata as RecommendationMetadata).basisAlbum!.title}
                       width={180}
                       height={180}
                       className='w-[180px] h-[180px] rounded-lg shadow-lg border border-zinc-700/50 hover:border-zinc-600 transition-all'
@@ -519,20 +560,20 @@ function SingleActivityDisplay({
               </Link>
 
               {/* Score indicator with heart - visible on hover between albums */}
-              {activity.metadata?.score && (
+              {(activity.metadata as RecommendationMetadata)?.score && (
                 <div className='arrow-indicator absolute left-[155px] top-[75px] opacity-0 transition-all duration-300 z-20'>
                   <div className='bg-zinc-900 border-2 border-zinc-800 rounded-full shadow-lg'>
                     <div
-                      className={`flex items-center justify-center w-16 h-16 bg-gradient-to-r ${getScoreColors(activity.metadata.score).bgGradient} rounded-full border-2 ${getScoreColors(activity.metadata.score).borderColor} shadow-md`}
+                      className={`flex items-center justify-center w-16 h-16 bg-gradient-to-r ${getScoreColors((activity.metadata as RecommendationMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as RecommendationMetadata).score!).borderColor} shadow-md`}
                     >
                       <div className='flex flex-col items-center'>
                         <Heart
-                          className={`h-4 w-4 ${getScoreColors(activity.metadata.score).heartColor} drop-shadow-sm mb-0.5`}
+                          className={`h-4 w-4 ${getScoreColors((activity.metadata as RecommendationMetadata).score!).heartColor} drop-shadow-sm mb-0.5`}
                         />
                         <span
-                          className={`text-xs font-bold ${getScoreColors(activity.metadata.score).textColor} tabular-nums leading-none`}
+                          className={`text-xs font-bold ${getScoreColors((activity.metadata as RecommendationMetadata).score!).textColor} tabular-nums leading-none`}
                         >
-                          {activity.metadata.score}
+                          {(activity.metadata as RecommendationMetadata).score}
                         </span>
                       </div>
                     </div>
@@ -541,16 +582,16 @@ function SingleActivityDisplay({
               )}
 
               {/* Basis album text - shows on hover with the albums */}
-              {activity.metadata?.basisAlbum && (
+              {(activity.metadata as RecommendationMetadata)?.basisAlbum && (
                 <div className='basis-text absolute bottom-0 left-0 w-[420px] opacity-0 transition-opacity duration-300 pointer-events-none'>
                   <p className='text-xs text-zinc-500 text-center w-full px-4 pb-1'>
                     if you like{' '}
                     <span className='text-zinc-400'>
-                      {activity.metadata.basisAlbum.title}
+                      {(activity.metadata as RecommendationMetadata).basisAlbum!.title}
                     </span>{' '}
                     by{' '}
                     <span className='text-zinc-400'>
-                      {activity.metadata.basisAlbum.artists?.[0]?.artist?.name}
+                      {(activity.metadata as RecommendationMetadata).basisAlbum!.artists?.[0]?.artist?.name}
                     </span>
                   </p>
                 </div>

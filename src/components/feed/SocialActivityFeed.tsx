@@ -4,6 +4,7 @@ import { useEffect, useCallback, useMemo } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import type { Session } from 'next-auth';
+import { useInView } from 'react-intersection-observer';
 
 import SignInButton from '@/components/auth/SignInButton';
 import { groupActivities } from '@/utils/activity-grouping';
@@ -59,6 +60,7 @@ export default function SocialActivityFeed({
               coverArtUrl
               artists {
                 artist {
+                  id
                   name
                 }
               }
@@ -79,6 +81,7 @@ export default function SocialActivityFeed({
                 coverArtUrl
                 artists {
                   artist {
+                    id
                     name
                   }
                 }
@@ -141,6 +144,7 @@ export default function SocialActivityFeed({
       albumId: activity.album?.id,
       albumTitle: activity.album?.title,
       albumArtist: activity.album?.artists?.[0]?.artist?.name,
+      artistId: activity.album?.artists?.[0]?.artist?.id,
       albumImage: activity.album?.coverArtUrl,
       createdAt: activity.createdAt,
       metadata: activity.metadata
@@ -190,22 +194,17 @@ export default function SocialActivityFeed({
     return groupActivities(activities);
   }, [activities]);
 
-  // Infinite scroll handler
-  const handleScroll = useCallback(() => {
-    if (
-      window.innerHeight + document.documentElement.scrollTop >=
-        document.documentElement.offsetHeight - 1000 &&
-      hasNextPage &&
-      !isFetchingNextPage
-    ) {
+  // Intersection observer for infinite scroll
+  const { ref: sentinelRef, inView } = useInView({
+    threshold: 0,
+  });
+
+  // Trigger fetchNextPage when sentinel is in view
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleRefresh = () => {
     refetch();
@@ -378,6 +377,9 @@ export default function SocialActivityFeed({
           />
         ))}
       </div>
+
+      {/* Sentinel element for infinite scroll */}
+      {hasNextPage && <div ref={sentinelRef} className='h-4' />}
 
       {/* Loading More Indicator */}
       {isFetchingNextPage && (

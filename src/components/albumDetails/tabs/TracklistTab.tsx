@@ -9,8 +9,16 @@ interface TracklistTabProps {
 
 export default function TracklistTab({ tracks }: TracklistTabProps) {
   const formatDuration = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+    // Handle invalid or extreme values
+    if (!seconds || seconds <= 0 || !isFinite(seconds)) {
+      return '--:--';
+    }
+
+    // If the value seems like it might be in milliseconds (>10000), convert it
+    const actualSeconds = seconds > 10000 ? Math.floor(seconds / 1000) : seconds;
+
+    const minutes = Math.floor(actualSeconds / 60);
+    const remainingSeconds = Math.floor(actualSeconds % 60);
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 

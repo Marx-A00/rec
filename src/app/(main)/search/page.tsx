@@ -13,7 +13,7 @@ import { sanitizeArtistName } from '@/lib/utils';
 import { defaultEntityTypes } from '@/components/ui/UniversalSearchBar';
 
 // TODO: Re-add 'all' when we figure out the "ALL" search
-type SearchFilter = 'albums' | 'artists' | 'tracks';
+type SearchFilter = 'albums' | 'artists' | 'tracks' | 'users';
 
 function SearchResults() {
   const searchParams = useSearchParams();
@@ -68,6 +68,7 @@ function SearchResults() {
       if (activeFilter === 'albums') return r.type === 'album';
       if (activeFilter === 'artists') return r.type === 'artist';
       if (activeFilter === 'tracks') return r.type === 'track';
+      if (activeFilter === 'users') return r.type === 'user';
       return true;
     });
   }, [activeFilter, results]);
@@ -346,6 +347,16 @@ function SearchResults() {
           }`}
         >
           Tracks
+        </button>
+        <button
+          onClick={() => handleFilterChange('users')}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+            activeFilter === 'users'
+              ? 'text-white border-cosmic-latte'
+              : 'text-zinc-400 border-transparent hover:text-zinc-300'
+          }`}
+        >
+          Users
         </button>
       </div>
 
@@ -673,6 +684,61 @@ function SearchResults() {
                         <span className='px-2 py-1 text-xs rounded bg-orange-900 text-orange-200'>
                           Track
                         </span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+        {/* Users Section */}
+        {activeFilter === 'users' &&
+          groupedByEntityType.user &&
+          groupedByEntityType.user.length > 0 && (
+            <div>
+              <div className='flex items-center gap-2 mb-4'>
+                <div className='text-zinc-400'>
+                  <User className='h-5 w-5' />
+                </div>
+                <h2 className='text-xl font-semibold text-white'>Users</h2>
+                <span className='text-sm text-zinc-500'>
+                  ({groupedByEntityType.user.length})
+                </span>
+              </div>
+              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                {groupedByEntityType.user.slice(0, 10).map(result => (
+                  <button
+                    key={`user:${result.id}`}
+                    onClick={() => handleResultClick(result)}
+                    className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
+                  >
+                    <div className='flex-shrink-0 relative w-16 h-16'>
+                      <AlbumImage
+                        src={result.image?.url || result.cover_image}
+                        alt={result.image?.alt || result.title}
+                        width={64}
+                        height={64}
+                        className='w-full h-full object-cover rounded-full'
+                        fallbackIcon={getResultIcon(result.type)}
+                      />
+                    </div>
+                    <div className='flex-1 min-w-0'>
+                      <h3 className='text-base font-medium text-white truncate mb-1'>
+                        {result.title}
+                      </h3>
+                      {result.subtitle && result.subtitle !== 'User' && (
+                        <p className='text-sm text-zinc-400 truncate mb-2'>
+                          {result.subtitle}
+                        </p>
+                      )}
+                      <div className='flex items-center gap-3 text-xs text-zinc-500'>
+                        {result.contextData?.followersCount !== undefined && (
+                          <span>{result.contextData.followersCount} followers</span>
+                        )}
+                        {result.contextData?.recommendationsCount !== undefined && (
+                          <span>{result.contextData.recommendationsCount} recs</span>
+                        )}
                       </div>
                     </div>
                   </button>

@@ -1,11 +1,19 @@
 'use client';
 
 import React, { FC } from 'react';
+import { Play, X, Trash2 } from 'lucide-react';
 
 import { useHeader } from '@/contexts/HeaderContext';
 import { useIsHomePage } from '@/hooks/useIsHomePage';
 import SimpleSearchBar from '@/components/ui/SimpleSearchBar';
 import { cn } from '@/lib/utils';
+import { useTour } from '@/contexts/TourContext';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 import UserAvatar from './UserAvatar';
 
@@ -14,6 +22,113 @@ interface TopBarProps {
   showSearch?: boolean;
   showAvatar?: boolean;
 }
+
+// Tour Debug Controls - Only shows in development
+const TourDebugControls: FC = () => {
+  // Only show in development
+  if (process.env.NODE_ENV !== 'development') {
+    return null;
+  }
+
+  const { startTour, stopTour, resetOnboarding, currentStep, isTourActive } = useTour();
+
+  const handleCheckOnboardingStatus = async () => {
+    try {
+      const response = await fetch('/api/users/onboarding-status');
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(
+          `📊 Onboarding Status\n\n` +
+          `Is New User: ${data.isNewUser ? 'Yes ✅' : 'No ❌'}\n` +
+          `User ID: ${data.userId}\n` +
+          `Profile Updated: ${data.profileUpdatedAt || 'Never'}\n` +
+          `Created: ${data.createdAt}`
+        );
+      } else {
+        alert(`❌ Error: ${data.error || 'Failed to check status'}`);
+      }
+    } catch (error) {
+      console.error('❌ Error checking status:', error);
+      alert('❌ Network error. Check console for details.');
+    }
+  };
+
+  return (
+    <TooltipProvider>
+      <div className='flex items-center gap-2 border-l border-zinc-700 pl-2 ml-2'>
+        {/* Tour Step Indicator */}
+        {isTourActive && currentStep !== null && (
+          <span className='text-xs text-emerald-400 font-medium px-2 py-1 bg-emerald-500/10 rounded'>
+            Step {currentStep + 1}
+          </span>
+        )}
+
+        {/* Start Tour Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={startTour}
+              disabled={isTourActive}
+              className='p-2 text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+            >
+              <Play className='w-4 h-4' />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Start Tour</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Stop Tour Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={stopTour}
+              disabled={!isTourActive}
+              className='p-2 text-red-400 hover:bg-red-500/10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+            >
+              <X className='w-4 h-4' />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Stop Tour</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Check Status Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleCheckOnboardingStatus}
+              className='p-2 text-zinc-400 hover:bg-zinc-700/50 rounded transition-colors'
+            >
+              📊
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Check Onboarding Status</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Reset & Restart Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={resetOnboarding}
+              className='p-2 text-orange-400 hover:bg-orange-500/10 rounded transition-colors'
+            >
+              <Trash2 className='w-4 h-4' />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Reset & Restart Tour</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </TooltipProvider>
+  );
+};
 
 // Separate component for mosaic controls that uses SplitMosaicContext
 const MosaicControls: FC = () => {
@@ -126,6 +241,7 @@ export const TopBar: FC<TopBarProps> = ({
           {/* Right Section - Actions */}
           <div className='flex items-center gap-2 flex-shrink-0 w-48 justify-end'>
             {isHomePage ? <MosaicControls /> : rightContent}
+            <TourDebugControls />
           </div>
         </div>
       </header>
