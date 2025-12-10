@@ -24,7 +24,8 @@ export const tourSteps: DriveStep[] = [
       title: '🎤 Share Your Music Taste',
       description: 'Click this button to create your first recommendation! Share albums you love and discover what others are listening to.',
       side: 'right',
-      align: 'center'
+      align: 'center',
+      showButtons: ['close'], // Hide Next button - user must click the actual button
     }
   },
   {
@@ -32,16 +33,16 @@ export const tourSteps: DriveStep[] = [
     popover: {
       title: '✨ Create Your First Recommendation',
       description: 'Great! Now you can search for an album and add your personal recommendation. This is how you share your music taste with the community.',
-      side: 'left',
-      align: 'start'
+      side: 'bottom',
+      align: 'center'
     }
   },
   {
     element: '[data-tour-step="recommendation-search"]',
     popover: {
-      title: '🎯 Demo Recommendation',
-      description: 'check this shit out cuh',
-      side: 'top',
+      title: '🎯 Search for Albums',
+      description: 'Use this search bar to find albums to recommend. Try searching for an album you love!',
+      side: 'bottom',
       align: 'start'
     }
   },
@@ -163,29 +164,62 @@ export const driverConfig: Config = {
   allowKeyboardControl: true, // Enable ESC key to close
   disableActiveInteraction: false, // Allow interacting with highlighted element
 
-  // Callbacks for navigation between pages
-  onNextClick: (element, step, options) => {
+  // Callback when a step is highlighted
+  onHighlightStarted: (_element, _step, options) => {
     const stepIndex = options.state.activeIndex ?? 0;
 
-    // Step 2: Auto-click "Create Recommendation" button to open drawer
+    // Step 2: Add click listener to the "Create Recommendation" button
     if (stepIndex === 1) {
-      console.log('🎵 Auto-opening recommendation drawer...');
-
-      // Find the button element - it's the parent of the div with data-tour-step
-      const buttonDiv = document.querySelector('[data-tour-step="create-recommendation"]');
-      const button = buttonDiv?.parentElement;
+      const button = document.querySelector('[data-tour-step="create-recommendation"]');
 
       if (button instanceof HTMLElement) {
-        button.click();
-        console.log('✅ Clicked recommendation button');
-        // Move to next step immediately
-        options.driver.moveNext();
+        // Create a one-time click handler
+        const clickHandler = (e: Event) => {
+          console.log('✅ User clicked recommendation button - advancing tour');
+          e.preventDefault(); // Prevent default drawer opening
+          e.stopPropagation();
+
+          // Remove the listener after it fires once
+          button.removeEventListener('click', clickHandler, true);
+
+          // Dispatch custom event to open drawer in tour mode
+          console.log('📤 Dispatching open-drawer-for-tour event');
+          const tourDrawerEvent = new CustomEvent('open-drawer-for-tour');
+          window.dispatchEvent(tourDrawerEvent);
+
+          // Wait for drawer to be visible before advancing
+          const waitForDrawer = () => {
+            const drawer = document.querySelector('[data-tour-step="recommendation-drawer"]');
+            if (drawer && drawer instanceof HTMLElement) {
+              // Check if drawer is visible (has non-zero height)
+              const rect = drawer.getBoundingClientRect();
+              if (rect.height > 0) {
+                console.log('✅ Drawer is visible, advancing to step 3');
+                options.driver.moveNext();
+                return;
+              }
+            }
+
+            // Not visible yet, check again in 100ms
+            setTimeout(waitForDrawer, 100);
+          };
+
+          // Start checking after initial delay
+          setTimeout(waitForDrawer, 200);
+        };
+
+        // Use capture phase to intercept before the normal click handler
+        button.addEventListener('click', clickHandler, true);
+        console.log('👂 Listening for button click on step 2...');
       } else {
-        console.error('❌ Could not find recommendation button');
-        options.driver.moveNext();
+        console.error('❌ Could not find recommendation button with data-tour-step attribute');
       }
-      return;
     }
+  },
+
+  // Callbacks for navigation between pages
+  onNextClick: (_element, _step, options) => {
+    const stepIndex = options.state.activeIndex ?? 0;
 
     // Step 6: Navigate to /browse
     if (stepIndex === 6) {
@@ -233,7 +267,7 @@ export const driverConfig: Config = {
     options.driver.moveNext();
   },
 
-  onCloseClick: (element, step, options) => {
+  onCloseClick: (_element, _step, options) => {
     console.log('❌ User closed tour early');
     // Explicitly destroy the tour instance
     options.driver.destroy();

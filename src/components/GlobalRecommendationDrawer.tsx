@@ -21,18 +21,28 @@ export default function GlobalRecommendationDrawer() {
       openDrawerForTour();
     };
 
+    const handleOpenDrawerForTour = () => {
+      console.log('📥 Received open-drawer-for-tour event');
+      openDrawerForTour();
+    };
+
     const handleCloseDrawer = () => {
       closeDrawer();
     };
 
     // Add event listeners for tour integration
     window.addEventListener('open-recommendation-drawer', handleOpenDrawer);
+    window.addEventListener('open-drawer-for-tour', handleOpenDrawerForTour);
     window.addEventListener('close-recommendation-drawer', handleCloseDrawer);
 
     return () => {
       window.removeEventListener(
         'open-recommendation-drawer',
         handleOpenDrawer
+      );
+      window.removeEventListener(
+        'open-drawer-for-tour',
+        handleOpenDrawerForTour
       );
       window.removeEventListener(
         'close-recommendation-drawer',

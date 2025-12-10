@@ -149,6 +149,11 @@ export default function RecommendationDrawer({
   // Get tour mode from context
   const { isTourMode } = useRecommendationDrawerContext();
 
+  // Log isOpen changes to debug
+  useEffect(() => {
+    console.log(`🔄 RecommendationDrawer: isOpen=${isOpen}, isTourMode=${isTourMode}`);
+  }, [isOpen, isTourMode]);
+
   // Reset state when drawer closes, or set prefilled album when drawer opens
   useEffect(() => {
     if (!isOpen) {
@@ -211,14 +216,17 @@ export default function RecommendationDrawer({
 
   // Modified close handler that respects tour state
   const handleDrawerClose = (open: boolean) => {
+    console.log(`🚪 handleDrawerClose called: open=${open}, isTourMode=${isTourMode}`);
+
     // Don't close the drawer if tour is active and trying to keep it open
     if (!open && isTourMode) {
-      console.log('Preventing drawer close during tour');
+      console.log('✋ Preventing drawer close during tour');
       return; // Prevent closing during tour
     }
 
     // Normal close behavior
     if (!open) {
+      console.log('❌ Closing drawer (not in tour mode)');
       onClose();
     }
   };
@@ -258,10 +266,15 @@ export default function RecommendationDrawer({
   };
 
   return (
-    <Drawer open={isOpen} onOpenChange={handleDrawerClose} handleOnly={true}>
+    <Drawer
+      open={isOpen}
+      onOpenChange={handleDrawerClose}
+      handleOnly={true}
+      modal={!isTourMode}
+      dismissible={!isTourMode}
+    >
       <DrawerContent
         id='recommendation-drawer'
-        data-tour-step="recommendation-drawer"
         className='h-[90vh] bg-zinc-900 border-zinc-700'
       >
         <DrawerHeader className='flex-shrink-0'>
@@ -311,7 +324,10 @@ export default function RecommendationDrawer({
               </div>
 
               {/* Similarity Rating Dial */}
-              <div className='flex flex-col items-center'>
+              <div
+                className='flex flex-col items-center'
+                data-tour-step="recommendation-drawer"
+              >
                 <div className='bg-zinc-800 rounded-lg p-4 border border-zinc-700'>
                   <SimilarityRatingDial
                     value={similarityRating}

@@ -104,6 +104,7 @@ export const NavigationItem: FC<NavigationItemProps> = ({
       onClick={handleClick}
       className='block'
       id={item.id === 'recommend' ? 'create-recommendation-button' : undefined}
+      data-tour-step={dataTourStep}
     >
       {itemContent}
     </Link>
@@ -112,6 +113,7 @@ export const NavigationItem: FC<NavigationItemProps> = ({
       onClick={handleClick}
       className='w-full text-left'
       id={item.id === 'recommend' ? 'create-recommendation-button' : undefined}
+      data-tour-step={dataTourStep}
     >
       {itemContent}
     </button>

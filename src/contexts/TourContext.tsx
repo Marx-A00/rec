@@ -66,6 +66,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         ...driverConfig,
         steps: tourSteps,
         onHighlightStarted: (element, step, options) => {
+          // Call the original callback from driverConfig first (for step-specific logic)
+          if (driverConfig.onHighlightStarted) {
+            driverConfig.onHighlightStarted(element, step, options);
+          }
+
+          // Then update TourContext state
           const stepIndex = options.state.activeIndex ?? 0;
           setCurrentStep(stepIndex);
           setIsTourActive(true);
@@ -165,6 +171,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         ...driverConfig,
         steps: tourSteps,
         onHighlightStarted: (element, step, options) => {
+          // Call the original callback from driverConfig first (for step-specific logic)
+          if (driverConfig.onHighlightStarted) {
+            driverConfig.onHighlightStarted(element, step, options);
+          }
+
+          // Then update TourContext state
           const stepIdx = options.state.activeIndex ?? 0;
           setCurrentStep(stepIdx);
           setIsTourActive(true);
