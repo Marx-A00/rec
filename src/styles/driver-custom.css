@@ -4,6 +4,16 @@
 .driver-popover {
   @apply bg-zinc-900 border-2 border-zinc-700 rounded-xl shadow-2xl;
   max-width: 420px !important;
+  pointer-events: auto !important; /* Allow interactions within popover */
+}
+
+/* Allow scrolling through popover when it's not being interacted with */
+.driver-popover-wrapper {
+  pointer-events: none !important;
+}
+
+.driver-popover-wrapper .driver-popover {
+  pointer-events: auto !important;
 }
 
 /* Title */
@@ -114,6 +124,12 @@
 #driver-highlighted-element-stage,
 #driver-page-overlay {
   pointer-events: none !important;
+}
+
+/* Allow scrolling within highlighted elements and their children */
+.driver-active-element,
+.driver-active-element * {
+  pointer-events: auto !important;
 }
 
 /* Make sure highlighted elements are NOT affected by the overlay */

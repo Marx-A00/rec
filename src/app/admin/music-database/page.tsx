@@ -70,6 +70,7 @@ import {
   useSearchTracksAdminQuery,
   useGetDatabaseStatsQuery,
   useGetAlbumDetailsAdminQuery,
+  useGetArtistDetailsQuery,
 } from '@/generated/graphql';
 
 interface AlbumSearchResult {
@@ -752,6 +753,144 @@ export default function MusicDatabasePage() {
     );
   };
 
+  // Component for expanded artist details
+  const ArtistExpandedContent = ({ artist }: { artist: ArtistSearchResult }) => {
+    const { data, isLoading, error } = useGetArtistDetailsQuery(
+      { id: artist.id },
+      { enabled: !!artist.id }
+    );
+
+    const artistDetails = data?.artist;
+
+    if (isLoading) {
+      return (
+        <div className='p-4 text-center text-zinc-400'>
+          <RefreshCcw className='h-5 w-5 animate-spin mx-auto mb-2' />
+          Loading details...
+        </div>
+      );
+    }
+
+    if (error || !artistDetails) {
+      return (
+        <div className='p-4 text-center text-zinc-400'>
+          Failed to load artist details
+        </div>
+      );
+    }
+
+    return (
+      <div className='p-4 bg-zinc-800/50 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
+        {/* Metadata Section */}
+        <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Database ID
+            </div>
+            <div className='text-sm text-zinc-300 font-mono text-xs'>
+              {artistDetails.id}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              MusicBrainz ID
+            </div>
+            <div className='text-sm text-zinc-300 font-mono text-xs'>
+              {artistDetails.musicbrainzId || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Country
+            </div>
+            <div className='text-sm text-zinc-300'>
+              {artistDetails.countryCode || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Formed Year
+            </div>
+            <div className='text-sm text-zinc-300'>
+              {artistDetails.formedYear || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Listeners (Last.fm)
+            </div>
+            <div className='text-sm text-zinc-300'>
+              {artistDetails.listeners
+                ? artistDetails.listeners.toLocaleString()
+                : 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Last Enriched
+            </div>
+            <div className='text-sm text-zinc-300'>
+              {artistDetails.lastEnriched
+                ? new Date(artistDetails.lastEnriched).toLocaleString()
+                : 'Never'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Image Status
+            </div>
+            <div className='text-sm text-zinc-300'>
+              {artistDetails.imageUrl && artistDetails.cloudflareImageId
+                ? '✓ Has images'
+                : '✗ Missing images'}
+            </div>
+          </div>
+        </div>
+
+        {/* Albums Section */}
+        {artistDetails.albums && artistDetails.albums.length > 0 && (
+          <div>
+            <div className='text-sm font-semibold text-white mb-2 flex items-center gap-2'>
+              <Disc className='h-4 w-4' />
+              Albums ({artistDetails.albums.length})
+            </div>
+            <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-60 overflow-y-auto'>
+              {artistDetails.albums.map((album: any) => (
+                <div
+                  key={album.id}
+                  className='flex items-center gap-2 p-2 bg-zinc-900/50 rounded text-xs'
+                >
+                  {album.coverArtUrl && (
+                    <img
+                      src={album.coverArtUrl}
+                      alt={album.title}
+                      className='h-10 w-10 rounded'
+                    />
+                  )}
+                  <div className='flex-1 min-w-0'>
+                    <div className='text-zinc-300 truncate'>{album.title}</div>
+                    <div className='text-zinc-500 text-xs'>
+                      {album.releaseDate
+                        ? new Date(album.releaseDate).getFullYear()
+                        : 'Unknown'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(!artistDetails.albums || artistDetails.albums.length === 0) && (
+          <div className='text-center py-4 text-zinc-500 text-sm'>
+            <Music className='h-8 w-8 mx-auto mb-2 opacity-50' />
+            No albums available
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className='p-8'>
       {/* Header */}
@@ -1204,39 +1343,55 @@ export default function MusicDatabasePage() {
                 </TableHeader>
                 <TableBody>
                   {displayArtists.map((artist: any) => (
-                    <TableRow
-                      key={artist.id}
-                      className='border-b border-zinc-800 hover:bg-zinc-800/50'
-                    >
-                      <TableCell>
-                        <input
-                          type='checkbox'
-                          checked={selectedItems.has(artist.id)}
-                          onChange={() => {
-                            const newSelected = new Set(selectedItems);
-                            if (newSelected.has(artist.id)) {
-                              newSelected.delete(artist.id);
-                            } else {
-                              newSelected.add(artist.id);
-                            }
-                            setSelectedItems(newSelected);
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div className='flex items-center gap-2'>
-                          {artist.imageUrl && (
-                            <img
-                              src={artist.imageUrl}
-                              alt={artist.name}
-                              className='h-10 w-10 rounded-full'
-                            />
-                          )}
-                          <div className='font-medium text-white'>
-                            {artist.name}
+                    <React.Fragment key={artist.id}>
+                      <TableRow
+                        className='border-b border-zinc-800 hover:bg-zinc-800/10 cursor-pointer transition-colors'
+                        onClick={e => {
+                          // Don't toggle if clicking checkbox or action button
+                          if (
+                            (e.target as HTMLElement).closest(
+                              'input[type="checkbox"], button'
+                            )
+                          ) {
+                            return;
+                          }
+                          toggleExpanded(artist.id);
+                        }}
+                      >
+                        <TableCell onClick={e => e.stopPropagation()}>
+                          <input
+                            type='checkbox'
+                            checked={selectedItems.has(artist.id)}
+                            onChange={() => {
+                              const newSelected = new Set(selectedItems);
+                              if (newSelected.has(artist.id)) {
+                                newSelected.delete(artist.id);
+                              } else {
+                                newSelected.add(artist.id);
+                              }
+                              setSelectedItems(newSelected);
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className='flex items-center gap-2'>
+                            {expandedRows.has(artist.id) ? (
+                              <ChevronDown className='h-4 w-4 text-zinc-400 flex-shrink-0' />
+                            ) : (
+                              <ChevronRight className='h-4 w-4 text-zinc-400 flex-shrink-0' />
+                            )}
+                            {artist.imageUrl && (
+                              <img
+                                src={artist.imageUrl}
+                                alt={artist.name}
+                                className='h-10 w-10 rounded-full'
+                              />
+                            )}
+                            <div className='font-medium text-white'>
+                              {artist.name}
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
+                        </TableCell>
                       <TableCell className='text-zinc-300'>
                         {artist.countryCode || '-'}
                       </TableCell>
@@ -1260,7 +1415,7 @@ export default function MusicDatabasePage() {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={e => e.stopPropagation()}>
                         <Button
                           size='sm'
                           variant='outline'
@@ -1276,6 +1431,14 @@ export default function MusicDatabasePage() {
                         </Button>
                       </TableCell>
                     </TableRow>
+                    {expandedRows.has(artist.id) && (
+                      <TableRow key={`${artist.id}-expanded`}>
+                        <TableCell colSpan={8} className='p-0 border-none'>
+                          <ArtistExpandedContent artist={artist} />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
                   ))}
                 </TableBody>
               </Table>

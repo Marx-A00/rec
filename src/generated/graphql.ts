@@ -1819,6 +1819,60 @@ export type GetAlbumRecommendationsQuery = {
   };
 };
 
+export type GetArtistDetailsQueryVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type GetArtistDetailsQuery = {
+  __typename?: 'Query';
+  artist?: {
+    __typename?: 'Artist';
+    id: string;
+    musicbrainzId?: string | null;
+    name: string;
+    biography?: string | null;
+    formedYear?: number | null;
+    countryCode?: string | null;
+    imageUrl?: string | null;
+    cloudflareImageId?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    dataQuality?: DataQuality | null;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+    albumCount: number;
+    trackCount: number;
+    popularity?: number | null;
+    needsEnrichment: boolean;
+    listeners?: number | null;
+    albums: Array<{
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      releaseDate?: Date | null;
+      releaseType?: string | null;
+      coverArtUrl?: string | null;
+      trackCount?: number | null;
+      duration?: string | null;
+      averageRating?: number | null;
+    }>;
+    tracks: Array<{
+      __typename?: 'Track';
+      id: string;
+      title: string;
+      trackNumber: number;
+      duration?: string | null;
+      explicit: boolean;
+      album?: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+      } | null;
+    }>;
+  } | null;
+};
+
 export type GetCollectionQueryVariables = Exact<{
   id: Scalars['String']['input'];
 }>;
@@ -3656,6 +3710,119 @@ export const useInfiniteGetAlbumRecommendationsQuery = <
 useInfiniteGetAlbumRecommendationsQuery.getKey = (
   variables: GetAlbumRecommendationsQueryVariables
 ) => ['GetAlbumRecommendations.infinite', variables];
+
+export const GetArtistDetailsDocument = `
+    query GetArtistDetails($id: UUID!) {
+  artist(id: $id) {
+    id
+    musicbrainzId
+    name
+    biography
+    formedYear
+    countryCode
+    imageUrl
+    cloudflareImageId
+    createdAt
+    updatedAt
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    albumCount
+    trackCount
+    popularity
+    needsEnrichment
+    listeners
+    albums {
+      id
+      title
+      releaseDate
+      releaseType
+      coverArtUrl
+      trackCount
+      duration
+      averageRating
+    }
+    tracks {
+      id
+      title
+      trackNumber
+      duration
+      explicit
+      album {
+        id
+        title
+        coverArtUrl
+      }
+    }
+  }
+}
+    `;
+
+export const useGetArtistDetailsQuery = <
+  TData = GetArtistDetailsQuery,
+  TError = unknown,
+>(
+  variables: GetArtistDetailsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetArtistDetailsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetArtistDetailsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetArtistDetailsQuery, TError, TData>({
+    queryKey: ['GetArtistDetails', variables],
+    queryFn: fetcher<GetArtistDetailsQuery, GetArtistDetailsQueryVariables>(
+      GetArtistDetailsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetArtistDetailsQuery.getKey = (
+  variables: GetArtistDetailsQueryVariables
+) => ['GetArtistDetails', variables];
+
+export const useInfiniteGetArtistDetailsQuery = <
+  TData = InfiniteData<GetArtistDetailsQuery>,
+  TError = unknown,
+>(
+  variables: GetArtistDetailsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetArtistDetailsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetArtistDetailsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetArtistDetailsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetArtistDetails.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetArtistDetailsQuery, GetArtistDetailsQueryVariables>(
+            GetArtistDetailsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetArtistDetailsQuery.getKey = (
+  variables: GetArtistDetailsQueryVariables
+) => ['GetArtistDetails.infinite', variables];
 
 export const GetCollectionDocument = `
     query GetCollection($id: String!) {

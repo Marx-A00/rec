@@ -31,8 +31,8 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="recommendation-drawer"]',
     popover: {
-      title: '✨ Create Your First Recommendation',
-      description: 'Great! Now you can search for an album and add your personal recommendation. This is how you share your music taste with the community.',
+      title: '✨ Demo Recommendation',
+      description: "Perfect! We've pre-filled a demo recommendation for you - comparing Daft Punk's \"Random Access Memories\" to \"Discovery\". This shows you how the recommendation system works!",
       side: 'bottom',
       align: 'center'
     }
@@ -40,9 +40,9 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="recommendation-search"]',
     popover: {
-      title: '🎯 Search for Albums',
-      description: 'Use this search bar to find albums to recommend. Try searching for an album you love!',
-      side: 'bottom',
+      title: '🎯 Album Selection',
+      description: 'Notice the two albums are already filled in! When you create your own recommendations, you\'ll use this search bar to find albums. For now, let\'s see how the similarity rating works!',
+      side: 'top',
       align: 'start'
     }
   },
@@ -167,6 +167,32 @@ export const driverConfig: Config = {
   // Callback when a step is highlighted
   onHighlightStarted: (_element, _step, options) => {
     const stepIndex = options.state.activeIndex ?? 0;
+
+    // Step 3: Auto-fill demo albums when drawer opens
+    if (stepIndex === 2) {
+      console.log('🎬 Auto-filling demo recommendation for tour');
+
+      // Dispatch event to fill demo albums
+      const demoEvent = new CustomEvent('fill-demo-recommendation', {
+        detail: {
+          sourceAlbum: {
+            id: '254183',
+            title: 'Random Access Memories',
+            artist: 'Daft Punk',
+            coverUrl: 'https://coverartarchive.org/release/e6db1d8f-c878-4a7d-b8e7-c99a5bb1eb20/front-500.jpg'
+          },
+          recommendedAlbum: {
+            id: '303145',
+            title: 'Discovery',
+            artist: 'Daft Punk',
+            coverUrl: 'https://coverartarchive.org/release/4f95ff02-fca9-4ae8-87ea-ec01c1d7e7f7/front-500.jpg'
+          },
+          similarityRating: 7
+        }
+      });
+      window.dispatchEvent(demoEvent);
+      console.log('✅ Demo recommendation filled');
+    }
 
     // Step 2: Add click listener to the "Create Recommendation" button
     if (stepIndex === 1) {

@@ -215,6 +215,8 @@ class MusicBrainzWorkerService {
     // Clean up current worker
     try {
       await this.worker?.close();
+      // Also destroy the worker in the queue to reset state
+      await this.queue.destroyWorker();
     } catch (closeError) {
       console.warn('Warning: Error closing failed worker:', closeError);
     }

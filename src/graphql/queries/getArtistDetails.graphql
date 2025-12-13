@@ -1,0 +1,44 @@
+query GetArtistDetails($id: UUID!) {
+  artist(id: $id) {
+    id
+    musicbrainzId
+    name
+    biography
+    formedYear
+    countryCode
+    imageUrl
+    cloudflareImageId
+    createdAt
+    updatedAt
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    albumCount
+    trackCount
+    popularity
+    needsEnrichment
+    listeners
+    albums {
+      id
+      title
+      releaseDate
+      releaseType
+      coverArtUrl
+      trackCount
+      duration
+      averageRating
+    }
+    tracks {
+      id
+      title
+      trackNumber
+      duration
+      explicit
+      album {
+        id
+        title
+        coverArtUrl
+      }
+    }
+  }
+}

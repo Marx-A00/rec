@@ -68,7 +68,7 @@ function Turntable({
               <div className='absolute inset-2'>
                 <div className='relative w-full h-full rounded-full overflow-hidden border border-zinc-800'>
                   <AlbumImage
-                    src={album.image.url}
+                    src={album.image?.url || ''}
                     alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}
                     width={300}
                     height={300}

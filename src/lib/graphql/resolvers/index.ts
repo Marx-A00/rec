@@ -1,6 +1,14 @@
 // @ts-nocheck - GraphQL resolvers have major type issues after schema migration, need complete rewrite
 // src/lib/graphql/resolvers/index.ts
 // Main resolver map for Apollo Server
+//
+// ⚠️ IMPORTANT: This file exports ALL resolvers to Apollo Server
+// - Query resolvers: imported from queries.ts
+// - Mutation resolvers: imported from mutations.ts
+// - Field resolvers (Artist, Album, Track, etc): defined in this file
+//
+// If you need to add/modify field resolvers (like Artist.needsEnrichment),
+// add them to the type resolver sections below (e.g., Artist: { ... })
 
 import chalk from 'chalk';
 
@@ -944,6 +952,15 @@ export const resolvers: Resolvers = {
     albums: async (parent, _, { dataloaders }) => {
       return dataloaders.albumsByArtistLoader.load(parent.id);
     },
+    tracks: async (parent, _, { prisma }) => {
+      // Get all tracks where this artist is credited
+      const trackArtists = await prisma.trackArtist.findMany({
+        where: { artistId: parent.id },
+        include: { track: true },
+        orderBy: { position: 'asc' },
+      });
+      return trackArtists.map(ta => ta.track);
+    },
     // Computed fields with simple implementations
     albumCount: async (parent, _, { prisma }) => {
       return prisma.albumArtist.count({ where: { artistId: parent.id } });
@@ -952,6 +969,16 @@ export const resolvers: Resolvers = {
       return prisma.trackArtist.count({ where: { artistId: parent.id } });
     },
     popularity: () => null, // Placeholder
+    needsEnrichment: (parent) => {
+      // Compute if artist needs enrichment based on available data
+      return (
+        !parent.imageUrl ||
+        !parent.cloudflareImageId ||
+        parent.dataQuality === 'LOW' ||
+        parent.enrichmentStatus === 'PENDING' ||
+        parent.enrichmentStatus === 'FAILED'
+      );
+    },
   },
 
   Album: {
