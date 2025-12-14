@@ -172,26 +172,61 @@ export const driverConfig: Config = {
     if (stepIndex === 2) {
       console.log('🎬 Auto-filling demo recommendation for tour');
 
-      // Dispatch event to fill demo albums
+      // Create properly structured Album objects matching Album type from /src/types/album.ts
+      const sourceAlbum = {
+        id: '556257',
+        title: 'Random Access Memories',
+        artists: [
+          {
+            id: 'daft-punk-1',
+            name: 'Daft Punk'
+          }
+        ],
+        releaseDate: '2013-05-17',
+        year: 2013,
+        genre: ['Electronic', 'Disco', 'Funk'],
+        label: 'Columbia Records',
+        image: {
+          url: '/demo-albums/RAM-daft-punk.jpeg',
+          width: 500,
+          height: 500,
+          alt: 'Random Access Memories album cover'
+        },
+        source: 'local' as const
+      };
+
+      const recommendedAlbum = {
+        id: 'discovery-1',
+        title: 'Discovery',
+        artists: [
+          {
+            id: 'daft-punk-1',
+            name: 'Daft Punk'
+          }
+        ],
+        releaseDate: '2001-03-12',
+        year: 2001,
+        genre: ['Electronic', 'House', 'Disco'],
+        label: 'Virgin Records',
+        image: {
+          url: '/demo-albums/discovery-daft-punk.jpg',
+          width: 500,
+          height: 500,
+          alt: 'Discovery album cover'
+        },
+        source: 'local' as const
+      };
+
+      // Dispatch event to fill demo albums with properly structured Album objects
       const demoEvent = new CustomEvent('fill-demo-recommendation', {
         detail: {
-          sourceAlbum: {
-            id: '254183',
-            title: 'Random Access Memories',
-            artist: 'Daft Punk',
-            coverUrl: 'https://coverartarchive.org/release/e6db1d8f-c878-4a7d-b8e7-c99a5bb1eb20/front-500.jpg'
-          },
-          recommendedAlbum: {
-            id: '303145',
-            title: 'Discovery',
-            artist: 'Daft Punk',
-            coverUrl: 'https://coverartarchive.org/release/4f95ff02-fca9-4ae8-87ea-ec01c1d7e7f7/front-500.jpg'
-          },
+          sourceAlbum,
+          recommendedAlbum,
           similarityRating: 7
         }
       });
       window.dispatchEvent(demoEvent);
-      console.log('✅ Demo recommendation filled');
+      console.log('✅ Demo recommendation filled with proper Album objects');
     }
 
     // Step 2: Add click listener to the "Create Recommendation" button
