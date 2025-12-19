@@ -309,7 +309,10 @@ export default function RecommendationDrawer({
             </div>
 
             {/* Turntables Layout - Responsive */}
-            <div className={`${layoutConfig.turntableClasses} mb-6`}>
+            <div
+              className={`${layoutConfig.turntableClasses} mb-6`}
+              data-tour-step="recommendation-interface-container"
+            >
               {/* Left Turntable */}
               <div className='flex flex-col items-center'>
                 <Turntable

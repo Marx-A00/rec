@@ -30,8 +30,8 @@ export const tourSteps: DriveStep[] = [
   },
   {
     popover: {
-      title: '✨ Demo Recommendation',
-      description: "Perfect! We've pre-filled a demo recommendation for you - comparing Daft Punk's \"Random Access Memories\" to \"Discovery\". This shows you how the recommendation system works!",
+      title: '✨ Welcome to Create Recommendation',
+      description: "Welcome to the Create Recommendation drawer. This is the bread and butter of rec music. In here, you'll be able to recommend albums based on a 'source' album that you already know and love.\n\nMaking Recs is a way to share music that you love, help other people find new music, and build connections around music.\n\nNext we'll show you how this all works!",
       side: 'over',
       align: 'center',
       popoverClass: 'driver-popover-large'
@@ -50,6 +50,16 @@ export const tourSteps: DriveStep[] = [
       if (overlay) {
         overlay.style.opacity = '0';
       }
+    }
+  },
+  {
+    element: '[data-tour-step="recommendation-interface-container"]',
+    popover: {
+      title: '🎵 Understanding the Recommendation System',
+      description: "Here's how creating recommendations works:\n\n🔴 LEFT TURNTABLE (SOURCE): Load an album you already know and love - this is your starting point\n\n⭐ MIDDLE DIAL (SIMILARITY): Rate how similar the albums are from 1-10. Higher scores mean more similar sound, vibe, or style\n\n🟢 RIGHT TURNTABLE (RECOMMENDED): Load the album you want to recommend to others who love the source album\n\nThink of it like saying: \"If you love THIS album (left), you should check out THAT album (right) - they're X/10 similar!\" Let's see it in action!",
+      side: 'bottom',
+      align: 'center',
+      popoverClass: 'driver-popover-large'
     }
   },
   {
