@@ -29,12 +29,27 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '[data-tour-step="recommendation-drawer"]',
     popover: {
       title: '✨ Demo Recommendation',
       description: "Perfect! We've pre-filled a demo recommendation for you - comparing Daft Punk's \"Random Access Memories\" to \"Discovery\". This shows you how the recommendation system works!",
-      side: 'bottom',
-      align: 'center'
+      side: 'over',
+      align: 'center',
+      popoverClass: 'driver-popover-large'
+    },
+    onHighlighted: () => {
+      // Add dimmed overlay for this step only
+      // we may add it back later, we removed it for debugging
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0.5';
+      }
+    },
+    onDeselected: () => {
+      // Remove dimmed overlay when leaving this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
     }
   },
   {
@@ -250,7 +265,7 @@ export const driverConfig: Config = {
 
           // Wait for drawer to be visible before advancing
           const waitForDrawer = () => {
-            const drawer = document.querySelector('[data-tour-step="recommendation-drawer"]');
+            const drawer = document.querySelector('#recommendation-drawer');
             if (drawer && drawer instanceof HTMLElement) {
               // Check if drawer is visible (has non-zero height)
               const rect = drawer.getBoundingClientRect();

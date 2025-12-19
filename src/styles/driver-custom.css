@@ -7,6 +7,24 @@
   pointer-events: auto !important; /* Allow interactions within popover */
 }
 
+/* Large popover variant for step 3 */
+.driver-popover-large {
+  max-width: 600px !important;
+  min-width: 500px !important;
+  padding: 2rem !important;
+}
+
+.driver-popover-large .driver-popover-title {
+  font-size: 1.75rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.driver-popover-large .driver-popover-description {
+  font-size: 1.125rem !important;
+  line-height: 1.8 !important;
+  margin-bottom: 2rem !important;
+}
+
 /* Allow scrolling through popover when it's not being interacted with */
 .driver-popover-wrapper {
   pointer-events: none !important;
@@ -114,10 +132,12 @@
   opacity: 1 !important;
 }
 
-/* Overlay - Completely transparent (no darkness) */
+/* Overlay - Completely transparent by default, but can be dimmed per-step */
 .driver-overlay {
-  background-color: transparent !important;
+  background-color: rgba(0, 0, 0, 0.75) !important;
   backdrop-filter: none;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
 }
 
 /* The "stage" is the highlighted area cutout - ensure it's fully visible */
