@@ -25,6 +25,24 @@
   margin-bottom: 2rem !important;
 }
 
+/* Wide bottom popover variant for step 4 - sits at bottom without covering elements */
+.driver-popover-wide-bottom {
+  max-width: 800px !important;
+  min-width: 700px !important;
+  padding: 1.5rem 2rem !important;
+}
+
+.driver-popover-wide-bottom .driver-popover-title {
+  font-size: 1.25rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.driver-popover-wide-bottom .driver-popover-description {
+  font-size: 0.95rem !important;
+  line-height: 1.5 !important;
+  margin-bottom: 1rem !important;
+}
+
 /* Allow scrolling through popover when it's not being interacted with */
 .driver-popover-wrapper {
   pointer-events: none !important;
@@ -131,6 +149,25 @@
   z-index: inherit;
   opacity: 1 !important;
 }
+
+/* Exception: Prevent Driver.js from forcing position/layout changes on turntable wrapper */
+.driver-active-element[data-tour-step="recommendation-interface-wrapper"] {
+  position: static !important;
+  ring-offset: 0 !important;
+  transform: none !important;
+}
+
+.driver-active-element[data-tour-step="recommendation-interface-wrapper"] * {
+  position: static !important;
+  transform: none !important;
+}
+
+
+/* Exception: Keep turntable labels absolutely positioned during tour */
+.driver-active-element .tour-label-fix {
+  position: absolute !important;
+}
+
 
 /* Overlay - Completely transparent by default, but can be dimmed per-step */
 .driver-overlay {

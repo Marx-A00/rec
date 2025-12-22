@@ -38,7 +38,6 @@ export const tourSteps: DriveStep[] = [
     },
     onHighlighted: () => {
       // Add dimmed overlay for this step only
-      // we may add it back later, we removed it for debugging
       const overlay = document.querySelector('.driver-overlay') as HTMLElement;
       if (overlay) {
         overlay.style.opacity = '0.5';
@@ -53,13 +52,12 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '[data-tour-step="recommendation-interface-container"]',
+    element: '[data-tour-step="recommendation-search"]',
     popover: {
       title: '🎵 Understanding the Recommendation System',
-      description: "Here's how creating recommendations works:\n\n🔴 LEFT TURNTABLE (SOURCE): Load an album you already know and love - this is your starting point\n\n⭐ MIDDLE DIAL (SIMILARITY): Rate how similar the albums are from 1-10. Higher scores mean more similar sound, vibe, or style\n\n🟢 RIGHT TURNTABLE (RECOMMENDED): Load the album you want to recommend to others who love the source album\n\nThink of it like saying: \"If you love THIS album (left), you should check out THAT album (right) - they're X/10 similar!\" Let's see it in action!",
-      side: 'bottom',
-      align: 'center',
-      popoverClass: 'driver-popover-large'
+      description: "Here's how creating recommendations works:\n\n🔴 LEFT TURNTABLE (SOURCE): Load an album you already know and love - this is your starting point\n\n⭐ MIDDLE DIAL (SIMILARITY): Rate how similar the albums are from 1-10. Higher scores mean more similar sound, vibe, or style\n\n🟢 RIGHT TURNTABLE (RECOMMENDED): Load the album you want to recommend to others who love the source album\n\nThink of it like saying: \"If you love THIS album (left), you should check out THAT album (right) - they're X/10 similar!\" Let's try it with a demo!",
+      side: 'top',
+      align: 'start'
     }
   },
   {
@@ -193,8 +191,8 @@ export const driverConfig: Config = {
   onHighlightStarted: (_element, _step, options) => {
     const stepIndex = options.state.activeIndex ?? 0;
 
-    // Step 3: Auto-fill demo albums when drawer opens
-    if (stepIndex === 2) {
+    // Step 5: Auto-fill demo albums when showing search/album selection step
+    if (stepIndex === 4) {
       console.log('🎬 Auto-filling demo recommendation for tour');
 
       // Create properly structured Album objects matching Album type from /src/types/album.ts

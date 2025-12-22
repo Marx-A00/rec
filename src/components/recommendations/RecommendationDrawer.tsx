@@ -48,6 +48,13 @@ function Turntable({
 
   return (
     <div className='relative'>
+      {/* Side Label - Moved OUTSIDE and positioned at top */}
+      <div className='flex justify-center mb-2'>
+        <div className={`${labelColor} text-white px-2 py-1 rounded text-xs font-bold`}>
+          {title}
+        </div>
+      </div>
+
       {/* Turntable Base */}
       <div className='relative bg-zinc-800 rounded-full p-4 border-2 border-zinc-700'>
         {/* Turntable Platter */}
@@ -104,15 +111,6 @@ function Turntable({
               </div>
             </div>
           )}
-        </div>
-
-        {/* Side Label */}
-        <div className='absolute -top-1 left-1/2 transform -translate-x-1/2'>
-          <div
-            className={`${labelColor} text-white px-2 py-1 rounded text-xs font-bold`}
-          >
-            {title}
-          </div>
         </div>
       </div>
     </div>
@@ -309,45 +307,44 @@ export default function RecommendationDrawer({
             </div>
 
             {/* Turntables Layout - Responsive */}
-            <div
-              className={`${layoutConfig.turntableClasses} mb-6`}
-              data-tour-step="recommendation-interface-container"
-            >
-              {/* Left Turntable */}
-              <div className='flex flex-col items-center'>
-                <Turntable
-                  album={selectedBasisAlbum}
-                  title='SOURCE'
-                  side='left'
-                  isActive={isSearchingForBasis}
-                  onClick={() => switchAlbumType(true)}
-                  placeholder='Load source'
-                  size={layoutConfig.turntableSize}
-                />
-              </div>
-
-              {/* Similarity Rating Dial */}
-              <div className='flex flex-col items-center'>
-                <div className='bg-zinc-800 rounded-lg p-4 border border-zinc-700'>
-                  <SimilarityRatingDial
-                    value={similarityRating}
-                    onChange={setSimilarityRating}
-                    disabled={false}
+            <div data-tour-step="recommendation-interface-wrapper">
+              <div className={`${layoutConfig.turntableClasses} mb-6`}>
+                {/* Left Turntable */}
+                <div className='flex flex-col items-center' data-tour-step="left-turntable-test">
+                  <Turntable
+                    album={selectedBasisAlbum}
+                    title='SOURCE'
+                    side='left'
+                    isActive={isSearchingForBasis}
+                    onClick={() => switchAlbumType(true)}
+                    placeholder='Load source'
+                    size={layoutConfig.turntableSize}
                   />
                 </div>
-              </div>
 
-              {/* Right Turntable */}
-              <div className='flex flex-col items-center'>
-                <Turntable
-                  album={selectedRecommendedAlbum}
-                  title='RECOMMENDED'
-                  side='right'
-                  isActive={!isSearchingForBasis}
-                  onClick={() => switchAlbumType(false)}
-                  placeholder='Load rec'
-                  size={layoutConfig.turntableSize}
-                />
+                {/* Similarity Rating Dial */}
+                <div className='flex flex-col items-center'>
+                  <div className='bg-zinc-800 rounded-lg p-4 border border-zinc-700'>
+                    <SimilarityRatingDial
+                      value={similarityRating}
+                      onChange={setSimilarityRating}
+                      disabled={false}
+                    />
+                  </div>
+                </div>
+
+                {/* Right Turntable */}
+                <div className='flex flex-col items-center'>
+                  <Turntable
+                    album={selectedRecommendedAlbum}
+                    title='RECOMMENDED'
+                    side='right'
+                    isActive={!isSearchingForBasis}
+                    onClick={() => switchAlbumType(false)}
+                    placeholder='Load rec'
+                    size={layoutConfig.turntableSize}
+                  />
+                </div>
               </div>
             </div>
 
