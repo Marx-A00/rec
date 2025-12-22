@@ -144,8 +144,9 @@
 }
 
 /* Ensure highlighted element's children stay visible and bright */
+/* REMOVED global position: relative on all children - it breaks absolute positioning in components like similarity dial */
 .driver-active-element[data-tour-step] * {
-  position: relative;
+  /* position: relative; ← COMMENTED OUT - causes displacement */
   z-index: inherit;
   opacity: 1 !important;
 }
