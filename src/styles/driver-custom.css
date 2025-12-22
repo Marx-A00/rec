@@ -136,11 +136,17 @@
 
 /* Only boost z-index for specific tour elements, not body */
 .driver-active-element[data-tour-step] {
-  position: relative !important;
+  /* position: relative !important; ← REMOVED - breaks absolute positioning for elements like submit button */
   z-index: 10001 !important; /* Above the driver overlay */
   /* Ensure it's not dimmed */
   opacity: 1 !important;
   filter: brightness(1.2) !important; /* Make it slightly brighter */
+}
+
+/* Exception: Keep submit button absolutely positioned */
+.driver-active-element[data-tour-step="submit-recommendation"] {
+  position: absolute !important;
+  /* Inherit original positioning - let component styles handle it */
 }
 
 /* Ensure highlighted element's children stay visible and bright */

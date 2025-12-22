@@ -6,6 +6,7 @@ import { driver, DriveStep } from 'driver.js';
 import type { Driver } from 'driver.js';
 
 import { driverConfig, tourSteps } from '@/lib/tours/driverConfig';
+import { useTourStore } from '@/stores/useTourStore';
 
 interface TourContextType {
   startTour: () => void;
@@ -201,6 +202,18 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     const user = session?.user;
     if (!user) return;
 
+    // Check if tour needs to resume from a specific step after navigation
+    const resumeStep = useTourStore.getState().resumeStep;
+    if (resumeStep !== null) {
+      console.log(`🔄 Resuming tour from step ${resumeStep + 1}...`);
+      useTourStore.getState().setResumeStep(null); // Clear the resume flag
+      // Delay to ensure all components are mounted and animations complete
+      setTimeout(() => {
+        startFromStep(resumeStep);
+      }, 500);
+      return;
+    }
+
     // Check if user is new (profileUpdatedAt is null)
     const isNewUser = user.profileUpdatedAt === null;
     const tourCompleted = localStorage.getItem('tour-completed');
@@ -212,7 +225,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         startTour();
       }, 1500);
     }
-  }, [session, status, startTour]);
+  }, [session, status, startTour, startFromStep]);
 
   // Expose debug commands to window
   useEffect(() => {

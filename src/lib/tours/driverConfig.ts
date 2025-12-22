@@ -1,5 +1,6 @@
 import { Config, DriveStep } from 'driver.js';
 import { driver } from 'driver.js';
+import { useTourStore } from '@/stores/useTourStore';
 
 /**
  * Driver.js Tour Configuration
@@ -88,12 +89,33 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '[data-tour-step="discover-nav"]',
     popover: {
-      title: '🌟 Discover New Music',
-      description: 'Amazing! Now that you know how to recommend music, explore what others are sharing. Click Next to go to the Browse & Discover page!',
-      side: 'right',
-      align: 'start'
+      title: '✨ Great Job!',
+      description: "You've learned how to create recommendations! Now let's explore the Browse page where you can discover music from other users and dive into artist pages. Click Next to continue to the Browse page!",
+      side: 'over',
+      align: 'center',
+      popoverClass: 'driver-popover-large'
+    },
+    onHighlighted: () => {
+      // Close the recommendation drawer
+      const closeButton = document.querySelector('[data-tour-step="recommendation-drawer"]')?.closest('[role="dialog"]')?.querySelector('button[aria-label="Close"]') as HTMLElement;
+      if (closeButton) {
+        closeButton.click();
+        console.log('✅ Closed recommendation drawer for tour transition');
+      }
+
+      // Add dimmed overlay for this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0.5';
+      }
+    },
+    onDeselected: () => {
+      // Remove dimmed overlay when leaving this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
     }
   },
   {
@@ -305,21 +327,25 @@ export const driverConfig: Config = {
   onNextClick: (_element, _step, options) => {
     const stepIndex = options.state.activeIndex ?? 0;
 
-    // Step 6: Navigate to /browse
-    if (stepIndex === 6) {
+    // Step 7: Navigate to /browse (after "Great Job!" transitional card)
+    if (stepIndex === 7) {
       console.log('🌟 Navigating to /browse page...');
+      // Save next step index to resume after navigation
+      useTourStore.getState().setResumeStep(8);
       window.location.href = '/browse';
       return;
     }
 
-    // Step 8: Search for Daft Punk and navigate to artist page
-    if (stepIndex === 8) {
+    // Step 9: Search for Daft Punk and navigate to artist page
+    if (stepIndex === 9) {
       console.log('🔍 Searching for Daft Punk...');
       fetch('/api/search?query=daft+punk&type=artists&limit=1')
         .then(res => res.json())
         .then(data => {
           if (data.results?.[0]?.id) {
             console.log('✅ Found Daft Punk, navigating to artist page...');
+            // Save next step index to resume after navigation
+            useTourStore.getState().setResumeStep(10);
             window.location.href = `/artists/${data.results[0].id}`;
           } else {
             console.warn('❌ Daft Punk not found, moving to next step');
@@ -333,16 +359,20 @@ export const driverConfig: Config = {
       return;
     }
 
-    // Step 10: Navigate to Random Access Memories album
-    if (stepIndex === 10) {
+    // Step 11: Navigate to Random Access Memories album
+    if (stepIndex === 11) {
       console.log('💿 Navigating to Random Access Memories album...');
+      // Save next step index to resume after navigation
+      useTourStore.getState().setResumeStep(12);
       window.location.href = '/albums/556257';
       return;
     }
 
-    // Step 12: Navigate to profile
-    if (stepIndex === 12) {
+    // Step 13: Navigate to profile
+    if (stepIndex === 13) {
       console.log('👤 Navigating to profile page...');
+      // Save next step index to resume after navigation
+      useTourStore.getState().setResumeStep(14);
       window.location.href = '/profile';
       return;
     }
