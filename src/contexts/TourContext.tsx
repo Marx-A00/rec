@@ -7,6 +7,7 @@ import type { Driver } from 'driver.js';
 
 import { driverConfig, tourSteps } from '@/lib/tours/driverConfig';
 import { useTourStore } from '@/stores/useTourStore';
+import { TourDebugControls } from '@/components/tour/TourDebugControls';
 
 interface TourContextType {
   startTour: () => void;
@@ -251,7 +252,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     driverInstance,
   };
 
-  return <TourContext.Provider value={value}>{children}</TourContext.Provider>;
+  return (
+    <TourContext.Provider value={value}>
+      {children}
+      <TourDebugControls />
+    </TourContext.Provider>
+  );
 }
 
 export function useTour() {
@@ -261,3 +267,6 @@ export function useTour() {
   }
   return context;
 }
+
+// Alias for convenience
+export const useTourContext = useTour;

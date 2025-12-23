@@ -327,7 +327,7 @@ export const driverConfig: Config = {
   onNextClick: (_element, _step, options) => {
     const stepIndex = options.state.activeIndex ?? 0;
 
-    // Step 7: Navigate to /browse (after "Great Job!" transitional card)
+    // Step 8 (index 7): Navigate to /browse (after "Great Job!" transitional card)
     if (stepIndex === 7) {
       console.log('🌟 Navigating to /browse page...');
       // Save next step index to resume after navigation
@@ -336,30 +336,17 @@ export const driverConfig: Config = {
       return;
     }
 
-    // Step 9: Search for Daft Punk and navigate to artist page
+    // Step 10 (index 9): Navigate to Daft Punk artist page (Main Search)
     if (stepIndex === 9) {
-      console.log('🔍 Searching for Daft Punk...');
-      fetch('/api/search?query=daft+punk&type=artists&limit=1')
-        .then(res => res.json())
-        .then(data => {
-          if (data.results?.[0]?.id) {
-            console.log('✅ Found Daft Punk, navigating to artist page...');
-            // Save next step index to resume after navigation
-            useTourStore.getState().setResumeStep(10);
-            window.location.href = `/artists/${data.results[0].id}`;
-          } else {
-            console.warn('❌ Daft Punk not found, moving to next step');
-            options.driver.moveNext();
-          }
-        })
-        .catch(error => {
-          console.error('❌ Search error:', error);
-          options.driver.moveNext();
-        });
+      console.log('🔍 Navigating to Daft Punk artist page...');
+      // Save next step index to resume after navigation (Artist Header = index 10)
+      useTourStore.getState().setResumeStep(10);
+      // Hardcoded Daft Punk UUID from local database
+      window.location.href = '/artists/da99bd57-74ca-4808-9bc3-7e5c7d7b6541?source=local';
       return;
     }
 
-    // Step 11: Navigate to Random Access Memories album
+    // Step 12 (index 11): Navigate to Random Access Memories album (from Artist Discography)
     if (stepIndex === 11) {
       console.log('💿 Navigating to Random Access Memories album...');
       // Save next step index to resume after navigation
@@ -368,7 +355,7 @@ export const driverConfig: Config = {
       return;
     }
 
-    // Step 13: Navigate to profile
+    // Step 14 (index 13): Navigate to profile
     if (stepIndex === 13) {
       console.log('👤 Navigating to profile page...');
       // Save next step index to resume after navigation
