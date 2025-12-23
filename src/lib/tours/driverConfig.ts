@@ -13,26 +13,34 @@ export const tourSteps: DriveStep[] = [
   {
     element: 'body',
     popover: {
-      title: '🎵 Welcome to Rec!',
-      description: "Discover amazing music through community recommendations. Let's show you how it works!",
+      title: 'Welcome to Rec!',
+      /*
+      Rec is a music sharing platform where you can find new music based on what you already love, and help others do the same.
+
+      Let's show you the ropes.
+
+      */
+      description: "Rec is a music sharing platform where you can find new music based on what you already love, and help others do the same.<br><br>Let's show you the ropes.",
       side: 'over', // Center overlay for welcome modal
-      align: 'center'
+      align: 'center',
+      popoverClass: 'driver-popover-large'
     }
   },
   {
     element: '[data-tour-step="create-recommendation"]',
     popover: {
-      title: '🎤 Share Your Music Taste',
-      description: 'Click this button to create your first recommendation! Share albums you love and discover what others are listening to.',
+      title: 'Share Your Music Taste',
+      description: 'Click this button to create your first recommendation! Share albums that you think others might love based on specific album.',
       side: 'right',
       align: 'center',
       showButtons: ['close'], // Hide Next button - user must click the actual button
+      popoverClass: 'driver-popover-large'
     }
   },
   {
     popover: {
-      title: '✨ Welcome to Create Recommendation',
-      description: "Welcome to the Create Recommendation drawer. This is the bread and butter of rec music. In here, you'll be able to recommend albums based on a 'source' album that you already know and love.\n\nMaking Recs is a way to share music that you love, help other people find new music, and build connections around music.\n\nNext we'll show you how this all works!",
+      title: 'Welcome to the Create Recommendation Drawer',
+      description: "This is the bread and butter of rec. <br><br>In here, you'll be able to recommend an album ('recommended') based on a 'source' album that you already know and love.<br><br>Making Recs is a way to share music that you love, help other people find new music, and build connections around those experiences.<br><br>Click next to look a little closer at the interface",
       side: 'over',
       align: 'center',
       popoverClass: 'driver-popover-large'
@@ -55,8 +63,8 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="recommendation-search"]',
     popover: {
-      title: '🎵 Understanding the Recommendation System',
-      description: "Here's how creating recommendations works:\n\n🔴 LEFT TURNTABLE (SOURCE): Load an album you already know and love - this is your starting point\n\n⭐ MIDDLE DIAL (SIMILARITY): Rate how similar the albums are from 1-10. Higher scores mean more similar sound, vibe, or style\n\n🟢 RIGHT TURNTABLE (RECOMMENDED): Load the album you want to recommend to others who love the source album\n\nThink of it like saying: \"If you love THIS album (left), you should check out THAT album (right) - they're X/10 similar!\" Let's try it with a demo!",
+      title: 'Understanding the Recommendation System',
+      description: "<span style='color: #ef4444; font-weight: 600;'>LEFT TURNTABLE (SOURCE)</span><br>Load an album you already know and love - this is your starting point<br><br><span style='color: #f59e0b; font-weight: 600;'>MIDDLE DIAL (SIMILARITY)</span><br>Rate how similar the albums are from 1-10. Higher scores mean more similar sound, vibe, or style<br><br><span style='color: #22c55e; font-weight: 600;'>RIGHT TURNTABLE (RECOMMENDED)</span><br>Load the album you want to recommend to others who love the source album<br><br>Think of it like saying: \"If you love THIS album (left), you should check out THAT album (right) - they're X/10 similar!\" Let's try it with a demo!",
       side: 'top',
       align: 'start'
     }
@@ -179,6 +187,29 @@ export const tourSteps: DriveStep[] = [
       description: 'Amazing! This is your personal music profile page. Here you can see your recommendations, followers, music stats, create collages, manage your collections, and showcase your unique music taste to the community. This is your musical identity hub!',
       side: 'bottom',
       align: 'start'
+    }
+  },
+  {
+    popover: {
+      title: '🎉 Tour Complete!',
+      description: "Congratulations! You've completed the Rec Music tour. You now know how to:<br><br>✅ Create and share music recommendations<br>✅ Discover new music through the browse page<br>✅ Explore artist pages and albums<br>✅ Manage your profile and music taste<br><br>Now it's time to start building your music community! Click Finish to start exploring on your own.",
+      side: 'over',
+      align: 'center',
+      popoverClass: 'driver-popover-large'
+    },
+    onHighlighted: () => {
+      // Add dimmed overlay for final step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0.5';
+      }
+    },
+    onDeselected: () => {
+      // Remove dimmed overlay when leaving this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
     }
   }
 ];

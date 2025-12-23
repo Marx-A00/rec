@@ -10,7 +10,7 @@ export function TourDebugControls() {
   // Don't show if tour is not active
   if (!isTourActive) return null;
 
-  const totalSteps = 15; // Update this if tour steps change
+  const totalSteps = 16; // Update this if tour steps change
 
   return (
     <div className='fixed top-4 right-4 z-[10002] bg-zinc-900 border-2 border-emerald-600 rounded-lg shadow-2xl'>

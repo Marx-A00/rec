@@ -12,17 +12,20 @@
   max-width: 600px !important;
   min-width: 500px !important;
   padding: 2rem !important;
+  text-align: center !important;
 }
 
 .driver-popover-large .driver-popover-title {
   font-size: 1.75rem !important;
   margin-bottom: 1.5rem !important;
+  text-align: center !important;
 }
 
 .driver-popover-large .driver-popover-description {
   font-size: 1.125rem !important;
   line-height: 1.8 !important;
   margin-bottom: 2rem !important;
+  text-align: center !important;
 }
 
 /* Wide bottom popover variant for step 4 - sits at bottom without covering elements */
