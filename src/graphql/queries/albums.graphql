@@ -39,6 +39,24 @@ query GetAlbumDetailsAdmin($id: UUID!) {
     averageRating
     inCollectionsCount
     recommendationScore
+    latestEnrichmentLog {
+      id
+      status
+      sources
+      fieldsEnriched
+      errorMessage
+      createdAt
+    }
+    enrichmentLogs(limit: 5) {
+      id
+      operation
+      sources
+      status
+      fieldsEnriched
+      errorMessage
+      durationMs
+      createdAt
+    }
     artists {
       artist {
         id

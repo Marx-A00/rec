@@ -1653,6 +1653,26 @@ export type GetAlbumDetailsAdminQuery = {
     averageRating?: number | null;
     inCollectionsCount: number;
     recommendationScore?: number | null;
+    latestEnrichmentLog?: {
+      __typename?: 'EnrichmentLog';
+      id: string;
+      status: EnrichmentLogStatus;
+      sources: Array<string>;
+      fieldsEnriched: Array<string>;
+      errorMessage?: string | null;
+      createdAt: Date;
+    } | null;
+    enrichmentLogs: Array<{
+      __typename?: 'EnrichmentLog';
+      id: string;
+      operation: string;
+      sources: Array<string>;
+      status: EnrichmentLogStatus;
+      fieldsEnriched: Array<string>;
+      errorMessage?: string | null;
+      durationMs?: number | null;
+      createdAt: Date;
+    }>;
     artists: Array<{
       __typename?: 'ArtistCredit';
       role: string;
@@ -1867,6 +1887,60 @@ export type GetArtistDiscographyQuery = {
   };
 };
 
+export type GetEnrichmentLogsQueryVariables = Exact<{
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  entityId?: InputMaybe<Scalars['UUID']['input']>;
+  status?: InputMaybe<EnrichmentLogStatus>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetEnrichmentLogsQuery = {
+  __typename?: 'Query';
+  enrichmentLogs: Array<{
+    __typename?: 'EnrichmentLog';
+    id: string;
+    entityType?: EnrichmentEntityType | null;
+    entityId?: string | null;
+    operation: string;
+    sources: Array<string>;
+    status: EnrichmentLogStatus;
+    fieldsEnriched: Array<string>;
+    dataQualityBefore?: DataQuality | null;
+    dataQualityAfter?: DataQuality | null;
+    errorMessage?: string | null;
+    errorCode?: string | null;
+    durationMs?: number | null;
+    apiCallCount: number;
+    metadata?: any | null;
+    createdAt: Date;
+  }>;
+};
+
+export type GetEnrichmentStatsQueryVariables = Exact<{
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  timeRange?: InputMaybe<TimeRangeInput>;
+}>;
+
+export type GetEnrichmentStatsQuery = {
+  __typename?: 'Query';
+  enrichmentStats: {
+    __typename?: 'EnrichmentStats';
+    totalAttempts: number;
+    successCount: number;
+    failedCount: number;
+    noDataCount: number;
+    skippedCount: number;
+    averageDurationMs: number;
+    sourceStats: Array<{
+      __typename?: 'SourceStat';
+      source: string;
+      attempts: number;
+      successRate: number;
+    }>;
+  };
+};
+
 export type GetAlbumRecommendationsQueryVariables = Exact<{
   albumId: Scalars['UUID']['input'];
   filter?: InputMaybe<Scalars['String']['input']>;
@@ -1938,6 +2012,26 @@ export type GetArtistDetailsQuery = {
     popularity?: number | null;
     needsEnrichment: boolean;
     listeners?: number | null;
+    latestEnrichmentLog?: {
+      __typename?: 'EnrichmentLog';
+      id: string;
+      status: EnrichmentLogStatus;
+      sources: Array<string>;
+      fieldsEnriched: Array<string>;
+      errorMessage?: string | null;
+      createdAt: Date;
+    } | null;
+    enrichmentLogs: Array<{
+      __typename?: 'EnrichmentLog';
+      id: string;
+      operation: string;
+      sources: Array<string>;
+      status: EnrichmentLogStatus;
+      fieldsEnriched: Array<string>;
+      errorMessage?: string | null;
+      durationMs?: number | null;
+      createdAt: Date;
+    }>;
     albums: Array<{
       __typename?: 'Album';
       id: string;
@@ -3264,6 +3358,24 @@ export const GetAlbumDetailsAdminDocument = `
     averageRating
     inCollectionsCount
     recommendationScore
+    latestEnrichmentLog {
+      id
+      status
+      sources
+      fieldsEnriched
+      errorMessage
+      createdAt
+    }
+    enrichmentLogs(limit: 5) {
+      id
+      operation
+      sources
+      status
+      fieldsEnriched
+      errorMessage
+      durationMs
+      createdAt
+    }
     artists {
       artist {
         id
@@ -3693,6 +3805,208 @@ useInfiniteGetArtistDiscographyQuery.getKey = (
   variables: GetArtistDiscographyQueryVariables
 ) => ['GetArtistDiscography.infinite', variables];
 
+export const GetEnrichmentLogsDocument = `
+    query GetEnrichmentLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: EnrichmentLogStatus, $skip: Int, $limit: Int) {
+  enrichmentLogs(
+    entityType: $entityType
+    entityId: $entityId
+    status: $status
+    skip: $skip
+    limit: $limit
+  ) {
+    id
+    entityType
+    entityId
+    operation
+    sources
+    status
+    fieldsEnriched
+    dataQualityBefore
+    dataQualityAfter
+    errorMessage
+    errorCode
+    durationMs
+    apiCallCount
+    metadata
+    createdAt
+  }
+}
+    `;
+
+export const useGetEnrichmentLogsQuery = <
+  TData = GetEnrichmentLogsQuery,
+  TError = unknown,
+>(
+  variables?: GetEnrichmentLogsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetEnrichmentLogsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetEnrichmentLogsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetEnrichmentLogsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetEnrichmentLogs']
+        : ['GetEnrichmentLogs', variables],
+    queryFn: fetcher<GetEnrichmentLogsQuery, GetEnrichmentLogsQueryVariables>(
+      GetEnrichmentLogsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetEnrichmentLogsQuery.getKey = (
+  variables?: GetEnrichmentLogsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetEnrichmentLogs']
+    : ['GetEnrichmentLogs', variables];
+
+export const useInfiniteGetEnrichmentLogsQuery = <
+  TData = InfiniteData<GetEnrichmentLogsQuery>,
+  TError = unknown,
+>(
+  variables: GetEnrichmentLogsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetEnrichmentLogsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetEnrichmentLogsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetEnrichmentLogsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetEnrichmentLogs.infinite']
+            : ['GetEnrichmentLogs.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetEnrichmentLogsQuery, GetEnrichmentLogsQueryVariables>(
+            GetEnrichmentLogsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetEnrichmentLogsQuery.getKey = (
+  variables?: GetEnrichmentLogsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetEnrichmentLogs.infinite']
+    : ['GetEnrichmentLogs.infinite', variables];
+
+export const GetEnrichmentStatsDocument = `
+    query GetEnrichmentStats($entityType: EnrichmentEntityType, $timeRange: TimeRangeInput) {
+  enrichmentStats(entityType: $entityType, timeRange: $timeRange) {
+    totalAttempts
+    successCount
+    failedCount
+    noDataCount
+    skippedCount
+    averageDurationMs
+    sourceStats {
+      source
+      attempts
+      successRate
+    }
+  }
+}
+    `;
+
+export const useGetEnrichmentStatsQuery = <
+  TData = GetEnrichmentStatsQuery,
+  TError = unknown,
+>(
+  variables?: GetEnrichmentStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetEnrichmentStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetEnrichmentStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetEnrichmentStatsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetEnrichmentStats']
+        : ['GetEnrichmentStats', variables],
+    queryFn: fetcher<GetEnrichmentStatsQuery, GetEnrichmentStatsQueryVariables>(
+      GetEnrichmentStatsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetEnrichmentStatsQuery.getKey = (
+  variables?: GetEnrichmentStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetEnrichmentStats']
+    : ['GetEnrichmentStats', variables];
+
+export const useInfiniteGetEnrichmentStatsQuery = <
+  TData = InfiniteData<GetEnrichmentStatsQuery>,
+  TError = unknown,
+>(
+  variables: GetEnrichmentStatsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetEnrichmentStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetEnrichmentStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetEnrichmentStatsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetEnrichmentStats.infinite']
+            : ['GetEnrichmentStats.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetEnrichmentStatsQuery, GetEnrichmentStatsQueryVariables>(
+            GetEnrichmentStatsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetEnrichmentStatsQuery.getKey = (
+  variables?: GetEnrichmentStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetEnrichmentStats.infinite']
+    : ['GetEnrichmentStats.infinite', variables];
+
 export const GetAlbumRecommendationsDocument = `
     query GetAlbumRecommendations($albumId: UUID!, $filter: String, $sort: String, $skip: Int, $limit: Int) {
   getAlbumRecommendations(
@@ -3825,6 +4139,24 @@ export const GetArtistDetailsDocument = `
     popularity
     needsEnrichment
     listeners
+    latestEnrichmentLog {
+      id
+      status
+      sources
+      fieldsEnriched
+      errorMessage
+      createdAt
+    }
+    enrichmentLogs(limit: 5) {
+      id
+      operation
+      sources
+      status
+      fieldsEnriched
+      errorMessage
+      durationMs
+      createdAt
+    }
     albums {
       id
       title

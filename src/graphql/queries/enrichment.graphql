@@ -1,0 +1,50 @@
+query GetEnrichmentLogs(
+  $entityType: EnrichmentEntityType
+  $entityId: UUID
+  $status: EnrichmentLogStatus
+  $skip: Int
+  $limit: Int
+) {
+  enrichmentLogs(
+    entityType: $entityType
+    entityId: $entityId
+    status: $status
+    skip: $skip
+    limit: $limit
+  ) {
+    id
+    entityType
+    entityId
+    operation
+    sources
+    status
+    fieldsEnriched
+    dataQualityBefore
+    dataQualityAfter
+    errorMessage
+    errorCode
+    durationMs
+    apiCallCount
+    metadata
+    createdAt
+  }
+}
+
+query GetEnrichmentStats(
+  $entityType: EnrichmentEntityType
+  $timeRange: TimeRangeInput
+) {
+  enrichmentStats(entityType: $entityType, timeRange: $timeRange) {
+    totalAttempts
+    successCount
+    failedCount
+    noDataCount
+    skippedCount
+    averageDurationMs
+    sourceStats {
+      source
+      attempts
+      successRate
+    }
+  }
+}
