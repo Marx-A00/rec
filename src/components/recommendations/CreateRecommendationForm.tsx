@@ -246,7 +246,7 @@ export default function CreateRecommendationForm({
         type='submit'
         onClick={handleSubmit}
         className={`
-          absolute -bottom-6 right-0 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200
+          block ml-auto mt-6 mr-8 mb-8 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200
           ${
             isDisabled
               ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed opacity-50'

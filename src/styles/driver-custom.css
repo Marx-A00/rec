@@ -146,12 +146,6 @@
   filter: brightness(1.2) !important; /* Make it slightly brighter */
 }
 
-/* Exception: Keep submit button absolutely positioned */
-.driver-active-element[data-tour-step="submit-recommendation"] {
-  position: absolute !important;
-  /* Inherit original positioning - let component styles handle it */
-}
-
 /* Ensure highlighted element's children stay visible and bright */
 /* REMOVED global position: relative on all children - it breaks absolute positioning in components like similarity dial */
 .driver-active-element[data-tour-step] * {

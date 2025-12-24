@@ -349,7 +349,7 @@ export default function RecommendationDrawer({
             </div>
 
             {/* Recommendation Form */}
-            <div className='relative min-h-[60px]'>
+            <div className='relative'>
               <CreateRecommendationForm
                 basisAlbum={selectedBasisAlbum}
                 recommendedAlbum={selectedRecommendedAlbum}
