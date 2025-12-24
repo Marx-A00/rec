@@ -90,8 +90,8 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="submit-recommendation"]',
     popover: {
-      title: '🚀 Submit Your Recommendation',
-      description: 'Hit this green button cuh',
+      title: 'Submit Your Rec!',
+      description: 'This is disabled during the tour.',
       side: 'top',
       align: 'center'
     }
@@ -127,12 +127,26 @@ export const tourSteps: DriveStep[] = [
     }
   },
   {
-    element: '[data-tour-step="browse-header"]',
     popover: {
       title: '🎵 Welcome to Discovery',
       description: 'Perfect! This is where the magic happens. Browse through trending albums, discover new artists, and explore recommendations from other music lovers. Everything is organized to help you find your next favorite album!',
-      side: 'bottom',
-      align: 'start'
+      side: 'over',
+      align: 'center',
+      popoverClass: 'driver-popover-large'
+    },
+    onHighlighted: () => {
+      // Add dimmed overlay for this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0.5';
+      }
+    },
+    onDeselected: () => {
+      // Remove dimmed overlay when leaving this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
     }
   },
   {

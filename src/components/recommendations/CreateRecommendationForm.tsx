@@ -4,6 +4,12 @@ import { CreateRecommendationRequest } from '@/types/recommendation';
 import { Album } from '@/types/album';
 import { useCreateRecommendationMutation, getErrorMessage } from '@/hooks';
 import { sanitizeArtistName } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from '@/components/ui/tooltip';
 
 // Helper function to format artists naturally with sanitization
 function formatArtists(artists: Array<{ name: string }> | undefined): string {
@@ -187,6 +193,7 @@ interface CreateRecommendationFormProps {
   recommendedAlbum: Album | null;
   score?: number;
   onSuccess?: () => void;
+  isTourMode?: boolean;
 }
 
 export default function CreateRecommendationForm({
@@ -194,6 +201,7 @@ export default function CreateRecommendationForm({
   recommendedAlbum,
   score: externalScore,
   onSuccess,
+  isTourMode = false,
 }: CreateRecommendationFormProps) {
   const [score, setScore] = useState(7);
   const finalScore = externalScore ?? score;
@@ -205,7 +213,7 @@ export default function CreateRecommendationForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!basisAlbum || !recommendedAlbum) {
+    if (!basisAlbum || !recommendedAlbum || isTourMode) {
       return;
     }
 
@@ -218,7 +226,7 @@ export default function CreateRecommendationForm({
   };
 
   const isDisabled =
-    !basisAlbum || !recommendedAlbum || createMutation.isPending;
+    !basisAlbum || !recommendedAlbum || createMutation.isPending || isTourMode;
 
   return (
     <div className='relative'>
@@ -240,36 +248,63 @@ export default function CreateRecommendationForm({
       )}
 
       {/* Circular Play Button - Bottom Right */}
-      <button
-        id='submit-recommendation-button'
-        data-tour-step="submit-recommendation"
-        type='submit'
-        onClick={handleSubmit}
-        className={`
-          block ml-auto mt-6 mr-8 mb-8 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200
-          ${
-            isDisabled
-              ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed opacity-50'
-              : 'bg-green-600 hover:bg-green-500 text-white hover:scale-110 active:scale-95 shadow-lg hover:shadow-green-500/25'
+      {isTourMode ? (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                id='submit-recommendation-button'
+                data-tour-step="submit-recommendation"
+                type='button'
+                onClick={handleSubmit}
+                className='block ml-auto mt-6 mr-8 mb-8 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 bg-green-600 text-white shadow-lg shadow-green-500/25 hover:bg-zinc-700 hover:text-zinc-500 hover:opacity-50 hover:shadow-none cursor-pointer hover:cursor-not-allowed'
+              >
+                <svg
+                  className='w-5 h-5 ml-0.5'
+                  fill='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path d='M8 5v14l11-7z' />
+                </svg>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side='top' className='font-medium'>
+              Rec submission disabled during tour
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        <button
+          id='submit-recommendation-button'
+          data-tour-step="submit-recommendation"
+          type='submit'
+          onClick={handleSubmit}
+          className={`
+            block ml-auto mt-6 mr-8 mb-8 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200
+            ${
+              isDisabled
+                ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed opacity-50'
+                : 'bg-green-600 hover:bg-green-500 text-white hover:scale-110 active:scale-95 shadow-lg hover:shadow-green-500/25'
+            }
+          `}
+          disabled={isDisabled}
+          title={
+            createMutation.isPending ? 'Creating...' : 'Create Recommendation'
           }
-        `}
-        disabled={isDisabled}
-        title={
-          createMutation.isPending ? 'Creating...' : 'Create Recommendation'
-        }
-      >
-        {createMutation.isPending ? (
-          <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
-        ) : (
-          <svg
-            className='w-5 h-5 ml-0.5'
-            fill='currentColor'
-            viewBox='0 0 24 24'
-          >
-            <path d='M8 5v14l11-7z' />
-          </svg>
-        )}
-      </button>
+        >
+          {createMutation.isPending ? (
+            <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
+          ) : (
+            <svg
+              className='w-5 h-5 ml-0.5'
+              fill='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path d='M8 5v14l11-7z' />
+            </svg>
+          )}
+        </button>
+      )}
     </div>
   );
 }

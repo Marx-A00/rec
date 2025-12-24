@@ -355,6 +355,7 @@ export default function RecommendationDrawer({
                 recommendedAlbum={selectedRecommendedAlbum}
                 score={similarityRating}
                 onSuccess={handleSuccess}
+                isTourMode={isTourMode}
               />
             </div>
           </div>
