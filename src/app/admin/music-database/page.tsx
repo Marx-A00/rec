@@ -71,7 +71,9 @@ import {
   useGetDatabaseStatsQuery,
   useGetAlbumDetailsAdminQuery,
   useGetArtistDetailsQuery,
+  EnrichmentEntityType,
 } from '@/generated/graphql';
+import { EnrichmentLogTable } from '@/components/admin/EnrichmentLogTable';
 
 interface AlbumSearchResult {
   id: string;
@@ -549,6 +551,7 @@ export default function MusicDatabasePage() {
   const AlbumExpandedContent = ({ album }: { album: AlbumSearchResult }) => {
     const [albumDetails, setAlbumDetails] = useState<any>(null);
     const [loadingDetails, setLoadingDetails] = useState(true);
+    const [tracksExpanded, setTracksExpanded] = useState(false);
 
     useEffect(() => {
       const fetchAlbumDetails = async () => {
@@ -710,36 +713,46 @@ export default function MusicDatabasePage() {
         {/* Tracks Section */}
         {albumDetails.tracks && albumDetails.tracks.length > 0 && (
           <div>
-            <div className='text-sm font-semibold text-white mb-2 flex items-center gap-2'>
+            <button
+              onClick={() => setTracksExpanded(!tracksExpanded)}
+              className='text-sm font-semibold text-white mb-2 flex items-center gap-2 hover:text-zinc-300 transition-colors w-full'
+            >
+              {tracksExpanded ? (
+                <ChevronDown className='h-4 w-4' />
+              ) : (
+                <ChevronRight className='h-4 w-4' />
+              )}
               <Disc className='h-4 w-4' />
-              Tracks
-            </div>
-            <div className='space-y-1 max-h-60 overflow-y-auto'>
-              {albumDetails.tracks.map((track: any) => (
-                <div
-                  key={track.id}
-                  className='flex items-center justify-between p-2 bg-zinc-900/50 rounded text-xs'
-                >
-                  <div className='flex items-center gap-3 flex-1'>
-                    <span className='text-zinc-500 w-8'>
-                      {track.discNumber > 1 && `${track.discNumber}-`}
-                      {track.trackNumber}
-                    </span>
-                    <span className='text-zinc-300'>{track.title}</span>
-                  </div>
-                  <div className='flex items-center gap-4'>
-                    {track.isrc && (
-                      <span className='text-zinc-500 font-mono'>
-                        {track.isrc}
+              Tracks ({albumDetails.tracks.length})
+            </button>
+            {tracksExpanded && (
+              <div className='space-y-1 max-h-60 overflow-y-auto'>
+                {albumDetails.tracks.map((track: any) => (
+                  <div
+                    key={track.id}
+                    className='flex items-center justify-between p-2 bg-zinc-900/50 rounded text-xs'
+                  >
+                    <div className='flex items-center gap-3 flex-1'>
+                      <span className='text-zinc-500 w-8'>
+                        {track.discNumber > 1 && `${track.discNumber}-`}
+                        {track.trackNumber}
                       </span>
-                    )}
-                    <span className='text-zinc-400'>
-                      {formatDuration(track.durationMs)}
-                    </span>
+                      <span className='text-zinc-300'>{track.title}</span>
+                    </div>
+                    <div className='flex items-center gap-4'>
+                      {track.isrc && (
+                        <span className='text-zinc-500 font-mono'>
+                          {track.isrc}
+                        </span>
+                      )}
+                      <span className='text-zinc-400'>
+                        {formatDuration(track.durationMs)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -749,6 +762,15 @@ export default function MusicDatabasePage() {
             No tracks available
           </div>
         )}
+
+        {/* Enrichment Logs Section */}
+        <div className='border-t border-zinc-700 pt-4'>
+          <EnrichmentLogTable
+            entityType={EnrichmentEntityType.Album}
+            entityId={album.id}
+            limit={10}
+          />
+        </div>
       </div>
     );
   };
@@ -887,6 +909,15 @@ export default function MusicDatabasePage() {
             No albums available
           </div>
         )}
+
+        {/* Enrichment Logs Section */}
+        <div className='border-t border-zinc-700 pt-4'>
+          <EnrichmentLogTable
+            entityType={EnrichmentEntityType.Artist}
+            entityId={artist.id}
+            limit={10}
+          />
+        </div>
       </div>
     );
   };
