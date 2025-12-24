@@ -1109,6 +1109,10 @@ type Mutation {
     type: EnrichmentType!
     priority: EnrichmentPriority
   ): BatchEnrichmentResult!
+  resetAlbumEnrichment(id: UUID!): Album!
+  resetArtistEnrichment(id: UUID!): Artist!
+  updateAlbumDataQuality(id: UUID!, dataQuality: DataQuality!): Album!
+  updateArtistDataQuality(id: UUID!, dataQuality: DataQuality!): Artist!
 
   # Admin mutations
   updateUserRole(userId: String!, role: UserRole!): UpdateUserRolePayload!

@@ -13,12 +13,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useGetEnrichmentLogsQuery, EnrichmentEntityType, EnrichmentLogStatus } from '@/generated/graphql';
 
 interface EnrichmentLogTableProps {
   entityType?: EnrichmentEntityType;
   entityId?: string;
   limit?: number;
+  enrichmentStatus?: string | null;
+  onReset?: () => void;
 }
 
 function EnrichmentStatusBadge({ status }: { status: EnrichmentLogStatus }) {
@@ -67,7 +70,9 @@ export function EnrichmentLogTable({
   entityType,
   entityId,
   limit = 100,
-}: EnrichmentLogTableProps) {
+  enrichmentStatus,
+  onReset,
+}: EnrichmentLogTableProps): React.JSX.Element {
   const { data, isLoading, error } = useGetEnrichmentLogsQuery(
     { entityType, entityId, limit },
     { enabled: !!(entityType || entityId) }
@@ -84,32 +89,9 @@ export function EnrichmentLogTable({
     );
   }
 
-  if (error) {
-    return (
-      <div className="p-8 text-center text-red-400">
-        <XCircle className="h-6 w-6 mx-auto mb-2" />
-        <p className="text-sm">Failed to load enrichment logs</p>
-        <p className="text-xs text-zinc-500 mt-1">
-          {error instanceof Error ? error.message : 'Unknown error'}
-        </p>
-      </div>
-    );
-  }
-
-  if (logs.length === 0) {
-    return (
-      <div className="p-8 text-center text-zinc-500">
-        <AlertCircle className="h-6 w-6 mx-auto mb-2" />
-        <p className="text-sm">No enrichment logs found</p>
-        <p className="text-xs text-zinc-600 mt-1">
-          This entity has not been enriched yet
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-2">
+      {/* Header with Reset button - always show */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-white flex items-center gap-2">
           <Clock className="h-4 w-4" />
@@ -118,9 +100,56 @@ export function EnrichmentLogTable({
             ({logs.length} {logs.length === 1 ? 'log' : 'logs'})
           </span>
         </h3>
+        {onReset && enrichmentStatus ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onReset}
+            className="text-yellow-400 border-yellow-500/20 hover:text-yellow-300 hover:bg-yellow-500/10"
+          >
+            <svg
+              className="h-3 w-3 mr-1.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            Reset Status
+          </Button>
+        ) : null}
       </div>
 
-      <div className="rounded-md border border-zinc-700 bg-zinc-900/50">
+      {/* Error state */}
+      {error ? (
+        <div className="p-8 text-center text-red-400">
+          <XCircle className="h-6 w-6 mx-auto mb-2" />
+          <p className="text-sm">Failed to load enrichment logs</p>
+          <p className="text-xs text-zinc-500 mt-1">
+            {error instanceof Error ? error.message : 'Unknown error'}
+          </p>
+        </div>
+      ) : null}
+
+      {/* Empty state */}
+      {!error && logs.length === 0 ? (
+        <div className="p-8 text-center text-zinc-500 border border-zinc-700 rounded-md bg-zinc-900/50">
+          <AlertCircle className="h-6 w-6 mx-auto mb-2" />
+          <p className="text-sm">No enrichment logs found</p>
+          <p className="text-xs text-zinc-600 mt-1">
+            This entity has not been enriched yet
+          </p>
+        </div>
+      ) : null}
+
+      {/* Logs table */}
+      {!error && logs.length > 0 ? (
+        <div className="rounded-md border border-zinc-700 bg-zinc-900/50">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-zinc-700">
@@ -199,7 +228,8 @@ export function EnrichmentLogTable({
             ))}
           </TableBody>
         </Table>
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

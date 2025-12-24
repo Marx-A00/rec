@@ -527,6 +527,8 @@ export type Mutation = {
   removeAlbumFromCollection: Scalars['Boolean']['output'];
   removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
+  resetAlbumEnrichment: Album;
+  resetArtistEnrichment: Artist;
   resetOnboardingStatus: OnboardingStatus;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
@@ -536,7 +538,9 @@ export type Mutation = {
   triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
   updateAlbum: Album;
+  updateAlbumDataQuality: Album;
   updateAlertThresholds: AlertThresholds;
+  updateArtistDataQuality: Artist;
   updateCollection: UpdateCollectionPayload;
   updateCollectionAlbum: UpdateCollectionAlbumPayload;
   updateDashboardLayout: UserSettings;
@@ -622,6 +626,14 @@ export type MutationReorderCollectionAlbumsArgs = {
   collectionId: Scalars['String']['input'];
 };
 
+export type MutationResetAlbumEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationResetArtistEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationRetryJobArgs = {
   jobId: Scalars['String']['input'];
 };
@@ -649,8 +661,18 @@ export type MutationUpdateAlbumArgs = {
   input: AlbumInput;
 };
 
+export type MutationUpdateAlbumDataQualityArgs = {
+  dataQuality: DataQuality;
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationUpdateAlertThresholdsArgs = {
   input: AlertThresholdsInput;
+};
+
+export type MutationUpdateArtistDataQualityArgs = {
+  dataQuality: DataQuality;
+  id: Scalars['UUID']['input'];
 };
 
 export type MutationUpdateCollectionArgs = {
@@ -2606,6 +2628,18 @@ export type MutationResolvers<
       'albumIds' | 'collectionId'
     >
   >;
+  resetAlbumEnrichment?: Resolver<
+    ResolversTypes['Album'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationResetAlbumEnrichmentArgs, 'id'>
+  >;
+  resetArtistEnrichment?: Resolver<
+    ResolversTypes['Artist'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationResetArtistEnrichmentArgs, 'id'>
+  >;
   resetOnboardingStatus?: Resolver<
     ResolversTypes['OnboardingStatus'],
     ParentType,
@@ -2649,11 +2683,23 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationUpdateAlbumArgs, 'id' | 'input'>
   >;
+  updateAlbumDataQuality?: Resolver<
+    ResolversTypes['Album'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationUpdateAlbumDataQualityArgs, 'dataQuality' | 'id'>
+  >;
   updateAlertThresholds?: Resolver<
     ResolversTypes['AlertThresholds'],
     ParentType,
     ContextType,
     RequireFields<MutationUpdateAlertThresholdsArgs, 'input'>
+  >;
+  updateArtistDataQuality?: Resolver<
+    ResolversTypes['Artist'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationUpdateArtistDataQualityArgs, 'dataQuality' | 'id'>
   >;
   updateCollection?: Resolver<
     ResolversTypes['UpdateCollectionPayload'],

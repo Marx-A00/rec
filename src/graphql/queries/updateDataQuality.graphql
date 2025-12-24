@@ -1,0 +1,13 @@
+mutation UpdateAlbumDataQuality($id: UUID!, $dataQuality: DataQuality!) {
+  updateAlbumDataQuality(id: $id, dataQuality: $dataQuality) {
+    id
+    dataQuality
+  }
+}
+
+mutation UpdateArtistDataQuality($id: UUID!, $dataQuality: DataQuality!) {
+  updateArtistDataQuality(id: $id, dataQuality: $dataQuality) {
+    id
+    dataQuality
+  }
+}

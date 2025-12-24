@@ -1791,4 +1791,68 @@ export const mutationResolvers: MutationResolvers = {
       throw new GraphQLError(`Failed to update user role: ${error}`);
     }
   },
+
+  // Reset enrichment status mutations
+  resetAlbumEnrichment: async (_, { id }, { prisma }) => {
+    try {
+      const album = await prisma.album.update({
+        where: { id },
+        data: {
+          enrichmentStatus: null,
+          lastEnriched: null,
+        },
+      });
+
+      return album;
+    } catch (error) {
+      throw new GraphQLError(`Failed to reset album enrichment: ${error}`);
+    }
+  },
+
+  resetArtistEnrichment: async (_, { id }, { prisma }) => {
+    try {
+      const artist = await prisma.artist.update({
+        where: { id },
+        data: {
+          enrichmentStatus: null,
+          lastEnriched: null,
+        },
+      });
+
+      return artist;
+    } catch (error) {
+      throw new GraphQLError(`Failed to reset artist enrichment: ${error}`);
+    }
+  },
+
+  // Update data quality mutations
+  updateAlbumDataQuality: async (_, { id, dataQuality }, { prisma }) => {
+    try {
+      const album = await prisma.album.update({
+        where: { id },
+        data: {
+          dataQuality,
+        },
+      });
+
+      return album;
+    } catch (error) {
+      throw new GraphQLError(`Failed to update album data quality: ${error}`);
+    }
+  },
+
+  updateArtistDataQuality: async (_, { id, dataQuality }, { prisma }) => {
+    try {
+      const artist = await prisma.artist.update({
+        where: { id },
+        data: {
+          dataQuality,
+        },
+      });
+
+      return artist;
+    } catch (error) {
+      throw new GraphQLError(`Failed to update artist data quality: ${error}`);
+    }
+  },
 };

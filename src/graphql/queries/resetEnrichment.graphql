@@ -1,0 +1,15 @@
+mutation ResetAlbumEnrichment($id: UUID!) {
+  resetAlbumEnrichment(id: $id) {
+    id
+    enrichmentStatus
+    lastEnriched
+  }
+}
+
+mutation ResetArtistEnrichment($id: UUID!) {
+  resetArtistEnrichment(id: $id) {
+    id
+    enrichmentStatus
+    lastEnriched
+  }
+}

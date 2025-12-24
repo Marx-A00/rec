@@ -553,6 +553,8 @@ export type Mutation = {
   removeAlbumFromCollection: Scalars['Boolean']['output'];
   removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
+  resetAlbumEnrichment: Album;
+  resetArtistEnrichment: Artist;
   resetOnboardingStatus: OnboardingStatus;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
@@ -562,7 +564,9 @@ export type Mutation = {
   triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
   updateAlbum: Album;
+  updateAlbumDataQuality: Album;
   updateAlertThresholds: AlertThresholds;
+  updateArtistDataQuality: Artist;
   updateCollection: UpdateCollectionPayload;
   updateCollectionAlbum: UpdateCollectionAlbumPayload;
   updateDashboardLayout: UserSettings;
@@ -648,6 +652,14 @@ export type MutationReorderCollectionAlbumsArgs = {
   collectionId: Scalars['String']['input'];
 };
 
+export type MutationResetAlbumEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationResetArtistEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationRetryJobArgs = {
   jobId: Scalars['String']['input'];
 };
@@ -675,8 +687,18 @@ export type MutationUpdateAlbumArgs = {
   input: AlbumInput;
 };
 
+export type MutationUpdateAlbumDataQualityArgs = {
+  dataQuality: DataQuality;
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationUpdateAlertThresholdsArgs = {
   input: AlertThresholdsInput;
+};
+
+export type MutationUpdateArtistDataQualityArgs = {
+  dataQuality: DataQuality;
+  id: Scalars['UUID']['input'];
 };
 
 export type MutationUpdateCollectionArgs = {
@@ -2438,6 +2460,34 @@ export type GetRecommendationQuery = {
   } | null;
 };
 
+export type ResetAlbumEnrichmentMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type ResetAlbumEnrichmentMutation = {
+  __typename?: 'Mutation';
+  resetAlbumEnrichment: {
+    __typename?: 'Album';
+    id: string;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+  };
+};
+
+export type ResetArtistEnrichmentMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type ResetArtistEnrichmentMutation = {
+  __typename?: 'Mutation';
+  resetArtistEnrichment: {
+    __typename?: 'Artist';
+    id: string;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+  };
+};
+
 export type SearchQueryVariables = Exact<{
   input: SearchInput;
 }>;
@@ -2694,6 +2744,34 @@ export type GetDatabaseStatsQuery = {
     recentlyEnriched: number;
     failedEnrichments: number;
     averageDataQuality: number;
+  };
+};
+
+export type UpdateAlbumDataQualityMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+  dataQuality: DataQuality;
+}>;
+
+export type UpdateAlbumDataQualityMutation = {
+  __typename?: 'Mutation';
+  updateAlbumDataQuality: {
+    __typename?: 'Album';
+    id: string;
+    dataQuality?: DataQuality | null;
+  };
+};
+
+export type UpdateArtistDataQualityMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+  dataQuality: DataQuality;
+}>;
+
+export type UpdateArtistDataQualityMutation = {
+  __typename?: 'Mutation';
+  updateArtistDataQuality: {
+    __typename?: 'Artist';
+    id: string;
+    dataQuality?: DataQuality | null;
   };
 };
 
@@ -5192,6 +5270,84 @@ useInfiniteGetRecommendationQuery.getKey = (
   variables: GetRecommendationQueryVariables
 ) => ['GetRecommendation.infinite', variables];
 
+export const ResetAlbumEnrichmentDocument = `
+    mutation ResetAlbumEnrichment($id: UUID!) {
+  resetAlbumEnrichment(id: $id) {
+    id
+    enrichmentStatus
+    lastEnriched
+  }
+}
+    `;
+
+export const useResetAlbumEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ResetAlbumEnrichmentMutation,
+    TError,
+    ResetAlbumEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ResetAlbumEnrichmentMutation,
+    TError,
+    ResetAlbumEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ResetAlbumEnrichment'],
+    mutationFn: (variables?: ResetAlbumEnrichmentMutationVariables) =>
+      fetcher<
+        ResetAlbumEnrichmentMutation,
+        ResetAlbumEnrichmentMutationVariables
+      >(ResetAlbumEnrichmentDocument, variables)(),
+    ...options,
+  });
+};
+
+useResetAlbumEnrichmentMutation.getKey = () => ['ResetAlbumEnrichment'];
+
+export const ResetArtistEnrichmentDocument = `
+    mutation ResetArtistEnrichment($id: UUID!) {
+  resetArtistEnrichment(id: $id) {
+    id
+    enrichmentStatus
+    lastEnriched
+  }
+}
+    `;
+
+export const useResetArtistEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ResetArtistEnrichmentMutation,
+    TError,
+    ResetArtistEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ResetArtistEnrichmentMutation,
+    TError,
+    ResetArtistEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ResetArtistEnrichment'],
+    mutationFn: (variables?: ResetArtistEnrichmentMutationVariables) =>
+      fetcher<
+        ResetArtistEnrichmentMutation,
+        ResetArtistEnrichmentMutationVariables
+      >(ResetArtistEnrichmentDocument, variables)(),
+    ...options,
+  });
+};
+
+useResetArtistEnrichmentMutation.getKey = () => ['ResetArtistEnrichment'];
+
 export const SearchDocument = `
     query Search($input: SearchInput!) {
   search(input: $input) {
@@ -5967,6 +6123,82 @@ useInfiniteGetDatabaseStatsQuery.getKey = (
   variables === undefined
     ? ['GetDatabaseStats.infinite']
     : ['GetDatabaseStats.infinite', variables];
+
+export const UpdateAlbumDataQualityDocument = `
+    mutation UpdateAlbumDataQuality($id: UUID!, $dataQuality: DataQuality!) {
+  updateAlbumDataQuality(id: $id, dataQuality: $dataQuality) {
+    id
+    dataQuality
+  }
+}
+    `;
+
+export const useUpdateAlbumDataQualityMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateAlbumDataQualityMutation,
+    TError,
+    UpdateAlbumDataQualityMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateAlbumDataQualityMutation,
+    TError,
+    UpdateAlbumDataQualityMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateAlbumDataQuality'],
+    mutationFn: (variables?: UpdateAlbumDataQualityMutationVariables) =>
+      fetcher<
+        UpdateAlbumDataQualityMutation,
+        UpdateAlbumDataQualityMutationVariables
+      >(UpdateAlbumDataQualityDocument, variables)(),
+    ...options,
+  });
+};
+
+useUpdateAlbumDataQualityMutation.getKey = () => ['UpdateAlbumDataQuality'];
+
+export const UpdateArtistDataQualityDocument = `
+    mutation UpdateArtistDataQuality($id: UUID!, $dataQuality: DataQuality!) {
+  updateArtistDataQuality(id: $id, dataQuality: $dataQuality) {
+    id
+    dataQuality
+  }
+}
+    `;
+
+export const useUpdateArtistDataQualityMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateArtistDataQualityMutation,
+    TError,
+    UpdateArtistDataQualityMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateArtistDataQualityMutation,
+    TError,
+    UpdateArtistDataQualityMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateArtistDataQuality'],
+    mutationFn: (variables?: UpdateArtistDataQualityMutationVariables) =>
+      fetcher<
+        UpdateArtistDataQualityMutation,
+        UpdateArtistDataQualityMutationVariables
+      >(UpdateArtistDataQualityDocument, variables)(),
+    ...options,
+  });
+};
+
+useUpdateArtistDataQualityMutation.getKey = () => ['UpdateArtistDataQuality'];
 
 export const UpdateUserRoleDocument = `
     mutation UpdateUserRole($userId: String!, $role: UserRole!) {

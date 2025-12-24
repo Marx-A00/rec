@@ -72,6 +72,11 @@ import {
   useGetAlbumDetailsAdminQuery,
   useGetArtistDetailsQuery,
   EnrichmentEntityType,
+  useResetAlbumEnrichmentMutation,
+  useResetArtistEnrichmentMutation,
+  useUpdateAlbumDataQualityMutation,
+  useUpdateArtistDataQualityMutation,
+  DataQuality,
 } from '@/generated/graphql';
 import { EnrichmentLogTable } from '@/components/admin/EnrichmentLogTable';
 
@@ -175,6 +180,14 @@ export default function MusicDatabasePage() {
     isLoading: statsLoading,
     error: statsError,
   } = useGetDatabaseStatsQuery();
+
+  // Reset enrichment mutations
+  const resetAlbumMutation = useResetAlbumEnrichmentMutation();
+  const resetArtistMutation = useResetArtistEnrichmentMutation();
+
+  // Data quality mutations
+  const updateAlbumQualityMutation = useUpdateAlbumDataQualityMutation();
+  const updateArtistQualityMutation = useUpdateArtistDataQualityMutation();
 
   // Search albums with React Query
   const {
@@ -282,6 +295,40 @@ export default function MusicDatabasePage() {
     (artist: any) => artist.enrichmentStatus === 'IN_PROGRESS'
   );
 
+  // Track enrichment completions and show toast notifications
+  const previousStatusesRef = React.useRef<Map<string, string>>(new Map());
+
+  React.useEffect(() => {
+    const currentItems = activeTab === 'albums' ? displayAlbums : displayArtists;
+
+    currentItems.forEach((item: any) => {
+      const previousStatus = previousStatusesRef.current.get(item.id);
+      const currentStatus = item.enrichmentStatus;
+
+      // Detect completion: was IN_PROGRESS, now is a terminal state
+      if (previousStatus === 'IN_PROGRESS' && currentStatus !== 'IN_PROGRESS') {
+        const itemName = item.title || item.name;
+
+        if (currentStatus === 'COMPLETED' || currentStatus === 'SUCCESS') {
+          toast.success(`${itemName} enriched successfully!`, {
+            description: 'New metadata and images have been loaded',
+          });
+        } else if (currentStatus === 'FAILED') {
+          toast.error(`Failed to enrich ${itemName}`, {
+            description: 'Check the enrichment logs for details',
+          });
+        } else if (currentStatus === 'NO_DATA_AVAILABLE') {
+          toast.info(`No additional data found for ${itemName}`, {
+            description: 'External sources did not have more information',
+          });
+        }
+      }
+
+      // Update tracking
+      previousStatusesRef.current.set(item.id, currentStatus);
+    });
+  }, [displayAlbums, displayArtists, activeTab]);
+
   // Loading state
   const loading = albumsLoading || artistsLoading || tracksLoading;
 
@@ -371,6 +418,61 @@ export default function MusicDatabasePage() {
     }
   };
 
+  const handleResetEnrichment = async (
+    itemId: string,
+    type: 'album' | 'artist'
+  ) => {
+    try {
+      if (type === 'album') {
+        await resetAlbumMutation.mutateAsync({ id: itemId });
+        toast.success('Album enrichment status reset');
+        refetchAlbums();
+      } else {
+        await resetArtistMutation.mutateAsync({ id: itemId });
+        toast.success('Artist enrichment status reset');
+        refetchArtists();
+      }
+    } catch (error) {
+      toast.error(`Failed to reset enrichment: ${error}`);
+    }
+  };
+
+  const handleUpdateDataQuality = async (
+    itemId: string,
+    type: 'album' | 'artist',
+    dataQuality: DataQuality
+  ) => {
+    console.log('handleUpdateDataQuality called with:', { itemId, type, dataQuality });
+    console.log('itemId type:', typeof itemId, 'value:', itemId);
+
+    if (!itemId) {
+      toast.error('No item ID provided');
+      return;
+    }
+
+    try {
+      const variables = { id: itemId, dataQuality };
+      console.log('Mutation variables:', variables);
+
+      if (type === 'album') {
+        console.log('Calling updateAlbumQualityMutation with:', variables);
+        const result = await updateAlbumQualityMutation.mutateAsync(variables);
+        console.log('Mutation result:', result);
+        toast.success(`Album data quality updated to ${dataQuality}`);
+        refetchAlbums();
+      } else {
+        console.log('Calling updateArtistQualityMutation with:', variables);
+        const result = await updateArtistQualityMutation.mutateAsync(variables);
+        console.log('Mutation result:', result);
+        toast.success(`Artist data quality updated to ${dataQuality}`);
+        refetchArtists();
+      }
+    } catch (error) {
+      console.error('Data quality update error:', error);
+      toast.error(`Failed to update data quality: ${(error as Error).message || String(error)}`);
+    }
+  };
+
   const handleBatchEnrichment = async () => {
     if (selectedItems.size === 0) {
       toast.error('No items selected');
@@ -443,29 +545,45 @@ export default function MusicDatabasePage() {
     }
   };
 
-  const getQualityBadge = (quality: string) => {
+  const getQualityBadge = (quality: string, itemId: string, type: 'album' | 'artist') => {
     const colors = {
       HIGH: 'bg-green-500',
       MEDIUM: 'bg-yellow-500',
       LOW: 'bg-red-500',
     };
+
     return (
-      <Badge
-        className={colors[quality as keyof typeof colors] || 'bg-gray-500'}
+      <Select
+        value={quality}
+        onValueChange={(value) => handleUpdateDataQuality(itemId, type, value as DataQuality)}
       >
-        {quality}
-      </Badge>
+        <SelectTrigger className={`${colors[quality as keyof typeof colors] || 'bg-gray-500'} text-white border-0 w-28 h-6 text-xs`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="LOW">LOW</SelectItem>
+          <SelectItem value="MEDIUM">MEDIUM</SelectItem>
+          <SelectItem value="HIGH">HIGH</SelectItem>
+        </SelectContent>
+      </Select>
     );
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'COMPLETED':
+      case 'SUCCESS':
         return <CheckCircle className='h-4 w-4 text-green-500' />;
       case 'IN_PROGRESS':
-        return <Clock className='h-4 w-4 text-yellow-500 animate-pulse' />;
+        return <RefreshCcw className='h-4 w-4 text-yellow-500 animate-spin' />;
       case 'FAILED':
         return <AlertCircle className='h-4 w-4 text-red-500' />;
+      case 'PENDING':
+        return <Clock className='h-4 w-4 text-blue-400' />;
+      case 'NO_DATA_AVAILABLE':
+        return <AlertCircle className='h-4 w-4 text-gray-400' />;
+      case 'SKIPPED':
+        return <Info className='h-4 w-4 text-zinc-500' />;
       default:
         return <Info className='h-4 w-4 text-zinc-400' />;
     }
@@ -769,6 +887,8 @@ export default function MusicDatabasePage() {
             entityType={EnrichmentEntityType.Album}
             entityId={album.id}
             limit={10}
+            enrichmentStatus={albumDetails.enrichmentStatus}
+            onReset={() => handleResetEnrichment(album.id, 'album')}
           />
         </div>
       </div>
@@ -916,6 +1036,8 @@ export default function MusicDatabasePage() {
             entityType={EnrichmentEntityType.Artist}
             entityId={artist.id}
             limit={10}
+            enrichmentStatus={artistDetails.enrichmentStatus}
+            onReset={() => handleResetEnrichment(artist.id, 'artist')}
           />
         </div>
       </div>
@@ -1297,8 +1419,8 @@ export default function MusicDatabasePage() {
                         <TableCell className='text-zinc-300'>
                           {album.trackCount || '-'}
                         </TableCell>
-                        <TableCell>
-                          {getQualityBadge(album.dataQuality)}
+                        <TableCell onClick={e => e.stopPropagation()}>
+                          {getQualityBadge(album.dataQuality, album.id, 'album')}
                         </TableCell>
                         <TableCell>
                           <div className='flex items-center gap-1'>
@@ -1435,8 +1557,8 @@ export default function MusicDatabasePage() {
                       <TableCell className='text-zinc-300'>
                         {artist.trackCount}
                       </TableCell>
-                      <TableCell>
-                        {getQualityBadge(artist.dataQuality)}
+                      <TableCell onClick={e => e.stopPropagation()}>
+                        {getQualityBadge(artist.dataQuality, artist.id, 'artist')}
                       </TableCell>
                       <TableCell>
                         <div className='flex items-center gap-1'>
