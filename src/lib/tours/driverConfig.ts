@@ -160,7 +160,7 @@ export const tourSteps: DriveStep[] = [
   },
   {
     popover: {
-      title: '🤖 Welcome to Artist Pages',
+      title: 'Welcome to Artist Pages',
       description: "Fantastic! This is an artist page where you can explore everything about an artist. Here you can see their biography, discography, collaborations, and discover similar artists. This is where you dive deep into an artist's world!",
       side: 'over',
       align: 'center',
