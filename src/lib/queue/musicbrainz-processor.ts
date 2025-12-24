@@ -11,6 +11,7 @@ import {
   calculateEnrichmentPriority,
   mapSourceToUserAction,
 } from '../musicbrainz/enrichment-logic';
+import { createEnrichmentLogger } from '../enrichment/enrichment-logger';
 import { searchSpotifyArtists } from '../spotify/search';
 import { calculateStringSimilarity as fuzzyMatch } from '../utils/string-similarity';
 import {
@@ -725,6 +726,15 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
 async function handleEnrichArtist(data: EnrichArtistJobData) {
   console.log(`🎤 Starting artist enrichment for artist ${data.artistId}`);
 
+  // Initialize enrichment logger
+  const enrichmentLogger = createEnrichmentLogger(prisma);
+
+  // Track enrichment metrics
+  const startTime = Date.now();
+  const sourcesAttempted: string[] = [];
+  const fieldsEnriched: string[] = [];
+  let apiCallCount = 0;
+
   // Get current artist from database
   const artist = await prisma.artist.findUnique({
     where: { id: data.artistId },
@@ -734,12 +744,32 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
     throw new Error(`Artist not found: ${data.artistId}`);
   }
 
-  // Check if enrichment is needed
-  const needsEnrichment = shouldEnrichArtist(artist);
+  const dataQualityBefore = artist.dataQuality || 'LOW';
+
+  // Check if enrichment is needed (with logger for cooldown checks)
+  const needsEnrichment = await shouldEnrichArtist(artist, enrichmentLogger);
   if (!needsEnrichment) {
     console.log(
       `⏭️ Artist ${data.artistId} does not need enrichment, skipping`
     );
+
+    // Log the skip
+    await enrichmentLogger.logEnrichment({
+      entityType: 'ARTIST',
+      entityId: artist.id,
+      operation: JOB_TYPES.ENRICH_ARTIST,
+      sources: [],
+      status: 'SKIPPED',
+      fieldsEnriched: [],
+      dataQualityBefore,
+      dataQualityAfter: artist.dataQuality || 'LOW',
+      durationMs: Date.now() - startTime,
+      apiCallCount: 0,
+      metadata: { artistName: artist.name, reason: 'enrichment_not_needed' },
+      jobId: data.requestId,
+      triggeredBy: data.userAction || 'manual',
+    });
+
     return {
       artistId: data.artistId,
       action: 'skipped',
@@ -762,6 +792,8 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
     // If we have a MusicBrainz ID, fetch detailed data
     if (artist.musicbrainzId) {
       try {
+        sourcesAttempted.push('MUSICBRAINZ');
+        apiCallCount++;
         const mbData = await musicBrainzService.getArtist(
           artist.musicbrainzId,
           ['url-rels', 'tags']
@@ -769,6 +801,12 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
         if (mbData) {
           enrichmentResult = await enrichArtistMetadata(artist, mbData);
           newDataQuality = 'HIGH';
+
+          // Track which fields were enriched
+          if (mbData.name) fieldsEnriched.push('name');
+          if (mbData.country) fieldsEnriched.push('countryCode');
+          if (mbData['life-span']?.begin) fieldsEnriched.push('formedYear');
+          if (mbData.disambiguation) fieldsEnriched.push('biography');
         }
       } catch (mbError) {
         console.warn(
@@ -781,6 +819,10 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
     // If no MusicBrainz ID or lookup failed, try searching
     if (!enrichmentResult && artist.name) {
       try {
+        if (!sourcesAttempted.includes('MUSICBRAINZ')) {
+          sourcesAttempted.push('MUSICBRAINZ');
+        }
+        apiCallCount++;
         const searchResults = await musicBrainzService.searchArtists(
           artist.name,
           5
@@ -805,6 +847,7 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
           );
 
           if (bestMatch && bestMatch.score > 0.8) {
+            apiCallCount++;
             const mbData = await musicBrainzService.getArtist(
               bestMatch.result.id,
               ['url-rels', 'tags']
@@ -812,6 +855,12 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
             if (mbData) {
               enrichmentResult = await enrichArtistMetadata(artist, mbData);
               newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
+
+              // Track which fields were enriched
+              if (mbData.name) fieldsEnriched.push('name');
+              if (mbData.country) fieldsEnriched.push('countryCode');
+              if (mbData['life-span']?.begin) fieldsEnriched.push('formedYear');
+              if (mbData.disambiguation) fieldsEnriched.push('biography');
             }
           }
         }
@@ -854,6 +903,19 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
       }
     }
 
+    // Determine final status
+    let finalStatus: 'SUCCESS' | 'NO_DATA_AVAILABLE' | 'PARTIAL_SUCCESS' =
+      'SUCCESS';
+    if (fieldsEnriched.length === 0 && sourcesAttempted.length > 0) {
+      finalStatus = 'NO_DATA_AVAILABLE';
+    } else if (
+      fieldsEnriched.length > 0 &&
+      fieldsEnriched.length < 3 &&
+      sourcesAttempted.length > 1
+    ) {
+      finalStatus = 'PARTIAL_SUCCESS';
+    }
+
     // Update enrichment status
     await prisma.artist.update({
       where: { id: data.artistId },
@@ -867,6 +929,26 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
     console.log(`✅ Artist enrichment completed for ${data.artistId}`, {
       hadResult: !!enrichmentResult,
       dataQuality: newDataQuality,
+    });
+
+    // Log successful enrichment
+    await enrichmentLogger.logEnrichment({
+      entityType: 'ARTIST',
+      entityId: artist.id,
+      operation: JOB_TYPES.ENRICH_ARTIST,
+      sources: sourcesAttempted,
+      status: finalStatus,
+      fieldsEnriched,
+      dataQualityBefore,
+      dataQualityAfter: newDataQuality,
+      durationMs: Date.now() - startTime,
+      apiCallCount,
+      metadata: {
+        artistName: artist.name,
+        hadMusicBrainzData: !!enrichmentResult,
+      },
+      jobId: data.requestId,
+      triggeredBy: data.userAction || 'manual',
     });
 
     // Queue artist image caching to Cloudflare (non-blocking)
@@ -915,6 +997,33 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
       where: { id: data.artistId },
       data: { enrichmentStatus: 'FAILED' },
     });
+
+    // Log failed enrichment
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    const errorCode = error instanceof Error ? error.name : 'UNKNOWN_ERROR';
+
+    await enrichmentLogger.logEnrichment({
+      entityType: 'ARTIST',
+      entityId: artist.id,
+      operation: JOB_TYPES.ENRICH_ARTIST,
+      sources: sourcesAttempted,
+      status: 'FAILED',
+      fieldsEnriched,
+      dataQualityBefore,
+      dataQualityAfter: artist.dataQuality || 'LOW',
+      errorMessage,
+      errorCode,
+      durationMs: Date.now() - startTime,
+      apiCallCount,
+      metadata: {
+        artistName: artist.name,
+        errorStack: error instanceof Error ? error.stack : undefined,
+      },
+      jobId: data.requestId,
+      triggeredBy: data.userAction || 'manual',
+    });
+
     throw error;
   }
 }

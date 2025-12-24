@@ -4,6 +4,8 @@
  * Determines when MusicBrainz enrichment is needed based on data quality and recency
  */
 
+import { EnrichmentLogger } from '@/lib/enrichment/enrichment-logger';
+
 export interface EnrichmentDecision {
   shouldEnrich: boolean;
   reason: string;
@@ -16,7 +18,16 @@ export interface AlbumEnrichmentData {
   title: string;
   releaseDate: Date | null;
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH' | null;
-  enrichmentStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | null;
+  enrichmentStatus:
+    | 'PENDING'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'FAILED'
+    | 'SUCCESS'
+    | 'PARTIAL_SUCCESS'
+    | 'NO_DATA_AVAILABLE'
+    | 'SKIPPED'
+    | null;
   lastEnriched: Date | null;
   artists?: Array<{
     artist: {
@@ -35,16 +46,42 @@ export interface ArtistEnrichmentData {
   formedYear: number | null;
   countryCode: string | null;
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH' | null;
-  enrichmentStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | null;
+  enrichmentStatus:
+    | 'PENDING'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'FAILED'
+    | 'SUCCESS'
+    | 'PARTIAL_SUCCESS'
+    | 'NO_DATA_AVAILABLE'
+    | 'SKIPPED'
+    | null;
   lastEnriched: Date | null;
 }
 
 /**
  * Determine if an album needs MusicBrainz enrichment
  * @param album Album data with enrichment metadata
- * @returns boolean decision
+ * @param enrichmentLogger Optional logger to check enrichment history and cooldowns
+ * @returns boolean decision (or Promise<boolean> if logger is provided)
  */
-export function shouldEnrichAlbum(album: AlbumEnrichmentData): boolean {
+export function shouldEnrichAlbum(
+  album: AlbumEnrichmentData,
+  enrichmentLogger?: EnrichmentLogger
+): boolean | Promise<boolean> {
+  // If no logger provided, use synchronous logic (backward compatible)
+  if (!enrichmentLogger) {
+    return shouldEnrichAlbumSync(album);
+  }
+
+  // Async logic with enrichment history checks
+  return shouldEnrichAlbumAsync(album, enrichmentLogger);
+}
+
+/**
+ * Synchronous enrichment check (original logic)
+ */
+function shouldEnrichAlbumSync(album: AlbumEnrichmentData): boolean {
   // Skip if enrichment is currently in progress
   if (album.enrichmentStatus === 'IN_PROGRESS') {
     return false;
@@ -83,11 +120,64 @@ export function shouldEnrichAlbum(album: AlbumEnrichmentData): boolean {
 }
 
 /**
+ * Async enrichment check with history logging
+ */
+async function shouldEnrichAlbumAsync(
+  album: AlbumEnrichmentData,
+  enrichmentLogger: EnrichmentLogger
+): Promise<boolean> {
+  // Check enrichment history for cooldown periods FIRST
+  const hasNoData = await enrichmentLogger.hasRecentNoDataStatus(
+    'ALBUM',
+    album.id,
+    90
+  );
+  if (hasNoData) {
+    console.log(
+      `⏭️  Album ${album.id} (${album.title}) marked as NO_DATA_AVAILABLE within 90 days, skipping enrichment`
+    );
+    return false;
+  }
+
+  const hasRecentFailure = await enrichmentLogger.hasRecentFailure(
+    'ALBUM',
+    album.id,
+    7
+  );
+  if (hasRecentFailure) {
+    console.log(
+      `⏭️  Album ${album.id} (${album.title}) failed enrichment within 7 days, skipping (cooldown period)`
+    );
+    return false;
+  }
+
+  // Run existing synchronous logic
+  return shouldEnrichAlbumSync(album);
+}
+
+/**
  * Determine if an artist needs MusicBrainz enrichment
  * @param artist Artist data with enrichment metadata
- * @returns boolean decision
+ * @param enrichmentLogger Optional logger to check enrichment history and cooldowns
+ * @returns boolean decision (or Promise<boolean> if logger is provided)
  */
-export function shouldEnrichArtist(artist: ArtistEnrichmentData): boolean {
+export function shouldEnrichArtist(
+  artist: ArtistEnrichmentData,
+  enrichmentLogger?: EnrichmentLogger
+): boolean | Promise<boolean> {
+  // If no logger provided, use synchronous logic (backward compatible)
+  if (!enrichmentLogger) {
+    return shouldEnrichArtistSync(artist);
+  }
+
+  // Async logic with enrichment history checks
+  return shouldEnrichArtistAsync(artist, enrichmentLogger);
+}
+
+/**
+ * Synchronous enrichment check (original logic)
+ */
+function shouldEnrichArtistSync(artist: ArtistEnrichmentData): boolean {
   // Skip if enrichment is currently in progress
   if (artist.enrichmentStatus === 'IN_PROGRESS') {
     return false;
@@ -113,6 +203,42 @@ export function shouldEnrichArtist(artist: ArtistEnrichmentData): boolean {
   }
 
   return false;
+}
+
+/**
+ * Async enrichment check with history logging
+ */
+async function shouldEnrichArtistAsync(
+  artist: ArtistEnrichmentData,
+  enrichmentLogger: EnrichmentLogger
+): Promise<boolean> {
+  // Check enrichment history for cooldown periods FIRST
+  const hasNoData = await enrichmentLogger.hasRecentNoDataStatus(
+    'ARTIST',
+    artist.id,
+    90
+  );
+  if (hasNoData) {
+    console.log(
+      `⏭️  Artist ${artist.id} (${artist.name}) marked as NO_DATA_AVAILABLE within 90 days, skipping enrichment`
+    );
+    return false;
+  }
+
+  const hasRecentFailure = await enrichmentLogger.hasRecentFailure(
+    'ARTIST',
+    artist.id,
+    7
+  );
+  if (hasRecentFailure) {
+    console.log(
+      `⏭️  Artist ${artist.id} (${artist.name}) failed enrichment within 7 days, skipping (cooldown period)`
+    );
+    return false;
+  }
+
+  // Run existing synchronous logic
+  return shouldEnrichArtistSync(artist);
 }
 
 /**
