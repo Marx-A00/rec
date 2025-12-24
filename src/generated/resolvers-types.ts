@@ -94,11 +94,13 @@ export type Album = {
   dataQuality?: Maybe<DataQuality>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
+  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
   label?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
+  latestEnrichmentLog?: Maybe<EnrichmentLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   needsEnrichment: Scalars['Boolean']['output'];
   recommendationScore?: Maybe<Scalars['Float']['output']>;
@@ -109,6 +111,10 @@ export type Album = {
   trackCount?: Maybe<Scalars['Int']['output']>;
   tracks: Array<Track>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type AlbumEnrichmentLogsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type AlbumInput = {
@@ -194,11 +200,13 @@ export type Artist = {
   countryCode?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
+  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
+  latestEnrichmentLog?: Maybe<EnrichmentLog>;
   listeners?: Maybe<Scalars['Int']['output']>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   name: Scalars['String']['output'];
@@ -207,6 +215,10 @@ export type Artist = {
   trackCount: Scalars['Int']['output'];
   tracks: Array<Track>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type ArtistEnrichmentLogsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type ArtistAlbumInput = {
@@ -349,6 +361,42 @@ export type DatabaseStats = {
   totalTracks: Scalars['Int']['output'];
 };
 
+export enum EnrichmentEntityType {
+  Album = 'ALBUM',
+  Artist = 'ARTIST',
+  Track = 'TRACK',
+}
+
+export type EnrichmentLog = {
+  __typename?: 'EnrichmentLog';
+  apiCallCount: Scalars['Int']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  dataQualityAfter?: Maybe<DataQuality>;
+  dataQualityBefore?: Maybe<DataQuality>;
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  entityId?: Maybe<Scalars['UUID']['output']>;
+  entityType?: Maybe<EnrichmentEntityType>;
+  errorCode?: Maybe<Scalars['String']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  fieldsEnriched: Array<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  jobId?: Maybe<Scalars['String']['output']>;
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  operation: Scalars['String']['output'];
+  retryCount: Scalars['Int']['output'];
+  sources: Array<Scalars['String']['output']>;
+  status: EnrichmentLogStatus;
+  triggeredBy?: Maybe<Scalars['String']['output']>;
+};
+
+export enum EnrichmentLogStatus {
+  Failed = 'FAILED',
+  NoDataAvailable = 'NO_DATA_AVAILABLE',
+  PartialSuccess = 'PARTIAL_SUCCESS',
+  Skipped = 'SKIPPED',
+  Success = 'SUCCESS',
+}
+
 export enum EnrichmentPriority {
   High = 'HIGH',
   Low = 'LOW',
@@ -360,6 +408,17 @@ export type EnrichmentResult = {
   jobId?: Maybe<Scalars['String']['output']>;
   message: Scalars['String']['output'];
   success: Scalars['Boolean']['output'];
+};
+
+export type EnrichmentStats = {
+  __typename?: 'EnrichmentStats';
+  averageDurationMs: Scalars['Float']['output'];
+  failedCount: Scalars['Int']['output'];
+  noDataCount: Scalars['Int']['output'];
+  skippedCount: Scalars['Int']['output'];
+  sourceStats: Array<SourceStat>;
+  successCount: Scalars['Int']['output'];
+  totalAttempts: Scalars['Int']['output'];
 };
 
 export enum EnrichmentStatus {
@@ -677,6 +736,8 @@ export type Query = {
   artistDiscography: CategorizedDiscography;
   collection?: Maybe<Collection>;
   databaseStats: DatabaseStats;
+  enrichmentLogs: Array<EnrichmentLog>;
+  enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
   followingActivity: Array<Recommendation>;
   getAlbumRecommendations: AlbumRecommendationsResponse;
@@ -742,6 +803,20 @@ export type QueryArtistDiscographyArgs = {
 
 export type QueryCollectionArgs = {
   id: Scalars['String']['input'];
+};
+
+export type QueryEnrichmentLogsArgs = {
+  entityId?: InputMaybe<Scalars['UUID']['input']>;
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sources?: InputMaybe<Array<Scalars['String']['input']>>;
+  status?: InputMaybe<EnrichmentLogStatus>;
+};
+
+export type QueryEnrichmentStatsArgs = {
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  timeRange?: InputMaybe<TimeRangeInput>;
 };
 
 export type QueryFailedJobsArgs = {
@@ -1003,6 +1078,13 @@ export enum SearchType {
   User = 'USER',
 }
 
+export type SourceStat = {
+  __typename?: 'SourceStat';
+  attempts: Scalars['Int']['output'];
+  source: Scalars['String']['output'];
+  successRate: Scalars['Float']['output'];
+};
+
 export type SpotifyAlbum = {
   __typename?: 'SpotifyAlbum';
   artistIds: Array<Scalars['String']['output']>;
@@ -1138,6 +1220,11 @@ export enum TimeRange {
   LastWeek = 'LAST_WEEK',
 }
 
+export type TimeRangeInput = {
+  from: Scalars['DateTime']['input'];
+  to: Scalars['DateTime']['input'];
+};
+
 export type Track = {
   __typename?: 'Track';
   album?: Maybe<Album>;
@@ -1148,9 +1235,11 @@ export type Track = {
   discNumber: Scalars['Int']['output'];
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
+  enrichmentLogs: Array<EnrichmentLog>;
   explicit: Scalars['Boolean']['output'];
   id: Scalars['UUID']['output'];
   isrc?: Maybe<Scalars['String']['output']>;
+  latestEnrichmentLog?: Maybe<EnrichmentLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   popularity?: Maybe<Scalars['Float']['output']>;
   previewUrl?: Maybe<Scalars['String']['output']>;
@@ -1159,6 +1248,10 @@ export type Track = {
   title: Scalars['String']['output'];
   trackNumber: Scalars['Int']['output'];
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type TrackEnrichmentLogsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type TrackInput = {
@@ -1464,8 +1557,12 @@ export type ResolversTypes = ResolversObject<{
   DataSource: DataSource;
   DatabaseStats: ResolverTypeWrapper<DatabaseStats>;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
+  EnrichmentEntityType: EnrichmentEntityType;
+  EnrichmentLog: ResolverTypeWrapper<EnrichmentLog>;
+  EnrichmentLogStatus: EnrichmentLogStatus;
   EnrichmentPriority: EnrichmentPriority;
   EnrichmentResult: ResolverTypeWrapper<EnrichmentResult>;
+  EnrichmentStats: ResolverTypeWrapper<EnrichmentStats>;
   EnrichmentStatus: EnrichmentStatus;
   EnrichmentType: EnrichmentType;
   ErrorMetric: ResolverTypeWrapper<ErrorMetric>;
@@ -1500,6 +1597,7 @@ export type ResolversTypes = ResolversObject<{
   >;
   SearchResults: ResolverTypeWrapper<SearchResults>;
   SearchType: SearchType;
+  SourceStat: ResolverTypeWrapper<SourceStat>;
   SpotifyAlbum: ResolverTypeWrapper<SpotifyAlbum>;
   SpotifyArtist: ResolverTypeWrapper<SpotifyArtist>;
   SpotifyPlaylist: ResolverTypeWrapper<SpotifyPlaylist>;
@@ -1515,6 +1613,7 @@ export type ResolversTypes = ResolversObject<{
   SystemHealth: ResolverTypeWrapper<SystemHealth>;
   ThroughputMetrics: ResolverTypeWrapper<ThroughputMetrics>;
   TimeRange: TimeRange;
+  TimeRangeInput: TimeRangeInput;
   Track: ResolverTypeWrapper<Track>;
   TrackInput: TrackInput;
   UUID: ResolverTypeWrapper<Scalars['UUID']['output']>;
@@ -1563,7 +1662,9 @@ export type ResolversParentTypes = ResolversObject<{
   CreateRecommendationPayload: CreateRecommendationPayload;
   DatabaseStats: DatabaseStats;
   DateTime: Scalars['DateTime']['output'];
+  EnrichmentLog: EnrichmentLog;
   EnrichmentResult: EnrichmentResult;
+  EnrichmentStats: EnrichmentStats;
   ErrorMetric: ErrorMetric;
   Float: Scalars['Float']['output'];
   FollowUserPayload: FollowUserPayload;
@@ -1589,6 +1690,7 @@ export type ResolversParentTypes = ResolversObject<{
   SearchInput: SearchInput;
   SearchResult: ResolversUnionTypes<ResolversParentTypes>['SearchResult'];
   SearchResults: SearchResults;
+  SourceStat: SourceStat;
   SpotifyAlbum: SpotifyAlbum;
   SpotifyArtist: SpotifyArtist;
   SpotifyPlaylist: SpotifyPlaylist;
@@ -1602,6 +1704,7 @@ export type ResolversParentTypes = ResolversObject<{
   Subscription: {};
   SystemHealth: SystemHealth;
   ThroughputMetrics: ThroughputMetrics;
+  TimeRangeInput: TimeRangeInput;
   Track: Track;
   TrackInput: TrackInput;
   UUID: Scalars['UUID']['output'];
@@ -1747,6 +1850,12 @@ export type AlbumResolvers<
   >;
   duration?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  enrichmentLogs?: Resolver<
+    Array<ResolversTypes['EnrichmentLog']>,
+    ParentType,
+    ContextType,
+    Partial<AlbumEnrichmentLogsArgs>
+  >;
   enrichmentStatus?: Resolver<
     Maybe<ResolversTypes['EnrichmentStatus']>,
     ParentType,
@@ -1757,6 +1866,11 @@ export type AlbumResolvers<
   label?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   lastEnriched?: Resolver<
     Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  latestEnrichmentLog?: Resolver<
+    Maybe<ResolversTypes['EnrichmentLog']>,
     ParentType,
     ContextType
   >;
@@ -1893,6 +2007,12 @@ export type ArtistResolvers<
     ParentType,
     ContextType
   >;
+  enrichmentLogs?: Resolver<
+    Array<ResolversTypes['EnrichmentLog']>,
+    ParentType,
+    ContextType,
+    Partial<ArtistEnrichmentLogsArgs>
+  >;
   enrichmentStatus?: Resolver<
     Maybe<ResolversTypes['EnrichmentStatus']>,
     ParentType,
@@ -1903,6 +2023,11 @@ export type ArtistResolvers<
   imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   lastEnriched?: Resolver<
     Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  latestEnrichmentLog?: Resolver<
+    Maybe<ResolversTypes['EnrichmentLog']>,
     ParentType,
     ContextType
   >;
@@ -2160,6 +2285,64 @@ export interface DateTimeScalarConfig
   name: 'DateTime';
 }
 
+export type EnrichmentLogResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['EnrichmentLog'] = ResolversParentTypes['EnrichmentLog'],
+> = ResolversObject<{
+  apiCallCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  dataQualityAfter?: Resolver<
+    Maybe<ResolversTypes['DataQuality']>,
+    ParentType,
+    ContextType
+  >;
+  dataQualityBefore?: Resolver<
+    Maybe<ResolversTypes['DataQuality']>,
+    ParentType,
+    ContextType
+  >;
+  durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  entityId?: Resolver<Maybe<ResolversTypes['UUID']>, ParentType, ContextType>;
+  entityType?: Resolver<
+    Maybe<ResolversTypes['EnrichmentEntityType']>,
+    ParentType,
+    ContextType
+  >;
+  errorCode?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  errorMessage?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  fieldsEnriched?: Resolver<
+    Array<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  metadata?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  operation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  retryCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  sources?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  status?: Resolver<
+    ResolversTypes['EnrichmentLogStatus'],
+    ParentType,
+    ContextType
+  >;
+  triggeredBy?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type EnrichmentResultResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -2168,6 +2351,29 @@ export type EnrichmentResultResolvers<
   jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type EnrichmentStatsResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['EnrichmentStats'] = ResolversParentTypes['EnrichmentStats'],
+> = ResolversObject<{
+  averageDurationMs?: Resolver<
+    ResolversTypes['Float'],
+    ParentType,
+    ContextType
+  >;
+  failedCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  noDataCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  skippedCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  sourceStats?: Resolver<
+    Array<ResolversTypes['SourceStat']>,
+    ParentType,
+    ContextType
+  >;
+  successCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalAttempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -2606,6 +2812,18 @@ export type QueryResolvers<
     ParentType,
     ContextType
   >;
+  enrichmentLogs?: Resolver<
+    Array<ResolversTypes['EnrichmentLog']>,
+    ParentType,
+    ContextType,
+    Partial<QueryEnrichmentLogsArgs>
+  >;
+  enrichmentStats?: Resolver<
+    ResolversTypes['EnrichmentStats'],
+    ParentType,
+    ContextType,
+    Partial<QueryEnrichmentStatsArgs>
+  >;
   failedJobs?: Resolver<
     Array<ResolversTypes['JobRecord']>,
     ParentType,
@@ -2974,6 +3192,17 @@ export type SearchResultsResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type SourceStatResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SourceStat'] = ResolversParentTypes['SourceStat'],
+> = ResolversObject<{
+  attempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  source?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  successRate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type SpotifyAlbumResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -3247,9 +3476,20 @@ export type TrackResolvers<
   discNumber?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   duration?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  enrichmentLogs?: Resolver<
+    Array<ResolversTypes['EnrichmentLog']>,
+    ParentType,
+    ContextType,
+    Partial<TrackEnrichmentLogsArgs>
+  >;
   explicit?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   isrc?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  latestEnrichmentLog?: Resolver<
+    Maybe<ResolversTypes['EnrichmentLog']>,
+    ParentType,
+    ContextType
+  >;
   musicbrainzId?: Resolver<
     Maybe<ResolversTypes['UUID']>,
     ParentType,
@@ -3591,7 +3831,9 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   CreateRecommendationPayload?: CreateRecommendationPayloadResolvers<ContextType>;
   DatabaseStats?: DatabaseStatsResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
+  EnrichmentLog?: EnrichmentLogResolvers<ContextType>;
   EnrichmentResult?: EnrichmentResultResolvers<ContextType>;
+  EnrichmentStats?: EnrichmentStatsResolvers<ContextType>;
   ErrorMetric?: ErrorMetricResolvers<ContextType>;
   FollowUserPayload?: FollowUserPayloadResolvers<ContextType>;
   HealthComponents?: HealthComponentsResolvers<ContextType>;
@@ -3613,6 +3855,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   ReorderCollectionAlbumsPayload?: ReorderCollectionAlbumsPayloadResolvers<ContextType>;
   SearchResult?: SearchResultResolvers<ContextType>;
   SearchResults?: SearchResultsResolvers<ContextType>;
+  SourceStat?: SourceStatResolvers<ContextType>;
   SpotifyAlbum?: SpotifyAlbumResolvers<ContextType>;
   SpotifyArtist?: SpotifyArtistResolvers<ContextType>;
   SpotifyPlaylist?: SpotifyPlaylistResolvers<ContextType>;

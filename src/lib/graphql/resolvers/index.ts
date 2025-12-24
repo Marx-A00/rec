@@ -979,6 +979,19 @@ export const resolvers: Resolvers = {
         parent.enrichmentStatus === 'FAILED'
       );
     },
+    enrichmentLogs: async (parent, args, { prisma }) => {
+      return prisma.enrichmentLog.findMany({
+        where: { artistId: parent.id },
+        orderBy: { createdAt: 'desc' },
+        take: args.limit || 10,
+      });
+    },
+    latestEnrichmentLog: async (parent, _, { prisma }) => {
+      return prisma.enrichmentLog.findFirst({
+        where: { artistId: parent.id },
+        orderBy: { createdAt: 'desc' },
+      });
+    },
   },
 
   Album: {
@@ -1000,6 +1013,19 @@ export const resolvers: Resolvers = {
       return prisma.collectionAlbum.count({ where: { albumId: parent.id } });
     },
     recommendationScore: () => null, // Placeholder
+    enrichmentLogs: async (parent, args, { prisma }) => {
+      return prisma.enrichmentLog.findMany({
+        where: { albumId: parent.id },
+        orderBy: { createdAt: 'desc' },
+        take: args.limit || 10,
+      });
+    },
+    latestEnrichmentLog: async (parent, _, { prisma }) => {
+      return prisma.enrichmentLog.findFirst({
+        where: { albumId: parent.id },
+        orderBy: { createdAt: 'desc' },
+      });
+    },
   },
 
   Track: {
@@ -1051,6 +1077,19 @@ export const resolvers: Resolvers = {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     },
     popularity: () => null, // Placeholder
+    enrichmentLogs: async (parent, args, { prisma }) => {
+      return prisma.enrichmentLog.findMany({
+        where: { trackId: parent.id },
+        orderBy: { createdAt: 'desc' },
+        take: args.limit || 10,
+      });
+    },
+    latestEnrichmentLog: async (parent, _, { prisma }) => {
+      return prisma.enrichmentLog.findFirst({
+        where: { trackId: parent.id },
+        orderBy: { createdAt: 'desc' },
+      });
+    },
   },
 
   User: {

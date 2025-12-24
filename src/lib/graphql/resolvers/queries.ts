@@ -1761,5 +1761,84 @@ export const queryResolvers: QueryResolvers = {
       throw new GraphQLError(`Failed to search tracks: ${error}`);
     }
   },
+
+  // Enrichment log queries
+  enrichmentLogs: async (_, args, { prisma }) => {
+    try {
+      const where: Record<string, unknown> = {};
+
+      if (args.entityType) where.entityType = args.entityType;
+      if (args.entityId) where.entityId = args.entityId;
+      if (args.status) where.status = args.status;
+      if (args.sources && args.sources.length > 0) {
+        where.sources = { hasSome: args.sources };
+      }
+
+      const logs = await prisma.enrichmentLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: args.skip || 0,
+        take: args.limit || 50,
+      });
+
+      return logs;
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch enrichment logs: ${error}`);
+    }
+  },
+
+  enrichmentStats: async (_, args, { prisma }) => {
+    try {
+      const where: Record<string, unknown> = {};
+
+      if (args.entityType) where.entityType = args.entityType;
+      if (args.timeRange) {
+        where.createdAt = {
+          gte: args.timeRange.from,
+          lte: args.timeRange.to,
+        };
+      }
+
+      const logs = await prisma.enrichmentLog.findMany({ where });
+
+      // Calculate source statistics
+      const sourceMap = new Map<string, { total: number; success: number }>();
+
+      logs.forEach(log => {
+        log.sources.forEach(source => {
+          const stats = sourceMap.get(source) || { total: 0, success: 0 };
+          stats.total++;
+          if (log.status === 'SUCCESS') stats.success++;
+          sourceMap.set(source, stats);
+        });
+      });
+
+      const sourceStats = Array.from(sourceMap.entries()).map(
+        ([source, stats]) => ({
+          source,
+          attempts: stats.total,
+          successRate: stats.total > 0 ? stats.success / stats.total : 0,
+        })
+      );
+
+      const totalLogs = logs.length;
+      const avgDurationMs =
+        totalLogs > 0
+          ? logs.reduce((sum, l) => sum + (l.durationMs || 0), 0) / totalLogs
+          : 0;
+
+      return {
+        totalAttempts: totalLogs,
+        successCount: logs.filter(l => l.status === 'SUCCESS').length,
+        failedCount: logs.filter(l => l.status === 'FAILED').length,
+        noDataCount: logs.filter(l => l.status === 'NO_DATA_AVAILABLE').length,
+        skippedCount: logs.filter(l => l.status === 'SKIPPED').length,
+        averageDurationMs: avgDurationMs,
+        sourceStats,
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to calculate enrichment stats: ${error}`);
+    }
+  },
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects
 };

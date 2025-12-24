@@ -42,6 +42,10 @@ type Artist {
 
   # Last.fm data
   listeners: Int
+
+  # Enrichment logs
+  enrichmentLogs(limit: Int): [EnrichmentLog!]!
+  latestEnrichmentLog: EnrichmentLog
 }
 
 type Album {
@@ -78,6 +82,10 @@ type Album {
   inCollectionsCount: Int!
   recommendationScore: Float
   needsEnrichment: Boolean!
+
+  # Enrichment logs
+  enrichmentLogs(limit: Int): [EnrichmentLog!]!
+  latestEnrichmentLog: EnrichmentLog
 }
 
 type Track {
@@ -108,6 +116,10 @@ type Track {
   # Search metadata (populated for MusicBrainz/external search results)
   searchCoverArtUrl: String
   searchArtistName: String
+
+  # Enrichment logs
+  enrichmentLogs(limit: Int): [EnrichmentLog!]!
+  latestEnrichmentLog: EnrichmentLog
 }
 
 # =============================================
@@ -562,6 +574,66 @@ enum EnrichmentStatus {
   FAILED
 }
 
+enum EnrichmentEntityType {
+  ARTIST
+  ALBUM
+  TRACK
+}
+
+enum EnrichmentLogStatus {
+  SUCCESS
+  PARTIAL_SUCCESS
+  FAILED
+  NO_DATA_AVAILABLE
+  SKIPPED
+}
+
+# =============================================
+# ENRICHMENT LOGGING TYPES
+# =============================================
+
+type EnrichmentLog {
+  id: UUID!
+  entityType: EnrichmentEntityType
+  entityId: UUID
+  operation: String!
+  sources: [String!]!
+  status: EnrichmentLogStatus!
+  fieldsEnriched: [String!]!
+  dataQualityBefore: DataQuality
+  dataQualityAfter: DataQuality
+  errorMessage: String
+  errorCode: String
+  retryCount: Int!
+  durationMs: Int
+  apiCallCount: Int!
+  metadata: JSON
+  jobId: String
+  triggeredBy: String
+  createdAt: DateTime!
+}
+
+input TimeRangeInput {
+  from: DateTime!
+  to: DateTime!
+}
+
+type EnrichmentStats {
+  totalAttempts: Int!
+  successCount: Int!
+  failedCount: Int!
+  noDataCount: Int!
+  skippedCount: Int!
+  averageDurationMs: Float!
+  sourceStats: [SourceStat!]!
+}
+
+type SourceStat {
+  source: String!
+  attempts: Int!
+  successRate: Float!
+}
+
 # =============================================
 # MONITORING & HEALTH TYPES
 # =============================================
@@ -920,6 +992,21 @@ type Query {
     skip: Int
     limit: Int
   ): [Artist!]!
+
+  # Enrichment Logging queries
+  enrichmentLogs(
+    entityType: EnrichmentEntityType
+    entityId: UUID
+    status: EnrichmentLogStatus
+    sources: [String!]
+    skip: Int
+    limit: Int
+  ): [EnrichmentLog!]!
+
+  enrichmentStats(
+    entityType: EnrichmentEntityType
+    timeRange: TimeRangeInput
+  ): EnrichmentStats!
 }
 
 # =============================================

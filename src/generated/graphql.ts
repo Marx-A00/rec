@@ -120,11 +120,13 @@ export type Album = {
   dataQuality?: Maybe<DataQuality>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
+  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
   label?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
+  latestEnrichmentLog?: Maybe<EnrichmentLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   needsEnrichment: Scalars['Boolean']['output'];
   recommendationScore?: Maybe<Scalars['Float']['output']>;
@@ -135,6 +137,10 @@ export type Album = {
   trackCount?: Maybe<Scalars['Int']['output']>;
   tracks: Array<Track>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type AlbumEnrichmentLogsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type AlbumInput = {
@@ -220,11 +226,13 @@ export type Artist = {
   countryCode?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
+  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
+  latestEnrichmentLog?: Maybe<EnrichmentLog>;
   listeners?: Maybe<Scalars['Int']['output']>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   name: Scalars['String']['output'];
@@ -233,6 +241,10 @@ export type Artist = {
   trackCount: Scalars['Int']['output'];
   tracks: Array<Track>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type ArtistEnrichmentLogsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type ArtistAlbumInput = {
@@ -375,6 +387,42 @@ export type DatabaseStats = {
   totalTracks: Scalars['Int']['output'];
 };
 
+export enum EnrichmentEntityType {
+  Album = 'ALBUM',
+  Artist = 'ARTIST',
+  Track = 'TRACK',
+}
+
+export type EnrichmentLog = {
+  __typename?: 'EnrichmentLog';
+  apiCallCount: Scalars['Int']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  dataQualityAfter?: Maybe<DataQuality>;
+  dataQualityBefore?: Maybe<DataQuality>;
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  entityId?: Maybe<Scalars['UUID']['output']>;
+  entityType?: Maybe<EnrichmentEntityType>;
+  errorCode?: Maybe<Scalars['String']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  fieldsEnriched: Array<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  jobId?: Maybe<Scalars['String']['output']>;
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  operation: Scalars['String']['output'];
+  retryCount: Scalars['Int']['output'];
+  sources: Array<Scalars['String']['output']>;
+  status: EnrichmentLogStatus;
+  triggeredBy?: Maybe<Scalars['String']['output']>;
+};
+
+export enum EnrichmentLogStatus {
+  Failed = 'FAILED',
+  NoDataAvailable = 'NO_DATA_AVAILABLE',
+  PartialSuccess = 'PARTIAL_SUCCESS',
+  Skipped = 'SKIPPED',
+  Success = 'SUCCESS',
+}
+
 export enum EnrichmentPriority {
   High = 'HIGH',
   Low = 'LOW',
@@ -386,6 +434,17 @@ export type EnrichmentResult = {
   jobId?: Maybe<Scalars['String']['output']>;
   message: Scalars['String']['output'];
   success: Scalars['Boolean']['output'];
+};
+
+export type EnrichmentStats = {
+  __typename?: 'EnrichmentStats';
+  averageDurationMs: Scalars['Float']['output'];
+  failedCount: Scalars['Int']['output'];
+  noDataCount: Scalars['Int']['output'];
+  skippedCount: Scalars['Int']['output'];
+  sourceStats: Array<SourceStat>;
+  successCount: Scalars['Int']['output'];
+  totalAttempts: Scalars['Int']['output'];
 };
 
 export enum EnrichmentStatus {
@@ -703,6 +762,8 @@ export type Query = {
   artistDiscography: CategorizedDiscography;
   collection?: Maybe<Collection>;
   databaseStats: DatabaseStats;
+  enrichmentLogs: Array<EnrichmentLog>;
+  enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
   followingActivity: Array<Recommendation>;
   getAlbumRecommendations: AlbumRecommendationsResponse;
@@ -768,6 +829,20 @@ export type QueryArtistDiscographyArgs = {
 
 export type QueryCollectionArgs = {
   id: Scalars['String']['input'];
+};
+
+export type QueryEnrichmentLogsArgs = {
+  entityId?: InputMaybe<Scalars['UUID']['input']>;
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sources?: InputMaybe<Array<Scalars['String']['input']>>;
+  status?: InputMaybe<EnrichmentLogStatus>;
+};
+
+export type QueryEnrichmentStatsArgs = {
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  timeRange?: InputMaybe<TimeRangeInput>;
 };
 
 export type QueryFailedJobsArgs = {
@@ -1029,6 +1104,13 @@ export enum SearchType {
   User = 'USER',
 }
 
+export type SourceStat = {
+  __typename?: 'SourceStat';
+  attempts: Scalars['Int']['output'];
+  source: Scalars['String']['output'];
+  successRate: Scalars['Float']['output'];
+};
+
 export type SpotifyAlbum = {
   __typename?: 'SpotifyAlbum';
   artistIds: Array<Scalars['String']['output']>;
@@ -1164,6 +1246,11 @@ export enum TimeRange {
   LastWeek = 'LAST_WEEK',
 }
 
+export type TimeRangeInput = {
+  from: Scalars['DateTime']['input'];
+  to: Scalars['DateTime']['input'];
+};
+
 export type Track = {
   __typename?: 'Track';
   album?: Maybe<Album>;
@@ -1174,9 +1261,11 @@ export type Track = {
   discNumber: Scalars['Int']['output'];
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
+  enrichmentLogs: Array<EnrichmentLog>;
   explicit: Scalars['Boolean']['output'];
   id: Scalars['UUID']['output'];
   isrc?: Maybe<Scalars['String']['output']>;
+  latestEnrichmentLog?: Maybe<EnrichmentLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   popularity?: Maybe<Scalars['Float']['output']>;
   previewUrl?: Maybe<Scalars['String']['output']>;
@@ -1185,6 +1274,10 @@ export type Track = {
   title: Scalars['String']['output'];
   trackNumber: Scalars['Int']['output'];
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type TrackEnrichmentLogsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type TrackInput = {
