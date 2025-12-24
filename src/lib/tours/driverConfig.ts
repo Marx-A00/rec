@@ -64,7 +64,7 @@ export const tourSteps: DriveStep[] = [
     element: '[data-tour-step="recommendation-search"]',
     popover: {
       title: 'Understanding the Recommendation System',
-      description: "<span style='color: #ef4444; font-weight: 600;'>LEFT TURNTABLE (SOURCE)</span><br>Load an album you already know and love - this is your starting point<br><br><span style='color: #f59e0b; font-weight: 600;'>MIDDLE DIAL (SIMILARITY)</span><br>Rate how similar the albums are from 1-10. Higher scores mean more similar sound, vibe, or style<br><br><span style='color: #22c55e; font-weight: 600;'>RIGHT TURNTABLE (RECOMMENDED)</span><br>Load the album you want to recommend to others who love the source album<br><br>Think of it like saying: \"If you love THIS album (left), you should check out THAT album (right) - they're X/10 similar!\" Let's try it with a demo!",
+      description: "<span style='color: #ef4444; font-weight: 600;'>LEFT TURNTABLE (SOURCE)</span><br>Load an album you already know and love - this is your starting point<br><br><span style='color: #f59e0b; font-weight: 600;'>MIDDLE DIAL (SIMILARITY)</span><br>Rate how similar the albums are from 1-10. Higher scores mean more similar sound, vibe, or style<br><br><span style='color: #22c55e; font-weight: 600;'>RIGHT TURNTABLE (RECOMMENDED)</span><br>Load the album you want to recommend to others who love the source album<br><br>Think of it like saying: \"If you love THIS album (left), you should check out THAT album (right) - there's an x/10 chance you'll love it!\" Let's try it with a demo!",
       side: 'top',
       align: 'start'
     }
@@ -82,7 +82,7 @@ export const tourSteps: DriveStep[] = [
     element: '[data-tour-step="similarity-dial"]',
     popover: {
       title: '⭐ Rate the Similarity',
-      description: 'Use the rating dial to score how similar the albums are! Drag the dial or click to set a rating from 1-10. This helps other users understand your recommendation.',
+      description: 'Use the rating dial to score how likely you think someone will love the recommended album, based on the source album. Drag the dial or click to set a rating from 1-10. This helps other users understand your recommendation.',
       side: 'left',
       align: 'center'
     }
