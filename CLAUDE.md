@@ -38,10 +38,13 @@ pnpm fix-all               # Fix all auto-fixable issues
 
 ```bash
 pnpm prisma generate       # Generate Prisma client
-pnpm prisma db push        # Push schema changes to database
+pnpm prisma migrate dev    # Create and apply migration (PREFERRED - creates migration files)
+pnpm prisma db push        # Push schema changes directly (prototyping only - no migration files)
 pnpm db:seed              # Seed database with initial data
 pnpm db:reset             # Reset and re-seed database
 ```
+
+**IMPORTANT**: Always use `pnpm prisma migrate dev` for schema changes in this project. This creates version-controlled migration files that can be deployed to production. Only use `db push` for quick prototyping when you don't need migration history.
 
 ### GraphQL Code Generation
 
@@ -218,8 +221,8 @@ Required environment variables:
 2. **Database Changes**:
 
    - Update `prisma/schema.prisma`
-   - Run `pnpm prisma generate` to update client
-   - Run `pnpm prisma db push` to update database
+   - Run `pnpm prisma migrate dev --name descriptive_migration_name` to create and apply migration
+   - Run `pnpm prisma generate` to update client (auto-runs with migrate dev)
 
 3. **Adding New Features**:
    - Check Task Master: `task-master next`
