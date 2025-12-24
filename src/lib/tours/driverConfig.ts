@@ -128,8 +128,8 @@ export const tourSteps: DriveStep[] = [
   },
   {
     popover: {
-      title: '🎵 Welcome to Discovery',
-      description: 'Perfect! This is where the magic happens. Browse through trending albums, discover new artists, and explore recommendations from other music lovers. Everything is organized to help you find your next favorite album!',
+      title: 'Welcome to Browse & Discover',
+      description: 'Perfect! This is where the magic happens. Browse through trending albums, discover new artists, and explore recommendations from other music lovers. <br><br> This page is always under construction, and we\'re always adding new features and content. Make sure to check back often!',
       side: 'over',
       align: 'center',
       popoverClass: 'driver-popover-large'
@@ -152,19 +152,33 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="main-search"]',
     popover: {
-      title: '🔍 Search for Music',
-      description: "Use the search bar to find albums, artists, and tracks. This is your gateway to discovering new music. Click Next and I'll show you by searching for the legendary electronic duo Daft Punk!",
+      title: 'Search Bar',
+      description: "Use the search bar to find albums, artists, tracks, and users. <br><br> Click Next and we'll show you by searching for the legendary electronic duo Daft Punk!",
       side: 'bottom',
       align: 'center'
     }
   },
   {
-    element: '[data-tour-step="artist-header"]',
     popover: {
       title: '🤖 Welcome to Artist Pages',
       description: "Fantastic! This is an artist page where you can explore everything about an artist. Here you can see their biography, discography, collaborations, and discover similar artists. This is where you dive deep into an artist's world!",
-      side: 'bottom',
-      align: 'start'
+      side: 'over',
+      align: 'center',
+      popoverClass: 'driver-popover-large'
+    },
+    onHighlighted: () => {
+      // Add dimmed overlay for this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0.5';
+      }
+    },
+    onDeselected: () => {
+      // Remove dimmed overlay when leaving this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
     }
   },
   {
