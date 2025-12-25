@@ -413,6 +413,7 @@ export type EnrichmentLog = {
   sources: Array<Scalars['String']['output']>;
   status: EnrichmentLogStatus;
   triggeredBy?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['String']['output']>;
 };
 
 export enum EnrichmentLogStatus {

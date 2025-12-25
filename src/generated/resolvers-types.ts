@@ -387,6 +387,7 @@ export type EnrichmentLog = {
   sources: Array<Scalars['String']['output']>;
   status: EnrichmentLogStatus;
   triggeredBy?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['String']['output']>;
 };
 
 export enum EnrichmentLogStatus {
@@ -2362,6 +2363,7 @@ export type EnrichmentLogResolvers<
     ParentType,
     ContextType
   >;
+  userId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

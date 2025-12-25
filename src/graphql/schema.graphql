@@ -610,6 +610,7 @@ type EnrichmentLog {
   metadata: JSON
   jobId: String
   triggeredBy: String
+  userId: String  # Track which user made manual changes
   createdAt: DateTime!
 }
 

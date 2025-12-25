@@ -442,33 +442,22 @@ export default function MusicDatabasePage() {
     type: 'album' | 'artist',
     dataQuality: DataQuality
   ) => {
-    console.log('handleUpdateDataQuality called with:', { itemId, type, dataQuality });
-    console.log('itemId type:', typeof itemId, 'value:', itemId);
-
     if (!itemId) {
       toast.error('No item ID provided');
       return;
     }
 
     try {
-      const variables = { id: itemId, dataQuality };
-      console.log('Mutation variables:', variables);
-
       if (type === 'album') {
-        console.log('Calling updateAlbumQualityMutation with:', variables);
-        const result = await updateAlbumQualityMutation.mutateAsync(variables);
-        console.log('Mutation result:', result);
+        await updateAlbumQualityMutation.mutateAsync({ id: itemId, dataQuality });
         toast.success(`Album data quality updated to ${dataQuality}`);
         refetchAlbums();
       } else {
-        console.log('Calling updateArtistQualityMutation with:', variables);
-        const result = await updateArtistQualityMutation.mutateAsync(variables);
-        console.log('Mutation result:', result);
+        await updateArtistQualityMutation.mutateAsync({ id: itemId, dataQuality });
         toast.success(`Artist data quality updated to ${dataQuality}`);
         refetchArtists();
       }
     } catch (error) {
-      console.error('Data quality update error:', error);
       toast.error(`Failed to update data quality: ${(error as Error).message || String(error)}`);
     }
   };

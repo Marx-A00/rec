@@ -56,6 +56,7 @@ model User {
   settings             UserSettings?
   followers            UserFollow[]     @relation("UserFollowers")
   following            UserFollow[]     @relation("UserFollowing")
+  enrichmentLogs       EnrichmentLog[]
 }
 
 model UserSettings {
@@ -366,10 +367,12 @@ model EnrichmentLog {
   metadata           Json?
   jobId              String?                @map("job_id") @db.VarChar(100)
   triggeredBy        String?                @map("triggered_by") @db.VarChar(50)
+  userId             String?                @map("user_id") // Track which user made manual changes
   createdAt          DateTime               @default(now()) @map("created_at")
   artist             Artist?                @relation(fields: [artistId], references: [id], onDelete: Cascade)
   album              Album?                 @relation(fields: [albumId], references: [id], onDelete: Cascade)
   track              Track?                 @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  user               User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([entityType, entityId])
   @@index([artistId, createdAt])
@@ -378,6 +381,7 @@ model EnrichmentLog {
   @@index([status, createdAt])
   @@index([operation])
   @@index([sources])
+  @@index([userId])
   @@map("enrichment_logs")
 }
 

@@ -15,6 +15,7 @@ import type {
   CacheAlbumCoverArtJobData,
 } from '@/lib/queue/jobs';
 import { alertManager } from '@/lib/monitoring';
+import { logActivity, OPERATIONS, SOURCES } from '@/lib/logging/activity-logger';
 
 // Utility function to cast return values for GraphQL resolvers
 // Field resolvers will populate missing computed fields
@@ -1826,13 +1827,32 @@ export const mutationResolvers: MutationResolvers = {
   },
 
   // Update data quality mutations
-  updateAlbumDataQuality: async (_, { id, dataQuality }, { prisma }) => {
+  updateAlbumDataQuality: async (_, { id, dataQuality }, { prisma, session }) => {
     try {
+      // Get the old data quality before updating
+      const oldAlbum = await prisma.album.findUnique({
+        where: { id },
+        select: { dataQuality: true },
+      });
+
       const album = await prisma.album.update({
         where: { id },
         data: {
           dataQuality,
         },
+      });
+
+      // Log the manual data quality update
+      await logActivity({
+        prisma,
+        entityType: 'ALBUM',
+        entityId: id,
+        operation: OPERATIONS.MANUAL_DATA_QUALITY_UPDATE,
+        sources: [SOURCES.USER],
+        fieldsChanged: ['dataQuality'],
+        userId: session?.user?.id,
+        dataQualityBefore: oldAlbum?.dataQuality ?? null,
+        dataQualityAfter: dataQuality,
       });
 
       return album;
@@ -1841,13 +1861,32 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  updateArtistDataQuality: async (_, { id, dataQuality }, { prisma }) => {
+  updateArtistDataQuality: async (_, { id, dataQuality }, { prisma, session }) => {
     try {
+      // Get the old data quality before updating
+      const oldArtist = await prisma.artist.findUnique({
+        where: { id },
+        select: { dataQuality: true },
+      });
+
       const artist = await prisma.artist.update({
         where: { id },
         data: {
           dataQuality,
         },
+      });
+
+      // Log the manual data quality update
+      await logActivity({
+        prisma,
+        entityType: 'ARTIST',
+        entityId: id,
+        operation: OPERATIONS.MANUAL_DATA_QUALITY_UPDATE,
+        sources: [SOURCES.USER],
+        fieldsChanged: ['dataQuality'],
+        userId: session?.user?.id,
+        dataQualityBefore: oldArtist?.dataQuality ?? null,
+        dataQualityAfter: dataQuality,
       });
 
       return artist;

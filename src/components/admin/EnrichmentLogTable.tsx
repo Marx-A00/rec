@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle, XCircle, Database, User, Cog, Edit } from 'lucide-react';
 
 import {
   Table,
@@ -64,6 +64,24 @@ function EnrichmentStatusBadge({ status }: { status: EnrichmentLogStatus }) {
       {config.label}
     </Badge>
   );
+}
+
+function OperationIcon({ operation, sources }: { operation: string; sources: string[] }) {
+  // Determine icon based on operation type or source
+  const isManual = operation.includes('MANUAL') || sources.includes('USER');
+  const isAutomated = operation.includes('AUTO') || sources.includes('SYSTEM');
+  const isApiEnrichment = sources.some(s => ['MUSICBRAINZ', 'SPOTIFY', 'LASTFM', 'DISCOGS'].includes(s));
+
+  if (isManual) {
+    return <span title="Manual operation"><User className="h-3.5 w-3.5 text-blue-400" /></span>;
+  }
+  if (isAutomated) {
+    return <span title="Automated operation"><Cog className="h-3.5 w-3.5 text-purple-400" /></span>;
+  }
+  if (isApiEnrichment) {
+    return <span title="API enrichment"><Database className="h-3.5 w-3.5 text-green-400" /></span>;
+  }
+  return <span title="Data change"><Edit className="h-3.5 w-3.5 text-zinc-400" /></span>;
 }
 
 export function EnrichmentLogTable({
@@ -174,7 +192,10 @@ export function EnrichmentLogTable({
                   })}
                 </TableCell>
                 <TableCell className="text-xs text-zinc-300 font-mono">
-                  {log.operation}
+                  <div className="flex items-center gap-1.5">
+                    <OperationIcon operation={log.operation} sources={log.sources} />
+                    {log.operation}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
