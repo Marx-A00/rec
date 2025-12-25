@@ -16,6 +16,7 @@ import type {
 } from '@/lib/queue/jobs';
 import { alertManager } from '@/lib/monitoring';
 import { logActivity, OPERATIONS, SOURCES } from '@/lib/logging/activity-logger';
+import { isAdmin } from '@/lib/permissions';
 
 // Utility function to cast return values for GraphQL resolvers
 // Field resolvers will populate missing computed fields
@@ -1822,6 +1823,123 @@ export const mutationResolvers: MutationResolvers = {
         throw error;
       }
       throw new GraphQLError(`Failed to update user role: ${error}`);
+    }
+  },
+
+  deleteAlbum: async (
+    _: unknown,
+    { id }: { id: string },
+    context: any
+  ) => {
+    const { user, prisma } = context;
+
+    // Check authentication
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Check authorization - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Unauthorized: Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      // Check if album exists
+      const album = await prisma.album.findUnique({
+        where: { id },
+        include: {
+          _count: {
+            select: {
+              collectionAlbum: true,
+              basisRecommendations: true,
+              targetRecommendations: true,
+              listenLater: true,
+              tracks: true,
+            },
+          },
+        },
+      });
+
+      if (!album) {
+        throw new GraphQLError('Album not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Use Prisma transaction to handle cascade deletion
+      await prisma.$transaction(async (tx) => {
+        // Delete related records in order
+        // 1. CollectionAlbum entries
+        await tx.collectionAlbum.deleteMany({
+          where: { albumId: id },
+        });
+
+        // 2. Recommendations (both as basis and target)
+        await tx.recommendation.deleteMany({
+          where: {
+            OR: [
+              { basisAlbumId: id },
+              { targetAlbumId: id },
+            ],
+          },
+        });
+
+        // 3. ListenLater entries
+        await tx.listenLater.deleteMany({
+          where: { albumId: id },
+        });
+
+        // 4. Track artists (via tracks)
+        const tracks = await tx.track.findMany({
+          where: { albumId: id },
+          select: { id: true },
+        });
+        const trackIds = tracks.map(t => t.id);
+
+        if (trackIds.length > 0) {
+          await tx.trackArtist.deleteMany({
+            where: { trackId: { in: trackIds } },
+          });
+        }
+
+        // 5. Tracks
+        await tx.track.deleteMany({
+          where: { albumId: id },
+        });
+
+        // 6. ArtistCredit entries
+        await tx.artistCredit.deleteMany({
+          where: { albumId: id },
+        });
+
+        // 7. EnrichmentLog entries
+        await tx.enrichmentLog.deleteMany({
+          where: { albumId: id },
+        });
+
+        // 8. Finally, delete the album itself
+        await tx.album.delete({
+          where: { id },
+        });
+      });
+
+      return {
+        success: true,
+        message: `Album deleted successfully`,
+        deletedId: id,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) {
+        throw error;
+      }
+      console.error('Error deleting album:', error);
+      throw new GraphQLError(`Failed to delete album: ${error}`, {
+        extensions: { code: 'INTERNAL_ERROR' },
+      });
     }
   },
 
