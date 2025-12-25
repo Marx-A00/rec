@@ -1,0 +1,7 @@
+mutation DeleteAlbum($id: UUID!) {
+  deleteAlbum(id: $id) {
+    success
+    message
+    deletedId
+  }
+}

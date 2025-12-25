@@ -387,6 +387,13 @@ export type DatabaseStats = {
   totalTracks: Scalars['Int']['output'];
 };
 
+export type DeleteAlbumPayload = {
+  __typename?: 'DeleteAlbumPayload';
+  deletedId?: Maybe<Scalars['UUID']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export enum EnrichmentEntityType {
   Album = 'ALBUM',
   Artist = 'ARTIST',
@@ -544,6 +551,7 @@ export type Mutation = {
   createCollection: CreateCollectionPayload;
   createRecommendation: CreateRecommendationPayload;
   createTrack: Track;
+  deleteAlbum: DeleteAlbumPayload;
   deleteCollection: Scalars['Boolean']['output'];
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
@@ -617,6 +625,10 @@ export type MutationCreateRecommendationArgs = {
 
 export type MutationCreateTrackArgs = {
   input: TrackInput;
+};
+
+export type MutationDeleteAlbumArgs = {
+  id: Scalars['UUID']['input'];
 };
 
 export type MutationDeleteCollectionArgs = {
@@ -1623,6 +1635,20 @@ export type UpdateUserSettingsMutation = {
     autoplayPreviews: boolean;
     createdAt: Date;
     updatedAt: Date;
+  };
+};
+
+export type DeleteAlbumMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type DeleteAlbumMutation = {
+  __typename?: 'Mutation';
+  deleteAlbum: {
+    __typename?: 'DeleteAlbumPayload';
+    success: boolean;
+    message?: string | null;
+    deletedId?: string | null;
   };
 };
 
@@ -3397,6 +3423,42 @@ export const useUpdateUserSettingsMutation = <
 };
 
 useUpdateUserSettingsMutation.getKey = () => ['UpdateUserSettings'];
+
+export const DeleteAlbumDocument = `
+    mutation DeleteAlbum($id: UUID!) {
+  deleteAlbum(id: $id) {
+    success
+    message
+    deletedId
+  }
+}
+    `;
+
+export const useDeleteAlbumMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    DeleteAlbumMutation,
+    TError,
+    DeleteAlbumMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    DeleteAlbumMutation,
+    TError,
+    DeleteAlbumMutationVariables,
+    TContext
+  >({
+    mutationKey: ['DeleteAlbum'],
+    mutationFn: (variables?: DeleteAlbumMutationVariables) =>
+      fetcher<DeleteAlbumMutation, DeleteAlbumMutationVariables>(
+        DeleteAlbumDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useDeleteAlbumMutation.getKey = () => ['DeleteAlbum'];
 
 export const AddAlbumDocument = `
     mutation AddAlbum($input: AlbumInput!) {

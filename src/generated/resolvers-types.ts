@@ -361,6 +361,13 @@ export type DatabaseStats = {
   totalTracks: Scalars['Int']['output'];
 };
 
+export type DeleteAlbumPayload = {
+  __typename?: 'DeleteAlbumPayload';
+  deletedId?: Maybe<Scalars['UUID']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export enum EnrichmentEntityType {
   Album = 'ALBUM',
   Artist = 'ARTIST',
@@ -518,6 +525,7 @@ export type Mutation = {
   createCollection: CreateCollectionPayload;
   createRecommendation: CreateRecommendationPayload;
   createTrack: Track;
+  deleteAlbum: DeleteAlbumPayload;
   deleteCollection: Scalars['Boolean']['output'];
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
@@ -591,6 +599,10 @@ export type MutationCreateRecommendationArgs = {
 
 export type MutationCreateTrackArgs = {
   input: TrackInput;
+};
+
+export type MutationDeleteAlbumArgs = {
+  id: Scalars['UUID']['input'];
 };
 
 export type MutationDeleteCollectionArgs = {
@@ -1580,6 +1592,7 @@ export type ResolversTypes = ResolversObject<{
   DataSource: DataSource;
   DatabaseStats: ResolverTypeWrapper<DatabaseStats>;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
+  DeleteAlbumPayload: ResolverTypeWrapper<DeleteAlbumPayload>;
   EnrichmentEntityType: EnrichmentEntityType;
   EnrichmentLog: ResolverTypeWrapper<EnrichmentLog>;
   EnrichmentLogStatus: EnrichmentLogStatus;
@@ -1685,6 +1698,7 @@ export type ResolversParentTypes = ResolversObject<{
   CreateRecommendationPayload: CreateRecommendationPayload;
   DatabaseStats: DatabaseStats;
   DateTime: Scalars['DateTime']['output'];
+  DeleteAlbumPayload: DeleteAlbumPayload;
   EnrichmentLog: EnrichmentLog;
   EnrichmentResult: EnrichmentResult;
   EnrichmentStats: EnrichmentStats;
@@ -2308,6 +2322,17 @@ export interface DateTimeScalarConfig
   name: 'DateTime';
 }
 
+export type DeleteAlbumPayloadResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['DeleteAlbumPayload'] = ResolversParentTypes['DeleteAlbumPayload'],
+> = ResolversObject<{
+  deletedId?: Resolver<Maybe<ResolversTypes['UUID']>, ParentType, ContextType>;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type EnrichmentLogResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -2569,6 +2594,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationCreateTrackArgs, 'input'>
+  >;
+  deleteAlbum?: Resolver<
+    ResolversTypes['DeleteAlbumPayload'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationDeleteAlbumArgs, 'id'>
   >;
   deleteCollection?: Resolver<
     ResolversTypes['Boolean'],
@@ -3879,6 +3910,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   CreateRecommendationPayload?: CreateRecommendationPayloadResolvers<ContextType>;
   DatabaseStats?: DatabaseStatsResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
+  DeleteAlbumPayload?: DeleteAlbumPayloadResolvers<ContextType>;
   EnrichmentLog?: EnrichmentLogResolvers<ContextType>;
   EnrichmentResult?: EnrichmentResultResolvers<ContextType>;
   EnrichmentStats?: EnrichmentStatsResolvers<ContextType>;
