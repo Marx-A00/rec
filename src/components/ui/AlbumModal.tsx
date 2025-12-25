@@ -13,6 +13,7 @@ import AddToCollectionButton from '@/components/collections/AddToCollectionButto
 import { useNavigation } from '@/hooks/useNavigation';
 import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 import { useListenLaterStatus } from '@/hooks/useListenLaterStatus';
+import { useAlbumState } from '@/hooks/useAlbumState';
 import { Release } from '@/types/album';
 import { CollectionAlbum } from '@/types/collection';
 import { Album } from '@/types/album';
@@ -35,6 +36,8 @@ import {
   useAddAlbumMutation,
   useDeleteAlbumMutation,
   EnrichmentPriority,
+  EnrichmentStatus,
+  DataQuality,
 } from '@/generated/graphql';
 
 interface AlbumModalProps {
@@ -270,6 +273,9 @@ export default function AlbumModal({
     albumForInteractions?.id || ''
   );
 
+  // Get unified album state for smart admin button behavior
+  const albumState = useAlbumState(albumForInteractions);
+
   // Album interaction handlers
   // TODO: Performance optimization - Pass currentArtistContext from DiscographyTab
   // to skip the GetArtistByMusicBrainzId lookup when clicking artist button while
@@ -435,11 +441,13 @@ export default function AlbumModal({
 
   // Admin action handlers
   const handleEnrichAlbum = async () => {
-    if (!albumForInteractions?.id) return;
+    // Use dbId from albumState for accurate database ID
+    const dbId = albumState.dbId || albumForInteractions?.id;
+    if (!dbId) return;
 
     try {
       const result = await enrichMutation.mutateAsync({
-        id: albumForInteractions.id,
+        id: dbId,
         priority: EnrichmentPriority.High,
       });
 
@@ -482,11 +490,13 @@ export default function AlbumModal({
   };
 
   const handleDeleteAlbum = async () => {
-    if (!albumForInteractions?.id) return;
+    // Use dbId from albumState for accurate database ID
+    const dbId = albumState.dbId || albumForInteractions?.id;
+    if (!dbId) return;
 
     try {
       const result = await deleteMutation.mutateAsync({
-        id: albumForInteractions.id,
+        id: dbId,
       });
 
       if (result.deleteAlbum.success) {
@@ -502,8 +512,10 @@ export default function AlbumModal({
   };
 
   const handleViewInAdmin = () => {
-    if (!albumForInteractions?.id) return;
-    window.open(`/admin/music-database?id=${albumForInteractions.id}`, '_blank');
+    // Use dbId from albumState for accurate database ID
+    const dbId = albumState.dbId || albumForInteractions?.id;
+    if (!dbId) return;
+    window.open(`/admin/music-database?id=${dbId}`, '_blank');
   };
 
   const handleMoreActions = () => {
@@ -978,33 +990,68 @@ export default function AlbumModal({
           {/* Admin Actions Section */}
           {albumForInteractions && isAdmin(session?.user?.role) && (
             <div className='mt-6 rounded-lg border border-amber-900/30 bg-amber-950/10 p-4'>
-              <h3 className='mb-3 text-sm font-medium text-amber-200'>
-                Admin Actions
-              </h3>
-              <div className='grid grid-cols-2 gap-2'>
-                {/* Enrich Album */}
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={handleEnrichAlbum}
-                  disabled={enrichMutation.isPending}
-                  className='gap-1.5 border-amber-800/50 bg-amber-950/20 text-amber-200 hover:bg-amber-900/30 hover:text-amber-100'
-                >
-                  {enrichMutation.isPending ? (
-                    <Loader2 className='h-3.5 w-3.5 animate-spin' />
-                  ) : (
-                    <RefreshCcw className='h-3.5 w-3.5' />
-                  )}
-                  Enrich
-                </Button>
+              <div className='mb-3 flex items-start justify-between'>
+                <h3 className='text-sm font-medium text-amber-200'>
+                  Admin Actions
+                </h3>
+                {albumState.isLoading && (
+                  <Loader2 className='h-3.5 w-3.5 animate-spin text-amber-400' />
+                )}
+              </div>
 
-                {/* Add to Database (only for external albums) */}
-                {albumForInteractions.source !== 'local' && (
+              {/* Enrichment Status Display */}
+              {albumState.existsInDb && (
+                <div className='mb-3 space-y-1 rounded-md border border-zinc-800/50 bg-zinc-900/30 p-2 text-xs'>
+                  <div className='flex items-center justify-between'>
+                    <span className='text-zinc-400'>Status:</span>
+                    <span className={`font-medium ${
+                      albumState.enrichmentStatus === EnrichmentStatus.Completed ? 'text-emerald-400' :
+                      albumState.enrichmentStatus === EnrichmentStatus.InProgress ? 'text-amber-400' :
+                      albumState.enrichmentStatus === EnrichmentStatus.Failed ? 'text-red-400' :
+                      'text-zinc-400'
+                    }`}>
+                      {albumState.enrichmentStatus || EnrichmentStatus.Pending}
+                    </span>
+                  </div>
+                  {albumState.dataQuality && (
+                    <div className='flex items-center justify-between'>
+                      <span className='text-zinc-400'>Quality:</span>
+                      <span className={`font-medium ${
+                        albumState.dataQuality === DataQuality.High ? 'text-emerald-400' :
+                        albumState.dataQuality === DataQuality.Medium ? 'text-amber-400' :
+                        'text-zinc-400'
+                      }`}>
+                        {albumState.dataQuality}
+                      </span>
+                    </div>
+                  )}
+                  {albumState.lastEnriched && (
+                    <div className='flex items-center justify-between'>
+                      <span className='text-zinc-400'>Last Enriched:</span>
+                      <span className='text-zinc-300'>
+                        {albumState.lastEnriched.toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                  {albumState.collectionNames.length > 0 && (
+                    <div className='flex items-center justify-between'>
+                      <span className='text-zinc-400'>Collections:</span>
+                      <span className='text-zinc-300'>
+                        {albumState.collectionNames.join(', ')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className='grid grid-cols-2 gap-2'>
+                {/* Add to Database - Only show if NOT in DB */}
+                {!albumState.existsInDb && (
                   <Button
                     variant='outline'
                     size='sm'
                     onClick={handleAddToDatabase}
-                    disabled={addAlbumMutation.isPending}
+                    disabled={addAlbumMutation.isPending || albumState.isLoading}
                     className='gap-1.5 border-emerald-800/50 bg-emerald-950/20 text-emerald-200 hover:bg-emerald-900/30 hover:text-emerald-100'
                   >
                     {addAlbumMutation.isPending ? (
@@ -1016,13 +1063,47 @@ export default function AlbumModal({
                   </Button>
                 )}
 
-                {/* Delete (only for local albums) */}
-                {albumForInteractions.source === 'local' && (
+                {/* Already in Database - Show disabled if in DB */}
+                {albumState.existsInDb && (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    disabled
+                    className='gap-1.5 border-zinc-700/50 bg-zinc-900/20 text-zinc-500 cursor-not-allowed'
+                  >
+                    <Database className='h-3.5 w-3.5' />
+                    Already in DB
+                  </Button>
+                )}
+
+                {/* Enrich Album - Disabled if not in DB */}
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={handleEnrichAlbum}
+                  disabled={!albumState.existsInDb || enrichMutation.isPending || albumState.isLoading}
+                  className={
+                    albumState.existsInDb
+                      ? 'gap-1.5 border-amber-800/50 bg-amber-950/20 text-amber-200 hover:bg-amber-900/30 hover:text-amber-100'
+                      : 'gap-1.5 border-zinc-700/50 bg-zinc-900/20 text-zinc-500 cursor-not-allowed'
+                  }
+                  title={!albumState.existsInDb ? 'Add to DB first' : 'Trigger enrichment job'}
+                >
+                  {enrichMutation.isPending ? (
+                    <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                  ) : (
+                    <RefreshCcw className='h-3.5 w-3.5' />
+                  )}
+                  {!albumState.existsInDb ? 'Add to DB first' : 'Enrich'}
+                </Button>
+
+                {/* Delete - Only show if in DB */}
+                {albumState.existsInDb && (
                   <Button
                     variant='outline'
                     size='sm'
                     onClick={() => setDeleteModalOpen(true)}
-                    disabled={deleteMutation.isPending}
+                    disabled={deleteMutation.isPending || albumState.isLoading}
                     className='gap-1.5 border-red-800/50 bg-red-950/20 text-red-200 hover:bg-red-900/30 hover:text-red-100'
                   >
                     <Trash2 className='h-3.5 w-3.5' />
@@ -1030,16 +1111,19 @@ export default function AlbumModal({
                   </Button>
                 )}
 
-                {/* Admin Panel Link */}
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={handleViewInAdmin}
-                  className='gap-1.5 border-zinc-700/50 bg-zinc-900/20 text-zinc-300 hover:bg-zinc-800/30 hover:text-zinc-100'
-                >
-                  <ExternalLink className='h-3.5 w-3.5' />
-                  Admin Panel
-                </Button>
+                {/* Admin Panel Link - Only if in DB */}
+                {albumState.existsInDb && albumState.dbId && (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={handleViewInAdmin}
+                    disabled={albumState.isLoading}
+                    className='gap-1.5 border-zinc-700/50 bg-zinc-900/20 text-zinc-300 hover:bg-zinc-800/30 hover:text-zinc-100'
+                  >
+                    <ExternalLink className='h-3.5 w-3.5' />
+                    Admin Panel
+                  </Button>
+                )}
               </div>
             </div>
           )}

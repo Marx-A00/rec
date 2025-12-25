@@ -1013,6 +1013,16 @@ export const resolvers: Resolvers = {
       return prisma.collectionAlbum.count({ where: { albumId: parent.id } });
     },
     recommendationScore: () => null, // Placeholder
+    needsEnrichment: (parent) => {
+      // Compute if album needs enrichment based on available data
+      return (
+        !parent.coverArtUrl ||
+        !parent.cloudflareImageId ||
+        parent.dataQuality === 'LOW' ||
+        parent.enrichmentStatus === 'PENDING' ||
+        parent.enrichmentStatus === 'FAILED'
+      );
+    },
     enrichmentLogs: async (parent, args, { prisma }) => {
       return prisma.enrichmentLog.findMany({
         where: { albumId: parent.id },
