@@ -175,7 +175,8 @@ export function EnrichmentLogTable({
               <TableHead className="text-zinc-400">Operation</TableHead>
               <TableHead className="text-zinc-400">Sources</TableHead>
               <TableHead className="text-zinc-400">Status</TableHead>
-              <TableHead className="text-zinc-400">Fields Enriched</TableHead>
+              <TableHead className="text-zinc-400">Fields Changed</TableHead>
+              <TableHead className="text-zinc-400">Changes</TableHead>
               <TableHead className="text-zinc-400 text-right">Duration</TableHead>
               <TableHead className="text-zinc-400">Error</TableHead>
             </TableRow>
@@ -228,6 +229,21 @@ export function EnrichmentLogTable({
                     </div>
                   ) : (
                     <span className="text-xs text-zinc-500">None</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {log.dataQualityBefore && log.dataQualityAfter ? (
+                    <div className="flex items-center gap-1.5">
+                      <Badge className="bg-red-500/10 text-red-300 border-red-500/20">
+                        {log.dataQualityBefore}
+                      </Badge>
+                      <span className="text-zinc-500">→</span>
+                      <Badge className="bg-green-500/10 text-green-300 border-green-500/20">
+                        {log.dataQualityAfter}
+                      </Badge>
+                    </div>
+                  ) : (
+                    <span className="text-zinc-500">-</span>
                   )}
                 </TableCell>
                 <TableCell className="text-xs text-zinc-400 text-right">

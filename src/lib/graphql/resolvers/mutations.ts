@@ -567,6 +567,18 @@ export const mutationResolvers: MutationResolvers = {
             console.log(
               `✨ Created new artist: "${newArtist.name}" (${newArtist.id})`
             );
+
+            // Log the artist creation
+            await logActivity({
+              prisma,
+              entityType: 'ARTIST',
+              entityId: newArtist.id,
+              operation: OPERATIONS.MANUAL_CREATE,
+              sources: [SOURCES.USER],
+              fieldsChanged: ['name'],
+              userId: user.id,
+              dataQualityAfter: newArtist.dataQuality,
+            });
           }
         }
 
@@ -630,6 +642,26 @@ export const mutationResolvers: MutationResolvers = {
             queueError
           );
         }
+      });
+
+      // Log the manual album creation
+      const fieldsCreated = ['title'];
+      if (input.releaseDate) fieldsCreated.push('releaseDate');
+      if (input.albumType) fieldsCreated.push('releaseType');
+      if (input.totalTracks) fieldsCreated.push('trackCount');
+      if (input.coverImageUrl) fieldsCreated.push('coverArtUrl');
+      if (input.musicbrainzId) fieldsCreated.push('musicbrainzId');
+      if (input.artists?.length) fieldsCreated.push('artists');
+
+      await logActivity({
+        prisma,
+        entityType: 'ALBUM',
+        entityId: album.id,
+        operation: OPERATIONS.MANUAL_CREATE,
+        sources: [SOURCES.USER],
+        fieldsChanged: fieldsCreated,
+        userId: user.id,
+        dataQualityAfter: album.dataQuality,
       });
 
       // Return the album with its relationships
