@@ -76,6 +76,9 @@ import {
   useResetArtistEnrichmentMutation,
   useUpdateAlbumDataQualityMutation,
   useUpdateArtistDataQualityMutation,
+  useTriggerAlbumEnrichmentMutation,
+  useTriggerArtistEnrichmentMutation,
+  EnrichmentPriority,
   DataQuality,
 } from '@/generated/graphql';
 import { EnrichmentLogTable } from '@/components/admin/EnrichmentLogTable';
@@ -149,7 +152,6 @@ interface DatabaseStats {
 }
 
 type SearchType = 'albums' | 'artists' | 'tracks';
-type EnrichmentPriority = 'HIGH' | 'MEDIUM' | 'LOW';
 
 export default function MusicDatabasePage() {
   const [activeTab, setActiveTab] = useState<SearchType>('albums');
@@ -180,6 +182,10 @@ export default function MusicDatabasePage() {
     isLoading: statsLoading,
     error: statsError,
   } = useGetDatabaseStatsQuery();
+
+  // Enrichment trigger mutations
+  const triggerAlbumEnrichmentMutation = useTriggerAlbumEnrichmentMutation();
+  const triggerArtistEnrichmentMutation = useTriggerArtistEnrichmentMutation();
 
   // Reset enrichment mutations
   const resetAlbumMutation = useResetAlbumEnrichmentMutation();
@@ -377,41 +383,37 @@ export default function MusicDatabasePage() {
   const handleEnrichItem = async (
     itemId: string,
     type: 'album' | 'artist',
-    priority: EnrichmentPriority = 'MEDIUM'
+    priority: EnrichmentPriority = EnrichmentPriority.Medium
   ) => {
     try {
-      const mutation =
-        type === 'album' ? 'triggerAlbumEnrichment' : 'triggerArtistEnrichment';
-      const response = await fetch('/api/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            mutation TriggerEnrichment {
-              ${mutation}(id: "${itemId}", priority: ${priority}) {
-                success
-                jobId
-                message
-              }
-            }
-          `,
-          variables: { itemId, priority },
-        }),
-      });
+      if (type === 'album') {
+        const result = await triggerAlbumEnrichmentMutation.mutateAsync({
+          id: itemId,
+          priority,
+        });
 
-      const data = await response.json();
-      if (data.data?.[mutation]?.success) {
-        toast.success(`Enrichment job queued for ${type}`);
-        // Refresh the search results based on active tab
-        if (activeTab === 'albums') {
+        if (result.triggerAlbumEnrichment.success) {
+          toast.success(`Enrichment job queued for album`);
           refetchAlbums();
-        } else if (activeTab === 'artists') {
-          refetchArtists();
+        } else {
+          throw new Error(
+            result.triggerAlbumEnrichment.message || 'Failed to queue enrichment'
+          );
         }
       } else {
-        throw new Error(
-          data.data?.[mutation]?.message || 'Failed to queue enrichment'
-        );
+        const result = await triggerArtistEnrichmentMutation.mutateAsync({
+          id: itemId,
+          priority,
+        });
+
+        if (result.triggerArtistEnrichment.success) {
+          toast.success(`Enrichment job queued for artist`);
+          refetchArtists();
+        } else {
+          throw new Error(
+            result.triggerArtistEnrichment.message || 'Failed to queue enrichment'
+          );
+        }
       }
     } catch (error) {
       toast.error(`Failed to queue enrichment: ${error}`);

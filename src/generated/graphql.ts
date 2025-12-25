@@ -1964,6 +1964,36 @@ export type GetEnrichmentStatsQuery = {
   };
 };
 
+export type TriggerAlbumEnrichmentMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+  priority?: InputMaybe<EnrichmentPriority>;
+}>;
+
+export type TriggerAlbumEnrichmentMutation = {
+  __typename?: 'Mutation';
+  triggerAlbumEnrichment: {
+    __typename?: 'EnrichmentResult';
+    success: boolean;
+    jobId?: string | null;
+    message: string;
+  };
+};
+
+export type TriggerArtistEnrichmentMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+  priority?: InputMaybe<EnrichmentPriority>;
+}>;
+
+export type TriggerArtistEnrichmentMutation = {
+  __typename?: 'Mutation';
+  triggerArtistEnrichment: {
+    __typename?: 'EnrichmentResult';
+    success: boolean;
+    jobId?: string | null;
+    message: string;
+  };
+};
+
 export type GetAlbumRecommendationsQueryVariables = Exact<{
   albumId: Scalars['UUID']['input'];
   filter?: InputMaybe<Scalars['String']['input']>;
@@ -4085,6 +4115,84 @@ useInfiniteGetEnrichmentStatsQuery.getKey = (
   variables === undefined
     ? ['GetEnrichmentStats.infinite']
     : ['GetEnrichmentStats.infinite', variables];
+
+export const TriggerAlbumEnrichmentDocument = `
+    mutation TriggerAlbumEnrichment($id: UUID!, $priority: EnrichmentPriority) {
+  triggerAlbumEnrichment(id: $id, priority: $priority) {
+    success
+    jobId
+    message
+  }
+}
+    `;
+
+export const useTriggerAlbumEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    TriggerAlbumEnrichmentMutation,
+    TError,
+    TriggerAlbumEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    TriggerAlbumEnrichmentMutation,
+    TError,
+    TriggerAlbumEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['TriggerAlbumEnrichment'],
+    mutationFn: (variables?: TriggerAlbumEnrichmentMutationVariables) =>
+      fetcher<
+        TriggerAlbumEnrichmentMutation,
+        TriggerAlbumEnrichmentMutationVariables
+      >(TriggerAlbumEnrichmentDocument, variables)(),
+    ...options,
+  });
+};
+
+useTriggerAlbumEnrichmentMutation.getKey = () => ['TriggerAlbumEnrichment'];
+
+export const TriggerArtistEnrichmentDocument = `
+    mutation TriggerArtistEnrichment($id: UUID!, $priority: EnrichmentPriority) {
+  triggerArtistEnrichment(id: $id, priority: $priority) {
+    success
+    jobId
+    message
+  }
+}
+    `;
+
+export const useTriggerArtistEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    TriggerArtistEnrichmentMutation,
+    TError,
+    TriggerArtistEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    TriggerArtistEnrichmentMutation,
+    TError,
+    TriggerArtistEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['TriggerArtistEnrichment'],
+    mutationFn: (variables?: TriggerArtistEnrichmentMutationVariables) =>
+      fetcher<
+        TriggerArtistEnrichmentMutation,
+        TriggerArtistEnrichmentMutationVariables
+      >(TriggerArtistEnrichmentDocument, variables)(),
+    ...options,
+  });
+};
+
+useTriggerArtistEnrichmentMutation.getKey = () => ['TriggerArtistEnrichment'];
 
 export const GetAlbumRecommendationsDocument = `
     query GetAlbumRecommendations($albumId: UUID!, $filter: String, $sort: String, $skip: Int, $limit: Int) {

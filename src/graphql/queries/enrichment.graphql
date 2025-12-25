@@ -48,3 +48,19 @@ query GetEnrichmentStats(
     }
   }
 }
+
+mutation TriggerAlbumEnrichment($id: UUID!, $priority: EnrichmentPriority) {
+  triggerAlbumEnrichment(id: $id, priority: $priority) {
+    success
+    jobId
+    message
+  }
+}
+
+mutation TriggerArtistEnrichment($id: UUID!, $priority: EnrichmentPriority) {
+  triggerArtistEnrichment(id: $id, priority: $priority) {
+    success
+    jobId
+    message
+  }
+}
