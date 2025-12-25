@@ -764,6 +764,7 @@ export type Query = {
   __typename?: 'Query';
   activeJobs: Array<JobRecord>;
   album?: Maybe<Album>;
+  albumByMusicBrainzId?: Maybe<Album>;
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
   artist?: Maybe<Artist>;
@@ -813,6 +814,10 @@ export type Query = {
 
 export type QueryAlbumArgs = {
   id: Scalars['UUID']['input'];
+};
+
+export type QueryAlbumByMusicBrainzIdArgs = {
+  musicbrainzId: Scalars['String']['input'];
 };
 
 export type QueryAlbumRecommendationsArgs = {
@@ -2849,6 +2854,12 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryAlbumArgs, 'id'>
+  >;
+  albumByMusicBrainzId?: Resolver<
+    Maybe<ResolversTypes['Album']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryAlbumByMusicBrainzIdArgs, 'musicbrainzId'>
   >;
   albumRecommendations?: Resolver<
     Array<ResolversTypes['Album']>,

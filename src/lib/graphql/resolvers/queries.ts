@@ -365,6 +365,20 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  albumByMusicBrainzId: async (_, { musicbrainzId }, { prisma }) => {
+    try {
+      const album = await prisma.album.findFirst({
+        where: { musicbrainzId },
+      });
+      if (!album) return null;
+      return { id: album.id } as ResolversTypes['Album'];
+    } catch (error) {
+      throw new GraphQLError(
+        `Failed to fetch album by MusicBrainz ID: ${error}`
+      );
+    }
+  },
+
   track: async (_, { id }, { prisma }) => {
     try {
       const track = await prisma.track.findUnique({ where: { id } });

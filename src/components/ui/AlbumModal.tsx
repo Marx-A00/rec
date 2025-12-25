@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, Share2, MoreHorizontal, User, Clock, Check, Loader2 } from 'lucide-react';
+import { Heart, Share2, MoreHorizontal, User, Clock, Check, Loader2, RefreshCcw, Database, Trash2, ExternalLink, AlertCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 
@@ -18,10 +18,23 @@ import { CollectionAlbum } from '@/types/collection';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
 import { graphqlClient } from '@/lib/graphql-client';
+import { isAdmin } from '@/lib/permissions';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   useAddToListenLaterMutation,
   GetArtistByMusicBrainzIdDocument,
   type GetArtistByMusicBrainzIdQuery,
+  useTriggerAlbumEnrichmentMutation,
+  useAddAlbumMutation,
+  useDeleteAlbumMutation,
+  EnrichmentPriority,
 } from '@/generated/graphql';
 
 interface AlbumModalProps {
@@ -70,6 +83,14 @@ export default function AlbumModal({
     },
     onError: () => showToast('Failed to add to Listen Later', 'error'),
   });
+
+  // Admin mutation hooks
+  const enrichMutation = useTriggerAlbumEnrichmentMutation();
+  const addAlbumMutation = useAddAlbumMutation();
+  const deleteMutation = useDeleteAlbumMutation();
+
+  // Delete confirmation modal state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const isMasterRelease = useMemo(
     () => isRelease(data) && data.type === 'master',
@@ -410,6 +431,79 @@ export default function AlbumModal({
         albumData,
       });
     } catch {}
+  };
+
+  // Admin action handlers
+  const handleEnrichAlbum = async () => {
+    if (!albumForInteractions?.id) return;
+
+    try {
+      const result = await enrichMutation.mutateAsync({
+        id: albumForInteractions.id,
+        priority: EnrichmentPriority.High,
+      });
+
+      if (result.triggerAlbumEnrichment.success) {
+        showToast('Enrichment job queued successfully', 'success');
+      } else {
+        throw new Error(result.triggerAlbumEnrichment.message || 'Failed to queue enrichment');
+      }
+    } catch (error) {
+      showToast(`Failed to queue enrichment: ${error}`, 'error');
+    }
+  };
+
+  const handleAddToDatabase = async () => {
+    if (!albumForInteractions) return;
+
+    if (albumForInteractions.source === 'local') {
+      showToast('Album is already in the database', 'error');
+      return;
+    }
+
+    try {
+      const albumData = {
+        title: albumForInteractions.title,
+        artists: albumForInteractions.artists.map(artist => ({
+          artistName: artist.name,
+          artistId: artist.id || undefined,
+        })),
+        coverImageUrl: albumForInteractions.image?.url || undefined,
+        musicbrainzId: albumForInteractions.musicbrainzId || undefined,
+        releaseDate: albumForInteractions.year ? `${albumForInteractions.year}-01-01` : undefined,
+        totalTracks: albumForInteractions.metadata?.numberOfTracks || undefined,
+      };
+
+      await addAlbumMutation.mutateAsync({ input: albumData });
+      showToast('Album added to database successfully', 'success');
+    } catch (error) {
+      showToast(`Failed to add album: ${error}`, 'error');
+    }
+  };
+
+  const handleDeleteAlbum = async () => {
+    if (!albumForInteractions?.id) return;
+
+    try {
+      const result = await deleteMutation.mutateAsync({
+        id: albumForInteractions.id,
+      });
+
+      if (result.deleteAlbum.success) {
+        showToast('Album deleted successfully', 'success');
+        setDeleteModalOpen(false);
+        onClose();
+      } else {
+        throw new Error(result.deleteAlbum.message || 'Failed to delete album');
+      }
+    } catch (error) {
+      showToast(`Failed to delete album: ${error}`, 'error');
+    }
+  };
+
+  const handleViewInAdmin = () => {
+    if (!albumForInteractions?.id) return;
+    window.open(`/admin/music-database?id=${albumForInteractions.id}`, '_blank');
   };
 
   const handleMoreActions = () => {
@@ -881,9 +975,150 @@ export default function AlbumModal({
             </div>
           )}
 
+          {/* Admin Actions Section */}
+          {albumForInteractions && isAdmin(session?.user?.role) && (
+            <div className='mt-6 rounded-lg border border-amber-900/30 bg-amber-950/10 p-4'>
+              <h3 className='mb-3 text-sm font-medium text-amber-200'>
+                Admin Actions
+              </h3>
+              <div className='grid grid-cols-2 gap-2'>
+                {/* Enrich Album */}
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={handleEnrichAlbum}
+                  disabled={enrichMutation.isPending}
+                  className='gap-1.5 border-amber-800/50 bg-amber-950/20 text-amber-200 hover:bg-amber-900/30 hover:text-amber-100'
+                >
+                  {enrichMutation.isPending ? (
+                    <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                  ) : (
+                    <RefreshCcw className='h-3.5 w-3.5' />
+                  )}
+                  Enrich
+                </Button>
+
+                {/* Add to Database (only for external albums) */}
+                {albumForInteractions.source !== 'local' && (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={handleAddToDatabase}
+                    disabled={addAlbumMutation.isPending}
+                    className='gap-1.5 border-emerald-800/50 bg-emerald-950/20 text-emerald-200 hover:bg-emerald-900/30 hover:text-emerald-100'
+                  >
+                    {addAlbumMutation.isPending ? (
+                      <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                    ) : (
+                      <Database className='h-3.5 w-3.5' />
+                    )}
+                    Add to DB
+                  </Button>
+                )}
+
+                {/* Delete (only for local albums) */}
+                {albumForInteractions.source === 'local' && (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => setDeleteModalOpen(true)}
+                    disabled={deleteMutation.isPending}
+                    className='gap-1.5 border-red-800/50 bg-red-950/20 text-red-200 hover:bg-red-900/30 hover:text-red-100'
+                  >
+                    <Trash2 className='h-3.5 w-3.5' />
+                    Delete
+                  </Button>
+                )}
+
+                {/* Admin Panel Link */}
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={handleViewInAdmin}
+                  className='gap-1.5 border-zinc-700/50 bg-zinc-900/20 text-zinc-300 hover:bg-zinc-800/30 hover:text-zinc-100'
+                >
+                  <ExternalLink className='h-3.5 w-3.5' />
+                  Admin Panel
+                </Button>
+              </div>
+            </div>
+          )}
+
           {renderDetails()}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className='sm:max-w-md'>
+          <DialogHeader>
+            <DialogTitle>Delete Album</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this album? This action cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {albumForInteractions && (
+            <div className='my-4'>
+              <div className='rounded-lg border border-zinc-800 bg-zinc-900/50 p-3'>
+                <p className='font-medium text-zinc-100'>
+                  {albumForInteractions.title}
+                </p>
+                <p className='text-sm text-zinc-400'>
+                  {albumForInteractions.artists
+                    .map(a => a.name)
+                    .join(', ')}
+                </p>
+              </div>
+
+              <div className='mt-4 rounded-lg border border-red-900/50 bg-red-950/20 p-3'>
+                <div className='flex gap-2'>
+                  <AlertCircle className='mt-0.5 h-4 w-4 flex-shrink-0 text-red-400' />
+                  <div className='text-sm text-red-200'>
+                    <p className='font-medium'>This will permanently delete:</p>
+                    <ul className='mt-1 list-inside list-disc space-y-0.5 text-red-300'>
+                      <li>All collection entries</li>
+                      <li>All recommendations (as basis or target)</li>
+                      <li>All tracks and metadata</li>
+                      <li>All artist relationships</li>
+                      <li>All enrichment logs</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setDeleteModalOpen(false)}
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant='destructive'
+              onClick={handleDeleteAlbum}
+              disabled={deleteMutation.isPending}
+              className='gap-2'
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className='h-4 w-4' />
+                  Delete Permanently
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Toast Notification */}
       <Toast

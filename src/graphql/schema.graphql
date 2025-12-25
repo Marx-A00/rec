@@ -915,6 +915,7 @@ type Query {
   artist(id: UUID!): Artist
   artistByMusicBrainzId(musicbrainzId: UUID!): Artist
   album(id: UUID!): Album
+  albumByMusicBrainzId(musicbrainzId: String!): Album
   track(id: UUID!): Track
   albumTracks(albumId: UUID!): [Track!]!
   searchTracks(query: String!, skip: Int, limit: Int = 20): [Track!]!

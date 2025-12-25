@@ -790,6 +790,7 @@ export type Query = {
   __typename?: 'Query';
   activeJobs: Array<JobRecord>;
   album?: Maybe<Album>;
+  albumByMusicBrainzId?: Maybe<Album>;
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
   artist?: Maybe<Artist>;
@@ -839,6 +840,10 @@ export type Query = {
 
 export type QueryAlbumArgs = {
   id: Scalars['UUID']['input'];
+};
+
+export type QueryAlbumByMusicBrainzIdArgs = {
+  musicbrainzId: Scalars['String']['input'];
 };
 
 export type QueryAlbumRecommendationsArgs = {
@@ -1753,6 +1758,30 @@ export type GetAlbumDetailsAdminQuery = {
         role: string;
         artist: { __typename?: 'Artist'; id: string; name: string };
       }>;
+    }>;
+  } | null;
+};
+
+export type AlbumByMusicBrainzIdQueryVariables = Exact<{
+  musicbrainzId: Scalars['String']['input'];
+}>;
+
+export type AlbumByMusicBrainzIdQuery = {
+  __typename?: 'Query';
+  albumByMusicBrainzId?: {
+    __typename?: 'Album';
+    id: string;
+    musicbrainzId?: string | null;
+    title: string;
+    releaseDate?: Date | null;
+    coverArtUrl?: string | null;
+    dataQuality?: DataQuality | null;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+    needsEnrichment: boolean;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
     }>;
   } | null;
 };
@@ -3653,6 +3682,100 @@ export const useInfiniteGetAlbumDetailsAdminQuery = <
 useInfiniteGetAlbumDetailsAdminQuery.getKey = (
   variables: GetAlbumDetailsAdminQueryVariables
 ) => ['GetAlbumDetailsAdmin.infinite', variables];
+
+export const AlbumByMusicBrainzIdDocument = `
+    query AlbumByMusicBrainzId($musicbrainzId: String!) {
+  albumByMusicBrainzId(musicbrainzId: $musicbrainzId) {
+    id
+    musicbrainzId
+    title
+    releaseDate
+    coverArtUrl
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    needsEnrichment
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+
+export const useAlbumByMusicBrainzIdQuery = <
+  TData = AlbumByMusicBrainzIdQuery,
+  TError = unknown,
+>(
+  variables: AlbumByMusicBrainzIdQueryVariables,
+  options?: Omit<
+    UseQueryOptions<AlbumByMusicBrainzIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      AlbumByMusicBrainzIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<AlbumByMusicBrainzIdQuery, TError, TData>({
+    queryKey: ['AlbumByMusicBrainzId', variables],
+    queryFn: fetcher<
+      AlbumByMusicBrainzIdQuery,
+      AlbumByMusicBrainzIdQueryVariables
+    >(AlbumByMusicBrainzIdDocument, variables),
+    ...options,
+  });
+};
+
+useAlbumByMusicBrainzIdQuery.getKey = (
+  variables: AlbumByMusicBrainzIdQueryVariables
+) => ['AlbumByMusicBrainzId', variables];
+
+export const useInfiniteAlbumByMusicBrainzIdQuery = <
+  TData = InfiniteData<AlbumByMusicBrainzIdQuery>,
+  TError = unknown,
+>(
+  variables: AlbumByMusicBrainzIdQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<AlbumByMusicBrainzIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      AlbumByMusicBrainzIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<AlbumByMusicBrainzIdQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'AlbumByMusicBrainzId.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            AlbumByMusicBrainzIdQuery,
+            AlbumByMusicBrainzIdQueryVariables
+          >(AlbumByMusicBrainzIdDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteAlbumByMusicBrainzIdQuery.getKey = (
+  variables: AlbumByMusicBrainzIdQueryVariables
+) => ['AlbumByMusicBrainzId.infinite', variables];
 
 export const GetArtistByMusicBrainzIdDocument = `
     query GetArtistByMusicBrainzId($musicbrainzId: UUID!) {

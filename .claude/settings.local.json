@@ -3,7 +3,8 @@
     "allow": [
       "WebSearch",
       "Read(//Users/marcosandrade/roaming/projects/rec/.taskmaster/docs/PRDs/**)",
-      "Read(//Users/marcosandrade/roaming/projects/rec/.taskmaster/docs/**)"
+      "Read(//Users/marcosandrade/roaming/projects/rec/.taskmaster/docs/**)",
+      "Bash(task-master:*)"
     ],
     "deny": [],
     "ask": []

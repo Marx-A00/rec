@@ -90,3 +90,24 @@ query GetAlbumDetailsAdmin($id: UUID!) {
     }
   }
 }
+
+# Query to find album by MusicBrainz ID for checking if external albums exist in DB
+query AlbumByMusicBrainzId($musicbrainzId: String!) {
+  albumByMusicBrainzId(musicbrainzId: $musicbrainzId) {
+    id
+    musicbrainzId
+    title
+    releaseDate
+    coverArtUrl
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    needsEnrichment
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
