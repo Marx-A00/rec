@@ -150,6 +150,8 @@ export default function CollectionPopover({
       // Invalidate queries to refresh UI
       queryClient.invalidateQueries({ queryKey: ['GetMyCollections'] });
       queryClient.invalidateQueries({ queryKey: ['AlbumByMusicBrainzId'] });
+      // Also invalidate album details queries to update admin panel state
+      queryClient.invalidateQueries({ queryKey: ['GetAlbumDetailsAdmin'] });
     } catch (error) {
       console.error('Error toggling collection:', error);
       showToast(
