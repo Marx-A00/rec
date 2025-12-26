@@ -404,6 +404,7 @@ export type EnrichmentLog = {
   jobId?: Maybe<Scalars['String']['output']>;
   metadata?: Maybe<Scalars['JSON']['output']>;
   operation: Scalars['String']['output'];
+  reason?: Maybe<Scalars['String']['output']>;
   retryCount: Scalars['Int']['output'];
   sources: Array<Scalars['String']['output']>;
   status: EnrichmentLogStatus;
@@ -676,11 +677,13 @@ export type MutationRetryJobArgs = {
 };
 
 export type MutationTriggerAlbumEnrichmentArgs = {
+  force?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['UUID']['input'];
   priority?: InputMaybe<EnrichmentPriority>;
 };
 
 export type MutationTriggerArtistEnrichmentArgs = {
+  force?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['UUID']['input'];
   priority?: InputMaybe<EnrichmentPriority>;
 };
@@ -2421,6 +2424,7 @@ export type EnrichmentLogResolvers<
   jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   metadata?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
   operation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  reason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   retryCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   sources?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<

@@ -18,6 +18,7 @@ query GetEnrichmentLogs(
     operation
     sources
     status
+    reason
     fieldsEnriched
     dataQualityBefore
     dataQualityAfter
@@ -49,16 +50,16 @@ query GetEnrichmentStats(
   }
 }
 
-mutation TriggerAlbumEnrichment($id: UUID!, $priority: EnrichmentPriority) {
-  triggerAlbumEnrichment(id: $id, priority: $priority) {
+mutation TriggerAlbumEnrichment($id: UUID!, $priority: EnrichmentPriority, $force: Boolean) {
+  triggerAlbumEnrichment(id: $id, priority: $priority, force: $force) {
     success
     jobId
     message
   }
 }
 
-mutation TriggerArtistEnrichment($id: UUID!, $priority: EnrichmentPriority) {
-  triggerArtistEnrichment(id: $id, priority: $priority) {
+mutation TriggerArtistEnrichment($id: UUID!, $priority: EnrichmentPriority, $force: Boolean) {
+  triggerArtistEnrichment(id: $id, priority: $priority, force: $force) {
     success
     jobId
     message

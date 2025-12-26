@@ -430,6 +430,7 @@ export type EnrichmentLog = {
   jobId?: Maybe<Scalars['String']['output']>;
   metadata?: Maybe<Scalars['JSON']['output']>;
   operation: Scalars['String']['output'];
+  reason?: Maybe<Scalars['String']['output']>;
   retryCount: Scalars['Int']['output'];
   sources: Array<Scalars['String']['output']>;
   status: EnrichmentLogStatus;
@@ -702,11 +703,13 @@ export type MutationRetryJobArgs = {
 };
 
 export type MutationTriggerAlbumEnrichmentArgs = {
+  force?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['UUID']['input'];
   priority?: InputMaybe<EnrichmentPriority>;
 };
 
 export type MutationTriggerArtistEnrichmentArgs = {
+  force?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['UUID']['input'];
   priority?: InputMaybe<EnrichmentPriority>;
 };
@@ -2045,6 +2048,7 @@ export type GetEnrichmentLogsQuery = {
     operation: string;
     sources: Array<string>;
     status: EnrichmentLogStatus;
+    reason?: string | null;
     fieldsEnriched: Array<string>;
     dataQualityBefore?: DataQuality | null;
     dataQualityAfter?: DataQuality | null;
@@ -2084,6 +2088,7 @@ export type GetEnrichmentStatsQuery = {
 export type TriggerAlbumEnrichmentMutationVariables = Exact<{
   id: Scalars['UUID']['input'];
   priority?: InputMaybe<EnrichmentPriority>;
+  force?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 export type TriggerAlbumEnrichmentMutation = {
@@ -2099,6 +2104,7 @@ export type TriggerAlbumEnrichmentMutation = {
 export type TriggerArtistEnrichmentMutationVariables = Exact<{
   id: Scalars['UUID']['input'];
   priority?: InputMaybe<EnrichmentPriority>;
+  force?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 export type TriggerArtistEnrichmentMutation = {
@@ -4258,6 +4264,7 @@ export const GetEnrichmentLogsDocument = `
     operation
     sources
     status
+    reason
     fieldsEnriched
     dataQualityBefore
     dataQualityAfter
@@ -4446,8 +4453,8 @@ useInfiniteGetEnrichmentStatsQuery.getKey = (
     : ['GetEnrichmentStats.infinite', variables];
 
 export const TriggerAlbumEnrichmentDocument = `
-    mutation TriggerAlbumEnrichment($id: UUID!, $priority: EnrichmentPriority) {
-  triggerAlbumEnrichment(id: $id, priority: $priority) {
+    mutation TriggerAlbumEnrichment($id: UUID!, $priority: EnrichmentPriority, $force: Boolean) {
+  triggerAlbumEnrichment(id: $id, priority: $priority, force: $force) {
     success
     jobId
     message
@@ -4485,8 +4492,8 @@ export const useTriggerAlbumEnrichmentMutation = <
 useTriggerAlbumEnrichmentMutation.getKey = () => ['TriggerAlbumEnrichment'];
 
 export const TriggerArtistEnrichmentDocument = `
-    mutation TriggerArtistEnrichment($id: UUID!, $priority: EnrichmentPriority) {
-  triggerArtistEnrichment(id: $id, priority: $priority) {
+    mutation TriggerArtistEnrichment($id: UUID!, $priority: EnrichmentPriority, $force: Boolean) {
+  triggerArtistEnrichment(id: $id, priority: $priority, force: $force) {
     success
     jobId
     message

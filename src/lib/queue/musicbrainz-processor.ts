@@ -526,23 +526,32 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
   const artistName = album.artists?.[0]?.artist?.name || 'Unknown Artist';
 
   // Check if enrichment is needed (with logger for cooldown checks)
-  const needsEnrichment = await shouldEnrichAlbum(album, enrichmentLogger);
-  if (!needsEnrichment) {
-    console.log(`⏭️ Album ${data.albumId} does not need enrichment, skipping`);
+  const enrichmentDecision = await shouldEnrichAlbum(album, enrichmentLogger);
+  if (!enrichmentDecision.shouldEnrich) {
+    console.log(`⏭️ Album ${data.albumId} does not need enrichment, skipping - ${enrichmentDecision.reason}`);
 
-    // Log the skip
+    // Reset enrichment status if it was set to IN_PROGRESS by the admin trigger
+    if (album.enrichmentStatus === 'IN_PROGRESS') {
+      await prisma.album.update({
+        where: { id: data.albumId },
+        data: { enrichmentStatus: 'COMPLETED' },
+      });
+    }
+
+    // Log the skip with the reason
     await enrichmentLogger.logEnrichment({
       entityType: 'ALBUM',
       entityId: album.id,
       operation: JOB_TYPES.ENRICH_ALBUM,
       sources: [],
       status: 'SKIPPED',
+      reason: enrichmentDecision.reason,
       fieldsEnriched: [],
       dataQualityBefore,
       dataQualityAfter: album.dataQuality || 'LOW',
       durationMs: Date.now() - startTime,
       apiCallCount: 0,
-      metadata: { albumTitle: album.title, artistName, reason: 'enrichment_not_needed' },
+      metadata: { albumTitle: album.title, artistName, confidence: enrichmentDecision.confidence },
       jobId: data.requestId,
       triggeredBy: data.userAction || 'manual',
     });
@@ -550,7 +559,7 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
     return {
       albumId: data.albumId,
       action: 'skipped',
-      reason: 'enrichment_not_needed',
+      reason: enrichmentDecision.reason,
       currentDataQuality: album.dataQuality,
       lastEnriched: album.lastEnriched,
     };
@@ -869,6 +878,14 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
     console.log(
       `⏭️ Artist ${data.artistId} does not need enrichment, skipping - ${enrichmentDecision.reason}`
     );
+
+    // Reset enrichment status if it was set to IN_PROGRESS by the admin trigger
+    if (artist.enrichmentStatus === 'IN_PROGRESS') {
+      await prisma.artist.update({
+        where: { id: data.artistId },
+        data: { enrichmentStatus: 'COMPLETED' },
+      });
+    }
 
     // Log the skip with the reason
     await enrichmentLogger.logEnrichment({

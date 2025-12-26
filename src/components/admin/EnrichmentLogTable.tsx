@@ -175,6 +175,7 @@ export function EnrichmentLogTable({
               <TableHead className="text-zinc-400">Operation</TableHead>
               <TableHead className="text-zinc-400">Sources</TableHead>
               <TableHead className="text-zinc-400">Status</TableHead>
+              <TableHead className="text-zinc-400">Reason</TableHead>
               <TableHead className="text-zinc-400">Fields Changed</TableHead>
               <TableHead className="text-zinc-400">Changes</TableHead>
               <TableHead className="text-zinc-400 text-right">Duration</TableHead>
@@ -213,6 +214,18 @@ export function EnrichmentLogTable({
                 </TableCell>
                 <TableCell>
                   <EnrichmentStatusBadge status={log.status} />
+                </TableCell>
+                <TableCell className="max-w-xs">
+                  {log.reason ? (
+                    <div
+                      className="text-xs text-zinc-300 truncate"
+                      title={log.reason}
+                    >
+                      {log.reason}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-zinc-600">-</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   {log.fieldsEnriched.length > 0 ? (
