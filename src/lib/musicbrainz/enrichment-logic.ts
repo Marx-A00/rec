@@ -63,12 +63,12 @@ export interface ArtistEnrichmentData {
  * Determine if an album needs MusicBrainz enrichment
  * @param album Album data with enrichment metadata
  * @param enrichmentLogger Optional logger to check enrichment history and cooldowns
- * @returns boolean decision (or Promise<boolean> if logger is provided)
+ * @returns EnrichmentDecision with shouldEnrich boolean and reason (or Promise<EnrichmentDecision> if logger is provided)
  */
 export function shouldEnrichAlbum(
   album: AlbumEnrichmentData,
   enrichmentLogger?: EnrichmentLogger
-): boolean | Promise<boolean> {
+): EnrichmentDecision | Promise<EnrichmentDecision> {
   // If no logger provided, use synchronous logic (backward compatible)
   if (!enrichmentLogger) {
     return shouldEnrichAlbumSync(album);
@@ -81,20 +81,36 @@ export function shouldEnrichAlbum(
 /**
  * Synchronous enrichment check (original logic)
  */
-function shouldEnrichAlbumSync(album: AlbumEnrichmentData): boolean {
+function shouldEnrichAlbumSync(album: AlbumEnrichmentData): EnrichmentDecision {
   // Skip if enrichment is currently in progress
   if (album.enrichmentStatus === 'IN_PROGRESS') {
-    return false;
+    return {
+      shouldEnrich: false,
+      reason: 'Enrichment already in progress',
+      confidence: 1.0,
+    };
   }
 
   // Always enrich if never enriched or failed
   if (!album.lastEnriched || album.enrichmentStatus === 'FAILED') {
-    return true;
+    return {
+      shouldEnrich: true,
+      reason: album.enrichmentStatus === 'FAILED' ? 'Previous enrichment failed' : 'Never enriched',
+      confidence: 0.95,
+    };
   }
 
   // Re-enrich if missing critical fields (prioritize this over time-based checks)
-  if (!album.musicbrainzId || !album.releaseDate) {
-    return true;
+  const missingFields = [];
+  if (!album.musicbrainzId) missingFields.push('musicbrainzId');
+  if (!album.releaseDate) missingFields.push('releaseDate');
+
+  if (missingFields.length > 0) {
+    return {
+      shouldEnrich: true,
+      reason: `Missing critical fields: ${missingFields.join(', ')}`,
+      confidence: 0.9,
+    };
   }
 
   // 🎵 NEW: Re-enrich if album has no tracks (for pure MusicBrainz track approach)
@@ -104,7 +120,11 @@ function shouldEnrichAlbumSync(album: AlbumEnrichmentData): boolean {
     Array.isArray(album.tracks) &&
     album.tracks.length === 0
   ) {
-    return true;
+    return {
+      shouldEnrich: true,
+      reason: 'Album has no tracks - needs track enrichment',
+      confidence: 0.85,
+    };
   }
 
   // Re-enrich if data quality is low and it's been more than 30 days
@@ -113,10 +133,20 @@ function shouldEnrichAlbumSync(album: AlbumEnrichmentData): boolean {
       (Date.now() - new Date(album.lastEnriched).getTime()) /
         (1000 * 60 * 60 * 24)
     );
-    return daysSinceEnrichment > 30;
+    if (daysSinceEnrichment > 30) {
+      return {
+        shouldEnrich: true,
+        reason: `Low quality data older than 30 days (${daysSinceEnrichment} days)`,
+        confidence: 0.7,
+      };
+    }
   }
 
-  return false;
+  return {
+    shouldEnrich: false,
+    reason: `High quality data enriched ${album.lastEnriched ? 'recently' : 'previously'}`,
+    confidence: 0.8,
+  };
 }
 
 /**
@@ -125,7 +155,7 @@ function shouldEnrichAlbumSync(album: AlbumEnrichmentData): boolean {
 async function shouldEnrichAlbumAsync(
   album: AlbumEnrichmentData,
   enrichmentLogger: EnrichmentLogger
-): Promise<boolean> {
+): Promise<EnrichmentDecision> {
   // Check enrichment history for cooldown periods FIRST
   const hasNoData = await enrichmentLogger.hasRecentNoDataStatus(
     'ALBUM',
@@ -136,7 +166,11 @@ async function shouldEnrichAlbumAsync(
     console.log(
       `⏭️  Album ${album.id} (${album.title}) marked as NO_DATA_AVAILABLE within 90 days, skipping enrichment`
     );
-    return false;
+    return {
+      shouldEnrich: false,
+      reason: 'Cooldown: Recent NO_DATA_AVAILABLE status (within 90 days)',
+      confidence: 1.0,
+    };
   }
 
   const hasRecentFailure = await enrichmentLogger.hasRecentFailure(
@@ -148,7 +182,11 @@ async function shouldEnrichAlbumAsync(
     console.log(
       `⏭️  Album ${album.id} (${album.title}) failed enrichment within 7 days, skipping (cooldown period)`
     );
-    return false;
+    return {
+      shouldEnrich: false,
+      reason: 'Cooldown: Recent FAILED enrichment (within 7 days)',
+      confidence: 1.0,
+    };
   }
 
   // Run existing synchronous logic
@@ -159,12 +197,12 @@ async function shouldEnrichAlbumAsync(
  * Determine if an artist needs MusicBrainz enrichment
  * @param artist Artist data with enrichment metadata
  * @param enrichmentLogger Optional logger to check enrichment history and cooldowns
- * @returns boolean decision (or Promise<boolean> if logger is provided)
+ * @returns EnrichmentDecision with shouldEnrich boolean and reason (or Promise<EnrichmentDecision> if logger is provided)
  */
 export function shouldEnrichArtist(
   artist: ArtistEnrichmentData,
   enrichmentLogger?: EnrichmentLogger
-): boolean | Promise<boolean> {
+): EnrichmentDecision | Promise<EnrichmentDecision> {
   // If no logger provided, use synchronous logic (backward compatible)
   if (!enrichmentLogger) {
     return shouldEnrichArtistSync(artist);
@@ -177,15 +215,36 @@ export function shouldEnrichArtist(
 /**
  * Synchronous enrichment check (original logic)
  */
-function shouldEnrichArtistSync(artist: ArtistEnrichmentData): boolean {
+function shouldEnrichArtistSync(artist: ArtistEnrichmentData): EnrichmentDecision {
   // Skip if enrichment is currently in progress
   if (artist.enrichmentStatus === 'IN_PROGRESS') {
-    return false;
+    return {
+      shouldEnrich: false,
+      reason: 'Enrichment already in progress',
+      confidence: 1.0,
+    };
   }
 
   // Always enrich if never enriched or failed
   if (!artist.lastEnriched || artist.enrichmentStatus === 'FAILED') {
-    return true;
+    return {
+      shouldEnrich: true,
+      reason: artist.enrichmentStatus === 'FAILED' ? 'Previous enrichment failed' : 'Never enriched',
+      confidence: 0.95,
+    };
+  }
+
+  // Re-enrich if missing critical fields
+  const missingFields = [];
+  if (!artist.musicbrainzId) missingFields.push('musicbrainzId');
+  if (!artist.biography) missingFields.push('biography');
+
+  if (missingFields.length > 0) {
+    return {
+      shouldEnrich: true,
+      reason: `Missing critical fields: ${missingFields.join(', ')}`,
+      confidence: 0.9,
+    };
   }
 
   // Re-enrich if data quality is low and it's been more than 30 days
@@ -194,15 +253,20 @@ function shouldEnrichArtistSync(artist: ArtistEnrichmentData): boolean {
       (Date.now() - new Date(artist.lastEnriched).getTime()) /
         (1000 * 60 * 60 * 24)
     );
-    return daysSinceEnrichment > 30;
+    if (daysSinceEnrichment > 30) {
+      return {
+        shouldEnrich: true,
+        reason: `Low quality data older than 30 days (${daysSinceEnrichment} days)`,
+        confidence: 0.7,
+      };
+    }
   }
 
-  // Re-enrich if missing critical fields
-  if (!artist.musicbrainzId || !artist.biography) {
-    return true;
-  }
-
-  return false;
+  return {
+    shouldEnrich: false,
+    reason: `High quality data enriched ${artist.lastEnriched ? 'recently' : 'previously'}`,
+    confidence: 0.8,
+  };
 }
 
 /**
@@ -211,7 +275,7 @@ function shouldEnrichArtistSync(artist: ArtistEnrichmentData): boolean {
 async function shouldEnrichArtistAsync(
   artist: ArtistEnrichmentData,
   enrichmentLogger: EnrichmentLogger
-): Promise<boolean> {
+): Promise<EnrichmentDecision> {
   // Check enrichment history for cooldown periods FIRST
   const hasNoData = await enrichmentLogger.hasRecentNoDataStatus(
     'ARTIST',
@@ -222,7 +286,11 @@ async function shouldEnrichArtistAsync(
     console.log(
       `⏭️  Artist ${artist.id} (${artist.name}) marked as NO_DATA_AVAILABLE within 90 days, skipping enrichment`
     );
-    return false;
+    return {
+      shouldEnrich: false,
+      reason: 'Cooldown: Recent NO_DATA_AVAILABLE status (within 90 days)',
+      confidence: 1.0,
+    };
   }
 
   const hasRecentFailure = await enrichmentLogger.hasRecentFailure(
@@ -234,7 +302,11 @@ async function shouldEnrichArtistAsync(
     console.log(
       `⏭️  Artist ${artist.id} (${artist.name}) failed enrichment within 7 days, skipping (cooldown period)`
     );
-    return false;
+    return {
+      shouldEnrich: false,
+      reason: 'Cooldown: Recent FAILED enrichment (within 7 days)',
+      confidence: 1.0,
+    };
   }
 
   // Run existing synchronous logic

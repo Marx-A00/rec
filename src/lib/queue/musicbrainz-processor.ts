@@ -864,25 +864,26 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
   const dataQualityBefore = artist.dataQuality || 'LOW';
 
   // Check if enrichment is needed (with logger for cooldown checks)
-  const needsEnrichment = await shouldEnrichArtist(artist, enrichmentLogger);
-  if (!needsEnrichment) {
+  const enrichmentDecision = await shouldEnrichArtist(artist, enrichmentLogger);
+  if (!enrichmentDecision.shouldEnrich) {
     console.log(
-      `⏭️ Artist ${data.artistId} does not need enrichment, skipping`
+      `⏭️ Artist ${data.artistId} does not need enrichment, skipping - ${enrichmentDecision.reason}`
     );
 
-    // Log the skip
+    // Log the skip with the reason
     await enrichmentLogger.logEnrichment({
       entityType: 'ARTIST',
       entityId: artist.id,
       operation: JOB_TYPES.ENRICH_ARTIST,
       sources: [],
       status: 'SKIPPED',
+      reason: enrichmentDecision.reason,
       fieldsEnriched: [],
       dataQualityBefore,
       dataQualityAfter: artist.dataQuality || 'LOW',
       durationMs: Date.now() - startTime,
       apiCallCount: 0,
-      metadata: { artistName: artist.name, reason: 'enrichment_not_needed' },
+      metadata: { artistName: artist.name, confidence: enrichmentDecision.confidence },
       jobId: data.requestId,
       triggeredBy: data.userAction || 'manual',
     });
@@ -890,7 +891,7 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
     return {
       artistId: data.artistId,
       action: 'skipped',
-      reason: 'enrichment_not_needed',
+      reason: enrichmentDecision.reason,
       currentDataQuality: artist.dataQuality,
       lastEnriched: artist.lastEnriched,
     };

@@ -40,6 +40,7 @@ export interface EnrichmentLogData {
   operation: EnrichmentOperation;
   sources: EnrichmentSource[];
   status: EnrichmentStatus;
+  reason?: string | null;
   fieldsEnriched: string[];
   dataQualityBefore?: DataQuality | null;
   dataQualityAfter?: DataQuality | null;
@@ -99,6 +100,7 @@ export class EnrichmentLogger {
           operation: data.operation,
           sources: data.sources,
           status: data.status,
+          reason: data.reason ?? undefined,
           fieldsEnriched: data.fieldsEnriched,
           dataQualityBefore: data.dataQualityBefore ?? undefined,
           dataQualityAfter: data.dataQualityAfter ?? undefined,
