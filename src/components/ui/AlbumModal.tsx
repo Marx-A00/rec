@@ -260,6 +260,38 @@ export default function AlbumModal({
   // Get unified album state for smart admin button behavior and collection checks
   const albumState = useAlbumState(albumForInteractions);
 
+  // Poll for enrichment status updates when enrichment is in progress
+  useEffect(() => {
+    // Only poll if enrichment is in progress
+    const shouldPoll =
+      albumState.enrichmentStatus === EnrichmentStatus.InProgress ||
+      albumState.enrichmentStatus === EnrichmentStatus.Pending;
+
+    console.log('[AlbumModal] Polling check:', {
+      shouldPoll,
+      enrichmentStatus: albumState.enrichmentStatus,
+      existsInDb: albumState.existsInDb,
+      dbId: albumState.dbId,
+    });
+
+    if (shouldPoll && albumState.existsInDb) {
+      console.log('[AlbumModal] Starting polling interval...');
+      const pollInterval = setInterval(() => {
+        console.log('[AlbumModal] 🔄 Polling for enrichment status...', {
+          dbId: albumState.dbId,
+          currentStatus: albumState.enrichmentStatus,
+        });
+        queryClient.invalidateQueries({ queryKey: ['albumByMusicBrainzId'] });
+        queryClient.invalidateQueries({ queryKey: ['albumDetails'] });
+      }, 3000); // Poll every 3 seconds
+
+      return () => {
+        console.log('[AlbumModal] Stopping polling interval');
+        clearInterval(pollInterval);
+      };
+    }
+  }, [albumState.enrichmentStatus, albumState.existsInDb, albumState.dbId, queryClient]);
+
   // Album interaction handlers
   // TODO: Performance optimization - Pass currentArtistContext from DiscographyTab
   // to skip the GetArtistByMusicBrainzId lookup when clicking artist button while
@@ -399,6 +431,10 @@ export default function AlbumModal({
 
       if (result.triggerAlbumEnrichment.success) {
         showToast('Enrichment job queued successfully', 'success');
+
+        // Invalidate album queries to trigger refetch and start polling
+        queryClient.invalidateQueries({ queryKey: ['albumByMusicBrainzId'] });
+        queryClient.invalidateQueries({ queryKey: ['albumDetails'] });
       } else {
         throw new Error(result.triggerAlbumEnrichment.message || 'Failed to queue enrichment');
       }
@@ -927,14 +963,20 @@ export default function AlbumModal({
                 <div className='mb-3 space-y-1 rounded-md border border-zinc-800/50 bg-zinc-900/30 p-2 text-xs'>
                   <div className='flex items-center justify-between'>
                     <span className='text-zinc-400'>Status:</span>
-                    <span className={`font-medium ${
-                      albumState.enrichmentStatus === EnrichmentStatus.Completed ? 'text-emerald-400' :
-                      albumState.enrichmentStatus === EnrichmentStatus.InProgress ? 'text-amber-400' :
-                      albumState.enrichmentStatus === EnrichmentStatus.Failed ? 'text-red-400' :
-                      'text-zinc-400'
-                    }`}>
-                      {albumState.enrichmentStatus || EnrichmentStatus.Pending}
-                    </span>
+                    <div className='flex items-center gap-1.5'>
+                      <span className={`font-medium ${
+                        albumState.enrichmentStatus === EnrichmentStatus.Completed ? 'text-emerald-400' :
+                        albumState.enrichmentStatus === EnrichmentStatus.InProgress ? 'text-amber-400' :
+                        albumState.enrichmentStatus === EnrichmentStatus.Failed ? 'text-red-400' :
+                        'text-zinc-400'
+                      }`}>
+                        {albumState.enrichmentStatus || EnrichmentStatus.Pending}
+                      </span>
+                      {(albumState.enrichmentStatus === EnrichmentStatus.InProgress ||
+                        albumState.enrichmentStatus === EnrichmentStatus.Pending) && (
+                        <Loader2 className='h-3 w-3 animate-spin text-amber-400' />
+                      )}
+                    </div>
                   </div>
                   {albumState.dataQuality && (
                     <div className='flex items-center justify-between'>

@@ -106,27 +106,42 @@ export function useAlbumState(album: Album | null): AlbumState {
   // Combine all loading states
   const isLoading = isLoadingExternalLookup || isLoadingDetails || isLoadingCollections;
 
-  // Extract enrichment data from the MusicBrainz lookup (which includes these fields)
+  // Extract enrichment data from albumDetails (for local albums) or MusicBrainz lookup (for external)
   const enrichmentStatus = useMemo(() => {
+    // For local albums, use albumDetails
+    if (isLocalAlbum && albumDetails?.album) {
+      return albumDetails.album.enrichmentStatus || null;
+    }
+    // For external albums, use MusicBrainz lookup
     if (externalAlbumData?.albumByMusicBrainzId) {
       return externalAlbumData.albumByMusicBrainzId.enrichmentStatus || null;
     }
     return null;
-  }, [externalAlbumData]);
+  }, [isLocalAlbum, albumDetails, externalAlbumData]);
 
   const lastEnriched = useMemo(() => {
+    // For local albums, use albumDetails
+    if (isLocalAlbum && albumDetails?.album?.lastEnriched) {
+      return new Date(albumDetails.album.lastEnriched);
+    }
+    // For external albums, use MusicBrainz lookup
     if (externalAlbumData?.albumByMusicBrainzId?.lastEnriched) {
       return new Date(externalAlbumData.albumByMusicBrainzId.lastEnriched);
     }
     return null;
-  }, [externalAlbumData]);
+  }, [isLocalAlbum, albumDetails, externalAlbumData]);
 
   const dataQuality = useMemo(() => {
+    // For local albums, use albumDetails
+    if (isLocalAlbum && albumDetails?.album) {
+      return albumDetails.album.dataQuality || null;
+    }
+    // For external albums, use MusicBrainz lookup
     if (externalAlbumData?.albumByMusicBrainzId) {
       return externalAlbumData.albumByMusicBrainzId.dataQuality || null;
     }
     return null;
-  }, [externalAlbumData]);
+  }, [isLocalAlbum, albumDetails, externalAlbumData]);
 
   return {
     existsInDb: !!dbId,
