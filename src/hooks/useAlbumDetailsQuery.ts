@@ -2,20 +2,26 @@ import { useQuery } from '@tanstack/react-query';
 
 import { graphqlClient } from '@/lib/graphql-client';
 import { GET_ALBUM_DETAILS } from '@/graphql/queries';
-import { Album } from '@/types/album';
 import { queryKeys, defaultQueryOptions, QueryError } from '@/lib/queries';
+import type {
+  GetAlbumDetailsAdminQuery,
+  GetAlbumDetailsAdminQueryVariables,
+} from '@/generated/graphql';
 import type {
   UseAlbumDetailsQueryOptions,
   UseAlbumDetailsQueryResult,
 } from '@/types/hooks';
 
+// Type for the album object returned by the GraphQL query
+export type AlbumDetailsData = NonNullable<GetAlbumDetailsAdminQuery['album']>;
+
 // ========================================
 // API Functions
 // ========================================
 
-const fetchAlbumDetailsGraphQL = async (albumId: string): Promise<Album> => {
+const fetchAlbumDetailsGraphQL = async (albumId: string): Promise<AlbumDetailsData> => {
   try {
-    const data = await graphqlClient.request<{ album: Album }>(
+    const data = await graphqlClient.request<GetAlbumDetailsAdminQuery, GetAlbumDetailsAdminQueryVariables>(
       GET_ALBUM_DETAILS,
       { id: albumId }
     );

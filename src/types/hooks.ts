@@ -12,6 +12,7 @@ import {
   CreateRecommendationRequest,
 } from '@/types/recommendation';
 import { QueryError } from '@/lib/queries';
+import type { AlbumDetailsData } from '@/hooks/useAlbumDetailsQuery';
 
 // ========================================
 // Common Hook Option Types
@@ -37,10 +38,10 @@ export type UseUsersQueryResult = UseQueryResult<User[], QueryError>;
 
 // Album Details Query
 export interface UseAlbumDetailsQueryOptions extends BaseQueryOptions {
-  initialData?: Album;
+  initialData?: AlbumDetailsData;
 }
 
-export type UseAlbumDetailsQueryResult = UseQueryResult<Album, QueryError>;
+export type UseAlbumDetailsQueryResult = UseQueryResult<AlbumDetailsData, QueryError>;
 
 // Masters Query
 export type UseMastersQueryOptions = BaseQueryOptions;

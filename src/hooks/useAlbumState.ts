@@ -8,7 +8,7 @@ import {
   DataQuality,
   EnrichmentStatus,
 } from '@/generated/graphql';
-import { useAlbumDetailsQuery } from '@/hooks/useAlbumDetailsQuery';
+import { useAlbumDetailsQuery, type AlbumDetailsData } from '@/hooks/useAlbumDetailsQuery';
 
 export interface AlbumState {
   existsInDb: boolean;
@@ -107,11 +107,10 @@ export function useAlbumState(album: Album | null): AlbumState {
   const isLoading = isLoadingExternalLookup || isLoadingDetails || isLoadingCollections;
 
   // Extract enrichment data from albumDetails (for local albums) or MusicBrainz lookup (for external)
-  // Note: albumDetails REST API type doesn't include enrichment fields, but GraphQL query returns them
   const enrichmentStatus = useMemo(() => {
-    // For local albums, use albumDetails (cast to any since enrichmentStatus not in Album type)
+    // For local albums, use albumDetails (now properly typed with AlbumDetailsData)
     if (isLocalAlbum && albumDetails) {
-      return (albumDetails as any).enrichmentStatus || null;
+      return albumDetails.enrichmentStatus || null;
     }
     // For external albums, use MusicBrainz lookup
     if (externalAlbumData?.albumByMusicBrainzId) {
@@ -121,9 +120,9 @@ export function useAlbumState(album: Album | null): AlbumState {
   }, [isLocalAlbum, albumDetails, externalAlbumData]);
 
   const lastEnriched = useMemo(() => {
-    // For local albums, use albumDetails (cast to any since lastEnriched not in Album type)
-    if (isLocalAlbum && (albumDetails as any)?.lastEnriched) {
-      return new Date((albumDetails as any).lastEnriched);
+    // For local albums, use albumDetails (now properly typed with AlbumDetailsData)
+    if (isLocalAlbum && albumDetails?.lastEnriched) {
+      return new Date(albumDetails.lastEnriched);
     }
     // For external albums, use MusicBrainz lookup
     if (externalAlbumData?.albumByMusicBrainzId?.lastEnriched) {
@@ -133,9 +132,9 @@ export function useAlbumState(album: Album | null): AlbumState {
   }, [isLocalAlbum, albumDetails, externalAlbumData]);
 
   const dataQuality = useMemo(() => {
-    // For local albums, use albumDetails (cast to any since dataQuality not in Album type)
+    // For local albums, use albumDetails (now properly typed with AlbumDetailsData)
     if (isLocalAlbum && albumDetails) {
-      return (albumDetails as any).dataQuality || null;
+      return albumDetails.dataQuality || null;
     }
     // For external albums, use MusicBrainz lookup
     if (externalAlbumData?.albumByMusicBrainzId) {
