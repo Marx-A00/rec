@@ -26,6 +26,7 @@ import {
   ChevronLeft,
   ChevronsLeft,
   ChevronsRight,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -1912,6 +1913,7 @@ export default function MusicDatabasePage() {
                 setDeleteArtistModalOpen(false);
                 setArtistToDelete(null);
               }}
+              disabled={deleteArtistMutation.isPending}
               className='border-zinc-700 text-white hover:bg-zinc-800'
             >
               Cancel
@@ -1919,22 +1921,27 @@ export default function MusicDatabasePage() {
             <Button
               variant='destructive'
               onClick={handleDeleteArtist}
+              disabled={deleteArtistMutation.isPending}
               className='gap-2'
             >
-              <svg
-                className='h-4 w-4'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-                />
-              </svg>
-              Delete Permanently
+              {deleteArtistMutation.isPending ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <svg
+                  className='h-4 w-4'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+                  />
+                </svg>
+              )}
+              {deleteArtistMutation.isPending ? 'Deleting...' : 'Delete Permanently'}
             </Button>
           </DialogFooter>
         </DialogContent>
