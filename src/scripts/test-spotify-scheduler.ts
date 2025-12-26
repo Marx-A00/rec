@@ -27,10 +27,10 @@ async function testSpotifyScheduler() {
 
   // 3. Test scheduler status
   console.log('3️⃣ Checking scheduler status...');
-  const status = spotifyScheduler.getStatus();
+  const status = await spotifyScheduler.getStatus();
   console.log('Status:', {
     isRunning: status.isRunning,
-    activeJobs: status.activeJobs,
+    activeSchedules: status.activeSchedules,
     config: status.config,
   });
   console.log('');
@@ -38,23 +38,23 @@ async function testSpotifyScheduler() {
   // 4. Test start/stop
   console.log('4️⃣ Testing start/stop...');
   console.log('Starting scheduler...');
-  spotifyScheduler.start();
+  await spotifyScheduler.start();
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  const statusAfterStart = spotifyScheduler.getStatus();
+  const statusAfterStart = await spotifyScheduler.getStatus();
   console.log('After start:', {
     isRunning: statusAfterStart.isRunning,
-    activeJobs: statusAfterStart.activeJobs,
+    activeSchedules: statusAfterStart.activeSchedules,
   });
 
   console.log('Stopping scheduler...');
-  spotifyScheduler.stop();
+  await spotifyScheduler.stop();
   await new Promise((resolve) => setTimeout(resolve, 500));
 
-  const statusAfterStop = spotifyScheduler.getStatus();
+  const statusAfterStop = await spotifyScheduler.getStatus();
   console.log('After stop:', {
     isRunning: statusAfterStop.isRunning,
-    activeJobs: statusAfterStop.activeJobs,
+    activeSchedules: statusAfterStop.activeSchedules,
   });
   console.log('');
 

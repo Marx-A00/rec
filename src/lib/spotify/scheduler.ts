@@ -31,13 +31,13 @@ export interface SpotifyScheduleConfig {
 export const DEFAULT_SCHEDULE_CONFIG: SpotifyScheduleConfig = {
   newReleases: {
     enabled: true,
-    intervalMinutes: 60, // Every hour
+    intervalMinutes: 10080, // Every week (7 days)
     limit: 20,
     country: 'US',
   },
   featuredPlaylists: {
     enabled: true,
-    intervalMinutes: 180, // Every 3 hours
+    intervalMinutes: 10080, // Every week (7 days)
     limit: 10,
     country: 'US',
     extractAlbums: true,
@@ -46,7 +46,6 @@ export const DEFAULT_SCHEDULE_CONFIG: SpotifyScheduleConfig = {
 
 class SpotifyScheduler {
   private config: SpotifyScheduleConfig;
-  private intervals: Map<string, NodeJS.Timeout> = new Map();
   private isRunning = false;
 
   constructor(config: SpotifyScheduleConfig = DEFAULT_SCHEDULE_CONFIG) {
@@ -56,7 +55,7 @@ class SpotifyScheduler {
   /**
    * Start the automated scheduler
    */
-  start() {
+  async start() {
     if (this.isRunning) {
       console.log('🔄 Spotify scheduler is already running');
       return;
@@ -65,14 +64,17 @@ class SpotifyScheduler {
     console.log('🚀 Starting Spotify automated scheduler...');
     this.isRunning = true;
 
+    // Remove any existing schedules to prevent duplicates
+    await this.removeExistingSchedules();
+
     // Schedule new releases sync
     if (this.config.newReleases.enabled) {
-      this.scheduleNewReleases();
+      await this.scheduleNewReleases();
     }
 
     // Schedule featured playlists sync
     if (this.config.featuredPlaylists.enabled) {
-      this.scheduleFeaturedPlaylists();
+      await this.scheduleFeaturedPlaylists();
     }
 
     console.log('✅ Spotify scheduler started successfully');
@@ -82,7 +84,7 @@ class SpotifyScheduler {
   /**
    * Stop the automated scheduler
    */
-  stop() {
+  async stop() {
     if (!this.isRunning) {
       console.log('⏸️  Spotify scheduler is not running');
       return;
@@ -90,13 +92,9 @@ class SpotifyScheduler {
 
     console.log('🛑 Stopping Spotify automated scheduler...');
 
-    // Clear all intervals
-    for (const [jobType, interval] of this.intervals) {
-      clearInterval(interval);
-      console.log(`  ✅ Stopped ${jobType} scheduler`);
-    }
+    // Remove repeatable jobs from BullMQ
+    await this.removeExistingSchedules();
 
-    this.intervals.clear();
     this.isRunning = false;
 
     console.log('✅ Spotify scheduler stopped successfully');
@@ -105,17 +103,17 @@ class SpotifyScheduler {
   /**
    * Update scheduler configuration
    */
-  updateConfig(newConfig: Partial<SpotifyScheduleConfig>) {
+  async updateConfig(newConfig: Partial<SpotifyScheduleConfig>) {
     const wasRunning = this.isRunning;
 
     if (wasRunning) {
-      this.stop();
+      await this.stop();
     }
 
     this.config = { ...this.config, ...newConfig };
 
     if (wasRunning) {
-      this.start();
+      await this.start();
     }
 
     console.log('🔧 Spotify scheduler configuration updated');
@@ -124,63 +122,118 @@ class SpotifyScheduler {
   /**
    * Get current scheduler status
    */
-  getStatus() {
+  async getStatus() {
+    const queue = getMusicBrainzQueue();
+    const repeatableJobs = await queue.getQueue().getRepeatableJobs();
+    const spotifyJobs = repeatableJobs.filter(
+      job =>
+        job.id === 'spotify-new-releases-schedule' ||
+        job.id === 'spotify-featured-playlists-schedule'
+    );
+
     return {
       isRunning: this.isRunning,
       config: this.config,
-      activeJobs: Array.from(this.intervals.keys()),
+      activeSchedules: spotifyJobs.map(job => job.id),
       metrics: spotifyMetrics.getMetrics(),
       successRate: spotifyMetrics.getSuccessRate(),
     };
   }
 
   /**
-   * Schedule new releases sync
+   * Schedule new releases sync using BullMQ repeatable jobs
    */
-  private scheduleNewReleases() {
+  private async scheduleNewReleases() {
     const intervalMs = this.config.newReleases.intervalMinutes * 60 * 1000;
+    const queue = getMusicBrainzQueue();
 
-    // Run immediately on start
-    this.queueNewReleasesSync();
+    const jobData: SpotifySyncNewReleasesJobData = {
+      limit: this.config.newReleases.limit,
+      country: this.config.newReleases.country,
+      priority: 'medium',
+      source: 'scheduled',
+      requestId: `scheduled_new_releases_${Date.now()}`,
+    };
 
-    // Then schedule recurring
-    const interval = setInterval(() => {
-      this.queueNewReleasesSync();
-    }, intervalMs);
-
-    this.intervals.set('new-releases', interval);
+    // Use BullMQ repeatable jobs instead of setInterval
+    // This persists in Redis and survives worker restarts
+    await queue.addJob(JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES, jobData, {
+      repeat: {
+        every: intervalMs,
+      },
+      jobId: 'spotify-new-releases-schedule', // Prevents duplicates
+      priority: 3,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 },
+      removeOnComplete: 10,
+      removeOnFail: 5,
+    });
 
     console.log(
-      `📅 Scheduled new releases sync every ${this.config.newReleases.intervalMinutes} minutes`
+      `📅 Scheduled new releases sync every ${this.config.newReleases.intervalMinutes} minutes (BullMQ repeatable job)`
     );
   }
 
   /**
-   * Schedule featured playlists sync
+   * Schedule featured playlists sync using BullMQ repeatable jobs
    */
-  private scheduleFeaturedPlaylists() {
+  private async scheduleFeaturedPlaylists() {
     const intervalMs =
       this.config.featuredPlaylists.intervalMinutes * 60 * 1000;
+    const queue = getMusicBrainzQueue();
 
-    // Run immediately on start (with slight delay to avoid collision)
-    setTimeout(() => {
-      this.queueFeaturedPlaylistsSync();
-    }, 30000); // 30 second delay
+    const jobData: SpotifySyncFeaturedPlaylistsJobData = {
+      limit: this.config.featuredPlaylists.limit,
+      country: this.config.featuredPlaylists.country,
+      extractAlbums: this.config.featuredPlaylists.extractAlbums,
+      priority: 'medium',
+      source: 'scheduled',
+      requestId: `scheduled_playlists_${Date.now()}`,
+    };
 
-    // Then schedule recurring
-    const interval = setInterval(() => {
-      this.queueFeaturedPlaylistsSync();
-    }, intervalMs);
-
-    this.intervals.set('featured-playlists', interval);
+    // Use BullMQ repeatable jobs instead of setInterval
+    await queue.addJob(JOB_TYPES.SPOTIFY_SYNC_FEATURED_PLAYLISTS, jobData, {
+      repeat: {
+        every: intervalMs,
+      },
+      jobId: 'spotify-featured-playlists-schedule', // Prevents duplicates
+      priority: 3,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 },
+      removeOnComplete: 10,
+      removeOnFail: 5,
+    });
 
     console.log(
-      `📅 Scheduled featured playlists sync every ${this.config.featuredPlaylists.intervalMinutes} minutes`
+      `📅 Scheduled featured playlists sync every ${this.config.featuredPlaylists.intervalMinutes} minutes (BullMQ repeatable job)`
     );
   }
 
   /**
-   * Queue a new releases sync job
+   * Remove existing repeatable job schedules
+   */
+  private async removeExistingSchedules() {
+    try {
+      const queue = getMusicBrainzQueue();
+      const repeatableJobs = await queue.getQueue().getRepeatableJobs();
+
+      // Remove Spotify-related schedules
+      for (const job of repeatableJobs) {
+        if (
+          job.id === 'spotify-new-releases-schedule' ||
+          job.id === 'spotify-featured-playlists-schedule'
+        ) {
+          await queue.getQueue().removeRepeatableByKey(job.key);
+          console.log(`  🗑️  Removed existing schedule: ${job.id}`);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️  Failed to remove existing schedules:', error);
+    }
+  }
+
+  /**
+   * Queue a new releases sync job (for manual triggering)
    */
   private async queueNewReleasesSync() {
     try {
@@ -190,30 +243,30 @@ class SpotifyScheduler {
         limit: this.config.newReleases.limit,
         country: this.config.newReleases.country,
         priority: 'medium',
-        source: 'scheduled',
-        requestId: `scheduled_new_releases_${Date.now()}`,
+        source: 'manual',
+        requestId: `manual_new_releases_${Date.now()}`,
       };
 
       const job = await queue.addJob(
         JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES,
         jobData,
         {
-          priority: 3, // Medium priority for scheduled jobs
+          priority: 3, // Medium priority for manual jobs
           attempts: 3,
           backoff: { type: 'exponential', delay: 5000 },
-          removeOnComplete: 10 as any, // Keep last 10 completed jobs
-          removeOnFail: 5 as any, // Keep last 5 failed jobs for debugging
+          removeOnComplete: 10,
+          removeOnFail: 5,
         }
       );
 
-      console.log(`🎵 Queued scheduled new releases sync (Job ID: ${job.id})`);
+      console.log(`🎵 Queued manual new releases sync (Job ID: ${job.id})`);
     } catch (error) {
       console.error('❌ Failed to queue new releases sync:', error);
     }
   }
 
   /**
-   * Queue a featured playlists sync job
+   * Queue a featured playlists sync job (for manual triggering)
    */
   private async queueFeaturedPlaylistsSync() {
     try {
@@ -224,24 +277,24 @@ class SpotifyScheduler {
         country: this.config.featuredPlaylists.country,
         extractAlbums: this.config.featuredPlaylists.extractAlbums,
         priority: 'medium',
-        source: 'scheduled',
-        requestId: `scheduled_playlists_${Date.now()}`,
+        source: 'manual',
+        requestId: `manual_playlists_${Date.now()}`,
       };
 
       const job = await queue.addJob(
         JOB_TYPES.SPOTIFY_SYNC_FEATURED_PLAYLISTS,
         jobData,
         {
-          priority: 3, // Medium priority for scheduled jobs
+          priority: 3, // Medium priority for manual jobs
           attempts: 3,
           backoff: { type: 'exponential', delay: 5000 },
-          removeOnComplete: 10 as any,
-          removeOnFail: 5 as any,
+          removeOnComplete: 10,
+          removeOnFail: 5,
         }
       );
 
       console.log(
-        `🎧 Queued scheduled featured playlists sync (Job ID: ${job.id})`
+        `🎧 Queued manual featured playlists sync (Job ID: ${job.id})`
       );
     } catch (error) {
       console.error('❌ Failed to queue featured playlists sync:', error);
@@ -306,7 +359,7 @@ export const spotifyScheduler = new SpotifyScheduler();
 /**
  * Initialize Spotify scheduler with environment-based configuration
  */
-export function initializeSpotifyScheduler() {
+export async function initializeSpotifyScheduler() {
   // Check if we have Spotify credentials
   if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
     console.log('⚠️  Spotify credentials not found, scheduler will not start');
@@ -318,7 +371,7 @@ export function initializeSpotifyScheduler() {
     newReleases: {
       enabled: process.env.SPOTIFY_SYNC_NEW_RELEASES !== 'false',
       intervalMinutes: parseInt(
-        process.env.SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES || '60'
+        process.env.SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES || '10080' // Default: 7 days
       ),
       limit: parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '20'),
       country: process.env.SPOTIFY_COUNTRY || 'US',
@@ -326,7 +379,7 @@ export function initializeSpotifyScheduler() {
     featuredPlaylists: {
       enabled: process.env.SPOTIFY_SYNC_FEATURED_PLAYLISTS !== 'false',
       intervalMinutes: parseInt(
-        process.env.SPOTIFY_FEATURED_PLAYLISTS_INTERVAL_MINUTES || '180'
+        process.env.SPOTIFY_FEATURED_PLAYLISTS_INTERVAL_MINUTES || '10080' // Default: 7 days
       ),
       limit: parseInt(process.env.SPOTIFY_FEATURED_PLAYLISTS_LIMIT || '10'),
       country: process.env.SPOTIFY_COUNTRY || 'US',
@@ -334,8 +387,8 @@ export function initializeSpotifyScheduler() {
     },
   };
 
-  spotifyScheduler.updateConfig(config);
-  spotifyScheduler.start();
+  await spotifyScheduler.updateConfig(config);
+  await spotifyScheduler.start();
 
   return true;
 }
@@ -343,6 +396,6 @@ export function initializeSpotifyScheduler() {
 /**
  * Gracefully shutdown the scheduler
  */
-export function shutdownSpotifyScheduler() {
-  spotifyScheduler.stop();
+export async function shutdownSpotifyScheduler() {
+  await spotifyScheduler.stop();
 }

@@ -28,7 +28,7 @@ async function startWorker() {
     // Start Spotify automated scheduler
     console.log('');
     console.log('🎵 Starting Spotify automated scheduler...');
-    const spotifyStarted = initializeSpotifyScheduler();
+    const spotifyStarted = await initializeSpotifyScheduler();
     if (spotifyStarted) {
       console.log('✅ Spotify scheduler started successfully!');
       console.log(

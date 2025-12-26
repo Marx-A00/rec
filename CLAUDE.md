@@ -131,12 +131,29 @@ task-master update-subtask --id=<id> --prompt="notes"  # Log progress
 - **Collection**: User's saved albums with metadata
 - **UserFollow**: Social following relationships
 
-### MusicBrainz Integration
+### Queue System & Schedulers
 
+**BullMQ Integration:**
 - **Rate Limiting**: 1 request/second via BullMQ
 - **Queue Service**: `/src/lib/musicbrainz/queue-service.ts`
 - **Worker**: `/src/workers/queue-worker.ts` (handles all background jobs)
-- **Job Types**: `search-artists`, `search-releases`, `get-artist`, `get-release`
+- **Job Types**: `search-artists`, `search-releases`, `get-artist`, `get-release`, `spotify:sync-new-releases`, `spotify:sync-featured-playlists`, `musicbrainz:sync-new-releases`
+
+**Automated Schedulers (BullMQ Repeatable Jobs):**
+- **Spotify Scheduler** (`/src/lib/spotify/scheduler.ts`):
+  - New releases sync (configurable interval, default: 60 min)
+  - Featured playlists sync (configurable interval, default: 180 min)
+  - Uses BullMQ repeatable jobs - schedules persist in Redis across worker restarts
+  - No duplicate processing on worker restart
+- **MusicBrainz Scheduler** (`/src/lib/musicbrainz/new-releases-scheduler.ts`):
+  - New releases sync (configurable interval, default: 7 days)
+  - Genre-based filtering with date ranges
+  - Uses BullMQ repeatable jobs for reliability
+
+**Key Pattern**: Schedulers use BullMQ's repeatable jobs API (`repeat: { every: ms }`) instead of `setInterval`. This ensures:
+- Schedules persist in Redis and survive worker restarts
+- No duplicate job execution on worker restart
+- Centralized schedule management via Bull Board dashboard
 
 ### Component Patterns
 
@@ -208,6 +225,21 @@ Required environment variables:
 - `GOOGLE_CLIENT_ID/SECRET` - Google OAuth
 - `SPOTIFY_CLIENT_ID/SECRET` - Spotify OAuth
 - AWS S3 credentials for image storage
+
+**Scheduler Configuration (BullMQ Repeatable Jobs):**
+
+Schedulers now use BullMQ repeatable jobs which persist in Redis. No need for `SKIP_INITIAL_SYNC` flags - schedules automatically avoid duplicates on worker restart.
+
+- `SPOTIFY_SYNC_NEW_RELEASES=true` - Enable Spotify new releases sync
+- `SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES=10080` - Sync interval (default: 7 days)
+- `SPOTIFY_NEW_RELEASES_LIMIT=50` - Number of releases to fetch
+- `SPOTIFY_SYNC_FEATURED_PLAYLISTS=true` - Enable featured playlists sync
+- `SPOTIFY_FEATURED_PLAYLISTS_INTERVAL_MINUTES=10080` - Sync interval (default: 7 days)
+- `SPOTIFY_COUNTRY=US` - Market/country code for Spotify API
+- `MUSICBRAINZ_SYNC_NEW_RELEASES=true` - Enable MusicBrainz new releases sync
+- `MUSICBRAINZ_NEW_RELEASES_INTERVAL_MINUTES=10080` - Sync interval (default: 7 days)
+- `MUSICBRAINZ_NEW_RELEASES_LIMIT=50` - Number of releases to fetch
+- `MUSICBRAINZ_NEW_RELEASES_DATE_RANGE_DAYS=7` - Look back period for releases
 
 ### Development Workflow
 

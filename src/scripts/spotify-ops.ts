@@ -32,7 +32,7 @@ async function showStatus() {
   console.log('📊 Spotify Sync Status\n');
   console.log('='.repeat(50));
 
-  const status = spotifyScheduler.getStatus();
+  const status = await spotifyScheduler.getStatus();
 
   console.log(
     `🔄 Scheduler: ${status.isRunning ? '✅ Running' : '❌ Stopped'}`
@@ -57,7 +57,7 @@ async function showStatus() {
     );
   }
 
-  console.log(`\n🎯 Active Jobs: ${status.activeJobs.join(', ') || 'None'}`);
+  console.log(`\n🎯 Active Schedules: ${status.activeSchedules.join(', ') || 'None'}`);
 }
 
 async function showMetrics() {
@@ -196,7 +196,7 @@ async function showConfig() {
   console.log('⚙️  Spotify Scheduler Configuration\n');
   console.log('='.repeat(50));
 
-  const status = spotifyScheduler.getStatus();
+  const status = await spotifyScheduler.getStatus();
   const config = status.config;
 
   console.log('🎵 New Releases:');
@@ -290,7 +290,7 @@ async function main() {
 
       case 'start':
         console.log('🚀 Starting Spotify scheduler...');
-        const started = initializeSpotifyScheduler();
+        const started = await initializeSpotifyScheduler();
         if (started) {
           console.log('✅ Spotify scheduler started successfully');
         } else {

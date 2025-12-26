@@ -379,6 +379,25 @@ export interface MusicBrainzJobOptions {
    * Default: 50 (keep for debugging)
    */
   removeOnFail?: number | boolean;
+
+  /**
+   * Job ID to prevent duplicates (used with repeatable jobs)
+   */
+  jobId?: string;
+
+  /**
+   * Repeatable job configuration
+   */
+  repeat?: {
+    /**
+     * Repeat every X milliseconds
+     */
+    every?: number;
+    /**
+     * Cron pattern for scheduling
+     */
+    pattern?: string;
+  };
 }
 
 // ============================================================================
