@@ -40,14 +40,14 @@ export default function ArtistAdminActions({
     musicbrainzId,
   });
 
+  // Admin mutation hooks (must be called before early return)
+  const enrichMutation = useTriggerArtistEnrichmentMutation();
+  const addArtistMutation = useAddArtistMutation();
+
   // Only render for admin users
   if (!isAdmin(session?.user?.role)) {
     return null;
   }
-
-  // Admin mutation hooks
-  const enrichMutation = useTriggerArtistEnrichmentMutation();
-  const addArtistMutation = useAddArtistMutation();
 
   // Admin action handlers
   const handleEnrichArtist = async () => {

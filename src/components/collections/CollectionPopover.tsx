@@ -139,7 +139,7 @@ export default function CollectionPopover({
       }
 
       // Invalidate queries to refresh UI
-      queryClient.invalidateQueries({ queryKey: ['collections'] });
+      queryClient.invalidateQueries({ queryKey: ['GetMyCollections'] });
       queryClient.invalidateQueries({ queryKey: ['AlbumByMusicBrainzId'] });
     } catch (error) {
       console.error('Error toggling collection:', error);
