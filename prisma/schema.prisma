@@ -357,6 +357,7 @@ model EnrichmentLog {
   operation          String                 @db.VarChar(100)
   sources            String[]
   status             EnrichmentStatus
+  reason             String?                // Human-readable explanation of why this enrichment occurred/was skipped
   fieldsEnriched     String[]               @map("fields_enriched")
   dataQualityBefore  DataQuality?           @map("data_quality_before")
   dataQualityAfter   DataQuality?           @map("data_quality_after")
