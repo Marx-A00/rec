@@ -58,6 +58,8 @@ export default function CollectionPopover({
 }: CollectionPopoverProps) {
   const [open, setOpen] = useState(false);
   const [processingCollections, setProcessingCollections] = useState<Set<string>>(new Set());
+  // Track optimistic state: Map<collectionId, isInCollection>
+  const [optimisticState, setOptimisticState] = useState<Map<string, boolean>>(new Map());
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { data: session } = useSession();
@@ -115,6 +117,13 @@ export default function CollectionPopover({
       return;
     }
 
+    // Optimistically update UI immediately
+    setOptimisticState(prev => {
+      const next = new Map(prev);
+      next.set(collectionId, !isCurrentlyInCollection);
+      return next;
+    });
+
     setProcessingCollections(prev => new Set(prev).add(collectionId));
 
     try {
@@ -147,6 +156,12 @@ export default function CollectionPopover({
         `Failed to ${isCurrentlyInCollection ? 'remove from' : 'add to'} ${collectionName}`,
         'error'
       );
+      // Revert optimistic update on error
+      setOptimisticState(prev => {
+        const next = new Map(prev);
+        next.delete(collectionId);
+        return next;
+      });
     } finally {
       setProcessingCollections(prev => {
         const next = new Set(prev);
@@ -189,13 +204,17 @@ export default function CollectionPopover({
                 const isInThisCollection = albumState.collectionNames.includes(collection.name);
                 const isProcessing = processingCollections.has(collection.id);
 
+                // Apply optimistic update if it exists, otherwise use actual state
+                const optimisticValue = optimisticState.get(collection.id);
+                const isChecked = optimisticValue !== undefined ? optimisticValue : isInThisCollection;
+
                 return (
                   <label
                     key={collection.id}
                     className="flex items-center gap-2 cursor-pointer hover:bg-zinc-800 p-2 rounded-md transition-colors"
                   >
                     <Checkbox
-                      checked={isInThisCollection}
+                      checked={isChecked}
                       disabled={isProcessing}
                       onCheckedChange={() =>
                         handleToggleCollection(collection.id, collection.name, isInThisCollection)
@@ -218,7 +237,8 @@ export default function CollectionPopover({
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start gap-2 text-zinc-400 hover:text-white"
+              disabled
+              className="w-full justify-start gap-2 text-zinc-600 cursor-not-allowed"
               onClick={() => {
                 // TODO: Open create collection dialog
                 showToast('Create collection coming soon!', 'success');
