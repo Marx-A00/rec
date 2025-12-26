@@ -1650,6 +1650,7 @@ export const queryResolvers: QueryResolvers = {
     try {
       const {
         query,
+        id,
         dataQuality,
         enrichmentStatus,
         needsEnrichment,
@@ -1661,6 +1662,11 @@ export const queryResolvers: QueryResolvers = {
 
       // Build where clause for local database search
       const where: any = {};
+
+      // Direct ID search takes priority
+      if (id) {
+        where.id = id;
+      }
 
       // Text search on name if query provided
       if (query) {

@@ -993,6 +993,7 @@ type Query {
   ): [Album!]!
   searchArtists(
     query: String
+    id: UUID
     dataQuality: String
     enrichmentStatus: String
     needsEnrichment: Boolean

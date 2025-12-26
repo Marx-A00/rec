@@ -524,7 +524,7 @@ export default function AlbumModal({
     // Use dbId from albumState for accurate database ID
     const dbId = albumState.dbId || albumForInteractions?.id;
     if (!dbId) return;
-    window.open(`/admin/music-database?id=${dbId}`, '_blank');
+    window.open(`/admin/music-database?id=${dbId}&type=albums`, '_blank');
   };
 
   const handleMoreActions = () => {

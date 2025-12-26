@@ -103,7 +103,7 @@ export default function ArtistAdminActions({
   const handleViewInAdmin = () => {
     const dbId = artistState.dbId || artistId;
     if (!dbId) return;
-    window.open(`/admin/music-database?id=${dbId}`, '_blank');
+    window.open(`/admin/music-database?id=${dbId}&type=artists`, '_blank');
   };
 
   return (

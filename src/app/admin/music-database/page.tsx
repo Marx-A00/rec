@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Search,
   Database,
@@ -157,7 +158,12 @@ interface DatabaseStats {
 type SearchType = 'albums' | 'artists' | 'tracks';
 
 export default function MusicDatabasePage() {
-  const [activeTab, setActiveTab] = useState<SearchType>('albums');
+  // Get URL search params for direct navigation
+  const searchParams = useSearchParams();
+  const targetId = searchParams.get('id');
+  const targetType = searchParams.get('type') as SearchType | null; // 'albums' or 'artists'
+
+  const [activeTab, setActiveTab] = useState<SearchType>(targetType || 'albums');
   const [searchQuery, setSearchQuery] = useState('');
   const [idSearch, setIdSearch] = useState('');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -177,6 +183,14 @@ export default function MusicDatabasePage() {
   const [deleteArtistModalOpen, setDeleteArtistModalOpen] = useState(false);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  // Auto-search and expand target row from URL parameter
+  useEffect(() => {
+    if (targetId) {
+      // Set the ID search to find this specific album/artist
+      setIdSearch(targetId);
+    }
+  }, [targetId]);
 
   // Calculate skip for pagination
   const skip = (page - 1) * itemsPerPage;
@@ -246,6 +260,7 @@ export default function MusicDatabasePage() {
   } = useSearchArtistsAdminQuery(
     {
       query: debouncedSearchQuery || undefined,
+      id: idSearch.trim() || undefined,
       dataQuality:
         filters.dataQuality !== 'all' ? filters.dataQuality : undefined,
       enrichmentStatus:
@@ -353,6 +368,51 @@ export default function MusicDatabasePage() {
     if (activeTab === 'artists') return displayArtists;
     return displayTracks;
   };
+
+  // Auto-expand and scroll to target row ONLY after data is loaded
+  useEffect(() => {
+    if (!targetId) return;
+
+    // Check if the target ID is in the loaded data
+    const allItems = [...albums, ...artists];
+    const targetExists = allItems.some((item: any) => item.id === targetId);
+
+    // Only proceed if data is loaded and target exists
+    if (targetExists && !expandedRows.has(targetId) && !albumsLoading && !artistsLoading) {
+      console.log('Target found in data, expanding and scrolling to:', targetId);
+
+      // Expand the target row
+      setExpandedRows(prev => new Set(prev).add(targetId));
+
+      // Use requestAnimationFrame for better timing with DOM updates
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const rowElement = document.getElementById(`row-${targetId}`);
+          if (rowElement) {
+            console.log('Found row element, scrolling...');
+
+            // Scroll to center the row
+            rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Add a prominent highlight effect with a border
+            rowElement.style.backgroundColor = 'rgba(250, 204, 21, 0.3)';
+            rowElement.style.borderLeft = '4px solid rgb(250, 204, 21)';
+            rowElement.style.boxShadow = '0 0 20px rgba(250, 204, 21, 0.5)';
+
+            // Fade out the highlight after 3 seconds
+            setTimeout(() => {
+              rowElement.style.transition = 'all 2s ease-out';
+              rowElement.style.backgroundColor = '';
+              rowElement.style.borderLeft = '';
+              rowElement.style.boxShadow = '';
+            }, 3000);
+          } else {
+            console.log('Row element not found after data loaded:', `row-${targetId}`);
+          }
+        }, 300);
+      });
+    }
+  }, [targetId, albums, artists, expandedRows, albumsLoading, artistsLoading]);
 
   const handleDeleteAlbum = async () => {
     if (!albumToDelete) return;
@@ -1411,6 +1471,7 @@ export default function MusicDatabasePage() {
                   {displayAlbums.map((album: any) => (
                     <React.Fragment key={album.id}>
                       <TableRow
+                        id={`row-${album.id}`}
                         className='border-b border-zinc-800 hover:bg-zinc-800/10 cursor-pointer transition-colors'
                         onClick={e => {
                           // Don't toggle if clicking checkbox or action button
@@ -1560,6 +1621,7 @@ export default function MusicDatabasePage() {
                   {displayArtists.map((artist: any) => (
                     <React.Fragment key={artist.id}>
                       <TableRow
+                        id={`row-${artist.id}`}
                         className='border-b border-zinc-800 hover:bg-zinc-800/10 cursor-pointer transition-colors'
                         onClick={e => {
                           // Don't toggle if clicking checkbox or action button
