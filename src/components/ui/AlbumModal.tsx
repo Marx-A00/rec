@@ -483,6 +483,15 @@ export default function AlbumModal({
       };
 
       await addAlbumMutation.mutateAsync({ input: albumData });
+
+      // Invalidate queries to refresh album state
+      queryClient.invalidateQueries({
+        queryKey: ['AlbumByMusicBrainzId', { musicbrainzId: albumForInteractions.musicbrainzId }]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['GetMyCollections']
+      });
+
       showToast('Album added to database successfully', 'success');
     } catch (error) {
       showToast(`Failed to add album: ${error}`, 'error');

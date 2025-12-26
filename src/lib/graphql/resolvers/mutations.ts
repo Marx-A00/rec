@@ -533,12 +533,13 @@ export const mutationResolvers: MutationResolvers = {
         },
       });
 
-      // Handle artist associations
+      // Handle artist associations (consistent with addToListenLater)
       for (const artistInput of input.artists) {
-        let artistId = artistInput.artistId;
+        let artistId: string | undefined;
 
-        // If no artistId provided, try to find existing artist by name first
-        if (!artistId && artistInput.artistName) {
+        // Always search/create by name (don't trust artistId from external sources)
+        // artistInput.artistId may be a MusicBrainz ID or empty string for external albums
+        if (artistInput.artistName) {
           // Search for existing artist by name (case-insensitive)
           const existingArtist = await prisma.artist.findFirst({
             where: {
@@ -581,14 +582,22 @@ export const mutationResolvers: MutationResolvers = {
               dataQualityAfter: newArtist.dataQuality,
             });
           }
-        }
 
-        if (artistId) {
-          await prisma.albumArtist.create({
-            data: {
+          // Create or update the album-artist relationship (upsert to handle duplicates)
+          const role = artistInput.role || 'PRIMARY';
+          await prisma.albumArtist.upsert({
+            where: {
+              albumId_artistId_role: {
+                albumId: album.id,
+                artistId: artistId,
+                role: role,
+              },
+            },
+            update: {}, // No update needed, just ensure it exists
+            create: {
               albumId: album.id,
               artistId: artistId,
-              role: artistInput.role || 'PRIMARY',
+              role: role,
             },
           });
         }
