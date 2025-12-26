@@ -145,12 +145,32 @@ export async function getAlbumDetails(
       };
 
       // Try to populate tracks from a representative release in the group
+      // Prefer standard editions over deluxe/special editions
       const releases: any[] = Array.isArray((mb as any).releases)
         ? (mb as any).releases
         : [];
-      const representativeRelease =
-        releases.find(r => (r.status || '').toLowerCase() === 'official') ||
-        releases[0];
+
+      // Filter to official releases first
+      const officialReleases = releases.filter(
+        r => (r.status || '').toLowerCase() === 'official'
+      );
+      const releasesToConsider = officialReleases.length > 0 ? officialReleases : releases;
+
+      // Sort by track count (prefer fewer tracks = standard edition)
+      // Also avoid releases with "deluxe", "special", "expanded" in the title
+      const representativeRelease = releasesToConsider
+        .map((r: any) => {
+          const title = (r.title || '').toLowerCase();
+          const isDeluxe = /deluxe|special|expanded|limited|collector|anniversary|remaster|bonus/i.test(title);
+          const trackCount = r['track-count'] || 9999; // Default high if unknown
+          return { release: r, isDeluxe, trackCount };
+        })
+        .sort((a: any, b: any) => {
+          // Prefer non-deluxe
+          if (a.isDeluxe !== b.isDeluxe) return a.isDeluxe ? 1 : -1;
+          // Then prefer fewer tracks
+          return a.trackCount - b.trackCount;
+        })[0]?.release || releases[0];
 
       if (representativeRelease?.id) {
         try {
@@ -170,9 +190,13 @@ export async function getAlbumDetails(
             trackNumber: number;
           }[] = [];
 
-          let seq = 1;
-          for (const m of media) {
-            const tracks: any[] = Array.isArray(m.tracks) ? m.tracks : [];
+          // Only show tracks from disc 1 to avoid bonus/alternate versions
+          // Multi-disc albums that are intentionally multi-disc will have disc 1 as the main content
+          const primaryDisc = media.find((m: any) => m.position === 1) || media[0];
+
+          if (primaryDisc) {
+            const tracks: any[] = Array.isArray(primaryDisc.tracks) ? primaryDisc.tracks : [];
+            let seq = 1;
             for (const t of tracks) {
               const lenMs =
                 (typeof t.length === 'number' && t.length) ||

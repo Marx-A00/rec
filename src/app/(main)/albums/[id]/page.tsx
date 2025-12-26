@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import AlbumInteractions from '@/components/albums/AlbumInteractions';
+import AlbumAdminActions from '@/components/albumDetails/AlbumAdminActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BackButton from '@/components/ui/BackButton';
 import TracklistTab from '@/components/albumDetails/tabs/TracklistTab';
@@ -102,6 +103,7 @@ export default async function AlbumDetailsPage({
             </h1>
             <p className='text-xl text-zinc-300 mb-4'>{album.subtitle}</p>
             <AlbumInteractions album={album} />
+            <AlbumAdminActions album={album} />
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>

@@ -258,7 +258,7 @@ model Album {
 model Track {
   id               String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   albumId          String                   @map("album_id") @db.Uuid
-  musicbrainzId    String?                  @unique @map("musicbrainz_id") @db.Uuid
+  musicbrainzId    String?                  @map("musicbrainz_id") @db.Uuid
   isrc             String?                  @db.VarChar(12)
   title            String                   @db.VarChar(255)
   trackNumber      Int                      @map("track_number")
@@ -296,6 +296,7 @@ model Track {
   album            Album                    @relation(fields: [albumId], references: [id], onDelete: Cascade)
   enrichmentLogs   EnrichmentLog[]
 
+  @@unique([albumId, musicbrainzId])
   @@index([albumId, discNumber, trackNumber])
   @@index([title])
   @@index([isrc])

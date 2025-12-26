@@ -2633,8 +2633,26 @@ async function processMusicBrainzTracksForAlbum(
     let tracksMatched = 0;
     let tracksUpdated = 0;
 
+    // Filter media to only include audio formats (skip DVD-Video, Blu-ray, etc.)
+    const audioMedia = (mbRelease.media || []).filter((medium: any) => {
+      const format = medium.format?.toLowerCase() || '';
+
+      // Skip video formats
+      if (format.includes('dvd') && format.includes('video')) return false;
+      if (format.includes('dvd-video')) return false;
+      if (format.includes('blu-ray')) return false;
+      if (format.includes('vhs')) return false;
+      if (format.includes('laserdisc')) return false;
+
+      return true; // Keep all other formats (CD, Digital Media, Vinyl, Cassette, etc.)
+    });
+
+    console.log(
+      `📀 Found ${mbRelease.media?.length || 0} total media, ${audioMedia.length} audio media (filtered out video formats)`
+    );
+
     // Process each disc/medium
-    for (const medium of mbRelease.media || []) {
+    for (const medium of audioMedia) {
       const discNumber = medium.position || 1;
 
       // Process each track on this disc
@@ -2697,6 +2715,13 @@ async function processMusicBrainzTracksForAlbum(
             });
 
             tracksUpdated++;
+
+            // IMPORTANT: Remove from available pool so it can't be matched again
+            // This prevents duplicate tracks from alternate versions (5.1 mixes, bonus discs, etc.)
+            const index = existingTracks.indexOf(matchingTrack);
+            if (index > -1) {
+              existingTracks.splice(index, 1);
+            }
           } else {
             // Create missing track from MusicBrainz data
             try {
@@ -2736,7 +2761,7 @@ async function processMusicBrainzTracksForAlbum(
                   explicit: false, // MusicBrainz doesn't provide explicit flag
                   previewUrl: null, // No preview URL from MusicBrainz
                   musicbrainzId: mbRecording.id,
-                  isrc, // 🏷️ NEW: Store ISRC
+                  isrc, // 🏷️ Store ISRC
                   youtubeUrl,
                   dataQuality: 'HIGH', // Coming from MusicBrainz = high quality
                   enrichmentStatus: 'COMPLETED',
