@@ -107,10 +107,11 @@ export function useAlbumState(album: Album | null): AlbumState {
   const isLoading = isLoadingExternalLookup || isLoadingDetails || isLoadingCollections;
 
   // Extract enrichment data from albumDetails (for local albums) or MusicBrainz lookup (for external)
+  // Note: albumDetails REST API type doesn't include enrichment fields, but GraphQL query returns them
   const enrichmentStatus = useMemo(() => {
-    // For local albums, use albumDetails
-    if (isLocalAlbum && albumDetails?.album) {
-      return albumDetails.album.enrichmentStatus || null;
+    // For local albums, use albumDetails (cast to any since enrichmentStatus not in Album type)
+    if (isLocalAlbum && albumDetails) {
+      return (albumDetails as any).enrichmentStatus || null;
     }
     // For external albums, use MusicBrainz lookup
     if (externalAlbumData?.albumByMusicBrainzId) {
@@ -120,9 +121,9 @@ export function useAlbumState(album: Album | null): AlbumState {
   }, [isLocalAlbum, albumDetails, externalAlbumData]);
 
   const lastEnriched = useMemo(() => {
-    // For local albums, use albumDetails
-    if (isLocalAlbum && albumDetails?.album?.lastEnriched) {
-      return new Date(albumDetails.album.lastEnriched);
+    // For local albums, use albumDetails (cast to any since lastEnriched not in Album type)
+    if (isLocalAlbum && (albumDetails as any)?.lastEnriched) {
+      return new Date((albumDetails as any).lastEnriched);
     }
     // For external albums, use MusicBrainz lookup
     if (externalAlbumData?.albumByMusicBrainzId?.lastEnriched) {
@@ -132,9 +133,9 @@ export function useAlbumState(album: Album | null): AlbumState {
   }, [isLocalAlbum, albumDetails, externalAlbumData]);
 
   const dataQuality = useMemo(() => {
-    // For local albums, use albumDetails
-    if (isLocalAlbum && albumDetails?.album) {
-      return albumDetails.album.dataQuality || null;
+    // For local albums, use albumDetails (cast to any since dataQuality not in Album type)
+    if (isLocalAlbum && albumDetails) {
+      return (albumDetails as any).dataQuality || null;
     }
     // For external albums, use MusicBrainz lookup
     if (externalAlbumData?.albumByMusicBrainzId) {
