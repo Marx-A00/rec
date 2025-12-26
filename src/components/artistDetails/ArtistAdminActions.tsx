@@ -11,6 +11,8 @@ import { isAdmin } from '@/lib/permissions';
 import { useArtistState } from '@/hooks/useArtistState';
 import {
   useTriggerArtistEnrichmentMutation,
+  useAddArtistMutation,
+  useDeleteArtistMutation,
   EnrichmentPriority,
   EnrichmentStatus,
   DataQuality,
@@ -55,6 +57,8 @@ export default function ArtistAdminActions({
 
   // Admin mutation hooks
   const enrichMutation = useTriggerArtistEnrichmentMutation();
+  const addArtistMutation = useAddArtistMutation();
+  const deleteMutation = useDeleteArtistMutation();
 
   // Delete confirmation modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -85,13 +89,51 @@ export default function ArtistAdminActions({
   };
 
   const handleAddToDatabase = async () => {
-    // TODO: Implement addArtist mutation (similar to addAlbum)
-    showToast('Add to database feature coming soon', 'error');
+    if (artistState.existsInDb) {
+      showToast('Artist is already in the database', 'error');
+      return;
+    }
+
+    try {
+      const artistData = {
+        name: artistName,
+        musicbrainzId: musicbrainzId || undefined,
+        // Additional fields would come from the artist page data if available
+      };
+
+      await addArtistMutation.mutateAsync({ input: artistData });
+
+      // Invalidate queries to refresh artist state
+      queryClient.invalidateQueries({
+        queryKey: ['GetArtistByMusicBrainzId', { musicbrainzId }]
+      });
+
+      showToast('Artist added to database successfully', 'success');
+    } catch (error) {
+      showToast(`Failed to add artist: ${error}`, 'error');
+    }
   };
 
   const handleDeleteArtist = async () => {
-    // TODO: Implement deleteArtist mutation (similar to deleteAlbum)
-    showToast('Delete feature coming soon', 'error');
+    const dbId = artistState.dbId || artistId;
+    if (!dbId) return;
+
+    try {
+      const result = await deleteMutation.mutateAsync({
+        id: dbId,
+      });
+
+      if (result.deleteArtist.success) {
+        showToast('Artist deleted successfully', 'success');
+        setDeleteModalOpen(false);
+        // Redirect to artists page or close modal
+        window.location.href = '/artists';
+      } else {
+        throw new Error(result.deleteArtist.message || 'Failed to delete artist');
+      }
+    } catch (error) {
+      showToast(`Failed to delete artist: ${error}`, 'error');
+    }
   };
 
   const handleViewInAdmin = () => {
@@ -161,11 +203,15 @@ export default function ArtistAdminActions({
               variant='outline'
               size='sm'
               onClick={handleAddToDatabase}
-              disabled={artistState.isLoading}
+              disabled={addArtistMutation.isPending || artistState.isLoading}
               className='gap-1.5 border-emerald-800/50 bg-emerald-950/20 text-emerald-200 hover:bg-emerald-900/30 hover:text-emerald-100'
             >
-              <Database className='h-3.5 w-3.5' />
-              Add to DB
+              {addArtistMutation.isPending ? (
+                <Loader2 className='h-3.5 w-3.5 animate-spin' />
+              ) : (
+                <Database className='h-3.5 w-3.5' />
+              )}
+              {addArtistMutation.isPending ? 'Adding...' : 'Add to DB'}
             </Button>
           )}
 
@@ -209,7 +255,7 @@ export default function ArtistAdminActions({
               variant='outline'
               size='sm'
               onClick={() => setDeleteModalOpen(true)}
-              disabled={artistState.isLoading}
+              disabled={deleteMutation.isPending || artistState.isLoading}
               className='gap-1.5 border-red-800/50 bg-red-950/20 text-red-200 hover:bg-red-900/30 hover:text-red-100'
             >
               <Trash2 className='h-3.5 w-3.5' />
@@ -267,9 +313,18 @@ export default function ArtistAdminActions({
             <Button variant='outline' onClick={() => setDeleteModalOpen(false)}>
               Cancel
             </Button>
-            <Button variant='destructive' onClick={handleDeleteArtist} className='gap-2'>
-              <Trash2 className='h-4 w-4' />
-              Delete Permanently
+            <Button
+              variant='destructive'
+              onClick={handleDeleteArtist}
+              disabled={deleteMutation.isPending}
+              className='gap-2'
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Trash2 className='h-4 w-4' />
+              )}
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete Permanently'}
             </Button>
           </DialogFooter>
         </DialogContent>

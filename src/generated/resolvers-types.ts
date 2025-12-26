@@ -234,6 +234,13 @@ export type ArtistCredit = {
   role: Scalars['String']['output'];
 };
 
+export type ArtistInput = {
+  countryCode?: InputMaybe<Scalars['String']['input']>;
+  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  musicbrainzId?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+};
+
 export type ArtistTrackInput = {
   artistId?: InputMaybe<Scalars['UUID']['input']>;
   artistName?: InputMaybe<Scalars['String']['input']>;
@@ -363,6 +370,13 @@ export type DatabaseStats = {
 
 export type DeleteAlbumPayload = {
   __typename?: 'DeleteAlbumPayload';
+  deletedId?: Maybe<Scalars['UUID']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+export type DeleteArtistPayload = {
+  __typename?: 'DeleteArtistPayload';
   deletedId?: Maybe<Scalars['UUID']['output']>;
   message?: Maybe<Scalars['String']['output']>;
   success: Scalars['Boolean']['output'];
@@ -518,6 +532,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   addAlbum: Album;
   addAlbumToCollection: AddAlbumToCollectionPayload;
+  addArtist: Artist;
   addToListenLater: CollectionAlbum;
   batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
@@ -526,6 +541,7 @@ export type Mutation = {
   createRecommendation: CreateRecommendationPayload;
   createTrack: Track;
   deleteAlbum: DeleteAlbumPayload;
+  deleteArtist: DeleteArtistPayload;
   deleteCollection: Scalars['Boolean']['output'];
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
@@ -570,6 +586,10 @@ export type MutationAddAlbumToCollectionArgs = {
   input: CollectionAlbumInput;
 };
 
+export type MutationAddArtistArgs = {
+  input: ArtistInput;
+};
+
 export type MutationAddToListenLaterArgs = {
   albumData?: InputMaybe<AlbumInput>;
   albumId: Scalars['UUID']['input'];
@@ -602,6 +622,10 @@ export type MutationCreateTrackArgs = {
 };
 
 export type MutationDeleteAlbumArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationDeleteArtistArgs = {
   id: Scalars['UUID']['input'];
 };
 
@@ -1581,6 +1605,7 @@ export type ResolversTypes = ResolversObject<{
   Artist: ResolverTypeWrapper<Artist>;
   ArtistAlbumInput: ArtistAlbumInput;
   ArtistCredit: ResolverTypeWrapper<ArtistCredit>;
+  ArtistInput: ArtistInput;
   ArtistTrackInput: ArtistTrackInput;
   AudioFeatures: ResolverTypeWrapper<AudioFeatures>;
   BatchEnrichmentResult: ResolverTypeWrapper<BatchEnrichmentResult>;
@@ -1598,6 +1623,7 @@ export type ResolversTypes = ResolversObject<{
   DatabaseStats: ResolverTypeWrapper<DatabaseStats>;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   DeleteAlbumPayload: ResolverTypeWrapper<DeleteAlbumPayload>;
+  DeleteArtistPayload: ResolverTypeWrapper<DeleteArtistPayload>;
   EnrichmentEntityType: EnrichmentEntityType;
   EnrichmentLog: ResolverTypeWrapper<EnrichmentLog>;
   EnrichmentLogStatus: EnrichmentLogStatus;
@@ -1690,6 +1716,7 @@ export type ResolversParentTypes = ResolversObject<{
   Artist: Artist;
   ArtistAlbumInput: ArtistAlbumInput;
   ArtistCredit: ArtistCredit;
+  ArtistInput: ArtistInput;
   ArtistTrackInput: ArtistTrackInput;
   AudioFeatures: AudioFeatures;
   BatchEnrichmentResult: BatchEnrichmentResult;
@@ -1704,6 +1731,7 @@ export type ResolversParentTypes = ResolversObject<{
   DatabaseStats: DatabaseStats;
   DateTime: Scalars['DateTime']['output'];
   DeleteAlbumPayload: DeleteAlbumPayload;
+  DeleteArtistPayload: DeleteArtistPayload;
   EnrichmentLog: EnrichmentLog;
   EnrichmentResult: EnrichmentResult;
   EnrichmentStats: EnrichmentStats;
@@ -2338,6 +2366,17 @@ export type DeleteAlbumPayloadResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type DeleteArtistPayloadResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['DeleteArtistPayload'] = ResolversParentTypes['DeleteArtistPayload'],
+> = ResolversObject<{
+  deletedId?: Resolver<Maybe<ResolversTypes['UUID']>, ParentType, ContextType>;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type EnrichmentLogResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -2556,6 +2595,12 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationAddAlbumToCollectionArgs, 'collectionId' | 'input'>
   >;
+  addArtist?: Resolver<
+    ResolversTypes['Artist'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationAddArtistArgs, 'input'>
+  >;
   addToListenLater?: Resolver<
     ResolversTypes['CollectionAlbum'],
     ParentType,
@@ -2605,6 +2650,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationDeleteAlbumArgs, 'id'>
+  >;
+  deleteArtist?: Resolver<
+    ResolversTypes['DeleteArtistPayload'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationDeleteArtistArgs, 'id'>
   >;
   deleteCollection?: Resolver<
     ResolversTypes['Boolean'],
@@ -3922,6 +3973,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   DatabaseStats?: DatabaseStatsResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
   DeleteAlbumPayload?: DeleteAlbumPayloadResolvers<ContextType>;
+  DeleteArtistPayload?: DeleteArtistPayloadResolvers<ContextType>;
   EnrichmentLog?: EnrichmentLogResolvers<ContextType>;
   EnrichmentResult?: EnrichmentResultResolvers<ContextType>;
   EnrichmentStats?: EnrichmentStatsResolvers<ContextType>;

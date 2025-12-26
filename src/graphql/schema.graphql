@@ -484,6 +484,13 @@ input ArtistAlbumInput {
   role: String # "PRIMARY", "FEATURED", "PRODUCER", etc.
 }
 
+input ArtistInput {
+  name: String!
+  musicbrainzId: String
+  imageUrl: String
+  countryCode: String
+}
+
 input TrackInput {
   title: String!
   albumId: UUID!
@@ -1034,6 +1041,10 @@ type Mutation {
   addAlbum(input: AlbumInput!): Album!
   updateAlbum(id: UUID!, input: AlbumInput!): Album!
 
+  # Artist management
+  addArtist(input: ArtistInput!): Artist!
+  deleteArtist(id: UUID!): DeleteArtistPayload!
+
   # Track management
   createTrack(input: TrackInput!): Track!
   updateTrack(id: UUID!, input: UpdateTrackInput!): Track!
@@ -1141,6 +1152,12 @@ type UpdateUserRolePayload {
 }
 
 type DeleteAlbumPayload {
+  success: Boolean!
+  message: String
+  deletedId: UUID
+}
+
+type DeleteArtistPayload {
   success: Boolean!
   message: String
   deletedId: UUID

@@ -260,6 +260,13 @@ export type ArtistCredit = {
   role: Scalars['String']['output'];
 };
 
+export type ArtistInput = {
+  countryCode?: InputMaybe<Scalars['String']['input']>;
+  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  musicbrainzId?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+};
+
 export type ArtistTrackInput = {
   artistId?: InputMaybe<Scalars['UUID']['input']>;
   artistName?: InputMaybe<Scalars['String']['input']>;
@@ -389,6 +396,13 @@ export type DatabaseStats = {
 
 export type DeleteAlbumPayload = {
   __typename?: 'DeleteAlbumPayload';
+  deletedId?: Maybe<Scalars['UUID']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+export type DeleteArtistPayload = {
+  __typename?: 'DeleteArtistPayload';
   deletedId?: Maybe<Scalars['UUID']['output']>;
   message?: Maybe<Scalars['String']['output']>;
   success: Scalars['Boolean']['output'];
@@ -544,6 +558,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   addAlbum: Album;
   addAlbumToCollection: AddAlbumToCollectionPayload;
+  addArtist: Artist;
   addToListenLater: CollectionAlbum;
   batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
@@ -552,6 +567,7 @@ export type Mutation = {
   createRecommendation: CreateRecommendationPayload;
   createTrack: Track;
   deleteAlbum: DeleteAlbumPayload;
+  deleteArtist: DeleteArtistPayload;
   deleteCollection: Scalars['Boolean']['output'];
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
@@ -596,6 +612,10 @@ export type MutationAddAlbumToCollectionArgs = {
   input: CollectionAlbumInput;
 };
 
+export type MutationAddArtistArgs = {
+  input: ArtistInput;
+};
+
 export type MutationAddToListenLaterArgs = {
   albumData?: InputMaybe<AlbumInput>;
   albumId: Scalars['UUID']['input'];
@@ -628,6 +648,10 @@ export type MutationCreateTrackArgs = {
 };
 
 export type MutationDeleteAlbumArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationDeleteArtistArgs = {
   id: Scalars['UUID']['input'];
 };
 
@@ -1966,6 +1990,39 @@ export type GetArtistDiscographyQuery = {
         artist: { __typename?: 'Artist'; id: string; name: string };
       }> | null;
     }>;
+  };
+};
+
+export type AddArtistMutationVariables = Exact<{
+  input: ArtistInput;
+}>;
+
+export type AddArtistMutation = {
+  __typename?: 'Mutation';
+  addArtist: {
+    __typename?: 'Artist';
+    id: string;
+    name: string;
+    musicbrainzId?: string | null;
+    imageUrl?: string | null;
+    countryCode?: string | null;
+    dataQuality?: DataQuality | null;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+  };
+};
+
+export type DeleteArtistMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type DeleteArtistMutation = {
+  __typename?: 'Mutation';
+  deleteArtist: {
+    __typename?: 'DeleteArtistPayload';
+    success: boolean;
+    message?: string | null;
+    deletedId?: string | null;
   };
 };
 
@@ -4106,6 +4163,83 @@ export const useInfiniteGetArtistDiscographyQuery = <
 useInfiniteGetArtistDiscographyQuery.getKey = (
   variables: GetArtistDiscographyQueryVariables
 ) => ['GetArtistDiscography.infinite', variables];
+
+export const AddArtistDocument = `
+    mutation AddArtist($input: ArtistInput!) {
+  addArtist(input: $input) {
+    id
+    name
+    musicbrainzId
+    imageUrl
+    countryCode
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+  }
+}
+    `;
+
+export const useAddArtistMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    AddArtistMutation,
+    TError,
+    AddArtistMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AddArtistMutation,
+    TError,
+    AddArtistMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AddArtist'],
+    mutationFn: (variables?: AddArtistMutationVariables) =>
+      fetcher<AddArtistMutation, AddArtistMutationVariables>(
+        AddArtistDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useAddArtistMutation.getKey = () => ['AddArtist'];
+
+export const DeleteArtistDocument = `
+    mutation DeleteArtist($id: UUID!) {
+  deleteArtist(id: $id) {
+    success
+    message
+    deletedId
+  }
+}
+    `;
+
+export const useDeleteArtistMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    DeleteArtistMutation,
+    TError,
+    DeleteArtistMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    DeleteArtistMutation,
+    TError,
+    DeleteArtistMutationVariables,
+    TContext
+  >({
+    mutationKey: ['DeleteArtist'],
+    mutationFn: (variables?: DeleteArtistMutationVariables) =>
+      fetcher<DeleteArtistMutation, DeleteArtistMutationVariables>(
+        DeleteArtistDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useDeleteArtistMutation.getKey = () => ['DeleteArtist'];
 
 export const GetEnrichmentLogsDocument = `
     query GetEnrichmentLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: EnrichmentLogStatus, $skip: Int, $limit: Int) {

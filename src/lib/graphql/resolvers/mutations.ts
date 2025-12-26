@@ -693,6 +693,224 @@ export const mutationResolvers: MutationResolvers = {
       });
     }
   },
+
+  addArtist: async (
+    _,
+    { input },
+    { user, prisma, activityTracker, priorityManager, sessionId, requestId }
+  ) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      // Check if artist already exists by MusicBrainz ID
+      if (input.musicbrainzId) {
+        const existing = await prisma.artist.findFirst({
+          where: { musicbrainzId: input.musicbrainzId },
+        });
+
+        if (existing) {
+          console.log(
+            `🔄 Artist already exists: "${existing.name}" (${existing.id})`
+          );
+          return existing as any;
+        }
+      }
+
+      // Check if artist already exists by name (case-insensitive)
+      const existingByName = await prisma.artist.findFirst({
+        where: {
+          name: {
+            equals: input.name,
+            mode: 'insensitive',
+          },
+        },
+      });
+
+      if (existingByName) {
+        console.log(
+          `🔄 Artist already exists by name: "${existingByName.name}" (${existingByName.id})`
+        );
+        return existingByName as any;
+      }
+
+      // Create the artist
+      const artist = await prisma.artist.create({
+        data: {
+          name: input.name,
+          musicbrainzId: input.musicbrainzId,
+          imageUrl: input.imageUrl,
+          countryCode: input.countryCode,
+          dataQuality: input.musicbrainzId ? 'MEDIUM' : 'LOW',
+          enrichmentStatus: 'PENDING',
+          lastEnriched: null,
+        },
+      });
+
+      console.log(`✨ Created new artist: "${artist.name}" (${artist.id})`);
+
+      // Queue enrichment check in background (non-blocking for faster response)
+      setImmediate(async () => {
+        try {
+          const queue = getMusicBrainzQueue();
+
+          // Track manual artist creation for priority management
+          await activityTracker.trackManualCreation('artist', artist.id);
+
+          // Queue artist enrichment check
+          const checkData: CheckArtistEnrichmentJobData = {
+            artistId: artist.id,
+            source: 'manual_add',
+            priority: 'high',
+            requestId: `manual-artist-add-${artist.id}`,
+          };
+
+          const jobOptions = getPriorityJobOptions(
+            'artist_enrichment',
+            artist.id,
+            10
+          );
+
+          await queue.addJob(
+            JOB_TYPES.CHECK_ARTIST_ENRICHMENT,
+            checkData,
+            jobOptions
+          );
+
+          console.log(`🔄 Queued enrichment check for artist ${artist.id}`);
+
+          // Also log priority calculation for debugging
+          await logPriorityCalculation(
+            'artist_enrichment',
+            artist.id,
+            jobOptions.priority / 10, // Convert back to 1-10 scale
+            {
+              actionImportance: 8,
+              userActivity: 0,
+              entityRelevance: 0,
+              systemLoad: 0,
+            },
+            jobOptions.delay
+          );
+        } catch (queueError) {
+          console.warn(
+            'Failed to queue enrichment check for new artist:',
+            queueError
+          );
+        }
+      });
+
+      // Log the manual artist creation
+      const fieldsCreated = ['name'];
+      if (input.musicbrainzId) fieldsCreated.push('musicbrainzId');
+      if (input.imageUrl) fieldsCreated.push('imageUrl');
+      if (input.countryCode) fieldsCreated.push('countryCode');
+
+      await logActivity({
+        prisma,
+        entityType: 'ARTIST',
+        entityId: artist.id,
+        operation: OPERATIONS.MANUAL_CREATE,
+        sources: [SOURCES.USER],
+        fieldsChanged: fieldsCreated,
+        userId: user.id,
+        dataQualityAfter: artist.dataQuality,
+      });
+
+      // Return the artist
+      return (await prisma.artist.findUnique({
+        where: { id: artist.id },
+      })) as any;
+    } catch (error) {
+      console.error('Error creating artist:', error);
+      throw new GraphQLError('Failed to create artist', {
+        extensions: { code: 'INTERNAL_ERROR' },
+      });
+    }
+  },
+
+  deleteArtist: async (
+    _: unknown,
+    { id }: { id: string },
+    context: any
+  ) => {
+    const { user, prisma } = context;
+
+    // Check authentication
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Check authorization - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Unauthorized: Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      // Check if artist exists
+      const artist = await prisma.artist.findUnique({
+        where: { id },
+        include: {
+          _count: {
+            select: {
+              albumArtist: true,
+              trackArtist: true,
+            },
+          },
+        },
+      });
+
+      if (!artist) {
+        throw new GraphQLError('Artist not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Use Prisma transaction to handle cascade deletion
+      await prisma.$transaction(async (tx) => {
+        // Delete related records in order
+        // 1. AlbumArtist entries (album-artist relationships)
+        await tx.albumArtist.deleteMany({
+          where: { artistId: id },
+        });
+
+        // 2. TrackArtist entries (track-artist relationships)
+        await tx.trackArtist.deleteMany({
+          where: { artistId: id },
+        });
+
+        // 3. EnrichmentLog entries
+        await tx.enrichmentLog.deleteMany({
+          where: { artistId: id },
+        });
+
+        // 4. Finally, delete the artist itself
+        await tx.artist.delete({
+          where: { id },
+        });
+      });
+
+      return {
+        success: true,
+        message: `Artist deleted successfully`,
+        deletedId: id,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) {
+        throw error;
+      }
+      console.error('Error deleting artist:', error);
+      throw new GraphQLError(`Failed to delete artist: ${error}`, {
+        extensions: { code: 'INTERNAL_ERROR' },
+      });
+    }
+  },
+
   // Collection management mutations (placeholders)
   createCollection: async (
     _,
