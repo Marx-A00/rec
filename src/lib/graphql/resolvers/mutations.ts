@@ -756,7 +756,21 @@ export const mutationResolvers: MutationResolvers = {
           const queue = getMusicBrainzQueue();
 
           // Track manual artist creation for priority management
-          await activityTracker.trackManualCreation('artist', artist.id);
+          await activityTracker.recordEntityInteraction(
+            'add_artist',
+            'artist',
+            artist.id,
+            'mutation',
+            { source: 'manual_add' }
+          );
+
+          // Get smart job options based on user activity
+          const jobOptions = await priorityManager.getJobOptions(
+            'manual',
+            artist.id,
+            'artist',
+            requestId
+          );
 
           // Queue artist enrichment check
           const checkData: CheckArtistEnrichmentJobData = {
@@ -766,23 +780,15 @@ export const mutationResolvers: MutationResolvers = {
             requestId: `manual-artist-add-${artist.id}`,
           };
 
-          const jobOptions = getPriorityJobOptions(
-            'artist_enrichment',
-            artist.id,
-            10
-          );
-
           await queue.addJob(
             JOB_TYPES.CHECK_ARTIST_ENRICHMENT,
             checkData,
             jobOptions
           );
 
-          console.log(`🔄 Queued enrichment check for artist ${artist.id}`);
-
-          // Also log priority calculation for debugging
-          await logPriorityCalculation(
-            'artist_enrichment',
+          // Log priority decision for debugging
+          priorityManager.logPriorityDecision(
+            'manual',
             artist.id,
             jobOptions.priority / 10, // Convert back to 1-10 scale
             {
@@ -855,14 +861,6 @@ export const mutationResolvers: MutationResolvers = {
       // Check if artist exists
       const artist = await prisma.artist.findUnique({
         where: { id },
-        include: {
-          _count: {
-            select: {
-              albumArtist: true,
-              trackArtist: true,
-            },
-          },
-        },
       });
 
       if (!artist) {
@@ -874,22 +872,22 @@ export const mutationResolvers: MutationResolvers = {
       // Use Prisma transaction to handle cascade deletion
       await prisma.$transaction(async (tx) => {
         // Delete related records in order
-        // 1. AlbumArtist entries (album-artist relationships)
+        // 1. Album-artist relationships
         await tx.albumArtist.deleteMany({
           where: { artistId: id },
         });
 
-        // 2. TrackArtist entries (track-artist relationships)
+        // 2. Track-artist relationships
         await tx.trackArtist.deleteMany({
           where: { artistId: id },
         });
 
-        // 3. EnrichmentLog entries
+        // 3. Enrichment logs
         await tx.enrichmentLog.deleteMany({
           where: { artistId: id },
         });
 
-        // 4. Finally, delete the artist itself
+        // 4. Finally, delete the artist
         await tx.artist.delete({
           where: { id },
         });

@@ -1,7 +1,6 @@
 'use client';
 
-import { Loader2, RefreshCcw, Database, Trash2, ExternalLink, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+import { Loader2, RefreshCcw, Database, ExternalLink } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -12,19 +11,10 @@ import { useArtistState } from '@/hooks/useArtistState';
 import {
   useTriggerArtistEnrichmentMutation,
   useAddArtistMutation,
-  useDeleteArtistMutation,
   EnrichmentPriority,
   EnrichmentStatus,
   DataQuality,
 } from '@/generated/graphql';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 
 interface ArtistAdminActionsProps {
   artistId: string;
@@ -58,10 +48,6 @@ export default function ArtistAdminActions({
   // Admin mutation hooks
   const enrichMutation = useTriggerArtistEnrichmentMutation();
   const addArtistMutation = useAddArtistMutation();
-  const deleteMutation = useDeleteArtistMutation();
-
-  // Delete confirmation modal state
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   // Admin action handlers
   const handleEnrichArtist = async () => {
@@ -111,28 +97,6 @@ export default function ArtistAdminActions({
       showToast('Artist added to database successfully', 'success');
     } catch (error) {
       showToast(`Failed to add artist: ${error}`, 'error');
-    }
-  };
-
-  const handleDeleteArtist = async () => {
-    const dbId = artistState.dbId || artistId;
-    if (!dbId) return;
-
-    try {
-      const result = await deleteMutation.mutateAsync({
-        id: dbId,
-      });
-
-      if (result.deleteArtist.success) {
-        showToast('Artist deleted successfully', 'success');
-        setDeleteModalOpen(false);
-        // Redirect to artists page or close modal
-        window.location.href = '/artists';
-      } else {
-        throw new Error(result.deleteArtist.message || 'Failed to delete artist');
-      }
-    } catch (error) {
-      showToast(`Failed to delete artist: ${error}`, 'error');
     }
   };
 
@@ -249,20 +213,6 @@ export default function ArtistAdminActions({
             {!artistState.existsInDb ? 'Add to DB first' : 'Enrich'}
           </Button>
 
-          {/* Delete - Only show if in DB */}
-          {artistState.existsInDb && (
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => setDeleteModalOpen(true)}
-              disabled={deleteMutation.isPending || artistState.isLoading}
-              className='gap-1.5 border-red-800/50 bg-red-950/20 text-red-200 hover:bg-red-900/30 hover:text-red-100'
-            >
-              <Trash2 className='h-3.5 w-3.5' />
-              Delete
-            </Button>
-          )}
-
           {/* Admin Panel Link - Only if in DB */}
           {artistState.existsInDb && artistState.dbId && (
             <Button
@@ -278,57 +228,6 @@ export default function ArtistAdminActions({
           )}
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className='sm:max-w-md'>
-          <DialogHeader>
-            <DialogTitle>Delete Artist</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this artist? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className='my-4'>
-            <div className='rounded-lg border border-zinc-800 bg-zinc-900/50 p-3'>
-              <p className='font-medium text-zinc-100'>{artistName}</p>
-            </div>
-
-            <div className='mt-4 rounded-lg border border-red-900/50 bg-red-950/20 p-3'>
-              <div className='flex gap-2'>
-                <AlertCircle className='mt-0.5 h-4 w-4 flex-shrink-0 text-red-400' />
-                <div className='text-sm text-red-200'>
-                  <p className='font-medium'>This will permanently delete:</p>
-                  <ul className='mt-1 list-inside list-disc space-y-0.5 text-red-300'>
-                    <li>All album relationships</li>
-                    <li>All track relationships</li>
-                    <li>All enrichment logs</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant='outline' onClick={() => setDeleteModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant='destructive'
-              onClick={handleDeleteArtist}
-              disabled={deleteMutation.isPending}
-              className='gap-2'
-            >
-              {deleteMutation.isPending ? (
-                <Loader2 className='h-4 w-4 animate-spin' />
-              ) : (
-                <Trash2 className='h-4 w-4' />
-              )}
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete Permanently'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Toast Notification */}
       <Toast message={toast.message} type={toast.type} isVisible={toast.isVisible} onClose={hideToast} />

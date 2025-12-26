@@ -78,6 +78,8 @@ import {
   useUpdateArtistDataQualityMutation,
   useTriggerAlbumEnrichmentMutation,
   useTriggerArtistEnrichmentMutation,
+  useDeleteAlbumMutation,
+  useDeleteArtistMutation,
   EnrichmentPriority,
   DataQuality,
 } from '@/generated/graphql';
@@ -170,6 +172,8 @@ export default function MusicDatabasePage() {
   const itemsPerPage = 50;
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [albumToDelete, setAlbumToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [artistToDelete, setArtistToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deleteArtistModalOpen, setDeleteArtistModalOpen] = useState(false);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
@@ -194,6 +198,10 @@ export default function MusicDatabasePage() {
   // Data quality mutations
   const updateAlbumQualityMutation = useUpdateAlbumDataQualityMutation();
   const updateArtistQualityMutation = useUpdateArtistDataQualityMutation();
+
+  // Delete mutations
+  const deleteAlbumMutation = useDeleteAlbumMutation();
+  const deleteArtistMutation = useDeleteArtistMutation();
 
   // Search albums with React Query
   const {
@@ -376,6 +384,37 @@ export default function MusicDatabasePage() {
     } catch (error) {
       console.error('Delete error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete album';
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleDeleteArtist = async () => {
+    if (!artistToDelete) return;
+
+    try {
+      const result = await deleteArtistMutation.mutateAsync({
+        id: artistToDelete.id,
+      });
+
+      if (result.deleteArtist?.success) {
+        toast.success(`Successfully deleted "${artistToDelete.name}"`);
+
+        // Collapse the row and refetch data
+        setExpandedRows(prev => {
+          const next = new Set(prev);
+          next.delete(artistToDelete.id);
+          return next;
+        });
+
+        setDeleteArtistModalOpen(false);
+        setArtistToDelete(null);
+        refetchArtists();
+      } else {
+        throw new Error(result.deleteArtist?.message || 'Failed to delete artist');
+      }
+    } catch (error) {
+      console.error('Delete artist error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete artist';
       toast.error(errorMessage);
     }
   };
@@ -978,6 +1017,37 @@ export default function MusicDatabasePage() {
                 : '✗ Missing images'}
             </div>
           </div>
+        </div>
+
+        {/* Delete Artist Button */}
+        <div className='flex justify-end pt-2 border-t border-zinc-700'>
+          <Button
+            onClick={() => {
+              setArtistToDelete({
+                id: artistDetails.id,
+                name: artistDetails.name,
+              });
+              setDeleteArtistModalOpen(true);
+            }}
+            variant='destructive'
+            size='sm'
+            className='gap-2'
+          >
+            <svg
+              className='h-4 w-4'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+              />
+            </svg>
+            Delete Artist
+          </Button>
         </div>
 
         {/* Albums Section */}
@@ -1777,6 +1847,78 @@ export default function MusicDatabasePage() {
             <Button
               variant='destructive'
               onClick={handleDeleteAlbum}
+              className='gap-2'
+            >
+              <svg
+                className='h-4 w-4'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+                />
+              </svg>
+              Delete Permanently
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Artist Confirmation Modal */}
+      <Dialog open={deleteArtistModalOpen} onOpenChange={setDeleteArtistModalOpen}>
+        <DialogContent className='bg-zinc-900 border-zinc-800 text-white'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2 text-red-500'>
+              <AlertCircle className='h-5 w-5' />
+              Delete Artist
+            </DialogTitle>
+            <DialogDescription className='text-zinc-400'>
+              This action cannot be undone. This will permanently delete the artist
+              and all associated data.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className='space-y-4 py-4'>
+            <div className='bg-zinc-800 border border-zinc-700 rounded-lg p-4'>
+              <div className='font-semibold text-white mb-2'>
+                {artistToDelete?.name}
+              </div>
+              <div className='text-sm text-zinc-400'>
+                Database ID: <span className='font-mono text-xs'>{artistToDelete?.id}</span>
+              </div>
+            </div>
+
+            <div className='bg-red-950/20 border border-red-900/50 rounded-lg p-4'>
+              <div className='font-medium text-red-400 mb-2 flex items-center gap-2'>
+                <AlertCircle className='h-4 w-4' />
+                Warning
+              </div>
+              <ul className='text-sm text-red-300/80 space-y-1 list-disc list-inside'>
+                <li>Artist will be removed from all album and track relationships</li>
+                <li>All enrichment logs for this artist will be deleted</li>
+                <li>This operation cannot be reversed</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => {
+                setDeleteArtistModalOpen(false);
+                setArtistToDelete(null);
+              }}
+              className='border-zinc-700 text-white hover:bg-zinc-800'
+            >
+              Cancel
+            </Button>
+            <Button
+              variant='destructive'
+              onClick={handleDeleteArtist}
               className='gap-2'
             >
               <svg
