@@ -5,6 +5,7 @@ import AlbumImage from '@/components/ui/AlbumImage';
 import BackButton from '@/components/ui/BackButton';
 import DiscographyTab from '@/components/artistDetails/tabs/DiscographyTab';
 import ArtistRecommendationsTab from '@/components/artistDetails/tabs/ArtistRecommendationsTab';
+import ArtistAdminActions from '@/components/artistDetails/ArtistAdminActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getArtistDetails } from '@/lib/api/artists';
 import { artistParamsSchema } from '@/lib/validations/params';
@@ -170,6 +171,14 @@ export default async function ArtistDetailsPage({
               </div>
             )}
           </div>
+
+          {/* Admin Actions */}
+          <ArtistAdminActions
+            artistId={artist.id}
+            artistName={artist.name}
+            artistSource={artist.source as 'local' | 'musicbrainz' | 'discogs'}
+            musicbrainzId={artist.musicbrainzId}
+          />
         </div>
       </div>
 

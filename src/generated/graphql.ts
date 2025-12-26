@@ -1798,6 +1798,10 @@ export type GetArtistByMusicBrainzIdQuery = {
     musicbrainzId?: string | null;
     name: string;
     imageUrl?: string | null;
+    dataQuality?: DataQuality | null;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+    needsEnrichment: boolean;
   } | null;
 };
 
@@ -3784,6 +3788,10 @@ export const GetArtistByMusicBrainzIdDocument = `
     musicbrainzId
     name
     imageUrl
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    needsEnrichment
   }
 }
     `;

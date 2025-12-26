@@ -339,7 +339,8 @@ export const queryResolvers: QueryResolvers = {
         where: { musicbrainzId },
       });
       if (!artist) return null;
-      return { id: artist.id } as ResolversTypes['Artist'];
+      // Return full artist data - field resolvers will handle relationships
+      return artist as ResolversTypes['Artist'];
     } catch (error) {
       throw new GraphQLError(
         `Failed to fetch artist by MusicBrainz ID: ${error}`
