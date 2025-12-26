@@ -2312,7 +2312,7 @@ export type GetMyCollectionsQuery = {
         coverArtUrl?: string | null;
         artists: Array<{
           __typename?: 'ArtistCredit';
-          artist: { __typename?: 'Artist'; name: string };
+          artist: { __typename?: 'Artist'; id: string; name: string };
         }>;
       };
     }>;
@@ -4982,6 +4982,7 @@ export const GetMyCollectionsDocument = `
         coverArtUrl
         artists {
           artist {
+            id
             name
           }
         }

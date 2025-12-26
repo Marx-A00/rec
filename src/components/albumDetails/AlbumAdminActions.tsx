@@ -1,14 +1,13 @@
 'use client';
 
 import { Loader2, RefreshCcw, Database, ExternalLink, Trash2 } from 'lucide-react';
-import { useSession } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import Toast, { useToast } from '@/components/ui/toast';
-import { isAdmin } from '@/lib/permissions';
+import { useAdminOverlay } from '@/hooks/useAdminOverlay';
 import { useAlbumState } from '@/hooks/useAlbumState';
 import {
   useTriggerAlbumEnrichmentMutation,
@@ -33,11 +32,11 @@ interface AlbumAdminActionsProps {
 }
 
 export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
-  const { data: session } = useSession();
   const { toast, showToast, hideToast } = useToast();
   const queryClient = useQueryClient();
   const router = useRouter();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const { adminOverlayEnabled } = useAdminOverlay();
 
   // Get unified album state
   const albumState = useAlbumState(album);
@@ -47,8 +46,8 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
   const addAlbumMutation = useAddAlbumMutation();
   const deleteMutation = useDeleteAlbumMutation();
 
-  // Only render for admin users
-  if (!isAdmin(session?.user?.role)) {
+  // Only render for admin users with overlay enabled
+  if (!adminOverlayEnabled) {
     return null;
   }
 
@@ -137,7 +136,12 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
     <>
       <div className='mt-6 rounded-lg border border-amber-900/30 bg-amber-950/10 p-4'>
         <div className='mb-3 flex items-start justify-between'>
-          <h3 className='text-sm font-medium text-amber-200'>Admin Actions</h3>
+          <div className='flex items-center gap-2'>
+            <h3 className='text-sm font-medium text-amber-200'>Admin Actions</h3>
+            <span className='rounded bg-amber-900/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-300 ring-1 ring-amber-800/50'>
+              OVERLAY
+            </span>
+          </div>
           {albumState.isLoading && (
             <Loader2 className='h-3.5 w-3.5 animate-spin text-amber-400' />
           )}

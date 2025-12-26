@@ -11,6 +11,7 @@ query GetMyCollections {
         coverArtUrl
         artists {
           artist {
+            id
             name
           }
         }

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Heart, Share2, MoreHorizontal, User, Loader2, RefreshCcw, Database, Trash2, ExternalLink, AlertCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Button } from '@/components/ui/button';
@@ -13,12 +12,12 @@ import CollectionPopover from '@/components/collections/CollectionPopover';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 import { useAlbumState } from '@/hooks/useAlbumState';
+import { useAdminOverlay } from '@/hooks/useAdminOverlay';
 import { Release } from '@/types/album';
 import { CollectionAlbum } from '@/types/collection';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
 import { graphqlClient } from '@/lib/graphql-client';
-import { isAdmin } from '@/lib/permissions';
 import {
   Dialog,
   DialogContent,
@@ -75,7 +74,7 @@ export default function AlbumModal({
   const { toast, showToast, hideToast } = useToast();
   const { openDrawer } = useRecommendationDrawerContext();
   const queryClient = useQueryClient();
-  const { data: session } = useSession();
+  const { adminOverlayEnabled } = useAdminOverlay();
 
   // Admin mutation hooks
   const enrichMutation = useTriggerAlbumEnrichmentMutation();
@@ -907,12 +906,17 @@ export default function AlbumModal({
           )}
 
           {/* Admin Actions Section */}
-          {albumForInteractions && isAdmin(session?.user?.role) && (
+          {albumForInteractions && adminOverlayEnabled && (
             <div className='mt-6 rounded-lg border border-amber-900/30 bg-amber-950/10 p-4'>
               <div className='mb-3 flex items-start justify-between'>
-                <h3 className='text-sm font-medium text-amber-200'>
-                  Admin Actions
-                </h3>
+                <div className='flex items-center gap-2'>
+                  <h3 className='text-sm font-medium text-amber-200'>
+                    Admin Actions
+                  </h3>
+                  <span className='rounded bg-amber-900/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-300 ring-1 ring-amber-800/50'>
+                    OVERLAY
+                  </span>
+                </div>
                 {albumState.isLoading && (
                   <Loader2 className='h-3.5 w-3.5 animate-spin text-amber-400' />
                 )}

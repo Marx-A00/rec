@@ -682,9 +682,11 @@ export default function MusicDatabasePage() {
 
   const formatDuration = (ms: number | null) => {
     if (!ms) return '-';
-    const minutes = Math.floor(ms / 60000);
-    const seconds = ((ms % 60000) / 1000).toFixed(0);
-    return `${minutes}:${seconds.padStart(2, '0')}`;
+    // Convert milliseconds to total seconds
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const toggleExpanded = (id: string) => {
