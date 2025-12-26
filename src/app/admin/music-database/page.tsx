@@ -1122,7 +1122,15 @@ export default function MusicDatabasePage() {
               {artistDetails.albums.map((album: any) => (
                 <div
                   key={album.id}
-                  className='flex items-center gap-2 p-2 bg-zinc-900/50 rounded text-xs'
+                  className='flex items-center gap-2 p-2 bg-zinc-900/50 rounded text-xs cursor-pointer hover:bg-zinc-800/50 transition-colors'
+                  onClick={() => {
+                    // Switch to albums tab and navigate to this album
+                    setActiveTab('albums');
+                    // Use the existing URL navigation pattern
+                    window.history.pushState({}, '', `/admin/music-database?id=${album.id}&type=albums`);
+                    // Trigger the scroll-to-row logic by updating the search params
+                    window.location.href = `/admin/music-database?id=${album.id}&type=albums`;
+                  }}
                 >
                   {album.coverArtUrl && (
                     <img
@@ -1527,12 +1535,27 @@ export default function MusicDatabasePage() {
                           </div>
                         </TableCell>
                         <TableCell className='text-zinc-300'>
-                          {album.artists
-                            .slice(0, 2)
-                            .map((a: any) => a.artist.name)
-                            .join(', ')}
-                          {album.artists.length > 2 &&
-                            ` +${album.artists.length - 2}`}
+                          <div className='flex flex-wrap gap-1'>
+                            {album.artists.slice(0, 2).map((a: any, idx: number) => (
+                              <span key={a.artist.id}>
+                                <span
+                                  className='cursor-pointer hover:text-cosmic-latte transition-colors'
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.location.href = `/admin/music-database?id=${a.artist.id}&type=artists`;
+                                  }}
+                                >
+                                  {a.artist.name}
+                                </span>
+                                {idx < Math.min(1, album.artists.length - 1) && ', '}
+                              </span>
+                            ))}
+                            {album.artists.length > 2 && (
+                              <span className='text-zinc-500'>
+                                +{album.artists.length - 2}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className='text-zinc-300'>
                           {album.releaseDate
