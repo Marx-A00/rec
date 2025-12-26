@@ -2,17 +2,16 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, Share2, MoreHorizontal, User, Clock, Check, Loader2, RefreshCcw, Database, Trash2, ExternalLink, AlertCircle } from 'lucide-react';
+import { Heart, Share2, MoreHorizontal, User, Loader2, RefreshCcw, Database, Trash2, ExternalLink, AlertCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Button } from '@/components/ui/button';
 import Toast, { useToast } from '@/components/ui/toast';
-import AddToCollectionButton from '@/components/collections/AddToCollectionButton';
+import CollectionPopover from '@/components/collections/CollectionPopover';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
-import { useListenLaterStatus } from '@/hooks/useListenLaterStatus';
 import { useAlbumState } from '@/hooks/useAlbumState';
 import { Release } from '@/types/album';
 import { CollectionAlbum } from '@/types/collection';
@@ -29,7 +28,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  useAddToListenLaterMutation,
   GetArtistByMusicBrainzIdDocument,
   type GetArtistByMusicBrainzIdQuery,
   useTriggerAlbumEnrichmentMutation,
@@ -78,14 +76,6 @@ export default function AlbumModal({
   const { openDrawer } = useRecommendationDrawerContext();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const addToListenLater = useAddToListenLaterMutation({
-    onSuccess: () => {
-      showToast('Added to Listen Later', 'success');
-      // Invalidate Listen Later cache to refetch
-      queryClient.invalidateQueries({ queryKey: ['collections', 'listen-later', 'albums'] });
-    },
-    onError: () => showToast('Failed to add to Listen Later', 'error'),
-  });
 
   // Admin mutation hooks
   const enrichMutation = useTriggerAlbumEnrichmentMutation();
@@ -268,12 +258,7 @@ export default function AlbumModal({
     return null;
   }, [data, highQualityImageUrl]);
 
-  // Check if album is already in Listen Later (must be after albumForInteractions is defined)
-  const { isInListenLater, isLoading: isCheckingListenLater } = useListenLaterStatus(
-    albumForInteractions?.id || ''
-  );
-
-  // Get unified album state for smart admin button behavior
+  // Get unified album state for smart admin button behavior and collection checks
   const albumState = useAlbumState(albumForInteractions);
 
   // Album interaction handlers
@@ -399,44 +384,6 @@ export default function AlbumModal({
       console.error('Share failed:', error);
       showToast('Failed to share album', 'error');
     }
-  };
-
-  const handleAddToListenLater = async () => {
-    if (!session?.user) {
-      showToast('Please sign in to add to Listen Later', 'error');
-      return;
-    }
-
-    if (!albumForInteractions?.id) {
-      showToast('Album not available', 'error');
-      return;
-    }
-
-    // If already in Listen Later, navigate to profile
-    if (isInListenLater) {
-      router.push('/profile');
-      return;
-    }
-
-    try {
-      // Prepare album data with artists
-      const albumData = {
-        title: albumForInteractions.title,
-        artists: albumForInteractions.artists.map(artist => ({
-          artistName: artist.name,
-          artistId: artist.id || undefined,
-        })),
-        coverImageUrl: albumForInteractions.image?.url || undefined,
-        musicbrainzId: albumForInteractions.musicbrainzId || undefined,
-        releaseDate: albumForInteractions.year ? `${albumForInteractions.year}-01-01` : undefined,
-        totalTracks: albumForInteractions.metadata?.numberOfTracks || undefined,
-      };
-
-      await addToListenLater.mutateAsync({
-        albumId: albumForInteractions.id,
-        albumData,
-      });
-    } catch {}
   };
 
   // Admin action handlers
@@ -928,48 +875,11 @@ export default function AlbumModal({
                   Make Rec
                 </Button>
 
-                <AddToCollectionButton
+                <CollectionPopover
                   album={albumForInteractions}
                   size='sm'
                   variant='default'
                 />
-
-                <Button
-                  variant={isInListenLater && session?.user ? 'success' : 'secondary'}
-                  size='sm'
-                  onClick={handleAddToListenLater}
-                  disabled={addToListenLater.isPending || (isCheckingListenLater && !!session?.user)}
-                  className='gap-1.5 text-sm'
-                  aria-label={
-                    isCheckingListenLater
-                      ? 'Checking Listen Later status...'
-                      : isInListenLater
-                        ? 'In Listen Later'
-                        : 'Add to Listen Later'
-                  }
-                >
-                  {isCheckingListenLater && !!session?.user ? (
-                    <>
-                      <Loader2 className='h-3.5 w-3.5 animate-spin' />
-                      Checking...
-                    </>
-                  ) : addToListenLater.isPending ? (
-                    <>
-                      <Loader2 className='h-3.5 w-3.5 animate-spin' />
-                      Adding...
-                    </>
-                  ) : isInListenLater && session?.user ? (
-                    <>
-                      <Check className='h-3.5 w-3.5' />
-                      In Listen Later
-                    </>
-                  ) : (
-                    <>
-                      <Clock className='h-3.5 w-3.5' />
-                      Listen Later
-                    </>
-                  )}
-                </Button>
 
                 <Button
                   variant='outline'
