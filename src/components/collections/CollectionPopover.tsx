@@ -168,7 +168,10 @@ export default function CollectionPopover({
           Save
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 bg-zinc-900 border-zinc-800 text-white p-3">
+      <PopoverContent
+        className="w-64 bg-zinc-900 border-zinc-800 text-white p-3"
+        sideOffset={8}
+      >
         <div className="space-y-3">
           <div className="font-semibold text-sm">Save to...</div>
 
