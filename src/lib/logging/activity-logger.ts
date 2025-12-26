@@ -12,7 +12,8 @@ export const OPERATIONS = {
   LASTFM_FETCH: 'LASTFM_FETCH',
 
   // Manual user operations
-  MANUAL_CREATE: 'MANUAL_CREATE',
+  MANUAL_CREATE: 'MANUAL_CREATE', // User manually typed in all data
+  MANUAL_ADD: 'MANUAL_ADD', // Admin added existing entity from external source (e.g., MusicBrainz)
   MANUAL_UPDATE: 'MANUAL_UPDATE',
   MANUAL_DELETE: 'MANUAL_DELETE',
   MANUAL_DATA_QUALITY_UPDATE: 'MANUAL_DATA_QUALITY_UPDATE',
@@ -33,6 +34,7 @@ export const SOURCES = {
   LASTFM: 'LASTFM',
   DISCOGS: 'DISCOGS',
   USER: 'USER',
+  ADMIN: 'ADMIN', // Admin panel actions
   SYSTEM: 'SYSTEM',
 } as const;
 

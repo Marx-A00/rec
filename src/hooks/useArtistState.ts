@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react';
 
 import {
   useGetArtistByMusicBrainzIdQuery,
+  useGetArtistDetailsQuery,
   DataQuality,
   EnrichmentStatus,
 } from '@/generated/graphql';
@@ -42,6 +43,15 @@ export function useArtistState(artist: ArtistInput | null): ArtistState {
   const isLocalArtist = artist?.source === 'local';
   const musicbrainzId = artist?.musicbrainzId;
 
+  // For local artists, fetch full details by ID
+  const { data: localArtistData, isLoading: isLoadingLocalLookup } =
+    useGetArtistDetailsQuery(
+      { id: artist?.id || '' },
+      {
+        enabled: isLocalArtist && !!artist?.id,
+      }
+    );
+
   // For external artists, query DB to check if it exists by musicbrainzId
   const { data: externalArtistData, isLoading: isLoadingExternalLookup } =
     useGetArtistByMusicBrainzIdQuery(
@@ -59,29 +69,38 @@ export function useArtistState(artist: ArtistInput | null): ArtistState {
   }, [artist, isLocalArtist, externalArtistData]);
 
   // Combine all loading states
-  const isLoading = isLoadingExternalLookup;
+  const isLoading = isLoadingLocalLookup || isLoadingExternalLookup;
 
-  // Extract enrichment data from the MusicBrainz lookup (which includes these fields)
+  // Extract enrichment data from either local or external artist data
   const enrichmentStatus = useMemo(() => {
+    if (isLocalArtist && localArtistData?.artist) {
+      return localArtistData.artist.enrichmentStatus || null;
+    }
     if (externalArtistData?.artistByMusicBrainzId) {
       return externalArtistData.artistByMusicBrainzId.enrichmentStatus || null;
     }
     return null;
-  }, [externalArtistData]);
+  }, [isLocalArtist, localArtistData, externalArtistData]);
 
   const lastEnriched = useMemo(() => {
+    if (isLocalArtist && localArtistData?.artist?.lastEnriched) {
+      return new Date(localArtistData.artist.lastEnriched);
+    }
     if (externalArtistData?.artistByMusicBrainzId?.lastEnriched) {
       return new Date(externalArtistData.artistByMusicBrainzId.lastEnriched);
     }
     return null;
-  }, [externalArtistData]);
+  }, [isLocalArtist, localArtistData, externalArtistData]);
 
   const dataQuality = useMemo(() => {
+    if (isLocalArtist && localArtistData?.artist) {
+      return localArtistData.artist.dataQuality || null;
+    }
     if (externalArtistData?.artistByMusicBrainzId) {
       return externalArtistData.artistByMusicBrainzId.dataQuality || null;
     }
     return null;
-  }, [externalArtistData]);
+  }, [isLocalArtist, localArtistData, externalArtistData]);
 
   return {
     existsInDb: !!dbId,
