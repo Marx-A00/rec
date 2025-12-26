@@ -935,7 +935,7 @@ export default function MusicDatabasePage() {
               Tracks ({albumDetails.tracks.length})
             </button>
             {tracksExpanded && (
-              <div className='space-y-1 max-h-60 overflow-y-auto'>
+              <div className='space-y-1 max-h-60 overflow-y-auto custom-scrollbar'>
                 {albumDetails.tracks.map((track: any) => (
                   <div
                     key={track.id}
