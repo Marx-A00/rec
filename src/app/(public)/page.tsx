@@ -4,6 +4,7 @@ import Image from 'next/image';
 
 import { Marquee } from '@/components/ui/marquee';
 import { Button } from '@/components/ui/button';
+import { RecentRecs } from '@/components/landing/RecentRecs';
 
 // Album cover data for the marquee
 const albumCovers = [
@@ -41,25 +42,25 @@ interface AlbumCardProps {
 
 function AlbumCard({ src, alt, priority = false }: AlbumCardProps) {
   return (
-    <div className="relative group">
-      <div className="relative h-32 w-32 sm:h-40 sm:w-40 md:h-48 md:w-48 overflow-hidden rounded-lg shadow-xl transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl">
+    <div className='relative group'>
+      <div className='relative h-32 w-32 sm:h-40 sm:w-40 md:h-48 md:w-48 overflow-hidden rounded-lg shadow-xl transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl'>
         <Image
           src={src}
           alt={alt}
           fill
           unoptimized
           priority={priority}
-          className="object-cover"
-          sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, 192px"
+          className='object-cover'
+          sizes='(max-width: 640px) 128px, (max-width: 768px) 160px, 192px'
         />
         {/* Glossy overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/20 pointer-events-none" />
+        <div className='absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/20 pointer-events-none' />
       </div>
     </div>
   );
 }
 
-export default function LandingPage() {
+function HeroSection() {
   const column1 = generateCovers('col1');
   const column2 = generateCovers('col2');
   const column3 = generateCovers('col3');
@@ -68,68 +69,68 @@ export default function LandingPage() {
   const mobileCovers = generateCovers('mobile');
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950">
+    <section className='relative min-h-[calc(100vh-4rem)] overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950'>
       {/* Background gradient overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent pointer-events-none" />
-      
+      <div className='absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent pointer-events-none' />
+
       {/* Main content */}
-      <div className="relative z-10 flex min-h-screen">
+      <div className='relative z-10 flex min-h-[calc(100vh-4rem)]'>
         {/* Left side - Hero content */}
-        <div className="flex flex-1 flex-col justify-center px-6 sm:px-12 lg:px-20 py-12">
-          <div className="max-w-xl">
+        <div className='flex flex-1 flex-col justify-center px-6 sm:px-12 lg:px-20 py-12'>
+          <div className='max-w-xl'>
             {/* Logo/Brand */}
-            <div className="mb-8">
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
-                <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+            <div className='mb-8'>
+              <h1 className='text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight'>
+                <span className='bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent'>
                   rec
                 </span>
               </h1>
             </div>
 
             {/* Tagline */}
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-zinc-100 mb-4">
+            <h2 className='text-2xl sm:text-3xl lg:text-4xl font-semibold text-zinc-100 mb-4'>
               Discover music that moves you
             </h2>
-            
-            <p className="text-lg sm:text-xl text-zinc-400 mb-8 leading-relaxed">
-              Get personalized album recommendations from people with great taste. 
-              Build your collection. Share your discoveries.
+
+            <p className='text-lg sm:text-xl text-zinc-400 mb-8 leading-relaxed'>
+              Get personalized album recommendations from people with great
+              taste. Build your collection. Share your discoveries.
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className='flex flex-col sm:flex-row gap-4'>
               <Button
                 asChild
-                size="lg"
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold px-8 py-6 text-lg rounded-xl shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/30"
+                size='lg'
+                className='bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold px-8 py-6 text-lg rounded-xl shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/30'
               >
-                <Link href="/register">Get Started</Link>
+                <Link href='/register'>Get Started</Link>
               </Button>
               <Button
                 asChild
-                variant="outline"
-                size="lg"
-                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 px-8 py-6 text-lg rounded-xl transition-all duration-300"
+                variant='outline'
+                size='lg'
+                className='border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 px-8 py-6 text-lg rounded-xl transition-all duration-300'
               >
-                <Link href="/signin">Sign In</Link>
+                <Link href='/signin'>Sign In</Link>
               </Button>
             </div>
           </div>
         </div>
 
         {/* Right side - 3D Marquee */}
-        <div className="hidden lg:flex flex-1 items-center justify-center overflow-hidden">
-          <div 
-            className="relative h-[800px] flex gap-4"
-            style={{ 
+        <div className='hidden lg:flex flex-1 items-center justify-center overflow-hidden'>
+          <div
+            className='relative h-[800px] flex gap-4'
+            style={{
               perspective: '1000px',
               perspectiveOrigin: '50% 50%',
             }}
           >
             {/* Column 1 - Far left, angled */}
-            <div 
-              className="relative opacity-40"
-              style={{ 
+            <div
+              className='relative opacity-40'
+              style={{
                 transform: 'rotateY(35deg) translateZ(-100px)',
                 transformStyle: 'preserve-3d',
               }}
@@ -137,18 +138,18 @@ export default function LandingPage() {
               <Marquee
                 vertical
                 pauseOnHover
-                className="h-[800px] [--duration:35s] [--gap:1rem]"
+                className='h-[800px] [--duration:35s] [--gap:1rem]'
               >
-                {column1.map((album) => (
+                {column1.map(album => (
                   <AlbumCard key={album.key} src={album.src} alt={album.alt} />
                 ))}
               </Marquee>
             </div>
 
             {/* Column 2 - Left */}
-            <div 
-              className="relative opacity-60"
-              style={{ 
+            <div
+              className='relative opacity-60'
+              style={{
                 transform: 'rotateY(20deg) translateZ(-50px)',
                 transformStyle: 'preserve-3d',
               }}
@@ -157,18 +158,18 @@ export default function LandingPage() {
                 vertical
                 reverse
                 pauseOnHover
-                className="h-[800px] [--duration:40s] [--gap:1rem]"
+                className='h-[800px] [--duration:40s] [--gap:1rem]'
               >
-                {column2.map((album) => (
+                {column2.map(album => (
                   <AlbumCard key={album.key} src={album.src} alt={album.alt} />
                 ))}
               </Marquee>
             </div>
 
             {/* Column 3 - Center (main focus) */}
-            <div 
-              className="relative"
-              style={{ 
+            <div
+              className='relative'
+              style={{
                 transform: 'translateZ(50px)',
                 transformStyle: 'preserve-3d',
               }}
@@ -176,13 +177,13 @@ export default function LandingPage() {
               <Marquee
                 vertical
                 pauseOnHover
-                className="h-[800px] [--duration:30s] [--gap:1rem]"
+                className='h-[800px] [--duration:30s] [--gap:1rem]'
               >
                 {column3.map((album, idx) => (
-                  <AlbumCard 
-                    key={album.key} 
-                    src={album.src} 
-                    alt={album.alt} 
+                  <AlbumCard
+                    key={album.key}
+                    src={album.src}
+                    alt={album.alt}
                     priority={idx < 2}
                   />
                 ))}
@@ -190,9 +191,9 @@ export default function LandingPage() {
             </div>
 
             {/* Column 4 - Right */}
-            <div 
-              className="relative opacity-60"
-              style={{ 
+            <div
+              className='relative opacity-60'
+              style={{
                 transform: 'rotateY(-20deg) translateZ(-50px)',
                 transformStyle: 'preserve-3d',
               }}
@@ -201,18 +202,18 @@ export default function LandingPage() {
                 vertical
                 reverse
                 pauseOnHover
-                className="h-[800px] [--duration:45s] [--gap:1rem]"
+                className='h-[800px] [--duration:45s] [--gap:1rem]'
               >
-                {column4.map((album) => (
+                {column4.map(album => (
                   <AlbumCard key={album.key} src={album.src} alt={album.alt} />
                 ))}
               </Marquee>
             </div>
 
             {/* Column 5 - Far right, angled */}
-            <div 
-              className="relative opacity-40"
-              style={{ 
+            <div
+              className='relative opacity-40'
+              style={{
                 transform: 'rotateY(-35deg) translateZ(-100px)',
                 transformStyle: 'preserve-3d',
               }}
@@ -220,45 +221,54 @@ export default function LandingPage() {
               <Marquee
                 vertical
                 pauseOnHover
-                className="h-[800px] [--duration:38s] [--gap:1rem]"
+                className='h-[800px] [--duration:38s] [--gap:1rem]'
               >
-                {column5.map((album) => (
+                {column5.map(album => (
                   <AlbumCard key={album.key} src={album.src} alt={album.alt} />
                 ))}
               </Marquee>
             </div>
 
             {/* Gradient overlays for depth */}
-            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950 pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/80 via-transparent to-zinc-950/80 pointer-events-none" />
+            <div className='absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950 pointer-events-none' />
+            <div className='absolute inset-0 bg-gradient-to-r from-zinc-950/80 via-transparent to-zinc-950/80 pointer-events-none' />
           </div>
         </div>
       </div>
 
       {/* Mobile marquee - horizontal at bottom */}
-      <div className="lg:hidden absolute bottom-0 left-0 right-0 overflow-hidden pb-4">
-        <div className="relative">
-          <Marquee
-            pauseOnHover
-            className="[--duration:25s] [--gap:0.75rem]"
-          >
+      <div className='lg:hidden absolute bottom-0 left-0 right-0 overflow-hidden pb-4'>
+        <div className='relative'>
+          <Marquee pauseOnHover className='[--duration:25s] [--gap:0.75rem]'>
             {mobileCovers.slice(0, 8).map((album, idx) => (
-              <div key={album.key} className="relative h-24 w-24 overflow-hidden rounded-lg shadow-lg">
+              <div
+                key={album.key}
+                className='relative h-24 w-24 overflow-hidden rounded-lg shadow-lg'
+              >
                 <Image
                   src={album.src}
                   alt={album.alt}
                   fill
                   unoptimized
                   priority={idx < 2}
-                  className="object-cover"
-                  sizes="96px"
+                  className='object-cover'
+                  sizes='96px'
                 />
               </div>
             ))}
           </Marquee>
-          <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-transparent to-zinc-950 pointer-events-none" />
+          <div className='absolute inset-0 bg-gradient-to-r from-zinc-950 via-transparent to-zinc-950 pointer-events-none' />
         </div>
       </div>
+    </section>
+  );
+}
+
+export default function LandingPage() {
+  return (
+    <div className='bg-zinc-950'>
+      <HeroSection />
+      <RecentRecs />
     </div>
   );
 }
