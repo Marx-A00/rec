@@ -1880,6 +1880,8 @@ async function handleSpotifySyncFeaturedPlaylists(
           const spotifyClient = createSpotifyClient();
           return await spotifyClient.browse.getFeaturedPlaylists(
             (data.country || 'US') as any,
+            'en_US', // Locale parameter (required)
+            undefined, // Timestamp (optional)
             (data.limit || 10) as any
           );
         }, 'Spotify getFeaturedPlaylists API call'),
