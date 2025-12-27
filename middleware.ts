@@ -421,6 +421,7 @@ function createRateLimitResponse(
 function isProtectedRoute(pathname: string): boolean {
   // All main app pages require authentication (route groups don't affect URL structure)
   const protectedPagePatterns = [
+    '/dashboard',
     '/albums',
     '/artists',
     '/browse',
@@ -617,6 +618,7 @@ export const config = {
     // API routes (for CORS and authentication)
     '/api/(.*)',
     // Protected page routes (for authentication)
+    '/dashboard/:path*',
     '/albums/:path*',
     '/artists/:path*',
     '/browse/:path*',
