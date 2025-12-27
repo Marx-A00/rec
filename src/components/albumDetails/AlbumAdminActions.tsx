@@ -68,6 +68,10 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
         queryClient.invalidateQueries({
           queryKey: ['AlbumByMusicBrainzId', { musicbrainzId: album.musicbrainzId }]
         });
+        // Invalidate enrichment logs to refresh admin panel
+        queryClient.invalidateQueries({
+          queryKey: ['GetEnrichmentLogs']
+        });
       } else {
         throw new Error(result.triggerAlbumEnrichment.message || 'Failed to queue enrichment');
       }

@@ -692,10 +692,16 @@ export default function MusicDatabasePage() {
   const toggleExpanded = (id: string) => {
     setExpandedRows(prev => {
       const newSet = new Set(prev);
+      const isExpanding = !newSet.has(id);
+
       if (newSet.has(id)) {
         newSet.delete(id);
+        // Remove URL params when collapsing
+        window.history.replaceState({}, '', '/admin/music-database');
       } else {
         newSet.add(id);
+        // Update URL params when expanding
+        window.history.replaceState({}, '', `/admin/music-database?id=${id}&type=${activeTab}`);
       }
       return newSet;
     });

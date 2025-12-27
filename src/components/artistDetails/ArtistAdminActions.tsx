@@ -65,6 +65,10 @@ export default function ArtistAdminActions({
         queryClient.invalidateQueries({
           queryKey: ['GetArtistByMusicBrainzId', { musicbrainzId }]
         });
+        // Invalidate enrichment logs to refresh admin panel
+        queryClient.invalidateQueries({
+          queryKey: ['GetEnrichmentLogs']
+        });
       } else {
         throw new Error(result.triggerArtistEnrichment.message || 'Failed to queue enrichment');
       }
