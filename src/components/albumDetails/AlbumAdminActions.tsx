@@ -10,6 +10,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatDistanceToNow } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import Toast, { useToast } from '@/components/ui/toast';
@@ -214,6 +215,13 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
                 <span className='text-zinc-400'>Last Enriched:</span>
                 <span className='text-zinc-300'>
                   {albumState.lastEnriched.toLocaleDateString()}
+                  <span className='text-zinc-500 text-xs ml-1.5'>
+                    (
+                    {formatDistanceToNow(albumState.lastEnriched, {
+                      addSuffix: true,
+                    })}
+                    )
+                  </span>
                 </span>
               </div>
             )}

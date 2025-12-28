@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { formatDistanceToNow } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
 import {
   Search,
@@ -163,7 +164,9 @@ export default function MusicDatabasePage() {
   const targetId = searchParams.get('id');
   const targetType = searchParams.get('type') as SearchType | null; // 'albums' or 'artists'
 
-  const [activeTab, setActiveTab] = useState<SearchType>(targetType || 'albums');
+  const [activeTab, setActiveTab] = useState<SearchType>(
+    targetType || 'albums'
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [idSearch, setIdSearch] = useState('');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -178,8 +181,14 @@ export default function MusicDatabasePage() {
   const [page, setPage] = useState(1);
   const itemsPerPage = 50;
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [albumToDelete, setAlbumToDelete] = useState<{ id: string; title: string } | null>(null);
-  const [artistToDelete, setArtistToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [albumToDelete, setAlbumToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  const [artistToDelete, setArtistToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [deleteArtistModalOpen, setDeleteArtistModalOpen] = useState(false);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -329,7 +338,8 @@ export default function MusicDatabasePage() {
   const previousStatusesRef = React.useRef<Map<string, string>>(new Map());
 
   React.useEffect(() => {
-    const currentItems = activeTab === 'albums' ? displayAlbums : displayArtists;
+    const currentItems =
+      activeTab === 'albums' ? displayAlbums : displayArtists;
 
     currentItems.forEach((item: any) => {
       const previousStatus = previousStatusesRef.current.get(item.id);
@@ -378,8 +388,16 @@ export default function MusicDatabasePage() {
     const targetExists = allItems.some((item: any) => item.id === targetId);
 
     // Only proceed if data is loaded and target exists
-    if (targetExists && !expandedRows.has(targetId) && !albumsLoading && !artistsLoading) {
-      console.log('Target found in data, expanding and scrolling to:', targetId);
+    if (
+      targetExists &&
+      !expandedRows.has(targetId) &&
+      !albumsLoading &&
+      !artistsLoading
+    ) {
+      console.log(
+        'Target found in data, expanding and scrolling to:',
+        targetId
+      );
 
       // Expand the target row
       setExpandedRows(prev => new Set(prev).add(targetId));
@@ -407,7 +425,10 @@ export default function MusicDatabasePage() {
               rowElement.style.boxShadow = '';
             }, 3000);
           } else {
-            console.log('Row element not found after data loaded:', `row-${targetId}`);
+            console.log(
+              'Row element not found after data loaded:',
+              `row-${targetId}`
+            );
           }
         }, 300);
       });
@@ -444,7 +465,8 @@ export default function MusicDatabasePage() {
       refetchAlbums();
     } catch (error) {
       console.error('Delete error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete album';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete album';
       toast.error(errorMessage);
     }
   };
@@ -471,11 +493,14 @@ export default function MusicDatabasePage() {
         setArtistToDelete(null);
         refetchArtists();
       } else {
-        throw new Error(result.deleteArtist?.message || 'Failed to delete artist');
+        throw new Error(
+          result.deleteArtist?.message || 'Failed to delete artist'
+        );
       }
     } catch (error) {
       console.error('Delete artist error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete artist';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete artist';
       toast.error(errorMessage);
     }
   };
@@ -497,7 +522,8 @@ export default function MusicDatabasePage() {
           refetchAlbums();
         } else {
           throw new Error(
-            result.triggerAlbumEnrichment.message || 'Failed to queue enrichment'
+            result.triggerAlbumEnrichment.message ||
+              'Failed to queue enrichment'
           );
         }
       } else {
@@ -511,7 +537,8 @@ export default function MusicDatabasePage() {
           refetchArtists();
         } else {
           throw new Error(
-            result.triggerArtistEnrichment.message || 'Failed to queue enrichment'
+            result.triggerArtistEnrichment.message ||
+              'Failed to queue enrichment'
           );
         }
       }
@@ -551,16 +578,24 @@ export default function MusicDatabasePage() {
 
     try {
       if (type === 'album') {
-        await updateAlbumQualityMutation.mutateAsync({ id: itemId, dataQuality });
+        await updateAlbumQualityMutation.mutateAsync({
+          id: itemId,
+          dataQuality,
+        });
         toast.success(`Album data quality updated to ${dataQuality}`);
         refetchAlbums();
       } else {
-        await updateArtistQualityMutation.mutateAsync({ id: itemId, dataQuality });
+        await updateArtistQualityMutation.mutateAsync({
+          id: itemId,
+          dataQuality,
+        });
         toast.success(`Artist data quality updated to ${dataQuality}`);
         refetchArtists();
       }
     } catch (error) {
-      toast.error(`Failed to update data quality: ${(error as Error).message || String(error)}`);
+      toast.error(
+        `Failed to update data quality: ${(error as Error).message || String(error)}`
+      );
     }
   };
 
@@ -636,7 +671,11 @@ export default function MusicDatabasePage() {
     }
   };
 
-  const getQualityBadge = (quality: string, itemId: string, type: 'album' | 'artist') => {
+  const getQualityBadge = (
+    quality: string,
+    itemId: string,
+    type: 'album' | 'artist'
+  ) => {
     const colors = {
       HIGH: 'bg-green-500',
       MEDIUM: 'bg-yellow-500',
@@ -646,15 +685,19 @@ export default function MusicDatabasePage() {
     return (
       <Select
         value={quality}
-        onValueChange={(value) => handleUpdateDataQuality(itemId, type, value as DataQuality)}
+        onValueChange={value =>
+          handleUpdateDataQuality(itemId, type, value as DataQuality)
+        }
       >
-        <SelectTrigger className={`${colors[quality as keyof typeof colors] || 'bg-gray-500'} text-white border-0 w-28 h-6 text-xs`}>
+        <SelectTrigger
+          className={`${colors[quality as keyof typeof colors] || 'bg-gray-500'} text-white border-0 w-28 h-6 text-xs`}
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="LOW">LOW</SelectItem>
-          <SelectItem value="MEDIUM">MEDIUM</SelectItem>
-          <SelectItem value="HIGH">HIGH</SelectItem>
+          <SelectItem value='LOW'>LOW</SelectItem>
+          <SelectItem value='MEDIUM'>MEDIUM</SelectItem>
+          <SelectItem value='HIGH'>HIGH</SelectItem>
         </SelectContent>
       </Select>
     );
@@ -701,7 +744,11 @@ export default function MusicDatabasePage() {
       } else {
         newSet.add(id);
         // Update URL params when expanding
-        window.history.replaceState({}, '', `/admin/music-database?id=${id}&type=${activeTab}`);
+        window.history.replaceState(
+          {},
+          '',
+          `/admin/music-database?id=${id}&type=${activeTab}`
+        );
       }
       return newSet;
     });
@@ -882,7 +929,9 @@ export default function MusicDatabasePage() {
             </div>
             <div className='text-sm text-zinc-300'>
               {albumDetails.lastEnriched
-                ? new Date(albumDetails.lastEnriched).toLocaleString()
+                ? formatDistanceToNow(new Date(albumDetails.lastEnriched), {
+                    addSuffix: true,
+                  })
                 : 'Never'}
             </div>
           </div>
@@ -995,7 +1044,11 @@ export default function MusicDatabasePage() {
   };
 
   // Component for expanded artist details
-  const ArtistExpandedContent = ({ artist }: { artist: ArtistSearchResult }) => {
+  const ArtistExpandedContent = ({
+    artist,
+  }: {
+    artist: ArtistSearchResult;
+  }) => {
     const { data, isLoading, error } = useGetArtistDetailsQuery(
       { id: artist.id },
       { enabled: !!artist.id }
@@ -1041,9 +1094,7 @@ export default function MusicDatabasePage() {
             </div>
           </div>
           <div>
-            <div className='text-xs text-zinc-500 uppercase mb-1'>
-              Country
-            </div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>Country</div>
             <div className='text-sm text-zinc-300'>
               {artistDetails.countryCode || 'N/A'}
             </div>
@@ -1072,7 +1123,9 @@ export default function MusicDatabasePage() {
             </div>
             <div className='text-sm text-zinc-300'>
               {artistDetails.lastEnriched
-                ? new Date(artistDetails.lastEnriched).toLocaleString()
+                ? formatDistanceToNow(new Date(artistDetails.lastEnriched), {
+                    addSuffix: true,
+                  })
                 : 'Never'}
             </div>
           </div>
@@ -1135,7 +1188,11 @@ export default function MusicDatabasePage() {
                     // Switch to albums tab and navigate to this album
                     setActiveTab('albums');
                     // Use the existing URL navigation pattern
-                    window.history.pushState({}, '', `/admin/music-database?id=${album.id}&type=albums`);
+                    window.history.pushState(
+                      {},
+                      '',
+                      `/admin/music-database?id=${album.id}&type=albums`
+                    );
                     // Trigger the scroll-to-row logic by updating the search params
                     window.location.href = `/admin/music-database?id=${album.id}&type=albums`;
                   }}
@@ -1544,20 +1601,24 @@ export default function MusicDatabasePage() {
                         </TableCell>
                         <TableCell className='text-zinc-300'>
                           <div className='flex flex-wrap gap-1'>
-                            {album.artists.slice(0, 2).map((a: any, idx: number) => (
-                              <span key={a.artist.id}>
-                                <span
-                                  className='cursor-pointer hover:text-cosmic-latte transition-colors'
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    window.location.href = `/admin/music-database?id=${a.artist.id}&type=artists`;
-                                  }}
-                                >
-                                  {a.artist.name}
+                            {album.artists
+                              .slice(0, 2)
+                              .map((a: any, idx: number) => (
+                                <span key={a.artist.id}>
+                                  <span
+                                    className='cursor-pointer hover:text-cosmic-latte transition-colors'
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      window.location.href = `/admin/music-database?id=${a.artist.id}&type=artists`;
+                                    }}
+                                  >
+                                    {a.artist.name}
+                                  </span>
+                                  {idx <
+                                    Math.min(1, album.artists.length - 1) &&
+                                    ', '}
                                 </span>
-                                {idx < Math.min(1, album.artists.length - 1) && ', '}
-                              </span>
-                            ))}
+                              ))}
                             {album.artists.length > 2 && (
                               <span className='text-zinc-500'>
                                 +{album.artists.length - 2}
@@ -1574,7 +1635,11 @@ export default function MusicDatabasePage() {
                           {album.trackCount || '-'}
                         </TableCell>
                         <TableCell onClick={e => e.stopPropagation()}>
-                          {getQualityBadge(album.dataQuality, album.id, 'album')}
+                          {getQualityBadge(
+                            album.dataQuality,
+                            album.id,
+                            'album'
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className='flex items-center gap-1'>
@@ -1700,53 +1765,59 @@ export default function MusicDatabasePage() {
                             </div>
                           </div>
                         </TableCell>
-                      <TableCell className='text-zinc-300'>
-                        {artist.countryCode || '-'}
-                      </TableCell>
-                      <TableCell className='text-zinc-300'>
-                        {artist.formedYear || '-'}
-                      </TableCell>
-                      <TableCell className='text-zinc-300'>
-                        {artist.albumCount}
-                      </TableCell>
-                      <TableCell className='text-zinc-300'>
-                        {artist.trackCount}
-                      </TableCell>
-                      <TableCell onClick={e => e.stopPropagation()}>
-                        {getQualityBadge(artist.dataQuality, artist.id, 'artist')}
-                      </TableCell>
-                      <TableCell>
-                        <div className='flex items-center gap-1'>
-                          {getStatusIcon(artist.enrichmentStatus)}
-                          <span className='text-xs text-zinc-300'>
-                            {artist.enrichmentStatus}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell onClick={e => e.stopPropagation()}>
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          onClick={() => handleEnrichItem(artist.id, 'artist')}
-                          disabled={
-                            artist.enrichmentStatus === 'IN_PROGRESS' ||
-                            !artist.needsEnrichment
-                          }
-                          className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
-                        >
-                          <RefreshCcw className='h-3 w-3 mr-1' />
-                          Enrich
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    {expandedRows.has(artist.id) && (
-                      <TableRow key={`${artist.id}-expanded`}>
-                        <TableCell colSpan={8} className='p-0 border-none'>
-                          <ArtistExpandedContent artist={artist} />
+                        <TableCell className='text-zinc-300'>
+                          {artist.countryCode || '-'}
+                        </TableCell>
+                        <TableCell className='text-zinc-300'>
+                          {artist.formedYear || '-'}
+                        </TableCell>
+                        <TableCell className='text-zinc-300'>
+                          {artist.albumCount}
+                        </TableCell>
+                        <TableCell className='text-zinc-300'>
+                          {artist.trackCount}
+                        </TableCell>
+                        <TableCell onClick={e => e.stopPropagation()}>
+                          {getQualityBadge(
+                            artist.dataQuality,
+                            artist.id,
+                            'artist'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className='flex items-center gap-1'>
+                            {getStatusIcon(artist.enrichmentStatus)}
+                            <span className='text-xs text-zinc-300'>
+                              {artist.enrichmentStatus}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell onClick={e => e.stopPropagation()}>
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            onClick={() =>
+                              handleEnrichItem(artist.id, 'artist')
+                            }
+                            disabled={
+                              artist.enrichmentStatus === 'IN_PROGRESS' ||
+                              !artist.needsEnrichment
+                            }
+                            className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
+                          >
+                            <RefreshCcw className='h-3 w-3 mr-1' />
+                            Enrich
+                          </Button>
                         </TableCell>
                       </TableRow>
-                    )}
-                  </React.Fragment>
+                      {expandedRows.has(artist.id) && (
+                        <TableRow key={`${artist.id}-expanded`}>
+                          <TableCell colSpan={8} className='p-0 border-none'>
+                            <ArtistExpandedContent artist={artist} />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
                   ))}
                 </TableBody>
               </Table>
@@ -1898,8 +1969,8 @@ export default function MusicDatabasePage() {
               Delete Album
             </DialogTitle>
             <DialogDescription className='text-zinc-400'>
-              This action cannot be undone. This will permanently delete the album
-              and all associated data.
+              This action cannot be undone. This will permanently delete the
+              album and all associated data.
             </DialogDescription>
           </DialogHeader>
 
@@ -1909,7 +1980,8 @@ export default function MusicDatabasePage() {
                 {albumToDelete?.title}
               </div>
               <div className='text-sm text-zinc-400'>
-                Database ID: <span className='font-mono text-xs'>{albumToDelete?.id}</span>
+                Database ID:{' '}
+                <span className='font-mono text-xs'>{albumToDelete?.id}</span>
               </div>
             </div>
 
@@ -1920,8 +1992,12 @@ export default function MusicDatabasePage() {
               </div>
               <ul className='text-sm text-red-300/80 space-y-1 list-disc list-inside'>
                 <li>Album will be removed from all user collections</li>
-                <li>All recommendations referencing this album will be deleted</li>
-                <li>All associated tracks and artist relationships will be removed</li>
+                <li>
+                  All recommendations referencing this album will be deleted
+                </li>
+                <li>
+                  All associated tracks and artist relationships will be removed
+                </li>
                 <li>This operation cannot be reversed</li>
               </ul>
             </div>
@@ -1963,7 +2039,10 @@ export default function MusicDatabasePage() {
       </Dialog>
 
       {/* Delete Artist Confirmation Modal */}
-      <Dialog open={deleteArtistModalOpen} onOpenChange={setDeleteArtistModalOpen}>
+      <Dialog
+        open={deleteArtistModalOpen}
+        onOpenChange={setDeleteArtistModalOpen}
+      >
         <DialogContent className='bg-zinc-900 border-zinc-800 text-white'>
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2 text-red-500'>
@@ -1971,8 +2050,8 @@ export default function MusicDatabasePage() {
               Delete Artist
             </DialogTitle>
             <DialogDescription className='text-zinc-400'>
-              This action cannot be undone. This will permanently delete the artist
-              and all associated data.
+              This action cannot be undone. This will permanently delete the
+              artist and all associated data.
             </DialogDescription>
           </DialogHeader>
 
@@ -1982,7 +2061,8 @@ export default function MusicDatabasePage() {
                 {artistToDelete?.name}
               </div>
               <div className='text-sm text-zinc-400'>
-                Database ID: <span className='font-mono text-xs'>{artistToDelete?.id}</span>
+                Database ID:{' '}
+                <span className='font-mono text-xs'>{artistToDelete?.id}</span>
               </div>
             </div>
 
@@ -1992,7 +2072,9 @@ export default function MusicDatabasePage() {
                 Warning
               </div>
               <ul className='text-sm text-red-300/80 space-y-1 list-disc list-inside'>
-                <li>Artist will be removed from all album and track relationships</li>
+                <li>
+                  Artist will be removed from all album and track relationships
+                </li>
                 <li>All enrichment logs for this artist will be deleted</li>
                 <li>This operation cannot be reversed</li>
               </ul>
@@ -2034,7 +2116,9 @@ export default function MusicDatabasePage() {
                   />
                 </svg>
               )}
-              {deleteArtistMutation.isPending ? 'Deleting...' : 'Delete Permanently'}
+              {deleteArtistMutation.isPending
+                ? 'Deleting...'
+                : 'Delete Permanently'}
             </Button>
           </DialogFooter>
         </DialogContent>

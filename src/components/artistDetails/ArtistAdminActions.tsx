@@ -2,6 +2,7 @@
 
 import { Loader2, RefreshCcw, Database, ExternalLink } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { formatDistanceToNow } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import Toast, { useToast } from '@/components/ui/toast';
@@ -63,14 +64,16 @@ export default function ArtistAdminActions({
         showToast('Enrichment job queued successfully', 'success');
         // Invalidate artist queries to refresh data
         queryClient.invalidateQueries({
-          queryKey: ['GetArtistByMusicBrainzId', { musicbrainzId }]
+          queryKey: ['GetArtistByMusicBrainzId', { musicbrainzId }],
         });
         // Invalidate enrichment logs to refresh admin panel
         queryClient.invalidateQueries({
-          queryKey: ['GetEnrichmentLogs']
+          queryKey: ['GetEnrichmentLogs'],
         });
       } else {
-        throw new Error(result.triggerArtistEnrichment.message || 'Failed to queue enrichment');
+        throw new Error(
+          result.triggerArtistEnrichment.message || 'Failed to queue enrichment'
+        );
       }
     } catch (error) {
       showToast(`Failed to queue enrichment: ${error}`, 'error');
@@ -94,7 +97,7 @@ export default function ArtistAdminActions({
 
       // Invalidate queries to refresh artist state
       queryClient.invalidateQueries({
-        queryKey: ['GetArtistByMusicBrainzId', { musicbrainzId }]
+        queryKey: ['GetArtistByMusicBrainzId', { musicbrainzId }],
       });
 
       showToast('Artist added to database successfully', 'success');
@@ -114,7 +117,9 @@ export default function ArtistAdminActions({
       <div className='mt-6 rounded-lg border border-amber-900/30 bg-amber-950/10 p-4'>
         <div className='mb-3 flex items-start justify-between'>
           <div className='flex items-center gap-2'>
-            <h3 className='text-sm font-medium text-amber-200'>Admin Actions</h3>
+            <h3 className='text-sm font-medium text-amber-200'>
+              Admin Actions
+            </h3>
             <span className='rounded bg-amber-900/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-300 ring-1 ring-amber-800/50'>
               OVERLAY
             </span>
@@ -133,7 +138,8 @@ export default function ArtistAdminActions({
                 className={`font-medium ${
                   artistState.enrichmentStatus === EnrichmentStatus.Completed
                     ? 'text-emerald-400'
-                    : artistState.enrichmentStatus === EnrichmentStatus.InProgress
+                    : artistState.enrichmentStatus ===
+                        EnrichmentStatus.InProgress
                       ? 'text-amber-400'
                       : artistState.enrichmentStatus === EnrichmentStatus.Failed
                         ? 'text-red-400'
@@ -162,7 +168,16 @@ export default function ArtistAdminActions({
             {artistState.lastEnriched && (
               <div className='flex items-center justify-between'>
                 <span className='text-zinc-400'>Last Enriched:</span>
-                <span className='text-zinc-300'>{artistState.lastEnriched.toLocaleDateString()}</span>
+                <span className='text-zinc-300'>
+                  {artistState.lastEnriched.toLocaleDateString()}
+                  <span className='text-zinc-500 text-xs ml-1.5'>
+                    (
+                    {formatDistanceToNow(artistState.lastEnriched, {
+                      addSuffix: true,
+                    })}
+                    )
+                  </span>
+                </span>
               </div>
             )}
           </div>
@@ -205,13 +220,21 @@ export default function ArtistAdminActions({
             variant='outline'
             size='sm'
             onClick={handleEnrichArtist}
-            disabled={!artistState.existsInDb || enrichMutation.isPending || artistState.isLoading}
+            disabled={
+              !artistState.existsInDb ||
+              enrichMutation.isPending ||
+              artistState.isLoading
+            }
             className={
               artistState.existsInDb
                 ? 'gap-1.5 border-amber-800/50 bg-amber-950/20 text-amber-200 hover:bg-amber-900/30 hover:text-amber-100'
                 : 'gap-1.5 border-zinc-700/50 bg-zinc-900/20 text-zinc-500 cursor-not-allowed'
             }
-            title={!artistState.existsInDb ? 'Add to DB first' : 'Trigger enrichment job'}
+            title={
+              !artistState.existsInDb
+                ? 'Add to DB first'
+                : 'Trigger enrichment job'
+            }
           >
             {enrichMutation.isPending ? (
               <Loader2 className='h-3.5 w-3.5 animate-spin' />
@@ -238,7 +261,12 @@ export default function ArtistAdminActions({
       </div>
 
       {/* Toast Notification */}
-      <Toast message={toast.message} type={toast.type} isVisible={toast.isVisible} onClose={hideToast} />
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
     </>
   );
 }
