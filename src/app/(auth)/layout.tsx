@@ -17,9 +17,9 @@ export default async function AuthLayout({
   // Check if user is already authenticated
   const session = await auth();
 
-  // Redirect authenticated users to home page
+  // Redirect authenticated users to home mosaic
   if (session?.user) {
-    redirect('/');
+    redirect('/home-mosaic');
   }
 
   return (

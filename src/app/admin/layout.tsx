@@ -29,7 +29,7 @@ export default function AdminLayout({
 
     // Admin access restricted to ADMIN and OWNER roles
     if (!isAdmin(session.user.role)) {
-      router.push('/'); // Redirect to home if not admin or owner
+      router.push('/home-mosaic'); // Redirect to home if not admin or owner
     }
   }, [session, status, router]);
 
@@ -129,7 +129,7 @@ export default function AdminLayout({
             </Link>
             <hr className='my-4 border-zinc-800' />
             <Link
-              href='/'
+              href='/home-mosaic'
               className='flex items-center px-4 py-2 text-zinc-400 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors'
             >
               <span>← Back to App</span>

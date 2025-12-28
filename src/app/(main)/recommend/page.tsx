@@ -40,7 +40,7 @@ export default function CreateRecommendationPage() {
     <div className='flex flex-col items-center justify-center min-h-screen p-4 bg-black'>
       <div className='flex flex-col gap-4 items-center max-w-4xl w-full'>
         <Link
-          href='/'
+          href='/home-mosaic'
           className='text-white bg-red-500 hover:bg-red-700 font-bold mb-10 py-4 px-8 rounded-full text-lg shadow-lg'
         >
           home

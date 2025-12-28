@@ -35,7 +35,7 @@ export default function MobileNavigation({
   const prefersReducedMotion = useReducedMotion();
 
   const bottomNavItems = [
-    { icon: Home, label: 'Home', href: '/dashboard' },
+    { icon: Home, label: 'Home', href: '/home-mosaic' },
     { icon: Search, label: 'Search', action: () => setSearchOpen(!searchOpen) },
     { icon: Compass, label: 'Discover', href: '/discover' },
     { icon: Library, label: 'Library', href: '/collections' },

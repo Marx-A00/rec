@@ -1,7 +1,9 @@
 // src/app/(public)/layout.tsx
 import { ReactNode } from 'react';
 import { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
+import { auth } from '@/../auth';
 import Sidebar from '@/components/navigation/Sidebar';
 import TopBar from '@/components/navigation/TopBar';
 import { HeaderProvider } from '@/contexts/HeaderContext';
@@ -32,7 +34,13 @@ interface PublicLayoutProps {
   children: ReactNode;
 }
 
-export default function PublicLayout({ children }: PublicLayoutProps) {
+export default async function PublicLayout({ children }: PublicLayoutProps) {
+  // Redirect authenticated users to home mosaic
+  const session = await auth();
+  if (session?.user) {
+    redirect('/home-mosaic');
+  }
+
   return (
     <RecommendationDrawerProvider>
       <HeaderProvider>

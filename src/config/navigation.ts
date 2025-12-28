@@ -40,10 +40,19 @@ export interface NavigationContext {
 export const getDefaultNavItems = (): NavItem[] => [
   {
     id: 'home',
+    href: '/home-mosaic',
+    icon: Home,
+    label: 'Home',
+    tooltip: 'Navigate to Home',
+    showWhen: ctx => ctx.isAuthenticated,
+  },
+  {
+    id: 'home-public',
     href: '/',
     icon: Home,
     label: 'Home',
     tooltip: 'Navigate to Home',
+    showWhen: ctx => !ctx.isAuthenticated,
   },
   {
     id: 'browse',

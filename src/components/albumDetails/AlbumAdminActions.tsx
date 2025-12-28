@@ -1,6 +1,12 @@
 'use client';
 
-import { Loader2, RefreshCcw, Database, ExternalLink, Trash2 } from 'lucide-react';
+import {
+  Loader2,
+  RefreshCcw,
+  Database,
+  ExternalLink,
+  Trash2,
+} from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -66,14 +72,19 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
         showToast('Enrichment job queued successfully', 'success');
         // Invalidate album queries to refresh data
         queryClient.invalidateQueries({
-          queryKey: ['AlbumByMusicBrainzId', { musicbrainzId: album.musicbrainzId }]
+          queryKey: [
+            'AlbumByMusicBrainzId',
+            { musicbrainzId: album.musicbrainzId },
+          ],
         });
         // Invalidate enrichment logs to refresh admin panel
         queryClient.invalidateQueries({
-          queryKey: ['GetEnrichmentLogs']
+          queryKey: ['GetEnrichmentLogs'],
         });
       } else {
-        throw new Error(result.triggerAlbumEnrichment.message || 'Failed to queue enrichment');
+        throw new Error(
+          result.triggerAlbumEnrichment.message || 'Failed to queue enrichment'
+        );
       }
     } catch (error) {
       showToast(`Failed to queue enrichment: ${error}`, 'error');
@@ -87,25 +98,34 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
     }
 
     try {
-      const artistInputs = (album.artists || []).map(a => ({ artistName: a.name }));
+      const artistInputs = (album.artists || []).map(a => ({
+        artistName: a.name,
+      }));
 
       const input: any = {
         title: album.title || 'Unknown Album',
-        artists: artistInputs.length > 0 ? artistInputs : [{ artistName: 'Unknown Artist' }],
+        artists:
+          artistInputs.length > 0
+            ? artistInputs
+            : [{ artistName: 'Unknown Artist' }],
       };
 
       if (album.source === 'musicbrainz' && album.musicbrainzId) {
         input.musicbrainzId = album.musicbrainzId;
       }
       if (album.releaseDate) input.releaseDate = album.releaseDate;
-      if (album.metadata?.numberOfTracks) input.totalTracks = album.metadata.numberOfTracks;
+      if (album.metadata?.numberOfTracks)
+        input.totalTracks = album.metadata.numberOfTracks;
       if (album.image?.url) input.coverImageUrl = album.image.url;
 
       await addAlbumMutation.mutateAsync({ input });
 
       // Invalidate queries to refresh album state
       queryClient.invalidateQueries({
-        queryKey: ['AlbumByMusicBrainzId', { musicbrainzId: album.musicbrainzId }]
+        queryKey: [
+          'AlbumByMusicBrainzId',
+          { musicbrainzId: album.musicbrainzId },
+        ],
       });
 
       showToast('Album added to database successfully', 'success');
@@ -124,7 +144,7 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
       setDeleteModalOpen(false);
 
       // Redirect to home after deletion
-      router.push('/');
+      router.push('/home-mosaic');
     } catch (error) {
       showToast(`Failed to delete album: ${error}`, 'error');
     }
@@ -141,7 +161,9 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
       <div className='mt-6 rounded-lg border border-amber-900/30 bg-amber-950/10 p-4'>
         <div className='mb-3 flex items-start justify-between'>
           <div className='flex items-center gap-2'>
-            <h3 className='text-sm font-medium text-amber-200'>Admin Actions</h3>
+            <h3 className='text-sm font-medium text-amber-200'>
+              Admin Actions
+            </h3>
             <span className='rounded bg-amber-900/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-300 ring-1 ring-amber-800/50'>
               OVERLAY
             </span>
@@ -160,7 +182,8 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
                 className={`font-medium ${
                   albumState.enrichmentStatus === EnrichmentStatus.Completed
                     ? 'text-emerald-400'
-                    : albumState.enrichmentStatus === EnrichmentStatus.InProgress
+                    : albumState.enrichmentStatus ===
+                        EnrichmentStatus.InProgress
                       ? 'text-amber-400'
                       : albumState.enrichmentStatus === EnrichmentStatus.Failed
                         ? 'text-red-400'
@@ -189,7 +212,9 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
             {albumState.lastEnriched && (
               <div className='flex items-center justify-between'>
                 <span className='text-zinc-400'>Last Enriched:</span>
-                <span className='text-zinc-300'>{albumState.lastEnriched.toLocaleDateString()}</span>
+                <span className='text-zinc-300'>
+                  {albumState.lastEnriched.toLocaleDateString()}
+                </span>
               </div>
             )}
           </div>
@@ -232,13 +257,21 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
             variant='outline'
             size='sm'
             onClick={handleEnrichAlbum}
-            disabled={!albumState.existsInDb || enrichMutation.isPending || albumState.isLoading}
+            disabled={
+              !albumState.existsInDb ||
+              enrichMutation.isPending ||
+              albumState.isLoading
+            }
             className={
               albumState.existsInDb
                 ? 'gap-1.5 border-amber-800/50 bg-amber-950/20 text-amber-200 hover:bg-amber-900/30 hover:text-amber-100'
                 : 'gap-1.5 border-zinc-700/50 bg-zinc-900/20 text-zinc-500 cursor-not-allowed'
             }
-            title={!albumState.existsInDb ? 'Add to DB first' : 'Trigger enrichment job'}
+            title={
+              !albumState.existsInDb
+                ? 'Add to DB first'
+                : 'Trigger enrichment job'
+            }
           >
             {enrichMutation.isPending ? (
               <Loader2 className='h-3.5 w-3.5 animate-spin' />
@@ -284,7 +317,9 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
           <DialogHeader>
             <DialogTitle>Delete Album</DialogTitle>
             <DialogDescription className='text-zinc-400'>
-              Are you sure you want to delete &quot;{album.title}&quot;? This will remove all tracks, recommendations, and collection entries. This action cannot be undone.
+              Are you sure you want to delete &quot;{album.title}&quot;? This
+              will remove all tracks, recommendations, and collection entries.
+              This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -318,7 +353,12 @@ export default function AlbumAdminActions({ album }: AlbumAdminActionsProps) {
       </Dialog>
 
       {/* Toast Notification */}
-      <Toast message={toast.message} type={toast.type} isVisible={toast.isVisible} onClose={hideToast} />
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
     </>
   );
 }

@@ -7,7 +7,7 @@ export default function ArtistLoading() {
       <div className='container mx-auto px-4 py-8'>
         {/* Back Navigation */}
         <Link
-          href='/'
+          href='/home-mosaic'
           className='inline-flex items-center text-zinc-400 hover:text-white mb-6 transition-colors'
         >
           <ArrowLeft className='h-4 w-4 mr-2' />
