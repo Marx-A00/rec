@@ -58,6 +58,7 @@ export const getDefaultNavItems = (): NavItem[] => [
     label: 'Recommend',
     tooltip: 'Create Recommendation',
     action: context => context?.openRecommendationDrawer?.(),
+    showWhen: ctx => ctx.isAuthenticated,
   },
 ];
 
