@@ -148,7 +148,7 @@ function RecCard({ rec, featured }: RecCardProps) {
           />
           {/* Score badge */}
           <div className='absolute -bottom-1 -right-1 bg-zinc-950 rounded-full px-1.5 py-0.5 border border-zinc-700'>
-            <span className='text-xs font-medium text-emerald-400'>
+            <span className='text-xs font-medium text-cosmic-latte'>
               {rec.score}/10
             </span>
           </div>
