@@ -15,7 +15,11 @@ import type {
   CacheAlbumCoverArtJobData,
 } from '@/lib/queue/jobs';
 import { alertManager } from '@/lib/monitoring';
-import { logActivity, OPERATIONS, SOURCES } from '@/lib/logging/activity-logger';
+import {
+  logActivity,
+  OPERATIONS,
+  SOURCES,
+} from '@/lib/logging/activity-logger';
 import { isAdmin } from '@/lib/permissions';
 
 // Utility function to cast return values for GraphQL resolvers
@@ -836,11 +840,7 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  deleteArtist: async (
-    _: unknown,
-    { id }: { id: string },
-    context: any
-  ) => {
+  deleteArtist: async (_: unknown, { id }: { id: string }, context: any) => {
     const { user, prisma } = context;
 
     // Check authentication
@@ -870,7 +870,7 @@ export const mutationResolvers: MutationResolvers = {
       }
 
       // Use Prisma transaction to handle cascade deletion
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async tx => {
         // Delete related records in order
         // 1. Album-artist relationships
         await tx.albumArtist.deleteMany({
@@ -1278,7 +1278,10 @@ export const mutationResolvers: MutationResolvers = {
           attempts: 3,
         });
       } catch (queueError) {
-        console.warn('Failed to queue enrichment for Listen Later album:', queueError);
+        console.warn(
+          'Failed to queue enrichment for Listen Later album:',
+          queueError
+        );
       }
 
       return ca as any;
@@ -1779,13 +1782,8 @@ export const mutationResolvers: MutationResolvers = {
         }
       );
 
-      // Update artist enrichment status
-      await prisma.artist.update({
-        where: { id },
-        data: {
-          enrichmentStatus: 'IN_PROGRESS',
-        },
-      });
+      // Don't set to IN_PROGRESS here - let the job do it after checking if enrichment is needed
+      // Otherwise shouldEnrichArtist will see IN_PROGRESS and skip enrichment
 
       return {
         success: true,
@@ -1831,10 +1829,7 @@ export const mutationResolvers: MutationResolvers = {
               }
             );
 
-            await prisma.album.update({
-              where: { id },
-              data: { enrichmentStatus: 'IN_PROGRESS' },
-            });
+            // Don't set to IN_PROGRESS here - let the job do it after checking if enrichment is needed
 
             jobs.push(job);
           }
@@ -1862,10 +1857,7 @@ export const mutationResolvers: MutationResolvers = {
               }
             );
 
-            await prisma.artist.update({
-              where: { id },
-              data: { enrichmentStatus: 'IN_PROGRESS' },
-            });
+            // Don't set to IN_PROGRESS here - let the job do it after checking if enrichment is needed
 
             jobs.push(job);
           }
@@ -2051,11 +2043,7 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  deleteAlbum: async (
-    _: unknown,
-    { id }: { id: string },
-    context: any
-  ) => {
+  deleteAlbum: async (_: unknown, { id }: { id: string }, context: any) => {
     const { user, prisma } = context;
 
     // Check authentication
@@ -2096,7 +2084,7 @@ export const mutationResolvers: MutationResolvers = {
       }
 
       // Use Prisma transaction to handle cascade deletion
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async tx => {
         // Delete related records in order
         // 1. CollectionAlbum entries
         await tx.collectionAlbum.deleteMany({
@@ -2106,10 +2094,7 @@ export const mutationResolvers: MutationResolvers = {
         // 2. Recommendations (both as basis and target)
         await tx.recommendation.deleteMany({
           where: {
-            OR: [
-              { basisAlbumId: id },
-              { targetAlbumId: id },
-            ],
+            OR: [{ basisAlbumId: id }, { targetAlbumId: id }],
           },
         });
 
@@ -2202,7 +2187,11 @@ export const mutationResolvers: MutationResolvers = {
   },
 
   // Update data quality mutations
-  updateAlbumDataQuality: async (_, { id, dataQuality }, { prisma, session }) => {
+  updateAlbumDataQuality: async (
+    _,
+    { id, dataQuality },
+    { prisma, session }
+  ) => {
     try {
       // Get the old data quality before updating
       const oldAlbum = await prisma.album.findUnique({
@@ -2236,7 +2225,11 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  updateArtistDataQuality: async (_, { id, dataQuality }, { prisma, session }) => {
+  updateArtistDataQuality: async (
+    _,
+    { id, dataQuality },
+    { prisma, session }
+  ) => {
     try {
       // Get the old data quality before updating
       const oldArtist = await prisma.artist.findUnique({
