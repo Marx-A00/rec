@@ -45,6 +45,8 @@ export interface ArtistEnrichmentData {
   biography: string | null;
   formedYear: number | null;
   countryCode: string | null;
+  imageUrl: string | null;
+  cloudflareImageId: string | null;
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH' | null;
   enrichmentStatus:
     | 'PENDING'
@@ -95,7 +97,10 @@ function shouldEnrichAlbumSync(album: AlbumEnrichmentData): EnrichmentDecision {
   if (!album.lastEnriched || album.enrichmentStatus === 'FAILED') {
     return {
       shouldEnrich: true,
-      reason: album.enrichmentStatus === 'FAILED' ? 'Previous enrichment failed' : 'Never enriched',
+      reason:
+        album.enrichmentStatus === 'FAILED'
+          ? 'Previous enrichment failed'
+          : 'Never enriched',
       confidence: 0.95,
     };
   }
@@ -215,7 +220,9 @@ export function shouldEnrichArtist(
 /**
  * Synchronous enrichment check (original logic)
  */
-function shouldEnrichArtistSync(artist: ArtistEnrichmentData): EnrichmentDecision {
+function shouldEnrichArtistSync(
+  artist: ArtistEnrichmentData
+): EnrichmentDecision {
   // Skip if enrichment is currently in progress
   if (artist.enrichmentStatus === 'IN_PROGRESS') {
     return {
@@ -229,15 +236,19 @@ function shouldEnrichArtistSync(artist: ArtistEnrichmentData): EnrichmentDecisio
   if (!artist.lastEnriched || artist.enrichmentStatus === 'FAILED') {
     return {
       shouldEnrich: true,
-      reason: artist.enrichmentStatus === 'FAILED' ? 'Previous enrichment failed' : 'Never enriched',
+      reason:
+        artist.enrichmentStatus === 'FAILED'
+          ? 'Previous enrichment failed'
+          : 'Never enriched',
       confidence: 0.95,
     };
   }
 
-  // Re-enrich if missing critical fields
+  // Re-enrich if missing critical fields (including image!)
   const missingFields = [];
   if (!artist.musicbrainzId) missingFields.push('musicbrainzId');
   if (!artist.biography) missingFields.push('biography');
+  if (!artist.imageUrl) missingFields.push('imageUrl');
 
   if (missingFields.length > 0) {
     return {
@@ -408,10 +419,11 @@ export function analyzeArtistEnrichmentNeed(
     };
   }
 
-  // Missing critical fields - high confidence to enrich
+  // Missing critical fields - high confidence to enrich (including image!)
   const missingFields = [];
   if (!artist.musicbrainzId) missingFields.push('musicbrainzId');
   if (!artist.biography) missingFields.push('biography');
+  if (!artist.imageUrl) missingFields.push('imageUrl');
 
   if (missingFields.length > 0) {
     return {
