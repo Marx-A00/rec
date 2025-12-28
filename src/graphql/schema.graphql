@@ -223,6 +223,7 @@ type User {
   followingCount: Int!
   recommendationsCount: Int!
   profileUpdatedAt: DateTime
+  lastActive: DateTime
   createdAt: DateTime!
   updatedAt: DateTime!
 

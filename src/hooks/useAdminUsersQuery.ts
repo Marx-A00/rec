@@ -12,6 +12,7 @@ interface User {
   followingCount: number;
   recommendationsCount: number;
   profileUpdatedAt: string | null;
+  lastActive: string | null;
   createdAt: string | null;
   collections: {
     id: string;
@@ -50,6 +51,7 @@ export function useAdminUsersQuery(
             followingCount
             recommendationsCount
             profileUpdatedAt
+            lastActive
             createdAt
             collections {
               id

@@ -30,6 +30,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return { ...session, user: undefined };
         }
 
+        // Update lastActive timestamp (throttled to once per minute to reduce DB writes)
+        const now = new Date();
+        const lastActive = dbUser.lastActive;
+        const shouldUpdateLastActive =
+          !lastActive || now.getTime() - lastActive.getTime() > 60 * 1000; // 1 minute throttle
+
+        if (shouldUpdateLastActive) {
+          try {
+            await prisma.user.update({
+              where: { id: token.sub },
+              data: { lastActive: now },
+            });
+            console.log('[auth] Updated lastActive for user:', token.sub);
+          } catch (err) {
+            console.error('[auth] Failed to update lastActive:', err);
+          }
+        }
+
         // Update session with latest user data from database
         session.user.id = token.sub;
         session.user.name = dbUser.name ?? '';

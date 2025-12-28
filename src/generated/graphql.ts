@@ -1431,6 +1431,7 @@ export type User = {
   id: Scalars['String']['output'];
   image?: Maybe<Scalars['String']['output']>;
   isFollowing?: Maybe<Scalars['Boolean']['output']>;
+  lastActive?: Maybe<Scalars['DateTime']['output']>;
   mutualFollowers: Array<User>;
   name?: Maybe<Scalars['String']['output']>;
   profileUpdatedAt?: Maybe<Scalars['DateTime']['output']>;

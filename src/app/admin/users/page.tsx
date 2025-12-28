@@ -16,6 +16,7 @@ import {
   Info,
   Shield,
 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
 import { useAdminUsersQuery } from '@/hooks/useAdminUsersQuery';
@@ -465,9 +466,21 @@ export default function AdminUsersPage() {
                       <td className='px-6 py-4 whitespace-nowrap'>
                         <div className='flex items-center text-sm text-zinc-400'>
                           <Calendar className='w-4 h-4 mr-1' />
-                          {user.profileUpdatedAt
-                            ? formatDate(user.profileUpdatedAt)
-                            : 'N/A'}
+                          {user.lastActive ? (
+                            <span>
+                              {formatDate(user.lastActive)}
+                              <span className='text-zinc-500 text-xs ml-1.5'>
+                                (
+                                {formatDistanceToNow(
+                                  new Date(user.lastActive),
+                                  { addSuffix: true }
+                                )}
+                                )
+                              </span>
+                            </span>
+                          ) : (
+                            <span className='text-zinc-500'>Never</span>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -1405,6 +1405,7 @@ export type User = {
   id: Scalars['String']['output'];
   image?: Maybe<Scalars['String']['output']>;
   isFollowing?: Maybe<Scalars['Boolean']['output']>;
+  lastActive?: Maybe<Scalars['DateTime']['output']>;
   mutualFollowers: Array<User>;
   name?: Maybe<Scalars['String']['output']>;
   profileUpdatedAt?: Maybe<Scalars['DateTime']['output']>;
@@ -3799,6 +3800,11 @@ export type UserResolvers<
   image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   isFollowing?: Resolver<
     Maybe<ResolversTypes['Boolean']>,
+    ParentType,
+    ContextType
+  >;
+  lastActive?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
     ParentType,
     ContextType
   >;
