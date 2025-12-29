@@ -84,7 +84,7 @@ function TopArtistCard({
   showStats,
 }: TopArtistCardProps) {
   return (
-    <Link href={`/artists/${artist.id}?source=local`}>
+    <Link href={`/artists/${artist.id}?source=local&tab=recommendations`}>
       <div className='flex-shrink-0 w-[200px] bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/80 rounded-xl p-6 hover:border-cosmic-latte/50 hover:bg-zinc-800/60 transition-all duration-300 group cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-cosmic-latte/10'>
         <div className='text-center space-y-4'>
           <div className='relative w-20 h-20 mx-auto'>

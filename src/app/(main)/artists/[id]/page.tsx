@@ -1,4 +1,4 @@
-import { ExternalLink, User, Music } from 'lucide-react';
+import { ExternalLink, User } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -14,7 +14,7 @@ import { CollapsibleBio } from '@/components/artistDetails/CollapsibleBio';
 
 interface ArtistDetailsPageProps {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ source?: string }>;
+  searchParams?: Promise<{ source?: string; tab?: string }>;
 }
 
 export default async function ArtistDetailsPage({
@@ -36,7 +36,7 @@ export default async function ArtistDetailsPage({
   // Fetch artist data server-side
   let artist;
   try {
-    const preferredSource = (rawSearch as any)?.source as
+    const preferredSource = rawSearch?.source as
       | 'local'
       | 'musicbrainz'
       | 'discogs'
@@ -48,6 +48,18 @@ export default async function ArtistDetailsPage({
     console.error('Error fetching artist:', error);
     notFound();
   }
+
+  // Determine initial tab from URL param
+  const validTabs = [
+    'discography',
+    'recommendations',
+    'biography',
+    'collaborations',
+    'similar',
+  ];
+  const initialTab = validTabs.includes(rawSearch?.tab || '')
+    ? rawSearch!.tab!
+    : 'discography';
 
   return (
     <div className='px-4 py-8'>
@@ -164,7 +176,7 @@ export default async function ArtistDetailsPage({
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue='discography' className='w-full'>
+      <Tabs defaultValue={initialTab} className='w-full'>
         <TabsList className='grid w-full grid-cols-5 bg-zinc-900'>
           <TabsTrigger
             value='discography'
