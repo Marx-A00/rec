@@ -400,6 +400,22 @@ type PaginationInfo {
   hasMore: Boolean!
 }
 
+# Top Recommended Types
+type TopRecommendedAlbum {
+  album: Album!
+  recommendationCount: Int!
+  asBasisCount: Int!
+  asTargetCount: Int!
+  averageScore: Float!
+}
+
+type TopRecommendedArtist {
+  artist: Artist!
+  recommendationCount: Int!
+  albumsInRecommendations: Int!
+  averageScore: Float!
+}
+
 # Social Activity Types
 enum ActivityType {
   FOLLOW
@@ -956,6 +972,10 @@ type Query {
   recommendationFeed(cursor: String, limit: Int = 20): RecommendationFeed!
   trendingAlbums(limit: Int = 20): [Album!]!
   trendingArtists(limit: Int = 20): [Artist!]!
+
+  # Top Recommended (most frequently appearing in recommendations)
+  topRecommendedAlbums(limit: Int = 20): [TopRecommendedAlbum!]!
+  topRecommendedArtists(limit: Int = 20): [TopRecommendedArtist!]!
   userSuggestions(limit: Int = 10): [User!]!
 
   # Album-specific queries

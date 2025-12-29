@@ -851,6 +851,8 @@ export type Query = {
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
   systemHealth: SystemHealth;
+  topRecommendedAlbums: Array<TopRecommendedAlbum>;
+  topRecommendedArtists: Array<TopRecommendedArtist>;
   track?: Maybe<Track>;
   trackRecommendations: Array<Track>;
   trendingAlbums: Array<Album>;
@@ -1003,6 +1005,14 @@ export type QuerySocialFeedArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   type?: InputMaybe<ActivityType>;
+};
+
+export type QueryTopRecommendedAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryTopRecommendedArtistsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryTrackArgs = {
@@ -1336,6 +1346,23 @@ export enum TimeRange {
 export type TimeRangeInput = {
   from: Scalars['DateTime']['input'];
   to: Scalars['DateTime']['input'];
+};
+
+export type TopRecommendedAlbum = {
+  __typename?: 'TopRecommendedAlbum';
+  album: Album;
+  asBasisCount: Scalars['Int']['output'];
+  asTargetCount: Scalars['Int']['output'];
+  averageScore: Scalars['Float']['output'];
+  recommendationCount: Scalars['Int']['output'];
+};
+
+export type TopRecommendedArtist = {
+  __typename?: 'TopRecommendedArtist';
+  albumsInRecommendations: Scalars['Int']['output'];
+  artist: Artist;
+  averageScore: Scalars['Float']['output'];
+  recommendationCount: Scalars['Int']['output'];
 };
 
 export type Track = {
@@ -2987,6 +3014,54 @@ export type GetDatabaseStatsQuery = {
     failedEnrichments: number;
     averageDataQuality: number;
   };
+};
+
+export type GetTopRecommendedAlbumsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetTopRecommendedAlbumsQuery = {
+  __typename?: 'Query';
+  topRecommendedAlbums: Array<{
+    __typename?: 'TopRecommendedAlbum';
+    recommendationCount: number;
+    asBasisCount: number;
+    asTargetCount: number;
+    averageScore: number;
+    album: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      releaseDate?: Date | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+  }>;
+};
+
+export type GetTopRecommendedArtistsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetTopRecommendedArtistsQuery = {
+  __typename?: 'Query';
+  topRecommendedArtists: Array<{
+    __typename?: 'TopRecommendedArtist';
+    recommendationCount: number;
+    albumsInRecommendations: number;
+    averageScore: number;
+    artist: {
+      __typename?: 'Artist';
+      id: string;
+      name: string;
+      imageUrl?: string | null;
+      cloudflareImageId?: string | null;
+    };
+  }>;
 };
 
 export type UpdateAlbumDataQualityMutationVariables = Exact<{
@@ -6815,6 +6890,208 @@ useInfiniteGetDatabaseStatsQuery.getKey = (
   variables === undefined
     ? ['GetDatabaseStats.infinite']
     : ['GetDatabaseStats.infinite', variables];
+
+export const GetTopRecommendedAlbumsDocument = `
+    query GetTopRecommendedAlbums($limit: Int) {
+  topRecommendedAlbums(limit: $limit) {
+    album {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+    recommendationCount
+    asBasisCount
+    asTargetCount
+    averageScore
+  }
+}
+    `;
+
+export const useGetTopRecommendedAlbumsQuery = <
+  TData = GetTopRecommendedAlbumsQuery,
+  TError = unknown,
+>(
+  variables?: GetTopRecommendedAlbumsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetTopRecommendedAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetTopRecommendedAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetTopRecommendedAlbumsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetTopRecommendedAlbums']
+        : ['GetTopRecommendedAlbums', variables],
+    queryFn: fetcher<
+      GetTopRecommendedAlbumsQuery,
+      GetTopRecommendedAlbumsQueryVariables
+    >(GetTopRecommendedAlbumsDocument, variables),
+    ...options,
+  });
+};
+
+useGetTopRecommendedAlbumsQuery.getKey = (
+  variables?: GetTopRecommendedAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetTopRecommendedAlbums']
+    : ['GetTopRecommendedAlbums', variables];
+
+export const useInfiniteGetTopRecommendedAlbumsQuery = <
+  TData = InfiniteData<GetTopRecommendedAlbumsQuery>,
+  TError = unknown,
+>(
+  variables: GetTopRecommendedAlbumsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetTopRecommendedAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetTopRecommendedAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetTopRecommendedAlbumsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetTopRecommendedAlbums.infinite']
+            : ['GetTopRecommendedAlbums.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            GetTopRecommendedAlbumsQuery,
+            GetTopRecommendedAlbumsQueryVariables
+          >(GetTopRecommendedAlbumsDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetTopRecommendedAlbumsQuery.getKey = (
+  variables?: GetTopRecommendedAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetTopRecommendedAlbums.infinite']
+    : ['GetTopRecommendedAlbums.infinite', variables];
+
+export const GetTopRecommendedArtistsDocument = `
+    query GetTopRecommendedArtists($limit: Int) {
+  topRecommendedArtists(limit: $limit) {
+    artist {
+      id
+      name
+      imageUrl
+      cloudflareImageId
+    }
+    recommendationCount
+    albumsInRecommendations
+    averageScore
+  }
+}
+    `;
+
+export const useGetTopRecommendedArtistsQuery = <
+  TData = GetTopRecommendedArtistsQuery,
+  TError = unknown,
+>(
+  variables?: GetTopRecommendedArtistsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetTopRecommendedArtistsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetTopRecommendedArtistsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetTopRecommendedArtistsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetTopRecommendedArtists']
+        : ['GetTopRecommendedArtists', variables],
+    queryFn: fetcher<
+      GetTopRecommendedArtistsQuery,
+      GetTopRecommendedArtistsQueryVariables
+    >(GetTopRecommendedArtistsDocument, variables),
+    ...options,
+  });
+};
+
+useGetTopRecommendedArtistsQuery.getKey = (
+  variables?: GetTopRecommendedArtistsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetTopRecommendedArtists']
+    : ['GetTopRecommendedArtists', variables];
+
+export const useInfiniteGetTopRecommendedArtistsQuery = <
+  TData = InfiniteData<GetTopRecommendedArtistsQuery>,
+  TError = unknown,
+>(
+  variables: GetTopRecommendedArtistsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetTopRecommendedArtistsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetTopRecommendedArtistsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetTopRecommendedArtistsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetTopRecommendedArtists.infinite']
+            : ['GetTopRecommendedArtists.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            GetTopRecommendedArtistsQuery,
+            GetTopRecommendedArtistsQueryVariables
+          >(GetTopRecommendedArtistsDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetTopRecommendedArtistsQuery.getKey = (
+  variables?: GetTopRecommendedArtistsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetTopRecommendedArtists.infinite']
+    : ['GetTopRecommendedArtists.infinite', variables];
 
 export const UpdateAlbumDataQualityDocument = `
     mutation UpdateAlbumDataQuality($id: UUID!, $dataQuality: DataQuality!) {

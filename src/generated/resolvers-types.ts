@@ -825,6 +825,8 @@ export type Query = {
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
   systemHealth: SystemHealth;
+  topRecommendedAlbums: Array<TopRecommendedAlbum>;
+  topRecommendedArtists: Array<TopRecommendedArtist>;
   track?: Maybe<Track>;
   trackRecommendations: Array<Track>;
   trendingAlbums: Array<Album>;
@@ -977,6 +979,14 @@ export type QuerySocialFeedArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   type?: InputMaybe<ActivityType>;
+};
+
+export type QueryTopRecommendedAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryTopRecommendedArtistsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryTrackArgs = {
@@ -1310,6 +1320,23 @@ export enum TimeRange {
 export type TimeRangeInput = {
   from: Scalars['DateTime']['input'];
   to: Scalars['DateTime']['input'];
+};
+
+export type TopRecommendedAlbum = {
+  __typename?: 'TopRecommendedAlbum';
+  album: Album;
+  asBasisCount: Scalars['Int']['output'];
+  asTargetCount: Scalars['Int']['output'];
+  averageScore: Scalars['Float']['output'];
+  recommendationCount: Scalars['Int']['output'];
+};
+
+export type TopRecommendedArtist = {
+  __typename?: 'TopRecommendedArtist';
+  albumsInRecommendations: Scalars['Int']['output'];
+  artist: Artist;
+  averageScore: Scalars['Float']['output'];
+  recommendationCount: Scalars['Int']['output'];
 };
 
 export type Track = {
@@ -1716,6 +1743,8 @@ export type ResolversTypes = ResolversObject<{
   ThroughputMetrics: ResolverTypeWrapper<ThroughputMetrics>;
   TimeRange: TimeRange;
   TimeRangeInput: TimeRangeInput;
+  TopRecommendedAlbum: ResolverTypeWrapper<TopRecommendedAlbum>;
+  TopRecommendedArtist: ResolverTypeWrapper<TopRecommendedArtist>;
   Track: ResolverTypeWrapper<Track>;
   TrackInput: TrackInput;
   UUID: ResolverTypeWrapper<Scalars['UUID']['output']>;
@@ -1811,6 +1840,8 @@ export type ResolversParentTypes = ResolversObject<{
   SystemHealth: SystemHealth;
   ThroughputMetrics: ThroughputMetrics;
   TimeRangeInput: TimeRangeInput;
+  TopRecommendedAlbum: TopRecommendedAlbum;
+  TopRecommendedArtist: TopRecommendedArtist;
   Track: Track;
   TrackInput: TrackInput;
   UUID: Scalars['UUID']['output'];
@@ -3134,6 +3165,18 @@ export type QueryResolvers<
     ParentType,
     ContextType
   >;
+  topRecommendedAlbums?: Resolver<
+    Array<ResolversTypes['TopRecommendedAlbum']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryTopRecommendedAlbumsArgs, 'limit'>
+  >;
+  topRecommendedArtists?: Resolver<
+    Array<ResolversTypes['TopRecommendedArtist']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryTopRecommendedArtistsArgs, 'limit'>
+  >;
   track?: Resolver<
     Maybe<ResolversTypes['Track']>,
     ParentType,
@@ -3633,6 +3676,43 @@ export type ThroughputMetricsResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type TopRecommendedAlbumResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['TopRecommendedAlbum'] = ResolversParentTypes['TopRecommendedAlbum'],
+> = ResolversObject<{
+  album?: Resolver<ResolversTypes['Album'], ParentType, ContextType>;
+  asBasisCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  asTargetCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  averageScore?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  recommendationCount?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type TopRecommendedArtistResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['TopRecommendedArtist'] = ResolversParentTypes['TopRecommendedArtist'],
+> = ResolversObject<{
+  albumsInRecommendations?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  artist?: Resolver<ResolversTypes['Artist'], ParentType, ContextType>;
+  averageScore?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  recommendationCount?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type TrackResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -4053,6 +4133,8 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Subscription?: SubscriptionResolvers<ContextType>;
   SystemHealth?: SystemHealthResolvers<ContextType>;
   ThroughputMetrics?: ThroughputMetricsResolvers<ContextType>;
+  TopRecommendedAlbum?: TopRecommendedAlbumResolvers<ContextType>;
+  TopRecommendedArtist?: TopRecommendedArtistResolvers<ContextType>;
   Track?: TrackResolvers<ContextType>;
   UUID?: GraphQLScalarType;
   UnifiedRelease?: UnifiedReleaseResolvers<ContextType>;

@@ -1862,5 +1862,171 @@ export const queryResolvers: QueryResolvers = {
       throw new GraphQLError(`Failed to calculate enrichment stats: ${error}`);
     }
   },
+
+  // Top recommended albums - albums that appear most frequently in recommendations
+  topRecommendedAlbums: async (_, { limit = 20 }, { prisma }) => {
+    try {
+      // Get all albums that appear in recommendations with their counts
+      const albumStats = await prisma.$queryRaw<
+        Array<{
+          album_id: string;
+          total_count: bigint;
+          basis_count: bigint;
+          target_count: bigint;
+          avg_score: number;
+        }>
+      >`
+        WITH album_recommendation_stats AS (
+          SELECT 
+            album_id,
+            SUM(basis_count + target_count) as total_count,
+            SUM(basis_count) as basis_count,
+            SUM(target_count) as target_count,
+            AVG(avg_score) as avg_score
+          FROM (
+            SELECT 
+              basis_album_id as album_id,
+              COUNT(*) as basis_count,
+              0 as target_count,
+              AVG(score) as avg_score
+            FROM "Recommendation"
+            GROUP BY basis_album_id
+            
+            UNION ALL
+            
+            SELECT 
+              recommended_album_id as album_id,
+              0 as basis_count,
+              COUNT(*) as target_count,
+              AVG(score) as avg_score
+            FROM "Recommendation"
+            GROUP BY recommended_album_id
+          ) combined
+          GROUP BY album_id
+        )
+        SELECT 
+          album_id,
+          total_count,
+          basis_count,
+          target_count,
+          avg_score
+        FROM album_recommendation_stats
+        ORDER BY total_count DESC
+        LIMIT ${limit}
+      `;
+
+      if (albumStats.length === 0) {
+        return [];
+      }
+
+      // Fetch the actual album data
+      const albumIds = albumStats.map(stat => stat.album_id);
+      const albums = await prisma.album.findMany({
+        where: { id: { in: albumIds } },
+        include: {
+          artists: {
+            include: { artist: true },
+            orderBy: { position: 'asc' },
+          },
+        },
+      });
+
+      // Create a map for quick lookup
+      const albumMap = new Map(albums.map(album => [album.id, album]));
+
+      // Combine stats with album data, maintaining the order
+      return albumStats
+        .map(stat => {
+          const album = albumMap.get(stat.album_id);
+          if (!album) return null;
+
+          return {
+            album,
+            recommendationCount: Number(stat.total_count),
+            asBasisCount: Number(stat.basis_count),
+            asTargetCount: Number(stat.target_count),
+            averageScore: stat.avg_score || 0,
+          };
+        })
+        .filter(Boolean);
+    } catch (error) {
+      console.error('Error fetching top recommended albums:', error);
+      throw new GraphQLError(
+        `Failed to fetch top recommended albums: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
+
+  // Top recommended artists - artists whose albums appear most frequently in recommendations
+  topRecommendedArtists: async (_, { limit = 20 }, { prisma }) => {
+    try {
+      // Get artists with the most albums appearing in recommendations
+      const artistStats = await prisma.$queryRaw<
+        Array<{
+          artist_id: string;
+          total_count: bigint;
+          album_count: bigint;
+          avg_score: number;
+        }>
+      >`
+        WITH album_recommendations AS (
+          SELECT basis_album_id as album_id, score FROM "Recommendation"
+          UNION ALL
+          SELECT recommended_album_id as album_id, score FROM "Recommendation"
+        ),
+        artist_album_stats AS (
+          SELECT 
+            aa.artist_id,
+            COUNT(*) as total_count,
+            COUNT(DISTINCT ar.album_id) as album_count,
+            AVG(ar.score) as avg_score
+          FROM album_recommendations ar
+          JOIN album_artists aa ON ar.album_id = aa.album_id
+          GROUP BY aa.artist_id
+        )
+        SELECT 
+          artist_id,
+          total_count,
+          album_count,
+          avg_score
+        FROM artist_album_stats
+        ORDER BY total_count DESC
+        LIMIT ${limit}
+      `;
+
+      if (artistStats.length === 0) {
+        return [];
+      }
+
+      // Fetch the actual artist data
+      const artistIds = artistStats.map(stat => stat.artist_id);
+      const artists = await prisma.artist.findMany({
+        where: { id: { in: artistIds } },
+      });
+
+      // Create a map for quick lookup
+      const artistMap = new Map(artists.map(artist => [artist.id, artist]));
+
+      // Combine stats with artist data, maintaining the order
+      return artistStats
+        .map(stat => {
+          const artist = artistMap.get(stat.artist_id);
+          if (!artist) return null;
+
+          return {
+            artist,
+            recommendationCount: Number(stat.total_count),
+            albumsInRecommendations: Number(stat.album_count),
+            averageScore: stat.avg_score || 0,
+          };
+        })
+        .filter(Boolean);
+    } catch (error) {
+      console.error('Error fetching top recommended artists:', error);
+      throw new GraphQLError(
+        `Failed to fetch top recommended artists: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects
 };
