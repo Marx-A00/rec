@@ -466,6 +466,25 @@ If you need to manually run migrations in Railway:
 - MusicBrainz API (rate-limited via BullMQ)
 - Playwright (for testing)
 
+## Future Optimizations
+
+The following optimizations are documented for when scale demands them. **Not necessary until we hit these numbers.**
+
+### Social Feed Query (UNION ALL)
+
+**Location:** `src/lib/graphql/resolvers/queries.ts` - `socialFeed` resolver
+
+**Current approach:** 3 separate Prisma queries (follows, recommendations, collection_adds) merged and sorted in memory.
+
+**Optimization:** Rewrite using raw SQL with `UNION ALL` to let the database handle sorting and limiting in a single round-trip.
+
+**When to implement:**
+- Users following 100+ people
+- 10k+ activities in the database
+- Noticeable slow response times on the social feed endpoint
+
+**Why not now:** Current implementation handles ~60 rows in memory (3 queries × 20 limit), which is trivial. Prisma's type safety and maintainability outweigh the marginal performance gains at current scale.
+
 ## License
 
 MIT
