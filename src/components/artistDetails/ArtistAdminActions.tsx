@@ -123,6 +123,22 @@ export default function ArtistAdminActions({
             <span className='rounded bg-amber-900/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-300 ring-1 ring-amber-800/50'>
               OVERLAY
             </span>
+            {/* Data Source Badge */}
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                artistSource === 'local'
+                  ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-800/50'
+                  : artistSource === 'musicbrainz'
+                    ? 'bg-blue-500/20 text-blue-400 ring-1 ring-blue-800/50'
+                    : 'bg-purple-500/20 text-purple-400 ring-1 ring-purple-800/50'
+              }`}
+            >
+              {artistSource === 'local'
+                ? 'DATABASE'
+                : artistSource === 'musicbrainz'
+                  ? 'MUSICBRAINZ'
+                  : 'DISCOGS'}
+            </span>
           </div>
           {artistState.isLoading && (
             <Loader2 className='h-3.5 w-3.5 animate-spin text-amber-400' />

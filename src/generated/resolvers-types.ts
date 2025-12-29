@@ -1025,12 +1025,26 @@ export type QueryUserSuggestionsArgs = {
 };
 
 export type QueryUsersArgs = {
+  createdAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  createdBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  hasActivity?: InputMaybe<Scalars['Boolean']['input']>;
+  lastActiveAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  lastActiveBefore?: InputMaybe<Scalars['DateTime']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
+  role?: InputMaybe<UserRole>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<UserSortField>;
+  sortOrder?: InputMaybe<SortOrder>;
 };
 
 export type QueryUsersCountArgs = {
+  createdAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  createdBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  hasActivity?: InputMaybe<Scalars['Boolean']['input']>;
+  lastActiveAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  lastActiveBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  role?: InputMaybe<UserRole>;
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -1144,6 +1158,11 @@ export enum SearchType {
   Artist = 'ARTIST',
   Track = 'TRACK',
   User = 'USER',
+}
+
+export enum SortOrder {
+  Asc = 'ASC',
+  Desc = 'DESC',
 }
 
 export type SourceStat = {
@@ -1456,6 +1475,16 @@ export type UserSettings = {
   userId: Scalars['String']['output'];
 };
 
+export enum UserSortField {
+  CollectionsCount = 'COLLECTIONS_COUNT',
+  CreatedAt = 'CREATED_AT',
+  Email = 'EMAIL',
+  FollowersCount = 'FOLLOWERS_COUNT',
+  LastActive = 'LAST_ACTIVE',
+  Name = 'NAME',
+  RecommendationsCount = 'RECOMMENDATIONS_COUNT',
+}
+
 export type UserStats = {
   __typename?: 'UserStats';
   averageRecommendationScore?: Maybe<Scalars['Float']['output']>;
@@ -1669,6 +1698,7 @@ export type ResolversTypes = ResolversObject<{
   >;
   SearchResults: ResolverTypeWrapper<SearchResults>;
   SearchType: SearchType;
+  SortOrder: SortOrder;
   SourceStat: ResolverTypeWrapper<SourceStat>;
   SpotifyAlbum: ResolverTypeWrapper<SpotifyAlbum>;
   SpotifyArtist: ResolverTypeWrapper<SpotifyArtist>;
@@ -1701,6 +1731,7 @@ export type ResolversTypes = ResolversObject<{
   UserFollow: ResolverTypeWrapper<UserFollow>;
   UserRole: UserRole;
   UserSettings: ResolverTypeWrapper<UserSettings>;
+  UserSortField: UserSortField;
   UserStats: ResolverTypeWrapper<UserStats>;
   WorkerInfo: ResolverTypeWrapper<WorkerInfo>;
 }>;
@@ -3167,7 +3198,7 @@ export type QueryResolvers<
     Array<ResolversTypes['User']>,
     ParentType,
     ContextType,
-    RequireFields<QueryUsersArgs, 'limit' | 'offset'>
+    RequireFields<QueryUsersArgs, 'limit' | 'offset' | 'sortBy' | 'sortOrder'>
   >;
   usersCount?: Resolver<
     ResolversTypes['Int'],

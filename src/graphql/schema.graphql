@@ -211,6 +211,21 @@ enum UserRole {
   OWNER
 }
 
+enum UserSortField {
+  NAME
+  EMAIL
+  CREATED_AT
+  LAST_ACTIVE
+  COLLECTIONS_COUNT
+  RECOMMENDATIONS_COUNT
+  FOLLOWERS_COUNT
+}
+
+enum SortOrder {
+  ASC
+  DESC
+}
+
 type User {
   id: String!
   name: String
@@ -976,8 +991,28 @@ type Query {
   userStats(userId: String!): UserStats!
 
   # Admin queries
-  users(offset: Int = 0, limit: Int = 20, search: String): [User!]!
-  usersCount(search: String): Int!
+  users(
+    offset: Int = 0
+    limit: Int = 20
+    search: String
+    role: UserRole
+    sortBy: UserSortField = CREATED_AT
+    sortOrder: SortOrder = DESC
+    createdAfter: DateTime
+    createdBefore: DateTime
+    lastActiveAfter: DateTime
+    lastActiveBefore: DateTime
+    hasActivity: Boolean
+  ): [User!]!
+  usersCount(
+    search: String
+    role: UserRole
+    createdAfter: DateTime
+    createdBefore: DateTime
+    lastActiveAfter: DateTime
+    lastActiveBefore: DateTime
+    hasActivity: Boolean
+  ): Int!
   mySettings: UserSettings
 
   # Music Database queries

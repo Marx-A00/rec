@@ -34,15 +34,97 @@ export const resolvers: Resolvers = {
     ...queryResolvers,
 
     // Admin users query
-    users: async (_, { offset = 0, limit = 20, search }, { prisma }) => {
-      const where = search
-        ? {
-            OR: [
-              { name: { contains: search, mode: 'insensitive' as const } },
-              { email: { contains: search, mode: 'insensitive' as const } },
-            ],
-          }
-        : {};
+    users: async (
+      _,
+      {
+        offset = 0,
+        limit = 20,
+        search,
+        role,
+        sortBy = 'CREATED_AT',
+        sortOrder = 'DESC',
+        createdAfter,
+        createdBefore,
+        lastActiveAfter,
+        lastActiveBefore,
+        hasActivity,
+      },
+      { prisma }
+    ) => {
+      // Build where clause
+      const whereConditions: Record<string, unknown>[] = [];
+
+      // Search filter
+      if (search) {
+        whereConditions.push({
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { email: { contains: search, mode: 'insensitive' as const } },
+          ],
+        });
+      }
+
+      // Role filter
+      if (role) {
+        whereConditions.push({ role });
+      }
+
+      // Created date range filter
+      if (createdAfter || createdBefore) {
+        const createdAtFilter: Record<string, Date> = {};
+        if (createdAfter) createdAtFilter.gte = new Date(createdAfter);
+        if (createdBefore) createdAtFilter.lte = new Date(createdBefore);
+        whereConditions.push({ createdAt: createdAtFilter });
+      }
+
+      // Last active date range filter
+      if (lastActiveAfter || lastActiveBefore) {
+        const lastActiveFilter: Record<string, Date | null> = {};
+        if (lastActiveAfter) lastActiveFilter.gte = new Date(lastActiveAfter);
+        if (lastActiveBefore) lastActiveFilter.lte = new Date(lastActiveBefore);
+        whereConditions.push({ lastActive: lastActiveFilter });
+      }
+
+      // Has activity filter (users who have logged in at least once)
+      if (hasActivity === true) {
+        whereConditions.push({ lastActive: { not: null } });
+      } else if (hasActivity === false) {
+        whereConditions.push({ lastActive: null });
+      }
+
+      const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
+
+      // Build orderBy clause
+      type OrderByType = Record<
+        string,
+        'asc' | 'desc' | { _count: 'asc' | 'desc' }
+      >;
+      const order = sortOrder === 'ASC' ? 'asc' : 'desc';
+      let orderBy: OrderByType = { id: 'desc' };
+
+      switch (sortBy) {
+        case 'NAME':
+          orderBy = { name: order };
+          break;
+        case 'EMAIL':
+          orderBy = { email: order };
+          break;
+        case 'CREATED_AT':
+          orderBy = { createdAt: order };
+          break;
+        case 'LAST_ACTIVE':
+          orderBy = { lastActive: order };
+          break;
+        case 'COLLECTIONS_COUNT':
+          orderBy = { collections: { _count: order } };
+          break;
+        case 'RECOMMENDATIONS_COUNT':
+          orderBy = { recommendations: { _count: order } };
+          break;
+        case 'FOLLOWERS_COUNT':
+          orderBy = { followers: { _count: order } };
+          break;
+      }
 
       const users = await prisma.user.findMany({
         where,
@@ -63,21 +145,62 @@ export const resolvers: Resolvers = {
             },
           },
         },
-        orderBy: { id: 'desc' }, // Order by ID since createdAt doesn't exist
+        orderBy,
       });
 
       return users;
     },
 
-    usersCount: async (_, { search }, { prisma }) => {
-      const where = search
-        ? {
-            OR: [
-              { name: { contains: search, mode: 'insensitive' as const } },
-              { email: { contains: search, mode: 'insensitive' as const } },
-            ],
-          }
-        : {};
+    usersCount: async (
+      _,
+      {
+        search,
+        role,
+        createdAfter,
+        createdBefore,
+        lastActiveAfter,
+        lastActiveBefore,
+        hasActivity,
+      },
+      { prisma }
+    ) => {
+      // Build where clause (same logic as users query)
+      const whereConditions: Record<string, unknown>[] = [];
+
+      if (search) {
+        whereConditions.push({
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { email: { contains: search, mode: 'insensitive' as const } },
+          ],
+        });
+      }
+
+      if (role) {
+        whereConditions.push({ role });
+      }
+
+      if (createdAfter || createdBefore) {
+        const createdAtFilter: Record<string, Date> = {};
+        if (createdAfter) createdAtFilter.gte = new Date(createdAfter);
+        if (createdBefore) createdAtFilter.lte = new Date(createdBefore);
+        whereConditions.push({ createdAt: createdAtFilter });
+      }
+
+      if (lastActiveAfter || lastActiveBefore) {
+        const lastActiveFilter: Record<string, Date | null> = {};
+        if (lastActiveAfter) lastActiveFilter.gte = new Date(lastActiveAfter);
+        if (lastActiveBefore) lastActiveFilter.lte = new Date(lastActiveBefore);
+        whereConditions.push({ lastActive: lastActiveFilter });
+      }
+
+      if (hasActivity === true) {
+        whereConditions.push({ lastActive: { not: null } });
+      } else if (hasActivity === false) {
+        whereConditions.push({ lastActive: null });
+      }
+
+      const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
       return prisma.user.count({ where });
     },
@@ -920,7 +1043,8 @@ export const resolvers: Resolvers = {
           });
         }
 
-        const currentCount = artists.length + albums.length + tracks.length + users.length;
+        const currentCount =
+          artists.length + albums.length + tracks.length + users.length;
         const totalAvailable = searchResult.totalResults + users.length;
 
         return {
@@ -969,7 +1093,7 @@ export const resolvers: Resolvers = {
       return prisma.trackArtist.count({ where: { artistId: parent.id } });
     },
     popularity: () => null, // Placeholder
-    needsEnrichment: (parent) => {
+    needsEnrichment: parent => {
       // Compute if artist needs enrichment based on available data
       return (
         !parent.imageUrl ||
@@ -1013,7 +1137,7 @@ export const resolvers: Resolvers = {
       return prisma.collectionAlbum.count({ where: { albumId: parent.id } });
     },
     recommendationScore: () => null, // Placeholder
-    needsEnrichment: (parent) => {
+    needsEnrichment: parent => {
       // Compute if album needs enrichment based on available data
       return (
         !parent.coverArtUrl ||

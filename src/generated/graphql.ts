@@ -1051,12 +1051,26 @@ export type QueryUserSuggestionsArgs = {
 };
 
 export type QueryUsersArgs = {
+  createdAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  createdBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  hasActivity?: InputMaybe<Scalars['Boolean']['input']>;
+  lastActiveAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  lastActiveBefore?: InputMaybe<Scalars['DateTime']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
+  role?: InputMaybe<UserRole>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<UserSortField>;
+  sortOrder?: InputMaybe<SortOrder>;
 };
 
 export type QueryUsersCountArgs = {
+  createdAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  createdBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  hasActivity?: InputMaybe<Scalars['Boolean']['input']>;
+  lastActiveAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  lastActiveBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  role?: InputMaybe<UserRole>;
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -1170,6 +1184,11 @@ export enum SearchType {
   Artist = 'ARTIST',
   Track = 'TRACK',
   User = 'USER',
+}
+
+export enum SortOrder {
+  Asc = 'ASC',
+  Desc = 'DESC',
 }
 
 export type SourceStat = {
@@ -1482,6 +1501,16 @@ export type UserSettings = {
   userId: Scalars['String']['output'];
 };
 
+export enum UserSortField {
+  CollectionsCount = 'COLLECTIONS_COUNT',
+  CreatedAt = 'CREATED_AT',
+  Email = 'EMAIL',
+  FollowersCount = 'FOLLOWERS_COUNT',
+  LastActive = 'LAST_ACTIVE',
+  Name = 'NAME',
+  RecommendationsCount = 'RECOMMENDATIONS_COUNT',
+}
+
 export type UserStats = {
   __typename?: 'UserStats';
   averageRecommendationScore?: Maybe<Scalars['Float']['output']>;
@@ -1684,6 +1713,47 @@ export type DeleteAlbumMutation = {
     message?: string | null;
     deletedId?: string | null;
   };
+};
+
+export type GetAdminUsersQueryVariables = Exact<{
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  role?: InputMaybe<UserRole>;
+  sortBy?: InputMaybe<UserSortField>;
+  sortOrder?: InputMaybe<SortOrder>;
+  createdAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  createdBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  lastActiveAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  lastActiveBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  hasActivity?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+export type GetAdminUsersQuery = {
+  __typename?: 'Query';
+  totalCount: number;
+  users: Array<{
+    __typename?: 'User';
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    emailVerified?: Date | null;
+    bio?: string | null;
+    role: UserRole;
+    followersCount: number;
+    followingCount: number;
+    recommendationsCount: number;
+    profileUpdatedAt?: Date | null;
+    lastActive?: Date | null;
+    createdAt: Date;
+    collections: Array<{ __typename?: 'Collection'; id: string; name: string }>;
+    _count?: {
+      __typename?: 'UserCount';
+      collections: number;
+      recommendations: number;
+    } | null;
+  }>;
 };
 
 export type AddAlbumMutationVariables = Exact<{
@@ -3574,6 +3644,125 @@ export const useDeleteAlbumMutation = <TError = unknown, TContext = unknown>(
 };
 
 useDeleteAlbumMutation.getKey = () => ['DeleteAlbum'];
+
+export const GetAdminUsersDocument = `
+    query GetAdminUsers($offset: Int = 0, $limit: Int = 20, $search: String, $role: UserRole, $sortBy: UserSortField = CREATED_AT, $sortOrder: SortOrder = DESC, $createdAfter: DateTime, $createdBefore: DateTime, $lastActiveAfter: DateTime, $lastActiveBefore: DateTime, $hasActivity: Boolean) {
+  users(
+    offset: $offset
+    limit: $limit
+    search: $search
+    role: $role
+    sortBy: $sortBy
+    sortOrder: $sortOrder
+    createdAfter: $createdAfter
+    createdBefore: $createdBefore
+    lastActiveAfter: $lastActiveAfter
+    lastActiveBefore: $lastActiveBefore
+    hasActivity: $hasActivity
+  ) {
+    id
+    name
+    email
+    image
+    emailVerified
+    bio
+    role
+    followersCount
+    followingCount
+    recommendationsCount
+    profileUpdatedAt
+    lastActive
+    createdAt
+    collections {
+      id
+      name
+    }
+    _count {
+      collections
+      recommendations
+    }
+  }
+  totalCount: usersCount(
+    search: $search
+    role: $role
+    createdAfter: $createdAfter
+    createdBefore: $createdBefore
+    lastActiveAfter: $lastActiveAfter
+    lastActiveBefore: $lastActiveBefore
+    hasActivity: $hasActivity
+  )
+}
+    `;
+
+export const useGetAdminUsersQuery = <
+  TData = GetAdminUsersQuery,
+  TError = unknown,
+>(
+  variables?: GetAdminUsersQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetAdminUsersQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<GetAdminUsersQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<GetAdminUsersQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetAdminUsers']
+        : ['GetAdminUsers', variables],
+    queryFn: fetcher<GetAdminUsersQuery, GetAdminUsersQueryVariables>(
+      GetAdminUsersDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetAdminUsersQuery.getKey = (variables?: GetAdminUsersQueryVariables) =>
+  variables === undefined ? ['GetAdminUsers'] : ['GetAdminUsers', variables];
+
+export const useInfiniteGetAdminUsersQuery = <
+  TData = InfiniteData<GetAdminUsersQuery>,
+  TError = unknown,
+>(
+  variables: GetAdminUsersQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetAdminUsersQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetAdminUsersQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetAdminUsersQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetAdminUsers.infinite']
+            : ['GetAdminUsers.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetAdminUsersQuery, GetAdminUsersQueryVariables>(
+            GetAdminUsersDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetAdminUsersQuery.getKey = (
+  variables?: GetAdminUsersQueryVariables
+) =>
+  variables === undefined
+    ? ['GetAdminUsers.infinite']
+    : ['GetAdminUsers.infinite', variables];
 
 export const AddAlbumDocument = `
     mutation AddAlbum($input: AlbumInput!) {
