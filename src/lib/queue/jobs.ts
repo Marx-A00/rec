@@ -108,8 +108,10 @@ export interface CheckAlbumEnrichmentJobData {
     | 'search'
     | 'browse'
     | 'manual'
-    | 'spotify_sync';
+    | 'spotify_sync'
+    | 'admin_manual';
   priority?: 'low' | 'medium' | 'high';
+  force?: boolean;
   requestId?: string;
 }
 
@@ -121,8 +123,10 @@ export interface CheckArtistEnrichmentJobData {
     | 'search'
     | 'browse'
     | 'manual'
-    | 'spotify_sync';
+    | 'spotify_sync'
+    | 'admin_manual';
   priority?: 'low' | 'medium' | 'high';
+  force?: boolean;
   requestId?: string;
 }
 
@@ -142,26 +146,30 @@ export interface CheckTrackEnrichmentJobData {
 export interface EnrichAlbumJobData {
   albumId: string;
   priority?: 'low' | 'medium' | 'high';
+  force?: boolean;
   userAction?:
     | 'collection_add'
     | 'recommendation_create'
     | 'search'
     | 'browse'
     | 'manual'
-    | 'spotify_sync';
+    | 'spotify_sync'
+    | 'admin_manual';
   requestId?: string;
 }
 
 export interface EnrichArtistJobData {
   artistId: string;
   priority?: 'low' | 'medium' | 'high';
+  force?: boolean;
   userAction?:
     | 'collection_add'
     | 'recommendation_create'
     | 'search'
     | 'browse'
     | 'manual'
-    | 'spotify_sync';
+    | 'spotify_sync'
+    | 'admin_manual';
   requestId?: string;
 }
 

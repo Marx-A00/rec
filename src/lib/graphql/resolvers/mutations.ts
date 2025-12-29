@@ -1703,7 +1703,7 @@ export const mutationResolvers: MutationResolvers = {
   // Music Database Enrichment mutations
   triggerAlbumEnrichment: async (
     _: any,
-    { id, priority = 'MEDIUM' }: any,
+    { id, priority = 'MEDIUM', force = false }: any,
     { prisma }: any
   ) => {
     try {
@@ -1717,11 +1717,23 @@ export const mutationResolvers: MutationResolvers = {
         });
       }
 
+      // If force=true, reset status to PENDING first so enrichment check passes
+      if (force) {
+        await prisma.album.update({
+          where: { id },
+          data: {
+            enrichmentStatus: 'PENDING',
+            lastEnriched: null,
+          },
+        });
+      }
+
       const queue = getMusicBrainzQueue();
       const jobData: CheckAlbumEnrichmentJobData = {
         albumId: id,
         source: 'admin_manual',
         priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
+        force,
         requestId: `admin_enrichment_${Date.now()}`,
       };
 
@@ -1741,7 +1753,9 @@ export const mutationResolvers: MutationResolvers = {
       return {
         success: true,
         jobId: job.id,
-        message: `Album enrichment job ${job.id} queued with ${priority} priority`,
+        message: force
+          ? `Album force re-enrichment job ${job.id} queued with ${priority} priority`
+          : `Album enrichment job ${job.id} queued with ${priority} priority`,
       };
     } catch (error) {
       throw new GraphQLError(`Failed to trigger album enrichment: ${error}`);
@@ -1750,7 +1764,7 @@ export const mutationResolvers: MutationResolvers = {
 
   triggerArtistEnrichment: async (
     _: any,
-    { id, priority = 'MEDIUM' }: any,
+    { id, priority = 'MEDIUM', force = false }: any,
     { prisma }: any
   ) => {
     try {
@@ -1764,11 +1778,23 @@ export const mutationResolvers: MutationResolvers = {
         });
       }
 
+      // If force=true, reset status to PENDING first so enrichment check passes
+      if (force) {
+        await prisma.artist.update({
+          where: { id },
+          data: {
+            enrichmentStatus: 'PENDING',
+            lastEnriched: null,
+          },
+        });
+      }
+
       const queue = getMusicBrainzQueue();
       const jobData: CheckArtistEnrichmentJobData = {
         artistId: id,
         source: 'admin_manual',
         priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
+        force,
         requestId: `admin_enrichment_${Date.now()}`,
       };
 
@@ -1788,7 +1814,9 @@ export const mutationResolvers: MutationResolvers = {
       return {
         success: true,
         jobId: job.id,
-        message: `Artist enrichment job ${job.id} queued with ${priority} priority`,
+        message: force
+          ? `Artist force re-enrichment job ${job.id} queued with ${priority} priority`
+          : `Artist enrichment job ${job.id} queued with ${priority} priority`,
       };
     } catch (error) {
       throw new GraphQLError(`Failed to trigger artist enrichment: ${error}`);

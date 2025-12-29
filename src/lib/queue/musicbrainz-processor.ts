@@ -351,7 +351,7 @@ async function handleBrowseReleaseGroupsByArtist(data: {
 
 async function handleCheckAlbumEnrichment(data: CheckAlbumEnrichmentJobData) {
   console.log(
-    `🔍 Checking if album ${data.albumId} needs enrichment (source: ${data.source})`
+    `🔍 Checking if album ${data.albumId} needs enrichment (source: ${data.source}, force: ${data.force || false})`
   );
 
   // Get album with current enrichment status (include tracks to check if enrichment needed)
@@ -372,12 +372,12 @@ async function handleCheckAlbumEnrichment(data: CheckAlbumEnrichmentJobData) {
     };
   }
 
-  // Check if enrichment is needed using our existing logic
-  const needsEnrichment = shouldEnrichAlbum(album);
+  // Check if enrichment is needed - force flag bypasses all checks
+  const needsEnrichment = data.force || shouldEnrichAlbum(album);
 
   if (needsEnrichment) {
     console.log(
-      `✅ Album ${data.albumId} needs enrichment, queueing enrichment job`
+      `✅ Album ${data.albumId} ${data.force ? 'force re-enrichment requested' : 'needs enrichment'}, queueing enrichment job`
     );
 
     // Queue the actual enrichment job
@@ -389,6 +389,7 @@ async function handleCheckAlbumEnrichment(data: CheckAlbumEnrichmentJobData) {
       {
         albumId: data.albumId,
         priority: data.priority || 'medium',
+        force: data.force,
         userAction: mapSourceToUserAction(data.source),
         requestId: data.requestId,
       },
@@ -420,6 +421,7 @@ async function handleCheckAlbumEnrichment(data: CheckAlbumEnrichmentJobData) {
       action: 'queued_for_enrichment',
       artistsAlsoQueued: album.artists.length,
       source: data.source,
+      force: data.force,
     };
   } else {
     console.log(`⏭️ Album ${data.albumId} doesn't need enrichment, skipping`);
@@ -436,7 +438,7 @@ async function handleCheckAlbumEnrichment(data: CheckAlbumEnrichmentJobData) {
 
 async function handleCheckArtistEnrichment(data: CheckArtistEnrichmentJobData) {
   console.log(
-    `🔍 Checking if artist ${data.artistId} needs enrichment (source: ${data.source})`
+    `🔍 Checking if artist ${data.artistId} needs enrichment (source: ${data.source}, force: ${data.force || false})`
   );
 
   // Get artist with current enrichment status
@@ -453,12 +455,12 @@ async function handleCheckArtistEnrichment(data: CheckArtistEnrichmentJobData) {
     };
   }
 
-  // Check if enrichment is needed using our existing logic
-  const needsEnrichment = shouldEnrichArtist(artist);
+  // Check if enrichment is needed - force flag bypasses all checks
+  const needsEnrichment = data.force || shouldEnrichArtist(artist);
 
   if (needsEnrichment) {
     console.log(
-      `✅ Artist ${data.artistId} needs enrichment, queueing enrichment job`
+      `✅ Artist ${data.artistId} ${data.force ? 'force re-enrichment requested' : 'needs enrichment'}, queueing enrichment job`
     );
 
     // Queue the actual enrichment job
@@ -470,6 +472,7 @@ async function handleCheckArtistEnrichment(data: CheckArtistEnrichmentJobData) {
       {
         artistId: data.artistId,
         priority: data.priority || 'medium',
+        force: data.force,
         userAction: mapSourceToUserAction(data.source),
         requestId: data.requestId,
       },
@@ -483,6 +486,7 @@ async function handleCheckArtistEnrichment(data: CheckArtistEnrichmentJobData) {
       artistId: data.artistId,
       action: 'queued_for_enrichment',
       source: data.source,
+      force: data.force,
     };
   } else {
     console.log(`⏭️ Artist ${data.artistId} doesn't need enrichment, skipping`);
@@ -526,43 +530,56 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
   const artistName = album.artists?.[0]?.artist?.name || 'Unknown Artist';
 
   // Check if enrichment is needed (with logger for cooldown checks)
-  const enrichmentDecision = await shouldEnrichAlbum(album, enrichmentLogger);
-  if (!enrichmentDecision.shouldEnrich) {
-    console.log(`⏭️ Album ${data.albumId} does not need enrichment, skipping - ${enrichmentDecision.reason}`);
+  // Skip this check if force=true (admin requested force re-enrichment)
+  if (!data.force) {
+    const enrichmentDecision = await shouldEnrichAlbum(album, enrichmentLogger);
+    if (!enrichmentDecision.shouldEnrich) {
+      console.log(
+        `⏭️ Album ${data.albumId} does not need enrichment, skipping - ${enrichmentDecision.reason}`
+      );
 
-    // Reset enrichment status if it was set to IN_PROGRESS by the admin trigger
-    if (album.enrichmentStatus === 'IN_PROGRESS') {
-      await prisma.album.update({
-        where: { id: data.albumId },
-        data: { enrichmentStatus: 'COMPLETED' },
+      // Reset enrichment status if it was set to IN_PROGRESS by the admin trigger
+      if (album.enrichmentStatus === 'IN_PROGRESS') {
+        await prisma.album.update({
+          where: { id: data.albumId },
+          data: { enrichmentStatus: 'COMPLETED' },
+        });
+      }
+
+      // Log the skip with the reason
+      await enrichmentLogger.logEnrichment({
+        entityType: 'ALBUM',
+        entityId: album.id,
+        operation: JOB_TYPES.ENRICH_ALBUM,
+        sources: [],
+        status: 'SKIPPED',
+        reason: enrichmentDecision.reason,
+        fieldsEnriched: [],
+        dataQualityBefore,
+        dataQualityAfter: album.dataQuality || 'LOW',
+        durationMs: Date.now() - startTime,
+        apiCallCount: 0,
+        metadata: {
+          albumTitle: album.title,
+          artistName,
+          confidence: enrichmentDecision.confidence,
+        },
+        jobId: data.requestId,
+        triggeredBy: data.userAction || 'manual',
       });
+
+      return {
+        albumId: data.albumId,
+        action: 'skipped',
+        reason: enrichmentDecision.reason,
+        currentDataQuality: album.dataQuality,
+        lastEnriched: album.lastEnriched,
+      };
     }
-
-    // Log the skip with the reason
-    await enrichmentLogger.logEnrichment({
-      entityType: 'ALBUM',
-      entityId: album.id,
-      operation: JOB_TYPES.ENRICH_ALBUM,
-      sources: [],
-      status: 'SKIPPED',
-      reason: enrichmentDecision.reason,
-      fieldsEnriched: [],
-      dataQualityBefore,
-      dataQualityAfter: album.dataQuality || 'LOW',
-      durationMs: Date.now() - startTime,
-      apiCallCount: 0,
-      metadata: { albumTitle: album.title, artistName, confidence: enrichmentDecision.confidence },
-      jobId: data.requestId,
-      triggeredBy: data.userAction || 'manual',
-    });
-
-    return {
-      albumId: data.albumId,
-      action: 'skipped',
-      reason: enrichmentDecision.reason,
-      currentDataQuality: album.dataQuality,
-      lastEnriched: album.lastEnriched,
-    };
+  } else {
+    console.log(
+      `🔄 Force re-enrichment requested for album ${data.albumId}, bypassing checks`
+    );
   }
 
   // Mark as in progress
@@ -695,7 +712,8 @@ async function handleEnrichAlbum(data: EnrichAlbumJobData) {
 
               // Track which fields were enriched
               if (mbData.title) fieldsEnriched.push('title');
-              if (mbData['first-release-date']) fieldsEnriched.push('releaseDate');
+              if (mbData['first-release-date'])
+                fieldsEnriched.push('releaseDate');
               if (mbData['artist-credit']) fieldsEnriched.push('artists');
 
               // 🚀 OPTIMIZATION: Fetch tracks for this album efficiently
@@ -873,45 +891,58 @@ async function handleEnrichArtist(data: EnrichArtistJobData) {
   const dataQualityBefore = artist.dataQuality || 'LOW';
 
   // Check if enrichment is needed (with logger for cooldown checks)
-  const enrichmentDecision = await shouldEnrichArtist(artist, enrichmentLogger);
-  if (!enrichmentDecision.shouldEnrich) {
-    console.log(
-      `⏭️ Artist ${data.artistId} does not need enrichment, skipping - ${enrichmentDecision.reason}`
+  // Skip this check if force=true (admin requested force re-enrichment)
+  if (!data.force) {
+    const enrichmentDecision = await shouldEnrichArtist(
+      artist,
+      enrichmentLogger
     );
+    if (!enrichmentDecision.shouldEnrich) {
+      console.log(
+        `⏭️ Artist ${data.artistId} does not need enrichment, skipping - ${enrichmentDecision.reason}`
+      );
 
-    // Reset enrichment status if it was set to IN_PROGRESS by the admin trigger
-    if (artist.enrichmentStatus === 'IN_PROGRESS') {
-      await prisma.artist.update({
-        where: { id: data.artistId },
-        data: { enrichmentStatus: 'COMPLETED' },
+      // Reset enrichment status if it was set to IN_PROGRESS by the admin trigger
+      if (artist.enrichmentStatus === 'IN_PROGRESS') {
+        await prisma.artist.update({
+          where: { id: data.artistId },
+          data: { enrichmentStatus: 'COMPLETED' },
+        });
+      }
+
+      // Log the skip with the reason
+      await enrichmentLogger.logEnrichment({
+        entityType: 'ARTIST',
+        entityId: artist.id,
+        operation: JOB_TYPES.ENRICH_ARTIST,
+        sources: [],
+        status: 'SKIPPED',
+        reason: enrichmentDecision.reason,
+        fieldsEnriched: [],
+        dataQualityBefore,
+        dataQualityAfter: artist.dataQuality || 'LOW',
+        durationMs: Date.now() - startTime,
+        apiCallCount: 0,
+        metadata: {
+          artistName: artist.name,
+          confidence: enrichmentDecision.confidence,
+        },
+        jobId: data.requestId,
+        triggeredBy: data.userAction || 'manual',
       });
+
+      return {
+        artistId: data.artistId,
+        action: 'skipped',
+        reason: enrichmentDecision.reason,
+        currentDataQuality: artist.dataQuality,
+        lastEnriched: artist.lastEnriched,
+      };
     }
-
-    // Log the skip with the reason
-    await enrichmentLogger.logEnrichment({
-      entityType: 'ARTIST',
-      entityId: artist.id,
-      operation: JOB_TYPES.ENRICH_ARTIST,
-      sources: [],
-      status: 'SKIPPED',
-      reason: enrichmentDecision.reason,
-      fieldsEnriched: [],
-      dataQualityBefore,
-      dataQualityAfter: artist.dataQuality || 'LOW',
-      durationMs: Date.now() - startTime,
-      apiCallCount: 0,
-      metadata: { artistName: artist.name, confidence: enrichmentDecision.confidence },
-      jobId: data.requestId,
-      triggeredBy: data.userAction || 'manual',
-    });
-
-    return {
-      artistId: data.artistId,
-      action: 'skipped',
-      reason: enrichmentDecision.reason,
-      currentDataQuality: artist.dataQuality,
-      lastEnriched: artist.lastEnriched,
-    };
+  } else {
+    console.log(
+      `🔄 Force re-enrichment requested for artist ${data.artistId}, bypassing checks`
+    );
   }
 
   // Mark as in progress
@@ -2519,7 +2550,8 @@ async function handleEnrichTrack(data: EnrichTrackJobData) {
       if (track) {
         trackTitle = track.title;
         trackArtistName = track.artists[0]?.artist?.name || 'Unknown Artist';
-        trackDataQualityBefore = (track.dataQuality as 'LOW' | 'MEDIUM' | 'HIGH') || 'LOW';
+        trackDataQualityBefore =
+          (track.dataQuality as 'LOW' | 'MEDIUM' | 'HIGH') || 'LOW';
       }
     } catch {
       // Ignore errors when fetching track for logging

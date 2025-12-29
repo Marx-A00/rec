@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Search,
   Database,
@@ -66,6 +67,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import {
   useSearchAlbumsAdminQuery,
@@ -81,8 +88,10 @@ import {
   useUpdateArtistDataQualityMutation,
   useTriggerAlbumEnrichmentMutation,
   useTriggerArtistEnrichmentMutation,
+  useBatchEnrichmentMutation,
   useDeleteAlbumMutation,
   useDeleteArtistMutation,
+  EnrichmentType,
   EnrichmentPriority,
   DataQuality,
 } from '@/generated/graphql';
@@ -164,6 +173,9 @@ export default function MusicDatabasePage() {
   const targetId = searchParams.get('id');
   const targetType = searchParams.get('type') as SearchType | null; // 'albums' or 'artists'
 
+  // Get query client for invalidating queries after mutations
+  const queryClient = useQueryClient();
+
   const [activeTab, setActiveTab] = useState<SearchType>(
     targetType || 'albums'
   );
@@ -190,6 +202,7 @@ export default function MusicDatabasePage() {
     name: string;
   } | null>(null);
   const [deleteArtistModalOpen, setDeleteArtistModalOpen] = useState(false);
+  const [enrichingItems, setEnrichingItems] = useState<Set<string>>(new Set());
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
@@ -223,6 +236,9 @@ export default function MusicDatabasePage() {
   const updateAlbumQualityMutation = useUpdateAlbumDataQualityMutation();
   const updateArtistQualityMutation = useUpdateArtistDataQualityMutation();
 
+  // Batch enrichment mutation
+  const batchEnrichmentMutation = useBatchEnrichmentMutation();
+
   // Delete mutations
   const deleteAlbumMutation = useDeleteAlbumMutation();
   const deleteArtistMutation = useDeleteArtistMutation();
@@ -251,12 +267,14 @@ export default function MusicDatabasePage() {
     {
       enabled: activeTab === 'albums',
       refetchInterval: query => {
-        // Enable polling if any albums are in progress
+        // Enable polling if any albums are pending or in progress
         const albums = query.state.data?.searchAlbums || [];
-        const hasInProgress = albums.some(
-          (a: any) => a.enrichmentStatus === 'IN_PROGRESS'
+        const hasActiveEnrichment = albums.some(
+          (a: any) =>
+            a.enrichmentStatus === 'IN_PROGRESS' ||
+            a.enrichmentStatus === 'PENDING'
         );
-        return hasInProgress ? 3000 : false; // Poll every 3 seconds
+        return hasActiveEnrichment ? 3000 : false; // Poll every 3 seconds
       },
     }
   );
@@ -285,11 +303,14 @@ export default function MusicDatabasePage() {
     {
       enabled: activeTab === 'artists',
       refetchInterval: query => {
+        // Enable polling if any artists are pending or in progress
         const artists = query.state.data?.searchArtists || [];
-        const hasInProgress = artists.some(
-          (a: any) => a.enrichmentStatus === 'IN_PROGRESS'
+        const hasActiveEnrichment = artists.some(
+          (a: any) =>
+            a.enrichmentStatus === 'IN_PROGRESS' ||
+            a.enrichmentStatus === 'PENDING'
         );
-        return hasInProgress ? 3000 : false;
+        return hasActiveEnrichment ? 3000 : false;
       },
     }
   );
@@ -439,30 +460,28 @@ export default function MusicDatabasePage() {
     if (!albumToDelete) return;
 
     try {
-      const response = await fetch('/api/admin/albums/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ albumId: albumToDelete.id }),
+      const result = await deleteAlbumMutation.mutateAsync({
+        id: albumToDelete.id,
       });
 
-      const data = await response.json();
+      if (result.deleteAlbum?.success) {
+        toast.success(`Successfully deleted "${albumToDelete.title}"`);
 
-      if (!response.ok) {
-        throw new Error(data.error || data.details || 'Failed to delete album');
+        // Collapse the row and refetch data
+        setExpandedRows(prev => {
+          const next = new Set(prev);
+          next.delete(albumToDelete.id);
+          return next;
+        });
+
+        setDeleteModalOpen(false);
+        setAlbumToDelete(null);
+        refetchAlbums();
+      } else {
+        throw new Error(
+          result.deleteAlbum?.message || 'Failed to delete album'
+        );
       }
-
-      toast.success(`Successfully deleted "${albumToDelete.title}"`);
-
-      // Collapse the row and refetch data
-      setExpandedRows(prev => {
-        const next = new Set(prev);
-        next.delete(albumToDelete.id);
-        return next;
-      });
-
-      setDeleteModalOpen(false);
-      setAlbumToDelete(null);
-      refetchAlbums();
     } catch (error) {
       console.error('Delete error:', error);
       const errorMessage =
@@ -508,18 +527,34 @@ export default function MusicDatabasePage() {
   const handleEnrichItem = async (
     itemId: string,
     type: 'album' | 'artist',
-    priority: EnrichmentPriority = EnrichmentPriority.Medium
+    priority: EnrichmentPriority = EnrichmentPriority.Medium,
+    force: boolean = false
   ) => {
+    // Add item to enriching set to show loading state
+    setEnrichingItems(prev => new Set(prev).add(itemId));
+
     try {
       if (type === 'album') {
         const result = await triggerAlbumEnrichmentMutation.mutateAsync({
           id: itemId,
           priority,
+          force,
         });
 
         if (result.triggerAlbumEnrichment.success) {
-          toast.success(`Enrichment job queued for album`);
-          refetchAlbums();
+          toast.success(
+            force
+              ? `Force re-enrichment job queued for album`
+              : `Enrichment job queued for album`
+          );
+          // Invalidate all related queries to ensure UI updates immediately
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['SearchAlbumsAdmin'] }),
+            queryClient.invalidateQueries({
+              queryKey: ['GetAlbumDetailsAdmin'],
+            }),
+            queryClient.invalidateQueries({ queryKey: ['GetEnrichmentLogs'] }),
+          ]);
         } else {
           throw new Error(
             result.triggerAlbumEnrichment.message ||
@@ -530,11 +565,21 @@ export default function MusicDatabasePage() {
         const result = await triggerArtistEnrichmentMutation.mutateAsync({
           id: itemId,
           priority,
+          force,
         });
 
         if (result.triggerArtistEnrichment.success) {
-          toast.success(`Enrichment job queued for artist`);
-          refetchArtists();
+          toast.success(
+            force
+              ? `Force re-enrichment job queued for artist`
+              : `Enrichment job queued for artist`
+          );
+          // Invalidate all related queries to ensure UI updates immediately
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['SearchArtistsAdmin'] }),
+            queryClient.invalidateQueries({ queryKey: ['GetArtistDetails'] }),
+            queryClient.invalidateQueries({ queryKey: ['GetEnrichmentLogs'] }),
+          ]);
         } else {
           throw new Error(
             result.triggerArtistEnrichment.message ||
@@ -544,6 +589,13 @@ export default function MusicDatabasePage() {
       }
     } catch (error) {
       toast.error(`Failed to queue enrichment: ${error}`);
+    } finally {
+      // Remove item from enriching set to hide loading state
+      setEnrichingItems(prev => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
     }
   };
 
@@ -606,55 +658,43 @@ export default function MusicDatabasePage() {
     }
 
     const itemsArray = Array.from(selectedItems);
-    const type =
+    const enrichmentType =
       activeTab === 'albums'
-        ? 'album'
+        ? EnrichmentType.Album
         : activeTab === 'artists'
-          ? 'artist'
+          ? EnrichmentType.Artist
           : null;
 
-    if (!type) {
+    if (!enrichmentType) {
       toast.error('Batch enrichment not available for tracks');
       return;
     }
 
     try {
-      const response = await fetch('/api/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            mutation BatchEnrichment {
-              batchEnrichment(
-                ids: ${JSON.stringify(itemsArray)},
-                type: "${type.toUpperCase()}",
-                priority: MEDIUM
-              ) {
-                success
-                jobsQueued
-                message
-              }
-            }
-          `,
-        }),
+      const result = await batchEnrichmentMutation.mutateAsync({
+        ids: itemsArray,
+        type: enrichmentType,
+        priority: EnrichmentPriority.Medium,
       });
 
-      const data = await response.json();
-      if (data.data?.batchEnrichment?.success) {
+      if (result.batchEnrichment?.success) {
         toast.success(
-          `${data.data.batchEnrichment.jobsQueued} enrichment jobs queued`
+          `${result.batchEnrichment.jobsQueued} enrichment jobs queued`
         );
         setSelectedItems(new Set());
-        // Refresh the search results based on active tab
+        // Invalidate queries to refresh the list
         if (activeTab === 'albums') {
-          refetchAlbums();
+          await queryClient.invalidateQueries({
+            queryKey: ['SearchAlbumsAdmin'],
+          });
         } else if (activeTab === 'artists') {
-          refetchArtists();
+          await queryClient.invalidateQueries({
+            queryKey: ['SearchArtistsAdmin'],
+          });
         }
       } else {
         throw new Error(
-          data.data?.batchEnrichment?.message ||
-            'Failed to queue batch enrichment'
+          result.batchEnrichment?.message || 'Failed to queue batch enrichment'
         );
       }
     } catch (error) {
@@ -813,58 +853,24 @@ export default function MusicDatabasePage() {
 
   // Component for expanded album details
   const AlbumExpandedContent = ({ album }: { album: AlbumSearchResult }) => {
-    const [albumDetails, setAlbumDetails] = useState<any>(null);
-    const [loadingDetails, setLoadingDetails] = useState(true);
     const [tracksExpanded, setTracksExpanded] = useState(false);
 
-    useEffect(() => {
-      const fetchAlbumDetails = async () => {
-        try {
-          const response = await fetch('/api/graphql', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              query: `
-                query GetAlbumDetails($id: UUID!) {
-                  album(id: $id) {
-                    id
-                    title
-                    musicbrainzId
-                    releaseDate
-                    label
-                    barcode
-                    dataQuality
-                    enrichmentStatus
-                    lastEnriched
-                    tracks {
-                      id
-                      title
-                      trackNumber
-                      discNumber
-                      durationMs
-                      isrc
-                    }
-                  }
-                }
-              `,
-              variables: { id: album.id },
-            }),
-          });
-          const data = await response.json();
-          if (data.data?.album) {
-            setAlbumDetails(data.data.album);
-          }
-        } catch (error) {
-          console.error('Failed to fetch album details:', error);
-        } finally {
-          setLoadingDetails(false);
-        }
-      };
+    const { data, isLoading, error } = useGetAlbumDetailsAdminQuery(
+      { id: album.id },
+      {
+        enabled: !!album.id,
+        // Poll while enrichment is pending or in progress
+        refetchInterval:
+          album.enrichmentStatus === 'PENDING' ||
+          album.enrichmentStatus === 'IN_PROGRESS'
+            ? 3000
+            : false,
+      }
+    );
 
-      fetchAlbumDetails();
-    }, [album.id]);
+    const albumDetails = data?.album;
 
-    if (loadingDetails) {
+    if (isLoading) {
       return (
         <div className='p-4 text-center text-zinc-400'>
           <RefreshCcw className='h-5 w-5 animate-spin mx-auto mb-2' />
@@ -873,7 +879,7 @@ export default function MusicDatabasePage() {
       );
     }
 
-    if (!albumDetails) {
+    if (error || !albumDetails) {
       return (
         <div className='p-4 text-center text-zinc-400'>
           Failed to load album details
@@ -941,6 +947,16 @@ export default function MusicDatabasePage() {
             </div>
             <div className='text-sm text-zinc-300'>
               {albumDetails.tracks?.length || 0} tracks
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Image Status
+            </div>
+            <div className='text-sm text-zinc-300'>
+              {albumDetails.coverArtUrl && albumDetails.cloudflareImageId
+                ? '✓ Has images'
+                : '✗ Missing images'}
             </div>
           </div>
         </div>
@@ -1035,7 +1051,7 @@ export default function MusicDatabasePage() {
             entityType={EnrichmentEntityType.Album}
             entityId={album.id}
             limit={10}
-            enrichmentStatus={albumDetails.enrichmentStatus}
+            enrichmentStatus={album.enrichmentStatus}
             onReset={() => handleResetEnrichment(album.id, 'album')}
           />
         </div>
@@ -1051,7 +1067,15 @@ export default function MusicDatabasePage() {
   }) => {
     const { data, isLoading, error } = useGetArtistDetailsQuery(
       { id: artist.id },
-      { enabled: !!artist.id }
+      {
+        enabled: !!artist.id,
+        // Poll while enrichment is pending or in progress
+        refetchInterval:
+          artist.enrichmentStatus === 'PENDING' ||
+          artist.enrichmentStatus === 'IN_PROGRESS'
+            ? 3000
+            : false,
+      }
     );
 
     const artistDetails = data?.artist;
@@ -1231,7 +1255,7 @@ export default function MusicDatabasePage() {
             entityType={EnrichmentEntityType.Artist}
             entityId={artist.id}
             limit={10}
-            enrichmentStatus={artistDetails.enrichmentStatus}
+            enrichmentStatus={artist.enrichmentStatus}
             onReset={() => handleResetEnrichment(artist.id, 'artist')}
           />
         </div>
@@ -1650,19 +1674,60 @@ export default function MusicDatabasePage() {
                           </div>
                         </TableCell>
                         <TableCell onClick={e => e.stopPropagation()}>
-                          <Button
-                            size='sm'
-                            variant='outline'
-                            onClick={() => handleEnrichItem(album.id, 'album')}
-                            disabled={
-                              album.enrichmentStatus === 'IN_PROGRESS' ||
-                              !album.needsEnrichment
-                            }
-                            className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
-                          >
-                            <RefreshCcw className='h-3 w-3 mr-1' />
-                            Enrich
-                          </Button>
+                          {enrichingItems.has(album.id) ? (
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              disabled
+                              className='text-white border-zinc-700 disabled:opacity-70'
+                            >
+                              <Loader2 className='h-3 w-3 mr-1 animate-spin' />
+                              Enriching...
+                            </Button>
+                          ) : (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size='sm'
+                                  variant='outline'
+                                  disabled={
+                                    album.enrichmentStatus === 'IN_PROGRESS'
+                                  }
+                                  className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
+                                >
+                                  <RefreshCcw className='h-3 w-3 mr-1' />
+                                  Enrich
+                                  <ChevronDown className='h-3 w-3 ml-1' />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className='bg-zinc-800 border-zinc-700'>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleEnrichItem(album.id, 'album')
+                                  }
+                                  disabled={!album.needsEnrichment}
+                                  className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
+                                >
+                                  <RefreshCcw className='h-3 w-3 mr-2' />
+                                  Enrich
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleEnrichItem(
+                                      album.id,
+                                      'album',
+                                      EnrichmentPriority.High,
+                                      true
+                                    )
+                                  }
+                                  className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                >
+                                  <Zap className='h-3 w-3 mr-2' />
+                                  Force Re-Enrich
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </TableCell>
                       </TableRow>
                       {expandedRows.has(album.id) && (
@@ -1793,21 +1858,60 @@ export default function MusicDatabasePage() {
                           </div>
                         </TableCell>
                         <TableCell onClick={e => e.stopPropagation()}>
-                          <Button
-                            size='sm'
-                            variant='outline'
-                            onClick={() =>
-                              handleEnrichItem(artist.id, 'artist')
-                            }
-                            disabled={
-                              artist.enrichmentStatus === 'IN_PROGRESS' ||
-                              !artist.needsEnrichment
-                            }
-                            className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
-                          >
-                            <RefreshCcw className='h-3 w-3 mr-1' />
-                            Enrich
-                          </Button>
+                          {enrichingItems.has(artist.id) ? (
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              disabled
+                              className='text-white border-zinc-700 disabled:opacity-70'
+                            >
+                              <Loader2 className='h-3 w-3 mr-1 animate-spin' />
+                              Enriching...
+                            </Button>
+                          ) : (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size='sm'
+                                  variant='outline'
+                                  disabled={
+                                    artist.enrichmentStatus === 'IN_PROGRESS'
+                                  }
+                                  className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
+                                >
+                                  <RefreshCcw className='h-3 w-3 mr-1' />
+                                  Enrich
+                                  <ChevronDown className='h-3 w-3 ml-1' />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className='bg-zinc-800 border-zinc-700'>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleEnrichItem(artist.id, 'artist')
+                                  }
+                                  disabled={!artist.needsEnrichment}
+                                  className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
+                                >
+                                  <RefreshCcw className='h-3 w-3 mr-2' />
+                                  Enrich
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleEnrichItem(
+                                      artist.id,
+                                      'artist',
+                                      EnrichmentPriority.High,
+                                      true
+                                    )
+                                  }
+                                  className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                >
+                                  <Zap className='h-3 w-3 mr-2' />
+                                  Force Re-Enrich
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </TableCell>
                       </TableRow>
                       {expandedRows.has(artist.id) && (

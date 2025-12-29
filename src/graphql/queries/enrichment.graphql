@@ -65,3 +65,11 @@ mutation TriggerArtistEnrichment($id: UUID!, $priority: EnrichmentPriority, $for
     message
   }
 }
+
+mutation BatchEnrichment($ids: [UUID!]!, $type: EnrichmentType!, $priority: EnrichmentPriority) {
+  batchEnrichment(ids: $ids, type: $type, priority: $priority) {
+    success
+    jobsQueued
+    message
+  }
+}

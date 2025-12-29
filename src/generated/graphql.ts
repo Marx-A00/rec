@@ -2118,6 +2118,22 @@ export type TriggerArtistEnrichmentMutation = {
   };
 };
 
+export type BatchEnrichmentMutationVariables = Exact<{
+  ids: Array<Scalars['UUID']['input']> | Scalars['UUID']['input'];
+  type: EnrichmentType;
+  priority?: InputMaybe<EnrichmentPriority>;
+}>;
+
+export type BatchEnrichmentMutation = {
+  __typename?: 'Mutation';
+  batchEnrichment: {
+    __typename?: 'BatchEnrichmentResult';
+    success: boolean;
+    jobsQueued: number;
+    message: string;
+  };
+};
+
 export type GetAlbumRecommendationsQueryVariables = Exact<{
   albumId: Scalars['UUID']['input'];
   filter?: InputMaybe<Scalars['String']['input']>;
@@ -4530,6 +4546,45 @@ export const useTriggerArtistEnrichmentMutation = <
 };
 
 useTriggerArtistEnrichmentMutation.getKey = () => ['TriggerArtistEnrichment'];
+
+export const BatchEnrichmentDocument = `
+    mutation BatchEnrichment($ids: [UUID!]!, $type: EnrichmentType!, $priority: EnrichmentPriority) {
+  batchEnrichment(ids: $ids, type: $type, priority: $priority) {
+    success
+    jobsQueued
+    message
+  }
+}
+    `;
+
+export const useBatchEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    BatchEnrichmentMutation,
+    TError,
+    BatchEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    BatchEnrichmentMutation,
+    TError,
+    BatchEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['BatchEnrichment'],
+    mutationFn: (variables?: BatchEnrichmentMutationVariables) =>
+      fetcher<BatchEnrichmentMutation, BatchEnrichmentMutationVariables>(
+        BatchEnrichmentDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useBatchEnrichmentMutation.getKey = () => ['BatchEnrichment'];
 
 export const GetAlbumRecommendationsDocument = `
     query GetAlbumRecommendations($albumId: UUID!, $filter: String, $sort: String, $skip: Int, $limit: Int) {
