@@ -1,10 +1,14 @@
 import { Suspense } from 'react';
-import { Calendar, Users, Music, Star } from 'lucide-react';
+import { Calendar, Users, Music, Star, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
 import { prisma } from '@/lib/prisma';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  TopRecommendedAlbums,
+  TopRecommendedArtists,
+} from '@/components/browse';
 
 // Force dynamic rendering - don't prerender at build time
 export const dynamic = 'force-dynamic';
@@ -128,7 +132,11 @@ export default async function BrowsePage() {
   return (
     <div className='container mx-auto px-4 py-8 max-w-7xl'>
       {/* Page Header */}
-      <div id='browse-page-header' data-tour-step="browse-header" className='mb-16'>
+      <div
+        id='browse-page-header'
+        data-tour-step='browse-header'
+        className='mb-16'
+      >
         <h1 className='text-4xl font-bold text-white mb-4'>
           Discover Music & Community
         </h1>
@@ -160,6 +168,24 @@ export default async function BrowsePage() {
           <Suspense fallback={<LoadingCards count={8} />}>
             <TrendingArtistsSection />
           </Suspense>
+        </ContentRow>
+
+        {/* Top Recommended Artists Section */}
+        <ContentRow
+          title='Top Recommended Artists'
+          subtitle='Artists with the most album recommendations'
+          icon={<TrendingUp className='w-5 h-5' />}
+        >
+          <TopRecommendedArtists limit={12} />
+        </ContentRow>
+
+        {/* Top Recommended Albums Section */}
+        <ContentRow
+          title='Most Recommended Albums'
+          subtitle='Albums the community loves recommending'
+          icon={<TrendingUp className='w-5 h-5' />}
+        >
+          <TopRecommendedAlbums limit={12} />
         </ContentRow>
 
         {/* Hot Albums from Spotify */}
