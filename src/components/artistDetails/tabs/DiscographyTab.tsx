@@ -328,10 +328,6 @@ function ReleaseCard({
                 {credits.length > 3 ? '…' : ''}
               </div>
             )}
-
-            <div className='text-xs text-zinc-500'>
-              Source: {release.source?.toLowerCase() || 'unknown'}
-            </div>
           </div>
         </div>
       </div>
