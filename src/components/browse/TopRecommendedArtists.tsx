@@ -47,7 +47,7 @@ export function TopRecommendedArtists({
 
   return (
     <div
-      className={`flex gap-6 overflow-x-auto pb-6 scrollbar-hide ${className}`}
+      className={`flex gap-6 overflow-x-auto pt-4 pb-4 px-1 -mx-1 custom-scrollbar ${className}`}
     >
       {artists.map(item => (
         <TopArtistCard
