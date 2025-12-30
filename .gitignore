@@ -96,3 +96,7 @@ node_modules/
 rec_dev_2025-09-30.dump
 
 /mb-query-results/
+
+# Agent shell files
+.agent-shell/
+Claude Code Agent @ rec

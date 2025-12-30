@@ -196,6 +196,10 @@ export interface SpotifySyncNewReleasesJobData {
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
   source?: 'scheduled' | 'manual' | 'graphql'; // How this sync was triggered
+
+  // Tag-based filtering for Spotify Search API
+  genreTags?: string[]; // e.g., ['rock', 'metal', 'pop']
+  year?: number; // e.g., 2025 (defaults to current year)
 }
 
 export interface SpotifySyncFeaturedPlaylistsJobData {

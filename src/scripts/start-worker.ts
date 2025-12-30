@@ -5,7 +5,7 @@
  */
 
 import { getMusicBrainzQueue } from '@/lib/queue';
-import { processMusicBrainzJob } from '@/lib/queue/musicbrainz-processor';
+import { processMusicBrainzJob } from '@/lib/queue/processors';
 import {
   initializeSpotifyScheduler,
   shutdownSpotifyScheduler,

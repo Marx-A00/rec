@@ -12,7 +12,7 @@ import { PrismaClient } from '@prisma/client';
 import chalk from 'chalk';
 
 import { getMusicBrainzQueue } from '@/lib/queue';
-import { processMusicBrainzJob } from '@/lib/queue/musicbrainz-processor';
+import { processMusicBrainzJob } from '@/lib/queue/processors';
 import { startQueueActivityMonitor } from '@/lib/activity/queue-activity-monitor';
 import {
   initializeSpotifyScheduler,
@@ -52,14 +52,18 @@ class MusicBrainzWorkerService {
     if (spotifySchedulerStarted) {
       console.log('✅ Spotify scheduler started successfully (weekly sync)');
     } else {
-      console.log('⏭️  Spotify scheduler disabled (check environment variables)');
+      console.log(
+        '⏭️  Spotify scheduler disabled (check environment variables)'
+      );
     }
 
     // Initialize MusicBrainz scheduler (weekly automated syncs)
     console.log('🎵 Initializing MusicBrainz scheduler...');
     const mbSchedulerStarted = await initializeMusicBrainzScheduler();
     if (mbSchedulerStarted) {
-      console.log('✅ MusicBrainz scheduler started successfully (weekly sync)');
+      console.log(
+        '✅ MusicBrainz scheduler started successfully (weekly sync)'
+      );
     } else {
       console.log('⏭️  MusicBrainz scheduler disabled');
     }
