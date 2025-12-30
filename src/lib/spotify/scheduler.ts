@@ -18,6 +18,8 @@ export interface SpotifyScheduleConfig {
     intervalMinutes: number;
     limit: number;
     country: string;
+    genreTags?: string[]; // Optional genre filtering (e.g., ['rock', 'metal', 'pop'])
+    year?: number; // Optional year filter (defaults to current year)
   };
   featuredPlaylists: {
     enabled: boolean;
@@ -32,11 +34,14 @@ export const DEFAULT_SCHEDULE_CONFIG: SpotifyScheduleConfig = {
   newReleases: {
     enabled: true,
     intervalMinutes: 10080, // Every week (7 days)
-    limit: 20,
+    limit: 50, // Increased from 20 for better coverage
     country: 'US',
+    genreTags: undefined, // No genre filtering by default
+    year: new Date().getFullYear(), // Current year
   },
   featuredPlaylists: {
-    enabled: true,
+    // Note: Featured playlists endpoint may return 404 (deprecated Nov 2024)
+    enabled: false, // Disabled by default due to API restrictions
     intervalMinutes: 10080, // Every week (7 days)
     limit: 10,
     country: 'US',
@@ -153,6 +158,9 @@ class SpotifyScheduler {
       priority: 'medium',
       source: 'scheduled',
       requestId: `scheduled_new_releases_${Date.now()}`,
+      // Tag-based filtering for Spotify Search API
+      genreTags: this.config.newReleases.genreTags,
+      year: this.config.newReleases.year || new Date().getFullYear(),
     };
 
     // Use BullMQ repeatable jobs instead of setInterval
@@ -172,6 +180,9 @@ class SpotifyScheduler {
     console.log(
       `📅 Scheduled new releases sync every ${this.config.newReleases.intervalMinutes} minutes (BullMQ repeatable job)`
     );
+    if (jobData.genreTags && jobData.genreTags.length > 0) {
+      console.log(`   Genre filters: ${jobData.genreTags.join(', ')}`);
+    }
   }
 
   /**
@@ -366,6 +377,16 @@ export async function initializeSpotifyScheduler() {
     return false;
   }
 
+  // Parse genre tags from comma-separated env var
+  const genreTags = process.env.SPOTIFY_NEW_RELEASES_GENRE_TAGS
+    ? process.env.SPOTIFY_NEW_RELEASES_GENRE_TAGS.split(',').map(t => t.trim())
+    : undefined;
+
+  // Parse year from env var (defaults to current year)
+  const year = process.env.SPOTIFY_NEW_RELEASES_YEAR
+    ? parseInt(process.env.SPOTIFY_NEW_RELEASES_YEAR)
+    : new Date().getFullYear();
+
   // Load configuration from environment variables
   const config: SpotifyScheduleConfig = {
     newReleases: {
@@ -373,11 +394,14 @@ export async function initializeSpotifyScheduler() {
       intervalMinutes: parseInt(
         process.env.SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES || '10080' // Default: 7 days
       ),
-      limit: parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '20'),
+      limit: parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '50'), // Increased default
       country: process.env.SPOTIFY_COUNTRY || 'US',
+      genreTags,
+      year,
     },
     featuredPlaylists: {
-      enabled: process.env.SPOTIFY_SYNC_FEATURED_PLAYLISTS !== 'false',
+      // Note: Featured playlists endpoint may return 404 (deprecated Nov 2024)
+      enabled: process.env.SPOTIFY_SYNC_FEATURED_PLAYLISTS === 'true', // Requires explicit enabling
       intervalMinutes: parseInt(
         process.env.SPOTIFY_FEATURED_PLAYLISTS_INTERVAL_MINUTES || '10080' // Default: 7 days
       ),

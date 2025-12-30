@@ -101,10 +101,18 @@ export async function GET() {
       fetchedAt: new Date().toISOString(),
     };
 
-    // 1. Get New Releases (larger pool, then sort chronologically)
+    // 1. Get New Releases using Search API with tag:new filter
+    // (Replaces deprecated browse.getNewReleases which returns stale data)
     try {
-      const newReleases = await spotifyClient.browse.getNewReleases('US', 50);
-      const processedAlbums = newReleases.albums.items.map(album => ({
+      const currentYear = new Date().getFullYear();
+      const searchResults = await spotifyClient.search(
+        `tag:new year:${currentYear}`,
+        ['album'],
+        'US',
+        50
+      );
+
+      const processedAlbums = searchResults.albums.items.map(album => ({
         id: album.id,
         name: album.name,
         artists: album.artists.map(a => a.name).join(', '),
@@ -115,16 +123,23 @@ export async function GET() {
         type: album.album_type,
         totalTracks: album.total_tracks,
       }));
+
+      // Sort by release date (newest first)
       data.newReleases = processedAlbums.sort((a, b) => {
         const dateA = new Date(a.releaseDate);
         const dateB = new Date(b.releaseDate);
         return dateB.getTime() - dateA.getTime();
       });
+
+      console.log(
+        `✅ Fetched ${data.newReleases.length} new releases using tag:new search`
+      );
     } catch (error) {
       console.error('Failed to fetch new releases:', error);
     }
 
     // 2. Get Featured Playlists
+    // Note: This endpoint may return 404 (deprecated Nov 2024)
     try {
       const featured = await spotifyClient.browse.getFeaturedPlaylists(
         'US',
@@ -142,9 +157,13 @@ export async function GET() {
         owner: playlist.owner.display_name,
       }));
     } catch (error) {
-      console.error('Failed to fetch featured playlists:', error);
+      // Gracefully handle deprecated endpoint - don't fail entire request
+      console.error(
+        'Failed to fetch featured playlists (endpoint may be deprecated):',
+        error
+      );
+      data.featuredPlaylists = [];
     }
-    spotifyClient.browse.getFeaturedPlaylists;
 
     // 3. Get Top Charts (if category exists)
     try {

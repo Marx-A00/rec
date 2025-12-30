@@ -89,68 +89,44 @@ export async function searchSpotifyNewReleases(
 
 /**
  * Handle Spotify new releases sync job
- * Fetches fresh data from Spotify API and processes through our mappers
+ * Uses Spotify Search API with tag:new filter (replaces deprecated browse.getNewReleases)
  */
 export async function handleSpotifySyncNewReleases(
   data: SpotifySyncNewReleasesJobData
 ): Promise<any> {
+  const year = data.year || new Date().getFullYear();
   console.log(
-    `🎵 Syncing Spotify new releases (limit: ${data.limit || 20}, country: ${data.country || 'US'})`
+    `🎵 Syncing Spotify new releases (limit: ${data.limit || 50}, country: ${data.country || 'US'})`
   );
+  console.log(`🔍 Using Spotify Search API with tag:new filter`);
+  console.log(`   Query: "tag:new year:${year}"`);
+  if (data.genreTags && data.genreTags.length > 0) {
+    console.log(`   Genre filters: ${data.genreTags.join(', ')}`);
+  }
 
   try {
-    // Import Spotify client, mappers, and error handling
-    const { SpotifyApi } = await import('@spotify/web-api-ts-sdk');
+    // Import mappers and error handling
     const { processSpotifyAlbums } = await import('../../spotify/mappers');
     const { withSpotifyRetry, withSpotifyMetrics } = await import(
       '../../spotify/error-handling'
     );
 
-    // Initialize Spotify client with retry wrapper
-    const createSpotifyClient = () =>
-      SpotifyApi.withClientCredentials(
-        process.env.SPOTIFY_CLIENT_ID!,
-        process.env.SPOTIFY_CLIENT_SECRET!
-      );
-
-    // Fetch new releases with retry logic and metrics
-    const newReleases = await withSpotifyMetrics(
+    // Fetch new releases using search API with tag:new filter
+    const spotifyAlbums = await withSpotifyMetrics(
       () =>
-        withSpotifyRetry(async () => {
-          const spotifyClient = createSpotifyClient();
-          return await spotifyClient.browse.getNewReleases(
-            (data.country || 'US') as Parameters<
-              typeof spotifyClient.browse.getNewReleases
-            >[0],
-            (data.limit || 20) as Parameters<
-              typeof spotifyClient.browse.getNewReleases
-            >[1]
-          );
-        }, 'Spotify getNewReleases API call'),
-      'Spotify New Releases Sync'
+        withSpotifyRetry(
+          async () => await searchSpotifyNewReleases(data),
+          'Spotify tag:new search'
+        ),
+      'Spotify New Releases Search'
     );
 
-    console.log(
-      `📀 Fetched ${newReleases.albums.items.length} new releases from Spotify`
-    );
-
-    // Transform Spotify data to our format
-    const spotifyAlbums = newReleases.albums.items.map(album => ({
-      id: album.id,
-      name: album.name,
-      artists: album.artists.map(a => a.name).join(', '),
-      artistIds: album.artists.map(a => a.id),
-      releaseDate: album.release_date,
-      image: album.images[0]?.url || null,
-      spotifyUrl: album.external_urls.spotify,
-      type: album.album_type,
-      totalTracks: album.total_tracks,
-    }));
+    console.log(`📀 Fetched ${spotifyAlbums.length} new releases from Spotify`);
 
     // Process through our mappers (creates DB records + queues enrichment)
     const result = await processSpotifyAlbums(
       spotifyAlbums,
-      data.source || 'spotify_sync'
+      data.source || 'spotify_search'
     );
 
     console.log(`✅ Spotify new releases sync complete:`, result.stats);
@@ -161,11 +137,13 @@ export async function handleSpotifySyncNewReleases(
       artistsProcessed: result.stats.artistsProcessed,
       duplicatesSkipped: result.stats.duplicatesSkipped,
       errors: result.stats.errors,
-      source: 'spotify_new_releases',
+      source: 'spotify_search',
       spotifyData: {
-        totalFetched: newReleases.albums.items.length,
+        totalFetched: spotifyAlbums.length,
         country: data.country || 'US',
-        limit: data.limit || 20,
+        limit: data.limit || 50,
+        year: year,
+        genreTags: data.genreTags || [],
       },
     };
   } catch (error) {
