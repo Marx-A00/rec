@@ -256,17 +256,8 @@ app.post('/spotify/:action', async (req, res) => {
         break;
 
       case 'sync':
-        if (
-          !type ||
-          !['new-releases', 'featured-playlists', 'both'].includes(type)
-        ) {
-          return res.status(400).json({
-            error:
-              'Invalid sync type. Use: new-releases, featured-playlists, or both',
-          });
-        }
-        await spotifyScheduler.triggerSync(type);
-        res.json({ success: true, message: `${type} sync triggered` });
+        await spotifyScheduler.triggerSync();
+        res.json({ success: true, message: 'New releases sync triggered' });
         break;
 
       default:

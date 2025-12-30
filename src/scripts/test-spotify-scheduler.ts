@@ -16,7 +16,7 @@ async function testSpotifyScheduler() {
   // 2. Test manual trigger (doesn't start intervals)
   console.log('2️⃣ Testing manual trigger...');
   try {
-    await spotifyScheduler.triggerSync('new-releases');
+    await spotifyScheduler.triggerSync();
     console.log('✅ New releases sync triggered successfully\n');
 
     console.log('✅ Job successfully queued to BullMQ\n');
@@ -39,7 +39,7 @@ async function testSpotifyScheduler() {
   console.log('4️⃣ Testing start/stop...');
   console.log('Starting scheduler...');
   await spotifyScheduler.start();
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
   const statusAfterStart = await spotifyScheduler.getStatus();
   console.log('After start:', {
@@ -49,7 +49,7 @@ async function testSpotifyScheduler() {
 
   console.log('Stopping scheduler...');
   await spotifyScheduler.stop();
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, 500));
 
   const statusAfterStop = await spotifyScheduler.getStatus();
   console.log('After stop:', {
@@ -72,7 +72,7 @@ async function testSpotifyScheduler() {
   process.exit(0);
 }
 
-testSpotifyScheduler().catch((error) => {
+testSpotifyScheduler().catch(error => {
   console.error('❌ Test failed:', error);
   process.exit(1);
 });

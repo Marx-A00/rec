@@ -4,7 +4,11 @@
       "WebSearch",
       "Read(//Users/marcosandrade/roaming/projects/rec/.taskmaster/docs/PRDs/**)",
       "Read(//Users/marcosandrade/roaming/projects/rec/.taskmaster/docs/**)",
-      "Bash(task-master:*)"
+      "Bash(task-master:*)",
+      "Bash(ls:*)",
+      "Bash(pnpm type-check:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
