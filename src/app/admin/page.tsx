@@ -114,9 +114,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const triggerSpotifySync = async (
-    type: 'NEW_RELEASES' | 'FEATURED_PLAYLISTS' | 'BOTH'
-  ) => {
+  const triggerSpotifySync = async () => {
     setSyncingSpotify(true);
     setSyncMessage(null);
 
@@ -128,8 +126,8 @@ export default function AdminDashboard() {
         },
         body: JSON.stringify({
           query: `
-            mutation TriggerSpotifySync($type: SpotifySyncType!) {
-              triggerSpotifySync(type: $type) {
+            mutation TriggerSpotifySync {
+              triggerSpotifySync(type: NEW_RELEASES) {
                 success
                 jobId
                 message
@@ -142,7 +140,6 @@ export default function AdminDashboard() {
               }
             }
           `,
-          variables: { type },
         }),
       });
 
@@ -470,7 +467,7 @@ export default function AdminDashboard() {
                       variant='outline'
                       size='sm'
                       className='text-white border-zinc-700 hover:bg-zinc-700'
-                      onClick={() => triggerSpotifySync('NEW_RELEASES')}
+                      onClick={() => triggerSpotifySync()}
                       disabled={syncingSpotify}
                     >
                       {syncingSpotify ? (
@@ -482,44 +479,6 @@ export default function AdminDashboard() {
                         <>
                           <Album className='mr-2 h-3 w-3' />
                           Sync New Releases
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      className='text-white border-zinc-700 hover:bg-zinc-700'
-                      onClick={() => triggerSpotifySync('FEATURED_PLAYLISTS')}
-                      disabled={syncingSpotify}
-                    >
-                      {syncingSpotify ? (
-                        <>
-                          <Activity className='mr-2 h-3 w-3 animate-spin' />
-                          Syncing...
-                        </>
-                      ) : (
-                        <>
-                          <Music className='mr-2 h-3 w-3' />
-                          Sync Featured Playlists
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      className='text-white border-zinc-700 hover:bg-zinc-700'
-                      onClick={() => triggerSpotifySync('BOTH')}
-                      disabled={syncingSpotify}
-                    >
-                      {syncingSpotify ? (
-                        <>
-                          <Activity className='mr-2 h-3 w-3 animate-spin' />
-                          Syncing...
-                        </>
-                      ) : (
-                        <>
-                          <Database className='mr-2 h-3 w-3' />
-                          Sync All Spotify Data
                         </>
                       )}
                     </Button>
