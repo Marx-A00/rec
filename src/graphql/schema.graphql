@@ -416,6 +416,38 @@ type TopRecommendedArtist {
   averageScore: Float!
 }
 
+# Artist Recommendations Types
+enum AlbumRole {
+  BASIS
+  RECOMMENDED
+  BOTH
+}
+
+enum ArtistRecommendationSort {
+  NEWEST
+  OLDEST
+  HIGHEST_SCORE
+  LOWEST_SCORE
+}
+
+type ArtistRecommendation {
+  id: ID!
+  score: Int!
+  description: String
+  createdAt: DateTime!
+  albumRole: AlbumRole!
+  basisAlbum: Album!
+  recommendedAlbum: Album!
+  user: User!
+  isOwnRecommendation: Boolean!
+}
+
+type ArtistRecommendationsConnection {
+  recommendations: [ArtistRecommendation!]!
+  totalCount: Int!
+  hasMore: Boolean!
+}
+
 # Social Activity Types
 enum ActivityType {
   FOLLOW
@@ -977,6 +1009,15 @@ type Query {
   topRecommendedAlbums(limit: Int = 20): [TopRecommendedAlbum!]!
   topRecommendedArtists(limit: Int = 20): [TopRecommendedArtist!]!
   userSuggestions(limit: Int = 10): [User!]!
+
+  # Artist Recommendations (recommendations featuring an artist's albums)
+  artistRecommendations(
+    artistId: ID!
+    filter: AlbumRole
+    sort: ArtistRecommendationSort = NEWEST
+    limit: Int = 12
+    offset: Int = 0
+  ): ArtistRecommendationsConnection!
 
   # Album-specific queries
   getAlbumRecommendations(

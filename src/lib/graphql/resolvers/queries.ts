@@ -2028,5 +2028,133 @@ export const queryResolvers: QueryResolvers = {
       );
     }
   },
+
+  artistRecommendations: async (
+    _,
+    { artistId, filter, sort = 'NEWEST', limit = 12, offset = 0 },
+    { prisma, session }
+  ) => {
+    try {
+      // 1. Get all albums by this artist from AlbumArtist junction table
+      const artistAlbums = await prisma.albumArtist.findMany({
+        where: { artistId },
+        select: { albumId: true },
+      });
+      const albumIds = artistAlbums.map((a: { albumId: string }) => a.albumId);
+
+      if (albumIds.length === 0) {
+        return { recommendations: [], totalCount: 0, hasMore: false };
+      }
+
+      // 2. Build filter condition based on AlbumRole
+      type WhereCondition = {
+        basisAlbumId?: { in: string[] };
+        recommendedAlbumId?: { in: string[] };
+        OR?: Array<{
+          basisAlbumId?: { in: string[] };
+          recommendedAlbumId?: { in: string[] };
+        }>;
+      };
+
+      let whereCondition: WhereCondition;
+      if (filter === 'BASIS') {
+        whereCondition = { basisAlbumId: { in: albumIds } };
+      } else if (filter === 'RECOMMENDED') {
+        whereCondition = { recommendedAlbumId: { in: albumIds } };
+      } else {
+        // ALL or undefined - either basis or recommended
+        whereCondition = {
+          OR: [
+            { basisAlbumId: { in: albumIds } },
+            { recommendedAlbumId: { in: albumIds } },
+          ],
+        };
+      }
+
+      // 3. Get total count for pagination
+      const totalCount = await prisma.recommendation.count({
+        where: whereCondition,
+      });
+
+      // 4. Map sort to Prisma orderBy
+      const orderByMap: Record<
+        string,
+        { createdAt?: 'desc' | 'asc'; score?: 'desc' | 'asc' }
+      > = {
+        NEWEST: { createdAt: 'desc' },
+        OLDEST: { createdAt: 'asc' },
+        HIGHEST_SCORE: { score: 'desc' },
+        LOWEST_SCORE: { score: 'asc' },
+      };
+      const orderBy = orderByMap[sort] || orderByMap.NEWEST;
+
+      // 5. Fetch recommendations with related data
+      const recommendations = await prisma.recommendation.findMany({
+        where: whereCondition,
+        orderBy,
+        skip: offset,
+        take: limit,
+        include: {
+          basisAlbum: {
+            include: { artists: { include: { artist: true } } },
+          },
+          recommendedAlbum: {
+            include: { artists: { include: { artist: true } } },
+          },
+          user: true,
+        },
+      });
+
+      // 6. Transform to add albumRole and isOwnRecommendation
+      const transformedRecs = recommendations.map(
+        (rec: {
+          id: string;
+          score: number;
+          createdAt: Date;
+          userId: string;
+          basisAlbumId: string;
+          recommendedAlbumId: string;
+          basisAlbum: unknown;
+          recommendedAlbum: unknown;
+          user: unknown;
+        }) => {
+          const basisInArtist = albumIds.includes(rec.basisAlbumId);
+          const recommendedInArtist = albumIds.includes(rec.recommendedAlbumId);
+
+          let albumRole: 'BASIS' | 'RECOMMENDED' | 'BOTH';
+          if (basisInArtist && recommendedInArtist) {
+            albumRole = 'BOTH';
+          } else if (basisInArtist) {
+            albumRole = 'BASIS';
+          } else {
+            albumRole = 'RECOMMENDED';
+          }
+
+          return {
+            id: rec.id,
+            score: rec.score,
+            description: null, // Recommendation model doesn't have description
+            createdAt: rec.createdAt,
+            albumRole,
+            basisAlbum: rec.basisAlbum,
+            recommendedAlbum: rec.recommendedAlbum,
+            user: rec.user,
+            isOwnRecommendation: session?.user?.id === rec.userId,
+          };
+        }
+      );
+
+      return {
+        recommendations: transformedRecs,
+        totalCount,
+        hasMore: offset + recommendations.length < totalCount,
+      };
+    } catch (error) {
+      console.error('Error fetching artist recommendations:', error);
+      throw new GraphQLError(
+        `Failed to fetch artist recommendations: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects
 };

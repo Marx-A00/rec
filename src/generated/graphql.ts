@@ -175,6 +175,12 @@ export type AlbumRecommendationsResponse = {
   recommendations: Array<AlbumRecommendation>;
 };
 
+export enum AlbumRole {
+  Basis = 'BASIS',
+  Both = 'BOTH',
+  Recommended = 'RECOMMENDED',
+}
+
 export type Alert = {
   __typename?: 'Alert';
   details?: Maybe<Scalars['JSON']['output']>;
@@ -265,6 +271,33 @@ export type ArtistInput = {
   imageUrl?: InputMaybe<Scalars['String']['input']>;
   musicbrainzId?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
+};
+
+export type ArtistRecommendation = {
+  __typename?: 'ArtistRecommendation';
+  albumRole: AlbumRole;
+  basisAlbum: Album;
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isOwnRecommendation: Scalars['Boolean']['output'];
+  recommendedAlbum: Album;
+  score: Scalars['Int']['output'];
+  user: User;
+};
+
+export enum ArtistRecommendationSort {
+  HighestScore = 'HIGHEST_SCORE',
+  LowestScore = 'LOWEST_SCORE',
+  Newest = 'NEWEST',
+  Oldest = 'OLDEST',
+}
+
+export type ArtistRecommendationsConnection = {
+  __typename?: 'ArtistRecommendationsConnection';
+  hasMore: Scalars['Boolean']['output'];
+  recommendations: Array<ArtistRecommendation>;
+  totalCount: Scalars['Int']['output'];
 };
 
 export type ArtistTrackInput = {
@@ -823,6 +856,7 @@ export type Query = {
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
   artistDiscography: CategorizedDiscography;
+  artistRecommendations: ArtistRecommendationsConnection;
   collection?: Maybe<Collection>;
   databaseStats: DatabaseStats;
   enrichmentLogs: Array<EnrichmentLog>;
@@ -894,6 +928,14 @@ export type QueryArtistByMusicBrainzIdArgs = {
 export type QueryArtistDiscographyArgs = {
   id: Scalars['String']['input'];
   source: DataSource;
+};
+
+export type QueryArtistRecommendationsArgs = {
+  artistId: Scalars['ID']['input'];
+  filter?: InputMaybe<AlbumRole>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<ArtistRecommendationSort>;
 };
 
 export type QueryCollectionArgs = {
@@ -2091,6 +2133,60 @@ export type GetArtistDiscographyQuery = {
         position: number;
         artist: { __typename?: 'Artist'; id: string; name: string };
       }> | null;
+    }>;
+  };
+};
+
+export type GetArtistRecommendationsQueryVariables = Exact<{
+  artistId: Scalars['ID']['input'];
+  filter?: InputMaybe<AlbumRole>;
+  sort?: InputMaybe<ArtistRecommendationSort>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetArtistRecommendationsQuery = {
+  __typename?: 'Query';
+  artistRecommendations: {
+    __typename?: 'ArtistRecommendationsConnection';
+    totalCount: number;
+    hasMore: boolean;
+    recommendations: Array<{
+      __typename?: 'ArtistRecommendation';
+      id: string;
+      score: number;
+      description?: string | null;
+      createdAt: Date;
+      albumRole: AlbumRole;
+      isOwnRecommendation: boolean;
+      basisAlbum: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+        releaseDate?: Date | null;
+        artists: Array<{
+          __typename?: 'ArtistCredit';
+          artist: { __typename?: 'Artist'; id: string; name: string };
+        }>;
+      };
+      recommendedAlbum: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+        releaseDate?: Date | null;
+        artists: Array<{
+          __typename?: 'ArtistCredit';
+          artist: { __typename?: 'Artist'; id: string; name: string };
+        }>;
+      };
+      user: {
+        __typename?: 'User';
+        id: string;
+        name?: string | null;
+        image?: string | null;
+      };
     }>;
   };
 };
@@ -4452,6 +4548,130 @@ export const useInfiniteGetArtistDiscographyQuery = <
 useInfiniteGetArtistDiscographyQuery.getKey = (
   variables: GetArtistDiscographyQueryVariables
 ) => ['GetArtistDiscography.infinite', variables];
+
+export const GetArtistRecommendationsDocument = `
+    query GetArtistRecommendations($artistId: ID!, $filter: AlbumRole, $sort: ArtistRecommendationSort, $limit: Int, $offset: Int) {
+  artistRecommendations(
+    artistId: $artistId
+    filter: $filter
+    sort: $sort
+    limit: $limit
+    offset: $offset
+  ) {
+    recommendations {
+      id
+      score
+      description
+      createdAt
+      albumRole
+      isOwnRecommendation
+      basisAlbum {
+        id
+        title
+        coverArtUrl
+        releaseDate
+        artists {
+          artist {
+            id
+            name
+          }
+        }
+      }
+      recommendedAlbum {
+        id
+        title
+        coverArtUrl
+        releaseDate
+        artists {
+          artist {
+            id
+            name
+          }
+        }
+      }
+      user {
+        id
+        name
+        image
+      }
+    }
+    totalCount
+    hasMore
+  }
+}
+    `;
+
+export const useGetArtistRecommendationsQuery = <
+  TData = GetArtistRecommendationsQuery,
+  TError = unknown,
+>(
+  variables: GetArtistRecommendationsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetArtistRecommendationsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetArtistRecommendationsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetArtistRecommendationsQuery, TError, TData>({
+    queryKey: ['GetArtistRecommendations', variables],
+    queryFn: fetcher<
+      GetArtistRecommendationsQuery,
+      GetArtistRecommendationsQueryVariables
+    >(GetArtistRecommendationsDocument, variables),
+    ...options,
+  });
+};
+
+useGetArtistRecommendationsQuery.getKey = (
+  variables: GetArtistRecommendationsQueryVariables
+) => ['GetArtistRecommendations', variables];
+
+export const useInfiniteGetArtistRecommendationsQuery = <
+  TData = InfiniteData<GetArtistRecommendationsQuery>,
+  TError = unknown,
+>(
+  variables: GetArtistRecommendationsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetArtistRecommendationsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetArtistRecommendationsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetArtistRecommendationsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'GetArtistRecommendations.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            GetArtistRecommendationsQuery,
+            GetArtistRecommendationsQueryVariables
+          >(GetArtistRecommendationsDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetArtistRecommendationsQuery.getKey = (
+  variables: GetArtistRecommendationsQueryVariables
+) => ['GetArtistRecommendations.infinite', variables];
 
 export const AddArtistDocument = `
     mutation AddArtist($input: ArtistInput!) {

@@ -1,8 +1,14 @@
 // src/hooks/useArtistRecommendations.ts
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+
+import {
+  useGetArtistRecommendationsQuery,
+  AlbumRole,
+  ArtistRecommendationSort,
+  GetArtistRecommendationsQuery,
+} from '@/generated/graphql';
 
 export type FilterType = 'all' | 'basis' | 'recommended';
 export type SortType = 'newest' | 'oldest' | 'highest_score' | 'lowest_score';
@@ -14,74 +20,10 @@ interface UseArtistRecommendationsOptions {
   limit?: number;
 }
 
-interface ArtistRecommendation {
-  id: string;
-  score: number;
-  description: string;
-  createdAt: string;
-  userId: string;
-  basisAlbumDiscogsId: string;
-  recommendedAlbumDiscogsId: string;
-  basisAlbumTitle: string;
-  recommendedAlbumTitle: string;
-  basisAlbumArtist: string;
-  recommendedAlbumArtist: string;
-  basisAlbumImageUrl: string | null;
-  recommendedAlbumImageUrl: string | null;
-  basisAlbumYear: string | null;
-  recommendedAlbumYear: string | null;
-  albumRole: 'basis' | 'recommended' | 'both';
-  otherAlbum: {
-    discogsId: string;
-    title: string;
-    artist: string;
-    imageUrl: string | null;
-    year: string | null;
-  };
-  user: {
-    id: string;
-    name: string | null;
-    image: string | null;
-  };
-  isOwnRecommendation: boolean;
-}
-
-interface ArtistRecommendationsResponse {
-  recommendations: ArtistRecommendation[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasMore: boolean;
-  };
-}
-
-async function fetchArtistRecommendations(
-  artistId: string,
-  filter: FilterType,
-  sort: SortType,
-  page: number,
-  limit: number
-): Promise<ArtistRecommendationsResponse> {
-  const params = new URLSearchParams({
-    filter,
-    sort,
-    page: page.toString(),
-    limit: limit.toString(),
-  });
-
-  const response = await fetch(
-    `/api/artists/${artistId}/recommendations?${params}`
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch recommendations');
-  }
-
-  return response.json();
-}
+// Type for the recommendations returned from GraphQL
+type GraphQLRecommendation = NonNullable<
+  GetArtistRecommendationsQuery['artistRecommendations']
+>['recommendations'][number];
 
 export function useArtistRecommendations({
   artistId,
@@ -91,60 +33,107 @@ export function useArtistRecommendations({
 }: UseArtistRecommendationsOptions) {
   const [filter, setFilter] = useState<FilterType>(initialFilter);
   const [sort, setSort] = useState<SortType>(initialSort);
-  const [page, setPage] = useState(1);
+  const [offset, setOffset] = useState(0);
   const [allRecommendations, setAllRecommendations] = useState<
-    ArtistRecommendation[]
+    GraphQLRecommendation[]
   >([]);
 
-  // Reset page when filter or sort changes
+  // Map local filter/sort to GraphQL enums
+  const gqlFilter = useMemo((): AlbumRole | undefined => {
+    if (filter === 'all') return undefined;
+    if (filter === 'basis') return AlbumRole.Basis;
+    if (filter === 'recommended') return AlbumRole.Recommended;
+    return undefined;
+  }, [filter]);
+
+  const gqlSort = useMemo((): ArtistRecommendationSort => {
+    switch (sort) {
+      case 'newest':
+        return ArtistRecommendationSort.Newest;
+      case 'oldest':
+        return ArtistRecommendationSort.Oldest;
+      case 'highest_score':
+        return ArtistRecommendationSort.HighestScore;
+      case 'lowest_score':
+        return ArtistRecommendationSort.LowestScore;
+      default:
+        return ArtistRecommendationSort.Newest;
+    }
+  }, [sort]);
+
+  // Reset offset when filter or sort changes
   useEffect(() => {
-    setPage(1);
+    setOffset(0);
     setAllRecommendations([]);
   }, [filter, sort]);
 
-  const { data, isLoading, error, isError, refetch, isFetching } = useQuery({
-    queryKey: ['artist-recommendations', artistId, filter, sort, page, limit],
-    queryFn: () =>
-      fetchArtistRecommendations(artistId, filter, sort, page, limit),
-    enabled: !!artistId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: 2,
-    refetchOnWindowFocus: false,
-  });
+  const { data, isLoading, error, refetch, isFetching } =
+    useGetArtistRecommendationsQuery(
+      {
+        artistId,
+        filter: gqlFilter,
+        sort: gqlSort,
+        limit,
+        offset,
+      },
+      {
+        enabled: !!artistId,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 10 * 60 * 1000, // 10 minutes
+        retry: 2,
+        refetchOnWindowFocus: false,
+      }
+    );
 
   // Update all recommendations when new data arrives
   useEffect(() => {
-    if (data?.recommendations) {
-      if (page === 1) {
-        setAllRecommendations(data.recommendations);
+    if (data?.artistRecommendations?.recommendations) {
+      if (offset === 0) {
+        setAllRecommendations(data.artistRecommendations.recommendations);
       } else {
-        setAllRecommendations(prev => [...prev, ...data.recommendations]);
+        setAllRecommendations(prev => [
+          ...prev,
+          ...data.artistRecommendations.recommendations,
+        ]);
       }
     }
-  }, [data, page]);
+  }, [data, offset]);
 
   const loadMore = useCallback(() => {
-    if (data?.pagination.hasMore && !isFetching) {
-      setPage(prev => prev + 1);
+    if (data?.artistRecommendations?.hasMore && !isFetching) {
+      setOffset(prev => prev + limit);
     }
-  }, [data?.pagination.hasMore, isFetching]);
+  }, [data?.artistRecommendations?.hasMore, isFetching, limit]);
+
+  const totalCount = data?.artistRecommendations?.totalCount || 0;
+  const hasMore = data?.artistRecommendations?.hasMore || false;
+
+  // Convert error to have message property for backward compatibility
+  const errorWithMessage = error
+    ? { message: error instanceof Error ? error.message : String(error) }
+    : null;
 
   return {
     data: {
       recommendations: allRecommendations,
-      pagination: data?.pagination,
+      pagination: {
+        page: Math.floor(offset / limit) + 1,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore,
+      },
     },
-    isLoading: isLoading && page === 1,
-    error,
-    isError,
+    isLoading: isLoading && offset === 0,
+    error: errorWithMessage,
+    isError: !!error,
     filter,
     setFilter,
     sort,
     setSort,
     loadMore,
-    hasMore: data?.pagination.hasMore || false,
-    total: data?.pagination.total || 0,
+    hasMore,
+    total: totalCount,
     refetch,
     isFetching,
   };

@@ -149,6 +149,12 @@ export type AlbumRecommendationsResponse = {
   recommendations: Array<AlbumRecommendation>;
 };
 
+export enum AlbumRole {
+  Basis = 'BASIS',
+  Both = 'BOTH',
+  Recommended = 'RECOMMENDED',
+}
+
 export type Alert = {
   __typename?: 'Alert';
   details?: Maybe<Scalars['JSON']['output']>;
@@ -239,6 +245,33 @@ export type ArtistInput = {
   imageUrl?: InputMaybe<Scalars['String']['input']>;
   musicbrainzId?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
+};
+
+export type ArtistRecommendation = {
+  __typename?: 'ArtistRecommendation';
+  albumRole: AlbumRole;
+  basisAlbum: Album;
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isOwnRecommendation: Scalars['Boolean']['output'];
+  recommendedAlbum: Album;
+  score: Scalars['Int']['output'];
+  user: User;
+};
+
+export enum ArtistRecommendationSort {
+  HighestScore = 'HIGHEST_SCORE',
+  LowestScore = 'LOWEST_SCORE',
+  Newest = 'NEWEST',
+  Oldest = 'OLDEST',
+}
+
+export type ArtistRecommendationsConnection = {
+  __typename?: 'ArtistRecommendationsConnection';
+  hasMore: Scalars['Boolean']['output'];
+  recommendations: Array<ArtistRecommendation>;
+  totalCount: Scalars['Int']['output'];
 };
 
 export type ArtistTrackInput = {
@@ -797,6 +830,7 @@ export type Query = {
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
   artistDiscography: CategorizedDiscography;
+  artistRecommendations: ArtistRecommendationsConnection;
   collection?: Maybe<Collection>;
   databaseStats: DatabaseStats;
   enrichmentLogs: Array<EnrichmentLog>;
@@ -868,6 +902,14 @@ export type QueryArtistByMusicBrainzIdArgs = {
 export type QueryArtistDiscographyArgs = {
   id: Scalars['String']['input'];
   source: DataSource;
+};
+
+export type QueryArtistRecommendationsArgs = {
+  artistId: Scalars['ID']['input'];
+  filter?: InputMaybe<AlbumRole>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<ArtistRecommendationSort>;
 };
 
 export type QueryCollectionArgs = {
@@ -1658,6 +1700,7 @@ export type ResolversTypes = ResolversObject<{
   AlbumInput: AlbumInput;
   AlbumRecommendation: ResolverTypeWrapper<AlbumRecommendation>;
   AlbumRecommendationsResponse: ResolverTypeWrapper<AlbumRecommendationsResponse>;
+  AlbumRole: AlbumRole;
   Alert: ResolverTypeWrapper<Alert>;
   AlertLevel: AlertLevel;
   AlertThresholds: ResolverTypeWrapper<AlertThresholds>;
@@ -1667,6 +1710,9 @@ export type ResolversTypes = ResolversObject<{
   ArtistAlbumInput: ArtistAlbumInput;
   ArtistCredit: ResolverTypeWrapper<ArtistCredit>;
   ArtistInput: ArtistInput;
+  ArtistRecommendation: ResolverTypeWrapper<ArtistRecommendation>;
+  ArtistRecommendationSort: ArtistRecommendationSort;
+  ArtistRecommendationsConnection: ResolverTypeWrapper<ArtistRecommendationsConnection>;
   ArtistTrackInput: ArtistTrackInput;
   AudioFeatures: ResolverTypeWrapper<AudioFeatures>;
   BatchEnrichmentResult: ResolverTypeWrapper<BatchEnrichmentResult>;
@@ -1699,6 +1745,7 @@ export type ResolversTypes = ResolversObject<{
   HealthComponents: ResolverTypeWrapper<HealthComponents>;
   HealthMetrics: ResolverTypeWrapper<HealthMetrics>;
   HealthStatus: HealthStatus;
+  ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   JSON: ResolverTypeWrapper<Scalars['JSON']['output']>;
   JobRecord: ResolverTypeWrapper<JobRecord>;
@@ -1782,6 +1829,8 @@ export type ResolversParentTypes = ResolversObject<{
   ArtistAlbumInput: ArtistAlbumInput;
   ArtistCredit: ArtistCredit;
   ArtistInput: ArtistInput;
+  ArtistRecommendation: ArtistRecommendation;
+  ArtistRecommendationsConnection: ArtistRecommendationsConnection;
   ArtistTrackInput: ArtistTrackInput;
   AudioFeatures: AudioFeatures;
   BatchEnrichmentResult: BatchEnrichmentResult;
@@ -1805,6 +1854,7 @@ export type ResolversParentTypes = ResolversObject<{
   FollowUserPayload: FollowUserPayload;
   HealthComponents: HealthComponents;
   HealthMetrics: HealthMetrics;
+  ID: Scalars['ID']['output'];
   Int: Scalars['Int']['output'];
   JSON: Scalars['JSON']['output'];
   JobRecord: JobRecord;
@@ -2199,6 +2249,46 @@ export type ArtistCreditResolvers<
   artist?: Resolver<ResolversTypes['Artist'], ParentType, ContextType>;
   position?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   role?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ArtistRecommendationResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArtistRecommendation'] = ResolversParentTypes['ArtistRecommendation'],
+> = ResolversObject<{
+  albumRole?: Resolver<ResolversTypes['AlbumRole'], ParentType, ContextType>;
+  basisAlbum?: Resolver<ResolversTypes['Album'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  description?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  isOwnRecommendation?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
+  recommendedAlbum?: Resolver<ResolversTypes['Album'], ParentType, ContextType>;
+  score?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ArtistRecommendationsConnectionResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArtistRecommendationsConnection'] = ResolversParentTypes['ArtistRecommendationsConnection'],
+> = ResolversObject<{
+  hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  recommendations?: Resolver<
+    Array<ResolversTypes['ArtistRecommendation']>,
+    ParentType,
+    ContextType
+  >;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -3009,6 +3099,15 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryArtistDiscographyArgs, 'id' | 'source'>
+  >;
+  artistRecommendations?: Resolver<
+    ResolversTypes['ArtistRecommendationsConnection'],
+    ParentType,
+    ContextType,
+    RequireFields<
+      QueryArtistRecommendationsArgs,
+      'artistId' | 'limit' | 'offset' | 'sort'
+    >
   >;
   collection?: Resolver<
     Maybe<ResolversTypes['Collection']>,
@@ -4084,6 +4183,8 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   AlertThresholds?: AlertThresholdsResolvers<ContextType>;
   Artist?: ArtistResolvers<ContextType>;
   ArtistCredit?: ArtistCreditResolvers<ContextType>;
+  ArtistRecommendation?: ArtistRecommendationResolvers<ContextType>;
+  ArtistRecommendationsConnection?: ArtistRecommendationsConnectionResolvers<ContextType>;
   AudioFeatures?: AudioFeaturesResolvers<ContextType>;
   BatchEnrichmentResult?: BatchEnrichmentResultResolvers<ContextType>;
   CategorizedDiscography?: CategorizedDiscographyResolvers<ContextType>;
