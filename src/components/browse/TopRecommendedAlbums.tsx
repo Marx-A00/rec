@@ -101,10 +101,6 @@ function TopAlbumCard({
             alt={album.title}
             className='w-full h-full object-cover rounded-lg shadow-xl'
           />
-          {/* Recommendation count badge */}
-          <div className='absolute top-2 right-2 bg-gradient-to-r from-emeraled-green to-green-400 text-black text-xs font-bold px-2 py-1 rounded-full shadow-lg'>
-            {recommendationCount} recs
-          </div>
         </div>
 
         <div className='space-y-2'>
