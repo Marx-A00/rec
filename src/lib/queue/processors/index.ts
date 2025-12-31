@@ -207,13 +207,15 @@ export async function processMusicBrainzJob(
       // Spotify sync handlers
       case JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES:
         result = await handleSpotifySyncNewReleases(
-          job.data as SpotifySyncNewReleasesJobData
+          job.data as SpotifySyncNewReleasesJobData,
+          job.id
         );
         break;
 
       case JOB_TYPES.SPOTIFY_SYNC_FEATURED_PLAYLISTS:
         result = await handleSpotifySyncFeaturedPlaylists(
-          job.data as SpotifySyncFeaturedPlaylistsJobData
+          job.data as SpotifySyncFeaturedPlaylistsJobData,
+          job.id
         );
         break;
 

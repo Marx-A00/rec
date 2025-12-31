@@ -92,7 +92,8 @@ export async function searchSpotifyNewReleases(
  * Uses Spotify Search API with tag:new filter (replaces deprecated browse.getNewReleases)
  */
 export async function handleSpotifySyncNewReleases(
-  data: SpotifySyncNewReleasesJobData
+  data: SpotifySyncNewReleasesJobData,
+  jobId?: string
 ): Promise<any> {
   const year = data.year || new Date().getFullYear();
   console.log(
@@ -128,6 +129,7 @@ export async function handleSpotifySyncNewReleases(
       spotifyAlbums,
       data.source || 'spotify_search',
       {
+        jobId: jobId,
         query: `tag:new year:${year}${data.genreTags ? ' ' + data.genreTags.map(t => `tag:${t}`).join(' ') : ''}`,
         country: data.country,
         genreTags: data.genreTags,
@@ -183,7 +185,8 @@ export async function handleSpotifySyncNewReleases(
  * Fetches playlists and extracts albums from tracks
  */
 export async function handleSpotifySyncFeaturedPlaylists(
-  data: SpotifySyncFeaturedPlaylistsJobData
+  data: SpotifySyncFeaturedPlaylistsJobData,
+  jobId?: string
 ): Promise<any> {
   console.log(
     `🎵 Syncing Spotify featured playlists (limit: ${data.limit || 10}, country: ${data.country || 'US'})`
@@ -310,6 +313,7 @@ export async function handleSpotifySyncFeaturedPlaylists(
       uniqueAlbums,
       data.source || 'spotify_playlists',
       {
+        jobId: jobId,
         country: data.country,
       }
     );

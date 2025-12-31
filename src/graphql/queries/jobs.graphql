@@ -1,0 +1,17 @@
+# Job-related queries
+
+query AlbumsByJobId($jobId: String!) {
+  albumsByJobId(jobId: $jobId) {
+    id
+    title
+    coverArtUrl
+    cloudflareImageId
+    releaseDate
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}

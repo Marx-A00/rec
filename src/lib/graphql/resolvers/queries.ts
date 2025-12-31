@@ -1561,6 +1561,48 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  albumsByJobId: async (_, args, { prisma }) => {
+    try {
+      const { jobId } = args;
+
+      const albums = await prisma.album.findMany({
+        where: {
+          metadata: {
+            path: ['jobId'],
+            equals: jobId,
+          },
+        },
+        include: {
+          artists: {
+            include: {
+              artist: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      // Transform to match GraphQL schema
+      return albums.map(album => ({
+        ...album,
+        artists: album.artists.map(aa => ({
+          artist: aa.artist,
+          role: aa.role,
+          position: aa.position,
+        })),
+        needsEnrichment:
+          album.dataQuality === 'LOW' ||
+          album.enrichmentStatus === 'PENDING' ||
+          album.enrichmentStatus === 'FAILED' ||
+          !album.musicbrainzId,
+      }));
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch albums by job ID: ${error}`);
+    }
+  },
+
   searchAlbums: async (_, args, { prisma }) => {
     try {
       const {

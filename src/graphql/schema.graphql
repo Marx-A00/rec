@@ -1078,6 +1078,7 @@ type Query {
 
   # Music Database queries
   databaseStats: DatabaseStats!
+  albumsByJobId(jobId: String!): [Album!]!
   searchAlbums(
     query: String
     id: UUID

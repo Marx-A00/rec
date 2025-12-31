@@ -853,6 +853,7 @@ export type Query = {
   albumByMusicBrainzId?: Maybe<Album>;
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
+  albumsByJobId: Array<Album>;
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
   artistDiscography: CategorizedDiscography;
@@ -915,6 +916,10 @@ export type QueryAlbumRecommendationsArgs = {
 
 export type QueryAlbumTracksArgs = {
   albumId: Scalars['UUID']['input'];
+};
+
+export type QueryAlbumsByJobIdArgs = {
+  jobId: Scalars['String']['input'];
 };
 
 export type QueryArtistArgs = {
@@ -2613,6 +2618,26 @@ export type GetUserProfileQuery = {
     followingCount: number;
     recommendationsCount: number;
   } | null;
+};
+
+export type AlbumsByJobIdQueryVariables = Exact<{
+  jobId: Scalars['String']['input'];
+}>;
+
+export type AlbumsByJobIdQuery = {
+  __typename?: 'Query';
+  albumsByJobId: Array<{
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    coverArtUrl?: string | null;
+    cloudflareImageId?: string | null;
+    releaseDate?: Date | null;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  }>;
 };
 
 export type RecommendationFieldsFragment = {
@@ -5884,6 +5909,87 @@ export const useInfiniteGetUserProfileQuery = <
 useInfiniteGetUserProfileQuery.getKey = (
   variables: GetUserProfileQueryVariables
 ) => ['GetUserProfile.infinite', variables];
+
+export const AlbumsByJobIdDocument = `
+    query AlbumsByJobId($jobId: String!) {
+  albumsByJobId(jobId: $jobId) {
+    id
+    title
+    coverArtUrl
+    cloudflareImageId
+    releaseDate
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+
+export const useAlbumsByJobIdQuery = <
+  TData = AlbumsByJobIdQuery,
+  TError = unknown,
+>(
+  variables: AlbumsByJobIdQueryVariables,
+  options?: Omit<
+    UseQueryOptions<AlbumsByJobIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<AlbumsByJobIdQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<AlbumsByJobIdQuery, TError, TData>({
+    queryKey: ['AlbumsByJobId', variables],
+    queryFn: fetcher<AlbumsByJobIdQuery, AlbumsByJobIdQueryVariables>(
+      AlbumsByJobIdDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useAlbumsByJobIdQuery.getKey = (variables: AlbumsByJobIdQueryVariables) => [
+  'AlbumsByJobId',
+  variables,
+];
+
+export const useInfiniteAlbumsByJobIdQuery = <
+  TData = InfiniteData<AlbumsByJobIdQuery>,
+  TError = unknown,
+>(
+  variables: AlbumsByJobIdQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<AlbumsByJobIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      AlbumsByJobIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<AlbumsByJobIdQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['AlbumsByJobId.infinite', variables],
+        queryFn: metaData =>
+          fetcher<AlbumsByJobIdQuery, AlbumsByJobIdQueryVariables>(
+            AlbumsByJobIdDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteAlbumsByJobIdQuery.getKey = (
+  variables: AlbumsByJobIdQueryVariables
+) => ['AlbumsByJobId.infinite', variables];
 
 export const GetRecommendationFeedDocument = `
     query GetRecommendationFeed($cursor: String, $limit: Int) {
