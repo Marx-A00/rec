@@ -417,6 +417,21 @@ export async function processSpotifyAlbums(
 
   for (const spotifyAlbum of spotifyAlbums) {
     try {
+      // Check if album already exists by Spotify ID first (most reliable)
+      if (spotifyAlbum.id) {
+        const existingBySpotifyId = await prisma.album.findUnique({
+          where: { spotifyId: spotifyAlbum.id },
+        });
+
+        if (existingBySpotifyId) {
+          console.log(
+            `⏭️  Skipping duplicate (Spotify ID): "${spotifyAlbum.name}"`
+          );
+          duplicatesSkipped++;
+          continue;
+        }
+      }
+
       // Check if album already exists (by title + first artist to avoid exact duplicates)
       const artistNames = parseArtistNames(spotifyAlbum.artists);
       const firstArtist = artistNames[0];
