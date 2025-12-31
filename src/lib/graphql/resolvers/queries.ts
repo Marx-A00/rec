@@ -1569,6 +1569,7 @@ export const queryResolvers: QueryResolvers = {
         dataQuality,
         enrichmentStatus,
         needsEnrichment,
+        source,
         sortBy = 'title',
         sortOrder = 'asc',
         skip = 0,
@@ -1604,6 +1605,10 @@ export const queryResolvers: QueryResolvers = {
           { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
           { musicbrainzId: null }
         );
+      }
+      // Filter by source (e.g., SPOTIFY, MUSICBRAINZ)
+      if (source && source !== 'all') {
+        where.source = source;
       }
 
       // Sorting

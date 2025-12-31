@@ -5,6 +5,7 @@
  */
 
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
+import { Prisma } from '@prisma/client';
 
 import { prisma } from '../prisma';
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
@@ -13,6 +14,7 @@ import type {
   CheckArtistEnrichmentJobData,
   CheckTrackEnrichmentJobData,
 } from '../queue/jobs';
+import { createSpotifySyncMetadata } from '@/types/album-metadata';
 
 import type {
   SpotifyAlbumData,
@@ -270,7 +272,15 @@ export async function findOrCreateArtist(
  */
 export async function processSpotifyAlbum(
   spotifyAlbum: SpotifyAlbumData,
-  source: string = 'spotify_sync'
+  source: string = 'spotify_sync',
+  metadataOptions?: {
+    jobId?: string;
+    batchId?: string;
+    query?: string;
+    country?: string;
+    genreTags?: string[];
+    year?: number;
+  }
 ): Promise<{ albumId: string; artistIds: string[]; tracksCreated?: number }> {
   console.log(`🎵 Processing Spotify album: "${spotifyAlbum.name}"`);
 
@@ -294,6 +304,11 @@ export async function processSpotifyAlbum(
       dataQuality: albumData.dataQuality,
       enrichmentStatus: albumData.enrichmentStatus,
       lastEnriched: albumData.lastEnriched,
+      // Track sync metadata for job auditing and "New This Week" features
+      metadata: createSpotifySyncMetadata(
+        source === 'spotify_playlists' ? 'spotify_playlists' : 'spotify_search',
+        metadataOptions
+      ) as Prisma.JsonValue,
     },
   });
 
@@ -384,7 +399,15 @@ export async function processSpotifyAlbum(
  */
 export async function processSpotifyAlbums(
   spotifyAlbums: SpotifyAlbumData[],
-  source: string = 'spotify_sync'
+  source: string = 'spotify_sync',
+  metadataOptions?: {
+    jobId?: string;
+    batchId?: string;
+    query?: string;
+    country?: string;
+    genreTags?: string[];
+    year?: number;
+  }
 ): Promise<SpotifyProcessingResult> {
   console.log(`🚀 Processing ${spotifyAlbums.length} Spotify albums...`);
 
@@ -428,7 +451,7 @@ export async function processSpotifyAlbums(
       }
 
       // Process the album
-      const result = await processSpotifyAlbum(spotifyAlbum, source);
+      const result = await processSpotifyAlbum(spotifyAlbum, source, metadataOptions);
       results.push(result);
     } catch (error) {
       const errorMsg = `Failed to process "${spotifyAlbum.name}": ${error instanceof Error ? error.message : String(error)}`;

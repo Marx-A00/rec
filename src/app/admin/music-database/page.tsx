@@ -244,6 +244,8 @@ export default function MusicDatabasePage() {
   const deleteArtistMutation = useDeleteArtistMutation();
 
   // Search albums with React Query
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+
   const {
     data: albumsData,
     isLoading: albumsLoading,
@@ -259,6 +261,7 @@ export default function MusicDatabasePage() {
           ? filters.enrichmentStatus
           : undefined,
       needsEnrichment: filters.needsEnrichment || undefined,
+      source: sourceFilter !== 'all' ? sourceFilter : undefined,
       sortBy: sortBy,
       sortOrder: sortOrder,
       skip: skip,
@@ -1403,82 +1406,116 @@ export default function MusicDatabasePage() {
               </Button>
             </div>
 
-            <div className='flex gap-2 flex-wrap'>
-              <Select
-                value={filters.dataQuality}
-                onValueChange={(value: string) =>
-                  setFilters(prev => ({ ...prev, dataQuality: value }))
-                }
-              >
-                <SelectTrigger className='w-[180px] bg-zinc-800 border-zinc-700 text-white'>
-                  <SelectValue placeholder='Data Quality' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all'>All Quality</SelectItem>
-                  <SelectItem value='HIGH'>High Quality</SelectItem>
-                  <SelectItem value='MEDIUM'>Medium Quality</SelectItem>
-                  <SelectItem value='LOW'>Low Quality</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className='space-y-3'>
+              {/* General Filters */}
+              <div className='flex gap-2 flex-wrap'>
+                <Select
+                  value={filters.dataQuality}
+                  onValueChange={(value: string) =>
+                    setFilters(prev => ({ ...prev, dataQuality: value }))
+                  }
+                >
+                  <SelectTrigger className='w-[180px] bg-zinc-800 border-zinc-700 text-white'>
+                    <SelectValue placeholder='Data Quality' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='all'>All Quality</SelectItem>
+                    <SelectItem value='HIGH'>High Quality</SelectItem>
+                    <SelectItem value='MEDIUM'>Medium Quality</SelectItem>
+                    <SelectItem value='LOW'>Low Quality</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              <Select
-                value={filters.enrichmentStatus}
-                onValueChange={(value: string) =>
-                  setFilters(prev => ({ ...prev, enrichmentStatus: value }))
-                }
-              >
-                <SelectTrigger className='w-[180px] bg-zinc-800 border-zinc-700 text-white'>
-                  <SelectValue placeholder='Enrichment Status' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all'>All Status</SelectItem>
-                  <SelectItem value='COMPLETED'>Completed</SelectItem>
-                  <SelectItem value='IN_PROGRESS'>In Progress</SelectItem>
-                  <SelectItem value='PENDING'>Pending</SelectItem>
-                  <SelectItem value='FAILED'>Failed</SelectItem>
-                </SelectContent>
-              </Select>
+                <Select
+                  value={filters.enrichmentStatus}
+                  onValueChange={(value: string) =>
+                    setFilters(prev => ({ ...prev, enrichmentStatus: value }))
+                  }
+                >
+                  <SelectTrigger className='w-[180px] bg-zinc-800 border-zinc-700 text-white'>
+                    <SelectValue placeholder='Enrichment Status' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='all'>All Status</SelectItem>
+                    <SelectItem value='COMPLETED'>Completed</SelectItem>
+                    <SelectItem value='IN_PROGRESS'>In Progress</SelectItem>
+                    <SelectItem value='PENDING'>Pending</SelectItem>
+                    <SelectItem value='FAILED'>Failed</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              <Button
-                variant={filters.needsEnrichment ? 'default' : 'outline'}
-                onClick={() =>
-                  setFilters(prev => ({
-                    ...prev,
-                    needsEnrichment: !prev.needsEnrichment,
-                  }))
-                }
-                className={
-                  filters.needsEnrichment
-                    ? 'bg-zinc-700 hover:bg-zinc-600 text-white'
-                    : 'text-white border-zinc-700 hover:bg-zinc-700'
-                }
-              >
-                <Filter className='h-4 w-4 mr-2' />
-                Needs Enrichment
-              </Button>
+                <Button
+                  variant={filters.needsEnrichment ? 'default' : 'outline'}
+                  onClick={() =>
+                    setFilters(prev => ({
+                      ...prev,
+                      needsEnrichment: !prev.needsEnrichment,
+                    }))
+                  }
+                  className={
+                    filters.needsEnrichment
+                      ? 'bg-zinc-700 hover:bg-zinc-600 text-white'
+                      : 'text-white border-zinc-700 hover:bg-zinc-700'
+                  }
+                >
+                  <Filter className='h-4 w-4 mr-2' />
+                  Needs Enrichment
+                </Button>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className='w-[180px] bg-zinc-800 border-zinc-700 text-white'>
-                  <SelectValue placeholder='Sort By' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='title'>Title/Name</SelectItem>
-                  <SelectItem value='releaseDate'>Release Date</SelectItem>
-                  <SelectItem value='lastEnriched'>Last Enriched</SelectItem>
-                  <SelectItem value='dataQuality'>Data Quality</SelectItem>
-                </SelectContent>
-              </Select>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className='w-[180px] bg-zinc-800 border-zinc-700 text-white'>
+                    <SelectValue placeholder='Sort By' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='title'>Title/Name</SelectItem>
+                    <SelectItem value='releaseDate'>Release Date</SelectItem>
+                    <SelectItem value='lastEnriched'>Last Enriched</SelectItem>
+                    <SelectItem value='dataQuality'>Data Quality</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              <Button
-                variant='outline'
-                size='icon'
-                onClick={() =>
-                  setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
-                }
-                className='text-white border-zinc-700 hover:bg-zinc-700'
-              >
-                {sortOrder === 'asc' ? '↑' : '↓'}
-              </Button>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() =>
+                    setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+                  }
+                  className='text-white border-zinc-700 hover:bg-zinc-700'
+                >
+                  {sortOrder === 'asc' ? '↑' : '↓'}
+                </Button>
+              </div>
+
+              {/* Source Filters */}
+              <div className='border-t border-zinc-700 pt-3'>
+                <div className='text-xs text-zinc-400 mb-2 uppercase tracking-wide'>
+                  Filter by Source
+                </div>
+                <div className='flex gap-2'>
+                  <Button
+                    variant={sourceFilter === 'SPOTIFY' ? 'default' : 'outline'}
+                    onClick={() =>
+                      setSourceFilter(prev =>
+                        prev === 'SPOTIFY' ? 'all' : 'SPOTIFY'
+                      )
+                    }
+                    className={
+                      sourceFilter === 'SPOTIFY'
+                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                        : 'text-white border-zinc-700 hover:bg-zinc-700'
+                    }
+                  >
+                    <svg
+                      className='h-4 w-4 mr-2'
+                      fill='currentColor'
+                      viewBox='0 0 24 24'
+                    >
+                      <path d='M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z' />
+                    </svg>
+                    Spotify Synced
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>

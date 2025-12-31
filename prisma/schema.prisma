@@ -239,6 +239,7 @@ model Album {
   dataQuality           DataQuality?             @default(LOW) @map("data_quality")
   enrichmentStatus      EnrichmentStatus?        @default(PENDING) @map("enrichment_status")
   lastEnriched          DateTime?                @map("last_enriched")
+  metadata              Json?                    // Sync tracking - see src/types/album-metadata.ts for structure
   createdAt             DateTime                 @default(now()) @map("created_at")
   updatedAt             DateTime                 @updatedAt @map("updated_at")
   collectionAlbums      CollectionAlbum[]

@@ -45,8 +45,8 @@ async function getAccessToken(): Promise<string> {
     return cachedAccessToken;
   }
 
-  const clientId = process.env.AUTH_SPOTIFY_ID;
-  const clientSecret = process.env.AUTH_SPOTIFY_SECRET;
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     throw new Error('Spotify credentials not configured');

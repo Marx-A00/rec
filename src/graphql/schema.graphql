@@ -1084,6 +1084,7 @@ type Query {
     dataQuality: String
     enrichmentStatus: String
     needsEnrichment: Boolean
+    source: String
     sortBy: String
     sortOrder: String
     skip: Int

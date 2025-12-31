@@ -126,7 +126,13 @@ export async function handleSpotifySyncNewReleases(
     // Process through our mappers (creates DB records + queues enrichment)
     const result = await processSpotifyAlbums(
       spotifyAlbums,
-      data.source || 'spotify_search'
+      data.source || 'spotify_search',
+      {
+        query: `tag:new year:${year}${data.genreTags ? ' ' + data.genreTags.map(t => `tag:${t}`).join(' ') : ''}`,
+        country: data.country,
+        genreTags: data.genreTags,
+        year: year,
+      }
     );
 
     console.log(`✅ Spotify new releases sync complete:`, result.stats);
@@ -302,7 +308,10 @@ export async function handleSpotifySyncFeaturedPlaylists(
     // Process through our mappers
     const result = await processSpotifyAlbums(
       uniqueAlbums,
-      data.source || 'spotify_playlists'
+      data.source || 'spotify_playlists',
+      {
+        country: data.country,
+      }
     );
 
     console.log(`✅ Spotify featured playlists sync complete:`, result.stats);

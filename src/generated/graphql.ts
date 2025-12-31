@@ -1023,6 +1023,7 @@ export type QuerySearchAlbumsArgs = {
   skip?: InputMaybe<Scalars['Int']['input']>;
   sortBy?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['String']['input']>;
+  source?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QuerySearchArtistsArgs = {
@@ -2999,6 +3000,7 @@ export type SearchAlbumsAdminQueryVariables = Exact<{
   dataQuality?: InputMaybe<Scalars['String']['input']>;
   enrichmentStatus?: InputMaybe<Scalars['String']['input']>;
   needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
+  source?: InputMaybe<Scalars['String']['input']>;
   sortBy?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['String']['input']>;
   skip?: InputMaybe<Scalars['Int']['input']>;
@@ -6702,13 +6704,14 @@ useInfiniteSearchTracksQuery.getKey = (
 ) => ['SearchTracks.infinite', variables];
 
 export const SearchAlbumsAdminDocument = `
-    query SearchAlbumsAdmin($query: String, $id: UUID, $dataQuality: String, $enrichmentStatus: String, $needsEnrichment: Boolean, $sortBy: String, $sortOrder: String, $skip: Int, $limit: Int) {
+    query SearchAlbumsAdmin($query: String, $id: UUID, $dataQuality: String, $enrichmentStatus: String, $needsEnrichment: Boolean, $source: String, $sortBy: String, $sortOrder: String, $skip: Int, $limit: Int) {
   searchAlbums(
     query: $query
     id: $id
     dataQuality: $dataQuality
     enrichmentStatus: $enrichmentStatus
     needsEnrichment: $needsEnrichment
+    source: $source
     sortBy: $sortBy
     sortOrder: $sortOrder
     skip: $skip

@@ -24,8 +24,9 @@ export async function handleDiscogsSearchArtist(
 
   try {
     // Initialize Discogs client via dynamic import (ESM-friendly)
-    const { Client: DiscogsClient } = await import('disconnect');
-    const discogsClient = new DiscogsClient({
+    // Note: disconnect is a CommonJS module, default export has .Client property
+    const Discogs = await import('disconnect');
+    const discogsClient = new Discogs.Client({
       userAgent: 'RecProject/1.0 +https://rec-music.org',
       consumerKey: process.env.CONSUMER_KEY!,
       consumerSecret: process.env.CONSUMER_SECRET!,

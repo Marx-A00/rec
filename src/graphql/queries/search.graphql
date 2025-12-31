@@ -122,6 +122,7 @@ query SearchAlbumsAdmin(
   $dataQuality: String
   $enrichmentStatus: String
   $needsEnrichment: Boolean
+  $source: String
   $sortBy: String
   $sortOrder: String
   $skip: Int
@@ -133,6 +134,7 @@ query SearchAlbumsAdmin(
     dataQuality: $dataQuality
     enrichmentStatus: $enrichmentStatus
     needsEnrichment: $needsEnrichment
+    source: $source
     sortBy: $sortBy
     sortOrder: $sortOrder
     skip: $skip

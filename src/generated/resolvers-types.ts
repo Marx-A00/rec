@@ -997,6 +997,7 @@ export type QuerySearchAlbumsArgs = {
   skip?: InputMaybe<Scalars['Int']['input']>;
   sortBy?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['String']['input']>;
+  source?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QuerySearchArtistsArgs = {
