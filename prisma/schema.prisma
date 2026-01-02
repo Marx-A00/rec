@@ -428,3 +428,62 @@ enum UserRole {
   ADMIN
   OWNER
 }
+
+// ============================================================================
+// Sync Job Tracking
+// ============================================================================
+
+enum SyncJobType {
+  SPOTIFY_NEW_RELEASES
+  SPOTIFY_FEATURED_PLAYLISTS
+  MUSICBRAINZ_NEW_RELEASES
+  MUSICBRAINZ_SYNC
+  DISCOGS_SYNC
+  ENRICHMENT_BATCH
+}
+
+enum SyncJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model SyncJob {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId           String        @unique @map("job_id") @db.VarChar(100) // BullMQ job ID for linking
+  jobType         SyncJobType   @map("job_type")
+  status          SyncJobStatus @default(PENDING)
+  
+  // Timing
+  startedAt       DateTime      @default(now()) @map("started_at")
+  completedAt     DateTime?     @map("completed_at")
+  durationMs      Int?          @map("duration_ms")
+  
+  // Results
+  albumsCreated   Int           @default(0) @map("albums_created")
+  albumsUpdated   Int           @default(0) @map("albums_updated")
+  albumsSkipped   Int           @default(0) @map("albums_skipped")
+  artistsCreated  Int           @default(0) @map("artists_created")
+  artistsUpdated  Int           @default(0) @map("artists_updated")
+  
+  // Error tracking
+  errorMessage    String?       @map("error_message")
+  errorCode       String?       @map("error_code") @db.VarChar(50)
+  
+  // Metadata (query params, filters, etc.)
+  metadata        Json?         // Stores: query, genreTags, year, country, limit, etc.
+  
+  // Audit
+  triggeredBy     String?       @map("triggered_by") @db.VarChar(50) // 'scheduled', 'manual', 'graphql'
+  
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@index([jobType, status])
+  @@index([status, startedAt])
+  @@index([startedAt])
+  @@index([jobId])
+  @@map("sync_jobs")
+}

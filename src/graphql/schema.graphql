@@ -960,6 +960,77 @@ type SpotifySyncStats {
 }
 
 # =============================================
+# SYNC JOB TRACKING
+# =============================================
+
+enum SyncJobType {
+  SPOTIFY_NEW_RELEASES
+  SPOTIFY_FEATURED_PLAYLISTS
+  MUSICBRAINZ_NEW_RELEASES
+  MUSICBRAINZ_SYNC
+  DISCOGS_SYNC
+  ENRICHMENT_BATCH
+}
+
+enum SyncJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+type SyncJob {
+  id: UUID!
+  jobId: String!
+  jobType: SyncJobType!
+  status: SyncJobStatus!
+  
+  # Timing
+  startedAt: DateTime!
+  completedAt: DateTime
+  durationMs: Int
+  
+  # Results
+  albumsCreated: Int!
+  albumsUpdated: Int!
+  albumsSkipped: Int!
+  artistsCreated: Int!
+  artistsUpdated: Int!
+  
+  # Error tracking
+  errorMessage: String
+  errorCode: String
+  
+  # Metadata (query params, filters used, etc.)
+  metadata: JSON
+  
+  # Audit
+  triggeredBy: String
+  
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Computed: albums created by this job
+  albums(limit: Int = 50): [Album!]!
+}
+
+type SyncJobsConnection {
+  jobs: [SyncJob!]!
+  totalCount: Int!
+  hasMore: Boolean!
+}
+
+input SyncJobsInput {
+  jobType: SyncJobType
+  status: SyncJobStatus
+  startedAfter: DateTime
+  startedBefore: DateTime
+  limit: Int = 20
+  offset: Int = 0
+}
+
+# =============================================
 # ROOT QUERY TYPE
 # =============================================
 
@@ -1075,6 +1146,11 @@ type Query {
     hasActivity: Boolean
   ): Int!
   mySettings: UserSettings
+
+  # Sync Job queries
+  syncJobs(input: SyncJobsInput): SyncJobsConnection!
+  syncJob(id: UUID!): SyncJob
+  syncJobByJobId(jobId: String!): SyncJob
 
   # Music Database queries
   databaseStats: DatabaseStats!

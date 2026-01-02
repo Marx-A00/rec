@@ -2203,5 +2203,95 @@ export const queryResolvers: QueryResolvers = {
       );
     }
   },
+
+  // ============================================================================
+  // Sync Job Queries
+  // ============================================================================
+
+  syncJobs: async (_, { input }, { prisma }) => {
+    try {
+      const {
+        jobType,
+        status,
+        startedAfter,
+        startedBefore,
+        limit = 20,
+        offset = 0,
+      } = input || {};
+
+      const where: Record<string, unknown> = {};
+
+      if (jobType) {
+        where.jobType = jobType;
+      }
+      if (status) {
+        where.status = status;
+      }
+      if (startedAfter || startedBefore) {
+        where.startedAt = {};
+        if (startedAfter) {
+          (where.startedAt as Record<string, unknown>).gte = new Date(
+            startedAfter
+          );
+        }
+        if (startedBefore) {
+          (where.startedAt as Record<string, unknown>).lte = new Date(
+            startedBefore
+          );
+        }
+      }
+
+      const [jobs, totalCount] = await Promise.all([
+        prisma.syncJob.findMany({
+          where,
+          orderBy: { startedAt: 'desc' },
+          take: limit,
+          skip: offset,
+        }),
+        prisma.syncJob.count({ where }),
+      ]);
+
+      return {
+        jobs,
+        totalCount,
+        hasMore: offset + jobs.length < totalCount,
+      };
+    } catch (error) {
+      console.error('Error fetching sync jobs:', error);
+      throw new GraphQLError(
+        `Failed to fetch sync jobs: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
+
+  syncJob: async (_, { id }, { prisma }) => {
+    try {
+      const syncJob = await prisma.syncJob.findUnique({
+        where: { id },
+      });
+
+      return syncJob;
+    } catch (error) {
+      console.error('Error fetching sync job:', error);
+      throw new GraphQLError(
+        `Failed to fetch sync job: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
+
+  syncJobByJobId: async (_, { jobId }, { prisma }) => {
+    try {
+      const syncJob = await prisma.syncJob.findUnique({
+        where: { jobId },
+      });
+
+      return syncJob;
+    } catch (error) {
+      console.error('Error fetching sync job by jobId:', error);
+      throw new GraphQLError(
+        `Failed to fetch sync job: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects
 };

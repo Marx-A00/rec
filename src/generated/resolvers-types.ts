@@ -859,6 +859,9 @@ export type Query = {
   searchTracks: Array<Track>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
+  syncJob?: Maybe<SyncJob>;
+  syncJobByJobId?: Maybe<SyncJob>;
+  syncJobs: SyncJobsConnection;
   systemHealth: SystemHealth;
   topRecommendedAlbums: Array<TopRecommendedAlbum>;
   topRecommendedArtists: Array<TopRecommendedArtist>;
@@ -1027,6 +1030,18 @@ export type QuerySocialFeedArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   type?: InputMaybe<ActivityType>;
+};
+
+export type QuerySyncJobArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type QuerySyncJobByJobIdArgs = {
+  jobId: Scalars['String']['input'];
+};
+
+export type QuerySyncJobsArgs = {
+  input?: InputMaybe<SyncJobsInput>;
 };
 
 export type QueryTopRecommendedAlbumsArgs = {
@@ -1339,6 +1354,66 @@ export type SubscriptionJobStatusUpdatesArgs = {
 
 export type SubscriptionMetricsStreamArgs = {
   interval?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type SyncJob = {
+  __typename?: 'SyncJob';
+  albums: Array<Album>;
+  albumsCreated: Scalars['Int']['output'];
+  albumsSkipped: Scalars['Int']['output'];
+  albumsUpdated: Scalars['Int']['output'];
+  artistsCreated: Scalars['Int']['output'];
+  artistsUpdated: Scalars['Int']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  errorCode?: Maybe<Scalars['String']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  jobId: Scalars['String']['output'];
+  jobType: SyncJobType;
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  startedAt: Scalars['DateTime']['output'];
+  status: SyncJobStatus;
+  triggeredBy?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type SyncJobAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export enum SyncJobStatus {
+  Cancelled = 'CANCELLED',
+  Completed = 'COMPLETED',
+  Failed = 'FAILED',
+  Pending = 'PENDING',
+  Running = 'RUNNING',
+}
+
+export enum SyncJobType {
+  DiscogsSync = 'DISCOGS_SYNC',
+  EnrichmentBatch = 'ENRICHMENT_BATCH',
+  MusicbrainzNewReleases = 'MUSICBRAINZ_NEW_RELEASES',
+  MusicbrainzSync = 'MUSICBRAINZ_SYNC',
+  SpotifyFeaturedPlaylists = 'SPOTIFY_FEATURED_PLAYLISTS',
+  SpotifyNewReleases = 'SPOTIFY_NEW_RELEASES',
+}
+
+export type SyncJobsConnection = {
+  __typename?: 'SyncJobsConnection';
+  hasMore: Scalars['Boolean']['output'];
+  jobs: Array<SyncJob>;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type SyncJobsInput = {
+  jobType?: InputMaybe<SyncJobType>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  startedAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  startedBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  status?: InputMaybe<SyncJobStatus>;
 };
 
 export type SystemHealth = {
@@ -1792,6 +1867,11 @@ export type ResolversTypes = ResolversObject<{
   SpotifyTrendingData: ResolverTypeWrapper<SpotifyTrendingData>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Subscription: ResolverTypeWrapper<{}>;
+  SyncJob: ResolverTypeWrapper<SyncJob>;
+  SyncJobStatus: SyncJobStatus;
+  SyncJobType: SyncJobType;
+  SyncJobsConnection: ResolverTypeWrapper<SyncJobsConnection>;
+  SyncJobsInput: SyncJobsInput;
   SystemHealth: ResolverTypeWrapper<SystemHealth>;
   ThroughputMetrics: ResolverTypeWrapper<ThroughputMetrics>;
   TimeRange: TimeRange;
@@ -1893,6 +1973,9 @@ export type ResolversParentTypes = ResolversObject<{
   SpotifyTrendingData: SpotifyTrendingData;
   String: Scalars['String']['output'];
   Subscription: {};
+  SyncJob: SyncJob;
+  SyncJobsConnection: SyncJobsConnection;
+  SyncJobsInput: SyncJobsInput;
   SystemHealth: SystemHealth;
   ThroughputMetrics: ThroughputMetrics;
   TimeRangeInput: TimeRangeInput;
@@ -3271,6 +3354,24 @@ export type QueryResolvers<
     ParentType,
     ContextType
   >;
+  syncJob?: Resolver<
+    Maybe<ResolversTypes['SyncJob']>,
+    ParentType,
+    ContextType,
+    RequireFields<QuerySyncJobArgs, 'id'>
+  >;
+  syncJobByJobId?: Resolver<
+    Maybe<ResolversTypes['SyncJob']>,
+    ParentType,
+    ContextType,
+    RequireFields<QuerySyncJobByJobIdArgs, 'jobId'>
+  >;
+  syncJobs?: Resolver<
+    ResolversTypes['SyncJobsConnection'],
+    ParentType,
+    ContextType,
+    Partial<QuerySyncJobsArgs>
+  >;
   systemHealth?: Resolver<
     ResolversTypes['SystemHealth'],
     ParentType,
@@ -3752,6 +3853,65 @@ export type SubscriptionResolvers<
     ParentType,
     ContextType
   >;
+}>;
+
+export type SyncJobResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SyncJob'] = ResolversParentTypes['SyncJob'],
+> = ResolversObject<{
+  albums?: Resolver<
+    Array<ResolversTypes['Album']>,
+    ParentType,
+    ContextType,
+    RequireFields<SyncJobAlbumsArgs, 'limit'>
+  >;
+  albumsCreated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  albumsSkipped?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  albumsUpdated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  artistsCreated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  artistsUpdated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  completedAt?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  errorCode?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  errorMessage?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  jobId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  jobType?: Resolver<ResolversTypes['SyncJobType'], ParentType, ContextType>;
+  metadata?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  startedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['SyncJobStatus'], ParentType, ContextType>;
+  triggeredBy?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SyncJobsConnectionResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SyncJobsConnection'] = ResolversParentTypes['SyncJobsConnection'],
+> = ResolversObject<{
+  hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  jobs?: Resolver<Array<ResolversTypes['SyncJob']>, ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SystemHealthResolvers<
@@ -4244,6 +4404,8 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   SpotifyTrack?: SpotifyTrackResolvers<ContextType>;
   SpotifyTrendingData?: SpotifyTrendingDataResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
+  SyncJob?: SyncJobResolvers<ContextType>;
+  SyncJobsConnection?: SyncJobsConnectionResolvers<ContextType>;
   SystemHealth?: SystemHealthResolvers<ContextType>;
   ThroughputMetrics?: ThroughputMetricsResolvers<ContextType>;
   TopRecommendedAlbum?: TopRecommendedAlbumResolvers<ContextType>;

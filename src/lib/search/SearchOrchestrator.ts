@@ -626,7 +626,7 @@ export class SearchOrchestrator {
       // For now, create client inline (same as old route.ts)
       // Note: disconnect is a CommonJS module, default export has .Client property
       const Discogs = await import('disconnect');
-      const db = new Discogs.Client({
+      const db = new Discogs.default.Client({
         userAgent: 'RecProject/1.0',
         userToken:
           process.env.DISCOGS_TOKEN ||

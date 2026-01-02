@@ -134,7 +134,9 @@ export async function searchSpotifyNewReleases(
       ),
     ];
 
-    console.log(`   👥 Fetching follower counts for ${uniqueArtistIds.length} artists...`);
+    console.log(
+      `   👥 Fetching follower counts for ${uniqueArtistIds.length} artists...`
+    );
 
     // Fetch artist details with follower counts
     const artistDetails = await getArtistsByIds(uniqueArtistIds);
@@ -176,6 +178,8 @@ export async function handleSpotifySyncNewReleases(
   jobId?: string
 ): Promise<any> {
   const year = data.year || new Date().getFullYear();
+  const startTime = Date.now();
+
   console.log(
     `🎵 Syncing Spotify new releases (limit: ${data.limit || 50}, country: ${data.country || 'US'})`
   );
@@ -183,6 +187,34 @@ export async function handleSpotifySyncNewReleases(
   console.log(`   Query: "tag:new year:${year}"`);
   if (data.genreTags && data.genreTags.length > 0) {
     console.log(`   Genre filters: ${data.genreTags.join(', ')}`);
+  }
+
+  // Import prisma for SyncJob tracking
+  const { prisma } = await import('@/lib/prisma');
+
+  // Create SyncJob record at start
+  let syncJob = null;
+  if (jobId) {
+    try {
+      syncJob = await prisma.syncJob.create({
+        data: {
+          jobId: jobId,
+          jobType: 'SPOTIFY_NEW_RELEASES',
+          status: 'RUNNING',
+          triggeredBy: data.source || 'scheduled',
+          metadata: {
+            query: `tag:new year:${year}`,
+            country: data.country || 'US',
+            limit: data.limit || 50,
+            genreTags: data.genreTags || [],
+            year: year,
+          },
+        },
+      });
+      console.log(`📝 Created SyncJob record: ${syncJob.id}`);
+    } catch (err) {
+      console.warn('⚠️  Failed to create SyncJob record:', err);
+    }
   }
 
   try {
@@ -219,8 +251,30 @@ export async function handleSpotifySyncNewReleases(
 
     console.log(`✅ Spotify new releases sync complete:`, result.stats);
 
+    // Update SyncJob record on success
+    if (syncJob) {
+      const durationMs = Date.now() - startTime;
+      try {
+        await prisma.syncJob.update({
+          where: { id: syncJob.id },
+          data: {
+            status: 'COMPLETED',
+            completedAt: new Date(),
+            durationMs: durationMs,
+            albumsCreated: result.stats.albumsProcessed || 0,
+            albumsSkipped: result.stats.duplicatesSkipped || 0,
+            artistsCreated: result.stats.artistsProcessed || 0,
+          },
+        });
+        console.log(`📝 Updated SyncJob record: COMPLETED in ${durationMs}ms`);
+      } catch (err) {
+        console.warn('⚠️  Failed to update SyncJob record:', err);
+      }
+    }
+
     return {
       success: true,
+      syncJobId: syncJob?.id,
       albumsProcessed: result.stats.albumsProcessed,
       artistsProcessed: result.stats.artistsProcessed,
       duplicatesSkipped: result.stats.duplicatesSkipped,
@@ -243,9 +297,30 @@ export async function handleSpotifySyncNewReleases(
     );
     const errorInfo = analyzeSpotifyError(error);
 
+    // Update SyncJob record on failure
+    if (syncJob) {
+      const durationMs = Date.now() - startTime;
+      try {
+        await prisma.syncJob.update({
+          where: { id: syncJob.id },
+          data: {
+            status: 'FAILED',
+            completedAt: new Date(),
+            durationMs: durationMs,
+            errorMessage: errorInfo.message,
+            errorCode: errorInfo.type,
+          },
+        });
+        console.log(`📝 Updated SyncJob record: FAILED`);
+      } catch (err) {
+        console.warn('⚠️  Failed to update SyncJob record:', err);
+      }
+    }
+
     // Return structured error response
     return {
       success: false,
+      syncJobId: syncJob?.id,
       error: {
         type: errorInfo.type,
         message: errorInfo.message,

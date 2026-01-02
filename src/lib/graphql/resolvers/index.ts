@@ -1297,6 +1297,39 @@ export const resolvers: Resolvers = {
     },
   },
 
+  // SyncJob field resolvers
+  SyncJob: {
+    albums: async (parent, { limit = 50 }, { prisma }) => {
+      // Fetch albums that were created by this sync job (via metadata.jobId)
+      const albums = await prisma.album.findMany({
+        where: {
+          metadata: {
+            path: ['jobId'],
+            equals: parent.jobId,
+          },
+        },
+        include: {
+          artists: {
+            include: {
+              artist: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      });
+
+      return albums.map(album => ({
+        ...album,
+        artists: album.artists.map(aa => ({
+          artist: aa.artist,
+          role: aa.role,
+          position: aa.position,
+        })),
+      }));
+    },
+  },
+
   Mutation: {
     ...mutationResolvers,
   },

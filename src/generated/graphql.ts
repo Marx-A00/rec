@@ -885,6 +885,9 @@ export type Query = {
   searchTracks: Array<Track>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
+  syncJob?: Maybe<SyncJob>;
+  syncJobByJobId?: Maybe<SyncJob>;
+  syncJobs: SyncJobsConnection;
   systemHealth: SystemHealth;
   topRecommendedAlbums: Array<TopRecommendedAlbum>;
   topRecommendedArtists: Array<TopRecommendedArtist>;
@@ -1053,6 +1056,18 @@ export type QuerySocialFeedArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   type?: InputMaybe<ActivityType>;
+};
+
+export type QuerySyncJobArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type QuerySyncJobByJobIdArgs = {
+  jobId: Scalars['String']['input'];
+};
+
+export type QuerySyncJobsArgs = {
+  input?: InputMaybe<SyncJobsInput>;
 };
 
 export type QueryTopRecommendedAlbumsArgs = {
@@ -1365,6 +1380,66 @@ export type SubscriptionJobStatusUpdatesArgs = {
 
 export type SubscriptionMetricsStreamArgs = {
   interval?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type SyncJob = {
+  __typename?: 'SyncJob';
+  albums: Array<Album>;
+  albumsCreated: Scalars['Int']['output'];
+  albumsSkipped: Scalars['Int']['output'];
+  albumsUpdated: Scalars['Int']['output'];
+  artistsCreated: Scalars['Int']['output'];
+  artistsUpdated: Scalars['Int']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  errorCode?: Maybe<Scalars['String']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  jobId: Scalars['String']['output'];
+  jobType: SyncJobType;
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  startedAt: Scalars['DateTime']['output'];
+  status: SyncJobStatus;
+  triggeredBy?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type SyncJobAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export enum SyncJobStatus {
+  Cancelled = 'CANCELLED',
+  Completed = 'COMPLETED',
+  Failed = 'FAILED',
+  Pending = 'PENDING',
+  Running = 'RUNNING',
+}
+
+export enum SyncJobType {
+  DiscogsSync = 'DISCOGS_SYNC',
+  EnrichmentBatch = 'ENRICHMENT_BATCH',
+  MusicbrainzNewReleases = 'MUSICBRAINZ_NEW_RELEASES',
+  MusicbrainzSync = 'MUSICBRAINZ_SYNC',
+  SpotifyFeaturedPlaylists = 'SPOTIFY_FEATURED_PLAYLISTS',
+  SpotifyNewReleases = 'SPOTIFY_NEW_RELEASES',
+}
+
+export type SyncJobsConnection = {
+  __typename?: 'SyncJobsConnection';
+  hasMore: Scalars['Boolean']['output'];
+  jobs: Array<SyncJob>;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type SyncJobsInput = {
+  jobType?: InputMaybe<SyncJobType>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  startedAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  startedBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  status?: InputMaybe<SyncJobStatus>;
 };
 
 export type SystemHealth = {
@@ -3137,6 +3212,105 @@ export type GetDatabaseStatsQuery = {
     failedEnrichments: number;
     averageDataQuality: number;
   };
+};
+
+export type GetSyncJobsQueryVariables = Exact<{
+  input?: InputMaybe<SyncJobsInput>;
+}>;
+
+export type GetSyncJobsQuery = {
+  __typename?: 'Query';
+  syncJobs: {
+    __typename?: 'SyncJobsConnection';
+    totalCount: number;
+    hasMore: boolean;
+    jobs: Array<{
+      __typename?: 'SyncJob';
+      id: string;
+      jobId: string;
+      jobType: SyncJobType;
+      status: SyncJobStatus;
+      startedAt: Date;
+      completedAt?: Date | null;
+      durationMs?: number | null;
+      albumsCreated: number;
+      albumsUpdated: number;
+      albumsSkipped: number;
+      artistsCreated: number;
+      artistsUpdated: number;
+      errorMessage?: string | null;
+      errorCode?: string | null;
+      metadata?: any | null;
+      triggeredBy?: string | null;
+      createdAt: Date;
+    }>;
+  };
+};
+
+export type GetSyncJobQueryVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type GetSyncJobQuery = {
+  __typename?: 'Query';
+  syncJob?: {
+    __typename?: 'SyncJob';
+    id: string;
+    jobId: string;
+    jobType: SyncJobType;
+    status: SyncJobStatus;
+    startedAt: Date;
+    completedAt?: Date | null;
+    durationMs?: number | null;
+    albumsCreated: number;
+    albumsUpdated: number;
+    albumsSkipped: number;
+    artistsCreated: number;
+    artistsUpdated: number;
+    errorMessage?: string | null;
+    errorCode?: string | null;
+    metadata?: any | null;
+    triggeredBy?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    albums: Array<{
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      releaseDate?: Date | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    }>;
+  } | null;
+};
+
+export type GetSyncJobByJobIdQueryVariables = Exact<{
+  jobId: Scalars['String']['input'];
+}>;
+
+export type GetSyncJobByJobIdQuery = {
+  __typename?: 'Query';
+  syncJobByJobId?: {
+    __typename?: 'SyncJob';
+    id: string;
+    jobId: string;
+    jobType: SyncJobType;
+    status: SyncJobStatus;
+    startedAt: Date;
+    completedAt?: Date | null;
+    durationMs?: number | null;
+    albumsCreated: number;
+    albumsUpdated: number;
+    albumsSkipped: number;
+    artistsCreated: number;
+    artistsUpdated: number;
+    errorMessage?: string | null;
+    metadata?: any | null;
+    triggeredBy?: string | null;
+  } | null;
 };
 
 export type GetTopRecommendedAlbumsQueryVariables = Exact<{
@@ -7219,6 +7393,281 @@ useInfiniteGetDatabaseStatsQuery.getKey = (
   variables === undefined
     ? ['GetDatabaseStats.infinite']
     : ['GetDatabaseStats.infinite', variables];
+
+export const GetSyncJobsDocument = `
+    query GetSyncJobs($input: SyncJobsInput) {
+  syncJobs(input: $input) {
+    jobs {
+      id
+      jobId
+      jobType
+      status
+      startedAt
+      completedAt
+      durationMs
+      albumsCreated
+      albumsUpdated
+      albumsSkipped
+      artistsCreated
+      artistsUpdated
+      errorMessage
+      errorCode
+      metadata
+      triggeredBy
+      createdAt
+    }
+    totalCount
+    hasMore
+  }
+}
+    `;
+
+export const useGetSyncJobsQuery = <TData = GetSyncJobsQuery, TError = unknown>(
+  variables?: GetSyncJobsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSyncJobsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<GetSyncJobsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<GetSyncJobsQuery, TError, TData>({
+    queryKey:
+      variables === undefined ? ['GetSyncJobs'] : ['GetSyncJobs', variables],
+    queryFn: fetcher<GetSyncJobsQuery, GetSyncJobsQueryVariables>(
+      GetSyncJobsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetSyncJobsQuery.getKey = (variables?: GetSyncJobsQueryVariables) =>
+  variables === undefined ? ['GetSyncJobs'] : ['GetSyncJobs', variables];
+
+export const useInfiniteGetSyncJobsQuery = <
+  TData = InfiniteData<GetSyncJobsQuery>,
+  TError = unknown,
+>(
+  variables: GetSyncJobsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetSyncJobsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetSyncJobsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetSyncJobsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetSyncJobs.infinite']
+            : ['GetSyncJobs.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetSyncJobsQuery, GetSyncJobsQueryVariables>(
+            GetSyncJobsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetSyncJobsQuery.getKey = (variables?: GetSyncJobsQueryVariables) =>
+  variables === undefined
+    ? ['GetSyncJobs.infinite']
+    : ['GetSyncJobs.infinite', variables];
+
+export const GetSyncJobDocument = `
+    query GetSyncJob($id: UUID!) {
+  syncJob(id: $id) {
+    id
+    jobId
+    jobType
+    status
+    startedAt
+    completedAt
+    durationMs
+    albumsCreated
+    albumsUpdated
+    albumsSkipped
+    artistsCreated
+    artistsUpdated
+    errorMessage
+    errorCode
+    metadata
+    triggeredBy
+    createdAt
+    updatedAt
+    albums(limit: 100) {
+      id
+      title
+      coverArtUrl
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useGetSyncJobQuery = <TData = GetSyncJobQuery, TError = unknown>(
+  variables: GetSyncJobQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSyncJobQuery, TError, TData>,
+    'queryKey'
+  > & { queryKey?: UseQueryOptions<GetSyncJobQuery, TError, TData>['queryKey'] }
+) => {
+  return useQuery<GetSyncJobQuery, TError, TData>({
+    queryKey: ['GetSyncJob', variables],
+    queryFn: fetcher<GetSyncJobQuery, GetSyncJobQueryVariables>(
+      GetSyncJobDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetSyncJobQuery.getKey = (variables: GetSyncJobQueryVariables) => [
+  'GetSyncJob',
+  variables,
+];
+
+export const useInfiniteGetSyncJobQuery = <
+  TData = InfiniteData<GetSyncJobQuery>,
+  TError = unknown,
+>(
+  variables: GetSyncJobQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetSyncJobQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetSyncJobQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetSyncJobQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetSyncJob.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetSyncJobQuery, GetSyncJobQueryVariables>(
+            GetSyncJobDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetSyncJobQuery.getKey = (variables: GetSyncJobQueryVariables) => [
+  'GetSyncJob.infinite',
+  variables,
+];
+
+export const GetSyncJobByJobIdDocument = `
+    query GetSyncJobByJobId($jobId: String!) {
+  syncJobByJobId(jobId: $jobId) {
+    id
+    jobId
+    jobType
+    status
+    startedAt
+    completedAt
+    durationMs
+    albumsCreated
+    albumsUpdated
+    albumsSkipped
+    artistsCreated
+    artistsUpdated
+    errorMessage
+    metadata
+    triggeredBy
+  }
+}
+    `;
+
+export const useGetSyncJobByJobIdQuery = <
+  TData = GetSyncJobByJobIdQuery,
+  TError = unknown,
+>(
+  variables: GetSyncJobByJobIdQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSyncJobByJobIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetSyncJobByJobIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetSyncJobByJobIdQuery, TError, TData>({
+    queryKey: ['GetSyncJobByJobId', variables],
+    queryFn: fetcher<GetSyncJobByJobIdQuery, GetSyncJobByJobIdQueryVariables>(
+      GetSyncJobByJobIdDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetSyncJobByJobIdQuery.getKey = (
+  variables: GetSyncJobByJobIdQueryVariables
+) => ['GetSyncJobByJobId', variables];
+
+export const useInfiniteGetSyncJobByJobIdQuery = <
+  TData = InfiniteData<GetSyncJobByJobIdQuery>,
+  TError = unknown,
+>(
+  variables: GetSyncJobByJobIdQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetSyncJobByJobIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetSyncJobByJobIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetSyncJobByJobIdQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetSyncJobByJobId.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetSyncJobByJobIdQuery, GetSyncJobByJobIdQueryVariables>(
+            GetSyncJobByJobIdDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetSyncJobByJobIdQuery.getKey = (
+  variables: GetSyncJobByJobIdQueryVariables
+) => ['GetSyncJobByJobId.infinite', variables];
 
 export const GetTopRecommendedAlbumsDocument = `
     query GetTopRecommendedAlbums($limit: Int) {
