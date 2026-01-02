@@ -17,6 +17,8 @@ export interface SpotifyScheduleConfig {
     country: string;
     genreTags?: string[]; // Optional genre filtering (e.g., ['rock', 'metal', 'pop'])
     year?: number; // Optional year filter (defaults to current year)
+    pages?: number; // Number of pages to fetch (1-4, default: 1)
+    minFollowers?: number; // Minimum artist followers to include (e.g., 100000 for 100k+)
   };
 }
 
@@ -28,6 +30,8 @@ export const DEFAULT_SCHEDULE_CONFIG: SpotifyScheduleConfig = {
     country: 'US',
     genreTags: undefined, // No genre filtering by default
     year: new Date().getFullYear(), // Current year
+    pages: 3, // Default to 3 pages (150 albums)
+    minFollowers: 100000, // Default to 100k+ followers (Task 11)
   },
 };
 
@@ -136,6 +140,9 @@ class SpotifyScheduler {
       // Tag-based filtering for Spotify Search API
       genreTags: this.config.newReleases.genreTags,
       year: this.config.newReleases.year || new Date().getFullYear(),
+      // Pagination and follower filtering (Task 11)
+      pages: this.config.newReleases.pages,
+      minFollowers: this.config.newReleases.minFollowers,
     };
 
     // Use BullMQ repeatable jobs instead of setInterval
@@ -157,6 +164,12 @@ class SpotifyScheduler {
     );
     if (jobData.genreTags && jobData.genreTags.length > 0) {
       console.log(`   Genre filters: ${jobData.genreTags.join(', ')}`);
+    }
+    if (jobData.pages && jobData.pages > 1) {
+      console.log(`   Pages: ${jobData.pages} (up to ${jobData.pages * (jobData.limit || 50)} albums)`);
+    }
+    if (jobData.minFollowers) {
+      console.log(`   Min followers: ${jobData.minFollowers.toLocaleString()}`);
     }
   }
 
@@ -271,6 +284,16 @@ export async function initializeSpotifyScheduler() {
     ? parseInt(process.env.SPOTIFY_NEW_RELEASES_YEAR)
     : new Date().getFullYear();
 
+  // Parse pagination setting (Task 11)
+  const pages = process.env.SPOTIFY_NEW_RELEASES_PAGES
+    ? parseInt(process.env.SPOTIFY_NEW_RELEASES_PAGES)
+    : 3; // Default to 3 pages
+
+  // Parse follower filter (Task 11)
+  const minFollowers = process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS
+    ? parseInt(process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS)
+    : 100000; // Default to 100k+ followers
+
   // Load configuration from environment variables
   const config: SpotifyScheduleConfig = {
     newReleases: {
@@ -282,6 +305,8 @@ export async function initializeSpotifyScheduler() {
       country: process.env.SPOTIFY_COUNTRY || 'US',
       genreTags,
       year,
+      pages,
+      minFollowers,
     },
   };
 

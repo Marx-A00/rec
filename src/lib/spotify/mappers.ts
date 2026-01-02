@@ -308,7 +308,7 @@ export async function processSpotifyAlbum(
       metadata: createSpotifySyncMetadata(
         source === 'spotify_playlists' ? 'spotify_playlists' : 'spotify_search',
         metadataOptions
-      ) as Prisma.JsonValue,
+      ) as unknown as Prisma.InputJsonValue,
     },
   });
 

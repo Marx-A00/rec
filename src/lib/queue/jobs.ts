@@ -191,7 +191,7 @@ export interface EnrichTrackJobData {
 // ============================================================================
 
 export interface SpotifySyncNewReleasesJobData {
-  limit?: number; // Number of releases to fetch (default: 20)
+  limit?: number; // Number of releases to fetch per page (default: 50)
   country?: string; // Country code (default: 'US')
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
@@ -200,6 +200,10 @@ export interface SpotifySyncNewReleasesJobData {
   // Tag-based filtering for Spotify Search API
   genreTags?: string[]; // e.g., ['rock', 'metal', 'pop']
   year?: number; // e.g., 2025 (defaults to current year)
+
+  // Pagination and follower filtering (Task 11)
+  pages?: number; // Number of pages to fetch (default: 1, max: 4 for 200 albums)
+  minFollowers?: number; // Minimum artist followers to include album (default: undefined = no filtering)
 }
 
 export interface SpotifySyncFeaturedPlaylistsJobData {

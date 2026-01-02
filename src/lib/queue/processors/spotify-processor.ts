@@ -13,6 +13,8 @@ import type {
 /**
  * Search for new releases using Spotify Search API with tag:new filter
  * Replaces deprecated browse.getNewReleases() which returns stale data
+ *
+ * Task 11: Supports pagination and artist follower filtering
  */
 export async function searchSpotifyNewReleases(
   data: SpotifySyncNewReleasesJobData
@@ -53,34 +55,112 @@ export async function searchSpotifyNewReleases(
   const query = queryParts.join(' ');
   const limit = data.limit || 50;
   const country = data.country || 'US';
+  const pages = data.pages || 1; // Default to 1 page
+  const minFollowers = data.minFollowers; // Optional follower filtering
 
   console.log(
-    `🔍 Spotify search query: "${query}" (limit: ${limit}, market: ${country})`
+    `🔍 Spotify search query: "${query}" (limit: ${limit}, pages: ${pages}, market: ${country})`
   );
+  if (minFollowers !== undefined) {
+    console.log(`   👥 Filtering artists with ${minFollowers}+ followers`);
+  }
 
-  // Execute search
-  const searchResults = await spotifyClient.search(
-    query,
-    ['album'],
-    country as Parameters<typeof spotifyClient.search>[2],
-    limit as 0 | 10 | 1 | 25 | 50 | 5 | 20
-  );
+  // Collect albums from all pages
+  const allAlbums: Array<{
+    id: string;
+    name: string;
+    artists: string;
+    artistIds: string[];
+    releaseDate: string;
+    image: string | null;
+    spotifyUrl: string;
+    type: string;
+    totalTracks: number;
+  }> = [];
 
-  const albums = searchResults.albums.items;
-  console.log(`📀 Found ${albums.length} new releases from search`);
+  // Fetch multiple pages (max 4 pages = 200 albums)
+  for (let page = 0; page < Math.min(pages, 4); page++) {
+    const offset = page * limit;
 
-  // Transform to expected format
-  return albums.map(album => ({
-    id: album.id,
-    name: album.name,
-    artists: album.artists.map(a => a.name).join(', '),
-    artistIds: album.artists.map(a => a.id),
-    releaseDate: album.release_date,
-    image: album.images[0]?.url || null,
-    spotifyUrl: album.external_urls.spotify,
-    type: album.album_type,
-    totalTracks: album.total_tracks,
-  }));
+    console.log(`   📄 Fetching page ${page + 1}/${pages} (offset: ${offset})`);
+
+    // Execute search with offset
+    const searchResults = await spotifyClient.search(
+      query,
+      ['album'],
+      country as Parameters<typeof spotifyClient.search>[2],
+      limit as 0 | 10 | 1 | 25 | 50 | 5 | 20,
+      offset
+    );
+
+    const albums = searchResults.albums.items;
+    console.log(`   📀 Found ${albums.length} albums on page ${page + 1}`);
+
+    // Break early if no more results
+    if (albums.length === 0) {
+      console.log(`   ⚠️  No more results, stopping pagination`);
+      break;
+    }
+
+    // Transform to expected format
+    const transformedAlbums = albums.map(album => ({
+      id: album.id,
+      name: album.name,
+      artists: album.artists.map(a => a.name).join(', '),
+      artistIds: album.artists.map(a => a.id),
+      releaseDate: album.release_date,
+      image: album.images[0]?.url || null,
+      spotifyUrl: album.external_urls.spotify,
+      type: album.album_type,
+      totalTracks: album.total_tracks,
+    }));
+
+    allAlbums.push(...transformedAlbums);
+  }
+
+  console.log(`📀 Total albums collected: ${allAlbums.length}`);
+
+  // Apply follower filtering if specified
+  if (minFollowers !== undefined && minFollowers > 0) {
+    console.log(`🔍 Applying follower filter (min: ${minFollowers})...`);
+
+    // Import artist API helper
+    const { getArtistsByIds } = await import('../../spotify/search');
+
+    // Extract unique artist IDs from all albums
+    const uniqueArtistIds = [
+      ...new Set(
+        allAlbums.flatMap(album => album.artistIds.slice(0, 1)) // Only primary artist
+      ),
+    ];
+
+    console.log(`   👥 Fetching follower counts for ${uniqueArtistIds.length} artists...`);
+
+    // Fetch artist details with follower counts
+    const artistDetails = await getArtistsByIds(uniqueArtistIds);
+
+    // Create a map of artist ID -> follower count
+    const artistFollowerMap = new Map(
+      artistDetails.map(artist => [artist.id, artist.followers])
+    );
+
+    // Filter albums by primary artist follower count
+    const beforeFilterCount = allAlbums.length;
+    const filteredAlbums = allAlbums.filter(album => {
+      const primaryArtistId = album.artistIds[0];
+      const followerCount = artistFollowerMap.get(primaryArtistId) || 0;
+      return followerCount >= minFollowers;
+    });
+
+    const removedCount = beforeFilterCount - filteredAlbums.length;
+    console.log(
+      `✅ Filtered ${beforeFilterCount} → ${filteredAlbums.length} albums (removed ${removedCount} from artists with <${minFollowers} followers)`
+    );
+
+    return filteredAlbums;
+  }
+
+  return allAlbums;
 }
 
 // ============================================================================

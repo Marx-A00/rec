@@ -127,12 +127,25 @@ export const mutationResolvers: MutationResolvers = {
 
       // Queue the appropriate job(s) based on type
       if (type === 'NEW_RELEASES' || type === 'BOTH') {
+        // Parse pagination setting (Task 11)
+        const pages = process.env.SPOTIFY_NEW_RELEASES_PAGES
+          ? parseInt(process.env.SPOTIFY_NEW_RELEASES_PAGES)
+          : 3; // Default to 3 pages
+
+        // Parse follower filter (Task 11)
+        const minFollowers = process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS
+          ? parseInt(process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS)
+          : 100000; // Default to 100k+ followers
+
         const jobData: SpotifySyncNewReleasesJobData = {
-          limit: 20,
+          limit: parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '50'),
           country: process.env.SPOTIFY_COUNTRY || 'US',
           priority: 'high',
-          source: 'manual_trigger',
+          source: 'graphql',
           requestId: `manual_new_releases_${Date.now()}`,
+          // Pagination and follower filtering (Task 11)
+          pages,
+          minFollowers,
         };
 
         const job = await queue.addJob(
@@ -146,7 +159,7 @@ export const mutationResolvers: MutationResolvers = {
         );
 
         results.jobId = job.id;
-        results.message = `Queued Spotify new releases sync (Job ID: ${job.id})`;
+        results.message = `Queued Spotify new releases sync (Job ID: ${job.id}, ${pages} pages, ${minFollowers.toLocaleString()}+ followers)`;
         console.log(`📀 Triggered Spotify new releases sync: Job ${job.id}`);
       }
 
