@@ -137,14 +137,14 @@ task-master update-subtask --id=<id> --prompt="notes"  # Log progress
 - **Rate Limiting**: 1 request/second via BullMQ
 - **Queue Service**: `/src/lib/musicbrainz/queue-service.ts`
 - **Worker**: `/src/workers/queue-worker.ts` (handles all background jobs)
-- **Job Types**: `search-artists`, `search-releases`, `get-artist`, `get-release`, `spotify:sync-new-releases`, `spotify:sync-featured-playlists`, `musicbrainz:sync-new-releases`
+- **Job Types**: `search-artists`, `search-releases`, `get-artist`, `get-release`, `spotify:sync-new-releases`, `musicbrainz:sync-new-releases`
 
 **Automated Schedulers (BullMQ Repeatable Jobs):**
 - **Spotify Scheduler** (`/src/lib/spotify/scheduler.ts`):
-  - New releases sync (configurable interval, default: 60 min)
-  - Featured playlists sync (configurable interval, default: 180 min)
+  - New releases sync using `tag:new` Search API (configurable interval, default: 7 days)
+  - Supports genre filtering, year filtering, pagination, and follower thresholds
   - Uses BullMQ repeatable jobs - schedules persist in Redis across worker restarts
-  - No duplicate processing on worker restart
+  - ⚠️ Note: `browse.getNewReleases()` was deprecated/restricted in Nov 2024
 - **MusicBrainz Scheduler** (`/src/lib/musicbrainz/new-releases-scheduler.ts`):
   - New releases sync (configurable interval, default: 7 days)
   - Genre-based filtering with date ranges
@@ -154,6 +154,11 @@ task-master update-subtask --id=<id> --prompt="notes"  # Log progress
 - Schedules persist in Redis and survive worker restarts
 - No duplicate job execution on worker restart
 - Centralized schedule management via Bull Board dashboard
+
+**Spotify API Migration Note (Nov 2024):**
+The original `browse.getNewReleases()` endpoint was restricted by Spotify. The scheduler now uses
+the Search API with `tag:new` queries (e.g., `tag:new year:2025`) which provides similar functionality
+with additional filtering capabilities. See `/src/lib/spotify/new-releases-service.ts` for implementation.
 
 ### Component Patterns
 
@@ -230,12 +235,23 @@ Required environment variables:
 
 Schedulers now use BullMQ repeatable jobs which persist in Redis. No need for `SKIP_INITIAL_SYNC` flags - schedules automatically avoid duplicates on worker restart.
 
+**Spotify New Releases (using `tag:new` Search API):**
 - `SPOTIFY_SYNC_NEW_RELEASES=true` - Enable Spotify new releases sync
 - `SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES=10080` - Sync interval (default: 7 days)
-- `SPOTIFY_NEW_RELEASES_LIMIT=50` - Number of releases to fetch
-- `SPOTIFY_SYNC_FEATURED_PLAYLISTS=true` - Enable featured playlists sync
-- `SPOTIFY_FEATURED_PLAYLISTS_INTERVAL_MINUTES=10080` - Sync interval (default: 7 days)
-- `SPOTIFY_COUNTRY=US` - Market/country code for Spotify API
+- `SPOTIFY_NEW_RELEASES_LIMIT=50` - Number of releases per page
+- `SPOTIFY_COUNTRY=US` - Market/country code (ISO 3166-1 alpha-2)
+- `SPOTIFY_NEW_RELEASES_PAGES=3` - Pages to fetch (1-4, default: 3 = 150 albums)
+- `SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS=100000` - Filter by artist followers (default: 100k+)
+- `SPOTIFY_NEW_RELEASES_GENRE_TAGS=` - Optional comma-separated genres (e.g., `rock,metal,pop`)
+- `SPOTIFY_NEW_RELEASES_YEAR=2025` - Optional year filter (defaults to current year)
+
+**Featured Playlists (DEPRECATED - Nov 2024):**
+- `SPOTIFY_SYNC_FEATURED_PLAYLISTS=false` - ⚠️ Keep disabled, endpoint returns 404
+- `SPOTIFY_FEATURED_PLAYLISTS_INTERVAL_MINUTES=10080` - Sync interval
+- `SPOTIFY_FEATURED_PLAYLISTS_LIMIT=20` - Playlists to fetch
+- `SPOTIFY_EXTRACT_ALBUMS=true` - Extract albums from playlists
+
+**MusicBrainz:**
 - `MUSICBRAINZ_SYNC_NEW_RELEASES=true` - Enable MusicBrainz new releases sync
 - `MUSICBRAINZ_NEW_RELEASES_INTERVAL_MINUTES=10080` - Sync interval (default: 7 days)
 - `MUSICBRAINZ_NEW_RELEASES_LIMIT=50` - Number of releases to fetch

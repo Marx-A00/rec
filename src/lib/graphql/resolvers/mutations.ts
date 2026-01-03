@@ -200,6 +200,123 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
+  // Sync Job Management - Rollback functionality
+  rollbackSyncJob: async (_, { syncJobId, dryRun = true }, { prisma }) => {
+    try {
+      // 1. Find the sync job
+      const syncJob = await prisma.syncJob.findUnique({
+        where: { id: syncJobId },
+      });
+
+      if (!syncJob) {
+        throw new GraphQLError(`SyncJob not found: ${syncJobId}`);
+      }
+
+      // 2. Find all albums created by this job (via metadata.jobId matching BullMQ job ID)
+      const albumsToDelete = await prisma.album.findMany({
+        where: {
+          metadata: {
+            path: ['jobId'],
+            equals: syncJob.jobId, // Match BullMQ job ID stored in album metadata
+          },
+        },
+        select: {
+          id: true,
+          title: true,
+          artists: {
+            select: {
+              artistId: true,
+            },
+          },
+        },
+      });
+
+      const albumIds = albumsToDelete.map(a => a.id);
+      const artistIdsFromAlbums = [
+        ...new Set(
+          albumsToDelete.flatMap(a => a.artists.map(aa => aa.artistId))
+        ),
+      ];
+
+      console.log(
+        `🔍 Rollback ${dryRun ? '(DRY RUN)' : ''}: Found ${albumIds.length} albums from SyncJob ${syncJobId}`
+      );
+
+      // 3. Find artists that would become orphaned (no other albums)
+      const artistsToDelete: string[] = [];
+
+      for (const artistId of artistIdsFromAlbums) {
+        const otherAlbumsCount = await prisma.albumArtist.count({
+          where: {
+            artistId,
+            albumId: { notIn: albumIds },
+          },
+        });
+
+        if (otherAlbumsCount === 0) {
+          artistsToDelete.push(artistId);
+        }
+      }
+
+      console.log(
+        `🔍 Rollback ${dryRun ? '(DRY RUN)' : ''}: ${artistsToDelete.length} artists would become orphaned`
+      );
+
+      // 4. If dry run, return what would be deleted
+      if (dryRun) {
+        return {
+          success: true,
+          syncJobId,
+          albumsDeleted: albumIds.length,
+          artistsDeleted: artistsToDelete.length,
+          message: `DRY RUN: Would delete ${albumIds.length} albums and ${artistsToDelete.length} orphaned artists from job "${syncJob.jobId}"`,
+          dryRun: true,
+        };
+      }
+
+      // 5. Actually delete (albums first due to foreign keys, then orphaned artists)
+      // Delete albums (this will cascade to AlbumArtist, CollectionAlbum, Recommendations, Tracks, etc.)
+      const deleteAlbumsResult = await prisma.album.deleteMany({
+        where: { id: { in: albumIds } },
+      });
+
+      console.log(`🗑️  Deleted ${deleteAlbumsResult.count} albums`);
+
+      // Delete orphaned artists
+      const deleteArtistsResult = await prisma.artist.deleteMany({
+        where: { id: { in: artistsToDelete } },
+      });
+
+      console.log(`🗑️  Deleted ${deleteArtistsResult.count} orphaned artists`);
+
+      // 6. Update SyncJob status to CANCELLED to indicate rollback
+      await prisma.syncJob.update({
+        where: { id: syncJobId },
+        data: {
+          status: 'CANCELLED',
+          metadata: {
+            ...((syncJob.metadata as object) || {}),
+            rolledBackAt: new Date().toISOString(),
+            albumsDeleted: deleteAlbumsResult.count,
+            artistsDeleted: deleteArtistsResult.count,
+          },
+        },
+      });
+
+      return {
+        success: true,
+        syncJobId,
+        albumsDeleted: deleteAlbumsResult.count,
+        artistsDeleted: deleteArtistsResult.count,
+        message: `Successfully rolled back SyncJob "${syncJob.jobId}": deleted ${deleteAlbumsResult.count} albums and ${deleteArtistsResult.count} orphaned artists`,
+        dryRun: false,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      throw new GraphQLError(`Failed to rollback sync job: ${error}`);
+    }
+  },
+
   // Alert configuration
   updateAlertThresholds: async (_, { input }) => {
     try {

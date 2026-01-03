@@ -618,6 +618,7 @@ export type Mutation = {
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
+  rollbackSyncJob: RollbackSyncJobResult;
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
   triggerSpotifySync: SpotifySyncResult;
@@ -733,6 +734,11 @@ export type MutationResetArtistEnrichmentArgs = {
 
 export type MutationRetryJobArgs = {
   jobId: Scalars['String']['input'];
+};
+
+export type MutationRollbackSyncJobArgs = {
+  dryRun?: InputMaybe<Scalars['Boolean']['input']>;
+  syncJobId: Scalars['UUID']['input'];
 };
 
 export type MutationTriggerAlbumEnrichmentArgs = {
@@ -1222,6 +1228,16 @@ export enum RecommendationSort {
 export type ReorderCollectionAlbumsPayload = {
   __typename?: 'ReorderCollectionAlbumsPayload';
   ids: Array<Scalars['String']['output']>;
+};
+
+export type RollbackSyncJobResult = {
+  __typename?: 'RollbackSyncJobResult';
+  albumsDeleted: Scalars['Int']['output'];
+  artistsDeleted: Scalars['Int']['output'];
+  dryRun: Scalars['Boolean']['output'];
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+  syncJobId: Scalars['UUID']['output'];
 };
 
 export type SearchInput = {
@@ -2715,6 +2731,30 @@ export type AlbumsByJobIdQuery = {
   }>;
 };
 
+export type GetLatestReleasesQueryVariables = Exact<{
+  source?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortOrder?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetLatestReleasesQuery = {
+  __typename?: 'Query';
+  searchAlbums: Array<{
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    releaseDate?: Date | null;
+    coverArtUrl?: string | null;
+    createdAt: Date;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      position: number;
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  }>;
+};
+
 export type RecommendationFieldsFragment = {
   __typename?: 'Recommendation';
   id: string;
@@ -3311,6 +3351,24 @@ export type GetSyncJobByJobIdQuery = {
     metadata?: any | null;
     triggeredBy?: string | null;
   } | null;
+};
+
+export type RollbackSyncJobMutationVariables = Exact<{
+  syncJobId: Scalars['UUID']['input'];
+  dryRun?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+export type RollbackSyncJobMutation = {
+  __typename?: 'Mutation';
+  rollbackSyncJob: {
+    __typename?: 'RollbackSyncJobResult';
+    success: boolean;
+    syncJobId: string;
+    albumsDeleted: number;
+    artistsDeleted: number;
+    message: string;
+    dryRun: boolean;
+  };
 };
 
 export type GetTopRecommendedAlbumsQueryVariables = Exact<{
@@ -6165,6 +6223,108 @@ useInfiniteAlbumsByJobIdQuery.getKey = (
   variables: AlbumsByJobIdQueryVariables
 ) => ['AlbumsByJobId.infinite', variables];
 
+export const GetLatestReleasesDocument = `
+    query GetLatestReleases($source: String = "SPOTIFY", $sortBy: String = "createdAt", $sortOrder: String = "desc", $limit: Int = 200) {
+  searchAlbums(
+    source: $source
+    sortBy: $sortBy
+    sortOrder: $sortOrder
+    limit: $limit
+  ) {
+    id
+    title
+    releaseDate
+    coverArtUrl
+    createdAt
+    artists {
+      artist {
+        id
+        name
+      }
+      position
+    }
+  }
+}
+    `;
+
+export const useGetLatestReleasesQuery = <
+  TData = GetLatestReleasesQuery,
+  TError = unknown,
+>(
+  variables?: GetLatestReleasesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetLatestReleasesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetLatestReleasesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetLatestReleasesQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetLatestReleases']
+        : ['GetLatestReleases', variables],
+    queryFn: fetcher<GetLatestReleasesQuery, GetLatestReleasesQueryVariables>(
+      GetLatestReleasesDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetLatestReleasesQuery.getKey = (
+  variables?: GetLatestReleasesQueryVariables
+) =>
+  variables === undefined
+    ? ['GetLatestReleases']
+    : ['GetLatestReleases', variables];
+
+export const useInfiniteGetLatestReleasesQuery = <
+  TData = InfiniteData<GetLatestReleasesQuery>,
+  TError = unknown,
+>(
+  variables: GetLatestReleasesQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetLatestReleasesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetLatestReleasesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetLatestReleasesQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetLatestReleases.infinite']
+            : ['GetLatestReleases.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetLatestReleasesQuery, GetLatestReleasesQueryVariables>(
+            GetLatestReleasesDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetLatestReleasesQuery.getKey = (
+  variables?: GetLatestReleasesQueryVariables
+) =>
+  variables === undefined
+    ? ['GetLatestReleases.infinite']
+    : ['GetLatestReleases.infinite', variables];
+
 export const GetRecommendationFeedDocument = `
     query GetRecommendationFeed($cursor: String, $limit: Int) {
   recommendationFeed(cursor: $cursor, limit: $limit) {
@@ -7668,6 +7828,48 @@ export const useInfiniteGetSyncJobByJobIdQuery = <
 useInfiniteGetSyncJobByJobIdQuery.getKey = (
   variables: GetSyncJobByJobIdQueryVariables
 ) => ['GetSyncJobByJobId.infinite', variables];
+
+export const RollbackSyncJobDocument = `
+    mutation RollbackSyncJob($syncJobId: UUID!, $dryRun: Boolean = true) {
+  rollbackSyncJob(syncJobId: $syncJobId, dryRun: $dryRun) {
+    success
+    syncJobId
+    albumsDeleted
+    artistsDeleted
+    message
+    dryRun
+  }
+}
+    `;
+
+export const useRollbackSyncJobMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    RollbackSyncJobMutation,
+    TError,
+    RollbackSyncJobMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    RollbackSyncJobMutation,
+    TError,
+    RollbackSyncJobMutationVariables,
+    TContext
+  >({
+    mutationKey: ['RollbackSyncJob'],
+    mutationFn: (variables?: RollbackSyncJobMutationVariables) =>
+      fetcher<RollbackSyncJobMutation, RollbackSyncJobMutationVariables>(
+        RollbackSyncJobDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useRollbackSyncJobMutation.getKey = () => ['RollbackSyncJob'];
 
 export const GetTopRecommendedAlbumsDocument = `
     query GetTopRecommendedAlbums($limit: Int) {

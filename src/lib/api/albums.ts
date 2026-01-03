@@ -17,12 +17,14 @@ const db = new Client({
   consumerSecret: process.env.CONSUMER_SECRET,
 }).database();
 
-function isUuid(id: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    id
-  );
-}
-
+/**
+ * Get album details from local database or external sources.
+ *
+ * IMPORTANT: Source inference is DEPRECATED. Always pass explicit source:
+ * - No source or 'local': Check local database first (default behavior)
+ * - 'musicbrainz': Fetch from MusicBrainz API
+ * - 'discogs': Fetch from Discogs API
+ */
 export async function getAlbumDetails(
   id: string,
   options?: { source?: 'musicbrainz' | 'discogs' | 'local' }
@@ -31,12 +33,15 @@ export async function getAlbumDetails(
     throw new Error('Album ID is required');
   }
 
-  console.log(`Fetching album details for ID: ${id}`);
+  console.log(
+    `Fetching album details for ID: ${id}, source: ${options?.source || 'auto (local first)'}`
+  );
 
-  const preferredSource = options?.source;
+  const explicitSource = options?.source;
 
-  // Local database path (authoritative when available)
-  if (preferredSource === 'local') {
+  // ALWAYS check local database first when no explicit source is provided
+  // This ensures Spotify-sourced albums (which have UUIDs) are found
+  if (!explicitSource || explicitSource === 'local') {
     const dbAlbum = await prisma.album.findUnique({
       where: { id },
       include: {
@@ -50,55 +55,62 @@ export async function getAlbumDetails(
       },
     });
 
-    if (!dbAlbum) {
-      throw new Error('Album not found');
+    if (dbAlbum) {
+      const year = dbAlbum.releaseDate
+        ? new Date(dbAlbum.releaseDate).getFullYear()
+        : undefined;
+
+      const album: Album = {
+        id: dbAlbum.id,
+        title: dbAlbum.title,
+        source: 'local',
+        artists:
+          dbAlbum.artists?.map(a => ({
+            id: a.artist.id,
+            name: a.artist.name,
+          })) || [],
+        subtitle: dbAlbum.releaseType || undefined,
+        releaseDate: dbAlbum.releaseDate
+          ? new Date(dbAlbum.releaseDate).toISOString()
+          : undefined,
+        year,
+        genre: Array.isArray(dbAlbum.genres) ? dbAlbum.genres : [],
+        label: dbAlbum.label || undefined,
+        image: {
+          url: dbAlbum.coverArtUrl || '',
+          width: 1200,
+          height: 1200,
+          alt: dbAlbum.title,
+        },
+        tracks:
+          dbAlbum.tracks?.map(t => ({
+            id: t.id,
+            title: t.title,
+            duration: Math.max(0, Math.floor((t.durationMs || 0) / 1000)),
+            trackNumber: t.trackNumber,
+          })) || [],
+        metadata: {
+          format: dbAlbum.releaseType || undefined,
+          totalDuration: dbAlbum.durationMs || undefined,
+          numberOfTracks: dbAlbum.trackCount || undefined,
+        },
+      };
+
+      return album;
     }
 
-    const year = dbAlbum.releaseDate
-      ? new Date(dbAlbum.releaseDate).getFullYear()
-      : undefined;
-
-    const album: Album = {
-      id: dbAlbum.id,
-      title: dbAlbum.title,
-      source: 'local',
-      artists:
-        dbAlbum.artists?.map(a => ({
-          id: a.artist.id,
-          name: a.artist.name,
-        })) || [],
-      subtitle: dbAlbum.releaseType || undefined,
-      releaseDate: dbAlbum.releaseDate
-        ? new Date(dbAlbum.releaseDate).toISOString()
-        : undefined,
-      year,
-      genre: Array.isArray(dbAlbum.genres) ? dbAlbum.genres : [],
-      label: dbAlbum.label || undefined,
-      image: {
-        url: dbAlbum.coverArtUrl || '',
-        width: 1200,
-        height: 1200,
-        alt: dbAlbum.title,
-      },
-      tracks:
-        dbAlbum.tracks?.map(t => ({
-          id: t.id,
-          title: t.title,
-          duration: Math.max(0, Math.floor((t.durationMs || 0) / 1000)),
-          trackNumber: t.trackNumber,
-        })) || [],
-      metadata: {
-        format: dbAlbum.releaseType || undefined,
-        totalDuration: dbAlbum.durationMs || undefined,
-        numberOfTracks: dbAlbum.trackCount || undefined,
-      },
-    };
-
-    return album;
+    // If explicit source is 'local' and not found, throw
+    if (explicitSource === 'local') {
+      throw new Error('Album not found in local database');
+    }
+    // If no explicit source and not found locally, throw (no more inference)
+    throw new Error(
+      'Album not found. Please specify a source (?source=local|musicbrainz|discogs)'
+    );
   }
 
-  // MusicBrainz Release Group path (explicit or UUID)
-  if (preferredSource === 'musicbrainz' || isUuid(id)) {
+  // MusicBrainz Release Group path - ONLY when explicitly requested
+  if (explicitSource === 'musicbrainz') {
     try {
       const mbQueued = getQueuedMusicBrainzService();
       const mb = await mbQueued.getReleaseGroup(id, [
@@ -121,15 +133,23 @@ export async function getAlbumDetails(
         title: mb.title,
         source: 'musicbrainz',
         artists:
-          mb['artist-credit']?.map((ac: any) => ({
-            id: ac.artist?.id || '',
-            name: ac.artist?.name || ac.name || 'Unknown Artist',
-          })) || [],
+          mb['artist-credit']?.map((ac: unknown) => {
+            const credit = ac as {
+              artist?: { id?: string; name?: string };
+              name?: string;
+            };
+            return {
+              id: credit.artist?.id || '',
+              name: credit.artist?.name || credit.name || 'Unknown Artist',
+            };
+          }) || [],
         subtitle: mb['primary-type'] || undefined,
         releaseDate: mb['first-release-date'] || undefined,
         year,
-        genre: Array.isArray((mb as any).tags)
-          ? (mb as any).tags.map((t: any) => t.name).filter(Boolean)
+        genre: Array.isArray((mb as { tags?: { name: string }[] }).tags)
+          ? (mb as { tags: { name: string }[] }).tags
+              .map(t => t.name)
+              .filter(Boolean)
           : [],
         label: undefined,
         image: {
@@ -145,32 +165,45 @@ export async function getAlbumDetails(
       };
 
       // Try to populate tracks from a representative release in the group
-      // Prefer standard editions over deluxe/special editions
-      const releases: any[] = Array.isArray((mb as any).releases)
-        ? (mb as any).releases
+      const releases: {
+        id?: string;
+        status?: string;
+        title?: string;
+        'track-count'?: number;
+      }[] = Array.isArray((mb as { releases?: unknown[] }).releases)
+        ? (
+            mb as {
+              releases: {
+                id?: string;
+                status?: string;
+                title?: string;
+                'track-count'?: number;
+              }[];
+            }
+          ).releases
         : [];
 
-      // Filter to official releases first
       const officialReleases = releases.filter(
         r => (r.status || '').toLowerCase() === 'official'
       );
-      const releasesToConsider = officialReleases.length > 0 ? officialReleases : releases;
+      const releasesToConsider =
+        officialReleases.length > 0 ? officialReleases : releases;
 
-      // Sort by track count (prefer fewer tracks = standard edition)
-      // Also avoid releases with "deluxe", "special", "expanded" in the title
-      const representativeRelease = releasesToConsider
-        .map((r: any) => {
-          const title = (r.title || '').toLowerCase();
-          const isDeluxe = /deluxe|special|expanded|limited|collector|anniversary|remaster|bonus/i.test(title);
-          const trackCount = r['track-count'] || 9999; // Default high if unknown
-          return { release: r, isDeluxe, trackCount };
-        })
-        .sort((a: any, b: any) => {
-          // Prefer non-deluxe
-          if (a.isDeluxe !== b.isDeluxe) return a.isDeluxe ? 1 : -1;
-          // Then prefer fewer tracks
-          return a.trackCount - b.trackCount;
-        })[0]?.release || releases[0];
+      const representativeRelease =
+        releasesToConsider
+          .map(r => {
+            const title = (r.title || '').toLowerCase();
+            const isDeluxe =
+              /deluxe|special|expanded|limited|collector|anniversary|remaster|bonus/i.test(
+                title
+              );
+            const trackCount = r['track-count'] || 9999;
+            return { release: r, isDeluxe, trackCount };
+          })
+          .sort((a, b) => {
+            if (a.isDeluxe !== b.isDeluxe) return a.isDeluxe ? 1 : -1;
+            return a.trackCount - b.trackCount;
+          })[0]?.release || releases[0];
 
       if (representativeRelease?.id) {
         try {
@@ -179,8 +212,20 @@ export async function getAlbumDetails(
             ['recordings']
           );
 
-          const media: any[] = Array.isArray((releaseWithTracks as any).media)
-            ? (releaseWithTracks as any).media
+          type MBTrack = {
+            id?: string;
+            title?: string;
+            length?: number;
+            recording?: { id?: string; title?: string; length?: number };
+          };
+          type MBMedia = {
+            position?: number;
+            tracks?: MBTrack[];
+          };
+
+          const releaseData = releaseWithTracks as { media?: MBMedia[] };
+          const media: MBMedia[] = Array.isArray(releaseData.media)
+            ? releaseData.media
             : [];
 
           const orderedTracks: {
@@ -190,12 +235,12 @@ export async function getAlbumDetails(
             trackNumber: number;
           }[] = [];
 
-          // Only show tracks from disc 1 to avoid bonus/alternate versions
-          // Multi-disc albums that are intentionally multi-disc will have disc 1 as the main content
-          const primaryDisc = media.find((m: any) => m.position === 1) || media[0];
+          const primaryDisc = media.find(m => m.position === 1) || media[0];
 
           if (primaryDisc) {
-            const tracks: any[] = Array.isArray(primaryDisc.tracks) ? primaryDisc.tracks : [];
+            const tracks = Array.isArray(primaryDisc.tracks)
+              ? primaryDisc.tracks
+              : [];
             let seq = 1;
             for (const t of tracks) {
               const lenMs =
@@ -216,7 +261,6 @@ export async function getAlbumDetails(
             }
           }
 
-          // Fallback: if media/tracks not present, keep existing empty list
           if (orderedTracks.length > 0) {
             album.tracks = orderedTracks;
           }
@@ -227,59 +271,32 @@ export async function getAlbumDetails(
 
       return album;
     } catch (err) {
-      console.warn(
-        'MusicBrainz release-group fetch failed, falling back:',
-        err
-      );
-      // Fall through to Discogs path as ultimate fallback
+      console.error('MusicBrainz release-group fetch failed:', err);
+      throw new Error('Album not found in MusicBrainz');
     }
   }
 
-  // Discogs path (explicit or numeric)
-  if (preferredSource === 'discogs' || /^\d+$/.test(id)) {
-    // Try to get the master release details first
+  // Discogs path - ONLY when explicitly requested
+  if (explicitSource === 'discogs') {
     try {
       const albumDetails: DiscogsMaster = await db.getMaster(id);
       console.log(`Found master release: ${albumDetails.title}`);
-
-      // Use the mapper to convert DiscogsMaster to Album
-      const album = mapDiscogsMasterToAlbum(albumDetails);
-      return album;
+      return mapDiscogsMasterToAlbum(albumDetails);
     } catch {
       console.log(`Not a master release, trying as regular release`);
-
-      // If not a master, try as a regular release
       try {
         const releaseDetails: DiscogsRelease = await db.getRelease(id);
         console.log(`Found regular release: ${releaseDetails.title}`);
-
-        // Use the mapper to convert DiscogsRelease to Album
-        const album = mapDiscogsReleaseToAlbum(releaseDetails);
-        return album;
+        return mapDiscogsReleaseToAlbum(releaseDetails);
       } catch (releaseError) {
         console.error('Error fetching release details:', releaseError);
-        throw new Error('Album not found');
+        throw new Error('Album not found in Discogs');
       }
     }
   }
 
-  // Fallback detection: only attempt Discogs when the ID is numeric
-  if (/^\d+$/.test(id)) {
-    try {
-      const albumDetails: DiscogsMaster = await db.getMaster(id);
-      const album = mapDiscogsMasterToAlbum(albumDetails);
-      return album;
-    } catch {
-      try {
-        const releaseDetails: DiscogsRelease = await db.getRelease(id);
-        const album = mapDiscogsReleaseToAlbum(releaseDetails);
-        return album;
-      } catch (releaseError) {
-        console.error('Error fetching release details:', releaseError);
-        throw new Error('Album not found');
-      }
-    }
-  }
-
-  throw new Error('Album not found');
+  // Should not reach here, but just in case
+  throw new Error(
+    'Album not found. Please specify a source (?source=local|musicbrainz|discogs)'
+  );
 }

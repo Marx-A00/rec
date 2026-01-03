@@ -80,3 +80,15 @@ query GetSyncJobByJobId($jobId: String!) {
     triggeredBy
   }
 }
+
+# Rollback a sync job (delete all albums/artists created by it)
+mutation RollbackSyncJob($syncJobId: UUID!, $dryRun: Boolean = true) {
+  rollbackSyncJob(syncJobId: $syncJobId, dryRun: $dryRun) {
+    success
+    syncJobId
+    albumsDeleted
+    artistsDeleted
+    message
+    dryRun
+  }
+}

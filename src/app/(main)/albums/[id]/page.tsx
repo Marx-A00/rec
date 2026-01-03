@@ -34,36 +34,22 @@ export default async function AlbumDetailsPage({
   const { id: albumId } = paramsResult.data;
 
   // Fetch album data server-side
+  // Source MUST be passed explicitly via ?source= query param
+  // No inference - always check local DB first, then use explicit source for external APIs
   let album;
   try {
-    const preferredSource = (rawSearch as any)?.source as
+    const source = (rawSearch as { source?: string })?.source as
       | 'musicbrainz'
       | 'discogs'
       | 'local'
       | undefined;
-    const isUuid =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        albumId
-      );
-    const isNumeric = /^\d+$/.test(albumId);
-    const inferredSource = isUuid
-      ? 'musicbrainz'
-      : isNumeric
-        ? 'discogs'
-        : undefined;
-    const source = preferredSource || inferredSource;
-    try {
-      console.log('[AlbumDetailsPage] Fetching album', {
-        albumId,
-        preferredSource: preferredSource || null,
-        inferredSource: inferredSource || null,
-        finalSource: source || null,
-      });
-    } catch {}
-    album = await getAlbumDetails(
+
+    console.log('[AlbumDetailsPage] Fetching album', {
       albumId,
-      source ? ({ source } as any) : undefined
-    );
+      source: source || 'local (default)',
+    });
+
+    album = await getAlbumDetails(albumId, source ? { source } : undefined);
   } catch (error) {
     console.error('Error fetching album:', error);
     notFound();
@@ -98,7 +84,10 @@ export default async function AlbumDetailsPage({
         {/* Album Info */}
         <div className='lg:col-span-2 space-y-6'>
           <div>
-            <h1 data-tour-step="album-header" className='text-4xl font-bold mb-2 text-white'>
+            <h1
+              data-tour-step='album-header'
+              className='text-4xl font-bold mb-2 text-white'
+            >
               {album.title}
             </h1>
             <p className='text-xl text-zinc-300 mb-4'>{album.subtitle}</p>

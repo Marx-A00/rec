@@ -1,0 +1,27 @@
+# Query for fetching latest releases (albums from Spotify sync)
+query GetLatestReleases(
+  $source: String = "SPOTIFY"
+  $sortBy: String = "createdAt"
+  $sortOrder: String = "desc"
+  $limit: Int = 200
+) {
+  searchAlbums(
+    source: $source
+    sortBy: $sortBy
+    sortOrder: $sortOrder
+    limit: $limit
+  ) {
+    id
+    title
+    releaseDate
+    coverArtUrl
+    createdAt
+    artists {
+      artist {
+        id
+        name
+      }
+      position
+    }
+  }
+}

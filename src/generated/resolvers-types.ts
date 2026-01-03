@@ -592,6 +592,7 @@ export type Mutation = {
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
+  rollbackSyncJob: RollbackSyncJobResult;
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
   triggerSpotifySync: SpotifySyncResult;
@@ -707,6 +708,11 @@ export type MutationResetArtistEnrichmentArgs = {
 
 export type MutationRetryJobArgs = {
   jobId: Scalars['String']['input'];
+};
+
+export type MutationRollbackSyncJobArgs = {
+  dryRun?: InputMaybe<Scalars['Boolean']['input']>;
+  syncJobId: Scalars['UUID']['input'];
 };
 
 export type MutationTriggerAlbumEnrichmentArgs = {
@@ -1196,6 +1202,16 @@ export enum RecommendationSort {
 export type ReorderCollectionAlbumsPayload = {
   __typename?: 'ReorderCollectionAlbumsPayload';
   ids: Array<Scalars['String']['output']>;
+};
+
+export type RollbackSyncJobResult = {
+  __typename?: 'RollbackSyncJobResult';
+  albumsDeleted: Scalars['Int']['output'];
+  artistsDeleted: Scalars['Int']['output'];
+  dryRun: Scalars['Boolean']['output'];
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+  syncJobId: Scalars['UUID']['output'];
 };
 
 export type SearchInput = {
@@ -1846,6 +1862,7 @@ export type ResolversTypes = ResolversObject<{
   RecommendationInput: RecommendationInput;
   RecommendationSort: RecommendationSort;
   ReorderCollectionAlbumsPayload: ResolverTypeWrapper<ReorderCollectionAlbumsPayload>;
+  RollbackSyncJobResult: ResolverTypeWrapper<RollbackSyncJobResult>;
   SearchInput: SearchInput;
   SearchMode: SearchMode;
   SearchResult: ResolverTypeWrapper<
@@ -1958,6 +1975,7 @@ export type ResolversParentTypes = ResolversObject<{
   RecommendationFeed: RecommendationFeed;
   RecommendationInput: RecommendationInput;
   ReorderCollectionAlbumsPayload: ReorderCollectionAlbumsPayload;
+  RollbackSyncJobResult: RollbackSyncJobResult;
   SearchInput: SearchInput;
   SearchResult: ResolversUnionTypes<ResolversParentTypes>['SearchResult'];
   SearchResults: SearchResults;
@@ -2989,6 +3007,12 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationRetryJobArgs, 'jobId'>
   >;
+  rollbackSyncJob?: Resolver<
+    ResolversTypes['RollbackSyncJobResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationRollbackSyncJobArgs, 'dryRun' | 'syncJobId'>
+  >;
   triggerAlbumEnrichment?: Resolver<
     ResolversTypes['EnrichmentResult'],
     ParentType,
@@ -3591,6 +3615,20 @@ export type ReorderCollectionAlbumsPayloadResolvers<
     ResolversParentTypes['ReorderCollectionAlbumsPayload'] = ResolversParentTypes['ReorderCollectionAlbumsPayload'],
 > = ResolversObject<{
   ids?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type RollbackSyncJobResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['RollbackSyncJobResult'] = ResolversParentTypes['RollbackSyncJobResult'],
+> = ResolversObject<{
+  albumsDeleted?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  artistsDeleted?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  dryRun?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  syncJobId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -4391,6 +4429,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Recommendation?: RecommendationResolvers<ContextType>;
   RecommendationFeed?: RecommendationFeedResolvers<ContextType>;
   ReorderCollectionAlbumsPayload?: ReorderCollectionAlbumsPayloadResolvers<ContextType>;
+  RollbackSyncJobResult?: RollbackSyncJobResultResolvers<ContextType>;
   SearchResult?: SearchResultResolvers<ContextType>;
   SearchResults?: SearchResultsResolvers<ContextType>;
   SourceStat?: SourceStatResolvers<ContextType>;

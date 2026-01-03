@@ -1030,6 +1030,17 @@ input SyncJobsInput {
   offset: Int = 0
 }
 
+# Rollback result for sync job deletion
+type RollbackSyncJobResult {
+  success: Boolean!
+  syncJobId: UUID!
+  albumsDeleted: Int!
+  artistsDeleted: Int!
+  message: String!
+  # Dry run returns what would be deleted without actually deleting
+  dryRun: Boolean!
+}
+
 # =============================================
 # ROOT QUERY TYPE
 # =============================================
@@ -1210,6 +1221,12 @@ type Mutation {
 
   # Spotify Sync
   triggerSpotifySync(type: SpotifySyncType!): SpotifySyncResult!
+
+  # Sync Job Management
+  rollbackSyncJob(
+    syncJobId: UUID!
+    dryRun: Boolean = true
+  ): RollbackSyncJobResult!
 
   # Alert Configuration
   updateAlertThresholds(input: AlertThresholdsInput!): AlertThresholds!
