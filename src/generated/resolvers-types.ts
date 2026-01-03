@@ -797,7 +797,9 @@ export type MutationUpdateUserRoleArgs = {
 export type MutationUpdateUserSettingsArgs = {
   language?: InputMaybe<Scalars['String']['input']>;
   profileVisibility?: InputMaybe<Scalars['String']['input']>;
+  showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showCollections?: InputMaybe<Scalars['Boolean']['input']>;
+  showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showRecentActivity?: InputMaybe<Scalars['Boolean']['input']>;
   theme?: InputMaybe<Scalars['String']['input']>;
 };
@@ -1634,7 +1636,9 @@ export type UserSettings = {
   language: Scalars['String']['output'];
   profileVisibility: Scalars['String']['output'];
   recommendationAlerts: Scalars['Boolean']['output'];
+  showCollectionAddsInFeed: Scalars['Boolean']['output'];
   showCollections: Scalars['Boolean']['output'];
+  showListenLaterInFeed: Scalars['Boolean']['output'];
   showRecentActivity: Scalars['Boolean']['output'];
   theme: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
@@ -4320,7 +4324,17 @@ export type UserSettingsResolvers<
     ParentType,
     ContextType
   >;
+  showCollectionAddsInFeed?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
   showCollections?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
+  showListenLaterInFeed?: Resolver<
     ResolversTypes['Boolean'],
     ParentType,
     ContextType

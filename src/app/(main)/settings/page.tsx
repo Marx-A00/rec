@@ -246,12 +246,7 @@ export default function SettingsPage() {
             onSave={handlePreferencesSave}
           />
 
-          <PrivacyTab
-            preferences={preferences}
-            setPreferences={setPreferences}
-            isLoading={isLoading}
-            onSave={handlePreferencesSave}
-          />
+          <PrivacyTab />
 
           <AccountTab
             user={user}

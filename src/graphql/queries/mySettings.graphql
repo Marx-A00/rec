@@ -1,0 +1,21 @@
+# Query to get the current user's settings
+query GetMySettings {
+  mySettings {
+    id
+    userId
+    theme
+    language
+    profileVisibility
+    showRecentActivity
+    showCollections
+    showListenLaterInFeed
+    showCollectionAddsInFeed
+    emailNotifications
+    recommendationAlerts
+    followAlerts
+    defaultCollectionView
+    autoplayPreviews
+    createdAt
+    updatedAt
+  }
+}

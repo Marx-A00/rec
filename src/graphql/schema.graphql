@@ -277,6 +277,8 @@ type UserSettings {
   profileVisibility: String!
   showRecentActivity: Boolean!
   showCollections: Boolean!
+  showListenLaterInFeed: Boolean!
+  showCollectionAddsInFeed: Boolean!
 
   # Notification preferences
   emailNotifications: Boolean!
@@ -1300,6 +1302,8 @@ type Mutation {
     profileVisibility: String
     showRecentActivity: Boolean
     showCollections: Boolean
+    showListenLaterInFeed: Boolean
+    showCollectionAddsInFeed: Boolean
   ): UserSettings!
 
   # Music Database enrichment mutations

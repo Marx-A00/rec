@@ -2100,10 +2100,12 @@ export const mutationResolvers: MutationResolvers = {
       profileVisibility,
       showRecentActivity,
       showCollections,
+      showListenLaterInFeed,
+      showCollectionAddsInFeed,
     } = args;
 
     try {
-      const updateData: any = {};
+      const updateData: Record<string, string | boolean> = {};
       if (theme !== undefined) updateData.theme = theme;
       if (language !== undefined) updateData.language = language;
       if (profileVisibility !== undefined)
@@ -2112,6 +2114,10 @@ export const mutationResolvers: MutationResolvers = {
         updateData.showRecentActivity = showRecentActivity;
       if (showCollections !== undefined)
         updateData.showCollections = showCollections;
+      if (showListenLaterInFeed !== undefined)
+        updateData.showListenLaterInFeed = showListenLaterInFeed;
+      if (showCollectionAddsInFeed !== undefined)
+        updateData.showCollectionAddsInFeed = showCollectionAddsInFeed;
 
       const settings = await prisma.userSettings.upsert({
         where: { userId: user.id },
@@ -2123,6 +2129,8 @@ export const mutationResolvers: MutationResolvers = {
           profileVisibility: profileVisibility || 'public',
           showRecentActivity: showRecentActivity ?? true,
           showCollections: showCollections ?? true,
+          showListenLaterInFeed: showListenLaterInFeed ?? true,
+          showCollectionAddsInFeed: showCollectionAddsInFeed ?? true,
           emailNotifications: true,
           recommendationAlerts: true,
           followAlerts: true,

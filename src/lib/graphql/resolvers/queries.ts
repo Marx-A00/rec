@@ -1206,7 +1206,43 @@ export const queryResolvers: QueryResolvers = {
         };
       }
 
-      const activities: any[] = [];
+      // Fetch privacy settings for all followed users
+      const followedUserSettings = await prisma.userSettings.findMany({
+        where: { userId: { in: followedUserIds } },
+        select: {
+          userId: true,
+          showRecentActivity: true,
+          showCollections: true,
+          showListenLaterInFeed: true,
+          showCollectionAddsInFeed: true,
+        },
+      });
+
+      // Create a settings map with defaults for users without settings
+      const settingsMap = new Map(followedUserSettings.map(s => [s.userId, s]));
+      const getSettings = (userId: string) =>
+        settingsMap.get(userId) || {
+          showRecentActivity: true,
+          showCollections: true,
+          showListenLaterInFeed: true,
+          showCollectionAddsInFeed: true,
+        };
+
+      const activities: Array<{
+        id: string;
+        type: string;
+        createdAt: Date;
+        actor: { id: string; name: string | null; image: string | null };
+        targetUser: {
+          id: string;
+          name: string | null;
+          image: string | null;
+        } | null;
+        album: unknown;
+        recommendation: unknown;
+        collection: unknown;
+        metadata: unknown;
+      }> = [];
       const cursorDate = cursor ? new Date(cursor) : null;
       const cursorCondition = cursorDate
         ? { createdAt: { lt: cursorDate } }
@@ -1228,6 +1264,10 @@ export const queryResolvers: QueryResolvers = {
         });
 
         followActivities.forEach(follow => {
+          // Check if the user allows their activity to be shown
+          const settings = getSettings(follow.followerId);
+          if (!settings.showRecentActivity) return;
+
           activities.push({
             id: `follow-${follow.followerId}-${follow.followedId}`,
             type: 'FOLLOW',
@@ -1275,6 +1315,10 @@ export const queryResolvers: QueryResolvers = {
         });
 
         recommendations.forEach(rec => {
+          // Check if the user allows their activity to be shown
+          const settings = getSettings(rec.userId);
+          if (!settings.showRecentActivity) return;
+
           activities.push({
             id: `rec-${rec.id}`,
             type: 'RECOMMENDATION',
@@ -1325,6 +1369,23 @@ export const queryResolvers: QueryResolvers = {
         });
 
         collectionAdds.forEach(ca => {
+          const settings = getSettings(ca.collection.userId);
+
+          // Check master activity switch
+          if (!settings.showRecentActivity) return;
+
+          // Check collections visibility
+          if (!settings.showCollections) return;
+
+          // Check if it's a private collection (allow only "My Collection")
+          if (!ca.collection.isPublic && ca.collection.name !== 'My Collection')
+            return;
+
+          // Check specific feed visibility settings
+          const isListenLater = ca.collection.name === 'Listen Later';
+          if (isListenLater && !settings.showListenLaterInFeed) return;
+          if (!isListenLater && !settings.showCollectionAddsInFeed) return;
+
           activities.push({
             id: `collection-${ca.id}`,
             type: 'COLLECTION_ADD',

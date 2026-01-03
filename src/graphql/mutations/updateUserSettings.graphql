@@ -4,6 +4,8 @@ mutation UpdateUserSettings(
   $profileVisibility: String
   $showRecentActivity: Boolean
   $showCollections: Boolean
+  $showListenLaterInFeed: Boolean
+  $showCollectionAddsInFeed: Boolean
 ) {
   updateUserSettings(
     theme: $theme
@@ -11,6 +13,8 @@ mutation UpdateUserSettings(
     profileVisibility: $profileVisibility
     showRecentActivity: $showRecentActivity
     showCollections: $showCollections
+    showListenLaterInFeed: $showListenLaterInFeed
+    showCollectionAddsInFeed: $showCollectionAddsInFeed
   ) {
     id
     userId
@@ -19,6 +23,8 @@ mutation UpdateUserSettings(
     profileVisibility
     showRecentActivity
     showCollections
+    showListenLaterInFeed
+    showCollectionAddsInFeed
     emailNotifications
     recommendationAlerts
     followAlerts

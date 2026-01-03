@@ -823,7 +823,9 @@ export type MutationUpdateUserRoleArgs = {
 export type MutationUpdateUserSettingsArgs = {
   language?: InputMaybe<Scalars['String']['input']>;
   profileVisibility?: InputMaybe<Scalars['String']['input']>;
+  showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showCollections?: InputMaybe<Scalars['Boolean']['input']>;
+  showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showRecentActivity?: InputMaybe<Scalars['Boolean']['input']>;
   theme?: InputMaybe<Scalars['String']['input']>;
 };
@@ -1660,7 +1662,9 @@ export type UserSettings = {
   language: Scalars['String']['output'];
   profileVisibility: Scalars['String']['output'];
   recommendationAlerts: Scalars['Boolean']['output'];
+  showCollectionAddsInFeed: Scalars['Boolean']['output'];
   showCollections: Scalars['Boolean']['output'];
+  showListenLaterInFeed: Scalars['Boolean']['output'];
   showRecentActivity: Scalars['Boolean']['output'];
   theme: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
@@ -1844,6 +1848,8 @@ export type UpdateUserSettingsMutationVariables = Exact<{
   profileVisibility?: InputMaybe<Scalars['String']['input']>;
   showRecentActivity?: InputMaybe<Scalars['Boolean']['input']>;
   showCollections?: InputMaybe<Scalars['Boolean']['input']>;
+  showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
+  showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 export type UpdateUserSettingsMutation = {
@@ -1857,6 +1863,8 @@ export type UpdateUserSettingsMutation = {
     profileVisibility: string;
     showRecentActivity: boolean;
     showCollections: boolean;
+    showListenLaterInFeed: boolean;
+    showCollectionAddsInFeed: boolean;
     emailNotifications: boolean;
     recommendationAlerts: boolean;
     followAlerts: boolean;
@@ -2753,6 +2761,31 @@ export type GetLatestReleasesQuery = {
       artist: { __typename?: 'Artist'; id: string; name: string };
     }>;
   }>;
+};
+
+export type GetMySettingsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type GetMySettingsQuery = {
+  __typename?: 'Query';
+  mySettings?: {
+    __typename?: 'UserSettings';
+    id: string;
+    userId: string;
+    theme: string;
+    language: string;
+    profileVisibility: string;
+    showRecentActivity: boolean;
+    showCollections: boolean;
+    showListenLaterInFeed: boolean;
+    showCollectionAddsInFeed: boolean;
+    emailNotifications: boolean;
+    recommendationAlerts: boolean;
+    followAlerts: boolean;
+    defaultCollectionView: string;
+    autoplayPreviews: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
 };
 
 export type RecommendationFieldsFragment = {
@@ -3984,13 +4017,15 @@ export const useUpdateProfileMutation = <TError = unknown, TContext = unknown>(
 useUpdateProfileMutation.getKey = () => ['UpdateProfile'];
 
 export const UpdateUserSettingsDocument = `
-    mutation UpdateUserSettings($theme: String, $language: String, $profileVisibility: String, $showRecentActivity: Boolean, $showCollections: Boolean) {
+    mutation UpdateUserSettings($theme: String, $language: String, $profileVisibility: String, $showRecentActivity: Boolean, $showCollections: Boolean, $showListenLaterInFeed: Boolean, $showCollectionAddsInFeed: Boolean) {
   updateUserSettings(
     theme: $theme
     language: $language
     profileVisibility: $profileVisibility
     showRecentActivity: $showRecentActivity
     showCollections: $showCollections
+    showListenLaterInFeed: $showListenLaterInFeed
+    showCollectionAddsInFeed: $showCollectionAddsInFeed
   ) {
     id
     userId
@@ -3999,6 +4034,8 @@ export const UpdateUserSettingsDocument = `
     profileVisibility
     showRecentActivity
     showCollections
+    showListenLaterInFeed
+    showCollectionAddsInFeed
     emailNotifications
     recommendationAlerts
     followAlerts
@@ -6324,6 +6361,99 @@ useInfiniteGetLatestReleasesQuery.getKey = (
   variables === undefined
     ? ['GetLatestReleases.infinite']
     : ['GetLatestReleases.infinite', variables];
+
+export const GetMySettingsDocument = `
+    query GetMySettings {
+  mySettings {
+    id
+    userId
+    theme
+    language
+    profileVisibility
+    showRecentActivity
+    showCollections
+    showListenLaterInFeed
+    showCollectionAddsInFeed
+    emailNotifications
+    recommendationAlerts
+    followAlerts
+    defaultCollectionView
+    autoplayPreviews
+    createdAt
+    updatedAt
+  }
+}
+    `;
+
+export const useGetMySettingsQuery = <
+  TData = GetMySettingsQuery,
+  TError = unknown,
+>(
+  variables?: GetMySettingsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetMySettingsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<GetMySettingsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<GetMySettingsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetMySettings']
+        : ['GetMySettings', variables],
+    queryFn: fetcher<GetMySettingsQuery, GetMySettingsQueryVariables>(
+      GetMySettingsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetMySettingsQuery.getKey = (variables?: GetMySettingsQueryVariables) =>
+  variables === undefined ? ['GetMySettings'] : ['GetMySettings', variables];
+
+export const useInfiniteGetMySettingsQuery = <
+  TData = InfiniteData<GetMySettingsQuery>,
+  TError = unknown,
+>(
+  variables: GetMySettingsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetMySettingsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetMySettingsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetMySettingsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetMySettings.infinite']
+            : ['GetMySettings.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetMySettingsQuery, GetMySettingsQueryVariables>(
+            GetMySettingsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetMySettingsQuery.getKey = (
+  variables?: GetMySettingsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetMySettings.infinite']
+    : ['GetMySettings.infinite', variables];
 
 export const GetRecommendationFeedDocument = `
     query GetRecommendationFeed($cursor: String, $limit: Int) {
