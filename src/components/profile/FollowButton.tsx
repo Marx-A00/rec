@@ -47,7 +47,13 @@ export default function FollowButton({
   };
 
   return (
-    <Button onClick={handleToggle} disabled={loading} className={className}>
+    <Button
+      onClick={handleToggle}
+      disabled={loading}
+      className={`${className} ${
+        isFollowing ? '' : 'bg-red-600 hover:bg-red-700 text-white'
+      }`}
+    >
       {loading ? '...' : isFollowing ? 'Unfollow' : 'Follow'}
     </Button>
   );

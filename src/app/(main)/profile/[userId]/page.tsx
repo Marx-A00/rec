@@ -238,6 +238,19 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
   const showCollections =
     isOwnProfile || userData.settings?.showCollections !== false;
 
+  // Check if current user is following this profile
+  const isFollowingUser =
+    !isOwnProfile && session?.user?.id
+      ? await prisma.userFollow.findUnique({
+          where: {
+            followerId_followedId: {
+              followerId: session.user.id,
+              followedId: userId,
+            },
+          },
+        })
+      : null;
+
   // Get collections, listen later, and recommendations
   const [collection, listenLater, recommendations] = await Promise.all([
     showCollections ? getUserCollections(userId) : Promise.resolve([]),
@@ -269,6 +282,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
       recommendations={recommendations}
       isOwnProfile={isOwnProfile}
       showCollections={showCollections}
+      isFollowingUser={!!isFollowingUser}
     />
   );
 }

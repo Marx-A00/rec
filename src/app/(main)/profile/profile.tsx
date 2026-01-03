@@ -39,6 +39,7 @@ interface ProfileClientProps {
   recommendations: RecommendationFieldsFragment[];
   isOwnProfile: boolean;
   showCollections?: boolean;
+  isFollowingUser?: boolean;
 }
 
 export default function ProfileClient({
@@ -48,6 +49,7 @@ export default function ProfileClient({
   recommendations,
   isOwnProfile,
   showCollections = true,
+  isFollowingUser = false,
 }: ProfileClientProps) {
   // Feature flag check for collection editor
   const isCollectionEditorEnabled =
@@ -347,6 +349,7 @@ export default function ProfileClient({
                     currentUser.id && (
                       <FollowButton
                         userId={currentUser.id}
+                        initialFollowing={isFollowingUser}
                         onFollowChange={handleFollowChange}
                       />
                     )

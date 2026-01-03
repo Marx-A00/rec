@@ -46,7 +46,7 @@ export function TopRecommendedAlbums({
 
   return (
     <div
-      className={`flex gap-6 overflow-x-auto pt-4 pb-4 px-1 -mx-1 custom-scrollbar ${className}`}
+      className={`flex gap-6 overflow-x-auto overflow-y-clip pt-4 pb-4 px-1 -mx-1 custom-scrollbar overscroll-x-contain ${className}`}
     >
       {albums.map(item => (
         <TopAlbumCard

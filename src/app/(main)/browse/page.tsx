@@ -202,7 +202,7 @@ async function SpotifyAlbumsSection() {
         </p>
       </div>
 
-      <div className='flex gap-6 overflow-x-auto pt-4 pb-4 px-1 -mx-1 custom-scrollbar'>
+      <div className='flex gap-6 overflow-x-auto overflow-y-clip pt-4 pb-4 px-1 -mx-1 custom-scrollbar overscroll-x-contain'>
         {spotifyData.newReleases.slice(0, 15).map(album => (
           <SpotifyAlbumCard key={album.id} album={album} />
         ))}
