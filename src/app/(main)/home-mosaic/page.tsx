@@ -13,4 +13,3 @@ export default function Home() {
 // TODO: check out memory leak or whatever
 // TODO: check out prisma query shits in terminal
 // TODO:  solve this image problem GET /default-album.svg 404 in 20ms
-

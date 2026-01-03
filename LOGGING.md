@@ -26,6 +26,7 @@ pnpm dev:pretty
 ```
 
 Output:
+
 ```
 14:23:45.123 INFO (graphql): Successfully matched artist with Spotify
   correlationId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
@@ -51,6 +52,7 @@ pnpm start:logs
 ```
 
 This writes:
+
 - All logs → `logs/app.log`
 - Error logs → `logs/error.log`
 
@@ -70,30 +72,42 @@ import { graphqlLogger } from '@/lib/logger';
 graphqlLogger.info('User logged in successfully');
 
 // With structured data
-graphqlLogger.info({
-  userId: '123',
-  email: 'user@example.com',
-  duration: 250
-}, 'User authentication completed');
+graphqlLogger.info(
+  {
+    userId: '123',
+    email: 'user@example.com',
+    duration: 250,
+  },
+  'User authentication completed'
+);
 
 // Warning
-graphqlLogger.warn({
-  artistName: 'Unknown Artist',
-  reason: 'No Spotify match found'
-}, 'Could not enrich artist data');
+graphqlLogger.warn(
+  {
+    artistName: 'Unknown Artist',
+    reason: 'No Spotify match found',
+  },
+  'Could not enrich artist data'
+);
 
 // Error
-graphqlLogger.error({
-  error: err.message,
-  stack: err.stack,
-  operation: 'fetchAlbums'
-}, 'Failed to fetch albums');
+graphqlLogger.error(
+  {
+    error: err.message,
+    stack: err.stack,
+    operation: 'fetchAlbums',
+  },
+  'Failed to fetch albums'
+);
 
 // Debug (only in development by default)
-graphqlLogger.debug({
-  query: 'The Beatles',
-  resultCount: 42
-}, 'Search completed');
+graphqlLogger.debug(
+  {
+    query: 'The Beatles',
+    resultCount: 42,
+  },
+  'Search completed'
+);
 ```
 
 ### Correlation IDs
@@ -201,11 +215,14 @@ Request → GraphQL Route → runWithCorrelationId()
 - Log important business events (user actions, external API calls, errors)
 
 ```typescript
-graphqlLogger.info({
-  userId: user.id,
-  albumId: album.id,
-  action: 'added_to_collection'
-}, 'User added album to collection');
+graphqlLogger.info(
+  {
+    userId: user.id,
+    albumId: album.id,
+    action: 'added_to_collection',
+  },
+  'User added album to collection'
+);
 ```
 
 ### ❌ Don't
@@ -220,10 +237,13 @@ graphqlLogger.info({
 console.log('User:', user);
 
 // Good
-graphqlLogger.debug({
-  userId: user.id,
-  email: user.email
-}, 'Processing user request');
+graphqlLogger.debug(
+  {
+    userId: user.id,
+    email: user.email,
+  },
+  'Processing user request'
+);
 ```
 
 ## Correlation ID Flow Example
@@ -283,6 +303,7 @@ node server.js | pnpm exec pino-pretty
 5. **Search by correlation ID** to trace user issues
 
 Example with PM2 (production):
+
 ```bash
 pm2 start npm --name "rec" -- start:logs
 pm2 logs rec --lines 100

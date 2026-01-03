@@ -392,7 +392,9 @@ export default function JobHistoryPage() {
                 <SelectContent className='bg-zinc-800 border-zinc-700'>
                   <SelectItem value='all'>All Job Types</SelectItem>
                   <SelectItem value='spotify'>🎵 Spotify Sync</SelectItem>
-                  <SelectItem value='musicbrainz'>🎼 MusicBrainz Sync</SelectItem>
+                  <SelectItem value='musicbrainz'>
+                    🎼 MusicBrainz Sync
+                  </SelectItem>
                   <SelectItem value='enrichment'>✨ Enrichment</SelectItem>
                   <SelectItem value='cache'>💾 Cache</SelectItem>
                   <SelectItem value='discogs'>💿 Discogs</SelectItem>
@@ -474,66 +476,66 @@ export default function JobHistoryPage() {
                       return true;
                     })
                     .map(job => (
-                    <TableRow
-                      key={job.id}
-                      className='border-zinc-800 cursor-pointer hover:bg-zinc-800/50 transition-colors'
-                      onClick={() => setSelectedJob(job)}
-                    >
-                      <TableCell>
-                        <div className='flex items-center gap-2'>
-                          {getStatusIcon(job.status)}
-                          <Badge
-                            variant={getStatusBadgeVariant(job.status) as any}
-                            className='text-xs'
-                          >
-                            {job.status}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className='text-zinc-300 font-medium'>
-                        {job.name}
-                      </TableCell>
-                      <TableCell className='text-zinc-400'>
-                        {job.albumName || '-'}
-                      </TableCell>
-                      <TableCell className='text-zinc-400'>
-                        {formatDistanceToNow(new Date(job.createdAt))}
-                      </TableCell>
-                      <TableCell className='text-zinc-400'>
-                        {formatDuration(job.duration)}
-                      </TableCell>
-                      <TableCell className='text-zinc-400'>
-                        {job.attempts}
-                      </TableCell>
-                      <TableCell>
-                        {job.status === 'failed' && (
-                          <Button
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleRetryJob(job.id);
-                            }}
-                            size='sm'
-                            variant='ghost'
-                            className='text-zinc-400 hover:text-white'
-                          >
-                            <RefreshCw className='h-3 w-3 mr-1' />
-                            Retry
-                          </Button>
-                        )}
-                        {job.error && (
-                          <Button
-                            onClick={e => e.stopPropagation()}
-                            size='sm'
-                            variant='ghost'
-                            className='text-zinc-400 hover:text-white'
-                            title={job.error}
-                          >
-                            <AlertCircle className='h-3 w-3' />
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                      <TableRow
+                        key={job.id}
+                        className='border-zinc-800 cursor-pointer hover:bg-zinc-800/50 transition-colors'
+                        onClick={() => setSelectedJob(job)}
+                      >
+                        <TableCell>
+                          <div className='flex items-center gap-2'>
+                            {getStatusIcon(job.status)}
+                            <Badge
+                              variant={getStatusBadgeVariant(job.status) as any}
+                              className='text-xs'
+                            >
+                              {job.status}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className='text-zinc-300 font-medium'>
+                          {job.name}
+                        </TableCell>
+                        <TableCell className='text-zinc-400'>
+                          {job.albumName || '-'}
+                        </TableCell>
+                        <TableCell className='text-zinc-400'>
+                          {formatDistanceToNow(new Date(job.createdAt))}
+                        </TableCell>
+                        <TableCell className='text-zinc-400'>
+                          {formatDuration(job.duration)}
+                        </TableCell>
+                        <TableCell className='text-zinc-400'>
+                          {job.attempts}
+                        </TableCell>
+                        <TableCell>
+                          {job.status === 'failed' && (
+                            <Button
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleRetryJob(job.id);
+                              }}
+                              size='sm'
+                              variant='ghost'
+                              className='text-zinc-400 hover:text-white'
+                            >
+                              <RefreshCw className='h-3 w-3 mr-1' />
+                              Retry
+                            </Button>
+                          )}
+                          {job.error && (
+                            <Button
+                              onClick={e => e.stopPropagation()}
+                              size='sm'
+                              variant='ghost'
+                              className='text-zinc-400 hover:text-white'
+                              title={job.error}
+                            >
+                              <AlertCircle className='h-3 w-3' />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
                 )}
               </TableBody>
             </Table>

@@ -96,7 +96,9 @@ async function fixUserCounts() {
 
     if (usersNeedingUpdate.length === 0) {
       console.log(
-        chalk.green('✓ All user counts are already accurate! No updates needed.')
+        chalk.green(
+          '✓ All user counts are already accurate! No updates needed.'
+        )
       );
       return;
     }
@@ -153,7 +155,9 @@ async function fixUserCounts() {
 
       updatedCount++;
       console.log(
-        chalk.green(`   ✓ Updated ${stat.userName || 'Unknown'} (${updatedCount}/${usersNeedingUpdate.length})`)
+        chalk.green(
+          `   ✓ Updated ${stat.userName || 'Unknown'} (${updatedCount}/${usersNeedingUpdate.length})`
+        )
       );
     }
 
@@ -176,12 +180,12 @@ async function fixUserCounts() {
         updatedUser.followingCount === stat.actualFollowingCount &&
         updatedUser.recommendationsCount === stat.actualRecommendationsCount
       ) {
-        console.log(
-          chalk.green(`   ✓ Verified ${stat.userName || 'Unknown'}`)
-        );
+        console.log(chalk.green(`   ✓ Verified ${stat.userName || 'Unknown'}`));
       } else {
         console.log(
-          chalk.red(`   ✗ Verification failed for ${stat.userName || 'Unknown'}`)
+          chalk.red(
+            `   ✗ Verification failed for ${stat.userName || 'Unknown'}`
+          )
         );
       }
     }
@@ -192,7 +196,9 @@ async function fixUserCounts() {
     console.log(chalk.bold.cyan('='.repeat(60)));
     console.log(chalk.white(`   Total users: ${users.length}`));
     console.log(chalk.white(`   Users updated: ${updatedCount}`));
-    console.log(chalk.white(`   Users unchanged: ${users.length - updatedCount}`));
+    console.log(
+      chalk.white(`   Users unchanged: ${users.length - updatedCount}`)
+    );
     console.log(chalk.bold.cyan('='.repeat(60) + '\n'));
   } catch (error) {
     console.error(chalk.red('\n❌ Error during migration:'), error);

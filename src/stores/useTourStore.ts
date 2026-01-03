@@ -16,12 +16,12 @@ interface TourState {
 
 export const useTourStore = create<TourState>()(
   persist(
-    (set) => ({
+    set => ({
       resumeStep: null,
-      setResumeStep: (step) => set({ resumeStep: step }),
+      setResumeStep: step => set({ resumeStep: step }),
 
       isCompleted: false,
-      setCompleted: (completed) => set({ isCompleted: completed }),
+      setCompleted: completed => set({ isCompleted: completed }),
 
       reset: () => set({ resumeStep: null, isCompleted: false }),
     }),

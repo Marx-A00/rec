@@ -78,7 +78,9 @@ export const Sidebar: FC<SidebarProps> = ({
               item={item}
               context={navigationContext}
               isCollapsed={true}
-              data-tour-step={item.id === 'recommend' ? 'create-recommendation' : undefined}
+              data-tour-step={
+                item.id === 'recommend' ? 'create-recommendation' : undefined
+              }
             />
           ))}
         </div>

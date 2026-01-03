@@ -76,7 +76,8 @@ export type AlbumMetadata = AlbumMetadataBase &
     | UserRecommendationMetadata
     | MusicBrainzSyncMetadata
     | Record<string, never> // Empty object for base metadata only
-  ) & Record<string, unknown>; // Index signature for Prisma JSON
+  ) &
+  Record<string, unknown>; // Index signature for Prisma JSON
 
 /**
  * Helper to create Spotify sync metadata

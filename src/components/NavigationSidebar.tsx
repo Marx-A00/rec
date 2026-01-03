@@ -338,7 +338,9 @@ export default function NavigationSidebar() {
               >
                 <button
                   id={href === '/browse' ? 'discover-nav-button' : undefined}
-                  data-tour-step={href === '/browse' ? 'discover-nav' : undefined}
+                  data-tour-step={
+                    href === '/browse' ? 'discover-nav' : undefined
+                  }
                   className={`group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 hover:bg-black/40 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:outline-none active:scale-95 transition-all duration-200 ease-out ${
                     isMounted
                       ? `opacity-100 translate-y-0 ${delay}`

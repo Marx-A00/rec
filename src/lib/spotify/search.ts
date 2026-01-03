@@ -184,9 +184,7 @@ export async function searchSpotifyArtists(
  * Fetch multiple artists by Spotify IDs in a single batch request
  * Returns artist info with follower counts
  */
-export async function getArtistsByIds(
-  artistIds: string[]
-): Promise<
+export async function getArtistsByIds(artistIds: string[]): Promise<
   Array<{
     id: string;
     name: string;

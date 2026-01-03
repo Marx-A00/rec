@@ -1,6 +1,12 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from 'react';
 import { useSession } from 'next-auth/react';
 import { driver, DriveStep } from 'driver.js';
 import type { Driver } from 'driver.js';
@@ -34,22 +40,32 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     const isMobile = window.innerWidth < 768;
     if (isMobile) {
       console.warn('⚠️ Tour is optimized for desktop view (768px+ width)');
-      console.log('💡 Tour will still work on mobile, but some elements may be positioned differently');
+      console.log(
+        '💡 Tour will still work on mobile, but some elements may be positioned differently'
+      );
     }
 
     // Give elements time to mount and become visible
     setTimeout(() => {
       // Verify critical elements exist
-      const step2Element = document.querySelector('[data-tour-step="create-recommendation"]');
+      const step2Element = document.querySelector(
+        '[data-tour-step="create-recommendation"]'
+      );
 
       if (!step2Element) {
         console.error('❌ Tour elements not ready. Retrying in 500ms...');
         // Retry once after a short delay
         setTimeout(() => {
-          const retryElement = document.querySelector('[data-tour-step="create-recommendation"]');
+          const retryElement = document.querySelector(
+            '[data-tour-step="create-recommendation"]'
+          );
           if (!retryElement) {
-            console.error('❌ Unable to find tour elements. Make sure the page has fully loaded.');
-            alert('⚠️ Tour elements not found. Please refresh the page and try again.');
+            console.error(
+              '❌ Unable to find tour elements. Make sure the page has fully loaded.'
+            );
+            alert(
+              '⚠️ Tour elements not found. Please refresh the page and try again.'
+            );
             return;
           }
           // Element found on retry, start tour
@@ -90,7 +106,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
           // Mark onboarding as completed via API
           fetch('/api/users/onboarding-status', { method: 'POST' })
             .then(() => console.log('✅ Onboarding marked as completed'))
-            .catch(error => console.error('❌ Error marking onboarding complete:', error));
+            .catch(error =>
+              console.error('❌ Error marking onboarding complete:', error)
+            );
         },
       });
 
@@ -131,70 +149,81 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     }
   }, [startTour]);
 
-  const startFromStep = useCallback((stepIndex: number) => {
-    console.log(`🎯 Jumping to step ${stepIndex + 1}...`);
+  const startFromStep = useCallback(
+    (stepIndex: number) => {
+      console.log(`🎯 Jumping to step ${stepIndex + 1}...`);
 
-    // Validate step index
-    if (stepIndex < 0 || stepIndex >= tourSteps.length) {
-      console.error(`❌ Invalid step index: ${stepIndex}. Valid range: 0-${tourSteps.length - 1}`);
-      return;
-    }
-
-    // Stop existing tour if active
-    if (driverInstance) {
-      driverInstance.destroy();
-    }
-
-    // Give elements time to mount
-    setTimeout(() => {
-      // For step 2 (create recommendation button), verify it exists
-      if (stepIndex === 1) {
-        const step2Element = document.querySelector('[data-tour-step="create-recommendation"]');
-        if (!step2Element) {
-          console.error('❌ Step 2 element not found. Retrying in 500ms...');
-          setTimeout(() => {
-            const retryElement = document.querySelector('[data-tour-step="create-recommendation"]');
-            if (!retryElement) {
-              console.error('❌ Unable to find step 2 element.');
-              alert('⚠️ Step 2 element not found. Make sure you are on the main page.');
-              return;
-            }
-            initializeDriverFromStep(stepIndex);
-          }, 500);
-          return;
-        }
+      // Validate step index
+      if (stepIndex < 0 || stepIndex >= tourSteps.length) {
+        console.error(
+          `❌ Invalid step index: ${stepIndex}. Valid range: 0-${tourSteps.length - 1}`
+        );
+        return;
       }
 
-      initializeDriverFromStep(stepIndex);
-    }, 100);
+      // Stop existing tour if active
+      if (driverInstance) {
+        driverInstance.destroy();
+      }
 
-    function initializeDriverFromStep(index: number) {
-      const driverObj = driver({
-        ...driverConfig,
-        steps: tourSteps,
-        onHighlightStarted: (element, step, options) => {
-          // Call the original callback from driverConfig first (for step-specific logic)
-          if (driverConfig.onHighlightStarted) {
-            driverConfig.onHighlightStarted(element, step, options);
+      // Give elements time to mount
+      setTimeout(() => {
+        // For step 2 (create recommendation button), verify it exists
+        if (stepIndex === 1) {
+          const step2Element = document.querySelector(
+            '[data-tour-step="create-recommendation"]'
+          );
+          if (!step2Element) {
+            console.error('❌ Step 2 element not found. Retrying in 500ms...');
+            setTimeout(() => {
+              const retryElement = document.querySelector(
+                '[data-tour-step="create-recommendation"]'
+              );
+              if (!retryElement) {
+                console.error('❌ Unable to find step 2 element.');
+                alert(
+                  '⚠️ Step 2 element not found. Make sure you are on the main page.'
+                );
+                return;
+              }
+              initializeDriverFromStep(stepIndex);
+            }, 500);
+            return;
           }
+        }
 
-          // Then update TourContext state
-          const stepIdx = options.state.activeIndex ?? 0;
-          setCurrentStep(stepIdx);
-          setIsTourActive(true);
-          console.log(`📍 Tour step ${stepIdx + 1}/${tourSteps.length}`);
-        },
-        onDestroyStarted: () => {
-          console.log('🎉 Tour stopped!');
-          setCurrentStep(null);
-          setIsTourActive(false);
-        },
-      });
+        initializeDriverFromStep(stepIndex);
+      }, 100);
 
-      setDriverInstance(driverObj);
-      driverObj.drive(index);
-    }
-  }, [driverInstance]);
+      function initializeDriverFromStep(index: number) {
+        const driverObj = driver({
+          ...driverConfig,
+          steps: tourSteps,
+          onHighlightStarted: (element, step, options) => {
+            // Call the original callback from driverConfig first (for step-specific logic)
+            if (driverConfig.onHighlightStarted) {
+              driverConfig.onHighlightStarted(element, step, options);
+            }
+
+            // Then update TourContext state
+            const stepIdx = options.state.activeIndex ?? 0;
+            setCurrentStep(stepIdx);
+            setIsTourActive(true);
+            console.log(`📍 Tour step ${stepIdx + 1}/${tourSteps.length}`);
+          },
+          onDestroyStarted: () => {
+            console.log('🎉 Tour stopped!');
+            setCurrentStep(null);
+            setIsTourActive(false);
+          },
+        });
+
+        setDriverInstance(driverObj);
+        driverObj.drive(index);
+      }
+    },
+    [driverInstance]
+  );
 
   // Auto-start tour for new users
   useEffect(() => {
@@ -240,7 +269,14 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         isActive: () => isTourActive,
       };
     }
-  }, [startTour, stopTour, resetOnboarding, startFromStep, currentStep, isTourActive]);
+  }, [
+    startTour,
+    stopTour,
+    resetOnboarding,
+    startFromStep,
+    currentStep,
+    isTourActive,
+  ]);
 
   const value: TourContextType = {
     startTour,

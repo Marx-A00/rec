@@ -155,23 +155,21 @@
 }
 
 /* Exception: Prevent Driver.js from forcing position/layout changes on turntable wrapper */
-.driver-active-element[data-tour-step="recommendation-interface-wrapper"] {
+.driver-active-element[data-tour-step='recommendation-interface-wrapper'] {
   position: static !important;
   ring-offset: 0 !important;
   transform: none !important;
 }
 
-.driver-active-element[data-tour-step="recommendation-interface-wrapper"] * {
+.driver-active-element[data-tour-step='recommendation-interface-wrapper'] * {
   position: static !important;
   transform: none !important;
 }
-
 
 /* Exception: Keep turntable labels absolutely positioned during tour */
 .driver-active-element .tour-label-fix {
   position: absolute !important;
 }
-
 
 /* Overlay - Completely transparent by default, but can be dimmed per-step */
 .driver-overlay {

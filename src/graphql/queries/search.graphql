@@ -201,16 +201,8 @@ query SearchArtistsAdmin(
   }
 }
 
-query SearchTracksAdmin(
-  $query: String!
-  $skip: Int
-  $limit: Int
-) {
-  searchTracks(
-    query: $query
-    skip: $skip
-    limit: $limit
-  ) {
+query SearchTracksAdmin($query: String!, $skip: Int, $limit: Int) {
+  searchTracks(query: $query, skip: $skip, limit: $limit) {
     id
     albumId
     musicbrainzId

@@ -166,7 +166,9 @@ class SpotifyScheduler {
       console.log(`   Genre filters: ${jobData.genreTags.join(', ')}`);
     }
     if (jobData.pages && jobData.pages > 1) {
-      console.log(`   Pages: ${jobData.pages} (up to ${jobData.pages * (jobData.limit || 50)} albums)`);
+      console.log(
+        `   Pages: ${jobData.pages} (up to ${jobData.pages * (jobData.limit || 50)} albums)`
+      );
     }
     if (jobData.minFollowers) {
       console.log(`   Min followers: ${jobData.minFollowers.toLocaleString()}`);

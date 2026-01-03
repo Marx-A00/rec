@@ -57,9 +57,13 @@ export default function CollectionPopover({
   size = 'lg',
 }: CollectionPopoverProps) {
   const [open, setOpen] = useState(false);
-  const [processingCollections, setProcessingCollections] = useState<Set<string>>(new Set());
+  const [processingCollections, setProcessingCollections] = useState<
+    Set<string>
+  >(new Set());
   // Track optimistic state: Map<collectionId, isInCollection>
-  const [optimisticState, setOptimisticState] = useState<Map<string, boolean>>(new Map());
+  const [optimisticState, setOptimisticState] = useState<Map<string, boolean>>(
+    new Map()
+  );
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { data: session } = useSession();
@@ -68,10 +72,8 @@ export default function CollectionPopover({
   const albumState = useAlbumState(album);
 
   // Get user's collections
-  const { data: collectionsData, isLoading: isLoadingCollections } = useGetMyCollectionsQuery(
-    {},
-    { enabled: !!session?.user }
-  );
+  const { data: collectionsData, isLoading: isLoadingCollections } =
+    useGetMyCollectionsQuery({}, { enabled: !!session?.user });
 
   // Remove from collection mutation
   const removeFromCollectionMutation = useRemoveAlbumFromCollectionMutation();
@@ -86,7 +88,9 @@ export default function CollectionPopover({
     }
 
     // Otherwise, add it to the DB first
-    const artistInputs = (album.artists || []).map(a => ({ artistName: a.name }));
+    const artistInputs = (album.artists || []).map(a => ({
+      artistName: a.name,
+    }));
 
     const input: any = {
       title: album.title || 'Unknown Album',
@@ -103,7 +107,8 @@ export default function CollectionPopover({
 
     // Optional fields
     if (album.releaseDate) input.releaseDate = album.releaseDate;
-    if (album.metadata?.numberOfTracks) input.totalTracks = album.metadata.numberOfTracks;
+    if (album.metadata?.numberOfTracks)
+      input.totalTracks = album.metadata.numberOfTracks;
     if (album.image?.url) input.coverImageUrl = album.image.url;
 
     const created: any = await graphqlClient.request(ADD_ALBUM, { input });
@@ -111,7 +116,11 @@ export default function CollectionPopover({
   };
 
   // Handle checkbox toggle
-  const handleToggleCollection = async (collectionId: string, collectionName: string, isCurrentlyInCollection: boolean) => {
+  const handleToggleCollection = async (
+    collectionId: string,
+    collectionName: string,
+    isCurrentlyInCollection: boolean
+  ) => {
     if (!session?.user) {
       showToast('Please sign in to save albums', 'error');
       return;
@@ -176,77 +185,86 @@ export default function CollectionPopover({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant={variant}
-          size={size}
-          className="gap-2"
-        >
-          <Bookmark className="h-4 w-4" />
+        <Button variant={variant} size={size} className='gap-2'>
+          <Bookmark className='h-4 w-4' />
           Save
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-64 bg-zinc-900 border-zinc-800 text-white p-3"
+        className='w-64 bg-zinc-900 border-zinc-800 text-white p-3'
         sideOffset={8}
       >
-        <div className="space-y-3">
-          <div className="font-semibold text-sm">Save to...</div>
+        <div className='space-y-3'>
+          <div className='font-semibold text-sm'>Save to...</div>
 
           {isLoadingCollections ? (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+            <div className='flex items-center justify-center py-4'>
+              <Loader2 className='h-4 w-4 animate-spin text-zinc-400' />
             </div>
           ) : collections.length === 0 ? (
-            <div className="text-sm text-zinc-400 py-2">
+            <div className='text-sm text-zinc-400 py-2'>
               No collections yet. Create one first!
             </div>
           ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div className='space-y-2 max-h-64 overflow-y-auto'>
               {collections.map((collection: any) => {
-                const isInThisCollection = albumState.collectionNames.includes(collection.name);
+                const isInThisCollection = albumState.collectionNames.includes(
+                  collection.name
+                );
                 const isProcessing = processingCollections.has(collection.id);
 
                 // Apply optimistic update if it exists, otherwise use actual state
                 const optimisticValue = optimisticState.get(collection.id);
-                const isChecked = optimisticValue !== undefined ? optimisticValue : isInThisCollection;
+                const isChecked =
+                  optimisticValue !== undefined
+                    ? optimisticValue
+                    : isInThisCollection;
 
                 return (
                   <label
                     key={collection.id}
-                    className="flex items-center gap-2 cursor-pointer hover:bg-zinc-800 p-2 rounded-md transition-colors"
+                    className='flex items-center gap-2 cursor-pointer hover:bg-zinc-800 p-2 rounded-md transition-colors'
                   >
                     <Checkbox
                       checked={isChecked}
                       disabled={isProcessing}
                       onCheckedChange={() =>
-                        handleToggleCollection(collection.id, collection.name, isInThisCollection)
+                        handleToggleCollection(
+                          collection.id,
+                          collection.name,
+                          isInThisCollection
+                        )
                       }
                     />
-                    <span className="text-sm flex-1">
+                    <span className='text-sm flex-1'>
                       {collection.name}
                       {collection.albumCount > 0 && (
-                        <span className="text-zinc-500 ml-1">({collection.albumCount})</span>
+                        <span className='text-zinc-500 ml-1'>
+                          ({collection.albumCount})
+                        </span>
                       )}
                     </span>
-                    {isProcessing && <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />}
+                    {isProcessing && (
+                      <Loader2 className='h-3 w-3 animate-spin text-zinc-400' />
+                    )}
                   </label>
                 );
               })}
             </div>
           )}
 
-          <div className="border-t border-zinc-800 pt-2">
+          <div className='border-t border-zinc-800 pt-2'>
             <Button
-              variant="ghost"
-              size="sm"
+              variant='ghost'
+              size='sm'
               disabled
-              className="w-full justify-start gap-2 text-zinc-600 cursor-not-allowed"
+              className='w-full justify-start gap-2 text-zinc-600 cursor-not-allowed'
               onClick={() => {
                 // TODO: Open create collection dialog
                 showToast('Create collection coming soon!', 'success');
               }}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className='h-4 w-4' />
               Create new collection
             </Button>
           </div>

@@ -19,12 +19,14 @@ export type AlbumDetailsData = NonNullable<GetAlbumDetailsAdminQuery['album']>;
 // API Functions
 // ========================================
 
-const fetchAlbumDetailsGraphQL = async (albumId: string): Promise<AlbumDetailsData> => {
+const fetchAlbumDetailsGraphQL = async (
+  albumId: string
+): Promise<AlbumDetailsData> => {
   try {
-    const data = await graphqlClient.request<GetAlbumDetailsAdminQuery, GetAlbumDetailsAdminQueryVariables>(
-      GET_ALBUM_DETAILS,
-      { id: albumId }
-    );
+    const data = await graphqlClient.request<
+      GetAlbumDetailsAdminQuery,
+      GetAlbumDetailsAdminQueryVariables
+    >(GET_ALBUM_DETAILS, { id: albumId });
 
     if (!data.album) {
       throw new QueryError('Album not found', 404);

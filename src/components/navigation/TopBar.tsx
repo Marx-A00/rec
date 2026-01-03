@@ -30,7 +30,8 @@ const TourDebugControls: FC = () => {
     return null;
   }
 
-  const { startTour, stopTour, resetOnboarding, currentStep, isTourActive } = useTour();
+  const { startTour, stopTour, resetOnboarding, currentStep, isTourActive } =
+    useTour();
 
   const handleCheckOnboardingStatus = async () => {
     try {
@@ -40,10 +41,10 @@ const TourDebugControls: FC = () => {
       if (response.ok) {
         alert(
           `📊 Onboarding Status\n\n` +
-          `Is New User: ${data.isNewUser ? 'Yes ✅' : 'No ❌'}\n` +
-          `User ID: ${data.userId}\n` +
-          `Profile Updated: ${data.profileUpdatedAt || 'Never'}\n` +
-          `Created: ${data.createdAt}`
+            `Is New User: ${data.isNewUser ? 'Yes ✅' : 'No ❌'}\n` +
+            `User ID: ${data.userId}\n` +
+            `Profile Updated: ${data.profileUpdatedAt || 'Never'}\n` +
+            `Created: ${data.createdAt}`
         );
       } else {
         alert(`❌ Error: ${data.error || 'Failed to check status'}`);

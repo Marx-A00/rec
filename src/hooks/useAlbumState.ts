@@ -8,7 +8,10 @@ import {
   DataQuality,
   EnrichmentStatus,
 } from '@/generated/graphql';
-import { useAlbumDetailsQuery, type AlbumDetailsData } from '@/hooks/useAlbumDetailsQuery';
+import {
+  useAlbumDetailsQuery,
+  type AlbumDetailsData,
+} from '@/hooks/useAlbumDetailsQuery';
 
 export interface AlbumState {
   existsInDb: boolean;
@@ -60,24 +63,27 @@ export function useAlbumState(album: Album | null): AlbumState {
   }, [album, isLocalAlbum, externalAlbumData]);
 
   // Fetch detailed album data if we have a DB ID
-  const { data: albumDetails, isLoading: isLoadingDetails } = useAlbumDetailsQuery(
-    dbId || '',
-    { enabled: !!dbId }
-  );
+  const { data: albumDetails, isLoading: isLoadingDetails } =
+    useAlbumDetailsQuery(dbId || '', { enabled: !!dbId });
 
   // Fetch user's collections to check if album is in any of them
-  const { data: collectionsData, isLoading: isLoadingCollections } = useGetMyCollectionsQuery(
-    {},
-    {
-      enabled: !!session?.user && !!dbId,
-      staleTime: 5 * 60 * 1000, // 5 minutes - same as useListenLaterStatus
-    }
-  );
+  const { data: collectionsData, isLoading: isLoadingCollections } =
+    useGetMyCollectionsQuery(
+      {},
+      {
+        enabled: !!session?.user && !!dbId,
+        staleTime: 5 * 60 * 1000, // 5 minutes - same as useListenLaterStatus
+      }
+    );
 
   // Check which collections this album is in
   const { isInCollection, isInListenLater, collectionNames } = useMemo(() => {
     if (!dbId || !collectionsData?.myCollections) {
-      return { isInCollection: false, isInListenLater: false, collectionNames: [] };
+      return {
+        isInCollection: false,
+        isInListenLater: false,
+        collectionNames: [],
+      };
     }
 
     const collections: string[] = [];
@@ -85,7 +91,7 @@ export function useAlbumState(album: Album | null): AlbumState {
 
     for (const collection of collectionsData.myCollections) {
       const hasAlbum = collection.albums?.some(
-        (collectionAlbum) => collectionAlbum.album?.id === dbId
+        collectionAlbum => collectionAlbum.album?.id === dbId
       );
 
       if (hasAlbum) {
@@ -104,7 +110,8 @@ export function useAlbumState(album: Album | null): AlbumState {
   }, [dbId, collectionsData]);
 
   // Combine all loading states
-  const isLoading = isLoadingExternalLookup || isLoadingDetails || isLoadingCollections;
+  const isLoading =
+    isLoadingExternalLookup || isLoadingDetails || isLoadingCollections;
 
   // Extract enrichment data from albumDetails (for local albums) or MusicBrainz lookup (for external)
   const enrichmentStatus = useMemo(() => {

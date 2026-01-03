@@ -1,7 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Play, RotateCcw, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Play,
+  RotateCcw,
+  Trash2,
+  X,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 
 import { useTour } from '@/contexts/TourContext';
 
@@ -26,7 +33,8 @@ export function TourDebugPanel() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
 
-  const { startTour, stopTour, resetOnboarding, currentStep, isTourActive } = useTour();
+  const { startTour, stopTour, resetOnboarding, currentStep, isTourActive } =
+    useTour();
 
   // Only show in development
   if (process.env.NODE_ENV !== 'development') {
@@ -44,10 +52,10 @@ export function TourDebugPanel() {
         console.log('📊 Onboarding status:', data);
         alert(
           `📊 Onboarding Status\n\n` +
-          `Is New User: ${data.isNewUser ? 'Yes ✅' : 'No ❌'}\n` +
-          `User ID: ${data.userId}\n` +
-          `Profile Updated: ${data.profileUpdatedAt || 'Never'}\n` +
-          `Created: ${data.createdAt}`
+            `Is New User: ${data.isNewUser ? 'Yes ✅' : 'No ❌'}\n` +
+            `User ID: ${data.userId}\n` +
+            `Profile Updated: ${data.profileUpdatedAt || 'Never'}\n` +
+            `Created: ${data.createdAt}`
         );
       } else {
         alert(`❌ Error: ${data.error || 'Failed to check status'}`);

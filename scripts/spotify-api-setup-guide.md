@@ -441,18 +441,15 @@ node analyze-popularity.js
 ## 8. Rate Limiting & Best Practices
 
 1. **Respect Rate Limits**:
-
    - The code includes retry logic for 429 errors
    - Add delays between requests when doing bulk operations
    - Cache tokens (already implemented)
 
 2. **Batch Requests**:
-
    - Use `getMultipleArtists()` to get up to 50 artists at once
    - Use higher limits (up to 50-100) when fetching lists
 
 3. **Error Handling**:
-
    - Always wrap API calls in try-catch blocks
    - Log errors for debugging
    - Implement exponential backoff for retries

@@ -237,31 +237,39 @@ This application uses **BullMQ** with Redis for handling MusicBrainz API request
 The queue system uses color-coded borders AND layer labels to help you easily identify which part of the system is logging. Each log now shows its layer in the header!
 
 **Queue Layer:**
+
 - 🔵 **Cyan borders** - `QUEUING JOB [QUEUE LAYER]` - Job queued to Redis
 
 **Queue Events Layer:**
+
 - 🟡 **Yellow borders** - `⏳ WAITING FOR JOB [QUEUE EVENTS LAYER]` - Waiting for job completion
 - 🟢 **Green borders** - `✅ JOB COMPLETED [QUEUE EVENTS LAYER]` - Job completed successfully
 - 🔴 **Red borders** - `❌ JOB FAILED [QUEUE EVENTS LAYER]` - Job failed with errors
 
 **Worker Layer:**
+
 - 🔵 **Blue borders** - `PROCESSING [WORKER LAYER]` - Worker starts processing job
 - 🟢 **Green borders** - `COMPLETED [WORKER LAYER]` - Worker finished job
 
 **Processor Layer:**
+
 - 🟡 **Yellow borders** - `✅ Completed [PROCESSOR LAYER]` - Job processor completed
 
 **API Layer:**
+
 - 🟣 **Magenta borders** - `✅ [API LAYER] MusicBrainz` - MusicBrainz API call completed
 
 **Search Layer:**
+
 - 🟣 **Magenta borders** - `🎨 [SEARCH LAYER]` - Cover art URL generation (SearchOrchestrator)
 
 **Log Prefixes** (plain text logs):
+
 - `[Queue]` - Queue layer events (job becomes active)
 - No prefix - Worker/Processor/API layer events
 
 **Example Log Flow**:
+
 ```
 ──────────────────────────────────────────────────────────── (Cyan)
 QUEUING JOB [QUEUE LAYER]
@@ -397,6 +405,7 @@ The `QueuedMusicBrainzService` wraps the original `MusicBrainzService` and provi
 ### Database Schema Migrations
 
 **Local Development:**
+
 ```bash
 # 1. Edit prisma/schema.prisma with your changes
 # 2. Create and apply migration
@@ -409,6 +418,7 @@ pnpm prisma migrate dev --name describe_your_change
 ```
 
 **Production Deployment (Railway):**
+
 ```bash
 # 1. Commit your schema changes and migrations
 git add prisma/schema.prisma prisma/migrations/
@@ -425,6 +435,7 @@ git push origin main
 ```
 
 **⚠️ Important Notes:**
+
 - **Never use `prisma db push` in production** - it bypasses migrations and can cause issues
 - **Always use migrations** for production database changes
 - **Test migrations locally** before pushing to production
@@ -433,6 +444,7 @@ git push origin main
 **Manual Migration (Emergency Only):**
 
 If you need to manually run migrations in Railway:
+
 1. Go to Railway dashboard → Your service
 2. Click "Deploy" → "Run command"
 3. Execute: `pnpm prisma migrate deploy`
@@ -440,15 +452,18 @@ If you need to manually run migrations in Railway:
 ### Deployment Architecture
 
 **Railway Services:**
+
 - **Web Service**: Next.js frontend (runs on push to `main`)
 - **Worker Service**: BullMQ background jobs (separate service with `SERVICE_TYPE=worker`)
 
 **Environment Variables:**
+
 - Local: `.env.local` (Supabase development database)
 - Test: `.env.test` (Supabase test database)
 - Production: Railway environment variables (PostgreSQL production database)
 
 **Database Environments:**
+
 - **Local**: Supabase PostgreSQL (development)
 - **Test**: Supabase PostgreSQL (separate test database)
 - **Production**: Railway PostgreSQL (production)
@@ -479,6 +494,7 @@ The following optimizations are documented for when scale demands them. **Not ne
 **Optimization:** Rewrite using raw SQL with `UNION ALL` to let the database handle sorting and limiting in a single round-trip.
 
 **When to implement:**
+
 - Users following 100+ people
 - 10k+ activities in the database
 - Noticeable slow response times on the social feed endpoint

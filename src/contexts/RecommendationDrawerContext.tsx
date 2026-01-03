@@ -50,7 +50,9 @@ export function RecommendationDrawerProvider({
   };
 
   const handleSuccess = () => {
-    console.log('✅ handleSuccess() called - Recommendation created, closing drawer');
+    console.log(
+      '✅ handleSuccess() called - Recommendation created, closing drawer'
+    );
     // Close drawer on successful recommendation creation
     setIsOpen(false);
     setIsTourMode(false);

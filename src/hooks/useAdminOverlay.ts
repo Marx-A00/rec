@@ -20,7 +20,9 @@ export function useAdminOverlay() {
 
   const result = useMemo(() => {
     // Check if user has admin role
-    const userIsAdmin = session?.user?.role ? isAdmin(session.user.role) : false;
+    const userIsAdmin = session?.user?.role
+      ? isAdmin(session.user.role)
+      : false;
 
     // Check if admin overlay is enabled via environment variable
     const overlayEnabled = process.env.NEXT_PUBLIC_ADMIN_OVERLAY === 'true';

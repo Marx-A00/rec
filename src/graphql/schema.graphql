@@ -672,7 +672,7 @@ type EnrichmentLog {
   operation: String!
   sources: [String!]!
   status: EnrichmentLogStatus!
-  reason: String  # Human-readable explanation of why this enrichment occurred/was skipped
+  reason: String # Human-readable explanation of why this enrichment occurred/was skipped
   fieldsEnriched: [String!]!
   dataQualityBefore: DataQuality
   dataQualityAfter: DataQuality
@@ -684,7 +684,7 @@ type EnrichmentLog {
   metadata: JSON
   jobId: String
   triggeredBy: String
-  userId: String  # Track which user made manual changes
+  userId: String # Track which user made manual changes
   createdAt: DateTime!
 }
 
@@ -987,32 +987,32 @@ type SyncJob {
   jobId: String!
   jobType: SyncJobType!
   status: SyncJobStatus!
-  
+
   # Timing
   startedAt: DateTime!
   completedAt: DateTime
   durationMs: Int
-  
+
   # Results
   albumsCreated: Int!
   albumsUpdated: Int!
   albumsSkipped: Int!
   artistsCreated: Int!
   artistsUpdated: Int!
-  
+
   # Error tracking
   errorMessage: String
   errorCode: String
-  
+
   # Metadata (query params, filters used, etc.)
   metadata: JSON
-  
+
   # Audit
   triggeredBy: String
-  
+
   createdAt: DateTime!
   updatedAt: DateTime!
-  
+
   # Computed: albums created by this job
   albums(limit: Int = 50): [Album!]!
 }

@@ -734,10 +734,15 @@ function SearchResults() {
                       )}
                       <div className='flex items-center gap-3 text-xs text-zinc-500'>
                         {result.contextData?.followersCount !== undefined && (
-                          <span>{result.contextData.followersCount} followers</span>
+                          <span>
+                            {result.contextData.followersCount} followers
+                          </span>
                         )}
-                        {result.contextData?.recommendationsCount !== undefined && (
-                          <span>{result.contextData.recommendationsCount} recs</span>
+                        {result.contextData?.recommendationsCount !==
+                          undefined && (
+                          <span>
+                            {result.contextData.recommendationsCount} recs
+                          </span>
                         )}
                       </div>
                     </div>

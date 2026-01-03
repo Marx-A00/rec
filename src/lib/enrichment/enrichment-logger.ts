@@ -29,7 +29,12 @@ export type EnrichmentOperation =
 /**
  * Common data sources used in enrichment operations
  */
-export type EnrichmentSource = 'SPOTIFY' | 'MUSICBRAINZ' | 'DISCOGS' | 'LASTFM' | (string & {});
+export type EnrichmentSource =
+  | 'SPOTIFY'
+  | 'MUSICBRAINZ'
+  | 'DISCOGS'
+  | 'LASTFM'
+  | (string & {});
 
 export interface EnrichmentLogData {
   entityType?: EnrichmentEntityType | null;
@@ -248,8 +253,6 @@ export class EnrichmentLogger {
 /**
  * Factory function to create an EnrichmentLogger instance
  */
-export function createEnrichmentLogger(
-  prisma: PrismaClient
-): EnrichmentLogger {
+export function createEnrichmentLogger(prisma: PrismaClient): EnrichmentLogger {
   return new EnrichmentLogger(prisma);
 }

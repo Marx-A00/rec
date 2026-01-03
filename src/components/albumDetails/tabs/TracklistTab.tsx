@@ -15,7 +15,8 @@ export default function TracklistTab({ tracks }: TracklistTabProps) {
     }
 
     // If the value seems like it might be in milliseconds (>10000), convert it
-    const actualSeconds = seconds > 10000 ? Math.floor(seconds / 1000) : seconds;
+    const actualSeconds =
+      seconds > 10000 ? Math.floor(seconds / 1000) : seconds;
 
     const minutes = Math.floor(actualSeconds / 60);
     const remainingSeconds = Math.floor(actualSeconds % 60);

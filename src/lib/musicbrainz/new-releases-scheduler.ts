@@ -163,21 +163,17 @@ class MusicBrainzScheduler {
 
     // Use BullMQ repeatable jobs instead of setInterval
     // This persists in Redis and survives worker restarts
-    await queue.addJob(
-      JOB_TYPES.MUSICBRAINZ_SYNC_NEW_RELEASES,
-      jobData,
-      {
-        repeat: {
-          every: intervalMs,
-        },
-        jobId: 'musicbrainz-new-releases-schedule', // Prevents duplicates
-        priority: 5, // Low priority for scheduled background jobs
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 10000 },
-        removeOnComplete: 10,
-        removeOnFail: 5,
-      }
-    );
+    await queue.addJob(JOB_TYPES.MUSICBRAINZ_SYNC_NEW_RELEASES, jobData, {
+      repeat: {
+        every: intervalMs,
+      },
+      jobId: 'musicbrainz-new-releases-schedule', // Prevents duplicates
+      priority: 5, // Low priority for scheduled background jobs
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 10000 },
+      removeOnComplete: 10,
+      removeOnFail: 5,
+    });
 
     console.log(
       `📅 Scheduled MusicBrainz new releases sync every ${this.config.newReleases.intervalMinutes} minutes (${Math.round(this.config.newReleases.intervalMinutes / 1440)} days) - BullMQ repeatable job`
@@ -275,9 +271,7 @@ class MusicBrainzScheduler {
       console.log(
         `     Limit: ${this.config.newReleases.limit}, Date Range: ${this.config.newReleases.dateRangeDays} days`
       );
-      console.log(
-        `     Genres: ${this.config.newReleases.genres.join(', ')}`
-      );
+      console.log(`     Genres: ${this.config.newReleases.genres.join(', ')}`);
     } else {
       console.log('  🎵 New Releases: Disabled');
     }

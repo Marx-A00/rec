@@ -12,7 +12,9 @@ async function deleteAlbum() {
   const deletedCollectionAlbums = await prisma.collectionAlbum.deleteMany({
     where: { albumId },
   });
-  console.log(`   ✅ Deleted ${deletedCollectionAlbums.count} CollectionAlbum entry(ies)`);
+  console.log(
+    `   ✅ Deleted ${deletedCollectionAlbums.count} CollectionAlbum entry(ies)`
+  );
 
   // Then delete the Album
   const deletedAlbum = await prisma.album.delete({

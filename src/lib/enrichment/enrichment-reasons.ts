@@ -4,18 +4,21 @@
  */
 
 export const SKIP_REASONS = {
-  COOLDOWN_NO_DATA: 'Cooldown: Recent NO_DATA_AVAILABLE status (within 90 days)',
+  COOLDOWN_NO_DATA:
+    'Cooldown: Recent NO_DATA_AVAILABLE status (within 90 days)',
   COOLDOWN_FAILED: 'Cooldown: Recent FAILED enrichment (within 7 days)',
   ALREADY_ENRICHED: 'Already enriched: High data quality with recent update',
   IN_PROGRESS: 'Enrichment already in progress',
-  MISSING_DEPENDENCY: (field: string) => `Missing critical dependency: ${field}`,
+  MISSING_DEPENDENCY: (field: string) =>
+    `Missing critical dependency: ${field}`,
   MISSING_MUSICBRAINZ_ID: 'Missing MusicBrainz ID required for enrichment',
 } as const;
 
 export const SUCCESS_REASONS = {
   SCHEDULED_SYNC: 'Scheduled weekly sync',
   MANUAL_ADMIN: 'Manual admin-initiated enrichment',
-  INITIAL_ENRICHMENT: (entityType: string) => `New ${entityType.toLowerCase()} - Initial enrichment`,
+  INITIAL_ENRICHMENT: (entityType: string) =>
+    `New ${entityType.toLowerCase()} - Initial enrichment`,
   QUALITY_IMPROVEMENT: (before: string, after: string) =>
     `Data quality improvement: ${before} → ${after}`,
   FORCE_ENRICHMENT: 'Force re-enrichment: Admin override',
@@ -23,7 +26,8 @@ export const SUCCESS_REASONS = {
 } as const;
 
 export const CORRECTION_REASONS = {
-  ADMIN_CORRECTION: (field: string) => `Manual correction: Admin updated ${field}`,
+  ADMIN_CORRECTION: (field: string) =>
+    `Manual correction: Admin updated ${field}`,
   BUG_FIX: 'Bug fix: Correcting malformed data',
   DEV_TESTING: 'Development: Testing enrichment pipeline',
   DATA_REFRESH: 'Data refresh: Updating stale information',

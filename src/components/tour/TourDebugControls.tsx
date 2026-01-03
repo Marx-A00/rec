@@ -36,18 +36,23 @@ export function TourDebugControls() {
           <div className='mb-3'>
             <div className='text-xs text-zinc-400 mb-1'>Current Step:</div>
             <div className='text-sm font-medium text-white'>
-              {currentStep !== null ? `Step ${currentStep + 1} of ${totalSteps}` : 'N/A'}
+              {currentStep !== null
+                ? `Step ${currentStep + 1} of ${totalSteps}`
+                : 'N/A'}
             </div>
           </div>
 
           <div>
-            <label htmlFor='step-select' className='text-xs text-zinc-400 mb-1 block'>
+            <label
+              htmlFor='step-select'
+              className='text-xs text-zinc-400 mb-1 block'
+            >
               Jump to Step:
             </label>
             <select
               id='step-select'
               value={currentStep ?? 0}
-              onChange={(e) => startFromStep(parseInt(e.target.value, 10))}
+              onChange={e => startFromStep(parseInt(e.target.value, 10))}
               className='w-full px-2 py-1 text-sm bg-zinc-800 border border-zinc-700 rounded text-white focus:outline-none focus:border-emerald-500'
             >
               {Array.from({ length: totalSteps }, (_, i) => (

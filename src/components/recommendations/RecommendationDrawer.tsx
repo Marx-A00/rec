@@ -50,7 +50,9 @@ function Turntable({
     <div className='relative'>
       {/* Side Label - Moved OUTSIDE and positioned at top */}
       <div className='flex justify-center mb-2'>
-        <div className={`${labelColor} text-white px-2 py-1 rounded text-xs font-bold`}>
+        <div
+          className={`${labelColor} text-white px-2 py-1 rounded text-xs font-bold`}
+        >
           {title}
         </div>
       </div>
@@ -149,7 +151,9 @@ export default function RecommendationDrawer({
 
   // Log isOpen changes to debug
   useEffect(() => {
-    console.log(`🔄 RecommendationDrawer: isOpen=${isOpen}, isTourMode=${isTourMode}`);
+    console.log(
+      `🔄 RecommendationDrawer: isOpen=${isOpen}, isTourMode=${isTourMode}`
+    );
   }, [isOpen, isTourMode]);
 
   // Reset state when drawer closes, or set prefilled album when drawer opens
@@ -214,7 +218,9 @@ export default function RecommendationDrawer({
 
   // Modified close handler that respects tour state
   const handleDrawerClose = (open: boolean) => {
-    console.log(`🚪 handleDrawerClose called: open=${open}, isTourMode=${isTourMode}`);
+    console.log(
+      `🚪 handleDrawerClose called: open=${open}, isTourMode=${isTourMode}`
+    );
 
     // Don't close the drawer if tour is active and trying to keep it open
     if (!open && isTourMode) {
@@ -307,10 +313,13 @@ export default function RecommendationDrawer({
             </div>
 
             {/* Turntables Layout - Responsive */}
-            <div data-tour-step="recommendation-interface-wrapper">
+            <div data-tour-step='recommendation-interface-wrapper'>
               <div className={`${layoutConfig.turntableClasses} mb-6`}>
                 {/* Left Turntable */}
-                <div className='flex flex-col items-center' data-tour-step="left-turntable-test">
+                <div
+                  className='flex flex-col items-center'
+                  data-tour-step='left-turntable-test'
+                >
                   <Turntable
                     album={selectedBasisAlbum}
                     title='SOURCE'

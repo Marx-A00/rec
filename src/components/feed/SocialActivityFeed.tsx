@@ -371,10 +371,7 @@ export default function SocialActivityFeed({
       {/* Activities List */}
       <div className='space-y-4'>
         {groupedActivities.map(group => (
-          <GroupedActivityItem
-            key={group.id}
-            group={group}
-          />
+          <GroupedActivityItem key={group.id} group={group} />
         ))}
       </div>
 

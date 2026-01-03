@@ -2,7 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, Share2, MoreHorizontal, User, Loader2, RefreshCcw, Database, Trash2, ExternalLink, AlertCircle } from 'lucide-react';
+import {
+  Heart,
+  Share2,
+  MoreHorizontal,
+  User,
+  Loader2,
+  RefreshCcw,
+  Database,
+  Trash2,
+  ExternalLink,
+  AlertCircle,
+} from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -290,7 +301,12 @@ export default function AlbumModal({
         clearInterval(pollInterval);
       };
     }
-  }, [albumState.enrichmentStatus, albumState.existsInDb, albumState.dbId, queryClient]);
+  }, [
+    albumState.enrichmentStatus,
+    albumState.existsInDb,
+    albumState.dbId,
+    queryClient,
+  ]);
 
   // Album interaction handlers
   // TODO: Performance optimization - Pass currentArtistContext from DiscographyTab
@@ -436,7 +452,9 @@ export default function AlbumModal({
         queryClient.invalidateQueries({ queryKey: ['albumByMusicBrainzId'] });
         queryClient.invalidateQueries({ queryKey: ['albumDetails'] });
       } else {
-        throw new Error(result.triggerAlbumEnrichment.message || 'Failed to queue enrichment');
+        throw new Error(
+          result.triggerAlbumEnrichment.message || 'Failed to queue enrichment'
+        );
       }
     } catch (error) {
       showToast(`Failed to queue enrichment: ${error}`, 'error');
@@ -460,7 +478,9 @@ export default function AlbumModal({
         })),
         coverImageUrl: albumForInteractions.image?.url || undefined,
         musicbrainzId: albumForInteractions.musicbrainzId || undefined,
-        releaseDate: albumForInteractions.year ? `${albumForInteractions.year}-01-01` : undefined,
+        releaseDate: albumForInteractions.year
+          ? `${albumForInteractions.year}-01-01`
+          : undefined,
         totalTracks: albumForInteractions.metadata?.numberOfTracks || undefined,
       };
 
@@ -468,10 +488,13 @@ export default function AlbumModal({
 
       // Invalidate queries to refresh album state
       queryClient.invalidateQueries({
-        queryKey: ['AlbumByMusicBrainzId', { musicbrainzId: albumForInteractions.musicbrainzId }]
+        queryKey: [
+          'AlbumByMusicBrainzId',
+          { musicbrainzId: albumForInteractions.musicbrainzId },
+        ],
       });
       queryClient.invalidateQueries({
-        queryKey: ['GetMyCollections']
+        queryKey: ['GetMyCollections'],
       });
 
       showToast('Album added to database successfully', 'success');
@@ -964,16 +987,27 @@ export default function AlbumModal({
                   <div className='flex items-center justify-between'>
                     <span className='text-zinc-400'>Status:</span>
                     <div className='flex items-center gap-1.5'>
-                      <span className={`font-medium ${
-                        albumState.enrichmentStatus === EnrichmentStatus.Completed ? 'text-emerald-400' :
-                        albumState.enrichmentStatus === EnrichmentStatus.InProgress ? 'text-amber-400' :
-                        albumState.enrichmentStatus === EnrichmentStatus.Failed ? 'text-red-400' :
-                        'text-zinc-400'
-                      }`}>
-                        {albumState.enrichmentStatus || EnrichmentStatus.Pending}
+                      <span
+                        className={`font-medium ${
+                          albumState.enrichmentStatus ===
+                          EnrichmentStatus.Completed
+                            ? 'text-emerald-400'
+                            : albumState.enrichmentStatus ===
+                                EnrichmentStatus.InProgress
+                              ? 'text-amber-400'
+                              : albumState.enrichmentStatus ===
+                                  EnrichmentStatus.Failed
+                                ? 'text-red-400'
+                                : 'text-zinc-400'
+                        }`}
+                      >
+                        {albumState.enrichmentStatus ||
+                          EnrichmentStatus.Pending}
                       </span>
-                      {(albumState.enrichmentStatus === EnrichmentStatus.InProgress ||
-                        albumState.enrichmentStatus === EnrichmentStatus.Pending) && (
+                      {(albumState.enrichmentStatus ===
+                        EnrichmentStatus.InProgress ||
+                        albumState.enrichmentStatus ===
+                          EnrichmentStatus.Pending) && (
                         <Loader2 className='h-3 w-3 animate-spin text-amber-400' />
                       )}
                     </div>
@@ -981,11 +1015,15 @@ export default function AlbumModal({
                   {albumState.dataQuality && (
                     <div className='flex items-center justify-between'>
                       <span className='text-zinc-400'>Quality:</span>
-                      <span className={`font-medium ${
-                        albumState.dataQuality === DataQuality.High ? 'text-emerald-400' :
-                        albumState.dataQuality === DataQuality.Medium ? 'text-amber-400' :
-                        'text-zinc-400'
-                      }`}>
+                      <span
+                        className={`font-medium ${
+                          albumState.dataQuality === DataQuality.High
+                            ? 'text-emerald-400'
+                            : albumState.dataQuality === DataQuality.Medium
+                              ? 'text-amber-400'
+                              : 'text-zinc-400'
+                        }`}
+                      >
                         {albumState.dataQuality}
                       </span>
                     </div>
@@ -1016,7 +1054,9 @@ export default function AlbumModal({
                     variant='outline'
                     size='sm'
                     onClick={handleAddToDatabase}
-                    disabled={addAlbumMutation.isPending || albumState.isLoading}
+                    disabled={
+                      addAlbumMutation.isPending || albumState.isLoading
+                    }
                     className='gap-1.5 border-emerald-800/50 bg-emerald-950/20 text-emerald-200 hover:bg-emerald-900/30 hover:text-emerald-100'
                   >
                     {addAlbumMutation.isPending ? (
@@ -1046,13 +1086,21 @@ export default function AlbumModal({
                   variant='outline'
                   size='sm'
                   onClick={handleEnrichAlbum}
-                  disabled={!albumState.existsInDb || enrichMutation.isPending || albumState.isLoading}
+                  disabled={
+                    !albumState.existsInDb ||
+                    enrichMutation.isPending ||
+                    albumState.isLoading
+                  }
                   className={
                     albumState.existsInDb
                       ? 'gap-1.5 border-amber-800/50 bg-amber-950/20 text-amber-200 hover:bg-amber-900/30 hover:text-amber-100'
                       : 'gap-1.5 border-zinc-700/50 bg-zinc-900/20 text-zinc-500 cursor-not-allowed'
                   }
-                  title={!albumState.existsInDb ? 'Add to DB first' : 'Trigger enrichment job'}
+                  title={
+                    !albumState.existsInDb
+                      ? 'Add to DB first'
+                      : 'Trigger enrichment job'
+                  }
                 >
                   {enrichMutation.isPending ? (
                     <Loader2 className='h-3.5 w-3.5 animate-spin' />
@@ -1115,9 +1163,7 @@ export default function AlbumModal({
                   {albumForInteractions.title}
                 </p>
                 <p className='text-sm text-zinc-400'>
-                  {albumForInteractions.artists
-                    .map(a => a.name)
-                    .join(', ')}
+                  {albumForInteractions.artists.map(a => a.name).join(', ')}
                 </p>
               </div>
 

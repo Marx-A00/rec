@@ -135,7 +135,7 @@ const AlbumSearchBackwardCompatible = forwardRef<
           <Search className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
           <input
             id='recommendation-search-input'
-            data-tour-step="recommendation-search"
+            data-tour-step='recommendation-search'
             type='text'
             placeholder={placeholder}
             value={inputValue}

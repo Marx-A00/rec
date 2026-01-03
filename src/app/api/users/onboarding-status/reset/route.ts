@@ -34,7 +34,8 @@ export async function POST() {
 
     return NextResponse.json({
       success: true,
-      message: 'Onboarding status reset. Refresh the page to trigger onboarding.',
+      message:
+        'Onboarding status reset. Refresh the page to trigger onboarding.',
       userId: user.id,
       profileUpdatedAt: user.profileUpdatedAt,
     });

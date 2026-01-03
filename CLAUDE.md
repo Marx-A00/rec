@@ -5,11 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 🔍 Search Components - IMPORTANT
 
 **ACTIVE Search Components (Use These):**
+
 - `src/components/ui/SimpleSearchBar.tsx` - Main search bar in header/topbar
 - `src/components/ui/UniversalSearchBar.tsx` - Used in mobile navigation and search page
 - `src/components/recommendations/AlbumSearchBackwardCompatible.tsx` - Used in recommendation flows
 
 **DEPRECATED Search Components (Do NOT Use):**
+
 - `src/components/ui/SearchBar.tsx` ❌
 - `src/components/ui/AlbumSearch.tsx` ❌
 - `src/components/ui/AlbumSearchWrapper.tsx` ❌
@@ -134,12 +136,14 @@ task-master update-subtask --id=<id> --prompt="notes"  # Log progress
 ### Queue System & Schedulers
 
 **BullMQ Integration:**
+
 - **Rate Limiting**: 1 request/second via BullMQ
 - **Queue Service**: `/src/lib/musicbrainz/queue-service.ts`
 - **Worker**: `/src/workers/queue-worker.ts` (handles all background jobs)
 - **Job Types**: `search-artists`, `search-releases`, `get-artist`, `get-release`, `spotify:sync-new-releases`, `musicbrainz:sync-new-releases`
 
 **Automated Schedulers (BullMQ Repeatable Jobs):**
+
 - **Spotify Scheduler** (`/src/lib/spotify/scheduler.ts`):
   - New releases sync using `tag:new` Search API (configurable interval, default: 7 days)
   - Supports genre filtering, year filtering, pagination, and follower thresholds
@@ -151,6 +155,7 @@ task-master update-subtask --id=<id> --prompt="notes"  # Log progress
   - Uses BullMQ repeatable jobs for reliability
 
 **Key Pattern**: Schedulers use BullMQ's repeatable jobs API (`repeat: { every: ms }`) instead of `setInterval`. This ensures:
+
 - Schedules persist in Redis and survive worker restarts
 - No duplicate job execution on worker restart
 - Centralized schedule management via Bull Board dashboard
@@ -236,6 +241,7 @@ Required environment variables:
 Schedulers now use BullMQ repeatable jobs which persist in Redis. No need for `SKIP_INITIAL_SYNC` flags - schedules automatically avoid duplicates on worker restart.
 
 **Spotify New Releases (using `tag:new` Search API):**
+
 - `SPOTIFY_SYNC_NEW_RELEASES=true` - Enable Spotify new releases sync
 - `SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES=10080` - Sync interval (default: 7 days)
 - `SPOTIFY_NEW_RELEASES_LIMIT=50` - Number of releases per page
@@ -246,12 +252,14 @@ Schedulers now use BullMQ repeatable jobs which persist in Redis. No need for `S
 - `SPOTIFY_NEW_RELEASES_YEAR=2025` - Optional year filter (defaults to current year)
 
 **Featured Playlists (DEPRECATED - Nov 2024):**
+
 - `SPOTIFY_SYNC_FEATURED_PLAYLISTS=false` - ⚠️ Keep disabled, endpoint returns 404
 - `SPOTIFY_FEATURED_PLAYLISTS_INTERVAL_MINUTES=10080` - Sync interval
 - `SPOTIFY_FEATURED_PLAYLISTS_LIMIT=20` - Playlists to fetch
 - `SPOTIFY_EXTRACT_ALBUMS=true` - Extract albums from playlists
 
 **MusicBrainz:**
+
 - `MUSICBRAINZ_SYNC_NEW_RELEASES=true` - Enable MusicBrainz new releases sync
 - `MUSICBRAINZ_NEW_RELEASES_INTERVAL_MINUTES=10080` - Sync interval (default: 7 days)
 - `MUSICBRAINZ_NEW_RELEASES_LIMIT=50` - Number of releases to fetch
@@ -260,14 +268,12 @@ Schedulers now use BullMQ repeatable jobs which persist in Redis. No need for `S
 ### Development Workflow
 
 1. **GraphQL Changes** (See `.taskmaster/docs/procedures/graphql-data-fetching.md` for detailed guide):
-
    - Modify schema in `/src/graphql/schema.graphql`
    - Add queries in `/src/graphql/queries/`
    - Run `pnpm codegen` to generate types and hooks
    - Use generated hooks in components
 
 2. **Database Changes**:
-
    - Update `prisma/schema.prisma`
    - Run `pnpm prisma migrate dev --name descriptive_migration_name` to create and apply migration
    - Run `pnpm prisma generate` to update client (auto-runs with migrate dev)
@@ -311,13 +317,16 @@ Schedulers now use BullMQ repeatable jobs which persist in Redis. No need for `S
 5. **Import existing types** - Check `src/types/` or generated types first
 
 **Example - BAD:**
+
 ```typescript
-function processRecording(recording: any) {  // ❌ NEVER DO THIS
+function processRecording(recording: any) {
+  // ❌ NEVER DO THIS
   return recording.title;
 }
 ```
 
 **Example - GOOD:**
+
 ```typescript
 interface MusicBrainzRecording {
   id: string;
@@ -327,12 +336,14 @@ interface MusicBrainzRecording {
   releases: Release[];
 }
 
-function processRecording(recording: MusicBrainzRecording) {  // ✅ CORRECT
+function processRecording(recording: MusicBrainzRecording) {
+  // ✅ CORRECT
   return recording.title;
 }
 ```
 
 **For third-party API responses:**
+
 ```typescript
 // Define the exact structure you expect
 interface MusicBrainzArtistCredit {

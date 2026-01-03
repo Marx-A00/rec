@@ -466,7 +466,11 @@ export async function processSpotifyAlbums(
       }
 
       // Process the album
-      const result = await processSpotifyAlbum(spotifyAlbum, source, metadataOptions);
+      const result = await processSpotifyAlbum(
+        spotifyAlbum,
+        source,
+        metadataOptions
+      );
       results.push(result);
     } catch (error) {
       const errorMsg = `Failed to process "${spotifyAlbum.name}": ${error instanceof Error ? error.message : String(error)}`;

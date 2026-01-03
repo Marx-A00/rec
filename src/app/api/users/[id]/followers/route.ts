@@ -93,9 +93,7 @@ export async function GET(
       where: { followerId: session.user.id },
       select: { followedId: true },
     });
-    const followedIds = new Set(
-      currentUserFollowing.map(f => f.followedId)
-    );
+    const followedIds = new Set(currentUserFollowing.map(f => f.followedId));
 
     // Transform the data for the response
     const followersData = results.map((follow: any) => ({

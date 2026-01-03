@@ -41,7 +41,10 @@ export interface UseAlbumDetailsQueryOptions extends BaseQueryOptions {
   initialData?: AlbumDetailsData;
 }
 
-export type UseAlbumDetailsQueryResult = UseQueryResult<AlbumDetailsData, QueryError>;
+export type UseAlbumDetailsQueryResult = UseQueryResult<
+  AlbumDetailsData,
+  QueryError
+>;
 
 // Masters Query
 export type UseMastersQueryOptions = BaseQueryOptions;

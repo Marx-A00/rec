@@ -50,7 +50,11 @@ query GetEnrichmentStats(
   }
 }
 
-mutation TriggerAlbumEnrichment($id: UUID!, $priority: EnrichmentPriority, $force: Boolean) {
+mutation TriggerAlbumEnrichment(
+  $id: UUID!
+  $priority: EnrichmentPriority
+  $force: Boolean
+) {
   triggerAlbumEnrichment(id: $id, priority: $priority, force: $force) {
     success
     jobId
@@ -58,7 +62,11 @@ mutation TriggerAlbumEnrichment($id: UUID!, $priority: EnrichmentPriority, $forc
   }
 }
 
-mutation TriggerArtistEnrichment($id: UUID!, $priority: EnrichmentPriority, $force: Boolean) {
+mutation TriggerArtistEnrichment(
+  $id: UUID!
+  $priority: EnrichmentPriority
+  $force: Boolean
+) {
   triggerArtistEnrichment(id: $id, priority: $priority, force: $force) {
     success
     jobId
@@ -66,7 +74,11 @@ mutation TriggerArtistEnrichment($id: UUID!, $priority: EnrichmentPriority, $for
   }
 }
 
-mutation BatchEnrichment($ids: [UUID!]!, $type: EnrichmentType!, $priority: EnrichmentPriority) {
+mutation BatchEnrichment(
+  $ids: [UUID!]!
+  $type: EnrichmentType!
+  $priority: EnrichmentPriority
+) {
   batchEnrichment(ids: $ids, type: $type, priority: $priority) {
     success
     jobsQueued

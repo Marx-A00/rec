@@ -50,8 +50,7 @@ export const useListenLaterStatus = (albumId: string) => {
     for (const collectionAlbum of listenLaterCollection.albums || []) {
       if (collectionAlbum.album) {
         const album = collectionAlbum.album;
-        const artistName =
-          album.artists?.[0]?.artist?.name || 'Unknown Artist';
+        const artistName = album.artists?.[0]?.artist?.name || 'Unknown Artist';
 
         albums.push({
           id: album.id,

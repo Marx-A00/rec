@@ -31,7 +31,9 @@ async function fixListenLaterAlbums() {
         console.log(`   MusicBrainz ID: NULL`);
 
         // Check if the album.id is a valid MusicBrainz UUID format
-        const isValidMbid = album.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+        const isValidMbid = album.id.match(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        );
 
         if (isValidMbid) {
           console.log(`   ✅ Looks like a valid MusicBrainz UUID!`);

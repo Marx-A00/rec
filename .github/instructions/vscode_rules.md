@@ -19,13 +19,11 @@ alwaysApply: true
   ```
 
 - **File References:**
-
   - Use `[filename](mdc:path/to/file)` ([filename](mdc:filename)) to reference files
   - Example: [prisma.md](.github/instructions/prisma.md) for rule references
   - Example: [schema.prisma](mdc:prisma/schema.prisma) for code references
 
 - **Code Examples:**
-
   - Use language-specific code blocks
 
   ```typescript
@@ -37,7 +35,6 @@ alwaysApply: true
   ```
 
 - **Rule Content Guidelines:**
-
   - Start with high-level overview
   - Include specific, actionable requirements
   - Show examples of correct implementation
@@ -45,7 +42,6 @@ alwaysApply: true
   - Keep rules DRY by referencing other rules
 
 - **Rule Maintenance:**
-
   - Update rules when new patterns emerge
   - Add examples from actual codebase
   - Remove outdated patterns

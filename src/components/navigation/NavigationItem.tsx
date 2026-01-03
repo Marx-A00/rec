@@ -123,9 +123,7 @@ export const NavigationItem: FC<NavigationItemProps> = ({
     <>
       {isCollapsed ? (
         <Tooltip>
-          <TooltipTrigger asChild>
-            {wrapperElement}
-          </TooltipTrigger>
+          <TooltipTrigger asChild>{wrapperElement}</TooltipTrigger>
           <TooltipContent side='right' className='font-medium'>
             {item.tooltip || item.label}
           </TooltipContent>

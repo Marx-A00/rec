@@ -1,7 +1,12 @@
 // Activity Logger
 // Centralized logging for all data changes (enrichment, manual edits, automated processes)
 
-import { PrismaClient, EnrichmentEntityType, EnrichmentStatus, DataQuality } from '@prisma/client';
+import {
+  PrismaClient,
+  EnrichmentEntityType,
+  EnrichmentStatus,
+  DataQuality,
+} from '@prisma/client';
 
 // Operation types - extend this as needed
 export const OPERATIONS = {
@@ -25,7 +30,7 @@ export const OPERATIONS = {
   SCHEDULED_REFRESH: 'SCHEDULED_REFRESH',
 } as const;
 
-export type OperationType = typeof OPERATIONS[keyof typeof OPERATIONS];
+export type OperationType = (typeof OPERATIONS)[keyof typeof OPERATIONS];
 
 // Data sources - extend this as needed
 export const SOURCES = {
@@ -38,7 +43,7 @@ export const SOURCES = {
   SYSTEM: 'SYSTEM',
 } as const;
 
-export type DataSource = typeof SOURCES[keyof typeof SOURCES];
+export type DataSource = (typeof SOURCES)[keyof typeof SOURCES];
 
 interface LogActivityParams {
   prisma: PrismaClient;
@@ -121,7 +126,10 @@ export async function logActivity({
       errorCode,
       retryCount: 0,
       durationMs,
-      apiCallCount: sources.includes(SOURCES.USER) || sources.includes(SOURCES.SYSTEM) ? 0 : 1,
+      apiCallCount:
+        sources.includes(SOURCES.USER) || sources.includes(SOURCES.SYSTEM)
+          ? 0
+          : 1,
       metadata: metadata as never,
       jobId,
       triggeredBy,
