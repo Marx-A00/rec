@@ -67,6 +67,11 @@ function EnrichmentStatusBadge({ status }: { status: EnrichmentLogStatus }) {
       icon: <Clock className='h-3 w-3' />,
       label: 'Skipped',
     },
+    PREVIEW: {
+      color: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+      icon: <AlertCircle className='h-3 w-3' />,
+      label: 'Preview',
+    },
   };
 
   const config = statusConfig[status];
@@ -128,15 +133,33 @@ export function EnrichmentLogTable({
   enrichmentStatus,
   onReset,
 }: EnrichmentLogTableProps): React.JSX.Element {
-  // Poll while enrichment is pending or in progress
-  const shouldPoll =
-    enrichmentStatus === 'PENDING' || enrichmentStatus === 'IN_PROGRESS';
-
   const { data, isLoading, error } = useGetEnrichmentLogsQuery(
     { entityType, entityId, limit },
     {
       enabled: !!(entityType || entityId),
-      refetchInterval: shouldPoll ? 3000 : false,
+      refetchInterval: query => {
+        // Poll while enrichment is pending or in progress (from parent prop)
+        if (
+          enrichmentStatus === 'PENDING' ||
+          enrichmentStatus === 'IN_PROGRESS'
+        ) {
+          return 3000;
+        }
+
+        // Also poll if the most recent log was created within the last 30 seconds
+        // This catches the case where a background job just completed
+        const logs = query.state.data?.enrichmentLogs || [];
+        if (logs.length > 0) {
+          const mostRecentLog = logs[0];
+          const logAge =
+            Date.now() - new Date(mostRecentLog.createdAt).getTime();
+          if (logAge < 30000) {
+            return 3000; // Keep polling for 30 seconds after last log entry
+          }
+        }
+
+        return false; // Stop polling
+      },
     }
   );
 
@@ -264,12 +287,9 @@ export function EnrichmentLogTable({
                   <TableCell>
                     <EnrichmentStatusBadge status={log.status} />
                   </TableCell>
-                  <TableCell className='max-w-xs'>
+                  <TableCell className='max-w-md'>
                     {log.reason ? (
-                      <div
-                        className='text-xs text-zinc-300 truncate'
-                        title={log.reason}
-                      >
+                      <div className='text-xs text-zinc-300 whitespace-pre-wrap break-words'>
                         {log.reason}
                       </div>
                     ) : (
@@ -295,15 +315,45 @@ export function EnrichmentLogTable({
                   </TableCell>
                   <TableCell className='text-xs'>
                     {log.dataQualityBefore && log.dataQualityAfter ? (
-                      <div className='flex items-center gap-1.5'>
-                        <Badge className='bg-red-500/10 text-red-300 border-red-500/20'>
-                          {log.dataQualityBefore}
-                        </Badge>
-                        <span className='text-zinc-500'>→</span>
-                        <Badge className='bg-green-500/10 text-green-300 border-green-500/20'>
+                      log.dataQualityBefore === log.dataQualityAfter ? (
+                        <Badge
+                          className={
+                            log.dataQualityAfter === 'HIGH'
+                              ? 'bg-green-500/10 text-green-300 border-green-500/20'
+                              : log.dataQualityAfter === 'MEDIUM'
+                                ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
+                                : 'bg-red-500/10 text-red-300 border-red-500/20'
+                          }
+                        >
                           {log.dataQualityAfter}
                         </Badge>
-                      </div>
+                      ) : (
+                        <div className='flex items-center gap-1.5'>
+                          <Badge
+                            className={
+                              log.dataQualityBefore === 'HIGH'
+                                ? 'bg-green-500/10 text-green-300 border-green-500/20'
+                                : log.dataQualityBefore === 'MEDIUM'
+                                  ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
+                                  : 'bg-red-500/10 text-red-300 border-red-500/20'
+                            }
+                          >
+                            {log.dataQualityBefore}
+                          </Badge>
+                          <span className='text-zinc-500'>→</span>
+                          <Badge
+                            className={
+                              log.dataQualityAfter === 'HIGH'
+                                ? 'bg-green-500/10 text-green-300 border-green-500/20'
+                                : log.dataQualityAfter === 'MEDIUM'
+                                  ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
+                                  : 'bg-red-500/10 text-red-300 border-red-500/20'
+                            }
+                          >
+                            {log.dataQualityAfter}
+                          </Badge>
+                        </div>
+                      )
                     ) : (
                       <span className='text-zinc-500'>-</span>
                     )}
@@ -311,12 +361,9 @@ export function EnrichmentLogTable({
                   <TableCell className='text-xs text-zinc-400 text-right'>
                     {log.durationMs ? `${log.durationMs}ms` : '-'}
                   </TableCell>
-                  <TableCell className='max-w-xs'>
+                  <TableCell className='max-w-md'>
                     {log.errorMessage ? (
-                      <div
-                        className='text-xs text-red-400 truncate'
-                        title={log.errorMessage}
-                      >
+                      <div className='text-xs text-red-400 whitespace-pre-wrap break-words'>
                         {log.errorMessage}
                       </div>
                     ) : (

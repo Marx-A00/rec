@@ -38,11 +38,8 @@ export default async function AlbumDetailsPage({
   // No inference - always check local DB first, then use explicit source for external APIs
   let album;
   try {
-    const source = (rawSearch as { source?: string })?.source as
-      | 'musicbrainz'
-      | 'discogs'
-      | 'local'
-      | undefined;
+    const rawSource = (rawSearch as { source?: string })?.source?.toLowerCase();
+    const source = rawSource as 'musicbrainz' | 'discogs' | 'local' | undefined;
 
     console.log('[AlbumDetailsPage] Fetching album', {
       albumId,

@@ -85,3 +85,39 @@ mutation BatchEnrichment(
     message
   }
 }
+
+mutation PreviewAlbumEnrichment($id: UUID!) {
+  previewAlbumEnrichment(id: $id) {
+    success
+    message
+    matchScore
+    matchedEntity
+    sources
+    fieldsToUpdate {
+      field
+      currentValue
+      newValue
+      source
+    }
+    enrichmentLogId
+    rawData
+  }
+}
+
+mutation PreviewArtistEnrichment($id: UUID!) {
+  previewArtistEnrichment(id: $id) {
+    success
+    message
+    matchScore
+    matchedEntity
+    sources
+    fieldsToUpdate {
+      field
+      currentValue
+      newValue
+      source
+    }
+    enrichmentLogId
+    rawData
+  }
+}

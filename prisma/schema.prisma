@@ -371,6 +371,7 @@ model EnrichmentLog {
   durationMs         Int?                   @map("duration_ms")
   apiCallCount       Int                    @default(0) @map("api_call_count")
   metadata           Json?
+  previewData        Json?                  @map("preview_data") // Stores raw API response and field diffs for preview enrichments
   jobId              String?                @map("job_id") @db.VarChar(100)
   triggeredBy        String?                @map("triggered_by") @db.VarChar(50)
   userId             String?                @map("user_id") // Track which user made manual changes
@@ -416,6 +417,7 @@ enum EnrichmentStatus {
   PARTIAL_SUCCESS
   NO_DATA_AVAILABLE
   SKIPPED
+  PREVIEW
 }
 
 enum EnrichmentEntityType {

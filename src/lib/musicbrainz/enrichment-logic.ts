@@ -27,6 +27,7 @@ export interface AlbumEnrichmentData {
     | 'PARTIAL_SUCCESS'
     | 'NO_DATA_AVAILABLE'
     | 'SKIPPED'
+    | 'PREVIEW'
     | null;
   lastEnriched: Date | null;
   artists?: Array<{
@@ -57,6 +58,7 @@ export interface ArtistEnrichmentData {
     | 'PARTIAL_SUCCESS'
     | 'NO_DATA_AVAILABLE'
     | 'SKIPPED'
+    | 'PREVIEW'
     | null;
   lastEnriched: Date | null;
 }

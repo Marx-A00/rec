@@ -6,6 +6,10 @@ import { GraphQLError } from 'graphql';
 
 import { MutationResolvers } from '@/generated/graphql';
 import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
+import {
+  previewAlbumEnrichment,
+  previewArtistEnrichment,
+} from '@/lib/enrichment/preview-enrichment';
 import type {
   CheckAlbumEnrichmentJobData,
   CheckArtistEnrichmentJobData,
@@ -1950,6 +1954,25 @@ export const mutationResolvers: MutationResolvers = {
       };
     } catch (error) {
       throw new GraphQLError(`Failed to trigger artist enrichment: ${error}`);
+    }
+  },
+
+  // Preview Enrichment mutations (dry-run without persisting to album/artist)
+  previewAlbumEnrichment: async (_: unknown, { id }: { id: string }) => {
+    try {
+      const result = await previewAlbumEnrichment(id);
+      return result;
+    } catch (error) {
+      throw new GraphQLError(`Failed to preview album enrichment: ${error}`);
+    }
+  },
+
+  previewArtistEnrichment: async (_: unknown, { id }: { id: string }) => {
+    try {
+      const result = await previewArtistEnrichment(id);
+      return result;
+    } catch (error) {
+      throw new GraphQLError(`Failed to preview artist enrichment: ${error}`);
     }
   },
 

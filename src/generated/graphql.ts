@@ -447,6 +447,14 @@ export enum EnrichmentEntityType {
   Track = 'TRACK',
 }
 
+export type EnrichmentFieldDiff = {
+  __typename?: 'EnrichmentFieldDiff';
+  currentValue?: Maybe<Scalars['String']['output']>;
+  field: Scalars['String']['output'];
+  newValue?: Maybe<Scalars['String']['output']>;
+  source: Scalars['String']['output'];
+};
+
 export type EnrichmentLog = {
   __typename?: 'EnrichmentLog';
   apiCallCount: Scalars['Int']['output'];
@@ -463,6 +471,7 @@ export type EnrichmentLog = {
   jobId?: Maybe<Scalars['String']['output']>;
   metadata?: Maybe<Scalars['JSON']['output']>;
   operation: Scalars['String']['output'];
+  previewData?: Maybe<Scalars['JSON']['output']>;
   reason?: Maybe<Scalars['String']['output']>;
   retryCount: Scalars['Int']['output'];
   sources: Array<Scalars['String']['output']>;
@@ -475,6 +484,7 @@ export enum EnrichmentLogStatus {
   Failed = 'FAILED',
   NoDataAvailable = 'NO_DATA_AVAILABLE',
   PartialSuccess = 'PARTIAL_SUCCESS',
+  Preview = 'PREVIEW',
   Skipped = 'SKIPPED',
   Success = 'SUCCESS',
 }
@@ -609,6 +619,8 @@ export type Mutation = {
   ensureListenLaterCollection: Collection;
   followUser: FollowUserPayload;
   pauseQueue: Scalars['Boolean']['output'];
+  previewAlbumEnrichment: PreviewEnrichmentResult;
+  previewArtistEnrichment: PreviewEnrichmentResult;
   removeAlbumFromCollection: Scalars['Boolean']['output'];
   removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
@@ -708,6 +720,14 @@ export type MutationDismissUserSuggestionArgs = {
 
 export type MutationFollowUserArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationPreviewAlbumEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationPreviewArtistEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
 };
 
 export type MutationRemoveAlbumFromCollectionArgs = {
@@ -852,6 +872,18 @@ export type PaginationInfo = {
   page: Scalars['Int']['output'];
   perPage: Scalars['Int']['output'];
   total: Scalars['Int']['output'];
+};
+
+export type PreviewEnrichmentResult = {
+  __typename?: 'PreviewEnrichmentResult';
+  enrichmentLogId: Scalars['UUID']['output'];
+  fieldsToUpdate: Array<EnrichmentFieldDiff>;
+  matchScore?: Maybe<Scalars['Float']['output']>;
+  matchedEntity?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  rawData?: Maybe<Scalars['JSON']['output']>;
+  sources: Array<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
 };
 
 export type Query = {
@@ -2429,6 +2461,56 @@ export type BatchEnrichmentMutation = {
     success: boolean;
     jobsQueued: number;
     message: string;
+  };
+};
+
+export type PreviewAlbumEnrichmentMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type PreviewAlbumEnrichmentMutation = {
+  __typename?: 'Mutation';
+  previewAlbumEnrichment: {
+    __typename?: 'PreviewEnrichmentResult';
+    success: boolean;
+    message?: string | null;
+    matchScore?: number | null;
+    matchedEntity?: string | null;
+    sources: Array<string>;
+    enrichmentLogId: string;
+    rawData?: any | null;
+    fieldsToUpdate: Array<{
+      __typename?: 'EnrichmentFieldDiff';
+      field: string;
+      currentValue?: string | null;
+      newValue?: string | null;
+      source: string;
+    }>;
+  };
+};
+
+export type PreviewArtistEnrichmentMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type PreviewArtistEnrichmentMutation = {
+  __typename?: 'Mutation';
+  previewArtistEnrichment: {
+    __typename?: 'PreviewEnrichmentResult';
+    success: boolean;
+    message?: string | null;
+    matchScore?: number | null;
+    matchedEntity?: string | null;
+    sources: Array<string>;
+    enrichmentLogId: string;
+    rawData?: any | null;
+    fieldsToUpdate: Array<{
+      __typename?: 'EnrichmentFieldDiff';
+      field: string;
+      currentValue?: string | null;
+      newValue?: string | null;
+      source: string;
+    }>;
   };
 };
 
@@ -5365,6 +5447,104 @@ export const useBatchEnrichmentMutation = <
 };
 
 useBatchEnrichmentMutation.getKey = () => ['BatchEnrichment'];
+
+export const PreviewAlbumEnrichmentDocument = `
+    mutation PreviewAlbumEnrichment($id: UUID!) {
+  previewAlbumEnrichment(id: $id) {
+    success
+    message
+    matchScore
+    matchedEntity
+    sources
+    fieldsToUpdate {
+      field
+      currentValue
+      newValue
+      source
+    }
+    enrichmentLogId
+    rawData
+  }
+}
+    `;
+
+export const usePreviewAlbumEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    PreviewAlbumEnrichmentMutation,
+    TError,
+    PreviewAlbumEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    PreviewAlbumEnrichmentMutation,
+    TError,
+    PreviewAlbumEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['PreviewAlbumEnrichment'],
+    mutationFn: (variables?: PreviewAlbumEnrichmentMutationVariables) =>
+      fetcher<
+        PreviewAlbumEnrichmentMutation,
+        PreviewAlbumEnrichmentMutationVariables
+      >(PreviewAlbumEnrichmentDocument, variables)(),
+    ...options,
+  });
+};
+
+usePreviewAlbumEnrichmentMutation.getKey = () => ['PreviewAlbumEnrichment'];
+
+export const PreviewArtistEnrichmentDocument = `
+    mutation PreviewArtistEnrichment($id: UUID!) {
+  previewArtistEnrichment(id: $id) {
+    success
+    message
+    matchScore
+    matchedEntity
+    sources
+    fieldsToUpdate {
+      field
+      currentValue
+      newValue
+      source
+    }
+    enrichmentLogId
+    rawData
+  }
+}
+    `;
+
+export const usePreviewArtistEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    PreviewArtistEnrichmentMutation,
+    TError,
+    PreviewArtistEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    PreviewArtistEnrichmentMutation,
+    TError,
+    PreviewArtistEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['PreviewArtistEnrichment'],
+    mutationFn: (variables?: PreviewArtistEnrichmentMutationVariables) =>
+      fetcher<
+        PreviewArtistEnrichmentMutation,
+        PreviewArtistEnrichmentMutationVariables
+      >(PreviewArtistEnrichmentDocument, variables)(),
+    ...options,
+  });
+};
+
+usePreviewArtistEnrichmentMutation.getKey = () => ['PreviewArtistEnrichment'];
 
 export const GetAlbumRecommendationsDocument = `
     query GetAlbumRecommendations($albumId: UUID!, $filter: String, $sort: String, $skip: Int, $limit: Int) {

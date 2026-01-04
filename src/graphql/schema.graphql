@@ -659,6 +659,7 @@ enum EnrichmentLogStatus {
   FAILED
   NO_DATA_AVAILABLE
   SKIPPED
+  PREVIEW
 }
 
 # =============================================
@@ -682,6 +683,7 @@ type EnrichmentLog {
   durationMs: Int
   apiCallCount: Int!
   metadata: JSON
+  previewData: JSON # Stores raw API response and field diffs for preview enrichments
   jobId: String
   triggeredBy: String
   userId: String # Track which user made manual changes
@@ -934,6 +936,25 @@ type BatchEnrichmentResult {
   success: Boolean!
   jobsQueued: Int!
   message: String!
+}
+
+# Preview Enrichment Types
+type EnrichmentFieldDiff {
+  field: String!
+  currentValue: String
+  newValue: String
+  source: String!
+}
+
+type PreviewEnrichmentResult {
+  success: Boolean!
+  message: String
+  matchScore: Float
+  matchedEntity: String
+  sources: [String!]!
+  fieldsToUpdate: [EnrichmentFieldDiff!]!
+  enrichmentLogId: UUID!
+  rawData: JSON
 }
 
 enum EnrichmentPriority {
@@ -1317,6 +1338,11 @@ type Mutation {
     priority: EnrichmentPriority
     force: Boolean
   ): EnrichmentResult!
+
+  # Preview Enrichment (dry-run without persisting to album/artist)
+  previewAlbumEnrichment(id: UUID!): PreviewEnrichmentResult!
+  previewArtistEnrichment(id: UUID!): PreviewEnrichmentResult!
+
   batchEnrichment(
     ids: [UUID!]!
     type: EnrichmentType!

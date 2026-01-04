@@ -421,6 +421,14 @@ export enum EnrichmentEntityType {
   Track = 'TRACK',
 }
 
+export type EnrichmentFieldDiff = {
+  __typename?: 'EnrichmentFieldDiff';
+  currentValue?: Maybe<Scalars['String']['output']>;
+  field: Scalars['String']['output'];
+  newValue?: Maybe<Scalars['String']['output']>;
+  source: Scalars['String']['output'];
+};
+
 export type EnrichmentLog = {
   __typename?: 'EnrichmentLog';
   apiCallCount: Scalars['Int']['output'];
@@ -437,6 +445,7 @@ export type EnrichmentLog = {
   jobId?: Maybe<Scalars['String']['output']>;
   metadata?: Maybe<Scalars['JSON']['output']>;
   operation: Scalars['String']['output'];
+  previewData?: Maybe<Scalars['JSON']['output']>;
   reason?: Maybe<Scalars['String']['output']>;
   retryCount: Scalars['Int']['output'];
   sources: Array<Scalars['String']['output']>;
@@ -449,6 +458,7 @@ export enum EnrichmentLogStatus {
   Failed = 'FAILED',
   NoDataAvailable = 'NO_DATA_AVAILABLE',
   PartialSuccess = 'PARTIAL_SUCCESS',
+  Preview = 'PREVIEW',
   Skipped = 'SKIPPED',
   Success = 'SUCCESS',
 }
@@ -583,6 +593,8 @@ export type Mutation = {
   ensureListenLaterCollection: Collection;
   followUser: FollowUserPayload;
   pauseQueue: Scalars['Boolean']['output'];
+  previewAlbumEnrichment: PreviewEnrichmentResult;
+  previewArtistEnrichment: PreviewEnrichmentResult;
   removeAlbumFromCollection: Scalars['Boolean']['output'];
   removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
@@ -682,6 +694,14 @@ export type MutationDismissUserSuggestionArgs = {
 
 export type MutationFollowUserArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationPreviewAlbumEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationPreviewArtistEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
 };
 
 export type MutationRemoveAlbumFromCollectionArgs = {
@@ -826,6 +846,18 @@ export type PaginationInfo = {
   page: Scalars['Int']['output'];
   perPage: Scalars['Int']['output'];
   total: Scalars['Int']['output'];
+};
+
+export type PreviewEnrichmentResult = {
+  __typename?: 'PreviewEnrichmentResult';
+  enrichmentLogId: Scalars['UUID']['output'];
+  fieldsToUpdate: Array<EnrichmentFieldDiff>;
+  matchScore?: Maybe<Scalars['Float']['output']>;
+  matchedEntity?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  rawData?: Maybe<Scalars['JSON']['output']>;
+  sources: Array<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
 };
 
 export type Query = {
@@ -1833,6 +1865,7 @@ export type ResolversTypes = ResolversObject<{
   DeleteAlbumPayload: ResolverTypeWrapper<DeleteAlbumPayload>;
   DeleteArtistPayload: ResolverTypeWrapper<DeleteArtistPayload>;
   EnrichmentEntityType: EnrichmentEntityType;
+  EnrichmentFieldDiff: ResolverTypeWrapper<EnrichmentFieldDiff>;
   EnrichmentLog: ResolverTypeWrapper<EnrichmentLog>;
   EnrichmentLogStatus: EnrichmentLogStatus;
   EnrichmentPriority: EnrichmentPriority;
@@ -1856,6 +1889,7 @@ export type ResolversTypes = ResolversObject<{
   OnboardingStatus: ResolverTypeWrapper<OnboardingStatus>;
   OtherAlbumInfo: ResolverTypeWrapper<OtherAlbumInfo>;
   PaginationInfo: ResolverTypeWrapper<PaginationInfo>;
+  PreviewEnrichmentResult: ResolverTypeWrapper<PreviewEnrichmentResult>;
   Query: ResolverTypeWrapper<{}>;
   QueueMetrics: ResolverTypeWrapper<QueueMetrics>;
   QueueStats: ResolverTypeWrapper<QueueStats>;
@@ -1953,6 +1987,7 @@ export type ResolversParentTypes = ResolversObject<{
   DateTime: Scalars['DateTime']['output'];
   DeleteAlbumPayload: DeleteAlbumPayload;
   DeleteArtistPayload: DeleteArtistPayload;
+  EnrichmentFieldDiff: EnrichmentFieldDiff;
   EnrichmentLog: EnrichmentLog;
   EnrichmentResult: EnrichmentResult;
   EnrichmentStats: EnrichmentStats;
@@ -1970,6 +2005,7 @@ export type ResolversParentTypes = ResolversObject<{
   OnboardingStatus: OnboardingStatus;
   OtherAlbumInfo: OtherAlbumInfo;
   PaginationInfo: PaginationInfo;
+  PreviewEnrichmentResult: PreviewEnrichmentResult;
   Query: {};
   QueueMetrics: QueueMetrics;
   QueueStats: QueueStats;
@@ -2645,6 +2681,22 @@ export type DeleteArtistPayloadResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type EnrichmentFieldDiffResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['EnrichmentFieldDiff'] = ResolversParentTypes['EnrichmentFieldDiff'],
+> = ResolversObject<{
+  currentValue?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  field?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  newValue?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  source?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type EnrichmentLogResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -2688,6 +2740,11 @@ export type EnrichmentLogResolvers<
   jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   metadata?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
   operation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  previewData?: Resolver<
+    Maybe<ResolversTypes['JSON']>,
+    ParentType,
+    ContextType
+  >;
   reason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   retryCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   sources?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
@@ -2962,6 +3019,18 @@ export type MutationResolvers<
     RequireFields<MutationFollowUserArgs, 'userId'>
   >;
   pauseQueue?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  previewAlbumEnrichment?: Resolver<
+    ResolversTypes['PreviewEnrichmentResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationPreviewAlbumEnrichmentArgs, 'id'>
+  >;
+  previewArtistEnrichment?: Resolver<
+    ResolversTypes['PreviewEnrichmentResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationPreviewArtistEnrichmentArgs, 'id'>
+  >;
   removeAlbumFromCollection?: Resolver<
     ResolversTypes['Boolean'],
     ParentType,
@@ -3162,6 +3231,34 @@ export type PaginationInfoResolvers<
   page?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   perPage?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type PreviewEnrichmentResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['PreviewEnrichmentResult'] = ResolversParentTypes['PreviewEnrichmentResult'],
+> = ResolversObject<{
+  enrichmentLogId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  fieldsToUpdate?: Resolver<
+    Array<ResolversTypes['EnrichmentFieldDiff']>,
+    ParentType,
+    ContextType
+  >;
+  matchScore?: Resolver<
+    Maybe<ResolversTypes['Float']>,
+    ParentType,
+    ContextType
+  >;
+  matchedEntity?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  rawData?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  sources?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -4421,6 +4518,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   DateTime?: GraphQLScalarType;
   DeleteAlbumPayload?: DeleteAlbumPayloadResolvers<ContextType>;
   DeleteArtistPayload?: DeleteArtistPayloadResolvers<ContextType>;
+  EnrichmentFieldDiff?: EnrichmentFieldDiffResolvers<ContextType>;
   EnrichmentLog?: EnrichmentLogResolvers<ContextType>;
   EnrichmentResult?: EnrichmentResultResolvers<ContextType>;
   EnrichmentStats?: EnrichmentStatsResolvers<ContextType>;
@@ -4435,6 +4533,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   OnboardingStatus?: OnboardingStatusResolvers<ContextType>;
   OtherAlbumInfo?: OtherAlbumInfoResolvers<ContextType>;
   PaginationInfo?: PaginationInfoResolvers<ContextType>;
+  PreviewEnrichmentResult?: PreviewEnrichmentResultResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   QueueMetrics?: QueueMetricsResolvers<ContextType>;
   QueueStats?: QueueStatsResolvers<ContextType>;

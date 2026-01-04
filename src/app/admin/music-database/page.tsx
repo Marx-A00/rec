@@ -30,6 +30,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Loader2,
+  Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -91,11 +92,15 @@ import {
   useBatchEnrichmentMutation,
   useDeleteAlbumMutation,
   useDeleteArtistMutation,
+  usePreviewAlbumEnrichmentMutation,
+  usePreviewArtistEnrichmentMutation,
+  PreviewEnrichmentResult,
   EnrichmentType,
   EnrichmentPriority,
   DataQuality,
 } from '@/generated/graphql';
 import { EnrichmentLogTable } from '@/components/admin/EnrichmentLogTable';
+import { EnrichmentPreviewResults } from '@/components/admin/EnrichmentPreviewResults';
 
 interface AlbumSearchResult {
   id: string;
@@ -203,6 +208,12 @@ export default function MusicDatabasePage() {
   } | null>(null);
   const [deleteArtistModalOpen, setDeleteArtistModalOpen] = useState(false);
   const [enrichingItems, setEnrichingItems] = useState<Set<string>>(new Set());
+  const [previewingItems, setPreviewingItems] = useState<Set<string>>(
+    new Set()
+  );
+  const [previewResults, setPreviewResults] = useState<
+    Map<string, PreviewEnrichmentResult>
+  >(new Map());
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
@@ -242,6 +253,10 @@ export default function MusicDatabasePage() {
   // Delete mutations
   const deleteAlbumMutation = useDeleteAlbumMutation();
   const deleteArtistMutation = useDeleteArtistMutation();
+
+  // Preview enrichment mutations
+  const previewAlbumEnrichmentMutation = usePreviewAlbumEnrichmentMutation();
+  const previewArtistEnrichmentMutation = usePreviewArtistEnrichmentMutation();
 
   // Search albums with React Query
   const [sourceFilter, setSourceFilter] = useState<string>('all');
@@ -600,6 +615,68 @@ export default function MusicDatabasePage() {
         return next;
       });
     }
+  };
+
+  const handlePreviewEnrichment = async (
+    itemId: string,
+    type: 'album' | 'artist'
+  ) => {
+    // Add item to previewing set to show loading state
+    setPreviewingItems(prev => new Set(prev).add(itemId));
+
+    try {
+      if (type === 'album') {
+        const result = await previewAlbumEnrichmentMutation.mutateAsync({
+          id: itemId,
+        });
+
+        setPreviewResults(prev => {
+          const next = new Map(prev);
+          next.set(itemId, result.previewAlbumEnrichment);
+          return next;
+        });
+
+        toast.success('Preview enrichment completed');
+
+        // Invalidate enrichment logs to show the new PREVIEW log entry
+        await queryClient.invalidateQueries({
+          queryKey: ['GetEnrichmentLogs'],
+        });
+      } else {
+        const result = await previewArtistEnrichmentMutation.mutateAsync({
+          id: itemId,
+        });
+
+        setPreviewResults(prev => {
+          const next = new Map(prev);
+          next.set(itemId, result.previewArtistEnrichment);
+          return next;
+        });
+
+        toast.success('Preview enrichment completed');
+
+        // Invalidate enrichment logs to show the new PREVIEW log entry
+        await queryClient.invalidateQueries({
+          queryKey: ['GetEnrichmentLogs'],
+        });
+      }
+    } catch (error) {
+      toast.error(`Preview enrichment failed: ${error}`);
+    } finally {
+      setPreviewingItems(prev => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
+    }
+  };
+
+  const clearPreviewResult = (itemId: string) => {
+    setPreviewResults(prev => {
+      const next = new Map(prev);
+      next.delete(itemId);
+      return next;
+    });
   };
 
   const handleResetEnrichment = async (
@@ -1048,6 +1125,15 @@ export default function MusicDatabasePage() {
           </div>
         )}
 
+        {/* Preview Enrichment Results */}
+        {previewResults.has(album.id) && (
+          <EnrichmentPreviewResults
+            result={previewResults.get(album.id)!}
+            onClose={() => clearPreviewResult(album.id)}
+            entityType='album'
+          />
+        )}
+
         {/* Enrichment Logs Section */}
         <div className='border-t border-zinc-700 pt-4'>
           <EnrichmentLogTable
@@ -1250,6 +1336,15 @@ export default function MusicDatabasePage() {
             <Music className='h-8 w-8 mx-auto mb-2 opacity-50' />
             No albums available
           </div>
+        )}
+
+        {/* Preview Enrichment Results */}
+        {previewResults.has(artist.id) && (
+          <EnrichmentPreviewResults
+            result={previewResults.get(artist.id)!}
+            onClose={() => clearPreviewResult(artist.id)}
+            entityType='artist'
+          />
         )}
 
         {/* Enrichment Logs Section */}
@@ -1762,6 +1857,24 @@ export default function MusicDatabasePage() {
                                   <Zap className='h-3 w-3 mr-2' />
                                   Force Re-Enrich
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    // Expand the row if not already expanded
+                                    if (!expandedRows.has(album.id)) {
+                                      toggleExpanded(album.id);
+                                    }
+                                    handlePreviewEnrichment(album.id, 'album');
+                                  }}
+                                  disabled={previewingItems.has(album.id)}
+                                  className='text-purple-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                >
+                                  {previewingItems.has(album.id) ? (
+                                    <Loader2 className='h-3 w-3 mr-2 animate-spin' />
+                                  ) : (
+                                    <Eye className='h-3 w-3 mr-2' />
+                                  )}
+                                  Preview Enrichment
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
@@ -1945,6 +2058,27 @@ export default function MusicDatabasePage() {
                                 >
                                   <Zap className='h-3 w-3 mr-2' />
                                   Force Re-Enrich
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    // Expand the row if not already expanded
+                                    if (!expandedRows.has(artist.id)) {
+                                      toggleExpanded(artist.id);
+                                    }
+                                    handlePreviewEnrichment(
+                                      artist.id,
+                                      'artist'
+                                    );
+                                  }}
+                                  disabled={previewingItems.has(artist.id)}
+                                  className='text-purple-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                >
+                                  {previewingItems.has(artist.id) ? (
+                                    <Loader2 className='h-3 w-3 mr-2 animate-spin' />
+                                  ) : (
+                                    <Eye className='h-3 w-3 mr-2' />
+                                  )}
+                                  Preview Enrichment
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
