@@ -197,7 +197,7 @@ export default function AdminUsersPage() {
   // Component for expanded user details
   const UserExpandedContent = ({ user }: { user: any }) => {
     return (
-      <tr>
+      <tr className='hover:bg-transparent'>
         <td colSpan={6} className='p-0 bg-zinc-900/30'>
           <div className='p-6 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
             {/* User Info Grid */}

@@ -1881,7 +1881,10 @@ export default function MusicDatabasePage() {
                         </TableCell>
                       </TableRow>
                       {expandedRows.has(album.id) && (
-                        <TableRow key={`${album.id}-expanded`}>
+                        <TableRow
+                          key={`${album.id}-expanded`}
+                          className='hover:bg-transparent'
+                        >
                           <TableCell colSpan={8} className='p-0 border-none'>
                             <AlbumExpandedContent album={album} />
                           </TableCell>
@@ -2086,7 +2089,10 @@ export default function MusicDatabasePage() {
                         </TableCell>
                       </TableRow>
                       {expandedRows.has(artist.id) && (
-                        <TableRow key={`${artist.id}-expanded`}>
+                        <TableRow
+                          key={`${artist.id}-expanded`}
+                          className='hover:bg-transparent'
+                        >
                           <TableCell colSpan={8} className='p-0 border-none'>
                             <ArtistExpandedContent artist={artist} />
                           </TableCell>

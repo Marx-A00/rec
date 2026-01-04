@@ -33,6 +33,29 @@ import {
 } from '../jobs';
 
 // ============================================================================
+// Field Change Tracking Types
+// ============================================================================
+
+interface FieldChange {
+  field: string;
+  before: unknown;
+  after: unknown;
+}
+
+interface EnrichmentUpdateResult {
+  updateData: Record<string, unknown> | null;
+  fieldChanges: FieldChange[];
+}
+
+// Helper to format field values for display
+function formatFieldValue(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) return value.join(', ');
+  if (value instanceof Date) return value.toISOString().split('T')[0];
+  return String(value);
+}
+
+// ============================================================================
 // Check Enrichment Handlers
 // ============================================================================
 
@@ -299,6 +322,7 @@ export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
   const startTime = Date.now();
   const sourcesAttempted: string[] = [];
   const fieldsEnriched: string[] = [];
+  const allFieldChanges: FieldChange[] = [];
   let apiCallCount = 0;
 
   // Get current album from database
@@ -390,7 +414,9 @@ export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
           ['artists', 'releases']
         );
         if (mbData) {
-          enrichmentResult = await updateAlbumFromMusicBrainz(album, mbData);
+          const updateResult = await updateAlbumFromMusicBrainz(album, mbData);
+          enrichmentResult = updateResult.updateData;
+          allFieldChanges.push(...updateResult.fieldChanges);
           newDataQuality = 'HIGH';
 
           // Track which fields were enriched
@@ -481,10 +507,12 @@ export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
               ['artists', 'tags', 'releases']
             );
             if (mbData) {
-              enrichmentResult = await updateAlbumFromMusicBrainz(
+              const updateResult = await updateAlbumFromMusicBrainz(
                 album,
                 mbData
               );
+              enrichmentResult = updateResult.updateData;
+              allFieldChanges.push(...updateResult.fieldChanges);
               newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
 
               if (mbData.title) fieldsEnriched.push('title');
@@ -584,6 +612,11 @@ export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
         albumTitle: album.title,
         artistName,
         hadMusicBrainzData: !!enrichmentResult,
+        fieldChanges: allFieldChanges.map(fc => ({
+          field: fc.field,
+          before: formatFieldValue(fc.before),
+          after: formatFieldValue(fc.after),
+        })),
       },
       jobId: data.requestId,
       triggeredBy: data.userAction || 'manual',
@@ -648,6 +681,7 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
   const startTime = Date.now();
   const sourcesAttempted: string[] = [];
   const fieldsEnriched: string[] = [];
+  const allFieldChanges: FieldChange[] = [];
   let apiCallCount = 0;
 
   // Get current artist from database
@@ -723,8 +757,12 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
   });
 
   try {
-    let enrichmentResult = null;
+    let enrichmentResult: EnrichmentUpdateResult = {
+      updateData: null,
+      fieldChanges: [],
+    };
     let newDataQuality = artist.dataQuality || 'LOW';
+    const allFieldChanges: FieldChange[] = [];
 
     // If we have a MusicBrainz ID, fetch detailed data
     if (artist.musicbrainzId) {
@@ -737,6 +775,7 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
         );
         if (mbData) {
           enrichmentResult = await enrichArtistMetadata(artist, mbData);
+          allFieldChanges.push(...enrichmentResult.fieldChanges);
           newDataQuality = 'HIGH';
 
           if (mbData.name) fieldsEnriched.push('name');
@@ -753,7 +792,7 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
     }
 
     // If no MusicBrainz ID or lookup failed, try searching
-    if (!enrichmentResult && artist.name) {
+    if (!enrichmentResult.updateData && artist.name) {
       try {
         if (!sourcesAttempted.includes('MUSICBRAINZ')) {
           sourcesAttempted.push('MUSICBRAINZ');
@@ -789,6 +828,7 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
             );
             if (mbData) {
               enrichmentResult = await enrichArtistMetadata(artist, mbData);
+              allFieldChanges.push(...enrichmentResult.fieldChanges);
               newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
 
               if (mbData.name) fieldsEnriched.push('name');
@@ -807,7 +847,7 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
     }
 
     // Queue Discogs search as fallback if no Discogs ID and no image yet
-    if (!enrichmentResult && !artist.discogsId && !artist.imageUrl) {
+    if (!enrichmentResult.updateData && !artist.discogsId && !artist.imageUrl) {
       console.log(
         `🔍 No Discogs ID found for "${artist.name}", queueing Discogs search as fallback`
       );
@@ -861,8 +901,9 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
     });
 
     console.log(`✅ Artist enrichment completed for ${data.artistId}`, {
-      hadResult: !!enrichmentResult,
+      hadResult: !!enrichmentResult.updateData,
       dataQuality: newDataQuality,
+      fieldChanges: allFieldChanges.length,
     });
 
     // Log successful enrichment
@@ -879,7 +920,12 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
       apiCallCount,
       metadata: {
         artistName: artist.name,
-        hadMusicBrainzData: !!enrichmentResult,
+        hadMusicBrainzData: !!enrichmentResult.updateData,
+        fieldChanges: allFieldChanges.map(fc => ({
+          field: fc.field,
+          before: formatFieldValue(fc.before),
+          after: formatFieldValue(fc.after),
+        })),
       },
       jobId: data.requestId,
       triggeredBy: data.userAction || 'manual',
@@ -1252,22 +1298,43 @@ async function updateAlbumFromMusicBrainz(
     musicbrainzId: string | null;
     releaseDate: Date | null;
     releaseType: string | null;
+    genres: string[] | null;
+    secondaryTypes: string[] | null;
+    releaseStatus: string | null;
+    releaseCountry: string | null;
   },
   mbData: MusicBrainzReleaseGroupData
-): Promise<Record<string, unknown> | null> {
+): Promise<EnrichmentUpdateResult> {
   const updateData: Record<string, unknown> = {};
+  const fieldChanges: FieldChange[] = [];
 
   if (mbData.id && !album.musicbrainzId) {
     updateData.musicbrainzId = mbData.id;
+    fieldChanges.push({
+      field: 'musicbrainzId',
+      before: album.musicbrainzId,
+      after: mbData.id,
+    });
   }
 
   if (mbData.title && mbData.title !== album.title) {
     updateData.title = mbData.title;
+    fieldChanges.push({
+      field: 'title',
+      before: album.title,
+      after: mbData.title,
+    });
   }
 
   if (mbData['first-release-date'] && !album.releaseDate) {
     try {
-      updateData.releaseDate = new Date(mbData['first-release-date']);
+      const newDate = new Date(mbData['first-release-date']);
+      updateData.releaseDate = newDate;
+      fieldChanges.push({
+        field: 'releaseDate',
+        before: album.releaseDate,
+        after: mbData['first-release-date'],
+      });
     } catch (e) {
       console.warn(
         'Invalid release date from MusicBrainz:',
@@ -1278,6 +1345,11 @@ async function updateAlbumFromMusicBrainz(
 
   if (mbData['primary-type'] && !album.releaseType) {
     updateData.releaseType = mbData['primary-type'];
+    fieldChanges.push({
+      field: 'releaseType',
+      before: album.releaseType,
+      after: mbData['primary-type'],
+    });
   }
 
   // Extract genre tags from MusicBrainz
@@ -1287,25 +1359,46 @@ async function updateAlbumFromMusicBrainz(
       .slice(0, 5)
       .map(tag => tag.name);
     updateData.genres = genres;
+    fieldChanges.push({
+      field: 'genres',
+      before: album.genres,
+      after: genres,
+    });
   }
 
   // Extract secondary types (live, compilation, etc.)
   if (mbData['secondary-types'] && mbData['secondary-types'].length > 0) {
     updateData.secondaryTypes = mbData['secondary-types'];
-  } else {
-    updateData.secondaryTypes = [];
+    fieldChanges.push({
+      field: 'secondaryTypes',
+      before: album.secondaryTypes,
+      after: mbData['secondary-types'],
+    });
   }
 
   // Extract release status (official, promotion, bootleg, etc.)
-  if (mbData.status) {
+  if (mbData.status && mbData.status !== album.releaseStatus) {
     updateData.releaseStatus = mbData.status;
+    fieldChanges.push({
+      field: 'releaseStatus',
+      before: album.releaseStatus,
+      after: mbData.status,
+    });
   }
 
   // Extract release country from releases
   if (mbData.releases && mbData.releases.length > 0) {
     const releaseWithCountry = mbData.releases.find(release => release.country);
-    if (releaseWithCountry?.country) {
+    if (
+      releaseWithCountry?.country &&
+      releaseWithCountry.country !== album.releaseCountry
+    ) {
       updateData.releaseCountry = releaseWithCountry.country;
+      fieldChanges.push({
+        field: 'releaseCountry',
+        before: album.releaseCountry,
+        after: releaseWithCountry.country,
+      });
     }
   }
 
@@ -1325,12 +1418,17 @@ async function updateAlbumFromMusicBrainz(
         );
 
         delete updateData.musicbrainzId;
+        // Remove from fieldChanges too
+        const mbIdIndex = fieldChanges.findIndex(
+          fc => fc.field === 'musicbrainzId'
+        );
+        if (mbIdIndex !== -1) fieldChanges.splice(mbIdIndex, 1);
 
         if (Object.keys(updateData).length === 0) {
           console.log(
             `   → No other fields to update, skipping database update`
           );
-          return null;
+          return { updateData: null, fieldChanges: [] };
         }
       }
     }
@@ -1339,10 +1437,10 @@ async function updateAlbumFromMusicBrainz(
       where: { id: album.id },
       data: updateData,
     });
-    return updateData;
+    return { updateData, fieldChanges };
   }
 
-  return null;
+  return { updateData: null, fieldChanges: [] };
 }
 
 interface MusicBrainzArtistData {
@@ -1370,24 +1468,41 @@ async function enrichArtistMetadata(
     discogsId: string | null;
     imageUrl: string | null;
     genres: string[] | null;
+    area?: string | null;
+    artistType?: string | null;
   },
   mbData: MusicBrainzArtistData
-): Promise<Record<string, unknown> | null> {
+): Promise<EnrichmentUpdateResult> {
   const updateData: Record<string, unknown> = {};
+  const fieldChanges: FieldChange[] = [];
 
   if (mbData.id && !artist.musicbrainzId) {
     updateData.musicbrainzId = mbData.id;
+    fieldChanges.push({
+      field: 'musicbrainzId',
+      before: artist.musicbrainzId,
+      after: mbData.id,
+    });
   }
 
   if (mbData.name && mbData.name !== artist.name) {
     updateData.name = mbData.name;
+    fieldChanges.push({
+      field: 'name',
+      before: artist.name,
+      after: mbData.name,
+    });
   }
 
   if (mbData['life-span']?.begin && !artist.formedYear) {
     try {
-      updateData.formedYear = parseInt(
-        mbData['life-span'].begin.substring(0, 4)
-      );
+      const formedYear = parseInt(mbData['life-span'].begin.substring(0, 4));
+      updateData.formedYear = formedYear;
+      fieldChanges.push({
+        field: 'formedYear',
+        before: artist.formedYear,
+        after: formedYear,
+      });
     } catch (e) {
       console.warn(
         'Invalid formed year from MusicBrainz:',
@@ -1397,17 +1512,33 @@ async function enrichArtistMetadata(
   }
 
   if (mbData.area?.iso && !artist.countryCode) {
-    updateData.countryCode = mbData.area.iso.substring(0, 2);
+    const countryCode = mbData.area.iso.substring(0, 2);
+    updateData.countryCode = countryCode;
+    fieldChanges.push({
+      field: 'countryCode',
+      before: artist.countryCode,
+      after: countryCode,
+    });
   }
 
   // Extract full area name (country/region)
-  if (mbData.area?.name) {
+  if (mbData.area?.name && mbData.area.name !== artist.area) {
     updateData.area = mbData.area.name;
+    fieldChanges.push({
+      field: 'area',
+      before: artist.area,
+      after: mbData.area.name,
+    });
   }
 
   // Extract artist type (Group, Person, etc.)
-  if (mbData.type) {
+  if (mbData.type && mbData.type !== artist.artistType) {
     updateData.artistType = mbData.type;
+    fieldChanges.push({
+      field: 'artistType',
+      before: artist.artistType,
+      after: mbData.type,
+    });
   }
 
   // Extract genre tags from MusicBrainz
@@ -1416,7 +1547,16 @@ async function enrichArtistMetadata(
       .sort((a, b) => (b.count || 0) - (a.count || 0))
       .slice(0, 5)
       .map(tag => tag.name);
-    updateData.genres = genres;
+    const genresChanged =
+      JSON.stringify(genres) !== JSON.stringify(artist.genres);
+    if (genresChanged) {
+      updateData.genres = genres;
+      fieldChanges.push({
+        field: 'genres',
+        before: artist.genres,
+        after: genres,
+      });
+    }
   }
 
   // Extract Discogs ID from MusicBrainz relations
@@ -1426,6 +1566,11 @@ async function enrichArtistMetadata(
       const discogsMatch = discogsRel.url.resource.match(/\/artist\/(\d+)/);
       if (discogsMatch) {
         updateData.discogsId = discogsMatch[1];
+        fieldChanges.push({
+          field: 'discogsId',
+          before: artist.discogsId,
+          after: discogsMatch[1],
+        });
         console.log(
           `🔗 Found Discogs ID ${discogsMatch[1]} for "${artist.name}"`
         );
@@ -1562,8 +1707,13 @@ async function enrichArtistMetadata(
     }
   }
 
-  if (imageUrl) {
+  if (imageUrl && imageUrl !== artist.imageUrl) {
     updateData.imageUrl = imageUrl;
+    fieldChanges.push({
+      field: 'imageUrl',
+      before: artist.imageUrl,
+      after: imageUrl,
+    });
   }
 
   if (Object.keys(updateData).length > 0) {
@@ -1582,12 +1732,17 @@ async function enrichArtistMetadata(
         );
 
         delete updateData.musicbrainzId;
+        // Remove from fieldChanges too
+        const mbIdIndex = fieldChanges.findIndex(
+          fc => fc.field === 'musicbrainzId'
+        );
+        if (mbIdIndex !== -1) fieldChanges.splice(mbIdIndex, 1);
 
         if (Object.keys(updateData).length === 0) {
           console.log(
             `   → No other fields to update, skipping database update`
           );
-          return null;
+          return { updateData: null, fieldChanges: [] };
         }
       }
     }
@@ -1596,10 +1751,10 @@ async function enrichArtistMetadata(
       where: { id: artist.id },
       data: updateData,
     });
-    return updateData;
+    return { updateData, fieldChanges };
   }
 
-  return null;
+  return { updateData: null, fieldChanges: [] };
 }
 
 // ============================================================================
