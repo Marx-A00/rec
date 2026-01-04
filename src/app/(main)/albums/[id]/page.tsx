@@ -143,7 +143,7 @@ export default async function AlbumDetailsPage({
 
       {/* Tabs Section */}
       <Tabs defaultValue='tracklist' className='w-full'>
-        <TabsList className='grid w-full grid-cols-4 bg-zinc-900'>
+        <TabsList className='grid w-full grid-cols-2 bg-zinc-900'>
           <TabsTrigger
             value='tracklist'
             className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
@@ -154,19 +154,7 @@ export default async function AlbumDetailsPage({
             value='recommendations'
             className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
-            Recommendations
-          </TabsTrigger>
-          <TabsTrigger
-            value='reviews'
-            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
-          >
-            Reviews
-          </TabsTrigger>
-          <TabsTrigger
-            value='similar'
-            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
-          >
-            Similar Albums
+            Recs
           </TabsTrigger>
         </TabsList>
 
@@ -184,30 +172,6 @@ export default async function AlbumDetailsPage({
             albumImageUrl={album.image?.url || null}
             albumYear={album.year?.toString() || null}
           />
-        </TabsContent>
-
-        <TabsContent value='reviews' className='mt-6'>
-          <div className='bg-zinc-900 rounded-lg p-6'>
-            <h3 className='text-xl font-semibold mb-4 text-white'>
-              User Reviews
-            </h3>
-            <p className='text-zinc-400'>
-              User reviews and ratings for this album will appear here. This
-              feature is coming soon!
-            </p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value='similar' className='mt-6'>
-          <div className='bg-zinc-900 rounded-lg p-6'>
-            <h3 className='text-xl font-semibold mb-4 text-white'>
-              Similar Albums
-            </h3>
-            <p className='text-zinc-400'>
-              Albums similar to this one will appear here. This feature is
-              coming soon!
-            </p>
-          </div>
         </TabsContent>
       </Tabs>
     </div>

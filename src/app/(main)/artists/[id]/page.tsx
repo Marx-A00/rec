@@ -50,13 +50,7 @@ export default async function ArtistDetailsPage({
   }
 
   // Determine initial tab from URL param
-  const validTabs = [
-    'discography',
-    'recommendations',
-    'biography',
-    'collaborations',
-    'similar',
-  ];
+  const validTabs = ['discography', 'recommendations'];
   const initialTab = validTabs.includes(rawSearch?.tab || '')
     ? rawSearch!.tab!
     : 'discography';
@@ -177,7 +171,7 @@ export default async function ArtistDetailsPage({
 
       {/* Tabs */}
       <Tabs defaultValue={initialTab} className='w-full'>
-        <TabsList className='grid w-full grid-cols-5 bg-zinc-900'>
+        <TabsList className='grid w-full grid-cols-2 bg-zinc-900'>
           <TabsTrigger
             value='discography'
             className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
@@ -189,24 +183,6 @@ export default async function ArtistDetailsPage({
             className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
             Recs
-          </TabsTrigger>
-          <TabsTrigger
-            value='biography'
-            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
-          >
-            Biography
-          </TabsTrigger>
-          <TabsTrigger
-            value='collaborations'
-            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
-          >
-            Collaborations
-          </TabsTrigger>
-          <TabsTrigger
-            value='similar'
-            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
-          >
-            Similar Artists
           </TabsTrigger>
         </TabsList>
 
@@ -230,39 +206,6 @@ export default async function ArtistDetailsPage({
             artistId={artist.id}
             artistName={sanitizeArtistName(artist.name)}
           />
-        </TabsContent>
-
-        <TabsContent value='biography'>
-          <div className='bg-zinc-900 p-4 rounded-lg'>
-            <h3 className='text-lg font-semibold mb-4 text-white'>Biography</h3>
-            {artist.profile ? (
-              <p className='text-zinc-300 leading-relaxed'>{artist.profile}</p>
-            ) : (
-              <p className='text-zinc-400'>No biography available.</p>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value='collaborations'>
-          <div className='bg-zinc-900 p-4 rounded-lg'>
-            <h3 className='text-lg font-semibold mb-4 text-white'>
-              Collaborations
-            </h3>
-            <p className='text-zinc-400'>
-              Collaboration information will appear here when available.
-            </p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value='similar'>
-          <div className='bg-zinc-900 p-4 rounded-lg'>
-            <h3 className='text-lg font-semibold mb-4 text-white'>
-              Similar Artists
-            </h3>
-            <p className='text-zinc-400'>
-              Similar artist recommendations will appear here.
-            </p>
-          </div>
         </TabsContent>
       </Tabs>
     </div>

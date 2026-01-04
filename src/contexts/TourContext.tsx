@@ -95,20 +95,14 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
           setIsTourActive(true);
           console.log(`📍 Tour step ${stepIndex + 1}/${tourSteps.length}`);
         },
-        onDestroyStarted: () => {
-          console.log('🎉 Tour completed or closed!');
+        onDestroyStarted: (element, step, options) => {
+          // Call the original callback from driverConfig (handles completion tracking)
+          if (driverConfig.onDestroyStarted) {
+            driverConfig.onDestroyStarted(element, step, options);
+          }
+          // Update local React state
           setCurrentStep(null);
           setIsTourActive(false);
-
-          // Mark tour as completed in localStorage
-          localStorage.setItem('tour-completed', 'true');
-
-          // Mark onboarding as completed via API
-          fetch('/api/users/onboarding-status', { method: 'POST' })
-            .then(() => console.log('✅ Onboarding marked as completed'))
-            .catch(error =>
-              console.error('❌ Error marking onboarding complete:', error)
-            );
         },
       });
 
@@ -134,7 +128,8 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (response.ok) {
-        localStorage.removeItem('tour-completed');
+        // Reset tour state in Zustand store (clears isCompleted and resumeStep)
+        useTourStore.getState().reset();
         console.log('✅ Onboarding reset complete. Refresh to trigger tour.');
 
         // Optionally start tour immediately
@@ -246,7 +241,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
     // Check if user is new (profileUpdatedAt is null)
     const isNewUser = user.profileUpdatedAt === null;
-    const tourCompleted = localStorage.getItem('tour-completed');
+    const tourCompleted = useTourStore.getState().isCompleted;
 
     if (isNewUser && !tourCompleted) {
       console.log('👋 New user detected! Starting onboarding tour...');

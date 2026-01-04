@@ -296,11 +296,11 @@ export const driverConfig: Config = {
 
       // Create properly structured Album objects matching Album type from /src/types/album.ts
       const sourceAlbum = {
-        id: '556257',
+        id: '6c0aa5f2-4fc2-4c26-b83f-62b6ad45dda8',
         title: 'Random Access Memories',
         artists: [
           {
-            id: 'daft-punk-1',
+            id: 'da99bd57-74ca-4808-9bc3-7e5c7d7b6541',
             name: 'Daft Punk',
           },
         ],
@@ -318,11 +318,11 @@ export const driverConfig: Config = {
       };
 
       const recommendedAlbum = {
-        id: 'discovery-1',
+        id: '1db33788-5ff8-4fda-93b1-daa475f4f74f',
         title: 'Discovery',
         artists: [
           {
-            id: 'daft-punk-1',
+            id: 'da99bd57-74ca-4808-9bc3-7e5c7d7b6541',
             name: 'Daft Punk',
           },
         ],
@@ -433,7 +433,8 @@ export const driverConfig: Config = {
       console.log('💿 Navigating to Random Access Memories album...');
       // Save next step index to resume after navigation
       useTourStore.getState().setResumeStep(12);
-      window.location.href = '/albums/556257';
+      window.location.href =
+        '/albums/6c0aa5f2-4fc2-4c26-b83f-62b6ad45dda8?source=local';
       return;
     }
 
@@ -458,8 +459,8 @@ export const driverConfig: Config = {
 
   onDestroyStarted: () => {
     console.log('🎉 Tour completed or closed!');
-    // Mark tour as completed in localStorage
-    localStorage.setItem('tour-completed', 'true');
+    // Mark tour as completed in Zustand store (persisted to localStorage via 'tour-state' key)
+    useTourStore.getState().setCompleted(true);
 
     // Mark onboarding as completed via API
     fetch('/api/users/onboarding-status', { method: 'POST' })
