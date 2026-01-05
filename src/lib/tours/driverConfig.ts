@@ -97,7 +97,8 @@ export const tourSteps: DriveStep[] = [
     element: '[data-tour-step="submit-recommendation"]',
     popover: {
       title: 'Submit Your Rec!',
-      description: 'This is disabled during the tour.',
+      description:
+        "This is where you would submit your rec. This is disabled during the tour, but you'll see it lit up green outside of the tour, so you know you are ready to send off your rec!",
       side: 'top',
       align: 'center',
     },
@@ -212,6 +213,74 @@ export const tourSteps: DriveStep[] = [
         'Perfect! This is a dedicated album page where you can explore everything about this album. Here you can see detailed information, track listings, reviews, add to your collection, and discover what others are saying about it. These interactions are the heart of music discovery!',
       side: 'bottom',
       align: 'start',
+    },
+  },
+  {
+    element: '[data-tour-step="album-interactions"]',
+    popover: {
+      title: '🎶 Quick Actions',
+      description:
+        'From here you can make a rec based on this album, add it to your collection, or share it with friends! These are the core ways to interact with any album you discover.',
+      side: 'bottom',
+      align: 'center',
+    },
+    onHighlighted: () => {
+      // Ensure no overlay/darkening for this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
+    },
+  },
+  {
+    element: '[data-tour-step="album-recs-tab"]',
+    popover: {
+      title: '📋 Album Recs',
+      description:
+        "This tab shows all the recs for this album across the entire site - whether it's been recommended as a source or as a recommendation. It's a great way to discover what other users think pairs well with this album!",
+      side: 'bottom',
+      align: 'center',
+    },
+    onHighlighted: () => {
+      // Hide the driver.js highlight so the tab's natural active state is visible
+      const highlightEl = document.querySelector(
+        '.driver-highlighted-element-stage'
+      ) as HTMLElement;
+      if (highlightEl) {
+        highlightEl.style.display = 'none';
+      }
+      // Click the Recs tab to switch to it (with delay to ensure element is ready)
+      setTimeout(() => {
+        const recsTab = document.querySelector(
+          '[data-tour-step="album-recs-tab"]'
+        ) as HTMLElement;
+        if (recsTab) {
+          // Dispatch proper mouse events to trigger Radix UI tab change
+          const mouseDown = new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+          });
+          const mouseUp = new MouseEvent('mouseup', {
+            bubbles: true,
+            cancelable: true,
+          });
+          const click = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+          });
+          recsTab.dispatchEvent(mouseDown);
+          recsTab.dispatchEvent(mouseUp);
+          recsTab.dispatchEvent(click);
+          console.log('✅ Switched to Recs tab for tour');
+        } else {
+          console.error('❌ Could not find Recs tab element');
+        }
+      }, 150);
+      // Ensure no overlay/darkening for this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
     },
   },
   {
@@ -438,11 +507,11 @@ export const driverConfig: Config = {
       return;
     }
 
-    // Step 14 (index 13): Navigate to profile
-    if (stepIndex === 13) {
+    // Step 16 (index 15): Navigate to profile
+    if (stepIndex === 15) {
       console.log('👤 Navigating to profile page...');
       // Save next step index to resume after navigation
-      useTourStore.getState().setResumeStep(14);
+      useTourStore.getState().setResumeStep(16);
       window.location.href = '/profile';
       return;
     }

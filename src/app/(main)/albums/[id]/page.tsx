@@ -152,6 +152,7 @@ export default async function AlbumDetailsPage({
           </TabsTrigger>
           <TabsTrigger
             value='recommendations'
+            data-tour-step='album-recs-tab'
             className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
           >
             Recs

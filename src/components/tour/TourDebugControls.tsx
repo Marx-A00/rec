@@ -3,6 +3,29 @@
 import React, { useState } from 'react';
 import { useTourContext } from '@/contexts/TourContext';
 
+// Truncated step titles for debug panel
+// Steps marked with navigates: true will trigger a page navigation
+const stepData = [
+  { title: 'Welcome', navigates: false },
+  { title: 'Create Rec Button', navigates: false },
+  { title: 'Welcome Rec Drawer', navigates: false },
+  { title: 'Understanding Rec System', navigates: false },
+  { title: 'Album Selection', navigates: false },
+  { title: 'Similarity Dial', navigates: false },
+  { title: 'Submit Rec', navigates: false },
+  { title: 'Great Job Transition', navigates: true }, // → /browse
+  { title: 'Welcome Browse', navigates: false },
+  { title: 'Search Bar', navigates: true }, // → /artists/daft-punk
+  { title: 'Artist Page', navigates: false },
+  { title: 'Artist Discography', navigates: true }, // → /albums/RAM
+  { title: 'Album Details', navigates: false },
+  { title: 'Album Interactions', navigates: false },
+  { title: 'Album Recs Tab', navigates: false },
+  { title: 'Profile Nav', navigates: true }, // → /profile
+  { title: 'Profile Header', navigates: false },
+  { title: 'Tour Complete', navigates: false },
+];
+
 export function TourDebugControls() {
   const { currentStep, startFromStep, isTourActive } = useTourContext();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -10,7 +33,7 @@ export function TourDebugControls() {
   // Don't show if tour is not active
   if (!isTourActive) return null;
 
-  const totalSteps = 16; // Update this if tour steps change
+  const totalSteps = stepData.length;
 
   return (
     <div className='fixed top-4 right-4 z-[10002] bg-zinc-900 border-2 border-emerald-600 rounded-lg shadow-2xl'>
@@ -47,7 +70,8 @@ export function TourDebugControls() {
               htmlFor='step-select'
               className='text-xs text-zinc-400 mb-1 block'
             >
-              Jump to Step:
+              Jump to Step:{' '}
+              <span className='text-red-400'>(red = navigates)</span>
             </label>
             <select
               id='step-select'
@@ -55,9 +79,10 @@ export function TourDebugControls() {
               onChange={e => startFromStep(parseInt(e.target.value, 10))}
               className='w-full px-2 py-1 text-sm bg-zinc-800 border border-zinc-700 rounded text-white focus:outline-none focus:border-emerald-500'
             >
-              {Array.from({ length: totalSteps }, (_, i) => (
+              {stepData.map((step, i) => (
                 <option key={i} value={i}>
-                  Step {i + 1}
+                  {step.navigates ? '🔴 ' : ''}
+                  {i + 1}: {step.title}
                 </option>
               ))}
             </select>

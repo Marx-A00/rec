@@ -159,7 +159,10 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
       )}
 
       {/* Action Buttons */}
-      <div className='flex flex-wrap gap-4 mb-8 justify-center lg:justify-start'>
+      <div
+        data-tour-step='album-interactions'
+        className='flex flex-wrap gap-4 mb-8 justify-center lg:justify-start'
+      >
         <Button
           variant='primary'
           size='lg'
