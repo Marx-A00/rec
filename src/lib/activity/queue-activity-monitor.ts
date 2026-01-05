@@ -41,6 +41,16 @@ export class QueueActivityMonitor {
   private backgroundJobsPaused: boolean = false;
   private startTime: Date = new Date();
   private pauseResumeEventCount: number = 0;
+  // Track last logged stats to avoid duplicate logs
+  private lastLoggedStats: {
+    active: number;
+    waiting: number;
+    delayed: number;
+    completed: number;
+    failed: number;
+    activityLevel: string;
+    paused: boolean;
+  } | null = null;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
@@ -107,13 +117,9 @@ export class QueueActivityMonitor {
       await this.resumeBackgroundJobs();
     }
 
-    // Log status every few minutes for debugging
-    const timeSinceLastLog = Date.now() - this.lastCheckTime.getTime();
-    if (timeSinceLastLog > 120000) {
-      // 2 minutes
-      await this.logQueueStatus();
-      this.lastCheckTime = new Date();
-    }
+    // Log status only when stats change (handled inside logQueueStatus)
+    await this.logQueueStatus();
+    this.lastCheckTime = new Date();
   }
 
   /**
@@ -190,10 +196,11 @@ export class QueueActivityMonitor {
 
   /**
    * Log current queue status for monitoring
+   * Only logs when stats have changed to avoid cluttering the terminal
    */
-  private async logQueueStatus(): Promise<void> {
+  private async logQueueStatus(forceFullLog: boolean = false): Promise<void> {
     try {
-      const activeUserCount =
+      const activityLevel =
         (await this.priorityManager.shouldPauseBackgroundJobs())
           ? 'HIGH'
           : 'NORMAL';
@@ -201,44 +208,54 @@ export class QueueActivityMonitor {
       const queue = getMusicBrainzQueue();
       const metrics = await queue.getMetrics();
 
-      // Build pretty formatted log
-      const border = chalk.gray('─'.repeat(60));
-      const activityColor =
-        activeUserCount === 'HIGH' ? chalk.red : chalk.green;
-      const pausedColor = this.backgroundJobsPaused
-        ? chalk.yellow
-        : chalk.green;
+      const currentStats = {
+        active: metrics.stats.active,
+        waiting: metrics.stats.waiting,
+        delayed: metrics.stats.delayed,
+        completed: metrics.stats.completed,
+        failed: metrics.stats.failed,
+        activityLevel,
+        paused: this.backgroundJobsPaused,
+      };
 
-      console.log('\n' + border);
-      console.log(chalk.bold.cyan('📊 Queue Activity Monitor Status'));
-      console.log(border);
+      // Check if stats have changed
+      const hasChanged =
+        !this.lastLoggedStats ||
+        currentStats.active !== this.lastLoggedStats.active ||
+        currentStats.waiting !== this.lastLoggedStats.waiting ||
+        currentStats.delayed !== this.lastLoggedStats.delayed ||
+        currentStats.completed !== this.lastLoggedStats.completed ||
+        currentStats.failed !== this.lastLoggedStats.failed ||
+        currentStats.activityLevel !== this.lastLoggedStats.activityLevel ||
+        currentStats.paused !== this.lastLoggedStats.paused;
 
-      console.log(chalk.bold('\n  Activity Level:'));
-      console.log(`    ${activityColor(activeUserCount)}`);
+      if (!hasChanged && !forceFullLog) {
+        // No changes, skip logging
+        return;
+      }
 
-      console.log(chalk.bold('\n  Background Jobs:'));
-      console.log(
-        `    ${pausedColor(this.backgroundJobsPaused ? '⏸️  PAUSED' : '▶️  RUNNING')}`
-      );
+      // Update last logged stats
+      this.lastLoggedStats = currentStats;
 
-      console.log(chalk.bold('\n  Queue Stats:'));
-      console.log(
-        `    ${chalk.blue('Active:')}    ${chalk.white(metrics.stats.active)}`
-      );
-      console.log(
-        `    ${chalk.yellow('Waiting:')}   ${chalk.white(metrics.stats.waiting)}`
-      );
-      console.log(
-        `    ${chalk.magenta('Delayed:')}   ${chalk.white(metrics.stats.delayed)}`
-      );
-      console.log(
-        `    ${chalk.green('Completed:')} ${chalk.white(metrics.stats.completed)}`
-      );
-      console.log(
-        `    ${chalk.red('Failed:')}    ${chalk.white(metrics.stats.failed)}`
-      );
+      // Use compact single-line format for routine updates
+      const statusIcon = this.backgroundJobsPaused ? '⏸️' : '▶️';
+      const activityColor = activityLevel === 'HIGH' ? chalk.red : chalk.green;
 
-      console.log('\n' + border + '\n');
+      console.log(
+        chalk.gray('📊 Queue:') +
+          ` ${statusIcon} ` +
+          activityColor(activityLevel) +
+          chalk.gray(' | ') +
+          chalk.blue(`A:${currentStats.active}`) +
+          chalk.gray('/') +
+          chalk.yellow(`W:${currentStats.waiting}`) +
+          chalk.gray('/') +
+          chalk.magenta(`D:${currentStats.delayed}`) +
+          chalk.gray(' | ') +
+          chalk.green(`✓${currentStats.completed}`) +
+          chalk.gray('/') +
+          chalk.red(`✗${currentStats.failed}`)
+      );
     } catch (error) {
       console.error('❌ Failed to log queue status:', error);
     }
