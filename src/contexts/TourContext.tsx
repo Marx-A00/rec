@@ -15,11 +15,23 @@ import type { Driver } from 'driver.js';
 import { driverConfig, tourSteps } from '@/lib/tours/driverConfig';
 import { useTourStore } from '@/stores/useTourStore';
 import { TourDebugControls } from '@/components/tour/TourDebugControls';
-import { graphqlRequest } from '@/lib/graphql-client';
 import {
-  GetMySettingsDocument,
-  UpdateUserSettingsDocument,
+  useGetMySettingsQuery,
+  useUpdateUserSettingsMutation,
 } from '@/generated/graphql';
+import {
+  Dialog,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogPortal,
+  DialogOverlay,
+  DialogClose,
+} from '@/components/ui/dialog';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 interface TourContextType {
   startTour: () => void;
@@ -38,7 +50,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [driverInstance, setDriverInstance] = useState<Driver | null>(null);
   const [currentStep, setCurrentStep] = useState<number | null>(null);
   const [isTourActive, setIsTourActive] = useState(false);
-  const hasCheckedOnboarding = useRef(false);
+  const [showEarlyExitModal, setShowEarlyExitModal] = useState(false);
+  const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(false);
+
+  const { mutateAsync: updateUserSettings } = useUpdateUserSettingsMutation();
+
+  // Query user settings to check if tour should auto-start
+  const { data: settingsData } = useGetMySettingsQuery(undefined, {
+    enabled: shouldCheckOnboarding,
+  });
 
   const startTour = useCallback(() => {
     console.log('🎬 Starting onboarding tour...');
@@ -130,22 +150,17 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const resetOnboarding = useCallback(async () => {
     console.log('🔄 Resetting onboarding status...');
     try {
-      await graphqlRequest(UpdateUserSettingsDocument, {
-        showOnboardingTour: true,
-      });
+      await updateUserSettings({ showOnboardingTour: true });
+      console.log('✅ Onboarding reset complete.');
 
-      // Reset tour state in Zustand store (clears isCompleted and resumeStep)
-      useTourStore.getState().reset();
-      console.log('✅ Onboarding reset complete. Refresh to trigger tour.');
-
-      // Optionally start tour immediately
+      // Start tour immediately
       setTimeout(() => {
         startTour();
       }, 500);
     } catch (error) {
       console.error('❌ Error resetting onboarding:', error);
     }
-  }, [startTour]);
+  }, [startTour, updateUserSettings]);
 
   const startFromStep = useCallback(
     (stepIndex: number) => {
@@ -242,44 +257,87 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Only auto-start tour on the home page where tour elements exist
+    // Only auto-start tour on pages where tour elements exist
     // This prevents the tour from trying to start on admin, settings, or other pages
     const currentPath = window.location.pathname;
-    if (currentPath !== '/') {
+    const tourEnabledPaths = ['/', '/home-mosaic'];
+    console.log('🔍 Tour check - currentPath:', currentPath);
+    if (!tourEnabledPaths.includes(currentPath)) {
+      console.log('🔍 Tour check - not on tour-enabled page, skipping');
       return;
     }
 
-    // Prevent multiple checks - only check once per session
-    if (hasCheckedOnboarding.current) return;
+    // Enable the settings query to check onboarding status
+    if (!shouldCheckOnboarding) {
+      setShouldCheckOnboarding(true);
+    }
+  }, [session, status, startFromStep, shouldCheckOnboarding]);
 
-    // Check if tour is already completed in local store (prevents re-fetch)
-    const tourCompleted = useTourStore.getState().isCompleted;
-    if (tourCompleted) return;
+  // React to settings data to start tour if needed
+  useEffect(() => {
+    if (!settingsData?.mySettings) return;
 
-    // Mark as checked before making the API call
-    hasCheckedOnboarding.current = true;
+    console.log('🔍 Tour check - mySettings:', settingsData.mySettings);
+    console.log(
+      '🔍 Tour check - showOnboardingTour:',
+      settingsData.mySettings.showOnboardingTour
+    );
 
-    // Fetch showOnboardingTour from user settings via GraphQL
-    const checkOnboardingStatus = async () => {
-      try {
-        const data = await graphqlRequest<{
-          mySettings: { showOnboardingTour: boolean } | null;
-        }>(GetMySettingsDocument);
+    if (settingsData.mySettings.showOnboardingTour) {
+      console.log('👋 New user detected! Starting onboarding tour...');
+      // Delay to ensure all components are mounted and animations complete
+      setTimeout(() => {
+        startTour();
+      }, 1500);
+    } else {
+      console.log('🔍 Tour check - tour already completed');
+    }
+  }, [settingsData, startTour]);
 
-        if (data.mySettings?.showOnboardingTour) {
-          console.log('👋 New user detected! Starting onboarding tour...');
-          // Delay to ensure all components are mounted and animations complete
-          setTimeout(() => {
-            startTour();
-          }, 1500);
-        }
-      } catch (error) {
-        console.error('Error checking onboarding status:', error);
-      }
+  // Listen for early exit event from driverConfig
+  useEffect(() => {
+    const handleEarlyExit = () => {
+      console.log('🔔 Early exit event received');
+      // Hide the driver.js popover while showing our modal
+      const popover = document.querySelector('.driver-popover') as HTMLElement;
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (popover) popover.style.display = 'none';
+      if (overlay) overlay.style.display = 'none';
+      setShowEarlyExitModal(true);
     };
 
-    checkOnboardingStatus();
-  }, [session, status, startTour, startFromStep]);
+    window.addEventListener('tour-early-exit', handleEarlyExit);
+    return () => window.removeEventListener('tour-early-exit', handleEarlyExit);
+  }, []);
+
+  // Handle early exit modal confirmation
+  const handleConfirmExit = useCallback(async () => {
+    setShowEarlyExitModal(false);
+
+    // Mark onboarding as completed via React Query mutation
+    try {
+      await updateUserSettings({ showOnboardingTour: false });
+      console.log('✅ Onboarding marked as completed (early exit)');
+    } catch (error) {
+      console.error('❌ Error marking onboarding complete:', error);
+    }
+
+    if (driverInstance) {
+      driverInstance.destroy();
+    }
+    setCurrentStep(null);
+    setIsTourActive(false);
+  }, [driverInstance, updateUserSettings]);
+
+  // Handle cancel exit (resume tour)
+  const handleCancelExit = useCallback(() => {
+    setShowEarlyExitModal(false);
+    // Show the driver.js popover again
+    const popover = document.querySelector('.driver-popover') as HTMLElement;
+    const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+    if (popover) popover.style.display = '';
+    if (overlay) overlay.style.display = '';
+  }, []);
 
   // Expose debug commands to window
   useEffect(() => {
@@ -316,6 +374,56 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     <TourContext.Provider value={value}>
       {children}
       <TourDebugControls />
+
+      {/* Early Exit Confirmation Modal - Styled to match driver.js tour cards */}
+      <Dialog open={showEarlyExitModal} onOpenChange={setShowEarlyExitModal}>
+        <DialogPortal>
+          <DialogOverlay />
+          <DialogPrimitive.Content className='fixed left-[50%] top-[50%] z-50 w-full max-w-md translate-x-[-50%] translate-y-[-50%] bg-zinc-900 border-2 border-zinc-700 rounded-xl shadow-2xl p-6 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95'>
+            {/* Close button on the left, styled like tour cards */}
+            <DialogClose className='absolute left-4 top-4 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md p-1 transition-colors'>
+              <X className='h-4 w-4' />
+              <span className='sr-only'>Close</span>
+            </DialogClose>
+
+            <DialogHeader className='pt-4'>
+              <DialogTitle className='text-xl font-bold text-white mb-3'>
+                Exit Tour?
+              </DialogTitle>
+              <DialogDescription asChild>
+                <div className='text-zinc-300 text-sm leading-relaxed space-y-3'>
+                  <p>
+                    No worries! You can restart the tour anytime from your
+                    profile settings.
+                  </p>
+                  <p className='text-zinc-400'>
+                    Go to{' '}
+                    <span className='text-white font-medium'>Profile</span> →{' '}
+                    <span className='text-white font-medium'>Settings</span> →{' '}
+                    <span className='text-white font-medium'>Restart Tour</span>
+                  </p>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className='flex gap-3 pt-4 border-t border-zinc-800 mt-4'>
+              <Button
+                variant='ghost'
+                onClick={handleCancelExit}
+                className='bg-zinc-700 hover:bg-zinc-600 text-zinc-300 px-4 py-2 text-sm rounded-lg font-medium'
+              >
+                Continue Tour
+              </Button>
+              <Button
+                variant='destructive'
+                onClick={handleConfirmExit}
+                className='px-4 py-2 text-sm rounded-lg font-medium shadow-lg'
+              >
+                Got it, exit tour
+              </Button>
+            </DialogFooter>
+          </DialogPrimitive.Content>
+        </DialogPortal>
+      </Dialog>
     </TourContext.Provider>
   );
 }

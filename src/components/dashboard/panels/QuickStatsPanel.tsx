@@ -19,8 +19,9 @@ export default function QuickStatsPanel({
   config,
   isEditMode,
 }: PanelComponentProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const user = session?.user;
+  const isSessionLoading = status === 'loading';
   const [stats, setStats] = useState<StatsData>({
     albumsInCollection: 0,
     recommendationsMade: 0,
@@ -112,10 +113,10 @@ export default function QuickStatsPanel({
 
   return (
     <div className='bg-zinc-900/50 p-6 h-full overflow-hidden'>
-      {user ? (
+      {isSessionLoading || user ? (
         <div className='h-full flex flex-col'>
           <div className='flex-1 grid grid-cols-2 gap-4'>
-            {isLoading
+            {isSessionLoading || isLoading
               ? // Loading skeletons
                 Array.from({ length: 4 }).map((_, i) => (
                   <div

@@ -198,7 +198,7 @@ export default function AdminUsersPage() {
   const UserExpandedContent = ({ user }: { user: any }) => {
     return (
       <tr className='hover:bg-transparent'>
-        <td colSpan={7} className='p-0 bg-zinc-900/30'>
+        <td colSpan={4} className='p-0 bg-zinc-900/30'>
           <div className='p-6 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
             {/* User Info Grid */}
             <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
@@ -611,42 +611,6 @@ export default function AdminUsersPage() {
                     {getSortIcon(UserSortField.Email)}
                   </button>
                 </th>
-                <th className='px-6 py-4 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider'>
-                  <button
-                    onClick={() =>
-                      handleSortChange(UserSortField.CollectionsCount)
-                    }
-                    className='flex items-center gap-1 hover:text-white transition-colors mx-auto'
-                  >
-                    Collections
-                    <ArrowUpDown className='w-3 h-3' />
-                    {getSortIcon(UserSortField.CollectionsCount)}
-                  </button>
-                </th>
-                <th className='px-6 py-4 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider'>
-                  <button
-                    onClick={() =>
-                      handleSortChange(UserSortField.RecommendationsCount)
-                    }
-                    className='flex items-center gap-1 hover:text-white transition-colors mx-auto'
-                  >
-                    Recommendations
-                    <ArrowUpDown className='w-3 h-3' />
-                    {getSortIcon(UserSortField.RecommendationsCount)}
-                  </button>
-                </th>
-                <th className='px-6 py-4 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider'>
-                  <button
-                    onClick={() =>
-                      handleSortChange(UserSortField.FollowersCount)
-                    }
-                    className='flex items-center gap-1 hover:text-white transition-colors mx-auto'
-                  >
-                    Followers
-                    <ArrowUpDown className='w-3 h-3' />
-                    {getSortIcon(UserSortField.FollowersCount)}
-                  </button>
-                </th>
                 <th className='px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider'>
                   <button
                     onClick={() => handleSortChange(UserSortField.LastActive)}
@@ -658,14 +622,14 @@ export default function AdminUsersPage() {
                   </button>
                 </th>
                 <th className='px-6 py-4 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider'>
-                  Tour
+                  showTour
                 </th>
               </tr>
             </thead>
             <tbody className='divide-y divide-zinc-700'>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className='px-6 py-8 text-center'>
+                  <td colSpan={4} className='px-6 py-8 text-center'>
                     <div className='flex justify-center'>
                       <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-emeraled-green'></div>
                     </div>
@@ -674,7 +638,7 @@ export default function AdminUsersPage() {
               ) : error ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={4}
                     className='px-6 py-8 text-center text-red-400'
                   >
                     Error loading users:{' '}
@@ -684,7 +648,7 @@ export default function AdminUsersPage() {
               ) : users.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={4}
                     className='px-6 py-8 text-center text-zinc-400'
                   >
                     No users found
@@ -744,21 +708,6 @@ export default function AdminUsersPage() {
                           </span>
                         )}
                       </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-center'>
-                        <span className='text-zinc-300'>
-                          {user._count?.collections || 0}
-                        </span>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-center'>
-                        <span className='text-zinc-300'>
-                          {user._count?.recommendations || 0}
-                        </span>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-center'>
-                        <span className='text-zinc-300'>
-                          {user.followersCount || 0}
-                        </span>
-                      </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
                         <div className='flex items-center text-sm text-zinc-400'>
                           <Calendar className='w-4 h-4 mr-1' />
@@ -780,11 +729,13 @@ export default function AdminUsersPage() {
                         </div>
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-center'>
-                        {user.settings?.showOnboardingTour === false ? (
-                          <span className='text-emeraled-green'>✓</span>
-                        ) : (
-                          <span className='text-zinc-500'>—</span>
-                        )}
+                        <span className='text-zinc-300'>
+                          {user.settings?.showOnboardingTour === undefined
+                            ? 'null'
+                            : user.settings.showOnboardingTour
+                              ? 'true'
+                              : 'false'}
+                        </span>
                       </td>
                     </tr>
                     {expandedRows.has(user.id) && (

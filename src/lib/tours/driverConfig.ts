@@ -4,6 +4,8 @@ import { useTourStore } from '@/stores/useTourStore';
 import { graphqlRequest } from '@/lib/graphql-client';
 import { UpdateUserSettingsDocument } from '@/generated/graphql';
 
+// Note: useTourStore is still used for resumeStep during page navigation
+
 /**
  * Driver.js Tour Configuration
  *
@@ -575,17 +577,27 @@ export const driverConfig: Config = {
   },
 
   onCloseClick: (_element, _step, options) => {
-    console.log('❌ User closed tour early');
-    // Explicitly destroy the tour instance
+    const currentStep = options.state.activeIndex ?? 0;
+    const totalSteps = tourSteps.length;
+    const isLastStep = currentStep === totalSteps - 1;
+
+    console.log(`❌ User closed tour at step ${currentStep + 1}/${totalSteps}`);
+
+    if (!isLastStep) {
+      // Early exit - show confirmation modal before destroying
+      // Dispatch event for React component to handle
+      window.dispatchEvent(new CustomEvent('tour-early-exit'));
+      // Don't destroy yet - modal will handle it
+      return;
+    }
+
+    // Last step - just destroy normally
     options.driver.destroy();
   },
 
   onDestroyStarted: () => {
     console.log('🎉 Tour completed or closed!');
-    // Mark tour as completed in Zustand store (persisted to localStorage via 'tour-state' key)
-    useTourStore.getState().setCompleted(true);
-
-    // Mark onboarding as completed via GraphQL mutation
+    // Mark onboarding as completed via GraphQL mutation (database is source of truth)
     graphqlRequest(UpdateUserSettingsDocument, { showOnboardingTour: false })
       .then(() => console.log('✅ Onboarding marked as completed'))
       .catch(error =>
