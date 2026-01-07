@@ -2125,6 +2125,7 @@ export const mutationResolvers: MutationResolvers = {
       showCollections,
       showListenLaterInFeed,
       showCollectionAddsInFeed,
+      showOnboardingTour,
     } = args;
 
     try {
@@ -2141,6 +2142,8 @@ export const mutationResolvers: MutationResolvers = {
         updateData.showListenLaterInFeed = showListenLaterInFeed;
       if (showCollectionAddsInFeed !== undefined)
         updateData.showCollectionAddsInFeed = showCollectionAddsInFeed;
+      if (showOnboardingTour !== undefined)
+        updateData.showOnboardingTour = showOnboardingTour;
 
       const settings = await prisma.userSettings.upsert({
         where: { userId: user.id },
@@ -2154,6 +2157,7 @@ export const mutationResolvers: MutationResolvers = {
           showCollections: showCollections ?? true,
           showListenLaterInFeed: showListenLaterInFeed ?? true,
           showCollectionAddsInFeed: showCollectionAddsInFeed ?? true,
+          showOnboardingTour: showOnboardingTour ?? true,
           emailNotifications: true,
           recommendationAlerts: true,
           followAlerts: true,

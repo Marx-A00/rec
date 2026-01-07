@@ -10,6 +10,7 @@ query GetMySettings {
     showCollections
     showListenLaterInFeed
     showCollectionAddsInFeed
+    showOnboardingTour
     emailNotifications
     recommendationAlerts
     followAlerts

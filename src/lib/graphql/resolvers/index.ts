@@ -138,6 +138,11 @@ export const resolvers: Resolvers = {
             },
             take: 5,
           },
+          settings: {
+            select: {
+              showOnboardingTour: true,
+            },
+          },
           _count: {
             select: {
               collections: true,

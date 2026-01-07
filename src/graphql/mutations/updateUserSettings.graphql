@@ -6,6 +6,7 @@ mutation UpdateUserSettings(
   $showCollections: Boolean
   $showListenLaterInFeed: Boolean
   $showCollectionAddsInFeed: Boolean
+  $showOnboardingTour: Boolean
 ) {
   updateUserSettings(
     theme: $theme
@@ -15,6 +16,7 @@ mutation UpdateUserSettings(
     showCollections: $showCollections
     showListenLaterInFeed: $showListenLaterInFeed
     showCollectionAddsInFeed: $showCollectionAddsInFeed
+    showOnboardingTour: $showOnboardingTour
   ) {
     id
     userId
@@ -25,6 +27,7 @@ mutation UpdateUserSettings(
     showCollections
     showListenLaterInFeed
     showCollectionAddsInFeed
+    showOnboardingTour
     emailNotifications
     recommendationAlerts
     followAlerts

@@ -820,6 +820,7 @@ export type MutationUpdateUserSettingsArgs = {
   showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showCollections?: InputMaybe<Scalars['Boolean']['input']>;
   showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
+  showOnboardingTour?: InputMaybe<Scalars['Boolean']['input']>;
   showRecentActivity?: InputMaybe<Scalars['Boolean']['input']>;
   theme?: InputMaybe<Scalars['String']['input']>;
 };
@@ -1671,6 +1672,7 @@ export type UserSettings = {
   showCollectionAddsInFeed: Scalars['Boolean']['output'];
   showCollections: Scalars['Boolean']['output'];
   showListenLaterInFeed: Scalars['Boolean']['output'];
+  showOnboardingTour: Scalars['Boolean']['output'];
   showRecentActivity: Scalars['Boolean']['output'];
   theme: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
@@ -4432,6 +4434,11 @@ export type UserSettingsResolvers<
     ContextType
   >;
   showListenLaterInFeed?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
+  showOnboardingTour?: Resolver<
     ResolversTypes['Boolean'],
     ParentType,
     ContextType

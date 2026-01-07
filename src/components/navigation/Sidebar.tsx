@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 import NavigationItem from './NavigationItem';
+import HelpMenu from './HelpMenu';
 
 interface SidebarProps {
   items?: NavItem[];
@@ -85,6 +86,11 @@ export const Sidebar: FC<SidebarProps> = ({
           ))}
         </div>
       </TooltipProvider>
+
+      {/* Help Menu at bottom */}
+      <div className='pb-6 flex justify-center'>
+        <HelpMenu />
+      </div>
     </nav>
   );
 };

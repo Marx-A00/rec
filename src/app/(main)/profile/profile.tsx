@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { Pencil, Settings } from 'lucide-react';
+import { Pencil, Settings, UserCog } from 'lucide-react';
 import { UserRole } from '@prisma/client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -305,6 +305,7 @@ export default function ProfileClient({
                       <Button
                         variant='ghost'
                         size='sm'
+                        data-tour-step='profile-settings'
                         onClick={e => {
                           e.stopPropagation();
                           setShowSettings(!showSettings);
@@ -322,7 +323,7 @@ export default function ProfileClient({
                       </Button>
                       {showSettings && (
                         <div
-                          className='absolute right-0 top-10 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-20 py-2 min-w-[140px] backdrop-blur-sm'
+                          className='absolute right-0 top-10 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-20 py-1 min-w-[160px] backdrop-blur-sm'
                           role='menu'
                           aria-label='Profile settings'
                         >
@@ -331,7 +332,7 @@ export default function ProfileClient({
                               e.stopPropagation();
                               handleEditProfile();
                             }}
-                            className='flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800'
+                            className='flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800'
                             role='menuitem'
                             tabIndex={0}
                             aria-label='Edit your profile'
@@ -342,6 +343,22 @@ export default function ProfileClient({
                             />
                             <span className='text-zinc-200'>Edit Profile</span>
                           </button>
+                          <Link
+                            href='/settings'
+                            onClick={() => setShowSettings(false)}
+                            className='flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800'
+                            role='menuitem'
+                            tabIndex={0}
+                            aria-label='Account settings'
+                          >
+                            <UserCog
+                              className='h-4 w-4 text-zinc-400'
+                              aria-hidden='true'
+                            />
+                            <span className='text-zinc-200'>
+                              Account Settings
+                            </span>
+                          </Link>
                         </div>
                       )}
                     </div>

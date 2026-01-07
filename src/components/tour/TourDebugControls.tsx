@@ -23,6 +23,7 @@ const stepData = [
   { title: 'Album Recs Tab', navigates: false },
   { title: 'Profile Nav', navigates: true }, // → /profile
   { title: 'Profile Header', navigates: false },
+  { title: 'Profile Settings', navigates: false },
   { title: 'Tour Complete', navigates: false },
 ];
 

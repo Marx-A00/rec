@@ -9,11 +9,13 @@ declare module 'next-auth' {
     user: {
       id: string;
       role: UserRole;
+      lastActive: Date | null;
     } & DefaultSession['user'];
   }
 
   interface User {
     role: UserRole;
     profileUpdatedAt: Date | null;
+    lastActive: Date | null;
   }
 }

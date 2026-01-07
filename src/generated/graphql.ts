@@ -846,6 +846,7 @@ export type MutationUpdateUserSettingsArgs = {
   showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showCollections?: InputMaybe<Scalars['Boolean']['input']>;
   showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
+  showOnboardingTour?: InputMaybe<Scalars['Boolean']['input']>;
   showRecentActivity?: InputMaybe<Scalars['Boolean']['input']>;
   theme?: InputMaybe<Scalars['String']['input']>;
 };
@@ -1697,6 +1698,7 @@ export type UserSettings = {
   showCollectionAddsInFeed: Scalars['Boolean']['output'];
   showCollections: Scalars['Boolean']['output'];
   showListenLaterInFeed: Scalars['Boolean']['output'];
+  showOnboardingTour: Scalars['Boolean']['output'];
   showRecentActivity: Scalars['Boolean']['output'];
   theme: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
@@ -1882,6 +1884,7 @@ export type UpdateUserSettingsMutationVariables = Exact<{
   showCollections?: InputMaybe<Scalars['Boolean']['input']>;
   showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
+  showOnboardingTour?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 export type UpdateUserSettingsMutation = {
@@ -1897,6 +1900,7 @@ export type UpdateUserSettingsMutation = {
     showCollections: boolean;
     showListenLaterInFeed: boolean;
     showCollectionAddsInFeed: boolean;
+    showOnboardingTour: boolean;
     emailNotifications: boolean;
     recommendationAlerts: boolean;
     followAlerts: boolean;
@@ -1954,6 +1958,10 @@ export type GetAdminUsersQuery = {
     lastActive?: Date | null;
     createdAt: Date;
     collections: Array<{ __typename?: 'Collection'; id: string; name: string }>;
+    settings?: {
+      __typename?: 'UserSettings';
+      showOnboardingTour: boolean;
+    } | null;
     _count?: {
       __typename?: 'UserCount';
       collections: number;
@@ -2860,6 +2868,7 @@ export type GetMySettingsQuery = {
     showCollections: boolean;
     showListenLaterInFeed: boolean;
     showCollectionAddsInFeed: boolean;
+    showOnboardingTour: boolean;
     emailNotifications: boolean;
     recommendationAlerts: boolean;
     followAlerts: boolean;
@@ -4099,7 +4108,7 @@ export const useUpdateProfileMutation = <TError = unknown, TContext = unknown>(
 useUpdateProfileMutation.getKey = () => ['UpdateProfile'];
 
 export const UpdateUserSettingsDocument = `
-    mutation UpdateUserSettings($theme: String, $language: String, $profileVisibility: String, $showRecentActivity: Boolean, $showCollections: Boolean, $showListenLaterInFeed: Boolean, $showCollectionAddsInFeed: Boolean) {
+    mutation UpdateUserSettings($theme: String, $language: String, $profileVisibility: String, $showRecentActivity: Boolean, $showCollections: Boolean, $showListenLaterInFeed: Boolean, $showCollectionAddsInFeed: Boolean, $showOnboardingTour: Boolean) {
   updateUserSettings(
     theme: $theme
     language: $language
@@ -4108,6 +4117,7 @@ export const UpdateUserSettingsDocument = `
     showCollections: $showCollections
     showListenLaterInFeed: $showListenLaterInFeed
     showCollectionAddsInFeed: $showCollectionAddsInFeed
+    showOnboardingTour: $showOnboardingTour
   ) {
     id
     userId
@@ -4118,6 +4128,7 @@ export const UpdateUserSettingsDocument = `
     showCollections
     showListenLaterInFeed
     showCollectionAddsInFeed
+    showOnboardingTour
     emailNotifications
     recommendationAlerts
     followAlerts
@@ -4225,6 +4236,9 @@ export const GetAdminUsersDocument = `
     collections {
       id
       name
+    }
+    settings {
+      showOnboardingTour
     }
     _count {
       collections
@@ -6554,6 +6568,7 @@ export const GetMySettingsDocument = `
     showCollections
     showListenLaterInFeed
     showCollectionAddsInFeed
+    showOnboardingTour
     emailNotifications
     recommendationAlerts
     followAlerts

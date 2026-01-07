@@ -1,6 +1,8 @@
 import { Config, DriveStep } from 'driver.js';
 import { driver } from 'driver.js';
 import { useTourStore } from '@/stores/useTourStore';
+import { graphqlRequest } from '@/lib/graphql-client';
+import { UpdateUserSettingsDocument } from '@/generated/graphql';
 
 /**
  * Driver.js Tour Configuration
@@ -304,6 +306,58 @@ export const tourSteps: DriveStep[] = [
     },
   },
   {
+    element: '[data-tour-step="profile-settings"]',
+    popover: {
+      title: '⚙️ Profile & Account Settings',
+      description:
+        'Click here to edit your profile info like your name and bio. For more options, head to Account Settings where you can manage your account preferences and restart this tour anytime!',
+      side: 'bottom',
+      align: 'end',
+    },
+    onHighlighted: () => {
+      // Open the settings dropdown
+      setTimeout(() => {
+        const settingsBtn = document.querySelector(
+          '[data-tour-step="profile-settings"]'
+        ) as HTMLElement;
+        if (settingsBtn) {
+          // Dispatch proper mouse events
+          const mouseDown = new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+          });
+          const mouseUp = new MouseEvent('mouseup', {
+            bubbles: true,
+            cancelable: true,
+          });
+          const click = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+          });
+          settingsBtn.dispatchEvent(mouseDown);
+          settingsBtn.dispatchEvent(mouseUp);
+          settingsBtn.dispatchEvent(click);
+          console.log('✅ Opened settings dropdown for tour');
+        }
+      }, 200);
+    },
+    onDeselected: () => {
+      // Close the settings dropdown when leaving this step
+      const dropdown = document.querySelector(
+        '[role="menu"][aria-label="Profile settings"]'
+      );
+      if (dropdown) {
+        const settingsBtn = document.querySelector(
+          '[data-tour-step="profile-settings"]'
+        ) as HTMLElement;
+        if (settingsBtn) {
+          settingsBtn.click();
+          console.log('✅ Closed settings dropdown');
+        }
+      }
+    },
+  },
+  {
     popover: {
       title: '🎉 Tour Complete!',
       description:
@@ -531,8 +585,8 @@ export const driverConfig: Config = {
     // Mark tour as completed in Zustand store (persisted to localStorage via 'tour-state' key)
     useTourStore.getState().setCompleted(true);
 
-    // Mark onboarding as completed via API
-    fetch('/api/users/onboarding-status', { method: 'POST' })
+    // Mark onboarding as completed via GraphQL mutation
+    graphqlRequest(UpdateUserSettingsDocument, { showOnboardingTour: false })
       .then(() => console.log('✅ Onboarding marked as completed'))
       .catch(error =>
         console.error('❌ Error marking onboarding complete:', error)

@@ -54,6 +54,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.email = dbUser.email ?? '';
         session.user.image = dbUser.image ?? '';
         session.user.role = dbUser.role;
+        // Pass the ORIGINAL lastActive value (before we updated it above)
+        // This allows TourContext to check if user was new (lastActive was null)
+        session.user.lastActive = lastActive;
       }
       return session;
     },
@@ -140,6 +143,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           image: user.image,
           role: user.role,
           profileUpdatedAt: user.profileUpdatedAt,
+          lastActive: user.lastActive,
         };
       },
     }),

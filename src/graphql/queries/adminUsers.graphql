@@ -41,6 +41,9 @@ query GetAdminUsers(
       id
       name
     }
+    settings {
+      showOnboardingTour
+    }
     _count {
       collections
       recommendations

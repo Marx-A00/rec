@@ -6,6 +6,7 @@ import React, {
   useState,
   useCallback,
   useEffect,
+  useRef,
 } from 'react';
 import { useSession } from 'next-auth/react';
 import { driver, DriveStep } from 'driver.js';
@@ -14,6 +15,11 @@ import type { Driver } from 'driver.js';
 import { driverConfig, tourSteps } from '@/lib/tours/driverConfig';
 import { useTourStore } from '@/stores/useTourStore';
 import { TourDebugControls } from '@/components/tour/TourDebugControls';
+import { graphqlRequest } from '@/lib/graphql-client';
+import {
+  GetMySettingsDocument,
+  UpdateUserSettingsDocument,
+} from '@/generated/graphql';
 
 interface TourContextType {
   startTour: () => void;
@@ -32,6 +38,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [driverInstance, setDriverInstance] = useState<Driver | null>(null);
   const [currentStep, setCurrentStep] = useState<number | null>(null);
   const [isTourActive, setIsTourActive] = useState(false);
+  const hasCheckedOnboarding = useRef(false);
 
   const startTour = useCallback(() => {
     console.log('🎬 Starting onboarding tour...');
@@ -123,22 +130,18 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const resetOnboarding = useCallback(async () => {
     console.log('🔄 Resetting onboarding status...');
     try {
-      const response = await fetch('/api/users/onboarding-status/reset', {
-        method: 'POST',
+      await graphqlRequest(UpdateUserSettingsDocument, {
+        showOnboardingTour: true,
       });
 
-      if (response.ok) {
-        // Reset tour state in Zustand store (clears isCompleted and resumeStep)
-        useTourStore.getState().reset();
-        console.log('✅ Onboarding reset complete. Refresh to trigger tour.');
+      // Reset tour state in Zustand store (clears isCompleted and resumeStep)
+      useTourStore.getState().reset();
+      console.log('✅ Onboarding reset complete. Refresh to trigger tour.');
 
-        // Optionally start tour immediately
-        setTimeout(() => {
-          startTour();
-        }, 500);
-      } else {
-        console.error('❌ Failed to reset onboarding');
-      }
+      // Optionally start tour immediately
+      setTimeout(() => {
+        startTour();
+      }, 500);
     } catch (error) {
       console.error('❌ Error resetting onboarding:', error);
     }
@@ -239,17 +242,43 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Check if user is new (profileUpdatedAt is null)
-    const isNewUser = user.profileUpdatedAt === null;
-    const tourCompleted = useTourStore.getState().isCompleted;
-
-    if (isNewUser && !tourCompleted) {
-      console.log('👋 New user detected! Starting onboarding tour...');
-      // Delay to ensure all components are mounted and animations complete
-      setTimeout(() => {
-        startTour();
-      }, 1500);
+    // Only auto-start tour on the home page where tour elements exist
+    // This prevents the tour from trying to start on admin, settings, or other pages
+    const currentPath = window.location.pathname;
+    if (currentPath !== '/') {
+      return;
     }
+
+    // Prevent multiple checks - only check once per session
+    if (hasCheckedOnboarding.current) return;
+
+    // Check if tour is already completed in local store (prevents re-fetch)
+    const tourCompleted = useTourStore.getState().isCompleted;
+    if (tourCompleted) return;
+
+    // Mark as checked before making the API call
+    hasCheckedOnboarding.current = true;
+
+    // Fetch showOnboardingTour from user settings via GraphQL
+    const checkOnboardingStatus = async () => {
+      try {
+        const data = await graphqlRequest<{
+          mySettings: { showOnboardingTour: boolean } | null;
+        }>(GetMySettingsDocument);
+
+        if (data.mySettings?.showOnboardingTour) {
+          console.log('👋 New user detected! Starting onboarding tour...');
+          // Delay to ensure all components are mounted and animations complete
+          setTimeout(() => {
+            startTour();
+          }, 1500);
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+      }
+    };
+
+    checkOnboardingStatus();
   }, [session, status, startTour, startFromStep]);
 
   // Expose debug commands to window

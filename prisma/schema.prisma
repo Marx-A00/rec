@@ -71,6 +71,7 @@ model UserSettings {
   showCollections          Boolean  @default(true)
   showListenLaterInFeed    Boolean  @default(true)
   showCollectionAddsInFeed Boolean  @default(true)
+  showOnboardingTour       Boolean  @default(true)
   emailNotifications       Boolean  @default(true)
   recommendationAlerts  Boolean  @default(true)
   followAlerts          Boolean  @default(true)

@@ -198,7 +198,7 @@ export default function AdminUsersPage() {
   const UserExpandedContent = ({ user }: { user: any }) => {
     return (
       <tr className='hover:bg-transparent'>
-        <td colSpan={6} className='p-0 bg-zinc-900/30'>
+        <td colSpan={7} className='p-0 bg-zinc-900/30'>
           <div className='p-6 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
             {/* User Info Grid */}
             <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
@@ -657,12 +657,15 @@ export default function AdminUsersPage() {
                     {getSortIcon(UserSortField.LastActive)}
                   </button>
                 </th>
+                <th className='px-6 py-4 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider'>
+                  Tour
+                </th>
               </tr>
             </thead>
             <tbody className='divide-y divide-zinc-700'>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className='px-6 py-8 text-center'>
+                  <td colSpan={7} className='px-6 py-8 text-center'>
                     <div className='flex justify-center'>
                       <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-emeraled-green'></div>
                     </div>
@@ -671,7 +674,7 @@ export default function AdminUsersPage() {
               ) : error ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className='px-6 py-8 text-center text-red-400'
                   >
                     Error loading users:{' '}
@@ -681,7 +684,7 @@ export default function AdminUsersPage() {
               ) : users.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className='px-6 py-8 text-center text-zinc-400'
                   >
                     No users found
@@ -775,6 +778,13 @@ export default function AdminUsersPage() {
                             <span className='text-zinc-500'>Never</span>
                           )}
                         </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-center'>
+                        {user.settings?.showOnboardingTour === false ? (
+                          <span className='text-emeraled-green'>✓</span>
+                        ) : (
+                          <span className='text-zinc-500'>—</span>
+                        )}
                       </td>
                     </tr>
                     {expandedRows.has(user.id) && (

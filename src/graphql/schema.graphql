@@ -280,6 +280,9 @@ type UserSettings {
   showListenLaterInFeed: Boolean!
   showCollectionAddsInFeed: Boolean!
 
+  # Onboarding
+  showOnboardingTour: Boolean!
+
   # Notification preferences
   emailNotifications: Boolean!
   recommendationAlerts: Boolean!
@@ -1325,6 +1328,7 @@ type Mutation {
     showCollections: Boolean
     showListenLaterInFeed: Boolean
     showCollectionAddsInFeed: Boolean
+    showOnboardingTour: Boolean
   ): UserSettings!
 
   # Music Database enrichment mutations

@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Ensure lucide-react icons are properly bundled in production
+  transpilePackages: ['lucide-react'],
   // Do not ignore ESLint during builds; we fix issues instead
   images: {
     loader: 'custom',
