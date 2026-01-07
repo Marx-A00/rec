@@ -39,7 +39,6 @@ export const tourSteps: DriveStep[] = [
         'Click this button to create your first recommendation! Share albums that you think others might love based on specific album.',
       side: 'right',
       align: 'center',
-      showButtons: ['close'], // Hide Next button - user must click the actual button
       popoverClass: 'driver-popover-large',
     },
   },
@@ -532,6 +531,37 @@ export const driverConfig: Config = {
   // Callbacks for navigation between pages
   onNextClick: (_element, _step, options) => {
     const stepIndex = options.state.activeIndex ?? 0;
+
+    // Step 2 (index 1): Click the Create Recommendation button to open drawer
+    if (stepIndex === 1) {
+      console.log(
+        '➡️ Next clicked on step 2 - triggering create recommendation button'
+      );
+
+      // Dispatch custom event to open drawer in tour mode
+      console.log('📤 Dispatching open-drawer-for-tour event');
+      const tourDrawerEvent = new CustomEvent('open-drawer-for-tour');
+      window.dispatchEvent(tourDrawerEvent);
+
+      // Wait for drawer to be visible before advancing
+      const waitForDrawer = () => {
+        const drawer = document.querySelector('#recommendation-drawer');
+        if (drawer && drawer instanceof HTMLElement) {
+          const rect = drawer.getBoundingClientRect();
+          if (rect.height > 0) {
+            console.log('✅ Drawer is visible, advancing to step 3');
+            options.driver.moveNext();
+            return;
+          }
+        }
+        // Not visible yet, check again in 100ms
+        setTimeout(waitForDrawer, 100);
+      };
+
+      // Start checking after initial delay
+      setTimeout(waitForDrawer, 200);
+      return;
+    }
 
     // Step 8 (index 7): Navigate to /browse (after "Great Job!" transitional card)
     if (stepIndex === 7) {

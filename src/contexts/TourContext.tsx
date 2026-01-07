@@ -14,6 +14,7 @@ import type { Driver } from 'driver.js';
 
 import { driverConfig, tourSteps } from '@/lib/tours/driverConfig';
 import { useTourStore } from '@/stores/useTourStore';
+import { useUserSettingsStore } from '@/stores/useUserSettingsStore';
 import { TourDebugControls } from '@/components/tour/TourDebugControls';
 import {
   useGetMySettingsQuery,
@@ -52,6 +53,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [isTourActive, setIsTourActive] = useState(false);
   const [showEarlyExitModal, setShowEarlyExitModal] = useState(false);
   const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(false);
+
+  // Zustand store for user settings
+  const { setSettings, updateSettings } = useUserSettingsStore();
 
   const { mutateAsync: updateUserSettings } = useUpdateUserSettingsMutation();
 
@@ -148,19 +152,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   }, [driverInstance]);
 
   const resetOnboarding = useCallback(async () => {
-    console.log('🔄 Resetting onboarding status...');
-    try {
-      await updateUserSettings({ showOnboardingTour: true });
-      console.log('✅ Onboarding reset complete.');
-
-      // Start tour immediately
-      setTimeout(() => {
-        startTour();
-      }, 500);
-    } catch (error) {
-      console.error('❌ Error resetting onboarding:', error);
-    }
-  }, [startTour, updateUserSettings]);
+    console.log('🔄 Manually restarting tour...');
+    // No need to update DB - the flag only controls auto-start for new users
+    // If they're manually restarting, they're explicitly choosing to see it
+    setTimeout(() => {
+      startTour();
+    }, 500);
+  }, [startTour]);
 
   const startFromStep = useCallback(
     (stepIndex: number) => {
@@ -277,6 +275,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!settingsData?.mySettings) return;
 
+    // Sync settings to Zustand store
+    setSettings(settingsData.mySettings as Parameters<typeof setSettings>[0]);
+
     console.log('🔍 Tour check - mySettings:', settingsData.mySettings);
     console.log(
       '🔍 Tour check - showOnboardingTour:',
@@ -292,12 +293,33 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     } else {
       console.log('🔍 Tour check - tour already completed');
     }
-  }, [settingsData, startTour]);
+  }, [settingsData, startTour, setSettings]);
 
   // Listen for early exit event from driverConfig
   useEffect(() => {
     const handleEarlyExit = () => {
       console.log('🔔 Early exit event received');
+
+      // Check Zustand store for current showOnboardingTour value
+      // If it's false, user manually restarted the tour - no need for confirmation
+      const currentSettings = useUserSettingsStore.getState().settings;
+      const showOnboardingTour = currentSettings?.showOnboardingTour ?? true;
+      console.log('🔍 showOnboardingTour from store:', showOnboardingTour);
+
+      // If showOnboardingTour is false, tour was manually restarted
+      // No need to show confirmation - just close the tour
+      if (!showOnboardingTour) {
+        console.log(
+          '🔄 Tour was manually restarted (showOnboardingTour=false) - skipping exit confirmation'
+        );
+        if (driverInstance) {
+          driverInstance.destroy();
+        }
+        setCurrentStep(null);
+        setIsTourActive(false);
+        return;
+      }
+
       // Hide the driver.js popover while showing our modal
       const popover = document.querySelector('.driver-popover') as HTMLElement;
       const overlay = document.querySelector('.driver-overlay') as HTMLElement;
@@ -308,15 +330,16 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
     window.addEventListener('tour-early-exit', handleEarlyExit);
     return () => window.removeEventListener('tour-early-exit', handleEarlyExit);
-  }, []);
+  }, [driverInstance]);
 
   // Handle early exit modal confirmation
   const handleConfirmExit = useCallback(async () => {
     setShowEarlyExitModal(false);
 
-    // Mark onboarding as completed via React Query mutation
+    // Mark onboarding as completed via React Query mutation and Zustand store
     try {
       await updateUserSettings({ showOnboardingTour: false });
+      updateSettings({ showOnboardingTour: false });
       console.log('✅ Onboarding marked as completed (early exit)');
     } catch (error) {
       console.error('❌ Error marking onboarding complete:', error);
@@ -327,7 +350,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     }
     setCurrentStep(null);
     setIsTourActive(false);
-  }, [driverInstance, updateUserSettings]);
+  }, [driverInstance, updateUserSettings, updateSettings]);
 
   // Handle cancel exit (resume tour)
   const handleCancelExit = useCallback(() => {
@@ -386,12 +409,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
               <span className='sr-only'>Close</span>
             </DialogClose>
 
-            <DialogHeader className='pt-4'>
-              <DialogTitle className='text-xl font-bold text-white mb-3'>
+            <DialogHeader className='pt-4 text-center'>
+              <DialogTitle className='text-xl font-bold text-white mb-3 text-center'>
                 Exit Tour?
               </DialogTitle>
               <DialogDescription asChild>
-                <div className='text-zinc-300 text-sm leading-relaxed space-y-3'>
+                <div className='text-zinc-300 text-sm leading-relaxed space-y-3 text-center'>
                   <p>
                     No worries! You can restart the tour anytime from your
                     profile settings.
@@ -405,7 +428,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
                 </div>
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter className='flex gap-3 pt-4 border-t border-zinc-800 mt-4'>
+            <DialogFooter className='flex flex-row items-center justify-center gap-3 pt-4 border-t border-zinc-800 mt-4 sm:justify-center'>
               <Button
                 variant='ghost'
                 onClick={handleCancelExit}
@@ -418,7 +441,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
                 onClick={handleConfirmExit}
                 className='px-4 py-2 text-sm rounded-lg font-medium shadow-lg'
               >
-                Got it, exit tour
+                Exit & Don't Show Tour Again
               </Button>
             </DialogFooter>
           </DialogPrimitive.Content>
