@@ -1911,6 +1911,31 @@ async function processMusicBrainzTracksForAlbum(
           } else {
             // Create missing track from MusicBrainz data
             try {
+              // Check if this musicbrainzId already exists for this album (duplicate detection)
+              const existingTrackWithSameMbId = await prisma.track.findFirst({
+                where: {
+                  albumId,
+                  musicbrainzId: mbRecording.id,
+                },
+                select: {
+                  id: true,
+                  title: true,
+                  trackNumber: true,
+                },
+              });
+
+              if (existingTrackWithSameMbId) {
+                // Log duplicate for investigation
+                console.warn(
+                  `⚠️ DUPLICATE RECORDING DETECTED: "${mbRecording.title}" at position ${trackNumber} ` +
+                    `has same MusicBrainz ID (${mbRecording.id}) as existing track ` +
+                    `"${existingTrackWithSameMbId.title}" at position ${existingTrackWithSameMbId.trackNumber}. ` +
+                    `Album ID: ${albumId}. Skipping duplicate.`
+                );
+                tracksProcessed++;
+                continue; // Skip this duplicate track
+              }
+
               console.log(
                 `🆕 Creating new track: "${mbRecording.title}" (${trackNumber})`
               );

@@ -86,8 +86,16 @@ export class QueueActivityMonitor {
     this.monitorInterval = setInterval(async () => {
       try {
         await this.checkAndManageQueueState();
-      } catch (error) {
-        console.error('❌ Error in queue activity monitor:', error);
+      } catch (error: unknown) {
+        const prismaError = error as { code?: string };
+        // Handle database connection errors gracefully
+        if (prismaError.code === 'P1017') {
+          console.warn(
+            '⚠️ Queue monitor: DB connection dropped, will retry next interval'
+          );
+        } else {
+          console.error('❌ Error in queue activity monitor:', error);
+        }
       }
     }, checkIntervalMs);
   }

@@ -263,7 +263,7 @@ export default function ActivityItem({
                   {/* Basis album text - shows on hover with the albums */}
                   {activity.metadata?.basisAlbum && (
                     <div className='basis-text absolute bottom-0 left-0 w-[420px] opacity-0 transition-opacity duration-300 pointer-events-none'>
-                      <p className='text-xs text-zinc-500 text-center w-full px-4 pb-1'>
+                      <p className='text-sm text-zinc-500 text-center w-full px-4 pb-1'>
                         if you like{' '}
                         <span className='text-zinc-400'>
                           {activity.metadata.basisAlbum.title}

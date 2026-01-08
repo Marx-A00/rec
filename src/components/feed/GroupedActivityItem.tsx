@@ -121,11 +121,10 @@ export default function GroupedActivityItem({
       case 'collection_add':
         return (
           <span>
-            added{' '}
+            collected{' '}
             <span className='text-emeraled-green font-semibold'>
               {activityCount} albums
-            </span>{' '}
-            to their collection {timeRange}
+            </span>
           </span>
         );
       case 'recommendation':
@@ -134,8 +133,7 @@ export default function GroupedActivityItem({
             made{' '}
             <span className='text-emeraled-green font-semibold'>
               {activityCount} recommendations
-            </span>{' '}
-            {timeRange}
+            </span>
           </span>
         );
       case 'follow':
@@ -144,16 +142,11 @@ export default function GroupedActivityItem({
             followed{' '}
             <span className='text-emeraled-green font-semibold'>
               {activityCount} users
-            </span>{' '}
-            {timeRange}
+            </span>
           </span>
         );
       default:
-        return (
-          <span>
-            performed {activityCount} actions {timeRange}
-          </span>
-        );
+        return <span>performed {activityCount} actions</span>;
     }
   };
 
@@ -193,7 +186,7 @@ export default function GroupedActivityItem({
         <div>
           {/* Stacked view (collapsed) */}
           {!isExpanded && (
-            <div className='flex justify-center'>
+            <div className='flex flex-col items-center pb-8'>
               <div className='flex -space-x-6'>
                 {group.activities.slice(0, 5).map((activity, index) => (
                   <Link
@@ -203,7 +196,7 @@ export default function GroupedActivityItem({
                         ? `/albums/${activity.albumId}?source=local`
                         : '#'
                     }
-                    className='relative group cursor-pointer block'
+                    className='relative group cursor-pointer block hover:!z-10'
                     style={{ zIndex: 5 - index }}
                   >
                     <AlbumImage
@@ -227,6 +220,21 @@ export default function GroupedActivityItem({
                           </span>
                         </div>
                       )}
+
+                    {/* Album info tooltip for collection adds - positioned below album */}
+                    {group.type === 'collection_add' && (
+                      <div className='absolute top-full left-1/2 -translate-x-1/2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20'>
+                        <p className='text-sm text-zinc-500 text-center'>
+                          <span className='text-zinc-300'>
+                            {activity.albumTitle}
+                          </span>{' '}
+                          by{' '}
+                          <span className='text-zinc-400'>
+                            {activity.albumArtist}
+                          </span>
+                        </p>
+                      </div>
+                    )}
 
                     {/* Show score for recommendations */}
                     {group.type === 'recommendation' &&
@@ -259,7 +267,7 @@ export default function GroupedActivityItem({
 
           {/* Expanded view - Horizontal layout with stacked hover effect */}
           {isExpanded && (
-            <div className='flex flex-wrap justify-center gap-6'>
+            <div className='flex flex-wrap justify-center gap-x-6 gap-y-12 px-4 pb-8'>
               {group.activities.map(activity => (
                 <div key={activity.id} className='flex-shrink-0'>
                   {/* Recommendation: Stacked albums that separate on hover */}
@@ -363,6 +371,19 @@ export default function GroupedActivityItem({
                           </span>
                         </div>
                       )}
+
+                      {/* Album info tooltip - positioned below album */}
+                      <div className='absolute top-full left-1/2 -translate-x-1/2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20'>
+                        <p className='text-sm text-zinc-500 text-center'>
+                          <span className='text-zinc-300'>
+                            {activity.albumTitle}
+                          </span>{' '}
+                          by{' '}
+                          <span className='text-zinc-400'>
+                            {activity.albumArtist}
+                          </span>
+                        </p>
+                      </div>
                     </Link>
                   )}
                 </div>
@@ -472,7 +493,7 @@ function SingleActivityDisplay({
       case 'collection_add':
         return (
           <span>
-            added{' '}
+            collected{' '}
             <Link
               href={`/albums/${activity.albumId}?source=local`}
               className='text-cosmic-latte hover:text-cosmic-latte/80 font-medium transition-colors'
@@ -485,14 +506,7 @@ function SingleActivityDisplay({
               className='text-zinc-300 hover:text-emeraled-green transition-colors'
             >
               {activity.albumArtist}
-            </Link>{' '}
-            to collection
-            {(activity.metadata as CollectionMetadata)?.collectionName && (
-              <span className='text-emeraled-green font-medium'>
-                {' '}
-                {(activity.metadata as CollectionMetadata).collectionName}
-              </span>
-            )}
+            </Link>
             {(activity.metadata as CollectionMetadata)?.personalRating && (
               <span className='text-yellow-400 text-sm block mt-1'>
                 ★ {(activity.metadata as CollectionMetadata).personalRating}/10
@@ -611,7 +625,7 @@ function SingleActivityDisplay({
               {/* Basis album text - shows on hover with the albums */}
               {(activity.metadata as RecommendationMetadata)?.basisAlbum && (
                 <div className='basis-text absolute bottom-0 left-0 w-[420px] opacity-0 transition-opacity duration-300 pointer-events-none'>
-                  <p className='text-xs text-zinc-500 text-center w-full px-4 pb-1'>
+                  <p className='text-sm text-zinc-500 text-center w-full px-4 pb-1'>
                     if you like{' '}
                     <span className='text-zinc-400'>
                       {

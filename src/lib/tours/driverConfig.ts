@@ -405,9 +405,9 @@ export const driverConfig: Config = {
   // Disable overlay - just show popovers pointing to elements
   overlayOpacity: 0, // No dark overlay (set to 0)
 
-  // Allow close via X button, ESC key
+  // Allow close via X button only - ESC is disabled to prevent conflicts with drawer
   allowClose: true,
-  allowKeyboardControl: true, // Enable ESC key to close
+  allowKeyboardControl: false, // Disable ESC key - user must use X button or complete tour
   disableActiveInteraction: false, // Allow interacting with highlighted element
 
   // Callback when a step is highlighted
@@ -599,6 +599,15 @@ export const driverConfig: Config = {
       // Save next step index to resume after navigation
       useTourStore.getState().setResumeStep(16);
       window.location.href = '/profile';
+      return;
+    }
+
+    // Final step (index 13): "Finish Tour" button clicked - destroy tour and cleanup
+    const totalSteps = tourSteps.length;
+    const isLastStep = stepIndex === totalSteps - 1;
+    if (isLastStep) {
+      console.log('🎉 Finish Tour clicked - completing tour!');
+      options.driver.destroy();
       return;
     }
 

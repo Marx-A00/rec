@@ -171,10 +171,17 @@ export default function RecommendationDrawer({
     }
   }, [isOpen, prefilledAlbum]);
 
-  // Handle escape key to close drawer
+  // Handle escape key to close drawer (disabled during tour)
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
+        // Don't close drawer during tour - ESC should do nothing
+        if (isTourMode) {
+          event.preventDefault();
+          event.stopPropagation();
+          console.log('🛡️ ESC blocked during tour mode');
+          return;
+        }
         onClose();
       }
     };
@@ -186,7 +193,7 @@ export default function RecommendationDrawer({
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isTourMode]);
 
   // Handle demo recommendation filling for tour
   useEffect(() => {
@@ -282,14 +289,14 @@ export default function RecommendationDrawer({
         className='h-[90vh] bg-zinc-900 border-zinc-700'
       >
         <DrawerHeader className='flex-shrink-0'>
-          <div className='flex items-center justify-between'>
+          <div className='flex items-center justify-center relative'>
             <DrawerTitle className='text-2xl font-bold text-white'>
               Create Recommendation
             </DrawerTitle>
             <DrawerClose asChild>
               <button
                 onClick={onClose}
-                className='text-zinc-400 hover:text-white bg-black/50 rounded-full p-1'
+                className='absolute right-0 text-zinc-400 hover:text-white bg-black/50 rounded-full p-1'
                 aria-label='Close drawer'
               >
                 <X className='w-5 h-5' />

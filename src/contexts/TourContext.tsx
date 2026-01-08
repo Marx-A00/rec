@@ -6,8 +6,8 @@ import React, {
   useState,
   useCallback,
   useEffect,
-  useRef,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import { driver, DriveStep } from 'driver.js';
 import type { Driver } from 'driver.js';
@@ -20,18 +20,7 @@ import {
   useGetMySettingsQuery,
   useUpdateUserSettingsMutation,
 } from '@/generated/graphql';
-import {
-  Dialog,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogPortal,
-  DialogOverlay,
-  DialogClose,
-} from '@/components/ui/dialog';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { Button } from '@/components/ui/button';
+
 import { X } from 'lucide-react';
 
 interface TourContextType {
@@ -325,6 +314,16 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       const overlay = document.querySelector('.driver-overlay') as HTMLElement;
       if (popover) popover.style.display = 'none';
       if (overlay) overlay.style.display = 'none';
+
+      // Disable pointer events on ALL vaul drawer elements so our modal is clickable
+      const drawerElements = document.querySelectorAll(
+        '[data-vaul-overlay], [data-vaul-drawer]'
+      ) as NodeListOf<HTMLElement>;
+      drawerElements.forEach(el => {
+        el.dataset.tourPointerEvents = el.style.pointerEvents;
+        el.style.pointerEvents = 'none';
+      });
+
       setShowEarlyExitModal(true);
     };
 
@@ -335,6 +334,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   // Handle early exit modal confirmation
   const handleConfirmExit = useCallback(async () => {
     setShowEarlyExitModal(false);
+
+    // Restore pointer events on drawer elements
+    const drawerElements = document.querySelectorAll(
+      '[data-vaul-overlay], [data-vaul-drawer]'
+    ) as NodeListOf<HTMLElement>;
+    drawerElements.forEach(el => {
+      el.style.pointerEvents = el.dataset.tourPointerEvents || '';
+      delete el.dataset.tourPointerEvents;
+    });
 
     // Mark onboarding as completed via React Query mutation and Zustand store
     try {
@@ -360,6 +368,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     const overlay = document.querySelector('.driver-overlay') as HTMLElement;
     if (popover) popover.style.display = '';
     if (overlay) overlay.style.display = '';
+
+    // Restore pointer events on drawer elements
+    const drawerElements = document.querySelectorAll(
+      '[data-vaul-overlay], [data-vaul-drawer]'
+    ) as NodeListOf<HTMLElement>;
+    drawerElements.forEach(el => {
+      el.style.pointerEvents = el.dataset.tourPointerEvents || '';
+      delete el.dataset.tourPointerEvents;
+    });
   }, []);
 
   // Expose debug commands to window
@@ -398,55 +415,152 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       {children}
       <TourDebugControls />
 
-      {/* Early Exit Confirmation Modal - Styled to match driver.js tour cards */}
-      <Dialog open={showEarlyExitModal} onOpenChange={setShowEarlyExitModal}>
-        <DialogPortal>
-          <DialogOverlay />
-          <DialogPrimitive.Content className='fixed left-[50%] top-[50%] z-50 w-full max-w-md translate-x-[-50%] translate-y-[-50%] bg-zinc-900 border-2 border-zinc-700 rounded-xl shadow-2xl p-6 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95'>
-            {/* Close button on the left, styled like tour cards */}
-            <DialogClose className='absolute left-4 top-4 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md p-1 transition-colors'>
-              <X className='h-4 w-4' />
-              <span className='sr-only'>Close</span>
-            </DialogClose>
+      {/* Early Exit Confirmation Modal - Using inline styles to guarantee override of driver.js */}
+      {showEarlyExitModal &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 2000000000,
+              pointerEvents: 'auto',
+            }}
+          >
+            {/* Backdrop */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                pointerEvents: 'auto',
+              }}
+              onClick={handleCancelExit}
+            />
+            {/* Modal */}
+            <div
+              style={{
+                position: 'fixed',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '100%',
+                maxWidth: '28rem',
+                backgroundColor: '#18181b',
+                border: '2px solid #3f3f46',
+                borderRadius: '0.75rem',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                padding: '1.5rem',
+                pointerEvents: 'auto',
+              }}
+            >
+              {/* Close button on the left, styled like tour cards */}
+              <button
+                onClick={handleCancelExit}
+                style={{
+                  position: 'absolute',
+                  left: '1rem',
+                  top: '1rem',
+                  color: '#a1a1aa',
+                  padding: '0.25rem',
+                  borderRadius: '0.375rem',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <X className='h-4 w-4' />
+                <span className='sr-only'>Close</span>
+              </button>
 
-            <DialogHeader className='pt-4 text-center'>
-              <DialogTitle className='text-xl font-bold text-white mb-3 text-center'>
-                Exit Tour?
-              </DialogTitle>
-              <DialogDescription asChild>
-                <div className='text-zinc-300 text-sm leading-relaxed space-y-3 text-center'>
-                  <p>
+              <div style={{ paddingTop: '1rem', textAlign: 'center' }}>
+                <h2
+                  style={{
+                    fontSize: '1.25rem',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    marginBottom: '0.75rem',
+                  }}
+                >
+                  Exit Tour?
+                </h2>
+                <div
+                  style={{
+                    color: '#d4d4d8',
+                    fontSize: '0.875rem',
+                    lineHeight: '1.625',
+                  }}
+                >
+                  <p style={{ marginBottom: '0.75rem' }}>
                     No worries! You can restart the tour anytime from your
                     profile settings.
                   </p>
-                  <p className='text-zinc-400'>
+                  <p style={{ color: '#a1a1aa' }}>
                     Go to{' '}
-                    <span className='text-white font-medium'>Profile</span> →{' '}
-                    <span className='text-white font-medium'>Settings</span> →{' '}
-                    <span className='text-white font-medium'>Restart Tour</span>
+                    <span style={{ color: 'white', fontWeight: 500 }}>
+                      Profile
+                    </span>{' '}
+                    →{' '}
+                    <span style={{ color: 'white', fontWeight: 500 }}>
+                      Settings
+                    </span>{' '}
+                    →{' '}
+                    <span style={{ color: 'white', fontWeight: 500 }}>
+                      Restart Tour
+                    </span>
                   </p>
                 </div>
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className='flex flex-row items-center justify-center gap-3 pt-4 border-t border-zinc-800 mt-4 sm:justify-center'>
-              <Button
-                variant='ghost'
-                onClick={handleCancelExit}
-                className='bg-zinc-700 hover:bg-zinc-600 text-zinc-300 px-4 py-2 text-sm rounded-lg font-medium'
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.75rem',
+                  paddingTop: '1rem',
+                  borderTop: '1px solid #27272a',
+                  marginTop: '1rem',
+                }}
               >
-                Continue Tour
-              </Button>
-              <Button
-                variant='destructive'
-                onClick={handleConfirmExit}
-                className='px-4 py-2 text-sm rounded-lg font-medium shadow-lg'
-              >
-                Exit & Don't Show Tour Again
-              </Button>
-            </DialogFooter>
-          </DialogPrimitive.Content>
-        </DialogPortal>
-      </Dialog>
+                <button
+                  onClick={handleCancelExit}
+                  style={{
+                    backgroundColor: '#3f3f46',
+                    color: '#d4d4d8',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.875rem',
+                    borderRadius: '0.5rem',
+                    fontWeight: 500,
+                    border: 'none',
+                    cursor: 'pointer',
+                    pointerEvents: 'auto',
+                  }}
+                >
+                  Continue Tour
+                </button>
+                <button
+                  onClick={handleConfirmExit}
+                  style={{
+                    backgroundColor: '#dc2626',
+                    color: 'white',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.875rem',
+                    borderRadius: '0.5rem',
+                    fontWeight: 500,
+                    border: 'none',
+                    cursor: 'pointer',
+                    pointerEvents: 'auto',
+                  }}
+                >
+                  Exit & Don't Show Tour Again
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </TourContext.Provider>
   );
 }
