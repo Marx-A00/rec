@@ -236,13 +236,20 @@ export class ActivityTracker {
       } catch (error: unknown) {
         const prismaError = error as { code?: string };
         // P1017 = Server has closed the connection
-        if (prismaError.code === 'P1017' && attempt < 2) {
+        if (prismaError.code === 'P1017') {
+          if (attempt < 2) {
+            console.warn(
+              `⚠️ Database connection closed, retrying getActiveUserCount (attempt ${attempt}/2)...`
+            );
+            // Small delay before retry
+            await new Promise(resolve => setTimeout(resolve, 100));
+            continue;
+          }
+          // On final attempt, return 0 instead of throwing
           console.warn(
-            `⚠️ Database connection closed, retrying getActiveUserCount (attempt ${attempt}/2)...`
+            '⚠️ Database connection closed after retries, assuming 0 active users'
           );
-          // Small delay before retry
-          await new Promise(resolve => setTimeout(resolve, 100));
-          continue;
+          return 0;
         }
         throw error;
       }
