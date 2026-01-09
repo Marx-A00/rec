@@ -6,8 +6,8 @@
 
 import { beforeAll, afterAll, afterEach } from 'vitest';
 
-// Set test environment
-process.env.NODE_ENV = 'test';
+// Set test environment using index signature to avoid readonly error
+(process.env as Record<string, string | undefined>)['NODE_ENV'] = 'test';
 
 beforeAll(() => {
   // Global setup before all tests

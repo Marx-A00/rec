@@ -8,7 +8,11 @@
       "Bash(ls:*)",
       "Bash(pnpm type-check:*)",
       "Bash(pnpm lint:*)",
-      "Bash(rm:*)"
+      "mcp__task-master-ai__get_tasks",
+      "mcp__task-master-ai__get_task",
+      "mcp__task-master-ai__next_task",
+      "mcp__task-master-ai__list_tags",
+      "mcp__task-master-ai__validate_dependencies"
     ],
     "deny": [],
     "ask": []
