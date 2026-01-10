@@ -2,11 +2,13 @@
 
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import { getAuthErrorMessage } from '@/types/auth';
 
 export default function SignIn() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   // const [isSpotifyLoading, setIsSpotifyLoading] = useState(false);
   const [isCredentialsLoading, setIsCredentialsLoading] = useState(false);
@@ -42,8 +44,9 @@ export default function SignIn() {
         setCredentialsError(errorMessage);
         console.error('[signin] Authentication failed:', result.error);
       } else if (result?.ok) {
-        // Successful sign-in
-        window.location.href = '/';
+        // Successful sign-in - use Next.js router for client-side navigation
+        router.push('/');
+        router.refresh();
       } else {
         // Unexpected state
         setCredentialsError('An unexpected error occurred. Please try again.');

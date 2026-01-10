@@ -9,8 +9,8 @@ test.describe('User Login', () => {
   test('should successfully log in with valid credentials', async ({
     page,
   }) => {
-    // We'll use the test user from our global setup
-    const testEmail = 'PLAYWRIGHT_TEST_existing@example.com';
+    // We'll use the test user from our global setup (lowercase email)
+    const testEmail = 'playwright_test_existing@example.com';
     const testPassword = 'TestPassword123!';
 
     // Fill in the login form
@@ -21,7 +21,10 @@ test.describe('User Login', () => {
     await page.locator('button[type="submit"]').click();
 
     // Should redirect to home page after successful login
-    await page.waitForURL('/', { timeout: 10000 });
-    await expect(page).toHaveURL('/');
+    // App redirects authenticated users from / to /home-mosaic
+    await page.waitForURL(/\/(home-mosaic)?$/, { timeout: 10000 });
+
+    // Verify we're NOT on the signin page anymore
+    await expect(page).not.toHaveURL('/signin');
   });
 });
