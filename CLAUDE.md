@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Output Formatting
+
+- Do NOT use markdown tables in responses. Use bullet points or plain text lists instead.
+
 ## 🔍 Search Components - IMPORTANT
 
 **ACTIVE Search Components (Use These):**

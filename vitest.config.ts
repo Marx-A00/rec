@@ -32,8 +32,8 @@ export default defineConfig({
     // Timeout for slow tests
     testTimeout: 10000,
 
-    // Reporter
-    reporters: ['verbose'],
+    // Reporter - custom pretty reporter
+    reporters: ['./tests/reporters/pretty-reporter.ts'],
   },
 
   resolve: {

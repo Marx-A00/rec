@@ -307,15 +307,17 @@ export default function RecommendationDrawer({
 
         <div className='flex-1 overflow-y-auto'>
           <div className={layoutConfig.containerClasses}>
-            {/* Search Bar */}
+            {/* Search Bar - Dual Input Mode */}
             <div className='mb-6'>
               <AlbumSearchBackwardCompatible
                 ref={albumSearchRef}
                 onAlbumSelect={handleAlbumSelect}
-                placeholder={`Search for ${isSearchingForBasis ? 'source' : 'recommended'} album...`}
-                label=''
+                albumPlaceholder='Search album title...'
+                artistPlaceholder='Filter by artist (optional)...'
+                label={`Search for ${isSearchingForBasis ? 'source' : 'recommended'} album`}
                 disabled={false}
                 colorTheme={isSearchingForBasis ? 'red' : 'green'}
+                searchMode='dual'
               />
             </div>
 
