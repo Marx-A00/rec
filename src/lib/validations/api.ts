@@ -272,13 +272,13 @@ export const userRegistrationSchema = z.object({
     ),
   username: z
     .string()
+    .trim() // Trim before validation
     .min(2, 'Username must be at least 2 characters long')
     .max(30, 'Username must be 30 characters or less')
     .regex(
       /^[a-zA-Z0-9\-_.]+$/,
       'Username can only contain letters, numbers, hyphens, underscores, and periods'
-    )
-    .transform(val => val.trim()), // Username is required!
+    ),
 });
 
 // User profile update schema (username required, minimum 2 characters)

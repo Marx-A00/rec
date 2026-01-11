@@ -48,17 +48,17 @@ async function globalSetup(config: FullConfig) {
     const testUsers = [
       {
         email: 'playwright_test_existing@example.com',
-        name: '🎭 PLAYWRIGHT TEST - Existing User',
+        username: '🎭 PLAYWRIGHT TEST - Existing User',
         hashedPassword: hashedPassword,
       },
       {
         email: 'playwright_test_duplicate@example.com',
-        name: '🎭 PLAYWRIGHT TEST - Duplicate User',
+        username: '🎭 PLAYWRIGHT TEST - Duplicate User',
         hashedPassword: hashedPassword,
       },
       {
         email: 'playwright_test_sample@example.com',
-        name: '🎭 PLAYWRIGHT TEST - Sample User',
+        username: '🎭 PLAYWRIGHT TEST - Sample User',
         hashedPassword: hashedPassword,
       },
     ];
@@ -67,7 +67,7 @@ async function globalSetup(config: FullConfig) {
       await prisma.user.create({
         data: userData,
       });
-      console.log(`Created test user: ${userData.name}`);
+      console.log(`Created test user: ${userData.username}`);
     }
 
     // Verify the users exist
