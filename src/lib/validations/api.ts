@@ -254,7 +254,7 @@ export const addToCollectionSchema = z.object({
     .regex(/^\d+$/, 'Album ID must be numeric'),
 });
 
-// User registration schema (name required and strict)
+// User registration schema (username required and strict)
 export const userRegistrationSchema = z.object({
   email: z
     .string()
@@ -270,28 +270,28 @@ export const userRegistrationSchema = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
       'Password must contain at least one lowercase letter, one uppercase letter, and one number'
     ),
-  name: z
+  username: z
     .string()
-    .min(2, 'Name must be at least 2 characters long')
-    .max(30, 'Name must be 30 characters or less')
+    .min(2, 'Username must be at least 2 characters long')
+    .max(30, 'Username must be 30 characters or less')
     .regex(
-      /^[a-zA-Z0-9\s\-_.]+$/,
-      'Name can only contain letters, numbers, spaces, hyphens, underscores, and periods'
+      /^[a-zA-Z0-9\-_.]+$/,
+      'Username can only contain letters, numbers, hyphens, underscores, and periods'
     )
-    .transform(val => val.trim()), // Name is required!
+    .transform(val => val.trim()), // Username is required!
 });
 
-// User profile update schema (name required, minimum 2 characters)
+// User profile update schema (username required, minimum 2 characters)
 export const userProfileUpdateSchema = z.object({
-  name: z
+  username: z
     .string()
-    .min(2, 'Name must be at least 2 characters long')
-    .max(30, 'Name must be 30 characters or less')
+    .min(2, 'Username must be at least 2 characters long')
+    .max(30, 'Username must be 30 characters or less')
     .regex(
-      /^[a-zA-Z0-9\s\-_.]+$/,
-      'Name can only contain letters, numbers, spaces, hyphens, underscores, and periods'
+      /^[a-zA-Z0-9\-_.]+$/,
+      'Username can only contain letters, numbers, hyphens, underscores, and periods'
     )
-    .transform(val => val.trim()), // Name is required for profile updates
+    .transform(val => val.trim()), // Username is required for profile updates
   bio: z.string().max(500).optional(),
 });
 

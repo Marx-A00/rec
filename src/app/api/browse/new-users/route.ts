@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       },
       select: {
         id: true,
-        name: true,
+        username: true,
         image: true,
         bio: true,
         followersCount: true,
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     // Transform the data to match expected format
     const transformedUsers = users.map(user => ({
       id: user.id,
-      name: user.name,
+      username: user.username,
       image: user.image,
       bio: user.bio,
       followersCount: user.followersCount,

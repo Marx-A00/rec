@@ -40,7 +40,7 @@ export async function GET(
     // Add search filter if provided
     if (search) {
       whereClause.follower = {
-        name: {
+        username: {
           contains: search,
           mode: 'insensitive',
         },
@@ -57,7 +57,7 @@ export async function GET(
     // Determine sort order
     const orderBy =
       sort === 'alphabetical'
-        ? { follower: { name: 'asc' as const } }
+        ? { follower: { username: 'asc' as const } }
         : { createdAt: 'desc' as const };
 
     // Fetch followers with user details
@@ -67,7 +67,7 @@ export async function GET(
         follower: {
           select: {
             id: true,
-            name: true,
+            username: true,
             email: true,
             image: true,
             bio: true,
@@ -98,7 +98,7 @@ export async function GET(
     // Transform the data for the response
     const followersData = results.map((follow: any) => ({
       id: follow.follower.id,
-      name: follow.follower.name,
+      username: follow.follower.username,
       email: follow.follower.email,
       image: follow.follower.image,
       bio: follow.follower.bio,

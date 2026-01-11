@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 
 interface MutualConnection {
   id: string;
-  name: string | null;
+  username: string | null;
   email: string | null;
   image: string | null;
   bio: string | null;
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     // Check if target user exists
     const targetUser = await prisma.user.findUnique({
       where: { id: targetUserId },
-      select: { id: true, name: true },
+      select: { id: true, username: true },
     });
 
     if (!targetUser) {
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
 
       return {
         id: user.id,
-        name: user.name,
+        username: user.username,
         email: user.email,
         image: user.image,
         bio: (user as any).bio || null,
@@ -171,7 +171,7 @@ export async function GET(request: NextRequest) {
     const potentialConnections: MutualConnection[] = targetUserFollowers.map(
       user => ({
         id: user.id,
-        name: user.name,
+        username: user.username,
         email: user.email,
         image: user.image,
         bio: (user as any).bio || null,
@@ -195,7 +195,7 @@ export async function GET(request: NextRequest) {
       total: allConnections.length,
       targetUser: {
         id: targetUser.id,
-        name: targetUser.name,
+        username: targetUser.username,
       },
       stats: {
         mutual_following: mutualConnections.length,

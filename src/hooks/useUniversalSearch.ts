@@ -305,7 +305,7 @@ export function useUniversalSearch(
         transformedResults.push({
           id: user.id,
           type: 'user' as const,
-          title: user.name || 'Unknown User',
+          title: user.username || 'Unknown User',
           subtitle: user.bio || 'User',
           artist: '', // Not applicable for users
           releaseDate: '',
@@ -316,7 +316,7 @@ export function useUniversalSearch(
             url: user.image || '',
             width: 300,
             height: 300,
-            alt: user.name || 'User',
+            alt: user.username || 'User',
           },
           cover_image: user.image || undefined,
           _discogs: {},

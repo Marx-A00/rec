@@ -21,9 +21,24 @@ async function getCollection(id: string, userId?: string) {
     const collection = await prisma.collection.findUnique({
       where: { id },
       include: {
-        user: { select: { id: true, name: true, image: true } },
+        user: { select: { id: true, username: true, image: true } },
         albums: {
           orderBy: { position: 'asc' },
+          include: {
+            album: {
+              select: {
+                id: true,
+                title: true,
+                coverArtUrl: true,
+                releaseDate: true,
+                artists: {
+                  select: {
+                    artist: { select: { id: true, name: true } },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     });
@@ -42,33 +57,28 @@ async function getCollection(id: string, userId?: string) {
       ...collection,
       createdAt: collection.createdAt.toISOString(),
       updatedAt: collection.updatedAt.toISOString(),
-      albums: collection.albums.map((album): UICollectionAlbum => {
-        type LegacyAlbumProps = {
-          albumId?: string | null;
-          albumTitle?: string | null;
-          albumArtist?: string | null;
-          albumImageUrl?: string | null;
-          albumYear?: string | number | null;
-          discogsId?: string | null;
-        };
-        const legacy = album as unknown as LegacyAlbumProps;
+      albums: collection.albums.map((collectionAlbum): UICollectionAlbum => {
+        const album = collectionAlbum.album;
+        const artistNames = album?.artists?.map(a => a.artist.name).join(', ');
+        const albumYear = album?.releaseDate
+          ? new Date(album.releaseDate).getFullYear().toString()
+          : null;
 
         return {
-          id: album.id,
-          // Prefer canonical albumId if present, fallback to legacy discogsId
-          albumId: String(legacy.albumId ?? album.discogsId ?? ''),
-          albumTitle: legacy.albumTitle ?? 'Unknown Album',
-          albumArtist: legacy.albumArtist ?? 'Unknown Artist',
-          albumImageUrl: legacy.albumImageUrl ?? null,
-          albumYear:
-            legacy.albumYear !== undefined && legacy.albumYear !== null
-              ? String(legacy.albumYear)
-              : null,
+          id: collectionAlbum.id,
+          albumId: String(
+            collectionAlbum.albumId ?? collectionAlbum.discogsId ?? ''
+          ),
+          albumTitle: album?.title ?? 'Unknown Album',
+          albumArtist: artistNames ?? 'Unknown Artist',
+          albumArtistId: album?.artists?.[0]?.artist.id,
+          albumImageUrl: album?.coverArtUrl ?? null,
+          albumYear,
           addedBy: collection.userId,
-          addedAt: album.addedAt.toISOString(),
-          personalRating: album.personalRating ?? null,
-          personalNotes: album.personalNotes ?? null,
-          position: album.position,
+          addedAt: collectionAlbum.addedAt.toISOString(),
+          personalRating: collectionAlbum.personalRating ?? null,
+          personalNotes: collectionAlbum.personalNotes ?? null,
+          position: collectionAlbum.position,
         };
       }),
       metadata: {
@@ -77,9 +87,10 @@ async function getCollection(id: string, userId?: string) {
         genres: [], // Not computed for now
         averageRating:
           collection.albums
-            .filter(album => album.personalRating)
+            .filter(collectionAlbum => collectionAlbum.personalRating)
             .reduce(
-              (acc, album, _, arr) => acc + album.personalRating! / arr.length,
+              (acc, collectionAlbum, _, arr) =>
+                acc + collectionAlbum.personalRating! / arr.length,
               0
             ) || undefined,
       },

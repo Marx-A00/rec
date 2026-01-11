@@ -136,7 +136,7 @@ describe('userRegistrationSchema', () => {
   const validUser = {
     email: 'test@example.com',
     password: 'Password123',
-    name: 'John Doe',
+    username: 'JohnDoe',
   };
 
   it('should accept valid registration data', () => {
@@ -229,83 +229,83 @@ describe('userRegistrationSchema', () => {
     });
   });
 
-  describe('name validation', () => {
-    it('should reject names shorter than 2 characters', () => {
+  describe('username validation', () => {
+    it('should reject usernames shorter than 2 characters', () => {
       const result = userRegistrationSchema.safeParse({
         ...validUser,
-        name: 'J',
+        username: 'J',
       });
       expect(result.success).toBe(false);
     });
 
-    it('should reject names longer than 30 characters', () => {
+    it('should reject usernames longer than 30 characters', () => {
       const result = userRegistrationSchema.safeParse({
         ...validUser,
-        name: 'A'.repeat(31),
+        username: 'A'.repeat(31),
       });
       expect(result.success).toBe(false);
     });
 
-    it('should accept names with allowed special characters', () => {
+    it('should accept usernames with allowed special characters', () => {
       expect(
-        userRegistrationSchema.safeParse({ ...validUser, name: 'John-Doe' })
+        userRegistrationSchema.safeParse({ ...validUser, username: 'John-Doe' })
           .success
       ).toBe(true);
       expect(
-        userRegistrationSchema.safeParse({ ...validUser, name: 'John_Doe' })
+        userRegistrationSchema.safeParse({ ...validUser, username: 'John_Doe' })
           .success
       ).toBe(true);
       expect(
-        userRegistrationSchema.safeParse({ ...validUser, name: 'John.Doe' })
-          .success
-      ).toBe(true);
-      expect(
-        userRegistrationSchema.safeParse({ ...validUser, name: 'John Doe' })
+        userRegistrationSchema.safeParse({ ...validUser, username: 'John.Doe' })
           .success
       ).toBe(true);
     });
 
-    it('should reject names with disallowed characters', () => {
+    it('should reject usernames with disallowed characters', () => {
       expect(
-        userRegistrationSchema.safeParse({ ...validUser, name: 'John@Doe' })
+        userRegistrationSchema.safeParse({ ...validUser, username: 'John@Doe' })
           .success
       ).toBe(false);
       expect(
-        userRegistrationSchema.safeParse({ ...validUser, name: 'John#Doe' })
+        userRegistrationSchema.safeParse({ ...validUser, username: 'John#Doe' })
           .success
       ).toBe(false);
       expect(
-        userRegistrationSchema.safeParse({ ...validUser, name: 'John$Doe' })
+        userRegistrationSchema.safeParse({ ...validUser, username: 'John$Doe' })
+          .success
+      ).toBe(false);
+      expect(
+        userRegistrationSchema.safeParse({ ...validUser, username: 'John Doe' })
           .success
       ).toBe(false);
     });
 
-    it('should trim name', () => {
+    it('should trim username', () => {
       const result = userRegistrationSchema.safeParse({
         ...validUser,
-        name: '  John Doe  ',
+        username: '  JohnDoe  ',
       });
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.name).toBe('John Doe');
+        expect(result.data.username).toBe('JohnDoe');
       }
     });
   });
 });
 
 describe('userProfileUpdateSchema', () => {
-  it('should require name with minimum 2 characters', () => {
-    expect(userProfileUpdateSchema.safeParse({ name: 'Jo' }).success).toBe(
+  it('should require username with minimum 2 characters', () => {
+    expect(userProfileUpdateSchema.safeParse({ username: 'Jo' }).success).toBe(
       true
     );
-    expect(userProfileUpdateSchema.safeParse({ name: 'J' }).success).toBe(
+    expect(userProfileUpdateSchema.safeParse({ username: 'J' }).success).toBe(
       false
     );
   });
 
   it('should accept optional bio', () => {
     const result = userProfileUpdateSchema.safeParse({
-      name: 'John',
+      username: 'John',
       bio: 'This is my bio',
     });
     expect(result.success).toBe(true);
@@ -313,7 +313,7 @@ describe('userProfileUpdateSchema', () => {
 
   it('should reject bio longer than 500 characters', () => {
     const result = userProfileUpdateSchema.safeParse({
-      name: 'John',
+      username: 'John',
       bio: 'A'.repeat(501),
     });
     expect(result.success).toBe(false);

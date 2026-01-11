@@ -29,7 +29,7 @@ export default async function FollowersPage({ params }: FollowersPageProps) {
     where: { id: userId },
     select: {
       id: true,
-      name: true,
+      username: true,
       image: true,
       followersCount: true,
     },
@@ -49,14 +49,14 @@ export default async function FollowersPage({ params }: FollowersPageProps) {
           <div className='flex items-center gap-4 mb-6'>
             <Image
               src={userData.image || '/placeholder.svg'}
-              alt={userData.name || 'User'}
+              alt={userData.username || 'User'}
               width={64}
               height={64}
               className='w-16 h-16 rounded-full object-cover'
             />
             <div>
               <h1 className='text-3xl font-bold text-cosmic-latte'>
-                {userData.name || 'Anonymous music enjoyer'}
+                {userData.username || 'Anonymous music enjoyer'}
               </h1>
               <p className='text-zinc-400'>
                 {userData.followersCount || 0}{' '}

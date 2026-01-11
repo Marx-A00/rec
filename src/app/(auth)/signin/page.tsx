@@ -12,7 +12,10 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   // const [isSpotifyLoading, setIsSpotifyLoading] = useState(false);
   const [isCredentialsLoading, setIsCredentialsLoading] = useState(false);
-  const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [credentials, setCredentials] = useState({
+    identifier: '',
+    password: '',
+  });
   const [credentialsError, setCredentialsError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -33,7 +36,7 @@ export default function SignIn() {
 
     try {
       const result = await signIn('credentials', {
-        email: credentials.email,
+        identifier: credentials.identifier,
         password: credentials.password,
         redirect: false,
       });
@@ -208,23 +211,23 @@ export default function SignIn() {
           <div className='space-y-4'>
             <div>
               <label
-                htmlFor='email'
+                htmlFor='identifier'
                 className='block text-sm font-medium text-zinc-300 mb-2'
               >
-                Email address
+                Email or Username
               </label>
               <input
-                id='email'
-                name='email'
-                type='email'
-                autoComplete='email'
+                id='identifier'
+                name='identifier'
+                type='text'
+                autoComplete='username'
                 required
-                value={credentials.email}
+                value={credentials.identifier}
                 onChange={e =>
-                  setCredentials({ ...credentials, email: e.target.value })
+                  setCredentials({ ...credentials, identifier: e.target.value })
                 }
                 className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2.5 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
-                placeholder='Enter your email'
+                placeholder='Enter your email or username'
               />
             </div>
 

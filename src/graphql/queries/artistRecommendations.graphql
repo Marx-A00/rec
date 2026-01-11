@@ -45,7 +45,7 @@ query GetArtistRecommendations(
       }
       user {
         id
-        name
+        username
         image
       }
     }

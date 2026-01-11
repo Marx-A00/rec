@@ -822,7 +822,7 @@ export type MutationUpdateOnboardingStatusArgs = {
 
 export type MutationUpdateProfileArgs = {
   bio?: InputMaybe<Scalars['String']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
+  username?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationUpdateRecommendationArgs = {
@@ -1610,7 +1610,7 @@ export type UpdateProfilePayload = {
   __typename?: 'UpdateProfilePayload';
   bio?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
-  name?: Maybe<Scalars['String']['output']>;
+  username?: Maybe<Scalars['String']['output']>;
 };
 
 export type UpdateRecommendationPayload = {
@@ -1653,13 +1653,13 @@ export type User = {
   isFollowing?: Maybe<Scalars['Boolean']['output']>;
   lastActive?: Maybe<Scalars['DateTime']['output']>;
   mutualFollowers: Array<User>;
-  name?: Maybe<Scalars['String']['output']>;
   profileUpdatedAt?: Maybe<Scalars['DateTime']['output']>;
   recommendations: Array<Recommendation>;
   recommendationsCount: Scalars['Int']['output'];
   role: UserRole;
   settings?: Maybe<UserSettings>;
   updatedAt: Scalars['DateTime']['output'];
+  username?: Maybe<Scalars['String']['output']>;
 };
 
 export type UserCount = {
@@ -1862,7 +1862,7 @@ export type UpdateCollectionMutation = {
 };
 
 export type UpdateProfileMutationVariables = Exact<{
-  name?: InputMaybe<Scalars['String']['input']>;
+  username?: InputMaybe<Scalars['String']['input']>;
   bio?: InputMaybe<Scalars['String']['input']>;
 }>;
 
@@ -1871,7 +1871,7 @@ export type UpdateProfileMutation = {
   updateProfile: {
     __typename?: 'UpdateProfilePayload';
     id: string;
-    name?: string | null;
+    username?: string | null;
     bio?: string | null;
   };
 };
@@ -1945,7 +1945,7 @@ export type GetAdminUsersQuery = {
   users: Array<{
     __typename?: 'User';
     id: string;
-    name?: string | null;
+    username?: string | null;
     email?: string | null;
     image?: string | null;
     emailVerified?: Date | null;
@@ -2329,7 +2329,7 @@ export type GetArtistRecommendationsQuery = {
       user: {
         __typename?: 'User';
         id: string;
-        name?: string | null;
+        username?: string | null;
         image?: string | null;
       };
     }>;
@@ -2553,7 +2553,7 @@ export type GetAlbumRecommendationsQuery = {
       user: {
         __typename?: 'User';
         id: string;
-        name?: string | null;
+        username?: string | null;
         image?: string | null;
       };
     }>;
@@ -2799,7 +2799,7 @@ export type GetUserProfileQuery = {
   user?: {
     __typename?: 'User';
     id: string;
-    name?: string | null;
+    username?: string | null;
     email?: string | null;
     image?: string | null;
     bio?: string | null;
@@ -2887,7 +2887,7 @@ export type RecommendationFieldsFragment = {
   user: {
     __typename?: 'User';
     id: string;
-    name?: string | null;
+    username?: string | null;
     image?: string | null;
   };
   basisAlbum: {
@@ -2933,7 +2933,7 @@ export type GetRecommendationFeedQuery = {
       user: {
         __typename?: 'User';
         id: string;
-        name?: string | null;
+        username?: string | null;
         image?: string | null;
       };
       basisAlbum: {
@@ -2982,7 +2982,7 @@ export type GetMyRecommendationsQuery = {
       user: {
         __typename?: 'User';
         id: string;
-        name?: string | null;
+        username?: string | null;
         image?: string | null;
       };
       basisAlbum: {
@@ -3061,7 +3061,7 @@ export type GetRecommendationQuery = {
     user: {
       __typename?: 'User';
       id: string;
-      name?: string | null;
+      username?: string | null;
       image?: string | null;
     };
     basisAlbum: {
@@ -3180,7 +3180,7 @@ export type SearchQuery = {
     users: Array<{
       __typename?: 'User';
       id: string;
-      name?: string | null;
+      username?: string | null;
       image?: string | null;
       bio?: string | null;
       followersCount: number;
@@ -3586,7 +3586,7 @@ export type UpdateUserRoleMutation = {
       __typename?: 'User';
       id: string;
       role: UserRole;
-      name?: string | null;
+      username?: string | null;
       email?: string | null;
     } | null;
   };
@@ -3599,7 +3599,7 @@ export const RecommendationFieldsFragmentDoc = `
   createdAt
   user {
     id
-    name
+    username
     image
   }
   basisAlbum {
@@ -4072,10 +4072,10 @@ export const useUpdateCollectionMutation = <
 useUpdateCollectionMutation.getKey = () => ['UpdateCollection'];
 
 export const UpdateProfileDocument = `
-    mutation UpdateProfile($name: String, $bio: String) {
-  updateProfile(name: $name, bio: $bio) {
+    mutation UpdateProfile($username: String, $bio: String) {
+  updateProfile(username: $username, bio: $bio) {
     id
-    name
+    username
     bio
   }
 }
@@ -4221,7 +4221,7 @@ export const GetAdminUsersDocument = `
     hasActivity: $hasActivity
   ) {
     id
-    name
+    username
     email
     image
     emailVerified
@@ -4983,7 +4983,7 @@ export const GetArtistRecommendationsDocument = `
       }
       user {
         id
-        name
+        username
         image
       }
     }
@@ -5585,7 +5585,7 @@ export const GetAlbumRecommendationsDocument = `
       }
       user {
         id
-        name
+        username
         image
       }
     }
@@ -6299,7 +6299,7 @@ export const GetUserProfileDocument = `
     query GetUserProfile($userId: String!) {
   user(id: $userId) {
     id
-    name
+    username
     email
     image
     bio
@@ -7158,7 +7158,7 @@ export const SearchDocument = `
     }
     users {
       id
-      name
+      username
       image
       bio
       followersCount
@@ -8482,7 +8482,7 @@ export const UpdateUserRoleDocument = `
     user {
       id
       role
-      name
+      username
       email
     }
   }

@@ -796,7 +796,7 @@ export type MutationUpdateOnboardingStatusArgs = {
 
 export type MutationUpdateProfileArgs = {
   bio?: InputMaybe<Scalars['String']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
+  username?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationUpdateRecommendationArgs = {
@@ -1584,7 +1584,7 @@ export type UpdateProfilePayload = {
   __typename?: 'UpdateProfilePayload';
   bio?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
-  name?: Maybe<Scalars['String']['output']>;
+  username?: Maybe<Scalars['String']['output']>;
 };
 
 export type UpdateRecommendationPayload = {
@@ -1627,13 +1627,13 @@ export type User = {
   isFollowing?: Maybe<Scalars['Boolean']['output']>;
   lastActive?: Maybe<Scalars['DateTime']['output']>;
   mutualFollowers: Array<User>;
-  name?: Maybe<Scalars['String']['output']>;
   profileUpdatedAt?: Maybe<Scalars['DateTime']['output']>;
   recommendations: Array<Recommendation>;
   recommendationsCount: Scalars['Int']['output'];
   role: UserRole;
   settings?: Maybe<UserSettings>;
   updatedAt: Scalars['DateTime']['output'];
+  username?: Maybe<Scalars['String']['output']>;
 };
 
 export type UserCount = {
@@ -4260,7 +4260,7 @@ export type UpdateProfilePayloadResolvers<
 > = ResolversObject<{
   bio?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  username?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -4336,7 +4336,6 @@ export type UserResolvers<
     ParentType,
     ContextType
   >;
-  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   profileUpdatedAt?: Resolver<
     Maybe<ResolversTypes['DateTime']>,
     ParentType,
@@ -4359,6 +4358,7 @@ export type UserResolvers<
     ContextType
   >;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  username?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

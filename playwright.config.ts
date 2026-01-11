@@ -12,7 +12,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env.test') });
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './tests',
+  testDir: './tests/e2e',
   /* Ignore Vitest unit tests - they should be run with pnpm test:unit */
   testIgnore: ['**/unit/**'],
   /* Run tests in files in parallel */

@@ -956,7 +956,7 @@ async function runEnrichedMigration(
         data: {
           // Let Prisma generate new IDs
           email: user.email,
-          name: user.displayName,
+          username: user.displayName,
           image: user.avatar,
           emailVerified: user.emailVerified,
         },

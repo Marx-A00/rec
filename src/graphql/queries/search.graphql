@@ -54,7 +54,7 @@ query Search($input: SearchInput!) {
     }
     users {
       id
-      name
+      username
       image
       bio
       followersCount

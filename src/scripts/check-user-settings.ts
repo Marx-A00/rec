@@ -39,7 +39,7 @@ async function checkUserSettings() {
       id: true,
       userId: true,
       user: {
-        select: { name: true, email: true },
+        select: { username: true, email: true },
       },
       dashboardLayout: true,
       createdAt: true,
@@ -49,7 +49,7 @@ async function checkUserSettings() {
 
   console.log(`Total UserSettings records: ${allSettings.length}`);
   allSettings.forEach(s => {
-    console.log(`- User: ${s.user.name} (${s.user.email})`);
+    console.log(`- User: ${s.user.username} (${s.user.email})`);
     console.log(`  Has Dashboard Layout: ${s.dashboardLayout ? 'Yes' : 'No'}`);
     console.log(`  Last Updated: ${s.updatedAt}`);
   });

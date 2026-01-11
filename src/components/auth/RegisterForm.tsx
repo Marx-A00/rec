@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 import {
   validateEmail,
-  validateNameForRegistration,
+  validateUsernameForRegistration,
   validatePassword,
 } from '@/lib/validations';
 
@@ -17,7 +17,7 @@ interface RegisterFormProps {
 
 export default function RegisterForm({ onSuccess }: RegisterFormProps) {
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
     email: '',
     password: '',
   });
@@ -26,14 +26,14 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
   const [serverError, setServerError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const validateField = (name: string, value: string) => {
-    switch (name) {
+  const validateField = (fieldName: string, value: string) => {
+    switch (fieldName) {
       case 'email':
         return validateEmail(value);
       case 'password':
         return validatePassword(value);
-      case 'name':
-        return validateNameForRegistration(value);
+      case 'username':
+        return validateUsernameForRegistration(value);
       default:
         return { isValid: true };
     }
@@ -61,7 +61,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
     // Validate all fields
     const validations = {
-      name: validateField('name', formData.name),
+      username: validateField('username', formData.username),
       email: validateField('email', formData.email),
       password: validateField('password', formData.password),
     };
@@ -85,7 +85,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name || undefined,
+          username: formData.username || undefined,
           email: formData.email,
           password: formData.password,
         }),
@@ -116,7 +116,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
       // Success - redirect will be handled by NextAuth
       if (onSuccess) {
-        onSuccess(formData.name);
+        onSuccess(formData.username);
       } else {
         window.location.href = '/';
       }
@@ -141,30 +141,30 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       <div className='space-y-3'>
         <div>
           <label
-            htmlFor='name'
+            htmlFor='username'
             className='block text-sm font-medium text-zinc-300 mb-2'
           >
-            Name
+            Username
           </label>
           <input
-            id='name'
-            name='name'
+            id='username'
+            name='username'
             type='text'
             required
-            value={formData.name}
+            value={formData.username}
             onChange={handleInputChange}
             className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
-            placeholder='Enter your name'
-            aria-describedby={errors.name ? 'name-error' : undefined}
-            aria-invalid={errors.name ? 'true' : 'false'}
+            placeholder='Choose a username'
+            aria-describedby={errors.username ? 'username-error' : undefined}
+            aria-invalid={errors.username ? 'true' : 'false'}
           />
-          {errors.name && (
+          {errors.username && (
             <p
-              id='name-error'
+              id='username-error'
               className='mt-1 text-sm text-red-400 font-medium'
               role='alert'
             >
-              {errors.name}
+              {errors.username}
             </p>
           )}
         </div>

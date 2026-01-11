@@ -30,7 +30,7 @@ async function globalTeardown(config: FullConfig) {
         OR: [
           { email: { contains: 'playwright_test' } },
           { email: { contains: 'PLAYWRIGHT_TEST' } },
-          { name: { contains: '🎭 PLAYWRIGHT TEST' } },
+          { username: { contains: '🎭 PLAYWRIGHT TEST' } },
         ],
       },
       select: { id: true, email: true },
@@ -98,7 +98,7 @@ async function globalTeardown(config: FullConfig) {
         OR: [
           { email: { contains: 'playwright_test' } },
           { email: { contains: 'PLAYWRIGHT_TEST' } },
-          { name: { contains: '🎭 PLAYWRIGHT TEST' } },
+          { username: { contains: '🎭 PLAYWRIGHT TEST' } },
         ],
       },
     });

@@ -68,7 +68,7 @@ async function getNewUsers(limit: number = 15) {
     take: limit,
     select: {
       id: true,
-      name: true,
+      username: true,
       email: true,
       image: true,
       bio: true,
@@ -304,16 +304,16 @@ function UserCard({ user }: { user: any }) {
           <Avatar className='w-20 h-20 mx-auto ring-2 ring-zinc-700/80 group-hover:ring-cosmic-latte/80 transition-all duration-300'>
             <AvatarImage
               src={user.image || undefined}
-              alt={user.name || 'User'}
+              alt={user.username || 'User'}
             />
             <AvatarFallback className='bg-gradient-to-br from-zinc-700 to-zinc-800 text-cosmic-latte text-xl font-semibold'>
-              {user.name?.charAt(0)?.toUpperCase() || 'U'}
+              {user.username?.charAt(0)?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
 
           <div className='space-y-2'>
             <h3 className='font-semibold text-white text-base truncate group-hover:text-cosmic-latte transition-colors'>
-              {user.name || 'Anonymous User'}
+              {user.username || 'Anonymous User'}
             </h3>
             <div className='space-y-1'>
               <p className='text-sm text-zinc-400'>

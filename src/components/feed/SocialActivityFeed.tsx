@@ -47,12 +47,12 @@ export default function SocialActivityFeed({
             createdAt
             actor {
               id
-              name
+              username
               image
             }
             targetUser {
               id
-              name
+              username
               image
             }
             album {
@@ -137,10 +137,10 @@ export default function SocialActivityFeed({
       id: activity.id,
       type: activity.type.toLowerCase().replace('_', '_'),
       actorId: activity.actor.id,
-      actorName: activity.actor.name,
+      actorName: activity.actor.username,
       actorImage: activity.actor.image,
       targetId: activity.targetUser?.id,
-      targetName: activity.targetUser?.name,
+      targetName: activity.targetUser?.username,
       targetImage: activity.targetUser?.image,
       albumId: activity.album?.id,
       albumTitle: activity.album?.title,

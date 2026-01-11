@@ -131,7 +131,7 @@ export function useAlbumRecommendations(
         },
         user: {
           id: rec.user.id,
-          name: rec.user.name || null,
+          name: rec.user.username || null,
           image: rec.user.image || null,
         },
       })),

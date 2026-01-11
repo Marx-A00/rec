@@ -45,7 +45,9 @@ async function checkRecommendations() {
   console.log('\n=== First 5 Recommendations ===\n');
   recommendations.forEach((rec, idx) => {
     console.log(`${idx + 1}. Recommendation ID: ${rec.id}`);
-    console.log(`   User: ${rec.user?.name || 'Unknown'} (${rec.user?.id})`);
+    console.log(
+      `   User: ${rec.user?.username || 'Unknown'} (${rec.user?.id})`
+    );
     console.log(`   Score: ${rec.score}`);
     console.log(`   Created: ${rec.createdAt}`);
     console.log(`   Basis Album: ${rec.basisAlbum?.title || 'Unknown'}`);

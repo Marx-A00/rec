@@ -14,7 +14,7 @@ async function getUserRecommendations(userId: string) {
     where: { userId },
     orderBy: { createdAt: 'desc' },
     include: {
-      user: { select: { id: true, name: true, image: true } },
+      user: { select: { id: true, username: true, image: true } },
       basisAlbum: {
         select: {
           id: true,
@@ -226,7 +226,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
             This Profile is Private
           </h2>
           <p className='text-zinc-400'>
-            {userData.name || 'This user'} has chosen to keep their profile
+            {userData.username || 'This user'} has chosen to keep their profile
             private.
           </p>
         </div>
@@ -261,10 +261,14 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
   // Create user object for Profile component
   const user = {
     id: userData.id,
-    name: userData.name || 'User',
+    name: userData.username || 'User',
     email: userData.email || null,
     image: userData.image || '/placeholder.svg',
-    username: userData.email ? `@${userData.email.split('@')[0]}` : '@user',
+    username: userData.username
+      ? `@${userData.username}`
+      : userData.email
+        ? `@${userData.email.split('@')[0]}`
+        : '@user',
     bio:
       userData.bio ||
       'Music enthusiast | Sharing vibes and discovering new sounds',

@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 interface UserCountStats {
   userId: string;
-  userName: string | null;
+  username: string | null;
   currentFollowersCount: number;
   actualFollowersCount: number;
   currentFollowingCount: number;
@@ -29,12 +29,12 @@ async function fixUserCounts() {
     const users = await prisma.user.findMany({
       select: {
         id: true,
-        name: true,
+        username: true,
         followersCount: true,
         followingCount: true,
         recommendationsCount: true,
       },
-      orderBy: { name: 'asc' },
+      orderBy: { username: 'asc' },
     });
 
     console.log(chalk.green(`✓ Found ${users.length} users\n`));
@@ -68,7 +68,7 @@ async function fixUserCounts() {
 
       stats.push({
         userId: user.id,
-        userName: user.name,
+        username: user.username,
         currentFollowersCount: user.followersCount,
         actualFollowersCount,
         currentFollowingCount: user.followingCount,
@@ -111,7 +111,7 @@ async function fixUserCounts() {
 
     // Display summary table
     for (const stat of usersNeedingUpdate) {
-      console.log(chalk.bold(`   User: ${stat.userName || 'Unknown'}`));
+      console.log(chalk.bold(`   User: ${stat.username || 'Unknown'}`));
       console.log(chalk.gray(`   ID: ${stat.userId}`));
 
       if (stat.currentFollowersCount !== stat.actualFollowersCount) {
@@ -156,7 +156,7 @@ async function fixUserCounts() {
       updatedCount++;
       console.log(
         chalk.green(
-          `   ✓ Updated ${stat.userName || 'Unknown'} (${updatedCount}/${usersNeedingUpdate.length})`
+          `   ✓ Updated ${stat.username || 'Unknown'} (${updatedCount}/${usersNeedingUpdate.length})`
         )
       );
     }
@@ -180,11 +180,11 @@ async function fixUserCounts() {
         updatedUser.followingCount === stat.actualFollowingCount &&
         updatedUser.recommendationsCount === stat.actualRecommendationsCount
       ) {
-        console.log(chalk.green(`   ✓ Verified ${stat.userName || 'Unknown'}`));
+        console.log(chalk.green(`   ✓ Verified ${stat.username || 'Unknown'}`));
       } else {
         console.log(
           chalk.red(
-            `   ✗ Verification failed for ${stat.userName || 'Unknown'}`
+            `   ✗ Verification failed for ${stat.username || 'Unknown'}`
           )
         );
       }
