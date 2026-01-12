@@ -461,7 +461,7 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
 
                     {/* Results list */}
                     {hasResults ? (
-                      <div className='space-y-2 overflow-y-auto flex-1 pr-1'>
+                      <div className='space-y-2 overflow-y-auto flex-1 pr-1 custom-scrollbar'>
                         {albumResults.map(
                           (result: UnifiedSearchResult, index) => {
                             const album = convertToAlbum(result);
@@ -564,7 +564,7 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
             )}
 
             {albumResults.length > 0 && (
-              <div className='space-y-2 max-h-48 overflow-y-auto relative z-[100] bg-zinc-900 rounded-lg border border-zinc-600 p-2 mt-4'>
+              <div className='space-y-2 max-h-48 overflow-y-auto relative z-[100] bg-zinc-900 rounded-lg border border-zinc-600 p-2 mt-4 custom-scrollbar'>
                 {albumResults.map((result: UnifiedSearchResult) => {
                   const album = convertToAlbum(result);
                   return (
