@@ -284,7 +284,7 @@ export default function RecommendationDrawer({
     >
       <DrawerContent
         id='recommendation-drawer'
-        className='h-[90vh] bg-zinc-900 border-zinc-700'
+        className='h-[90vh] bg-zinc-900 border-zinc-700 focus:outline-none'
       >
         <DrawerHeader className='flex-shrink-0'>
           <div className='flex items-center justify-center relative'>

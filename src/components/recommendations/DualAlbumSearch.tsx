@@ -292,19 +292,18 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
       <div className='text-white relative'>
         {/* Single container that morphs between states */}
         {isDualMode && (
-          <div className='relative min-h-[200px]'>
+          <div className='relative min-h-[200px] flex justify-center'>
             <motion.div
-              className={`absolute inset-x-0 top-0 rounded-lg overflow-hidden origin-top transition-colors duration-300 ${
+              className={`rounded-lg overflow-hidden transition-colors duration-300 ${
                 isMorphedState
                   ? `bg-zinc-900 border-2 ${getResultsBorderColor()} p-3`
-                  : ''
+                  : 'w-full'
               }`}
               animate={{
-                scaleX: isMorphedState ? 0.92 : 1,
+                width: isMorphedState ? '60%' : '100%',
               }}
-              style={{ originX: 0.5 }}
               transition={{
-                scaleX: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
+                width: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
               }}
             >
               <AnimatePresence mode='wait'>
