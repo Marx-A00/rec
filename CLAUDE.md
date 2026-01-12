@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `src/components/ui/SimpleSearchBar.tsx` - Main search bar in header/topbar
 - `src/components/ui/UniversalSearchBar.tsx` - Used in mobile navigation and search page
-- `src/components/recommendations/AlbumSearchBackwardCompatible.tsx` - Used in recommendation flows
+- `src/components/recommendations/DualAlbumSearch.tsx` - Used in recommendation flows (dual album + artist inputs)
 
 **DEPRECATED Search Components (Do NOT Use):**
 

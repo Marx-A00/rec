@@ -16,9 +16,7 @@ import AlbumImage from '@/components/ui/AlbumImage';
 import { sanitizeArtistName } from '@/lib/utils';
 import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
 
-import AlbumSearchBackwardCompatible, {
-  AlbumSearchRef,
-} from './AlbumSearchBackwardCompatible';
+import DualAlbumSearch, { AlbumSearchRef } from './DualAlbumSearch';
 import CreateRecommendationForm from './CreateRecommendationForm';
 import SimilarityRatingDial from './SimilarityRatingDial';
 
@@ -309,7 +307,7 @@ export default function RecommendationDrawer({
           <div className={layoutConfig.containerClasses}>
             {/* Search Bar - Dual Input Mode */}
             <div className='mb-6'>
-              <AlbumSearchBackwardCompatible
+              <DualAlbumSearch
                 ref={albumSearchRef}
                 onAlbumSelect={handleAlbumSelect}
                 albumPlaceholder='Search album title...'
