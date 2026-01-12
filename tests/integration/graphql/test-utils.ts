@@ -4,7 +4,7 @@
  * Provides helpers for testing GraphQL resolvers directly against the test database.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserRole } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
 import type { GraphQLContext } from '@/lib/graphql/context';
@@ -84,7 +84,7 @@ export async function createTestUser(
   data?: Partial<{
     email: string;
     username: string;
-    role: string;
+    role: UserRole;
   }>
 ): Promise<TestUser & { dbUser: any }> {
   const id = randomUUID();
@@ -96,13 +96,13 @@ export async function createTestUser(
       id,
       email,
       username,
-      role: data?.role || 'USER',
+      role: data?.role || UserRole.USER,
     },
   });
 
   return {
     id: dbUser.id,
-    email: dbUser.email,
+    email: dbUser.email ?? email, // Fallback to provided email if null
     role: dbUser.role,
     dbUser,
   };

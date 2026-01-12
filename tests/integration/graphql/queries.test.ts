@@ -9,8 +9,10 @@
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { randomUUID } from 'crypto';
+import type { GraphQLResolveInfo } from 'graphql';
 
 import { queryResolvers } from '@/lib/graphql/resolvers/queries';
+import type { GraphQLContext } from '@/lib/graphql/context';
 
 import {
   getTestPrisma,
@@ -23,6 +25,24 @@ import {
   createTestRecommendation,
   cleanupTestData,
 } from './test-utils';
+
+// Helper type to call resolvers - they may be functions or objects with resolve
+type ResolverFn<TResult, TArgs = Record<string, unknown>> = (
+  parent: Record<string, unknown>,
+  args: TArgs,
+  context: GraphQLContext,
+  info: GraphQLResolveInfo
+) => TResult | Promise<TResult>;
+
+// Helper to call a resolver (handles both function and object forms)
+function callResolver<TResult, TArgs = Record<string, unknown>>(
+  resolver: unknown,
+  args: TArgs,
+  context: GraphQLContext
+): TResult | Promise<TResult> {
+  const fn = (typeof resolver === 'function' ? resolver : (resolver as { resolve: ResolverFn<TResult, TArgs> }).resolve) as ResolverFn<TResult, TArgs>;
+  return fn({}, args, context, {} as GraphQLResolveInfo);
+}
 
 describe('GraphQL Query Resolvers', () => {
   const prisma = getTestPrisma();
@@ -39,7 +59,8 @@ describe('GraphQL Query Resolvers', () => {
 
   describe('health', () => {
     it('should return health status string', () => {
-      const result = queryResolvers.health!({}, {}, {} as any, {} as any);
+      const context = createTestContext({ prisma });
+      const result = callResolver<string>(queryResolvers.health, {}, context);
       expect(result).toContain('GraphQL server running at');
     });
   });
@@ -57,11 +78,10 @@ describe('GraphQL Query Resolvers', () => {
     it('should return album by id', async () => {
       const context = createTestContext({ prisma });
 
-      const result = await queryResolvers.album!(
-        {},
+      const result = await callResolver<{ id: string } | null>(
+        queryResolvers.album,
         { id: testAlbum.id },
-        context,
-        {} as any
+        context
       );
 
       // Resolver returns minimal object { id } - field resolvers populate the rest
@@ -73,11 +93,10 @@ describe('GraphQL Query Resolvers', () => {
       const context = createTestContext({ prisma });
 
       // Use a valid UUID format that doesn't exist in the database
-      const result = await queryResolvers.album!(
-        {},
+      const result = await callResolver<{ id: string } | null>(
+        queryResolvers.album,
         { id: randomUUID() },
-        context,
-        {} as any
+        context
       );
 
       expect(result).toBeNull();
@@ -98,11 +117,10 @@ describe('GraphQL Query Resolvers', () => {
     it('should return artist by id', async () => {
       const context = createTestContext({ prisma });
 
-      const result = await queryResolvers.artist!(
-        {},
+      const result = await callResolver<{ id: string } | null>(
+        queryResolvers.artist,
         { id: testArtist.id },
-        context,
-        {} as any
+        context
       );
 
       // Resolver returns minimal object { id } - field resolvers populate the rest
@@ -114,11 +132,10 @@ describe('GraphQL Query Resolvers', () => {
       const context = createTestContext({ prisma });
 
       // Use a valid UUID format that doesn't exist in the database
-      const result = await queryResolvers.artist!(
-        {},
+      const result = await callResolver<{ id: string } | null>(
+        queryResolvers.artist,
         { id: randomUUID() },
-        context,
-        {} as any
+        context
       );
 
       expect(result).toBeNull();
@@ -140,11 +157,10 @@ describe('GraphQL Query Resolvers', () => {
     it('should return user by id', async () => {
       const context = createTestContext({ prisma });
 
-      const result = await queryResolvers.user!(
-        {},
+      const result = await callResolver<{ id: string } | null>(
+        queryResolvers.user,
         { id: testUser.id },
-        context,
-        {} as any
+        context
       );
 
       // Resolver returns minimal object { id } - field resolvers populate the rest
@@ -155,11 +171,10 @@ describe('GraphQL Query Resolvers', () => {
     it('should return null for non-existent user', async () => {
       const context = createTestContext({ prisma });
 
-      const result = await queryResolvers.user!(
-        {},
+      const result = await callResolver<{ id: string } | null>(
+        queryResolvers.user,
         { id: 'non-existent-id' },
-        context,
-        {} as any
+        context
       );
 
       expect(result).toBeNull();
@@ -184,11 +199,10 @@ describe('GraphQL Query Resolvers', () => {
     it('should return collection by id', async () => {
       const context = createTestContext({ prisma });
 
-      const result = await queryResolvers.collection!(
-        {},
+      const result = await callResolver<{ id: string } | null>(
+        queryResolvers.collection,
         { id: testCollection.id },
-        context,
-        {} as any
+        context
       );
 
       // Resolver returns minimal object { id } - field resolvers populate the rest
@@ -199,11 +213,10 @@ describe('GraphQL Query Resolvers', () => {
     it('should return null for non-existent collection', async () => {
       const context = createTestContext({ prisma });
 
-      const result = await queryResolvers.collection!(
-        {},
+      const result = await callResolver<{ id: string } | null>(
+        queryResolvers.collection,
         { id: 'non-existent-id' },
-        context,
-        {} as any
+        context
       );
 
       expect(result).toBeNull();
@@ -238,11 +251,10 @@ describe('GraphQL Query Resolvers', () => {
     it('should return recommendation by id', async () => {
       const context = createTestContext({ prisma });
 
-      const result = await queryResolvers.recommendation!(
-        {},
+      const result = await callResolver<{ id: string } | null>(
+        queryResolvers.recommendation,
         { id: testRecommendation.id },
-        context,
-        {} as any
+        context
       );
 
       // Resolver returns minimal object { id } - field resolvers populate the rest
@@ -253,11 +265,10 @@ describe('GraphQL Query Resolvers', () => {
     it('should return null for non-existent recommendation', async () => {
       const context = createTestContext({ prisma });
 
-      const result = await queryResolvers.recommendation!(
-        {},
+      const result = await callResolver<{ id: string } | null>(
+        queryResolvers.recommendation,
         { id: 'non-existent-id' },
-        context,
-        {} as any
+        context
       );
 
       expect(result).toBeNull();
@@ -292,11 +303,11 @@ describe('GraphQL Query Resolvers', () => {
     it('should return recommendation feed with pagination info', async () => {
       const context = createTestContext({ prisma });
 
-      const result = await queryResolvers.recommendationFeed!(
-        {},
+      type FeedResult = { recommendations: { id: string }[]; hasMore: boolean; cursor: string | null };
+      const result = await callResolver<FeedResult>(
+        queryResolvers.recommendationFeed,
         { limit: 10 },
-        context,
-        {} as any
+        context
       );
 
       expect(result).toBeDefined();
@@ -310,12 +321,13 @@ describe('GraphQL Query Resolvers', () => {
     it('should support cursor-based pagination', async () => {
       const context = createTestContext({ prisma });
 
+      type FeedResult = { recommendations: { id: string }[]; hasMore: boolean; cursor: string | null };
+      
       // First call without cursor
-      const result1 = await queryResolvers.recommendationFeed!(
-        {},
+      const result1 = await callResolver<FeedResult>(
+        queryResolvers.recommendationFeed,
         { limit: 1 },
-        context,
-        {} as any
+        context
       );
 
       expect(result1).toBeDefined();
@@ -324,11 +336,10 @@ describe('GraphQL Query Resolvers', () => {
       // If there's more data, the cursor should be set
       if (result1.hasMore && result1.cursor) {
         // Second call with cursor
-        const result2 = await queryResolvers.recommendationFeed!(
-          {},
+        const result2 = await callResolver<FeedResult>(
+          queryResolvers.recommendationFeed,
           { limit: 1, cursor: result1.cursor },
-          context,
-          {} as any
+          context
         );
 
         expect(result2).toBeDefined();
@@ -356,11 +367,11 @@ describe('GraphQL Query Resolvers', () => {
     it('should return user statistics', async () => {
       const context = createTestContext({ prisma });
 
-      const result = await queryResolvers.userStats!(
-        {},
+      type StatsResult = { userId: string; followersCount: number; followingCount: number; collectionsCount: number; recommendationsCount: number };
+      const result = await callResolver<StatsResult>(
+        queryResolvers.userStats,
         { userId: testUser.id },
-        context,
-        {} as any
+        context
       );
 
       expect(result).toBeDefined();
@@ -375,11 +386,10 @@ describe('GraphQL Query Resolvers', () => {
       const context = createTestContext({ prisma });
 
       await expect(
-        queryResolvers.userStats!(
-          {},
+        callResolver<unknown>(
+          queryResolvers.userStats,
           { userId: 'non-existent-user-id' },
-          context,
-          {} as any
+          context
         )
       ).rejects.toThrow('User not found');
     });
@@ -405,11 +415,10 @@ describe('GraphQL Query Resolvers', () => {
         user: { id: testUser.id, email: testUser.email },
       });
 
-      const result = await queryResolvers.myCollections!(
+      const result = await callResolver<{ id: string }[]>(
+        queryResolvers.myCollections,
         {},
-        {},
-        context,
-        {} as any
+        context
       );
 
       expect(result).toBeDefined();
@@ -422,7 +431,7 @@ describe('GraphQL Query Resolvers', () => {
       const context = createTestContext({ prisma, user: null });
 
       await expect(
-        queryResolvers.myCollections!({}, {}, context, {} as any)
+        callResolver<unknown>(queryResolvers.myCollections, {}, context)
       ).rejects.toThrow('Authentication required');
     });
   });

@@ -80,7 +80,7 @@ describe('mapDiscogsMasterToAlbum', () => {
     expect(result.artists).toHaveLength(1);
     expect(result.artists[0].id).toBe('3840');
     expect(result.artists[0].name).toBe('Radiohead');
-    expect(result.artists[0].resourceUrl).toBe(
+    expect(result.artists[0].resource_url).toBe(
       'https://api.discogs.com/artists/3840'
     );
   });
