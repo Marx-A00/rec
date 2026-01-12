@@ -13,7 +13,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAlbumState } from '@/hooks/useAlbumState';
 import { Album } from '@/types/album';
-import { useToast } from '@/components/ui/toast';
+import { useCollectionToastContext } from '@/components/ui/CollectionToastProvider';
 import { graphqlClient } from '@/lib/graphql-client';
 import { useSession } from 'next-auth/react';
 import {
@@ -65,7 +65,7 @@ export default function CollectionPopover({
     new Map()
   );
   const queryClient = useQueryClient();
-  const { showToast } = useToast();
+  const { showCollectionToast } = useCollectionToastContext();
   const { data: session } = useSession();
 
   // Get album state to know which collections it's in
@@ -122,7 +122,7 @@ export default function CollectionPopover({
     isCurrentlyInCollection: boolean
   ) => {
     if (!session?.user) {
-      showToast('Please sign in to save albums', 'error');
+      showCollectionToast('Please sign in to save albums', 'error');
       return;
     }
 
@@ -143,7 +143,7 @@ export default function CollectionPopover({
             collectionId,
             albumId: albumState.dbId,
           });
-          showToast(`Removed from ${collectionName}`, 'success');
+          showCollectionToast(`Removed from ${collectionName}`, 'success');
         }
       } else {
         // Add to collection
@@ -153,7 +153,11 @@ export default function CollectionPopover({
           albumId,
           position: 0,
         });
-        showToast(`Added to ${collectionName}`, 'success');
+        showCollectionToast(`Added to ${collectionName}`, 'success', {
+          showNavigation: true,
+          navigationLabel: 'View Collection',
+          navigationUrl: '/profile',
+        });
       }
 
       // Invalidate queries to refresh UI
@@ -163,7 +167,7 @@ export default function CollectionPopover({
       queryClient.invalidateQueries({ queryKey: ['GetAlbumDetailsAdmin'] });
     } catch (error) {
       console.error('Error toggling collection:', error);
-      showToast(
+      showCollectionToast(
         `Failed to ${isCurrentlyInCollection ? 'remove from' : 'add to'} ${collectionName}`,
         'error'
       );
@@ -261,7 +265,10 @@ export default function CollectionPopover({
               className='w-full justify-start gap-2 text-zinc-600 cursor-not-allowed'
               onClick={() => {
                 // TODO: Open create collection dialog
-                showToast('Create collection coming soon!', 'success');
+                showCollectionToast(
+                  'Create collection coming soon!',
+                  'success'
+                );
               }}
             >
               <Plus className='h-4 w-4' />

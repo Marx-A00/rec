@@ -3,6 +3,7 @@ import { Pencil, Trash2, MoreHorizontal, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
+import { useCollectionToastContext } from '@/components/ui/CollectionToastProvider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { RecommendationFieldsFragment } from '@/generated/graphql';
@@ -60,15 +61,20 @@ export default function RecommendationCard({
     string | null
   >(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
+  const { showCollectionToast } = useCollectionToastContext();
 
   const deleteMutation = useDeleteRecommendationMutation({
     onSuccess: () => {
       setShowDeleteConfirm(false);
       setShowActions(false);
+      showCollectionToast('Recommendation deleted', 'success');
     },
     onError: error => {
       console.error('Failed to delete recommendation:', error);
-      // TODO: Add toast notification for error
+      showCollectionToast(
+        `Failed to delete: ${error instanceof Error ? error.message : 'Please try again'}`,
+        'error'
+      );
     },
   });
 

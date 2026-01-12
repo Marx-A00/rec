@@ -1,9 +1,8 @@
 import { useState } from 'react';
 
-import { CreateRecommendationRequest } from '@/types/recommendation';
 import { Album } from '@/types/album';
+import { useCollectionToastContext } from '@/components/ui/CollectionToastProvider';
 import { useCreateRecommendationMutation, getErrorMessage } from '@/hooks';
-import { sanitizeArtistName } from '@/lib/utils';
 import {
   Tooltip,
   TooltipContent,
@@ -205,9 +204,19 @@ export default function CreateRecommendationForm({
 }: CreateRecommendationFormProps) {
   const [score, setScore] = useState(7);
   const finalScore = externalScore ?? score;
+  const { showCollectionToast } = useCollectionToastContext();
 
   const createMutation = useCreateRecommendationMutation({
-    onSuccess,
+    onSuccess: () => {
+      showCollectionToast('Recommendation created!', 'success');
+      onSuccess?.();
+    },
+    onError: error => {
+      showCollectionToast(
+        `Failed to create recommendation: ${getErrorMessage(error)}`,
+        'error'
+      );
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {

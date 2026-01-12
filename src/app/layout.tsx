@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import 'driver.js/dist/driver.css';
 import '@/styles/driver-custom.css';
+import { Toaster } from 'sonner';
 
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
@@ -41,6 +42,16 @@ export default function RootLayout({
             <TourProvider>
               <CollectionToastProvider>{children}</CollectionToastProvider>
               <TourDebugPanel />
+              <Toaster
+                position='top-right'
+                toastOptions={{
+                  style: {
+                    background: '#18181b',
+                    border: '1px solid #3f3f46',
+                    color: '#fafafa',
+                  },
+                }}
+              />
             </TourProvider>
           </QueryProvider>
         </SessionProvider>
