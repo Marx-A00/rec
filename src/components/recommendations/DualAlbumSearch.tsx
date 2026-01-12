@@ -292,234 +292,236 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
       <div className='text-white relative'>
         {/* Single container that morphs between states */}
         {isDualMode && (
-          <motion.div
-            layout
-            className={`relative rounded-lg overflow-hidden origin-center transition-colors duration-300 ${
-              isMorphedState
-                ? `bg-zinc-900 border-2 ${getResultsBorderColor()} p-3`
-                : ''
-            }`}
-            animate={{
-              scaleX: isMorphedState ? 0.92 : 1,
-            }}
-            transition={{
-              scaleX: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
-              layout: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
-            }}
-          >
-            <AnimatePresence mode='wait'>
-              {/* IDLE STATE: Input fields */}
-              {uiState === 'idle' && (
-                <motion.div
-                  key='inputs'
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className='space-y-3'
-                >
-                  {/* Label */}
-                  <label className='block text-sm font-medium text-white mb-2'>
-                    {label}
-                  </label>
-
-                  {/* Album input */}
-                  <div className='relative z-20'>
-                    <Search className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
-                    <input
-                      id='recommendation-search-input'
-                      data-tour-step='recommendation-search'
-                      type='text'
-                      placeholder={albumPlaceholder}
-                      value={albumQuery}
-                      onChange={e => setAlbumQuery(e.target.value)}
-                      onKeyDown={handleAlbumKeyDown}
-                      disabled={disabled}
-                      aria-label='Album title'
-                      tabIndex={0}
-                      className={`w-full pl-10 pr-4 py-3 min-h-[44px] bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses(false)}`}
-                    />
-                  </div>
-
-                  {/* Artist input */}
-                  <div className='relative z-20'>
-                    <User className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
-                    <input
-                      type='text'
-                      placeholder={artistPlaceholder}
-                      value={artistQuery}
-                      onChange={e => setArtistQuery(e.target.value)}
-                      onKeyDown={handleArtistKeyDown}
-                      disabled={disabled}
-                      aria-label='Artist name (optional)'
-                      tabIndex={0}
-                      className={`w-full pl-10 pr-4 py-3 min-h-[44px] bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses(true)}`}
-                    />
-                  </div>
-
-                  {/* Press Enter hint */}
-                  <div className='h-5 flex items-center justify-center'>
-                    {hasInputToSearch && (
-                      <p className='text-zinc-400 text-xs'>
-                        Press Enter to search
-                      </p>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* SEARCHING STATE: Centered loading spinner */}
-              {uiState === 'searching' && (
-                <motion.div
-                  key='searching'
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className='min-h-[140px] flex flex-col items-center justify-center'
-                >
-                  {/* Centered loading spinner */}
+          <div className='relative min-h-[200px]'>
+            <motion.div
+              className={`absolute inset-x-0 top-0 rounded-lg overflow-hidden origin-top transition-colors duration-300 ${
+                isMorphedState
+                  ? `bg-zinc-900 border-2 ${getResultsBorderColor()} p-3`
+                  : ''
+              }`}
+              animate={{
+                scaleX: isMorphedState ? 0.92 : 1,
+              }}
+              style={{ originX: 0.5 }}
+              transition={{
+                scaleX: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
+              }}
+            >
+              <AnimatePresence mode='wait'>
+                {/* IDLE STATE: Input fields */}
+                {uiState === 'idle' && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.15, duration: 0.2 }}
-                    className='flex flex-col items-center gap-3'
-                  >
-                    {/* Spinner */}
-                    <div className='relative'>
-                      <div
-                        className='w-10 h-10 rounded-full animate-spin'
-                        style={{
-                          borderWidth: '3px',
-                          borderStyle: 'solid',
-                          borderColor: '#3f3f46',
-                          borderTopColor:
-                            colorTheme === 'red' ? '#ef4444' : '#22c55e',
-                        }}
-                      />
-                    </div>
-                    {/* Search text */}
-                    <p className='text-sm text-zinc-400 text-center'>
-                      Searching
-                      {activeSearchTerms.album
-                        ? ` "${activeSearchTerms.album}"`
-                        : ''}
-                      {activeSearchTerms.artist
-                        ? ` by ${activeSearchTerms.artist}`
-                        : ''}
-                      ...
-                    </p>
-                  </motion.div>
-
-                  {/* Back button in corner */}
-                  <motion.button
+                    key='inputs'
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    onClick={handleBackToSearch}
-                    className='absolute top-3 left-3 p-1.5 rounded-full hover:bg-zinc-800 transition-colors'
-                    aria-label='Back to search'
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className='space-y-3'
                   >
-                    <ArrowLeft className='w-4 h-4 text-zinc-400' />
-                  </motion.button>
-                </motion.div>
-              )}
+                    {/* Label */}
+                    <label className='block text-sm font-medium text-white mb-2'>
+                      {label}
+                    </label>
 
-              {/* RESULTS STATE: Populated container with candidates */}
-              {uiState === 'results' && (
-                <motion.div
-                  key='results'
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className='max-h-[240px] overflow-hidden flex flex-col'
-                >
-                  {/* Header with search info and back button */}
-                  <div className='flex items-center justify-between mb-3 flex-shrink-0'>
-                    <div className='flex items-center gap-2'>
+                    {/* Album input */}
+                    <div className='relative z-20'>
+                      <Search className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
+                      <input
+                        id='recommendation-search-input'
+                        data-tour-step='recommendation-search'
+                        type='text'
+                        placeholder={albumPlaceholder}
+                        value={albumQuery}
+                        onChange={e => setAlbumQuery(e.target.value)}
+                        onKeyDown={handleAlbumKeyDown}
+                        disabled={disabled}
+                        aria-label='Album title'
+                        tabIndex={0}
+                        className={`w-full pl-10 pr-4 py-3 min-h-[44px] bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses(false)}`}
+                      />
+                    </div>
+
+                    {/* Artist input */}
+                    <div className='relative z-20'>
+                      <User className='absolute left-3 top-3 h-4 w-4 text-zinc-400' />
+                      <input
+                        type='text'
+                        placeholder={artistPlaceholder}
+                        value={artistQuery}
+                        onChange={e => setArtistQuery(e.target.value)}
+                        onKeyDown={handleArtistKeyDown}
+                        disabled={disabled}
+                        aria-label='Artist name (optional)'
+                        tabIndex={0}
+                        className={`w-full pl-10 pr-4 py-3 min-h-[44px] bg-zinc-900 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${getColorClasses(true)}`}
+                      />
+                    </div>
+
+                    {/* Press Enter hint */}
+                    <div className='h-5 flex items-center justify-center'>
+                      {hasInputToSearch && (
+                        <p className='text-zinc-400 text-xs'>
+                          Press Enter to search
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* SEARCHING STATE: Centered loading spinner */}
+                {uiState === 'searching' && (
+                  <motion.div
+                    key='searching'
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className='min-h-[140px] flex flex-col items-center justify-center'
+                  >
+                    {/* Centered loading spinner */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.15, duration: 0.2 }}
+                      className='flex flex-col items-center gap-3'
+                    >
+                      {/* Spinner */}
+                      <div className='relative'>
+                        <div
+                          className='w-10 h-10 rounded-full animate-spin'
+                          style={{
+                            borderWidth: '3px',
+                            borderStyle: 'solid',
+                            borderColor: '#3f3f46',
+                            borderTopColor:
+                              colorTheme === 'red' ? '#ef4444' : '#22c55e',
+                          }}
+                        />
+                      </div>
+                      {/* Search text */}
+                      <p className='text-sm text-zinc-400 text-center'>
+                        Searching
+                        {activeSearchTerms.album
+                          ? ` "${activeSearchTerms.album}"`
+                          : ''}
+                        {activeSearchTerms.artist
+                          ? ` by ${activeSearchTerms.artist}`
+                          : ''}
+                        ...
+                      </p>
+                    </motion.div>
+
+                    {/* Back button in corner */}
+                    <motion.button
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                      onClick={handleBackToSearch}
+                      className='absolute top-3 left-3 p-1.5 rounded-full hover:bg-zinc-800 transition-colors'
+                      aria-label='Back to search'
+                    >
+                      <ArrowLeft className='w-4 h-4 text-zinc-400' />
+                    </motion.button>
+                  </motion.div>
+                )}
+
+                {/* RESULTS STATE: Populated container with candidates */}
+                {uiState === 'results' && (
+                  <motion.div
+                    key='results'
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className='max-h-[240px] overflow-hidden flex flex-col'
+                  >
+                    {/* Header with search info and back button */}
+                    <div className='flex items-center justify-between mb-3 flex-shrink-0'>
+                      <div className='flex items-center gap-2'>
+                        <button
+                          onClick={handleBackToSearch}
+                          className='p-1.5 rounded-full hover:bg-zinc-800 transition-colors'
+                          aria-label='Back to search'
+                        >
+                          <ArrowLeft className='w-4 h-4 text-zinc-400' />
+                        </button>
+                        <span className='text-sm text-zinc-400'>
+                          {hasResults
+                            ? `${albumResults.length} result${albumResults.length !== 1 ? 's' : ''}`
+                            : 'No results'}
+                        </span>
+                      </div>
                       <button
                         onClick={handleBackToSearch}
                         className='p-1.5 rounded-full hover:bg-zinc-800 transition-colors'
-                        aria-label='Back to search'
+                        aria-label='Clear search'
                       >
-                        <ArrowLeft className='w-4 h-4 text-zinc-400' />
+                        <X className='w-4 h-4 text-zinc-400' />
                       </button>
-                      <span className='text-sm text-zinc-400'>
-                        {hasResults
-                          ? `${albumResults.length} result${albumResults.length !== 1 ? 's' : ''}`
-                          : 'No results'}
-                      </span>
                     </div>
-                    <button
-                      onClick={handleBackToSearch}
-                      className='p-1.5 rounded-full hover:bg-zinc-800 transition-colors'
-                      aria-label='Clear search'
-                    >
-                      <X className='w-4 h-4 text-zinc-400' />
-                    </button>
-                  </div>
 
-                  {/* Results list */}
-                  {hasResults ? (
-                    <div className='space-y-2 overflow-y-auto flex-1 pr-1'>
-                      {albumResults.map(
-                        (result: UnifiedSearchResult, index) => {
-                          const album = convertToAlbum(result);
-                          return (
-                            <motion.div
-                              key={album.id}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{
-                                delay: index * 0.05,
-                                duration: 0.2,
-                              }}
-                              onClick={() => onAlbumSelect(album)}
-                              className='flex items-center gap-3 p-2 bg-zinc-800 border border-zinc-700 rounded-lg cursor-pointer hover:bg-zinc-700 hover:border-zinc-600 transition-all'
-                            >
-                              <div className='w-12 h-12 flex-shrink-0 relative'>
-                                <AlbumImage
-                                  src={album.image?.url}
-                                  alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}
-                                  width={48}
-                                  height={48}
-                                  className='w-full h-full rounded object-cover'
-                                  sizes='48px'
-                                  showSkeleton={false}
-                                />
-                              </div>
-                              <div className='flex-1 min-w-0'>
-                                <p className='font-semibold text-white truncate text-sm'>
-                                  {album.title}
-                                </p>
-                                <p className='text-sm text-zinc-300 truncate'>
-                                  {sanitizeArtistName(
-                                    album.artists?.[0]?.name || 'Unknown Artist'
-                                  )}
-                                </p>
-                                {album.year && (
-                                  <p className='text-xs text-zinc-500'>
-                                    {album.year}
+                    {/* Results list */}
+                    {hasResults ? (
+                      <div className='space-y-2 overflow-y-auto flex-1 pr-1'>
+                        {albumResults.map(
+                          (result: UnifiedSearchResult, index) => {
+                            const album = convertToAlbum(result);
+                            return (
+                              <motion.div
+                                key={album.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{
+                                  delay: index * 0.05,
+                                  duration: 0.2,
+                                }}
+                                onClick={() => onAlbumSelect(album)}
+                                className='flex items-center gap-3 p-2 bg-zinc-800 border border-zinc-700 rounded-lg cursor-pointer hover:bg-zinc-700 hover:border-zinc-600 transition-all'
+                              >
+                                <div className='w-12 h-12 flex-shrink-0 relative'>
+                                  <AlbumImage
+                                    src={album.image?.url}
+                                    alt={`${album.title} by ${sanitizeArtistName(album.artists?.[0]?.name || 'Unknown Artist')}`}
+                                    width={48}
+                                    height={48}
+                                    className='w-full h-full rounded object-cover'
+                                    sizes='48px'
+                                    showSkeleton={false}
+                                  />
+                                </div>
+                                <div className='flex-1 min-w-0'>
+                                  <p className='font-semibold text-white truncate text-sm'>
+                                    {album.title}
                                   </p>
-                                )}
-                              </div>
-                            </motion.div>
-                          );
-                        }
-                      )}
-                    </div>
-                  ) : (
-                    <div className='flex-1 flex items-center justify-center min-h-[100px]'>
-                      <p className='text-zinc-500 text-sm'>
-                        {getNoResultsMessage()}
-                      </p>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+                                  <p className='text-sm text-zinc-300 truncate'>
+                                    {sanitizeArtistName(
+                                      album.artists?.[0]?.name ||
+                                        'Unknown Artist'
+                                    )}
+                                  </p>
+                                  {album.year && (
+                                    <p className='text-xs text-zinc-500'>
+                                      {album.year}
+                                    </p>
+                                  )}
+                                </div>
+                              </motion.div>
+                            );
+                          }
+                        )}
+                      </div>
+                    ) : (
+                      <div className='flex-1 flex items-center justify-center min-h-[100px]'>
+                        <p className='text-zinc-500 text-sm'>
+                          {getNoResultsMessage()}
+                        </p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </div>
         )}
 
         {/* Error state - shown in any UI state */}
