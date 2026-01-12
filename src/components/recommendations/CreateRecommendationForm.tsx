@@ -266,7 +266,7 @@ export default function CreateRecommendationForm({
                 data-tour-step='submit-recommendation'
                 type='button'
                 onClick={handleSubmit}
-                className='block ml-auto mt-6 mr-8 mb-8 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 bg-green-600 text-white shadow-lg shadow-green-500/25 hover:bg-zinc-700 hover:text-zinc-500 hover:opacity-50 hover:shadow-none cursor-pointer hover:cursor-not-allowed'
+                className='w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 bg-green-600 text-white shadow-lg shadow-green-500/25 hover:bg-zinc-700 hover:text-zinc-500 hover:opacity-50 hover:shadow-none cursor-pointer hover:cursor-not-allowed'
               >
                 <svg
                   className='w-5 h-5 ml-0.5'
@@ -289,7 +289,7 @@ export default function CreateRecommendationForm({
           type='submit'
           onClick={handleSubmit}
           className={`
-            block ml-auto mt-6 mr-8 mb-8 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200
+            w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200
             ${
               isDisabled
                 ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed opacity-50'

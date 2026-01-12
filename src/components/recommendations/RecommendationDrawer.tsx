@@ -284,7 +284,7 @@ export default function RecommendationDrawer({
     >
       <DrawerContent
         id='recommendation-drawer'
-        className='h-[90vh] bg-zinc-900 border-zinc-700 focus:outline-none'
+        className='h-auto max-h-[95vh] bg-zinc-900 border-zinc-700 focus:outline-none'
       >
         <DrawerHeader className='flex-shrink-0'>
           <div className='flex items-center justify-center relative'>
@@ -303,10 +303,10 @@ export default function RecommendationDrawer({
           </div>
         </DrawerHeader>
 
-        <div className='flex-1 overflow-y-auto'>
+        <div className='flex-1 overflow-hidden'>
           <div className={layoutConfig.containerClasses}>
             {/* Search Bar - Dual Input Mode */}
-            <div className='mb-6'>
+            <div className='mb-4'>
               <DualAlbumSearch
                 ref={albumSearchRef}
                 onAlbumSelect={handleAlbumSelect}
@@ -321,7 +321,7 @@ export default function RecommendationDrawer({
 
             {/* Turntables Layout - Responsive */}
             <div data-tour-step='recommendation-interface-wrapper'>
-              <div className={`${layoutConfig.turntableClasses} mb-6`}>
+              <div className={`${layoutConfig.turntableClasses} mb-4`}>
                 {/* Left Turntable */}
                 <div
                   className='flex flex-col items-center'
@@ -361,18 +361,18 @@ export default function RecommendationDrawer({
                     size={layoutConfig.turntableSize}
                   />
                 </div>
-              </div>
-            </div>
 
-            {/* Recommendation Form */}
-            <div className='relative'>
-              <CreateRecommendationForm
-                basisAlbum={selectedBasisAlbum}
-                recommendedAlbum={selectedRecommendedAlbum}
-                score={similarityRating}
-                onSuccess={handleSuccess}
-                isTourMode={isTourMode}
-              />
+                {/* Create Recommendation Button */}
+                <div className='flex flex-col items-center self-end'>
+                  <CreateRecommendationForm
+                    basisAlbum={selectedBasisAlbum}
+                    recommendedAlbum={selectedRecommendedAlbum}
+                    score={similarityRating}
+                    onSuccess={handleSuccess}
+                    isTourMode={isTourMode}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

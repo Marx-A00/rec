@@ -292,7 +292,7 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
       <div className='text-white relative'>
         {/* Single container that morphs between states */}
         {isDualMode && (
-          <div className='relative min-h-[200px] flex justify-center'>
+          <div className='relative flex justify-center'>
             <motion.div
               className={`rounded-lg overflow-hidden transition-colors duration-300 ${
                 isMorphedState
