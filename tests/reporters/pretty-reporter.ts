@@ -1,4 +1,5 @@
-import type { Reporter, TestModule, TestCase, Vitest } from 'vitest/reporters';
+import type { Reporter } from 'vitest/reporters';
+import type { Vitest, TestModule, TestCase, TestSuite } from 'vitest/node';
 import pc from 'picocolors';
 
 interface TestStats {
@@ -119,27 +120,21 @@ export default class PrettyReporter implements Reporter {
     const tests: TestCase[] = [];
     for (const child of testModule.children) {
       if (child.type === 'test') {
-        tests.push(child);
+        tests.push(child as TestCase);
       } else if (child.type === 'suite') {
-        tests.push(...this.collectTestsFromSuite(child));
+        tests.push(...this.collectTestsFromSuite(child as TestSuite));
       }
     }
     return tests;
   }
 
-  private collectTestsFromSuite(suite: {
-    children: Iterable<{ type: string }>;
-  }): TestCase[] {
+  private collectTestsFromSuite(suite: TestSuite): TestCase[] {
     const tests: TestCase[] = [];
     for (const child of suite.children) {
       if (child.type === 'test') {
         tests.push(child as TestCase);
       } else if (child.type === 'suite') {
-        tests.push(
-          ...this.collectTestsFromSuite(
-            child as { children: Iterable<{ type: string }> }
-          )
-        );
+        tests.push(...this.collectTestsFromSuite(child as TestSuite));
       }
     }
     return tests;

@@ -12,6 +12,9 @@ export default defineConfig({
     include: ['tests/unit/**/*.test.ts', 'tests/integration/**/*.test.ts'],
     exclude: ['node_modules', 'tests/*.spec.ts'], // Exclude Playwright E2E tests
 
+    // Disable file parallelism for integration tests that share database state
+    fileParallelism: false,
+
     // Coverage configuration
     coverage: {
       provider: 'v8',
