@@ -166,6 +166,7 @@ export default function JobHistoryPage() {
   const [jobs, setJobs] = useState<JobHistoryItem[]>([]);
   const [stats, setStats] = useState<JobStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -176,6 +177,7 @@ export default function JobHistoryPage() {
 
   const fetchJobHistory = async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -195,9 +197,14 @@ export default function JobHistoryPage() {
       setJobs(data.jobs || []);
       setStats(data.stats || null);
       setTotalPages(data.totalPages || 1);
-    } catch (error) {
-      toast.error('Failed to load job history');
-      console.error('Error fetching job history:', error);
+    } catch (err) {
+      const isConnectionError =
+        err instanceof TypeError && err.message === 'Failed to fetch';
+      const errorMessage = isConnectionError
+        ? `Unable to connect to monitoring service at ${MONITORING_API}. Make sure the queue worker is running.`
+        : 'Failed to load job history';
+      setError(errorMessage);
+      console.error('Error fetching job history:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -356,8 +363,7 @@ export default function JobHistoryPage() {
       {/* Filters and Controls */}
       <Card className='bg-zinc-900 border-zinc-800 mb-6'>
         <CardHeader>
-          <div className='flex items-center justify-between'>
-            <CardTitle className='text-white'>Job History</CardTitle>
+          <div className='flex items-center justify-end'>
             <div className='flex items-center gap-2'>
               <Select value={timeFilter} onValueChange={setTimeFilter}>
                 <SelectTrigger className='w-32 bg-zinc-800 border-zinc-700 text-white'>
@@ -447,6 +453,29 @@ export default function JobHistoryPage() {
                       className='text-center text-zinc-500 py-8'
                     >
                       Loading job history...
+                    </TableCell>
+                  </TableRow>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className='py-12'>
+                      <div className='flex flex-col items-center gap-4'>
+                        <div className='flex items-center gap-2 text-red-400'>
+                          <AlertCircle className='h-5 w-5' />
+                          <span className='font-medium'>Connection Error</span>
+                        </div>
+                        <p className='text-zinc-400 text-sm text-center max-w-md'>
+                          {error}
+                        </p>
+                        <Button
+                          onClick={handleRefresh}
+                          size='sm'
+                          variant='outline'
+                          className='border-zinc-700 text-white hover:bg-zinc-800'
+                        >
+                          <RefreshCw className='h-4 w-4 mr-2' />
+                          Retry
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : jobs.length === 0 ? (

@@ -122,7 +122,7 @@ export default function GroupedActivityItem({
         return (
           <span>
             collected{' '}
-            <span className='text-emeraled-green font-semibold'>
+            <span className='text-cosmic-latte font-semibold'>
               {activityCount} albums
             </span>
           </span>
@@ -131,7 +131,7 @@ export default function GroupedActivityItem({
         return (
           <span>
             made{' '}
-            <span className='text-emeraled-green font-semibold'>
+            <span className='text-cosmic-latte font-semibold'>
               {activityCount} recommendations
             </span>
           </span>
@@ -140,7 +140,7 @@ export default function GroupedActivityItem({
         return (
           <span>
             followed{' '}
-            <span className='text-emeraled-green font-semibold'>
+            <span className='text-cosmic-latte font-semibold'>
               {activityCount} users
             </span>
           </span>
@@ -465,7 +465,7 @@ function SingleActivityDisplay({
             followed{' '}
             <Link
               href={`/profile/${activity.targetId}`}
-              className='text-emeraled-green hover:text-emeraled-green/80 font-medium'
+              className='text-cosmic-latte hover:text-emeraled-green font-medium transition-colors'
             >
               {activity.targetName}
             </Link>
@@ -477,14 +477,14 @@ function SingleActivityDisplay({
             recommends{' '}
             <Link
               href={`/albums/${activity.albumId}?source=local`}
-              className='text-emeraled-green hover:text-emeraled-green/80 font-semibold transition-colors'
+              className='text-cosmic-latte hover:text-emeraled-green font-semibold transition-colors'
             >
               {activity.albumTitle}
             </Link>{' '}
             by{' '}
             <Link
               href={`/artists/${activity.artistId}`}
-              className='text-emeraled-green hover:text-emeraled-green/80 transition-colors'
+              className='text-cosmic-latte hover:text-emeraled-green transition-colors'
             >
               {activity.albumArtist}
             </Link>
@@ -496,14 +496,14 @@ function SingleActivityDisplay({
             collected{' '}
             <Link
               href={`/albums/${activity.albumId}?source=local`}
-              className='text-cosmic-latte hover:text-cosmic-latte/80 font-medium transition-colors'
+              className='text-cosmic-latte hover:text-emeraled-green font-medium transition-colors'
             >
               {activity.albumTitle}
             </Link>{' '}
             by{' '}
             <Link
               href={`/artists/${activity.artistId}`}
-              className='text-zinc-300 hover:text-emeraled-green transition-colors'
+              className='text-cosmic-latte hover:text-emeraled-green transition-colors'
             >
               {activity.albumArtist}
             </Link>
