@@ -27,7 +27,7 @@ export default function AccountCreatedSuccess({
       if (onContinue) {
         onContinue();
       } else {
-        window.location.href = '/';
+        window.location.href = '/browse';
       }
     }, 300);
   };

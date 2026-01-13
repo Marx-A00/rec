@@ -19,6 +19,50 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: '/signin',
   },
   callbacks: {
+    async signIn({ user, account }) {
+      // Allow OAuth sign-in to link to existing accounts with the same email
+      if (account?.provider && account.provider !== 'credentials') {
+        const email = user.email;
+        if (email) {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: email.toLowerCase() },
+            include: { accounts: true },
+          });
+
+          if (existingUser) {
+            // Check if this OAuth account is already linked
+            const isLinked = existingUser.accounts.some(
+              acc =>
+                acc.provider === account.provider &&
+                acc.providerAccountId === account.providerAccountId
+            );
+
+            if (!isLinked) {
+              // Link the OAuth account to the existing user
+              await prisma.account.create({
+                data: {
+                  userId: existingUser.id,
+                  type: account.type,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  refresh_token: account.refresh_token,
+                  access_token: account.access_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                  session_state: account.session_state as string | null,
+                },
+              });
+              console.log(
+                `[auth] Linked ${account.provider} account to existing user: ${existingUser.id}`
+              );
+            }
+          }
+        }
+      }
+      return true;
+    },
     async session({ session, token }) {
       if (session.user && token.sub) {
         // Check if user still exists in database and get latest data
@@ -109,14 +153,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           })) as (User & { hashedPassword?: string | null }) | null;
         } else {
           // Case-insensitive username lookup
-          user = (await prisma.user.findFirst({
+          // Use findMany to detect if there are duplicate usernames (legacy data issue)
+          const matchingUsers = await prisma.user.findMany({
             where: {
               username: {
                 equals: identifier,
                 mode: 'insensitive',
               },
             },
-          })) as (User & { hashedPassword?: string | null }) | null;
+            take: 2, // Only need to know if there's more than one
+          });
+
+          if (matchingUsers.length > 1) {
+            // Multiple users with same username exist (data integrity issue)
+            // Log the issue and fail safely rather than returning wrong account
+            console.error(
+              `[auth] SECURITY: Multiple users found with username "${identifier}". Login blocked to prevent account confusion.`,
+              new Date().toISOString()
+            );
+            throw new CredentialsSignin(AUTH_ERROR_CODES.USER_NOT_FOUND);
+          }
+
+          user = (matchingUsers[0] ?? null) as
+            | (User & { hashedPassword?: string | null })
+            | null;
         }
 
         // User not found

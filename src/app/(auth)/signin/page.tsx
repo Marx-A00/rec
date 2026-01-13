@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+import BackButton from '@/components/ui/BackButton';
 import { getAuthErrorMessage } from '@/types/auth';
 
 export default function SignIn() {
@@ -21,7 +22,8 @@ export default function SignIn() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    await signIn('google', { callbackUrl: '/' });
+    // Redirect to a protected route so the middleware can check for username
+    await signIn('google', { callbackUrl: '/browse' });
   };
 
   // const handleSpotifySignIn = async () => {
@@ -47,8 +49,9 @@ export default function SignIn() {
         setCredentialsError(errorMessage);
         console.error('[signin] Authentication failed:', result.error);
       } else if (result?.ok) {
-        // Successful sign-in - use Next.js router for client-side navigation
-        router.push('/');
+        // Successful sign-in - redirect to a protected route
+        // Middleware will redirect to /complete-profile if username is missing
+        router.push('/browse');
         router.refresh();
       } else {
         // Unexpected state
@@ -64,7 +67,13 @@ export default function SignIn() {
 
   return (
     <div className='space-y-6'>
-      {/* Header */}
+      {/* Back Button */}
+      <BackButton
+        text='Back'
+        fallbackHref='/'
+        className='inline-flex items-center text-zinc-400 hover:text-white transition-colors text-sm -mt-2 mb-4'
+      />
+        {/* Header */}
       <div className='text-center space-y-3'>
         <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-cosmic-latte/20 backdrop-blur-sm border border-cosmic-latte/30 mb-4'>
           <svg
