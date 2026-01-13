@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck - Worker class has type issues, needs refactor
 // src/workers/queue-worker.ts
+
+// Load environment variables from .env.local and .env
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env' });
 /**
  * Production Queue Worker - Always Running
  * Handles all background job processing across 6 services (21 job types)

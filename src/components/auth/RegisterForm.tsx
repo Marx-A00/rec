@@ -118,7 +118,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       if (onSuccess) {
         onSuccess(formData.username);
       } else {
-        window.location.href = '/';
+        window.location.href = '/browse';
       }
     } catch {
       setServerError('Something went wrong. Please try again.');

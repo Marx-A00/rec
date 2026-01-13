@@ -18,9 +18,15 @@ export default async function AuthLayout({
   // Check if user is already authenticated
   const session = await auth();
 
-  // Redirect authenticated users to home mosaic
+  // Redirect authenticated users with username to home mosaic
+  // Users without username stay on auth pages to complete their profile
   if (session?.user) {
-    redirect('/home-mosaic');
+    const hasUsername = session.user.name && session.user.name.trim() !== '';
+
+    if (hasUsername) {
+      redirect('/home-mosaic');
+    }
+    // If no username, allow access to auth pages (for /complete-profile)
   }
 
   return <AuthLayoutClient>{children}</AuthLayoutClient>;

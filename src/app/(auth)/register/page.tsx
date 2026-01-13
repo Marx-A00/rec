@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 
+import BackButton from '@/components/ui/BackButton';
 import RegisterForm from '@/components/auth/RegisterForm';
 import AccountCreatedSuccess from '@/components/auth/AccountCreatedSuccess';
 
@@ -21,6 +22,13 @@ export default function Register() {
 
   return (
     <div className='space-y-6'>
+      {/* Back Button */}
+      <BackButton
+        text='Back'
+        fallbackHref='/'
+        className='inline-flex items-center text-zinc-400 hover:text-white transition-colors text-sm -mt-2 mb-4'
+      />
+
       {/* Header */}
       <div className='text-center space-y-3'>
         <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-cosmic-latte/20 backdrop-blur-sm border border-cosmic-latte/30 mb-4'>

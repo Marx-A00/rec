@@ -79,6 +79,31 @@ export async function PUT(
 
     const { username, bio } = validation.data;
 
+    // Check if username is already taken by another user (case-insensitive)
+    if (username !== undefined) {
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          username: {
+            equals: username,
+            mode: 'insensitive',
+          },
+          NOT: {
+            id: id,
+          },
+        },
+      });
+
+      if (existingUser) {
+        const { response, status } = createErrorResponse(
+          'Username already taken',
+          409,
+          'This username is already in use by another account.',
+          'USERNAME_TAKEN'
+        );
+        return NextResponse.json(response, { status });
+      }
+    }
+
     // Update user
     const updatedUser = await prisma.user.update({
       where: { id },
@@ -150,6 +175,31 @@ export async function PATCH(
     }
 
     const { username, bio } = validation.data;
+
+    // Check if username is already taken by another user (case-insensitive)
+    if (username !== undefined) {
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          username: {
+            equals: username,
+            mode: 'insensitive',
+          },
+          NOT: {
+            id: id,
+          },
+        },
+      });
+
+      if (existingUser) {
+        const { response, status } = createErrorResponse(
+          'Username already taken',
+          409,
+          'This username is already in use by another account.',
+          'USERNAME_TAKEN'
+        );
+        return NextResponse.json(response, { status });
+      }
+    }
 
     // Update user profile
     const updatedUser = await prisma.user.update({

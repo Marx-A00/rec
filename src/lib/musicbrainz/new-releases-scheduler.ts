@@ -247,10 +247,11 @@ class MusicBrainzScheduler {
       const repeatableJobs = await queue.getQueue().getRepeatableJobs();
 
       // Remove MusicBrainz-related schedules
+      // Check the key field which contains 'musicbrainz-new-releases-schedule'
       for (const job of repeatableJobs) {
-        if (job.id === 'musicbrainz-new-releases-schedule') {
+        if (job.key.includes('musicbrainz-new-releases-schedule')) {
           await queue.getQueue().removeRepeatableByKey(job.key);
-          console.log(`  🗑️  Removed existing schedule: ${job.id}`);
+          console.log(`  🗑️  Removed existing schedule: ${job.key}`);
         }
       }
     } catch (error) {

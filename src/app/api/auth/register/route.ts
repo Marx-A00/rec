@@ -43,6 +43,28 @@ export async function POST(request: Request) {
       return NextResponse.json(response, { status });
     }
 
+    // Check if username already exists (case-insensitive)
+    if (username) {
+      const existingUsername = await prisma.user.findFirst({
+        where: {
+          username: {
+            equals: username,
+            mode: 'insensitive',
+          },
+        },
+      });
+
+      if (existingUsername) {
+        const { response, status } = createErrorResponse(
+          'Username already taken',
+          409,
+          'This username is already in use. Please choose a different one.',
+          'USERNAME_TAKEN'
+        );
+        return NextResponse.json(response, { status });
+      }
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 

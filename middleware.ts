@@ -425,6 +425,7 @@ function isProtectedRoute(pathname: string): boolean {
     '/artists',
     '/browse',
     '/collections',
+    '/complete-profile',
     '/home-mosaic',
     '/labels',
     '/latest',
@@ -444,6 +445,24 @@ function isProtectedRoute(pathname: string): boolean {
   const isProtectedApi = isApiRoute && !isPublicApiRoute(pathname);
 
   return isProtectedPage || isProtectedApi;
+}
+
+/**
+ * Routes that require auth but should NOT check for username
+ * (to avoid redirect loops)
+ */
+const USERNAME_EXEMPT_ROUTES = [
+  '/complete-profile',
+  '/api/users/', // Allow profile updates
+  '/api/auth/', // Allow auth endpoints
+  '/signout',
+];
+
+/**
+ * Check if a route is exempt from username requirement
+ */
+function isUsernameExemptRoute(pathname: string): boolean {
+  return USERNAME_EXEMPT_ROUTES.some(route => pathname.startsWith(route));
 }
 
 /**
@@ -482,7 +501,30 @@ async function handleAuthentication(
       return { response: NextResponse.redirect(landingUrl) };
     }
 
-    // User is authenticated, return user ID for rate limiting
+    // Check if user has a username (required for most routes)
+    const hasUsername = session.user.name && session.user.name.trim() !== '';
+
+    if (!hasUsername && !isUsernameExemptRoute(pathname)) {
+      // For API routes, return 403 indicating profile incomplete
+      if (pathname.startsWith('/api/')) {
+        return {
+          response: NextResponse.json(
+            {
+              error: 'Profile incomplete',
+              code: 'USERNAME_REQUIRED',
+              message: 'Please set a username to continue',
+            },
+            { status: 403 }
+          ),
+        };
+      }
+
+      // For page routes, redirect to complete-profile
+      const completeProfileUrl = new URL('/complete-profile', request.url);
+      return { response: NextResponse.redirect(completeProfileUrl) };
+    }
+
+    // User is authenticated and has username, return user ID for rate limiting
     return { response: null, userID: session.user.id };
   } catch (error) {
     console.error('Authentication check failed:', error);
@@ -626,6 +668,7 @@ export const config = {
     '/artists/:path*',
     '/browse/:path*',
     '/collections/:path*',
+    '/complete-profile',
     '/home-mosaic',
     '/latest',
     '/labels/:path*',
