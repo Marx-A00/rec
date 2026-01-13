@@ -284,7 +284,7 @@ export default function RecommendationDrawer({
     >
       <DrawerContent
         id='recommendation-drawer'
-        className='h-auto max-h-[95vh] bg-zinc-900 border-zinc-700 focus:outline-none'
+        className='h-[85vh] bg-zinc-900 border-zinc-700 focus:outline-none'
       >
         <DrawerHeader className='flex-shrink-0'>
           <div className='flex items-center justify-center relative'>
@@ -303,10 +303,10 @@ export default function RecommendationDrawer({
           </div>
         </DrawerHeader>
 
-        <div className='flex-1 overflow-hidden'>
+        <div className='flex-1 overflow-hidden relative'>
           <div className={layoutConfig.containerClasses}>
             {/* Search Bar - Dual Input Mode */}
-            <div className='mb-4'>
+            <div className='mb-4 relative z-40 h-[160px]'>
               <DualAlbumSearch
                 ref={albumSearchRef}
                 onAlbumSelect={handleAlbumSelect}
@@ -320,7 +320,10 @@ export default function RecommendationDrawer({
             </div>
 
             {/* Turntables Layout - Responsive */}
-            <div data-tour-step='recommendation-interface-wrapper'>
+            <div
+              data-tour-step='recommendation-interface-wrapper'
+              className='relative'
+            >
               <div className={`${layoutConfig.turntableClasses} mb-4`}>
                 {/* Left Turntable */}
                 <div
@@ -361,17 +364,17 @@ export default function RecommendationDrawer({
                     size={layoutConfig.turntableSize}
                   />
                 </div>
+              </div>
 
-                {/* Create Recommendation Button */}
-                <div className='flex flex-col items-center self-end'>
-                  <CreateRecommendationForm
-                    basisAlbum={selectedBasisAlbum}
-                    recommendedAlbum={selectedRecommendedAlbum}
-                    score={similarityRating}
-                    onSuccess={handleSuccess}
-                    isTourMode={isTourMode}
-                  />
-                </div>
+              {/* Create Recommendation Button - Positioned to the right */}
+              <div className='absolute right-0 bottom-0'>
+                <CreateRecommendationForm
+                  basisAlbum={selectedBasisAlbum}
+                  recommendedAlbum={selectedRecommendedAlbum}
+                  score={similarityRating}
+                  onSuccess={handleSuccess}
+                  isTourMode={isTourMode}
+                />
               </div>
             </div>
           </div>

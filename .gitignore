@@ -105,3 +105,5 @@ scripts/archive/
 MANUAL-QA-CHECKLIST.html
 MANUAL-QA-CHECKLIST.org
 scripts/spotify-api-setup-guide.html
+testGruv.tsx
+syntax-test.tsx

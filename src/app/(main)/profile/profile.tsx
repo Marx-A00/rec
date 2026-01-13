@@ -88,6 +88,10 @@ export default function ProfileClient({
   // Collection expansion state (for non-editable mode)
   const [isCollectionExpanded, setIsCollectionExpanded] = useState(false);
 
+  // Recommendations expansion state
+  const [isRecommendationsExpanded, setIsRecommendationsExpanded] =
+    useState(false);
+
   // Update sorted albums when collection changes
   useEffect(() => {
     setSortedAlbums(allAlbums);
@@ -548,17 +552,72 @@ export default function ProfileClient({
               Music Recommendations
             </h2>
             {recommendations.length > 0 ? (
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                {recommendations.map(recommendation => (
-                  <RecommendationCard
-                    key={recommendation.id}
-                    recommendation={recommendation}
-                    currentUserId={user.id}
-                    onAlbumClick={(albumId, _albumType) =>
-                      navigateToAlbum(albumId)
-                    }
-                  />
-                ))}
+              <div>
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+                  {(isRecommendationsExpanded
+                    ? recommendations
+                    : recommendations.slice(0, 6)
+                  ).map(recommendation => (
+                    <RecommendationCard
+                      key={recommendation.id}
+                      recommendation={recommendation}
+                      currentUserId={user.id}
+                      onAlbumClick={(albumId, _albumType) =>
+                        navigateToAlbum(albumId)
+                      }
+                    />
+                  ))}
+                </div>
+
+                {/* Show expand/collapse link when recommendations exceed 6 */}
+                {recommendations.length > 6 && (
+                  <div className='flex justify-center mb-8 mt-8'>
+                    <button
+                      onClick={() =>
+                        setIsRecommendationsExpanded(!isRecommendationsExpanded)
+                      }
+                      className='flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-300 transition-colors'
+                    >
+                      {isRecommendationsExpanded ? (
+                        <>
+                          <span>Show Less</span>
+                          <svg
+                            className='w-3.5 h-3.5'
+                            fill='none'
+                            stroke='currentColor'
+                            viewBox='0 0 24 24'
+                          >
+                            <path
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                              strokeWidth={2}
+                              d='M5 15l7-7 7 7'
+                            />
+                          </svg>
+                        </>
+                      ) : (
+                        <>
+                          <span>
+                            See All {recommendations.length} Recommendations
+                          </span>
+                          <svg
+                            className='w-3.5 h-3.5'
+                            fill='none'
+                            stroke='currentColor'
+                            viewBox='0 0 24 24'
+                          >
+                            <path
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                              strokeWidth={2}
+                              d='M19 9l-7 7-7-7'
+                            />
+                          </svg>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className='text-center py-12'>
