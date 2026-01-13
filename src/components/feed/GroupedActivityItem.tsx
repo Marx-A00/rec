@@ -415,34 +415,93 @@ export default function GroupedActivityItem({
 
       {/* Stacked Avatars for Follow Activities */}
       {group.type === 'follow' && (
-        <div className='flex justify-center'>
-          <div className='flex -space-x-3'>
-            {group.activities.slice(0, 5).map((activity, index) => (
-              <Link
-                key={activity.id}
-                href={`/profile/${activity.targetId}`}
-                className='group relative'
-                style={{ zIndex: 5 - index }}
-              >
-                <Avatar className='h-12 w-12 ring-2 ring-zinc-900 transition-all group-hover:scale-110 group-hover:ring-cosmic-latte/80 group-hover:z-10'>
-                  <AvatarImage
-                    src={activity.targetImage || undefined}
-                    alt={activity.targetName || 'User'}
-                  />
-                  <AvatarFallback className='bg-zinc-700 text-zinc-200 text-xs'>
-                    {activity.targetName?.charAt(0)?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              </Link>
-            ))}
+        <div>
+          {/* Stacked view (collapsed) */}
+          {!isExpanded && (
+            <div className='flex justify-center pb-6'>
+              <div className='flex -space-x-3'>
+                {group.activities.slice(0, 5).map((activity, index) => (
+                  <Link
+                    key={activity.id}
+                    href={`/profile/${activity.targetId}`}
+                    className='group relative'
+                    style={{ zIndex: 5 - index }}
+                  >
+                    <Avatar className='h-12 w-12 ring-2 ring-zinc-900 transition-all group-hover:scale-110 group-hover:ring-cosmic-latte/80 group-hover:z-10'>
+                      <AvatarImage
+                        src={activity.targetImage || undefined}
+                        alt={activity.targetName || 'User'}
+                      />
+                      <AvatarFallback className='bg-zinc-700 text-zinc-200 text-xs'>
+                        {activity.targetName?.charAt(0)?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    {/* Username tooltip on hover */}
+                    <div className='absolute top-full left-1/2 -translate-x-1/2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20'>
+                      <p className='text-xs text-zinc-300 text-center'>
+                        {activity.targetName}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
 
-            {/* Show "+X more" if there are more than 5 */}
-            {activityCount > 5 && (
-              <div className='flex items-center justify-center h-12 w-12 rounded-full bg-zinc-800 ring-2 ring-zinc-900 text-xs text-zinc-400 font-medium'>
-                +{activityCount - 5}
+                {/* Show "+X more" if there are more than 5 */}
+                {activityCount > 5 && (
+                  <div className='flex items-center justify-center h-12 w-12 rounded-full bg-zinc-800 ring-2 ring-zinc-900 text-xs text-zinc-400 font-medium'>
+                    +{activityCount - 5}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Expanded view - show all users */}
+          {isExpanded && (
+            <div className='flex flex-wrap justify-center gap-6 px-4 pb-6'>
+              {group.activities.map(activity => (
+                <Link
+                  key={activity.id}
+                  href={`/profile/${activity.targetId}`}
+                  className='group relative flex flex-col items-center'
+                >
+                  <Avatar className='h-16 w-16 ring-2 ring-zinc-900 transition-all group-hover:scale-105 group-hover:ring-cosmic-latte/80'>
+                    <AvatarImage
+                      src={activity.targetImage || undefined}
+                      alt={activity.targetName || 'User'}
+                    />
+                    <AvatarFallback className='bg-zinc-700 text-zinc-200 text-sm'>
+                      {activity.targetName?.charAt(0)?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className='text-xs text-zinc-300 text-center mt-2'>
+                    {activity.targetName}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Expand/Collapse button */}
+          {activityCount > 5 && (
+            <div className='flex justify-center mt-3'>
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className='flex items-center gap-1 text-xs text-zinc-400 hover:text-emeraled-green transition-colors'
+              >
+                {isExpanded ? (
+                  <>
+                    <ChevronUp className='w-4 h-4' />
+                    Show less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className='w-4 h-4' />
+                    Show all {activityCount}
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
