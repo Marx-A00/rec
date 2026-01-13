@@ -42,6 +42,10 @@ type Artist {
 
   # Last.fm data
   listeners: Int
+
+  # Enrichment logs
+  enrichmentLogs(limit: Int): [EnrichmentLog!]!
+  latestEnrichmentLog: EnrichmentLog
 }
 
 type Album {
@@ -78,6 +82,10 @@ type Album {
   inCollectionsCount: Int!
   recommendationScore: Float
   needsEnrichment: Boolean!
+
+  # Enrichment logs
+  enrichmentLogs(limit: Int): [EnrichmentLog!]!
+  latestEnrichmentLog: EnrichmentLog
 }
 
 type Track {
@@ -108,6 +116,10 @@ type Track {
   # Search metadata (populated for MusicBrainz/external search results)
   searchCoverArtUrl: String
   searchArtistName: String
+
+  # Enrichment logs
+  enrichmentLogs(limit: Int): [EnrichmentLog!]!
+  latestEnrichmentLog: EnrichmentLog
 }
 
 # =============================================
@@ -199,9 +211,24 @@ enum UserRole {
   OWNER
 }
 
+enum UserSortField {
+  NAME
+  EMAIL
+  CREATED_AT
+  LAST_ACTIVE
+  COLLECTIONS_COUNT
+  RECOMMENDATIONS_COUNT
+  FOLLOWERS_COUNT
+}
+
+enum SortOrder {
+  ASC
+  DESC
+}
+
 type User {
   id: String!
-  name: String
+  username: String
   email: String
   emailVerified: DateTime
   image: String
@@ -211,6 +238,7 @@ type User {
   followingCount: Int!
   recommendationsCount: Int!
   profileUpdatedAt: DateTime
+  lastActive: DateTime
   createdAt: DateTime!
   updatedAt: DateTime!
 
@@ -249,6 +277,11 @@ type UserSettings {
   profileVisibility: String!
   showRecentActivity: Boolean!
   showCollections: Boolean!
+  showListenLaterInFeed: Boolean!
+  showCollectionAddsInFeed: Boolean!
+
+  # Onboarding
+  showOnboardingTour: Boolean!
 
   # Notification preferences
   emailNotifications: Boolean!
@@ -372,6 +405,54 @@ type PaginationInfo {
   hasMore: Boolean!
 }
 
+# Top Recommended Types
+type TopRecommendedAlbum {
+  album: Album!
+  recommendationCount: Int!
+  asBasisCount: Int!
+  asTargetCount: Int!
+  averageScore: Float!
+}
+
+type TopRecommendedArtist {
+  artist: Artist!
+  recommendationCount: Int!
+  albumsInRecommendations: Int!
+  averageScore: Float!
+}
+
+# Artist Recommendations Types
+enum AlbumRole {
+  BASIS
+  RECOMMENDED
+  BOTH
+}
+
+enum ArtistRecommendationSort {
+  NEWEST
+  OLDEST
+  HIGHEST_SCORE
+  LOWEST_SCORE
+}
+
+type ArtistRecommendation {
+  id: ID!
+  score: Int!
+  description: String
+  createdAt: DateTime!
+  albumRole: AlbumRole!
+  basisAlbum: Album!
+  recommendedAlbum: Album!
+  user: User!
+  isOwnRecommendation: Boolean!
+}
+
+type ArtistRecommendationsConnection {
+  recommendations: [ArtistRecommendation!]!
+  totalCount: Int!
+  hasMore: Boolean!
+}
+
 # Social Activity Types
 enum ActivityType {
   FOLLOW
@@ -472,6 +553,13 @@ input ArtistAlbumInput {
   role: String # "PRIMARY", "FEATURED", "PRODUCER", etc.
 }
 
+input ArtistInput {
+  name: String!
+  musicbrainzId: String
+  imageUrl: String
+  countryCode: String
+}
+
 input TrackInput {
   title: String!
   albumId: UUID!
@@ -560,6 +648,70 @@ enum EnrichmentStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+enum EnrichmentEntityType {
+  ARTIST
+  ALBUM
+  TRACK
+}
+
+enum EnrichmentLogStatus {
+  SUCCESS
+  PARTIAL_SUCCESS
+  FAILED
+  NO_DATA_AVAILABLE
+  SKIPPED
+  PREVIEW
+}
+
+# =============================================
+# ENRICHMENT LOGGING TYPES
+# =============================================
+
+type EnrichmentLog {
+  id: UUID!
+  entityType: EnrichmentEntityType
+  entityId: UUID
+  operation: String!
+  sources: [String!]!
+  status: EnrichmentLogStatus!
+  reason: String # Human-readable explanation of why this enrichment occurred/was skipped
+  fieldsEnriched: [String!]!
+  dataQualityBefore: DataQuality
+  dataQualityAfter: DataQuality
+  errorMessage: String
+  errorCode: String
+  retryCount: Int!
+  durationMs: Int
+  apiCallCount: Int!
+  metadata: JSON
+  previewData: JSON # Stores raw API response and field diffs for preview enrichments
+  jobId: String
+  triggeredBy: String
+  userId: String # Track which user made manual changes
+  createdAt: DateTime!
+}
+
+input TimeRangeInput {
+  from: DateTime!
+  to: DateTime!
+}
+
+type EnrichmentStats {
+  totalAttempts: Int!
+  successCount: Int!
+  failedCount: Int!
+  noDataCount: Int!
+  skippedCount: Int!
+  averageDurationMs: Float!
+  sourceStats: [SourceStat!]!
+}
+
+type SourceStat {
+  source: String!
+  attempts: Int!
+  successRate: Float!
 }
 
 # =============================================
@@ -789,6 +941,25 @@ type BatchEnrichmentResult {
   message: String!
 }
 
+# Preview Enrichment Types
+type EnrichmentFieldDiff {
+  field: String!
+  currentValue: String
+  newValue: String
+  source: String!
+}
+
+type PreviewEnrichmentResult {
+  success: Boolean!
+  message: String
+  matchScore: Float
+  matchedEntity: String
+  sources: [String!]!
+  fieldsToUpdate: [EnrichmentFieldDiff!]!
+  enrichmentLogId: UUID!
+  rawData: JSON
+}
+
 enum EnrichmentPriority {
   HIGH
   MEDIUM
@@ -812,6 +983,88 @@ type SpotifySyncStats {
   albumsCreated: Int!
   albumsUpdated: Int!
   enrichmentJobsQueued: Int!
+}
+
+# =============================================
+# SYNC JOB TRACKING
+# =============================================
+
+enum SyncJobType {
+  SPOTIFY_NEW_RELEASES
+  SPOTIFY_FEATURED_PLAYLISTS
+  MUSICBRAINZ_NEW_RELEASES
+  MUSICBRAINZ_SYNC
+  DISCOGS_SYNC
+  ENRICHMENT_BATCH
+}
+
+enum SyncJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+type SyncJob {
+  id: UUID!
+  jobId: String!
+  jobType: SyncJobType!
+  status: SyncJobStatus!
+
+  # Timing
+  startedAt: DateTime!
+  completedAt: DateTime
+  durationMs: Int
+
+  # Results
+  albumsCreated: Int!
+  albumsUpdated: Int!
+  albumsSkipped: Int!
+  artistsCreated: Int!
+  artistsUpdated: Int!
+
+  # Error tracking
+  errorMessage: String
+  errorCode: String
+
+  # Metadata (query params, filters used, etc.)
+  metadata: JSON
+
+  # Audit
+  triggeredBy: String
+
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Computed: albums created by this job
+  albums(limit: Int = 50): [Album!]!
+}
+
+type SyncJobsConnection {
+  jobs: [SyncJob!]!
+  totalCount: Int!
+  hasMore: Boolean!
+}
+
+input SyncJobsInput {
+  jobType: SyncJobType
+  status: SyncJobStatus
+  startedAfter: DateTime
+  startedBefore: DateTime
+  limit: Int = 20
+  offset: Int = 0
+}
+
+# Rollback result for sync job deletion
+type RollbackSyncJobResult {
+  success: Boolean!
+  syncJobId: UUID!
+  albumsDeleted: Int!
+  artistsDeleted: Int!
+  message: String!
+  # Dry run returns what would be deleted without actually deleting
+  dryRun: Boolean!
 }
 
 # =============================================
@@ -842,6 +1095,7 @@ type Query {
   artist(id: UUID!): Artist
   artistByMusicBrainzId(musicbrainzId: UUID!): Artist
   album(id: UUID!): Album
+  albumByMusicBrainzId(musicbrainzId: String!): Album
   track(id: UUID!): Track
   albumTracks(albumId: UUID!): [Track!]!
   searchTracks(query: String!, skip: Int, limit: Int = 20): [Track!]!
@@ -858,7 +1112,20 @@ type Query {
   recommendationFeed(cursor: String, limit: Int = 20): RecommendationFeed!
   trendingAlbums(limit: Int = 20): [Album!]!
   trendingArtists(limit: Int = 20): [Artist!]!
+
+  # Top Recommended (most frequently appearing in recommendations)
+  topRecommendedAlbums(limit: Int = 20): [TopRecommendedAlbum!]!
+  topRecommendedArtists(limit: Int = 20): [TopRecommendedArtist!]!
   userSuggestions(limit: Int = 10): [User!]!
+
+  # Artist Recommendations (recommendations featuring an artist's albums)
+  artistRecommendations(
+    artistId: ID!
+    filter: AlbumRole
+    sort: ArtistRecommendationSort = NEWEST
+    limit: Int = 12
+    offset: Int = 0
+  ): ArtistRecommendationsConnection!
 
   # Album-specific queries
   getAlbumRecommendations(
@@ -893,13 +1160,51 @@ type Query {
   userStats(userId: String!): UserStats!
 
   # Admin queries
-  users(offset: Int = 0, limit: Int = 20, search: String): [User!]!
-  usersCount(search: String): Int!
+  users(
+    offset: Int = 0
+    limit: Int = 20
+    search: String
+    role: UserRole
+    sortBy: UserSortField = CREATED_AT
+    sortOrder: SortOrder = DESC
+    createdAfter: DateTime
+    createdBefore: DateTime
+    lastActiveAfter: DateTime
+    lastActiveBefore: DateTime
+    hasActivity: Boolean
+  ): [User!]!
+  usersCount(
+    search: String
+    role: UserRole
+    createdAfter: DateTime
+    createdBefore: DateTime
+    lastActiveAfter: DateTime
+    lastActiveBefore: DateTime
+    hasActivity: Boolean
+  ): Int!
   mySettings: UserSettings
+
+  # Sync Job queries
+  syncJobs(input: SyncJobsInput): SyncJobsConnection!
+  syncJob(id: UUID!): SyncJob
+  syncJobByJobId(jobId: String!): SyncJob
 
   # Music Database queries
   databaseStats: DatabaseStats!
+  albumsByJobId(jobId: String!): [Album!]!
   searchAlbums(
+    query: String
+    id: UUID
+    dataQuality: String
+    enrichmentStatus: String
+    needsEnrichment: Boolean
+    source: String
+    sortBy: String
+    sortOrder: String
+    skip: Int
+    limit: Int
+  ): [Album!]!
+  searchArtists(
     query: String
     id: UUID
     dataQuality: String
@@ -909,17 +1214,22 @@ type Query {
     sortOrder: String
     skip: Int
     limit: Int
-  ): [Album!]!
-  searchArtists(
-    query: String
-    dataQuality: String
-    enrichmentStatus: String
-    needsEnrichment: Boolean
-    sortBy: String
-    sortOrder: String
+  ): [Artist!]!
+
+  # Enrichment Logging queries
+  enrichmentLogs(
+    entityType: EnrichmentEntityType
+    entityId: UUID
+    status: EnrichmentLogStatus
+    sources: [String!]
     skip: Int
     limit: Int
-  ): [Artist!]!
+  ): [EnrichmentLog!]!
+
+  enrichmentStats(
+    entityType: EnrichmentEntityType
+    timeRange: TimeRangeInput
+  ): EnrichmentStats!
 }
 
 # =============================================
@@ -938,12 +1248,22 @@ type Mutation {
   # Spotify Sync
   triggerSpotifySync(type: SpotifySyncType!): SpotifySyncResult!
 
+  # Sync Job Management
+  rollbackSyncJob(
+    syncJobId: UUID!
+    dryRun: Boolean = true
+  ): RollbackSyncJobResult!
+
   # Alert Configuration
   updateAlertThresholds(input: AlertThresholdsInput!): AlertThresholds!
 
   # Album management
   addAlbum(input: AlbumInput!): Album!
   updateAlbum(id: UUID!, input: AlbumInput!): Album!
+
+  # Artist management
+  addArtist(input: ArtistInput!): Artist!
+  deleteArtist(id: UUID!): DeleteArtistPayload!
 
   # Track management
   createTrack(input: TrackInput!): Track!
@@ -996,7 +1316,7 @@ type Mutation {
   dismissUserSuggestion(userId: String!): Boolean!
 
   # Profile management
-  updateProfile(name: String, bio: String): UpdateProfilePayload!
+  updateProfile(username: String, bio: String): UpdateProfilePayload!
   updateOnboardingStatus(hasCompletedTour: Boolean!): OnboardingStatus!
   resetOnboardingStatus: OnboardingStatus!
   updateDashboardLayout(layout: JSON!): UserSettings!
@@ -1006,25 +1326,40 @@ type Mutation {
     profileVisibility: String
     showRecentActivity: Boolean
     showCollections: Boolean
+    showListenLaterInFeed: Boolean
+    showCollectionAddsInFeed: Boolean
+    showOnboardingTour: Boolean
   ): UserSettings!
 
   # Music Database enrichment mutations
   triggerAlbumEnrichment(
     id: UUID!
     priority: EnrichmentPriority
+    force: Boolean
   ): EnrichmentResult!
   triggerArtistEnrichment(
     id: UUID!
     priority: EnrichmentPriority
+    force: Boolean
   ): EnrichmentResult!
+
+  # Preview Enrichment (dry-run without persisting to album/artist)
+  previewAlbumEnrichment(id: UUID!): PreviewEnrichmentResult!
+  previewArtistEnrichment(id: UUID!): PreviewEnrichmentResult!
+
   batchEnrichment(
     ids: [UUID!]!
     type: EnrichmentType!
     priority: EnrichmentPriority
   ): BatchEnrichmentResult!
+  resetAlbumEnrichment(id: UUID!): Album!
+  resetArtistEnrichment(id: UUID!): Artist!
+  updateAlbumDataQuality(id: UUID!, dataQuality: DataQuality!): Album!
+  updateArtistDataQuality(id: UUID!, dataQuality: DataQuality!): Artist!
 
   # Admin mutations
   updateUserRole(userId: String!, role: UserRole!): UpdateUserRolePayload!
+  deleteAlbum(id: UUID!): DeleteAlbumPayload!
 }
 
 type FollowUserPayload {
@@ -1036,7 +1371,7 @@ type FollowUserPayload {
 
 type UpdateProfilePayload {
   id: String!
-  name: String
+  username: String
   bio: String
 }
 
@@ -1044,6 +1379,18 @@ type UpdateUserRolePayload {
   success: Boolean!
   user: User
   message: String
+}
+
+type DeleteAlbumPayload {
+  success: Boolean!
+  message: String
+  deletedId: UUID
+}
+
+type DeleteArtistPayload {
+  success: Boolean!
+  message: String
+  deletedId: UUID
 }
 
 type CreateRecommendationPayload {

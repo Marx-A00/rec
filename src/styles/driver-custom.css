@@ -4,6 +4,55 @@
 .driver-popover {
   @apply bg-zinc-900 border-2 border-zinc-700 rounded-xl shadow-2xl;
   max-width: 420px !important;
+  pointer-events: auto !important; /* Allow interactions within popover */
+}
+
+/* Large popover variant for step 3 */
+.driver-popover-large {
+  max-width: 600px !important;
+  min-width: 500px !important;
+  padding: 2rem !important;
+  text-align: center !important;
+}
+
+.driver-popover-large .driver-popover-title {
+  font-size: 1.75rem !important;
+  margin-bottom: 1.5rem !important;
+  text-align: center !important;
+}
+
+.driver-popover-large .driver-popover-description {
+  font-size: 1.125rem !important;
+  line-height: 1.8 !important;
+  margin-bottom: 2rem !important;
+  text-align: center !important;
+}
+
+/* Wide bottom popover variant for step 4 - sits at bottom without covering elements */
+.driver-popover-wide-bottom {
+  max-width: 800px !important;
+  min-width: 700px !important;
+  padding: 1.5rem 2rem !important;
+}
+
+.driver-popover-wide-bottom .driver-popover-title {
+  font-size: 1.25rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.driver-popover-wide-bottom .driver-popover-description {
+  font-size: 0.95rem !important;
+  line-height: 1.5 !important;
+  margin-bottom: 1rem !important;
+}
+
+/* Allow scrolling through popover when it's not being interacted with */
+.driver-popover-wrapper {
+  pointer-events: none !important;
+}
+
+.driver-popover-wrapper .driver-popover {
+  pointer-events: auto !important;
 }
 
 /* Title */
@@ -90,7 +139,7 @@
 
 /* Only boost z-index for specific tour elements, not body */
 .driver-active-element[data-tour-step] {
-  position: relative !important;
+  /* position: relative !important; ← REMOVED - breaks absolute positioning for elements like submit button */
   z-index: 10001 !important; /* Above the driver overlay */
   /* Ensure it's not dimmed */
   opacity: 1 !important;
@@ -98,22 +147,48 @@
 }
 
 /* Ensure highlighted element's children stay visible and bright */
+/* REMOVED global position: relative on all children - it breaks absolute positioning in components like similarity dial */
 .driver-active-element[data-tour-step] * {
-  position: relative;
+  /* position: relative; ← COMMENTED OUT - causes displacement */
   z-index: inherit;
   opacity: 1 !important;
 }
 
-/* Overlay - Completely transparent (no darkness) */
+/* Exception: Prevent Driver.js from forcing position/layout changes on turntable wrapper */
+.driver-active-element[data-tour-step='recommendation-interface-wrapper'] {
+  position: static !important;
+  ring-offset: 0 !important;
+  transform: none !important;
+}
+
+.driver-active-element[data-tour-step='recommendation-interface-wrapper'] * {
+  position: static !important;
+  transform: none !important;
+}
+
+/* Exception: Keep turntable labels absolutely positioned during tour */
+.driver-active-element .tour-label-fix {
+  position: absolute !important;
+}
+
+/* Overlay - Completely transparent by default, but can be dimmed per-step */
 .driver-overlay {
-  background-color: transparent !important;
+  background-color: rgba(0, 0, 0, 0.75) !important;
   backdrop-filter: none;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
 }
 
 /* The "stage" is the highlighted area cutout - ensure it's fully visible */
 #driver-highlighted-element-stage,
 #driver-page-overlay {
   pointer-events: none !important;
+}
+
+/* Allow scrolling within highlighted elements and their children */
+.driver-active-element,
+.driver-active-element * {
+  pointer-events: auto !important;
 }
 
 /* Make sure highlighted elements are NOT affected by the overlay */

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { Pencil, Settings } from 'lucide-react';
+import { Pencil, Settings, UserCog } from 'lucide-react';
 import { UserRole } from '@prisma/client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -38,6 +38,8 @@ interface ProfileClientProps {
   listenLater: CollectionAlbum[];
   recommendations: RecommendationFieldsFragment[];
   isOwnProfile: boolean;
+  showCollections?: boolean;
+  isFollowingUser?: boolean;
 }
 
 export default function ProfileClient({
@@ -46,6 +48,8 @@ export default function ProfileClient({
   listenLater,
   recommendations,
   isOwnProfile,
+  showCollections = true,
+  isFollowingUser = false,
 }: ProfileClientProps) {
   // Feature flag check for collection editor
   const isCollectionEditorEnabled =
@@ -83,6 +87,10 @@ export default function ProfileClient({
 
   // Collection expansion state (for non-editable mode)
   const [isCollectionExpanded, setIsCollectionExpanded] = useState(false);
+
+  // Recommendations expansion state
+  const [isRecommendationsExpanded, setIsRecommendationsExpanded] =
+    useState(false);
 
   // Update sorted albums when collection changes
   useEffect(() => {
@@ -286,7 +294,10 @@ export default function ProfileClient({
               <div className='flex flex-col md:flex-row md:items-start md:justify-between gap-4'>
                 <div>
                   <div className='flex items-center gap-3 mb-2'>
-                    <h1 data-tour-step="profile-header" className='text-4xl font-bold text-cosmic-latte'>
+                    <h1
+                      data-tour-step='profile-header'
+                      className='text-4xl font-bold text-cosmic-latte'
+                    >
                       {currentUser.name}
                     </h1>
                     <AdminBadge role={currentUser.role} />
@@ -298,6 +309,7 @@ export default function ProfileClient({
                       <Button
                         variant='ghost'
                         size='sm'
+                        data-tour-step='profile-settings'
                         onClick={e => {
                           e.stopPropagation();
                           setShowSettings(!showSettings);
@@ -315,7 +327,7 @@ export default function ProfileClient({
                       </Button>
                       {showSettings && (
                         <div
-                          className='absolute right-0 top-10 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-20 py-2 min-w-[140px] backdrop-blur-sm'
+                          className='absolute right-0 top-10 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-20 py-1 min-w-[160px] backdrop-blur-sm'
                           role='menu'
                           aria-label='Profile settings'
                         >
@@ -324,7 +336,7 @@ export default function ProfileClient({
                               e.stopPropagation();
                               handleEditProfile();
                             }}
-                            className='flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800'
+                            className='flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800'
                             role='menuitem'
                             tabIndex={0}
                             aria-label='Edit your profile'
@@ -335,6 +347,22 @@ export default function ProfileClient({
                             />
                             <span className='text-zinc-200'>Edit Profile</span>
                           </button>
+                          <Link
+                            href='/settings'
+                            onClick={() => setShowSettings(false)}
+                            className='flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800'
+                            role='menuitem'
+                            tabIndex={0}
+                            aria-label='Account settings'
+                          >
+                            <UserCog
+                              className='h-4 w-4 text-zinc-400'
+                              aria-hidden='true'
+                            />
+                            <span className='text-zinc-200'>
+                              Account Settings
+                            </span>
+                          </Link>
                         </div>
                       )}
                     </div>
@@ -342,6 +370,7 @@ export default function ProfileClient({
                     currentUser.id && (
                       <FollowButton
                         userId={currentUser.id}
+                        initialFollowing={isFollowingUser}
                         onFollowChange={handleFollowChange}
                       />
                     )
@@ -400,7 +429,7 @@ export default function ProfileClient({
           {/* TODO: add in DnD grid with varying sizes or whatever */}
 
           {/* Listen Later Section */}
-          {listenLater.length > 0 && (
+          {showCollections && listenLater.length > 0 && (
             <section className='border-t border-zinc-800 pt-8'>
               <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte flex items-center gap-2'>
                 <span>Listen Later</span>
@@ -427,41 +456,129 @@ export default function ProfileClient({
             </section>
           )}
 
-          <section className='border-t border-zinc-800 pt-8'>
+          {showCollections && (
+            <section className='border-t border-zinc-800 pt-8'>
+              <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
+                Record Collection
+              </h2>
+              {allAlbums.length > 0 ? (
+                <div>
+                  {/* Collection Stats */}
+                  <div className='mb-6 text-sm text-zinc-400'>
+                    <p>{allAlbums.length} albums in collection</p>
+                  </div>
+
+                  {/* Sortable Album Grid */}
+                  <SortableAlbumGrid
+                    albums={displayedAlbums}
+                    onReorder={handleAlbumReorder}
+                    onAlbumClick={albumId => {
+                      const album = sortedAlbums.find(
+                        a => a.albumId === albumId
+                      );
+                      if (album) {
+                        setSelectedAlbum(album);
+                      }
+                    }}
+                    isEditable={isOwnProfile && isCollectionEditorEnabled}
+                    className='mb-2'
+                  />
+
+                  {/* Show expand/collapse link when not in editable mode and collection is truncated */}
+                  {!isCollectionEditorEnabled && sortedAlbums.length > 6 && (
+                    <div className='flex justify-center mb-8 mt-8'>
+                      <button
+                        onClick={() =>
+                          setIsCollectionExpanded(!isCollectionExpanded)
+                        }
+                        className='flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-300 transition-colors'
+                      >
+                        {isCollectionExpanded ? (
+                          <>
+                            <span>Show Less</span>
+                            <svg
+                              className='w-3.5 h-3.5'
+                              fill='none'
+                              stroke='currentColor'
+                              viewBox='0 0 24 24'
+                            >
+                              <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth={2}
+                                d='M5 15l7-7 7 7'
+                              />
+                            </svg>
+                          </>
+                        ) : (
+                          <>
+                            <span>See All {sortedAlbums.length} Albums</span>
+                            <svg
+                              className='w-3.5 h-3.5'
+                              fill='none'
+                              stroke='currentColor'
+                              viewBox='0 0 24 24'
+                            >
+                              <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth={2}
+                                d='M19 9l-7 7-7-7'
+                              />
+                            </svg>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className='text-center py-12'>
+                  <p className='text-zinc-400 mb-4'>
+                    No albums in collection yet.
+                  </p>
+                  <p className='text-sm text-zinc-500'>
+                    This user hasn&apos;t added any albums to their record
+                    collection.
+                  </p>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Recommendations Section */}
+          <section className='border-t border-zinc-800 pt-8 mt-8'>
             <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
-              Record Collection
+              Music Recommendations
             </h2>
-            {allAlbums.length > 0 ? (
+            {recommendations.length > 0 ? (
               <div>
-                {/* Collection Stats */}
-                <div className='mb-6 text-sm text-zinc-400'>
-                  <p>{allAlbums.length} albums in collection</p>
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+                  {(isRecommendationsExpanded
+                    ? recommendations
+                    : recommendations.slice(0, 6)
+                  ).map(recommendation => (
+                    <RecommendationCard
+                      key={recommendation.id}
+                      recommendation={recommendation}
+                      currentUserId={user.id}
+                      onAlbumClick={(albumId, _albumType) =>
+                        navigateToAlbum(albumId)
+                      }
+                    />
+                  ))}
                 </div>
 
-                {/* Sortable Album Grid */}
-                <SortableAlbumGrid
-                  albums={displayedAlbums}
-                  onReorder={handleAlbumReorder}
-                  onAlbumClick={albumId => {
-                    const album = sortedAlbums.find(a => a.albumId === albumId);
-                    if (album) {
-                      setSelectedAlbum(album);
-                    }
-                  }}
-                  isEditable={isOwnProfile && isCollectionEditorEnabled}
-                  className='mb-2'
-                />
-
-                {/* Show expand/collapse link when not in editable mode and collection is truncated */}
-                {!isCollectionEditorEnabled && sortedAlbums.length > 6 && (
+                {/* Show expand/collapse link when recommendations exceed 6 */}
+                {recommendations.length > 6 && (
                   <div className='flex justify-center mb-8 mt-8'>
                     <button
                       onClick={() =>
-                        setIsCollectionExpanded(!isCollectionExpanded)
+                        setIsRecommendationsExpanded(!isRecommendationsExpanded)
                       }
                       className='flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-300 transition-colors'
                     >
-                      {isCollectionExpanded ? (
+                      {isRecommendationsExpanded ? (
                         <>
                           <span>Show Less</span>
                           <svg
@@ -480,7 +597,9 @@ export default function ProfileClient({
                         </>
                       ) : (
                         <>
-                          <span>See All {sortedAlbums.length} Albums</span>
+                          <span>
+                            See All {recommendations.length} Recommendations
+                          </span>
                           <svg
                             className='w-3.5 h-3.5'
                             fill='none'
@@ -499,37 +618,6 @@ export default function ProfileClient({
                     </button>
                   </div>
                 )}
-              </div>
-            ) : (
-              <div className='text-center py-12'>
-                <p className='text-zinc-400 mb-4'>
-                  No albums in collection yet.
-                </p>
-                <p className='text-sm text-zinc-500'>
-                  This user hasn&apos;t added any albums to their record
-                  collection.
-                </p>
-              </div>
-            )}
-          </section>
-
-          {/* Recommendations Section */}
-          <section className='border-t border-zinc-800 pt-8 mt-8'>
-            <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
-              Music Recommendations
-            </h2>
-            {recommendations.length > 0 ? (
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                {recommendations.map(recommendation => (
-                  <RecommendationCard
-                    key={recommendation.id}
-                    recommendation={recommendation}
-                    currentUserId={user.id}
-                    onAlbumClick={(albumId, _albumType) =>
-                      navigateToAlbum(albumId)
-                    }
-                  />
-                ))}
               </div>
             ) : (
               <div className='text-center py-12'>

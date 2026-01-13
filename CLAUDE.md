@@ -2,14 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Output Formatting
+
+- Do NOT use markdown tables in responses. Use bullet points or plain text lists instead.
+
 ## 🔍 Search Components - IMPORTANT
 
 **ACTIVE Search Components (Use These):**
+
 - `src/components/ui/SimpleSearchBar.tsx` - Main search bar in header/topbar
 - `src/components/ui/UniversalSearchBar.tsx` - Used in mobile navigation and search page
-- `src/components/recommendations/AlbumSearchBackwardCompatible.tsx` - Used in recommendation flows
+- `src/components/recommendations/DualAlbumSearch.tsx` - Used in recommendation flows (dual album + artist inputs)
 
 **DEPRECATED Search Components (Do NOT Use):**
+
 - `src/components/ui/SearchBar.tsx` ❌
 - `src/components/ui/AlbumSearch.tsx` ❌
 - `src/components/ui/AlbumSearchWrapper.tsx` ❌
@@ -38,10 +44,13 @@ pnpm fix-all               # Fix all auto-fixable issues
 
 ```bash
 pnpm prisma generate       # Generate Prisma client
-pnpm prisma db push        # Push schema changes to database
+pnpm prisma migrate dev    # Create and apply migration (PREFERRED - creates migration files)
+pnpm prisma db push        # Push schema changes directly (prototyping only - no migration files)
 pnpm db:seed              # Seed database with initial data
 pnpm db:reset             # Reset and re-seed database
 ```
+
+**IMPORTANT**: Always use `pnpm prisma migrate dev` for schema changes in this project. This creates version-controlled migration files that can be deployed to production. Only use `db push` for quick prototyping when you don't need migration history.
 
 ### GraphQL Code Generation
 
@@ -128,12 +137,37 @@ task-master update-subtask --id=<id> --prompt="notes"  # Log progress
 - **Collection**: User's saved albums with metadata
 - **UserFollow**: Social following relationships
 
-### MusicBrainz Integration
+### Queue System & Schedulers
+
+**BullMQ Integration:**
 
 - **Rate Limiting**: 1 request/second via BullMQ
 - **Queue Service**: `/src/lib/musicbrainz/queue-service.ts`
 - **Worker**: `/src/workers/queue-worker.ts` (handles all background jobs)
-- **Job Types**: `search-artists`, `search-releases`, `get-artist`, `get-release`
+- **Job Types**: `search-artists`, `search-releases`, `get-artist`, `get-release`, `spotify:sync-new-releases`, `musicbrainz:sync-new-releases`
+
+**Automated Schedulers (BullMQ Repeatable Jobs):**
+
+- **Spotify Scheduler** (`/src/lib/spotify/scheduler.ts`):
+  - New releases sync using `tag:new` Search API (configurable interval, default: 7 days)
+  - Supports genre filtering, year filtering, pagination, and follower thresholds
+  - Uses BullMQ repeatable jobs - schedules persist in Redis across worker restarts
+  - ⚠️ Note: `browse.getNewReleases()` was deprecated/restricted in Nov 2024
+- **MusicBrainz Scheduler** (`/src/lib/musicbrainz/new-releases-scheduler.ts`):
+  - New releases sync (configurable interval, default: 7 days)
+  - Genre-based filtering with date ranges
+  - Uses BullMQ repeatable jobs for reliability
+
+**Key Pattern**: Schedulers use BullMQ's repeatable jobs API (`repeat: { every: ms }`) instead of `setInterval`. This ensures:
+
+- Schedules persist in Redis and survive worker restarts
+- No duplicate job execution on worker restart
+- Centralized schedule management via Bull Board dashboard
+
+**Spotify API Migration Note (Nov 2024):**
+The original `browse.getNewReleases()` endpoint was restricted by Spotify. The scheduler now uses
+the Search API with `tag:new` queries (e.g., `tag:new year:2025`) which provides similar functionality
+with additional filtering capabilities. See `/src/lib/spotify/new-releases-service.ts` for implementation.
 
 ### Component Patterns
 
@@ -206,20 +240,47 @@ Required environment variables:
 - `SPOTIFY_CLIENT_ID/SECRET` - Spotify OAuth
 - AWS S3 credentials for image storage
 
+**Scheduler Configuration (BullMQ Repeatable Jobs):**
+
+Schedulers now use BullMQ repeatable jobs which persist in Redis. No need for `SKIP_INITIAL_SYNC` flags - schedules automatically avoid duplicates on worker restart.
+
+**Spotify New Releases (using `tag:new` Search API):**
+
+- `SPOTIFY_SYNC_NEW_RELEASES=true` - Enable Spotify new releases sync
+- `SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES=10080` - Sync interval (default: 7 days)
+- `SPOTIFY_NEW_RELEASES_LIMIT=50` - Number of releases per page
+- `SPOTIFY_COUNTRY=US` - Market/country code (ISO 3166-1 alpha-2)
+- `SPOTIFY_NEW_RELEASES_PAGES=3` - Pages to fetch (1-4, default: 3 = 150 albums)
+- `SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS=100000` - Filter by artist followers (default: 100k+)
+- `SPOTIFY_NEW_RELEASES_GENRE_TAGS=` - Optional comma-separated genres (e.g., `rock,metal,pop`)
+- `SPOTIFY_NEW_RELEASES_YEAR=2025` - Optional year filter (defaults to current year)
+
+**Featured Playlists (DEPRECATED - Nov 2024):**
+
+- `SPOTIFY_SYNC_FEATURED_PLAYLISTS=false` - ⚠️ Keep disabled, endpoint returns 404
+- `SPOTIFY_FEATURED_PLAYLISTS_INTERVAL_MINUTES=10080` - Sync interval
+- `SPOTIFY_FEATURED_PLAYLISTS_LIMIT=20` - Playlists to fetch
+- `SPOTIFY_EXTRACT_ALBUMS=true` - Extract albums from playlists
+
+**MusicBrainz:**
+
+- `MUSICBRAINZ_SYNC_NEW_RELEASES=true` - Enable MusicBrainz new releases sync
+- `MUSICBRAINZ_NEW_RELEASES_INTERVAL_MINUTES=10080` - Sync interval (default: 7 days)
+- `MUSICBRAINZ_NEW_RELEASES_LIMIT=50` - Number of releases to fetch
+- `MUSICBRAINZ_NEW_RELEASES_DATE_RANGE_DAYS=7` - Look back period for releases
+
 ### Development Workflow
 
 1. **GraphQL Changes** (See `.taskmaster/docs/procedures/graphql-data-fetching.md` for detailed guide):
-
    - Modify schema in `/src/graphql/schema.graphql`
    - Add queries in `/src/graphql/queries/`
    - Run `pnpm codegen` to generate types and hooks
    - Use generated hooks in components
 
 2. **Database Changes**:
-
    - Update `prisma/schema.prisma`
-   - Run `pnpm prisma generate` to update client
-   - Run `pnpm prisma db push` to update database
+   - Run `pnpm prisma migrate dev --name descriptive_migration_name` to create and apply migration
+   - Run `pnpm prisma generate` to update client (auto-runs with migrate dev)
 
 3. **Adding New Features**:
    - Check Task Master: `task-master next`
@@ -260,13 +321,16 @@ Required environment variables:
 5. **Import existing types** - Check `src/types/` or generated types first
 
 **Example - BAD:**
+
 ```typescript
-function processRecording(recording: any) {  // ❌ NEVER DO THIS
+function processRecording(recording: any) {
+  // ❌ NEVER DO THIS
   return recording.title;
 }
 ```
 
 **Example - GOOD:**
+
 ```typescript
 interface MusicBrainzRecording {
   id: string;
@@ -276,12 +340,14 @@ interface MusicBrainzRecording {
   releases: Release[];
 }
 
-function processRecording(recording: MusicBrainzRecording) {  // ✅ CORRECT
+function processRecording(recording: MusicBrainzRecording) {
+  // ✅ CORRECT
   return recording.title;
 }
 ```
 
 **For third-party API responses:**
+
 ```typescript
 // Define the exact structure you expect
 interface MusicBrainzArtistCredit {

@@ -131,7 +131,7 @@ const SimilarityRatingDial = memo(function SimilarityRatingDial({
   return (
     <div
       id='similarity-rating-dial'
-      data-tour-step="similarity-dial"
+      data-tour-step='similarity-dial'
       className='flex flex-col items-center space-y-2'
     >
       {/* Dial Label */}

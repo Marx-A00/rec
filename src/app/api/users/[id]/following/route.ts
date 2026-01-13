@@ -40,7 +40,7 @@ export async function GET(
     // Add search filter if provided
     if (search) {
       whereClause.followed = {
-        name: {
+        username: {
           contains: search,
           mode: 'insensitive',
         },
@@ -61,7 +61,7 @@ export async function GET(
         followed: {
           select: {
             id: true,
-            name: true,
+            username: true,
             email: true,
             image: true,
             bio: true,
@@ -73,7 +73,7 @@ export async function GET(
       },
       orderBy:
         sort === 'alphabetical'
-          ? { followed: { name: 'asc' } }
+          ? { followed: { username: 'asc' } }
           : { createdAt: 'desc' },
       take: limit + 1, // Take one extra to check if there are more results
     });
@@ -90,14 +90,12 @@ export async function GET(
       where: { followerId: session.user.id },
       select: { followedId: true },
     });
-    const followedIds = new Set(
-      currentUserFollowing.map(f => f.followedId)
-    );
+    const followedIds = new Set(currentUserFollowing.map(f => f.followedId));
 
     // Transform the data for the response
     const followingData = results.map((follow: any) => ({
       id: follow.followed.id,
-      name: follow.followed.name,
+      username: follow.followed.username,
       email: follow.followed.email,
       image: follow.followed.image,
       bio: follow.followed.bio,

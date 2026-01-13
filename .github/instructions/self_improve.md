@@ -5,7 +5,6 @@ alwaysApply: true
 ---
 
 - **Rule Improvement Triggers:**
-
   - New code patterns not covered by existing rules
   - Repeated similar implementations across files
   - Common error patterns that could be prevented
@@ -13,7 +12,6 @@ alwaysApply: true
   - Emerging best practices in the codebase
 
 - **Analysis Process:**
-
   - Compare new code with existing rules
   - Identify patterns that should be standardized
   - Look for references to external documentation
@@ -21,9 +19,7 @@ alwaysApply: true
   - Monitor test patterns and coverage
 
 - **Rule Updates:**
-
   - **Add New Rules When:**
-
     - A new technology/pattern is used in 3+ files
     - Common bugs could be prevented by a rule
     - Code reviews repeatedly mention the same feedback
@@ -51,14 +47,12 @@ alwaysApply: true
   ```
 
 - **Rule Quality Checks:**
-
   - Rules should be actionable and specific
   - Examples should come from actual code
   - References should be up to date
   - Patterns should be consistently enforced
 
 - **Continuous Improvement:**
-
   - Monitor code review comments
   - Track common development questions
   - Update rules after major refactors
@@ -66,7 +60,6 @@ alwaysApply: true
   - Cross-reference related rules
 
 - **Rule Deprecation:**
-
   - Mark outdated patterns as deprecated
   - Remove rules that no longer apply
   - Update references to deprecated rules

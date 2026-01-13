@@ -4,5 +4,9 @@ query GetArtistByMusicBrainzId($musicbrainzId: UUID!) {
     musicbrainzId
     name
     imageUrl
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    needsEnrichment
   }
 }

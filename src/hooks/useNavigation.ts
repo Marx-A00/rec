@@ -190,7 +190,7 @@ export function useNavigation() {
         router.back();
       } else {
         // Fallback to home if no history
-        router.push('/');
+        router.push('/home-mosaic');
       }
 
       setState(prev => ({ ...prev, isNavigating: false }));
@@ -203,12 +203,12 @@ export function useNavigation() {
         error: navigationError,
       }));
       // Fallback to home on error
-      router.push('/');
+      router.push('/home-mosaic');
     }
   }, [router]);
 
   const goToHome = useCallback(() => {
-    return navigateTo('/', { validate: false });
+    return navigateTo('/home-mosaic', { validate: false });
   }, [navigateTo]);
 
   const refresh = useCallback(() => {

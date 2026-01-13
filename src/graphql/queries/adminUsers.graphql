@@ -1,0 +1,61 @@
+query GetAdminUsers(
+  $offset: Int = 0
+  $limit: Int = 20
+  $search: String
+  $role: UserRole
+  $sortBy: UserSortField = CREATED_AT
+  $sortOrder: SortOrder = DESC
+  $createdAfter: DateTime
+  $createdBefore: DateTime
+  $lastActiveAfter: DateTime
+  $lastActiveBefore: DateTime
+  $hasActivity: Boolean
+) {
+  users(
+    offset: $offset
+    limit: $limit
+    search: $search
+    role: $role
+    sortBy: $sortBy
+    sortOrder: $sortOrder
+    createdAfter: $createdAfter
+    createdBefore: $createdBefore
+    lastActiveAfter: $lastActiveAfter
+    lastActiveBefore: $lastActiveBefore
+    hasActivity: $hasActivity
+  ) {
+    id
+    username
+    email
+    image
+    emailVerified
+    bio
+    role
+    followersCount
+    followingCount
+    recommendationsCount
+    profileUpdatedAt
+    lastActive
+    createdAt
+    collections {
+      id
+      name
+    }
+    settings {
+      showOnboardingTour
+    }
+    _count {
+      collections
+      recommendations
+    }
+  }
+  totalCount: usersCount(
+    search: $search
+    role: $role
+    createdAfter: $createdAfter
+    createdBefore: $createdBefore
+    lastActiveAfter: $lastActiveAfter
+    lastActiveBefore: $lastActiveBefore
+    hasActivity: $hasActivity
+  )
+}

@@ -217,18 +217,45 @@ export class ActivityTracker {
 
   /**
    * Static method to check if any users are currently active
+   * Includes retry logic for transient connection errors (P1017)
    */
   static async getActiveUserCount(prisma: PrismaClient): Promise<number> {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-    const activeUsers = await prisma.userActivity.groupBy({
-      by: ['sessionId'],
-      where: {
-        timestamp: { gte: fiveMinutesAgo },
-      },
-    });
+    // Retry up to 2 times for connection errors
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const activeUsers = await prisma.userActivity.groupBy({
+          by: ['sessionId'],
+          where: {
+            timestamp: { gte: fiveMinutesAgo },
+          },
+        });
 
-    return activeUsers.length;
+        return activeUsers.length;
+      } catch (error: unknown) {
+        const prismaError = error as { code?: string };
+        // P1017 = Server has closed the connection
+        if (prismaError.code === 'P1017') {
+          if (attempt < 2) {
+            console.warn(
+              `⚠️ Database connection closed, retrying getActiveUserCount (attempt ${attempt}/2)...`
+            );
+            // Small delay before retry
+            await new Promise(resolve => setTimeout(resolve, 100));
+            continue;
+          }
+          // On final attempt, return 0 instead of throwing
+          console.warn(
+            '⚠️ Database connection closed after retries, assuming 0 active users'
+          );
+          return 0;
+        }
+        throw error;
+      }
+    }
+
+    return 0; // Fallback if all retries fail
   }
 
   /**

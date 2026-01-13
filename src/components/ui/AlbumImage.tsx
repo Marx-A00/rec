@@ -148,29 +148,52 @@ export default function AlbumImage({
     return showSkeleton ? <LoadingSkeleton /> : <FallbackContent />;
   }
 
+  // Check if this is a Cover Art Archive URL (needs native img due to CORS on redirect)
+  const isCoverArtArchive =
+    imgSrc.includes('coverartarchive.org') || imgSrc.includes('archive.org');
+
   return (
     <div className={`relative ${fill ? '' : 'w-full h-full'}`}>
       {/* Loading skeleton overlay */}
       {isLoading && showSkeleton && <LoadingSkeleton />}
 
-      {/* Main image */}
-      <Image
-        src={imgSrc}
-        alt={alt}
-        width={fill ? undefined : width}
-        height={fill ? undefined : height}
-        fill={fill}
-        sizes={sizes}
-        priority={priority}
-        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
-        onLoad={handleImageLoad}
-        onError={handleImageError}
-        // Disable drag to prevent issues with fallback logic
-        draggable={false}
-        style={style}
-        // Use unoptimized for external images to avoid loader warnings
-        unoptimized={!imgSrc.includes('imagedelivery.net')}
-      />
+      {/* Use native img for Cover Art Archive (CORS issues with redirects) */}
+      {isCoverArtArchive ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imgSrc}
+          alt={alt}
+          width={fill ? undefined : width}
+          height={fill ? undefined : height}
+          className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300 ${fill ? 'absolute inset-0 w-full h-full object-cover' : ''}`}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          draggable={false}
+          style={style}
+          referrerPolicy='no-referrer'
+          crossOrigin='anonymous'
+          loading='lazy'
+        />
+      ) : (
+        /* Main image - use Next.js Image for optimized delivery */
+        <Image
+          src={imgSrc}
+          alt={alt}
+          width={fill ? undefined : width}
+          height={fill ? undefined : height}
+          fill={fill}
+          sizes={sizes}
+          priority={priority}
+          className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          // Disable drag to prevent issues with fallback logic
+          draggable={false}
+          style={style}
+          // Use unoptimized for external images to avoid loader warnings
+          unoptimized={!imgSrc.includes('imagedelivery.net')}
+        />
+      )}
 
       {/* Error state overlay (only show if fallback image also fails) */}
       {hasError && imgSrc === FALLBACK_IMAGE && (

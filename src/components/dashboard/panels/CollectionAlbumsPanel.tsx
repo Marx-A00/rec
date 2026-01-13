@@ -20,8 +20,9 @@ export default function CollectionAlbumsPanel({
   config,
   isEditMode,
 }: PanelComponentProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const user = session?.user;
+  const isSessionLoading = status === 'loading';
   const { navigateTo, navigateToAlbum } = useNavigation();
 
   // Use GraphQL hook with proper caching
@@ -186,8 +187,8 @@ export default function CollectionAlbumsPanel({
       />
 
       <div className='bg-zinc-900/50 p-6 h-full overflow-hidden'>
-        {user ? (
-          // Show user's album collection
+        {isSessionLoading || user ? (
+          // Show user's album collection (or loading skeleton)
           <div className='h-full flex flex-col'>
             {/* Layout Toggle */}
             <div className='flex justify-end mb-3'>
@@ -213,7 +214,7 @@ export default function CollectionAlbumsPanel({
             </div>
 
             <div className='flex-1 h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
-              {isLoading ? (
+              {isSessionLoading || isLoading ? (
                 <div className='h-full flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
                   {Array.from({ length: 10 }).map((_, i) => (
                     <div

@@ -95,37 +95,56 @@ export default function ActivityItem({
             </Link>
           </>
         );
-      case 'collection_add':
-        return (
-          <span>
-            added{' '}
-            <Link
-              href={`/albums/${activity.albumId}?source=local`}
-              className='text-cosmic-latte hover:text-cosmic-latte/80 font-medium transition-colors'
-            >
-              {activity.albumTitle}
-            </Link>{' '}
-            by{' '}
-            <Link
-              href={`/artists/${activity.artistId}`}
-              className='text-zinc-300 hover:text-emeraled-green transition-colors'
-            >
-              {activity.albumArtist}
-            </Link>{' '}
-            to collection
-            {activity.metadata?.collectionName && (
-              <span className='text-emeraled-green font-medium'>
-                {' '}
-                {activity.metadata.collectionName}
-              </span>
-            )}
-            {activity.metadata?.personalRating && (
-              <span className='text-yellow-400 text-sm block mt-1'>
-                ★ {activity.metadata.personalRating}/10
-              </span>
-            )}
+      case 'collection_add': {
+        const collectionName = activity.metadata?.collectionName;
+        const albumLink = (
+          <Link
+            href={`/albums/${activity.albumId}?source=local`}
+            className='text-cosmic-latte hover:text-cosmic-latte/80 font-medium transition-colors'
+          >
+            {activity.albumTitle}
+          </Link>
+        );
+        const artistLink = (
+          <Link
+            href={`/artists/${activity.artistId}`}
+            className='text-zinc-300 hover:text-emeraled-green transition-colors'
+          >
+            {activity.albumArtist}
+          </Link>
+        );
+        const ratingDisplay = activity.metadata?.personalRating && (
+          <span className='text-yellow-400 text-sm block mt-1'>
+            ★ {activity.metadata.personalRating}/10
           </span>
         );
+
+        if (collectionName === 'Listen Later') {
+          return (
+            <span>
+              saved {albumLink} by {artistLink} for later
+              {ratingDisplay}
+            </span>
+          );
+        } else if (collectionName === 'My Collection') {
+          return (
+            <span>
+              added {albumLink} by {artistLink} to their collection
+              {ratingDisplay}
+            </span>
+          );
+        } else {
+          return (
+            <span>
+              added {albumLink} by {artistLink} to{' '}
+              <span className='text-emeraled-green font-medium'>
+                {collectionName}
+              </span>
+              {ratingDisplay}
+            </span>
+          );
+        }
+      }
       case 'profile_update':
         return <span>updated their profile</span>;
       default:
@@ -244,7 +263,7 @@ export default function ActivityItem({
                   {/* Basis album text - shows on hover with the albums */}
                   {activity.metadata?.basisAlbum && (
                     <div className='basis-text absolute bottom-0 left-0 w-[420px] opacity-0 transition-opacity duration-300 pointer-events-none'>
-                      <p className='text-xs text-zinc-500 text-center w-full px-4 pb-1'>
+                      <p className='text-sm text-zinc-500 text-center w-full px-4 pb-1'>
                         if you like{' '}
                         <span className='text-zinc-400'>
                           {activity.metadata.basisAlbum.title}

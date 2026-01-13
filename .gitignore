@@ -96,3 +96,14 @@ node_modules/
 rec_dev_2025-09-30.dump
 
 /mb-query-results/
+
+# Agent shell files
+.agent-shell/
+Claude Code Agent @ rec
+test-scripts/
+scripts/archive/
+MANUAL-QA-CHECKLIST.html
+MANUAL-QA-CHECKLIST.org
+scripts/spotify-api-setup-guide.html
+testGruv.tsx
+syntax-test.tsx

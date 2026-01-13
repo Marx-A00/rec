@@ -21,8 +21,9 @@ export default function RecentlyPlayedPanel({
   config,
   isEditMode,
 }: PanelComponentProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const user = session?.user;
+  const isSessionLoading = status === 'loading';
   const [recentlyPlayed, setRecentlyPlayed] = useState<RecentlyPlayedAlbum[]>(
     []
   );
@@ -110,10 +111,10 @@ export default function RecentlyPlayedPanel({
 
   return (
     <div className='bg-zinc-900/50 p-6 h-full overflow-hidden'>
-      {user ? (
+      {isSessionLoading || user ? (
         <div className='h-full flex flex-col'>
           <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
-            {isLoading ? (
+            {isSessionLoading || isLoading ? (
               <div className='space-y-3'>
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className='flex items-center gap-3'>

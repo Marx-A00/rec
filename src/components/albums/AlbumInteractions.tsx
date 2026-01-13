@@ -1,23 +1,22 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Heart, Share2, MoreHorizontal, User, Clock, Check, Loader2 } from 'lucide-react';
+import { Heart, Share2, MoreHorizontal, User } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 
 import { Button } from '@/components/ui/button';
 import Toast, { useToast } from '@/components/ui/toast';
-import AddToCollectionButton from '@/components/collections/AddToCollectionButton';
+import CollectionPopover from '@/components/collections/CollectionPopover';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useRecommendationDrawerContext } from '@/contexts/RecommendationDrawerContext';
-import { useListenLaterStatus } from '@/hooks/useListenLaterStatus';
+import { useAlbumState } from '@/hooks/useAlbumState';
 import { Album } from '@/types/album';
 import { sanitizeArtistName } from '@/lib/utils';
 import { graphqlClient } from '@/lib/graphql-client';
 import {
   GetArtistByMusicBrainzIdDocument,
   type GetArtistByMusicBrainzIdQuery,
-  useAddToListenLaterMutation,
 } from '@/generated/graphql';
 
 interface AlbumInteractionsProps {
@@ -31,19 +30,9 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
   const { openDrawer } = useRecommendationDrawerContext();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const addToListenLater = useAddToListenLaterMutation({
-    onSuccess: () => {
-      showToast('Added to Listen Later', 'success');
-      // Invalidate Listen Later cache to refetch
-      queryClient.invalidateQueries({ queryKey: ['collections', 'listen-later', 'albums'] });
-    },
-    onError: () => showToast('Failed to add to Listen Later', 'error'),
-  });
 
-  // Check if album is already in Listen Later
-  const { isInListenLater, isLoading: isCheckingListenLater } = useListenLaterStatus(
-    album?.id || ''
-  );
+  // Get unified album state to check collections
+  const albumState = useAlbumState(album);
 
   const handleArtistClick = async (artistId: string, artistName: string) => {
     if (!artistId) {
@@ -141,44 +130,6 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
     }
   };
 
-  const handleAddToListenLater = async () => {
-    if (!session?.user) {
-      showToast('Please sign in to add to Listen Later', 'error');
-      return;
-    }
-
-    if (!album?.id) {
-      showToast('Album not available', 'error');
-      return;
-    }
-
-    // If already in Listen Later, navigate to profile
-    if (isInListenLater) {
-      router.push('/profile');
-      return;
-    }
-
-    try {
-      // Prepare album data with artists
-      const albumData = {
-        title: album.title,
-        artists: album.artists.map(artist => ({
-          artistName: artist.name,
-          artistId: artist.id || undefined,
-        })),
-        coverImageUrl: album.image?.url || undefined,
-        musicbrainzId: album.musicbrainzId || undefined,
-        releaseDate: album.year ? `${album.year}-01-01` : undefined,
-        totalTracks: album.metadata?.numberOfTracks || undefined,
-      };
-
-      await addToListenLater.mutateAsync({
-        albumId: album.id,
-        albumData,
-      });
-    } catch {}
-  };
-
   const handleMoreActions = () => {
     showToast('More actions coming soon!', 'success');
   };
@@ -208,7 +159,10 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
       )}
 
       {/* Action Buttons */}
-      <div className='flex flex-wrap gap-4 mb-8 justify-center lg:justify-start'>
+      <div
+        data-tour-step='album-interactions'
+        className='flex flex-wrap gap-4 mb-8 justify-center lg:justify-start'
+      >
         <Button
           variant='primary'
           size='lg'
@@ -220,44 +174,7 @@ export default function AlbumInteractions({ album }: AlbumInteractionsProps) {
           Make Rec
         </Button>
 
-        <AddToCollectionButton album={album} size='lg' variant='default' />
-
-        <Button
-          variant={isInListenLater && session?.user ? 'success' : 'outline'}
-          size='lg'
-          onClick={handleAddToListenLater}
-          className='gap-2'
-          disabled={addToListenLater.isPending || (isCheckingListenLater && !!session?.user)}
-          aria-label={
-            isCheckingListenLater
-              ? 'Checking Listen Later status...'
-              : isInListenLater
-                ? 'In Listen Later'
-                : 'Add to Listen Later'
-          }
-        >
-          {isCheckingListenLater && !!session?.user ? (
-            <>
-              <Loader2 className='h-4 w-4 animate-spin' />
-              Checking...
-            </>
-          ) : addToListenLater.isPending ? (
-            <>
-              <Loader2 className='h-4 w-4 animate-spin' />
-              Adding...
-            </>
-          ) : isInListenLater && session?.user ? (
-            <>
-              <Check className='h-4 w-4' />
-              In Listen Later
-            </>
-          ) : (
-            <>
-              <Clock className='h-4 w-4' />
-              Listen Later
-            </>
-          )}
-        </Button>
+        <CollectionPopover album={album} size='lg' variant='default' />
 
         <Button
           variant='outline'

@@ -94,11 +94,13 @@ export type Album = {
   dataQuality?: Maybe<DataQuality>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
+  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
   label?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
+  latestEnrichmentLog?: Maybe<EnrichmentLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   needsEnrichment: Scalars['Boolean']['output'];
   recommendationScore?: Maybe<Scalars['Float']['output']>;
@@ -109,6 +111,10 @@ export type Album = {
   trackCount?: Maybe<Scalars['Int']['output']>;
   tracks: Array<Track>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type AlbumEnrichmentLogsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type AlbumInput = {
@@ -142,6 +148,12 @@ export type AlbumRecommendationsResponse = {
   pagination: PaginationInfo;
   recommendations: Array<AlbumRecommendation>;
 };
+
+export enum AlbumRole {
+  Basis = 'BASIS',
+  Both = 'BOTH',
+  Recommended = 'RECOMMENDED',
+}
 
 export type Alert = {
   __typename?: 'Alert';
@@ -194,11 +206,13 @@ export type Artist = {
   countryCode?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
+  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
+  latestEnrichmentLog?: Maybe<EnrichmentLog>;
   listeners?: Maybe<Scalars['Int']['output']>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   name: Scalars['String']['output'];
@@ -207,6 +221,10 @@ export type Artist = {
   trackCount: Scalars['Int']['output'];
   tracks: Array<Track>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type ArtistEnrichmentLogsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type ArtistAlbumInput = {
@@ -220,6 +238,40 @@ export type ArtistCredit = {
   artist: Artist;
   position: Scalars['Int']['output'];
   role: Scalars['String']['output'];
+};
+
+export type ArtistInput = {
+  countryCode?: InputMaybe<Scalars['String']['input']>;
+  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  musicbrainzId?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+};
+
+export type ArtistRecommendation = {
+  __typename?: 'ArtistRecommendation';
+  albumRole: AlbumRole;
+  basisAlbum: Album;
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isOwnRecommendation: Scalars['Boolean']['output'];
+  recommendedAlbum: Album;
+  score: Scalars['Int']['output'];
+  user: User;
+};
+
+export enum ArtistRecommendationSort {
+  HighestScore = 'HIGHEST_SCORE',
+  LowestScore = 'LOWEST_SCORE',
+  Newest = 'NEWEST',
+  Oldest = 'OLDEST',
+}
+
+export type ArtistRecommendationsConnection = {
+  __typename?: 'ArtistRecommendationsConnection';
+  hasMore: Scalars['Boolean']['output'];
+  recommendations: Array<ArtistRecommendation>;
+  totalCount: Scalars['Int']['output'];
 };
 
 export type ArtistTrackInput = {
@@ -349,6 +401,68 @@ export type DatabaseStats = {
   totalTracks: Scalars['Int']['output'];
 };
 
+export type DeleteAlbumPayload = {
+  __typename?: 'DeleteAlbumPayload';
+  deletedId?: Maybe<Scalars['UUID']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+export type DeleteArtistPayload = {
+  __typename?: 'DeleteArtistPayload';
+  deletedId?: Maybe<Scalars['UUID']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+export enum EnrichmentEntityType {
+  Album = 'ALBUM',
+  Artist = 'ARTIST',
+  Track = 'TRACK',
+}
+
+export type EnrichmentFieldDiff = {
+  __typename?: 'EnrichmentFieldDiff';
+  currentValue?: Maybe<Scalars['String']['output']>;
+  field: Scalars['String']['output'];
+  newValue?: Maybe<Scalars['String']['output']>;
+  source: Scalars['String']['output'];
+};
+
+export type EnrichmentLog = {
+  __typename?: 'EnrichmentLog';
+  apiCallCount: Scalars['Int']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  dataQualityAfter?: Maybe<DataQuality>;
+  dataQualityBefore?: Maybe<DataQuality>;
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  entityId?: Maybe<Scalars['UUID']['output']>;
+  entityType?: Maybe<EnrichmentEntityType>;
+  errorCode?: Maybe<Scalars['String']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  fieldsEnriched: Array<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  jobId?: Maybe<Scalars['String']['output']>;
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  operation: Scalars['String']['output'];
+  previewData?: Maybe<Scalars['JSON']['output']>;
+  reason?: Maybe<Scalars['String']['output']>;
+  retryCount: Scalars['Int']['output'];
+  sources: Array<Scalars['String']['output']>;
+  status: EnrichmentLogStatus;
+  triggeredBy?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['String']['output']>;
+};
+
+export enum EnrichmentLogStatus {
+  Failed = 'FAILED',
+  NoDataAvailable = 'NO_DATA_AVAILABLE',
+  PartialSuccess = 'PARTIAL_SUCCESS',
+  Preview = 'PREVIEW',
+  Skipped = 'SKIPPED',
+  Success = 'SUCCESS',
+}
+
 export enum EnrichmentPriority {
   High = 'HIGH',
   Low = 'LOW',
@@ -360,6 +474,17 @@ export type EnrichmentResult = {
   jobId?: Maybe<Scalars['String']['output']>;
   message: Scalars['String']['output'];
   success: Scalars['Boolean']['output'];
+};
+
+export type EnrichmentStats = {
+  __typename?: 'EnrichmentStats';
+  averageDurationMs: Scalars['Float']['output'];
+  failedCount: Scalars['Int']['output'];
+  noDataCount: Scalars['Int']['output'];
+  skippedCount: Scalars['Int']['output'];
+  sourceStats: Array<SourceStat>;
+  successCount: Scalars['Int']['output'];
+  totalAttempts: Scalars['Int']['output'];
 };
 
 export enum EnrichmentStatus {
@@ -451,6 +576,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   addAlbum: Album;
   addAlbumToCollection: AddAlbumToCollectionPayload;
+  addArtist: Artist;
   addToListenLater: CollectionAlbum;
   batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
@@ -458,6 +584,8 @@ export type Mutation = {
   createCollection: CreateCollectionPayload;
   createRecommendation: CreateRecommendationPayload;
   createTrack: Track;
+  deleteAlbum: DeleteAlbumPayload;
+  deleteArtist: DeleteArtistPayload;
   deleteCollection: Scalars['Boolean']['output'];
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
@@ -465,19 +593,26 @@ export type Mutation = {
   ensureListenLaterCollection: Collection;
   followUser: FollowUserPayload;
   pauseQueue: Scalars['Boolean']['output'];
+  previewAlbumEnrichment: PreviewEnrichmentResult;
+  previewArtistEnrichment: PreviewEnrichmentResult;
   removeAlbumFromCollection: Scalars['Boolean']['output'];
   removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
+  resetAlbumEnrichment: Album;
+  resetArtistEnrichment: Artist;
   resetOnboardingStatus: OnboardingStatus;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
+  rollbackSyncJob: RollbackSyncJobResult;
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
   triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
   updateAlbum: Album;
+  updateAlbumDataQuality: Album;
   updateAlertThresholds: AlertThresholds;
+  updateArtistDataQuality: Artist;
   updateCollection: UpdateCollectionPayload;
   updateCollectionAlbum: UpdateCollectionAlbumPayload;
   updateDashboardLayout: UserSettings;
@@ -496,6 +631,10 @@ export type MutationAddAlbumArgs = {
 export type MutationAddAlbumToCollectionArgs = {
   collectionId: Scalars['String']['input'];
   input: CollectionAlbumInput;
+};
+
+export type MutationAddArtistArgs = {
+  input: ArtistInput;
 };
 
 export type MutationAddToListenLaterArgs = {
@@ -529,6 +668,14 @@ export type MutationCreateTrackArgs = {
   input: TrackInput;
 };
 
+export type MutationDeleteAlbumArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationDeleteArtistArgs = {
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationDeleteCollectionArgs = {
   id: Scalars['String']['input'];
 };
@@ -549,6 +696,14 @@ export type MutationFollowUserArgs = {
   userId: Scalars['String']['input'];
 };
 
+export type MutationPreviewAlbumEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationPreviewArtistEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationRemoveAlbumFromCollectionArgs = {
   albumId: Scalars['UUID']['input'];
   collectionId: Scalars['String']['input'];
@@ -563,16 +718,31 @@ export type MutationReorderCollectionAlbumsArgs = {
   collectionId: Scalars['String']['input'];
 };
 
+export type MutationResetAlbumEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationResetArtistEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationRetryJobArgs = {
   jobId: Scalars['String']['input'];
 };
 
+export type MutationRollbackSyncJobArgs = {
+  dryRun?: InputMaybe<Scalars['Boolean']['input']>;
+  syncJobId: Scalars['UUID']['input'];
+};
+
 export type MutationTriggerAlbumEnrichmentArgs = {
+  force?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['UUID']['input'];
   priority?: InputMaybe<EnrichmentPriority>;
 };
 
 export type MutationTriggerArtistEnrichmentArgs = {
+  force?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['UUID']['input'];
   priority?: InputMaybe<EnrichmentPriority>;
 };
@@ -590,8 +760,18 @@ export type MutationUpdateAlbumArgs = {
   input: AlbumInput;
 };
 
+export type MutationUpdateAlbumDataQualityArgs = {
+  dataQuality: DataQuality;
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationUpdateAlertThresholdsArgs = {
   input: AlertThresholdsInput;
+};
+
+export type MutationUpdateArtistDataQualityArgs = {
+  dataQuality: DataQuality;
+  id: Scalars['UUID']['input'];
 };
 
 export type MutationUpdateCollectionArgs = {
@@ -616,7 +796,7 @@ export type MutationUpdateOnboardingStatusArgs = {
 
 export type MutationUpdateProfileArgs = {
   bio?: InputMaybe<Scalars['String']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
+  username?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationUpdateRecommendationArgs = {
@@ -637,7 +817,10 @@ export type MutationUpdateUserRoleArgs = {
 export type MutationUpdateUserSettingsArgs = {
   language?: InputMaybe<Scalars['String']['input']>;
   profileVisibility?: InputMaybe<Scalars['String']['input']>;
+  showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showCollections?: InputMaybe<Scalars['Boolean']['input']>;
+  showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
+  showOnboardingTour?: InputMaybe<Scalars['Boolean']['input']>;
   showRecentActivity?: InputMaybe<Scalars['Boolean']['input']>;
   theme?: InputMaybe<Scalars['String']['input']>;
 };
@@ -666,17 +849,34 @@ export type PaginationInfo = {
   total: Scalars['Int']['output'];
 };
 
+export type PreviewEnrichmentResult = {
+  __typename?: 'PreviewEnrichmentResult';
+  enrichmentLogId: Scalars['UUID']['output'];
+  fieldsToUpdate: Array<EnrichmentFieldDiff>;
+  matchScore?: Maybe<Scalars['Float']['output']>;
+  matchedEntity?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  rawData?: Maybe<Scalars['JSON']['output']>;
+  sources: Array<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export type Query = {
   __typename?: 'Query';
   activeJobs: Array<JobRecord>;
   album?: Maybe<Album>;
+  albumByMusicBrainzId?: Maybe<Album>;
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
+  albumsByJobId: Array<Album>;
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
   artistDiscography: CategorizedDiscography;
+  artistRecommendations: ArtistRecommendationsConnection;
   collection?: Maybe<Collection>;
   databaseStats: DatabaseStats;
+  enrichmentLogs: Array<EnrichmentLog>;
+  enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
   followingActivity: Array<Recommendation>;
   getAlbumRecommendations: AlbumRecommendationsResponse;
@@ -700,7 +900,12 @@ export type Query = {
   searchTracks: Array<Track>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
+  syncJob?: Maybe<SyncJob>;
+  syncJobByJobId?: Maybe<SyncJob>;
+  syncJobs: SyncJobsConnection;
   systemHealth: SystemHealth;
+  topRecommendedAlbums: Array<TopRecommendedAlbum>;
+  topRecommendedArtists: Array<TopRecommendedArtist>;
   track?: Maybe<Track>;
   trackRecommendations: Array<Track>;
   trendingAlbums: Array<Album>;
@@ -719,12 +924,20 @@ export type QueryAlbumArgs = {
   id: Scalars['UUID']['input'];
 };
 
+export type QueryAlbumByMusicBrainzIdArgs = {
+  musicbrainzId: Scalars['String']['input'];
+};
+
 export type QueryAlbumRecommendationsArgs = {
   input: RecommendationInput;
 };
 
 export type QueryAlbumTracksArgs = {
   albumId: Scalars['UUID']['input'];
+};
+
+export type QueryAlbumsByJobIdArgs = {
+  jobId: Scalars['String']['input'];
 };
 
 export type QueryArtistArgs = {
@@ -740,8 +953,30 @@ export type QueryArtistDiscographyArgs = {
   source: DataSource;
 };
 
+export type QueryArtistRecommendationsArgs = {
+  artistId: Scalars['ID']['input'];
+  filter?: InputMaybe<AlbumRole>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<ArtistRecommendationSort>;
+};
+
 export type QueryCollectionArgs = {
   id: Scalars['String']['input'];
+};
+
+export type QueryEnrichmentLogsArgs = {
+  entityId?: InputMaybe<Scalars['UUID']['input']>;
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sources?: InputMaybe<Array<Scalars['String']['input']>>;
+  status?: InputMaybe<EnrichmentLogStatus>;
+};
+
+export type QueryEnrichmentStatsArgs = {
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  timeRange?: InputMaybe<TimeRangeInput>;
 };
 
 export type QueryFailedJobsArgs = {
@@ -811,11 +1046,13 @@ export type QuerySearchAlbumsArgs = {
   skip?: InputMaybe<Scalars['Int']['input']>;
   sortBy?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['String']['input']>;
+  source?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QuerySearchArtistsArgs = {
   dataQuality?: InputMaybe<Scalars['String']['input']>;
   enrichmentStatus?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
   query?: InputMaybe<Scalars['String']['input']>;
@@ -834,6 +1071,26 @@ export type QuerySocialFeedArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   type?: InputMaybe<ActivityType>;
+};
+
+export type QuerySyncJobArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type QuerySyncJobByJobIdArgs = {
+  jobId: Scalars['String']['input'];
+};
+
+export type QuerySyncJobsArgs = {
+  input?: InputMaybe<SyncJobsInput>;
+};
+
+export type QueryTopRecommendedAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryTopRecommendedArtistsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryTrackArgs = {
@@ -882,12 +1139,26 @@ export type QueryUserSuggestionsArgs = {
 };
 
 export type QueryUsersArgs = {
+  createdAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  createdBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  hasActivity?: InputMaybe<Scalars['Boolean']['input']>;
+  lastActiveAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  lastActiveBefore?: InputMaybe<Scalars['DateTime']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
+  role?: InputMaybe<UserRole>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<UserSortField>;
+  sortOrder?: InputMaybe<SortOrder>;
 };
 
 export type QueryUsersCountArgs = {
+  createdAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  createdBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  hasActivity?: InputMaybe<Scalars['Boolean']['input']>;
+  lastActiveAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  lastActiveBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  role?: InputMaybe<UserRole>;
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -968,6 +1239,16 @@ export type ReorderCollectionAlbumsPayload = {
   ids: Array<Scalars['String']['output']>;
 };
 
+export type RollbackSyncJobResult = {
+  __typename?: 'RollbackSyncJobResult';
+  albumsDeleted: Scalars['Int']['output'];
+  artistsDeleted: Scalars['Int']['output'];
+  dryRun: Scalars['Boolean']['output'];
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+  syncJobId: Scalars['UUID']['output'];
+};
+
 export type SearchInput = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
@@ -1002,6 +1283,18 @@ export enum SearchType {
   Track = 'TRACK',
   User = 'USER',
 }
+
+export enum SortOrder {
+  Asc = 'ASC',
+  Desc = 'DESC',
+}
+
+export type SourceStat = {
+  __typename?: 'SourceStat';
+  attempts: Scalars['Int']['output'];
+  source: Scalars['String']['output'];
+  successRate: Scalars['Float']['output'];
+};
 
 export type SpotifyAlbum = {
   __typename?: 'SpotifyAlbum';
@@ -1114,6 +1407,66 @@ export type SubscriptionMetricsStreamArgs = {
   interval?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type SyncJob = {
+  __typename?: 'SyncJob';
+  albums: Array<Album>;
+  albumsCreated: Scalars['Int']['output'];
+  albumsSkipped: Scalars['Int']['output'];
+  albumsUpdated: Scalars['Int']['output'];
+  artistsCreated: Scalars['Int']['output'];
+  artistsUpdated: Scalars['Int']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  errorCode?: Maybe<Scalars['String']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  jobId: Scalars['String']['output'];
+  jobType: SyncJobType;
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  startedAt: Scalars['DateTime']['output'];
+  status: SyncJobStatus;
+  triggeredBy?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type SyncJobAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export enum SyncJobStatus {
+  Cancelled = 'CANCELLED',
+  Completed = 'COMPLETED',
+  Failed = 'FAILED',
+  Pending = 'PENDING',
+  Running = 'RUNNING',
+}
+
+export enum SyncJobType {
+  DiscogsSync = 'DISCOGS_SYNC',
+  EnrichmentBatch = 'ENRICHMENT_BATCH',
+  MusicbrainzNewReleases = 'MUSICBRAINZ_NEW_RELEASES',
+  MusicbrainzSync = 'MUSICBRAINZ_SYNC',
+  SpotifyFeaturedPlaylists = 'SPOTIFY_FEATURED_PLAYLISTS',
+  SpotifyNewReleases = 'SPOTIFY_NEW_RELEASES',
+}
+
+export type SyncJobsConnection = {
+  __typename?: 'SyncJobsConnection';
+  hasMore: Scalars['Boolean']['output'];
+  jobs: Array<SyncJob>;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type SyncJobsInput = {
+  jobType?: InputMaybe<SyncJobType>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  startedAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  startedBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  status?: InputMaybe<SyncJobStatus>;
+};
+
 export type SystemHealth = {
   __typename?: 'SystemHealth';
   alerts: Array<Scalars['String']['output']>;
@@ -1138,6 +1491,28 @@ export enum TimeRange {
   LastWeek = 'LAST_WEEK',
 }
 
+export type TimeRangeInput = {
+  from: Scalars['DateTime']['input'];
+  to: Scalars['DateTime']['input'];
+};
+
+export type TopRecommendedAlbum = {
+  __typename?: 'TopRecommendedAlbum';
+  album: Album;
+  asBasisCount: Scalars['Int']['output'];
+  asTargetCount: Scalars['Int']['output'];
+  averageScore: Scalars['Float']['output'];
+  recommendationCount: Scalars['Int']['output'];
+};
+
+export type TopRecommendedArtist = {
+  __typename?: 'TopRecommendedArtist';
+  albumsInRecommendations: Scalars['Int']['output'];
+  artist: Artist;
+  averageScore: Scalars['Float']['output'];
+  recommendationCount: Scalars['Int']['output'];
+};
+
 export type Track = {
   __typename?: 'Track';
   album?: Maybe<Album>;
@@ -1148,9 +1523,11 @@ export type Track = {
   discNumber: Scalars['Int']['output'];
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
+  enrichmentLogs: Array<EnrichmentLog>;
   explicit: Scalars['Boolean']['output'];
   id: Scalars['UUID']['output'];
   isrc?: Maybe<Scalars['String']['output']>;
+  latestEnrichmentLog?: Maybe<EnrichmentLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   popularity?: Maybe<Scalars['Float']['output']>;
   previewUrl?: Maybe<Scalars['String']['output']>;
@@ -1159,6 +1536,10 @@ export type Track = {
   title: Scalars['String']['output'];
   trackNumber: Scalars['Int']['output'];
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type TrackEnrichmentLogsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type TrackInput = {
@@ -1203,7 +1584,7 @@ export type UpdateProfilePayload = {
   __typename?: 'UpdateProfilePayload';
   bio?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
-  name?: Maybe<Scalars['String']['output']>;
+  username?: Maybe<Scalars['String']['output']>;
 };
 
 export type UpdateRecommendationPayload = {
@@ -1244,14 +1625,15 @@ export type User = {
   id: Scalars['String']['output'];
   image?: Maybe<Scalars['String']['output']>;
   isFollowing?: Maybe<Scalars['Boolean']['output']>;
+  lastActive?: Maybe<Scalars['DateTime']['output']>;
   mutualFollowers: Array<User>;
-  name?: Maybe<Scalars['String']['output']>;
   profileUpdatedAt?: Maybe<Scalars['DateTime']['output']>;
   recommendations: Array<Recommendation>;
   recommendationsCount: Scalars['Int']['output'];
   role: UserRole;
   settings?: Maybe<UserSettings>;
   updatedAt: Scalars['DateTime']['output'];
+  username?: Maybe<Scalars['String']['output']>;
 };
 
 export type UserCount = {
@@ -1287,12 +1669,25 @@ export type UserSettings = {
   language: Scalars['String']['output'];
   profileVisibility: Scalars['String']['output'];
   recommendationAlerts: Scalars['Boolean']['output'];
+  showCollectionAddsInFeed: Scalars['Boolean']['output'];
   showCollections: Scalars['Boolean']['output'];
+  showListenLaterInFeed: Scalars['Boolean']['output'];
+  showOnboardingTour: Scalars['Boolean']['output'];
   showRecentActivity: Scalars['Boolean']['output'];
   theme: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
   userId: Scalars['String']['output'];
 };
+
+export enum UserSortField {
+  CollectionsCount = 'COLLECTIONS_COUNT',
+  CreatedAt = 'CREATED_AT',
+  Email = 'EMAIL',
+  FollowersCount = 'FOLLOWERS_COUNT',
+  LastActive = 'LAST_ACTIVE',
+  Name = 'NAME',
+  RecommendationsCount = 'RECOMMENDATIONS_COUNT',
+}
 
 export type UserStats = {
   __typename?: 'UserStats';
@@ -1440,6 +1835,7 @@ export type ResolversTypes = ResolversObject<{
   AlbumInput: AlbumInput;
   AlbumRecommendation: ResolverTypeWrapper<AlbumRecommendation>;
   AlbumRecommendationsResponse: ResolverTypeWrapper<AlbumRecommendationsResponse>;
+  AlbumRole: AlbumRole;
   Alert: ResolverTypeWrapper<Alert>;
   AlertLevel: AlertLevel;
   AlertThresholds: ResolverTypeWrapper<AlertThresholds>;
@@ -1448,6 +1844,10 @@ export type ResolversTypes = ResolversObject<{
   Artist: ResolverTypeWrapper<Artist>;
   ArtistAlbumInput: ArtistAlbumInput;
   ArtistCredit: ResolverTypeWrapper<ArtistCredit>;
+  ArtistInput: ArtistInput;
+  ArtistRecommendation: ResolverTypeWrapper<ArtistRecommendation>;
+  ArtistRecommendationSort: ArtistRecommendationSort;
+  ArtistRecommendationsConnection: ResolverTypeWrapper<ArtistRecommendationsConnection>;
   ArtistTrackInput: ArtistTrackInput;
   AudioFeatures: ResolverTypeWrapper<AudioFeatures>;
   BatchEnrichmentResult: ResolverTypeWrapper<BatchEnrichmentResult>;
@@ -1464,8 +1864,15 @@ export type ResolversTypes = ResolversObject<{
   DataSource: DataSource;
   DatabaseStats: ResolverTypeWrapper<DatabaseStats>;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
+  DeleteAlbumPayload: ResolverTypeWrapper<DeleteAlbumPayload>;
+  DeleteArtistPayload: ResolverTypeWrapper<DeleteArtistPayload>;
+  EnrichmentEntityType: EnrichmentEntityType;
+  EnrichmentFieldDiff: ResolverTypeWrapper<EnrichmentFieldDiff>;
+  EnrichmentLog: ResolverTypeWrapper<EnrichmentLog>;
+  EnrichmentLogStatus: EnrichmentLogStatus;
   EnrichmentPriority: EnrichmentPriority;
   EnrichmentResult: ResolverTypeWrapper<EnrichmentResult>;
+  EnrichmentStats: ResolverTypeWrapper<EnrichmentStats>;
   EnrichmentStatus: EnrichmentStatus;
   EnrichmentType: EnrichmentType;
   ErrorMetric: ResolverTypeWrapper<ErrorMetric>;
@@ -1474,6 +1881,7 @@ export type ResolversTypes = ResolversObject<{
   HealthComponents: ResolverTypeWrapper<HealthComponents>;
   HealthMetrics: ResolverTypeWrapper<HealthMetrics>;
   HealthStatus: HealthStatus;
+  ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   JSON: ResolverTypeWrapper<Scalars['JSON']['output']>;
   JobRecord: ResolverTypeWrapper<JobRecord>;
@@ -1483,6 +1891,7 @@ export type ResolversTypes = ResolversObject<{
   OnboardingStatus: ResolverTypeWrapper<OnboardingStatus>;
   OtherAlbumInfo: ResolverTypeWrapper<OtherAlbumInfo>;
   PaginationInfo: ResolverTypeWrapper<PaginationInfo>;
+  PreviewEnrichmentResult: ResolverTypeWrapper<PreviewEnrichmentResult>;
   Query: ResolverTypeWrapper<{}>;
   QueueMetrics: ResolverTypeWrapper<QueueMetrics>;
   QueueStats: ResolverTypeWrapper<QueueStats>;
@@ -1493,6 +1902,7 @@ export type ResolversTypes = ResolversObject<{
   RecommendationInput: RecommendationInput;
   RecommendationSort: RecommendationSort;
   ReorderCollectionAlbumsPayload: ResolverTypeWrapper<ReorderCollectionAlbumsPayload>;
+  RollbackSyncJobResult: ResolverTypeWrapper<RollbackSyncJobResult>;
   SearchInput: SearchInput;
   SearchMode: SearchMode;
   SearchResult: ResolverTypeWrapper<
@@ -1500,6 +1910,8 @@ export type ResolversTypes = ResolversObject<{
   >;
   SearchResults: ResolverTypeWrapper<SearchResults>;
   SearchType: SearchType;
+  SortOrder: SortOrder;
+  SourceStat: ResolverTypeWrapper<SourceStat>;
   SpotifyAlbum: ResolverTypeWrapper<SpotifyAlbum>;
   SpotifyArtist: ResolverTypeWrapper<SpotifyArtist>;
   SpotifyPlaylist: ResolverTypeWrapper<SpotifyPlaylist>;
@@ -1512,9 +1924,17 @@ export type ResolversTypes = ResolversObject<{
   SpotifyTrendingData: ResolverTypeWrapper<SpotifyTrendingData>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Subscription: ResolverTypeWrapper<{}>;
+  SyncJob: ResolverTypeWrapper<SyncJob>;
+  SyncJobStatus: SyncJobStatus;
+  SyncJobType: SyncJobType;
+  SyncJobsConnection: ResolverTypeWrapper<SyncJobsConnection>;
+  SyncJobsInput: SyncJobsInput;
   SystemHealth: ResolverTypeWrapper<SystemHealth>;
   ThroughputMetrics: ResolverTypeWrapper<ThroughputMetrics>;
   TimeRange: TimeRange;
+  TimeRangeInput: TimeRangeInput;
+  TopRecommendedAlbum: ResolverTypeWrapper<TopRecommendedAlbum>;
+  TopRecommendedArtist: ResolverTypeWrapper<TopRecommendedArtist>;
   Track: ResolverTypeWrapper<Track>;
   TrackInput: TrackInput;
   UUID: ResolverTypeWrapper<Scalars['UUID']['output']>;
@@ -1530,6 +1950,7 @@ export type ResolversTypes = ResolversObject<{
   UserFollow: ResolverTypeWrapper<UserFollow>;
   UserRole: UserRole;
   UserSettings: ResolverTypeWrapper<UserSettings>;
+  UserSortField: UserSortField;
   UserStats: ResolverTypeWrapper<UserStats>;
   WorkerInfo: ResolverTypeWrapper<WorkerInfo>;
 }>;
@@ -1550,6 +1971,9 @@ export type ResolversParentTypes = ResolversObject<{
   Artist: Artist;
   ArtistAlbumInput: ArtistAlbumInput;
   ArtistCredit: ArtistCredit;
+  ArtistInput: ArtistInput;
+  ArtistRecommendation: ArtistRecommendation;
+  ArtistRecommendationsConnection: ArtistRecommendationsConnection;
   ArtistTrackInput: ArtistTrackInput;
   AudioFeatures: AudioFeatures;
   BatchEnrichmentResult: BatchEnrichmentResult;
@@ -1563,12 +1987,18 @@ export type ResolversParentTypes = ResolversObject<{
   CreateRecommendationPayload: CreateRecommendationPayload;
   DatabaseStats: DatabaseStats;
   DateTime: Scalars['DateTime']['output'];
+  DeleteAlbumPayload: DeleteAlbumPayload;
+  DeleteArtistPayload: DeleteArtistPayload;
+  EnrichmentFieldDiff: EnrichmentFieldDiff;
+  EnrichmentLog: EnrichmentLog;
   EnrichmentResult: EnrichmentResult;
+  EnrichmentStats: EnrichmentStats;
   ErrorMetric: ErrorMetric;
   Float: Scalars['Float']['output'];
   FollowUserPayload: FollowUserPayload;
   HealthComponents: HealthComponents;
   HealthMetrics: HealthMetrics;
+  ID: Scalars['ID']['output'];
   Int: Scalars['Int']['output'];
   JSON: Scalars['JSON']['output'];
   JobRecord: JobRecord;
@@ -1577,6 +2007,7 @@ export type ResolversParentTypes = ResolversObject<{
   OnboardingStatus: OnboardingStatus;
   OtherAlbumInfo: OtherAlbumInfo;
   PaginationInfo: PaginationInfo;
+  PreviewEnrichmentResult: PreviewEnrichmentResult;
   Query: {};
   QueueMetrics: QueueMetrics;
   QueueStats: QueueStats;
@@ -1586,9 +2017,11 @@ export type ResolversParentTypes = ResolversObject<{
   RecommendationFeed: RecommendationFeed;
   RecommendationInput: RecommendationInput;
   ReorderCollectionAlbumsPayload: ReorderCollectionAlbumsPayload;
+  RollbackSyncJobResult: RollbackSyncJobResult;
   SearchInput: SearchInput;
   SearchResult: ResolversUnionTypes<ResolversParentTypes>['SearchResult'];
   SearchResults: SearchResults;
+  SourceStat: SourceStat;
   SpotifyAlbum: SpotifyAlbum;
   SpotifyArtist: SpotifyArtist;
   SpotifyPlaylist: SpotifyPlaylist;
@@ -1600,8 +2033,14 @@ export type ResolversParentTypes = ResolversObject<{
   SpotifyTrendingData: SpotifyTrendingData;
   String: Scalars['String']['output'];
   Subscription: {};
+  SyncJob: SyncJob;
+  SyncJobsConnection: SyncJobsConnection;
+  SyncJobsInput: SyncJobsInput;
   SystemHealth: SystemHealth;
   ThroughputMetrics: ThroughputMetrics;
+  TimeRangeInput: TimeRangeInput;
+  TopRecommendedAlbum: TopRecommendedAlbum;
+  TopRecommendedArtist: TopRecommendedArtist;
   Track: Track;
   TrackInput: TrackInput;
   UUID: Scalars['UUID']['output'];
@@ -1747,6 +2186,12 @@ export type AlbumResolvers<
   >;
   duration?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  enrichmentLogs?: Resolver<
+    Array<ResolversTypes['EnrichmentLog']>,
+    ParentType,
+    ContextType,
+    Partial<AlbumEnrichmentLogsArgs>
+  >;
   enrichmentStatus?: Resolver<
     Maybe<ResolversTypes['EnrichmentStatus']>,
     ParentType,
@@ -1757,6 +2202,11 @@ export type AlbumResolvers<
   label?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   lastEnriched?: Resolver<
     Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  latestEnrichmentLog?: Resolver<
+    Maybe<ResolversTypes['EnrichmentLog']>,
     ParentType,
     ContextType
   >;
@@ -1893,6 +2343,12 @@ export type ArtistResolvers<
     ParentType,
     ContextType
   >;
+  enrichmentLogs?: Resolver<
+    Array<ResolversTypes['EnrichmentLog']>,
+    ParentType,
+    ContextType,
+    Partial<ArtistEnrichmentLogsArgs>
+  >;
   enrichmentStatus?: Resolver<
     Maybe<ResolversTypes['EnrichmentStatus']>,
     ParentType,
@@ -1903,6 +2359,11 @@ export type ArtistResolvers<
   imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   lastEnriched?: Resolver<
     Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  latestEnrichmentLog?: Resolver<
+    Maybe<ResolversTypes['EnrichmentLog']>,
     ParentType,
     ContextType
   >;
@@ -1937,6 +2398,46 @@ export type ArtistCreditResolvers<
   artist?: Resolver<ResolversTypes['Artist'], ParentType, ContextType>;
   position?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   role?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ArtistRecommendationResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArtistRecommendation'] = ResolversParentTypes['ArtistRecommendation'],
+> = ResolversObject<{
+  albumRole?: Resolver<ResolversTypes['AlbumRole'], ParentType, ContextType>;
+  basisAlbum?: Resolver<ResolversTypes['Album'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  description?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  isOwnRecommendation?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
+  recommendedAlbum?: Resolver<ResolversTypes['Album'], ParentType, ContextType>;
+  score?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ArtistRecommendationsConnectionResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArtistRecommendationsConnection'] = ResolversParentTypes['ArtistRecommendationsConnection'],
+> = ResolversObject<{
+  hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  recommendations?: Resolver<
+    Array<ResolversTypes['ArtistRecommendation']>,
+    ParentType,
+    ContextType
+  >;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -2160,6 +2661,109 @@ export interface DateTimeScalarConfig
   name: 'DateTime';
 }
 
+export type DeleteAlbumPayloadResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['DeleteAlbumPayload'] = ResolversParentTypes['DeleteAlbumPayload'],
+> = ResolversObject<{
+  deletedId?: Resolver<Maybe<ResolversTypes['UUID']>, ParentType, ContextType>;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type DeleteArtistPayloadResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['DeleteArtistPayload'] = ResolversParentTypes['DeleteArtistPayload'],
+> = ResolversObject<{
+  deletedId?: Resolver<Maybe<ResolversTypes['UUID']>, ParentType, ContextType>;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type EnrichmentFieldDiffResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['EnrichmentFieldDiff'] = ResolversParentTypes['EnrichmentFieldDiff'],
+> = ResolversObject<{
+  currentValue?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  field?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  newValue?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  source?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type EnrichmentLogResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['EnrichmentLog'] = ResolversParentTypes['EnrichmentLog'],
+> = ResolversObject<{
+  apiCallCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  dataQualityAfter?: Resolver<
+    Maybe<ResolversTypes['DataQuality']>,
+    ParentType,
+    ContextType
+  >;
+  dataQualityBefore?: Resolver<
+    Maybe<ResolversTypes['DataQuality']>,
+    ParentType,
+    ContextType
+  >;
+  durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  entityId?: Resolver<Maybe<ResolversTypes['UUID']>, ParentType, ContextType>;
+  entityType?: Resolver<
+    Maybe<ResolversTypes['EnrichmentEntityType']>,
+    ParentType,
+    ContextType
+  >;
+  errorCode?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  errorMessage?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  fieldsEnriched?: Resolver<
+    Array<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  metadata?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  operation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  previewData?: Resolver<
+    Maybe<ResolversTypes['JSON']>,
+    ParentType,
+    ContextType
+  >;
+  reason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  retryCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  sources?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  status?: Resolver<
+    ResolversTypes['EnrichmentLogStatus'],
+    ParentType,
+    ContextType
+  >;
+  triggeredBy?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  userId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type EnrichmentResultResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -2168,6 +2772,29 @@ export type EnrichmentResultResolvers<
   jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type EnrichmentStatsResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['EnrichmentStats'] = ResolversParentTypes['EnrichmentStats'],
+> = ResolversObject<{
+  averageDurationMs?: Resolver<
+    ResolversTypes['Float'],
+    ParentType,
+    ContextType
+  >;
+  failedCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  noDataCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  skippedCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  sourceStats?: Resolver<
+    Array<ResolversTypes['SourceStat']>,
+    ParentType,
+    ContextType
+  >;
+  successCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalAttempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -2296,6 +2923,12 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationAddAlbumToCollectionArgs, 'collectionId' | 'input'>
   >;
+  addArtist?: Resolver<
+    ResolversTypes['Artist'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationAddArtistArgs, 'input'>
+  >;
   addToListenLater?: Resolver<
     ResolversTypes['CollectionAlbum'],
     ParentType,
@@ -2340,6 +2973,18 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationCreateTrackArgs, 'input'>
   >;
+  deleteAlbum?: Resolver<
+    ResolversTypes['DeleteAlbumPayload'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationDeleteAlbumArgs, 'id'>
+  >;
+  deleteArtist?: Resolver<
+    ResolversTypes['DeleteArtistPayload'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationDeleteArtistArgs, 'id'>
+  >;
   deleteCollection?: Resolver<
     ResolversTypes['Boolean'],
     ParentType,
@@ -2376,6 +3021,18 @@ export type MutationResolvers<
     RequireFields<MutationFollowUserArgs, 'userId'>
   >;
   pauseQueue?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  previewAlbumEnrichment?: Resolver<
+    ResolversTypes['PreviewEnrichmentResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationPreviewAlbumEnrichmentArgs, 'id'>
+  >;
+  previewArtistEnrichment?: Resolver<
+    ResolversTypes['PreviewEnrichmentResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationPreviewArtistEnrichmentArgs, 'id'>
+  >;
   removeAlbumFromCollection?: Resolver<
     ResolversTypes['Boolean'],
     ParentType,
@@ -2400,6 +3057,18 @@ export type MutationResolvers<
       'albumIds' | 'collectionId'
     >
   >;
+  resetAlbumEnrichment?: Resolver<
+    ResolversTypes['Album'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationResetAlbumEnrichmentArgs, 'id'>
+  >;
+  resetArtistEnrichment?: Resolver<
+    ResolversTypes['Artist'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationResetArtistEnrichmentArgs, 'id'>
+  >;
   resetOnboardingStatus?: Resolver<
     ResolversTypes['OnboardingStatus'],
     ParentType,
@@ -2412,6 +3081,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationRetryJobArgs, 'jobId'>
+  >;
+  rollbackSyncJob?: Resolver<
+    ResolversTypes['RollbackSyncJobResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationRollbackSyncJobArgs, 'dryRun' | 'syncJobId'>
   >;
   triggerAlbumEnrichment?: Resolver<
     ResolversTypes['EnrichmentResult'],
@@ -2443,11 +3118,23 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationUpdateAlbumArgs, 'id' | 'input'>
   >;
+  updateAlbumDataQuality?: Resolver<
+    ResolversTypes['Album'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationUpdateAlbumDataQualityArgs, 'dataQuality' | 'id'>
+  >;
   updateAlertThresholds?: Resolver<
     ResolversTypes['AlertThresholds'],
     ParentType,
     ContextType,
     RequireFields<MutationUpdateAlertThresholdsArgs, 'input'>
+  >;
+  updateArtistDataQuality?: Resolver<
+    ResolversTypes['Artist'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationUpdateArtistDataQualityArgs, 'dataQuality' | 'id'>
   >;
   updateCollection?: Resolver<
     ResolversTypes['UpdateCollectionPayload'],
@@ -2549,6 +3236,34 @@ export type PaginationInfoResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type PreviewEnrichmentResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['PreviewEnrichmentResult'] = ResolversParentTypes['PreviewEnrichmentResult'],
+> = ResolversObject<{
+  enrichmentLogId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  fieldsToUpdate?: Resolver<
+    Array<ResolversTypes['EnrichmentFieldDiff']>,
+    ParentType,
+    ContextType
+  >;
+  matchScore?: Resolver<
+    Maybe<ResolversTypes['Float']>,
+    ParentType,
+    ContextType
+  >;
+  matchedEntity?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  rawData?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  sources?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type QueryResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -2565,6 +3280,12 @@ export type QueryResolvers<
     ContextType,
     RequireFields<QueryAlbumArgs, 'id'>
   >;
+  albumByMusicBrainzId?: Resolver<
+    Maybe<ResolversTypes['Album']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryAlbumByMusicBrainzIdArgs, 'musicbrainzId'>
+  >;
   albumRecommendations?: Resolver<
     Array<ResolversTypes['Album']>,
     ParentType,
@@ -2576,6 +3297,12 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryAlbumTracksArgs, 'albumId'>
+  >;
+  albumsByJobId?: Resolver<
+    Array<ResolversTypes['Album']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryAlbumsByJobIdArgs, 'jobId'>
   >;
   artist?: Resolver<
     Maybe<ResolversTypes['Artist']>,
@@ -2595,6 +3322,15 @@ export type QueryResolvers<
     ContextType,
     RequireFields<QueryArtistDiscographyArgs, 'id' | 'source'>
   >;
+  artistRecommendations?: Resolver<
+    ResolversTypes['ArtistRecommendationsConnection'],
+    ParentType,
+    ContextType,
+    RequireFields<
+      QueryArtistRecommendationsArgs,
+      'artistId' | 'limit' | 'offset' | 'sort'
+    >
+  >;
   collection?: Resolver<
     Maybe<ResolversTypes['Collection']>,
     ParentType,
@@ -2605,6 +3341,18 @@ export type QueryResolvers<
     ResolversTypes['DatabaseStats'],
     ParentType,
     ContextType
+  >;
+  enrichmentLogs?: Resolver<
+    Array<ResolversTypes['EnrichmentLog']>,
+    ParentType,
+    ContextType,
+    Partial<QueryEnrichmentLogsArgs>
+  >;
+  enrichmentStats?: Resolver<
+    ResolversTypes['EnrichmentStats'],
+    ParentType,
+    ContextType,
+    Partial<QueryEnrichmentStatsArgs>
   >;
   failedJobs?: Resolver<
     Array<ResolversTypes['JobRecord']>,
@@ -2733,10 +3481,40 @@ export type QueryResolvers<
     ParentType,
     ContextType
   >;
+  syncJob?: Resolver<
+    Maybe<ResolversTypes['SyncJob']>,
+    ParentType,
+    ContextType,
+    RequireFields<QuerySyncJobArgs, 'id'>
+  >;
+  syncJobByJobId?: Resolver<
+    Maybe<ResolversTypes['SyncJob']>,
+    ParentType,
+    ContextType,
+    RequireFields<QuerySyncJobByJobIdArgs, 'jobId'>
+  >;
+  syncJobs?: Resolver<
+    ResolversTypes['SyncJobsConnection'],
+    ParentType,
+    ContextType,
+    Partial<QuerySyncJobsArgs>
+  >;
   systemHealth?: Resolver<
     ResolversTypes['SystemHealth'],
     ParentType,
     ContextType
+  >;
+  topRecommendedAlbums?: Resolver<
+    Array<ResolversTypes['TopRecommendedAlbum']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryTopRecommendedAlbumsArgs, 'limit'>
+  >;
+  topRecommendedArtists?: Resolver<
+    Array<ResolversTypes['TopRecommendedArtist']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryTopRecommendedArtistsArgs, 'limit'>
   >;
   track?: Resolver<
     Maybe<ResolversTypes['Track']>,
@@ -2802,7 +3580,7 @@ export type QueryResolvers<
     Array<ResolversTypes['User']>,
     ParentType,
     ContextType,
-    RequireFields<QueryUsersArgs, 'limit' | 'offset'>
+    RequireFields<QueryUsersArgs, 'limit' | 'offset' | 'sortBy' | 'sortOrder'>
   >;
   usersCount?: Resolver<
     ResolversTypes['Int'],
@@ -2943,6 +3721,20 @@ export type ReorderCollectionAlbumsPayloadResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type RollbackSyncJobResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['RollbackSyncJobResult'] = ResolversParentTypes['RollbackSyncJobResult'],
+> = ResolversObject<{
+  albumsDeleted?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  artistsDeleted?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  dryRun?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  syncJobId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type SearchResultResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -2971,6 +3763,17 @@ export type SearchResultsResolvers<
   total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   tracks?: Resolver<Array<ResolversTypes['Track']>, ParentType, ContextType>;
   users?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SourceStatResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SourceStat'] = ResolversParentTypes['SourceStat'],
+> = ResolversObject<{
+  attempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  source?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  successRate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -3193,6 +3996,65 @@ export type SubscriptionResolvers<
   >;
 }>;
 
+export type SyncJobResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SyncJob'] = ResolversParentTypes['SyncJob'],
+> = ResolversObject<{
+  albums?: Resolver<
+    Array<ResolversTypes['Album']>,
+    ParentType,
+    ContextType,
+    RequireFields<SyncJobAlbumsArgs, 'limit'>
+  >;
+  albumsCreated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  albumsSkipped?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  albumsUpdated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  artistsCreated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  artistsUpdated?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  completedAt?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  errorCode?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  errorMessage?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  jobId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  jobType?: Resolver<ResolversTypes['SyncJobType'], ParentType, ContextType>;
+  metadata?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  startedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['SyncJobStatus'], ParentType, ContextType>;
+  triggeredBy?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SyncJobsConnectionResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['SyncJobsConnection'] = ResolversParentTypes['SyncJobsConnection'],
+> = ResolversObject<{
+  hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  jobs?: Resolver<Array<ResolversTypes['SyncJob']>, ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type SystemHealthResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -3226,6 +4088,43 @@ export type ThroughputMetricsResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type TopRecommendedAlbumResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['TopRecommendedAlbum'] = ResolversParentTypes['TopRecommendedAlbum'],
+> = ResolversObject<{
+  album?: Resolver<ResolversTypes['Album'], ParentType, ContextType>;
+  asBasisCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  asTargetCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  averageScore?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  recommendationCount?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type TopRecommendedArtistResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['TopRecommendedArtist'] = ResolversParentTypes['TopRecommendedArtist'],
+> = ResolversObject<{
+  albumsInRecommendations?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  artist?: Resolver<ResolversTypes['Artist'], ParentType, ContextType>;
+  averageScore?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  recommendationCount?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type TrackResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -3247,9 +4146,20 @@ export type TrackResolvers<
   discNumber?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   duration?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  enrichmentLogs?: Resolver<
+    Array<ResolversTypes['EnrichmentLog']>,
+    ParentType,
+    ContextType,
+    Partial<TrackEnrichmentLogsArgs>
+  >;
   explicit?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   isrc?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  latestEnrichmentLog?: Resolver<
+    Maybe<ResolversTypes['EnrichmentLog']>,
+    ParentType,
+    ContextType
+  >;
   musicbrainzId?: Resolver<
     Maybe<ResolversTypes['UUID']>,
     ParentType,
@@ -3350,7 +4260,7 @@ export type UpdateProfilePayloadResolvers<
 > = ResolversObject<{
   bio?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  username?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -3416,12 +4326,16 @@ export type UserResolvers<
     ParentType,
     ContextType
   >;
+  lastActive?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
   mutualFollowers?: Resolver<
     Array<ResolversTypes['User']>,
     ParentType,
     ContextType
   >;
-  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   profileUpdatedAt?: Resolver<
     Maybe<ResolversTypes['DateTime']>,
     ParentType,
@@ -3444,6 +4358,7 @@ export type UserResolvers<
     ContextType
   >;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  username?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -3508,7 +4423,22 @@ export type UserSettingsResolvers<
     ParentType,
     ContextType
   >;
+  showCollectionAddsInFeed?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
   showCollections?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
+  showListenLaterInFeed?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
+  showOnboardingTour?: Resolver<
     ResolversTypes['Boolean'],
     ParentType,
     ContextType
@@ -3581,6 +4511,8 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   AlertThresholds?: AlertThresholdsResolvers<ContextType>;
   Artist?: ArtistResolvers<ContextType>;
   ArtistCredit?: ArtistCreditResolvers<ContextType>;
+  ArtistRecommendation?: ArtistRecommendationResolvers<ContextType>;
+  ArtistRecommendationsConnection?: ArtistRecommendationsConnectionResolvers<ContextType>;
   AudioFeatures?: AudioFeaturesResolvers<ContextType>;
   BatchEnrichmentResult?: BatchEnrichmentResultResolvers<ContextType>;
   CategorizedDiscography?: CategorizedDiscographyResolvers<ContextType>;
@@ -3591,7 +4523,12 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   CreateRecommendationPayload?: CreateRecommendationPayloadResolvers<ContextType>;
   DatabaseStats?: DatabaseStatsResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
+  DeleteAlbumPayload?: DeleteAlbumPayloadResolvers<ContextType>;
+  DeleteArtistPayload?: DeleteArtistPayloadResolvers<ContextType>;
+  EnrichmentFieldDiff?: EnrichmentFieldDiffResolvers<ContextType>;
+  EnrichmentLog?: EnrichmentLogResolvers<ContextType>;
   EnrichmentResult?: EnrichmentResultResolvers<ContextType>;
+  EnrichmentStats?: EnrichmentStatsResolvers<ContextType>;
   ErrorMetric?: ErrorMetricResolvers<ContextType>;
   FollowUserPayload?: FollowUserPayloadResolvers<ContextType>;
   HealthComponents?: HealthComponentsResolvers<ContextType>;
@@ -3603,6 +4540,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   OnboardingStatus?: OnboardingStatusResolvers<ContextType>;
   OtherAlbumInfo?: OtherAlbumInfoResolvers<ContextType>;
   PaginationInfo?: PaginationInfoResolvers<ContextType>;
+  PreviewEnrichmentResult?: PreviewEnrichmentResultResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   QueueMetrics?: QueueMetricsResolvers<ContextType>;
   QueueStats?: QueueStatsResolvers<ContextType>;
@@ -3611,8 +4549,10 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Recommendation?: RecommendationResolvers<ContextType>;
   RecommendationFeed?: RecommendationFeedResolvers<ContextType>;
   ReorderCollectionAlbumsPayload?: ReorderCollectionAlbumsPayloadResolvers<ContextType>;
+  RollbackSyncJobResult?: RollbackSyncJobResultResolvers<ContextType>;
   SearchResult?: SearchResultResolvers<ContextType>;
   SearchResults?: SearchResultsResolvers<ContextType>;
+  SourceStat?: SourceStatResolvers<ContextType>;
   SpotifyAlbum?: SpotifyAlbumResolvers<ContextType>;
   SpotifyArtist?: SpotifyArtistResolvers<ContextType>;
   SpotifyPlaylist?: SpotifyPlaylistResolvers<ContextType>;
@@ -3623,8 +4563,12 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   SpotifyTrack?: SpotifyTrackResolvers<ContextType>;
   SpotifyTrendingData?: SpotifyTrendingDataResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
+  SyncJob?: SyncJobResolvers<ContextType>;
+  SyncJobsConnection?: SyncJobsConnectionResolvers<ContextType>;
   SystemHealth?: SystemHealthResolvers<ContextType>;
   ThroughputMetrics?: ThroughputMetricsResolvers<ContextType>;
+  TopRecommendedAlbum?: TopRecommendedAlbumResolvers<ContextType>;
+  TopRecommendedArtist?: TopRecommendedArtistResolvers<ContextType>;
   Track?: TrackResolvers<ContextType>;
   UUID?: GraphQLScalarType;
   UnifiedRelease?: UnifiedReleaseResolvers<ContextType>;

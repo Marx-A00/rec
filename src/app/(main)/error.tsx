@@ -38,7 +38,7 @@ export default function MainError({
               Try again
             </button>
             <Link
-              href='/'
+              href='/home-mosaic'
               className='block sm:inline-block w-full sm:w-auto bg-zinc-700 hover:bg-zinc-600 text-white px-8 py-3 rounded-lg font-medium transition-colors text-center'
             >
               Go home

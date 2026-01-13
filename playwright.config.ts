@@ -12,7 +12,9 @@ dotenv.config({ path: path.resolve(__dirname, '.env.test') });
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './tests',
+  testDir: './tests/e2e',
+  /* Ignore Vitest unit tests - they should be run with pnpm test:unit */
+  testIgnore: ['**/unit/**'],
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -22,9 +24,10 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Global setup */
+  reporter: [['html', { open: 'never' }]],
+  /* Global setup and teardown - creates test users before, cleans up after */
   globalSetup: require.resolve('./tests/global-setup'),
+  globalTeardown: require.resolve('./tests/global-teardown'),
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */

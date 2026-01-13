@@ -339,7 +339,8 @@ export const queryResolvers: QueryResolvers = {
         where: { musicbrainzId },
       });
       if (!artist) return null;
-      return { id: artist.id } as ResolversTypes['Artist'];
+      // Return full artist data - field resolvers will handle relationships
+      return artist as ResolversTypes['Artist'];
     } catch (error) {
       throw new GraphQLError(
         `Failed to fetch artist by MusicBrainz ID: ${error}`
@@ -362,6 +363,21 @@ export const queryResolvers: QueryResolvers = {
       return { id: album.id } as ResolversTypes['Album'];
     } catch (error) {
       throw new GraphQLError(`Failed to fetch album: ${error}`);
+    }
+  },
+
+  albumByMusicBrainzId: async (_, { musicbrainzId }, { prisma }) => {
+    try {
+      const album = await prisma.album.findFirst({
+        where: { musicbrainzId },
+      });
+      if (!album) return null;
+      // Return full album data - field resolvers will handle relationships
+      return album as ResolversTypes['Album'];
+    } catch (error) {
+      throw new GraphQLError(
+        `Failed to fetch album by MusicBrainz ID: ${error}`
+      );
     }
   },
 
@@ -1190,7 +1206,43 @@ export const queryResolvers: QueryResolvers = {
         };
       }
 
-      const activities: any[] = [];
+      // Fetch privacy settings for all followed users
+      const followedUserSettings = await prisma.userSettings.findMany({
+        where: { userId: { in: followedUserIds } },
+        select: {
+          userId: true,
+          showRecentActivity: true,
+          showCollections: true,
+          showListenLaterInFeed: true,
+          showCollectionAddsInFeed: true,
+        },
+      });
+
+      // Create a settings map with defaults for users without settings
+      const settingsMap = new Map(followedUserSettings.map(s => [s.userId, s]));
+      const getSettings = (userId: string) =>
+        settingsMap.get(userId) || {
+          showRecentActivity: true,
+          showCollections: true,
+          showListenLaterInFeed: true,
+          showCollectionAddsInFeed: true,
+        };
+
+      const activities: Array<{
+        id: string;
+        type: string;
+        createdAt: Date;
+        actor: { id: string; name: string | null; image: string | null };
+        targetUser: {
+          id: string;
+          name: string | null;
+          image: string | null;
+        } | null;
+        album: unknown;
+        recommendation: unknown;
+        collection: unknown;
+        metadata: unknown;
+      }> = [];
       const cursorDate = cursor ? new Date(cursor) : null;
       const cursorCondition = cursorDate
         ? { createdAt: { lt: cursorDate } }
@@ -1212,6 +1264,10 @@ export const queryResolvers: QueryResolvers = {
         });
 
         followActivities.forEach(follow => {
+          // Check if the user allows their activity to be shown
+          const settings = getSettings(follow.followerId);
+          if (!settings.showRecentActivity) return;
+
           activities.push({
             id: `follow-${follow.followerId}-${follow.followedId}`,
             type: 'FOLLOW',
@@ -1259,6 +1315,10 @@ export const queryResolvers: QueryResolvers = {
         });
 
         recommendations.forEach(rec => {
+          // Check if the user allows their activity to be shown
+          const settings = getSettings(rec.userId);
+          if (!settings.showRecentActivity) return;
+
           activities.push({
             id: `rec-${rec.id}`,
             type: 'RECOMMENDATION',
@@ -1309,6 +1369,23 @@ export const queryResolvers: QueryResolvers = {
         });
 
         collectionAdds.forEach(ca => {
+          const settings = getSettings(ca.collection.userId);
+
+          // Check master activity switch
+          if (!settings.showRecentActivity) return;
+
+          // Check collections visibility
+          if (!settings.showCollections) return;
+
+          // Check if it's a private collection (allow only "My Collection")
+          if (!ca.collection.isPublic && ca.collection.name !== 'My Collection')
+            return;
+
+          // Check specific feed visibility settings
+          const isListenLater = ca.collection.name === 'Listen Later';
+          if (isListenLater && !settings.showListenLaterInFeed) return;
+          if (!isListenLater && !settings.showCollectionAddsInFeed) return;
+
           activities.push({
             id: `collection-${ca.id}`,
             type: 'COLLECTION_ADD',
@@ -1545,6 +1622,48 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  albumsByJobId: async (_, args, { prisma }) => {
+    try {
+      const { jobId } = args;
+
+      const albums = await prisma.album.findMany({
+        where: {
+          metadata: {
+            path: ['jobId'],
+            equals: jobId,
+          },
+        },
+        include: {
+          artists: {
+            include: {
+              artist: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      // Transform to match GraphQL schema
+      return albums.map(album => ({
+        ...album,
+        artists: album.artists.map(aa => ({
+          artist: aa.artist,
+          role: aa.role,
+          position: aa.position,
+        })),
+        needsEnrichment:
+          album.dataQuality === 'LOW' ||
+          album.enrichmentStatus === 'PENDING' ||
+          album.enrichmentStatus === 'FAILED' ||
+          !album.musicbrainzId,
+      }));
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch albums by job ID: ${error}`);
+    }
+  },
+
   searchAlbums: async (_, args, { prisma }) => {
     try {
       const {
@@ -1553,6 +1672,7 @@ export const queryResolvers: QueryResolvers = {
         dataQuality,
         enrichmentStatus,
         needsEnrichment,
+        source,
         sortBy = 'title',
         sortOrder = 'asc',
         skip = 0,
@@ -1588,6 +1708,10 @@ export const queryResolvers: QueryResolvers = {
           { enrichmentStatus: { in: ['PENDING', 'FAILED'] } },
           { musicbrainzId: null }
         );
+      }
+      // Filter by source (e.g., SPOTIFY, MUSICBRAINZ)
+      if (source && source !== 'all') {
+        where.source = source;
       }
 
       // Sorting
@@ -1631,14 +1755,10 @@ export const queryResolvers: QueryResolvers = {
   },
 
   searchArtists: async (_, args, { prisma }) => {
-    const requestId = `search-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    console.log(
-      `🔍 [Search Request] ID: ${requestId} | Query: "${args.query}" | Limit: ${args.limit || 50}`
-    );
-
     try {
       const {
         query,
+        id,
         dataQuality,
         enrichmentStatus,
         needsEnrichment,
@@ -1648,204 +1768,78 @@ export const queryResolvers: QueryResolvers = {
         limit = 50,
       } = args;
 
-      // If no query, return empty results (external API search requires query)
-      if (!query) {
-        return [];
+      // Build where clause for local database search
+      const where: any = {};
+
+      // Direct ID search takes priority
+      if (id) {
+        where.id = id;
       }
 
-      // Check cache first for external API search results
-      const cacheKey = `artist-search:${query.toLowerCase().trim()}`;
-      const cached = await prisma.cacheData.findUnique({
-        where: { key: cacheKey },
-      });
-
-      if (cached) {
-        const now = new Date();
-        if (cached.expires > now) {
-          console.log(
-            `✅ [Cache] Hit for artist search: "${query}" (expires: ${cached.expires.toISOString()})`
-          );
-          return cached.data as any[]; // Return cached results
-        } else {
-          // Delete expired cache entry
-          console.log(
-            `🗑️ [Cache] Expired entry found for "${query}", cleaning up...`
-          );
-          await prisma.cacheData
-            .delete({ where: { key: cacheKey } })
-            .catch(() => {
-              // Ignore deletion errors
-            });
-        }
+      // Text search on name if query provided
+      if (query) {
+        where.name = {
+          contains: query,
+          mode: 'insensitive',
+        };
       }
 
-      console.log(`❌ [Cache] Miss for artist search: "${query}"`);
+      // Filter by data quality
+      if (dataQuality && dataQuality !== 'all') {
+        where.dataQuality = dataQuality;
+      }
 
-      // Parallel API calls to MusicBrainz and Last.fm using Promise.allSettled
-      const startTime = Date.now();
-      const searchLimit = Math.min(limit, 25); // Limit API calls
+      // Filter by enrichment status
+      if (enrichmentStatus && enrichmentStatus !== 'all') {
+        where.enrichmentStatus = enrichmentStatus;
+      }
 
-      const searchPromises = [
-        // MusicBrainz search
-        (async () => {
-          try {
-            const { getQueuedMusicBrainzService } = await import(
-              '../../musicbrainz/queue-service'
-            );
-            const mbService = getQueuedMusicBrainzService();
-            const results = await mbService.searchArtists(query, searchLimit);
-            console.log(
-              `✅ [MusicBrainz] Found ${results.length} artists for "${query}"`
-            );
-            return { source: 'musicbrainz', results, error: null };
-          } catch (error) {
-            console.error(`❌ [MusicBrainz] Search failed:`, error);
-            return { source: 'musicbrainz', results: [], error };
-          }
-        })(),
-        // Last.fm search
-        (async () => {
-          try {
-            const { getQueuedLastFmService } = await import(
-              '../../lastfm/queue-service'
-            );
-            const lfmService = getQueuedLastFmService();
-            const results = await lfmService.searchArtists(query);
-            console.log(
-              `✅ [Last.fm] Found ${results.length} artists for "${query}"`
-            );
-            return { source: 'lastfm', results, error: null };
-          } catch (error) {
-            console.error(`❌ [Last.fm] Search failed:`, error);
-            return { source: 'lastfm', results: [], error };
-          }
-        })(),
-      ];
-
-      const settledResults = await Promise.allSettled(searchPromises);
-      const duration = Date.now() - startTime;
-
-      // Extract results from settled promises with detailed error tracking
-      const mbResult =
-        settledResults[0].status === 'fulfilled'
-          ? settledResults[0].value
-          : null;
-      const lfmResult =
-        settledResults[1].status === 'fulfilled'
-          ? settledResults[1].value
-          : null;
-
-      const mbResults = mbResult?.results || [];
-      const lfmResults = lfmResult?.results || [];
-
-      // Log partial failures
-      const mbFailed =
-        settledResults[0].status === 'rejected' || mbResult?.error;
-      const lfmFailed =
-        settledResults[1].status === 'rejected' || lfmResult?.error;
-
-      if (mbFailed || lfmFailed) {
-        const failures = [];
-        if (mbFailed) failures.push('MusicBrainz');
-        if (lfmFailed) failures.push('Last.fm');
-        console.warn(
-          `⚠️ [Search] Partial failure - ${failures.join(', ')} API(s) failed`
+      // Filter by needs enrichment
+      if (needsEnrichment) {
+        where.OR = where.OR || [];
+        where.OR.push(
+          { imageUrl: null },
+          { cloudflareImageId: null },
+          { dataQuality: 'LOW' },
+          { enrichmentStatus: { in: ['PENDING', 'FAILED'] } }
         );
       }
 
-      console.log(
-        `🔍 [Search] Completed in ${duration}ms - MusicBrainz: ${mbResults.length}, Last.fm: ${lfmResults.length}, Success rate: ${
-          (((mbFailed ? 0 : 1) + (lfmFailed ? 0 : 1)) / 2) * 100
-        }%`
-      );
+      // Build orderBy clause
+      const orderBy: any = {};
+      if (sortBy === 'name') orderBy.name = sortOrder;
+      else if (sortBy === 'createdAt') orderBy.createdAt = sortOrder;
+      else if (sortBy === 'updatedAt') orderBy.updatedAt = sortOrder;
+      else if (sortBy === 'lastEnriched') orderBy.lastEnriched = sortOrder;
 
-      // If both APIs failed, return empty array
-      if (mbFailed && lfmFailed) {
-        console.error(`❌ [Search] Both APIs failed for query: "${query}"`);
-        return [];
-      }
-
-      // Merge results with fuzzy matching
-      const { findLastFmMatch } = await import('../../utils/fuzzy-match');
-      const mergedResults = mbResults.map((mbArtist: any) => {
-        // Try to find matching Last.fm data
-        const lfmMatch = findLastFmMatch(mbArtist.name, lfmResults);
-
-        if (lfmMatch) {
-          console.log(
-            `🔗 [Fuzzy Match] "${mbArtist.name}" → "${lfmMatch.match.name}" (confidence: ${lfmMatch.confidence}, score: ${lfmMatch.score})`
-          );
-
-          // Merge: Prioritize Last.fm image and add listener count
-          return {
-            ...mbArtist,
-            imageUrl: lfmMatch.match.imageUrl || mbArtist.imageUrl,
-            listeners: lfmMatch.match.listeners,
-            lastFmMatch: {
-              confidence: lfmMatch.confidence,
-              score: lfmMatch.score,
+      // Query local database
+      const artists = await prisma.artist.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          _count: {
+            select: {
+              albums: true,
+              tracks: true,
             },
-          };
-        }
-
-        // No Last.fm match found
-        return mbArtist;
+          },
+        },
       });
 
-      const matchCount = mergedResults.filter((r: any) => r.lastFmMatch).length;
-      const matchRate =
-        mbResults.length > 0
-          ? ((matchCount / mbResults.length) * 100).toFixed(1)
-          : '0';
-      console.log(
-        `✅ [Merge] Matched ${matchCount}/${mbResults.length} MusicBrainz artists with Last.fm data (${matchRate}%)`
-      );
-
-      // Cache merged results with metadata (reuse cacheKey from above)
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
-
-      try {
-        await prisma.cacheData.upsert({
-          where: { key: cacheKey },
-          create: {
-            key: cacheKey,
-            data: mergedResults as any,
-            expires: expiresAt,
-            metadata: {
-              mbCount: mbResults.length,
-              lfmCount: lfmResults.length,
-              matchedCount: matchCount,
-              searchDuration: duration,
-              cachedAt: new Date().toISOString(),
-            },
-          },
-          update: {
-            data: mergedResults as any,
-            expires: expiresAt,
-            metadata: {
-              mbCount: mbResults.length,
-              lfmCount: lfmResults.length,
-              matchedCount: matchCount,
-              searchDuration: duration,
-              cachedAt: new Date().toISOString(),
-            },
-          },
-        });
-        console.log(
-          `💾 [Cache] Stored results for "${query}" (expires: ${expiresAt.toISOString()})`
-        );
-      } catch (cacheError) {
-        console.error(`⚠️ [Cache] Failed to store results:`, cacheError);
-        // Don't fail the request if caching fails
-      }
-
-      // Final summary log
-      console.log(
-        `📊 [Search Summary] Query: "${query}" | Total: ${mergedResults.length} | MB: ${mbResults.length} | LFM: ${lfmResults.length} | Matched: ${matchCount} (${matchRate}%) | Duration: ${duration}ms | Cached: ${!mbFailed && !lfmFailed}`
-      );
-
-      // Apply pagination (skip and limit)
-      return mergedResults.slice(skip, skip + limit);
+      // Transform to match GraphQL schema with computed fields
+      return artists.map(artist => ({
+        ...artist,
+        albumCount: artist._count.albums,
+        trackCount: artist._count.tracks,
+        needsEnrichment:
+          !artist.imageUrl ||
+          !artist.cloudflareImageId ||
+          artist.dataQuality === 'LOW' ||
+          artist.enrichmentStatus === 'PENDING' ||
+          artist.enrichmentStatus === 'FAILED',
+      }));
     } catch (error) {
       console.error(
         `❌ [Search Error] Failed to search artists for "${args.query}":`,
@@ -1895,6 +1889,469 @@ export const queryResolvers: QueryResolvers = {
       }));
     } catch (error) {
       throw new GraphQLError(`Failed to search tracks: ${error}`);
+    }
+  },
+
+  // Enrichment log queries
+  enrichmentLogs: async (_, args, { prisma }) => {
+    try {
+      const where: Record<string, unknown> = {};
+
+      if (args.entityType) where.entityType = args.entityType;
+      if (args.entityId) where.entityId = args.entityId;
+      if (args.status) where.status = args.status;
+      if (args.sources && args.sources.length > 0) {
+        where.sources = { hasSome: args.sources };
+      }
+
+      const logs = await prisma.enrichmentLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: args.skip || 0,
+        take: args.limit || 50,
+      });
+
+      return logs;
+    } catch (error) {
+      throw new GraphQLError(`Failed to fetch enrichment logs: ${error}`);
+    }
+  },
+
+  enrichmentStats: async (_, args, { prisma }) => {
+    try {
+      const where: Record<string, unknown> = {};
+
+      if (args.entityType) where.entityType = args.entityType;
+      if (args.timeRange) {
+        where.createdAt = {
+          gte: args.timeRange.from,
+          lte: args.timeRange.to,
+        };
+      }
+
+      const logs = await prisma.enrichmentLog.findMany({ where });
+
+      // Calculate source statistics
+      const sourceMap = new Map<string, { total: number; success: number }>();
+
+      logs.forEach(log => {
+        log.sources.forEach(source => {
+          const stats = sourceMap.get(source) || { total: 0, success: 0 };
+          stats.total++;
+          if (log.status === 'SUCCESS') stats.success++;
+          sourceMap.set(source, stats);
+        });
+      });
+
+      const sourceStats = Array.from(sourceMap.entries()).map(
+        ([source, stats]) => ({
+          source,
+          attempts: stats.total,
+          successRate: stats.total > 0 ? stats.success / stats.total : 0,
+        })
+      );
+
+      const totalLogs = logs.length;
+      const avgDurationMs =
+        totalLogs > 0
+          ? logs.reduce((sum, l) => sum + (l.durationMs || 0), 0) / totalLogs
+          : 0;
+
+      return {
+        totalAttempts: totalLogs,
+        successCount: logs.filter(l => l.status === 'SUCCESS').length,
+        failedCount: logs.filter(l => l.status === 'FAILED').length,
+        noDataCount: logs.filter(l => l.status === 'NO_DATA_AVAILABLE').length,
+        skippedCount: logs.filter(l => l.status === 'SKIPPED').length,
+        averageDurationMs: avgDurationMs,
+        sourceStats,
+      };
+    } catch (error) {
+      throw new GraphQLError(`Failed to calculate enrichment stats: ${error}`);
+    }
+  },
+
+  // Top recommended albums - albums that appear most frequently in recommendations
+  topRecommendedAlbums: async (_, { limit = 20 }, { prisma }) => {
+    try {
+      // Get all albums that appear in recommendations with their counts
+      const albumStats = await prisma.$queryRaw<
+        Array<{
+          album_id: string;
+          total_count: bigint;
+          basis_count: bigint;
+          target_count: bigint;
+          avg_score: number;
+        }>
+      >`
+        WITH album_recommendation_stats AS (
+          SELECT 
+            album_id,
+            SUM(basis_count + target_count) as total_count,
+            SUM(basis_count) as basis_count,
+            SUM(target_count) as target_count,
+            AVG(avg_score) as avg_score
+          FROM (
+            SELECT 
+              basis_album_id as album_id,
+              COUNT(*) as basis_count,
+              0 as target_count,
+              AVG(score) as avg_score
+            FROM "Recommendation"
+            GROUP BY basis_album_id
+            
+            UNION ALL
+            
+            SELECT 
+              recommended_album_id as album_id,
+              0 as basis_count,
+              COUNT(*) as target_count,
+              AVG(score) as avg_score
+            FROM "Recommendation"
+            GROUP BY recommended_album_id
+          ) combined
+          GROUP BY album_id
+        )
+        SELECT 
+          album_id,
+          total_count,
+          basis_count,
+          target_count,
+          avg_score
+        FROM album_recommendation_stats
+        ORDER BY total_count DESC
+        LIMIT ${limit}
+      `;
+
+      if (albumStats.length === 0) {
+        return [];
+      }
+
+      // Fetch the actual album data
+      const albumIds = albumStats.map(stat => stat.album_id);
+      const albums = await prisma.album.findMany({
+        where: { id: { in: albumIds } },
+        include: {
+          artists: {
+            include: { artist: true },
+            orderBy: { position: 'asc' },
+          },
+        },
+      });
+
+      // Create a map for quick lookup
+      const albumMap = new Map(albums.map(album => [album.id, album]));
+
+      // Combine stats with album data, maintaining the order
+      return albumStats
+        .map(stat => {
+          const album = albumMap.get(stat.album_id);
+          if (!album) return null;
+
+          return {
+            album,
+            recommendationCount: Number(stat.total_count),
+            asBasisCount: Number(stat.basis_count),
+            asTargetCount: Number(stat.target_count),
+            averageScore: stat.avg_score || 0,
+          };
+        })
+        .filter(Boolean);
+    } catch (error) {
+      console.error('Error fetching top recommended albums:', error);
+      throw new GraphQLError(
+        `Failed to fetch top recommended albums: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
+
+  // Top recommended artists - artists whose albums appear most frequently in recommendations
+  topRecommendedArtists: async (_, { limit = 20 }, { prisma }) => {
+    try {
+      // Get artists with the most albums appearing in recommendations
+      const artistStats = await prisma.$queryRaw<
+        Array<{
+          artist_id: string;
+          total_count: bigint;
+          album_count: bigint;
+          avg_score: number;
+        }>
+      >`
+        WITH album_recommendations AS (
+          SELECT basis_album_id as album_id, score FROM "Recommendation"
+          UNION ALL
+          SELECT recommended_album_id as album_id, score FROM "Recommendation"
+        ),
+        artist_album_stats AS (
+          SELECT 
+            aa.artist_id,
+            COUNT(*) as total_count,
+            COUNT(DISTINCT ar.album_id) as album_count,
+            AVG(ar.score) as avg_score
+          FROM album_recommendations ar
+          JOIN album_artists aa ON ar.album_id = aa.album_id
+          GROUP BY aa.artist_id
+        )
+        SELECT 
+          artist_id,
+          total_count,
+          album_count,
+          avg_score
+        FROM artist_album_stats
+        ORDER BY total_count DESC
+        LIMIT ${limit}
+      `;
+
+      if (artistStats.length === 0) {
+        return [];
+      }
+
+      // Fetch the actual artist data
+      const artistIds = artistStats.map(stat => stat.artist_id);
+      const artists = await prisma.artist.findMany({
+        where: { id: { in: artistIds } },
+      });
+
+      // Create a map for quick lookup
+      const artistMap = new Map(artists.map(artist => [artist.id, artist]));
+
+      // Combine stats with artist data, maintaining the order
+      return artistStats
+        .map(stat => {
+          const artist = artistMap.get(stat.artist_id);
+          if (!artist) return null;
+
+          return {
+            artist,
+            recommendationCount: Number(stat.total_count),
+            albumsInRecommendations: Number(stat.album_count),
+            averageScore: stat.avg_score || 0,
+          };
+        })
+        .filter(Boolean);
+    } catch (error) {
+      console.error('Error fetching top recommended artists:', error);
+      throw new GraphQLError(
+        `Failed to fetch top recommended artists: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
+
+  artistRecommendations: async (
+    _,
+    { artistId, filter, sort = 'NEWEST', limit = 12, offset = 0 },
+    { prisma, session }
+  ) => {
+    try {
+      // 1. Get all albums by this artist from AlbumArtist junction table
+      const artistAlbums = await prisma.albumArtist.findMany({
+        where: { artistId },
+        select: { albumId: true },
+      });
+      const albumIds = artistAlbums.map((a: { albumId: string }) => a.albumId);
+
+      if (albumIds.length === 0) {
+        return { recommendations: [], totalCount: 0, hasMore: false };
+      }
+
+      // 2. Build filter condition based on AlbumRole
+      type WhereCondition = {
+        basisAlbumId?: { in: string[] };
+        recommendedAlbumId?: { in: string[] };
+        OR?: Array<{
+          basisAlbumId?: { in: string[] };
+          recommendedAlbumId?: { in: string[] };
+        }>;
+      };
+
+      let whereCondition: WhereCondition;
+      if (filter === 'BASIS') {
+        whereCondition = { basisAlbumId: { in: albumIds } };
+      } else if (filter === 'RECOMMENDED') {
+        whereCondition = { recommendedAlbumId: { in: albumIds } };
+      } else {
+        // ALL or undefined - either basis or recommended
+        whereCondition = {
+          OR: [
+            { basisAlbumId: { in: albumIds } },
+            { recommendedAlbumId: { in: albumIds } },
+          ],
+        };
+      }
+
+      // 3. Get total count for pagination
+      const totalCount = await prisma.recommendation.count({
+        where: whereCondition,
+      });
+
+      // 4. Map sort to Prisma orderBy
+      const orderByMap: Record<
+        string,
+        { createdAt?: 'desc' | 'asc'; score?: 'desc' | 'asc' }
+      > = {
+        NEWEST: { createdAt: 'desc' },
+        OLDEST: { createdAt: 'asc' },
+        HIGHEST_SCORE: { score: 'desc' },
+        LOWEST_SCORE: { score: 'asc' },
+      };
+      const orderBy = orderByMap[sort] || orderByMap.NEWEST;
+
+      // 5. Fetch recommendations with related data
+      const recommendations = await prisma.recommendation.findMany({
+        where: whereCondition,
+        orderBy,
+        skip: offset,
+        take: limit,
+        include: {
+          basisAlbum: {
+            include: { artists: { include: { artist: true } } },
+          },
+          recommendedAlbum: {
+            include: { artists: { include: { artist: true } } },
+          },
+          user: true,
+        },
+      });
+
+      // 6. Transform to add albumRole and isOwnRecommendation
+      const transformedRecs = recommendations.map(
+        (rec: {
+          id: string;
+          score: number;
+          createdAt: Date;
+          userId: string;
+          basisAlbumId: string;
+          recommendedAlbumId: string;
+          basisAlbum: unknown;
+          recommendedAlbum: unknown;
+          user: unknown;
+        }) => {
+          const basisInArtist = albumIds.includes(rec.basisAlbumId);
+          const recommendedInArtist = albumIds.includes(rec.recommendedAlbumId);
+
+          let albumRole: 'BASIS' | 'RECOMMENDED' | 'BOTH';
+          if (basisInArtist && recommendedInArtist) {
+            albumRole = 'BOTH';
+          } else if (basisInArtist) {
+            albumRole = 'BASIS';
+          } else {
+            albumRole = 'RECOMMENDED';
+          }
+
+          return {
+            id: rec.id,
+            score: rec.score,
+            description: null, // Recommendation model doesn't have description
+            createdAt: rec.createdAt,
+            albumRole,
+            basisAlbum: rec.basisAlbum,
+            recommendedAlbum: rec.recommendedAlbum,
+            user: rec.user,
+            isOwnRecommendation: session?.user?.id === rec.userId,
+          };
+        }
+      );
+
+      return {
+        recommendations: transformedRecs,
+        totalCount,
+        hasMore: offset + recommendations.length < totalCount,
+      };
+    } catch (error) {
+      console.error('Error fetching artist recommendations:', error);
+      throw new GraphQLError(
+        `Failed to fetch artist recommendations: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
+
+  // ============================================================================
+  // Sync Job Queries
+  // ============================================================================
+
+  syncJobs: async (_, { input }, { prisma }) => {
+    try {
+      const {
+        jobType,
+        status,
+        startedAfter,
+        startedBefore,
+        limit = 20,
+        offset = 0,
+      } = input || {};
+
+      const where: Record<string, unknown> = {};
+
+      if (jobType) {
+        where.jobType = jobType;
+      }
+      if (status) {
+        where.status = status;
+      }
+      if (startedAfter || startedBefore) {
+        where.startedAt = {};
+        if (startedAfter) {
+          (where.startedAt as Record<string, unknown>).gte = new Date(
+            startedAfter
+          );
+        }
+        if (startedBefore) {
+          (where.startedAt as Record<string, unknown>).lte = new Date(
+            startedBefore
+          );
+        }
+      }
+
+      const [jobs, totalCount] = await Promise.all([
+        prisma.syncJob.findMany({
+          where,
+          orderBy: { startedAt: 'desc' },
+          take: limit,
+          skip: offset,
+        }),
+        prisma.syncJob.count({ where }),
+      ]);
+
+      return {
+        jobs,
+        totalCount,
+        hasMore: offset + jobs.length < totalCount,
+      };
+    } catch (error) {
+      console.error('Error fetching sync jobs:', error);
+      throw new GraphQLError(
+        `Failed to fetch sync jobs: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
+
+  syncJob: async (_, { id }, { prisma }) => {
+    try {
+      const syncJob = await prisma.syncJob.findUnique({
+        where: { id },
+      });
+
+      return syncJob;
+    } catch (error) {
+      console.error('Error fetching sync job:', error);
+      throw new GraphQLError(
+        `Failed to fetch sync job: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
+
+  syncJobByJobId: async (_, { jobId }, { prisma }) => {
+    try {
+      const syncJob = await prisma.syncJob.findUnique({
+        where: { jobId },
+      });
+
+      return syncJob;
+    } catch (error) {
+      console.error('Error fetching sync job by jobId:', error);
+      throw new GraphQLError(
+        `Failed to fetch sync job: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   },
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects

@@ -28,7 +28,7 @@ query GetAlbumRecommendations(
       }
       user {
         id
-        name
+        username
         image
       }
     }

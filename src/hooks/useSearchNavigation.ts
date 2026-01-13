@@ -114,7 +114,9 @@ export function useSearchNavigation(options: UseSearchNavigationOptions) {
           // Navigate to user profile page
           await navigateToProfile(result.id, {
             onError: error => {
-              throw new Error(`Failed to navigate to user profile: ${error.message}`);
+              throw new Error(
+                `Failed to navigate to user profile: ${error.message}`
+              );
             },
           });
         } else {

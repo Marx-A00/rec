@@ -108,8 +108,10 @@ export interface CheckAlbumEnrichmentJobData {
     | 'search'
     | 'browse'
     | 'manual'
-    | 'spotify_sync';
+    | 'spotify_sync'
+    | 'admin_manual';
   priority?: 'low' | 'medium' | 'high';
+  force?: boolean;
   requestId?: string;
 }
 
@@ -121,8 +123,10 @@ export interface CheckArtistEnrichmentJobData {
     | 'search'
     | 'browse'
     | 'manual'
-    | 'spotify_sync';
+    | 'spotify_sync'
+    | 'admin_manual';
   priority?: 'low' | 'medium' | 'high';
+  force?: boolean;
   requestId?: string;
 }
 
@@ -142,26 +146,30 @@ export interface CheckTrackEnrichmentJobData {
 export interface EnrichAlbumJobData {
   albumId: string;
   priority?: 'low' | 'medium' | 'high';
+  force?: boolean;
   userAction?:
     | 'collection_add'
     | 'recommendation_create'
     | 'search'
     | 'browse'
     | 'manual'
-    | 'spotify_sync';
+    | 'spotify_sync'
+    | 'admin_manual';
   requestId?: string;
 }
 
 export interface EnrichArtistJobData {
   artistId: string;
   priority?: 'low' | 'medium' | 'high';
+  force?: boolean;
   userAction?:
     | 'collection_add'
     | 'recommendation_create'
     | 'search'
     | 'browse'
     | 'manual'
-    | 'spotify_sync';
+    | 'spotify_sync'
+    | 'admin_manual';
   requestId?: string;
 }
 
@@ -183,11 +191,19 @@ export interface EnrichTrackJobData {
 // ============================================================================
 
 export interface SpotifySyncNewReleasesJobData {
-  limit?: number; // Number of releases to fetch (default: 20)
+  limit?: number; // Number of releases to fetch per page (default: 50)
   country?: string; // Country code (default: 'US')
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
   source?: 'scheduled' | 'manual' | 'graphql'; // How this sync was triggered
+
+  // Tag-based filtering for Spotify Search API
+  genreTags?: string[]; // e.g., ['rock', 'metal', 'pop']
+  year?: number; // e.g., 2025 (defaults to current year)
+
+  // Pagination and follower filtering (Task 11)
+  pages?: number; // Number of pages to fetch (default: 1, max: 4 for 200 albums)
+  minFollowers?: number; // Minimum artist followers to include album (default: undefined = no filtering)
 }
 
 export interface SpotifySyncFeaturedPlaylistsJobData {
@@ -379,6 +395,25 @@ export interface MusicBrainzJobOptions {
    * Default: 50 (keep for debugging)
    */
   removeOnFail?: number | boolean;
+
+  /**
+   * Job ID to prevent duplicates (used with repeatable jobs)
+   */
+  jobId?: string;
+
+  /**
+   * Repeatable job configuration
+   */
+  repeat?: {
+    /**
+     * Repeat every X milliseconds
+     */
+    every?: number;
+    /**
+     * Cron pattern for scheduling
+     */
+    pattern?: string;
+  };
 }
 
 // ============================================================================

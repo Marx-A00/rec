@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 import NavigationItem from './NavigationItem';
+import HelpMenu from './HelpMenu';
 
 interface SidebarProps {
   items?: NavItem[];
@@ -78,11 +79,18 @@ export const Sidebar: FC<SidebarProps> = ({
               item={item}
               context={navigationContext}
               isCollapsed={true}
-              data-tour-step={item.id === 'recommend' ? 'create-recommendation' : undefined}
+              data-tour-step={
+                item.id === 'recommend' ? 'create-recommendation' : undefined
+              }
             />
           ))}
         </div>
       </TooltipProvider>
+
+      {/* Help Menu at bottom */}
+      <div className='pb-6 flex justify-center'>
+        <HelpMenu />
+      </div>
     </nav>
   );
 };

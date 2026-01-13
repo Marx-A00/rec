@@ -13,8 +13,12 @@ import {
   Download,
   TrendingUp,
   TrendingDown,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
+
+import { useAlbumsByJobIdQuery } from '@/generated/graphql';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -89,6 +93,75 @@ interface JobStats {
 const MONITORING_API =
   process.env.NEXT_PUBLIC_MONITORING_API_URL || 'http://localhost:3001';
 
+function JobAlbums({ jobId, jobName }: { jobId: string; jobName: string }) {
+  const { data, isLoading } = useAlbumsByJobIdQuery(
+    { jobId },
+    { enabled: jobName.includes('spotify') }
+  );
+
+  if (!jobName.includes('spotify')) {
+    return null;
+  }
+
+  if (isLoading) {
+    return (
+      <div className='space-y-2'>
+        <div className='text-sm text-zinc-400'>Albums Added</div>
+        <div className='text-zinc-500'>Loading albums...</div>
+      </div>
+    );
+  }
+
+  const albums = data?.albumsByJobId || [];
+
+  if (albums.length === 0) {
+    return (
+      <div className='space-y-2'>
+        <div className='text-sm text-zinc-400'>Albums Added</div>
+        <div className='text-zinc-500'>No albums found for this job</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className='space-y-2'>
+      <div className='text-sm text-zinc-400'>
+        Albums Added ({albums.length})
+      </div>
+      <div className='grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto'>
+        {albums.map(album => (
+          <Link
+            key={album.id}
+            href={`/admin/music-database?id=${album.id}`}
+            className='bg-zinc-800 rounded-lg p-2 hover:bg-zinc-700 transition-colors group'
+          >
+            <div className='flex gap-2'>
+              <div className='w-12 h-12 bg-zinc-700 rounded flex-shrink-0 overflow-hidden'>
+                {album.coverArtUrl && (
+                  <img
+                    src={album.coverArtUrl}
+                    alt={album.title}
+                    className='w-full h-full object-cover'
+                  />
+                )}
+              </div>
+              <div className='flex-1 min-w-0'>
+                <div className='text-sm font-medium text-white truncate group-hover:text-green-400'>
+                  {album.title}
+                </div>
+                <div className='text-xs text-zinc-400 truncate'>
+                  {album.artists[0]?.artist.name || 'Unknown Artist'}
+                </div>
+              </div>
+              <ExternalLink className='h-4 w-4 text-zinc-500 group-hover:text-green-400 flex-shrink-0' />
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function JobHistoryPage() {
   const [jobs, setJobs] = useState<JobHistoryItem[]>([]);
   const [stats, setStats] = useState<JobStats | null>(null);
@@ -97,6 +170,7 @@ export default function JobHistoryPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [timeFilter, setTimeFilter] = useState<string>('24h');
+  const [jobTypeFilter, setJobTypeFilter] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobHistoryItem | null>(null);
 
@@ -311,6 +385,22 @@ export default function JobHistoryPage() {
                 </SelectContent>
               </Select>
 
+              <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
+                <SelectTrigger className='w-48 bg-zinc-800 border-zinc-700 text-white'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className='bg-zinc-800 border-zinc-700'>
+                  <SelectItem value='all'>All Job Types</SelectItem>
+                  <SelectItem value='spotify'>🎵 Spotify Sync</SelectItem>
+                  <SelectItem value='musicbrainz'>
+                    🎼 MusicBrainz Sync
+                  </SelectItem>
+                  <SelectItem value='enrichment'>✨ Enrichment</SelectItem>
+                  <SelectItem value='cache'>💾 Cache</SelectItem>
+                  <SelectItem value='discogs'>💿 Discogs</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Button
                 onClick={handleRefresh}
                 disabled={refreshing}
@@ -369,67 +459,83 @@ export default function JobHistoryPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  jobs.map(job => (
-                    <TableRow
-                      key={job.id}
-                      className='border-zinc-800 cursor-pointer hover:bg-zinc-800/50 transition-colors'
-                      onClick={() => setSelectedJob(job)}
-                    >
-                      <TableCell>
-                        <div className='flex items-center gap-2'>
-                          {getStatusIcon(job.status)}
-                          <Badge
-                            variant={getStatusBadgeVariant(job.status) as any}
-                            className='text-xs'
-                          >
-                            {job.status}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className='text-zinc-300 font-medium'>
-                        {job.name}
-                      </TableCell>
-                      <TableCell className='text-zinc-400'>
-                        {job.albumName || '-'}
-                      </TableCell>
-                      <TableCell className='text-zinc-400'>
-                        {formatDistanceToNow(new Date(job.createdAt))}
-                      </TableCell>
-                      <TableCell className='text-zinc-400'>
-                        {formatDuration(job.duration)}
-                      </TableCell>
-                      <TableCell className='text-zinc-400'>
-                        {job.attempts}
-                      </TableCell>
-                      <TableCell>
-                        {job.status === 'failed' && (
-                          <Button
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleRetryJob(job.id);
-                            }}
-                            size='sm'
-                            variant='ghost'
-                            className='text-zinc-400 hover:text-white'
-                          >
-                            <RefreshCw className='h-3 w-3 mr-1' />
-                            Retry
-                          </Button>
-                        )}
-                        {job.error && (
-                          <Button
-                            onClick={e => e.stopPropagation()}
-                            size='sm'
-                            variant='ghost'
-                            className='text-zinc-400 hover:text-white'
-                            title={job.error}
-                          >
-                            <AlertCircle className='h-3 w-3' />
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  jobs
+                    .filter(job => {
+                      // Filter by job type
+                      if (jobTypeFilter === 'all') return true;
+                      if (jobTypeFilter === 'spotify')
+                        return job.name.includes('spotify');
+                      if (jobTypeFilter === 'musicbrainz')
+                        return job.name.includes('musicbrainz');
+                      if (jobTypeFilter === 'enrichment')
+                        return job.name.includes('enrichment');
+                      if (jobTypeFilter === 'cache')
+                        return job.name.includes('cache');
+                      if (jobTypeFilter === 'discogs')
+                        return job.name.includes('discogs');
+                      return true;
+                    })
+                    .map(job => (
+                      <TableRow
+                        key={job.id}
+                        className='border-zinc-800 cursor-pointer hover:bg-zinc-800/50 transition-colors'
+                        onClick={() => setSelectedJob(job)}
+                      >
+                        <TableCell>
+                          <div className='flex items-center gap-2'>
+                            {getStatusIcon(job.status)}
+                            <Badge
+                              variant={getStatusBadgeVariant(job.status) as any}
+                              className='text-xs'
+                            >
+                              {job.status}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className='text-zinc-300 font-medium'>
+                          {job.name}
+                        </TableCell>
+                        <TableCell className='text-zinc-400'>
+                          {job.albumName || '-'}
+                        </TableCell>
+                        <TableCell className='text-zinc-400'>
+                          {formatDistanceToNow(new Date(job.createdAt))}
+                        </TableCell>
+                        <TableCell className='text-zinc-400'>
+                          {formatDuration(job.duration)}
+                        </TableCell>
+                        <TableCell className='text-zinc-400'>
+                          {job.attempts}
+                        </TableCell>
+                        <TableCell>
+                          {job.status === 'failed' && (
+                            <Button
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleRetryJob(job.id);
+                              }}
+                              size='sm'
+                              variant='ghost'
+                              className='text-zinc-400 hover:text-white'
+                            >
+                              <RefreshCw className='h-3 w-3 mr-1' />
+                              Retry
+                            </Button>
+                          )}
+                          {job.error && (
+                            <Button
+                              onClick={e => e.stopPropagation()}
+                              size='sm'
+                              variant='ghost'
+                              className='text-zinc-400 hover:text-white'
+                              title={job.error}
+                            >
+                              <AlertCircle className='h-3 w-3' />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
                 )}
               </TableBody>
             </Table>
@@ -566,6 +672,9 @@ export default function JobHistoryPage() {
                   </div>
                 </div>
               )}
+
+              {/* Albums Added (for Spotify sync jobs) */}
+              <JobAlbums jobId={selectedJob.id} jobName={selectedJob.name} />
 
               {/* Actions */}
               <div className='flex justify-end gap-2 pt-4 border-t border-zinc-800'>

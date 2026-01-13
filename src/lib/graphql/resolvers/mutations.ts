@@ -6,6 +6,10 @@ import { GraphQLError } from 'graphql';
 
 import { MutationResolvers } from '@/generated/graphql';
 import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
+import {
+  previewAlbumEnrichment,
+  previewArtistEnrichment,
+} from '@/lib/enrichment/preview-enrichment';
 import type {
   CheckAlbumEnrichmentJobData,
   CheckArtistEnrichmentJobData,
@@ -15,6 +19,12 @@ import type {
   CacheAlbumCoverArtJobData,
 } from '@/lib/queue/jobs';
 import { alertManager } from '@/lib/monitoring';
+import {
+  logActivity,
+  OPERATIONS,
+  SOURCES,
+} from '@/lib/logging/activity-logger';
+import { isAdmin } from '@/lib/permissions';
 
 // Utility function to cast return values for GraphQL resolvers
 // Field resolvers will populate missing computed fields
@@ -121,12 +131,25 @@ export const mutationResolvers: MutationResolvers = {
 
       // Queue the appropriate job(s) based on type
       if (type === 'NEW_RELEASES' || type === 'BOTH') {
+        // Parse pagination setting (Task 11)
+        const pages = process.env.SPOTIFY_NEW_RELEASES_PAGES
+          ? parseInt(process.env.SPOTIFY_NEW_RELEASES_PAGES)
+          : 3; // Default to 3 pages
+
+        // Parse follower filter (Task 11)
+        const minFollowers = process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS
+          ? parseInt(process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS)
+          : 100000; // Default to 100k+ followers
+
         const jobData: SpotifySyncNewReleasesJobData = {
-          limit: 20,
+          limit: parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '50'),
           country: process.env.SPOTIFY_COUNTRY || 'US',
           priority: 'high',
-          source: 'manual_trigger',
+          source: 'graphql',
           requestId: `manual_new_releases_${Date.now()}`,
+          // Pagination and follower filtering (Task 11)
+          pages,
+          minFollowers,
         };
 
         const job = await queue.addJob(
@@ -140,7 +163,7 @@ export const mutationResolvers: MutationResolvers = {
         );
 
         results.jobId = job.id;
-        results.message = `Queued Spotify new releases sync (Job ID: ${job.id})`;
+        results.message = `Queued Spotify new releases sync (Job ID: ${job.id}, ${pages} pages, ${minFollowers.toLocaleString()}+ followers)`;
         console.log(`📀 Triggered Spotify new releases sync: Job ${job.id}`);
       }
 
@@ -178,6 +201,123 @@ export const mutationResolvers: MutationResolvers = {
       return results;
     } catch (error) {
       throw new GraphQLError(`Failed to trigger Spotify sync: ${error}`);
+    }
+  },
+
+  // Sync Job Management - Rollback functionality
+  rollbackSyncJob: async (_, { syncJobId, dryRun = true }, { prisma }) => {
+    try {
+      // 1. Find the sync job
+      const syncJob = await prisma.syncJob.findUnique({
+        where: { id: syncJobId },
+      });
+
+      if (!syncJob) {
+        throw new GraphQLError(`SyncJob not found: ${syncJobId}`);
+      }
+
+      // 2. Find all albums created by this job (via metadata.jobId matching BullMQ job ID)
+      const albumsToDelete = await prisma.album.findMany({
+        where: {
+          metadata: {
+            path: ['jobId'],
+            equals: syncJob.jobId, // Match BullMQ job ID stored in album metadata
+          },
+        },
+        select: {
+          id: true,
+          title: true,
+          artists: {
+            select: {
+              artistId: true,
+            },
+          },
+        },
+      });
+
+      const albumIds = albumsToDelete.map(a => a.id);
+      const artistIdsFromAlbums = [
+        ...new Set(
+          albumsToDelete.flatMap(a => a.artists.map(aa => aa.artistId))
+        ),
+      ];
+
+      console.log(
+        `🔍 Rollback ${dryRun ? '(DRY RUN)' : ''}: Found ${albumIds.length} albums from SyncJob ${syncJobId}`
+      );
+
+      // 3. Find artists that would become orphaned (no other albums)
+      const artistsToDelete: string[] = [];
+
+      for (const artistId of artistIdsFromAlbums) {
+        const otherAlbumsCount = await prisma.albumArtist.count({
+          where: {
+            artistId,
+            albumId: { notIn: albumIds },
+          },
+        });
+
+        if (otherAlbumsCount === 0) {
+          artistsToDelete.push(artistId);
+        }
+      }
+
+      console.log(
+        `🔍 Rollback ${dryRun ? '(DRY RUN)' : ''}: ${artistsToDelete.length} artists would become orphaned`
+      );
+
+      // 4. If dry run, return what would be deleted
+      if (dryRun) {
+        return {
+          success: true,
+          syncJobId,
+          albumsDeleted: albumIds.length,
+          artistsDeleted: artistsToDelete.length,
+          message: `DRY RUN: Would delete ${albumIds.length} albums and ${artistsToDelete.length} orphaned artists from job "${syncJob.jobId}"`,
+          dryRun: true,
+        };
+      }
+
+      // 5. Actually delete (albums first due to foreign keys, then orphaned artists)
+      // Delete albums (this will cascade to AlbumArtist, CollectionAlbum, Recommendations, Tracks, etc.)
+      const deleteAlbumsResult = await prisma.album.deleteMany({
+        where: { id: { in: albumIds } },
+      });
+
+      console.log(`🗑️  Deleted ${deleteAlbumsResult.count} albums`);
+
+      // Delete orphaned artists
+      const deleteArtistsResult = await prisma.artist.deleteMany({
+        where: { id: { in: artistsToDelete } },
+      });
+
+      console.log(`🗑️  Deleted ${deleteArtistsResult.count} orphaned artists`);
+
+      // 6. Update SyncJob status to CANCELLED to indicate rollback
+      await prisma.syncJob.update({
+        where: { id: syncJobId },
+        data: {
+          status: 'CANCELLED',
+          metadata: {
+            ...((syncJob.metadata as object) || {}),
+            rolledBackAt: new Date().toISOString(),
+            albumsDeleted: deleteAlbumsResult.count,
+            artistsDeleted: deleteArtistsResult.count,
+          },
+        },
+      });
+
+      return {
+        success: true,
+        syncJobId,
+        albumsDeleted: deleteAlbumsResult.count,
+        artistsDeleted: deleteArtistsResult.count,
+        message: `Successfully rolled back SyncJob "${syncJob.jobId}": deleted ${deleteAlbumsResult.count} albums and ${deleteArtistsResult.count} orphaned artists`,
+        dryRun: false,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      throw new GraphQLError(`Failed to rollback sync job: ${error}`);
     }
   },
 
@@ -531,12 +671,13 @@ export const mutationResolvers: MutationResolvers = {
         },
       });
 
-      // Handle artist associations
+      // Handle artist associations (consistent with addToListenLater)
       for (const artistInput of input.artists) {
-        let artistId = artistInput.artistId;
+        let artistId: string | undefined;
 
-        // If no artistId provided, try to find existing artist by name first
-        if (!artistId && artistInput.artistName) {
+        // Always search/create by name (don't trust artistId from external sources)
+        // artistInput.artistId may be a MusicBrainz ID or empty string for external albums
+        if (artistInput.artistName) {
           // Search for existing artist by name (case-insensitive)
           const existingArtist = await prisma.artist.findFirst({
             where: {
@@ -566,15 +707,35 @@ export const mutationResolvers: MutationResolvers = {
             console.log(
               `✨ Created new artist: "${newArtist.name}" (${newArtist.id})`
             );
-          }
-        }
 
-        if (artistId) {
-          await prisma.albumArtist.create({
-            data: {
+            // Log the artist creation
+            await logActivity({
+              prisma,
+              entityType: 'ARTIST',
+              entityId: newArtist.id,
+              operation: OPERATIONS.MANUAL_ADD,
+              sources: [SOURCES.ADMIN, SOURCES.MUSICBRAINZ],
+              fieldsChanged: ['name'],
+              userId: user.id,
+              dataQualityAfter: newArtist.dataQuality,
+            });
+          }
+
+          // Create or update the album-artist relationship (upsert to handle duplicates)
+          const role = artistInput.role || 'PRIMARY';
+          await prisma.albumArtist.upsert({
+            where: {
+              albumId_artistId_role: {
+                albumId: album.id,
+                artistId: artistId,
+                role: role,
+              },
+            },
+            update: {}, // No update needed, just ensure it exists
+            create: {
               albumId: album.id,
               artistId: artistId,
-              role: artistInput.role || 'PRIMARY',
+              role: role,
             },
           });
         }
@@ -631,6 +792,26 @@ export const mutationResolvers: MutationResolvers = {
         }
       });
 
+      // Log the manual album creation
+      const fieldsCreated = ['title'];
+      if (input.releaseDate) fieldsCreated.push('releaseDate');
+      if (input.albumType) fieldsCreated.push('releaseType');
+      if (input.totalTracks) fieldsCreated.push('trackCount');
+      if (input.coverImageUrl) fieldsCreated.push('coverArtUrl');
+      if (input.musicbrainzId) fieldsCreated.push('musicbrainzId');
+      if (input.artists?.length) fieldsCreated.push('artists');
+
+      await logActivity({
+        prisma,
+        entityType: 'ALBUM',
+        entityId: album.id,
+        operation: OPERATIONS.MANUAL_ADD,
+        sources: [SOURCES.ADMIN, SOURCES.MUSICBRAINZ],
+        fieldsChanged: fieldsCreated,
+        userId: user.id,
+        dataQualityAfter: album.dataQuality,
+      });
+
       // Return the album with its relationships
       return (await prisma.album.findUnique({
         where: { id: album.id },
@@ -650,6 +831,218 @@ export const mutationResolvers: MutationResolvers = {
       });
     }
   },
+
+  addArtist: async (
+    _,
+    { input },
+    { user, prisma, activityTracker, priorityManager, sessionId, requestId }
+  ) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    try {
+      // Check if artist already exists by MusicBrainz ID
+      if (input.musicbrainzId) {
+        const existing = await prisma.artist.findFirst({
+          where: { musicbrainzId: input.musicbrainzId },
+        });
+
+        if (existing) {
+          console.log(
+            `🔄 Artist already exists: "${existing.name}" (${existing.id})`
+          );
+          return existing as any;
+        }
+      }
+
+      // Check if artist already exists by name (case-insensitive)
+      const existingByName = await prisma.artist.findFirst({
+        where: {
+          name: {
+            equals: input.name,
+            mode: 'insensitive',
+          },
+        },
+      });
+
+      if (existingByName) {
+        console.log(
+          `🔄 Artist already exists by name: "${existingByName.name}" (${existingByName.id})`
+        );
+        return existingByName as any;
+      }
+
+      // Create the artist
+      const artist = await prisma.artist.create({
+        data: {
+          name: input.name,
+          musicbrainzId: input.musicbrainzId,
+          imageUrl: input.imageUrl,
+          countryCode: input.countryCode,
+          dataQuality: input.musicbrainzId ? 'MEDIUM' : 'LOW',
+          enrichmentStatus: 'PENDING',
+          lastEnriched: null,
+        },
+      });
+
+      console.log(`✨ Created new artist: "${artist.name}" (${artist.id})`);
+
+      // Queue enrichment check in background (non-blocking for faster response)
+      setImmediate(async () => {
+        try {
+          const queue = getMusicBrainzQueue();
+
+          // Track manual artist creation for priority management
+          await activityTracker.recordEntityInteraction(
+            'add_artist',
+            'artist',
+            artist.id,
+            'mutation',
+            { source: 'manual_add' }
+          );
+
+          // Get smart job options based on user activity
+          const jobOptions = await priorityManager.getJobOptions(
+            'manual',
+            artist.id,
+            'artist',
+            requestId
+          );
+
+          // Queue artist enrichment check
+          const checkData: CheckArtistEnrichmentJobData = {
+            artistId: artist.id,
+            source: 'manual_add',
+            priority: 'high',
+            requestId: `manual-artist-add-${artist.id}`,
+          };
+
+          await queue.addJob(
+            JOB_TYPES.CHECK_ARTIST_ENRICHMENT,
+            checkData,
+            jobOptions
+          );
+
+          // Log priority decision for debugging
+          priorityManager.logPriorityDecision(
+            'manual',
+            artist.id,
+            jobOptions.priority / 10, // Convert back to 1-10 scale
+            {
+              actionImportance: 8,
+              userActivity: 0,
+              entityRelevance: 0,
+              systemLoad: 0,
+            },
+            jobOptions.delay
+          );
+        } catch (queueError) {
+          console.warn(
+            'Failed to queue enrichment check for new artist:',
+            queueError
+          );
+        }
+      });
+
+      // Log the manual artist creation
+      const fieldsCreated = ['name'];
+      if (input.musicbrainzId) fieldsCreated.push('musicbrainzId');
+      if (input.imageUrl) fieldsCreated.push('imageUrl');
+      if (input.countryCode) fieldsCreated.push('countryCode');
+
+      await logActivity({
+        prisma,
+        entityType: 'ARTIST',
+        entityId: artist.id,
+        operation: OPERATIONS.MANUAL_ADD,
+        sources: [SOURCES.ADMIN, SOURCES.MUSICBRAINZ],
+        fieldsChanged: fieldsCreated,
+        userId: user.id,
+        dataQualityAfter: artist.dataQuality,
+      });
+
+      // Return the artist
+      return (await prisma.artist.findUnique({
+        where: { id: artist.id },
+      })) as any;
+    } catch (error) {
+      console.error('Error creating artist:', error);
+      throw new GraphQLError('Failed to create artist', {
+        extensions: { code: 'INTERNAL_ERROR' },
+      });
+    }
+  },
+
+  deleteArtist: async (_: unknown, { id }: { id: string }, context: any) => {
+    const { user, prisma } = context;
+
+    // Check authentication
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Check authorization - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Unauthorized: Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      // Check if artist exists
+      const artist = await prisma.artist.findUnique({
+        where: { id },
+      });
+
+      if (!artist) {
+        throw new GraphQLError('Artist not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Use Prisma transaction to handle cascade deletion
+      await prisma.$transaction(async tx => {
+        // Delete related records in order
+        // 1. Album-artist relationships
+        await tx.albumArtist.deleteMany({
+          where: { artistId: id },
+        });
+
+        // 2. Track-artist relationships
+        await tx.trackArtist.deleteMany({
+          where: { artistId: id },
+        });
+
+        // 3. Enrichment logs
+        await tx.enrichmentLog.deleteMany({
+          where: { artistId: id },
+        });
+
+        // 4. Finally, delete the artist
+        await tx.artist.delete({
+          where: { id },
+        });
+      });
+
+      return {
+        success: true,
+        message: `Artist deleted successfully`,
+        deletedId: id,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) {
+        throw error;
+      }
+      console.error('Error deleting artist:', error);
+      throw new GraphQLError(`Failed to delete artist: ${error}`, {
+        extensions: { code: 'INTERNAL_ERROR' },
+      });
+    }
+  },
+
   // Collection management mutations (placeholders)
   createCollection: async (
     _,
@@ -1019,7 +1412,10 @@ export const mutationResolvers: MutationResolvers = {
           attempts: 3,
         });
       } catch (queueError) {
-        console.warn('Failed to queue enrichment for Listen Later album:', queueError);
+        console.warn(
+          'Failed to queue enrichment for Listen Later album:',
+          queueError
+        );
       }
 
       return ca as any;
@@ -1441,7 +1837,7 @@ export const mutationResolvers: MutationResolvers = {
   // Music Database Enrichment mutations
   triggerAlbumEnrichment: async (
     _: any,
-    { id, priority = 'MEDIUM' }: any,
+    { id, priority = 'MEDIUM', force = false }: any,
     { prisma }: any
   ) => {
     try {
@@ -1455,11 +1851,23 @@ export const mutationResolvers: MutationResolvers = {
         });
       }
 
+      // If force=true, reset status to PENDING first so enrichment check passes
+      if (force) {
+        await prisma.album.update({
+          where: { id },
+          data: {
+            enrichmentStatus: 'PENDING',
+            lastEnriched: null,
+          },
+        });
+      }
+
       const queue = getMusicBrainzQueue();
       const jobData: CheckAlbumEnrichmentJobData = {
         albumId: id,
         source: 'admin_manual',
         priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
+        force,
         requestId: `admin_enrichment_${Date.now()}`,
       };
 
@@ -1479,7 +1887,9 @@ export const mutationResolvers: MutationResolvers = {
       return {
         success: true,
         jobId: job.id,
-        message: `Album enrichment job ${job.id} queued with ${priority} priority`,
+        message: force
+          ? `Album force re-enrichment job ${job.id} queued with ${priority} priority`
+          : `Album enrichment job ${job.id} queued with ${priority} priority`,
       };
     } catch (error) {
       throw new GraphQLError(`Failed to trigger album enrichment: ${error}`);
@@ -1488,7 +1898,7 @@ export const mutationResolvers: MutationResolvers = {
 
   triggerArtistEnrichment: async (
     _: any,
-    { id, priority = 'MEDIUM' }: any,
+    { id, priority = 'MEDIUM', force = false }: any,
     { prisma }: any
   ) => {
     try {
@@ -1502,11 +1912,23 @@ export const mutationResolvers: MutationResolvers = {
         });
       }
 
+      // If force=true, reset status to PENDING first so enrichment check passes
+      if (force) {
+        await prisma.artist.update({
+          where: { id },
+          data: {
+            enrichmentStatus: 'PENDING',
+            lastEnriched: null,
+          },
+        });
+      }
+
       const queue = getMusicBrainzQueue();
       const jobData: CheckArtistEnrichmentJobData = {
         artistId: id,
         source: 'admin_manual',
         priority: priority.toLowerCase() as 'high' | 'normal' | 'low',
+        force,
         requestId: `admin_enrichment_${Date.now()}`,
       };
 
@@ -1520,21 +1942,37 @@ export const mutationResolvers: MutationResolvers = {
         }
       );
 
-      // Update artist enrichment status
-      await prisma.artist.update({
-        where: { id },
-        data: {
-          enrichmentStatus: 'IN_PROGRESS',
-        },
-      });
+      // Don't set to IN_PROGRESS here - let the job do it after checking if enrichment is needed
+      // Otherwise shouldEnrichArtist will see IN_PROGRESS and skip enrichment
 
       return {
         success: true,
         jobId: job.id,
-        message: `Artist enrichment job ${job.id} queued with ${priority} priority`,
+        message: force
+          ? `Artist force re-enrichment job ${job.id} queued with ${priority} priority`
+          : `Artist enrichment job ${job.id} queued with ${priority} priority`,
       };
     } catch (error) {
       throw new GraphQLError(`Failed to trigger artist enrichment: ${error}`);
+    }
+  },
+
+  // Preview Enrichment mutations (dry-run without persisting to album/artist)
+  previewAlbumEnrichment: async (_: unknown, { id }: { id: string }) => {
+    try {
+      const result = await previewAlbumEnrichment(id);
+      return result;
+    } catch (error) {
+      throw new GraphQLError(`Failed to preview album enrichment: ${error}`);
+    }
+  },
+
+  previewArtistEnrichment: async (_: unknown, { id }: { id: string }) => {
+    try {
+      const result = await previewArtistEnrichment(id);
+      return result;
+    } catch (error) {
+      throw new GraphQLError(`Failed to preview artist enrichment: ${error}`);
     }
   },
 
@@ -1572,10 +2010,7 @@ export const mutationResolvers: MutationResolvers = {
               }
             );
 
-            await prisma.album.update({
-              where: { id },
-              data: { enrichmentStatus: 'IN_PROGRESS' },
-            });
+            // Don't set to IN_PROGRESS here - let the job do it after checking if enrichment is needed
 
             jobs.push(job);
           }
@@ -1603,10 +2038,7 @@ export const mutationResolvers: MutationResolvers = {
               }
             );
 
-            await prisma.artist.update({
-              where: { id },
-              data: { enrichmentStatus: 'IN_PROGRESS' },
-            });
+            // Don't set to IN_PROGRESS here - let the job do it after checking if enrichment is needed
 
             jobs.push(job);
           }
@@ -1691,10 +2123,13 @@ export const mutationResolvers: MutationResolvers = {
       profileVisibility,
       showRecentActivity,
       showCollections,
+      showListenLaterInFeed,
+      showCollectionAddsInFeed,
+      showOnboardingTour,
     } = args;
 
     try {
-      const updateData: any = {};
+      const updateData: Record<string, string | boolean> = {};
       if (theme !== undefined) updateData.theme = theme;
       if (language !== undefined) updateData.language = language;
       if (profileVisibility !== undefined)
@@ -1703,6 +2138,12 @@ export const mutationResolvers: MutationResolvers = {
         updateData.showRecentActivity = showRecentActivity;
       if (showCollections !== undefined)
         updateData.showCollections = showCollections;
+      if (showListenLaterInFeed !== undefined)
+        updateData.showListenLaterInFeed = showListenLaterInFeed;
+      if (showCollectionAddsInFeed !== undefined)
+        updateData.showCollectionAddsInFeed = showCollectionAddsInFeed;
+      if (showOnboardingTour !== undefined)
+        updateData.showOnboardingTour = showOnboardingTour;
 
       const settings = await prisma.userSettings.upsert({
         where: { userId: user.id },
@@ -1714,6 +2155,9 @@ export const mutationResolvers: MutationResolvers = {
           profileVisibility: profileVisibility || 'public',
           showRecentActivity: showRecentActivity ?? true,
           showCollections: showCollections ?? true,
+          showListenLaterInFeed: showListenLaterInFeed ?? true,
+          showCollectionAddsInFeed: showCollectionAddsInFeed ?? true,
+          showOnboardingTour: showOnboardingTour ?? true,
           emailNotifications: true,
           recommendationAlerts: true,
           followAlerts: true,
@@ -1789,6 +2233,226 @@ export const mutationResolvers: MutationResolvers = {
         throw error;
       }
       throw new GraphQLError(`Failed to update user role: ${error}`);
+    }
+  },
+
+  deleteAlbum: async (_: unknown, { id }: { id: string }, context: any) => {
+    const { user, prisma } = context;
+
+    // Check authentication
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Check authorization - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Unauthorized: Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      // Check if album exists
+      const album = await prisma.album.findUnique({
+        where: { id },
+        include: {
+          _count: {
+            select: {
+              collectionAlbum: true,
+              basisRecommendations: true,
+              targetRecommendations: true,
+              listenLater: true,
+              tracks: true,
+            },
+          },
+        },
+      });
+
+      if (!album) {
+        throw new GraphQLError('Album not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Use Prisma transaction to handle cascade deletion
+      await prisma.$transaction(async tx => {
+        // Delete related records in order
+        // 1. CollectionAlbum entries
+        await tx.collectionAlbum.deleteMany({
+          where: { albumId: id },
+        });
+
+        // 2. Recommendations (both as basis and target)
+        await tx.recommendation.deleteMany({
+          where: {
+            OR: [{ basisAlbumId: id }, { targetAlbumId: id }],
+          },
+        });
+
+        // 3. ListenLater entries
+        await tx.listenLater.deleteMany({
+          where: { albumId: id },
+        });
+
+        // 4. Track artists (via tracks)
+        const tracks = await tx.track.findMany({
+          where: { albumId: id },
+          select: { id: true },
+        });
+        const trackIds = tracks.map(t => t.id);
+
+        if (trackIds.length > 0) {
+          await tx.trackArtist.deleteMany({
+            where: { trackId: { in: trackIds } },
+          });
+        }
+
+        // 5. Tracks
+        await tx.track.deleteMany({
+          where: { albumId: id },
+        });
+
+        // 6. ArtistCredit entries
+        await tx.artistCredit.deleteMany({
+          where: { albumId: id },
+        });
+
+        // 7. EnrichmentLog entries
+        await tx.enrichmentLog.deleteMany({
+          where: { albumId: id },
+        });
+
+        // 8. Finally, delete the album itself
+        await tx.album.delete({
+          where: { id },
+        });
+      });
+
+      return {
+        success: true,
+        message: `Album deleted successfully`,
+        deletedId: id,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) {
+        throw error;
+      }
+      console.error('Error deleting album:', error);
+      throw new GraphQLError(`Failed to delete album: ${error}`, {
+        extensions: { code: 'INTERNAL_ERROR' },
+      });
+    }
+  },
+
+  // Reset enrichment status mutations
+  resetAlbumEnrichment: async (_, { id }, { prisma }) => {
+    try {
+      const album = await prisma.album.update({
+        where: { id },
+        data: {
+          enrichmentStatus: null,
+          lastEnriched: null,
+        },
+      });
+
+      return album;
+    } catch (error) {
+      throw new GraphQLError(`Failed to reset album enrichment: ${error}`);
+    }
+  },
+
+  resetArtistEnrichment: async (_, { id }, { prisma }) => {
+    try {
+      const artist = await prisma.artist.update({
+        where: { id },
+        data: {
+          enrichmentStatus: null,
+          lastEnriched: null,
+        },
+      });
+
+      return artist;
+    } catch (error) {
+      throw new GraphQLError(`Failed to reset artist enrichment: ${error}`);
+    }
+  },
+
+  // Update data quality mutations
+  updateAlbumDataQuality: async (
+    _,
+    { id, dataQuality },
+    { prisma, session }
+  ) => {
+    try {
+      // Get the old data quality before updating
+      const oldAlbum = await prisma.album.findUnique({
+        where: { id },
+        select: { dataQuality: true },
+      });
+
+      const album = await prisma.album.update({
+        where: { id },
+        data: {
+          dataQuality,
+        },
+      });
+
+      // Log the manual data quality update
+      await logActivity({
+        prisma,
+        entityType: 'ALBUM',
+        entityId: id,
+        operation: OPERATIONS.MANUAL_DATA_QUALITY_UPDATE,
+        sources: [SOURCES.USER],
+        fieldsChanged: ['dataQuality'],
+        userId: session?.user?.id,
+        dataQualityBefore: oldAlbum?.dataQuality ?? null,
+        dataQualityAfter: dataQuality,
+      });
+
+      return album;
+    } catch (error) {
+      throw new GraphQLError(`Failed to update album data quality: ${error}`);
+    }
+  },
+
+  updateArtistDataQuality: async (
+    _,
+    { id, dataQuality },
+    { prisma, session }
+  ) => {
+    try {
+      // Get the old data quality before updating
+      const oldArtist = await prisma.artist.findUnique({
+        where: { id },
+        select: { dataQuality: true },
+      });
+
+      const artist = await prisma.artist.update({
+        where: { id },
+        data: {
+          dataQuality,
+        },
+      });
+
+      // Log the manual data quality update
+      await logActivity({
+        prisma,
+        entityType: 'ARTIST',
+        entityId: id,
+        operation: OPERATIONS.MANUAL_DATA_QUALITY_UPDATE,
+        sources: [SOURCES.USER],
+        fieldsChanged: ['dataQuality'],
+        userId: session?.user?.id,
+        dataQualityBefore: oldArtist?.dataQuality ?? null,
+        dataQualityAfter: dataQuality,
+      });
+
+      return artist;
+    } catch (error) {
+      throw new GraphQLError(`Failed to update artist data quality: ${error}`);
     }
   },
 };

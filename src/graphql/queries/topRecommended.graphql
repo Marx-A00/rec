@@ -1,0 +1,38 @@
+# Top Recommended Albums and Artists queries
+# Albums and artists that appear most frequently in recommendations
+
+query GetTopRecommendedAlbums($limit: Int) {
+  topRecommendedAlbums(limit: $limit) {
+    album {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+    recommendationCount
+    asBasisCount
+    asTargetCount
+    averageScore
+  }
+}
+
+query GetTopRecommendedArtists($limit: Int) {
+  topRecommendedArtists(limit: $limit) {
+    artist {
+      id
+      name
+      imageUrl
+      cloudflareImageId
+    }
+    recommendationCount
+    albumsInRecommendations
+    averageScore
+  }
+}

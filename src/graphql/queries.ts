@@ -29,17 +29,14 @@ export const GET_ALBUM_DETAILS = gql`
       recommendationScore
       needsEnrichment
       artists {
-        id
-        artistId
-        name
-        joinPhrase
-        isMain
         artist {
           id
           name
           imageUrl
           musicbrainzId
         }
+        role
+        position
       }
       tracks {
         id
@@ -67,16 +64,13 @@ export const GET_ALBUM_TRACKS = gql`
       explicit
       previewUrl
       artists {
-        id
-        artistId
-        name
-        joinPhrase
-        isMain
         artist {
           id
           name
           imageUrl
         }
+        role
+        position
       }
     }
   }
@@ -154,14 +148,13 @@ export const SEARCH_MUSIC = gql`
         trackCount
         duration
         artists {
-          id
-          name
-          isMain
           artist {
             id
             name
             imageUrl
           }
+          role
+          position
         }
       }
       tracks {
@@ -177,13 +170,12 @@ export const SEARCH_MUSIC = gql`
           coverArtUrl
         }
         artists {
-          id
-          name
-          isMain
           artist {
             id
             name
           }
+          role
+          position
         }
       }
       total
@@ -218,14 +210,13 @@ export const SEARCH_ALBUMS = gql`
         duration
         averageRating
         artists {
-          id
-          name
-          isMain
           artist {
             id
             name
             imageUrl
           }
+          role
+          position
         }
       }
       total
@@ -251,14 +242,13 @@ export const SEARCH_TRACKS = gql`
         releaseDate
       }
       artists {
-        id
-        name
-        isMain
         artist {
           id
           name
           imageUrl
         }
+        role
+        position
       }
     }
   }
@@ -280,14 +270,13 @@ export const GET_ALBUM_RECOMMENDATIONS = gql`
       averageRating
       recommendationScore
       artists {
-        id
-        name
-        isMain
         artist {
           id
           name
           imageUrl
         }
+        role
+        position
       }
     }
   }
@@ -308,13 +297,12 @@ export const GET_TRACK_RECOMMENDATIONS = gql`
         coverArtUrl
       }
       artists {
-        id
-        name
-        isMain
         artist {
           id
           name
         }
+        role
+        position
       }
     }
   }
@@ -348,13 +336,12 @@ export const GET_USER_COLLECTIONS = gql`
           coverArtUrl
           releaseDate
           artists {
-            id
-            name
-            isMain
             artist {
               id
               name
             }
+            role
+            position
           }
         }
       }
@@ -380,13 +367,12 @@ export const GET_USER_RECOMMENDATIONS = gql`
         title
         coverArtUrl
         artists {
-          id
-          name
-          isMain
           artist {
             id
             name
           }
+          role
+          position
         }
       }
       recommendedAlbum {
@@ -394,13 +380,12 @@ export const GET_USER_RECOMMENDATIONS = gql`
         title
         coverArtUrl
         artists {
-          id
-          name
-          isMain
           artist {
             id
             name
           }
+          role
+          position
         }
       }
     }
@@ -435,13 +420,12 @@ export const GET_SOCIAL_FEED = gql`
           title
           coverArtUrl
           artists {
-            id
-            name
-            isMain
             artist {
               id
               name
             }
+            role
+            position
           }
         }
         recommendation {

@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 interface UserCountStats {
   userId: string;
-  userName: string | null;
+  username: string | null;
   currentFollowersCount: number;
   actualFollowersCount: number;
   currentFollowingCount: number;
@@ -29,12 +29,12 @@ async function fixUserCounts() {
     const users = await prisma.user.findMany({
       select: {
         id: true,
-        name: true,
+        username: true,
         followersCount: true,
         followingCount: true,
         recommendationsCount: true,
       },
-      orderBy: { name: 'asc' },
+      orderBy: { username: 'asc' },
     });
 
     console.log(chalk.green(`✓ Found ${users.length} users\n`));
@@ -68,7 +68,7 @@ async function fixUserCounts() {
 
       stats.push({
         userId: user.id,
-        userName: user.name,
+        username: user.username,
         currentFollowersCount: user.followersCount,
         actualFollowersCount,
         currentFollowingCount: user.followingCount,
@@ -96,7 +96,9 @@ async function fixUserCounts() {
 
     if (usersNeedingUpdate.length === 0) {
       console.log(
-        chalk.green('✓ All user counts are already accurate! No updates needed.')
+        chalk.green(
+          '✓ All user counts are already accurate! No updates needed.'
+        )
       );
       return;
     }
@@ -109,7 +111,7 @@ async function fixUserCounts() {
 
     // Display summary table
     for (const stat of usersNeedingUpdate) {
-      console.log(chalk.bold(`   User: ${stat.userName || 'Unknown'}`));
+      console.log(chalk.bold(`   User: ${stat.username || 'Unknown'}`));
       console.log(chalk.gray(`   ID: ${stat.userId}`));
 
       if (stat.currentFollowersCount !== stat.actualFollowersCount) {
@@ -153,7 +155,9 @@ async function fixUserCounts() {
 
       updatedCount++;
       console.log(
-        chalk.green(`   ✓ Updated ${stat.userName || 'Unknown'} (${updatedCount}/${usersNeedingUpdate.length})`)
+        chalk.green(
+          `   ✓ Updated ${stat.username || 'Unknown'} (${updatedCount}/${usersNeedingUpdate.length})`
+        )
       );
     }
 
@@ -176,12 +180,12 @@ async function fixUserCounts() {
         updatedUser.followingCount === stat.actualFollowingCount &&
         updatedUser.recommendationsCount === stat.actualRecommendationsCount
       ) {
-        console.log(
-          chalk.green(`   ✓ Verified ${stat.userName || 'Unknown'}`)
-        );
+        console.log(chalk.green(`   ✓ Verified ${stat.username || 'Unknown'}`));
       } else {
         console.log(
-          chalk.red(`   ✗ Verification failed for ${stat.userName || 'Unknown'}`)
+          chalk.red(
+            `   ✗ Verification failed for ${stat.username || 'Unknown'}`
+          )
         );
       }
     }
@@ -192,7 +196,9 @@ async function fixUserCounts() {
     console.log(chalk.bold.cyan('='.repeat(60)));
     console.log(chalk.white(`   Total users: ${users.length}`));
     console.log(chalk.white(`   Users updated: ${updatedCount}`));
-    console.log(chalk.white(`   Users unchanged: ${users.length - updatedCount}`));
+    console.log(
+      chalk.white(`   Users unchanged: ${users.length - updatedCount}`)
+    );
     console.log(chalk.bold.cyan('='.repeat(60) + '\n'));
   } catch (error) {
     console.error(chalk.red('\n❌ Error during migration:'), error);

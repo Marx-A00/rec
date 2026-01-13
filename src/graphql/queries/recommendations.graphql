@@ -4,7 +4,7 @@ fragment RecommendationFields on Recommendation {
   createdAt
   user {
     id
-    name
+    username
     image
   }
   basisAlbum {

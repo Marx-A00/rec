@@ -119,18 +119,27 @@ export class MusicBrainzService {
     offset = 0
   ): Promise<ReleaseGroupSearchResult[]> {
     try {
-      // TODO: Improve search quality by filtering out unwanted results
-      // Current filters exclude bootlegs, compilations, and DJ mixes
-      // Consider adding: score threshold, date range, better ranking algorithm
+      // Check if the query is already a Lucene query (contains field specifiers like "artist:" or "releasegroup:")
+      // If so, pass it through unchanged. Otherwise, wrap it in our enhanced query template.
+      const isLuceneQuery =
+        query.includes('artist:') ||
+        query.includes('releasegroup:') ||
+        query.includes('status:');
 
-      // Enhanced query with filters to exclude junk:
-      // - status:official (exclude bootlegs and promotional)
-      // - NOT secondarytype:compilation (exclude unofficial compilations)
-      // - NOT secondarytype:dj-mix (exclude DJ mixes)
-      const enhancedQuery = `(artist:"${query}" OR releasegroup:"${query}") AND status:official AND NOT secondarytype:compilation AND NOT secondarytype:dj-mix`;
+      let finalQuery: string;
+      if (isLuceneQuery) {
+        // Query is already formatted as Lucene syntax (e.g., from dual-input search)
+        finalQuery = query;
+      } else {
+        // Plain text query - enhance with filters to exclude junk:
+        // - status:official (exclude bootlegs and promotional)
+        // - NOT secondarytype:compilation (exclude unofficial compilations)
+        // - NOT secondarytype:dj-mix (exclude DJ mixes)
+        finalQuery = `(artist:"${query}" OR releasegroup:"${query}") AND status:official AND NOT secondarytype:compilation AND NOT secondarytype:dj-mix`;
+      }
 
       const response = await this.api.search('release-group', {
-        query: enhancedQuery,
+        query: finalQuery,
         limit,
         offset,
         inc: ['artist-credits'], // Include artist credit information

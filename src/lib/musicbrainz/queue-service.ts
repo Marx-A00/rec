@@ -128,11 +128,9 @@ export class QueuedMusicBrainzService {
         console.log(chalk.green(`✅ Resolving pending job ${jobId}`));
         pending.resolve(result);
         this.pendingJobs.delete(jobId);
-      } else {
-        console.log(
-          chalk.yellow(`⚠️ No pending promise found for job ${jobId}`)
-        );
       }
+      // Note: Enrichment jobs don't register pending promises (they're fire-and-forget background jobs)
+      // So no warning needed when there's no pending promise for those jobs
     });
 
     this.queueEvents.on('failed', ({ jobId, failedReason }) => {

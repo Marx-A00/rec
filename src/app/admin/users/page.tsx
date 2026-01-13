@@ -15,10 +15,13 @@ import {
   Star,
   Info,
   Shield,
+  Filter,
+  ArrowUpDown,
+  X,
 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
-import { useAdminUsersQuery } from '@/hooks/useAdminUsersQuery';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Dialog,
@@ -36,22 +39,51 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { useUpdateUserRoleMutation, UserRole } from '@/generated/graphql';
+import { Input } from '@/components/ui/input';
+import {
+  useGetAdminUsersQuery,
+  useUpdateUserRoleMutation,
+  UserRole,
+  UserSortField,
+  SortOrder,
+} from '@/generated/graphql';
 
 export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [roleModalOpen, setRoleModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedRole, setSelectedRole] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
 
-  const { data, isLoading, error, refetch } = useAdminUsersQuery(
-    page,
-    20,
-    search
+  // Filter state
+  const [filters, setFilters] = useState({
+    search: '',
+    role: '' as UserRole | '',
+    sortBy: UserSortField.CreatedAt,
+    sortOrder: SortOrder.Desc,
+    hasActivity: undefined as boolean | undefined,
+  });
+
+  const limit = 20;
+  const offset = (page - 1) * limit;
+
+  const { data, isLoading, error, refetch } = useGetAdminUsersQuery(
+    {
+      offset,
+      limit,
+      search: filters.search || undefined,
+      role: filters.role || undefined,
+      sortBy: filters.sortBy,
+      sortOrder: filters.sortOrder,
+      hasActivity: filters.hasActivity,
+    },
+    {
+      staleTime: 30000,
+    }
   );
+
   const updateUserRoleMutation = useUpdateUserRoleMutation();
 
   const toggleExpanded = (id: string) => {
@@ -68,9 +100,57 @@ export default function AdminUsersPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearch(searchInput);
+    setFilters(prev => ({ ...prev, search: searchInput }));
     setPage(1);
   };
+
+  const handleSortChange = (field: UserSortField) => {
+    setFilters(prev => ({
+      ...prev,
+      sortBy: field,
+      sortOrder:
+        prev.sortBy === field && prev.sortOrder === SortOrder.Desc
+          ? SortOrder.Asc
+          : SortOrder.Desc,
+    }));
+    setPage(1);
+  };
+
+  const handleRoleFilter = (role: string) => {
+    setFilters(prev => ({
+      ...prev,
+      role: role === 'all' ? '' : (role as UserRole),
+    }));
+    setPage(1);
+  };
+
+  const handleActivityFilter = (value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      hasActivity:
+        value === 'all' ? undefined : value === 'active' ? true : false,
+    }));
+    setPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      role: '',
+      sortBy: UserSortField.CreatedAt,
+      sortOrder: SortOrder.Desc,
+      hasActivity: undefined,
+    });
+    setSearchInput('');
+    setPage(1);
+  };
+
+  const hasActiveFilters =
+    filters.search ||
+    filters.role ||
+    filters.hasActivity !== undefined ||
+    filters.sortBy !== UserSortField.CreatedAt ||
+    filters.sortOrder !== SortOrder.Desc;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -100,7 +180,6 @@ export default function AdminUsersPage() {
           result.updateUserRole.message || 'Role updated successfully'
         );
         setRoleModalOpen(false);
-        // Refresh the data
         await refetch();
       } else {
         throw new Error('Failed to update role');
@@ -110,11 +189,16 @@ export default function AdminUsersPage() {
     }
   };
 
+  const getSortIcon = (field: UserSortField) => {
+    if (filters.sortBy !== field) return null;
+    return filters.sortOrder === SortOrder.Asc ? '↑' : '↓';
+  };
+
   // Component for expanded user details
   const UserExpandedContent = ({ user }: { user: any }) => {
     return (
-      <tr>
-        <td colSpan={6} className='p-0 bg-zinc-900/30'>
+      <tr className='hover:bg-transparent'>
+        <td colSpan={4} className='p-0 bg-zinc-900/30'>
           <div className='p-6 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
             {/* User Info Grid */}
             <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
@@ -230,6 +314,9 @@ export default function AdminUsersPage() {
     );
   };
 
+  const users = data?.users || [];
+  const totalCount = data?.totalCount || 0;
+
   return (
     <div className='space-y-6'>
       {/* Role Change Modal */}
@@ -298,6 +385,7 @@ export default function AdminUsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       {/* Header */}
       <div>
         <h1 className='text-3xl font-bold text-cosmic-latte mb-2'>
@@ -307,41 +395,195 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Search Bar */}
-      <form onSubmit={handleSearch} className='relative'>
-        <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-5 h-5' />
-        <input
-          type='text'
-          value={searchInput}
-          onChange={e => setSearchInput(e.target.value)}
-          placeholder='Search users by name or email...'
-          className='w-full pl-10 pr-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emeraled-green focus:border-transparent'
-        />
+      <form onSubmit={handleSearch} className='flex gap-2'>
+        <div className='relative flex-1'>
+          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-5 h-5' />
+          <Input
+            type='text'
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            placeholder='Search users by name or email...'
+            className='w-full pl-10 pr-4 py-3 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-400'
+          />
+        </div>
+        <Button
+          type='submit'
+          className='bg-emeraled-green hover:bg-emeraled-green/80 text-white'
+        >
+          Search
+        </Button>
+        <Button
+          type='button'
+          variant='outline'
+          onClick={() => setShowFilters(!showFilters)}
+          className={`text-white border-zinc-700 hover:bg-zinc-700 ${showFilters ? 'bg-zinc-700' : ''}`}
+        >
+          <Filter className='w-4 h-4 mr-2' />
+          Filters
+          {hasActiveFilters && (
+            <span className='ml-2 w-2 h-2 bg-emeraled-green rounded-full' />
+          )}
+        </Button>
       </form>
 
-      {/* Stats Cards */}
-      {data && (
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-          <div className='bg-zinc-800 p-4 rounded-lg border border-zinc-700'>
-            <div className='flex items-center justify-between'>
-              <div>
-                <p className='text-zinc-400 text-sm'>Total Users</p>
-                <p className='text-2xl font-bold text-cosmic-latte'>
-                  {data.totalCount}
-                </p>
-              </div>
-              <Users className='w-8 h-8 text-emeraled-green' />
+      {/* Filters Panel */}
+      {showFilters && (
+        <div className='bg-zinc-800 rounded-lg border border-zinc-700 p-4 space-y-4'>
+          <div className='flex items-center justify-between'>
+            <h3 className='text-sm font-medium text-white'>Filters</h3>
+            {hasActiveFilters && (
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={clearFilters}
+                className='text-zinc-400 hover:text-white'
+              >
+                <X className='w-4 h-4 mr-1' />
+                Clear all
+              </Button>
+            )}
+          </div>
+
+          <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+            {/* Role Filter */}
+            <div>
+              <label className='text-xs text-zinc-500 uppercase mb-1 block'>
+                Role
+              </label>
+              <Select
+                value={filters.role || 'all'}
+                onValueChange={handleRoleFilter}
+              >
+                <SelectTrigger className='bg-zinc-900 border-zinc-700 text-white'>
+                  <SelectValue placeholder='All roles' />
+                </SelectTrigger>
+                <SelectContent className='bg-zinc-800 border-zinc-700'>
+                  <SelectItem value='all'>All Roles</SelectItem>
+                  <SelectItem value='USER'>User</SelectItem>
+                  <SelectItem value='MODERATOR'>Moderator</SelectItem>
+                  <SelectItem value='ADMIN'>Admin</SelectItem>
+                  <SelectItem value='OWNER'>Owner</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Activity Filter */}
+            <div>
+              <label className='text-xs text-zinc-500 uppercase mb-1 block'>
+                Activity
+              </label>
+              <Select
+                value={
+                  filters.hasActivity === undefined
+                    ? 'all'
+                    : filters.hasActivity
+                      ? 'active'
+                      : 'inactive'
+                }
+                onValueChange={handleActivityFilter}
+              >
+                <SelectTrigger className='bg-zinc-900 border-zinc-700 text-white'>
+                  <SelectValue placeholder='All users' />
+                </SelectTrigger>
+                <SelectContent className='bg-zinc-800 border-zinc-700'>
+                  <SelectItem value='all'>All Users</SelectItem>
+                  <SelectItem value='active'>Has Logged In</SelectItem>
+                  <SelectItem value='inactive'>Never Logged In</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort By */}
+            <div>
+              <label className='text-xs text-zinc-500 uppercase mb-1 block'>
+                Sort By
+              </label>
+              <Select
+                value={filters.sortBy}
+                onValueChange={value => {
+                  setFilters(prev => ({
+                    ...prev,
+                    sortBy: value as UserSortField,
+                  }));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className='bg-zinc-900 border-zinc-700 text-white'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className='bg-zinc-800 border-zinc-700'>
+                  <SelectItem value={UserSortField.CreatedAt}>
+                    Created Date
+                  </SelectItem>
+                  <SelectItem value={UserSortField.LastActive}>
+                    Last Active
+                  </SelectItem>
+                  <SelectItem value={UserSortField.Name}>Name</SelectItem>
+                  <SelectItem value={UserSortField.Email}>Email</SelectItem>
+                  <SelectItem value={UserSortField.CollectionsCount}>
+                    Collections
+                  </SelectItem>
+                  <SelectItem value={UserSortField.RecommendationsCount}>
+                    Recommendations
+                  </SelectItem>
+                  <SelectItem value={UserSortField.FollowersCount}>
+                    Followers
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort Order */}
+            <div>
+              <label className='text-xs text-zinc-500 uppercase mb-1 block'>
+                Order
+              </label>
+              <Select
+                value={filters.sortOrder}
+                onValueChange={value => {
+                  setFilters(prev => ({
+                    ...prev,
+                    sortOrder: value as SortOrder,
+                  }));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className='bg-zinc-900 border-zinc-700 text-white'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className='bg-zinc-800 border-zinc-700'>
+                  <SelectItem value={SortOrder.Desc}>Descending</SelectItem>
+                  <SelectItem value={SortOrder.Asc}>Ascending</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
       )}
 
+      {/* Stats Cards */}
+      <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+        <div className='bg-zinc-800 p-4 rounded-lg border border-zinc-700'>
+          <div className='flex items-center justify-between'>
+            <div>
+              <p className='text-zinc-400 text-sm'>Total Users</p>
+              <p className='text-2xl font-bold text-cosmic-latte'>
+                {totalCount}
+              </p>
+            </div>
+            <Users className='w-8 h-8 text-emeraled-green' />
+          </div>
+        </div>
+      </div>
+
       {/* Users Table */}
       <div className='bg-zinc-800 rounded-lg border border-zinc-700 overflow-hidden'>
-        {data?.users && data.users.length > 0 && (
+        {users.length > 0 && (
           <div className='px-4 pt-3 pb-2 border-b border-zinc-700'>
             <p className='text-xs text-zinc-500 flex items-center gap-1'>
               <Info className='h-3 w-3' />
-              Click on any row to view detailed user information
+              Click on any row to view detailed user information. Click column
+              headers to sort.
             </p>
           </div>
         )}
@@ -350,29 +592,44 @@ export default function AdminUsersPage() {
             <thead className='bg-zinc-900 border-b border-zinc-700'>
               <tr>
                 <th className='px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider'>
-                  User
+                  <button
+                    onClick={() => handleSortChange(UserSortField.Name)}
+                    className='flex items-center gap-1 hover:text-white transition-colors'
+                  >
+                    User
+                    <ArrowUpDown className='w-3 h-3' />
+                    {getSortIcon(UserSortField.Name)}
+                  </button>
                 </th>
                 <th className='px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider'>
-                  Email
-                </th>
-                <th className='px-6 py-4 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider'>
-                  Collections
-                </th>
-                <th className='px-6 py-4 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider'>
-                  Recommendations
-                </th>
-                <th className='px-6 py-4 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider'>
-                  Followers
+                  <button
+                    onClick={() => handleSortChange(UserSortField.Email)}
+                    className='flex items-center gap-1 hover:text-white transition-colors'
+                  >
+                    Email
+                    <ArrowUpDown className='w-3 h-3' />
+                    {getSortIcon(UserSortField.Email)}
+                  </button>
                 </th>
                 <th className='px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider'>
-                  Last Active
+                  <button
+                    onClick={() => handleSortChange(UserSortField.LastActive)}
+                    className='flex items-center gap-1 hover:text-white transition-colors'
+                  >
+                    Last Active
+                    <ArrowUpDown className='w-3 h-3' />
+                    {getSortIcon(UserSortField.LastActive)}
+                  </button>
+                </th>
+                <th className='px-6 py-4 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider'>
+                  showTour
                 </th>
               </tr>
             </thead>
             <tbody className='divide-y divide-zinc-700'>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className='px-6 py-8 text-center'>
+                  <td colSpan={4} className='px-6 py-8 text-center'>
                     <div className='flex justify-center'>
                       <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-emeraled-green'></div>
                     </div>
@@ -381,28 +638,28 @@ export default function AdminUsersPage() {
               ) : error ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={4}
                     className='px-6 py-8 text-center text-red-400'
                   >
-                    Error loading users: {error.message}
+                    Error loading users:{' '}
+                    {error instanceof Error ? error.message : 'Unknown error'}
                   </td>
                 </tr>
-              ) : data?.users.length === 0 ? (
+              ) : users.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={4}
                     className='px-6 py-8 text-center text-zinc-400'
                   >
                     No users found
                   </td>
                 </tr>
               ) : (
-                data?.users.map(user => (
+                users.map((user: any) => (
                   <React.Fragment key={user.id}>
                     <tr
                       className='hover:bg-zinc-900/50 transition-colors cursor-pointer'
                       onClick={e => {
-                        // Don't toggle if clicking a link
                         if ((e.target as HTMLElement).closest('a')) {
                           return;
                         }
@@ -428,11 +685,15 @@ export default function AdminUsersPage() {
                             </AvatarFallback>
                           </Avatar>
                           <div className='ml-1'>
-                            <div className='text-sm font-medium text-cosmic-latte'>
+                            <div className='text-sm font-medium text-cosmic-latte flex items-center gap-2'>
                               {user.name || 'Unnamed User'}
+                              {(user.role === 'ADMIN' ||
+                                user.role === 'OWNER') && (
+                                <Shield className='h-3 w-3 text-emeraled-green' />
+                              )}
                             </div>
                             <div className='text-xs text-zinc-400'>
-                              ID: {user.id.slice(0, 8)}...
+                              {user.role || 'USER'}
                             </div>
                           </div>
                         </div>
@@ -447,28 +708,34 @@ export default function AdminUsersPage() {
                           </span>
                         )}
                       </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-center'>
-                        <span className='text-zinc-300'>
-                          {user._count?.collections || 0}
-                        </span>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-center'>
-                        <span className='text-zinc-300'>
-                          {user._count?.recommendations || 0}
-                        </span>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-center'>
-                        <span className='text-zinc-300'>
-                          {user.followersCount || 0}
-                        </span>
-                      </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
                         <div className='flex items-center text-sm text-zinc-400'>
                           <Calendar className='w-4 h-4 mr-1' />
-                          {user.profileUpdatedAt
-                            ? formatDate(user.profileUpdatedAt)
-                            : 'N/A'}
+                          {user.lastActive ? (
+                            <span>
+                              {formatDate(user.lastActive)}
+                              <span className='text-zinc-500 text-xs ml-1.5'>
+                                (
+                                {formatDistanceToNow(
+                                  new Date(user.lastActive),
+                                  { addSuffix: true }
+                                )}
+                                )
+                              </span>
+                            </span>
+                          ) : (
+                            <span className='text-zinc-500'>Never</span>
+                          )}
                         </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-center'>
+                        <span className='text-zinc-300'>
+                          {user.settings?.showOnboardingTour === undefined
+                            ? 'null'
+                            : user.settings.showOnboardingTour
+                              ? 'true'
+                              : 'false'}
+                        </span>
                       </td>
                     </tr>
                     {expandedRows.has(user.id) && (
@@ -485,11 +752,11 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Pagination */}
-        {data && data.totalCount > 20 && (
+        {totalCount > limit && (
           <div className='bg-zinc-900 px-6 py-4 border-t border-zinc-700 flex items-center justify-between'>
             <div className='text-sm text-zinc-400'>
-              Showing {(page - 1) * 20 + 1} to{' '}
-              {Math.min(page * 20, data.totalCount)} of {data.totalCount} users
+              Showing {offset + 1} to {Math.min(offset + limit, totalCount)} of{' '}
+              {totalCount} users
             </div>
             <div className='flex gap-2'>
               <button
@@ -501,7 +768,7 @@ export default function AdminUsersPage() {
               </button>
               <button
                 onClick={() => setPage(p => p + 1)}
-                disabled={page * 20 >= data.totalCount}
+                disabled={offset + limit >= totalCount}
                 className='px-4 py-2 text-sm font-medium text-zinc-300 bg-zinc-800 border border-zinc-700 rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
               >
                 Next

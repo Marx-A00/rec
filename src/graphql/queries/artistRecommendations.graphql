@@ -1,0 +1,55 @@
+query GetArtistRecommendations(
+  $artistId: ID!
+  $filter: AlbumRole
+  $sort: ArtistRecommendationSort
+  $limit: Int
+  $offset: Int
+) {
+  artistRecommendations(
+    artistId: $artistId
+    filter: $filter
+    sort: $sort
+    limit: $limit
+    offset: $offset
+  ) {
+    recommendations {
+      id
+      score
+      description
+      createdAt
+      albumRole
+      isOwnRecommendation
+      basisAlbum {
+        id
+        title
+        coverArtUrl
+        releaseDate
+        artists {
+          artist {
+            id
+            name
+          }
+        }
+      }
+      recommendedAlbum {
+        id
+        title
+        coverArtUrl
+        releaseDate
+        artists {
+          artist {
+            id
+            name
+          }
+        }
+      }
+      user {
+        id
+        username
+        image
+      }
+    }
+    totalCount
+    hasMore
+  }
+}

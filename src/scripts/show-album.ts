@@ -19,7 +19,7 @@ async function showAlbum() {
           collection: {
             select: {
               name: true,
-              user: { select: { name: true } },
+              user: { select: { username: true } },
             },
           },
         },

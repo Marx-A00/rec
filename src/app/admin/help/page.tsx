@@ -91,9 +91,7 @@ export default function AdminHelpPage() {
                   </p>
                 </div>
                 <div className='bg-zinc-800/50 p-3 rounded border border-zinc-700'>
-                  <code className='text-emerald-400'>
-                    pnpm prisma generate
-                  </code>
+                  <code className='text-emerald-400'>pnpm prisma generate</code>
                   <p className='text-zinc-400 text-xs mt-1'>
                     Generate Prisma client after schema changes
                   </p>
@@ -226,9 +224,7 @@ export default function AdminHelpPage() {
                 </div>
                 <div className='bg-zinc-800/50 p-3 rounded border border-zinc-700'>
                   <span className='text-emerald-400 font-medium'>State:</span>
-                  <span className='text-zinc-300 ml-2'>
-                    TanStack Query v5
-                  </span>
+                  <span className='text-zinc-300 ml-2'>TanStack Query v5</span>
                 </div>
               </div>
             </div>
@@ -423,9 +419,7 @@ export default function AdminHelpPage() {
       {/* Environment & Deployment */}
       <Card className='bg-zinc-900 border-zinc-800 mb-6'>
         <CardHeader>
-          <CardTitle className='text-white'>
-            Environment & Deployment
-          </CardTitle>
+          <CardTitle className='text-white'>Environment & Deployment</CardTitle>
           <CardDescription className='text-zinc-400'>
             Configuration and deployment information
           </CardDescription>
@@ -468,9 +462,7 @@ export default function AdminHelpPage() {
                   </ul>
                 </div>
                 <div className='bg-zinc-800/50 p-3 rounded border border-zinc-700'>
-                  <h4 className='text-blue-400 font-medium mb-2'>
-                    Production
-                  </h4>
+                  <h4 className='text-blue-400 font-medium mb-2'>Production</h4>
                   <ul className='space-y-1 text-zinc-400 text-xs'>
                     <li>• Simplified admin view</li>
                     <li>• Quick actions only</li>
@@ -559,9 +551,7 @@ export default function AdminHelpPage() {
         </p>
         <p className='mt-2'>
           Task Master documentation:{' '}
-          <code className='text-emerald-400'>
-            .taskmaster/docs/procedures/
-          </code>
+          <code className='text-emerald-400'>.taskmaster/docs/procedures/</code>
         </p>
       </div>
     </div>

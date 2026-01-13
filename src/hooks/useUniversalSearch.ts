@@ -237,17 +237,8 @@ export function useUniversalSearch(
       }
 
       searchData.tracks.forEach(track => {
-        const idStr = String(track.id);
-        const isUuid =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-            idStr
-          );
-        const isNumeric = /^\d+$/.test(idStr);
-        const inferredSource = isUuid
-          ? 'musicbrainz'
-          : isNumeric
-            ? 'discogs'
-            : 'local';
+        // All tracks come from our local database - no source inference needed
+        const trackSource = 'local' as const;
 
         // Prefer searchCoverArtUrl for external search results, fall back to album.coverArtUrl
         const coverArtUrl =
@@ -285,7 +276,7 @@ export function useUniversalSearch(
           releaseDate: '',
           genre: [],
           label: '',
-          source: inferredSource,
+          source: trackSource,
           image: {
             url: coverArtUrl,
             width: 300,
@@ -314,7 +305,7 @@ export function useUniversalSearch(
         transformedResults.push({
           id: user.id,
           type: 'user' as const,
-          title: user.name || 'Unknown User',
+          title: user.username || 'Unknown User',
           subtitle: user.bio || 'User',
           artist: '', // Not applicable for users
           releaseDate: '',
@@ -325,7 +316,7 @@ export function useUniversalSearch(
             url: user.image || '',
             width: 300,
             height: 300,
-            alt: user.name || 'User',
+            alt: user.username || 'User',
           },
           cover_image: user.image || undefined,
           _discogs: {},

@@ -149,7 +149,7 @@ export default function RecommendationDetailModal({
           {recommendation.user?.image ? (
             <AlbumImage
               src={recommendation.user.image}
-              alt={recommendation.user.name || 'User'}
+              alt={recommendation.user.username || 'User'}
               width={40}
               height={40}
               className='rounded-full'
@@ -157,14 +157,14 @@ export default function RecommendationDetailModal({
           ) : (
             <div className='w-10 h-10 bg-zinc-700 rounded-full flex items-center justify-center'>
               <span className='text-white font-semibold'>
-                {(recommendation.user?.name || 'A').charAt(0).toUpperCase()}
+                {(recommendation.user?.username || 'A').charAt(0).toUpperCase()}
               </span>
             </div>
           )}
           <div>
             <Link href={`/profile/${recommendation.user.id}`}>
               <span className='text-cosmic-latte font-medium hover:underline hover:text-white'>
-                {recommendation.user?.name || 'Anonymous'}
+                {recommendation.user?.username || 'Anonymous'}
               </span>
             </Link>
             <p className='text-zinc-400 text-sm'>

@@ -188,7 +188,7 @@ export const welcomeOnboardingTour = {
       side: 'bottom' as const, // Show below the discography
       showControls: true,
       showSkip: true,
-      nextRoute: '/albums/556257', // Navigate to Random Access Memories album page
+      nextRoute: '/albums/6c0aa5f2-4fc2-4c26-b83f-62b6ad45dda8?source=local', // Navigate to Random Access Memories album page
       // Custom card will handle finding and clicking Random Access Memories
     },
     {

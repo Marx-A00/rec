@@ -1,10 +1,11 @@
-import { ExternalLink, User, Music } from 'lucide-react';
+import { ExternalLink, User } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import BackButton from '@/components/ui/BackButton';
 import DiscographyTab from '@/components/artistDetails/tabs/DiscographyTab';
 import ArtistRecommendationsTab from '@/components/artistDetails/tabs/ArtistRecommendationsTab';
+import ArtistAdminActions from '@/components/artistDetails/ArtistAdminActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getArtistDetails } from '@/lib/api/artists';
 import { artistParamsSchema } from '@/lib/validations/params';
@@ -13,7 +14,7 @@ import { CollapsibleBio } from '@/components/artistDetails/CollapsibleBio';
 
 interface ArtistDetailsPageProps {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ source?: string }>;
+  searchParams?: Promise<{ source?: string; tab?: string }>;
 }
 
 export default async function ArtistDetailsPage({
@@ -35,7 +36,7 @@ export default async function ArtistDetailsPage({
   // Fetch artist data server-side
   let artist;
   try {
-    const preferredSource = (rawSearch as any)?.source as
+    const preferredSource = rawSearch?.source as
       | 'local'
       | 'musicbrainz'
       | 'discogs'
@@ -48,6 +49,12 @@ export default async function ArtistDetailsPage({
     notFound();
   }
 
+  // Determine initial tab from URL param
+  const validTabs = ['discography', 'recommendations'];
+  const initialTab = validTabs.includes(rawSearch?.tab || '')
+    ? rawSearch!.tab!
+    : 'discography';
+
   return (
     <div className='px-4 py-8'>
       {/* Back Navigation */}
@@ -56,7 +63,7 @@ export default async function ArtistDetailsPage({
       {/* Artist Header */}
       <div
         id='artist-page-header'
-        data-tour-step="artist-header"
+        data-tour-step='artist-header'
         className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'
       >
         {/* Artist Image */}
@@ -105,25 +112,6 @@ export default async function ArtistDetailsPage({
                   : 'Present'}
               </p>
             )}
-            {/* Source Badge */}
-            <div className='mt-4 flex items-center gap-2'>
-              <span className='text-sm text-zinc-400'>Data source:</span>
-              <span
-                className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  artist.source === 'local'
-                    ? 'bg-emeraled-green text-black'
-                    : artist.source === 'musicbrainz'
-                      ? 'bg-blue-500/20 text-blue-400'
-                      : 'bg-purple-500/20 text-purple-400'
-                }`}
-              >
-                {artist.source === 'local'
-                  ? 'Database'
-                  : artist.source === 'musicbrainz'
-                    ? 'MusicBrainz'
-                    : 'Discogs'}
-              </span>
-            </div>
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -170,12 +158,20 @@ export default async function ArtistDetailsPage({
               </div>
             )}
           </div>
+
+          {/* Admin Actions */}
+          <ArtistAdminActions
+            artistId={artist.id}
+            artistName={artist.name}
+            artistSource={artist.source as 'local' | 'musicbrainz' | 'discogs'}
+            musicbrainzId={artist.musicbrainzId}
+          />
         </div>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue='discography' className='w-full'>
-        <TabsList className='grid w-full grid-cols-5 bg-zinc-900'>
+      <Tabs defaultValue={initialTab} className='w-full'>
+        <TabsList className='grid w-full grid-cols-2 bg-zinc-900'>
           <TabsTrigger
             value='discography'
             className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
@@ -188,29 +184,11 @@ export default async function ArtistDetailsPage({
           >
             Recs
           </TabsTrigger>
-          <TabsTrigger
-            value='biography'
-            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
-          >
-            Biography
-          </TabsTrigger>
-          <TabsTrigger
-            value='collaborations'
-            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
-          >
-            Collaborations
-          </TabsTrigger>
-          <TabsTrigger
-            value='similar'
-            className='data-[state=active]:bg-cosmic-latte data-[state=active]:text-black'
-          >
-            Similar Artists
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent
           value='discography'
-          data-tour-step="artist-discography"
+          data-tour-step='artist-discography'
           className='focus:outline-none outline-none'
         >
           <DiscographyTab
@@ -228,39 +206,6 @@ export default async function ArtistDetailsPage({
             artistId={artist.id}
             artistName={sanitizeArtistName(artist.name)}
           />
-        </TabsContent>
-
-        <TabsContent value='biography'>
-          <div className='bg-zinc-900 p-4 rounded-lg'>
-            <h3 className='text-lg font-semibold mb-4 text-white'>Biography</h3>
-            {artist.profile ? (
-              <p className='text-zinc-300 leading-relaxed'>{artist.profile}</p>
-            ) : (
-              <p className='text-zinc-400'>No biography available.</p>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value='collaborations'>
-          <div className='bg-zinc-900 p-4 rounded-lg'>
-            <h3 className='text-lg font-semibold mb-4 text-white'>
-              Collaborations
-            </h3>
-            <p className='text-zinc-400'>
-              Collaboration information will appear here when available.
-            </p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value='similar'>
-          <div className='bg-zinc-900 p-4 rounded-lg'>
-            <h3 className='text-lg font-semibold mb-4 text-white'>
-              Similar Artists
-            </h3>
-            <p className='text-zinc-400'>
-              Similar artist recommendations will appear here.
-            </p>
-          </div>
         </TabsContent>
       </Tabs>
     </div>

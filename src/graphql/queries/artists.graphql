@@ -1,0 +1,22 @@
+# Mutation to add an artist to the database
+mutation AddArtist($input: ArtistInput!) {
+  addArtist(input: $input) {
+    id
+    name
+    musicbrainzId
+    imageUrl
+    countryCode
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+  }
+}
+
+# Mutation to delete an artist from the database
+mutation DeleteArtist($id: UUID!) {
+  deleteArtist(id: $id) {
+    success
+    message
+    deletedId
+  }
+}

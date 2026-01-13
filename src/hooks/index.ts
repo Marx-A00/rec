@@ -25,6 +25,7 @@ export { useUpdateUserProfileMutation } from './useUpdateUserProfileMutation';
 export { useAlbumModal } from './useAlbumModal';
 export { useCollageGenerator } from './useCollageGenerator';
 export { useRecommendationModal } from './useRecommendationModal';
+export { useAdminOverlay } from './useAdminOverlay';
 
 export { useNavigation } from './useNavigation';
 

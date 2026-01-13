@@ -31,32 +31,34 @@ async function globalSetup(config: FullConfig) {
     await prisma.$connect();
     console.log('Successfully connected to database');
 
-    // Clear existing test users first
+    // Clear existing test users first (check both cases for safety)
     await prisma.user.deleteMany({
       where: {
-        email: {
-          contains: 'PLAYWRIGHT_TEST',
-        },
+        OR: [
+          { email: { contains: 'playwright_test' } },
+          { email: { contains: 'PLAYWRIGHT_TEST' } },
+        ],
       },
     });
 
     // Create multiple recognizable test users
     const hashedPassword = await bcrypt.hash('TestPassword123!', 10);
 
+    // Emails must be lowercase - auth.ts does email.toLowerCase() when looking up users
     const testUsers = [
       {
-        email: 'PLAYWRIGHT_TEST_existing@example.com',
-        name: '🎭 PLAYWRIGHT TEST - Existing User',
+        email: 'playwright_test_existing@example.com',
+        username: '🎭 PLAYWRIGHT TEST - Existing User',
         hashedPassword: hashedPassword,
       },
       {
-        email: 'PLAYWRIGHT_TEST_duplicate@example.com',
-        name: '🎭 PLAYWRIGHT TEST - Duplicate User',
+        email: 'playwright_test_duplicate@example.com',
+        username: '🎭 PLAYWRIGHT TEST - Duplicate User',
         hashedPassword: hashedPassword,
       },
       {
-        email: 'PLAYWRIGHT_TEST_sample@example.com',
-        name: '🎭 PLAYWRIGHT TEST - Sample User',
+        email: 'playwright_test_sample@example.com',
+        username: '🎭 PLAYWRIGHT TEST - Sample User',
         hashedPassword: hashedPassword,
       },
     ];
@@ -65,7 +67,7 @@ async function globalSetup(config: FullConfig) {
       await prisma.user.create({
         data: userData,
       });
-      console.log(`Created test user: ${userData.name}`);
+      console.log(`Created test user: ${userData.username}`);
     }
 
     // Verify the users exist
@@ -81,17 +83,7 @@ async function globalSetup(config: FullConfig) {
     console.log('Total users in database:', userCount);
     console.log('Test users created:', testUserCount);
 
-    // Show which database we're actually using
-    const dbUrl = process.env.DATABASE_URL || '';
-    if (dbUrl.includes('onamogqceorcnecvcame')) {
-      console.log('✅ USING TEST DATABASE (onamogqceorcnecvcame)');
-    } else if (dbUrl.includes('uqsmqujtpebvytzqfmzr')) {
-      console.log(
-        '❌ USING REAL DATABASE (uqsmqujtpebvytzqfmzr) - THIS IS WRONG!'
-      );
-    } else {
-      console.log('⚠️  UNKNOWN DATABASE:', dbUrl.substring(0, 50));
-    }
+    console.log('✅ Test users ready in dev database');
   } catch (error) {
     console.error('Error setting up test data:', error);
     throw error;

@@ -1,14 +1,11 @@
 // src/lib/spotify/scheduler.ts
 /**
  * Automated scheduler for Spotify sync jobs
- * Handles periodic syncing of new releases and featured playlists
+ * Handles periodic syncing of new releases using tag:new search API
  */
 
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
-import type {
-  SpotifySyncNewReleasesJobData,
-  SpotifySyncFeaturedPlaylistsJobData,
-} from '../queue/jobs';
+import type { SpotifySyncNewReleasesJobData } from '../queue/jobs';
 
 import { spotifyMetrics } from './error-handling';
 
@@ -18,35 +15,28 @@ export interface SpotifyScheduleConfig {
     intervalMinutes: number;
     limit: number;
     country: string;
-  };
-  featuredPlaylists: {
-    enabled: boolean;
-    intervalMinutes: number;
-    limit: number;
-    country: string;
-    extractAlbums: boolean;
+    genreTags?: string[]; // Optional genre filtering (e.g., ['rock', 'metal', 'pop'])
+    year?: number; // Optional year filter (defaults to current year)
+    pages?: number; // Number of pages to fetch (1-4, default: 1)
+    minFollowers?: number; // Minimum artist followers to include (e.g., 100000 for 100k+)
   };
 }
 
 export const DEFAULT_SCHEDULE_CONFIG: SpotifyScheduleConfig = {
   newReleases: {
     enabled: true,
-    intervalMinutes: 60, // Every hour
-    limit: 20,
+    intervalMinutes: 10080, // Every week (7 days)
+    limit: 50,
     country: 'US',
-  },
-  featuredPlaylists: {
-    enabled: true,
-    intervalMinutes: 180, // Every 3 hours
-    limit: 10,
-    country: 'US',
-    extractAlbums: true,
+    genreTags: undefined, // No genre filtering by default
+    year: new Date().getFullYear(), // Current year
+    pages: 3, // Default to 3 pages (150 albums)
+    minFollowers: 100000, // Default to 100k+ followers (Task 11)
   },
 };
 
 class SpotifyScheduler {
   private config: SpotifyScheduleConfig;
-  private intervals: Map<string, NodeJS.Timeout> = new Map();
   private isRunning = false;
 
   constructor(config: SpotifyScheduleConfig = DEFAULT_SCHEDULE_CONFIG) {
@@ -56,7 +46,7 @@ class SpotifyScheduler {
   /**
    * Start the automated scheduler
    */
-  start() {
+  async start() {
     if (this.isRunning) {
       console.log('🔄 Spotify scheduler is already running');
       return;
@@ -65,14 +55,12 @@ class SpotifyScheduler {
     console.log('🚀 Starting Spotify automated scheduler...');
     this.isRunning = true;
 
+    // Remove any existing schedules to prevent duplicates
+    await this.removeExistingSchedules();
+
     // Schedule new releases sync
     if (this.config.newReleases.enabled) {
-      this.scheduleNewReleases();
-    }
-
-    // Schedule featured playlists sync
-    if (this.config.featuredPlaylists.enabled) {
-      this.scheduleFeaturedPlaylists();
+      await this.scheduleNewReleases();
     }
 
     console.log('✅ Spotify scheduler started successfully');
@@ -82,7 +70,7 @@ class SpotifyScheduler {
   /**
    * Stop the automated scheduler
    */
-  stop() {
+  async stop() {
     if (!this.isRunning) {
       console.log('⏸️  Spotify scheduler is not running');
       return;
@@ -90,13 +78,9 @@ class SpotifyScheduler {
 
     console.log('🛑 Stopping Spotify automated scheduler...');
 
-    // Clear all intervals
-    for (const [jobType, interval] of this.intervals) {
-      clearInterval(interval);
-      console.log(`  ✅ Stopped ${jobType} scheduler`);
-    }
+    // Remove repeatable jobs from BullMQ
+    await this.removeExistingSchedules();
 
-    this.intervals.clear();
     this.isRunning = false;
 
     console.log('✅ Spotify scheduler stopped successfully');
@@ -105,17 +89,17 @@ class SpotifyScheduler {
   /**
    * Update scheduler configuration
    */
-  updateConfig(newConfig: Partial<SpotifyScheduleConfig>) {
+  async updateConfig(newConfig: Partial<SpotifyScheduleConfig>) {
     const wasRunning = this.isRunning;
 
     if (wasRunning) {
-      this.stop();
+      await this.stop();
     }
 
     this.config = { ...this.config, ...newConfig };
 
     if (wasRunning) {
-      this.start();
+      await this.start();
     }
 
     console.log('🔧 Spotify scheduler configuration updated');
@@ -124,63 +108,95 @@ class SpotifyScheduler {
   /**
    * Get current scheduler status
    */
-  getStatus() {
+  async getStatus() {
+    const queue = getMusicBrainzQueue();
+    const repeatableJobs = await queue.getQueue().getRepeatableJobs();
+    const spotifyJobs = repeatableJobs.filter(job =>
+      job.key.includes('spotify-new-releases-schedule')
+    );
+
     return {
       isRunning: this.isRunning,
       config: this.config,
-      activeJobs: Array.from(this.intervals.keys()),
+      activeSchedules: spotifyJobs.map(job => job.id),
       metrics: spotifyMetrics.getMetrics(),
       successRate: spotifyMetrics.getSuccessRate(),
     };
   }
 
   /**
-   * Schedule new releases sync
+   * Schedule new releases sync using BullMQ repeatable jobs
    */
-  private scheduleNewReleases() {
+  private async scheduleNewReleases() {
     const intervalMs = this.config.newReleases.intervalMinutes * 60 * 1000;
+    const queue = getMusicBrainzQueue();
 
-    // Run immediately on start
-    this.queueNewReleasesSync();
+    const jobData: SpotifySyncNewReleasesJobData = {
+      limit: this.config.newReleases.limit,
+      country: this.config.newReleases.country,
+      priority: 'medium',
+      source: 'scheduled',
+      requestId: `scheduled_new_releases_${Date.now()}`,
+      // Tag-based filtering for Spotify Search API
+      genreTags: this.config.newReleases.genreTags,
+      year: this.config.newReleases.year || new Date().getFullYear(),
+      // Pagination and follower filtering (Task 11)
+      pages: this.config.newReleases.pages,
+      minFollowers: this.config.newReleases.minFollowers,
+    };
 
-    // Then schedule recurring
-    const interval = setInterval(() => {
-      this.queueNewReleasesSync();
-    }, intervalMs);
-
-    this.intervals.set('new-releases', interval);
+    // Use BullMQ repeatable jobs instead of setInterval
+    // This persists in Redis and survives worker restarts
+    await queue.addJob(JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES, jobData, {
+      repeat: {
+        every: intervalMs,
+      },
+      jobId: 'spotify-new-releases-schedule', // Prevents duplicates
+      priority: 3,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 },
+      removeOnComplete: 10,
+      removeOnFail: 5,
+    });
 
     console.log(
-      `📅 Scheduled new releases sync every ${this.config.newReleases.intervalMinutes} minutes`
+      `📅 Scheduled new releases sync every ${this.config.newReleases.intervalMinutes} minutes (BullMQ repeatable job)`
     );
+    if (jobData.genreTags && jobData.genreTags.length > 0) {
+      console.log(`   Genre filters: ${jobData.genreTags.join(', ')}`);
+    }
+    if (jobData.pages && jobData.pages > 1) {
+      console.log(
+        `   Pages: ${jobData.pages} (up to ${jobData.pages * (jobData.limit || 50)} albums)`
+      );
+    }
+    if (jobData.minFollowers) {
+      console.log(`   Min followers: ${jobData.minFollowers.toLocaleString()}`);
+    }
   }
 
   /**
-   * Schedule featured playlists sync
+   * Remove existing repeatable job schedules
    */
-  private scheduleFeaturedPlaylists() {
-    const intervalMs =
-      this.config.featuredPlaylists.intervalMinutes * 60 * 1000;
+  private async removeExistingSchedules() {
+    try {
+      const queue = getMusicBrainzQueue();
+      const repeatableJobs = await queue.getQueue().getRepeatableJobs();
 
-    // Run immediately on start (with slight delay to avoid collision)
-    setTimeout(() => {
-      this.queueFeaturedPlaylistsSync();
-    }, 30000); // 30 second delay
-
-    // Then schedule recurring
-    const interval = setInterval(() => {
-      this.queueFeaturedPlaylistsSync();
-    }, intervalMs);
-
-    this.intervals.set('featured-playlists', interval);
-
-    console.log(
-      `📅 Scheduled featured playlists sync every ${this.config.featuredPlaylists.intervalMinutes} minutes`
-    );
+      // Remove Spotify new releases schedules
+      for (const job of repeatableJobs) {
+        if (job.key.includes('spotify-new-releases-schedule')) {
+          await queue.getQueue().removeRepeatableByKey(job.key);
+          console.log(`  🗑️  Removed existing schedule: ${job.key}`);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️  Failed to remove existing schedules:', error);
+    }
   }
 
   /**
-   * Queue a new releases sync job
+   * Queue a new releases sync job (for manual triggering)
    */
   private async queueNewReleasesSync() {
     try {
@@ -190,61 +206,25 @@ class SpotifyScheduler {
         limit: this.config.newReleases.limit,
         country: this.config.newReleases.country,
         priority: 'medium',
-        source: 'scheduled',
-        requestId: `scheduled_new_releases_${Date.now()}`,
+        source: 'manual',
+        requestId: `manual_new_releases_${Date.now()}`,
       };
 
       const job = await queue.addJob(
         JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES,
         jobData,
         {
-          priority: 3, // Medium priority for scheduled jobs
+          priority: 3, // Medium priority for manual jobs
           attempts: 3,
           backoff: { type: 'exponential', delay: 5000 },
-          removeOnComplete: 10 as any, // Keep last 10 completed jobs
-          removeOnFail: 5 as any, // Keep last 5 failed jobs for debugging
+          removeOnComplete: 10,
+          removeOnFail: 5,
         }
       );
 
-      console.log(`🎵 Queued scheduled new releases sync (Job ID: ${job.id})`);
+      console.log(`🎵 Queued manual new releases sync (Job ID: ${job.id})`);
     } catch (error) {
       console.error('❌ Failed to queue new releases sync:', error);
-    }
-  }
-
-  /**
-   * Queue a featured playlists sync job
-   */
-  private async queueFeaturedPlaylistsSync() {
-    try {
-      const queue = getMusicBrainzQueue();
-
-      const jobData: SpotifySyncFeaturedPlaylistsJobData = {
-        limit: this.config.featuredPlaylists.limit,
-        country: this.config.featuredPlaylists.country,
-        extractAlbums: this.config.featuredPlaylists.extractAlbums,
-        priority: 'medium',
-        source: 'scheduled',
-        requestId: `scheduled_playlists_${Date.now()}`,
-      };
-
-      const job = await queue.addJob(
-        JOB_TYPES.SPOTIFY_SYNC_FEATURED_PLAYLISTS,
-        jobData,
-        {
-          priority: 3, // Medium priority for scheduled jobs
-          attempts: 3,
-          backoff: { type: 'exponential', delay: 5000 },
-          removeOnComplete: 10 as any,
-          removeOnFail: 5 as any,
-        }
-      );
-
-      console.log(
-        `🎧 Queued scheduled featured playlists sync (Job ID: ${job.id})`
-      );
-    } catch (error) {
-      console.error('❌ Failed to queue featured playlists sync:', error);
     }
   }
 
@@ -261,41 +241,24 @@ class SpotifyScheduler {
       console.log(
         `     Limit: ${this.config.newReleases.limit}, Country: ${this.config.newReleases.country}`
       );
+      if (this.config.newReleases.genreTags?.length) {
+        console.log(
+          `     Genres: ${this.config.newReleases.genreTags.join(', ')}`
+        );
+      }
     } else {
       console.log('  🎵 New Releases: Disabled');
-    }
-
-    if (this.config.featuredPlaylists.enabled) {
-      console.log(
-        `  🎧 Featured Playlists: Every ${this.config.featuredPlaylists.intervalMinutes} minutes`
-      );
-      console.log(
-        `     Limit: ${this.config.featuredPlaylists.limit}, Country: ${this.config.featuredPlaylists.country}`
-      );
-      console.log(
-        `     Extract Albums: ${this.config.featuredPlaylists.extractAlbums}`
-      );
-    } else {
-      console.log('  🎧 Featured Playlists: Disabled');
     }
 
     console.log('');
   }
 
   /**
-   * Manually trigger a sync (for testing or immediate needs)
+   * Manually trigger a new releases sync
    */
-  async triggerSync(type: 'new-releases' | 'featured-playlists' | 'both') {
-    console.log(`🔄 Manually triggering ${type} sync...`);
-
-    if (type === 'new-releases' || type === 'both') {
-      await this.queueNewReleasesSync();
-    }
-
-    if (type === 'featured-playlists' || type === 'both') {
-      await this.queueFeaturedPlaylistsSync();
-    }
-
+  async triggerSync() {
+    console.log('🔄 Manually triggering new releases sync...');
+    await this.queueNewReleasesSync();
     console.log('✅ Manual sync triggered successfully');
   }
 }
@@ -306,36 +269,51 @@ export const spotifyScheduler = new SpotifyScheduler();
 /**
  * Initialize Spotify scheduler with environment-based configuration
  */
-export function initializeSpotifyScheduler() {
+export async function initializeSpotifyScheduler() {
   // Check if we have Spotify credentials
   if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
     console.log('⚠️  Spotify credentials not found, scheduler will not start');
     return false;
   }
 
+  // Parse genre tags from comma-separated env var
+  const genreTags = process.env.SPOTIFY_NEW_RELEASES_GENRE_TAGS
+    ? process.env.SPOTIFY_NEW_RELEASES_GENRE_TAGS.split(',').map(t => t.trim())
+    : undefined;
+
+  // Parse year from env var (defaults to current year)
+  const year = process.env.SPOTIFY_NEW_RELEASES_YEAR
+    ? parseInt(process.env.SPOTIFY_NEW_RELEASES_YEAR)
+    : new Date().getFullYear();
+
+  // Parse pagination setting (Task 11)
+  const pages = process.env.SPOTIFY_NEW_RELEASES_PAGES
+    ? parseInt(process.env.SPOTIFY_NEW_RELEASES_PAGES)
+    : 3; // Default to 3 pages
+
+  // Parse follower filter (Task 11)
+  const minFollowers = process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS
+    ? parseInt(process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS)
+    : 100000; // Default to 100k+ followers
+
   // Load configuration from environment variables
   const config: SpotifyScheduleConfig = {
     newReleases: {
       enabled: process.env.SPOTIFY_SYNC_NEW_RELEASES !== 'false',
       intervalMinutes: parseInt(
-        process.env.SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES || '60'
+        process.env.SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES || '10080' // Default: 7 days
       ),
-      limit: parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '20'),
+      limit: parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '50'),
       country: process.env.SPOTIFY_COUNTRY || 'US',
-    },
-    featuredPlaylists: {
-      enabled: process.env.SPOTIFY_SYNC_FEATURED_PLAYLISTS !== 'false',
-      intervalMinutes: parseInt(
-        process.env.SPOTIFY_FEATURED_PLAYLISTS_INTERVAL_MINUTES || '180'
-      ),
-      limit: parseInt(process.env.SPOTIFY_FEATURED_PLAYLISTS_LIMIT || '10'),
-      country: process.env.SPOTIFY_COUNTRY || 'US',
-      extractAlbums: process.env.SPOTIFY_EXTRACT_ALBUMS !== 'false',
+      genreTags,
+      year,
+      pages,
+      minFollowers,
     },
   };
 
-  spotifyScheduler.updateConfig(config);
-  spotifyScheduler.start();
+  await spotifyScheduler.updateConfig(config);
+  await spotifyScheduler.start();
 
   return true;
 }
@@ -343,6 +321,6 @@ export function initializeSpotifyScheduler() {
 /**
  * Gracefully shutdown the scheduler
  */
-export function shutdownSpotifyScheduler() {
-  spotifyScheduler.stop();
+export async function shutdownSpotifyScheduler() {
+  await spotifyScheduler.stop();
 }

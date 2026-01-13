@@ -314,27 +314,27 @@ export class HealthChecker {
       const metrics = spotifyMetrics.getMetrics();
       const successRate = spotifyMetrics.getSuccessRate();
 
-      // Check for recent scheduled Spotify jobs in the queue to detect if scheduler is running
+      // Check for registered repeatable jobs (the actual schedules) instead of recent executions
+      // Repeatable jobs persist in Redis and represent the scheduler configuration
       const queue = getMusicBrainzQueue();
-      const jobs = await queue
-        .getQueue()
-        .getJobs(['completed', 'active', 'waiting'], 0, 10);
-      const recentScheduledJobs = jobs.filter(
+      const repeatableJobs = await queue.getQueue().getRepeatableJobs();
+      // Filter by job key which contains the full job identifier
+      const spotifySchedules = repeatableJobs.filter(
         job =>
-          (job.name === 'spotify-sync-new-releases' ||
-            job.name === 'spotify-sync-featured-playlists') &&
-          (job.data as any)?.source === 'scheduled' &&
-          job.timestamp > Date.now() - 3600000 // Within last hour
+          job.key.includes('spotify-new-releases-schedule') ||
+          job.key.includes('spotify-featured-playlists-schedule')
       );
-      const schedulerRunning = recentScheduledJobs.length > 0;
+      const schedulerConfigured = spotifySchedules.length > 0;
 
       let status: HealthStatus;
       let message: string;
 
-      if (!schedulerRunning) {
+      if (!schedulerConfigured) {
         status = HealthStatus.DEGRADED;
-        message = 'Spotify scheduler not running (no recent scheduled jobs)';
-      } else if (successRate < 80) {
+        message =
+          'Spotify scheduler not configured (no scheduled jobs registered)';
+      } else if (successRate < 80 && (metrics as any).totalRequests > 10) {
+        // Only flag low success rate if we have enough data points
         status = HealthStatus.DEGRADED;
         message = `Low Spotify API success rate: ${successRate.toFixed(2)}%`;
       } else if ((metrics as any).errors?.total > 100) {
@@ -342,7 +342,9 @@ export class HealthChecker {
         message = `High Spotify error count: ${(metrics as any).errors?.total}`;
       } else {
         status = HealthStatus.HEALTHY;
-        message = 'Spotify integration healthy';
+        message = schedulerConfigured
+          ? `Spotify integration healthy (${spotifySchedules.length} schedule(s) active)`
+          : 'Spotify integration healthy';
       }
 
       return {
@@ -351,8 +353,8 @@ export class HealthChecker {
         details: {
           ...metrics,
           successRate,
-          schedulerRunning,
-          recentScheduledJobs: recentScheduledJobs.length,
+          schedulerConfigured,
+          activeSchedules: spotifySchedules.map(job => job.id),
         },
         lastCheck: new Date(),
       };

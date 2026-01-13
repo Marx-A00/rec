@@ -206,12 +206,12 @@ app.get('/spotify/metrics', async (req, res) => {
     const { spotifyScheduler } = await import('@/lib/spotify/scheduler');
 
     const metrics = spotifyMetrics.getMetrics();
-    const status = spotifyScheduler.getStatus();
+    const status = await spotifyScheduler.getStatus();
 
     res.json({
       scheduler: {
         isRunning: status.isRunning,
-        activeJobs: status.activeJobs,
+        activeSchedules: status.activeSchedules,
         config: status.config,
       },
       metrics: {
@@ -241,7 +241,7 @@ app.post('/spotify/:action', async (req, res) => {
         const { initializeSpotifyScheduler } = await import(
           '@/lib/spotify/scheduler'
         );
-        const started = initializeSpotifyScheduler();
+        const started = await initializeSpotifyScheduler();
         res.json({
           success: started,
           message: started
@@ -256,17 +256,8 @@ app.post('/spotify/:action', async (req, res) => {
         break;
 
       case 'sync':
-        if (
-          !type ||
-          !['new-releases', 'featured-playlists', 'both'].includes(type)
-        ) {
-          return res.status(400).json({
-            error:
-              'Invalid sync type. Use: new-releases, featured-playlists, or both',
-          });
-        }
-        await spotifyScheduler.triggerSync(type);
-        res.json({ success: true, message: `${type} sync triggered` });
+        await spotifyScheduler.triggerSync();
+        res.json({ success: true, message: 'New releases sync triggered' });
         break;
 
       default:

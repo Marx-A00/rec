@@ -1,0 +1,94 @@
+# Sync Job Queries for Weekly Sync Admin Page
+
+query GetSyncJobs($input: SyncJobsInput) {
+  syncJobs(input: $input) {
+    jobs {
+      id
+      jobId
+      jobType
+      status
+      startedAt
+      completedAt
+      durationMs
+      albumsCreated
+      albumsUpdated
+      albumsSkipped
+      artistsCreated
+      artistsUpdated
+      errorMessage
+      errorCode
+      metadata
+      triggeredBy
+      createdAt
+    }
+    totalCount
+    hasMore
+  }
+}
+
+query GetSyncJob($id: UUID!) {
+  syncJob(id: $id) {
+    id
+    jobId
+    jobType
+    status
+    startedAt
+    completedAt
+    durationMs
+    albumsCreated
+    albumsUpdated
+    albumsSkipped
+    artistsCreated
+    artistsUpdated
+    errorMessage
+    errorCode
+    metadata
+    triggeredBy
+    createdAt
+    updatedAt
+    albums(limit: 100) {
+      id
+      title
+      coverArtUrl
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+query GetSyncJobByJobId($jobId: String!) {
+  syncJobByJobId(jobId: $jobId) {
+    id
+    jobId
+    jobType
+    status
+    startedAt
+    completedAt
+    durationMs
+    albumsCreated
+    albumsUpdated
+    albumsSkipped
+    artistsCreated
+    artistsUpdated
+    errorMessage
+    metadata
+    triggeredBy
+  }
+}
+
+# Rollback a sync job (delete all albums/artists created by it)
+mutation RollbackSyncJob($syncJobId: UUID!, $dryRun: Boolean = true) {
+  rollbackSyncJob(syncJobId: $syncJobId, dryRun: $dryRun) {
+    success
+    syncJobId
+    albumsDeleted
+    artistsDeleted
+    message
+    dryRun
+  }
+}

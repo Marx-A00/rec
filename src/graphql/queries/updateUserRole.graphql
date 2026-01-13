@@ -5,7 +5,7 @@ mutation UpdateUserRole($userId: String!, $role: UserRole!) {
     user {
       id
       role
-      name
+      username
       email
     }
   }

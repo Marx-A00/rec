@@ -40,7 +40,6 @@ export const DEFAULT_SCHEDULE_CONFIG: MusicBrainzScheduleConfig = {
 
 class MusicBrainzScheduler {
   private config: MusicBrainzScheduleConfig;
-  private intervals: Map<string, NodeJS.Timeout> = new Map();
   private isRunning = false;
 
   constructor(config: MusicBrainzScheduleConfig = DEFAULT_SCHEDULE_CONFIG) {
@@ -50,7 +49,7 @@ class MusicBrainzScheduler {
   /**
    * Start the automated scheduler
    */
-  start() {
+  async start() {
     if (this.isRunning) {
       console.log('🔄 MusicBrainz scheduler is already running');
       return;
@@ -59,9 +58,12 @@ class MusicBrainzScheduler {
     console.log('🚀 Starting MusicBrainz automated scheduler...');
     this.isRunning = true;
 
+    // Remove any existing schedules to prevent duplicates
+    await this.removeExistingSchedules();
+
     // Schedule new releases sync
     if (this.config.newReleases.enabled) {
-      this.scheduleNewReleases();
+      await this.scheduleNewReleases();
     }
 
     console.log('✅ MusicBrainz scheduler started successfully');
@@ -71,7 +73,7 @@ class MusicBrainzScheduler {
   /**
    * Stop the automated scheduler
    */
-  stop() {
+  async stop() {
     if (!this.isRunning) {
       console.log('⏸️  MusicBrainz scheduler is not running');
       return;
@@ -79,13 +81,9 @@ class MusicBrainzScheduler {
 
     console.log('🛑 Stopping MusicBrainz automated scheduler...');
 
-    // Clear all intervals
-    for (const [jobType, interval] of this.intervals) {
-      clearInterval(interval);
-      console.log(`  ✅ Stopped ${jobType} scheduler`);
-    }
+    // Remove repeatable jobs from BullMQ
+    await this.removeExistingSchedules();
 
-    this.intervals.clear();
     this.isRunning = false;
 
     console.log('✅ MusicBrainz scheduler stopped successfully');
@@ -94,17 +92,17 @@ class MusicBrainzScheduler {
   /**
    * Update scheduler configuration
    */
-  updateConfig(newConfig: Partial<MusicBrainzScheduleConfig>) {
+  async updateConfig(newConfig: Partial<MusicBrainzScheduleConfig>) {
     const wasRunning = this.isRunning;
 
     if (wasRunning) {
-      this.stop();
+      await this.stop();
     }
 
     this.config = { ...this.config, ...newConfig };
 
     if (wasRunning) {
-      this.start();
+      await this.start();
     }
 
     console.log('🔧 MusicBrainz scheduler configuration updated');
@@ -113,37 +111,77 @@ class MusicBrainzScheduler {
   /**
    * Get current scheduler status
    */
-  getStatus() {
+  async getStatus() {
+    const queue = getMusicBrainzQueue();
+    const repeatableJobs = await queue.getQueue().getRepeatableJobs();
+    const musicBrainzJobs = repeatableJobs.filter(
+      job => job.id === 'musicbrainz-new-releases-schedule'
+    );
+
     return {
       isRunning: this.isRunning,
       config: this.config,
-      activeJobs: Array.from(this.intervals.keys()),
+      activeSchedules: musicBrainzJobs.map(job => job.id),
     };
   }
 
   /**
-   * Schedule new releases sync
+   * Schedule new releases sync using BullMQ repeatable jobs
    */
-  private scheduleNewReleases() {
+  private async scheduleNewReleases() {
     const intervalMs = this.config.newReleases.intervalMinutes * 60 * 1000;
+    const queue = getMusicBrainzQueue();
 
-    // Run immediately on start
-    this.queueNewReleasesSync();
+    // Calculate date range
+    const today = new Date();
+    const daysAgo = new Date(
+      today.getTime() -
+        this.config.newReleases.dateRangeDays * 24 * 60 * 60 * 1000
+    );
+    const fromDate = daysAgo.toISOString().split('T')[0];
+    const toDate = today.toISOString().split('T')[0];
 
-    // Then schedule recurring
-    const interval = setInterval(() => {
-      this.queueNewReleasesSync();
-    }, intervalMs);
+    // Build Lucene query with genre filters
+    const genreFilters = this.config.newReleases.genres
+      .map(genre => `tag:"${genre}"`)
+      .join(' OR ');
 
-    this.intervals.set('new-releases', interval);
+    const query = `firstreleasedate:[${fromDate} TO ${toDate}] AND primarytype:Album AND (${genreFilters})`;
+
+    const jobData: MusicBrainzSyncNewReleasesJobData = {
+      query,
+      limit: this.config.newReleases.limit,
+      dateRange: {
+        from: fromDate,
+        to: toDate,
+      },
+      genres: this.config.newReleases.genres,
+      priority: 'low',
+      source: 'scheduled',
+      requestId: `scheduled_mb_new_releases_${Date.now()}`,
+    };
+
+    // Use BullMQ repeatable jobs instead of setInterval
+    // This persists in Redis and survives worker restarts
+    await queue.addJob(JOB_TYPES.MUSICBRAINZ_SYNC_NEW_RELEASES, jobData, {
+      repeat: {
+        every: intervalMs,
+      },
+      jobId: 'musicbrainz-new-releases-schedule', // Prevents duplicates
+      priority: 5, // Low priority for scheduled background jobs
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 10000 },
+      removeOnComplete: 10,
+      removeOnFail: 5,
+    });
 
     console.log(
-      `📅 Scheduled MusicBrainz new releases sync every ${this.config.newReleases.intervalMinutes} minutes`
+      `📅 Scheduled MusicBrainz new releases sync every ${this.config.newReleases.intervalMinutes} minutes (${Math.round(this.config.newReleases.intervalMinutes / 1440)} days) - BullMQ repeatable job`
     );
   }
 
   /**
-   * Queue a new releases sync job
+   * Queue a new releases sync job (for manual triggering)
    */
   private async queueNewReleasesSync() {
     try {
@@ -160,7 +198,7 @@ class MusicBrainzScheduler {
 
       // Build Lucene query with genre filters
       const genreFilters = this.config.newReleases.genres
-        .map((genre) => `tag:"${genre}"`)
+        .map(genre => `tag:"${genre}"`)
         .join(' OR ');
 
       const query = `firstreleasedate:[${fromDate} TO ${toDate}] AND primarytype:Album AND (${genreFilters})`;
@@ -174,29 +212,49 @@ class MusicBrainzScheduler {
         },
         genres: this.config.newReleases.genres,
         priority: 'low',
-        source: 'scheduled',
-        requestId: `scheduled_mb_new_releases_${Date.now()}`,
+        source: 'manual',
+        requestId: `manual_mb_new_releases_${Date.now()}`,
       };
 
       const job = await queue.addJob(
         JOB_TYPES.MUSICBRAINZ_SYNC_NEW_RELEASES,
         jobData,
         {
-          priority: 5, // Low priority for scheduled background jobs
+          priority: 5, // Low priority for manual jobs
           attempts: 3,
           backoff: { type: 'exponential', delay: 10000 },
-          removeOnComplete: 10 as any, // Keep last 10 completed jobs
-          removeOnFail: 5 as any, // Keep last 5 failed jobs for debugging
+          removeOnComplete: 10,
+          removeOnFail: 5,
         }
       );
 
       console.log(
-        `🎵 Queued scheduled MusicBrainz new releases sync (Job ID: ${job.id})`
+        `🎵 Queued manual MusicBrainz new releases sync (Job ID: ${job.id})`
       );
       console.log(`   Date range: ${fromDate} to ${toDate}`);
       console.log(`   Genres: ${this.config.newReleases.genres.join(', ')}`);
     } catch (error) {
       console.error('❌ Failed to queue MusicBrainz new releases sync:', error);
+    }
+  }
+
+  /**
+   * Remove existing repeatable job schedules
+   */
+  private async removeExistingSchedules() {
+    try {
+      const queue = getMusicBrainzQueue();
+      const repeatableJobs = await queue.getQueue().getRepeatableJobs();
+
+      // Remove MusicBrainz-related schedules
+      for (const job of repeatableJobs) {
+        if (job.id === 'musicbrainz-new-releases-schedule') {
+          await queue.getQueue().removeRepeatableByKey(job.key);
+          console.log(`  🗑️  Removed existing schedule: ${job.id}`);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️  Failed to remove existing schedules:', error);
     }
   }
 
@@ -213,9 +271,7 @@ class MusicBrainzScheduler {
       console.log(
         `     Limit: ${this.config.newReleases.limit}, Date Range: ${this.config.newReleases.dateRangeDays} days`
       );
-      console.log(
-        `     Genres: ${this.config.newReleases.genres.join(', ')}`
-      );
+      console.log(`     Genres: ${this.config.newReleases.genres.join(', ')}`);
     } else {
       console.log('  🎵 New Releases: Disabled');
     }
@@ -239,7 +295,7 @@ export const musicBrainzScheduler = new MusicBrainzScheduler();
 /**
  * Initialize MusicBrainz scheduler with environment-based configuration
  */
-export function initializeMusicBrainzScheduler() {
+export async function initializeMusicBrainzScheduler() {
   // Load configuration from environment variables
   const config: MusicBrainzScheduleConfig = {
     newReleases: {
@@ -268,8 +324,8 @@ export function initializeMusicBrainzScheduler() {
     },
   };
 
-  musicBrainzScheduler.updateConfig(config);
-  musicBrainzScheduler.start();
+  await musicBrainzScheduler.updateConfig(config);
+  await musicBrainzScheduler.start();
 
   return true;
 }
@@ -277,6 +333,6 @@ export function initializeMusicBrainzScheduler() {
 /**
  * Gracefully shutdown the scheduler
  */
-export function shutdownMusicBrainzScheduler() {
-  musicBrainzScheduler.stop();
+export async function shutdownMusicBrainzScheduler() {
+  await musicBrainzScheduler.stop();
 }

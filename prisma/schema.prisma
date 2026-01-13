@@ -4,8 +4,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")      // Pooled connection for runtime
-  directUrl = env("DIRECT_URL")        // Direct connection for migrations
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Optional: for connection pooling (Supabase, Neon)
 }
 
 model Account {
@@ -36,7 +36,7 @@ model Session {
 
 model User {
   id                   String           @id @default(cuid())
-  name                 String?
+  username             String?          @map("name")
   email                String?          @unique
   emailVerified        DateTime?
   image                String?
@@ -47,6 +47,7 @@ model User {
   followingCount       Int              @default(0)
   recommendationsCount Int              @default(0)
   profileUpdatedAt     DateTime?
+  lastActive           DateTime?        @map("last_active")
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   accounts             Account[]
@@ -56,6 +57,7 @@ model User {
   settings             UserSettings?
   followers            UserFollow[]     @relation("UserFollowers")
   following            UserFollow[]     @relation("UserFollowing")
+  enrichmentLogs       EnrichmentLog[]
 }
 
 model UserSettings {
@@ -64,10 +66,13 @@ model UserSettings {
   dashboardLayout       Json?
   theme                 String   @default("dark")
   language              String   @default("en")
-  profileVisibility     String   @default("public")
-  showRecentActivity    Boolean  @default(true)
-  showCollections       Boolean  @default(true)
-  emailNotifications    Boolean  @default(true)
+  profileVisibility        String   @default("public")
+  showRecentActivity       Boolean  @default(true)
+  showCollections          Boolean  @default(true)
+  showListenLaterInFeed    Boolean  @default(true)
+  showCollectionAddsInFeed Boolean  @default(true)
+  showOnboardingTour       Boolean  @default(true)
+  emailNotifications       Boolean  @default(true)
   recommendationAlerts  Boolean  @default(true)
   followAlerts          Boolean  @default(true)
   defaultCollectionView String   @default("grid")
@@ -201,6 +206,7 @@ model Artist {
   updatedAt        DateTime                 @updatedAt @map("updated_at")
   albums           AlbumArtist[]
   tracks           TrackArtist[]
+  enrichmentLogs   EnrichmentLog[]
 
   @@index([name])
   @@index([musicbrainzId])
@@ -236,6 +242,7 @@ model Album {
   dataQuality           DataQuality?             @default(LOW) @map("data_quality")
   enrichmentStatus      EnrichmentStatus?        @default(PENDING) @map("enrichment_status")
   lastEnriched          DateTime?                @map("last_enriched")
+  metadata              Json?                    // Sync tracking - see src/types/album-metadata.ts for structure
   createdAt             DateTime                 @default(now()) @map("created_at")
   updatedAt             DateTime                 @updatedAt @map("updated_at")
   collectionAlbums      CollectionAlbum[]
@@ -243,6 +250,7 @@ model Album {
   targetRecommendations Recommendation[]         @relation("RecommendedAlbum")
   artists               AlbumArtist[]
   tracks                Track[]
+  enrichmentLogs        EnrichmentLog[]
 
   @@index([title])
   @@index([releaseDate])
@@ -255,7 +263,7 @@ model Album {
 model Track {
   id               String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   albumId          String                   @map("album_id") @db.Uuid
-  musicbrainzId    String?                  @unique @map("musicbrainz_id") @db.Uuid
+  musicbrainzId    String?                  @map("musicbrainz_id") @db.Uuid
   isrc             String?                  @db.VarChar(12)
   title            String                   @db.VarChar(255)
   trackNumber      Int                      @map("track_number")
@@ -291,7 +299,9 @@ model Track {
   updatedAt        DateTime                 @updatedAt @map("updated_at")
   artists          TrackArtist[]
   album            Album                    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  enrichmentLogs   EnrichmentLog[]
 
+  @@unique([albumId, musicbrainzId])
   @@index([albumId, discNumber, trackNumber])
   @@index([title])
   @@index([isrc])
@@ -342,6 +352,47 @@ model CacheData {
   @@map("cache_data")
 }
 
+model EnrichmentLog {
+  id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entityType         EnrichmentEntityType?  @map("entity_type")
+  entityId           String?                @map("entity_id") @db.Uuid
+  artistId           String?                @map("artist_id") @db.Uuid
+  albumId            String?                @map("album_id") @db.Uuid
+  trackId            String?                @map("track_id") @db.Uuid
+  operation          String                 @db.VarChar(100)
+  sources            String[]
+  status             EnrichmentStatus
+  reason             String?                // Human-readable explanation of why this enrichment occurred/was skipped
+  fieldsEnriched     String[]               @map("fields_enriched")
+  dataQualityBefore  DataQuality?           @map("data_quality_before")
+  dataQualityAfter   DataQuality?           @map("data_quality_after")
+  errorMessage       String?                @map("error_message")
+  errorCode          String?                @map("error_code") @db.VarChar(50)
+  retryCount         Int                    @default(0) @map("retry_count")
+  durationMs         Int?                   @map("duration_ms")
+  apiCallCount       Int                    @default(0) @map("api_call_count")
+  metadata           Json?
+  previewData        Json?                  @map("preview_data") // Stores raw API response and field diffs for preview enrichments
+  jobId              String?                @map("job_id") @db.VarChar(100)
+  triggeredBy        String?                @map("triggered_by") @db.VarChar(50)
+  userId             String?                @map("user_id") // Track which user made manual changes
+  createdAt          DateTime               @default(now()) @map("created_at")
+  artist             Artist?                @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  album              Album?                 @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  track              Track?                 @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  user               User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([artistId, createdAt])
+  @@index([albumId, createdAt])
+  @@index([trackId, createdAt])
+  @@index([status, createdAt])
+  @@index([operation])
+  @@index([sources])
+  @@index([userId])
+  @@map("enrichment_logs")
+}
+
 enum ContentSource {
   DISCOGS
   MUSICBRAINZ
@@ -363,6 +414,17 @@ enum EnrichmentStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+  SUCCESS
+  PARTIAL_SUCCESS
+  NO_DATA_AVAILABLE
+  SKIPPED
+  PREVIEW
+}
+
+enum EnrichmentEntityType {
+  ARTIST
+  ALBUM
+  TRACK
 }
 
 enum UserRole {
@@ -370,4 +432,63 @@ enum UserRole {
   MODERATOR
   ADMIN
   OWNER
+}
+
+// ============================================================================
+// Sync Job Tracking
+// ============================================================================
+
+enum SyncJobType {
+  SPOTIFY_NEW_RELEASES
+  SPOTIFY_FEATURED_PLAYLISTS
+  MUSICBRAINZ_NEW_RELEASES
+  MUSICBRAINZ_SYNC
+  DISCOGS_SYNC
+  ENRICHMENT_BATCH
+}
+
+enum SyncJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model SyncJob {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId           String        @unique @map("job_id") @db.VarChar(100) // BullMQ job ID for linking
+  jobType         SyncJobType   @map("job_type")
+  status          SyncJobStatus @default(PENDING)
+  
+  // Timing
+  startedAt       DateTime      @default(now()) @map("started_at")
+  completedAt     DateTime?     @map("completed_at")
+  durationMs      Int?          @map("duration_ms")
+  
+  // Results
+  albumsCreated   Int           @default(0) @map("albums_created")
+  albumsUpdated   Int           @default(0) @map("albums_updated")
+  albumsSkipped   Int           @default(0) @map("albums_skipped")
+  artistsCreated  Int           @default(0) @map("artists_created")
+  artistsUpdated  Int           @default(0) @map("artists_updated")
+  
+  // Error tracking
+  errorMessage    String?       @map("error_message")
+  errorCode       String?       @map("error_code") @db.VarChar(50)
+  
+  // Metadata (query params, filters, etc.)
+  metadata        Json?         // Stores: query, genreTags, year, country, limit, etc.
+  
+  // Audit
+  triggeredBy     String?       @map("triggered_by") @db.VarChar(50) // 'scheduled', 'manual', 'graphql'
+  
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@index([jobType, status])
+  @@index([status, startedAt])
+  @@index([startedAt])
+  @@index([jobId])
+  @@map("sync_jobs")
 }

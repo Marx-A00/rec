@@ -1,5 +1,10 @@
 import { Config, DriveStep } from 'driver.js';
 import { driver } from 'driver.js';
+import { useTourStore } from '@/stores/useTourStore';
+import { graphqlRequest } from '@/lib/graphql-client';
+import { UpdateUserSettingsDocument } from '@/generated/graphql';
+
+// Note: useTourStore is still used for resumeStep during page navigation
 
 /**
  * Driver.js Tour Configuration
@@ -12,129 +17,371 @@ export const tourSteps: DriveStep[] = [
   {
     element: 'body',
     popover: {
-      title: '🎵 Welcome to Rec!',
-      description: "Discover amazing music through community recommendations. Let's show you how it works!",
+      title: 'Welcome to Rec!',
+      /*
+      Rec is a music sharing platform where you can find new music based on what you already love, and help others do the same.
+
+      Let's show you the ropes.
+
+      */
+      description:
+        "Rec is a music sharing platform where you can find new music based on what you already love, and help others do the same.<br><br>Let's show you the ropes.",
       side: 'over', // Center overlay for welcome modal
-      align: 'center'
-    }
+      align: 'center',
+      popoverClass: 'driver-popover-large',
+    },
   },
   {
     element: '[data-tour-step="create-recommendation"]',
     popover: {
-      title: '🎤 Share Your Music Taste',
-      description: 'Click this button to create your first recommendation! Share albums you love and discover what others are listening to.',
+      title: 'Share Your Music Taste',
+      description:
+        'Click this button to create your first recommendation! Share albums that you think others might love based on specific album.',
       side: 'right',
-      align: 'center'
-    }
+      align: 'center',
+      popoverClass: 'driver-popover-large',
+    },
   },
   {
-    element: '[data-tour-step="recommendation-drawer"]',
     popover: {
-      title: '✨ Create Your First Recommendation',
-      description: 'Great! Now you can search for an album and add your personal recommendation. This is how you share your music taste with the community.',
-      side: 'left',
-      align: 'start'
-    }
+      title: 'Welcome to the Create Recommendation Drawer',
+      description:
+        "This is the bread and butter of rec. <br><br>In here, you'll be able to recommend an album ('recommended') based on a 'source' album that you already know and love.<br><br>Making Recs is a way to share music that you love, help other people find new music, and build connections around those experiences.<br><br>Click next to look a little closer at the interface",
+      side: 'over',
+      align: 'center',
+      popoverClass: 'driver-popover-large',
+    },
+    onHighlighted: () => {
+      // Add dimmed overlay for this step only
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0.5';
+      }
+    },
+    onDeselected: () => {
+      // Remove dimmed overlay when leaving this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
+    },
   },
   {
     element: '[data-tour-step="recommendation-search"]',
     popover: {
-      title: '🎯 Demo Recommendation',
-      description: 'check this shit out cuh',
+      title: 'Understanding the Recommendation System',
+      description:
+        "<span style='color: #ef4444; font-weight: 600;'>LEFT TURNTABLE (SOURCE)</span><br>Load an album you already know and love - this is your starting point<br><br><span style='color: #f59e0b; font-weight: 600;'>MIDDLE DIAL (SIMILARITY)</span><br>Rate how similar the albums are from 1-10. Higher scores mean more similar sound, vibe, or style<br><br><span style='color: #22c55e; font-weight: 600;'>RIGHT TURNTABLE (RECOMMENDED)</span><br>Load the album you want to recommend to others who love the source album<br><br>Think of it like saying: \"If you love THIS album (left), you should check out THAT album (right) - there's an x/10 chance you'll love it!\" Let's try it with a demo!",
       side: 'top',
-      align: 'start'
-    }
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour-step="recommendation-search"]',
+    popover: {
+      title: '🎯 Album Selection',
+      description:
+        "Notice the two albums are already filled in! When you create your own recommendations, you'll use this search bar to find albums. For now, let's see how the similarity rating works!",
+      side: 'top',
+      align: 'start',
+    },
   },
   {
     element: '[data-tour-step="similarity-dial"]',
     popover: {
       title: '⭐ Rate the Similarity',
-      description: 'Use the rating dial to score how similar the albums are! Drag the dial or click to set a rating from 1-10. This helps other users understand your recommendation.',
+      description:
+        'Use the rating dial to score how likely you think someone will love the recommended album, based on the source album. Drag the dial or click to set a rating from 1-10. This helps other users understand your recommendation.',
       side: 'left',
-      align: 'center'
-    }
+      align: 'center',
+    },
   },
   {
     element: '[data-tour-step="submit-recommendation"]',
     popover: {
-      title: '🚀 Submit Your Recommendation',
-      description: 'Hit this green button cuh',
+      title: 'Submit Your Rec!',
+      description:
+        "This is where you would submit your rec. This is disabled during the tour, but you'll see it lit up green outside of the tour, so you know you are ready to send off your rec!",
       side: 'top',
-      align: 'center'
-    }
+      align: 'center',
+    },
   },
   {
-    element: '[data-tour-step="discover-nav"]',
     popover: {
-      title: '🌟 Discover New Music',
-      description: 'Amazing! Now that you know how to recommend music, explore what others are sharing. Click Next to go to the Browse & Discover page!',
-      side: 'right',
-      align: 'start'
-    }
+      title: '✨ Great Job!',
+      description:
+        "You've learned how to create recommendations! Now let's explore the Browse page where you can discover music from other users and dive into artist pages. Click Next to continue to the Browse page!",
+      side: 'over',
+      align: 'center',
+      popoverClass: 'driver-popover-large',
+    },
+    onHighlighted: () => {
+      // Close the recommendation drawer
+      const closeButton = document
+        .querySelector('[data-tour-step="recommendation-drawer"]')
+        ?.closest('[role="dialog"]')
+        ?.querySelector('button[aria-label="Close"]') as HTMLElement;
+      if (closeButton) {
+        closeButton.click();
+        console.log('✅ Closed recommendation drawer for tour transition');
+      }
+
+      // Add dimmed overlay for this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0.5';
+      }
+    },
+    onDeselected: () => {
+      // Remove dimmed overlay when leaving this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
+    },
   },
   {
-    element: '[data-tour-step="browse-header"]',
     popover: {
-      title: '🎵 Welcome to Discovery',
-      description: 'Perfect! This is where the magic happens. Browse through trending albums, discover new artists, and explore recommendations from other music lovers. Everything is organized to help you find your next favorite album!',
-      side: 'bottom',
-      align: 'start'
-    }
+      title: 'Welcome to Browse & Discover',
+      description:
+        "Perfect! This is where the magic happens. Browse through trending albums, discover new artists, and explore recommendations from other music lovers. <br><br> This page is always under construction, and we're always adding new features and content. Make sure to check back often!",
+      side: 'over',
+      align: 'center',
+      popoverClass: 'driver-popover-large',
+    },
+    onHighlighted: () => {
+      // Add dimmed overlay for this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0.5';
+      }
+    },
+    onDeselected: () => {
+      // Remove dimmed overlay when leaving this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
+    },
   },
   {
     element: '[data-tour-step="main-search"]',
     popover: {
-      title: '🔍 Search for Music',
-      description: "Use the search bar to find albums, artists, and tracks. This is your gateway to discovering new music. Click Next and I'll show you by searching for the legendary electronic duo Daft Punk!",
+      title: 'Search Bar',
+      description:
+        "Use the search bar to find albums, artists, tracks, and users. <br><br> Click Next and we'll show you by searching for the legendary electronic duo Daft Punk!",
       side: 'bottom',
-      align: 'center'
-    }
+      align: 'center',
+    },
   },
   {
-    element: '[data-tour-step="artist-header"]',
     popover: {
-      title: '🤖 Welcome to Artist Pages',
-      description: "Fantastic! This is an artist page where you can explore everything about an artist. Here you can see their biography, discography, collaborations, and discover similar artists. This is where you dive deep into an artist's world!",
-      side: 'bottom',
-      align: 'start'
-    }
+      title: 'Welcome to Artist Pages',
+      description:
+        "Fantastic! This is an artist page where you can explore everything about an artist. Here you can see their biography, discography, collaborations, and discover similar artists. This is where you dive deep into an artist's world!",
+      side: 'over',
+      align: 'center',
+      popoverClass: 'driver-popover-large',
+    },
+    onHighlighted: () => {
+      // Add dimmed overlay for this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0.5';
+      }
+    },
+    onDeselected: () => {
+      // Remove dimmed overlay when leaving this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
+    },
   },
   {
     element: '[data-tour-step="artist-discography"]',
     popover: {
       title: '💿 Explore Albums',
-      description: "Now let's explore Daft Punk's legendary discography! I'll show you how to interact with albums. Click Next and I'll demonstrate by opening the iconic \"Random Access Memories\" album details.",
+      description:
+        "Now let's explore Daft Punk's legendary discography! I'll show you how to interact with albums. Click Next and I'll demonstrate by opening the iconic \"Random Access Memories\" album details.",
       side: 'bottom',
-      align: 'start'
-    }
+      align: 'start',
+    },
   },
   {
     element: '[data-tour-step="album-header"]',
     popover: {
       title: '🎵 Album Details & Interactions',
-      description: 'Perfect! This is a dedicated album page where you can explore everything about this album. Here you can see detailed information, track listings, reviews, add to your collection, and discover what others are saying about it. These interactions are the heart of music discovery!',
+      description:
+        'Perfect! This is a dedicated album page where you can explore everything about this album. Here you can see detailed information, track listings, reviews, add to your collection, and discover what others are saying about it. These interactions are the heart of music discovery!',
       side: 'bottom',
-      align: 'start'
-    }
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour-step="album-interactions"]',
+    popover: {
+      title: '🎶 Quick Actions',
+      description:
+        'From here you can make a rec based on this album, add it to your collection, or share it with friends! These are the core ways to interact with any album you discover.',
+      side: 'bottom',
+      align: 'center',
+    },
+    onHighlighted: () => {
+      // Ensure no overlay/darkening for this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
+    },
+  },
+  {
+    element: '[data-tour-step="album-recs-tab"]',
+    popover: {
+      title: '📋 Album Recs',
+      description:
+        "This tab shows all the recs for this album across the entire site - whether it's been recommended as a source or as a recommendation. It's a great way to discover what other users think pairs well with this album!",
+      side: 'bottom',
+      align: 'center',
+    },
+    onHighlighted: () => {
+      // Hide the driver.js highlight so the tab's natural active state is visible
+      const highlightEl = document.querySelector(
+        '.driver-highlighted-element-stage'
+      ) as HTMLElement;
+      if (highlightEl) {
+        highlightEl.style.display = 'none';
+      }
+      // Click the Recs tab to switch to it (with delay to ensure element is ready)
+      setTimeout(() => {
+        const recsTab = document.querySelector(
+          '[data-tour-step="album-recs-tab"]'
+        ) as HTMLElement;
+        if (recsTab) {
+          // Dispatch proper mouse events to trigger Radix UI tab change
+          const mouseDown = new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+          });
+          const mouseUp = new MouseEvent('mouseup', {
+            bubbles: true,
+            cancelable: true,
+          });
+          const click = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+          });
+          recsTab.dispatchEvent(mouseDown);
+          recsTab.dispatchEvent(mouseUp);
+          recsTab.dispatchEvent(click);
+          console.log('✅ Switched to Recs tab for tour');
+        } else {
+          console.error('❌ Could not find Recs tab element');
+        }
+      }, 150);
+      // Ensure no overlay/darkening for this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
+    },
   },
   {
     element: '[data-tour-step="profile-nav"]',
     popover: {
       title: '👤 Explore Your Profile',
-      description: "Now let's explore your personal music profile! This is where you can showcase your music taste, connect with other music lovers, and track your listening journey. Click Next and I'll take you to your profile page.",
+      description:
+        "Now let's explore your personal music profile! This is where you can showcase your music taste, connect with other music lovers, and track your listening journey. Click Next and I'll take you to your profile page.",
       side: 'bottom',
-      align: 'start'
-    }
+      align: 'start',
+    },
   },
   {
     element: '[data-tour-step="profile-header"]',
     popover: {
       title: '✨ Welcome to Your Profile!',
-      description: 'Amazing! This is your personal music profile page. Here you can see your recommendations, followers, music stats, create collages, manage your collections, and showcase your unique music taste to the community. This is your musical identity hub!',
+      description:
+        'Amazing! This is your personal music profile page. Here you can see your recommendations, followers, music stats, create collages, manage your collections, and showcase your unique music taste to the community. This is your musical identity hub!',
       side: 'bottom',
-      align: 'start'
-    }
-  }
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour-step="profile-settings"]',
+    popover: {
+      title: '⚙️ Profile & Account Settings',
+      description:
+        'Click here to edit your profile info like your name and bio. For more options, head to Account Settings where you can manage your account preferences and restart this tour anytime!',
+      side: 'bottom',
+      align: 'end',
+    },
+    onHighlighted: () => {
+      // Open the settings dropdown
+      setTimeout(() => {
+        const settingsBtn = document.querySelector(
+          '[data-tour-step="profile-settings"]'
+        ) as HTMLElement;
+        if (settingsBtn) {
+          // Dispatch proper mouse events
+          const mouseDown = new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+          });
+          const mouseUp = new MouseEvent('mouseup', {
+            bubbles: true,
+            cancelable: true,
+          });
+          const click = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+          });
+          settingsBtn.dispatchEvent(mouseDown);
+          settingsBtn.dispatchEvent(mouseUp);
+          settingsBtn.dispatchEvent(click);
+          console.log('✅ Opened settings dropdown for tour');
+        }
+      }, 200);
+    },
+    onDeselected: () => {
+      // Close the settings dropdown when leaving this step
+      const dropdown = document.querySelector(
+        '[role="menu"][aria-label="Profile settings"]'
+      );
+      if (dropdown) {
+        const settingsBtn = document.querySelector(
+          '[data-tour-step="profile-settings"]'
+        ) as HTMLElement;
+        if (settingsBtn) {
+          settingsBtn.click();
+          console.log('✅ Closed settings dropdown');
+        }
+      }
+    },
+  },
+  {
+    popover: {
+      title: '🎉 Tour Complete!',
+      description:
+        "Congratulations! You've completed the Rec Music tour. You now know how to:<br><br>✅ Create and share music recommendations<br>✅ Discover new music through the browse page<br>✅ Explore artist pages and albums<br>✅ Manage your profile and music taste<br><br>Now it's time to start building your music community! Click Finish to start exploring on your own.",
+      side: 'over',
+      align: 'center',
+      popoverClass: 'driver-popover-large',
+    },
+    onHighlighted: () => {
+      // Add dimmed overlay for final step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0.5';
+      }
+    },
+    onDeselected: () => {
+      // Remove dimmed overlay when leaving this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
+    },
+  },
 ];
 
 export const driverConfig: Config = {
@@ -149,83 +396,218 @@ export const driverConfig: Config = {
   animate: true,
 
   // Staging and padding for better visibility
-  stagePadding: 10,          // More padding around highlighted element
-  stageRadius: 8,            // Border radius of highlight cutout
+  stagePadding: 10, // More padding around highlighted element
+  stageRadius: 8, // Border radius of highlight cutout
 
   // Popover styling
   popoverClass: 'driver-popover-custom',
 
   // Disable overlay - just show popovers pointing to elements
-  overlayOpacity: 0,         // No dark overlay (set to 0)
+  overlayOpacity: 0, // No dark overlay (set to 0)
 
-  // Allow close via X button, ESC key
+  // Allow close via X button only - ESC is disabled to prevent conflicts with drawer
   allowClose: true,
-  allowKeyboardControl: true, // Enable ESC key to close
+  allowKeyboardControl: false, // Disable ESC key - user must use X button or complete tour
   disableActiveInteraction: false, // Allow interacting with highlighted element
 
-  // Callbacks for navigation between pages
-  onNextClick: (element, step, options) => {
+  // Callback when a step is highlighted
+  onHighlightStarted: (_element, _step, options) => {
     const stepIndex = options.state.activeIndex ?? 0;
 
-    // Step 2: Auto-click "Create Recommendation" button to open drawer
-    if (stepIndex === 1) {
-      console.log('🎵 Auto-opening recommendation drawer...');
+    // Step 5: Auto-fill demo albums when showing search/album selection step
+    if (stepIndex === 4) {
+      console.log('🎬 Auto-filling demo recommendation for tour');
 
-      // Find the button element - it's the parent of the div with data-tour-step
-      const buttonDiv = document.querySelector('[data-tour-step="create-recommendation"]');
-      const button = buttonDiv?.parentElement;
+      // Create properly structured Album objects matching Album type from /src/types/album.ts
+      const sourceAlbum = {
+        id: '6c0aa5f2-4fc2-4c26-b83f-62b6ad45dda8',
+        title: 'Random Access Memories',
+        artists: [
+          {
+            id: 'da99bd57-74ca-4808-9bc3-7e5c7d7b6541',
+            name: 'Daft Punk',
+          },
+        ],
+        releaseDate: '2013-05-17',
+        year: 2013,
+        genre: ['Electronic', 'Disco', 'Funk'],
+        label: 'Columbia Records',
+        image: {
+          url: '/demo-albums/RAM-daft-punk.jpeg',
+          width: 500,
+          height: 500,
+          alt: 'Random Access Memories album cover',
+        },
+        source: 'local' as const,
+      };
+
+      const recommendedAlbum = {
+        id: '1db33788-5ff8-4fda-93b1-daa475f4f74f',
+        title: 'Discovery',
+        artists: [
+          {
+            id: 'da99bd57-74ca-4808-9bc3-7e5c7d7b6541',
+            name: 'Daft Punk',
+          },
+        ],
+        releaseDate: '2001-03-12',
+        year: 2001,
+        genre: ['Electronic', 'House', 'Disco'],
+        label: 'Virgin Records',
+        image: {
+          url: '/demo-albums/discovery-daft-punk.jpg',
+          width: 500,
+          height: 500,
+          alt: 'Discovery album cover',
+        },
+        source: 'local' as const,
+      };
+
+      // Dispatch event to fill demo albums with properly structured Album objects
+      const demoEvent = new CustomEvent('fill-demo-recommendation', {
+        detail: {
+          sourceAlbum,
+          recommendedAlbum,
+          similarityRating: 7,
+        },
+      });
+      window.dispatchEvent(demoEvent);
+      console.log('✅ Demo recommendation filled with proper Album objects');
+    }
+
+    // Step 2: Add click listener to the "Create Recommendation" button
+    if (stepIndex === 1) {
+      const button = document.querySelector(
+        '[data-tour-step="create-recommendation"]'
+      );
 
       if (button instanceof HTMLElement) {
-        button.click();
-        console.log('✅ Clicked recommendation button');
-        // Move to next step immediately
-        options.driver.moveNext();
+        // Create a one-time click handler
+        const clickHandler = (e: Event) => {
+          console.log('✅ User clicked recommendation button - advancing tour');
+          e.preventDefault(); // Prevent default drawer opening
+          e.stopPropagation();
+
+          // Remove the listener after it fires once
+          button.removeEventListener('click', clickHandler, true);
+
+          // Dispatch custom event to open drawer in tour mode
+          console.log('📤 Dispatching open-drawer-for-tour event');
+          const tourDrawerEvent = new CustomEvent('open-drawer-for-tour');
+          window.dispatchEvent(tourDrawerEvent);
+
+          // Wait for drawer to be visible before advancing
+          const waitForDrawer = () => {
+            const drawer = document.querySelector('#recommendation-drawer');
+            if (drawer && drawer instanceof HTMLElement) {
+              // Check if drawer is visible (has non-zero height)
+              const rect = drawer.getBoundingClientRect();
+              if (rect.height > 0) {
+                console.log('✅ Drawer is visible, advancing to step 3');
+                options.driver.moveNext();
+                return;
+              }
+            }
+
+            // Not visible yet, check again in 100ms
+            setTimeout(waitForDrawer, 100);
+          };
+
+          // Start checking after initial delay
+          setTimeout(waitForDrawer, 200);
+        };
+
+        // Use capture phase to intercept before the normal click handler
+        button.addEventListener('click', clickHandler, true);
+        console.log('👂 Listening for button click on step 2...');
       } else {
-        console.error('❌ Could not find recommendation button');
-        options.driver.moveNext();
+        console.error(
+          '❌ Could not find recommendation button with data-tour-step attribute'
+        );
       }
+    }
+  },
+
+  // Callbacks for navigation between pages
+  onNextClick: (_element, _step, options) => {
+    const stepIndex = options.state.activeIndex ?? 0;
+
+    // Step 2 (index 1): Click the Create Recommendation button to open drawer
+    if (stepIndex === 1) {
+      console.log(
+        '➡️ Next clicked on step 2 - triggering create recommendation button'
+      );
+
+      // Dispatch custom event to open drawer in tour mode
+      console.log('📤 Dispatching open-drawer-for-tour event');
+      const tourDrawerEvent = new CustomEvent('open-drawer-for-tour');
+      window.dispatchEvent(tourDrawerEvent);
+
+      // Wait for drawer to be visible before advancing
+      const waitForDrawer = () => {
+        const drawer = document.querySelector('#recommendation-drawer');
+        if (drawer && drawer instanceof HTMLElement) {
+          const rect = drawer.getBoundingClientRect();
+          if (rect.height > 0) {
+            console.log('✅ Drawer is visible, advancing to step 3');
+            options.driver.moveNext();
+            return;
+          }
+        }
+        // Not visible yet, check again in 100ms
+        setTimeout(waitForDrawer, 100);
+      };
+
+      // Start checking after initial delay
+      setTimeout(waitForDrawer, 200);
       return;
     }
 
-    // Step 6: Navigate to /browse
-    if (stepIndex === 6) {
+    // Step 8 (index 7): Navigate to /browse (after "Great Job!" transitional card)
+    if (stepIndex === 7) {
       console.log('🌟 Navigating to /browse page...');
+      // Save next step index to resume after navigation
+      useTourStore.getState().setResumeStep(8);
       window.location.href = '/browse';
       return;
     }
 
-    // Step 8: Search for Daft Punk and navigate to artist page
-    if (stepIndex === 8) {
-      console.log('🔍 Searching for Daft Punk...');
-      fetch('/api/search?query=daft+punk&type=artists&limit=1')
-        .then(res => res.json())
-        .then(data => {
-          if (data.results?.[0]?.id) {
-            console.log('✅ Found Daft Punk, navigating to artist page...');
-            window.location.href = `/artists/${data.results[0].id}`;
-          } else {
-            console.warn('❌ Daft Punk not found, moving to next step');
-            options.driver.moveNext();
-          }
-        })
-        .catch(error => {
-          console.error('❌ Search error:', error);
-          options.driver.moveNext();
-        });
+    // Step 10 (index 9): Navigate to Daft Punk artist page (Main Search)
+    if (stepIndex === 9) {
+      console.log('🔍 Navigating to Daft Punk artist page...');
+      // Save next step index to resume after navigation (Artist Header = index 10)
+      useTourStore.getState().setResumeStep(10);
+      // Hardcoded Daft Punk UUID from local database
+      window.location.href =
+        '/artists/da99bd57-74ca-4808-9bc3-7e5c7d7b6541?source=local';
       return;
     }
 
-    // Step 10: Navigate to Random Access Memories album
-    if (stepIndex === 10) {
+    // Step 12 (index 11): Navigate to Random Access Memories album (from Artist Discography)
+    if (stepIndex === 11) {
       console.log('💿 Navigating to Random Access Memories album...');
-      window.location.href = '/albums/556257';
+      // Save next step index to resume after navigation
+      useTourStore.getState().setResumeStep(12);
+      window.location.href =
+        '/albums/6c0aa5f2-4fc2-4c26-b83f-62b6ad45dda8?source=local';
       return;
     }
 
-    // Step 12: Navigate to profile
-    if (stepIndex === 12) {
+    // Step 16 (index 15): Navigate to profile
+    if (stepIndex === 15) {
       console.log('👤 Navigating to profile page...');
+      // Save next step index to resume after navigation
+      useTourStore.getState().setResumeStep(16);
       window.location.href = '/profile';
+      return;
+    }
+
+    // Final step (index 13): "Finish Tour" button clicked - destroy tour and cleanup
+    const totalSteps = tourSteps.length;
+    const isLastStep = stepIndex === totalSteps - 1;
+    if (isLastStep) {
+      console.log('🎉 Finish Tour clicked - completing tour!');
+      options.driver.destroy();
       return;
     }
 
@@ -233,22 +615,34 @@ export const driverConfig: Config = {
     options.driver.moveNext();
   },
 
-  onCloseClick: (element, step, options) => {
-    console.log('❌ User closed tour early');
-    // Explicitly destroy the tour instance
+  onCloseClick: (_element, _step, options) => {
+    const currentStep = options.state.activeIndex ?? 0;
+    const totalSteps = tourSteps.length;
+    const isLastStep = currentStep === totalSteps - 1;
+
+    console.log(`❌ User closed tour at step ${currentStep + 1}/${totalSteps}`);
+
+    if (!isLastStep) {
+      // Early exit - show confirmation modal before destroying
+      // Dispatch event for React component to handle
+      window.dispatchEvent(new CustomEvent('tour-early-exit'));
+      // Don't destroy yet - modal will handle it
+      return;
+    }
+
+    // Last step - just destroy normally
     options.driver.destroy();
   },
 
   onDestroyStarted: () => {
     console.log('🎉 Tour completed or closed!');
-    // Mark tour as completed in localStorage
-    localStorage.setItem('tour-completed', 'true');
-
-    // Mark onboarding as completed via API
-    fetch('/api/users/onboarding-status', { method: 'POST' })
+    // Mark onboarding as completed via GraphQL mutation (database is source of truth)
+    graphqlRequest(UpdateUserSettingsDocument, { showOnboardingTour: false })
       .then(() => console.log('✅ Onboarding marked as completed'))
-      .catch(error => console.error('❌ Error marking onboarding complete:', error));
-  }
+      .catch(error =>
+        console.error('❌ Error marking onboarding complete:', error)
+      );
+  },
 };
 
 export function createOnboardingDriver() {

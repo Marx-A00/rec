@@ -424,9 +424,14 @@ function isProtectedRoute(pathname: string): boolean {
     '/albums',
     '/artists',
     '/browse',
-    '/recommend',
-    '/profile',
+    '/collections',
+    '/home-mosaic',
     '/labels',
+    '/latest',
+    '/profile',
+    '/recommend',
+    '/search',
+    '/settings',
   ];
 
   // Check if it's a protected page route
@@ -468,13 +473,13 @@ async function handleAuthentication(
         };
       }
 
-      // For page routes, redirect to sign-in with callback URL
-      const signInUrl = new URL('/signin', request.url);
-      signInUrl.searchParams.set(
+      // For page routes, redirect to landing page with callback URL
+      const landingUrl = new URL('/', request.url);
+      landingUrl.searchParams.set(
         'callbackUrl',
         pathname + request.nextUrl.search
       );
-      return { response: NextResponse.redirect(signInUrl) };
+      return { response: NextResponse.redirect(landingUrl) };
     }
 
     // User is authenticated, return user ID for rate limiting
@@ -496,8 +501,8 @@ async function handleAuthentication(
       };
     }
 
-    // Redirect to sign-in on page routes
-    return { response: NextResponse.redirect(new URL('/signin', request.url)) };
+    // Redirect to landing page on page routes
+    return { response: NextResponse.redirect(new URL('/', request.url)) };
   }
 }
 
@@ -620,8 +625,13 @@ export const config = {
     '/albums/:path*',
     '/artists/:path*',
     '/browse/:path*',
-    '/recommend/:path*',
-    '/profile/:path*',
+    '/collections/:path*',
+    '/home-mosaic',
+    '/latest',
     '/labels/:path*',
+    '/profile/:path*',
+    '/recommend/:path*',
+    '/search',
+    '/settings',
   ],
 };

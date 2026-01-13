@@ -37,8 +37,9 @@ export default function FriendActivityPanel({
   config,
   isEditMode,
 }: PanelComponentProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const user = session?.user;
+  const isSessionLoading = status === 'loading';
   const [selectedFriend, setSelectedFriend] = useState<string>('all');
   const [friends, setFriends] = useState<Friend[]>([]);
   const [activities, setActivities] = useState<FriendActivity[]>([]);
@@ -209,7 +210,7 @@ export default function FriendActivityPanel({
 
   return (
     <div className='bg-zinc-900/50 p-6 h-full overflow-hidden'>
-      {user ? (
+      {isSessionLoading || user ? (
         <div className='h-full flex flex-col'>
           {/* Friend Selector */}
           <div className='mb-4 flex-shrink-0'>
@@ -280,7 +281,7 @@ export default function FriendActivityPanel({
 
           {/* Activities */}
           <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
-            {isLoading ? (
+            {isSessionLoading || isLoading ? (
               <div className='space-y-3'>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div

@@ -28,7 +28,8 @@ export default function SocialActivityFeed({
   refreshInterval = 30000, // 30 seconds default - DISABLED TEMPORARILY
   session: sessionProp,
 }: SocialActivityFeedProps) {
-  const { data: clientSession } = useSession();
+  const { data: clientSession, status } = useSession();
+  const isSessionLoading = status === 'loading';
 
   // Use prop session if provided (server-side), otherwise fall back to client session
   const session = sessionProp ?? clientSession;
@@ -46,12 +47,12 @@ export default function SocialActivityFeed({
             createdAt
             actor {
               id
-              name
+              username
               image
             }
             targetUser {
               id
-              name
+              username
               image
             }
             album {
@@ -136,10 +137,10 @@ export default function SocialActivityFeed({
       id: activity.id,
       type: activity.type.toLowerCase().replace('_', '_'),
       actorId: activity.actor.id,
-      actorName: activity.actor.name,
+      actorName: activity.actor.username,
       actorImage: activity.actor.image,
       targetId: activity.targetUser?.id,
-      targetName: activity.targetUser?.name,
+      targetName: activity.targetUser?.username,
       targetImage: activity.targetUser?.image,
       albumId: activity.album?.id,
       albumTitle: activity.album?.title,
@@ -180,9 +181,10 @@ export default function SocialActivityFeed({
     initialPageParam: undefined,
     getNextPageParam: lastPage => lastPage.nextCursor,
     staleTime: 5 * 60 * 1000, // 5 minutes (increased from 30 seconds)
+    gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
     refetchInterval: false, // DISABLED: was refreshInterval - causing performance issues
     refetchOnWindowFocus: false, // DISABLED: prevent refetch on tab switch
-    refetchOnMount: 'always', // Only fetch on mount
+    refetchOnMount: true, // Refetch only if stale (respects staleTime)
     enabled: !!session, // Only fetch if user is signed in
   });
 
@@ -210,6 +212,87 @@ export default function SocialActivityFeed({
     refetch();
   };
 
+  // Show loading skeleton while session is loading or data is loading
+  if (isSessionLoading || isLoading) {
+    // Different skeleton variations matching actual activity types
+    const skeletonVariants = [
+      // Single album (collection_add style)
+      <div
+        key='collection'
+        className='bg-zinc-900 rounded-lg p-3 pb-4 border border-zinc-800 animate-pulse'
+      >
+        <div className='flex justify-center items-center gap-2 mb-3'>
+          <div className='w-6 h-6 bg-zinc-700 rounded-full flex-shrink-0' />
+          <div className='h-4 bg-zinc-700 rounded w-52' />
+        </div>
+        <div className='flex justify-center'>
+          <div className='w-[150px] h-[150px] bg-zinc-800 rounded-lg' />
+        </div>
+      </div>,
+
+      // Stacked albums (recommendation style)
+      <div
+        key='recommendation'
+        className='bg-zinc-900 rounded-lg p-3 pb-4 border border-zinc-800 animate-pulse'
+      >
+        <div className='flex justify-center items-center gap-2 mb-3'>
+          <div className='w-6 h-6 bg-zinc-700 rounded-full flex-shrink-0' />
+          <div className='h-4 bg-zinc-700 rounded w-64' />
+        </div>
+        <div className='flex justify-center'>
+          <div className='relative w-[220px] h-[220px]'>
+            <div className='absolute left-0 top-0 w-[180px] h-[180px] bg-zinc-800 rounded-lg' />
+            <div className='absolute left-14 top-0 w-[160px] h-[160px] bg-zinc-700 rounded-lg border-2 border-zinc-600' />
+          </div>
+        </div>
+      </div>,
+
+      // Grouped albums (multiple collection_add style)
+      <div
+        key='grouped'
+        className='bg-zinc-900 rounded-lg p-3 pb-4 border border-zinc-800 animate-pulse'
+      >
+        <div className='flex justify-center items-center gap-2 mb-3'>
+          <div className='w-6 h-6 bg-zinc-700 rounded-full flex-shrink-0' />
+          <div className='h-4 bg-zinc-700 rounded w-44' />
+        </div>
+        <div className='flex justify-center'>
+          <div className='flex -space-x-6'>
+            {[...Array(4)].map((_, j) => (
+              <div
+                key={j}
+                className='w-24 h-24 bg-zinc-800 rounded-lg ring-2 ring-zinc-900'
+                style={{ zIndex: 4 - j }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>,
+
+      // Follow activity (avatar style)
+      <div
+        key='follow'
+        className='bg-zinc-900 rounded-lg p-3 pb-4 border border-zinc-800 animate-pulse'
+      >
+        <div className='flex justify-center items-center gap-2 mb-3'>
+          <div className='w-6 h-6 bg-zinc-700 rounded-full flex-shrink-0' />
+          <div className='h-4 bg-zinc-700 rounded w-36' />
+        </div>
+        <div className='flex justify-center'>
+          <div className='w-[120px] h-[120px] bg-zinc-800 rounded-full' />
+        </div>
+      </div>,
+    ];
+
+    return (
+      <div className={`space-y-4 ${className}`}>
+        {skeletonVariants.map((skeleton, i) => (
+          <div key={i}>{skeleton}</div>
+        ))}
+      </div>
+    );
+  }
+
   // Show sign-in message if user is not authenticated
   if (!session) {
     return (
@@ -227,24 +310,6 @@ export default function SocialActivityFeed({
             <SignInButton />
           </div>
         </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className={`space-y-4 ${className}`}>
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className='rounded-lg p-4 animate-pulse'>
-            <div className='flex items-start gap-3'>
-              <div className='w-10 h-10 bg-zinc-700 rounded-full flex-shrink-0' />
-              <div className='flex-1 space-y-2'>
-                <div className='h-4 bg-zinc-700 rounded w-3/4' />
-                <div className='h-3 bg-zinc-700 rounded w-1/2' />
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
     );
   }
@@ -371,10 +436,7 @@ export default function SocialActivityFeed({
       {/* Activities List */}
       <div className='space-y-4'>
         {groupedActivities.map(group => (
-          <GroupedActivityItem
-            key={group.id}
-            group={group}
-          />
+          <GroupedActivityItem key={group.id} group={group} />
         ))}
       </div>
 

@@ -10,7 +10,7 @@ async function debugListenLater() {
   const collections = await prisma.collection.findMany({
     where: { name: 'Listen Later' },
     include: {
-      user: { select: { name: true, email: true } },
+      user: { select: { username: true, email: true } },
       albums: {
         include: {
           album: {
@@ -31,7 +31,9 @@ async function debugListenLater() {
 
   for (const collection of collections) {
     console.log(`📚 Collection ID: ${collection.id}`);
-    console.log(`   User: ${collection.user.name} (${collection.user.email})`);
+    console.log(
+      `   User: ${collection.user.username} (${collection.user.email})`
+    );
     console.log(`   Albums: ${collection.albums.length}`);
     console.log('');
 

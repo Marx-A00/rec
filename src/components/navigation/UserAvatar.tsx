@@ -24,10 +24,23 @@ export const UserAvatar: FC<UserAvatarProps> = ({
   isCollapsed = false,
   className = '',
 }) => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const user = session?.user;
+  const isSessionLoading = status === 'loading';
   const isAdminOrOwner =
     user?.role === UserRole.ADMIN || user?.role === UserRole.OWNER;
+
+  // Show skeleton while session is loading
+  if (isSessionLoading) {
+    return (
+      <div className={`flex items-center gap-2 p-2 ${className}`}>
+        <div className='h-8 w-8 rounded-full bg-zinc-700 animate-pulse' />
+        {!isCollapsed && (
+          <div className='h-4 w-20 bg-zinc-700 rounded animate-pulse' />
+        )}
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -42,6 +55,7 @@ export const UserAvatar: FC<UserAvatarProps> = ({
       <HoverCardTrigger asChild>
         <Link
           href={`/profile/${user.id}`}
+          data-tour-step='profile-nav'
           className='relative flex items-center gap-2 p-2 rounded-lg hover:bg-zinc-800 transition-colors'
         >
           <Avatar className='h-8 w-8'>

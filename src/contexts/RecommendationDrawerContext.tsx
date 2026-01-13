@@ -28,18 +28,21 @@ export function RecommendationDrawerProvider({
   const [isTourMode, setIsTourMode] = useState(false);
 
   const openDrawer = (album?: Album) => {
+    console.log('🔓 openDrawer() called - Normal mode');
     setPrefilledAlbum(album || null);
     setIsTourMode(false);
     setIsOpen(true);
   };
 
   const openDrawerForTour = (album?: Album) => {
+    console.log('🎯 openDrawerForTour() called - Tour mode ENABLED');
     setPrefilledAlbum(album || null);
     setIsTourMode(true);
     setIsOpen(true);
   };
 
   const closeDrawer = () => {
+    console.log('🔒 closeDrawer() called - Closing drawer');
     setIsOpen(false);
     setIsTourMode(false);
     // Clear prefilled album when closing
@@ -47,6 +50,9 @@ export function RecommendationDrawerProvider({
   };
 
   const handleSuccess = () => {
+    console.log(
+      '✅ handleSuccess() called - Recommendation created, closing drawer'
+    );
     // Close drawer on successful recommendation creation
     setIsOpen(false);
     setIsTourMode(false);

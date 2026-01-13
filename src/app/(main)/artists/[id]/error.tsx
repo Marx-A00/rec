@@ -20,7 +20,7 @@ export default function ArtistError({
       <div className='container mx-auto px-4 py-8'>
         {/* Back Navigation */}
         <Link
-          href='/'
+          href='/home-mosaic'
           className='inline-flex items-center text-zinc-400 hover:text-white mb-6 transition-colors'
         >
           <ArrowLeft className='h-4 w-4 mr-2' />
@@ -49,7 +49,7 @@ export default function ArtistError({
               Try loading again
             </button>
             <Link
-              href='/'
+              href='/home-mosaic'
               className='block sm:inline-block w-full sm:w-auto bg-zinc-700 hover:bg-zinc-600 text-white px-8 py-3 rounded-lg font-medium transition-colors text-center'
             >
               Back to search

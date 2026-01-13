@@ -16,7 +16,7 @@ async function testSpotifyScheduler() {
   // 2. Test manual trigger (doesn't start intervals)
   console.log('2️⃣ Testing manual trigger...');
   try {
-    await spotifyScheduler.triggerSync('new-releases');
+    await spotifyScheduler.triggerSync();
     console.log('✅ New releases sync triggered successfully\n');
 
     console.log('✅ Job successfully queued to BullMQ\n');
@@ -27,10 +27,10 @@ async function testSpotifyScheduler() {
 
   // 3. Test scheduler status
   console.log('3️⃣ Checking scheduler status...');
-  const status = spotifyScheduler.getStatus();
+  const status = await spotifyScheduler.getStatus();
   console.log('Status:', {
     isRunning: status.isRunning,
-    activeJobs: status.activeJobs,
+    activeSchedules: status.activeSchedules,
     config: status.config,
   });
   console.log('');
@@ -38,23 +38,23 @@ async function testSpotifyScheduler() {
   // 4. Test start/stop
   console.log('4️⃣ Testing start/stop...');
   console.log('Starting scheduler...');
-  spotifyScheduler.start();
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await spotifyScheduler.start();
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
-  const statusAfterStart = spotifyScheduler.getStatus();
+  const statusAfterStart = await spotifyScheduler.getStatus();
   console.log('After start:', {
     isRunning: statusAfterStart.isRunning,
-    activeJobs: statusAfterStart.activeJobs,
+    activeSchedules: statusAfterStart.activeSchedules,
   });
 
   console.log('Stopping scheduler...');
-  spotifyScheduler.stop();
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await spotifyScheduler.stop();
+  await new Promise(resolve => setTimeout(resolve, 500));
 
-  const statusAfterStop = spotifyScheduler.getStatus();
+  const statusAfterStop = await spotifyScheduler.getStatus();
   console.log('After stop:', {
     isRunning: statusAfterStop.isRunning,
-    activeJobs: statusAfterStop.activeJobs,
+    activeSchedules: statusAfterStop.activeSchedules,
   });
   console.log('');
 
@@ -72,7 +72,7 @@ async function testSpotifyScheduler() {
   process.exit(0);
 }
 
-testSpotifyScheduler().catch((error) => {
+testSpotifyScheduler().catch(error => {
   console.error('❌ Test failed:', error);
   process.exit(1);
 });

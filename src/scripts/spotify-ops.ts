@@ -32,7 +32,7 @@ async function showStatus() {
   console.log('📊 Spotify Sync Status\n');
   console.log('='.repeat(50));
 
-  const status = spotifyScheduler.getStatus();
+  const status = await spotifyScheduler.getStatus();
 
   console.log(
     `🔄 Scheduler: ${status.isRunning ? '✅ Running' : '❌ Stopped'}`
@@ -57,7 +57,9 @@ async function showStatus() {
     );
   }
 
-  console.log(`\n🎯 Active Jobs: ${status.activeJobs.join(', ') || 'None'}`);
+  console.log(
+    `\n🎯 Active Schedules: ${status.activeSchedules.join(', ') || 'None'}`
+  );
 }
 
 async function showMetrics() {
@@ -196,7 +198,7 @@ async function showConfig() {
   console.log('⚙️  Spotify Scheduler Configuration\n');
   console.log('='.repeat(50));
 
-  const status = spotifyScheduler.getStatus();
+  const status = await spotifyScheduler.getStatus();
   const config = status.config;
 
   console.log('🎵 New Releases:');
@@ -204,17 +206,6 @@ async function showConfig() {
   console.log(`  Interval: ${config.newReleases.intervalMinutes} minutes`);
   console.log(`  Limit: ${config.newReleases.limit} albums`);
   console.log(`  Country: ${config.newReleases.country}`);
-
-  console.log('\n🎧 Featured Playlists:');
-  console.log(`  Enabled: ${config.featuredPlaylists.enabled ? '✅' : '❌'}`);
-  console.log(
-    `  Interval: ${config.featuredPlaylists.intervalMinutes} minutes`
-  );
-  console.log(`  Limit: ${config.featuredPlaylists.limit} playlists`);
-  console.log(`  Country: ${config.featuredPlaylists.country}`);
-  console.log(
-    `  Extract Albums: ${config.featuredPlaylists.extractAlbums ? '✅' : '❌'}`
-  );
 
   console.log('\n🔧 Environment Variables:');
   console.log(
@@ -290,7 +281,7 @@ async function main() {
 
       case 'start':
         console.log('🚀 Starting Spotify scheduler...');
-        const started = initializeSpotifyScheduler();
+        const started = await initializeSpotifyScheduler();
         if (started) {
           console.log('✅ Spotify scheduler started successfully');
         } else {
@@ -307,16 +298,8 @@ async function main() {
         break;
 
       case 'sync':
-        if (
-          !arg ||
-          !['new-releases', 'featured-playlists', 'both'].includes(arg)
-        ) {
-          console.error(
-            '❌ Sync command requires: new-releases|featured-playlists|both'
-          );
-          process.exit(1);
-        }
-        await spotifyScheduler.triggerSync(arg as any);
+        console.log('🔄 Triggering new releases sync...');
+        await spotifyScheduler.triggerSync();
         break;
 
       case 'metrics':

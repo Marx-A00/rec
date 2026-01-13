@@ -120,11 +120,13 @@ export type Album = {
   dataQuality?: Maybe<DataQuality>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
+  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
   label?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
+  latestEnrichmentLog?: Maybe<EnrichmentLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   needsEnrichment: Scalars['Boolean']['output'];
   recommendationScore?: Maybe<Scalars['Float']['output']>;
@@ -135,6 +137,10 @@ export type Album = {
   trackCount?: Maybe<Scalars['Int']['output']>;
   tracks: Array<Track>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type AlbumEnrichmentLogsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type AlbumInput = {
@@ -168,6 +174,12 @@ export type AlbumRecommendationsResponse = {
   pagination: PaginationInfo;
   recommendations: Array<AlbumRecommendation>;
 };
+
+export enum AlbumRole {
+  Basis = 'BASIS',
+  Both = 'BOTH',
+  Recommended = 'RECOMMENDED',
+}
 
 export type Alert = {
   __typename?: 'Alert';
@@ -220,11 +232,13 @@ export type Artist = {
   countryCode?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
+  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
+  latestEnrichmentLog?: Maybe<EnrichmentLog>;
   listeners?: Maybe<Scalars['Int']['output']>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   name: Scalars['String']['output'];
@@ -233,6 +247,10 @@ export type Artist = {
   trackCount: Scalars['Int']['output'];
   tracks: Array<Track>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type ArtistEnrichmentLogsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type ArtistAlbumInput = {
@@ -246,6 +264,40 @@ export type ArtistCredit = {
   artist: Artist;
   position: Scalars['Int']['output'];
   role: Scalars['String']['output'];
+};
+
+export type ArtistInput = {
+  countryCode?: InputMaybe<Scalars['String']['input']>;
+  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  musicbrainzId?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+};
+
+export type ArtistRecommendation = {
+  __typename?: 'ArtistRecommendation';
+  albumRole: AlbumRole;
+  basisAlbum: Album;
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isOwnRecommendation: Scalars['Boolean']['output'];
+  recommendedAlbum: Album;
+  score: Scalars['Int']['output'];
+  user: User;
+};
+
+export enum ArtistRecommendationSort {
+  HighestScore = 'HIGHEST_SCORE',
+  LowestScore = 'LOWEST_SCORE',
+  Newest = 'NEWEST',
+  Oldest = 'OLDEST',
+}
+
+export type ArtistRecommendationsConnection = {
+  __typename?: 'ArtistRecommendationsConnection';
+  hasMore: Scalars['Boolean']['output'];
+  recommendations: Array<ArtistRecommendation>;
+  totalCount: Scalars['Int']['output'];
 };
 
 export type ArtistTrackInput = {
@@ -375,6 +427,68 @@ export type DatabaseStats = {
   totalTracks: Scalars['Int']['output'];
 };
 
+export type DeleteAlbumPayload = {
+  __typename?: 'DeleteAlbumPayload';
+  deletedId?: Maybe<Scalars['UUID']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+export type DeleteArtistPayload = {
+  __typename?: 'DeleteArtistPayload';
+  deletedId?: Maybe<Scalars['UUID']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+export enum EnrichmentEntityType {
+  Album = 'ALBUM',
+  Artist = 'ARTIST',
+  Track = 'TRACK',
+}
+
+export type EnrichmentFieldDiff = {
+  __typename?: 'EnrichmentFieldDiff';
+  currentValue?: Maybe<Scalars['String']['output']>;
+  field: Scalars['String']['output'];
+  newValue?: Maybe<Scalars['String']['output']>;
+  source: Scalars['String']['output'];
+};
+
+export type EnrichmentLog = {
+  __typename?: 'EnrichmentLog';
+  apiCallCount: Scalars['Int']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  dataQualityAfter?: Maybe<DataQuality>;
+  dataQualityBefore?: Maybe<DataQuality>;
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  entityId?: Maybe<Scalars['UUID']['output']>;
+  entityType?: Maybe<EnrichmentEntityType>;
+  errorCode?: Maybe<Scalars['String']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  fieldsEnriched: Array<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  jobId?: Maybe<Scalars['String']['output']>;
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  operation: Scalars['String']['output'];
+  previewData?: Maybe<Scalars['JSON']['output']>;
+  reason?: Maybe<Scalars['String']['output']>;
+  retryCount: Scalars['Int']['output'];
+  sources: Array<Scalars['String']['output']>;
+  status: EnrichmentLogStatus;
+  triggeredBy?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['String']['output']>;
+};
+
+export enum EnrichmentLogStatus {
+  Failed = 'FAILED',
+  NoDataAvailable = 'NO_DATA_AVAILABLE',
+  PartialSuccess = 'PARTIAL_SUCCESS',
+  Preview = 'PREVIEW',
+  Skipped = 'SKIPPED',
+  Success = 'SUCCESS',
+}
+
 export enum EnrichmentPriority {
   High = 'HIGH',
   Low = 'LOW',
@@ -386,6 +500,17 @@ export type EnrichmentResult = {
   jobId?: Maybe<Scalars['String']['output']>;
   message: Scalars['String']['output'];
   success: Scalars['Boolean']['output'];
+};
+
+export type EnrichmentStats = {
+  __typename?: 'EnrichmentStats';
+  averageDurationMs: Scalars['Float']['output'];
+  failedCount: Scalars['Int']['output'];
+  noDataCount: Scalars['Int']['output'];
+  skippedCount: Scalars['Int']['output'];
+  sourceStats: Array<SourceStat>;
+  successCount: Scalars['Int']['output'];
+  totalAttempts: Scalars['Int']['output'];
 };
 
 export enum EnrichmentStatus {
@@ -477,6 +602,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   addAlbum: Album;
   addAlbumToCollection: AddAlbumToCollectionPayload;
+  addArtist: Artist;
   addToListenLater: CollectionAlbum;
   batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
@@ -484,6 +610,8 @@ export type Mutation = {
   createCollection: CreateCollectionPayload;
   createRecommendation: CreateRecommendationPayload;
   createTrack: Track;
+  deleteAlbum: DeleteAlbumPayload;
+  deleteArtist: DeleteArtistPayload;
   deleteCollection: Scalars['Boolean']['output'];
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
@@ -491,19 +619,26 @@ export type Mutation = {
   ensureListenLaterCollection: Collection;
   followUser: FollowUserPayload;
   pauseQueue: Scalars['Boolean']['output'];
+  previewAlbumEnrichment: PreviewEnrichmentResult;
+  previewArtistEnrichment: PreviewEnrichmentResult;
   removeAlbumFromCollection: Scalars['Boolean']['output'];
   removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
+  resetAlbumEnrichment: Album;
+  resetArtistEnrichment: Artist;
   resetOnboardingStatus: OnboardingStatus;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
+  rollbackSyncJob: RollbackSyncJobResult;
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
   triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
   updateAlbum: Album;
+  updateAlbumDataQuality: Album;
   updateAlertThresholds: AlertThresholds;
+  updateArtistDataQuality: Artist;
   updateCollection: UpdateCollectionPayload;
   updateCollectionAlbum: UpdateCollectionAlbumPayload;
   updateDashboardLayout: UserSettings;
@@ -522,6 +657,10 @@ export type MutationAddAlbumArgs = {
 export type MutationAddAlbumToCollectionArgs = {
   collectionId: Scalars['String']['input'];
   input: CollectionAlbumInput;
+};
+
+export type MutationAddArtistArgs = {
+  input: ArtistInput;
 };
 
 export type MutationAddToListenLaterArgs = {
@@ -555,6 +694,14 @@ export type MutationCreateTrackArgs = {
   input: TrackInput;
 };
 
+export type MutationDeleteAlbumArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationDeleteArtistArgs = {
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationDeleteCollectionArgs = {
   id: Scalars['String']['input'];
 };
@@ -575,6 +722,14 @@ export type MutationFollowUserArgs = {
   userId: Scalars['String']['input'];
 };
 
+export type MutationPreviewAlbumEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationPreviewArtistEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationRemoveAlbumFromCollectionArgs = {
   albumId: Scalars['UUID']['input'];
   collectionId: Scalars['String']['input'];
@@ -589,16 +744,31 @@ export type MutationReorderCollectionAlbumsArgs = {
   collectionId: Scalars['String']['input'];
 };
 
+export type MutationResetAlbumEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationResetArtistEnrichmentArgs = {
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationRetryJobArgs = {
   jobId: Scalars['String']['input'];
 };
 
+export type MutationRollbackSyncJobArgs = {
+  dryRun?: InputMaybe<Scalars['Boolean']['input']>;
+  syncJobId: Scalars['UUID']['input'];
+};
+
 export type MutationTriggerAlbumEnrichmentArgs = {
+  force?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['UUID']['input'];
   priority?: InputMaybe<EnrichmentPriority>;
 };
 
 export type MutationTriggerArtistEnrichmentArgs = {
+  force?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['UUID']['input'];
   priority?: InputMaybe<EnrichmentPriority>;
 };
@@ -616,8 +786,18 @@ export type MutationUpdateAlbumArgs = {
   input: AlbumInput;
 };
 
+export type MutationUpdateAlbumDataQualityArgs = {
+  dataQuality: DataQuality;
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationUpdateAlertThresholdsArgs = {
   input: AlertThresholdsInput;
+};
+
+export type MutationUpdateArtistDataQualityArgs = {
+  dataQuality: DataQuality;
+  id: Scalars['UUID']['input'];
 };
 
 export type MutationUpdateCollectionArgs = {
@@ -642,7 +822,7 @@ export type MutationUpdateOnboardingStatusArgs = {
 
 export type MutationUpdateProfileArgs = {
   bio?: InputMaybe<Scalars['String']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
+  username?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationUpdateRecommendationArgs = {
@@ -663,7 +843,10 @@ export type MutationUpdateUserRoleArgs = {
 export type MutationUpdateUserSettingsArgs = {
   language?: InputMaybe<Scalars['String']['input']>;
   profileVisibility?: InputMaybe<Scalars['String']['input']>;
+  showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
   showCollections?: InputMaybe<Scalars['Boolean']['input']>;
+  showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
+  showOnboardingTour?: InputMaybe<Scalars['Boolean']['input']>;
   showRecentActivity?: InputMaybe<Scalars['Boolean']['input']>;
   theme?: InputMaybe<Scalars['String']['input']>;
 };
@@ -692,17 +875,34 @@ export type PaginationInfo = {
   total: Scalars['Int']['output'];
 };
 
+export type PreviewEnrichmentResult = {
+  __typename?: 'PreviewEnrichmentResult';
+  enrichmentLogId: Scalars['UUID']['output'];
+  fieldsToUpdate: Array<EnrichmentFieldDiff>;
+  matchScore?: Maybe<Scalars['Float']['output']>;
+  matchedEntity?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  rawData?: Maybe<Scalars['JSON']['output']>;
+  sources: Array<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export type Query = {
   __typename?: 'Query';
   activeJobs: Array<JobRecord>;
   album?: Maybe<Album>;
+  albumByMusicBrainzId?: Maybe<Album>;
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
+  albumsByJobId: Array<Album>;
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
   artistDiscography: CategorizedDiscography;
+  artistRecommendations: ArtistRecommendationsConnection;
   collection?: Maybe<Collection>;
   databaseStats: DatabaseStats;
+  enrichmentLogs: Array<EnrichmentLog>;
+  enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
   followingActivity: Array<Recommendation>;
   getAlbumRecommendations: AlbumRecommendationsResponse;
@@ -726,7 +926,12 @@ export type Query = {
   searchTracks: Array<Track>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
+  syncJob?: Maybe<SyncJob>;
+  syncJobByJobId?: Maybe<SyncJob>;
+  syncJobs: SyncJobsConnection;
   systemHealth: SystemHealth;
+  topRecommendedAlbums: Array<TopRecommendedAlbum>;
+  topRecommendedArtists: Array<TopRecommendedArtist>;
   track?: Maybe<Track>;
   trackRecommendations: Array<Track>;
   trendingAlbums: Array<Album>;
@@ -745,12 +950,20 @@ export type QueryAlbumArgs = {
   id: Scalars['UUID']['input'];
 };
 
+export type QueryAlbumByMusicBrainzIdArgs = {
+  musicbrainzId: Scalars['String']['input'];
+};
+
 export type QueryAlbumRecommendationsArgs = {
   input: RecommendationInput;
 };
 
 export type QueryAlbumTracksArgs = {
   albumId: Scalars['UUID']['input'];
+};
+
+export type QueryAlbumsByJobIdArgs = {
+  jobId: Scalars['String']['input'];
 };
 
 export type QueryArtistArgs = {
@@ -766,8 +979,30 @@ export type QueryArtistDiscographyArgs = {
   source: DataSource;
 };
 
+export type QueryArtistRecommendationsArgs = {
+  artistId: Scalars['ID']['input'];
+  filter?: InputMaybe<AlbumRole>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<ArtistRecommendationSort>;
+};
+
 export type QueryCollectionArgs = {
   id: Scalars['String']['input'];
+};
+
+export type QueryEnrichmentLogsArgs = {
+  entityId?: InputMaybe<Scalars['UUID']['input']>;
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sources?: InputMaybe<Array<Scalars['String']['input']>>;
+  status?: InputMaybe<EnrichmentLogStatus>;
+};
+
+export type QueryEnrichmentStatsArgs = {
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  timeRange?: InputMaybe<TimeRangeInput>;
 };
 
 export type QueryFailedJobsArgs = {
@@ -837,11 +1072,13 @@ export type QuerySearchAlbumsArgs = {
   skip?: InputMaybe<Scalars['Int']['input']>;
   sortBy?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['String']['input']>;
+  source?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QuerySearchArtistsArgs = {
   dataQuality?: InputMaybe<Scalars['String']['input']>;
   enrichmentStatus?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
   query?: InputMaybe<Scalars['String']['input']>;
@@ -860,6 +1097,26 @@ export type QuerySocialFeedArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   type?: InputMaybe<ActivityType>;
+};
+
+export type QuerySyncJobArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type QuerySyncJobByJobIdArgs = {
+  jobId: Scalars['String']['input'];
+};
+
+export type QuerySyncJobsArgs = {
+  input?: InputMaybe<SyncJobsInput>;
+};
+
+export type QueryTopRecommendedAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryTopRecommendedArtistsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryTrackArgs = {
@@ -908,12 +1165,26 @@ export type QueryUserSuggestionsArgs = {
 };
 
 export type QueryUsersArgs = {
+  createdAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  createdBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  hasActivity?: InputMaybe<Scalars['Boolean']['input']>;
+  lastActiveAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  lastActiveBefore?: InputMaybe<Scalars['DateTime']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
+  role?: InputMaybe<UserRole>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<UserSortField>;
+  sortOrder?: InputMaybe<SortOrder>;
 };
 
 export type QueryUsersCountArgs = {
+  createdAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  createdBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  hasActivity?: InputMaybe<Scalars['Boolean']['input']>;
+  lastActiveAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  lastActiveBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  role?: InputMaybe<UserRole>;
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -994,6 +1265,16 @@ export type ReorderCollectionAlbumsPayload = {
   ids: Array<Scalars['String']['output']>;
 };
 
+export type RollbackSyncJobResult = {
+  __typename?: 'RollbackSyncJobResult';
+  albumsDeleted: Scalars['Int']['output'];
+  artistsDeleted: Scalars['Int']['output'];
+  dryRun: Scalars['Boolean']['output'];
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+  syncJobId: Scalars['UUID']['output'];
+};
+
 export type SearchInput = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
@@ -1028,6 +1309,18 @@ export enum SearchType {
   Track = 'TRACK',
   User = 'USER',
 }
+
+export enum SortOrder {
+  Asc = 'ASC',
+  Desc = 'DESC',
+}
+
+export type SourceStat = {
+  __typename?: 'SourceStat';
+  attempts: Scalars['Int']['output'];
+  source: Scalars['String']['output'];
+  successRate: Scalars['Float']['output'];
+};
 
 export type SpotifyAlbum = {
   __typename?: 'SpotifyAlbum';
@@ -1140,6 +1433,66 @@ export type SubscriptionMetricsStreamArgs = {
   interval?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type SyncJob = {
+  __typename?: 'SyncJob';
+  albums: Array<Album>;
+  albumsCreated: Scalars['Int']['output'];
+  albumsSkipped: Scalars['Int']['output'];
+  albumsUpdated: Scalars['Int']['output'];
+  artistsCreated: Scalars['Int']['output'];
+  artistsUpdated: Scalars['Int']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  errorCode?: Maybe<Scalars['String']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  jobId: Scalars['String']['output'];
+  jobType: SyncJobType;
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  startedAt: Scalars['DateTime']['output'];
+  status: SyncJobStatus;
+  triggeredBy?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type SyncJobAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export enum SyncJobStatus {
+  Cancelled = 'CANCELLED',
+  Completed = 'COMPLETED',
+  Failed = 'FAILED',
+  Pending = 'PENDING',
+  Running = 'RUNNING',
+}
+
+export enum SyncJobType {
+  DiscogsSync = 'DISCOGS_SYNC',
+  EnrichmentBatch = 'ENRICHMENT_BATCH',
+  MusicbrainzNewReleases = 'MUSICBRAINZ_NEW_RELEASES',
+  MusicbrainzSync = 'MUSICBRAINZ_SYNC',
+  SpotifyFeaturedPlaylists = 'SPOTIFY_FEATURED_PLAYLISTS',
+  SpotifyNewReleases = 'SPOTIFY_NEW_RELEASES',
+}
+
+export type SyncJobsConnection = {
+  __typename?: 'SyncJobsConnection';
+  hasMore: Scalars['Boolean']['output'];
+  jobs: Array<SyncJob>;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type SyncJobsInput = {
+  jobType?: InputMaybe<SyncJobType>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  startedAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  startedBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  status?: InputMaybe<SyncJobStatus>;
+};
+
 export type SystemHealth = {
   __typename?: 'SystemHealth';
   alerts: Array<Scalars['String']['output']>;
@@ -1164,6 +1517,28 @@ export enum TimeRange {
   LastWeek = 'LAST_WEEK',
 }
 
+export type TimeRangeInput = {
+  from: Scalars['DateTime']['input'];
+  to: Scalars['DateTime']['input'];
+};
+
+export type TopRecommendedAlbum = {
+  __typename?: 'TopRecommendedAlbum';
+  album: Album;
+  asBasisCount: Scalars['Int']['output'];
+  asTargetCount: Scalars['Int']['output'];
+  averageScore: Scalars['Float']['output'];
+  recommendationCount: Scalars['Int']['output'];
+};
+
+export type TopRecommendedArtist = {
+  __typename?: 'TopRecommendedArtist';
+  albumsInRecommendations: Scalars['Int']['output'];
+  artist: Artist;
+  averageScore: Scalars['Float']['output'];
+  recommendationCount: Scalars['Int']['output'];
+};
+
 export type Track = {
   __typename?: 'Track';
   album?: Maybe<Album>;
@@ -1174,9 +1549,11 @@ export type Track = {
   discNumber: Scalars['Int']['output'];
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
+  enrichmentLogs: Array<EnrichmentLog>;
   explicit: Scalars['Boolean']['output'];
   id: Scalars['UUID']['output'];
   isrc?: Maybe<Scalars['String']['output']>;
+  latestEnrichmentLog?: Maybe<EnrichmentLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   popularity?: Maybe<Scalars['Float']['output']>;
   previewUrl?: Maybe<Scalars['String']['output']>;
@@ -1185,6 +1562,10 @@ export type Track = {
   title: Scalars['String']['output'];
   trackNumber: Scalars['Int']['output'];
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type TrackEnrichmentLogsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type TrackInput = {
@@ -1229,7 +1610,7 @@ export type UpdateProfilePayload = {
   __typename?: 'UpdateProfilePayload';
   bio?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
-  name?: Maybe<Scalars['String']['output']>;
+  username?: Maybe<Scalars['String']['output']>;
 };
 
 export type UpdateRecommendationPayload = {
@@ -1270,14 +1651,15 @@ export type User = {
   id: Scalars['String']['output'];
   image?: Maybe<Scalars['String']['output']>;
   isFollowing?: Maybe<Scalars['Boolean']['output']>;
+  lastActive?: Maybe<Scalars['DateTime']['output']>;
   mutualFollowers: Array<User>;
-  name?: Maybe<Scalars['String']['output']>;
   profileUpdatedAt?: Maybe<Scalars['DateTime']['output']>;
   recommendations: Array<Recommendation>;
   recommendationsCount: Scalars['Int']['output'];
   role: UserRole;
   settings?: Maybe<UserSettings>;
   updatedAt: Scalars['DateTime']['output'];
+  username?: Maybe<Scalars['String']['output']>;
 };
 
 export type UserCount = {
@@ -1313,12 +1695,25 @@ export type UserSettings = {
   language: Scalars['String']['output'];
   profileVisibility: Scalars['String']['output'];
   recommendationAlerts: Scalars['Boolean']['output'];
+  showCollectionAddsInFeed: Scalars['Boolean']['output'];
   showCollections: Scalars['Boolean']['output'];
+  showListenLaterInFeed: Scalars['Boolean']['output'];
+  showOnboardingTour: Scalars['Boolean']['output'];
   showRecentActivity: Scalars['Boolean']['output'];
   theme: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
   userId: Scalars['String']['output'];
 };
+
+export enum UserSortField {
+  CollectionsCount = 'COLLECTIONS_COUNT',
+  CreatedAt = 'CREATED_AT',
+  Email = 'EMAIL',
+  FollowersCount = 'FOLLOWERS_COUNT',
+  LastActive = 'LAST_ACTIVE',
+  Name = 'NAME',
+  RecommendationsCount = 'RECOMMENDATIONS_COUNT',
+}
 
 export type UserStats = {
   __typename?: 'UserStats';
@@ -1467,7 +1862,7 @@ export type UpdateCollectionMutation = {
 };
 
 export type UpdateProfileMutationVariables = Exact<{
-  name?: InputMaybe<Scalars['String']['input']>;
+  username?: InputMaybe<Scalars['String']['input']>;
   bio?: InputMaybe<Scalars['String']['input']>;
 }>;
 
@@ -1476,7 +1871,7 @@ export type UpdateProfileMutation = {
   updateProfile: {
     __typename?: 'UpdateProfilePayload';
     id: string;
-    name?: string | null;
+    username?: string | null;
     bio?: string | null;
   };
 };
@@ -1487,6 +1882,9 @@ export type UpdateUserSettingsMutationVariables = Exact<{
   profileVisibility?: InputMaybe<Scalars['String']['input']>;
   showRecentActivity?: InputMaybe<Scalars['Boolean']['input']>;
   showCollections?: InputMaybe<Scalars['Boolean']['input']>;
+  showListenLaterInFeed?: InputMaybe<Scalars['Boolean']['input']>;
+  showCollectionAddsInFeed?: InputMaybe<Scalars['Boolean']['input']>;
+  showOnboardingTour?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 export type UpdateUserSettingsMutation = {
@@ -1500,6 +1898,9 @@ export type UpdateUserSettingsMutation = {
     profileVisibility: string;
     showRecentActivity: boolean;
     showCollections: boolean;
+    showListenLaterInFeed: boolean;
+    showCollectionAddsInFeed: boolean;
+    showOnboardingTour: boolean;
     emailNotifications: boolean;
     recommendationAlerts: boolean;
     followAlerts: boolean;
@@ -1508,6 +1909,65 @@ export type UpdateUserSettingsMutation = {
     createdAt: Date;
     updatedAt: Date;
   };
+};
+
+export type DeleteAlbumMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type DeleteAlbumMutation = {
+  __typename?: 'Mutation';
+  deleteAlbum: {
+    __typename?: 'DeleteAlbumPayload';
+    success: boolean;
+    message?: string | null;
+    deletedId?: string | null;
+  };
+};
+
+export type GetAdminUsersQueryVariables = Exact<{
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  role?: InputMaybe<UserRole>;
+  sortBy?: InputMaybe<UserSortField>;
+  sortOrder?: InputMaybe<SortOrder>;
+  createdAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  createdBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  lastActiveAfter?: InputMaybe<Scalars['DateTime']['input']>;
+  lastActiveBefore?: InputMaybe<Scalars['DateTime']['input']>;
+  hasActivity?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+export type GetAdminUsersQuery = {
+  __typename?: 'Query';
+  totalCount: number;
+  users: Array<{
+    __typename?: 'User';
+    id: string;
+    username?: string | null;
+    email?: string | null;
+    image?: string | null;
+    emailVerified?: Date | null;
+    bio?: string | null;
+    role: UserRole;
+    followersCount: number;
+    followingCount: number;
+    recommendationsCount: number;
+    profileUpdatedAt?: Date | null;
+    lastActive?: Date | null;
+    createdAt: Date;
+    collections: Array<{ __typename?: 'Collection'; id: string; name: string }>;
+    settings?: {
+      __typename?: 'UserSettings';
+      showOnboardingTour: boolean;
+    } | null;
+    _count?: {
+      __typename?: 'UserCount';
+      collections: number;
+      recommendations: number;
+    } | null;
+  }>;
 };
 
 export type AddAlbumMutationVariables = Exact<{
@@ -1560,6 +2020,26 @@ export type GetAlbumDetailsAdminQuery = {
     averageRating?: number | null;
     inCollectionsCount: number;
     recommendationScore?: number | null;
+    latestEnrichmentLog?: {
+      __typename?: 'EnrichmentLog';
+      id: string;
+      status: EnrichmentLogStatus;
+      sources: Array<string>;
+      fieldsEnriched: Array<string>;
+      errorMessage?: string | null;
+      createdAt: Date;
+    } | null;
+    enrichmentLogs: Array<{
+      __typename?: 'EnrichmentLog';
+      id: string;
+      operation: string;
+      sources: Array<string>;
+      status: EnrichmentLogStatus;
+      fieldsEnriched: Array<string>;
+      errorMessage?: string | null;
+      durationMs?: number | null;
+      createdAt: Date;
+    }>;
     artists: Array<{
       __typename?: 'ArtistCredit';
       role: string;
@@ -1595,6 +2075,30 @@ export type GetAlbumDetailsAdminQuery = {
   } | null;
 };
 
+export type AlbumByMusicBrainzIdQueryVariables = Exact<{
+  musicbrainzId: Scalars['String']['input'];
+}>;
+
+export type AlbumByMusicBrainzIdQuery = {
+  __typename?: 'Query';
+  albumByMusicBrainzId?: {
+    __typename?: 'Album';
+    id: string;
+    musicbrainzId?: string | null;
+    title: string;
+    releaseDate?: Date | null;
+    coverArtUrl?: string | null;
+    dataQuality?: DataQuality | null;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+    needsEnrichment: boolean;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  } | null;
+};
+
 export type GetArtistByMusicBrainzIdQueryVariables = Exact<{
   musicbrainzId: Scalars['UUID']['input'];
 }>;
@@ -1607,6 +2111,10 @@ export type GetArtistByMusicBrainzIdQuery = {
     musicbrainzId?: string | null;
     name: string;
     imageUrl?: string | null;
+    dataQuality?: DataQuality | null;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+    needsEnrichment: boolean;
   } | null;
 };
 
@@ -1774,6 +2282,246 @@ export type GetArtistDiscographyQuery = {
   };
 };
 
+export type GetArtistRecommendationsQueryVariables = Exact<{
+  artistId: Scalars['ID']['input'];
+  filter?: InputMaybe<AlbumRole>;
+  sort?: InputMaybe<ArtistRecommendationSort>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetArtistRecommendationsQuery = {
+  __typename?: 'Query';
+  artistRecommendations: {
+    __typename?: 'ArtistRecommendationsConnection';
+    totalCount: number;
+    hasMore: boolean;
+    recommendations: Array<{
+      __typename?: 'ArtistRecommendation';
+      id: string;
+      score: number;
+      description?: string | null;
+      createdAt: Date;
+      albumRole: AlbumRole;
+      isOwnRecommendation: boolean;
+      basisAlbum: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+        releaseDate?: Date | null;
+        artists: Array<{
+          __typename?: 'ArtistCredit';
+          artist: { __typename?: 'Artist'; id: string; name: string };
+        }>;
+      };
+      recommendedAlbum: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+        releaseDate?: Date | null;
+        artists: Array<{
+          __typename?: 'ArtistCredit';
+          artist: { __typename?: 'Artist'; id: string; name: string };
+        }>;
+      };
+      user: {
+        __typename?: 'User';
+        id: string;
+        username?: string | null;
+        image?: string | null;
+      };
+    }>;
+  };
+};
+
+export type AddArtistMutationVariables = Exact<{
+  input: ArtistInput;
+}>;
+
+export type AddArtistMutation = {
+  __typename?: 'Mutation';
+  addArtist: {
+    __typename?: 'Artist';
+    id: string;
+    name: string;
+    musicbrainzId?: string | null;
+    imageUrl?: string | null;
+    countryCode?: string | null;
+    dataQuality?: DataQuality | null;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+  };
+};
+
+export type DeleteArtistMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type DeleteArtistMutation = {
+  __typename?: 'Mutation';
+  deleteArtist: {
+    __typename?: 'DeleteArtistPayload';
+    success: boolean;
+    message?: string | null;
+    deletedId?: string | null;
+  };
+};
+
+export type GetEnrichmentLogsQueryVariables = Exact<{
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  entityId?: InputMaybe<Scalars['UUID']['input']>;
+  status?: InputMaybe<EnrichmentLogStatus>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetEnrichmentLogsQuery = {
+  __typename?: 'Query';
+  enrichmentLogs: Array<{
+    __typename?: 'EnrichmentLog';
+    id: string;
+    entityType?: EnrichmentEntityType | null;
+    entityId?: string | null;
+    operation: string;
+    sources: Array<string>;
+    status: EnrichmentLogStatus;
+    reason?: string | null;
+    fieldsEnriched: Array<string>;
+    dataQualityBefore?: DataQuality | null;
+    dataQualityAfter?: DataQuality | null;
+    errorMessage?: string | null;
+    errorCode?: string | null;
+    durationMs?: number | null;
+    apiCallCount: number;
+    metadata?: any | null;
+    createdAt: Date;
+  }>;
+};
+
+export type GetEnrichmentStatsQueryVariables = Exact<{
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  timeRange?: InputMaybe<TimeRangeInput>;
+}>;
+
+export type GetEnrichmentStatsQuery = {
+  __typename?: 'Query';
+  enrichmentStats: {
+    __typename?: 'EnrichmentStats';
+    totalAttempts: number;
+    successCount: number;
+    failedCount: number;
+    noDataCount: number;
+    skippedCount: number;
+    averageDurationMs: number;
+    sourceStats: Array<{
+      __typename?: 'SourceStat';
+      source: string;
+      attempts: number;
+      successRate: number;
+    }>;
+  };
+};
+
+export type TriggerAlbumEnrichmentMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+  priority?: InputMaybe<EnrichmentPriority>;
+  force?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+export type TriggerAlbumEnrichmentMutation = {
+  __typename?: 'Mutation';
+  triggerAlbumEnrichment: {
+    __typename?: 'EnrichmentResult';
+    success: boolean;
+    jobId?: string | null;
+    message: string;
+  };
+};
+
+export type TriggerArtistEnrichmentMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+  priority?: InputMaybe<EnrichmentPriority>;
+  force?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+export type TriggerArtistEnrichmentMutation = {
+  __typename?: 'Mutation';
+  triggerArtistEnrichment: {
+    __typename?: 'EnrichmentResult';
+    success: boolean;
+    jobId?: string | null;
+    message: string;
+  };
+};
+
+export type BatchEnrichmentMutationVariables = Exact<{
+  ids: Array<Scalars['UUID']['input']> | Scalars['UUID']['input'];
+  type: EnrichmentType;
+  priority?: InputMaybe<EnrichmentPriority>;
+}>;
+
+export type BatchEnrichmentMutation = {
+  __typename?: 'Mutation';
+  batchEnrichment: {
+    __typename?: 'BatchEnrichmentResult';
+    success: boolean;
+    jobsQueued: number;
+    message: string;
+  };
+};
+
+export type PreviewAlbumEnrichmentMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type PreviewAlbumEnrichmentMutation = {
+  __typename?: 'Mutation';
+  previewAlbumEnrichment: {
+    __typename?: 'PreviewEnrichmentResult';
+    success: boolean;
+    message?: string | null;
+    matchScore?: number | null;
+    matchedEntity?: string | null;
+    sources: Array<string>;
+    enrichmentLogId: string;
+    rawData?: any | null;
+    fieldsToUpdate: Array<{
+      __typename?: 'EnrichmentFieldDiff';
+      field: string;
+      currentValue?: string | null;
+      newValue?: string | null;
+      source: string;
+    }>;
+  };
+};
+
+export type PreviewArtistEnrichmentMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type PreviewArtistEnrichmentMutation = {
+  __typename?: 'Mutation';
+  previewArtistEnrichment: {
+    __typename?: 'PreviewEnrichmentResult';
+    success: boolean;
+    message?: string | null;
+    matchScore?: number | null;
+    matchedEntity?: string | null;
+    sources: Array<string>;
+    enrichmentLogId: string;
+    rawData?: any | null;
+    fieldsToUpdate: Array<{
+      __typename?: 'EnrichmentFieldDiff';
+      field: string;
+      currentValue?: string | null;
+      newValue?: string | null;
+      source: string;
+    }>;
+  };
+};
+
 export type GetAlbumRecommendationsQueryVariables = Exact<{
   albumId: Scalars['UUID']['input'];
   filter?: InputMaybe<Scalars['String']['input']>;
@@ -1805,7 +2553,7 @@ export type GetAlbumRecommendationsQuery = {
       user: {
         __typename?: 'User';
         id: string;
-        name?: string | null;
+        username?: string | null;
         image?: string | null;
       };
     }>;
@@ -1817,6 +2565,80 @@ export type GetAlbumRecommendationsQuery = {
       hasMore: boolean;
     };
   };
+};
+
+export type GetArtistDetailsQueryVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type GetArtistDetailsQuery = {
+  __typename?: 'Query';
+  artist?: {
+    __typename?: 'Artist';
+    id: string;
+    musicbrainzId?: string | null;
+    name: string;
+    biography?: string | null;
+    formedYear?: number | null;
+    countryCode?: string | null;
+    imageUrl?: string | null;
+    cloudflareImageId?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    dataQuality?: DataQuality | null;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+    albumCount: number;
+    trackCount: number;
+    popularity?: number | null;
+    needsEnrichment: boolean;
+    listeners?: number | null;
+    latestEnrichmentLog?: {
+      __typename?: 'EnrichmentLog';
+      id: string;
+      status: EnrichmentLogStatus;
+      sources: Array<string>;
+      fieldsEnriched: Array<string>;
+      errorMessage?: string | null;
+      createdAt: Date;
+    } | null;
+    enrichmentLogs: Array<{
+      __typename?: 'EnrichmentLog';
+      id: string;
+      operation: string;
+      sources: Array<string>;
+      status: EnrichmentLogStatus;
+      fieldsEnriched: Array<string>;
+      errorMessage?: string | null;
+      durationMs?: number | null;
+      createdAt: Date;
+    }>;
+    albums: Array<{
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      releaseDate?: Date | null;
+      releaseType?: string | null;
+      coverArtUrl?: string | null;
+      trackCount?: number | null;
+      duration?: string | null;
+      averageRating?: number | null;
+    }>;
+    tracks: Array<{
+      __typename?: 'Track';
+      id: string;
+      title: string;
+      trackNumber: number;
+      duration?: string | null;
+      explicit: boolean;
+      album?: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+      } | null;
+    }>;
+  } | null;
 };
 
 export type GetCollectionQueryVariables = Exact<{
@@ -1901,7 +2723,7 @@ export type GetMyCollectionsQuery = {
         coverArtUrl?: string | null;
         artists: Array<{
           __typename?: 'ArtistCredit';
-          artist: { __typename?: 'Artist'; name: string };
+          artist: { __typename?: 'Artist'; id: string; name: string };
         }>;
       };
     }>;
@@ -1977,13 +2799,83 @@ export type GetUserProfileQuery = {
   user?: {
     __typename?: 'User';
     id: string;
-    name?: string | null;
+    username?: string | null;
     email?: string | null;
     image?: string | null;
     bio?: string | null;
     followersCount: number;
     followingCount: number;
     recommendationsCount: number;
+  } | null;
+};
+
+export type AlbumsByJobIdQueryVariables = Exact<{
+  jobId: Scalars['String']['input'];
+}>;
+
+export type AlbumsByJobIdQuery = {
+  __typename?: 'Query';
+  albumsByJobId: Array<{
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    coverArtUrl?: string | null;
+    cloudflareImageId?: string | null;
+    releaseDate?: Date | null;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  }>;
+};
+
+export type GetLatestReleasesQueryVariables = Exact<{
+  source?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortOrder?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetLatestReleasesQuery = {
+  __typename?: 'Query';
+  searchAlbums: Array<{
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    releaseDate?: Date | null;
+    coverArtUrl?: string | null;
+    createdAt: Date;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      position: number;
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  }>;
+};
+
+export type GetMySettingsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type GetMySettingsQuery = {
+  __typename?: 'Query';
+  mySettings?: {
+    __typename?: 'UserSettings';
+    id: string;
+    userId: string;
+    theme: string;
+    language: string;
+    profileVisibility: string;
+    showRecentActivity: boolean;
+    showCollections: boolean;
+    showListenLaterInFeed: boolean;
+    showCollectionAddsInFeed: boolean;
+    showOnboardingTour: boolean;
+    emailNotifications: boolean;
+    recommendationAlerts: boolean;
+    followAlerts: boolean;
+    defaultCollectionView: string;
+    autoplayPreviews: boolean;
+    createdAt: Date;
+    updatedAt: Date;
   } | null;
 };
 
@@ -1995,7 +2887,7 @@ export type RecommendationFieldsFragment = {
   user: {
     __typename?: 'User';
     id: string;
-    name?: string | null;
+    username?: string | null;
     image?: string | null;
   };
   basisAlbum: {
@@ -2041,7 +2933,7 @@ export type GetRecommendationFeedQuery = {
       user: {
         __typename?: 'User';
         id: string;
-        name?: string | null;
+        username?: string | null;
         image?: string | null;
       };
       basisAlbum: {
@@ -2090,7 +2982,7 @@ export type GetMyRecommendationsQuery = {
       user: {
         __typename?: 'User';
         id: string;
-        name?: string | null;
+        username?: string | null;
         image?: string | null;
       };
       basisAlbum: {
@@ -2169,7 +3061,7 @@ export type GetRecommendationQuery = {
     user: {
       __typename?: 'User';
       id: string;
-      name?: string | null;
+      username?: string | null;
       image?: string | null;
     };
     basisAlbum: {
@@ -2195,6 +3087,34 @@ export type GetRecommendationQuery = {
       }>;
     };
   } | null;
+};
+
+export type ResetAlbumEnrichmentMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type ResetAlbumEnrichmentMutation = {
+  __typename?: 'Mutation';
+  resetAlbumEnrichment: {
+    __typename?: 'Album';
+    id: string;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+  };
+};
+
+export type ResetArtistEnrichmentMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type ResetArtistEnrichmentMutation = {
+  __typename?: 'Mutation';
+  resetArtistEnrichment: {
+    __typename?: 'Artist';
+    id: string;
+    enrichmentStatus?: EnrichmentStatus | null;
+    lastEnriched?: Date | null;
+  };
 };
 
 export type SearchQueryVariables = Exact<{
@@ -2260,7 +3180,7 @@ export type SearchQuery = {
     users: Array<{
       __typename?: 'User';
       id: string;
-      name?: string | null;
+      username?: string | null;
       image?: string | null;
       bio?: string | null;
       followersCount: number;
@@ -2344,6 +3264,7 @@ export type SearchAlbumsAdminQueryVariables = Exact<{
   dataQuality?: InputMaybe<Scalars['String']['input']>;
   enrichmentStatus?: InputMaybe<Scalars['String']['input']>;
   needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
+  source?: InputMaybe<Scalars['String']['input']>;
   sortBy?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['String']['input']>;
   skip?: InputMaybe<Scalars['Int']['input']>;
@@ -2377,6 +3298,7 @@ export type SearchAlbumsAdminQuery = {
 
 export type SearchArtistsAdminQueryVariables = Exact<{
   query?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
   dataQuality?: InputMaybe<Scalars['String']['input']>;
   enrichmentStatus?: InputMaybe<Scalars['String']['input']>;
   needsEnrichment?: InputMaybe<Scalars['Boolean']['input']>;
@@ -2456,6 +3378,199 @@ export type GetDatabaseStatsQuery = {
   };
 };
 
+export type GetSyncJobsQueryVariables = Exact<{
+  input?: InputMaybe<SyncJobsInput>;
+}>;
+
+export type GetSyncJobsQuery = {
+  __typename?: 'Query';
+  syncJobs: {
+    __typename?: 'SyncJobsConnection';
+    totalCount: number;
+    hasMore: boolean;
+    jobs: Array<{
+      __typename?: 'SyncJob';
+      id: string;
+      jobId: string;
+      jobType: SyncJobType;
+      status: SyncJobStatus;
+      startedAt: Date;
+      completedAt?: Date | null;
+      durationMs?: number | null;
+      albumsCreated: number;
+      albumsUpdated: number;
+      albumsSkipped: number;
+      artistsCreated: number;
+      artistsUpdated: number;
+      errorMessage?: string | null;
+      errorCode?: string | null;
+      metadata?: any | null;
+      triggeredBy?: string | null;
+      createdAt: Date;
+    }>;
+  };
+};
+
+export type GetSyncJobQueryVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type GetSyncJobQuery = {
+  __typename?: 'Query';
+  syncJob?: {
+    __typename?: 'SyncJob';
+    id: string;
+    jobId: string;
+    jobType: SyncJobType;
+    status: SyncJobStatus;
+    startedAt: Date;
+    completedAt?: Date | null;
+    durationMs?: number | null;
+    albumsCreated: number;
+    albumsUpdated: number;
+    albumsSkipped: number;
+    artistsCreated: number;
+    artistsUpdated: number;
+    errorMessage?: string | null;
+    errorCode?: string | null;
+    metadata?: any | null;
+    triggeredBy?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    albums: Array<{
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      releaseDate?: Date | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    }>;
+  } | null;
+};
+
+export type GetSyncJobByJobIdQueryVariables = Exact<{
+  jobId: Scalars['String']['input'];
+}>;
+
+export type GetSyncJobByJobIdQuery = {
+  __typename?: 'Query';
+  syncJobByJobId?: {
+    __typename?: 'SyncJob';
+    id: string;
+    jobId: string;
+    jobType: SyncJobType;
+    status: SyncJobStatus;
+    startedAt: Date;
+    completedAt?: Date | null;
+    durationMs?: number | null;
+    albumsCreated: number;
+    albumsUpdated: number;
+    albumsSkipped: number;
+    artistsCreated: number;
+    artistsUpdated: number;
+    errorMessage?: string | null;
+    metadata?: any | null;
+    triggeredBy?: string | null;
+  } | null;
+};
+
+export type RollbackSyncJobMutationVariables = Exact<{
+  syncJobId: Scalars['UUID']['input'];
+  dryRun?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+export type RollbackSyncJobMutation = {
+  __typename?: 'Mutation';
+  rollbackSyncJob: {
+    __typename?: 'RollbackSyncJobResult';
+    success: boolean;
+    syncJobId: string;
+    albumsDeleted: number;
+    artistsDeleted: number;
+    message: string;
+    dryRun: boolean;
+  };
+};
+
+export type GetTopRecommendedAlbumsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetTopRecommendedAlbumsQuery = {
+  __typename?: 'Query';
+  topRecommendedAlbums: Array<{
+    __typename?: 'TopRecommendedAlbum';
+    recommendationCount: number;
+    asBasisCount: number;
+    asTargetCount: number;
+    averageScore: number;
+    album: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      releaseDate?: Date | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+  }>;
+};
+
+export type GetTopRecommendedArtistsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetTopRecommendedArtistsQuery = {
+  __typename?: 'Query';
+  topRecommendedArtists: Array<{
+    __typename?: 'TopRecommendedArtist';
+    recommendationCount: number;
+    albumsInRecommendations: number;
+    averageScore: number;
+    artist: {
+      __typename?: 'Artist';
+      id: string;
+      name: string;
+      imageUrl?: string | null;
+      cloudflareImageId?: string | null;
+    };
+  }>;
+};
+
+export type UpdateAlbumDataQualityMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+  dataQuality: DataQuality;
+}>;
+
+export type UpdateAlbumDataQualityMutation = {
+  __typename?: 'Mutation';
+  updateAlbumDataQuality: {
+    __typename?: 'Album';
+    id: string;
+    dataQuality?: DataQuality | null;
+  };
+};
+
+export type UpdateArtistDataQualityMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+  dataQuality: DataQuality;
+}>;
+
+export type UpdateArtistDataQualityMutation = {
+  __typename?: 'Mutation';
+  updateArtistDataQuality: {
+    __typename?: 'Artist';
+    id: string;
+    dataQuality?: DataQuality | null;
+  };
+};
+
 export type UpdateUserRoleMutationVariables = Exact<{
   userId: Scalars['String']['input'];
   role: UserRole;
@@ -2471,7 +3586,7 @@ export type UpdateUserRoleMutation = {
       __typename?: 'User';
       id: string;
       role: UserRole;
-      name?: string | null;
+      username?: string | null;
       email?: string | null;
     } | null;
   };
@@ -2484,7 +3599,7 @@ export const RecommendationFieldsFragmentDoc = `
   createdAt
   user {
     id
-    name
+    username
     image
   }
   basisAlbum {
@@ -2957,10 +4072,10 @@ export const useUpdateCollectionMutation = <
 useUpdateCollectionMutation.getKey = () => ['UpdateCollection'];
 
 export const UpdateProfileDocument = `
-    mutation UpdateProfile($name: String, $bio: String) {
-  updateProfile(name: $name, bio: $bio) {
+    mutation UpdateProfile($username: String, $bio: String) {
+  updateProfile(username: $username, bio: $bio) {
     id
-    name
+    username
     bio
   }
 }
@@ -2993,13 +4108,16 @@ export const useUpdateProfileMutation = <TError = unknown, TContext = unknown>(
 useUpdateProfileMutation.getKey = () => ['UpdateProfile'];
 
 export const UpdateUserSettingsDocument = `
-    mutation UpdateUserSettings($theme: String, $language: String, $profileVisibility: String, $showRecentActivity: Boolean, $showCollections: Boolean) {
+    mutation UpdateUserSettings($theme: String, $language: String, $profileVisibility: String, $showRecentActivity: Boolean, $showCollections: Boolean, $showListenLaterInFeed: Boolean, $showCollectionAddsInFeed: Boolean, $showOnboardingTour: Boolean) {
   updateUserSettings(
     theme: $theme
     language: $language
     profileVisibility: $profileVisibility
     showRecentActivity: $showRecentActivity
     showCollections: $showCollections
+    showListenLaterInFeed: $showListenLaterInFeed
+    showCollectionAddsInFeed: $showCollectionAddsInFeed
+    showOnboardingTour: $showOnboardingTour
   ) {
     id
     userId
@@ -3008,6 +4126,9 @@ export const UpdateUserSettingsDocument = `
     profileVisibility
     showRecentActivity
     showCollections
+    showListenLaterInFeed
+    showCollectionAddsInFeed
+    showOnboardingTour
     emailNotifications
     recommendationAlerts
     followAlerts
@@ -3047,6 +4168,164 @@ export const useUpdateUserSettingsMutation = <
 };
 
 useUpdateUserSettingsMutation.getKey = () => ['UpdateUserSettings'];
+
+export const DeleteAlbumDocument = `
+    mutation DeleteAlbum($id: UUID!) {
+  deleteAlbum(id: $id) {
+    success
+    message
+    deletedId
+  }
+}
+    `;
+
+export const useDeleteAlbumMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    DeleteAlbumMutation,
+    TError,
+    DeleteAlbumMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    DeleteAlbumMutation,
+    TError,
+    DeleteAlbumMutationVariables,
+    TContext
+  >({
+    mutationKey: ['DeleteAlbum'],
+    mutationFn: (variables?: DeleteAlbumMutationVariables) =>
+      fetcher<DeleteAlbumMutation, DeleteAlbumMutationVariables>(
+        DeleteAlbumDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useDeleteAlbumMutation.getKey = () => ['DeleteAlbum'];
+
+export const GetAdminUsersDocument = `
+    query GetAdminUsers($offset: Int = 0, $limit: Int = 20, $search: String, $role: UserRole, $sortBy: UserSortField = CREATED_AT, $sortOrder: SortOrder = DESC, $createdAfter: DateTime, $createdBefore: DateTime, $lastActiveAfter: DateTime, $lastActiveBefore: DateTime, $hasActivity: Boolean) {
+  users(
+    offset: $offset
+    limit: $limit
+    search: $search
+    role: $role
+    sortBy: $sortBy
+    sortOrder: $sortOrder
+    createdAfter: $createdAfter
+    createdBefore: $createdBefore
+    lastActiveAfter: $lastActiveAfter
+    lastActiveBefore: $lastActiveBefore
+    hasActivity: $hasActivity
+  ) {
+    id
+    username
+    email
+    image
+    emailVerified
+    bio
+    role
+    followersCount
+    followingCount
+    recommendationsCount
+    profileUpdatedAt
+    lastActive
+    createdAt
+    collections {
+      id
+      name
+    }
+    settings {
+      showOnboardingTour
+    }
+    _count {
+      collections
+      recommendations
+    }
+  }
+  totalCount: usersCount(
+    search: $search
+    role: $role
+    createdAfter: $createdAfter
+    createdBefore: $createdBefore
+    lastActiveAfter: $lastActiveAfter
+    lastActiveBefore: $lastActiveBefore
+    hasActivity: $hasActivity
+  )
+}
+    `;
+
+export const useGetAdminUsersQuery = <
+  TData = GetAdminUsersQuery,
+  TError = unknown,
+>(
+  variables?: GetAdminUsersQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetAdminUsersQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<GetAdminUsersQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<GetAdminUsersQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetAdminUsers']
+        : ['GetAdminUsers', variables],
+    queryFn: fetcher<GetAdminUsersQuery, GetAdminUsersQueryVariables>(
+      GetAdminUsersDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetAdminUsersQuery.getKey = (variables?: GetAdminUsersQueryVariables) =>
+  variables === undefined ? ['GetAdminUsers'] : ['GetAdminUsers', variables];
+
+export const useInfiniteGetAdminUsersQuery = <
+  TData = InfiniteData<GetAdminUsersQuery>,
+  TError = unknown,
+>(
+  variables: GetAdminUsersQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetAdminUsersQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetAdminUsersQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetAdminUsersQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetAdminUsers.infinite']
+            : ['GetAdminUsers.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetAdminUsersQuery, GetAdminUsersQueryVariables>(
+            GetAdminUsersDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetAdminUsersQuery.getKey = (
+  variables?: GetAdminUsersQueryVariables
+) =>
+  variables === undefined
+    ? ['GetAdminUsers.infinite']
+    : ['GetAdminUsers.infinite', variables];
 
 export const AddAlbumDocument = `
     mutation AddAlbum($input: AlbumInput!) {
@@ -3117,6 +4396,24 @@ export const GetAlbumDetailsAdminDocument = `
     averageRating
     inCollectionsCount
     recommendationScore
+    latestEnrichmentLog {
+      id
+      status
+      sources
+      fieldsEnriched
+      errorMessage
+      createdAt
+    }
+    enrichmentLogs(limit: 5) {
+      id
+      operation
+      sources
+      status
+      fieldsEnriched
+      errorMessage
+      durationMs
+      createdAt
+    }
     artists {
       artist {
         id
@@ -3224,6 +4521,100 @@ useInfiniteGetAlbumDetailsAdminQuery.getKey = (
   variables: GetAlbumDetailsAdminQueryVariables
 ) => ['GetAlbumDetailsAdmin.infinite', variables];
 
+export const AlbumByMusicBrainzIdDocument = `
+    query AlbumByMusicBrainzId($musicbrainzId: String!) {
+  albumByMusicBrainzId(musicbrainzId: $musicbrainzId) {
+    id
+    musicbrainzId
+    title
+    releaseDate
+    coverArtUrl
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    needsEnrichment
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+
+export const useAlbumByMusicBrainzIdQuery = <
+  TData = AlbumByMusicBrainzIdQuery,
+  TError = unknown,
+>(
+  variables: AlbumByMusicBrainzIdQueryVariables,
+  options?: Omit<
+    UseQueryOptions<AlbumByMusicBrainzIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      AlbumByMusicBrainzIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<AlbumByMusicBrainzIdQuery, TError, TData>({
+    queryKey: ['AlbumByMusicBrainzId', variables],
+    queryFn: fetcher<
+      AlbumByMusicBrainzIdQuery,
+      AlbumByMusicBrainzIdQueryVariables
+    >(AlbumByMusicBrainzIdDocument, variables),
+    ...options,
+  });
+};
+
+useAlbumByMusicBrainzIdQuery.getKey = (
+  variables: AlbumByMusicBrainzIdQueryVariables
+) => ['AlbumByMusicBrainzId', variables];
+
+export const useInfiniteAlbumByMusicBrainzIdQuery = <
+  TData = InfiniteData<AlbumByMusicBrainzIdQuery>,
+  TError = unknown,
+>(
+  variables: AlbumByMusicBrainzIdQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<AlbumByMusicBrainzIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      AlbumByMusicBrainzIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<AlbumByMusicBrainzIdQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'AlbumByMusicBrainzId.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            AlbumByMusicBrainzIdQuery,
+            AlbumByMusicBrainzIdQueryVariables
+          >(AlbumByMusicBrainzIdDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteAlbumByMusicBrainzIdQuery.getKey = (
+  variables: AlbumByMusicBrainzIdQueryVariables
+) => ['AlbumByMusicBrainzId.infinite', variables];
+
 export const GetArtistByMusicBrainzIdDocument = `
     query GetArtistByMusicBrainzId($musicbrainzId: UUID!) {
   artistByMusicBrainzId(musicbrainzId: $musicbrainzId) {
@@ -3231,6 +4622,10 @@ export const GetArtistByMusicBrainzIdDocument = `
     musicbrainzId
     name
     imageUrl
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    needsEnrichment
   }
 }
     `;
@@ -3546,6 +4941,625 @@ useInfiniteGetArtistDiscographyQuery.getKey = (
   variables: GetArtistDiscographyQueryVariables
 ) => ['GetArtistDiscography.infinite', variables];
 
+export const GetArtistRecommendationsDocument = `
+    query GetArtistRecommendations($artistId: ID!, $filter: AlbumRole, $sort: ArtistRecommendationSort, $limit: Int, $offset: Int) {
+  artistRecommendations(
+    artistId: $artistId
+    filter: $filter
+    sort: $sort
+    limit: $limit
+    offset: $offset
+  ) {
+    recommendations {
+      id
+      score
+      description
+      createdAt
+      albumRole
+      isOwnRecommendation
+      basisAlbum {
+        id
+        title
+        coverArtUrl
+        releaseDate
+        artists {
+          artist {
+            id
+            name
+          }
+        }
+      }
+      recommendedAlbum {
+        id
+        title
+        coverArtUrl
+        releaseDate
+        artists {
+          artist {
+            id
+            name
+          }
+        }
+      }
+      user {
+        id
+        username
+        image
+      }
+    }
+    totalCount
+    hasMore
+  }
+}
+    `;
+
+export const useGetArtistRecommendationsQuery = <
+  TData = GetArtistRecommendationsQuery,
+  TError = unknown,
+>(
+  variables: GetArtistRecommendationsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetArtistRecommendationsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetArtistRecommendationsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetArtistRecommendationsQuery, TError, TData>({
+    queryKey: ['GetArtistRecommendations', variables],
+    queryFn: fetcher<
+      GetArtistRecommendationsQuery,
+      GetArtistRecommendationsQueryVariables
+    >(GetArtistRecommendationsDocument, variables),
+    ...options,
+  });
+};
+
+useGetArtistRecommendationsQuery.getKey = (
+  variables: GetArtistRecommendationsQueryVariables
+) => ['GetArtistRecommendations', variables];
+
+export const useInfiniteGetArtistRecommendationsQuery = <
+  TData = InfiniteData<GetArtistRecommendationsQuery>,
+  TError = unknown,
+>(
+  variables: GetArtistRecommendationsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetArtistRecommendationsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetArtistRecommendationsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetArtistRecommendationsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'GetArtistRecommendations.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            GetArtistRecommendationsQuery,
+            GetArtistRecommendationsQueryVariables
+          >(GetArtistRecommendationsDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetArtistRecommendationsQuery.getKey = (
+  variables: GetArtistRecommendationsQueryVariables
+) => ['GetArtistRecommendations.infinite', variables];
+
+export const AddArtistDocument = `
+    mutation AddArtist($input: ArtistInput!) {
+  addArtist(input: $input) {
+    id
+    name
+    musicbrainzId
+    imageUrl
+    countryCode
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+  }
+}
+    `;
+
+export const useAddArtistMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    AddArtistMutation,
+    TError,
+    AddArtistMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AddArtistMutation,
+    TError,
+    AddArtistMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AddArtist'],
+    mutationFn: (variables?: AddArtistMutationVariables) =>
+      fetcher<AddArtistMutation, AddArtistMutationVariables>(
+        AddArtistDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useAddArtistMutation.getKey = () => ['AddArtist'];
+
+export const DeleteArtistDocument = `
+    mutation DeleteArtist($id: UUID!) {
+  deleteArtist(id: $id) {
+    success
+    message
+    deletedId
+  }
+}
+    `;
+
+export const useDeleteArtistMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    DeleteArtistMutation,
+    TError,
+    DeleteArtistMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    DeleteArtistMutation,
+    TError,
+    DeleteArtistMutationVariables,
+    TContext
+  >({
+    mutationKey: ['DeleteArtist'],
+    mutationFn: (variables?: DeleteArtistMutationVariables) =>
+      fetcher<DeleteArtistMutation, DeleteArtistMutationVariables>(
+        DeleteArtistDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useDeleteArtistMutation.getKey = () => ['DeleteArtist'];
+
+export const GetEnrichmentLogsDocument = `
+    query GetEnrichmentLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: EnrichmentLogStatus, $skip: Int, $limit: Int) {
+  enrichmentLogs(
+    entityType: $entityType
+    entityId: $entityId
+    status: $status
+    skip: $skip
+    limit: $limit
+  ) {
+    id
+    entityType
+    entityId
+    operation
+    sources
+    status
+    reason
+    fieldsEnriched
+    dataQualityBefore
+    dataQualityAfter
+    errorMessage
+    errorCode
+    durationMs
+    apiCallCount
+    metadata
+    createdAt
+  }
+}
+    `;
+
+export const useGetEnrichmentLogsQuery = <
+  TData = GetEnrichmentLogsQuery,
+  TError = unknown,
+>(
+  variables?: GetEnrichmentLogsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetEnrichmentLogsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetEnrichmentLogsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetEnrichmentLogsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetEnrichmentLogs']
+        : ['GetEnrichmentLogs', variables],
+    queryFn: fetcher<GetEnrichmentLogsQuery, GetEnrichmentLogsQueryVariables>(
+      GetEnrichmentLogsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetEnrichmentLogsQuery.getKey = (
+  variables?: GetEnrichmentLogsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetEnrichmentLogs']
+    : ['GetEnrichmentLogs', variables];
+
+export const useInfiniteGetEnrichmentLogsQuery = <
+  TData = InfiniteData<GetEnrichmentLogsQuery>,
+  TError = unknown,
+>(
+  variables: GetEnrichmentLogsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetEnrichmentLogsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetEnrichmentLogsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetEnrichmentLogsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetEnrichmentLogs.infinite']
+            : ['GetEnrichmentLogs.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetEnrichmentLogsQuery, GetEnrichmentLogsQueryVariables>(
+            GetEnrichmentLogsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetEnrichmentLogsQuery.getKey = (
+  variables?: GetEnrichmentLogsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetEnrichmentLogs.infinite']
+    : ['GetEnrichmentLogs.infinite', variables];
+
+export const GetEnrichmentStatsDocument = `
+    query GetEnrichmentStats($entityType: EnrichmentEntityType, $timeRange: TimeRangeInput) {
+  enrichmentStats(entityType: $entityType, timeRange: $timeRange) {
+    totalAttempts
+    successCount
+    failedCount
+    noDataCount
+    skippedCount
+    averageDurationMs
+    sourceStats {
+      source
+      attempts
+      successRate
+    }
+  }
+}
+    `;
+
+export const useGetEnrichmentStatsQuery = <
+  TData = GetEnrichmentStatsQuery,
+  TError = unknown,
+>(
+  variables?: GetEnrichmentStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetEnrichmentStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetEnrichmentStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetEnrichmentStatsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetEnrichmentStats']
+        : ['GetEnrichmentStats', variables],
+    queryFn: fetcher<GetEnrichmentStatsQuery, GetEnrichmentStatsQueryVariables>(
+      GetEnrichmentStatsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetEnrichmentStatsQuery.getKey = (
+  variables?: GetEnrichmentStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetEnrichmentStats']
+    : ['GetEnrichmentStats', variables];
+
+export const useInfiniteGetEnrichmentStatsQuery = <
+  TData = InfiniteData<GetEnrichmentStatsQuery>,
+  TError = unknown,
+>(
+  variables: GetEnrichmentStatsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetEnrichmentStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetEnrichmentStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetEnrichmentStatsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetEnrichmentStats.infinite']
+            : ['GetEnrichmentStats.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetEnrichmentStatsQuery, GetEnrichmentStatsQueryVariables>(
+            GetEnrichmentStatsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetEnrichmentStatsQuery.getKey = (
+  variables?: GetEnrichmentStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetEnrichmentStats.infinite']
+    : ['GetEnrichmentStats.infinite', variables];
+
+export const TriggerAlbumEnrichmentDocument = `
+    mutation TriggerAlbumEnrichment($id: UUID!, $priority: EnrichmentPriority, $force: Boolean) {
+  triggerAlbumEnrichment(id: $id, priority: $priority, force: $force) {
+    success
+    jobId
+    message
+  }
+}
+    `;
+
+export const useTriggerAlbumEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    TriggerAlbumEnrichmentMutation,
+    TError,
+    TriggerAlbumEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    TriggerAlbumEnrichmentMutation,
+    TError,
+    TriggerAlbumEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['TriggerAlbumEnrichment'],
+    mutationFn: (variables?: TriggerAlbumEnrichmentMutationVariables) =>
+      fetcher<
+        TriggerAlbumEnrichmentMutation,
+        TriggerAlbumEnrichmentMutationVariables
+      >(TriggerAlbumEnrichmentDocument, variables)(),
+    ...options,
+  });
+};
+
+useTriggerAlbumEnrichmentMutation.getKey = () => ['TriggerAlbumEnrichment'];
+
+export const TriggerArtistEnrichmentDocument = `
+    mutation TriggerArtistEnrichment($id: UUID!, $priority: EnrichmentPriority, $force: Boolean) {
+  triggerArtistEnrichment(id: $id, priority: $priority, force: $force) {
+    success
+    jobId
+    message
+  }
+}
+    `;
+
+export const useTriggerArtistEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    TriggerArtistEnrichmentMutation,
+    TError,
+    TriggerArtistEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    TriggerArtistEnrichmentMutation,
+    TError,
+    TriggerArtistEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['TriggerArtistEnrichment'],
+    mutationFn: (variables?: TriggerArtistEnrichmentMutationVariables) =>
+      fetcher<
+        TriggerArtistEnrichmentMutation,
+        TriggerArtistEnrichmentMutationVariables
+      >(TriggerArtistEnrichmentDocument, variables)(),
+    ...options,
+  });
+};
+
+useTriggerArtistEnrichmentMutation.getKey = () => ['TriggerArtistEnrichment'];
+
+export const BatchEnrichmentDocument = `
+    mutation BatchEnrichment($ids: [UUID!]!, $type: EnrichmentType!, $priority: EnrichmentPriority) {
+  batchEnrichment(ids: $ids, type: $type, priority: $priority) {
+    success
+    jobsQueued
+    message
+  }
+}
+    `;
+
+export const useBatchEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    BatchEnrichmentMutation,
+    TError,
+    BatchEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    BatchEnrichmentMutation,
+    TError,
+    BatchEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['BatchEnrichment'],
+    mutationFn: (variables?: BatchEnrichmentMutationVariables) =>
+      fetcher<BatchEnrichmentMutation, BatchEnrichmentMutationVariables>(
+        BatchEnrichmentDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useBatchEnrichmentMutation.getKey = () => ['BatchEnrichment'];
+
+export const PreviewAlbumEnrichmentDocument = `
+    mutation PreviewAlbumEnrichment($id: UUID!) {
+  previewAlbumEnrichment(id: $id) {
+    success
+    message
+    matchScore
+    matchedEntity
+    sources
+    fieldsToUpdate {
+      field
+      currentValue
+      newValue
+      source
+    }
+    enrichmentLogId
+    rawData
+  }
+}
+    `;
+
+export const usePreviewAlbumEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    PreviewAlbumEnrichmentMutation,
+    TError,
+    PreviewAlbumEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    PreviewAlbumEnrichmentMutation,
+    TError,
+    PreviewAlbumEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['PreviewAlbumEnrichment'],
+    mutationFn: (variables?: PreviewAlbumEnrichmentMutationVariables) =>
+      fetcher<
+        PreviewAlbumEnrichmentMutation,
+        PreviewAlbumEnrichmentMutationVariables
+      >(PreviewAlbumEnrichmentDocument, variables)(),
+    ...options,
+  });
+};
+
+usePreviewAlbumEnrichmentMutation.getKey = () => ['PreviewAlbumEnrichment'];
+
+export const PreviewArtistEnrichmentDocument = `
+    mutation PreviewArtistEnrichment($id: UUID!) {
+  previewArtistEnrichment(id: $id) {
+    success
+    message
+    matchScore
+    matchedEntity
+    sources
+    fieldsToUpdate {
+      field
+      currentValue
+      newValue
+      source
+    }
+    enrichmentLogId
+    rawData
+  }
+}
+    `;
+
+export const usePreviewArtistEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    PreviewArtistEnrichmentMutation,
+    TError,
+    PreviewArtistEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    PreviewArtistEnrichmentMutation,
+    TError,
+    PreviewArtistEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['PreviewArtistEnrichment'],
+    mutationFn: (variables?: PreviewArtistEnrichmentMutationVariables) =>
+      fetcher<
+        PreviewArtistEnrichmentMutation,
+        PreviewArtistEnrichmentMutationVariables
+      >(PreviewArtistEnrichmentDocument, variables)(),
+    ...options,
+  });
+};
+
+usePreviewArtistEnrichmentMutation.getKey = () => ['PreviewArtistEnrichment'];
+
 export const GetAlbumRecommendationsDocument = `
     query GetAlbumRecommendations($albumId: UUID!, $filter: String, $sort: String, $skip: Int, $limit: Int) {
   getAlbumRecommendations(
@@ -3571,7 +5585,7 @@ export const GetAlbumRecommendationsDocument = `
       }
       user {
         id
-        name
+        username
         image
       }
     }
@@ -3656,6 +5670,137 @@ export const useInfiniteGetAlbumRecommendationsQuery = <
 useInfiniteGetAlbumRecommendationsQuery.getKey = (
   variables: GetAlbumRecommendationsQueryVariables
 ) => ['GetAlbumRecommendations.infinite', variables];
+
+export const GetArtistDetailsDocument = `
+    query GetArtistDetails($id: UUID!) {
+  artist(id: $id) {
+    id
+    musicbrainzId
+    name
+    biography
+    formedYear
+    countryCode
+    imageUrl
+    cloudflareImageId
+    createdAt
+    updatedAt
+    dataQuality
+    enrichmentStatus
+    lastEnriched
+    albumCount
+    trackCount
+    popularity
+    needsEnrichment
+    listeners
+    latestEnrichmentLog {
+      id
+      status
+      sources
+      fieldsEnriched
+      errorMessage
+      createdAt
+    }
+    enrichmentLogs(limit: 5) {
+      id
+      operation
+      sources
+      status
+      fieldsEnriched
+      errorMessage
+      durationMs
+      createdAt
+    }
+    albums {
+      id
+      title
+      releaseDate
+      releaseType
+      coverArtUrl
+      trackCount
+      duration
+      averageRating
+    }
+    tracks {
+      id
+      title
+      trackNumber
+      duration
+      explicit
+      album {
+        id
+        title
+        coverArtUrl
+      }
+    }
+  }
+}
+    `;
+
+export const useGetArtistDetailsQuery = <
+  TData = GetArtistDetailsQuery,
+  TError = unknown,
+>(
+  variables: GetArtistDetailsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetArtistDetailsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetArtistDetailsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetArtistDetailsQuery, TError, TData>({
+    queryKey: ['GetArtistDetails', variables],
+    queryFn: fetcher<GetArtistDetailsQuery, GetArtistDetailsQueryVariables>(
+      GetArtistDetailsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetArtistDetailsQuery.getKey = (
+  variables: GetArtistDetailsQueryVariables
+) => ['GetArtistDetails', variables];
+
+export const useInfiniteGetArtistDetailsQuery = <
+  TData = InfiniteData<GetArtistDetailsQuery>,
+  TError = unknown,
+>(
+  variables: GetArtistDetailsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetArtistDetailsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetArtistDetailsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetArtistDetailsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetArtistDetails.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetArtistDetailsQuery, GetArtistDetailsQueryVariables>(
+            GetArtistDetailsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetArtistDetailsQuery.getKey = (
+  variables: GetArtistDetailsQueryVariables
+) => ['GetArtistDetails.infinite', variables];
 
 export const GetCollectionDocument = `
     query GetCollection($id: String!) {
@@ -3874,6 +6019,7 @@ export const GetMyCollectionsDocument = `
         coverArtUrl
         artists {
           artist {
+            id
             name
           }
         }
@@ -4153,7 +6299,7 @@ export const GetUserProfileDocument = `
     query GetUserProfile($userId: String!) {
   user(id: $userId) {
     id
-    name
+    username
     email
     image
     bio
@@ -4226,6 +6372,283 @@ export const useInfiniteGetUserProfileQuery = <
 useInfiniteGetUserProfileQuery.getKey = (
   variables: GetUserProfileQueryVariables
 ) => ['GetUserProfile.infinite', variables];
+
+export const AlbumsByJobIdDocument = `
+    query AlbumsByJobId($jobId: String!) {
+  albumsByJobId(jobId: $jobId) {
+    id
+    title
+    coverArtUrl
+    cloudflareImageId
+    releaseDate
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+
+export const useAlbumsByJobIdQuery = <
+  TData = AlbumsByJobIdQuery,
+  TError = unknown,
+>(
+  variables: AlbumsByJobIdQueryVariables,
+  options?: Omit<
+    UseQueryOptions<AlbumsByJobIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<AlbumsByJobIdQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<AlbumsByJobIdQuery, TError, TData>({
+    queryKey: ['AlbumsByJobId', variables],
+    queryFn: fetcher<AlbumsByJobIdQuery, AlbumsByJobIdQueryVariables>(
+      AlbumsByJobIdDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useAlbumsByJobIdQuery.getKey = (variables: AlbumsByJobIdQueryVariables) => [
+  'AlbumsByJobId',
+  variables,
+];
+
+export const useInfiniteAlbumsByJobIdQuery = <
+  TData = InfiniteData<AlbumsByJobIdQuery>,
+  TError = unknown,
+>(
+  variables: AlbumsByJobIdQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<AlbumsByJobIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      AlbumsByJobIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<AlbumsByJobIdQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['AlbumsByJobId.infinite', variables],
+        queryFn: metaData =>
+          fetcher<AlbumsByJobIdQuery, AlbumsByJobIdQueryVariables>(
+            AlbumsByJobIdDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteAlbumsByJobIdQuery.getKey = (
+  variables: AlbumsByJobIdQueryVariables
+) => ['AlbumsByJobId.infinite', variables];
+
+export const GetLatestReleasesDocument = `
+    query GetLatestReleases($source: String = "SPOTIFY", $sortBy: String = "createdAt", $sortOrder: String = "desc", $limit: Int = 200) {
+  searchAlbums(
+    source: $source
+    sortBy: $sortBy
+    sortOrder: $sortOrder
+    limit: $limit
+  ) {
+    id
+    title
+    releaseDate
+    coverArtUrl
+    createdAt
+    artists {
+      artist {
+        id
+        name
+      }
+      position
+    }
+  }
+}
+    `;
+
+export const useGetLatestReleasesQuery = <
+  TData = GetLatestReleasesQuery,
+  TError = unknown,
+>(
+  variables?: GetLatestReleasesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetLatestReleasesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetLatestReleasesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetLatestReleasesQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetLatestReleases']
+        : ['GetLatestReleases', variables],
+    queryFn: fetcher<GetLatestReleasesQuery, GetLatestReleasesQueryVariables>(
+      GetLatestReleasesDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetLatestReleasesQuery.getKey = (
+  variables?: GetLatestReleasesQueryVariables
+) =>
+  variables === undefined
+    ? ['GetLatestReleases']
+    : ['GetLatestReleases', variables];
+
+export const useInfiniteGetLatestReleasesQuery = <
+  TData = InfiniteData<GetLatestReleasesQuery>,
+  TError = unknown,
+>(
+  variables: GetLatestReleasesQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetLatestReleasesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetLatestReleasesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetLatestReleasesQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetLatestReleases.infinite']
+            : ['GetLatestReleases.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetLatestReleasesQuery, GetLatestReleasesQueryVariables>(
+            GetLatestReleasesDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetLatestReleasesQuery.getKey = (
+  variables?: GetLatestReleasesQueryVariables
+) =>
+  variables === undefined
+    ? ['GetLatestReleases.infinite']
+    : ['GetLatestReleases.infinite', variables];
+
+export const GetMySettingsDocument = `
+    query GetMySettings {
+  mySettings {
+    id
+    userId
+    theme
+    language
+    profileVisibility
+    showRecentActivity
+    showCollections
+    showListenLaterInFeed
+    showCollectionAddsInFeed
+    showOnboardingTour
+    emailNotifications
+    recommendationAlerts
+    followAlerts
+    defaultCollectionView
+    autoplayPreviews
+    createdAt
+    updatedAt
+  }
+}
+    `;
+
+export const useGetMySettingsQuery = <
+  TData = GetMySettingsQuery,
+  TError = unknown,
+>(
+  variables?: GetMySettingsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetMySettingsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<GetMySettingsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<GetMySettingsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetMySettings']
+        : ['GetMySettings', variables],
+    queryFn: fetcher<GetMySettingsQuery, GetMySettingsQueryVariables>(
+      GetMySettingsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetMySettingsQuery.getKey = (variables?: GetMySettingsQueryVariables) =>
+  variables === undefined ? ['GetMySettings'] : ['GetMySettings', variables];
+
+export const useInfiniteGetMySettingsQuery = <
+  TData = InfiniteData<GetMySettingsQuery>,
+  TError = unknown,
+>(
+  variables: GetMySettingsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetMySettingsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetMySettingsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetMySettingsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetMySettings.infinite']
+            : ['GetMySettings.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetMySettingsQuery, GetMySettingsQueryVariables>(
+            GetMySettingsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetMySettingsQuery.getKey = (
+  variables?: GetMySettingsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetMySettings.infinite']
+    : ['GetMySettings.infinite', variables];
 
 export const GetRecommendationFeedDocument = `
     query GetRecommendationFeed($cursor: String, $limit: Int) {
@@ -4600,6 +7023,84 @@ useInfiniteGetRecommendationQuery.getKey = (
   variables: GetRecommendationQueryVariables
 ) => ['GetRecommendation.infinite', variables];
 
+export const ResetAlbumEnrichmentDocument = `
+    mutation ResetAlbumEnrichment($id: UUID!) {
+  resetAlbumEnrichment(id: $id) {
+    id
+    enrichmentStatus
+    lastEnriched
+  }
+}
+    `;
+
+export const useResetAlbumEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ResetAlbumEnrichmentMutation,
+    TError,
+    ResetAlbumEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ResetAlbumEnrichmentMutation,
+    TError,
+    ResetAlbumEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ResetAlbumEnrichment'],
+    mutationFn: (variables?: ResetAlbumEnrichmentMutationVariables) =>
+      fetcher<
+        ResetAlbumEnrichmentMutation,
+        ResetAlbumEnrichmentMutationVariables
+      >(ResetAlbumEnrichmentDocument, variables)(),
+    ...options,
+  });
+};
+
+useResetAlbumEnrichmentMutation.getKey = () => ['ResetAlbumEnrichment'];
+
+export const ResetArtistEnrichmentDocument = `
+    mutation ResetArtistEnrichment($id: UUID!) {
+  resetArtistEnrichment(id: $id) {
+    id
+    enrichmentStatus
+    lastEnriched
+  }
+}
+    `;
+
+export const useResetArtistEnrichmentMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ResetArtistEnrichmentMutation,
+    TError,
+    ResetArtistEnrichmentMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ResetArtistEnrichmentMutation,
+    TError,
+    ResetArtistEnrichmentMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ResetArtistEnrichment'],
+    mutationFn: (variables?: ResetArtistEnrichmentMutationVariables) =>
+      fetcher<
+        ResetArtistEnrichmentMutation,
+        ResetArtistEnrichmentMutationVariables
+      >(ResetArtistEnrichmentDocument, variables)(),
+    ...options,
+  });
+};
+
+useResetArtistEnrichmentMutation.getKey = () => ['ResetArtistEnrichment'];
+
 export const SearchDocument = `
     query Search($input: SearchInput!) {
   search(input: $input) {
@@ -4657,7 +7158,7 @@ export const SearchDocument = `
     }
     users {
       id
-      name
+      username
       image
       bio
       followersCount
@@ -4968,13 +7469,14 @@ useInfiniteSearchTracksQuery.getKey = (
 ) => ['SearchTracks.infinite', variables];
 
 export const SearchAlbumsAdminDocument = `
-    query SearchAlbumsAdmin($query: String, $id: UUID, $dataQuality: String, $enrichmentStatus: String, $needsEnrichment: Boolean, $sortBy: String, $sortOrder: String, $skip: Int, $limit: Int) {
+    query SearchAlbumsAdmin($query: String, $id: UUID, $dataQuality: String, $enrichmentStatus: String, $needsEnrichment: Boolean, $source: String, $sortBy: String, $sortOrder: String, $skip: Int, $limit: Int) {
   searchAlbums(
     query: $query
     id: $id
     dataQuality: $dataQuality
     enrichmentStatus: $enrichmentStatus
     needsEnrichment: $needsEnrichment
+    source: $source
     sortBy: $sortBy
     sortOrder: $sortOrder
     skip: $skip
@@ -5083,9 +7585,10 @@ useInfiniteSearchAlbumsAdminQuery.getKey = (
     : ['SearchAlbumsAdmin.infinite', variables];
 
 export const SearchArtistsAdminDocument = `
-    query SearchArtistsAdmin($query: String, $dataQuality: String, $enrichmentStatus: String, $needsEnrichment: Boolean, $sortBy: String, $sortOrder: String, $skip: Int, $limit: Int) {
+    query SearchArtistsAdmin($query: String, $id: UUID, $dataQuality: String, $enrichmentStatus: String, $needsEnrichment: Boolean, $sortBy: String, $sortOrder: String, $skip: Int, $limit: Int) {
   searchArtists(
     query: $query
+    id: $id
     dataQuality: $dataQuality
     enrichmentStatus: $enrichmentStatus
     needsEnrichment: $needsEnrichment
@@ -5376,6 +7879,601 @@ useInfiniteGetDatabaseStatsQuery.getKey = (
     ? ['GetDatabaseStats.infinite']
     : ['GetDatabaseStats.infinite', variables];
 
+export const GetSyncJobsDocument = `
+    query GetSyncJobs($input: SyncJobsInput) {
+  syncJobs(input: $input) {
+    jobs {
+      id
+      jobId
+      jobType
+      status
+      startedAt
+      completedAt
+      durationMs
+      albumsCreated
+      albumsUpdated
+      albumsSkipped
+      artistsCreated
+      artistsUpdated
+      errorMessage
+      errorCode
+      metadata
+      triggeredBy
+      createdAt
+    }
+    totalCount
+    hasMore
+  }
+}
+    `;
+
+export const useGetSyncJobsQuery = <TData = GetSyncJobsQuery, TError = unknown>(
+  variables?: GetSyncJobsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSyncJobsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<GetSyncJobsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<GetSyncJobsQuery, TError, TData>({
+    queryKey:
+      variables === undefined ? ['GetSyncJobs'] : ['GetSyncJobs', variables],
+    queryFn: fetcher<GetSyncJobsQuery, GetSyncJobsQueryVariables>(
+      GetSyncJobsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetSyncJobsQuery.getKey = (variables?: GetSyncJobsQueryVariables) =>
+  variables === undefined ? ['GetSyncJobs'] : ['GetSyncJobs', variables];
+
+export const useInfiniteGetSyncJobsQuery = <
+  TData = InfiniteData<GetSyncJobsQuery>,
+  TError = unknown,
+>(
+  variables: GetSyncJobsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetSyncJobsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetSyncJobsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetSyncJobsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetSyncJobs.infinite']
+            : ['GetSyncJobs.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetSyncJobsQuery, GetSyncJobsQueryVariables>(
+            GetSyncJobsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetSyncJobsQuery.getKey = (variables?: GetSyncJobsQueryVariables) =>
+  variables === undefined
+    ? ['GetSyncJobs.infinite']
+    : ['GetSyncJobs.infinite', variables];
+
+export const GetSyncJobDocument = `
+    query GetSyncJob($id: UUID!) {
+  syncJob(id: $id) {
+    id
+    jobId
+    jobType
+    status
+    startedAt
+    completedAt
+    durationMs
+    albumsCreated
+    albumsUpdated
+    albumsSkipped
+    artistsCreated
+    artistsUpdated
+    errorMessage
+    errorCode
+    metadata
+    triggeredBy
+    createdAt
+    updatedAt
+    albums(limit: 100) {
+      id
+      title
+      coverArtUrl
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useGetSyncJobQuery = <TData = GetSyncJobQuery, TError = unknown>(
+  variables: GetSyncJobQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSyncJobQuery, TError, TData>,
+    'queryKey'
+  > & { queryKey?: UseQueryOptions<GetSyncJobQuery, TError, TData>['queryKey'] }
+) => {
+  return useQuery<GetSyncJobQuery, TError, TData>({
+    queryKey: ['GetSyncJob', variables],
+    queryFn: fetcher<GetSyncJobQuery, GetSyncJobQueryVariables>(
+      GetSyncJobDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetSyncJobQuery.getKey = (variables: GetSyncJobQueryVariables) => [
+  'GetSyncJob',
+  variables,
+];
+
+export const useInfiniteGetSyncJobQuery = <
+  TData = InfiniteData<GetSyncJobQuery>,
+  TError = unknown,
+>(
+  variables: GetSyncJobQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetSyncJobQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetSyncJobQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetSyncJobQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetSyncJob.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetSyncJobQuery, GetSyncJobQueryVariables>(
+            GetSyncJobDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetSyncJobQuery.getKey = (variables: GetSyncJobQueryVariables) => [
+  'GetSyncJob.infinite',
+  variables,
+];
+
+export const GetSyncJobByJobIdDocument = `
+    query GetSyncJobByJobId($jobId: String!) {
+  syncJobByJobId(jobId: $jobId) {
+    id
+    jobId
+    jobType
+    status
+    startedAt
+    completedAt
+    durationMs
+    albumsCreated
+    albumsUpdated
+    albumsSkipped
+    artistsCreated
+    artistsUpdated
+    errorMessage
+    metadata
+    triggeredBy
+  }
+}
+    `;
+
+export const useGetSyncJobByJobIdQuery = <
+  TData = GetSyncJobByJobIdQuery,
+  TError = unknown,
+>(
+  variables: GetSyncJobByJobIdQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSyncJobByJobIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetSyncJobByJobIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetSyncJobByJobIdQuery, TError, TData>({
+    queryKey: ['GetSyncJobByJobId', variables],
+    queryFn: fetcher<GetSyncJobByJobIdQuery, GetSyncJobByJobIdQueryVariables>(
+      GetSyncJobByJobIdDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetSyncJobByJobIdQuery.getKey = (
+  variables: GetSyncJobByJobIdQueryVariables
+) => ['GetSyncJobByJobId', variables];
+
+export const useInfiniteGetSyncJobByJobIdQuery = <
+  TData = InfiniteData<GetSyncJobByJobIdQuery>,
+  TError = unknown,
+>(
+  variables: GetSyncJobByJobIdQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetSyncJobByJobIdQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetSyncJobByJobIdQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetSyncJobByJobIdQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetSyncJobByJobId.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetSyncJobByJobIdQuery, GetSyncJobByJobIdQueryVariables>(
+            GetSyncJobByJobIdDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetSyncJobByJobIdQuery.getKey = (
+  variables: GetSyncJobByJobIdQueryVariables
+) => ['GetSyncJobByJobId.infinite', variables];
+
+export const RollbackSyncJobDocument = `
+    mutation RollbackSyncJob($syncJobId: UUID!, $dryRun: Boolean = true) {
+  rollbackSyncJob(syncJobId: $syncJobId, dryRun: $dryRun) {
+    success
+    syncJobId
+    albumsDeleted
+    artistsDeleted
+    message
+    dryRun
+  }
+}
+    `;
+
+export const useRollbackSyncJobMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    RollbackSyncJobMutation,
+    TError,
+    RollbackSyncJobMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    RollbackSyncJobMutation,
+    TError,
+    RollbackSyncJobMutationVariables,
+    TContext
+  >({
+    mutationKey: ['RollbackSyncJob'],
+    mutationFn: (variables?: RollbackSyncJobMutationVariables) =>
+      fetcher<RollbackSyncJobMutation, RollbackSyncJobMutationVariables>(
+        RollbackSyncJobDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useRollbackSyncJobMutation.getKey = () => ['RollbackSyncJob'];
+
+export const GetTopRecommendedAlbumsDocument = `
+    query GetTopRecommendedAlbums($limit: Int) {
+  topRecommendedAlbums(limit: $limit) {
+    album {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+    recommendationCount
+    asBasisCount
+    asTargetCount
+    averageScore
+  }
+}
+    `;
+
+export const useGetTopRecommendedAlbumsQuery = <
+  TData = GetTopRecommendedAlbumsQuery,
+  TError = unknown,
+>(
+  variables?: GetTopRecommendedAlbumsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetTopRecommendedAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetTopRecommendedAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetTopRecommendedAlbumsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetTopRecommendedAlbums']
+        : ['GetTopRecommendedAlbums', variables],
+    queryFn: fetcher<
+      GetTopRecommendedAlbumsQuery,
+      GetTopRecommendedAlbumsQueryVariables
+    >(GetTopRecommendedAlbumsDocument, variables),
+    ...options,
+  });
+};
+
+useGetTopRecommendedAlbumsQuery.getKey = (
+  variables?: GetTopRecommendedAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetTopRecommendedAlbums']
+    : ['GetTopRecommendedAlbums', variables];
+
+export const useInfiniteGetTopRecommendedAlbumsQuery = <
+  TData = InfiniteData<GetTopRecommendedAlbumsQuery>,
+  TError = unknown,
+>(
+  variables: GetTopRecommendedAlbumsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetTopRecommendedAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetTopRecommendedAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetTopRecommendedAlbumsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetTopRecommendedAlbums.infinite']
+            : ['GetTopRecommendedAlbums.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            GetTopRecommendedAlbumsQuery,
+            GetTopRecommendedAlbumsQueryVariables
+          >(GetTopRecommendedAlbumsDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetTopRecommendedAlbumsQuery.getKey = (
+  variables?: GetTopRecommendedAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetTopRecommendedAlbums.infinite']
+    : ['GetTopRecommendedAlbums.infinite', variables];
+
+export const GetTopRecommendedArtistsDocument = `
+    query GetTopRecommendedArtists($limit: Int) {
+  topRecommendedArtists(limit: $limit) {
+    artist {
+      id
+      name
+      imageUrl
+      cloudflareImageId
+    }
+    recommendationCount
+    albumsInRecommendations
+    averageScore
+  }
+}
+    `;
+
+export const useGetTopRecommendedArtistsQuery = <
+  TData = GetTopRecommendedArtistsQuery,
+  TError = unknown,
+>(
+  variables?: GetTopRecommendedArtistsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetTopRecommendedArtistsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetTopRecommendedArtistsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetTopRecommendedArtistsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetTopRecommendedArtists']
+        : ['GetTopRecommendedArtists', variables],
+    queryFn: fetcher<
+      GetTopRecommendedArtistsQuery,
+      GetTopRecommendedArtistsQueryVariables
+    >(GetTopRecommendedArtistsDocument, variables),
+    ...options,
+  });
+};
+
+useGetTopRecommendedArtistsQuery.getKey = (
+  variables?: GetTopRecommendedArtistsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetTopRecommendedArtists']
+    : ['GetTopRecommendedArtists', variables];
+
+export const useInfiniteGetTopRecommendedArtistsQuery = <
+  TData = InfiniteData<GetTopRecommendedArtistsQuery>,
+  TError = unknown,
+>(
+  variables: GetTopRecommendedArtistsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetTopRecommendedArtistsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetTopRecommendedArtistsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetTopRecommendedArtistsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetTopRecommendedArtists.infinite']
+            : ['GetTopRecommendedArtists.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            GetTopRecommendedArtistsQuery,
+            GetTopRecommendedArtistsQueryVariables
+          >(GetTopRecommendedArtistsDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetTopRecommendedArtistsQuery.getKey = (
+  variables?: GetTopRecommendedArtistsQueryVariables
+) =>
+  variables === undefined
+    ? ['GetTopRecommendedArtists.infinite']
+    : ['GetTopRecommendedArtists.infinite', variables];
+
+export const UpdateAlbumDataQualityDocument = `
+    mutation UpdateAlbumDataQuality($id: UUID!, $dataQuality: DataQuality!) {
+  updateAlbumDataQuality(id: $id, dataQuality: $dataQuality) {
+    id
+    dataQuality
+  }
+}
+    `;
+
+export const useUpdateAlbumDataQualityMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateAlbumDataQualityMutation,
+    TError,
+    UpdateAlbumDataQualityMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateAlbumDataQualityMutation,
+    TError,
+    UpdateAlbumDataQualityMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateAlbumDataQuality'],
+    mutationFn: (variables?: UpdateAlbumDataQualityMutationVariables) =>
+      fetcher<
+        UpdateAlbumDataQualityMutation,
+        UpdateAlbumDataQualityMutationVariables
+      >(UpdateAlbumDataQualityDocument, variables)(),
+    ...options,
+  });
+};
+
+useUpdateAlbumDataQualityMutation.getKey = () => ['UpdateAlbumDataQuality'];
+
+export const UpdateArtistDataQualityDocument = `
+    mutation UpdateArtistDataQuality($id: UUID!, $dataQuality: DataQuality!) {
+  updateArtistDataQuality(id: $id, dataQuality: $dataQuality) {
+    id
+    dataQuality
+  }
+}
+    `;
+
+export const useUpdateArtistDataQualityMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateArtistDataQualityMutation,
+    TError,
+    UpdateArtistDataQualityMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateArtistDataQualityMutation,
+    TError,
+    UpdateArtistDataQualityMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateArtistDataQuality'],
+    mutationFn: (variables?: UpdateArtistDataQualityMutationVariables) =>
+      fetcher<
+        UpdateArtistDataQualityMutation,
+        UpdateArtistDataQualityMutationVariables
+      >(UpdateArtistDataQualityDocument, variables)(),
+    ...options,
+  });
+};
+
+useUpdateArtistDataQualityMutation.getKey = () => ['UpdateArtistDataQuality'];
+
 export const UpdateUserRoleDocument = `
     mutation UpdateUserRole($userId: String!, $role: UserRole!) {
   updateUserRole(userId: $userId, role: $role) {
@@ -5384,7 +8482,7 @@ export const UpdateUserRoleDocument = `
     user {
       id
       role
-      name
+      username
       email
     }
   }

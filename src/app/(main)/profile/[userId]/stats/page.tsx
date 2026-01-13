@@ -19,13 +19,15 @@ export async function generateMetadata({
   const { userId } = await params;
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true },
+    select: { username: true },
   });
 
   return {
-    title: user ? `${user.name}'s Statistics - Rec` : 'User Statistics - Rec',
+    title: user
+      ? `${user.username}'s Statistics - Rec`
+      : 'User Statistics - Rec',
     description: user
-      ? `View ${user.name}'s social statistics and engagement metrics`
+      ? `View ${user.username}'s social statistics and engagement metrics`
       : 'User social statistics and engagement metrics',
   };
 }
@@ -39,7 +41,7 @@ export default async function StatsPage({ params }: StatsPageProps) {
     where: { id: userId },
     select: {
       id: true,
-      name: true,
+      username: true,
       image: true,
       followersCount: true,
       followingCount: true,
@@ -64,7 +66,7 @@ export default async function StatsPage({ params }: StatsPageProps) {
               {user.image && (
                 <Image
                   src={user.image}
-                  alt={user.name || ''}
+                  alt={user.username || ''}
                   width={48}
                   height={48}
                   className='w-12 h-12 rounded-full object-cover'
@@ -74,7 +76,7 @@ export default async function StatsPage({ params }: StatsPageProps) {
                 <h1 className='text-2xl font-bold text-gray-900'>
                   {isOwnProfile
                     ? 'Your Statistics'
-                    : `${user.name}'s Statistics`}
+                    : `${user.username}'s Statistics`}
                 </h1>
                 <div className='flex items-center space-x-4 text-sm text-gray-600'>
                   <span>{user.followersCount} followers</span>

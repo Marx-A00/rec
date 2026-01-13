@@ -3,13 +3,20 @@
     "allow": [
       "WebSearch",
       "Read(//Users/marcosandrade/roaming/projects/rec/.taskmaster/docs/PRDs/**)",
-      "Read(//Users/marcosandrade/roaming/projects/rec/.taskmaster/docs/**)"
+      "Read(//Users/marcosandrade/roaming/projects/rec/.taskmaster/docs/**)",
+      "Bash(task-master:*)",
+      "Bash(ls:*)",
+      "Bash(pnpm type-check:*)",
+      "Bash(pnpm lint:*)",
+      "mcp__task-master-ai__get_tasks",
+      "mcp__task-master-ai__get_task",
+      "mcp__task-master-ai__next_task",
+      "mcp__task-master-ai__list_tags",
+      "mcp__task-master-ai__validate_dependencies"
     ],
     "deny": [],
     "ask": []
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "taskmaster-ai"
-  ]
+  "enabledMcpjsonServers": ["taskmaster-ai"]
 }

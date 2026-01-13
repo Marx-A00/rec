@@ -43,57 +43,73 @@ export function validatePassword(password: string): ValidationResult {
   return { isValid: true };
 }
 
-// Strict validation function (minimum 2 characters for all new names)
-export function validateNameStrict(name: string): ValidationResult {
-  if (!name || !name.trim()) {
+// Strict validation function (minimum 2 characters for all usernames)
+export function validateUsernameStrict(username: string): ValidationResult {
+  if (!username || !username.trim()) {
     return {
       isValid: false,
-      message: 'Name is required',
+      message: 'Username is required',
     };
   }
 
-  const trimmedName = name.trim();
+  const trimmedUsername = username.trim();
 
-  if (trimmedName.length < 2) {
+  if (trimmedUsername.length < 2) {
     return {
       isValid: false,
-      message: 'Name must be at least 2 characters long',
+      message: 'Username must be at least 2 characters long',
     };
   }
 
-  if (trimmedName.length > 30) {
+  if (trimmedUsername.length > 30) {
     return {
       isValid: false,
-      message: 'Name must be 30 characters or less',
+      message: 'Username must be 30 characters or less',
     };
   }
 
-  if (!/^[a-zA-Z0-9\s\-_.]+$/.test(trimmedName)) {
+  // Usernames should not contain spaces
+  if (!/^[a-zA-Z0-9\-_.]+$/.test(trimmedUsername)) {
     return {
       isValid: false,
       message:
-        'Name can only contain letters, numbers, spaces, hyphens, underscores, and periods',
+        'Username can only contain letters, numbers, hyphens, underscores, and periods',
     };
   }
 
-  if (trimmedName !== name) {
+  if (trimmedUsername !== username) {
     return {
       isValid: false,
-      message: 'Name cannot start or end with spaces',
+      message: 'Username cannot start or end with spaces',
     };
   }
 
   return { isValid: true };
 }
 
-// For new user registration (name required)
-export function validateNameForRegistration(name: string): ValidationResult {
-  return validateNameStrict(name);
+// For new user registration (username required)
+export function validateUsernameForRegistration(
+  username: string
+): ValidationResult {
+  return validateUsernameStrict(username);
 }
 
-// For profile updates (name required, minimum 2 characters)
+// For profile updates (username required, minimum 2 characters)
+export function validateUsernameForProfile(username: string): ValidationResult {
+  return validateUsernameStrict(username);
+}
+
+// Legacy aliases for backward compatibility
+export function validateNameStrict(name: string): ValidationResult {
+  return validateUsernameStrict(name);
+}
+
+export function validateNameForRegistration(name: string): ValidationResult {
+  return validateUsernameForRegistration(name);
+}
+
 export function validateNameForProfile(name: string): ValidationResult {
-  return validateNameStrict(name);
+  return validateUsernameForProfile(name);
 }
 
 // Keep existing function for backward compatibility

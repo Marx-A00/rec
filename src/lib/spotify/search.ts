@@ -45,8 +45,8 @@ async function getAccessToken(): Promise<string> {
     return cachedAccessToken;
   }
 
-  const clientId = process.env.AUTH_SPOTIFY_ID;
-  const clientSecret = process.env.AUTH_SPOTIFY_SECRET;
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     throw new Error('Spotify credentials not configured');
@@ -174,6 +174,109 @@ export async function searchSpotifyArtists(
       }
     } else {
       console.error(`❌ [Spotify] Unknown error during search (${duration}ms)`);
+    }
+
+    return []; // Graceful degradation
+  }
+}
+
+/**
+ * Fetch multiple artists by Spotify IDs in a single batch request
+ * Returns artist info with follower counts
+ */
+export async function getArtistsByIds(artistIds: string[]): Promise<
+  Array<{
+    id: string;
+    name: string;
+    followers: number;
+    popularity: number;
+    genres: string[];
+  }>
+> {
+  if (artistIds.length === 0) return [];
+
+  const startTime = Date.now();
+
+  try {
+    const accessToken = await getAccessToken();
+
+    // Spotify API allows up to 50 artists per request
+    const batchSize = 50;
+    const allArtists: Array<{
+      id: string;
+      name: string;
+      followers: number;
+      popularity: number;
+      genres: string[];
+    }> = [];
+
+    // Process in batches of 50
+    for (let i = 0; i < artistIds.length; i += batchSize) {
+      const batch = artistIds.slice(i, i + batchSize);
+      const ids = batch.join(',');
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+      const response = await fetch(
+        `${SPOTIFY_API_URL}/artists?ids=${encodeURIComponent(ids)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const duration = Date.now() - startTime;
+        console.error(
+          `❌ [Spotify] API error fetching artists: ${response.status} ${response.statusText} (${duration}ms)`
+        );
+        continue; // Skip this batch
+      }
+
+      const data = await response.json();
+      const artists = data?.artists || [];
+
+      for (const artist of artists) {
+        if (artist) {
+          allArtists.push({
+            id: artist.id,
+            name: artist.name,
+            followers: artist.followers?.total || 0,
+            popularity: artist.popularity || 0,
+            genres: artist.genres || [],
+          });
+        }
+      }
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(
+      `✅ [Spotify] Fetched ${allArtists.length} artists (${duration}ms)`
+    );
+
+    return allArtists;
+  } catch (error: unknown) {
+    const duration = Date.now() - startTime;
+
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        console.error(
+          `⏱️ [Spotify] Request timeout after ${TIMEOUT_MS}ms for batch artist fetch`
+        );
+      } else {
+        console.error(
+          `❌ [Spotify] Error fetching artists: ${error.message} (${duration}ms)`
+        );
+      }
+    } else {
+      console.error(
+        `❌ [Spotify] Unknown error during batch artist fetch (${duration}ms)`
+      );
     }
 
     return []; // Graceful degradation

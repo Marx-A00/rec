@@ -3,6 +3,7 @@ import { Pencil, Trash2, MoreHorizontal, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
+import { useCollectionToastContext } from '@/components/ui/CollectionToastProvider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { RecommendationFieldsFragment } from '@/generated/graphql';
@@ -60,15 +61,20 @@ export default function RecommendationCard({
     string | null
   >(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
+  const { showCollectionToast } = useCollectionToastContext();
 
   const deleteMutation = useDeleteRecommendationMutation({
     onSuccess: () => {
       setShowDeleteConfirm(false);
       setShowActions(false);
+      showCollectionToast('Recommendation deleted', 'success');
     },
     onError: error => {
       console.error('Failed to delete recommendation:', error);
-      // TODO: Add toast notification for error
+      showCollectionToast(
+        `Failed to delete: ${error instanceof Error ? error.message : 'Please try again'}`,
+        'error'
+      );
     },
   });
 
@@ -171,17 +177,19 @@ export default function RecommendationCard({
               <Avatar className='h-6 w-6 ring-2 ring-zinc-600 shadow-sm'>
                 <AvatarImage
                   src={recommendation.user?.image || undefined}
-                  alt={recommendation.user?.name || 'User'}
+                  alt={recommendation.user?.username || 'User'}
                 />
                 <AvatarFallback className='bg-gradient-to-br from-zinc-600 to-zinc-700 text-white text-xs font-semibold'>
-                  {(recommendation.user?.name || 'A').charAt(0).toUpperCase()}
+                  {(recommendation.user?.username || 'A')
+                    .charAt(0)
+                    .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className='absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-black rounded-full shadow-sm'></div>
             </div>
             <Link href={`/profile/${recommendation.user.id}`}>
               <span className='text-xs font-medium text-cosmic-latte hover:underline cursor-pointer transition-all duration-200'>
-                {recommendation.user?.name || 'Anonymous'}
+                {recommendation.user?.username || 'Anonymous'}
               </span>
             </Link>
           </div>

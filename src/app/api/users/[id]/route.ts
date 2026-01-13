@@ -20,7 +20,7 @@ export async function GET(
       where: { id },
       select: {
         id: true,
-        name: true,
+        username: true,
         email: true,
         image: true,
         bio: true,
@@ -77,19 +77,19 @@ export async function PUT(
       return NextResponse.json(response, { status });
     }
 
-    const { name, bio } = validation.data;
+    const { username, bio } = validation.data;
 
     // Update user
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        ...(name !== undefined && { name }),
+        ...(username !== undefined && { username }),
         ...(bio !== undefined && { bio }),
         profileUpdatedAt: new Date(),
       },
       select: {
         id: true,
-        name: true,
+        username: true,
         email: true,
         image: true,
         bio: true,
@@ -149,19 +149,19 @@ export async function PATCH(
       return NextResponse.json(response, { status });
     }
 
-    const { name, bio } = validation.data;
+    const { username, bio } = validation.data;
 
     // Update user profile
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        ...(name !== undefined && { name }),
+        ...(username !== undefined && { username }),
         ...(bio !== undefined && { bio }),
         profileUpdatedAt: new Date(),
       },
       select: {
         id: true,
-        name: true,
+        username: true,
         email: true,
         image: true,
         bio: true,

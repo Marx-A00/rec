@@ -16,18 +16,18 @@ interface SearchState {
 
 export const useSearchStore = create<SearchState>()(
   persist(
-    (set) => ({
+    set => ({
       // Default to albums
       preferredSearchType: 'albums',
-      setPreferredSearchType: (type) => set({ preferredSearchType: type }),
+      setPreferredSearchType: type => set({ preferredSearchType: type }),
 
       // Recent searches
       recentSearches: [],
-      addRecentSearch: (query) =>
-        set((state) => ({
+      addRecentSearch: query =>
+        set(state => ({
           recentSearches: [
             query,
-            ...state.recentSearches.filter((q) => q !== query),
+            ...state.recentSearches.filter(q => q !== query),
           ].slice(0, 10), // Keep last 10 searches
         })),
       clearRecentSearches: () => set({ recentSearches: [] }),

@@ -29,12 +29,12 @@ export default function SimpleSearchBar({
 
   // Use Zustand store for search type persistence
   const preferredSearchType = useSearchStore(
-    (state) => state.preferredSearchType
+    state => state.preferredSearchType
   );
   const setPreferredSearchType = useSearchStore(
-    (state) => state.setPreferredSearchType
+    state => state.setPreferredSearchType
   );
-  const addRecentSearch = useSearchStore((state) => state.addRecentSearch);
+  const addRecentSearch = useSearchStore(state => state.addRecentSearch);
 
   // Initialize local search type from store
   // TODO: Re-add 'all' when we figure out the "ALL" search
@@ -118,7 +118,7 @@ export default function SimpleSearchBar({
           <div className='[&_.border-b]:border-0 [&_[cmdk-input-wrapper]]:border-0 [&_svg]:text-cosmic-latte [&_svg]:opacity-100'>
             <CommandInput
               id='main-search-bar'
-              data-tour-step="main-search"
+              data-tour-step='main-search'
               placeholder={placeholder}
               value={query}
               onValueChange={handleValueChange}

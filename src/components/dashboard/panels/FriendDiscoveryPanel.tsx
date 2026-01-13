@@ -27,8 +27,9 @@ export default function FriendDiscoveryPanel({
   config,
   isEditMode,
 }: PanelComponentProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const user = session?.user;
+  const isSessionLoading = status === 'loading';
   const [suggestions, setSuggestions] = useState<SuggestedFriend[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -177,7 +178,7 @@ export default function FriendDiscoveryPanel({
 
   return (
     <div className='bg-zinc-900/50 p-6 h-full overflow-hidden'>
-      {user ? (
+      {isSessionLoading || user ? (
         <div className='h-full flex flex-col'>
           {/* Header with refresh */}
           <div className='flex items-center justify-between mb-4 flex-shrink-0'>
@@ -197,7 +198,7 @@ export default function FriendDiscoveryPanel({
 
           {/* Suggestions */}
           <div className='flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
-            {isLoading ? (
+            {isSessionLoading || isLoading ? (
               <div className='space-y-4'>
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div
