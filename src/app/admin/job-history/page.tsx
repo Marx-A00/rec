@@ -14,6 +14,11 @@ import {
   TrendingUp,
   TrendingDown,
   ExternalLink,
+  Calendar,
+  Music,
+  Database,
+  Pause,
+  Play,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -90,6 +95,31 @@ interface JobStats {
   trendsUp: boolean;
 }
 
+interface SchedulerStatus {
+  spotify: {
+    enabled: boolean;
+    nextRunAt: string | null;
+    lastRunAt: string | null;
+    intervalMinutes: number;
+    jobKey: string | null;
+  };
+  musicbrainz: {
+    enabled: boolean;
+    nextRunAt: string | null;
+    lastRunAt: string | null;
+    intervalMinutes: number;
+    jobKey: string | null;
+  };
+  queue: {
+    waiting: number;
+    active: number;
+    completed: number;
+    failed: number;
+    delayed: number;
+    paused: boolean;
+  };
+}
+
 const MONITORING_API =
   process.env.NEXT_PUBLIC_MONITORING_API_URL || 'http://localhost:3001';
 
@@ -162,9 +192,39 @@ function JobAlbums({ jobId, jobName }: { jobId: string; jobName: string }) {
   );
 }
 
+// Helper to format relative time for next sync
+function formatTimeUntil(date: Date): string {
+  const now = Date.now();
+  const diff = date.getTime() - now;
+
+  if (diff < 0) return 'running now';
+
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `in ${days}d ${hours % 24}h`;
+  if (hours > 0) return `in ${hours}h ${minutes % 60}m`;
+  if (minutes > 0) return `in ${minutes}m`;
+  return 'soon';
+}
+
+// Helper to format interval
+function formatInterval(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `${days}d`;
+}
+
 export default function JobHistoryPage() {
   const [jobs, setJobs] = useState<JobHistoryItem[]>([]);
   const [stats, setStats] = useState<JobStats | null>(null);
+  const [schedulerStatus, setSchedulerStatus] =
+    useState<SchedulerStatus | null>(null);
+  const [schedulerLoading, setSchedulerLoading] = useState(true);
+  const [schedulerError, setSchedulerError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -174,6 +234,30 @@ export default function JobHistoryPage() {
   const [jobTypeFilter, setJobTypeFilter] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobHistoryItem | null>(null);
+
+  const fetchSchedulerStatus = async () => {
+    setSchedulerLoading(true);
+    setSchedulerError(null);
+    try {
+      const response = await fetch('/api/admin/scheduler/status');
+      if (!response.ok) {
+        throw new Error('Failed to fetch scheduler status');
+      }
+      const data = await response.json();
+      if (data.success) {
+        setSchedulerStatus(data.status);
+      } else {
+        throw new Error(data.error || 'Unknown error');
+      }
+    } catch (err) {
+      setSchedulerError(
+        err instanceof Error ? err.message : 'Failed to load scheduler status'
+      );
+      console.error('Error fetching scheduler status:', err);
+    } finally {
+      setSchedulerLoading(false);
+    }
+  };
 
   const fetchJobHistory = async () => {
     setLoading(true);
@@ -212,12 +296,17 @@ export default function JobHistoryPage() {
   };
 
   useEffect(() => {
+    fetchSchedulerStatus();
+  }, []);
+
+  useEffect(() => {
     fetchJobHistory();
   }, [page, statusFilter, timeFilter]);
 
   const handleRefresh = () => {
     setRefreshing(true);
     fetchJobHistory();
+    fetchSchedulerStatus();
   };
 
   const handleRetryJob = async (jobId: string) => {
@@ -284,6 +373,166 @@ export default function JobHistoryPage() {
           Historical view of all processed jobs and their outcomes
         </p>
       </div>
+
+      {/* Scheduler Status Card */}
+      <Card className='bg-zinc-900 border-zinc-800 mb-6'>
+        <CardHeader className='pb-3'>
+          <div className='flex items-center justify-between'>
+            <CardTitle className='text-lg font-semibold text-white flex items-center gap-2'>
+              <Calendar className='h-5 w-5 text-green-500' />
+              Sync Schedules
+            </CardTitle>
+            {schedulerStatus?.queue.paused && (
+              <Badge
+                variant='outline'
+                className='text-yellow-500 border-yellow-500'
+              >
+                <Pause className='h-3 w-3 mr-1' />
+                Queue Paused
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {schedulerLoading ? (
+            <div className='text-zinc-500'>Loading scheduler status...</div>
+          ) : schedulerError ? (
+            <div className='flex items-center gap-2 text-red-400'>
+              <AlertCircle className='h-4 w-4' />
+              <span>{schedulerError}</span>
+            </div>
+          ) : schedulerStatus ? (
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              {/* Spotify Sync */}
+              <div className='bg-zinc-800 rounded-lg p-4'>
+                <div className='flex items-center gap-2 mb-3'>
+                  <Music className='h-5 w-5 text-green-500' />
+                  <span className='font-medium text-white'>Spotify Sync</span>
+                  {schedulerStatus.spotify.enabled ? (
+                    <Badge className='bg-green-500/20 text-green-400 text-xs'>
+                      Active
+                    </Badge>
+                  ) : (
+                    <Badge variant='outline' className='text-zinc-500 text-xs'>
+                      Disabled
+                    </Badge>
+                  )}
+                </div>
+                {schedulerStatus.spotify.enabled ? (
+                  <div className='space-y-2 text-sm'>
+                    <div className='flex justify-between'>
+                      <span className='text-zinc-400'>Next sync</span>
+                      <span className='text-white font-medium'>
+                        {schedulerStatus.spotify.nextRunAt
+                          ? formatTimeUntil(
+                              new Date(schedulerStatus.spotify.nextRunAt)
+                            )
+                          : 'Unknown'}
+                      </span>
+                    </div>
+                    {schedulerStatus.spotify.intervalMinutes > 0 && (
+                      <div className='flex justify-between'>
+                        <span className='text-zinc-400'>Interval</span>
+                        <span className='text-zinc-300'>
+                          Every{' '}
+                          {formatInterval(
+                            schedulerStatus.spotify.intervalMinutes
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {schedulerStatus.spotify.lastRunAt && (
+                      <div className='flex justify-between'>
+                        <span className='text-zinc-400'>Last run</span>
+                        <span className='text-zinc-300'>
+                          {formatDistanceToNow(
+                            new Date(schedulerStatus.spotify.lastRunAt)
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className='text-zinc-500 text-sm'>
+                    No Spotify sync scheduled
+                  </p>
+                )}
+              </div>
+
+              {/* MusicBrainz Sync */}
+              <div className='bg-zinc-800 rounded-lg p-4'>
+                <div className='flex items-center gap-2 mb-3'>
+                  <Database className='h-5 w-5 text-blue-500' />
+                  <span className='font-medium text-white'>
+                    MusicBrainz Sync
+                  </span>
+                  {schedulerStatus.musicbrainz.enabled ? (
+                    <Badge className='bg-blue-500/20 text-blue-400 text-xs'>
+                      Active
+                    </Badge>
+                  ) : (
+                    <Badge variant='outline' className='text-zinc-500 text-xs'>
+                      Disabled
+                    </Badge>
+                  )}
+                </div>
+                {schedulerStatus.musicbrainz.enabled ? (
+                  <div className='space-y-2 text-sm'>
+                    <div className='flex justify-between'>
+                      <span className='text-zinc-400'>Next sync</span>
+                      <span className='text-white font-medium'>
+                        {schedulerStatus.musicbrainz.nextRunAt
+                          ? formatTimeUntil(
+                              new Date(schedulerStatus.musicbrainz.nextRunAt)
+                            )
+                          : 'Unknown'}
+                      </span>
+                    </div>
+                    {schedulerStatus.musicbrainz.intervalMinutes > 0 && (
+                      <div className='flex justify-between'>
+                        <span className='text-zinc-400'>Interval</span>
+                        <span className='text-zinc-300'>
+                          Every{' '}
+                          {formatInterval(
+                            schedulerStatus.musicbrainz.intervalMinutes
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {schedulerStatus.musicbrainz.lastRunAt && (
+                      <div className='flex justify-between'>
+                        <span className='text-zinc-400'>Last run</span>
+                        <span className='text-zinc-300'>
+                          {formatDistanceToNow(
+                            new Date(schedulerStatus.musicbrainz.lastRunAt)
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className='text-zinc-500 text-sm'>
+                    No MusicBrainz sync scheduled
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Queue Summary */}
+          {schedulerStatus && (
+            <div className='mt-4 pt-4 border-t border-zinc-700'>
+              <div className='flex items-center gap-4 text-sm text-zinc-400'>
+                <span>
+                  Queue: {schedulerStatus.queue.waiting} waiting ·{' '}
+                  {schedulerStatus.queue.active} active ·{' '}
+                  {schedulerStatus.queue.delayed} delayed
+                </span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Stats Cards */}
       {stats && (
