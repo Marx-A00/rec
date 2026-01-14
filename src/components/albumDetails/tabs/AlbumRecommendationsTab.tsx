@@ -126,6 +126,12 @@ export default function AlbumRecommendationsTab({
           key: rec.id,
           recommendation: {
             ...rec,
+            // Map user.name to user.username for RecommendationCard compatibility
+            user: {
+              id: rec.user.id,
+              username: rec.user.name,
+              image: rec.user.image,
+            },
             basisAlbum:
               rec.albumRole === 'basis' ? currentAlbumData : otherAlbumData,
             recommendedAlbum:
