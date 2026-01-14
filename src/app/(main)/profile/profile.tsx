@@ -407,21 +407,6 @@ export default function ProfileClient({
                   Recommendations
                 </span>
               </div>
-
-              {/* Action Buttons */}
-              <div className='mt-6 flex flex-col sm:flex-row gap-3'>
-                <Link href='/profile/collage'>
-                  <button
-                    disabled
-                    className='bg-gray-500 text-black font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'
-                  >
-                    🎵 Create Album Collage
-                  </button>
-                </Link>
-              </div>
-              <p className='text-xs text-zinc-500 mt-1'>
-                * Album collage feature coming soon!
-              </p>
             </div>
           </div>
 
