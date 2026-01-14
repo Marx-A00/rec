@@ -158,6 +158,65 @@ app.get('/queue/metrics', async (_req, res) => {
   }
 });
 
+// Live queue snapshot endpoint - waiting + active jobs
+app.get('/queue/snapshot', async (_req, res) => {
+  try {
+    const queue = getMusicBrainzQueue().getQueue();
+    const stats = await getMusicBrainzQueue().getStats();
+    const isPaused = await queue.isPaused();
+
+    // Get live jobs
+    const [waiting, active, delayed, failed] = await Promise.all([
+      queue.getWaiting(0, 20),
+      queue.getActive(0, 10),
+      queue.getDelayed(0, 10),
+      queue.getFailed(0, 10),
+    ]);
+
+    const formatJob = (job: any, status: string) => ({
+      id: job.id,
+      name: job.name,
+      status,
+      data: {
+        query: job.data?.query,
+        mbid: job.data?.mbid,
+        artistMbid: job.data?.artistMbid,
+        albumId: job.data?.albumId,
+        artistId: job.data?.artistId,
+      },
+      createdAt: new Date(job.timestamp).toISOString(),
+      processedOn: job.processedOn
+        ? new Date(job.processedOn).toISOString()
+        : undefined,
+      attempts: job.attemptsMade || 0,
+      error: job.failedReason,
+    });
+
+    res.json({
+      stats: {
+        waiting: stats.waiting,
+        active: stats.active,
+        delayed: stats.delayed,
+        completed: stats.completed,
+        failed: stats.failed,
+        paused: isPaused,
+      },
+      jobs: {
+        active: active.map(j => formatJob(j, 'active')),
+        waiting: waiting.map(j => formatJob(j, 'waiting')),
+        delayed: delayed.map(j => formatJob(j, 'delayed')),
+        failed: failed.map(j => formatJob(j, 'failed')),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to get queue snapshot',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
 // Queue control endpoints
 app.post('/queue/pause', async (_req, res) => {
   try {
