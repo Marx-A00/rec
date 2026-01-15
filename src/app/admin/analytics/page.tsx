@@ -23,19 +23,37 @@ import { Badge } from '@/components/ui/badge';
 
 const UMAMI_DASHBOARD_URL = 'https://umami-production-08c5.up.railway.app';
 
+interface UmamiStat {
+  value: number;
+  prev?: number;
+}
+
 interface AnalyticsData {
   stats: {
-    pageviews: { value: number; prev: number };
-    visitors: { value: number; prev: number };
-    visits: { value: number; prev: number };
-    bounces: { value: number; prev: number };
-    totaltime: { value: number; prev: number };
+    pageviews: UmamiStat;
+    visitors: UmamiStat;
+    visits: UmamiStat;
+    bounces: UmamiStat;
+    totaltime: UmamiStat;
   };
   pages: Array<{ x: string; y: number }>;
   referrers: Array<{ x: string; y: number }>;
   countries: Array<{ x: string; y: number }>;
   browsers: Array<{ x: string; y: number }>;
   timestamp: string;
+}
+
+// Helper to safely get stat value
+function getStatValue(stat: UmamiStat | number | undefined): number {
+  if (stat === undefined || stat === null) return 0;
+  if (typeof stat === 'number') return stat;
+  return stat.value ?? 0;
+}
+
+function getStatPrev(stat: UmamiStat | number | undefined): number {
+  if (stat === undefined || stat === null) return 0;
+  if (typeof stat === 'number') return 0;
+  return stat.prev ?? 0;
 }
 
 type TimeRange = '24h' | '7d' | '30d' | '90d';
@@ -97,17 +115,18 @@ export default function AnalyticsPage() {
   }, [fetchAnalytics]);
 
   const stats = data?.stats;
-  const bounceRate = stats
-    ? stats.visits.value > 0
-      ? Math.round((stats.bounces.value / stats.visits.value) * 100)
-      : 0
-    : 0;
 
-  const avgVisitTime = stats
-    ? stats.visits.value > 0
-      ? stats.totaltime.value / stats.visits.value
-      : 0
-    : 0;
+  // Safely extract values
+  const visitors = getStatValue(stats?.visitors);
+  const visitorsPrev = getStatPrev(stats?.visitors);
+  const pageviews = getStatValue(stats?.pageviews);
+  const pageviewsPrev = getStatPrev(stats?.pageviews);
+  const visits = getStatValue(stats?.visits);
+  const bounces = getStatValue(stats?.bounces);
+  const totaltime = getStatValue(stats?.totaltime);
+
+  const bounceRate = visits > 0 ? Math.round((bounces / visits) * 100) : 0;
+  const avgVisitTime = visits > 0 ? totaltime / visits : 0;
 
   return (
     <div className='p-8'>
@@ -210,38 +229,24 @@ export default function AnalyticsPage() {
               <CardContent className='pt-4'>
                 <div className='flex items-center justify-between mb-2'>
                   <Users className='h-5 w-5 text-zinc-500' />
-                  {stats &&
-                    getChangePercent(
-                      stats.visitors.value,
-                      stats.visitors.prev
-                    ) !== null && (
-                      <Badge
-                        variant='outline'
-                        className={`text-xs ${
-                          getChangePercent(
-                            stats.visitors.value,
-                            stats.visitors.prev
-                          )! >= 0
-                            ? 'text-green-400 border-green-800'
-                            : 'text-red-400 border-red-800'
-                        }`}
-                      >
-                        {getChangePercent(
-                          stats.visitors.value,
-                          stats.visitors.prev
-                        )! >= 0
-                          ? '+'
-                          : ''}
-                        {getChangePercent(
-                          stats.visitors.value,
-                          stats.visitors.prev
-                        )}
-                        %
-                      </Badge>
-                    )}
+                  {visitorsPrev > 0 && (
+                    <Badge
+                      variant='outline'
+                      className={`text-xs ${
+                        getChangePercent(visitors, visitorsPrev)! >= 0
+                          ? 'text-green-400 border-green-800'
+                          : 'text-red-400 border-red-800'
+                      }`}
+                    >
+                      {getChangePercent(visitors, visitorsPrev)! >= 0
+                        ? '+'
+                        : ''}
+                      {getChangePercent(visitors, visitorsPrev)}%
+                    </Badge>
+                  )}
                 </div>
                 <p className='text-2xl font-bold text-white'>
-                  {stats?.visitors.value.toLocaleString() ?? '-'}
+                  {visitors.toLocaleString()}
                 </p>
                 <p className='text-xs text-zinc-500 mt-1'>Unique Visitors</p>
               </CardContent>
@@ -251,38 +256,24 @@ export default function AnalyticsPage() {
               <CardContent className='pt-4'>
                 <div className='flex items-center justify-between mb-2'>
                   <Eye className='h-5 w-5 text-zinc-500' />
-                  {stats &&
-                    getChangePercent(
-                      stats.pageviews.value,
-                      stats.pageviews.prev
-                    ) !== null && (
-                      <Badge
-                        variant='outline'
-                        className={`text-xs ${
-                          getChangePercent(
-                            stats.pageviews.value,
-                            stats.pageviews.prev
-                          )! >= 0
-                            ? 'text-green-400 border-green-800'
-                            : 'text-red-400 border-red-800'
-                        }`}
-                      >
-                        {getChangePercent(
-                          stats.pageviews.value,
-                          stats.pageviews.prev
-                        )! >= 0
-                          ? '+'
-                          : ''}
-                        {getChangePercent(
-                          stats.pageviews.value,
-                          stats.pageviews.prev
-                        )}
-                        %
-                      </Badge>
-                    )}
+                  {pageviewsPrev > 0 && (
+                    <Badge
+                      variant='outline'
+                      className={`text-xs ${
+                        getChangePercent(pageviews, pageviewsPrev)! >= 0
+                          ? 'text-green-400 border-green-800'
+                          : 'text-red-400 border-red-800'
+                      }`}
+                    >
+                      {getChangePercent(pageviews, pageviewsPrev)! >= 0
+                        ? '+'
+                        : ''}
+                      {getChangePercent(pageviews, pageviewsPrev)}%
+                    </Badge>
+                  )}
                 </div>
                 <p className='text-2xl font-bold text-white'>
-                  {stats?.pageviews.value.toLocaleString() ?? '-'}
+                  {pageviews.toLocaleString()}
                 </p>
                 <p className='text-xs text-zinc-500 mt-1'>Page Views</p>
               </CardContent>
