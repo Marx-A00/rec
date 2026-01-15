@@ -112,13 +112,13 @@ export async function GET(request: NextRequest) {
     // Get auth token
     const token = await getUmamiToken();
 
-    // Fetch all data in parallel
+    // Fetch all data in parallel (Umami v2 API)
     const [stats, pages, referrers, countries, browsers] = await Promise.all([
       fetchUmamiData('stats', token, params),
       fetchUmamiData(
         'metrics',
         token,
-        new URLSearchParams({ ...Object.fromEntries(params), type: 'url' })
+        new URLSearchParams({ ...Object.fromEntries(params), type: 'path' })
       ),
       fetchUmamiData(
         'metrics',
