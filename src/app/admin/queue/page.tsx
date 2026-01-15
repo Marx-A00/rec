@@ -29,8 +29,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-const MONITORING_API =
-  process.env.NEXT_PUBLIC_MONITORING_API_URL || 'http://localhost:3001';
+// Use proxy API route to securely communicate with worker
+const MONITORING_API = '/api/admin/worker';
 
 interface QueueStats {
   waiting: number;

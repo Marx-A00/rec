@@ -17,19 +17,28 @@ import {
 } from '@/lib/monitoring';
 
 const PORT = 3001;
+const API_KEY = process.env.WORKER_API_KEY || '';
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'https://rec-production.up.railway.app',
+  process.env.NEXT_PUBLIC_APP_URL,
+].filter(Boolean);
 
 // Create Express app with minimal configuration
 const app = express();
 app.disable('x-powered-by');
 app.set('env', 'production');
 
-// Add CORS middleware to allow requests from localhost:3000
+// Add CORS middleware
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header(
     'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept'
+    'Origin, X-Requested-With, Content-Type, Accept, X-API-Key'
   );
 
   // Handle preflight requests
@@ -38,6 +47,26 @@ app.use((req, res, next) => {
   } else {
     next();
   }
+});
+
+// API Key authentication middleware (skip for health check)
+app.use((req, res, next) => {
+  // Skip auth for health check (useful for Railway health checks)
+  if (req.path === '/health') {
+    return next();
+  }
+
+  // Skip auth in development
+  if (!API_KEY || process.env.NODE_ENV === 'development') {
+    return next();
+  }
+
+  const providedKey = req.headers['x-api-key'];
+  if (providedKey !== API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  next();
 });
 
 // Initialize queue and Bull Board

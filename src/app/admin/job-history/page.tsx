@@ -120,8 +120,8 @@ interface SchedulerStatus {
   };
 }
 
-const MONITORING_API =
-  process.env.NEXT_PUBLIC_MONITORING_API_URL || 'http://localhost:3001';
+// Use proxy route to securely access worker API
+const MONITORING_API = '/api/admin/worker';
 
 function JobAlbums({ jobId, jobName }: { jobId: string; jobName: string }) {
   const { data, isLoading } = useAlbumsByJobIdQuery(
