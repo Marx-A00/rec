@@ -1038,6 +1038,14 @@ export default function MusicDatabasePage() {
                 ? '✓ Has images'
                 : '✗ Missing images'}
             </div>
+            {albumDetails.coverArtUrl && (
+              <div
+                className='mt-1 text-xs text-zinc-500 truncate max-w-xs'
+                title={albumDetails.coverArtUrl}
+              >
+                {albumDetails.coverArtUrl}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1251,6 +1259,14 @@ export default function MusicDatabasePage() {
                 ? '✓ Has images'
                 : '✗ Missing images'}
             </div>
+            {artistDetails.imageUrl && (
+              <div
+                className='mt-1 text-xs text-zinc-500 truncate max-w-xs'
+                title={artistDetails.imageUrl}
+              >
+                {artistDetails.imageUrl}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1875,6 +1891,15 @@ export default function MusicDatabasePage() {
                                   )}
                                   Preview Enrichment
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    window.open(`/albums/${album.id}`, '_blank')
+                                  }
+                                  className='text-blue-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                >
+                                  <ExternalLink className='h-3 w-3 mr-2' />
+                                  View Album Page
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
@@ -2082,6 +2107,18 @@ export default function MusicDatabasePage() {
                                     <Eye className='h-3 w-3 mr-2' />
                                   )}
                                   Preview Enrichment
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    window.open(
+                                      `/artists/${artist.id}`,
+                                      '_blank'
+                                    )
+                                  }
+                                  className='text-blue-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                >
+                                  <ExternalLink className='h-3 w-3 mr-2' />
+                                  View Artist Page
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>

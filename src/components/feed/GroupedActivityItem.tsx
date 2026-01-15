@@ -6,7 +6,10 @@ import { Heart, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AlbumImage from '@/components/ui/AlbumImage';
-import { formatActivityTimeRange } from '@/utils/activity-grouping';
+import {
+  formatActivityTimeRange,
+  formatTimeAgo,
+} from '@/utils/activity-grouping';
 
 // Helper function to get color classes based on score
 const getScoreColors = (score: number) => {
@@ -177,6 +180,9 @@ export default function GroupedActivityItem({
               {group.actorName}
             </Link>{' '}
             {getGroupedActivityText()}
+            {timeRange && (
+              <span className='text-zinc-500 ml-1'>· {timeRange}</span>
+            )}
           </p>
         </div>
       </div>
@@ -607,6 +613,9 @@ function SingleActivityDisplay({
               {activity.actorName}
             </Link>{' '}
             {getActivityText()}
+            <span className='text-zinc-500 ml-1'>
+              · {formatTimeAgo(activity.createdAt)}
+            </span>
           </p>
         </div>
       </div>

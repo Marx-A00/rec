@@ -98,29 +98,12 @@ function createGroupedActivity(activities: Activity[]): GroupedActivity {
   };
 }
 
-// Helper to format time range for grouped activities
+// Helper to format time for grouped activities - shows when the latest activity happened
 export function formatActivityTimeRange(group: GroupedActivity): string {
-  if (!group.isGrouped) {
-    return formatTimeAgo(group.createdAt);
-  }
-
-  const latest = new Date(group.createdAt);
-  const earliest = new Date(group.earliestCreatedAt);
-  const diffMinutes = Math.round(
-    (latest.getTime() - earliest.getTime()) / (1000 * 60)
-  );
-
-  if (diffMinutes < 1) {
-    return 'just now';
-  } else if (diffMinutes < 60) {
-    return `over ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
-  } else {
-    const diffHours = Math.round(diffMinutes / 60);
-    return `over ${diffHours} hour${diffHours > 1 ? 's' : ''}`;
-  }
+  return formatTimeAgo(group.createdAt);
 }
 
-function formatTimeAgo(dateString: string): string {
+export function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
