@@ -31,6 +31,7 @@ import {
   ChevronsRight,
   Loader2,
   Eye,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
