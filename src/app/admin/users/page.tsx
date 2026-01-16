@@ -152,8 +152,8 @@ export default function AdminUsersPage() {
     filters.sortBy !== UserSortField.CreatedAt ||
     filters.sortOrder !== SortOrder.Desc;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (date: string | Date) => {
+    return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -655,7 +655,7 @@ export default function AdminUsersPage() {
                   </td>
                 </tr>
               ) : (
-                users.map((user: any) => (
+                users.map(user => (
                   <React.Fragment key={user.id}>
                     <tr
                       className='hover:bg-zinc-900/50 transition-colors cursor-pointer'
@@ -676,17 +676,17 @@ export default function AdminUsersPage() {
                           <Avatar className='h-10 w-10'>
                             <AvatarImage
                               src={user.image || undefined}
-                              alt={user.name || 'User'}
+                              alt={user.username || 'User'}
                             />
                             <AvatarFallback className='bg-zinc-700 text-zinc-300'>
-                              {user.name?.charAt(0)?.toUpperCase() ||
+                              {user.username?.charAt(0)?.toUpperCase() ||
                                 user.email?.charAt(0)?.toUpperCase() ||
                                 'U'}
                             </AvatarFallback>
                           </Avatar>
                           <div className='ml-1'>
                             <div className='text-sm font-medium text-cosmic-latte flex items-center gap-2'>
-                              {user.name || 'Unnamed User'}
+                              {user.username || 'Unnamed User'}
                               {(user.role === 'ADMIN' ||
                                 user.role === 'OWNER') && (
                                 <Shield className='h-3 w-3 text-emeraled-green' />

@@ -8,7 +8,7 @@ import FollowButton from '@/components/profile/FollowButton';
 interface UserListItemProps {
   user: {
     id: string;
-    name: string | null;
+    username: string | null;
     email: string | null;
     image: string | null;
     bio: string | null;
@@ -60,10 +60,10 @@ export default function UserListItem({
           <Avatar className='h-12 w-12 hover:opacity-80 transition-opacity cursor-pointer'>
             <AvatarImage
               src={user.image || undefined}
-              alt={user.name || 'User'}
+              alt={user.username || 'User'}
             />
             <AvatarFallback className='bg-zinc-700 text-zinc-200'>
-              {user.name?.charAt(0)?.toUpperCase() || 'A'}
+              {user.username?.charAt(0)?.toUpperCase() || 'A'}
             </AvatarFallback>
           </Avatar>
         </Link>
@@ -74,7 +74,7 @@ export default function UserListItem({
             <div className='flex-1 min-w-0'>
               <Link href={`/profile/${user.id}`}>
                 <h3 className='font-medium text-white hover:text-emeraled-green transition-colors cursor-pointer truncate'>
-                  {user.name || 'Anonymous music enjoyer'}
+                  {user.username || 'Anonymous music enjoyer'}
                 </h3>
               </Link>
 

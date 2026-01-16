@@ -21,10 +21,9 @@ import { RecommendationFieldsFragment } from '@/generated/graphql';
 
 interface User {
   id: string;
-  name: string;
+  username: string;
   email: string | null;
   image: string;
-  username: string;
   bio: string;
   followersCount: number;
   followingCount: number;
@@ -199,10 +198,13 @@ export default function ProfileClient({
     setIsEditingProfile(false);
   };
 
-  const handleSaveProfile = (updatedUser: { name: string; bio: string }) => {
+  const handleSaveProfile = (updatedUser: {
+    username: string;
+    bio: string;
+  }) => {
     setCurrentUser((prev: User) => ({
       ...prev,
-      name: updatedUser.name,
+      username: updatedUser.username,
       bio: updatedUser.bio,
     }));
     setIsEditingProfile(false);
@@ -285,9 +287,9 @@ export default function ProfileClient({
         <div className='max-w-4xl mx-auto'>
           <div className='flex flex-col md:flex-row items-center md:items-start gap-8 mb-12'>
             <Avatar className='w-32 h-32 border-2 border-zinc-800'>
-              <AvatarImage src={currentUser.image} alt={currentUser.name} />
+              <AvatarImage src={currentUser.image} alt={currentUser.username} />
               <AvatarFallback className='bg-zinc-800 text-cosmic-latte text-2xl'>
-                {currentUser.name.charAt(0)}
+                {currentUser.username.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div className='text-center md:text-left flex-1'>
@@ -298,7 +300,7 @@ export default function ProfileClient({
                       data-tour-step='profile-header'
                       className='text-4xl font-bold text-cosmic-latte'
                     >
-                      {currentUser.name}
+                      {currentUser.username}
                     </h1>
                     <AdminBadge role={currentUser.role} />
                   </div>
@@ -623,7 +625,7 @@ export default function ProfileClient({
         <ProfileEditForm
           user={{
             id: currentUser.id,
-            name: currentUser.name,
+            username: currentUser.username,
             bio: currentUser.bio,
             image: currentUser.image,
           }}

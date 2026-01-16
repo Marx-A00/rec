@@ -176,7 +176,7 @@ export type CollectionListResponse = PaginatedApiResponse<CollectionResponse>;
 export interface UserResponse extends ApiResponse {
   id: string;
   email: string;
-  name?: string;
+  username?: string;
   createdAt: string;
   updatedAt: string;
 }

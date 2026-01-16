@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 
 interface TrendingUser {
   id: string;
-  name: string | null;
+  username: string | null;
   email: string | null;
   image: string | null;
   bio: string | null;
@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
       ) {
         trendingUsers.push({
           id: user.id,
-          name: user.name,
+          username: user.username,
           email: user.email,
           image: user.image,
           bio: user.bio,

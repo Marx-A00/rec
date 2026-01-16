@@ -502,7 +502,8 @@ async function handleAuthentication(
     }
 
     // Check if user has a username (required for most routes)
-    const hasUsername = session.user.name && session.user.name.trim() !== '';
+    const hasUsername =
+      session.user.username && session.user.username.trim() !== '';
 
     if (!hasUsername && !isUsernameExemptRoute(pathname)) {
       // For API routes, return 403 indicating profile incomplete

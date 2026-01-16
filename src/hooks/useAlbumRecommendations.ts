@@ -21,7 +21,7 @@ export interface AlbumRecommendation {
   };
   user: {
     id: string;
-    name: string | null;
+    username: string | null;
     image: string | null;
   };
 }
@@ -131,7 +131,7 @@ export function useAlbumRecommendations(
         },
         user: {
           id: rec.user.id,
-          name: rec.user.username || null,
+          username: rec.user.username || null,
           image: rec.user.image || null,
         },
       })),

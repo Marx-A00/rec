@@ -51,7 +51,7 @@ async function checkActivities() {
     console.log('Recent collection adds:');
     recentAdds.forEach(ca => {
       console.log(
-        `  - ${ca.collection.user.name} added "${ca.album?.title || ca.albumTitle}" at ${ca.addedAt}`
+        `  - ${ca.collection.user.username} added "${ca.album?.title || ca.albumTitle}" at ${ca.addedAt}`
       );
     });
   }

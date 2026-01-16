@@ -10,12 +10,12 @@ import AvatarUpload from './AvatarUpload';
 interface ProfileEditFormProps {
   user: {
     id: string;
-    name: string | null;
+    username: string | null;
     bio: string | null;
     image?: string | null;
   };
   onCancel: () => void;
-  onSave: (updatedUser: { name: string; bio: string }) => void;
+  onSave: (updatedUser: { username: string; bio: string }) => void;
 }
 
 export default function ProfileEditForm({
@@ -23,7 +23,7 @@ export default function ProfileEditForm({
   onCancel,
   onSave,
 }: ProfileEditFormProps) {
-  const [name, setName] = useState(user.name || '');
+  const [username, setUsername] = useState(user.username || '');
   const [bio, setBio] = useState(user.bio || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,11 +31,11 @@ export default function ProfileEditForm({
 
   const router = useRouter();
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setName(value);
+    setUsername(value);
 
-    // Validate name
+    // Validate username
     const validation = validateNameForProfile(value);
     setNameError(validation.isValid ? null : validation.message || null);
   };
@@ -46,9 +46,9 @@ export default function ProfileEditForm({
     setError(null);
 
     // Validate before submitting
-    const nameValidation = validateNameForProfile(name);
-    if (!nameValidation.isValid) {
-      setNameError(nameValidation.message || 'Invalid name');
+    const usernameValidation = validateNameForProfile(username);
+    if (!usernameValidation.isValid) {
+      setNameError(usernameValidation.message || 'Invalid username');
       setIsLoading(false);
       return;
     }
@@ -60,7 +60,7 @@ export default function ProfileEditForm({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: name.trim(),
+          username: username.trim(),
           bio: bio.trim(),
         }),
       });
@@ -72,7 +72,10 @@ export default function ProfileEditForm({
 
       const result = await response.json();
       const updatedUser = result.data?.user || result;
-      onSave({ name: updatedUser.name || '', bio: updatedUser.bio || '' });
+      onSave({
+        username: updatedUser.username || '',
+        bio: updatedUser.bio || '',
+      });
       router.refresh(); // Refresh to show updated data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -108,16 +111,16 @@ export default function ProfileEditForm({
 
           <div>
             <label
-              htmlFor='name'
+              htmlFor='username'
               className='block text-sm font-medium text-zinc-300 mb-2'
             >
               Display Name
             </label>
             <input
               type='text'
-              id='name'
-              value={name}
-              onChange={handleNameChange}
+              id='username'
+              value={username}
+              onChange={handleUsernameChange}
               maxLength={30}
               className={`w-full px-3 py-2 bg-zinc-800 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:border-transparent ${
                 nameError
@@ -126,16 +129,16 @@ export default function ProfileEditForm({
               }`}
               placeholder='Enter your display name'
               aria-invalid={nameError ? 'true' : 'false'}
-              aria-describedby={nameError ? 'name-error' : undefined}
+              aria-describedby={nameError ? 'username-error' : undefined}
               required
             />
             {nameError ? (
-              <p id='name-error' className='text-xs text-red-400 mt-1'>
+              <p id='username-error' className='text-xs text-red-400 mt-1'>
                 {nameError}
               </p>
             ) : (
               <p className='text-xs text-zinc-500 mt-1'>
-                {name.length}/30 characters
+                {username.length}/30 characters
               </p>
             )}
           </div>
@@ -164,7 +167,9 @@ export default function ProfileEditForm({
           <div className='flex gap-3 pt-4'>
             <button
               type='submit'
-              disabled={isLoading || !!nameError || name.trim().length === 0}
+              disabled={
+                isLoading || !!nameError || username.trim().length === 0
+              }
               className='flex-1 bg-emeraled-green text-black py-2 px-4 rounded-lg font-medium hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
             >
               {isLoading ? 'Saving...' : 'Save Changes'}

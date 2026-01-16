@@ -41,7 +41,7 @@ export default function SettingsPage() {
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
-    name: '',
+    username: '',
     bio: '',
   });
 
@@ -60,7 +60,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (userData?.user) {
       setProfileForm({
-        name: userData.user.username || '',
+        username: userData.user.username || '',
         bio: userData.user.bio || '',
       });
     }
@@ -68,7 +68,7 @@ export default function SettingsPage() {
 
   // Dirty state detection for profile
   const hasProfileChanges =
-    profileForm.name !== (userData?.user?.username || '') ||
+    profileForm.username !== (userData?.user?.username || '') ||
     profileForm.bio !== (userData?.user?.bio || '');
 
   // Dirty state detection for preferences/privacy
@@ -77,7 +77,7 @@ export default function SettingsPage() {
   // Reset profile form to original values
   const handleDiscardProfileChanges = () => {
     setProfileForm({
-      name: userData?.user?.username || '',
+      username: userData?.user?.username || '',
       bio: userData?.user?.bio || '',
     });
   };
@@ -99,7 +99,7 @@ export default function SettingsPage() {
     try {
       setIsLoading(true);
       await updateProfileMutation.mutateAsync({
-        name: profileForm.name.trim(),
+        username: profileForm.username.trim(),
         bio: profileForm.bio.trim(),
       });
       showToast('Profile updated successfully', 'success');

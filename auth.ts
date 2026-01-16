@@ -94,7 +94,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Update session with latest user data from database
         session.user.id = token.sub;
-        session.user.name = dbUser.username ?? ''; // Map username to session.user.name
+        session.user.username = dbUser.username ?? '';
         session.user.email = dbUser.email ?? '';
         session.user.image = dbUser.image ?? '';
         session.user.role = dbUser.role;

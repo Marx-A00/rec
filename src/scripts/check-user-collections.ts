@@ -18,7 +18,7 @@ async function checkUserCollections() {
     return;
   }
 
-  console.log(`User found: ${user.name} (${user.email})\n`);
+  console.log(`User found: ${user.username} (${user.email})\n`);
 
   // Get collections
   const collections = await prisma.collection.findMany({
