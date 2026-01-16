@@ -2742,6 +2742,7 @@ export type GetMyCollectionsQuery = {
     __typename?: 'Collection';
     id: string;
     name: string;
+    albumCount: number;
     albums: Array<{
       __typename?: 'CollectionAlbum';
       id: string;
@@ -6083,6 +6084,7 @@ export const GetMyCollectionsDocument = `
   myCollections {
     id
     name
+    albumCount
     albums {
       id
       album {

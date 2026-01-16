@@ -263,9 +263,12 @@ export default function GroupedActivityItem({
 
                 {/* Show "+X more" if there are more than 5 */}
                 {activityCount > 5 && (
-                  <div className='flex items-center justify-center w-24 h-24 rounded-lg bg-zinc-800 ring-2 ring-zinc-900 text-xs text-zinc-400 font-medium'>
+                  <button
+                    onClick={() => setIsExpanded(true)}
+                    className='flex items-center justify-center w-24 h-24 rounded-lg bg-zinc-800 ring-2 ring-zinc-900 text-xs text-zinc-400 font-medium hover:bg-zinc-700 hover:text-zinc-300 hover:ring-cosmic-latte/50 transition-all cursor-pointer'
+                  >
                     +{activityCount - 5}
-                  </div>
+                  </button>
                 )}
               </div>
             </div>
@@ -273,7 +276,7 @@ export default function GroupedActivityItem({
 
           {/* Expanded view - Horizontal layout with stacked hover effect */}
           {isExpanded && (
-            <div className='flex flex-wrap justify-center gap-x-6 gap-y-12 px-4 pb-8'>
+            <div className='flex flex-wrap justify-center gap-x-6 gap-y-12 px-4 pb-8 animate-in fade-in zoom-in-95 duration-300'>
               {group.activities.map(activity => (
                 <div key={activity.id} className='flex-shrink-0'>
                   {/* Recommendation: Stacked albums that separate on hover */}
@@ -453,9 +456,12 @@ export default function GroupedActivityItem({
 
                 {/* Show "+X more" if there are more than 5 */}
                 {activityCount > 5 && (
-                  <div className='flex items-center justify-center h-12 w-12 rounded-full bg-zinc-800 ring-2 ring-zinc-900 text-xs text-zinc-400 font-medium'>
+                  <button
+                    onClick={() => setIsExpanded(true)}
+                    className='flex items-center justify-center h-12 w-12 rounded-full bg-zinc-800 ring-2 ring-zinc-900 text-xs text-zinc-400 font-medium hover:bg-zinc-700 hover:text-zinc-300 hover:ring-cosmic-latte/50 transition-all cursor-pointer'
+                  >
                     +{activityCount - 5}
-                  </div>
+                  </button>
                 )}
               </div>
             </div>
@@ -463,7 +469,7 @@ export default function GroupedActivityItem({
 
           {/* Expanded view - show all users */}
           {isExpanded && (
-            <div className='flex flex-wrap justify-center gap-6 px-4 pb-6'>
+            <div className='flex flex-wrap justify-center gap-6 px-4 pb-6 animate-in fade-in zoom-in-95 duration-300'>
               {group.activities.map(activity => (
                 <Link
                   key={activity.id}

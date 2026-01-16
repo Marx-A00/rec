@@ -2,6 +2,7 @@ query GetMyCollections {
   myCollections {
     id
     name
+    albumCount
     albums {
       id
       album {
