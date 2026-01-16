@@ -16,6 +16,8 @@ test-output/
 # testing
 /coverage
 /public/*
+!/public/demo-albums/
+!/public/landing/
 
 
 # next.js

@@ -9,7 +9,7 @@ import { RecentRecs } from '@/components/landing/RecentRecs';
 // Album cover data for the marquee
 const albumCovers = [
   {
-    src: '/Charli_XCX_-_Brat_(album_cover).png',
+    src: '/landing/Charli_XCX_-_Brat_(album_cover).png',
     alt: 'Charli XCX - Brat',
   },
   {
@@ -21,7 +21,7 @@ const albumCovers = [
     alt: 'Daft Punk - Random Access Memories',
   },
   {
-    src: '/reflections-hannah-diamond.webp',
+    src: '/landing/reflections-hannah-diamond.webp',
     alt: 'Hannah Diamond - Reflections',
   },
 ];
