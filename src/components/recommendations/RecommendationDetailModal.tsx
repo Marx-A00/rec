@@ -1,9 +1,10 @@
 'use client';
 
-import { X, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useGetRecommendationQuery } from '@/generated/graphql';
 
 interface RecommendationDetailModalProps {
@@ -146,21 +147,15 @@ export default function RecommendationDetailModal({
 
         {/* User Info */}
         <div className='flex items-center space-x-3 mb-6'>
-          {recommendation.user?.image ? (
-            <AlbumImage
-              src={recommendation.user.image}
-              alt={recommendation.user.username || 'User'}
-              width={40}
-              height={40}
-              className='rounded-full'
+          <Avatar className='h-10 w-10 ring-2 ring-zinc-600 shadow-sm'>
+            <AvatarImage
+              src={recommendation.user?.image || undefined}
+              alt={recommendation.user?.username || 'User'}
             />
-          ) : (
-            <div className='w-10 h-10 bg-zinc-700 rounded-full flex items-center justify-center'>
-              <span className='text-white font-semibold'>
-                {(recommendation.user?.username || 'A').charAt(0).toUpperCase()}
-              </span>
-            </div>
-          )}
+            <AvatarFallback className='bg-zinc-700 text-white font-semibold'>
+              {(recommendation.user?.username || 'A').charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
           <div>
             <Link href={`/profile/${recommendation.user.id}`}>
               <span className='text-cosmic-latte font-medium hover:underline hover:text-white'>
