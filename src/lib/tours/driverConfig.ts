@@ -1,8 +1,6 @@
 import { Config, DriveStep } from 'driver.js';
 import { driver } from 'driver.js';
 import { useTourStore } from '@/stores/useTourStore';
-import { graphqlRequest } from '@/lib/graphql-client';
-import { UpdateUserSettingsDocument } from '@/generated/graphql';
 
 // Tour demo content IDs - different per environment
 const isProd = process.env.NODE_ENV === 'production';
@@ -308,13 +306,27 @@ export const tourSteps: DriveStep[] = [
     },
   },
   {
-    element: '[data-tour-step="profile-header"]',
     popover: {
       title: '✨ Welcome to Your Profile!',
       description:
         'Amazing! This is your personal music profile page. Here you can see your recommendations, followers, music stats, create collages, manage your collections, and showcase your unique music taste to the community. This is your musical identity hub!',
-      side: 'bottom',
-      align: 'start',
+      side: 'over',
+      align: 'center',
+      popoverClass: 'driver-popover-large',
+    },
+    onHighlighted: () => {
+      // Add dimmed overlay for this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0.5';
+      }
+    },
+    onDeselected: () => {
+      // Remove dimmed overlay when leaving this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
     },
   },
   {
@@ -610,12 +622,16 @@ export const driverConfig: Config = {
       return;
     }
 
-    // Final step (index 13): "Finish Tour" button clicked - destroy tour and cleanup
+    // Final step: "Finish Tour" button clicked
+    // Don't call destroy() here - let TourContext's onDestroyStarted handle everything
     const totalSteps = tourSteps.length;
     const isLastStep = stepIndex === totalSteps - 1;
     if (isLastStep) {
-      console.log('🎉 Finish Tour clicked - completing tour!');
-      options.driver.destroy();
+      console.log(
+        '🎉 Finish Tour clicked - TourContext will handle completion'
+      );
+      // Dispatch event for TourContext to handle completion and call destroy()
+      window.dispatchEvent(new CustomEvent('tour-completed'));
       return;
     }
 
@@ -642,15 +658,7 @@ export const driverConfig: Config = {
     options.driver.destroy();
   },
 
-  onDestroyStarted: () => {
-    console.log('🎉 Tour completed or closed!');
-    // Mark onboarding as completed via GraphQL mutation (database is source of truth)
-    graphqlRequest(UpdateUserSettingsDocument, { showOnboardingTour: false })
-      .then(() => console.log('✅ Onboarding marked as completed'))
-      .catch(error =>
-        console.error('❌ Error marking onboarding complete:', error)
-      );
-  },
+  // Note: onDestroyStarted is handled in TourContext.tsx using React Query mutation
 };
 
 export function createOnboardingDriver() {

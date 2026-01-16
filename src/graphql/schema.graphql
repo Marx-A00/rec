@@ -1359,6 +1359,7 @@ type Mutation {
 
   # Admin mutations
   updateUserRole(userId: String!, role: UserRole!): UpdateUserRolePayload!
+  adminUpdateUserShowTour(userId: String!, showOnboardingTour: Boolean!): AdminUpdateUserSettingsPayload!
   deleteAlbum(id: UUID!): DeleteAlbumPayload!
 }
 
@@ -1378,6 +1379,13 @@ type UpdateProfilePayload {
 type UpdateUserRolePayload {
   success: Boolean!
   user: User
+  message: String
+}
+
+type AdminUpdateUserSettingsPayload {
+  success: Boolean!
+  userId: String!
+  showOnboardingTour: Boolean
   message: String
 }
 

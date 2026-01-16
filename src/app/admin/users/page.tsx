@@ -43,6 +43,7 @@ import { Input } from '@/components/ui/input';
 import {
   useGetAdminUsersQuery,
   useUpdateUserRoleMutation,
+  useAdminUpdateUserShowTourMutation,
   UserRole,
   UserSortField,
   SortOrder,
@@ -85,6 +86,7 @@ export default function AdminUsersPage() {
   );
 
   const updateUserRoleMutation = useUpdateUserRoleMutation();
+  const updateShowTourMutation = useAdminUpdateUserShowTourMutation();
 
   const toggleExpanded = (id: string) => {
     setExpandedRows(prev => {
@@ -186,6 +188,29 @@ export default function AdminUsersPage() {
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to update user role');
+    }
+  };
+
+  const handleToggleShowTour = async (
+    userId: string,
+    currentValue: boolean | undefined | null
+  ) => {
+    const newValue = !(currentValue ?? true); // Default to true if undefined/null
+
+    try {
+      const result = await updateShowTourMutation.mutateAsync({
+        userId,
+        showOnboardingTour: newValue,
+      });
+
+      if (result.adminUpdateUserShowTour?.success) {
+        toast.success(`showOnboardingTour set to ${newValue}`);
+        await refetch();
+      } else {
+        throw new Error('Failed to update showOnboardingTour');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update showOnboardingTour');
     }
   };
 
@@ -729,13 +754,31 @@ export default function AdminUsersPage() {
                         </div>
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-center'>
-                        <span className='text-zinc-300'>
-                          {user.settings?.showOnboardingTour === undefined
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleToggleShowTour(
+                              user.id,
+                              user.settings?.showOnboardingTour
+                            );
+                          }}
+                          disabled={updateShowTourMutation.isPending}
+                          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                            user.settings?.showOnboardingTour === undefined ||
+                            user.settings?.showOnboardingTour === null
+                              ? 'bg-zinc-700 text-zinc-400 hover:bg-zinc-600'
+                              : user.settings.showOnboardingTour
+                                ? 'bg-emeraled-green/20 text-emeraled-green hover:bg-emeraled-green/30'
+                                : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          {user.settings?.showOnboardingTour === undefined ||
+                          user.settings?.showOnboardingTour === null
                             ? 'null'
                             : user.settings.showOnboardingTour
                               ? 'true'
                               : 'false'}
-                        </span>
+                        </button>
                       </td>
                     </tr>
                     {expandedRows.has(user.id) && (

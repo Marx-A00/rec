@@ -106,6 +106,14 @@ export type AddAlbumToCollectionPayload = {
   id: Scalars['String']['output'];
 };
 
+export type AdminUpdateUserSettingsPayload = {
+  __typename?: 'AdminUpdateUserSettingsPayload';
+  message?: Maybe<Scalars['String']['output']>;
+  showOnboardingTour?: Maybe<Scalars['Boolean']['output']>;
+  success: Scalars['Boolean']['output'];
+  userId: Scalars['String']['output'];
+};
+
 export type Album = {
   __typename?: 'Album';
   artists: Array<ArtistCredit>;
@@ -604,6 +612,7 @@ export type Mutation = {
   addAlbumToCollection: AddAlbumToCollectionPayload;
   addArtist: Artist;
   addToListenLater: CollectionAlbum;
+  adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
   clearFailedJobs: Scalars['Boolean']['output'];
@@ -666,6 +675,11 @@ export type MutationAddArtistArgs = {
 export type MutationAddToListenLaterArgs = {
   albumData?: InputMaybe<AlbumInput>;
   albumId: Scalars['UUID']['input'];
+};
+
+export type MutationAdminUpdateUserShowTourArgs = {
+  showOnboardingTour: Scalars['Boolean']['input'];
+  userId: Scalars['String']['input'];
 };
 
 export type MutationBatchEnrichmentArgs = {
@@ -1734,6 +1748,22 @@ export type WorkerInfo = {
   id: Scalars['String']['output'];
   isPaused: Scalars['Boolean']['output'];
   isRunning: Scalars['Boolean']['output'];
+};
+
+export type AdminUpdateUserShowTourMutationVariables = Exact<{
+  userId: Scalars['String']['input'];
+  showOnboardingTour: Scalars['Boolean']['input'];
+}>;
+
+export type AdminUpdateUserShowTourMutation = {
+  __typename?: 'Mutation';
+  adminUpdateUserShowTour: {
+    __typename?: 'AdminUpdateUserSettingsPayload';
+    success: boolean;
+    userId: string;
+    showOnboardingTour?: boolean | null;
+    message?: string | null;
+  };
 };
 
 export type CreateCollectionMutationVariables = Exact<{
@@ -3628,6 +3658,49 @@ export const RecommendationFieldsFragmentDoc = `
   }
 }
     `;
+export const AdminUpdateUserShowTourDocument = `
+    mutation AdminUpdateUserShowTour($userId: String!, $showOnboardingTour: Boolean!) {
+  adminUpdateUserShowTour(
+    userId: $userId
+    showOnboardingTour: $showOnboardingTour
+  ) {
+    success
+    userId
+    showOnboardingTour
+    message
+  }
+}
+    `;
+
+export const useAdminUpdateUserShowTourMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    AdminUpdateUserShowTourMutation,
+    TError,
+    AdminUpdateUserShowTourMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AdminUpdateUserShowTourMutation,
+    TError,
+    AdminUpdateUserShowTourMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AdminUpdateUserShowTour'],
+    mutationFn: (variables?: AdminUpdateUserShowTourMutationVariables) =>
+      fetcher<
+        AdminUpdateUserShowTourMutation,
+        AdminUpdateUserShowTourMutationVariables
+      >(AdminUpdateUserShowTourDocument, variables)(),
+    ...options,
+  });
+};
+
+useAdminUpdateUserShowTourMutation.getKey = () => ['AdminUpdateUserShowTour'];
+
 export const CreateCollectionDocument = `
     mutation CreateCollection($name: String!, $description: String, $isPublic: Boolean) {
   createCollection(name: $name, description: $description, isPublic: $isPublic) {
