@@ -22,7 +22,7 @@ export default function CompleteProfilePage() {
 
   // If user already has a username, redirect to browse
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.name) {
+    if (status === 'authenticated' && session?.user?.username) {
       router.replace('/browse');
     }
   }, [status, session, router]);
@@ -208,4 +208,3 @@ export default function CompleteProfilePage() {
     </div>
   );
 }
-
