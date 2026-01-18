@@ -9,6 +9,11 @@ import { ArrowLeft, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { MobileButton } from '@/components/mobile/MobileButton';
 import { getAuthErrorMessage } from '@/types/auth';
 
+interface FieldErrors {
+  identifier?: string;
+  password?: string;
+}
+
 export default function MobileSignInPage() {
   const router = useRouter();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -18,6 +23,7 @@ export default function MobileSignInPage() {
     password: '',
   });
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [showPassword, setShowPassword] = useState(false);
 
   const handleGoogleSignIn = async () => {
@@ -31,10 +37,34 @@ export default function MobileSignInPage() {
     }
   };
 
+  const validateForm = (): boolean => {
+    const errors: FieldErrors = {};
+    let isValid = true;
+
+    if (!credentials.identifier.trim()) {
+      errors.identifier = 'Email or username is required';
+      isValid = false;
+    }
+
+    if (!credentials.password) {
+      errors.password = 'Password is required';
+      isValid = false;
+    }
+
+    setFieldErrors(errors);
+    return isValid;
+  };
+
   const handleCredentialsSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsCredentialsLoading(true);
     setError('');
+    setFieldErrors({});
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsCredentialsLoading(true);
 
     try {
       const result = await signIn('credentials', {
@@ -150,14 +180,35 @@ export default function MobileSignInPage() {
                 autoComplete='username'
                 required
                 value={credentials.identifier}
-                onChange={e =>
-                  setCredentials({ ...credentials, identifier: e.target.value })
-                }
+                onChange={e => {
+                  setCredentials({
+                    ...credentials,
+                    identifier: e.target.value,
+                  });
+                  if (fieldErrors.identifier) {
+                    setFieldErrors({ ...fieldErrors, identifier: undefined });
+                  }
+                }}
                 disabled={isLoading}
-                className='w-full h-[52px] pl-12 pr-4 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors'
+                className={`w-full h-[52px] pl-12 pr-4 bg-zinc-900 border rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors ${
+                  fieldErrors.identifier ? 'border-red-500' : 'border-zinc-800'
+                }`}
                 placeholder='you@example.com'
+                aria-invalid={!!fieldErrors.identifier}
+                aria-describedby={
+                  fieldErrors.identifier ? 'identifier-error' : undefined
+                }
               />
             </div>
+            {fieldErrors.identifier && (
+              <p
+                id='identifier-error'
+                className='mt-2 text-sm text-red-400'
+                role='alert'
+              >
+                {fieldErrors.identifier}
+              </p>
+            )}
           </div>
 
           <div>
@@ -176,12 +227,21 @@ export default function MobileSignInPage() {
                 autoComplete='current-password'
                 required
                 value={credentials.password}
-                onChange={e =>
-                  setCredentials({ ...credentials, password: e.target.value })
-                }
+                onChange={e => {
+                  setCredentials({ ...credentials, password: e.target.value });
+                  if (fieldErrors.password) {
+                    setFieldErrors({ ...fieldErrors, password: undefined });
+                  }
+                }}
                 disabled={isLoading}
-                className='w-full h-[52px] pl-12 pr-12 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors'
+                className={`w-full h-[52px] pl-12 pr-12 bg-zinc-900 border rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors ${
+                  fieldErrors.password ? 'border-red-500' : 'border-zinc-800'
+                }`}
                 placeholder='Enter your password'
+                aria-invalid={!!fieldErrors.password}
+                aria-describedby={
+                  fieldErrors.password ? 'password-error' : undefined
+                }
               />
               <button
                 type='button'
@@ -196,6 +256,15 @@ export default function MobileSignInPage() {
                 )}
               </button>
             </div>
+            {fieldErrors.password && (
+              <p
+                id='password-error'
+                className='mt-2 text-sm text-red-400'
+                role='alert'
+              >
+                {fieldErrors.password}
+              </p>
+            )}
           </div>
 
           <MobileButton
