@@ -150,8 +150,11 @@ export default function CompleteProfilePage() {
                 onChange={e => setUsername(e.target.value.toLowerCase())}
                 placeholder='yourname'
                 autoComplete='username'
+                autoCapitalize='none'
+                autoCorrect='off'
+                spellCheck='false'
                 autoFocus
-                className='w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:border-transparent pr-10'
+                className='w-full px-4 min-h-12 bg-zinc-900 border border-zinc-700 rounded-lg text-base text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:border-transparent pr-12'
               />
               {/* Status indicator */}
               <div className='absolute right-3 top-1/2 -translate-y-1/2'>

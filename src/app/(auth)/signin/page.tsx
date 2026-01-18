@@ -73,7 +73,7 @@ export default function SignIn() {
         fallbackHref='/'
         className='inline-flex items-center text-zinc-400 hover:text-white transition-colors text-sm -mt-2 mb-4'
       />
-        {/* Header */}
+      {/* Header */}
       <div className='text-center space-y-3'>
         <div className='inline-flex items-center justify-center w-12 h-12 rounded-full bg-cosmic-latte/20 backdrop-blur-sm border border-cosmic-latte/30 mb-4'>
           <svg
@@ -230,12 +230,15 @@ export default function SignIn() {
                 name='identifier'
                 type='text'
                 autoComplete='username'
+                autoCapitalize='none'
+                autoCorrect='off'
+                spellCheck='false'
                 required
                 value={credentials.identifier}
                 onChange={e =>
                   setCredentials({ ...credentials, identifier: e.target.value })
                 }
-                className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2.5 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+                className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
                 placeholder='Enter your email or username'
               />
             </div>
@@ -253,12 +256,15 @@ export default function SignIn() {
                   name='password'
                   type={showPassword ? 'text' : 'password'}
                   autoComplete='current-password'
+                  autoCapitalize='none'
+                  autoCorrect='off'
+                  spellCheck='false'
                   required
                   value={credentials.password}
                   onChange={e =>
                     setCredentials({ ...credentials, password: e.target.value })
                   }
-                  className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2.5 pr-10 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+                  className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 pr-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
                   placeholder='Enter your password'
                 />
                 <button

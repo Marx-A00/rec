@@ -150,10 +150,13 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             id='username'
             name='username'
             type='text'
+            autoCapitalize='none'
+            autoCorrect='off'
+            spellCheck='false'
             required
             value={formData.username}
             onChange={handleInputChange}
-            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
             placeholder='Choose a username'
             aria-describedby={errors.username ? 'username-error' : undefined}
             aria-invalid={errors.username ? 'true' : 'false'}
@@ -180,10 +183,13 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             id='email'
             name='email'
             type='email'
+            autoCapitalize='none'
+            autoCorrect='off'
+            spellCheck='false'
             required
             value={formData.email}
             onChange={handleInputChange}
-            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+            className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
             placeholder='Enter your email address'
             aria-describedby={errors.email ? 'email-error' : undefined}
             aria-invalid={errors.email ? 'true' : 'false'}
@@ -212,10 +218,13 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
               id='password'
               name='password'
               type={showPassword ? 'text' : 'password'}
+              autoCapitalize='none'
+              autoCorrect='off'
+              spellCheck='false'
               required
               value={formData.password}
               onChange={handleInputChange}
-              className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 py-2 pr-10 text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
+              className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 pr-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
               placeholder='Create a strong password'
               aria-describedby={`password-strength ${errors.password ? 'password-error' : ''}`}
               aria-invalid={errors.password ? 'true' : 'false'}
