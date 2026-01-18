@@ -2838,6 +2838,10 @@ export type GetUserProfileQuery = {
     followingCount: number;
     recommendationsCount: number;
     isFollowing?: boolean | null;
+    settings?: {
+      __typename?: 'UserSettings';
+      profileVisibility: string;
+    } | null;
   } | null;
 };
 
@@ -6383,6 +6387,9 @@ export const GetUserProfileDocument = `
     followingCount
     recommendationsCount
     isFollowing
+    settings {
+      profileVisibility
+    }
   }
 }
     `;

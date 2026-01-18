@@ -11,6 +11,7 @@ import {
   Music,
   User,
   ChevronRight,
+  Lock,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -202,6 +203,47 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
             This user does not exist or their profile is private.
           </p>
           <MobileButton onClick={() => router.back()}>Go Back</MobileButton>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if profile is private (only block for non-owners)
+  const isPrivateProfile =
+    !isOwnProfile && user.settings?.profileVisibility === 'private';
+
+  if (isPrivateProfile) {
+    return (
+      <div className='min-h-screen bg-black'>
+        {/* Header with back button */}
+        <div className='sticky top-0 z-10 bg-black/90 backdrop-blur-sm border-b border-zinc-800 px-4 py-3'>
+          <div className='flex items-center justify-between'>
+            <button
+              onClick={() => router.back()}
+              className='flex items-center gap-2 text-white min-h-[44px] min-w-[44px]'
+              aria-label='Go back'
+            >
+              <ArrowLeft className='h-5 w-5' />
+            </button>
+            <h1 className='text-lg font-semibold text-white'>
+              {user.username || 'Profile'}
+            </h1>
+            <div className='min-h-[44px] min-w-[44px]' />
+          </div>
+        </div>
+
+        {/* Private profile message */}
+        <div className='flex flex-col items-center justify-center min-h-[60vh] px-6 text-center'>
+          <div className='w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4'>
+            <Lock className='h-8 w-8 text-zinc-500' />
+          </div>
+          <h2 className='text-xl font-bold text-white mb-2'>
+            This Profile is Private
+          </h2>
+          <p className='text-zinc-400 max-w-xs'>
+            {user.username || 'This user'} has chosen to keep their profile
+            private.
+          </p>
         </div>
       </div>
     );
