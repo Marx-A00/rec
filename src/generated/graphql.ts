@@ -2837,6 +2837,7 @@ export type GetUserProfileQuery = {
     followersCount: number;
     followingCount: number;
     recommendationsCount: number;
+    isFollowing?: boolean | null;
   } | null;
 };
 
@@ -6381,6 +6382,7 @@ export const GetUserProfileDocument = `
     followersCount
     followingCount
     recommendationsCount
+    isFollowing
   }
 }
     `;

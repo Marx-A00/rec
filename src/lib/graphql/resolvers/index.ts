@@ -1235,7 +1235,26 @@ export const resolvers: Resolvers = {
     collections: async (parent, _, { dataloaders }) => {
       return dataloaders.collectionsByUserLoader.load(parent.id);
     },
-    isFollowing: () => null, // Placeholder
+    isFollowing: async (parent, _, { user, prisma }) => {
+      // If no current user logged in, return false
+      if (!user) {
+        return false;
+      }
+      // Can't follow yourself
+      if (user.id === parent.id) {
+        return null;
+      }
+      // Check if current user follows this user
+      const follow = await prisma.userFollow.findUnique({
+        where: {
+          followerId_followedId: {
+            followerId: user.id,
+            followedId: parent.id,
+          },
+        },
+      });
+      return !!follow;
+    },
     mutualFollowers: () => [], // Placeholder
     _count: async parent => {
       // Return the _count object if it exists (from Prisma include)

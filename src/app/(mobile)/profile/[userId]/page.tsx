@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Share2,
@@ -33,7 +33,10 @@ type TabType = 'recs' | 'collection';
 export default function MobileProfilePage({ params }: MobileProfilePageProps) {
   const router = useRouter();
   const { data: session } = useSession();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>('recs');
+  // Local state for optimistic follower count updates
+  const [followerCountDelta, setFollowerCountDelta] = useState(0);
 
   // Unwrap params (Next.js 15 async params)
   const { data: unwrappedParams } = useQuery({
@@ -53,6 +56,21 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
   } = useGetUserProfileQuery({ userId: userId || '' }, { enabled: !!userId });
 
   const user = userData?.user;
+
+  // Handle follow/unfollow with optimistic count update
+  const handleFollowChange = useCallback(
+    (isFollowing: boolean) => {
+      // Optimistically update follower count
+      setFollowerCountDelta(prev => (isFollowing ? prev + 1 : prev - 1));
+      // Invalidate query to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ['GetUserProfile'] });
+    },
+    [queryClient]
+  );
+
+  // Calculate displayed follower count with optimistic delta
+  const displayedFollowersCount =
+    (user?.followersCount ?? 0) + followerCountDelta;
 
   // Fetch user collections
   const { data: collectionsData, isLoading: collectionsLoading } =
@@ -257,7 +275,7 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
             className='flex flex-col items-center min-h-[44px] justify-center'
           >
             <span className='text-lg font-semibold text-white'>
-              {user.followersCount}
+              {displayedFollowersCount}
             </span>
             <span className='text-xs text-zinc-500'>Followers</span>
           </Link>
@@ -283,7 +301,8 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
           <div className='flex gap-3'>
             <FollowButton
               userId={userId}
-              onFollowChange={() => {}}
+              initialFollowing={user.isFollowing ?? false}
+              onFollowChange={handleFollowChange}
               className='px-6'
             />
           </div>
