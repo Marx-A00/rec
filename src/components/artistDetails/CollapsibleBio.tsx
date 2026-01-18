@@ -1,48 +1,70 @@
 // src/components/artistDetails/CollapsibleBio.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface CollapsibleBioProps {
   content: string;
-  maxLength?: number;
+  /** Number of lines to show when collapsed (default: 2) */
+  collapsedLines?: number;
 }
 
 export function CollapsibleBio({
   content,
-  maxLength = 200,
+  collapsedLines = 2,
 }: CollapsibleBioProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [shouldShowButton, setShouldShowButton] = useState(false);
+  const [contentHeight, setContentHeight] = useState<number | undefined>(
+    undefined
+  );
+  const contentRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
 
-  // Split content into sentences and take first few for preview
-  const sentences = content
-    .split(/[.!?]+/)
-    .filter(sentence => sentence.trim().length > 0);
-  const previewSentences =
-    sentences.slice(0, 2).join('. ') + (sentences.length > 2 ? '.' : '');
+  // Measure content to determine if it needs expand/collapse
+  useEffect(() => {
+    if (measureRef.current && contentRef.current) {
+      const fullHeight = measureRef.current.scrollHeight;
+      const lineHeight = parseFloat(
+        getComputedStyle(measureRef.current).lineHeight
+      );
+      const collapsedHeight = lineHeight * collapsedLines;
 
-  // If content is short enough, don't show expand/collapse
-  const shouldShowExpandButton =
-    content.length > maxLength || sentences.length > 2;
-
-  const displayContent = isExpanded ? content : previewSentences;
+      // Show button if content exceeds collapsed height
+      setShouldShowButton(fullHeight > collapsedHeight + 4); // 4px tolerance
+      setContentHeight(isExpanded ? fullHeight : collapsedHeight);
+    }
+  }, [content, collapsedLines, isExpanded]);
 
   return (
     <div className='space-y-3'>
-      <p className='text-zinc-300 text-sm leading-relaxed'>
-        {displayContent}
-        {!isExpanded && shouldShowExpandButton && (
-          <span className='text-zinc-500'>...</span>
-        )}
-      </p>
+      {/* Hidden element to measure full content height */}
+      <div
+        ref={measureRef}
+        className='absolute opacity-0 pointer-events-none text-zinc-300 text-sm leading-relaxed'
+        style={{ width: contentRef.current?.offsetWidth || 'auto' }}
+        aria-hidden='true'
+      >
+        {content}
+      </div>
 
-      {shouldShowExpandButton && (
+      {/* Visible content with animation */}
+      <div
+        ref={contentRef}
+        className='overflow-hidden transition-[height] duration-300 ease-in-out'
+        style={{ height: contentHeight ? `${contentHeight}px` : 'auto' }}
+      >
+        <p className='text-zinc-300 text-sm leading-relaxed'>{content}</p>
+      </div>
+
+      {shouldShowButton && (
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className='flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-white transition-colors duration-200 group'
+          aria-expanded={isExpanded}
         >
-          <span>{isExpanded ? 'Show less' : 'Show more'}</span>
+          <span>{isExpanded ? 'Show less' : 'Read more'}</span>
           {isExpanded ? (
             <ChevronUp className='h-3 w-3 group-hover:translate-y-[-1px] transition-transform duration-200' />
           ) : (

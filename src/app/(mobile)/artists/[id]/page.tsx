@@ -1,13 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Share2,
-  ChevronDown,
-  ChevronUp,
   User,
   ExternalLink,
   Calendar,
@@ -17,6 +14,7 @@ import {
 import AlbumImage from '@/components/ui/AlbumImage';
 import { MobileButton } from '@/components/mobile/MobileButton';
 import MobileDiscography from '@/components/mobile/MobileDiscography';
+import { CollapsibleBio } from '@/components/artistDetails/CollapsibleBio';
 import { sanitizeArtistName } from '@/lib/utils';
 
 interface MobileArtistPageProps {
@@ -44,7 +42,6 @@ interface ArtistDetails {
 
 export default function MobileArtistPage({ params }: MobileArtistPageProps) {
   const router = useRouter();
-  const [bioExpanded, setBioExpanded] = useState(false);
 
   // Unwrap params (Next.js 15 async params)
   const { data: unwrappedParams } = useQuery({
@@ -193,15 +190,6 @@ export default function MobileArtistPage({ params }: MobileArtistPageProps) {
     );
   }
 
-  // Bio preview (first 2 sentences)
-  const bioPreview = artist.profile
-    ? artist.profile
-        .split(/[.!?]+/)
-        .slice(0, 2)
-        .join('. ') + '.'
-    : null;
-  const showBioExpand = artist.profile && artist.profile.length > 150;
-
   return (
     <div className='min-h-screen bg-black pb-4'>
       {/* Sticky Header */}
@@ -287,28 +275,7 @@ export default function MobileArtistPage({ params }: MobileArtistPageProps) {
         <section className='px-4 mb-6'>
           <h3 className='text-lg font-semibold text-white mb-2'>Biography</h3>
           <div className='bg-zinc-900 rounded-lg p-4 border border-zinc-800'>
-            <p className='text-sm text-zinc-300 leading-relaxed'>
-              {bioExpanded ? artist.profile : bioPreview}
-              {!bioExpanded && showBioExpand && (
-                <span className='text-zinc-500'>...</span>
-              )}
-            </p>
-            {showBioExpand && (
-              <button
-                onClick={() => setBioExpanded(!bioExpanded)}
-                className='flex items-center gap-1 mt-3 text-xs font-medium text-zinc-400 min-h-[44px]'
-              >
-                {bioExpanded ? (
-                  <>
-                    Show less <ChevronUp className='h-4 w-4' />
-                  </>
-                ) : (
-                  <>
-                    Show more <ChevronDown className='h-4 w-4' />
-                  </>
-                )}
-              </button>
-            )}
+            <CollapsibleBio content={artist.profile} collapsedLines={2} />
           </div>
         </section>
       )}
