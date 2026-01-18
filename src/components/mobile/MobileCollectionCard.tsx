@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AlbumImage from '@/components/ui/AlbumImage';
-import { formatTimeAgo } from '@/utils/activity-grouping';
+import TimeAgo from '@/components/mobile/TimeAgo';
 import { cn } from '@/lib/utils';
 
 interface CollectionMetadata {
@@ -71,9 +71,10 @@ export default function MobileCollectionCard({
               added to {collectionName || 'collection'}
             </span>
           </p>
-          <p className='text-xs text-zinc-500'>
-            {formatTimeAgo(activity.createdAt)}
-          </p>
+          <TimeAgo
+            date={activity.createdAt}
+            className='text-xs text-zinc-500'
+          />
         </div>
       </div>
 

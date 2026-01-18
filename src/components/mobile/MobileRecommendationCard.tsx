@@ -5,7 +5,7 @@ import { Heart } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AlbumImage from '@/components/ui/AlbumImage';
-import { formatTimeAgo } from '@/utils/activity-grouping';
+import TimeAgo from '@/components/mobile/TimeAgo';
 import { cn } from '@/lib/utils';
 
 interface BasisAlbum {
@@ -104,9 +104,10 @@ export default function MobileRecommendationCard({
           >
             {activity.actorName}
           </Link>
-          <p className='text-xs text-zinc-500'>
-            {formatTimeAgo(activity.createdAt)}
-          </p>
+          <TimeAgo
+            date={activity.createdAt}
+            className='text-xs text-zinc-500'
+          />
         </div>
       </div>
 

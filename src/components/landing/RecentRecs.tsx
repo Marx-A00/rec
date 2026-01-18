@@ -1,9 +1,9 @@
 'use client';
 
-import { useGetRecommendationFeedQuery } from '@/generated/graphql';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
+import { useGetRecommendationFeedQuery } from '@/generated/graphql';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 

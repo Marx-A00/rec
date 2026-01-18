@@ -1,7 +1,8 @@
 // src/app/icon.tsx
-import { ImageResponse } from 'next/og';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+
+import { ImageResponse } from 'next/og';
 
 // Image metadata
 export const size = {

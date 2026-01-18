@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { formatTimeAgo } from '@/utils/activity-grouping';
+import TimeAgo from '@/components/mobile/TimeAgo';
 import { cn } from '@/lib/utils';
 
 interface Activity {
@@ -65,9 +65,10 @@ export default function MobileFollowCard({
               {activity.targetName}
             </Link>
           </p>
-          <p className='text-xs text-zinc-500'>
-            {formatTimeAgo(activity.createdAt)}
-          </p>
+          <TimeAgo
+            date={activity.createdAt}
+            className='text-xs text-zinc-500'
+          />
         </div>
 
         {/* Target Avatar */}

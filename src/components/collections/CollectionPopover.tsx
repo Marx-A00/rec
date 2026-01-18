@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Bookmark, Loader2, Plus } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -15,7 +16,6 @@ import { useAlbumState } from '@/hooks/useAlbumState';
 import { Album } from '@/types/album';
 import { useCollectionToastContext } from '@/components/ui/CollectionToastProvider';
 import { graphqlClient } from '@/lib/graphql-client';
-import { useSession } from 'next-auth/react';
 import {
   useGetMyCollectionsQuery,
   useRemoveAlbumFromCollectionMutation,

@@ -20,7 +20,5 @@
     "ask": []
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "taskmaster-ai"
-  ]
+  "enabledMcpjsonServers": ["taskmaster-ai"]
 }

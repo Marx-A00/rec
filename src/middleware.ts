@@ -1,6 +1,91 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // ===========================
+// MOBILE DETECTION
+// ===========================
+
+const MOBILE_USER_AGENTS =
+  /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i;
+
+/**
+ * Check if the request is from a mobile device
+ */
+function isMobileDevice(request: NextRequest): boolean {
+  const userAgent = request.headers.get('user-agent') || '';
+  const isMobile = MOBILE_USER_AGENTS.test(userAgent);
+
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log(
+      `📱 Mobile check: ${isMobile ? 'YES' : 'NO'} | UA: ${userAgent.substring(0, 80)}...`
+    );
+  }
+
+  return isMobile;
+}
+
+/**
+ * Check if path should skip mobile redirect
+ */
+function shouldSkipMobileRedirect(pathname: string): boolean {
+  return (
+    pathname.startsWith('/m/') ||
+    pathname.startsWith('/m') ||
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/admin') ||
+    pathname.includes('.')
+  );
+}
+
+/**
+ * Map desktop routes to their mobile equivalents
+ */
+function getMobileRoute(pathname: string): string {
+  // Auth routes mapping
+  if (pathname === '/signin') return '/m/auth/signin';
+  if (pathname === '/register') return '/m/auth/register';
+  if (pathname === '/signout') return '/signout'; // Keep signout as-is
+
+  // Default: just prepend /m
+  if (pathname === '/') return '/m';
+  return `/m${pathname}`;
+}
+
+/**
+ * Handle mobile detection and redirect
+ */
+function handleMobileRedirect(
+  request: NextRequest,
+  pathname: string
+): NextResponse | null {
+  const isMobile = isMobileDevice(request);
+
+  // Skip if already handled
+  if (shouldSkipMobileRedirect(pathname)) {
+    return null;
+  }
+
+  // Redirect mobile users to mobile routes
+  if (isMobile) {
+    const mobilePath = getMobileRoute(pathname);
+    const mobileUrl = new URL(mobilePath, request.url);
+    mobileUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(mobileUrl);
+  }
+
+  // Redirect desktop users away from mobile routes (if they somehow got there)
+  if (!isMobile && pathname.startsWith('/m/')) {
+    const desktopPath = pathname.replace(/^\/m/, '') || '/';
+    const desktopUrl = new URL(desktopPath, request.url);
+    desktopUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(desktopUrl);
+  }
+
+  return null;
+}
+
+// ===========================
 // RATE LIMITING CONFIGURATION
 // ===========================
 
@@ -167,6 +252,7 @@ function handlePreflight(request: NextRequest): NextResponse {
 function isPublicApiRoute(pathname: string): boolean {
   const publicApiPatterns = [
     '/api/auth/', // Authentication routes (signin, register, etc.)
+    '/api/graphql', // GraphQL endpoint (handles its own auth, can't use Prisma in Edge)
     '/api/search', // Public search functionality
     '/api/albums/search', // Public album search
     '/api/test/', // Test endpoints
@@ -433,6 +519,7 @@ function isProtectedRoute(pathname: string): boolean {
     '/recommend',
     '/search',
     '/settings',
+    '/m/', // Mobile routes are protected
   ];
 
   // Check if it's a protected page route
@@ -474,7 +561,7 @@ async function handleAuthentication(
 ): Promise<{ response: NextResponse | null; userID?: string }> {
   try {
     // Dynamically import auth to avoid edge runtime issues
-    const { auth } = await import('./auth');
+    const { auth } = await import('../auth');
     const session = await auth();
 
     if (!session?.user) {
@@ -490,6 +577,17 @@ async function handleAuthentication(
             { status: 401 }
           ),
         };
+      }
+
+      // For mobile routes, redirect to mobile signin (when implemented)
+      // For now, redirect to landing page
+      if (pathname.startsWith('/m/')) {
+        const landingUrl = new URL('/', request.url);
+        landingUrl.searchParams.set(
+          'callbackUrl',
+          pathname + request.nextUrl.search
+        );
+        return { response: NextResponse.redirect(landingUrl) };
       }
 
       // For page routes, redirect to landing page with callback URL
@@ -557,7 +655,16 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
+  // Debug: Log every middleware invocation
+  console.log(`🔧 Middleware running: ${method} ${pathname}`);
+
   let userID: string | undefined;
+
+  // 0. Mobile detection and redirect (before auth to catch unauthenticated mobile users)
+  const mobileRedirect = handleMobileRedirect(request, pathname);
+  if (mobileRedirect) {
+    return mobileRedirect;
+  }
 
   // Skip auth entirely for public API routes to avoid Prisma edge runtime issues
   const isPublicApi =
@@ -662,9 +769,13 @@ export async function middleware(request: NextRequest) {
 // Configure which paths the middleware should run on
 export const config = {
   matcher: [
-    // API routes (for CORS and authentication)
-    '/api/(.*)',
-    // Protected page routes (for authentication)
+    // Root
+    '/',
+    // All main routes
+    '/signin',
+    '/register',
+    '/signout',
+    '/profile/:path*',
     '/albums/:path*',
     '/artists/:path*',
     '/browse/:path*',
@@ -673,9 +784,12 @@ export const config = {
     '/home-mosaic',
     '/latest',
     '/labels/:path*',
-    '/profile/:path*',
     '/recommend/:path*',
     '/search',
     '/settings',
+    // Mobile routes
+    '/m/:path*',
+    // API routes
+    '/api/:path*',
   ],
 };

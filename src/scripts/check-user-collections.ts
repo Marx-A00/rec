@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 // Check user collections and albums
 import { prisma } from '@/lib/prisma';

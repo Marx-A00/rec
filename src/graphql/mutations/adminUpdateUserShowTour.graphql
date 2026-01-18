@@ -1,5 +1,11 @@
-mutation AdminUpdateUserShowTour($userId: String!, $showOnboardingTour: Boolean!) {
-  adminUpdateUserShowTour(userId: $userId, showOnboardingTour: $showOnboardingTour) {
+mutation AdminUpdateUserShowTour(
+  $userId: String!
+  $showOnboardingTour: Boolean!
+) {
+  adminUpdateUserShowTour(
+    userId: $userId
+    showOnboardingTour: $showOnboardingTour
+  ) {
     success
     userId
     showOnboardingTour

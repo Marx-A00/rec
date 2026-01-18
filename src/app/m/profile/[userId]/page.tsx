@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -12,6 +12,7 @@ import {
   User,
   ChevronRight,
   Lock,
+  LogOut,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -351,11 +352,21 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
         )}
 
         {isOwnProfile && (
-          <Link href='/m/profile/edit'>
-            <MobileButton variant='secondary' size='sm'>
-              Edit Profile
+          <div className='flex gap-3'>
+            <Link href='/m/profile/edit'>
+              <MobileButton variant='secondary' size='sm'>
+                Edit Profile
+              </MobileButton>
+            </Link>
+            <MobileButton
+              variant='outline'
+              size='sm'
+              onClick={() => signOut({ callbackUrl: '/' })}
+              leftIcon={<LogOut className='h-4 w-4' />}
+            >
+              Sign Out
             </MobileButton>
-          </Link>
+          </div>
         )}
       </section>
 

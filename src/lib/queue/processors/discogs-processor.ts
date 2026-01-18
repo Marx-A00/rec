@@ -2,13 +2,15 @@
 // Discogs API search and fetch handlers
 
 import { prisma } from '@/lib/prisma';
-import { calculateStringSimilarity } from './utils';
+
 import type {
   DiscogsSearchArtistJobData,
   DiscogsGetArtistJobData,
   CacheArtistImageJobData,
 } from '../jobs';
 import { JOB_TYPES } from '../jobs';
+
+import { calculateStringSimilarity } from './utils';
 
 // ============================================================================
 // Discogs Search Handler

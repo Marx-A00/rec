@@ -1,14 +1,16 @@
 // src/lib/enrichment/preview-enrichment.ts
 // Preview enrichment logic - runs fetch/matching without persisting changes
 
+import { EnrichmentStatus } from '@prisma/client';
+
 import { prisma } from '@/lib/prisma';
+
 import { musicBrainzService } from '../musicbrainz';
 import {
   buildAlbumSearchQuery,
   findBestAlbumMatch,
   findBestArtistMatch,
 } from '../queue/processors/utils';
-import { EnrichmentStatus } from '@prisma/client';
 
 export interface EnrichmentFieldDiff {
   field: string;
