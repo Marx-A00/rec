@@ -332,16 +332,23 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
         {activeTab === 'recs' && (
           <section>
             {recsLoading ? (
-              <div className='space-y-3'>
+              <div className='grid grid-cols-2 gap-3'>
                 {[...Array(4)].map((_, i) => (
                   <div
                     key={i}
                     className='bg-zinc-900 rounded-lg p-3 animate-pulse'
                   >
-                    <div className='flex gap-3'>
-                      <div className='w-16 h-16 bg-zinc-800 rounded-md' />
-                      <div className='w-6 h-6 bg-zinc-800 rounded self-center' />
-                      <div className='w-16 h-16 bg-zinc-800 rounded-md' />
+                    <div className='flex items-center justify-center gap-2 mb-2'>
+                      <div className='w-12 h-12 bg-zinc-800 rounded-md' />
+                      <div className='w-4 h-4 bg-zinc-800 rounded' />
+                      <div className='w-12 h-12 bg-zinc-800 rounded-md' />
+                    </div>
+                    <div className='flex justify-center mb-2'>
+                      <div className='w-16 h-5 bg-zinc-800 rounded-full' />
+                    </div>
+                    <div className='space-y-1'>
+                      <div className='h-4 bg-zinc-800 rounded mx-auto w-3/4' />
+                      <div className='h-3 bg-zinc-800 rounded mx-auto w-1/2' />
                     </div>
                   </div>
                 ))}
@@ -372,7 +379,7 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
                 )}
               </div>
             ) : (
-              <div className='space-y-3'>
+              <div className='grid grid-cols-2 gap-3'>
                 {recommendations.map(
                   (rec: {
                     id: string;
@@ -393,40 +400,45 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
                     <Link
                       key={rec.id}
                       href={`/m/albums/${rec.recommendedAlbum.id}`}
-                      className='flex items-center gap-3 bg-zinc-900 rounded-lg p-3 border border-zinc-800 active:scale-[0.98] transition-transform'
+                      className='bg-zinc-900 rounded-lg p-3 border border-zinc-800 active:scale-[0.98] transition-transform'
                     >
-                      {/* Basis Album */}
-                      <div className='w-14 h-14 flex-shrink-0 rounded-md overflow-hidden'>
-                        <AlbumImage
-                          src={rec.basisAlbum.coverArtUrl}
-                          alt={rec.basisAlbum.title}
-                          width={56}
-                          height={56}
-                          className='w-full h-full object-cover'
-                        />
+                      {/* Album Covers Row */}
+                      <div className='flex items-center justify-center gap-2 mb-2'>
+                        {/* Basis Album */}
+                        <div className='w-12 h-12 flex-shrink-0 rounded-md overflow-hidden'>
+                          <AlbumImage
+                            src={rec.basisAlbum.coverArtUrl}
+                            alt={rec.basisAlbum.title}
+                            width={48}
+                            height={48}
+                            className='w-full h-full object-cover'
+                          />
+                        </div>
+
+                        {/* Arrow */}
+                        <ChevronRight className='h-4 w-4 text-zinc-500 flex-shrink-0' />
+
+                        {/* Recommended Album */}
+                        <div className='w-12 h-12 flex-shrink-0 rounded-md overflow-hidden'>
+                          <AlbumImage
+                            src={rec.recommendedAlbum.coverArtUrl}
+                            alt={rec.recommendedAlbum.title}
+                            width={48}
+                            height={48}
+                            className='w-full h-full object-cover'
+                          />
+                        </div>
                       </div>
 
-                      {/* Arrow with Score */}
-                      <div className='flex flex-col items-center'>
-                        <ChevronRight className='h-4 w-4 text-zinc-500' />
-                        <span className='text-xs font-medium text-emeraled-green'>
-                          {rec.score}%
+                      {/* Score Badge */}
+                      <div className='flex justify-center mb-2'>
+                        <span className='text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full'>
+                          {rec.score}% match
                         </span>
                       </div>
 
-                      {/* Recommended Album */}
-                      <div className='w-14 h-14 flex-shrink-0 rounded-md overflow-hidden'>
-                        <AlbumImage
-                          src={rec.recommendedAlbum.coverArtUrl}
-                          alt={rec.recommendedAlbum.title}
-                          width={56}
-                          height={56}
-                          className='w-full h-full object-cover'
-                        />
-                      </div>
-
                       {/* Album Info */}
-                      <div className='flex-1 min-w-0'>
+                      <div className='text-center'>
                         <p className='text-sm font-medium text-white truncate'>
                           {rec.recommendedAlbum.title}
                         </p>
