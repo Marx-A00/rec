@@ -19,14 +19,6 @@ export default function MosaicHeaderControls({
   onToggleEditMode,
   onShowWidgetLibrary,
 }: MosaicHeaderControlsProps) {
-  // Feature flag check - hide in production
-  const isMosaicEditorEnabled =
-    process.env.NEXT_PUBLIC_ENABLE_MOSAIC_EDITOR === 'true';
-
-  if (!isMosaicEditorEnabled) {
-    return null;
-  }
-
   const { actions } = useSplitMosaic();
   const [isSaving, setIsSaving] = React.useState(false);
   const [toast, setToast] = React.useState<{
@@ -38,6 +30,14 @@ export default function MosaicHeaderControls({
     message: '',
     type: 'success',
   });
+
+  // Feature flag check - hide in production
+  const isMosaicEditorEnabled =
+    process.env.NEXT_PUBLIC_ENABLE_MOSAIC_EDITOR === 'true';
+
+  if (!isMosaicEditorEnabled) {
+    return null;
+  }
 
   const handleSaveLayout = async () => {
     setIsSaving(true);

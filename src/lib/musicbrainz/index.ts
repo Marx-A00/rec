@@ -13,12 +13,11 @@ export {
 } from './queue-service';
 
 // Factory function available if needed (though getQueuedMusicBrainzService can be used directly)
-export function createMusicBrainzQueueService() {
-  // Import locally to avoid circular dependency with the re-export above
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-  const {
-    getQueuedMusicBrainzService: getService,
-  } = require('./queue-service');
+export async function createMusicBrainzQueueService() {
+  // Import dynamically to avoid circular dependency with the re-export above
+  const { getQueuedMusicBrainzService: getService } = await import(
+    './queue-service'
+  );
   return getService();
 }
 

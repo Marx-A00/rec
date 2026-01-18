@@ -36,7 +36,8 @@ export default function TestingPage() {
   });
 
   const handleDelete = (id: string) => {
-    if (confirm('Delete this recommendation?')) {
+    // eslint-disable-next-line no-alert -- Admin testing page, confirm is acceptable
+    if (window.confirm('Delete this recommendation?')) {
       deleteMutation.mutate({ id });
     }
   };

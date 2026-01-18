@@ -1,11 +1,5 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck - Worker class has type issues, needs refactor
 // src/workers/queue-worker.ts
-
-// Load environment variables from .env.local and .env
-import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
-dotenv.config({ path: '.env' });
 /**
  * Production Queue Worker - Always Running
  * Handles all background job processing across 6 services (21 job types)
@@ -13,6 +7,7 @@ dotenv.config({ path: '.env' });
  * Auto-restarts on failures, production-ready
  */
 
+import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import chalk from 'chalk';
 
@@ -27,6 +22,10 @@ import {
   initializeMusicBrainzScheduler,
   shutdownMusicBrainzScheduler,
 } from '@/lib/musicbrainz/new-releases-scheduler';
+
+// Load environment variables from .env.local and .env
+dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env' });
 
 class MusicBrainzWorkerService {
   private worker: any;

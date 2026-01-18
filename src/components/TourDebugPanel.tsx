@@ -29,7 +29,6 @@ export function TourDebugPanel() {
   // Keeping this component for potential future use, but it won't render
   return null;
 
-  /* eslint-disable @typescript-eslint/no-unused-vars */
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
 
@@ -40,7 +39,6 @@ export function TourDebugPanel() {
   if (process.env.NODE_ENV !== 'development') {
     return null;
   }
-  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   const handleCheckOnboardingStatus = async () => {
     try {
@@ -50,7 +48,8 @@ export function TourDebugPanel() {
 
       if (response.ok) {
         console.log('📊 Onboarding status:', data);
-        alert(
+        // eslint-disable-next-line no-alert -- Debug panel alert
+        window.alert(
           `📊 Onboarding Status\n\n` +
             `Is New User: ${data.isNewUser ? 'Yes ✅' : 'No ❌'}\n` +
             `User ID: ${data.userId}\n` +
@@ -58,11 +57,13 @@ export function TourDebugPanel() {
             `Created: ${data.createdAt}`
         );
       } else {
-        alert(`❌ Error: ${data.error || 'Failed to check status'}`);
+        // eslint-disable-next-line no-alert -- Debug panel alert
+        window.alert(`❌ Error: ${data.error || 'Failed to check status'}`);
       }
     } catch (error) {
       console.error('❌ Error checking status:', error);
-      alert('❌ Network error. Check console for details.');
+      // eslint-disable-next-line no-alert -- Debug panel alert
+      window.alert('❌ Network error. Check console for details.');
     }
   };
 

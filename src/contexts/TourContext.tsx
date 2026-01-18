@@ -11,6 +11,7 @@ import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import { driver, DriveStep } from 'driver.js';
 import type { Driver } from 'driver.js';
+import { X } from 'lucide-react';
 
 import { driverConfig, tourSteps } from '@/lib/tours/driverConfig';
 import { useTourStore } from '@/stores/useTourStore';
@@ -20,8 +21,6 @@ import {
   useGetMySettingsQuery,
   useUpdateUserSettingsMutation,
 } from '@/generated/graphql';
-
-import { X } from 'lucide-react';
 
 interface TourContextType {
   startTour: () => void;
@@ -84,7 +83,8 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
             console.error(
               '❌ Unable to find tour elements. Make sure the page has fully loaded.'
             );
-            alert(
+            // eslint-disable-next-line no-alert -- Tour warning message
+            window.alert(
               '⚠️ Tour elements not found. Please refresh the page and try again.'
             );
             return;
@@ -190,7 +190,8 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
               );
               if (!retryElement) {
                 console.error('❌ Unable to find step 2 element.');
-                alert(
+                // eslint-disable-next-line no-alert -- Tour warning message
+                window.alert(
                   '⚠️ Step 2 element not found. Make sure you are on the main page.'
                 );
                 return;
@@ -649,7 +650,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
                     pointerEvents: 'auto',
                   }}
                 >
-                  Exit & Don't Show Tour Again
+                  Exit &amp; Don&apos;t Show Tour Again
                 </button>
               </div>
             </div>
