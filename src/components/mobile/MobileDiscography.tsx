@@ -164,7 +164,7 @@ export default function MobileDiscography({
               className={cn(
                 'flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors min-h-[36px]',
                 filter === option.value
-                  ? 'bg-cosmic-latte text-black'
+                  ? 'bg-white text-black'
                   : 'bg-zinc-800 text-zinc-300'
               )}
             >
@@ -172,11 +172,11 @@ export default function MobileDiscography({
               {option.count > 0 && (
                 <span
                   className={cn(
-                    'ml-1',
-                    filter === option.value ? 'text-black/60' : 'text-zinc-500'
+                    'ml-1.5',
+                    filter === option.value ? 'text-black/70' : 'text-zinc-500'
                   )}
                 >
-                  ({option.count})
+                  {option.count}
                 </span>
               )}
             </button>
