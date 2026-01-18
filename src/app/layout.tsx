@@ -9,8 +9,7 @@ import { Toaster } from 'sonner';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { CollectionToastProvider } from '@/components/ui/CollectionToastProvider';
-import { TourProvider } from '@/contexts/TourContext';
-import { TourDebugPanel } from '@/components/TourDebugPanel';
+import { TourProviderWrapper } from '@/components/providers/TourProviderWrapper';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -40,9 +39,8 @@ export default function RootLayout({
       >
         <SessionProvider>
           <QueryProvider>
-            <TourProvider>
+            <TourProviderWrapper>
               <CollectionToastProvider>{children}</CollectionToastProvider>
-              <TourDebugPanel />
               <Toaster
                 position='top-right'
                 toastOptions={{
@@ -53,7 +51,7 @@ export default function RootLayout({
                   },
                 }}
               />
-            </TourProvider>
+            </TourProviderWrapper>
           </QueryProvider>
         </SessionProvider>
         <Script

@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 import { useInView } from 'react-intersection-observer';
+
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { RefreshCw, Users } from 'lucide-react';
 
 import MobileRecommendationCard from '@/components/mobile/MobileRecommendationCard';
@@ -55,8 +56,7 @@ interface GroupedActivity {
 }
 
 export default function MobileHomePage() {
-  const { data: session, status } = useSession();
-  const isSessionLoading = status === 'loading';
+  const { session, isLoading: isSessionLoading } = useRequireAuth();
 
   const { ref: sentinelRef, inView } = useInView({ threshold: 0 });
 
@@ -257,17 +257,9 @@ export default function MobileHomePage() {
     );
   }
 
-  // Not signed in
+  // Not signed in - useRequireAuth handles redirect
   if (!session) {
-    return (
-      <div className='flex flex-col items-center justify-center min-h-[60vh] px-6 text-center'>
-        <div className='text-5xl mb-4'>🔒</div>
-        <h2 className='text-xl font-bold text-white mb-2'>Sign In Required</h2>
-        <p className='text-zinc-400 mb-6'>
-          Sign in to see what your friends are recommending
-        </p>
-      </div>
-    );
+    return null;
   }
 
   // Error state

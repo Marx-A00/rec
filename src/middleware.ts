@@ -163,6 +163,18 @@ const getAllowedOrigins = (): string[] => {
   return isDevelopment ? [...baseOrigins, ...devOrigins] : baseOrigins;
 };
 
+/**
+ * Check if origin is a local network IP (for mobile testing in development)
+ */
+function isLocalNetworkOrigin(origin: string): boolean {
+  if (process.env.NODE_ENV !== 'development') return false;
+
+  // Match local network IPs: 192.168.x.x, 10.x.x.x, 172.16-31.x.x
+  const localNetworkPattern =
+    /^http:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}):\d+$/;
+  return localNetworkPattern.test(origin);
+}
+
 // CORS configuration
 const CORS_CONFIG = {
   allowedOrigins: getAllowedOrigins(),
@@ -189,7 +201,10 @@ const CORS_CONFIG = {
  */
 function isOriginAllowed(origin: string | null): boolean {
   if (!origin) return false;
-  return CORS_CONFIG.allowedOrigins.includes(origin);
+  // Allow configured origins OR local network IPs in development
+  return (
+    CORS_CONFIG.allowedOrigins.includes(origin) || isLocalNetworkOrigin(origin)
+  );
 }
 
 /**
@@ -505,6 +520,11 @@ function createRateLimitResponse(
  * Check if a route requires authentication
  */
 function isProtectedRoute(pathname: string): boolean {
+  // Mobile routes handle their own auth client-side (Prisma doesn't work in Edge runtime)
+  if (pathname.startsWith('/m/') || pathname === '/m') {
+    return false;
+  }
+
   // All main app pages require authentication (route groups don't affect URL structure)
   const protectedPagePatterns = [
     '/albums',
@@ -519,7 +539,6 @@ function isProtectedRoute(pathname: string): boolean {
     '/recommend',
     '/search',
     '/settings',
-    '/m/', // Mobile routes are protected
   ];
 
   // Check if it's a protected page route
@@ -658,47 +677,24 @@ export async function middleware(request: NextRequest) {
   // Debug: Log every middleware invocation
   console.log(`🔧 Middleware running: ${method} ${pathname}`);
 
-  let userID: string | undefined;
-
-  // 0. Mobile detection and redirect (before auth to catch unauthenticated mobile users)
+  // 0. Mobile detection and redirect
   const mobileRedirect = handleMobileRedirect(request, pathname);
   if (mobileRedirect) {
     return mobileRedirect;
   }
 
-  // Skip auth entirely for public API routes to avoid Prisma edge runtime issues
-  const isPublicApi =
-    pathname.startsWith('/api/') && isPublicApiRoute(pathname);
+  // NOTE: Auth checks removed from middleware - Prisma doesn't work in Edge runtime.
+  // Pages and API routes handle their own authentication via useSession() or getServerSession().
 
-  // 1. Authentication check for protected routes (both pages and API)
-  if (!isPublicApi && isProtectedRoute(pathname)) {
-    // Development logging for route protection decisions
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🔒 Protected route accessed: ${method} ${pathname}`);
-    }
-
-    const authResult = await handleAuthentication(request, pathname);
-    if (authResult.response) {
-      return authResult.response; // Return authentication failure response
-    }
-    userID = authResult.userID;
-  } else if (
-    process.env.NODE_ENV === 'development' &&
-    pathname.startsWith('/api/')
-  ) {
-    // Log public API routes in development
-    console.log(`🌐 Public API route accessed: ${method} ${pathname}`);
-  }
-
-  // 2. Rate limiting for API routes (both protected and public)
+  // 1. Rate limiting for API routes
   if (pathname.startsWith('/api/')) {
-    const rateLimitResult = checkRateLimit(request, pathname, userID);
+    const rateLimitResult = checkRateLimit(request, pathname);
 
     if (!rateLimitResult.allowed) {
       // Development logging for rate limiting
       if (process.env.NODE_ENV === 'development') {
         console.log(
-          `⛔ Rate limit exceeded: ${method} ${pathname} by ${getRateLimitKey(request, userID)}`
+          `⛔ Rate limit exceeded: ${method} ${pathname} by ${getRateLimitKey(request)}`
         );
       }
 
@@ -716,7 +712,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 3. CORS handling for API routes only
+  // 2. CORS handling for API routes
   if (pathname.startsWith('/api/')) {
     // Handle preflight OPTIONS requests
     if (method === 'OPTIONS') {
@@ -760,7 +756,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // 4. For non-API routes (pages), add security headers and continue
+  // 3. For non-API routes (pages), add security headers and continue
   const pageResponse = NextResponse.next();
   addMiddlewareSecurityHeaders(pageResponse, pathname);
   return pageResponse;
