@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Music, Disc } from 'lucide-react';
+import { Music, Disc, Loader2 } from 'lucide-react';
+import { useInView } from 'react-intersection-observer';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import {
@@ -24,12 +25,15 @@ interface MobileDiscographyProps {
 
 type FilterOption = 'all' | 'albums' | 'singles' | 'eps';
 
+const ITEMS_PER_PAGE = 10;
+
 export default function MobileDiscography({
   artistId,
   artistName: _artistName,
   source,
 }: MobileDiscographyProps) {
   const [filter, setFilter] = useState<FilterOption>('all');
+  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
 
   // Map source string to DataSource enum
   const sourceEnum =
@@ -45,6 +49,86 @@ export default function MobileDiscography({
   );
 
   const discography = data?.artistDiscography;
+
+  // Intersection observer for infinite scroll
+  const { ref: sentinelRef, inView } = useInView({
+    threshold: 0,
+    rootMargin: '100px',
+  });
+
+  // Memoize filtered and sorted releases
+  const {
+    filteredReleases,
+    albums,
+    eps,
+    singles,
+    compilations,
+    liveAlbums,
+    other,
+  } = useMemo(() => {
+    const albums = discography?.albums || [];
+    const eps = discography?.eps || [];
+    const singles = discography?.singles || [];
+    const compilations = discography?.compilations || [];
+    const liveAlbums = discography?.liveAlbums || [];
+    const other = discography?.other || [];
+
+    const getFilteredReleases = (): ReleaseType[] => {
+      switch (filter) {
+        case 'albums':
+          return [...albums, ...compilations, ...liveAlbums];
+        case 'singles':
+          return singles;
+        case 'eps':
+          return eps;
+        case 'all':
+        default:
+          return [
+            ...albums,
+            ...eps,
+            ...singles,
+            ...compilations,
+            ...liveAlbums,
+            ...other,
+          ];
+      }
+    };
+
+    const sorted = getFilteredReleases().sort((a, b) => {
+      // Sort by year descending (newest first)
+      const yearA = a.year || 0;
+      const yearB = b.year || 0;
+      return yearB - yearA;
+    });
+
+    return {
+      filteredReleases: sorted,
+      albums,
+      eps,
+      singles,
+      compilations,
+      liveAlbums,
+      other,
+    };
+  }, [filter, discography]);
+
+  // Reset display count when filter changes
+  useEffect(() => {
+    setDisplayCount(ITEMS_PER_PAGE);
+  }, [filter]);
+
+  // Load more items when sentinel is in view
+  const hasMore = displayCount < filteredReleases.length;
+  useEffect(() => {
+    if (inView && hasMore) {
+      setDisplayCount(prev =>
+        Math.min(prev + ITEMS_PER_PAGE, filteredReleases.length)
+      );
+    }
+  }, [inView, hasMore, filteredReleases.length]);
+
+  // Get visible releases
+  const visibleReleases = filteredReleases.slice(0, displayCount);
 
   if (isLoading) {
     return (
@@ -80,42 +164,6 @@ export default function MobileDiscography({
       </div>
     );
   }
-
-  // Combine releases based on filter
-  const albums = discography?.albums || [];
-  const eps = discography?.eps || [];
-  const singles = discography?.singles || [];
-  const compilations = discography?.compilations || [];
-  const liveAlbums = discography?.liveAlbums || [];
-  const other = discography?.other || [];
-
-  const getFilteredReleases = (): ReleaseType[] => {
-    switch (filter) {
-      case 'albums':
-        return [...albums, ...compilations, ...liveAlbums];
-      case 'singles':
-        return singles;
-      case 'eps':
-        return eps;
-      case 'all':
-      default:
-        return [
-          ...albums,
-          ...eps,
-          ...singles,
-          ...compilations,
-          ...liveAlbums,
-          ...other,
-        ];
-    }
-  };
-
-  const filteredReleases = getFilteredReleases().sort((a, b) => {
-    // Sort by year descending (newest first)
-    const yearA = a.year || 0;
-    const yearB = b.year || 0;
-    return yearB - yearA;
-  });
 
   const filterOptions: { value: FilterOption; label: string; count: number }[] =
     [
@@ -184,42 +232,51 @@ export default function MobileDiscography({
       </div>
 
       {/* 2-Column Grid */}
-      {filteredReleases.length > 0 ? (
-        <div className='grid grid-cols-2 gap-3'>
-          {filteredReleases.map(release => (
-            <Link
-              key={release.id}
-              href={`/m/albums/${release.id}`}
-              className='bg-zinc-900 rounded-lg p-2 border border-zinc-800 active:scale-[0.98] transition-transform'
-            >
-              {/* Album Cover */}
-              <div className='aspect-square relative mb-2'>
-                <AlbumImage
-                  src={release.imageUrl || undefined}
-                  alt={release.title}
-                  width={160}
-                  height={160}
-                  className='w-full h-full object-cover rounded-md'
-                  fallbackIcon={<Music className='h-8 w-8 text-zinc-600' />}
-                />
-                {/* Type badge */}
-                {release.primaryType && release.primaryType !== 'Album' && (
-                  <span className='absolute top-1 left-1 bg-black/70 text-[10px] text-zinc-300 px-1.5 py-0.5 rounded'>
-                    {release.primaryType}
-                  </span>
-                )}
-              </div>
+      {visibleReleases.length > 0 ? (
+        <>
+          <div className='grid grid-cols-2 gap-3'>
+            {visibleReleases.map(release => (
+              <Link
+                key={release.id}
+                href={`/m/albums/${release.id}`}
+                className='bg-zinc-900 rounded-lg p-2 border border-zinc-800 active:scale-[0.98] transition-transform'
+              >
+                {/* Album Cover */}
+                <div className='aspect-square relative mb-2'>
+                  <AlbumImage
+                    src={release.imageUrl || undefined}
+                    alt={release.title}
+                    width={160}
+                    height={160}
+                    className='w-full h-full object-cover rounded-md'
+                    fallbackIcon={<Music className='h-8 w-8 text-zinc-600' />}
+                  />
+                  {/* Type badge */}
+                  {release.primaryType && release.primaryType !== 'Album' && (
+                    <span className='absolute top-1 left-1 bg-black/70 text-[10px] text-zinc-300 px-1.5 py-0.5 rounded'>
+                      {release.primaryType}
+                    </span>
+                  )}
+                </div>
 
-              {/* Release Info */}
-              <p className='text-sm font-medium text-white truncate'>
-                {release.title}
-              </p>
-              <p className='text-xs text-zinc-500'>
-                {release.year || 'Unknown Year'}
-              </p>
-            </Link>
-          ))}
-        </div>
+                {/* Release Info */}
+                <p className='text-sm font-medium text-white truncate'>
+                  {release.title}
+                </p>
+                <p className='text-xs text-zinc-500'>
+                  {release.year || 'Unknown Year'}
+                </p>
+              </Link>
+            ))}
+          </div>
+
+          {/* Infinite scroll sentinel */}
+          {hasMore && (
+            <div ref={sentinelRef} className='flex justify-center py-4'>
+              <Loader2 className='h-5 w-5 text-zinc-500 animate-spin' />
+            </div>
+          )}
+        </>
       ) : (
         <div className='bg-zinc-900 rounded-lg p-4 border border-zinc-800 text-center'>
           <p className='text-sm text-zinc-500'>
