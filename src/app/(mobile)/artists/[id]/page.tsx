@@ -142,7 +142,7 @@ export default function MobileArtistPage({ params }: MobileArtistPageProps) {
 
         {/* Hero skeleton */}
         <div className='px-4 py-6 flex flex-col items-center'>
-          <div className='w-40 h-40 bg-zinc-800 rounded-full animate-pulse mb-4' />
+          <div className='w-[120px] h-[120px] bg-zinc-800 rounded-full animate-pulse mb-4' />
           <div className='h-7 w-48 bg-zinc-800 rounded animate-pulse mb-2' />
           <div className='h-4 w-32 bg-zinc-800 rounded animate-pulse' />
         </div>
@@ -229,15 +229,15 @@ export default function MobileArtistPage({ params }: MobileArtistPageProps) {
 
       {/* Artist Hero - Circular Photo */}
       <section className='px-4 py-6 flex flex-col items-center'>
-        <div className='w-40 h-40 rounded-full overflow-hidden mb-4 border-2 border-zinc-800'>
+        <div className='w-[120px] h-[120px] rounded-full overflow-hidden mb-4 border-2 border-zinc-800'>
           <AlbumImage
             src={artist.imageUrl}
             alt={sanitizeArtistName(artist.name)}
-            width={160}
-            height={160}
+            width={120}
+            height={120}
             className='w-full h-full object-cover'
             priority
-            fallbackIcon={<User className='h-16 w-16 text-zinc-600' />}
+            fallbackIcon={<User className='h-12 w-12 text-zinc-600' />}
           />
         </div>
 
