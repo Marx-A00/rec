@@ -1,12 +1,40 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  Check,
+  X,
+  Loader2,
+} from 'lucide-react';
 
 import { MobileButton } from '@/components/mobile/MobileButton';
+import {
+  validateEmail,
+  validateUsernameForRegistration,
+  validatePassword,
+  getPasswordStrength,
+} from '@/lib/validations';
+
+interface FieldErrors {
+  username?: string;
+  email?: string;
+  password?: string;
+}
+
+interface UsernameCheckState {
+  checking: boolean;
+  available: boolean | null;
+  checkedUsername: string;
+}
 
 export default function MobileRegisterPage() {
   const router = useRouter();
@@ -16,11 +44,70 @@ export default function MobileRegisterPage() {
     email: '',
     username: '',
     password: '',
-    confirmPassword: '',
   });
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [usernameCheck, setUsernameCheck] = useState<UsernameCheckState>({
+    checking: false,
+    available: null,
+    checkedUsername: '',
+  });
+
+  // Debounced username availability check
+  const checkUsernameAvailability = useCallback(async (username: string) => {
+    if (!username || username.length < 2) {
+      setUsernameCheck({
+        checking: false,
+        available: null,
+        checkedUsername: '',
+      });
+      return;
+    }
+
+    // Validate username format first
+    const validation = validateUsernameForRegistration(username);
+    if (!validation.isValid) {
+      setUsernameCheck({
+        checking: false,
+        available: null,
+        checkedUsername: '',
+      });
+      return;
+    }
+
+    setUsernameCheck(prev => ({ ...prev, checking: true }));
+
+    try {
+      const response = await fetch(
+        `/api/auth/check-username?username=${encodeURIComponent(username)}`
+      );
+      const data = await response.json();
+
+      setUsernameCheck({
+        checking: false,
+        available: data.available,
+        checkedUsername: username,
+      });
+    } catch {
+      setUsernameCheck({
+        checking: false,
+        available: null,
+        checkedUsername: '',
+      });
+    }
+  }, []);
+
+  // Debounce username check
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.username && formData.username.length >= 2) {
+        checkUsernameAvailability(formData.username);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.username, checkUsernameAvailability]);
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
@@ -33,35 +120,72 @@ export default function MobileRegisterPage() {
     }
   };
 
-  const validateForm = (): string | null => {
-    if (!formData.email || !formData.username || !formData.password) {
-      return 'All fields are required';
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Clear server error when user starts typing
+    if (error) setError('');
+
+    // Clear field error when user starts typing
+    if (fieldErrors[name as keyof FieldErrors]) {
+      setFieldErrors(prev => ({ ...prev, [name]: undefined }));
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      return 'Please enter a valid email address';
+
+    // Reset username check when username changes
+    if (name === 'username') {
+      setUsernameCheck({
+        checking: false,
+        available: null,
+        checkedUsername: '',
+      });
     }
-    if (formData.username.length < 3) {
-      return 'Username must be at least 3 characters';
+  };
+
+  const validateForm = (): boolean => {
+    const errors: FieldErrors = {};
+    let isValid = true;
+
+    // Validate username
+    const usernameValidation = validateUsernameForRegistration(
+      formData.username
+    );
+    if (!usernameValidation.isValid) {
+      errors.username = usernameValidation.message;
+      isValid = false;
+    } else if (usernameCheck.available === false) {
+      errors.username = 'Username is already taken';
+      isValid = false;
     }
-    if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
-      return 'Username can only contain letters, numbers, and underscores';
+
+    // Validate email
+    const emailValidation = validateEmail(formData.email);
+    if (!emailValidation.isValid) {
+      errors.email = emailValidation.message;
+      isValid = false;
     }
-    if (formData.password.length < 8) {
-      return 'Password must be at least 8 characters';
+
+    // Validate password
+    const passwordValidation = validatePassword(formData.password);
+    if (!passwordValidation.isValid) {
+      errors.password = passwordValidation.message;
+      isValid = false;
     }
-    if (formData.password !== formData.confirmPassword) {
-      return 'Passwords do not match';
-    }
-    return null;
+
+    setFieldErrors(errors);
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
+    if (!validateForm()) {
+      return;
+    }
+
+    // Wait for username check if still in progress
+    if (usernameCheck.checking) {
       return;
     }
 
@@ -81,7 +205,9 @@ export default function MobileRegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Registration failed. Please try again.');
+        setError(
+          data.error || data.message || 'Registration failed. Please try again.'
+        );
         return;
       }
 
@@ -107,6 +233,27 @@ export default function MobileRegisterPage() {
   };
 
   const isLoading = isGoogleLoading || isSubmitting;
+  const passwordStrength = getPasswordStrength(formData.password);
+
+  // Get username field status
+  const getUsernameStatus = () => {
+    if (!formData.username) return null;
+    if (fieldErrors.username) return 'error';
+    if (usernameCheck.checking) return 'checking';
+    if (
+      usernameCheck.available === true &&
+      usernameCheck.checkedUsername === formData.username
+    )
+      return 'available';
+    if (
+      usernameCheck.available === false &&
+      usernameCheck.checkedUsername === formData.username
+    )
+      return 'taken';
+    return null;
+  };
+
+  const usernameStatus = getUsernameStatus();
 
   return (
     <div className='min-h-screen bg-black flex flex-col'>
@@ -181,33 +328,6 @@ export default function MobileRegisterPage() {
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className='space-y-4'>
-          {/* Email */}
-          <div>
-            <label
-              htmlFor='email'
-              className='block text-sm font-medium text-zinc-400 mb-2'
-            >
-              Email
-            </label>
-            <div className='relative'>
-              <Mail className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500' />
-              <input
-                id='email'
-                name='email'
-                type='email'
-                autoComplete='email'
-                required
-                value={formData.email}
-                onChange={e =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                disabled={isLoading}
-                className='w-full h-[52px] pl-12 pr-4 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors'
-                placeholder='you@example.com'
-              />
-            </div>
-          </div>
-
           {/* Username */}
           <div>
             <label
@@ -225,14 +345,93 @@ export default function MobileRegisterPage() {
                 autoComplete='username'
                 required
                 value={formData.username}
-                onChange={e =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
+                onChange={handleInputChange}
                 disabled={isLoading}
-                className='w-full h-[52px] pl-12 pr-4 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors'
+                className={`w-full h-[52px] pl-12 pr-12 bg-zinc-900 border rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors ${
+                  fieldErrors.username || usernameStatus === 'taken'
+                    ? 'border-red-500'
+                    : usernameStatus === 'available'
+                      ? 'border-green-500'
+                      : 'border-zinc-800'
+                }`}
                 placeholder='Choose a username'
+                aria-invalid={
+                  !!fieldErrors.username || usernameStatus === 'taken'
+                }
+                aria-describedby={
+                  fieldErrors.username ? 'username-error' : undefined
+                }
+              />
+              {/* Status indicator */}
+              <div className='absolute right-4 top-1/2 -translate-y-1/2'>
+                {usernameStatus === 'checking' && (
+                  <Loader2 className='h-5 w-5 text-zinc-500 animate-spin' />
+                )}
+                {usernameStatus === 'available' && (
+                  <Check className='h-5 w-5 text-green-500' />
+                )}
+                {usernameStatus === 'taken' && (
+                  <X className='h-5 w-5 text-red-500' />
+                )}
+              </div>
+            </div>
+            {fieldErrors.username && (
+              <p
+                id='username-error'
+                className='mt-2 text-sm text-red-400'
+                role='alert'
+              >
+                {fieldErrors.username}
+              </p>
+            )}
+            {usernameStatus === 'available' && (
+              <p className='mt-2 text-sm text-green-400'>
+                Username is available
+              </p>
+            )}
+            {usernameStatus === 'taken' && !fieldErrors.username && (
+              <p className='mt-2 text-sm text-red-400' role='alert'>
+                Username is already taken
+              </p>
+            )}
+          </div>
+
+          {/* Email */}
+          <div>
+            <label
+              htmlFor='email'
+              className='block text-sm font-medium text-zinc-400 mb-2'
+            >
+              Email
+            </label>
+            <div className='relative'>
+              <Mail className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500' />
+              <input
+                id='email'
+                name='email'
+                type='email'
+                autoComplete='email'
+                required
+                value={formData.email}
+                onChange={handleInputChange}
+                disabled={isLoading}
+                className={`w-full h-[52px] pl-12 pr-4 bg-zinc-900 border rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors ${
+                  fieldErrors.email ? 'border-red-500' : 'border-zinc-800'
+                }`}
+                placeholder='you@example.com'
+                aria-invalid={!!fieldErrors.email}
+                aria-describedby={fieldErrors.email ? 'email-error' : undefined}
               />
             </div>
+            {fieldErrors.email && (
+              <p
+                id='email-error'
+                className='mt-2 text-sm text-red-400'
+                role='alert'
+              >
+                {fieldErrors.email}
+              </p>
+            )}
           </div>
 
           {/* Password */}
@@ -252,12 +451,18 @@ export default function MobileRegisterPage() {
                 autoComplete='new-password'
                 required
                 value={formData.password}
-                onChange={e =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
+                onChange={handleInputChange}
                 disabled={isLoading}
-                className='w-full h-[52px] pl-12 pr-12 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors'
+                className={`w-full h-[52px] pl-12 pr-12 bg-zinc-900 border rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors ${
+                  fieldErrors.password ? 'border-red-500' : 'border-zinc-800'
+                }`}
                 placeholder='At least 8 characters'
+                aria-invalid={!!fieldErrors.password}
+                aria-describedby={
+                  fieldErrors.password
+                    ? 'password-error password-strength'
+                    : 'password-strength'
+                }
               />
               <button
                 type='button'
@@ -272,52 +477,48 @@ export default function MobileRegisterPage() {
                 )}
               </button>
             </div>
-          </div>
-
-          {/* Confirm Password */}
-          <div>
-            <label
-              htmlFor='confirmPassword'
-              className='block text-sm font-medium text-zinc-400 mb-2'
-            >
-              Confirm Password
-            </label>
-            <div className='relative'>
-              <Lock className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500' />
-              <input
-                id='confirmPassword'
-                name='confirmPassword'
-                type={showConfirmPassword ? 'text' : 'password'}
-                autoComplete='new-password'
-                required
-                value={formData.confirmPassword}
-                onChange={e =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
-                }
-                disabled={isLoading}
-                className='w-full h-[52px] pl-12 pr-12 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 transition-colors'
-                placeholder='Confirm your password'
-              />
-              <button
-                type='button'
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className='absolute right-4 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] flex items-center justify-center -mr-2 text-zinc-500'
-                aria-label={
-                  showConfirmPassword ? 'Hide password' : 'Show password'
-                }
+            {fieldErrors.password && (
+              <p
+                id='password-error'
+                className='mt-2 text-sm text-red-400'
+                role='alert'
               >
-                {showConfirmPassword ? (
-                  <EyeOff className='h-5 w-5' />
-                ) : (
-                  <Eye className='h-5 w-5' />
-                )}
-              </button>
-            </div>
+                {fieldErrors.password}
+              </p>
+            )}
+
+            {/* Password Strength Indicator */}
+            {formData.password && (
+              <div id='password-strength' className='mt-3'>
+                <div className='flex justify-between items-center mb-1.5'>
+                  <span className='text-xs text-zinc-500'>
+                    Password strength
+                  </span>
+                  <span
+                    className={`text-xs font-medium ${passwordStrength.color}`}
+                  >
+                    {passwordStrength.label}
+                  </span>
+                </div>
+                <div className='w-full bg-zinc-800 rounded-full h-1.5'>
+                  <div
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      passwordStrength.score <= 2
+                        ? 'bg-red-500'
+                        : passwordStrength.score <= 4
+                          ? 'bg-yellow-500'
+                          : 'bg-green-500'
+                    }`}
+                    style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <MobileButton
             type='submit'
-            disabled={isLoading}
+            disabled={isLoading || usernameCheck.checking}
             className='w-full mt-6'
             size='lg'
           >
