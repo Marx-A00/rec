@@ -308,18 +308,51 @@ export default function MobileSearchPage() {
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty State - External search completed with no results */}
         {!isLoading &&
           !hasError &&
           showResults &&
           results.length === 0 &&
           searchMode === 'LOCAL_AND_EXTERNAL' && (
             <div className='flex flex-col items-center justify-center py-12 text-center'>
-              <Search className='h-12 w-12 text-zinc-600 mb-4' />
+              <div className='w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4'>
+                <Search className='h-8 w-8 text-zinc-600' />
+              </div>
               <p className='text-white font-medium mb-2'>No results found</p>
-              <p className='text-sm text-zinc-500'>
-                Try a different search term
+              <p className='text-sm text-zinc-500 max-w-xs'>
+                We couldn&apos;t find any albums or artists matching &quot;
+                {query}&quot;. Try a different search term.
               </p>
+            </div>
+          )}
+
+        {/* Empty State - Local search with no results (hint to search externally) */}
+        {!isLoading &&
+          !hasError &&
+          showResults &&
+          results.length === 0 &&
+          searchMode === 'LOCAL_ONLY' && (
+            <div className='flex flex-col items-center justify-center py-12 text-center'>
+              <div className='w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4'>
+                <Search className='h-8 w-8 text-zinc-600' />
+              </div>
+              <p className='text-white font-medium mb-2'>
+                No local results for &quot;{query}&quot;
+              </p>
+              <p className='text-sm text-zinc-500 max-w-xs mb-4'>
+                Press <span className='text-zinc-300 font-medium'>Enter</span>{' '}
+                to search external sources for more results.
+              </p>
+              <MobileButton
+                variant='outline'
+                size='sm'
+                onClick={() => {
+                  saveRecentSearch(query);
+                  setSearchMode('LOCAL_AND_EXTERNAL');
+                }}
+              >
+                Search All Sources
+              </MobileButton>
             </div>
           )}
 

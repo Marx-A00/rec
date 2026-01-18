@@ -294,18 +294,32 @@ export default function MobileHomePage() {
   // Empty state
   if (groupedActivities.length === 0) {
     return (
-      <div className='flex flex-col items-center justify-center min-h-[60vh] px-6 text-center'>
-        <div className='text-5xl mb-4'>🎵</div>
-        <h2 className='text-xl font-bold text-white mb-2'>No Activity Yet</h2>
-        <p className='text-zinc-400 mb-6'>
-          Follow some users to see their music recommendations here.
-        </p>
-        <MobileButton
-          variant='outline'
-          leftIcon={<Users className='h-4 w-4' />}
-        >
-          Find People to Follow
-        </MobileButton>
+      <div className='px-4 pt-4'>
+        <header className='mb-6'>
+          <h1 className='text-2xl font-bold text-white'>
+            {session.user?.username ? `Hey, ${session.user.username}` : 'Home'}
+          </h1>
+          <p className='text-sm text-zinc-400 mt-1'>
+            See what your friends are listening to
+          </p>
+        </header>
+        <div className='flex flex-col items-center justify-center min-h-[50vh] px-6 text-center'>
+          <div className='w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4'>
+            <Users className='h-8 w-8 text-zinc-600' />
+          </div>
+          <h2 className='text-xl font-bold text-white mb-2'>No Activity Yet</h2>
+          <p className='text-zinc-400 mb-6 max-w-xs'>
+            Follow some users to see their music recommendations and collection
+            updates here.
+          </p>
+          <MobileButton
+            variant='outline'
+            leftIcon={<Users className='h-4 w-4' />}
+            onClick={() => (window.location.href = '/m/search')}
+          >
+            Find People to Follow
+          </MobileButton>
+        </div>
       </div>
     );
   }

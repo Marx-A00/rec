@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   Share2,
   Settings,
-  Users,
   Music,
   User,
   ChevronRight,
@@ -348,13 +347,29 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
                 ))}
               </div>
             ) : recommendations.length === 0 ? (
-              <div className='bg-zinc-900 rounded-lg p-6 text-center border border-zinc-800'>
-                <Music className='h-8 w-8 text-zinc-600 mx-auto mb-2' />
-                <p className='text-sm text-zinc-400'>
+              <div className='flex flex-col items-center justify-center py-12 text-center'>
+                <div className='w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4'>
+                  <Music className='h-8 w-8 text-zinc-600' />
+                </div>
+                <p className='text-white font-medium mb-2'>
                   {isOwnProfile
-                    ? "You haven't made any recommendations yet"
-                    : 'No recommendations yet'}
+                    ? 'No Recommendations Yet'
+                    : 'No Recommendations'}
                 </p>
+                <p className='text-sm text-zinc-500 max-w-xs mb-4'>
+                  {isOwnProfile
+                    ? 'Start recommending albums you love to share your music taste with others.'
+                    : `${user.username || 'This user'} hasn't made any recommendations yet.`}
+                </p>
+                {isOwnProfile && (
+                  <MobileButton
+                    variant='outline'
+                    size='sm'
+                    onClick={() => router.push('/m/search')}
+                  >
+                    Find Albums to Recommend
+                  </MobileButton>
+                )}
               </div>
             ) : (
               <div className='space-y-3'>
@@ -444,13 +459,27 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
                 ))}
               </div>
             ) : collections.length === 0 ? (
-              <div className='bg-zinc-900 rounded-lg p-6 text-center border border-zinc-800'>
-                <Users className='h-8 w-8 text-zinc-600 mx-auto mb-2' />
-                <p className='text-sm text-zinc-400'>
-                  {isOwnProfile
-                    ? 'Your collection is empty'
-                    : 'No albums in collection'}
+              <div className='flex flex-col items-center justify-center py-12 text-center'>
+                <div className='w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4'>
+                  <Music className='h-8 w-8 text-zinc-600' />
+                </div>
+                <p className='text-white font-medium mb-2'>
+                  {isOwnProfile ? 'Collection Empty' : 'No Albums Collected'}
                 </p>
+                <p className='text-sm text-zinc-500 max-w-xs mb-4'>
+                  {isOwnProfile
+                    ? 'Add albums to your collection to keep track of your favorite music.'
+                    : `${user.username || 'This user'} hasn't added any albums to their collection yet.`}
+                </p>
+                {isOwnProfile && (
+                  <MobileButton
+                    variant='outline'
+                    size='sm'
+                    onClick={() => router.push('/m/search')}
+                  >
+                    Browse Albums
+                  </MobileButton>
+                )}
               </div>
             ) : (
               <div className='grid grid-cols-3 gap-2'>
