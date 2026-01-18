@@ -146,7 +146,7 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
 
         {/* Profile hero skeleton */}
         <div className='px-4 py-6 flex flex-col items-center'>
-          <div className='w-24 h-24 bg-zinc-800 rounded-full animate-pulse mb-4' />
+          <div className='w-20 h-20 bg-zinc-800 rounded-full animate-pulse mb-4' />
           <div className='h-6 w-40 bg-zinc-800 rounded animate-pulse mb-2' />
           <div className='h-4 w-32 bg-zinc-800 rounded animate-pulse mb-4' />
 
@@ -227,8 +227,8 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
 
       {/* Profile Hero */}
       <section className='px-4 py-6 flex flex-col items-center'>
-        {/* Avatar */}
-        <Avatar className='w-24 h-24 mb-4 border-2 border-zinc-700'>
+        {/* Avatar - 80x80px centered */}
+        <Avatar className='w-20 h-20 mb-4 border-2 border-zinc-700'>
           <AvatarImage
             src={user.image || undefined}
             alt={user.username || 'User'}
@@ -243,9 +243,9 @@ export default function MobileProfilePage({ params }: MobileProfilePageProps) {
           {user.username || 'Anonymous User'}
         </h2>
 
-        {/* Bio */}
+        {/* Bio - 14px, max 3 lines with truncation */}
         {user.bio && (
-          <p className='text-sm text-zinc-400 text-center max-w-xs mb-4'>
+          <p className='text-sm text-zinc-400 text-center max-w-xs mb-4 line-clamp-3'>
             {user.bio}
           </p>
         )}
