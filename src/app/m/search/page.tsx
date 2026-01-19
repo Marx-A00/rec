@@ -47,11 +47,12 @@ function getTypeBadgeColor(type: string): string {
 
 // Get navigation path for result
 function getResultPath(result: UnifiedSearchResult): string {
+  const sourceParam = result.source ? `?source=${result.source}` : '';
   switch (result.type) {
     case 'album':
-      return `/m/albums/${result.id}`;
+      return `/m/albums/${result.id}${sourceParam}`;
     case 'artist':
-      return `/m/artists/${result.id}`;
+      return `/m/artists/${result.id}${sourceParam}`;
     default:
       return `/m/search`;
   }
@@ -185,7 +186,7 @@ export default function MobileSearchPage() {
   // Search hook
   const { results, isLoading, error } = useUniversalSearch(urlQuery.trim(), {
     entityTypes: getEntityTypes(),
-    searchType: 'all',
+    searchType: urlType as 'albums' | 'artists' | 'tracks' | 'users',
     filters: [],
     debounceMs: 300,
     minQueryLength: 2,
