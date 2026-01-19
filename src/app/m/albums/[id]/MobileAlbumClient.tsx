@@ -114,6 +114,7 @@ export default function MobileAlbumClient({ album }: MobileAlbumClientProps) {
           <div className='w-32 h-32 flex-shrink-0 relative'>
             <AlbumImage
               src={album.image?.url}
+              cloudflareImageId={album.cloudflareImageId}
               alt={album.title}
               width={128}
               height={128}

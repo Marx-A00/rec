@@ -59,6 +59,7 @@ export default function SocialActivityFeed({
               id
               title
               coverArtUrl
+              cloudflareImageId
               artists {
                 artist {
                   id
@@ -80,6 +81,7 @@ export default function SocialActivityFeed({
                 id
                 title
                 coverArtUrl
+                cloudflareImageId
                 artists {
                   artist {
                     id
@@ -147,6 +149,7 @@ export default function SocialActivityFeed({
       albumArtist: activity.album?.artists?.[0]?.artist?.name,
       artistId: activity.album?.artists?.[0]?.artist?.id,
       albumImage: activity.album?.coverArtUrl,
+      albumCloudflareImageId: activity.album?.cloudflareImageId,
       createdAt: activity.createdAt,
       metadata: activity.metadata
         ? {

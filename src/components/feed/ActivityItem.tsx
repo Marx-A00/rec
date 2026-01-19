@@ -51,6 +51,7 @@ interface ActivityItemProps {
     albumArtist?: string;
     artistId?: string;
     albumImage?: string | null;
+    albumCloudflareImageId?: string | null;
     createdAt: string;
     metadata?: any;
   };

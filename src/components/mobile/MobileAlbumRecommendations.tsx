@@ -100,6 +100,7 @@ export default function MobileAlbumRecommendations({
               <div className='relative w-full aspect-square mb-2'>
                 <AlbumImage
                   src={displayAlbum.imageUrl || undefined}
+                  cloudflareImageId={displayAlbum.cloudflareImageId}
                   alt={displayAlbum.title}
                   width={116}
                   height={116}

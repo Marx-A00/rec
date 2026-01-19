@@ -26,6 +26,7 @@ export interface Album {
   year?: number;
   genre?: string[];
   label?: string;
+  cloudflareImageId?: string | null; // Cloudflare Images ID for optimized delivery
   image: {
     url: string;
     width: number;

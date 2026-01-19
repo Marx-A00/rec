@@ -147,16 +147,9 @@ export function getImageUrl(
     return `${deliveryUrl}/${imageId}/${options.variant}`;
   }
 
-  // Build custom transform URL
-  const params = new URLSearchParams();
-  if (options?.width) params.append('w', options.width.toString());
-  if (options?.height) params.append('h', options.height.toString());
-  if (options?.format) params.append('f', options.format);
-  if (options?.quality) params.append('q', options.quality.toString());
-  if (options?.blur) params.append('blur', options.blur.toString());
-
-  const queryString = params.toString();
-  return `${deliveryUrl}/${imageId}/public${queryString ? '?' + queryString : ''}`;
+  // Use 'public' variant - flexible variants require a Cloudflare zone (custom domain)
+  // CSS handles sizing; full-quality images are served and scaled client-side
+  return `${deliveryUrl}/${imageId}/public`;
 }
 
 // Cache external album art

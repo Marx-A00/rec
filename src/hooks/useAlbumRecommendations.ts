@@ -17,6 +17,7 @@ export interface AlbumRecommendation {
     title: string;
     artist: string;
     imageUrl: string | null;
+    cloudflareImageId: string | null;
     year: string | null;
   };
   user: {
@@ -127,6 +128,7 @@ export function useAlbumRecommendations(
           title: rec.otherAlbum.title,
           artist: rec.otherAlbum.artist,
           imageUrl: rec.otherAlbum.imageUrl || null,
+          cloudflareImageId: rec.otherAlbum.cloudflareImageId || null,
           year: rec.otherAlbum.year || null,
         },
         user: {

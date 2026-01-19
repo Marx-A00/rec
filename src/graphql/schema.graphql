@@ -395,6 +395,7 @@ type OtherAlbumInfo {
   title: String!
   artist: String!
   imageUrl: String
+  cloudflareImageId: String
   year: String
 }
 

@@ -12,6 +12,7 @@ interface BasisAlbum {
   id: string;
   title: string;
   coverArtUrl?: string;
+  cloudflareImageId?: string;
   artists?: Array<{
     artist?: {
       name?: string;
@@ -34,6 +35,7 @@ interface Activity {
   albumArtist?: string;
   artistId?: string;
   albumImage?: string | null;
+  albumCloudflareImageId?: string | null;
   createdAt: string;
   metadata?: RecommendationMetadata;
 }
@@ -121,6 +123,7 @@ export default function MobileRecommendationCard({
           >
             <AlbumImage
               src={basisAlbum.coverArtUrl || '/placeholder-album.png'}
+              cloudflareImageId={basisAlbum.cloudflareImageId}
               alt={basisAlbum.title}
               width={120}
               height={120}
@@ -156,6 +159,7 @@ export default function MobileRecommendationCard({
         >
           <AlbumImage
             src={activity.albumImage || '/placeholder-album.png'}
+            cloudflareImageId={activity.albumCloudflareImageId}
             alt={activity.albumTitle || 'Album'}
             width={120}
             height={120}

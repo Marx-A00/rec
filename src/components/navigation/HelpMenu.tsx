@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { HelpCircle, Mail, Info, RotateCcw } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 import { useTourContext } from '@/contexts/TourContext';
 
@@ -10,6 +11,8 @@ export default function HelpMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { startTour } = useTourContext();
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user;
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -92,14 +95,16 @@ export default function HelpMenu() {
             <Info className='h-4 w-4 text-zinc-400' />
             About
           </Link>
-          <button
-            onClick={handleRestartTour}
-            className='flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 w-full text-left transition-colors'
-            role='menuitem'
-          >
-            <RotateCcw className='h-4 w-4 text-zinc-400' />
-            Restart Tour
-          </button>
+          {isAuthenticated && (
+            <button
+              onClick={handleRestartTour}
+              className='flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 w-full text-left transition-colors'
+              role='menuitem'
+            >
+              <RotateCcw className='h-4 w-4 text-zinc-400' />
+              Restart Tour
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -3,7 +3,6 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig,
 } from 'graphql';
-
 import { GraphQLContext } from '@/lib/graphql/context';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -850,6 +849,7 @@ export type OnboardingStatus = {
 export type OtherAlbumInfo = {
   __typename?: 'OtherAlbumInfo';
   artist: Scalars['String']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
@@ -3259,6 +3259,11 @@ export type OtherAlbumInfoResolvers<
     ResolversParentTypes['OtherAlbumInfo'] = ResolversParentTypes['OtherAlbumInfo'],
 > = ResolversObject<{
   artist?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;

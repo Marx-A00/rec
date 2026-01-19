@@ -42,6 +42,7 @@ interface BasisAlbum {
   id: string;
   title: string;
   coverArtUrl?: string;
+  cloudflareImageId?: string;
   artists?: Array<{
     artist?: {
       name?: string;
@@ -77,6 +78,7 @@ interface Activity {
   albumTitle?: string;
   albumArtist?: string;
   albumImage?: string | null;
+  albumCloudflareImageId?: string | null;
   artistId?: string;
   createdAt: string;
   metadata?: ActivityMetadata;
@@ -207,6 +209,7 @@ export default function GroupedActivityItem({
                   >
                     <AlbumImage
                       src={activity.albumImage || '/placeholder-album.png'}
+                      cloudflareImageId={activity.albumCloudflareImageId}
                       alt={`${activity.albumTitle} by ${activity.albumArtist}`}
                       width={96}
                       height={96}
@@ -298,6 +301,10 @@ export default function GroupedActivityItem({
                                   .basisAlbum!.coverArtUrl ||
                                 '/placeholder-album.png'
                               }
+                              cloudflareImageId={
+                                (activity.metadata as RecommendationMetadata)
+                                  .basisAlbum!.cloudflareImageId
+                              }
                               alt={
                                 (activity.metadata as RecommendationMetadata)
                                   .basisAlbum!.title
@@ -317,6 +324,7 @@ export default function GroupedActivityItem({
                         >
                           <AlbumImage
                             src={activity.albumImage}
+                            cloudflareImageId={activity.albumCloudflareImageId}
                             alt={`${activity.albumTitle} by ${activity.albumArtist}`}
                             width={110}
                             height={110}
@@ -362,6 +370,7 @@ export default function GroupedActivityItem({
                     >
                       <AlbumImage
                         src={activity.albumImage || '/placeholder-album.png'}
+                        cloudflareImageId={activity.albumCloudflareImageId}
                         alt={`${activity.albumTitle} by ${activity.albumArtist}`}
                         width={110}
                         height={110}
@@ -645,6 +654,10 @@ function SingleActivityDisplay({
                         (activity.metadata as RecommendationMetadata)
                           .basisAlbum!.coverArtUrl || '/placeholder-album.png'
                       }
+                      cloudflareImageId={
+                        (activity.metadata as RecommendationMetadata)
+                          .basisAlbum!.cloudflareImageId
+                      }
                       alt={
                         (activity.metadata as RecommendationMetadata)
                           .basisAlbum!.title
@@ -666,6 +679,7 @@ function SingleActivityDisplay({
                 <div className='relative'>
                   <AlbumImage
                     src={activity.albumImage}
+                    cloudflareImageId={activity.albumCloudflareImageId}
                     alt={`${activity.albumTitle} by ${activity.albumArtist}`}
                     width={220}
                     height={220}
@@ -732,6 +746,7 @@ function SingleActivityDisplay({
           >
             <AlbumImage
               src={activity.albumImage}
+              cloudflareImageId={activity.albumCloudflareImageId}
               alt={`${activity.albumTitle} by ${activity.albumArtist}`}
               width={150}
               height={150}

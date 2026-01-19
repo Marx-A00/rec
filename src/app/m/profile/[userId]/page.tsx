@@ -19,6 +19,7 @@ async function getUserRecommendations(userId: string) {
           id: true,
           title: true,
           coverArtUrl: true,
+          cloudflareImageId: true,
           artists: {
             select: {
               artist: { select: { id: true, name: true } },
@@ -31,6 +32,7 @@ async function getUserRecommendations(userId: string) {
           id: true,
           title: true,
           coverArtUrl: true,
+          cloudflareImageId: true,
           artists: {
             select: {
               artist: { select: { id: true, name: true } },
@@ -49,6 +51,7 @@ async function getUserRecommendations(userId: string) {
       id: rec.basisAlbum.id,
       title: rec.basisAlbum.title,
       coverArtUrl: rec.basisAlbum.coverArtUrl,
+      cloudflareImageId: rec.basisAlbum.cloudflareImageId,
       artists: rec.basisAlbum.artists.map(ac => ({
         artist: { id: ac.artist.id, name: ac.artist.name },
       })),
@@ -57,6 +60,7 @@ async function getUserRecommendations(userId: string) {
       id: rec.recommendedAlbum.id,
       title: rec.recommendedAlbum.title,
       coverArtUrl: rec.recommendedAlbum.coverArtUrl,
+      cloudflareImageId: rec.recommendedAlbum.cloudflareImageId,
       artists: rec.recommendedAlbum.artists.map(ac => ({
         artist: { id: ac.artist.id, name: ac.artist.name },
       })),
@@ -80,6 +84,7 @@ async function getUserCollections(userId: string) {
               id: true,
               title: true,
               coverArtUrl: true,
+              cloudflareImageId: true,
             },
           },
         },
@@ -96,6 +101,7 @@ async function getUserCollections(userId: string) {
         id: albumEntry.album.id,
         title: albumEntry.album.title,
         coverArtUrl: albumEntry.album.coverArtUrl,
+        cloudflareImageId: albumEntry.album.cloudflareImageId,
       },
     }))
   );

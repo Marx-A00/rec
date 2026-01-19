@@ -202,11 +202,13 @@ const { data, fetchNextPage, hasNextPage } =
 ```
 src/
 ├── app/                    # Next.js app router pages
-│   ├── (main)/            # Authenticated routes
+│   ├── (main)/            # Desktop authenticated routes
+│   ├── m/                 # Mobile-specific routes (see Mobile Architecture below)
 │   ├── api/               # API routes (REST + GraphQL)
 │   └── auth/              # Authentication pages
 ├── components/            # React components
 │   ├── ui/               # Reusable UI components
+│   ├── mobile/           # Mobile-specific components
 │   └── [feature]/        # Feature-specific components
 ├── generated/            # Generated GraphQL code (DO NOT EDIT)
 ├── graphql/             # GraphQL schemas and queries
@@ -220,6 +222,55 @@ src/
 ├── types/              # TypeScript type definitions
 └── workers/            # Background job processors
 ```
+
+### Mobile Architecture
+
+The app has a dedicated mobile experience at `/m/*` routes, separate from the desktop routes in `/(main)/*`.
+
+**Mobile Routes (`src/app/m/`):**
+- `/m` - Mobile home/feed
+- `/m/search` - Mobile search
+- `/m/albums/[id]` - Mobile album detail
+- `/m/artists/[id]` - Mobile artist detail  
+- `/m/profile/[userId]` - Mobile user profile
+- `/m/settings` - Mobile settings
+
+**Mobile Components (`src/components/mobile/`):**
+- `MobileHeader.tsx` - Sticky header with back navigation
+- `MobileButton.tsx` - Touch-friendly button component
+- `MobileDiscography.tsx` - Artist discography grid
+- `MobileAlbumRecommendations.tsx` - Album recommendations carousel
+- `MobileRecommendationCard.tsx` - Recommendation display card
+- `MobileCollectionCard.tsx` - Collection activity card
+- `CollectionSelectionSheet.tsx` - Bottom sheet for adding to collections
+
+**Mobile Design Patterns:**
+- **Touch targets**: Minimum 44px height for tappable elements
+- **Server Components**: Pages fetch data server-side, pass to client components
+- **Client Components**: Named `*Client.tsx`, handle interactivity
+- **Bottom sheets**: Use for modals/selections instead of desktop modals
+- **Gesture support**: `active:scale-[0.95]` for tap feedback
+
+**Data Fetching Pattern:**
+```typescript
+// Page (Server Component) - src/app/m/albums/[id]/page.tsx
+export default async function MobileAlbumPage({ params }) {
+  const album = await getAlbumDetails(params.id);
+  return <MobileAlbumClient album={album} />;
+}
+
+// Client Component - src/app/m/albums/[id]/MobileAlbumClient.tsx  
+'use client';
+export default function MobileAlbumClient({ album }: { album: Album }) {
+  // Interactive UI here
+}
+```
+
+**Cloudflare Images:**
+- Albums in local database have `cloudflareImageId` for optimized image delivery
+- Always pass `cloudflareImageId` to `AlbumImage` component when available
+- Only local database albums have this - external API results (MusicBrainz, Discogs) won't have it
+- The `AlbumImage` component prioritizes `cloudflareImageId` over `src` URL when present
 
 ### Authentication Flow
 

@@ -39,12 +39,14 @@ interface RecommendationData {
     id: string;
     title: string;
     coverArtUrl: string | null;
+    cloudflareImageId?: string | null;
     artists: Array<{ artist: { id: string; name: string } }>;
   };
   recommendedAlbum: {
     id: string;
     title: string;
     coverArtUrl: string | null;
+    cloudflareImageId?: string | null;
     artists: Array<{ artist: { id: string; name: string } }>;
   };
 }
@@ -55,6 +57,7 @@ interface CollectionAlbumData {
     id: string;
     title: string;
     coverArtUrl: string | null;
+    cloudflareImageId?: string | null;
   };
 }
 
@@ -295,6 +298,7 @@ export default function MobileProfileClient({
                       <div className='w-12 h-12 flex-shrink-0 rounded-md overflow-hidden'>
                         <AlbumImage
                           src={rec.basisAlbum.coverArtUrl}
+                          cloudflareImageId={rec.basisAlbum.cloudflareImageId}
                           alt={rec.basisAlbum.title}
                           width={48}
                           height={48}
@@ -305,6 +309,9 @@ export default function MobileProfileClient({
                       <div className='w-12 h-12 flex-shrink-0 rounded-md overflow-hidden'>
                         <AlbumImage
                           src={rec.recommendedAlbum.coverArtUrl}
+                          cloudflareImageId={
+                            rec.recommendedAlbum.cloudflareImageId
+                          }
                           alt={rec.recommendedAlbum.title}
                           width={48}
                           height={48}
@@ -374,6 +381,7 @@ export default function MobileProfileClient({
                   >
                     <AlbumImage
                       src={albumEntry.album.coverArtUrl || undefined}
+                      cloudflareImageId={albumEntry.album.cloudflareImageId}
                       alt={albumEntry.album.title}
                       width={120}
                       height={120}

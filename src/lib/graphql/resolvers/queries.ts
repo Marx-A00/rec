@@ -1155,6 +1155,7 @@ export const queryResolvers: QueryResolvers = {
             title: otherAlbum.title,
             artist: primaryArtist?.name || 'Unknown Artist',
             imageUrl: otherAlbum.coverArtUrl,
+            cloudflareImageId: otherAlbum.cloudflareImageId,
             year: otherAlbum.releaseDate
               ? new Date(otherAlbum.releaseDate).getFullYear().toString()
               : null,

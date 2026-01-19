@@ -875,6 +875,7 @@ export type OnboardingStatus = {
 export type OtherAlbumInfo = {
   __typename?: 'OtherAlbumInfo';
   artist: Scalars['String']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
@@ -2578,6 +2579,7 @@ export type GetAlbumRecommendationsQuery = {
         title: string;
         artist: string;
         imageUrl?: string | null;
+        cloudflareImageId?: string | null;
         year?: string | null;
       };
       user: {
@@ -5660,6 +5662,7 @@ export const GetAlbumRecommendationsDocument = `
         title
         artist
         imageUrl
+        cloudflareImageId
         year
       }
       user {
