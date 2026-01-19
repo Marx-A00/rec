@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 
+import MobileHeader from '@/components/mobile/MobileHeader';
 import MobileBottomNav from '@/components/mobile/MobileBottomNav';
 
 export const metadata: Metadata = {
@@ -22,6 +23,9 @@ export default function MobileLayout({
 }>) {
   return (
     <div className='min-h-screen bg-black text-white'>
+      {/* Sticky header with search */}
+      <MobileHeader />
+
       {/* Main scrollable content */}
       <main
         className='pb-[calc(56px+env(safe-area-inset-bottom))]'

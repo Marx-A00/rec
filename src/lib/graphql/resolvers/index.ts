@@ -58,7 +58,7 @@ export const resolvers: Resolvers = {
       if (search) {
         whereConditions.push({
           OR: [
-            { name: { contains: search, mode: 'insensitive' as const } },
+            { username: { contains: search, mode: 'insensitive' as const } },
             { email: { contains: search, mode: 'insensitive' as const } },
           ],
         });
@@ -175,7 +175,7 @@ export const resolvers: Resolvers = {
       if (search) {
         whereConditions.push({
           OR: [
-            { name: { contains: search, mode: 'insensitive' as const } },
+            { username: { contains: search, mode: 'insensitive' as const } },
             { email: { contains: search, mode: 'insensitive' as const } },
           ],
         });
@@ -1023,7 +1023,7 @@ export const resolvers: Resolvers = {
         if (searchUsers) {
           const userWhere = {
             OR: [
-              { name: { contains: query, mode: 'insensitive' as const } },
+              { username: { contains: query, mode: 'insensitive' as const } },
               { bio: { contains: query, mode: 'insensitive' as const } },
             ],
           };
