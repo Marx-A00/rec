@@ -93,7 +93,7 @@ export default function MobileAlbumRecommendations({
           return (
             <Link
               key={rec.id}
-              href={`/m/albums/${displayAlbum.discogsId}`}
+              href={`/m/albums/${displayAlbum.discogsId}?source=local`}
               className='flex-shrink-0 w-[140px] bg-zinc-900 rounded-lg p-3 border border-zinc-800 active:scale-[0.98] transition-transform'
             >
               {/* Album Cover */}

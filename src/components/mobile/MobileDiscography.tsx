@@ -238,7 +238,7 @@ export default function MobileDiscography({
             {visibleReleases.map(release => (
               <Link
                 key={release.id}
-                href={`/m/albums/${release.id}`}
+                href={`/m/albums/${release.id}?source=${source}`}
                 className='bg-zinc-900 rounded-lg p-2 border border-zinc-800 active:scale-[0.98] transition-transform'
               >
                 {/* Album Cover */}

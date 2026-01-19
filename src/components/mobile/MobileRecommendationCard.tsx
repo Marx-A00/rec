@@ -116,7 +116,7 @@ export default function MobileRecommendationCard({
         {/* Basis Album */}
         {basisAlbum && (
           <Link
-            href={`/m/albums/${basisAlbum.id}`}
+            href={`/m/albums/${basisAlbum.id}?source=local`}
             className='flex-shrink-0 active:scale-95 transition-transform'
           >
             <AlbumImage
@@ -151,7 +151,7 @@ export default function MobileRecommendationCard({
 
         {/* Recommended Album */}
         <Link
-          href={`/m/albums/${activity.albumId}`}
+          href={`/m/albums/${activity.albumId}?source=local`}
           className='flex-shrink-0 active:scale-95 transition-transform'
         >
           <AlbumImage
@@ -171,7 +171,7 @@ export default function MobileRecommendationCard({
             If you like{' '}
             <span className='text-zinc-300'>{basisAlbum.title}</span>, check out{' '}
             <Link
-              href={`/m/albums/${activity.albumId}`}
+              href={`/m/albums/${activity.albumId}?source=local`}
               className='text-white font-medium'
             >
               {activity.albumTitle}
@@ -181,14 +181,14 @@ export default function MobileRecommendationCard({
           <>
             Recommends{' '}
             <Link
-              href={`/m/albums/${activity.albumId}`}
+              href={`/m/albums/${activity.albumId}?source=local`}
               className='text-white font-medium'
             >
               {activity.albumTitle}
             </Link>{' '}
             by{' '}
             <Link
-              href={`/m/artists/${activity.artistId}`}
+              href={`/m/artists/${activity.artistId}?source=local`}
               className='text-zinc-300'
             >
               {activity.albumArtist}

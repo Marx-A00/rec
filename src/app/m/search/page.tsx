@@ -6,6 +6,7 @@ import { Search, X, Clock, Music, User, Building2, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
+import { AnimatedLoader } from '@/components/ui/AnimatedLoader';
 import { MobileButton } from '@/components/mobile/MobileButton';
 import {
   useUniversalSearch,
@@ -258,9 +259,8 @@ export default function MobileSearchPage() {
 
         {/* Loading State */}
         {isLoading && showResults && (
-          <div className='flex flex-col items-center justify-center py-12'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-emeraled-green mb-4' />
-            <p className='text-sm text-zinc-500'>Searching...</p>
+          <div className='flex flex-col items-center justify-center py-8'>
+            <AnimatedLoader className='scale-50' />
           </div>
         )}
 

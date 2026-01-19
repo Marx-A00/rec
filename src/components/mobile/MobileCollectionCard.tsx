@@ -80,7 +80,7 @@ export default function MobileCollectionCard({
 
       {/* Album */}
       <Link
-        href={`/m/albums/${activity.albumId}`}
+        href={`/m/albums/${activity.albumId}?source=local`}
         className='block active:scale-[0.98] transition-transform'
       >
         <div className='flex gap-3'>

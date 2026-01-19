@@ -132,7 +132,7 @@ export default function MobileAlbumClient({ album }: MobileAlbumClientProps) {
             {/* Artist Link */}
             {primaryArtist && (
               <Link
-                href={`/m/artists/${primaryArtist.id}`}
+                href={`/m/artists/${primaryArtist.id}${album.source ? `?source=${album.source}` : ''}`}
                 className='text-emeraled-green font-medium text-sm mt-1 block'
               >
                 {artistName}
@@ -264,7 +264,7 @@ export default function MobileAlbumClient({ album }: MobileAlbumClientProps) {
             {album.artists.map(artist => (
               <Link
                 key={artist.id}
-                href={`/m/artists/${artist.id}`}
+                href={`/m/artists/${artist.id}${album.source ? `?source=${album.source}` : ''}`}
                 className='flex items-center justify-between bg-zinc-900 rounded-lg p-3 border border-zinc-800 active:scale-[0.98] transition-transform'
               >
                 <span className='text-white'>

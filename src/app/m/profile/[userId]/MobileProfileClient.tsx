@@ -287,7 +287,7 @@ export default function MobileProfileClient({
                 {recommendations.map(rec => (
                   <Link
                     key={rec.id}
-                    href={`/m/albums/${rec.recommendedAlbum.id}`}
+                    href={`/m/albums/${rec.recommendedAlbum.id}?source=local`}
                     className='bg-zinc-900 rounded-lg p-3 border border-zinc-800 active:scale-[0.98] transition-transform'
                   >
                     {/* Album Covers Row */}
@@ -369,7 +369,7 @@ export default function MobileProfileClient({
                 {collections.map(albumEntry => (
                   <Link
                     key={albumEntry.id}
-                    href={`/m/albums/${albumEntry.album.id}`}
+                    href={`/m/albums/${albumEntry.album.id}?source=local`}
                     className='aspect-square rounded-md overflow-hidden active:scale-[0.95] transition-transform'
                   >
                     <AlbumImage

@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
 import {
   Select,
@@ -76,8 +76,18 @@ export default function MobileHeader() {
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder='Search...'
-            className='w-full h-10 pl-9 pr-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-emeraled-green transition-colors'
+            className='w-full h-10 pl-9 pr-9 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-emeraled-green transition-colors'
           />
+          {query && (
+            <button
+              type='button'
+              onClick={() => setQuery('')}
+              className='absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-zinc-300 transition-colors'
+              aria-label='Clear search'
+            >
+              <X className='h-4 w-4' />
+            </button>
+          )}
         </div>
       </div>
     </header>
