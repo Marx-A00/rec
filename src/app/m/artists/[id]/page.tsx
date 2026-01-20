@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { getArtistDetails } from '@/lib/api/artists';
 import { artistParamsSchema } from '@/lib/validations/params';
-import MobileArtistClient from './MobileArtistClient';
+import MobileArtistDetails from '@/components/mobile/artists/MobileArtistDetails';
 
 interface MobileArtistPageProps {
   params: Promise<{ id: string }>;
@@ -78,5 +78,5 @@ export default async function MobileArtistPage({
     );
   }
 
-  return <MobileArtistClient artist={artist} />;
+  return <MobileArtistDetails artist={artist} />;
 }

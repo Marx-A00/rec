@@ -1,3 +1,8 @@
+/**
+ * Mobile Album Detail Client Component
+ *
+ * Desktop equivalent: src/app/(main)/albums/[id]/page.tsx
+ */
 'use client';
 
 import { useState } from 'react';
@@ -23,7 +28,7 @@ import { useAlbumState } from '@/hooks/useAlbumState';
 import { cn, sanitizeArtistName } from '@/lib/utils';
 import type { Album, Track } from '@/types/album';
 
-interface MobileAlbumClientProps {
+interface MobileAlbumDetailsProps {
   album: Album;
 }
 
@@ -38,7 +43,7 @@ function formatDuration(seconds: number): string {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-export default function MobileAlbumClient({ album }: MobileAlbumClientProps) {
+export default function MobileAlbumDetails({ album }: MobileAlbumDetailsProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [isCollectionSheetOpen, setIsCollectionSheetOpen] = useState(false);

@@ -5,7 +5,7 @@ import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
 import { userProfileParamsSchema } from '@/lib/validations/params';
 
-import MobileProfileClient from './MobileProfileClient';
+import MobileProfileClient from '@/components/mobile/profile/MobileProfileClient';
 
 // Helper function to get user recommendations
 async function getUserRecommendations(userId: string) {

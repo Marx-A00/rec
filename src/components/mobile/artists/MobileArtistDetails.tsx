@@ -1,3 +1,8 @@
+/**
+ * Mobile Artist Detail Client Component
+ *
+ * Desktop equivalent: src/app/(main)/artists/[id]/page.tsx
+ */
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -34,13 +39,13 @@ interface ArtistDetails {
   musicbrainzId?: string;
 }
 
-interface MobileArtistClientProps {
+interface MobileArtistDetailsProps {
   artist: ArtistDetails;
 }
 
-export default function MobileArtistClient({
+export default function MobileArtistDetails({
   artist,
-}: MobileArtistClientProps) {
+}: MobileArtistDetailsProps) {
   const router = useRouter();
 
   // Handle share

@@ -1,3 +1,8 @@
+/**
+ * Mobile Profile Client Component
+ *
+ * Desktop equivalent: src/app/(main)/profile/[userId]/page.tsx
+ */
 'use client';
 
 import React, { useState, useCallback } from 'react';

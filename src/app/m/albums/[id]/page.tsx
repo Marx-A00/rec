@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { getAlbumDetails } from '@/lib/api/albums';
 import { albumParamsSchema } from '@/lib/validations/params';
-import MobileAlbumClient from './MobileAlbumClient';
+import MobileAlbumDetails from '@/components/mobile/albums/MobileAlbumDetails';
 
 interface MobileAlbumPageProps {
   params: Promise<{ id: string }>;
@@ -75,5 +75,5 @@ export default async function MobileAlbumPage({
     );
   }
 
-  return <MobileAlbumClient album={album} />;
+  return <MobileAlbumDetails album={album} />;
 }
