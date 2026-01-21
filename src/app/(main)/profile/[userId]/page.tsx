@@ -84,6 +84,7 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
             select: {
               title: true,
               coverArtUrl: true,
+              cloudflareImageId: true,
               releaseDate: true,
               artists: {
                 select: {
@@ -105,8 +106,9 @@ async function getUserCollections(userId: string): Promise<CollectionAlbum[]> {
         albumId: String(album.albumId ?? album.discogsId ?? ''),
         albumTitle: album.album.title,
         albumArtist: album.album.artists.map(a => a.artist.name).join(', '),
-        albumArtistId: album.album.artists[0]?.artist.id ?? undefined, // Add first artist ID
+        albumArtistId: album.album.artists[0]?.artist.id ?? undefined,
         albumImageUrl: album.album.coverArtUrl ?? null,
+        cloudflareImageId: album.album.cloudflareImageId ?? null,
         albumYear: album.album.releaseDate
           ? String(new Date(album.album.releaseDate).getFullYear())
           : null,
@@ -135,6 +137,7 @@ async function getListenLater(userId: string): Promise<CollectionAlbum[]> {
             select: {
               title: true,
               coverArtUrl: true,
+              cloudflareImageId: true,
               releaseDate: true,
               artists: {
                 select: {
@@ -156,13 +159,14 @@ async function getListenLater(userId: string): Promise<CollectionAlbum[]> {
       (album): CollectionAlbum => ({
         id: album.id,
         albumId: String(album.albumId ?? album.discogsId ?? ''),
-        albumTitle: album.album.title || 'Loading...', // Handle empty titles from newly created albums
+        albumTitle: album.album.title || 'Loading...',
         albumArtist:
           album.album.artists.length > 0
             ? album.album.artists.map(a => a.artist.name).join(', ')
-            : 'Unknown Artist', // Handle albums without artists yet
-        albumArtistId: album.album.artists[0]?.artist.id ?? undefined, // Add first artist ID
+            : 'Unknown Artist',
+        albumArtistId: album.album.artists[0]?.artist.id ?? undefined,
         albumImageUrl: album.album.coverArtUrl ?? null,
+        cloudflareImageId: album.album.cloudflareImageId ?? null,
         albumYear: album.album.releaseDate
           ? String(new Date(album.album.releaseDate).getFullYear())
           : null,

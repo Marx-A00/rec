@@ -1,8 +1,18 @@
 import { Config, DriveStep } from 'driver.js';
 import { driver } from 'driver.js';
+
 import { useTourStore } from '@/stores/useTourStore';
-import { graphqlRequest } from '@/lib/graphql-client';
-import { UpdateUserSettingsDocument } from '@/generated/graphql';
+
+// Tour demo content IDs - different per environment
+const isProd = process.env.NODE_ENV === 'production';
+
+// Daft Punk artist ID (same in both environments)
+const DAFT_PUNK_ARTIST_ID = 'da99bd57-74ca-4808-9bc3-7e5c7d7b6541';
+
+// Random Access Memories album IDs
+const RAM_ALBUM_ID = isProd
+  ? 'ec50811a-8356-40d3-9c83-4290706ee552' // prod DB ID
+  : '6c0aa5f2-4fc2-4c26-b83f-62b6ad45dda8'; // dev DB ID
 
 // Note: useTourStore is still used for resumeStep during page navigation
 
@@ -297,13 +307,27 @@ export const tourSteps: DriveStep[] = [
     },
   },
   {
-    element: '[data-tour-step="profile-header"]',
     popover: {
       title: '✨ Welcome to Your Profile!',
       description:
         'Amazing! This is your personal music profile page. Here you can see your recommendations, followers, music stats, create collages, manage your collections, and showcase your unique music taste to the community. This is your musical identity hub!',
-      side: 'bottom',
-      align: 'start',
+      side: 'over',
+      align: 'center',
+      popoverClass: 'driver-popover-large',
+    },
+    onHighlighted: () => {
+      // Add dimmed overlay for this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0.5';
+      }
+    },
+    onDeselected: () => {
+      // Remove dimmed overlay when leaving this step
+      const overlay = document.querySelector('.driver-overlay') as HTMLElement;
+      if (overlay) {
+        overlay.style.opacity = '0';
+      }
     },
   },
   {
@@ -577,9 +601,7 @@ export const driverConfig: Config = {
       console.log('🔍 Navigating to Daft Punk artist page...');
       // Save next step index to resume after navigation (Artist Header = index 10)
       useTourStore.getState().setResumeStep(10);
-      // Hardcoded Daft Punk UUID from local database
-      window.location.href =
-        '/artists/da99bd57-74ca-4808-9bc3-7e5c7d7b6541?source=local';
+      window.location.href = `/artists/${DAFT_PUNK_ARTIST_ID}?source=local`;
       return;
     }
 
@@ -588,8 +610,7 @@ export const driverConfig: Config = {
       console.log('💿 Navigating to Random Access Memories album...');
       // Save next step index to resume after navigation
       useTourStore.getState().setResumeStep(12);
-      window.location.href =
-        '/albums/6c0aa5f2-4fc2-4c26-b83f-62b6ad45dda8?source=local';
+      window.location.href = `/albums/${RAM_ALBUM_ID}?source=local`;
       return;
     }
 
@@ -602,12 +623,16 @@ export const driverConfig: Config = {
       return;
     }
 
-    // Final step (index 13): "Finish Tour" button clicked - destroy tour and cleanup
+    // Final step: "Finish Tour" button clicked
+    // Don't call destroy() here - let TourContext's onDestroyStarted handle everything
     const totalSteps = tourSteps.length;
     const isLastStep = stepIndex === totalSteps - 1;
     if (isLastStep) {
-      console.log('🎉 Finish Tour clicked - completing tour!');
-      options.driver.destroy();
+      console.log(
+        '🎉 Finish Tour clicked - TourContext will handle completion'
+      );
+      // Dispatch event for TourContext to handle completion and call destroy()
+      window.dispatchEvent(new CustomEvent('tour-completed'));
       return;
     }
 
@@ -634,15 +659,7 @@ export const driverConfig: Config = {
     options.driver.destroy();
   },
 
-  onDestroyStarted: () => {
-    console.log('🎉 Tour completed or closed!');
-    // Mark onboarding as completed via GraphQL mutation (database is source of truth)
-    graphqlRequest(UpdateUserSettingsDocument, { showOnboardingTour: false })
-      .then(() => console.log('✅ Onboarding marked as completed'))
-      .catch(error =>
-        console.error('❌ Error marking onboarding complete:', error)
-      );
-  },
+  // Note: onDestroyStarted is handled in TourContext.tsx using React Query mutation
 };
 
 export function createOnboardingDriver() {

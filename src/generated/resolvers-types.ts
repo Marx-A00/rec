@@ -80,6 +80,14 @@ export type AddAlbumToCollectionPayload = {
   id: Scalars['String']['output'];
 };
 
+export type AdminUpdateUserSettingsPayload = {
+  __typename?: 'AdminUpdateUserSettingsPayload';
+  message?: Maybe<Scalars['String']['output']>;
+  showOnboardingTour?: Maybe<Scalars['Boolean']['output']>;
+  success: Scalars['Boolean']['output'];
+  userId: Scalars['String']['output'];
+};
+
 export type Album = {
   __typename?: 'Album';
   artists: Array<ArtistCredit>;
@@ -578,6 +586,7 @@ export type Mutation = {
   addAlbumToCollection: AddAlbumToCollectionPayload;
   addArtist: Artist;
   addToListenLater: CollectionAlbum;
+  adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
   clearFailedJobs: Scalars['Boolean']['output'];
@@ -640,6 +649,11 @@ export type MutationAddArtistArgs = {
 export type MutationAddToListenLaterArgs = {
   albumData?: InputMaybe<AlbumInput>;
   albumId: Scalars['UUID']['input'];
+};
+
+export type MutationAdminUpdateUserShowTourArgs = {
+  showOnboardingTour: Scalars['Boolean']['input'];
+  userId: Scalars['String']['input'];
 };
 
 export type MutationBatchEnrichmentArgs = {
@@ -835,6 +849,7 @@ export type OnboardingStatus = {
 export type OtherAlbumInfo = {
   __typename?: 'OtherAlbumInfo';
   artist: Scalars['String']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
@@ -1831,6 +1846,7 @@ export type ResolversTypes = ResolversObject<{
   ActivityMetadata: ResolverTypeWrapper<ActivityMetadata>;
   ActivityType: ActivityType;
   AddAlbumToCollectionPayload: ResolverTypeWrapper<AddAlbumToCollectionPayload>;
+  AdminUpdateUserSettingsPayload: ResolverTypeWrapper<AdminUpdateUserSettingsPayload>;
   Album: ResolverTypeWrapper<Album>;
   AlbumInput: AlbumInput;
   AlbumRecommendation: ResolverTypeWrapper<AlbumRecommendation>;
@@ -1961,6 +1977,7 @@ export type ResolversParentTypes = ResolversObject<{
   ActivityFeed: ActivityFeed;
   ActivityMetadata: ActivityMetadata;
   AddAlbumToCollectionPayload: AddAlbumToCollectionPayload;
+  AdminUpdateUserSettingsPayload: AdminUpdateUserSettingsPayload;
   Album: Album;
   AlbumInput: AlbumInput;
   AlbumRecommendation: AlbumRecommendation;
@@ -2134,6 +2151,22 @@ export type AddAlbumToCollectionPayloadResolvers<
     ResolversParentTypes['AddAlbumToCollectionPayload'] = ResolversParentTypes['AddAlbumToCollectionPayload'],
 > = ResolversObject<{
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AdminUpdateUserSettingsPayloadResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['AdminUpdateUserSettingsPayload'] = ResolversParentTypes['AdminUpdateUserSettingsPayload'],
+> = ResolversObject<{
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  showOnboardingTour?: Resolver<
+    Maybe<ResolversTypes['Boolean']>,
+    ParentType,
+    ContextType
+  >;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -2935,6 +2968,15 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationAddToListenLaterArgs, 'albumId'>
   >;
+  adminUpdateUserShowTour?: Resolver<
+    ResolversTypes['AdminUpdateUserSettingsPayload'],
+    ParentType,
+    ContextType,
+    RequireFields<
+      MutationAdminUpdateUserShowTourArgs,
+      'showOnboardingTour' | 'userId'
+    >
+  >;
   batchEnrichment?: Resolver<
     ResolversTypes['BatchEnrichmentResult'],
     ParentType,
@@ -3217,6 +3259,11 @@ export type OtherAlbumInfoResolvers<
     ResolversParentTypes['OtherAlbumInfo'] = ResolversParentTypes['OtherAlbumInfo'],
 > = ResolversObject<{
   artist?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -4504,6 +4551,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   ActivityFeed?: ActivityFeedResolvers<ContextType>;
   ActivityMetadata?: ActivityMetadataResolvers<ContextType>;
   AddAlbumToCollectionPayload?: AddAlbumToCollectionPayloadResolvers<ContextType>;
+  AdminUpdateUserSettingsPayload?: AdminUpdateUserSettingsPayloadResolvers<ContextType>;
   Album?: AlbumResolvers<ContextType>;
   AlbumRecommendation?: AlbumRecommendationResolvers<ContextType>;
   AlbumRecommendationsResponse?: AlbumRecommendationsResponseResolvers<ContextType>;

@@ -1,6 +1,8 @@
 // src/lib/queue/processors/musicbrainz-processor.ts
 // MusicBrainz API search and lookup handlers
 
+import { prisma } from '@/lib/prisma';
+
 import { musicBrainzService } from '../../musicbrainz';
 import type {
   MusicBrainzSearchArtistsJobData,
@@ -12,7 +14,6 @@ import type {
   MusicBrainzLookupReleaseGroupJobData,
   MusicBrainzSyncNewReleasesJobData,
 } from '../jobs';
-import { prisma } from '@/lib/prisma';
 
 // ============================================================================
 // MusicBrainz Search Handlers

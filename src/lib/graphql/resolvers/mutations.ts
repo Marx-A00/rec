@@ -2236,6 +2236,79 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
+  adminUpdateUserShowTour: async (
+    _: unknown,
+    {
+      userId,
+      showOnboardingTour,
+    }: { userId: string; showOnboardingTour: boolean },
+    context: any
+  ) => {
+    const { user, prisma } = context;
+
+    if (!user) {
+      throw new GraphQLError('Authentication required');
+    }
+
+    if (!prisma) {
+      throw new GraphQLError('Database connection error');
+    }
+
+    // Check if user is admin or owner
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Unauthorized: Admin access required');
+    }
+
+    try {
+      // Check if target user exists
+      const targetUser = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!targetUser) {
+        throw new GraphQLError('User not found');
+      }
+
+      // Upsert user settings with the new showOnboardingTour value
+      const settings = await prisma.userSettings.upsert({
+        where: { userId },
+        update: { showOnboardingTour },
+        create: {
+          userId,
+          showOnboardingTour,
+          theme: 'dark',
+          language: 'en',
+          profileVisibility: 'public',
+          showRecentActivity: true,
+          showCollections: true,
+          showListenLaterInFeed: true,
+          showCollectionAddsInFeed: true,
+          emailNotifications: true,
+          recommendationAlerts: true,
+          followAlerts: true,
+          defaultCollectionView: 'grid',
+          autoplayPreviews: false,
+        },
+      });
+
+      console.log(
+        `Admin ${user.id} updated showOnboardingTour for user ${userId} to ${showOnboardingTour}`
+      );
+
+      return {
+        success: true,
+        userId,
+        showOnboardingTour: settings.showOnboardingTour,
+        message: `showOnboardingTour updated to ${showOnboardingTour}`,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) {
+        throw error;
+      }
+      throw new GraphQLError(`Failed to update user settings: ${error}`);
+    }
+  },
+
   deleteAlbum: async (_: unknown, { id }: { id: string }, context: any) => {
     const { user, prisma } = context;
 

@@ -8,7 +8,7 @@ import FollowSuggestions from '@/components/profile/FollowSuggestions';
 
 interface BaseUser {
   id: string;
-  name: string | null;
+  username: string | null;
   email: string | null;
   image: string | null;
   bio: string | null;
@@ -128,7 +128,7 @@ export default function DiscoveryTabs({
         );
       case 'alphabetical':
         return sortedUsers.sort((a, b) =>
-          (a.name || '').localeCompare(b.name || '')
+          (a.username || '').localeCompare(b.username || '')
         );
       case 'recent':
         // For new users, sort by join date; for others, sort by followers as fallback

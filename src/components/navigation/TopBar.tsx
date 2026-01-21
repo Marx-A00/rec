@@ -25,13 +25,13 @@ interface TopBarProps {
 
 // Tour Debug Controls - Only shows in development
 const TourDebugControls: FC = () => {
+  const { startTour, stopTour, resetOnboarding, currentStep, isTourActive } =
+    useTour();
+
   // Only show in development
   if (process.env.NODE_ENV !== 'development') {
     return null;
   }
-
-  const { startTour, stopTour, resetOnboarding, currentStep, isTourActive } =
-    useTour();
 
   const handleCheckOnboardingStatus = async () => {
     try {
@@ -39,7 +39,8 @@ const TourDebugControls: FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert(
+        // eslint-disable-next-line no-alert -- Dev-only debug control
+        window.alert(
           `📊 Onboarding Status\n\n` +
             `Is New User: ${data.isNewUser ? 'Yes ✅' : 'No ❌'}\n` +
             `User ID: ${data.userId}\n` +
@@ -47,11 +48,13 @@ const TourDebugControls: FC = () => {
             `Created: ${data.createdAt}`
         );
       } else {
-        alert(`❌ Error: ${data.error || 'Failed to check status'}`);
+        // eslint-disable-next-line no-alert -- Dev-only debug control
+        window.alert(`❌ Error: ${data.error || 'Failed to check status'}`);
       }
     } catch (error) {
       console.error('❌ Error checking status:', error);
-      alert('❌ Network error. Check console for details.');
+      // eslint-disable-next-line no-alert -- Dev-only debug control
+      window.alert('❌ Network error. Check console for details.');
     }
   };
 
@@ -133,23 +136,13 @@ const TourDebugControls: FC = () => {
 
 // Separate component for mosaic controls that uses SplitMosaicContext
 const MosaicControls: FC = () => {
-  // Feature flag check - don't render controls in production
-  const isMosaicEditorEnabled =
-    process.env.NEXT_PUBLIC_ENABLE_MOSAIC_EDITOR === 'true';
-
-  if (!isMosaicEditorEnabled) {
-    return null;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires */
   const { useSplitMosaic } = require('@/contexts/SplitMosaicContext');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const MosaicHeaderControls =
     require('@/components/dashboard/MosaicHeaderControls').default;
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const WidgetLibrary = require('@/components/dashboard/WidgetLibrary').default;
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const { createPortal } = require('react-dom');
+  /* eslint-enable @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires */
 
   const [showWidgetLibrary, setShowWidgetLibrary] = React.useState(false);
   const [isMounted, setIsMounted] = React.useState(false);
@@ -158,6 +151,14 @@ const MosaicControls: FC = () => {
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Feature flag check - don't render controls in production
+  const isMosaicEditorEnabled =
+    process.env.NEXT_PUBLIC_ENABLE_MOSAIC_EDITOR === 'true';
+
+  if (!isMosaicEditorEnabled) {
+    return null;
+  }
 
   return (
     <>
@@ -180,6 +181,33 @@ const MosaicControls: FC = () => {
   );
 };
 
+// Hook to safely get edit mode state from SplitMosaicContext
+const useEditModeState = (isHomePage: boolean): boolean => {
+  const [isEditMode, setIsEditMode] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isHomePage) {
+      setIsEditMode(false);
+      return;
+    }
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+      const { useSplitMosaicStore } = require('@/contexts/SplitMosaicContext');
+      if (useSplitMosaicStore) {
+        const unsubscribe = useSplitMosaicStore.subscribe(
+          (state: { isEditMode: boolean }) => setIsEditMode(state.isEditMode)
+        );
+        return unsubscribe;
+      }
+    } catch {
+      // Context not available, not in edit mode
+    }
+  }, [isHomePage]);
+
+  return isEditMode;
+};
+
 export const TopBar: FC<TopBarProps> = ({
   className,
   showSearch = true,
@@ -189,18 +217,8 @@ export const TopBar: FC<TopBarProps> = ({
   const { leftContent, centerContent, rightContent, isVisible } = state;
   const isHomePage = useIsHomePage();
 
-  // Check if we're in edit mode on homepage (to hide search bar)
-  let isEditMode = false;
-  if (isHomePage) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-      const { useSplitMosaic } = require('@/contexts/SplitMosaicContext');
-      const { state: mosaicState } = useSplitMosaic();
-      isEditMode = mosaicState.isEditMode;
-    } catch {
-      // Context not available, not in edit mode
-    }
-  }
+  // Get edit mode state without conditionally calling hooks
+  const isEditMode = useEditModeState(isHomePage);
 
   if (!isVisible) {
     return null;

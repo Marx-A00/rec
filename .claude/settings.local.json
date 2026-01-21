@@ -12,7 +12,9 @@
       "mcp__task-master-ai__get_task",
       "mcp__task-master-ai__next_task",
       "mcp__task-master-ai__list_tags",
-      "mcp__task-master-ai__validate_dependencies"
+      "mcp__task-master-ai__validate_dependencies",
+      "Bash(railway variables:*)",
+      "Bash(pnpm prisma migrate dev:*)"
     ],
     "deny": [],
     "ask": []

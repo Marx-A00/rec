@@ -40,7 +40,11 @@ function callResolver<TResult, TArgs = Record<string, unknown>>(
   args: TArgs,
   context: GraphQLContext
 ): TResult | Promise<TResult> {
-  const fn = (typeof resolver === 'function' ? resolver : (resolver as { resolve: ResolverFn<TResult, TArgs> }).resolve) as ResolverFn<TResult, TArgs>;
+  const fn = (
+    typeof resolver === 'function'
+      ? resolver
+      : (resolver as { resolve: ResolverFn<TResult, TArgs> }).resolve
+  ) as ResolverFn<TResult, TArgs>;
   return fn({}, args, context, {} as GraphQLResolveInfo);
 }
 
@@ -303,7 +307,11 @@ describe('GraphQL Query Resolvers', () => {
     it('should return recommendation feed with pagination info', async () => {
       const context = createTestContext({ prisma });
 
-      type FeedResult = { recommendations: { id: string }[]; hasMore: boolean; cursor: string | null };
+      type FeedResult = {
+        recommendations: { id: string }[];
+        hasMore: boolean;
+        cursor: string | null;
+      };
       const result = await callResolver<FeedResult>(
         queryResolvers.recommendationFeed,
         { limit: 10 },
@@ -321,8 +329,12 @@ describe('GraphQL Query Resolvers', () => {
     it('should support cursor-based pagination', async () => {
       const context = createTestContext({ prisma });
 
-      type FeedResult = { recommendations: { id: string }[]; hasMore: boolean; cursor: string | null };
-      
+      type FeedResult = {
+        recommendations: { id: string }[];
+        hasMore: boolean;
+        cursor: string | null;
+      };
+
       // First call without cursor
       const result1 = await callResolver<FeedResult>(
         queryResolvers.recommendationFeed,
@@ -367,7 +379,13 @@ describe('GraphQL Query Resolvers', () => {
     it('should return user statistics', async () => {
       const context = createTestContext({ prisma });
 
-      type StatsResult = { userId: string; followersCount: number; followingCount: number; collectionsCount: number; recommendationsCount: number };
+      type StatsResult = {
+        userId: string;
+        followersCount: number;
+        followingCount: number;
+        collectionsCount: number;
+        recommendationsCount: number;
+      };
       const result = await callResolver<StatsResult>(
         queryResolvers.userStats,
         { userId: testUser.id },

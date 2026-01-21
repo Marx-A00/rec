@@ -140,16 +140,16 @@ export default function NavigationSidebar() {
                 <button
                   id='user-profile-menu'
                   className='group relative w-12 h-12 flex items-center justify-center rounded-lg backdrop-blur-sm bg-black/20 hover:bg-black/40 hover:shadow-lg hover:shadow-cosmic-latte/20 hover:scale-105 focus:outline-none transition-all duration-200 ease-out'
-                  aria-label={`User profile: ${user.name || 'Unknown user'}`}
+                  aria-label={`User profile: ${user.username || 'Unknown user'}`}
                   aria-describedby='user-profile-info'
                 >
                   <Avatar className='h-8 w-8'>
                     <AvatarImage
                       src={user.image || '/placeholder.svg'}
-                      alt={user.name || 'User'}
+                      alt={user.username || 'User'}
                     />
                     <AvatarFallback className='bg-zinc-800 text-zinc-200 text-sm'>
-                      {user.name?.charAt(0) || 'A'}
+                      {user.username?.charAt(0) || 'A'}
                     </AvatarFallback>
                   </Avatar>
                 </button>
@@ -188,16 +188,16 @@ export default function NavigationSidebar() {
                   <Avatar className='h-12 w-12'>
                     <AvatarImage
                       src={user.image || '/placeholder.svg'}
-                      alt={user.name || 'User'}
+                      alt={user.username || 'User'}
                     />
                     <AvatarFallback className='bg-zinc-800 text-zinc-200'>
-                      {user.name?.charAt(0) || 'A'}
+                      {user.username?.charAt(0) || 'A'}
                     </AvatarFallback>
                   </Avatar>
                   <div className='space-y-1'>
                     <div className='flex items-center gap-2'>
                       <h4 className='text-sm font-semibold text-white'>
-                        {user.name}
+                        {user.username}
                       </h4>
                       <Link href='/settings'>
                         <button

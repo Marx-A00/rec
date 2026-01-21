@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
 
 interface ProfileFormData {
-  name: string;
+  username: string;
   bio: string;
 }
 
 interface UserData {
-  name?: string | null;
+  username?: string | null;
   email?: string | null;
   image?: string | null;
   followersCount: number;
@@ -58,14 +58,14 @@ export default function ProfileTab({
           <Avatar className='h-20 w-20'>
             <AvatarImage
               src={user.image || '/placeholder.svg'}
-              alt={user.name || 'User'}
+              alt={user.username || 'User'}
             />
             <AvatarFallback className='bg-zinc-800 text-zinc-200 text-lg'>
-              {user.name?.charAt(0) || 'A'}
+              {user.username?.charAt(0) || 'A'}
             </AvatarFallback>
           </Avatar>
           <div className='space-y-2'>
-            <h4 className='text-lg font-medium text-white'>{user.name}</h4>
+            <h4 className='text-lg font-medium text-white'>{user.username}</h4>
             <p className='text-zinc-400 text-sm'>
               {user.recommendationsCount} recommendations •{' '}
               {user.followersCount} followers
@@ -76,16 +76,16 @@ export default function ProfileTab({
           </div>
         </div>
 
-        {/* Name Field */}
+        {/* Username Field */}
         <div className='space-y-2'>
           <label className='text-sm font-medium text-zinc-200'>
             Display Name
           </label>
           <input
             type='text'
-            value={profileForm.name}
+            value={profileForm.username}
             onChange={e =>
-              setProfileForm(prev => ({ ...prev, name: e.target.value }))
+              setProfileForm(prev => ({ ...prev, username: e.target.value }))
             }
             className='w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-cosmic-latte focus:border-transparent'
             placeholder='Your display name'

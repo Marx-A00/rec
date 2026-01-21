@@ -91,13 +91,11 @@ export default function AlbumImage({
   }, [src, cloudflareImageId, width, height]);
 
   const handleImageLoad = () => {
-    console.log(`[AlbumImage] Image loaded successfully: ${imgSrc}`);
     setIsLoading(false);
     setHasError(false);
   };
 
   const handleImageError = () => {
-    console.log(`[AlbumImage] Image load error for: ${imgSrc}`);
     setIsLoading(false);
 
     if (retryCount < MAX_RETRIES && imgSrc !== FALLBACK_IMAGE) {
@@ -148,17 +146,19 @@ export default function AlbumImage({
     return showSkeleton ? <LoadingSkeleton /> : <FallbackContent />;
   }
 
-  // Check if this is a Cover Art Archive URL (needs native img due to CORS on redirect)
-  const isCoverArtArchive =
-    imgSrc.includes('coverartarchive.org') || imgSrc.includes('archive.org');
+  // Check if this needs native img (CORS issues with redirects or Cloudflare Images)
+  const useNativeImg =
+    imgSrc.includes('coverartarchive.org') ||
+    imgSrc.includes('archive.org') ||
+    imgSrc.includes('imagedelivery.net');
 
   return (
     <div className={`relative ${fill ? '' : 'w-full h-full'}`}>
       {/* Loading skeleton overlay */}
       {isLoading && showSkeleton && <LoadingSkeleton />}
 
-      {/* Use native img for Cover Art Archive (CORS issues with redirects) */}
-      {isCoverArtArchive ? (
+      {/* Use native img for Cover Art Archive and Cloudflare Images */}
+      {useNativeImg ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={imgSrc}
@@ -170,9 +170,6 @@ export default function AlbumImage({
           onError={handleImageError}
           draggable={false}
           style={style}
-          referrerPolicy='no-referrer'
-          crossOrigin='anonymous'
-          loading='lazy'
         />
       ) : (
         /* Main image - use Next.js Image for optimized delivery */

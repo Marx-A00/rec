@@ -21,7 +21,8 @@ export default async function AuthLayout({
   // Redirect authenticated users with username to home mosaic
   // Users without username stay on auth pages to complete their profile
   if (session?.user) {
-    const hasUsername = session.user.name && session.user.name.trim() !== '';
+    const hasUsername =
+      session.user.username && session.user.username.trim() !== '';
 
     if (hasUsername) {
       redirect('/home-mosaic');

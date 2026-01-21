@@ -1,6 +1,91 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // ===========================
+// MOBILE DETECTION
+// ===========================
+
+const MOBILE_USER_AGENTS =
+  /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i;
+
+/**
+ * Check if the request is from a mobile device
+ */
+function isMobileDevice(request: NextRequest): boolean {
+  const userAgent = request.headers.get('user-agent') || '';
+  const isMobile = MOBILE_USER_AGENTS.test(userAgent);
+
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log(
+      `📱 Mobile check: ${isMobile ? 'YES' : 'NO'} | UA: ${userAgent.substring(0, 80)}...`
+    );
+  }
+
+  return isMobile;
+}
+
+/**
+ * Check if path should skip mobile redirect
+ */
+function shouldSkipMobileRedirect(pathname: string): boolean {
+  return (
+    pathname.startsWith('/m/') ||
+    pathname.startsWith('/m') ||
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/admin') ||
+    pathname.includes('.')
+  );
+}
+
+/**
+ * Map desktop routes to their mobile equivalents
+ */
+function getMobileRoute(pathname: string): string {
+  // Auth routes mapping
+  if (pathname === '/signin') return '/m/auth/signin';
+  if (pathname === '/register') return '/m/auth/register';
+  if (pathname === '/signout') return '/signout'; // Keep signout as-is
+
+  // Default: just prepend /m
+  if (pathname === '/') return '/m';
+  return `/m${pathname}`;
+}
+
+/**
+ * Handle mobile detection and redirect
+ */
+function handleMobileRedirect(
+  request: NextRequest,
+  pathname: string
+): NextResponse | null {
+  const isMobile = isMobileDevice(request);
+
+  // Skip if already handled
+  if (shouldSkipMobileRedirect(pathname)) {
+    return null;
+  }
+
+  // Redirect mobile users to mobile routes
+  if (isMobile) {
+    const mobilePath = getMobileRoute(pathname);
+    const mobileUrl = new URL(mobilePath, request.url);
+    mobileUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(mobileUrl);
+  }
+
+  // Redirect desktop users away from mobile routes (if they somehow got there)
+  if (!isMobile && pathname.startsWith('/m/')) {
+    const desktopPath = pathname.replace(/^\/m/, '') || '/';
+    const desktopUrl = new URL(desktopPath, request.url);
+    desktopUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(desktopUrl);
+  }
+
+  return null;
+}
+
+// ===========================
 // RATE LIMITING CONFIGURATION
 // ===========================
 
@@ -78,6 +163,18 @@ const getAllowedOrigins = (): string[] => {
   return isDevelopment ? [...baseOrigins, ...devOrigins] : baseOrigins;
 };
 
+/**
+ * Check if origin is a local network IP (for mobile testing in development)
+ */
+function isLocalNetworkOrigin(origin: string): boolean {
+  if (process.env.NODE_ENV !== 'development') return false;
+
+  // Match local network IPs: 192.168.x.x, 10.x.x.x, 172.16-31.x.x
+  const localNetworkPattern =
+    /^http:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}):\d+$/;
+  return localNetworkPattern.test(origin);
+}
+
 // CORS configuration
 const CORS_CONFIG = {
   allowedOrigins: getAllowedOrigins(),
@@ -104,7 +201,10 @@ const CORS_CONFIG = {
  */
 function isOriginAllowed(origin: string | null): boolean {
   if (!origin) return false;
-  return CORS_CONFIG.allowedOrigins.includes(origin);
+  // Allow configured origins OR local network IPs in development
+  return (
+    CORS_CONFIG.allowedOrigins.includes(origin) || isLocalNetworkOrigin(origin)
+  );
 }
 
 /**
@@ -167,6 +267,7 @@ function handlePreflight(request: NextRequest): NextResponse {
 function isPublicApiRoute(pathname: string): boolean {
   const publicApiPatterns = [
     '/api/auth/', // Authentication routes (signin, register, etc.)
+    '/api/graphql', // GraphQL endpoint (handles its own auth, can't use Prisma in Edge)
     '/api/search', // Public search functionality
     '/api/albums/search', // Public album search
     '/api/test/', // Test endpoints
@@ -419,6 +520,11 @@ function createRateLimitResponse(
  * Check if a route requires authentication
  */
 function isProtectedRoute(pathname: string): boolean {
+  // Mobile routes handle their own auth client-side (Prisma doesn't work in Edge runtime)
+  if (pathname.startsWith('/m/') || pathname === '/m') {
+    return false;
+  }
+
   // All main app pages require authentication (route groups don't affect URL structure)
   const protectedPagePatterns = [
     '/albums',
@@ -474,7 +580,7 @@ async function handleAuthentication(
 ): Promise<{ response: NextResponse | null; userID?: string }> {
   try {
     // Dynamically import auth to avoid edge runtime issues
-    const { auth } = await import('./auth');
+    const { auth } = await import('../auth');
     const session = await auth();
 
     if (!session?.user) {
@@ -492,6 +598,17 @@ async function handleAuthentication(
         };
       }
 
+      // For mobile routes, redirect to mobile signin (when implemented)
+      // For now, redirect to landing page
+      if (pathname.startsWith('/m/')) {
+        const landingUrl = new URL('/', request.url);
+        landingUrl.searchParams.set(
+          'callbackUrl',
+          pathname + request.nextUrl.search
+        );
+        return { response: NextResponse.redirect(landingUrl) };
+      }
+
       // For page routes, redirect to landing page with callback URL
       const landingUrl = new URL('/', request.url);
       landingUrl.searchParams.set(
@@ -502,7 +619,8 @@ async function handleAuthentication(
     }
 
     // Check if user has a username (required for most routes)
-    const hasUsername = session.user.name && session.user.name.trim() !== '';
+    const hasUsername =
+      session.user.username && session.user.username.trim() !== '';
 
     if (!hasUsername && !isUsernameExemptRoute(pathname)) {
       // For API routes, return 403 indicating profile incomplete
@@ -556,41 +674,27 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
-  let userID: string | undefined;
+  // Debug: Log every middleware invocation
+  console.log(`🔧 Middleware running: ${method} ${pathname}`);
 
-  // Skip auth entirely for public API routes to avoid Prisma edge runtime issues
-  const isPublicApi =
-    pathname.startsWith('/api/') && isPublicApiRoute(pathname);
-
-  // 1. Authentication check for protected routes (both pages and API)
-  if (!isPublicApi && isProtectedRoute(pathname)) {
-    // Development logging for route protection decisions
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🔒 Protected route accessed: ${method} ${pathname}`);
-    }
-
-    const authResult = await handleAuthentication(request, pathname);
-    if (authResult.response) {
-      return authResult.response; // Return authentication failure response
-    }
-    userID = authResult.userID;
-  } else if (
-    process.env.NODE_ENV === 'development' &&
-    pathname.startsWith('/api/')
-  ) {
-    // Log public API routes in development
-    console.log(`🌐 Public API route accessed: ${method} ${pathname}`);
+  // 0. Mobile detection and redirect
+  const mobileRedirect = handleMobileRedirect(request, pathname);
+  if (mobileRedirect) {
+    return mobileRedirect;
   }
 
-  // 2. Rate limiting for API routes (both protected and public)
+  // NOTE: Auth checks removed from middleware - Prisma doesn't work in Edge runtime.
+  // Pages and API routes handle their own authentication via useSession() or getServerSession().
+
+  // 1. Rate limiting for API routes
   if (pathname.startsWith('/api/')) {
-    const rateLimitResult = checkRateLimit(request, pathname, userID);
+    const rateLimitResult = checkRateLimit(request, pathname);
 
     if (!rateLimitResult.allowed) {
       // Development logging for rate limiting
       if (process.env.NODE_ENV === 'development') {
         console.log(
-          `⛔ Rate limit exceeded: ${method} ${pathname} by ${getRateLimitKey(request, userID)}`
+          `⛔ Rate limit exceeded: ${method} ${pathname} by ${getRateLimitKey(request)}`
         );
       }
 
@@ -608,7 +712,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 3. CORS handling for API routes only
+  // 2. CORS handling for API routes
   if (pathname.startsWith('/api/')) {
     // Handle preflight OPTIONS requests
     if (method === 'OPTIONS') {
@@ -652,7 +756,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // 4. For non-API routes (pages), add security headers and continue
+  // 3. For non-API routes (pages), add security headers and continue
   const pageResponse = NextResponse.next();
   addMiddlewareSecurityHeaders(pageResponse, pathname);
   return pageResponse;
@@ -661,9 +765,13 @@ export async function middleware(request: NextRequest) {
 // Configure which paths the middleware should run on
 export const config = {
   matcher: [
-    // API routes (for CORS and authentication)
-    '/api/(.*)',
-    // Protected page routes (for authentication)
+    // Root
+    '/',
+    // All main routes
+    '/signin',
+    '/register',
+    '/signout',
+    '/profile/:path*',
     '/albums/:path*',
     '/artists/:path*',
     '/browse/:path*',
@@ -672,9 +780,12 @@ export const config = {
     '/home-mosaic',
     '/latest',
     '/labels/:path*',
-    '/profile/:path*',
     '/recommend/:path*',
     '/search',
     '/settings',
+    // Mobile routes
+    '/m/:path*',
+    // API routes
+    '/api/:path*',
   ],
 };

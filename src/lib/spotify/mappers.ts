@@ -7,6 +7,8 @@
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { Prisma } from '@prisma/client';
 
+import { createSpotifySyncMetadata } from '@/types/album-metadata';
+
 import { prisma } from '../prisma';
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
 import type {
@@ -14,7 +16,6 @@ import type {
   CheckArtistEnrichmentJobData,
   CheckTrackEnrichmentJobData,
 } from '../queue/jobs';
-import { createSpotifySyncMetadata } from '@/types/album-metadata';
 
 import type {
   SpotifyAlbumData,

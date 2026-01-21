@@ -18,6 +18,7 @@ const eslintConfig = [
       'test-results/**',
       'node_modules/**',
       'public/**',
+      'src/generated/**',
     ],
   },
   ...compat.config({

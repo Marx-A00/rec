@@ -2,6 +2,7 @@
 // Album, artist, and track enrichment handlers
 
 import { prisma } from '@/lib/prisma';
+
 import { musicBrainzService } from '../../musicbrainz';
 import {
   shouldEnrichAlbum,
@@ -13,15 +14,6 @@ import { createEnrichmentLogger } from '../../enrichment/enrichment-logger';
 import { searchSpotifyArtists } from '../../spotify/search';
 import type { MusicBrainzRecordingDetail } from '../../musicbrainz/schemas';
 import {
-  calculateStringSimilarity,
-  buildAlbumSearchQuery,
-  findBestAlbumMatch,
-  findBestArtistMatch,
-  findBestTrackMatch,
-  normalizeTrackTitle,
-  findMatchingTrack,
-} from './utils';
-import {
   JOB_TYPES,
   type CheckAlbumEnrichmentJobData,
   type CheckArtistEnrichmentJobData,
@@ -31,6 +23,16 @@ import {
   type EnrichTrackJobData,
   type CacheArtistImageJobData,
 } from '../jobs';
+
+import {
+  calculateStringSimilarity,
+  buildAlbumSearchQuery,
+  findBestAlbumMatch,
+  findBestArtistMatch,
+  findBestTrackMatch,
+  normalizeTrackTitle,
+  findMatchingTrack,
+} from './utils';
 
 // ============================================================================
 // Field Change Tracking Types

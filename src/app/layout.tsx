@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 import 'driver.js/dist/driver.css';
 import '@/styles/driver-custom.css';
@@ -8,8 +9,7 @@ import { Toaster } from 'sonner';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { CollectionToastProvider } from '@/components/ui/CollectionToastProvider';
-import { TourProvider } from '@/contexts/TourContext';
-import { TourDebugPanel } from '@/components/TourDebugPanel';
+import { TourProviderWrapper } from '@/components/providers/TourProviderWrapper';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -39,9 +39,8 @@ export default function RootLayout({
       >
         <SessionProvider>
           <QueryProvider>
-            <TourProvider>
+            <TourProviderWrapper>
               <CollectionToastProvider>{children}</CollectionToastProvider>
-              <TourDebugPanel />
               <Toaster
                 position='top-right'
                 toastOptions={{
@@ -52,9 +51,14 @@ export default function RootLayout({
                   },
                 }}
               />
-            </TourProvider>
+            </TourProviderWrapper>
           </QueryProvider>
         </SessionProvider>
+        <Script
+          defer
+          src='https://umami-production-08c5.up.railway.app/script.js'
+          data-website-id='9b8dd0c0-f9cf-406a-ab48-d4580cfeae39'
+        />
       </body>
     </html>
   );

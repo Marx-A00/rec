@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 // Check user collections and albums
 import { prisma } from '@/lib/prisma';
@@ -18,7 +17,7 @@ async function checkUserCollections() {
     return;
   }
 
-  console.log(`User found: ${user.name} (${user.email})\n`);
+  console.log(`User found: ${user.username} (${user.email})\n`);
 
   // Get collections
   const collections = await prisma.collection.findMany({

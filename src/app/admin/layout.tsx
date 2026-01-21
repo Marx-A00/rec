@@ -118,6 +118,16 @@ export default function AdminLayout({
               <span>Users</span>
             </Link>
             <Link
+              href='/admin/analytics'
+              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
+                pathname === '/admin/analytics'
+                  ? 'text-white bg-zinc-800'
+                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+              }`}
+            >
+              <span>Analytics</span>
+            </Link>
+            <Link
               href='/admin/testing'
               className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
                 pathname === '/admin/testing'

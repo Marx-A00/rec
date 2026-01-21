@@ -17,11 +17,12 @@ export interface AlbumRecommendation {
     title: string;
     artist: string;
     imageUrl: string | null;
+    cloudflareImageId: string | null;
     year: string | null;
   };
   user: {
     id: string;
-    name: string | null;
+    username: string | null;
     image: string | null;
   };
 }
@@ -127,11 +128,12 @@ export function useAlbumRecommendations(
           title: rec.otherAlbum.title,
           artist: rec.otherAlbum.artist,
           imageUrl: rec.otherAlbum.imageUrl || null,
+          cloudflareImageId: rec.otherAlbum.cloudflareImageId || null,
           year: rec.otherAlbum.year || null,
         },
         user: {
           id: rec.user.id,
-          name: rec.user.username || null,
+          username: rec.user.username || null,
           image: rec.user.image || null,
         },
       })),

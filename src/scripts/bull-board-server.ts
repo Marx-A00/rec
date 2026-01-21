@@ -17,19 +17,28 @@ import {
 } from '@/lib/monitoring';
 
 const PORT = 3001;
+const API_KEY = process.env.WORKER_API_KEY || '';
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'https://rec-production.up.railway.app',
+  process.env.NEXT_PUBLIC_APP_URL,
+].filter(Boolean);
 
 // Create Express app with minimal configuration
 const app = express();
 app.disable('x-powered-by');
 app.set('env', 'production');
 
-// Add CORS middleware to allow requests from localhost:3000
+// Add CORS middleware
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header(
     'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept'
+    'Origin, X-Requested-With, Content-Type, Accept, X-API-Key'
   );
 
   // Handle preflight requests
@@ -38,6 +47,26 @@ app.use((req, res, next) => {
   } else {
     next();
   }
+});
+
+// API Key authentication middleware (skip for health check)
+app.use((req, res, next) => {
+  // Skip auth for health check (useful for Railway health checks)
+  if (req.path === '/health') {
+    return next();
+  }
+
+  // Skip auth in development
+  if (!API_KEY || process.env.NODE_ENV === 'development') {
+    return next();
+  }
+
+  const providedKey = req.headers['x-api-key'];
+  if (providedKey !== API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  next();
 });
 
 // Initialize queue and Bull Board
@@ -153,6 +182,65 @@ app.get('/queue/metrics', async (_req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Failed to get queue metrics',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Live queue snapshot endpoint - waiting + active jobs
+app.get('/queue/snapshot', async (_req, res) => {
+  try {
+    const queue = getMusicBrainzQueue().getQueue();
+    const stats = await getMusicBrainzQueue().getStats();
+    const isPaused = await queue.isPaused();
+
+    // Get live jobs
+    const [waiting, active, delayed, failed] = await Promise.all([
+      queue.getWaiting(0, 20),
+      queue.getActive(0, 10),
+      queue.getDelayed(0, 10),
+      queue.getFailed(0, 10),
+    ]);
+
+    const formatJob = (job: any, status: string) => ({
+      id: job.id,
+      name: job.name,
+      status,
+      data: {
+        query: job.data?.query,
+        mbid: job.data?.mbid,
+        artistMbid: job.data?.artistMbid,
+        albumId: job.data?.albumId,
+        artistId: job.data?.artistId,
+      },
+      createdAt: new Date(job.timestamp).toISOString(),
+      processedOn: job.processedOn
+        ? new Date(job.processedOn).toISOString()
+        : undefined,
+      attempts: job.attemptsMade || 0,
+      error: job.failedReason,
+    });
+
+    res.json({
+      stats: {
+        waiting: stats.waiting,
+        active: stats.active,
+        delayed: stats.delayed,
+        completed: stats.completed,
+        failed: stats.failed,
+        paused: isPaused,
+      },
+      jobs: {
+        active: active.map(j => formatJob(j, 'active')),
+        waiting: waiting.map(j => formatJob(j, 'waiting')),
+        delayed: delayed.map(j => formatJob(j, 'delayed')),
+        failed: failed.map(j => formatJob(j, 'failed')),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to get queue snapshot',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
   }

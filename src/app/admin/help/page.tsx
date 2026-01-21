@@ -2,13 +2,6 @@
 'use client';
 
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
   Activity,
   Database,
   Users,
@@ -20,6 +13,14 @@ import {
   Code,
   AlertCircle,
 } from 'lucide-react';
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 export default function AdminHelpPage() {
   return (

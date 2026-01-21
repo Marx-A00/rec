@@ -10,7 +10,7 @@ import type { Recommendation } from '@/types';
 
 interface User {
   id: string;
-  name: string | null;
+  username: string | null;
   email: string | null;
   image: string | null;
   bio: string | null;
@@ -33,7 +33,7 @@ interface TrendingArtist {
     albumTitle: string;
     user: {
       id: string;
-      name: string | null;
+      username: string | null;
       image: string | null;
     };
     createdAt: string;
@@ -54,7 +54,7 @@ interface TrendingAlbum {
     score: number;
     user: {
       id: string;
-      name: string | null;
+      username: string | null;
       image: string | null;
     };
     createdAt: string;
@@ -232,16 +232,16 @@ function UserCard({ user }: { user: User }) {
           <Avatar className='w-16 h-16 mx-auto border-2 border-zinc-700 group-hover:border-cosmic-latte transition-colors'>
             <AvatarImage
               src={user.image || undefined}
-              alt={user.name || 'User'}
+              alt={user.username || 'User'}
             />
             <AvatarFallback className='bg-zinc-700 text-cosmic-latte text-lg'>
-              {user.name?.charAt(0) || 'A'}
+              {user.username?.charAt(0) || 'A'}
             </AvatarFallback>
           </Avatar>
 
           <div>
             <h3 className='font-medium text-white text-sm truncate group-hover:text-cosmic-latte transition-colors'>
-              {user.name || 'Anonymous music enjoyer'}
+              {user.username || 'Anonymous music enjoyer'}
             </h3>
             <p className='text-xs text-zinc-400 mt-1'>
               {user.followersCount} followers
@@ -371,14 +371,14 @@ function TrendingAlbumCard({ album }: { album: TrendingAlbum }) {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={album.recentRecommendations[0].user.image}
-                    alt={album.recentRecommendations[0].user.name || 'User'}
+                    alt={album.recentRecommendations[0].user.username || 'User'}
                     className='w-full h-full rounded-full object-cover'
                   />
                 )}
               </div>
               <p className='text-xs text-zinc-500 truncate'>
                 Recent by{' '}
-                {album.recentRecommendations[0].user?.name || 'Anonymous'}
+                {album.recentRecommendations[0].user?.username || 'Anonymous'}
               </p>
             </div>
           )}

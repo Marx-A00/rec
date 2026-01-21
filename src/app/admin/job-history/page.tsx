@@ -24,7 +24,6 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 
 import { useAlbumsByJobIdQuery } from '@/generated/graphql';
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -120,8 +119,8 @@ interface SchedulerStatus {
   };
 }
 
-const MONITORING_API =
-  process.env.NEXT_PUBLIC_MONITORING_API_URL || 'http://localhost:3001';
+// Use proxy route to securely access worker API
+const MONITORING_API = '/api/admin/worker';
 
 function JobAlbums({ jobId, jobName }: { jobId: string; jobName: string }) {
   const { data, isLoading } = useAlbumsByJobIdQuery(

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -23,38 +24,58 @@ export default function FollowButton({
   className?: string;
 }) {
   const [isFollowing, setIsFollowing] = useState(initialFollowing);
+  const [isLoading, setIsLoading] = useState(false);
+  const previousFollowingRef = useRef(initialFollowing);
   const followMutation = useFollowUserMutation();
   const unfollowMutation = useUnfollowUserMutation();
 
-  const loading =
-    followMutation.status === 'pending' ||
-    unfollowMutation.status === 'pending';
+  // Sync with initialFollowing prop when it changes (e.g., after query refetch)
+  useEffect(() => {
+    setIsFollowing(initialFollowing);
+  }, [initialFollowing]);
 
   const handleToggle = async () => {
+    // Store previous state for rollback
+    const wasFollowing = isFollowing;
+    previousFollowingRef.current = wasFollowing;
+
+    // Optimistic UI update
+    const newFollowingState = !wasFollowing;
+    setIsFollowing(newFollowingState);
+    setIsLoading(true);
+
+    // Notify parent immediately for optimistic count update
+    onFollowChange?.(newFollowingState);
+
     try {
-      if (isFollowing) {
+      if (wasFollowing) {
         await unfollowMutation.mutateAsync({ userId });
-        setIsFollowing(false);
-        onFollowChange?.(false);
       } else {
         await followMutation.mutateAsync({ userId });
-        setIsFollowing(true);
-        onFollowChange?.(true);
       }
-    } catch (e) {
-      // noop
+    } catch {
+      // Rollback on error
+      setIsFollowing(wasFollowing);
+      onFollowChange?.(wasFollowing);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <Button
       onClick={handleToggle}
-      disabled={loading}
-      className={`${className} ${
-        isFollowing ? '' : 'bg-red-600 hover:bg-red-700 text-white'
-      }`}
+      disabled={isLoading}
+      variant={isFollowing ? 'outline' : 'destructive'}
+      className={className}
     >
-      {loading ? '...' : isFollowing ? 'Unfollow' : 'Follow'}
+      {isLoading ? (
+        <Loader2 className='h-4 w-4 animate-spin' />
+      ) : isFollowing ? (
+        'Following'
+      ) : (
+        'Follow'
+      )}
     </Button>
   );
 }

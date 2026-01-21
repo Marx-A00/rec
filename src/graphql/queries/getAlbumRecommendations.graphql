@@ -24,6 +24,7 @@ query GetAlbumRecommendations(
         title
         artist
         imageUrl
+        cloudflareImageId
         year
       }
       user {

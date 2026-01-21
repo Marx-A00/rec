@@ -6,7 +6,10 @@ import { Heart, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AlbumImage from '@/components/ui/AlbumImage';
-import { formatActivityTimeRange } from '@/utils/activity-grouping';
+import {
+  formatActivityTimeRange,
+  formatTimeAgo,
+} from '@/utils/activity-grouping';
 
 // Helper function to get color classes based on score
 const getScoreColors = (score: number) => {
@@ -39,6 +42,7 @@ interface BasisAlbum {
   id: string;
   title: string;
   coverArtUrl?: string;
+  cloudflareImageId?: string;
   artists?: Array<{
     artist?: {
       name?: string;
@@ -74,6 +78,7 @@ interface Activity {
   albumTitle?: string;
   albumArtist?: string;
   albumImage?: string | null;
+  albumCloudflareImageId?: string | null;
   artistId?: string;
   createdAt: string;
   metadata?: ActivityMetadata;
@@ -177,6 +182,9 @@ export default function GroupedActivityItem({
               {group.actorName}
             </Link>{' '}
             {getGroupedActivityText()}
+            {timeRange && (
+              <span className='text-zinc-500 ml-1'>· {timeRange}</span>
+            )}
           </p>
         </div>
       </div>
@@ -201,6 +209,7 @@ export default function GroupedActivityItem({
                   >
                     <AlbumImage
                       src={activity.albumImage || '/placeholder-album.png'}
+                      cloudflareImageId={activity.albumCloudflareImageId}
                       alt={`${activity.albumTitle} by ${activity.albumArtist}`}
                       width={96}
                       height={96}
@@ -257,9 +266,12 @@ export default function GroupedActivityItem({
 
                 {/* Show "+X more" if there are more than 5 */}
                 {activityCount > 5 && (
-                  <div className='flex items-center justify-center w-24 h-24 rounded-lg bg-zinc-800 ring-2 ring-zinc-900 text-xs text-zinc-400 font-medium'>
+                  <button
+                    onClick={() => setIsExpanded(true)}
+                    className='flex items-center justify-center w-24 h-24 rounded-lg bg-zinc-800 ring-2 ring-zinc-900 text-xs text-zinc-400 font-medium hover:bg-zinc-700 hover:text-zinc-300 hover:ring-cosmic-latte/50 transition-all cursor-pointer'
+                  >
                     +{activityCount - 5}
-                  </div>
+                  </button>
                 )}
               </div>
             </div>
@@ -267,7 +279,7 @@ export default function GroupedActivityItem({
 
           {/* Expanded view - Horizontal layout with stacked hover effect */}
           {isExpanded && (
-            <div className='flex flex-wrap justify-center gap-x-6 gap-y-12 px-4 pb-8'>
+            <div className='flex flex-wrap justify-center gap-x-6 gap-y-12 px-4 pb-8 animate-in fade-in zoom-in-95 duration-300'>
               {group.activities.map(activity => (
                 <div key={activity.id} className='flex-shrink-0'>
                   {/* Recommendation: Stacked albums that separate on hover */}
@@ -289,6 +301,10 @@ export default function GroupedActivityItem({
                                   .basisAlbum!.coverArtUrl ||
                                 '/placeholder-album.png'
                               }
+                              cloudflareImageId={
+                                (activity.metadata as RecommendationMetadata)
+                                  .basisAlbum!.cloudflareImageId
+                              }
                               alt={
                                 (activity.metadata as RecommendationMetadata)
                                   .basisAlbum!.title
@@ -308,6 +324,7 @@ export default function GroupedActivityItem({
                         >
                           <AlbumImage
                             src={activity.albumImage}
+                            cloudflareImageId={activity.albumCloudflareImageId}
                             alt={`${activity.albumTitle} by ${activity.albumArtist}`}
                             width={110}
                             height={110}
@@ -353,6 +370,7 @@ export default function GroupedActivityItem({
                     >
                       <AlbumImage
                         src={activity.albumImage || '/placeholder-album.png'}
+                        cloudflareImageId={activity.albumCloudflareImageId}
                         alt={`${activity.albumTitle} by ${activity.albumArtist}`}
                         width={110}
                         height={110}
@@ -447,9 +465,12 @@ export default function GroupedActivityItem({
 
                 {/* Show "+X more" if there are more than 5 */}
                 {activityCount > 5 && (
-                  <div className='flex items-center justify-center h-12 w-12 rounded-full bg-zinc-800 ring-2 ring-zinc-900 text-xs text-zinc-400 font-medium'>
+                  <button
+                    onClick={() => setIsExpanded(true)}
+                    className='flex items-center justify-center h-12 w-12 rounded-full bg-zinc-800 ring-2 ring-zinc-900 text-xs text-zinc-400 font-medium hover:bg-zinc-700 hover:text-zinc-300 hover:ring-cosmic-latte/50 transition-all cursor-pointer'
+                  >
                     +{activityCount - 5}
-                  </div>
+                  </button>
                 )}
               </div>
             </div>
@@ -457,7 +478,7 @@ export default function GroupedActivityItem({
 
           {/* Expanded view - show all users */}
           {isExpanded && (
-            <div className='flex flex-wrap justify-center gap-6 px-4 pb-6'>
+            <div className='flex flex-wrap justify-center gap-6 px-4 pb-6 animate-in fade-in zoom-in-95 duration-300'>
               {group.activities.map(activity => (
                 <Link
                   key={activity.id}
@@ -607,6 +628,9 @@ function SingleActivityDisplay({
               {activity.actorName}
             </Link>{' '}
             {getActivityText()}
+            <span className='text-zinc-500 ml-1'>
+              · {formatTimeAgo(activity.createdAt)}
+            </span>
           </p>
         </div>
       </div>
@@ -630,6 +654,10 @@ function SingleActivityDisplay({
                         (activity.metadata as RecommendationMetadata)
                           .basisAlbum!.coverArtUrl || '/placeholder-album.png'
                       }
+                      cloudflareImageId={
+                        (activity.metadata as RecommendationMetadata)
+                          .basisAlbum!.cloudflareImageId
+                      }
                       alt={
                         (activity.metadata as RecommendationMetadata)
                           .basisAlbum!.title
@@ -651,6 +679,7 @@ function SingleActivityDisplay({
                 <div className='relative'>
                   <AlbumImage
                     src={activity.albumImage}
+                    cloudflareImageId={activity.albumCloudflareImageId}
                     alt={`${activity.albumTitle} by ${activity.albumArtist}`}
                     width={220}
                     height={220}
@@ -717,6 +746,7 @@ function SingleActivityDisplay({
           >
             <AlbumImage
               src={activity.albumImage}
+              cloudflareImageId={activity.albumCloudflareImageId}
               alt={`${activity.albumTitle} by ${activity.albumArtist}`}
               width={150}
               height={150}

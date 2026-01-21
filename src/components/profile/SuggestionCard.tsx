@@ -9,7 +9,7 @@ import FollowButton from '@/components/profile/FollowButton';
 
 interface SuggestionUser {
   id: string;
-  name: string | null;
+  username: string | null;
   email: string | null;
   image: string | null;
   bio: string | null;
@@ -102,10 +102,10 @@ export default function SuggestionCard({
           <Avatar className='h-12 w-12 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0'>
             <AvatarImage
               src={user.image || undefined}
-              alt={user.name || 'User'}
+              alt={user.username || 'User'}
             />
             <AvatarFallback className='bg-zinc-700 text-zinc-200'>
-              {user.name?.charAt(0)?.toUpperCase() || 'A'}
+              {user.username?.charAt(0)?.toUpperCase() || 'A'}
             </AvatarFallback>
           </Avatar>
         </Link>
@@ -116,7 +116,7 @@ export default function SuggestionCard({
               href={`/profile/${user.id}`}
               className='font-medium text-cosmic-latte hover:text-emeraled-green transition-colors truncate'
             >
-              {user.name || 'Anonymous music enjoyer'}
+              {user.username || 'Anonymous music enjoyer'}
             </Link>
           </div>
 

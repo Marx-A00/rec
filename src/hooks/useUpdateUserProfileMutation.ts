@@ -4,22 +4,22 @@ import { useUpdateProfileMutation } from '@/generated/graphql';
 import { queryKeys } from '@/lib/queries';
 
 interface UpdateProfileRequest {
-  name: string;
+  username: string;
   bio: string;
 }
 
 interface UpdateProfileResponse {
-  name: string;
+  username: string;
   bio: string;
   id: string;
 }
 
 function normalizeProfileInput(p: UpdateProfileRequest) {
-  return { name: p.name.trim(), bio: p.bio.trim() };
+  return { username: p.username.trim(), bio: p.bio.trim() };
 }
 
 interface UseUpdateUserProfileMutationOptions {
-  onSuccess?: (updatedUser: { name: string; bio: string }) => void;
+  onSuccess?: (updatedUser: { username: string; bio: string }) => void;
   onError?: (error: string) => void;
 }
 
@@ -42,7 +42,7 @@ export const useUpdateUserProfileMutation = (
       queryClient.invalidateQueries({ queryKey: queryKeys.users() });
 
       if (options.onSuccess) {
-        options.onSuccess({ name: data.name, bio: data.bio });
+        options.onSuccess({ username: data.username, bio: data.bio });
       }
     },
     onError: error => {

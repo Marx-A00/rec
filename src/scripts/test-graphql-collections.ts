@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 // Test GraphQL collections query directly
 import { readFileSync } from 'fs';

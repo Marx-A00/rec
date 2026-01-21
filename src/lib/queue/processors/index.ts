@@ -31,8 +31,6 @@ import {
 } from '../jobs';
 
 import { isRetryableError, getErrorCode } from './utils';
-
-// Import handlers from individual processor files
 import {
   handleSearchArtists,
   handleSearchReleases,
@@ -44,7 +42,6 @@ import {
   handleBrowseReleaseGroupsByArtist,
   handleMusicBrainzSyncNewReleases,
 } from './musicbrainz-processor';
-
 import {
   handleCheckAlbumEnrichment,
   handleCheckArtistEnrichment,
@@ -53,17 +50,14 @@ import {
   handleEnrichArtist,
   handleEnrichTrack,
 } from './enrichment-processor';
-
 import {
   handleSpotifySyncNewReleases,
   handleSpotifySyncFeaturedPlaylists,
 } from './spotify-processor';
-
 import {
   handleCacheAlbumCoverArt,
   handleCacheArtistImage,
 } from './cache-processor';
-
 import {
   handleDiscogsSearchArtist,
   handleDiscogsGetArtist,

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Heart } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -50,6 +51,7 @@ interface ActivityItemProps {
     albumArtist?: string;
     artistId?: string;
     albumImage?: string | null;
+    albumCloudflareImageId?: string | null;
     createdAt: string;
     metadata?: any;
   };
@@ -186,6 +188,12 @@ export default function ActivityItem({
                 {activity.actorName}
               </Link>{' '}
               {getActivityText()}
+              <span className='text-zinc-500 ml-1'>
+                ·{' '}
+                {formatDistanceToNow(new Date(activity.createdAt), {
+                  addSuffix: true,
+                })}
+              </span>
             </p>
           </div>
         </div>

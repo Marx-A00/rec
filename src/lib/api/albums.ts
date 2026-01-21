@@ -76,6 +76,7 @@ export async function getAlbumDetails(
         year,
         genre: Array.isArray(dbAlbum.genres) ? dbAlbum.genres : [],
         label: dbAlbum.label || undefined,
+        cloudflareImageId: dbAlbum.cloudflareImageId,
         image: {
           url: dbAlbum.coverArtUrl || '',
           width: 1200,

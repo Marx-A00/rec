@@ -1,9 +1,9 @@
 'use client';
 
-import { useGetRecommendationFeedQuery } from '@/generated/graphql';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
+import { useGetRecommendationFeedQuery } from '@/generated/graphql';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -83,7 +83,7 @@ interface RecCardProps {
     score: number;
     user: {
       id: string;
-      name?: string | null;
+      username?: string | null;
       image?: string | null;
     };
     basisAlbum?: {
@@ -175,12 +175,14 @@ function RecCard({ rec, featured }: RecCardProps) {
         <Avatar className='w-5 h-5'>
           <AvatarImage src={rec.user.image ?? undefined} />
           <AvatarFallback className='bg-zinc-800 text-zinc-400 text-xs'>
-            {rec.user.name?.charAt(0)?.toUpperCase() ?? '?'}
+            {rec.user.username?.charAt(0)?.toUpperCase() ?? '?'}
           </AvatarFallback>
         </Avatar>
         <span className='text-xs text-zinc-500'>
           rec&apos;d by{' '}
-          <span className='text-zinc-400'>{rec.user.name ?? 'someone'}</span>
+          <span className='text-zinc-400'>
+            {rec.user.username ?? 'someone'}
+          </span>
         </span>
       </div>
     </div>

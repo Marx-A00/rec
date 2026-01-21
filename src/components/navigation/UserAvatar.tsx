@@ -61,14 +61,16 @@ export const UserAvatar: FC<UserAvatarProps> = ({
           <Avatar className='h-8 w-8'>
             <AvatarImage
               src={user.image || undefined}
-              alt={user.name || 'User'}
+              alt={user.username || 'User'}
             />
             <AvatarFallback>
-              {user.name?.charAt(0)?.toUpperCase() || '?'}
+              {user.username?.charAt(0)?.toUpperCase() || '?'}
             </AvatarFallback>
           </Avatar>
           {!isCollapsed && (
-            <span className='text-sm font-medium text-white'>{user.name}</span>
+            <span className='text-sm font-medium text-white'>
+              {user.username}
+            </span>
           )}
         </Link>
       </HoverCardTrigger>
@@ -82,15 +84,15 @@ export const UserAvatar: FC<UserAvatarProps> = ({
             <Avatar className='h-12 w-12'>
               <AvatarImage
                 src={user.image || undefined}
-                alt={user.name || 'User'}
+                alt={user.username || 'User'}
               />
               <AvatarFallback className='bg-zinc-800 text-white'>
-                {user.name?.charAt(0)?.toUpperCase() || '?'}
+                {user.username?.charAt(0)?.toUpperCase() || '?'}
               </AvatarFallback>
             </Avatar>
             <div className='flex-1 min-w-0'>
               <p className='text-sm font-medium text-cosmic-latte truncate'>
-                {user.name}
+                {user.username}
               </p>
               <p className='text-xs text-zinc-400 truncate'>{user.email}</p>
             </div>

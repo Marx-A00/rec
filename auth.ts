@@ -18,6 +18,46 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: '/signin',
   },
+  events: {
+    // Create default collections for new OAuth users
+    async createUser({ user }) {
+      if (user.id) {
+        try {
+          // Check if user already has collections (shouldn't happen, but be safe)
+          const existingCollections = await prisma.collection.findFirst({
+            where: { userId: user.id },
+          });
+
+          if (!existingCollections) {
+            await prisma.collection.createMany({
+              data: [
+                {
+                  userId: user.id,
+                  name: 'My Collection',
+                  description: 'My music collection',
+                  isPublic: false,
+                },
+                {
+                  userId: user.id,
+                  name: 'Listen Later',
+                  description: 'Albums to listen to later',
+                  isPublic: false,
+                },
+              ],
+            });
+            console.log(
+              `[auth] Created default collections for new user: ${user.id}`
+            );
+          }
+        } catch (error) {
+          console.error(
+            `[auth] Failed to create default collections for user ${user.id}:`,
+            error
+          );
+        }
+      }
+    },
+  },
   callbacks: {
     async signIn({ user, account }) {
       // Allow OAuth sign-in to link to existing accounts with the same email
@@ -94,7 +134,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Update session with latest user data from database
         session.user.id = token.sub;
-        session.user.name = dbUser.username ?? ''; // Map username to session.user.name
+        session.user.username = dbUser.username ?? '';
         session.user.email = dbUser.email ?? '';
         session.user.image = dbUser.image ?? '';
         session.user.role = dbUser.role;

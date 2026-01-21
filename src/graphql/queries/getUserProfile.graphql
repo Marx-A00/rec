@@ -8,5 +8,9 @@ query GetUserProfile($userId: String!) {
     followersCount
     followingCount
     recommendationsCount
+    isFollowing
+    settings {
+      profileVisibility
+    }
   }
 }

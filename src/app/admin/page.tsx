@@ -579,7 +579,8 @@ function TestingTab() {
   });
 
   const handleDelete = (id: string) => {
-    if (confirm('Delete this recommendation?')) {
+    // eslint-disable-next-line no-alert -- Admin page confirmation
+    if (window.confirm('Delete this recommendation?')) {
       deleteMutation.mutate({ id });
     }
   };

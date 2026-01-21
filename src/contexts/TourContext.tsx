@@ -11,6 +11,7 @@ import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import { driver, DriveStep } from 'driver.js';
 import type { Driver } from 'driver.js';
+import { X } from 'lucide-react';
 
 import { driverConfig, tourSteps } from '@/lib/tours/driverConfig';
 import { useTourStore } from '@/stores/useTourStore';
@@ -20,8 +21,6 @@ import {
   useGetMySettingsQuery,
   useUpdateUserSettingsMutation,
 } from '@/generated/graphql';
-
-import { X } from 'lucide-react';
 
 interface TourContextType {
   startTour: () => void;
@@ -41,6 +40,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [currentStep, setCurrentStep] = useState<number | null>(null);
   const [isTourActive, setIsTourActive] = useState(false);
   const [showEarlyExitModal, setShowEarlyExitModal] = useState(false);
+  const [isCompletingTour, setIsCompletingTour] = useState(false);
   const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(false);
 
   // Zustand store for user settings
@@ -83,7 +83,8 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
             console.error(
               '❌ Unable to find tour elements. Make sure the page has fully loaded.'
             );
-            alert(
+            // eslint-disable-next-line no-alert -- Tour warning message
+            window.alert(
               '⚠️ Tour elements not found. Please refresh the page and try again.'
             );
             return;
@@ -115,21 +116,29 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
           setIsTourActive(true);
           console.log(`📍 Tour step ${stepIndex + 1}/${tourSteps.length}`);
         },
-        onDestroyStarted: (element, step, options) => {
-          // Call the original callback from driverConfig (handles completion tracking)
-          if (driverConfig.onDestroyStarted) {
-            driverConfig.onDestroyStarted(element, step, options);
-          }
+        onDestroyStarted: () => {
+          console.log('🎉 Tour completed or closed! Calling mutation...');
           // Update local React state
           setCurrentStep(null);
           setIsTourActive(false);
+
+          // Mark onboarding as completed via React Query mutation
+          // Using .then/.catch since driver.js doesn't wait for async callbacks
+          updateUserSettings({ showOnboardingTour: false })
+            .then(() => {
+              updateSettings({ showOnboardingTour: false });
+              console.log('✅ Onboarding marked as completed in database');
+            })
+            .catch(error => {
+              console.error('❌ Error marking onboarding complete:', error);
+            });
         },
       });
 
       setDriverInstance(driverObj);
       driverObj.drive();
     }
-  }, []);
+  }, [updateUserSettings, updateSettings]);
 
   const stopTour = useCallback(() => {
     console.log('⏹️ Stopping tour...');
@@ -181,7 +190,8 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
               );
               if (!retryElement) {
                 console.error('❌ Unable to find step 2 element.');
-                alert(
+                // eslint-disable-next-line no-alert -- Tour warning message
+                window.alert(
                   '⚠️ Step 2 element not found. Make sure you are on the main page.'
                 );
                 return;
@@ -212,9 +222,20 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
             console.log(`📍 Tour step ${stepIdx + 1}/${tourSteps.length}`);
           },
           onDestroyStarted: () => {
-            console.log('🎉 Tour stopped!');
+            console.log('🎉 Tour stopped! Calling mutation...');
             setCurrentStep(null);
             setIsTourActive(false);
+
+            // Mark onboarding as completed via React Query mutation
+            // Using .then/.catch since driver.js doesn't wait for async callbacks
+            updateUserSettings({ showOnboardingTour: false })
+              .then(() => {
+                updateSettings({ showOnboardingTour: false });
+                console.log('✅ Onboarding marked as completed in database');
+              })
+              .catch(error => {
+                console.error('❌ Error marking onboarding complete:', error);
+              });
           },
         });
 
@@ -222,7 +243,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         driverObj.drive(index);
       }
     },
-    [driverInstance]
+    [driverInstance, updateUserSettings, updateSettings]
   );
 
   // Auto-start tour for new users
@@ -331,6 +352,35 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('tour-early-exit', handleEarlyExit);
   }, [driverInstance]);
 
+  // Listen for tour completion event from driverConfig
+  useEffect(() => {
+    const handleTourCompleted = async () => {
+      console.log('🎉 Tour completed event received! Calling mutation...');
+      setIsCompletingTour(true);
+
+      // Mark onboarding as completed via React Query mutation FIRST
+      try {
+        await updateUserSettings({ showOnboardingTour: false });
+        updateSettings({ showOnboardingTour: false });
+        console.log('✅ Onboarding marked as completed in database');
+      } catch (error) {
+        console.error('❌ Error marking onboarding complete:', error);
+      }
+
+      // THEN destroy the driver and update state
+      if (driverInstance) {
+        driverInstance.destroy();
+      }
+      setCurrentStep(null);
+      setIsTourActive(false);
+      setIsCompletingTour(false);
+    };
+
+    window.addEventListener('tour-completed', handleTourCompleted);
+    return () =>
+      window.removeEventListener('tour-completed', handleTourCompleted);
+  }, [updateUserSettings, updateSettings, driverInstance]);
+
   // Handle early exit modal confirmation
   const handleConfirmExit = useCallback(async () => {
     setShowEarlyExitModal(false);
@@ -414,6 +464,52 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     <TourContext.Provider value={value}>
       {children}
       <TourDebugControls />
+
+      {/* Tour Completing Loading Overlay */}
+      {isCompletingTour &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 2000000000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1rem',
+              }}
+            >
+              <div
+                style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  border: '3px solid #3f3f46',
+                  borderTopColor: '#22c55e',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                }}
+              />
+              <p style={{ color: '#d4d4d8', fontSize: '0.875rem' }}>
+                Saving your progress...
+              </p>
+            </div>
+            <style>{`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+          </div>,
+          document.body
+        )}
 
       {/* Early Exit Confirmation Modal - Using inline styles to guarantee override of driver.js */}
       {showEarlyExitModal &&
@@ -554,7 +650,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
                     pointerEvents: 'auto',
                   }}
                 >
-                  Exit & Don't Show Tour Again
+                  Exit &amp; Don&apos;t Show Tour Again
                 </button>
               </div>
             </div>
