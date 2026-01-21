@@ -1,9 +1,12 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 /**
  * Dev-only hook that listens for Ctrl+C Ctrl+C to trigger auto-login.
  * Only active in development mode.
+ *
+ * Requires DEV_LOGIN_EMAIL and DEV_LOGIN_PASSWORD in .env.local
  *
  * @param redirectTo - Where to redirect after successful login (default: '/browse')
  */
@@ -17,19 +20,33 @@ export function useDevLogin(redirectTo: string = '/browse') {
     isLoggingIn.current = true;
 
     try {
-      console.log('[dev-login] Triggering dev login...');
+      console.log('[dev-login] Fetching dev credentials...');
       const response = await fetch('/api/auth/dev-login', {
         method: 'POST',
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('[dev-login] Success!', data.user);
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('[dev-login] Failed to get credentials:', error.error);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('[dev-login] Got credentials, signing in...');
+
+      // Use NextAuth's signIn with the credentials
+      const result = await signIn('credentials', {
+        identifier: data.credentials.identifier,
+        password: data.credentials.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        console.error('[dev-login] Sign in failed:', result.error);
+      } else if (result?.ok) {
+        console.log('[dev-login] Success!');
         router.push(redirectTo);
         router.refresh();
-      } else {
-        const error = await response.json();
-        console.error('[dev-login] Failed:', error.error);
       }
     } catch (error) {
       console.error('[dev-login] Error:', error);
