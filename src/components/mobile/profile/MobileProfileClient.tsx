@@ -174,8 +174,9 @@ export default function MobileProfileClient({
         )}
 
         {/* Stats Row */}
+        {/* TODO: Re-enable followers/following links once fetching is refactored */}
         <div className='flex gap-8 mb-4'>
-          <Link
+          {/* <Link
             href={`/m/profile/${user.id}/followers`}
             className='flex flex-col items-center min-h-[44px] justify-center'
           >
@@ -183,8 +184,12 @@ export default function MobileProfileClient({
               {displayedFollowersCount}
             </span>
             <span className='text-xs text-zinc-500'>Followers</span>
-          </Link>
-          <Link
+          </Link> */}
+          <div className='flex flex-col items-center min-h-[44px] justify-center'>
+            <span className='text-lg font-semibold text-white'>∞</span>
+            <span className='text-xs text-zinc-500'>Followers</span>
+          </div>
+          {/* <Link
             href={`/m/profile/${user.id}/following`}
             className='flex flex-col items-center min-h-[44px] justify-center'
           >
@@ -192,7 +197,11 @@ export default function MobileProfileClient({
               {user.followingCount}
             </span>
             <span className='text-xs text-zinc-500'>Following</span>
-          </Link>
+          </Link> */}
+          <div className='flex flex-col items-center min-h-[44px] justify-center'>
+            <span className='text-lg font-semibold text-white'>∞</span>
+            <span className='text-xs text-zinc-500'>Following</span>
+          </div>
           <div className='flex flex-col items-center'>
             <span className='text-lg font-semibold text-white'>
               {user.recommendationsCount}
