@@ -1229,199 +1229,125 @@ export const queryResolvers: QueryResolvers = {
           showCollectionAddsInFeed: true,
         };
 
-      const activities: Array<{
-        id: string;
-        type: string;
-        createdAt: Date;
-        actor: { id: string; name: string | null; image: string | null };
-        targetUser: {
-          id: string;
-          name: string | null;
-          image: string | null;
-        } | null;
-        album: unknown;
-        recommendation: unknown;
-        collection: unknown;
-        metadata: unknown;
-      }> = [];
+      // Build type filter for Activity table
+      // Map GraphQL enum to database values
+      const typeMap: Record<string, string> = {
+        FOLLOW: 'follow',
+        RECOMMENDATION: 'recommendation',
+        COLLECTION_ADD: 'collection_add',
+      };
+      const dbType = type ? typeMap[type] : undefined;
+      const typeFilter = dbType
+        ? { type: dbType }
+        : { type: { in: ['follow', 'recommendation', 'collection_add'] } };
+
       const cursorDate = cursor ? new Date(cursor) : null;
-      const cursorCondition = cursorDate
-        ? { createdAt: { lt: cursorDate } }
-        : {};
 
-      // 1. Get follow activities
-      if (!type || type === 'FOLLOW') {
-        const followActivities = await prisma.userFollow.findMany({
-          where: {
-            followerId: { in: followedUserIds },
-            ...cursorCondition,
-          },
-          include: {
-            follower: true,
-            followed: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: limit,
-        });
-
-        followActivities.forEach(follow => {
-          // Check if the user allows their activity to be shown
-          const settings = getSettings(follow.followerId);
-          if (!settings.showRecentActivity) return;
-
-          activities.push({
-            id: `follow-${follow.followerId}-${follow.followedId}`,
-            type: 'FOLLOW',
-            createdAt: follow.createdAt,
-            actor: follow.follower,
-            targetUser: follow.followed,
-            album: null,
-            recommendation: null,
-            collection: null,
-            metadata: null,
-          });
-        });
-      }
-
-      // 2. Get recommendations
-      if (!type || type === 'RECOMMENDATION') {
-        const recommendations = await prisma.recommendation.findMany({
-          where: {
-            userId: { in: followedUserIds },
-            ...cursorCondition,
-          },
-          include: {
-            user: true,
-            basisAlbum: {
-              include: {
-                artists: {
-                  include: {
-                    artist: true,
-                  },
-                },
+      // Query Activity table - single query instead of 3 separate queries
+      const activities = await prisma.activity.findMany({
+        where: {
+          userId: { in: followedUserIds },
+          ...typeFilter,
+          deletedAt: null,
+          ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
+        },
+        include: {
+          user: true,
+          targetUser: true,
+          recommendation: {
+            include: {
+              basisAlbum: {
+                include: { artists: { include: { artist: true } } },
               },
-            },
-            recommendedAlbum: {
-              include: {
-                artists: {
-                  include: {
-                    artist: true,
-                  },
-                },
+              recommendedAlbum: {
+                include: { artists: { include: { artist: true } } },
               },
             },
           },
-          orderBy: { createdAt: 'desc' },
-          take: limit,
-        });
-
-        recommendations.forEach(rec => {
-          // Check if the user allows their activity to be shown
-          const settings = getSettings(rec.userId);
-          if (!settings.showRecentActivity) return;
-
-          activities.push({
-            id: `rec-${rec.id}`,
-            type: 'RECOMMENDATION',
-            createdAt: rec.createdAt,
-            actor: rec.user,
-            targetUser: null,
-            album: rec.recommendedAlbum,
-            recommendation: rec,
-            collection: null,
-            metadata: {
-              score: rec.score,
-              basisAlbum: rec.basisAlbum,
-              collectionName: null,
-              personalRating: null,
-              position: null,
-            },
-          });
-        });
-      }
-
-      // 3. Get collection adds
-      if (!type || type === 'COLLECTION_ADD') {
-        const collectionAdds = await prisma.collectionAlbum.findMany({
-          where: {
-            collection: {
-              userId: { in: followedUserIds },
-            },
-            ...(cursorDate ? { addedAt: { lt: cursorDate } } : {}),
-          },
-          include: {
-            collection: {
-              include: {
-                user: true,
-              },
-            },
-            album: {
-              include: {
-                artists: {
-                  include: {
-                    artist: true,
-                  },
-                },
+          collectionAlbum: {
+            include: {
+              collection: true,
+              album: {
+                include: { artists: { include: { artist: true } } },
               },
             },
           },
-          orderBy: { addedAt: 'desc' },
-          take: limit,
-        });
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit + 1, // Fetch one extra to check if there's more
+      });
 
-        collectionAdds.forEach(ca => {
-          const settings = getSettings(ca.collection.userId);
+      // Apply privacy filters
+      const filteredActivities = activities.filter(activity => {
+        const settings = getSettings(activity.userId);
 
-          // Check master activity switch
-          if (!settings.showRecentActivity) return;
+        // Check master activity switch
+        if (!settings.showRecentActivity) return false;
 
-          // Check collections visibility
-          if (!settings.showCollections) return;
+        // Check collection-specific privacy settings
+        if (activity.type === 'collection_add' && activity.collectionAlbum) {
+          if (!settings.showCollections) return false;
+
+          const collection = activity.collectionAlbum.collection;
 
           // Check if it's a private collection (allow only "My Collection")
-          if (!ca.collection.isPublic && ca.collection.name !== 'My Collection')
-            return;
+          if (!collection.isPublic && collection.name !== 'My Collection')
+            return false;
 
           // Check specific feed visibility settings
-          const isListenLater = ca.collection.name === 'Listen Later';
-          if (isListenLater && !settings.showListenLaterInFeed) return;
-          if (!isListenLater && !settings.showCollectionAddsInFeed) return;
+          const isListenLater = collection.name === 'Listen Later';
+          if (isListenLater && !settings.showListenLaterInFeed) return false;
+          if (!isListenLater && !settings.showCollectionAddsInFeed)
+            return false;
+        }
 
-          activities.push({
-            id: `collection-${ca.id}`,
-            type: 'COLLECTION_ADD',
-            createdAt: ca.addedAt,
-            actor: ca.collection.user,
-            targetUser: null,
-            album: ca.album,
-            recommendation: null,
-            collection: ca.collection,
-            metadata: {
-              score: null,
-              basisAlbum: null,
-              collectionName: ca.collection.name,
-              personalRating: ca.personalRating,
-              position: ca.position,
-            },
-          });
-        });
-      }
+        return true;
+      });
 
-      // Sort all activities by date
-      activities.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-      // Take only the requested limit
-      const limitedActivities = activities.slice(0, limit);
-      const hasMore = activities.length > limit;
+      const hasMore = filteredActivities.length > limit;
+      const finalActivities = filteredActivities.slice(0, limit);
       const nextCursor =
-        hasMore && limitedActivities.length > 0
-          ? limitedActivities[
-              limitedActivities.length - 1
-            ].createdAt.toISOString()
+        hasMore && finalActivities.length > 0
+          ? finalActivities[finalActivities.length - 1].createdAt.toISOString()
           : null;
 
+      // Transform to GraphQL response format
+      const transformedActivities = finalActivities.map(activity => {
+        const metadata = activity.metadata as Record<string, unknown> | null;
+
+        // Map database type back to GraphQL enum
+        const typeEnumMap: Record<string, string> = {
+          follow: 'FOLLOW',
+          recommendation: 'RECOMMENDATION',
+          collection_add: 'COLLECTION_ADD',
+        };
+
+        return {
+          id: activity.id,
+          type: typeEnumMap[activity.type] || activity.type.toUpperCase(),
+          createdAt: activity.createdAt,
+          actor: activity.user,
+          targetUser: activity.targetUser,
+          album:
+            activity.type === 'recommendation'
+              ? activity.recommendation?.recommendedAlbum
+              : activity.collectionAlbum?.album || null,
+          recommendation: activity.recommendation,
+          collection: activity.collectionAlbum?.collection || null,
+          metadata: metadata
+            ? {
+                score: (metadata.score as number) || null,
+                basisAlbum: activity.recommendation?.basisAlbum || null,
+                collectionName: (metadata.collectionName as string) || null,
+                personalRating: (metadata.personalRating as number) || null,
+                position: null,
+              }
+            : null,
+        };
+      });
+
       return {
-        activities: limitedActivities,
+        activities: transformedActivities,
         cursor: nextCursor,
         hasMore,
       };

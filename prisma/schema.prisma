@@ -59,6 +59,8 @@ model User {
   followers            UserFollow[]     @relation("UserFollowers")
   following            UserFollow[]     @relation("UserFollowing")
   enrichmentLogs       EnrichmentLog[]
+  activities           Activity[]       @relation("ActivityActor")
+  targetedActivities   Activity[]       @relation("ActivityTarget")
 }
 
 model UserSettings {
@@ -94,18 +96,19 @@ model VerificationToken {
 }
 
 model Recommendation {
-  id                   String   @id @default(cuid())
+  id                   String     @id @default(cuid())
   score                Int
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
   userId               String
-  basisAlbumId         String   @map("basis_album_id") @db.Uuid
-  recommendedAlbumId   String   @map("recommended_album_id") @db.Uuid
-  basisDiscogsId       String?  @map("basis_discogs_id")
-  recommendedDiscogsId String?  @map("recommended_discogs_id")
-  basisAlbum           Album    @relation("BasisAlbum", fields: [basisAlbumId], references: [id], onDelete: Cascade)
-  recommendedAlbum     Album    @relation("RecommendedAlbum", fields: [recommendedAlbumId], references: [id], onDelete: Cascade)
-  user                 User     @relation(fields: [userId], references: [id])
+  basisAlbumId         String     @map("basis_album_id") @db.Uuid
+  recommendedAlbumId   String     @map("recommended_album_id") @db.Uuid
+  basisDiscogsId       String?    @map("basis_discogs_id")
+  recommendedDiscogsId String?    @map("recommended_discogs_id")
+  basisAlbum           Album      @relation("BasisAlbum", fields: [basisAlbumId], references: [id], onDelete: Cascade)
+  recommendedAlbum     Album      @relation("RecommendedAlbum", fields: [recommendedAlbumId], references: [id], onDelete: Cascade)
+  user                 User       @relation(fields: [userId], references: [id])
+  activities           Activity[]
 
   @@index([userId])
   @@index([basisAlbumId])
@@ -139,6 +142,7 @@ model CollectionAlbum {
   discogsId      String?    @map("discogs_id")
   album          Album      @relation(fields: [albumId], references: [id], onDelete: Cascade)
   collection     Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  activities     Activity[]
 
   @@unique([collectionId, albumId])
   @@index([collectionId])
@@ -159,6 +163,44 @@ model UserFollow {
   @@index([followerId])
   @@index([followedId])
   @@map("user_follows")
+}
+
+// ============================================================================
+// Activity Feed (Social Feed)
+// ============================================================================
+
+model Activity {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String    @db.VarChar(50) // 'follow', 'recommendation', 'collection_add', 'collection_remove'
+
+  // Target references (nullable based on activity type)
+  targetUserId      String?
+  recommendationId  String?
+  collectionAlbumId String?
+
+  // Denormalized data for fast feed queries
+  metadata  Json?
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  deletedAt DateTime? // Soft delete for unfollows, removed recs, etc.
+
+  // Relations
+  user            User              @relation("ActivityActor", fields: [userId], references: [id], onDelete: Cascade)
+  targetUser      User?             @relation("ActivityTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  recommendation  Recommendation?   @relation(fields: [recommendationId], references: [id], onDelete: SetNull)
+  collectionAlbum CollectionAlbum?  @relation(fields: [collectionAlbumId], references: [id], onDelete: SetNull)
+
+  // Indexes for feed queries
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, deletedAt, createdAt(sort: Desc)])
+  @@index([type, createdAt(sort: Desc)])
+  @@index([targetUserId])
+  @@index([recommendationId])
+  @@index([collectionAlbumId])
+
+  @@map("activities")
 }
 
 model UserActivity {

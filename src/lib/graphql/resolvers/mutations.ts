@@ -1145,27 +1145,58 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      // Verify collection ownership
-      const collection = await prisma.collection.findFirst({
-        where: {
-          id: collectionId,
-          userId: user.id,
-        },
-      });
+      // Create collection album and activity in a transaction
+      const collectionAlbum = await prisma.$transaction(async tx => {
+        // Verify collection ownership
+        const collection = await tx.collection.findFirst({
+          where: {
+            id: collectionId,
+            userId: user.id,
+          },
+        });
 
-      if (!collection) {
-        throw new GraphQLError('Collection not found or access denied');
-      }
+        if (!collection) {
+          throw new GraphQLError('Collection not found or access denied');
+        }
 
-      // Perform immediate database operation
-      const collectionAlbum = await prisma.collectionAlbum.create({
-        data: {
-          collectionId,
-          albumId: input.albumId,
-          personalRating: input.personalRating ?? undefined,
-          personalNotes: input.personalNotes,
-          position: input.position || 0,
-        },
+        // Create collection album with album data for activity metadata
+        const ca = await tx.collectionAlbum.create({
+          data: {
+            collectionId,
+            albumId: input.albumId,
+            personalRating: input.personalRating ?? undefined,
+            personalNotes: input.personalNotes,
+            position: input.position || 0,
+          },
+          include: {
+            album: {
+              include: { artists: { include: { artist: true } } },
+            },
+          },
+        });
+
+        // Create Activity record with denormalized data
+        await tx.activity.create({
+          data: {
+            id: `act-col-${ca.id}`,
+            userId: user.id,
+            type: 'collection_add',
+            collectionAlbumId: ca.id,
+            metadata: {
+              collectionId: collection.id,
+              collectionName: collection.name,
+              isPublicCollection: collection.isPublic,
+              albumId: ca.albumId,
+              albumTitle: ca.album.title,
+              albumCoverUrl: ca.album.coverArtUrl,
+              albumArtist: ca.album.artists?.[0]?.artist?.name || null,
+              personalRating: ca.personalRating,
+            },
+            createdAt: ca.addedAt,
+          },
+        });
+
+        return ca;
       });
 
       // Queue lightweight enrichment check (non-blocking)
@@ -1223,24 +1254,42 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      // Verify collection ownership
-      const collection = await prisma.collection.findFirst({
-        where: {
-          id: collectionId,
-          userId: user.id,
-        },
+      // Remove album and soft-delete activity in a transaction
+      await prisma.$transaction(async tx => {
+        // Verify collection ownership
+        const collection = await tx.collection.findFirst({
+          where: {
+            id: collectionId,
+            userId: user.id,
+          },
+        });
+
+        if (!collection) {
+          throw new GraphQLError('Collection not found or access denied');
+        }
+
+        // Find the collection album to get its ID for activity soft-delete
+        const collectionAlbum = await tx.collectionAlbum.findFirst({
+          where: { collectionId, albumId },
+        });
+
+        if (collectionAlbum) {
+          // Soft-delete the Activity first
+          await tx.activity.updateMany({
+            where: { collectionAlbumId: collectionAlbum.id, deletedAt: null },
+            data: { deletedAt: new Date() },
+          });
+        }
+
+        // Delete the collection album
+        await tx.collectionAlbum.deleteMany({
+          where: {
+            collectionId,
+            albumId,
+          },
+        });
       });
 
-      if (!collection) {
-        throw new GraphQLError('Collection not found or access denied');
-      }
-
-      await prisma.collectionAlbum.deleteMany({
-        where: {
-          collectionId,
-          albumId,
-        },
-      });
       return true;
     } catch (error) {
       throw new GraphQLError(
@@ -1396,6 +1445,32 @@ export const mutationResolvers: MutationResolvers = {
     try {
       const ca = await prisma.collectionAlbum.create({
         data: { collectionId: collection.id, albumId: dbAlbumId },
+        include: {
+          album: {
+            include: { artists: { include: { artist: true } } },
+          },
+        },
+      });
+
+      // Create Activity record for Listen Later add
+      await prisma.activity.create({
+        data: {
+          id: `act-col-${ca.id}`,
+          userId: user.id,
+          type: 'collection_add',
+          collectionAlbumId: ca.id,
+          metadata: {
+            collectionId: collection.id,
+            collectionName: collection.name,
+            isPublicCollection: collection.isPublic,
+            albumId: ca.albumId,
+            albumTitle: ca.album.title,
+            albumCoverUrl: ca.album.coverArtUrl,
+            albumArtist: ca.album.artists?.[0]?.artist?.name || null,
+            personalRating: ca.personalRating,
+          },
+          createdAt: ca.addedAt,
+        },
       });
 
       // Queue enrichment for the newly added album
@@ -1436,6 +1511,20 @@ export const mutationResolvers: MutationResolvers = {
       where: { userId: user.id, name },
     });
     if (!collection) return true;
+
+    // Find the collection album to soft-delete activity, then delete
+    const collectionAlbum = await prisma.collectionAlbum.findFirst({
+      where: { collectionId: collection.id, albumId },
+    });
+
+    if (collectionAlbum) {
+      // Soft-delete the Activity
+      await prisma.activity.updateMany({
+        where: { collectionAlbumId: collectionAlbum.id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+    }
+
     await prisma.collectionAlbum.deleteMany({
       where: { collectionId: collection.id, albumId },
     });
@@ -1535,15 +1624,47 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      // Perform immediate database operation and increment user's recommendations count
+      // Perform immediate database operation, create activity, and increment user's recommendations count
       const recommendation = await prisma.$transaction(async tx => {
-        // Create the recommendation
+        // Create the recommendation with album data for activity metadata
         const rec = await tx.recommendation.create({
           data: {
             userId: user.id,
             basisAlbumId,
             recommendedAlbumId,
             score,
+          },
+          include: {
+            basisAlbum: {
+              include: { artists: { include: { artist: true } } },
+            },
+            recommendedAlbum: {
+              include: { artists: { include: { artist: true } } },
+            },
+          },
+        });
+
+        // Create Activity record with denormalized album data
+        await tx.activity.create({
+          data: {
+            id: `act-rec-${rec.id}`,
+            userId: user.id,
+            type: 'recommendation',
+            recommendationId: rec.id,
+            metadata: {
+              score: rec.score,
+              basisAlbumId: rec.basisAlbumId,
+              basisAlbumTitle: rec.basisAlbum.title,
+              basisAlbumCoverUrl: rec.basisAlbum.coverArtUrl,
+              basisAlbumArtist:
+                rec.basisAlbum.artists?.[0]?.artist?.name || null,
+              recommendedAlbumId: rec.recommendedAlbumId,
+              recommendedAlbumTitle: rec.recommendedAlbum.title,
+              recommendedAlbumCoverUrl: rec.recommendedAlbum.coverArtUrl,
+              recommendedAlbumArtist:
+                rec.recommendedAlbum.artists?.[0]?.artist?.name || null,
+            },
+            createdAt: rec.createdAt,
           },
         });
 
@@ -1615,21 +1736,40 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      const recommendation = await prisma.recommendation.findFirst({
-        where: {
-          id,
-          userId: user.id,
-        },
+      // Update recommendation and activity in a transaction
+      const updatedRecommendation = await prisma.$transaction(async tx => {
+        const recommendation = await tx.recommendation.findFirst({
+          where: {
+            id,
+            userId: user.id,
+          },
+        });
+
+        if (!recommendation) {
+          throw new GraphQLError('Recommendation not found or access denied');
+        }
+
+        const rec = await tx.recommendation.update({
+          where: { id },
+          data: { score },
+        });
+
+        // Update Activity metadata score field
+        const activity = await tx.activity.findFirst({
+          where: { recommendationId: id, deletedAt: null },
+        });
+        if (activity && activity.metadata) {
+          await tx.activity.update({
+            where: { id: activity.id },
+            data: {
+              metadata: { ...(activity.metadata as object), score },
+            },
+          });
+        }
+
+        return rec;
       });
 
-      if (!recommendation) {
-        throw new GraphQLError('Recommendation not found or access denied');
-      }
-
-      const updatedRecommendation = await prisma.recommendation.update({
-        where: { id },
-        data: { score },
-      });
       return updatedRecommendation;
     } catch (error) {
       throw new GraphQLError(`Failed to update recommendation: ${error}`);
@@ -1642,7 +1782,7 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      // Delete recommendation and update count in a transaction
+      // Delete recommendation, soft-delete activity, and update count in a transaction
       await prisma.$transaction(async tx => {
         const recommendation = await tx.recommendation.findFirst({
           where: {
@@ -1654,6 +1794,12 @@ export const mutationResolvers: MutationResolvers = {
         if (!recommendation) {
           throw new GraphQLError('Recommendation not found or access denied');
         }
+
+        // Soft-delete the Activity first (before deleting recommendation due to FK)
+        await tx.activity.updateMany({
+          where: { recommendationId: id, deletedAt: null },
+          data: { deletedAt: new Date() },
+        });
 
         // Delete the recommendation
         await tx.recommendation.delete({
@@ -1684,13 +1830,25 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      // Create the follow relationship and update counts in a transaction
+      // Create the follow relationship, activity record, and update counts in a transaction
       const userFollow = await prisma.$transaction(async tx => {
         // Create the follow relationship
         const follow = await tx.userFollow.create({
           data: {
             followerId: user.id,
             followedId: userId,
+          },
+        });
+
+        // Create Activity record for the follow
+        await tx.activity.create({
+          data: {
+            id: `act-follow-${user.id}-${userId}-${Date.now()}`,
+            userId: user.id,
+            type: 'follow',
+            targetUserId: userId,
+            metadata: {},
+            createdAt: follow.createdAt,
           },
         });
 
@@ -1721,7 +1879,7 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      // Delete the follow relationship and update counts in a transaction
+      // Delete the follow relationship, soft-delete activity, and update counts in a transaction
       await prisma.$transaction(async tx => {
         // Delete the follow relationship
         const result = await tx.userFollow.deleteMany({
@@ -1731,8 +1889,19 @@ export const mutationResolvers: MutationResolvers = {
           },
         });
 
-        // Only decrement counts if a follow relationship was actually deleted
+        // Only process if a follow relationship was actually deleted
         if (result.count > 0) {
+          // Soft-delete the follow activity
+          await tx.activity.updateMany({
+            where: {
+              userId: user.id,
+              targetUserId: userId,
+              type: 'follow',
+              deletedAt: null,
+            },
+            data: { deletedAt: new Date() },
+          });
+
           // Decrement the followed user's followers count
           await tx.user.update({
             where: { id: userId },
