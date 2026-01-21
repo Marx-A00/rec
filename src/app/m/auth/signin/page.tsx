@@ -182,6 +182,8 @@ export default function MobileSignInPage() {
                 name='identifier'
                 type='text'
                 autoComplete='username'
+                autoCapitalize='none'
+                autoCorrect='off'
                 required
                 value={credentials.identifier}
                 onChange={e => {
@@ -229,6 +231,8 @@ export default function MobileSignInPage() {
                 name='password'
                 type={showPassword ? 'text' : 'password'}
                 autoComplete='current-password'
+                autoCapitalize='none'
+                autoCorrect='off'
                 required
                 value={credentials.password}
                 onChange={e => {

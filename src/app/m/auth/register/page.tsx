@@ -343,6 +343,8 @@ export default function MobileRegisterPage() {
                 name='username'
                 type='text'
                 autoComplete='username'
+                autoCapitalize='none'
+                autoCorrect='off'
                 required
                 value={formData.username}
                 onChange={handleInputChange}
@@ -411,6 +413,8 @@ export default function MobileRegisterPage() {
                 name='email'
                 type='email'
                 autoComplete='email'
+                autoCapitalize='none'
+                autoCorrect='off'
                 required
                 value={formData.email}
                 onChange={handleInputChange}
@@ -449,6 +453,8 @@ export default function MobileRegisterPage() {
                 name='password'
                 type={showPassword ? 'text' : 'password'}
                 autoComplete='new-password'
+                autoCapitalize='none'
+                autoCorrect='off'
                 required
                 value={formData.password}
                 onChange={handleInputChange}
