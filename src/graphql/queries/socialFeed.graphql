@@ -1,0 +1,65 @@
+# Social Feed Query - fetches activity feed from followed users
+
+fragment ActivityFields on Activity {
+  id
+  type
+  createdAt
+  actor {
+    id
+    username
+    image
+  }
+  targetUser {
+    id
+    username
+    image
+  }
+  album {
+    id
+    title
+    coverArtUrl
+    cloudflareImageId
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+  recommendation {
+    id
+    score
+  }
+  collection {
+    id
+    name
+  }
+  metadata {
+    score
+    basisAlbum {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+    collectionName
+    personalRating
+    position
+  }
+}
+
+query GetSocialFeed($type: ActivityType, $cursor: String, $limit: Int = 20) {
+  socialFeed(type: $type, cursor: $cursor, limit: $limit) {
+    activities {
+      ...ActivityFields
+    }
+    cursor
+    hasMore
+  }
+}

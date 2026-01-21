@@ -1,77 +1,71 @@
 import { Music } from 'lucide-react';
 
-import AlbumImage from './AlbumImage';
+import AlbumImage from '../AlbumImage';
 
 interface ProfileSkeletonProps {
-  /** Whether to show the collection section skeleton */
   showCollection?: boolean;
-  /** Whether to show the recommendations section skeleton */
   showRecommendations?: boolean;
-  /** Number of album skeletons to show in collection */
   albumCount?: number;
-  /** Number of recommendation card skeletons to show */
   recommendationCount?: number;
-  /** Whether this is for own profile (affects buttons) */
   isOwnProfile?: boolean;
-  /** Additional className for container */
   className?: string;
 }
 
-// Shimmer animation component
 const Shimmer = ({ className = '' }: { className?: string }) => (
   <div className={`animate-pulse bg-zinc-800 rounded ${className}`} />
 );
 
-// Skeleton recommendation card component
-const RecommendationCardSkeleton = () => (
-  <div className='bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-4'>
-    {/* Recommendation header */}
-    <div className='flex items-center gap-3'>
-      <Shimmer className='w-8 h-8 rounded-full' />
-      <div className='space-y-2 flex-1'>
-        <Shimmer className='h-4 w-24' />
-        <Shimmer className='h-3 w-16' />
+function ProfileRecommendationCardSkeleton() {
+  return (
+    <div className='bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-4'>
+      {/* Recommendation header */}
+      <div className='flex items-center gap-3'>
+        <Shimmer className='w-8 h-8 rounded-full' />
+        <div className='space-y-2 flex-1'>
+          <Shimmer className='h-4 w-24' />
+          <Shimmer className='h-3 w-16' />
+        </div>
+        <Shimmer className='h-6 w-16 rounded-full' />
       </div>
-      <Shimmer className='h-6 w-16 rounded-full' />
-    </div>
 
-    {/* Basis and recommended albums */}
-    <div className='grid grid-cols-2 gap-4'>
-      {/* Basis Album */}
+      {/* Basis and recommended albums */}
+      <div className='grid grid-cols-2 gap-4'>
+        {/* Basis Album */}
+        <div className='space-y-2'>
+          <Shimmer className='h-3 w-16' />
+          <div className='aspect-square bg-zinc-800 rounded border border-zinc-700 flex items-center justify-center'>
+            <Music className='w-8 h-8 text-zinc-600' />
+          </div>
+          <div className='space-y-1'>
+            <Shimmer className='h-3 w-full' />
+            <Shimmer className='h-3 w-3/4' />
+          </div>
+        </div>
+
+        {/* Recommended Album */}
+        <div className='space-y-2'>
+          <Shimmer className='h-3 w-20' />
+          <div className='aspect-square bg-zinc-800 rounded border border-zinc-700 flex items-center justify-center'>
+            <Music className='w-8 h-8 text-zinc-600' />
+          </div>
+          <div className='space-y-1'>
+            <Shimmer className='h-3 w-full' />
+            <Shimmer className='h-3 w-2/3' />
+          </div>
+        </div>
+      </div>
+
+      {/* Score and notes */}
       <div className='space-y-2'>
-        <Shimmer className='h-3 w-16' />
-        <div className='aspect-square bg-zinc-800 rounded border border-zinc-700 flex items-center justify-center'>
-          <Music className='w-8 h-8 text-zinc-600' />
-        </div>
-        <div className='space-y-1'>
-          <Shimmer className='h-3 w-full' />
-          <Shimmer className='h-3 w-3/4' />
-        </div>
-      </div>
-
-      {/* Recommended Album */}
-      <div className='space-y-2'>
-        <Shimmer className='h-3 w-20' />
-        <div className='aspect-square bg-zinc-800 rounded border border-zinc-700 flex items-center justify-center'>
-          <Music className='w-8 h-8 text-zinc-600' />
-        </div>
-        <div className='space-y-1'>
-          <Shimmer className='h-3 w-full' />
-          <Shimmer className='h-3 w-2/3' />
-        </div>
+        <Shimmer className='h-4 w-20' />
+        <Shimmer className='h-3 w-full' />
+        <Shimmer className='h-3 w-4/5' />
       </div>
     </div>
+  );
+}
 
-    {/* Score and notes */}
-    <div className='space-y-2'>
-      <Shimmer className='h-4 w-20' />
-      <Shimmer className='h-3 w-full' />
-      <Shimmer className='h-3 w-4/5' />
-    </div>
-  </div>
-);
-
-export default function ProfileSkeleton({
+export function ProfileSkeleton({
   showCollection = true,
   showRecommendations = true,
   albumCount = 12,
@@ -183,7 +177,7 @@ export default function ProfileSkeleton({
                       animationDelay: `${index * 100}ms`,
                     }}
                   >
-                    <RecommendationCardSkeleton />
+                    <ProfileRecommendationCardSkeleton />
                   </div>
                 ))}
               </div>

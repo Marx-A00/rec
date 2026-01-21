@@ -1,34 +1,35 @@
-import React from 'react';
+export function CollectionsSkeleton() {
+  return (
+    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className='animate-pulse bg-zinc-800 rounded-lg p-6 space-y-4'
+        >
+          {/* Header */}
+          <div className='space-y-2'>
+            <div className='h-5 bg-zinc-700 rounded w-3/4'></div>
+            <div className='h-4 bg-zinc-700 rounded w-1/2'></div>
+          </div>
 
-interface AlbumCollectionSkeletonProps {
-  /**
-   * Number of skeleton items to render
-   * @default 10
-   */
-  count?: number;
+          {/* Cover Image */}
+          <div className='aspect-square bg-zinc-700 rounded-lg'></div>
 
-  /**
-   * Additional CSS classes for the container
-   */
-  className?: string;
-
-  /**
-   * Show hover effects on skeleton items
-   * @default true
-   */
-  showHoverEffects?: boolean;
-
-  /**
-   * Layout style for the skeleton grid
-   * @default 'grid' - Full responsive grid
-   * @option 'row' - Single horizontal row
-   */
-  layout?: 'grid' | 'row';
+          {/* Footer */}
+          <div className='flex justify-between'>
+            <div className='h-4 bg-zinc-700 rounded w-16'></div>
+            <div className='h-4 bg-zinc-700 rounded w-20'></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
-interface AlbumSkeletonItemProps {
-  showHoverEffects: boolean;
-  delay?: number;
+interface AlbumCollectionSkeletonProps {
+  count?: number;
+  className?: string;
+  showHoverEffects?: boolean;
   layout?: 'grid' | 'row';
 }
 
@@ -36,7 +37,11 @@ function AlbumSkeletonItem({
   showHoverEffects,
   delay = 0,
   layout = 'grid',
-}: AlbumSkeletonItemProps) {
+}: {
+  showHoverEffects: boolean;
+  delay?: number;
+  layout?: 'grid' | 'row';
+}) {
   const itemClasses =
     layout === 'row'
       ? `relative group cursor-pointer transition-all duration-200 flex-shrink-0 w-32 ${showHoverEffects ? 'hover:scale-105 hover:z-10' : ''}`
@@ -85,7 +90,7 @@ function AlbumSkeletonItem({
   );
 }
 
-export default function AlbumCollectionSkeleton({
+export function AlbumCollectionSkeleton({
   count = 10,
   className = '',
   showHoverEffects = true,
@@ -102,7 +107,7 @@ export default function AlbumCollectionSkeleton({
         <AlbumSkeletonItem
           key={i}
           showHoverEffects={showHoverEffects}
-          delay={i * 50} // Staggered animation delay
+          delay={i * 50}
           layout={layout}
         />
       ))}
