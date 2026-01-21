@@ -7,7 +7,6 @@ import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { AnimatedLoader } from '@/components/ui/AnimatedLoader';
-import { MobileButton } from '@/components/mobile/MobileButton';
 import {
   useUniversalSearch,
   type SearchMode,

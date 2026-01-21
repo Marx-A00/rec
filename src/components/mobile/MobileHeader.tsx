@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 
 import {
@@ -16,6 +16,7 @@ import { useSearchStore, SearchType } from '@/stores/useSearchStore';
 export default function MobileHeader() {
   const [query, setQuery] = useState('');
   const router = useRouter();
+  const pathname = usePathname();
 
   // Use Zustand store for search type persistence
   const preferredSearchType = useSearchStore(
@@ -50,6 +51,10 @@ export default function MobileHeader() {
     },
     [query, router, searchType, addRecentSearch]
   );
+
+  // Hide header on auth pages (must be after all hooks)
+  const isAuthPage = pathname.startsWith('/m/auth');
+  if (isAuthPage) return null;
 
   return (
     <header className='sticky top-0 z-40 bg-zinc-900/95 backdrop-blur-lg border-b border-zinc-800 pt-[env(safe-area-inset-top)]'>

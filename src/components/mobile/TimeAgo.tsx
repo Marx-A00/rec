@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
 import { formatTimeAgo } from '@/utils/activity-grouping';
 
 interface TimeAgoProps {

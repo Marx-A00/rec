@@ -5,12 +5,12 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const mobileButtonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]',
   {
     variants: {
       variant: {
         primary:
-          'bg-cosmic-latte text-black shadow hover:bg-cosmic-latte/90 focus-visible:ring-cosmic-latte/50',
+          'bg-red-600 text-white shadow hover:bg-red-700 focus-visible:ring-red-600/50',
         secondary: 'bg-zinc-800 text-white shadow-sm hover:bg-zinc-700',
         outline:
           'border border-zinc-600 bg-transparent text-zinc-200 shadow-sm hover:bg-zinc-800',
@@ -20,9 +20,9 @@ const mobileButtonVariants = cva(
           'bg-emeraled-green text-black shadow hover:bg-emeraled-green/90 focus-visible:ring-emeraled-green/50',
       },
       size: {
-        sm: 'h-9 min-w-[44px] px-3 text-sm',
-        md: 'h-11 min-w-[44px] px-4 text-base',
-        lg: 'h-13 min-w-[44px] px-6 text-base',
+        sm: 'h-10 min-w-[44px] px-4 text-sm font-normal',
+        md: 'h-12 min-w-[44px] px-5 text-base font-normal',
+        lg: 'h-14 min-w-[44px] px-6 text-base font-normal',
       },
       fullWidth: {
         true: 'w-full',
