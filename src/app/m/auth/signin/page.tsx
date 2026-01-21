@@ -8,6 +8,7 @@ import { ArrowLeft, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 
 import { MobileButton } from '@/components/mobile/MobileButton';
 import { getAuthErrorMessage } from '@/types/auth';
+import { useDevLogin } from '@/hooks/useDevLogin';
 
 interface FieldErrors {
   identifier?: string;
@@ -16,6 +17,9 @@ interface FieldErrors {
 
 export default function MobileSignInPage() {
   const router = useRouter();
+
+  // Dev only: Ctrl+C Ctrl+C to auto-login
+  useDevLogin('/m');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isCredentialsLoading, setIsCredentialsLoading] = useState(false);
   const [credentials, setCredentials] = useState({

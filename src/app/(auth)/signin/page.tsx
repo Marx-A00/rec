@@ -7,9 +7,13 @@ import Link from 'next/link';
 
 import BackButton from '@/components/ui/BackButton';
 import { getAuthErrorMessage } from '@/types/auth';
+import { useDevLogin } from '@/hooks/useDevLogin';
 
 export default function SignIn() {
   const router = useRouter();
+
+  // Dev only: Ctrl+C Ctrl+C to auto-login
+  useDevLogin('/browse');
   const [isLoading, setIsLoading] = useState(false);
   // const [isSpotifyLoading, setIsSpotifyLoading] = useState(false);
   const [isCredentialsLoading, setIsCredentialsLoading] = useState(false);
