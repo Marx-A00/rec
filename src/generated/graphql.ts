@@ -3416,6 +3416,132 @@ export type GetDatabaseStatsQuery = {
   };
 };
 
+export type ActivityFieldsFragment = {
+  __typename?: 'Activity';
+  id: string;
+  type: ActivityType;
+  createdAt: Date;
+  actor: {
+    __typename?: 'User';
+    id: string;
+    username?: string | null;
+    image?: string | null;
+  };
+  targetUser?: {
+    __typename?: 'User';
+    id: string;
+    username?: string | null;
+    image?: string | null;
+  } | null;
+  album?: {
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    coverArtUrl?: string | null;
+    cloudflareImageId?: string | null;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  } | null;
+  recommendation?: {
+    __typename?: 'Recommendation';
+    id: string;
+    score: number;
+  } | null;
+  collection?: { __typename?: 'Collection'; id: string; name: string } | null;
+  metadata?: {
+    __typename?: 'ActivityMetadata';
+    score?: number | null;
+    collectionName?: string | null;
+    personalRating?: number | null;
+    position?: number | null;
+    basisAlbum?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    } | null;
+  } | null;
+};
+
+export type GetSocialFeedQueryVariables = Exact<{
+  type?: InputMaybe<ActivityType>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetSocialFeedQuery = {
+  __typename?: 'Query';
+  socialFeed: {
+    __typename?: 'ActivityFeed';
+    cursor?: string | null;
+    hasMore: boolean;
+    activities: Array<{
+      __typename?: 'Activity';
+      id: string;
+      type: ActivityType;
+      createdAt: Date;
+      actor: {
+        __typename?: 'User';
+        id: string;
+        username?: string | null;
+        image?: string | null;
+      };
+      targetUser?: {
+        __typename?: 'User';
+        id: string;
+        username?: string | null;
+        image?: string | null;
+      } | null;
+      album?: {
+        __typename?: 'Album';
+        id: string;
+        title: string;
+        coverArtUrl?: string | null;
+        cloudflareImageId?: string | null;
+        artists: Array<{
+          __typename?: 'ArtistCredit';
+          artist: { __typename?: 'Artist'; id: string; name: string };
+        }>;
+      } | null;
+      recommendation?: {
+        __typename?: 'Recommendation';
+        id: string;
+        score: number;
+      } | null;
+      collection?: {
+        __typename?: 'Collection';
+        id: string;
+        name: string;
+      } | null;
+      metadata?: {
+        __typename?: 'ActivityMetadata';
+        score?: number | null;
+        collectionName?: string | null;
+        personalRating?: number | null;
+        position?: number | null;
+        basisAlbum?: {
+          __typename?: 'Album';
+          id: string;
+          title: string;
+          coverArtUrl?: string | null;
+          cloudflareImageId?: string | null;
+          artists: Array<{
+            __typename?: 'ArtistCredit';
+            artist: { __typename?: 'Artist'; id: string; name: string };
+          }>;
+        } | null;
+      } | null;
+    }>;
+  };
+};
+
 export type GetSyncJobsQueryVariables = Exact<{
   input?: InputMaybe<SyncJobsInput>;
 }>;
@@ -3663,6 +3789,61 @@ export const RecommendationFieldsFragmentDoc = `
         name
       }
     }
+  }
+}
+    `;
+export const ActivityFieldsFragmentDoc = `
+    fragment ActivityFields on Activity {
+  id
+  type
+  createdAt
+  actor {
+    id
+    username
+    image
+  }
+  targetUser {
+    id
+    username
+    image
+  }
+  album {
+    id
+    title
+    coverArtUrl
+    cloudflareImageId
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+  recommendation {
+    id
+    score
+  }
+  collection {
+    id
+    name
+  }
+  metadata {
+    score
+    basisAlbum {
+      id
+      title
+      coverArtUrl
+      cloudflareImageId
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+    collectionName
+    personalRating
+    position
   }
 }
     `;
@@ -7965,6 +8146,88 @@ useInfiniteGetDatabaseStatsQuery.getKey = (
   variables === undefined
     ? ['GetDatabaseStats.infinite']
     : ['GetDatabaseStats.infinite', variables];
+
+export const GetSocialFeedDocument = `
+    query GetSocialFeed($type: ActivityType, $cursor: String, $limit: Int = 20) {
+  socialFeed(type: $type, cursor: $cursor, limit: $limit) {
+    activities {
+      ...ActivityFields
+    }
+    cursor
+    hasMore
+  }
+}
+    ${ActivityFieldsFragmentDoc}`;
+
+export const useGetSocialFeedQuery = <
+  TData = GetSocialFeedQuery,
+  TError = unknown,
+>(
+  variables?: GetSocialFeedQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSocialFeedQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<GetSocialFeedQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<GetSocialFeedQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetSocialFeed']
+        : ['GetSocialFeed', variables],
+    queryFn: fetcher<GetSocialFeedQuery, GetSocialFeedQueryVariables>(
+      GetSocialFeedDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetSocialFeedQuery.getKey = (variables?: GetSocialFeedQueryVariables) =>
+  variables === undefined ? ['GetSocialFeed'] : ['GetSocialFeed', variables];
+
+export const useInfiniteGetSocialFeedQuery = <
+  TData = InfiniteData<GetSocialFeedQuery>,
+  TError = unknown,
+>(
+  variables: GetSocialFeedQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetSocialFeedQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetSocialFeedQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetSocialFeedQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetSocialFeed.infinite']
+            : ['GetSocialFeed.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetSocialFeedQuery, GetSocialFeedQueryVariables>(
+            GetSocialFeedDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetSocialFeedQuery.getKey = (
+  variables?: GetSocialFeedQueryVariables
+) =>
+  variables === undefined
+    ? ['GetSocialFeed.infinite']
+    : ['GetSocialFeed.infinite', variables];
 
 export const GetSyncJobsDocument = `
     query GetSyncJobs($input: SyncJobsInput) {

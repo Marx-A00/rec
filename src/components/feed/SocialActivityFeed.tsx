@@ -1,13 +1,17 @@
 'use client';
 
-import { useEffect, useCallback, useMemo } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import type { Session } from 'next-auth';
 import { useInView } from 'react-intersection-observer';
 
 import SignInButton from '@/components/auth/SignInButton';
 import { groupActivities } from '@/utils/activity-grouping';
+import {
+  useInfiniteGetSocialFeedQuery,
+  ActivityType,
+  type ActivityFieldsFragment,
+} from '@/generated/graphql';
 
 import GroupedActivityItem from './GroupedActivityItem';
 
@@ -22,6 +26,50 @@ interface SocialActivityFeedProps {
   session?: Session | null; // Optional prop for server-side session
 }
 
+// Map component activity type strings to GraphQL enum
+const activityTypeMap: Record<string, ActivityType> = {
+  follow: ActivityType.Follow,
+  recommendation: ActivityType.Recommendation,
+  collection_add: ActivityType.CollectionAdd,
+  profile_update: ActivityType.ProfileUpdate,
+};
+
+// Transform GraphQL activity to the format expected by ActivityItem/GroupedActivityItem
+function transformActivity(activity: ActivityFieldsFragment) {
+  return {
+    id: activity.id,
+    type: activity.type.toLowerCase().replace('_', '_') as
+      | 'follow'
+      | 'recommendation'
+      | 'collection_add'
+      | 'profile_update',
+    actorId: activity.actor.id,
+    actorName: activity.actor.username || 'Unknown',
+    actorImage: activity.actor.image ?? null,
+    targetId: activity.targetUser?.id,
+    targetName: activity.targetUser?.username ?? undefined,
+    targetImage: activity.targetUser?.image ?? null,
+    albumId: activity.album?.id,
+    albumTitle: activity.album?.title,
+    albumArtist: activity.album?.artists?.[0]?.artist?.name,
+    artistId: activity.album?.artists?.[0]?.artist?.id,
+    albumImage: activity.album?.coverArtUrl ?? null,
+    albumCloudflareImageId: activity.album?.cloudflareImageId ?? null,
+    createdAt:
+      activity.createdAt instanceof Date
+        ? activity.createdAt.toISOString()
+        : activity.createdAt,
+    metadata: activity.metadata
+      ? {
+          score: activity.metadata.score,
+          basisAlbum: activity.metadata.basisAlbum,
+          collectionName: activity.metadata.collectionName,
+          personalRating: activity.metadata.personalRating,
+        }
+      : undefined,
+  };
+}
+
 export default function SocialActivityFeed({
   className = '',
   activityType,
@@ -34,137 +82,7 @@ export default function SocialActivityFeed({
   // Use prop session if provided (server-side), otherwise fall back to client session
   const session = sessionProp ?? clientSession;
 
-  // TODO: See if there is way that we can abstract this query or make it prettier
-
-  const fetchActivities = async ({ pageParam }: { pageParam?: string }) => {
-    // GraphQL query for social feed
-    const query = `
-      query GetSocialFeed($type: ActivityType, $cursor: String, $limit: Int) {
-        socialFeed(type: $type, cursor: $cursor, limit: $limit) {
-          activities {
-            id
-            type
-            createdAt
-            actor {
-              id
-              username
-              image
-            }
-            targetUser {
-              id
-              username
-              image
-            }
-            album {
-              id
-              title
-              coverArtUrl
-              artists {
-                artist {
-                  id
-                  name
-                }
-              }
-            }
-            recommendation {
-              id
-              score
-            }
-            collection {
-              id
-              name
-            }
-            metadata {
-              score
-              basisAlbum {
-                id
-                title
-                coverArtUrl
-                artists {
-                  artist {
-                    id
-                    name
-                  }
-                }
-              }
-              collectionName
-              personalRating
-              position
-            }
-          }
-          cursor
-          hasMore
-        }
-      }
-    `;
-
-    // Map activity type to GraphQL enum
-    const typeMap: Record<string, string> = {
-      follow: 'FOLLOW',
-      recommendation: 'RECOMMENDATION',
-      collection_add: 'COLLECTION_ADD',
-      profile_update: 'PROFILE_UPDATE',
-    };
-
-    const response = await fetch('/api/graphql', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        query,
-        variables: {
-          type: activityType ? typeMap[activityType] : null,
-          cursor: pageParam,
-          limit: 20,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch activities');
-    }
-
-    const { data, errors } = await response.json();
-
-    if (errors) {
-      throw new Error(errors[0].message);
-    }
-
-    // Transform GraphQL response to match existing format
-    const activities = data.socialFeed.activities.map((activity: any) => ({
-      id: activity.id,
-      type: activity.type.toLowerCase().replace('_', '_'),
-      actorId: activity.actor.id,
-      actorName: activity.actor.username,
-      actorImage: activity.actor.image,
-      targetId: activity.targetUser?.id,
-      targetName: activity.targetUser?.username,
-      targetImage: activity.targetUser?.image,
-      albumId: activity.album?.id,
-      albumTitle: activity.album?.title,
-      albumArtist: activity.album?.artists?.[0]?.artist?.name,
-      artistId: activity.album?.artists?.[0]?.artist?.id,
-      albumImage: activity.album?.coverArtUrl,
-      createdAt: activity.createdAt,
-      metadata: activity.metadata
-        ? {
-            score: activity.metadata.score,
-            basisAlbum: activity.metadata.basisAlbum,
-            collectionName: activity.metadata.collectionName,
-            personalRating: activity.metadata.personalRating,
-          }
-        : undefined,
-    }));
-
-    return {
-      activities,
-      nextCursor: data.socialFeed.cursor,
-      hasMore: data.socialFeed.hasMore,
-    };
-  };
-
+  // Use generated infinite query hook
   const {
     data,
     error,
@@ -175,21 +93,43 @@ export default function SocialActivityFeed({
     isError,
     refetch,
     isFetching,
-  } = useInfiniteQuery({
-    queryKey: ['social-feed', activityType],
-    queryFn: fetchActivities,
-    initialPageParam: undefined,
-    getNextPageParam: lastPage => lastPage.nextCursor,
-    staleTime: 5 * 60 * 1000, // 5 minutes (increased from 30 seconds)
-    gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    refetchInterval: false, // DISABLED: was refreshInterval - causing performance issues
-    refetchOnWindowFocus: false, // DISABLED: prevent refetch on tab switch
-    refetchOnMount: true, // Refetch only if stale (respects staleTime)
-    enabled: !!session, // Only fetch if user is signed in
-  });
+  } = useInfiniteGetSocialFeedQuery(
+    {
+      type: activityType ? activityTypeMap[activityType] : undefined,
+      limit: 20,
+    },
+    {
+      initialPageParam: { cursor: undefined } as { cursor: string | undefined },
+      getNextPageParam: lastPage =>
+        lastPage.socialFeed.cursor
+          ? { cursor: lastPage.socialFeed.cursor }
+          : undefined,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
+      refetchInterval: false, // DISABLED: was refreshInterval - causing performance issues
+      refetchOnWindowFocus: false, // DISABLED: prevent refetch on tab switch
+      refetchOnMount: true, // Refetch only if stale (respects staleTime)
+      enabled: !!session, // Only fetch if user is signed in
+    }
+  );
 
-  // Flatten activities from all pages
-  const activities = data?.pages?.flatMap(page => page.activities || []) || [];
+  // Flatten and transform activities from all pages, deduplicating by ID
+  const activities = useMemo(() => {
+    const allActivities =
+      data?.pages?.flatMap(page =>
+        page.socialFeed.activities.map(transformActivity)
+      ) || [];
+
+    // Deduplicate by activity ID (handles pagination drift and any DB duplicates)
+    const seen = new Set<string>();
+    return allActivities.filter(activity => {
+      if (seen.has(activity.id)) {
+        return false;
+      }
+      seen.add(activity.id);
+      return true;
+    });
+  }, [data?.pages]);
 
   // Group activities by user and type within time windows
   const groupedActivities = useMemo(() => {
