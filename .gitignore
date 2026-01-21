@@ -109,3 +109,25 @@ MANUAL-QA-CHECKLIST.org
 scripts/spotify-api-setup-guide.html
 testGruv.tsx
 syntax-test.tsx
+
+# Ralph TUI / Session files
+.call_count
+.circuit_breaker_history
+.circuit_breaker_state
+.claude_session_id
+.exit_signals
+.last_reset
+.ralph-tui/
+.ralph_session
+.ralph_session_history
+.response_analysis
+progress.json
+status.json
+tasks/
+
+# Temp docs/prompts
+@AGENT.md
+@fix_plan.md
+PROMPT.md
+ralph-prompt.txt
+docs/social-feed-*.md

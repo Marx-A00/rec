@@ -316,9 +316,8 @@ export default function SocialActivityFeed({
       {isFetchingNextPage && (
         <div className='text-center py-4'>
           <div className='rounded-lg p-4'>
-            <div className='flex items-center justify-center gap-2'>
+            <div className='flex items-center justify-center'>
               <div className='w-4 h-4 border-2 border-emeraled-green border-t-transparent rounded-full animate-spin' />
-              <span className='text-zinc-400'>Loading more activities...</span>
             </div>
           </div>
         </div>
