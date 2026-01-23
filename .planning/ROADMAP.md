@@ -34,12 +34,12 @@ This roadmap delivers an admin data correction feature that lets administrators 
   2. MBID redirects are detected and handled gracefully
   3. Rate limiting is respected (1 request/second to MusicBrainz)
   4. Queue position is observable for debugging
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: Queue priority system for admin requests
-- [ ] 01-02: MBID verification utility
-- [ ] 01-03: Error handling patterns for API failures
+- [ ] 01-01-PLAN.md — Queue priority tiers (ADMIN, USER, ENRICHMENT, BACKGROUND)
+- [ ] 01-02-PLAN.md — MBID verification utility for redirect detection
+- [ ] 01-03-PLAN.md — Structured error handling and queue observability
 
 ### Phase 2: Search Service
 **Goal**: Admins can search MusicBrainz programmatically with match scoring
