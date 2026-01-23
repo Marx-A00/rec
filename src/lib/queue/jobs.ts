@@ -44,6 +44,28 @@ export const JOB_TYPES = {
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
 
 // ============================================================================
+// Priority Tiers
+// ============================================================================
+
+/**
+ * Semantic priority tiers for job scheduling
+ * Lower number = higher priority (BullMQ convention)
+ *
+ * ADMIN: Admin UI corrections - highest priority (immediate feedback)
+ * USER: User-initiated searches (recommendations, collections)
+ * ENRICHMENT: Background enrichment jobs (album/artist data)
+ * BACKGROUND: Scheduled syncs, bulk operations
+ */
+export const PRIORITY_TIERS = {
+  ADMIN: 1,
+  USER: 5,
+  ENRICHMENT: 8,
+  BACKGROUND: 10,
+} as const;
+
+export type PriorityTier = (typeof PRIORITY_TIERS)[keyof typeof PRIORITY_TIERS];
+
+// ============================================================================
 // Job Data Interfaces
 // ============================================================================
 
