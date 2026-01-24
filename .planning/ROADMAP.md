@@ -140,10 +140,9 @@ Plans:
 
 Plans:
 
-- [ ] 06-01: Fix Data button integration in admin album table
-- [ ] 06-02: CorrectionModal component structure
-- [ ] 06-03: Current album data display component
-- [ ] 06-04: External ID status indicators
+- [ ] 06-01-PLAN.md — Modal shell, step navigation, and session persistence
+- [ ] 06-02-PLAN.md — Current data display with accordion sections
+- [ ] 06-03-PLAN.md — Fix Data button and modal integration
 
 ### Phase 7: Search UI
 
@@ -287,7 +286,7 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 3. Preview Service             | 3/3            | Complete    | 2026-01-23 |
 | 4. Apply Service               | 3/3            | Complete    | 2026-01-24 |
 | 5. GraphQL Integration         | 3/3            | Complete    | 2026-01-24 |
-| 6. Modal & Entry Point         | 0/4            | Not started | -          |
+| 6. Modal & Entry Point         | 0/3            | Not started | -          |
 | 7. Search UI                   | 0/3            | Not started | -          |
 | 8. Preview UI                  | 0/4            | Not started | -          |
 | 9. Apply UI                    | 0/4            | Not started | -          |
@@ -295,5 +294,5 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 11. Artist Correction          | 0/4            | Not started | -          |
 | 12. Polish & Recovery          | 0/5            | Not started | -          |
 
-**Total Plans:** 43
+**Total Plans:** 42
 **Total Requirements Covered:** 35/35
