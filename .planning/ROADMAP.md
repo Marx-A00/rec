@@ -97,14 +97,13 @@ Plans:
 3. Before-state is captured in enrichment_logs before any changes
 4. Correction log includes admin user ID and timestamp
 5. Failed transactions leave no partial changes (atomic rollback)
-   **Plans**: TBD
+   **Plans**: 3 plans
 
 Plans:
 
-- [ ] 04-01: ApplyCorrectionService with Prisma transactions
-- [ ] 04-02: Selective field update logic
-- [ ] 04-03: Audit logging to enrichment_logs
-- [ ] 04-04: Data quality score update after correction
+- [ ] 04-01-PLAN.md — Apply types and track matching strategy
+- [ ] 04-02-PLAN.md — Selective field update logic
+- [ ] 04-03-PLAN.md — ApplyCorrectionService with audit logging
 
 ### Phase 5: GraphQL Integration
 
@@ -286,7 +285,7 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 1. Foundation & Infrastructure | 3/3            | Complete    | 2026-01-24 |
 | 2. Search Service              | 3/3            | Complete    | 2026-01-23 |
 | 3. Preview Service             | 3/3            | Complete    | 2026-01-23 |
-| 4. Apply Service               | 0/4            | Not started | -          |
+| 4. Apply Service               | 0/3            | Not started | -          |
 | 5. GraphQL Integration         | 0/3            | Not started | -          |
 | 6. Modal & Entry Point         | 0/4            | Not started | -          |
 | 7. Search UI                   | 0/3            | Not started | -          |
@@ -296,5 +295,5 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 11. Artist Correction          | 0/4            | Not started | -          |
 | 12. Polish & Recovery          | 0/5            | Not started | -          |
 
-**Total Plans:** 44
+**Total Plans:** 43
 **Total Requirements Covered:** 35/35
