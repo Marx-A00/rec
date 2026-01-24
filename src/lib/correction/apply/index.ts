@@ -34,3 +34,13 @@ export {
   SIMILARITY_THRESHOLD,
 } from './track-matcher';
 export type { TrackMatch, TrackMatchType } from './track-matcher';
+
+// Field selectors
+export {
+  buildAlbumUpdateData,
+  buildTrackUpdateData,
+  buildTrackCreateData,
+  getTrackIdsToDelete,
+  hasAnyMetadataSelected,
+  parseReleaseDate,
+} from './field-selector';
