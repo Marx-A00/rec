@@ -1,19 +1,16 @@
-mutation CorrectionApply($input: CorrectionApplyInput!) {
+mutation ApplyCorrection($input: CorrectionApplyInput!) {
   correctionApply(input: $input) {
     success
     # Success fields (when success=true)
     album {
       id
       title
-      artistName
       releaseDate
       releaseType
-      releaseCountry
       barcode
       label
       musicbrainzId
-      releaseGroupMbid
-      coverImage
+      coverArtUrl
       cloudflareImageId
       dataQuality
       updatedAt
@@ -27,25 +24,31 @@ mutation CorrectionApply($input: CorrectionApplyInput!) {
         musicbrainzId
       }
       artists {
-        id
-        name
-        musicbrainzId
-        imageUrl
+        artist {
+          id
+          name
+          musicbrainzId
+          imageUrl
+        }
+        role
+        position
       }
     }
     changes {
-      fieldsUpdated
+      metadata
       artists {
         added
-        updated
-        linked
+        removed
       }
       tracks {
         added
-        updated
+        modified
         removed
       }
+      externalIds
       coverArt
+      dataQualityBefore
+      dataQualityAfter
     }
     # Error fields (when success=false)
     code

@@ -1,35 +1,33 @@
-query CorrectionPreview($input: CorrectionPreviewInput!) {
+query GetCorrectionPreview($input: CorrectionPreviewInput!) {
   correctionPreview(input: $input) {
     albumId
     albumTitle
     albumUpdatedAt
     sourceResult {
-      resultIndex
-      searchResult {
+      releaseGroupMbid
+      title
+      disambiguation
+      artistCredits {
         mbid
-        releaseGroupMbid
-        title
-        artistName
-        artistMbid
-        releaseDate
-        country
-        releaseType
-        secondaryTypes
-        coverArtUrl
-        label
+        name
       }
-      scoring {
-        normalizedScore
-        displayScore
-        breakdown {
-          titleMatch
-          artistMatch
-          yearMatch
-          mbScoreContribution
-        }
-        isLowConfidence
-        scoringStrategy
+      primaryArtistName
+      firstReleaseDate
+      primaryType
+      secondaryTypes
+      mbScore
+      coverArtUrl
+      source
+      normalizedScore
+      displayScore
+      breakdown {
+        titleScore
+        artistScore
+        yearScore
+        mbScore
+        confidenceTier
       }
+      isLowConfidence
     }
     mbReleaseData {
       id
@@ -43,9 +41,12 @@ query CorrectionPreview($input: CorrectionPreviewInput!) {
         trackCount
         tracks {
           position
-          title
-          length
-          number
+          recording {
+            id
+            title
+            length
+            position
+          }
         }
       }
       artistCredit {
@@ -55,8 +56,6 @@ query CorrectionPreview($input: CorrectionPreviewInput!) {
           id
           name
           sortName
-          type
-          country
           disambiguation
         }
       }
@@ -64,33 +63,20 @@ query CorrectionPreview($input: CorrectionPreviewInput!) {
     fieldDiffs
     artistDiff {
       changeType
-      currentCredits {
+      current {
+        mbid
         name
-        joinphrase
-        artistId
-        artistName
-        artistMbid
       }
-      sourceCredits {
+      source {
+        mbid
         name
-        joinphrase
-        artist {
-          id
-          name
-          sortName
-          type
-          country
-          disambiguation
-        }
       }
-      artistMappings {
-        position
-        currentArtistId
-        currentArtistName
-        sourceArtistMbid
-        sourceArtistName
-        status
-        confidence
+      currentDisplay
+      sourceDisplay
+      nameDiff {
+        value
+        added
+        removed
       }
     }
     trackDiffs {
@@ -105,8 +91,7 @@ query CorrectionPreview($input: CorrectionPreviewInput!) {
       source {
         title
         durationMs
-        position
-        number
+        mbid
       }
       titleDiff {
         value
@@ -119,33 +104,23 @@ query CorrectionPreview($input: CorrectionPreviewInput!) {
     trackSummary {
       totalCurrent
       totalSource
-      matched
+      matching
+      modified
       added
       removed
-      modified
-      unchanged
     }
     coverArt {
       changeType
       currentUrl
       sourceUrl
-      currentCloudflareId
-      sourceDimensions {
-        width
-        height
-      }
     }
     summary {
       totalFields
       changedFields
       addedFields
-      removedFields
       modifiedFields
-      unchangedFields
+      conflictFields
       hasTrackChanges
-      hasArtistChanges
-      hasCoverArtChange
-      overallRisk
     }
   }
 }

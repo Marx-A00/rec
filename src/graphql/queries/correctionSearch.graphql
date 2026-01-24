@@ -1,62 +1,58 @@
-query CorrectionSearch($input: CorrectionSearchInput!) {
+query SearchCorrectionCandidates($input: CorrectionSearchInput!) {
   correctionSearch(input: $input) {
     results {
       releaseGroupMbid
       primaryResult {
-        resultIndex
-        searchResult {
+        releaseGroupMbid
+        title
+        disambiguation
+        artistCredits {
           mbid
-          releaseGroupMbid
-          title
-          artistName
-          artistMbid
-          releaseDate
-          country
-          releaseType
-          secondaryTypes
-          coverArtUrl
-          label
+          name
         }
-        scoring {
-          normalizedScore
-          displayScore
-          breakdown {
-            titleMatch
-            artistMatch
-            yearMatch
-            mbScoreContribution
-          }
-          isLowConfidence
-          scoringStrategy
+        primaryArtistName
+        firstReleaseDate
+        primaryType
+        secondaryTypes
+        mbScore
+        coverArtUrl
+        source
+        normalizedScore
+        displayScore
+        breakdown {
+          titleScore
+          artistScore
+          yearScore
+          mbScore
+          confidenceTier
         }
+        isLowConfidence
       }
       alternateVersions {
-        resultIndex
-        searchResult {
+        releaseGroupMbid
+        title
+        disambiguation
+        artistCredits {
           mbid
-          releaseGroupMbid
-          title
-          artistName
-          artistMbid
-          releaseDate
-          country
-          releaseType
-          secondaryTypes
-          coverArtUrl
-          label
+          name
         }
-        scoring {
-          normalizedScore
-          displayScore
-          breakdown {
-            titleMatch
-            artistMatch
-            yearMatch
-            mbScoreContribution
-          }
-          isLowConfidence
-          scoringStrategy
+        primaryArtistName
+        firstReleaseDate
+        primaryType
+        secondaryTypes
+        mbScore
+        coverArtUrl
+        source
+        normalizedScore
+        displayScore
+        breakdown {
+          titleScore
+          artistScore
+          yearScore
+          mbScore
+          confidenceTier
         }
+        isLowConfidence
       }
       versionCount
       bestScore

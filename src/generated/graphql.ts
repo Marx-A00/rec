@@ -2406,6 +2406,76 @@ export type AdminUpdateUserShowTourMutation = {
   };
 };
 
+export type ApplyCorrectionMutationVariables = Exact<{
+  input: CorrectionApplyInput;
+}>;
+
+export type ApplyCorrectionMutation = {
+  __typename?: 'Mutation';
+  correctionApply: {
+    __typename?: 'CorrectionApplyResult';
+    success: boolean;
+    code?: ApplyErrorCode | null;
+    message?: string | null;
+    context?: any | null;
+    album?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      releaseDate?: Date | null;
+      releaseType?: string | null;
+      barcode?: string | null;
+      label?: string | null;
+      musicbrainzId?: string | null;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      dataQuality?: DataQuality | null;
+      updatedAt: Date;
+      tracks: Array<{
+        __typename?: 'Track';
+        id: string;
+        title: string;
+        durationMs?: number | null;
+        trackNumber: number;
+        discNumber: number;
+        isrc?: string | null;
+        musicbrainzId?: string | null;
+      }>;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: {
+          __typename?: 'Artist';
+          id: string;
+          name: string;
+          musicbrainzId?: string | null;
+          imageUrl?: string | null;
+        };
+      }>;
+    } | null;
+    changes?: {
+      __typename?: 'AppliedChanges';
+      metadata: Array<string>;
+      externalIds: Array<string>;
+      coverArt: boolean;
+      dataQualityBefore: DataQuality;
+      dataQualityAfter: DataQuality;
+      artists: {
+        __typename?: 'AppliedArtistChanges';
+        added: Array<string>;
+        removed: Array<string>;
+      };
+      tracks: {
+        __typename?: 'AppliedTrackChanges';
+        added: number;
+        modified: number;
+        removed: number;
+      };
+    } | null;
+  };
+};
+
 export type CreateCollectionMutationVariables = Exact<{
   name: Scalars['String']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
@@ -3036,6 +3106,248 @@ export type DeleteArtistMutation = {
     success: boolean;
     message?: string | null;
     deletedId?: string | null;
+  };
+};
+
+export type GetCorrectionPreviewQueryVariables = Exact<{
+  input: CorrectionPreviewInput;
+}>;
+
+export type GetCorrectionPreviewQuery = {
+  __typename?: 'Query';
+  correctionPreview: {
+    __typename?: 'CorrectionPreview';
+    albumId: string;
+    albumTitle: string;
+    albumUpdatedAt: Date;
+    fieldDiffs: any;
+    sourceResult: {
+      __typename?: 'ScoredSearchResult';
+      releaseGroupMbid: string;
+      title: string;
+      disambiguation?: string | null;
+      primaryArtistName: string;
+      firstReleaseDate?: string | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      mbScore: number;
+      coverArtUrl?: string | null;
+      source: string;
+      normalizedScore: number;
+      displayScore: number;
+      isLowConfidence: boolean;
+      artistCredits: Array<{
+        __typename?: 'CorrectionArtistCredit';
+        mbid: string;
+        name: string;
+      }>;
+      breakdown: {
+        __typename?: 'ScoreBreakdown';
+        titleScore: number;
+        artistScore: number;
+        yearScore: number;
+        mbScore?: number | null;
+        confidenceTier?: ConfidenceTier | null;
+      };
+    };
+    mbReleaseData?: {
+      __typename?: 'MBReleaseData';
+      id: string;
+      title: string;
+      date?: string | null;
+      country?: string | null;
+      barcode?: string | null;
+      media: Array<{
+        __typename?: 'MBMedium';
+        position: number;
+        format?: string | null;
+        trackCount: number;
+        tracks: Array<{
+          __typename?: 'MBMediumTrack';
+          position: number;
+          recording: {
+            __typename?: 'MBRecording';
+            id: string;
+            title: string;
+            length?: number | null;
+            position: number;
+          };
+        }>;
+      }>;
+      artistCredit: Array<{
+        __typename?: 'MBArtistCredit';
+        name: string;
+        joinphrase?: string | null;
+        artist: {
+          __typename?: 'MBArtist';
+          id: string;
+          name: string;
+          sortName?: string | null;
+          disambiguation?: string | null;
+        };
+      }>;
+    } | null;
+    artistDiff: {
+      __typename?: 'ArtistCreditDiff';
+      changeType: ChangeType;
+      currentDisplay: string;
+      sourceDisplay: string;
+      current: Array<{
+        __typename?: 'CorrectionArtistCredit';
+        mbid: string;
+        name: string;
+      }>;
+      source: Array<{
+        __typename?: 'CorrectionArtistCredit';
+        mbid: string;
+        name: string;
+      }>;
+      nameDiff?: Array<{
+        __typename?: 'TextDiffPart';
+        value: string;
+        added?: boolean | null;
+        removed?: boolean | null;
+      }> | null;
+    };
+    trackDiffs: Array<{
+      __typename?: 'TrackDiff';
+      position: number;
+      discNumber: number;
+      changeType: string;
+      durationDelta?: number | null;
+      trackId?: string | null;
+      current?: {
+        __typename?: 'TrackData';
+        title: string;
+        durationMs?: number | null;
+        trackNumber: number;
+      } | null;
+      source?: {
+        __typename?: 'TrackSourceData';
+        title: string;
+        durationMs?: number | null;
+        mbid?: string | null;
+      } | null;
+      titleDiff?: Array<{
+        __typename?: 'TextDiffPart';
+        value: string;
+        added?: boolean | null;
+        removed?: boolean | null;
+      }> | null;
+    }>;
+    trackSummary: {
+      __typename?: 'TrackListSummary';
+      totalCurrent: number;
+      totalSource: number;
+      matching: number;
+      modified: number;
+      added: number;
+      removed: number;
+    };
+    coverArt: {
+      __typename?: 'CoverArtDiff';
+      changeType: ChangeType;
+      currentUrl?: string | null;
+      sourceUrl?: string | null;
+    };
+    summary: {
+      __typename?: 'PreviewSummary';
+      totalFields: number;
+      changedFields: number;
+      addedFields: number;
+      modifiedFields: number;
+      conflictFields: number;
+      hasTrackChanges: boolean;
+    };
+  };
+};
+
+export type SearchCorrectionCandidatesQueryVariables = Exact<{
+  input: CorrectionSearchInput;
+}>;
+
+export type SearchCorrectionCandidatesQuery = {
+  __typename?: 'Query';
+  correctionSearch: {
+    __typename?: 'CorrectionSearchResponse';
+    totalGroups: number;
+    hasMore: boolean;
+    results: Array<{
+      __typename?: 'GroupedSearchResult';
+      releaseGroupMbid: string;
+      versionCount: number;
+      bestScore: number;
+      primaryResult: {
+        __typename?: 'ScoredSearchResult';
+        releaseGroupMbid: string;
+        title: string;
+        disambiguation?: string | null;
+        primaryArtistName: string;
+        firstReleaseDate?: string | null;
+        primaryType?: string | null;
+        secondaryTypes?: Array<string> | null;
+        mbScore: number;
+        coverArtUrl?: string | null;
+        source: string;
+        normalizedScore: number;
+        displayScore: number;
+        isLowConfidence: boolean;
+        artistCredits: Array<{
+          __typename?: 'CorrectionArtistCredit';
+          mbid: string;
+          name: string;
+        }>;
+        breakdown: {
+          __typename?: 'ScoreBreakdown';
+          titleScore: number;
+          artistScore: number;
+          yearScore: number;
+          mbScore?: number | null;
+          confidenceTier?: ConfidenceTier | null;
+        };
+      };
+      alternateVersions: Array<{
+        __typename?: 'ScoredSearchResult';
+        releaseGroupMbid: string;
+        title: string;
+        disambiguation?: string | null;
+        primaryArtistName: string;
+        firstReleaseDate?: string | null;
+        primaryType?: string | null;
+        secondaryTypes?: Array<string> | null;
+        mbScore: number;
+        coverArtUrl?: string | null;
+        source: string;
+        normalizedScore: number;
+        displayScore: number;
+        isLowConfidence: boolean;
+        artistCredits: Array<{
+          __typename?: 'CorrectionArtistCredit';
+          mbid: string;
+          name: string;
+        }>;
+        breakdown: {
+          __typename?: 'ScoreBreakdown';
+          titleScore: number;
+          artistScore: number;
+          yearScore: number;
+          mbScore?: number | null;
+          confidenceTier?: ConfidenceTier | null;
+        };
+      }>;
+    }>;
+    query: {
+      __typename?: 'CorrectionSearchQuery';
+      albumTitle?: string | null;
+      artistName?: string | null;
+      yearFilter?: number | null;
+    };
+    scoring: {
+      __typename?: 'CorrectionScoringInfo';
+      strategy: ScoringStrategy;
+      threshold: number;
+      lowConfidenceCount: number;
+    };
   };
 };
 
@@ -4528,6 +4840,94 @@ export const useAdminUpdateUserShowTourMutation = <
 };
 
 useAdminUpdateUserShowTourMutation.getKey = () => ['AdminUpdateUserShowTour'];
+
+export const ApplyCorrectionDocument = `
+    mutation ApplyCorrection($input: CorrectionApplyInput!) {
+  correctionApply(input: $input) {
+    success
+    album {
+      id
+      title
+      releaseDate
+      releaseType
+      barcode
+      label
+      musicbrainzId
+      coverArtUrl
+      cloudflareImageId
+      dataQuality
+      updatedAt
+      tracks {
+        id
+        title
+        durationMs
+        trackNumber
+        discNumber
+        isrc
+        musicbrainzId
+      }
+      artists {
+        artist {
+          id
+          name
+          musicbrainzId
+          imageUrl
+        }
+        role
+        position
+      }
+    }
+    changes {
+      metadata
+      artists {
+        added
+        removed
+      }
+      tracks {
+        added
+        modified
+        removed
+      }
+      externalIds
+      coverArt
+      dataQualityBefore
+      dataQualityAfter
+    }
+    code
+    message
+    context
+  }
+}
+    `;
+
+export const useApplyCorrectionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ApplyCorrectionMutation,
+    TError,
+    ApplyCorrectionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ApplyCorrectionMutation,
+    TError,
+    ApplyCorrectionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ApplyCorrection'],
+    mutationFn: (variables?: ApplyCorrectionMutationVariables) =>
+      fetcher<ApplyCorrectionMutation, ApplyCorrectionMutationVariables>(
+        ApplyCorrectionDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useApplyCorrectionMutation.getKey = () => ['ApplyCorrection'];
 
 export const CreateCollectionDocument = `
     mutation CreateCollection($name: String!, $description: String, $isPublic: Boolean) {
@@ -6042,6 +6442,355 @@ export const useDeleteArtistMutation = <TError = unknown, TContext = unknown>(
 };
 
 useDeleteArtistMutation.getKey = () => ['DeleteArtist'];
+
+export const GetCorrectionPreviewDocument = `
+    query GetCorrectionPreview($input: CorrectionPreviewInput!) {
+  correctionPreview(input: $input) {
+    albumId
+    albumTitle
+    albumUpdatedAt
+    sourceResult {
+      releaseGroupMbid
+      title
+      disambiguation
+      artistCredits {
+        mbid
+        name
+      }
+      primaryArtistName
+      firstReleaseDate
+      primaryType
+      secondaryTypes
+      mbScore
+      coverArtUrl
+      source
+      normalizedScore
+      displayScore
+      breakdown {
+        titleScore
+        artistScore
+        yearScore
+        mbScore
+        confidenceTier
+      }
+      isLowConfidence
+    }
+    mbReleaseData {
+      id
+      title
+      date
+      country
+      barcode
+      media {
+        position
+        format
+        trackCount
+        tracks {
+          position
+          recording {
+            id
+            title
+            length
+            position
+          }
+        }
+      }
+      artistCredit {
+        name
+        joinphrase
+        artist {
+          id
+          name
+          sortName
+          disambiguation
+        }
+      }
+    }
+    fieldDiffs
+    artistDiff {
+      changeType
+      current {
+        mbid
+        name
+      }
+      source {
+        mbid
+        name
+      }
+      currentDisplay
+      sourceDisplay
+      nameDiff {
+        value
+        added
+        removed
+      }
+    }
+    trackDiffs {
+      position
+      discNumber
+      changeType
+      current {
+        title
+        durationMs
+        trackNumber
+      }
+      source {
+        title
+        durationMs
+        mbid
+      }
+      titleDiff {
+        value
+        added
+        removed
+      }
+      durationDelta
+      trackId
+    }
+    trackSummary {
+      totalCurrent
+      totalSource
+      matching
+      modified
+      added
+      removed
+    }
+    coverArt {
+      changeType
+      currentUrl
+      sourceUrl
+    }
+    summary {
+      totalFields
+      changedFields
+      addedFields
+      modifiedFields
+      conflictFields
+      hasTrackChanges
+    }
+  }
+}
+    `;
+
+export const useGetCorrectionPreviewQuery = <
+  TData = GetCorrectionPreviewQuery,
+  TError = unknown,
+>(
+  variables: GetCorrectionPreviewQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetCorrectionPreviewQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetCorrectionPreviewQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetCorrectionPreviewQuery, TError, TData>({
+    queryKey: ['GetCorrectionPreview', variables],
+    queryFn: fetcher<
+      GetCorrectionPreviewQuery,
+      GetCorrectionPreviewQueryVariables
+    >(GetCorrectionPreviewDocument, variables),
+    ...options,
+  });
+};
+
+useGetCorrectionPreviewQuery.getKey = (
+  variables: GetCorrectionPreviewQueryVariables
+) => ['GetCorrectionPreview', variables];
+
+export const useInfiniteGetCorrectionPreviewQuery = <
+  TData = InfiniteData<GetCorrectionPreviewQuery>,
+  TError = unknown,
+>(
+  variables: GetCorrectionPreviewQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetCorrectionPreviewQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetCorrectionPreviewQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetCorrectionPreviewQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'GetCorrectionPreview.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            GetCorrectionPreviewQuery,
+            GetCorrectionPreviewQueryVariables
+          >(GetCorrectionPreviewDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetCorrectionPreviewQuery.getKey = (
+  variables: GetCorrectionPreviewQueryVariables
+) => ['GetCorrectionPreview.infinite', variables];
+
+export const SearchCorrectionCandidatesDocument = `
+    query SearchCorrectionCandidates($input: CorrectionSearchInput!) {
+  correctionSearch(input: $input) {
+    results {
+      releaseGroupMbid
+      primaryResult {
+        releaseGroupMbid
+        title
+        disambiguation
+        artistCredits {
+          mbid
+          name
+        }
+        primaryArtistName
+        firstReleaseDate
+        primaryType
+        secondaryTypes
+        mbScore
+        coverArtUrl
+        source
+        normalizedScore
+        displayScore
+        breakdown {
+          titleScore
+          artistScore
+          yearScore
+          mbScore
+          confidenceTier
+        }
+        isLowConfidence
+      }
+      alternateVersions {
+        releaseGroupMbid
+        title
+        disambiguation
+        artistCredits {
+          mbid
+          name
+        }
+        primaryArtistName
+        firstReleaseDate
+        primaryType
+        secondaryTypes
+        mbScore
+        coverArtUrl
+        source
+        normalizedScore
+        displayScore
+        breakdown {
+          titleScore
+          artistScore
+          yearScore
+          mbScore
+          confidenceTier
+        }
+        isLowConfidence
+      }
+      versionCount
+      bestScore
+    }
+    totalGroups
+    hasMore
+    query {
+      albumTitle
+      artistName
+      yearFilter
+    }
+    scoring {
+      strategy
+      threshold
+      lowConfidenceCount
+    }
+  }
+}
+    `;
+
+export const useSearchCorrectionCandidatesQuery = <
+  TData = SearchCorrectionCandidatesQuery,
+  TError = unknown,
+>(
+  variables: SearchCorrectionCandidatesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SearchCorrectionCandidatesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      SearchCorrectionCandidatesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<SearchCorrectionCandidatesQuery, TError, TData>({
+    queryKey: ['SearchCorrectionCandidates', variables],
+    queryFn: fetcher<
+      SearchCorrectionCandidatesQuery,
+      SearchCorrectionCandidatesQueryVariables
+    >(SearchCorrectionCandidatesDocument, variables),
+    ...options,
+  });
+};
+
+useSearchCorrectionCandidatesQuery.getKey = (
+  variables: SearchCorrectionCandidatesQueryVariables
+) => ['SearchCorrectionCandidates', variables];
+
+export const useInfiniteSearchCorrectionCandidatesQuery = <
+  TData = InfiniteData<SearchCorrectionCandidatesQuery>,
+  TError = unknown,
+>(
+  variables: SearchCorrectionCandidatesQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SearchCorrectionCandidatesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SearchCorrectionCandidatesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SearchCorrectionCandidatesQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'SearchCorrectionCandidates.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            SearchCorrectionCandidatesQuery,
+            SearchCorrectionCandidatesQueryVariables
+          >(SearchCorrectionCandidatesDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSearchCorrectionCandidatesQuery.getKey = (
+  variables: SearchCorrectionCandidatesQueryVariables
+) => ['SearchCorrectionCandidates.infinite', variables];
 
 export const GetEnrichmentLogsDocument = `
     query GetEnrichmentLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: EnrichmentLogStatus, $skip: Int, $limit: Int) {
