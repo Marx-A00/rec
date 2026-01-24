@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Phase 4 - Apply Service (COMPLETE)
+**Current focus:** Phase 5 - GraphQL Integration (IN PROGRESS)
 
 ## Current Position
 
-Phase: 4 of 12 (Apply Service)
-Plan: 3 of 4 in current phase (04-04 is verification)
-Status: Phase complete
-Last activity: 2026-01-24 — Completed 04-03-PLAN.md
+Phase: 5 of 12 (GraphQL Integration)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-01-24 — Completed 05-01-PLAN.md
 
-Progress: [███████░░░] 32%
+Progress: [████████░░] 35%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 12
-- Average duration: 3.4min
-- Total execution time: 47.4min
+- Total plans completed: 13
+- Average duration: 3.5min
+- Total execution time: 52.6min
 
 **By Phase:**
 
@@ -32,11 +32,12 @@ Progress: [███████░░░] 32%
 | 02    | 3     | 7.1min  | 2.4min   |
 | 03    | 3     | 14min   | 4.7min   |
 | 04    | 3     | 11min   | 3.7min   |
+| 05    | 1     | 5.2min  | 5.2min   |
 
 **Recent Trend:**
 
-- Last 5 plans: 03-02 (4min), 03-03 (7min), 04-01 (2.8min), 04-02 (2.2min), 04-03 (6min)
-- Trend: Consistent - service implementation taking ~3.5min average
+- Last 5 plans: 03-03 (7min), 04-01 (2.8min), 04-02 (2.2min), 04-03 (6min), 05-01 (5.2min)
+- Trend: Consistent - schema definition taking slightly longer due to comprehensive type coverage
 
 *Updated after each plan completion*
 
@@ -70,6 +71,7 @@ Recent decisions affecting current work:
 - [04-03]: Admin corrections always HIGH data quality
 - [04-03]: Audit logging AFTER transaction (failure doesn't roll back)
 - [04-03]: Serializable isolation level for transactions
+- [05-01]: JSON scalar for fieldDiffs union type (flexibility over complexity)
 
 ### Pending Todos
 
@@ -83,12 +85,11 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Completed 04-03-PLAN.md
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Phase 4 is complete. Ready for Phase 5 (GraphQL Integration):
-- Create GraphQL schema for correction mutations
-- Implement thin resolvers calling correction services
-- Wire up search, preview, and apply operations
+Continue Phase 5 (GraphQL Integration):
+- 05-02: Implement thin resolvers calling correction services
+- 05-03: Wire up search, preview, and apply operations
