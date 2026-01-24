@@ -89,62 +89,64 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ## Out of Scope
 
-| Feature | Reason |
-|---------|--------|
-| Auto-correction suggestions | v1 is manual search only; ML-based matching is future enhancement |
-| Duplicate album merging | Separate feature with different complexity |
-| User-submitted corrections | Admin-only for data integrity in v1 |
-| Correction history/revert UI | Audit log exists but no UI to browse/revert |
-| Real-time collaboration | Single admin at a time is fine for v1 |
+| Feature                      | Reason                                                            |
+| ---------------------------- | ----------------------------------------------------------------- |
+| Auto-correction suggestions  | v1 is manual search only; ML-based matching is future enhancement |
+| Duplicate album merging      | Separate feature with different complexity                        |
+| User-submitted corrections   | Admin-only for data integrity in v1                               |
+| Correction history/revert UI | Audit log exists but no UI to browse/revert                       |
+| Real-time collaboration      | Single admin at a time is fine for v1                             |
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| MODAL-01 | Phase 6 | Pending |
-| MODAL-02 | Phase 6 | Pending |
-| MODAL-03 | Phase 6 | Pending |
-| MODAL-04 | Phase 6 | Pending |
-| MODAL-05 | Phase 6 | Pending |
-| SEARCH-01 | Phase 2, 7 | Pending |
-| SEARCH-02 | Phase 2, 7 | Pending |
-| SEARCH-03 | Phase 7 | Pending |
-| SEARCH-04 | Phase 2, 7 | Pending |
-| SEARCH-05 | Phase 2, 7 | Pending |
-| SEARCH-06 | Phase 2, 7 | Pending |
-| SEARCH-07 | Phase 1 | Pending |
-| SEARCH-08 | Phase 1, 12 | Pending |
-| PREVIEW-01 | Phase 3, 8 | Pending |
-| PREVIEW-02 | Phase 3, 8 | Pending |
-| PREVIEW-03 | Phase 3, 8 | Pending |
-| PREVIEW-04 | Phase 3, 8 | Pending |
-| PREVIEW-05 | Phase 3, 8 | Pending |
-| PREVIEW-06 | Phase 8 | Pending |
-| APPLY-01 | Phase 4, 9 | Pending |
-| APPLY-02 | Phase 4, 9 | Pending |
-| APPLY-03 | Phase 4, 9 | Pending |
-| APPLY-04 | Phase 4, 9 | Pending |
-| APPLY-05 | Phase 4 | Pending |
-| APPLY-06 | Phase 9 | Pending |
-| APPLY-07 | Phase 4 | Pending |
-| APPLY-08 | Phase 4 | Pending |
-| MANUAL-01 | Phase 10 | Pending |
-| MANUAL-02 | Phase 10 | Pending |
-| MANUAL-03 | Phase 10 | Pending |
-| MANUAL-04 | Phase 10 | Pending |
-| MANUAL-05 | Phase 10 | Pending |
-| MANUAL-06 | Phase 10 | Pending |
-| ARTIST-01 | Phase 11 | Pending |
-| ARTIST-02 | Phase 11 | Pending |
-| ARTIST-03 | Phase 11 | Pending |
-| ARTIST-04 | Phase 11 | Pending |
-| ARTIST-05 | Phase 11 | Pending |
+| Requirement | Phase       | Status  |
+| ----------- | ----------- | ------- |
+| MODAL-01    | Phase 6     | Pending |
+| MODAL-02    | Phase 6     | Pending |
+| MODAL-03    | Phase 6     | Pending |
+| MODAL-04    | Phase 6     | Pending |
+| MODAL-05    | Phase 6     | Pending |
+| SEARCH-01   | Phase 2, 7  | Pending |
+| SEARCH-02   | Phase 2, 7  | Pending |
+| SEARCH-03   | Phase 7     | Pending |
+| SEARCH-04   | Phase 2, 7  | Pending |
+| SEARCH-05   | Phase 2, 7  | Pending |
+| SEARCH-06   | Phase 2, 7  | Pending |
+| SEARCH-07   | Phase 1     | Complete |
+| SEARCH-08   | Phase 1, 12 | Partial  |
+| PREVIEW-01  | Phase 3, 8  | Pending |
+| PREVIEW-02  | Phase 3, 8  | Pending |
+| PREVIEW-03  | Phase 3, 8  | Pending |
+| PREVIEW-04  | Phase 3, 8  | Pending |
+| PREVIEW-05  | Phase 3, 8  | Pending |
+| PREVIEW-06  | Phase 8     | Pending |
+| APPLY-01    | Phase 4, 9  | Pending |
+| APPLY-02    | Phase 4, 9  | Pending |
+| APPLY-03    | Phase 4, 9  | Pending |
+| APPLY-04    | Phase 4, 9  | Pending |
+| APPLY-05    | Phase 4     | Pending |
+| APPLY-06    | Phase 9     | Pending |
+| APPLY-07    | Phase 4     | Pending |
+| APPLY-08    | Phase 4     | Pending |
+| MANUAL-01   | Phase 10    | Pending |
+| MANUAL-02   | Phase 10    | Pending |
+| MANUAL-03   | Phase 10    | Pending |
+| MANUAL-04   | Phase 10    | Pending |
+| MANUAL-05   | Phase 10    | Pending |
+| MANUAL-06   | Phase 10    | Pending |
+| ARTIST-01   | Phase 11    | Pending |
+| ARTIST-02   | Phase 11    | Pending |
+| ARTIST-03   | Phase 11    | Pending |
+| ARTIST-04   | Phase 11    | Pending |
+| ARTIST-05   | Phase 11    | Pending |
 
 **Coverage:**
+
 - v1 requirements: 35 total
 - Mapped to phases: 35/35
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-01-23*
-*Last updated: 2026-01-23 after roadmap creation*
+
+_Requirements defined: 2026-01-23_
+_Last updated: 2026-01-23 after roadmap creation_
