@@ -13,7 +13,7 @@ This roadmap delivers an admin data correction feature that lets administrators 
 
 - [x] **Phase 1: Foundation & Infrastructure** - Queue priority and MBID verification for reliable API calls
 - [x] **Phase 2: Search Service** - MusicBrainz search with fuzzy matching and rate limiting
-- [ ] **Phase 3: Preview Service** - Side-by-side diff generation and field comparison logic
+- [x] **Phase 3: Preview Service** - Side-by-side diff generation and field comparison logic
 - [ ] **Phase 4: Apply Service** - Atomic corrections with audit logging
 - [ ] **Phase 5: GraphQL Integration** - Schema, resolvers, and generated hooks
 - [ ] **Phase 6: Modal & Entry Point** - Correction modal structure and current data display
@@ -81,9 +81,9 @@ Plans:
 
 Plans:
 
-- [ ] 03-01-PLAN.md — Preview types and text normalization utilities
-- [ ] 03-02-PLAN.md — DiffEngine with field comparison methods
-- [ ] 03-03-PLAN.md — CorrectionPreviewService with MB data fetching
+- [x] 03-01-PLAN.md — Preview types and text normalization utilities
+- [x] 03-02-PLAN.md — DiffEngine with field comparison methods
+- [x] 03-03-PLAN.md — CorrectionPreviewService with MB data fetching
 
 ### Phase 4: Apply Service
 
@@ -285,7 +285,7 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | ------------------------------ | -------------- | ----------- | ---------- |
 | 1. Foundation & Infrastructure | 3/3            | Complete    | 2026-01-24 |
 | 2. Search Service              | 3/3            | Complete    | 2026-01-23 |
-| 3. Preview Service             | 0/3            | Not started | -          |
+| 3. Preview Service             | 3/3            | Complete    | 2026-01-23 |
 | 4. Apply Service               | 0/4            | Not started | -          |
 | 5. GraphQL Integration         | 0/3            | Not started | -          |
 | 6. Modal & Entry Point         | 0/4            | Not started | -          |

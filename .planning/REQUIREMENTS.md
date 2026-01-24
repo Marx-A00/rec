@@ -99,46 +99,46 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ## Traceability
 
-| Requirement | Phase       | Status  |
-| ----------- | ----------- | ------- |
-| MODAL-01    | Phase 6     | Pending |
-| MODAL-02    | Phase 6     | Pending |
-| MODAL-03    | Phase 6     | Pending |
-| MODAL-04    | Phase 6     | Pending |
-| MODAL-05    | Phase 6     | Pending |
+| Requirement | Phase       | Status   |
+| ----------- | ----------- | -------- |
+| MODAL-01    | Phase 6     | Pending  |
+| MODAL-02    | Phase 6     | Pending  |
+| MODAL-03    | Phase 6     | Pending  |
+| MODAL-04    | Phase 6     | Pending  |
+| MODAL-05    | Phase 6     | Pending  |
 | SEARCH-01   | Phase 2, 7  | Partial  |
 | SEARCH-02   | Phase 2, 7  | Partial  |
-| SEARCH-03   | Phase 7     | Pending |
+| SEARCH-03   | Phase 7     | Pending  |
 | SEARCH-04   | Phase 2, 7  | Partial  |
 | SEARCH-05   | Phase 2, 7  | Partial  |
 | SEARCH-06   | Phase 2, 7  | Partial  |
 | SEARCH-07   | Phase 1     | Complete |
 | SEARCH-08   | Phase 1, 12 | Partial  |
-| PREVIEW-01  | Phase 3, 8  | Pending |
-| PREVIEW-02  | Phase 3, 8  | Pending |
-| PREVIEW-03  | Phase 3, 8  | Pending |
-| PREVIEW-04  | Phase 3, 8  | Pending |
-| PREVIEW-05  | Phase 3, 8  | Pending |
-| PREVIEW-06  | Phase 8     | Pending |
-| APPLY-01    | Phase 4, 9  | Pending |
-| APPLY-02    | Phase 4, 9  | Pending |
-| APPLY-03    | Phase 4, 9  | Pending |
-| APPLY-04    | Phase 4, 9  | Pending |
-| APPLY-05    | Phase 4     | Pending |
-| APPLY-06    | Phase 9     | Pending |
-| APPLY-07    | Phase 4     | Pending |
-| APPLY-08    | Phase 4     | Pending |
-| MANUAL-01   | Phase 10    | Pending |
-| MANUAL-02   | Phase 10    | Pending |
-| MANUAL-03   | Phase 10    | Pending |
-| MANUAL-04   | Phase 10    | Pending |
-| MANUAL-05   | Phase 10    | Pending |
-| MANUAL-06   | Phase 10    | Pending |
-| ARTIST-01   | Phase 11    | Pending |
-| ARTIST-02   | Phase 11    | Pending |
-| ARTIST-03   | Phase 11    | Pending |
-| ARTIST-04   | Phase 11    | Pending |
-| ARTIST-05   | Phase 11    | Pending |
+| PREVIEW-01  | Phase 3, 8  | Partial  |
+| PREVIEW-02  | Phase 3, 8  | Partial  |
+| PREVIEW-03  | Phase 3, 8  | Partial  |
+| PREVIEW-04  | Phase 3, 8  | Partial  |
+| PREVIEW-05  | Phase 3, 8  | Partial  |
+| PREVIEW-06  | Phase 8     | Pending  |
+| APPLY-01    | Phase 4, 9  | Pending  |
+| APPLY-02    | Phase 4, 9  | Pending  |
+| APPLY-03    | Phase 4, 9  | Pending  |
+| APPLY-04    | Phase 4, 9  | Pending  |
+| APPLY-05    | Phase 4     | Pending  |
+| APPLY-06    | Phase 9     | Pending  |
+| APPLY-07    | Phase 4     | Pending  |
+| APPLY-08    | Phase 4     | Pending  |
+| MANUAL-01   | Phase 10    | Pending  |
+| MANUAL-02   | Phase 10    | Pending  |
+| MANUAL-03   | Phase 10    | Pending  |
+| MANUAL-04   | Phase 10    | Pending  |
+| MANUAL-05   | Phase 10    | Pending  |
+| MANUAL-06   | Phase 10    | Pending  |
+| ARTIST-01   | Phase 11    | Pending  |
+| ARTIST-02   | Phase 11    | Pending  |
+| ARTIST-03   | Phase 11    | Pending  |
+| ARTIST-04   | Phase 11    | Pending  |
+| ARTIST-05   | Phase 11    | Pending  |
 
 **Coverage:**
 
