@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-01-23)
 ## Current Position
 
 Phase: 3 of 12 (Preview Service)
-Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-01-23 — Phase 2 complete, verified ✓
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-01-24 — Completed 03-01-PLAN.md
 
-Progress: [████░░░░░░] 17%
+Progress: [████░░░░░░] 19%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 6
-- Average duration: 3.7min
-- Total execution time: 22.4min
+- Total plans completed: 7
+- Average duration: 3.4min
+- Total execution time: 25.4min
 
 **By Phase:**
 
@@ -30,13 +30,14 @@ Progress: [████░░░░░░] 17%
 | ----- | ----- | ------- | -------- |
 | 01    | 3     | 15.3min | 5.1min   |
 | 02    | 3     | 7.1min  | 2.4min   |
+| 03    | 1     | 3.0min  | 3.0min   |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-03 (7min), 02-01 (1.8min), 02-02 (3min), 02-03 (2.3min)
-- Trend: Improving - service layer plans executing quickly
+- Last 5 plans: 02-01 (1.8min), 02-02 (3min), 02-03 (2.3min), 03-01 (3min)
+- Trend: Stable - foundation plans averaging ~3min
 
-*Updated after each plan completion*
+_Updated after each plan completion_
 
 ## Accumulated Context
 
@@ -56,6 +57,10 @@ Recent decisions affecting current work:
 - [02-02]: Tier thresholds - high:-1000, medium:-3000, low:-5000 fuzzysort scores
 - [02-02]: Default low-confidence threshold 0.5
 - [02-03]: Type priority sorting - Album:1 > EP:2 > Single:3 for group ordering
+- [03-01]: Five-state change classification (ADDED, MODIFIED, REMOVED, CONFLICT, UNCHANGED)
+- [03-01]: NFD Unicode normalization for text comparison (handles accents)
+- [03-01]: Component-level date diffing (year/month/day granularity)
+- [03-01]: Position-based track comparison (disc + trackNumber, then diff title/duration)
 
 ### Pending Todos
 
@@ -65,16 +70,18 @@ None yet.
 
 - Research flagged: Mobile comparison layout patterns need attention in Phase 8/12
 - Multi-admin scenarios not deeply researched (single admin at a time is fine for v1)
+- [03-01]: No conflict detection rules yet - CONFLICT state exists but 03-02 needs to define when to use it
 
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Completed 02-03-PLAN.md - Phase 2 complete
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Phase 3 (Preview Service) is ready to begin:
-- All search service layer complete
-- CorrectionSearchService, SearchScoringService patterns established
-- Preview will generate field-by-field diffs between current album and MusicBrainz results
+Phase 3 (Preview Service) - Plan 02 (Diff Engine):
+
+- Foundation complete: types, normalizers, diff libraries installed
+- Next: Implement diff engine using jsdiff for character-level diffs
+- Then: Preview service in 03-03 to generate CorrectionPreview objects
