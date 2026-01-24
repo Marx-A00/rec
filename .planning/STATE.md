@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-01-23)
 ## Current Position
 
 Phase: 4 of 12 (Apply Service)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-01-24 — Completed 04-01-PLAN.md
+Last activity: 2026-01-24 — Completed 04-02-PLAN.md
 
-Progress: [██████░░░░] 26%
+Progress: [██████░░░░] 29%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 10
-- Average duration: 3.3min
-- Total execution time: 39.2min
+- Total plans completed: 11
+- Average duration: 3.2min
+- Total execution time: 41.4min
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [██████░░░░] 26%
 | 01    | 3     | 15.3min | 5.1min   |
 | 02    | 3     | 7.1min  | 2.4min   |
 | 03    | 3     | 14min   | 4.7min   |
-| 04    | 1     | 2.8min  | 2.8min   |
+| 04    | 2     | 5min    | 2.5min   |
 
 **Recent Trend:**
 
-- Last 5 plans: 02-03 (2.3min), 03-01 (3min), 03-02 (4min), 03-03 (7min), 04-01 (2.8min)
+- Last 5 plans: 03-01 (3min), 03-02 (4min), 03-03 (7min), 04-01 (2.8min), 04-02 (2.2min)
 - Trend: Consistent - type-focused plans execute quickly
 
 *Updated after each plan completion*
@@ -64,6 +64,9 @@ Recent decisions affecting current work:
 - [03-03]: Preview fetches full MB release via queue with ADMIN priority
 - [04-01]: Track matching strategy - position-first, similarity-fallback (threshold 0.8)
 - [04-01]: Five field selection groups (metadata, artists, tracks, externalIds, coverArt)
+- [04-02]: Conditional update objects - undefined fields mean no change in Prisma
+- [04-02]: Cover art three-way choice (use_source, keep_current, clear)
+- [04-02]: Track selection by database ID, not position
 
 ### Pending Todos
 
@@ -77,12 +80,12 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Completed 04-01-PLAN.md
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Phase 4 continues with 04-02 (Apply Service implementation):
-- Apply types defined
-- Track matcher ready
-- Next: Build applyCorrection() service function with atomic updates
+Phase 4 continues with 04-03 (Apply Service implementation):
+- Field selectors ready for use
+- Next: Build applyCorrection() service with atomic transaction
+- Transaction wraps album update + track create/update/delete + audit log
