@@ -17,6 +17,193 @@ import type { ResolversTypes } from '@/generated/resolvers-types';
 import { JobStatus as GqlJobStatus } from '@/generated/resolvers-types';
 
 import { getSearchService } from '../search';
+// Correction system imports
+import { isAdmin } from '@/lib/permissions';
+import { getCorrectionSearchService } from '@/lib/correction/search-service';
+import { getCorrectionPreviewService } from '@/lib/correction/preview';
+import type { ScoredSearchResult, ScoringStrategy as ServiceScoringStrategy } from '@/lib/correction/scoring/types';
+import type { GroupedSearchResult } from '@/lib/correction/types';
+import {
+  ScoringStrategy as GqlScoringStrategy,
+  ConfidenceTier as GqlConfidenceTier,
+} from '@/generated/resolvers-types';
+
+
+
+// ============================================================================
+// Correction System Helper Functions
+// ============================================================================
+
+/**
+ * Map GraphQL ScoringStrategy enum to service strategy type
+ */
+function mapGqlStrategyToService(
+  strategy: GqlScoringStrategy | null | undefined
+): ServiceScoringStrategy {
+  if (!strategy) return 'normalized';
+  switch (strategy) {
+    case GqlScoringStrategy.Normalized:
+      return 'normalized';
+    case GqlScoringStrategy.Tiered:
+      return 'tiered';
+    case GqlScoringStrategy.Weighted:
+      return 'weighted';
+    default:
+      return 'normalized';
+  }
+}
+
+/**
+ * Map service strategy type to GraphQL ScoringStrategy enum
+ */
+function mapServiceStrategyToGql(
+  strategy: ServiceScoringStrategy
+): GqlScoringStrategy {
+  switch (strategy) {
+    case 'normalized':
+      return GqlScoringStrategy.Normalized;
+    case 'tiered':
+      return GqlScoringStrategy.Tiered;
+    case 'weighted':
+      return GqlScoringStrategy.Weighted;
+    default:
+      return GqlScoringStrategy.Normalized;
+  }
+}
+
+/**
+ * Map service confidence tier to GraphQL enum
+ */
+function mapConfidenceTierToGql(
+  tier: string | undefined
+): GqlConfidenceTier | null {
+  if (!tier) return null;
+  switch (tier.toLowerCase()) {
+    case 'high':
+      return GqlConfidenceTier.High;
+    case 'medium':
+      return GqlConfidenceTier.Medium;
+    case 'low':
+      return GqlConfidenceTier.Low;
+    case 'none':
+      return GqlConfidenceTier.None;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Transform a scored search result to GraphQL format
+ */
+function transformScoredResult(result: ScoredSearchResult) {
+  return {
+    releaseGroupMbid: result.releaseGroupMbid,
+    title: result.title,
+    disambiguation: result.disambiguation ?? null,
+    artistCredits: result.artistCredits.map(ac => ({
+      mbid: ac.mbid,
+      name: ac.name,
+    })),
+    primaryArtistName: result.primaryArtistName,
+    firstReleaseDate: result.firstReleaseDate ?? null,
+    primaryType: result.primaryType ?? null,
+    secondaryTypes: result.secondaryTypes ?? [],
+    mbScore: result.mbScore,
+    coverArtUrl: result.coverArtUrl,
+    source: result.source,
+    normalizedScore: result.normalizedScore,
+    displayScore: typeof result.displayScore === 'number' ? result.displayScore : 0,
+    breakdown: {
+      titleScore: result.breakdown.titleScore,
+      artistScore: result.breakdown.artistScore,
+      yearScore: result.breakdown.yearScore,
+      mbScore: result.breakdown.mbScore ?? null,
+      confidenceTier: mapConfidenceTierToGql(result.breakdown.confidenceTier),
+    },
+    isLowConfidence: result.isLowConfidence,
+    scoringStrategy: mapServiceStrategyToGql(result.scoringStrategy),
+  };
+}
+
+/**
+ * Transform a grouped search result to GraphQL format
+ */
+function transformGroupedResult(group: GroupedSearchResult) {
+  return {
+    releaseGroupMbid: group.releaseGroupMbid,
+    primaryResult: transformScoredResult(group.primaryResult),
+    alternateVersions: group.alternateVersions.map(transformScoredResult),
+    versionCount: group.versionCount,
+    bestScore: group.bestScore,
+  };
+}
+
+/**
+ * Transform MusicBrainz release data to GraphQL format
+ */
+function transformMBReleaseData(mbData: {
+  id: string;
+  title: string;
+  date?: string;
+  country?: string;
+  barcode?: string;
+  media: Array<{
+    position: number;
+    format?: string;
+    trackCount: number;
+    tracks: Array<{
+      position: number;
+      recording: {
+        id: string;
+        title: string;
+        length?: number;
+        position?: number;
+      };
+    }>;
+  }>;
+  artistCredit: Array<{
+    name: string;
+    joinphrase?: string;
+    artist: {
+      id: string;
+      name: string;
+      sortName?: string;
+      disambiguation?: string;
+    };
+  }>;
+}) {
+  return {
+    id: mbData.id,
+    title: mbData.title,
+    date: mbData.date ?? null,
+    country: mbData.country ?? null,
+    barcode: mbData.barcode ?? null,
+    media: mbData.media.map(medium => ({
+      position: medium.position,
+      format: medium.format ?? null,
+      trackCount: medium.trackCount,
+      tracks: medium.tracks.map(track => ({
+        position: track.position,
+        recording: {
+          id: track.recording.id,
+          title: track.recording.title,
+          length: track.recording.length ?? null,
+        },
+      })),
+    })),
+    artistCredit: mbData.artistCredit.map(ac => ({
+      name: ac.name,
+      joinphrase: ac.joinphrase ?? null,
+      artist: {
+        id: ac.artist.id,
+        name: ac.artist.name,
+        sortName: ac.artist.sortName ?? null,
+        disambiguation: ac.artist.disambiguation ?? null,
+      },
+    })),
+  };
+}
+
 
 // TODO: Fix GraphQL resolver return types to match generated types
 // Prisma returns partial objects; field resolvers populate computed/relational fields
@@ -2281,5 +2468,227 @@ export const queryResolvers: QueryResolvers = {
       );
     }
   },
+  // ============================================================================
+  // Correction System Queries (Admin Only)
+  // ============================================================================
+
+  correctionSearch: async (_, { input }, { user, prisma }) => {
+    // Authentication check
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Authorization check - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const {
+        albumId,
+        albumTitle,
+        artistName,
+        yearFilter,
+        limit,
+        offset,
+        strategy,
+        lowConfidenceThreshold,
+      } = input;
+
+      // Get album data if title/artist not provided
+      let searchAlbumTitle = albumTitle;
+      let searchArtistName = artistName;
+
+      if (!searchAlbumTitle || !searchArtistName) {
+        const album = await prisma.album.findUnique({
+          where: { id: albumId },
+          include: {
+            artists: {
+              include: { artist: true },
+              orderBy: { position: 'asc' },
+            },
+          },
+        });
+
+        if (!album) {
+          throw new GraphQLError('Album not found: ' + albumId, {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        searchAlbumTitle = searchAlbumTitle ?? album.title;
+        searchArtistName = searchArtistName ?? album.artists[0]?.artist?.name;
+      }
+
+      // Map GraphQL strategy enum to service strategy
+      const serviceStrategy = mapGqlStrategyToService(strategy);
+
+      // Execute search with scoring
+      const searchService = getCorrectionSearchService();
+      const response = await searchService.searchWithScoring({
+        albumTitle: searchAlbumTitle,
+        artistName: searchArtistName,
+        yearFilter: yearFilter ?? undefined,
+        limit: limit ?? 10,
+        offset: offset ?? 0,
+        strategy: serviceStrategy,
+        lowConfidenceThreshold: lowConfidenceThreshold ?? 0.5,
+      });
+
+      // Transform to GraphQL format
+      const transformedResults = response.results.map(transformGroupedResult);
+
+      return {
+        results: transformedResults,
+        totalGroups: response.totalGroups,
+        hasMore: response.hasMore,
+        query: {
+          albumTitle: response.query.albumTitle ?? null,
+          artistName: response.query.artistName ?? null,
+          yearFilter: response.query.yearFilter ?? null,
+        },
+        scoring: {
+          strategy: mapServiceStrategyToGql(response.scoring.strategy),
+          threshold: response.scoring.threshold,
+          lowConfidenceCount: response.scoring.lowConfidenceCount,
+        },
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error in correctionSearch:', error);
+      throw new GraphQLError(
+        'Correction search failed: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
+      );
+    }
+  },
+
+  correctionPreview: async (_, { input }, { user, prisma }) => {
+    // Authentication check
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Authorization check - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const { albumId, releaseGroupMbid } = input;
+
+      // Get album with tracks
+      const album = await prisma.album.findUnique({
+        where: { id: albumId },
+        include: {
+          tracks: {
+            orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }],
+          },
+          artists: {
+            include: { artist: true },
+            orderBy: { position: 'asc' },
+          },
+        },
+      });
+
+      if (!album) {
+        throw new GraphQLError('Album not found: ' + albumId, {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Search for the specific release group to get scored result
+      const searchService = getCorrectionSearchService();
+      const searchResponse = await searchService.searchWithScoring({
+        albumTitle: album.title,
+        artistName: album.artists[0]?.artist?.name,
+        limit: 50, // Fetch more to find the specific release group
+      });
+
+      // Find the matching release group result
+      const groupResult = searchResponse.results.find(
+        g => g.releaseGroupMbid === releaseGroupMbid
+      );
+
+      if (!groupResult) {
+        throw new GraphQLError(
+          'Release group not found: ' + releaseGroupMbid,
+          { extensions: { code: 'NOT_FOUND' } }
+        );
+      }
+
+      // Use the primary result's release group MBID as the release MBID for preview
+      // Note: In a more complete implementation, we would look up specific releases within the group
+      const releaseMbid = releaseGroupMbid;
+
+      // Generate preview
+      const previewService = getCorrectionPreviewService();
+      const preview = await previewService.generatePreview(
+        albumId,
+        groupResult.primaryResult,
+        releaseMbid
+      );
+
+      // Transform to GraphQL format
+      return {
+        albumId: albumId,
+        albumTitle: album.title,
+        albumUpdatedAt: album.updatedAt,
+        sourceResult: transformScoredResult(groupResult.primaryResult),
+        mbReleaseData: preview.mbReleaseData
+          ? transformMBReleaseData(preview.mbReleaseData)
+          : null,
+        fieldDiffs: preview.fieldDiffs, // Passed as JSON
+        artistDiff: {
+          changeType: preview.artistDiff.changeType,
+          current: preview.artistDiff.current || [],
+          source: preview.artistDiff.source || [],
+        },
+        trackDiff: {
+          tracks: preview.trackDiffs,
+          summary: {
+            matching: preview.trackSummary.matching,
+            modified: preview.trackSummary.modified,
+            added: preview.trackSummary.added,
+            removed: preview.trackSummary.removed,
+            total:
+              preview.trackSummary.matching +
+              preview.trackSummary.modified +
+              preview.trackSummary.added +
+              preview.trackSummary.removed,
+          },
+        },
+        coverArt: {
+          currentUrl: preview.coverArt.currentUrl,
+          sourceUrl: preview.coverArt.sourceUrl,
+          changeType: preview.coverArt.changeType,
+        },
+        summary: {
+          totalFields: preview.summary.totalFields,
+          changedFields: preview.summary.changedFields,
+          addedFields: preview.summary.addedFields,
+          modifiedFields: preview.summary.modifiedFields,
+          conflictFields: preview.summary.conflictFields,
+          hasTrackChanges: preview.summary.hasTrackChanges,
+        },
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error in correctionPreview:', error);
+      throw new GraphQLError(
+        'Correction preview failed: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
+      );
+    }
+  },
+
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects
 };
