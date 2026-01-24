@@ -3,7 +3,11 @@
 
 import { prisma } from '@/lib/prisma';
 
-import { musicBrainzService } from '../../musicbrainz';
+import {
+  musicBrainzService,
+  verifyMbid,
+  hasIdProperty,
+} from '../../musicbrainz';
 import type {
   MusicBrainzSearchArtistsJobData,
   MusicBrainzSearchReleasesJobData,
@@ -50,29 +54,63 @@ export async function handleSearchRecordings(
 }
 
 // ============================================================================
-// MusicBrainz Lookup Handlers
+// MusicBrainz Lookup Handlers (with MBID verification)
 // ============================================================================
 
 export async function handleLookupArtist(data: MusicBrainzLookupArtistJobData) {
-  return await musicBrainzService.getArtist(data.mbid, data.includes);
+  const result = await musicBrainzService.getArtist(data.mbid, data.includes);
+
+  // Verify MBID wasn't redirected
+  if (hasIdProperty(result)) {
+    return verifyMbid(data.mbid, result);
+  }
+
+  return result;
 }
 
 export async function handleLookupRelease(
   data: MusicBrainzLookupReleaseJobData
 ) {
-  return await musicBrainzService.getRelease(data.mbid, data.includes);
+  const result = await musicBrainzService.getRelease(data.mbid, data.includes);
+
+  // Verify MBID wasn't redirected
+  if (hasIdProperty(result)) {
+    return verifyMbid(data.mbid, result);
+  }
+
+  return result;
 }
 
 export async function handleLookupRecording(
   data: MusicBrainzLookupRecordingJobData
 ) {
-  return await musicBrainzService.getRecording(data.mbid, data.includes);
+  const result = await musicBrainzService.getRecording(
+    data.mbid,
+    data.includes
+  );
+
+  // Verify MBID wasn't redirected
+  if (hasIdProperty(result)) {
+    return verifyMbid(data.mbid, result);
+  }
+
+  return result;
 }
 
 export async function handleLookupReleaseGroup(
   data: MusicBrainzLookupReleaseGroupJobData
 ) {
-  return await musicBrainzService.getReleaseGroup(data.mbid, data.includes);
+  const result = await musicBrainzService.getReleaseGroup(
+    data.mbid,
+    data.includes
+  );
+
+  // Verify MBID wasn't redirected
+  if (hasIdProperty(result)) {
+    return verifyMbid(data.mbid, result);
+  }
+
+  return result;
 }
 
 export async function handleBrowseReleaseGroupsByArtist(data: {
@@ -80,6 +118,8 @@ export async function handleBrowseReleaseGroupsByArtist(data: {
   limit?: number;
   offset?: number;
 }) {
+  // Browse returns a list of release groups, not a single entity by MBID
+  // No verification needed here - the artist MBID is the query parameter
   return await musicBrainzService.getArtistReleaseGroups(
     data.artistMbid,
     data.limit || 100,
@@ -97,7 +137,7 @@ export async function handleBrowseReleaseGroupsByArtist(data: {
  */
 export async function handleMusicBrainzSyncNewReleases(
   data: MusicBrainzSyncNewReleasesJobData
-): Promise<any> {
+): Promise<unknown> {
   console.log(
     `🎵 Syncing MusicBrainz new releases (limit: ${data.limit || 50})`
   );
