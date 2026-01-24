@@ -5,6 +5,7 @@
  * Searches MusicBrainz for correction candidates with ADMIN priority.
  * Supports scoring, grouping, and deduplication of search results.
  * Generates side-by-side previews with field-level diffs.
+ * Applies corrections atomically with audit logging.
  */
 
 // Types
@@ -51,3 +52,31 @@ export type {
   ExternalIdDiff,
   MBReleaseData,
 } from './preview';
+
+// Apply correction types and utilities
+export {
+  createDefaultSelections,
+  selectAllFromPreview,
+  matchTracks,
+  calculateTitleSimilarity,
+  SIMILARITY_THRESHOLD,
+} from './apply';
+export type {
+  MetadataSelections,
+  ExternalIdSelections,
+  CoverArtChoice,
+  FieldSelections,
+  ApplyInput,
+  AppliedChanges,
+  ApplySuccessResult,
+  ApplyFailureResult,
+  ApplyResult,
+  ApplyErrorCode,
+  ApplyError,
+  FieldDelta,
+  TrackChangeLog,
+  ArtistChangeLog,
+  AuditLogPayload,
+  TrackMatch,
+  TrackMatchType,
+} from './apply';
