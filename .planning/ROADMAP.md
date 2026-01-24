@@ -77,13 +77,13 @@ Plans:
 3. Track listing from source is included in preview
 4. External ID changes are clearly indicated
 5. Preview data is sufficient for UI rendering without additional API calls
-   **Plans**: TBD
+   **Plans**: 3 plans
 
 Plans:
 
-- [ ] 03-01: CorrectionPreviewService implementation
-- [ ] 03-02: Field diff algorithm (extends existing EnrichmentFieldDiff)
-- [ ] 03-03: Track listing comparison logic
+- [ ] 03-01-PLAN.md — Preview types and text normalization utilities
+- [ ] 03-02-PLAN.md — DiffEngine with field comparison methods
+- [ ] 03-03-PLAN.md — CorrectionPreviewService with MB data fetching
 
 ### Phase 4: Apply Service
 
