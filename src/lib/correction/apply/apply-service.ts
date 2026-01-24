@@ -41,7 +41,6 @@ import {
   buildAlbumUpdateData,
   buildTrackCreateData,
   buildTrackUpdateData,
-  getTrackIdsToDelete,
   hasAnyMetadataSelected,
 } from './field-selector';
 import { matchTracks, type TrackMatch } from './track-matcher';
@@ -115,7 +114,8 @@ export class ApplyCorrectionService {
    * @returns ApplyResult indicating success with changes or failure with error
    */
   async applyCorrection(input: ApplyInput): Promise<ApplyResult> {
-    const { albumId, preview, selections, expectedUpdatedAt, adminUserId } = input;
+    const { albumId, preview, selections, expectedUpdatedAt, adminUserId } =
+      input;
 
     try {
       // ================================================================
@@ -135,7 +135,10 @@ export class ApplyCorrectionService {
       });
 
       if (!beforeAlbum) {
-        return this.createErrorResult('ALBUM_NOT_FOUND', `Album ${albumId} not found`);
+        return this.createErrorResult(
+          'ALBUM_NOT_FOUND',
+          `Album ${albumId} not found`
+        );
       }
 
       // 2. Extract MB tracks from preview
@@ -157,7 +160,7 @@ export class ApplyCorrectionService {
       // ================================================================
 
       const result = await this.prisma.$transaction(
-        async (tx) => {
+        async tx => {
           // 1. Optimistic locking check
           const current = await tx.album.findUnique({
             where: { id: albumId },
@@ -221,7 +224,9 @@ export class ApplyCorrectionService {
           const afterAlbum = await tx.album.findUnique({
             where: { id: albumId },
             include: {
-              tracks: { orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }] },
+              tracks: {
+                orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }],
+              },
               artists: { include: { artist: true } },
             },
           });
@@ -273,7 +278,6 @@ export class ApplyCorrectionService {
         album: result.updatedAlbum,
         changes,
       };
-
     } catch (error) {
       return this.handleError(error);
     }
@@ -318,12 +322,12 @@ export class ApplyCorrectionService {
     }
 
     return preview.artistDiff.source
-      .filter((artist) => {
+      .filter(artist => {
         // Check if this artist is selected
         const key = artist.mbid ?? artist.name;
         return selections.artists.get(key) === true;
       })
-      .map((artist) => ({
+      .map(artist => ({
         mbid: artist.mbid,
         name: artist.name,
       }));
@@ -346,7 +350,7 @@ export class ApplyCorrectionService {
     }
 
     // Track before state for audit
-    const beforeNames = beforeArtists.map((aa) => aa.artist.name);
+    const beforeNames = beforeArtists.map(aa => aa.artist.name);
 
     // Delete all existing artist associations
     await tx.albumArtist.deleteMany({ where: { albumId } });
@@ -388,8 +392,8 @@ export class ApplyCorrectionService {
     }
 
     // Calculate removed (in before but not in added)
-    const removed = beforeNames.filter((name) => !addedNames.includes(name));
-    const added = addedNames.filter((name) => !beforeNames.includes(name));
+    const removed = beforeNames.filter(name => !addedNames.includes(name));
+    const added = addedNames.filter(name => !beforeNames.includes(name));
 
     return { added, removed };
   }
@@ -435,7 +439,9 @@ export class ApplyCorrectionService {
           // New track from MB - create if track changes are selected
           if (match.mbTrack) {
             // Check if any track is selected (indicating user wants track updates)
-            const anyTrackSelected = Array.from(selections.tracks.values()).some(Boolean);
+            const anyTrackSelected = Array.from(
+              selections.tracks.values()
+            ).some(Boolean);
             if (anyTrackSelected || selections.tracks.size === 0) {
               // If no tracks explicitly selected, still add new tracks
               const createData = buildTrackCreateData(
@@ -453,7 +459,8 @@ export class ApplyCorrectionService {
         case 'ORPHANED': {
           // DB track not in MB - potentially delete
           if (match.dbTrack) {
-            const shouldDelete = selections.tracks.get(match.dbTrack.id) === true;
+            const shouldDelete =
+              selections.tracks.get(match.dbTrack.id) === true;
             if (shouldDelete) {
               await tx.track.delete({ where: { id: match.dbTrack.id } });
               removed++;
@@ -470,7 +477,10 @@ export class ApplyCorrectionService {
   /**
    * Creates an error result with the given code and message.
    */
-  private createErrorResult(code: ApplyErrorCode, message: string): ApplyResult {
+  private createErrorResult(
+    code: ApplyErrorCode,
+    message: string
+  ): ApplyResult {
     return {
       success: false,
       error: { code, message },
@@ -569,34 +579,72 @@ export class ApplyCorrectionService {
     const metadata: FieldDelta[] = [];
 
     if (selections.metadata.title && beforeAlbum.title !== afterAlbum.title) {
-      metadata.push({ field: 'title', before: beforeAlbum.title, after: afterAlbum.title });
+      metadata.push({
+        field: 'title',
+        before: beforeAlbum.title,
+        after: afterAlbum.title,
+      });
     }
     if (selections.metadata.releaseDate) {
-      const beforeDate = beforeAlbum.releaseDate?.toISOString().split('T')[0] ?? null;
-      const afterDate = afterAlbum.releaseDate?.toISOString().split('T')[0] ?? null;
+      const beforeDate =
+        beforeAlbum.releaseDate?.toISOString().split('T')[0] ?? null;
+      const afterDate =
+        afterAlbum.releaseDate?.toISOString().split('T')[0] ?? null;
       if (beforeDate !== afterDate) {
-        metadata.push({ field: 'releaseDate', before: beforeDate, after: afterDate });
+        metadata.push({
+          field: 'releaseDate',
+          before: beforeDate,
+          after: afterDate,
+        });
       }
     }
-    if (selections.metadata.releaseType && beforeAlbum.releaseType !== afterAlbum.releaseType) {
-      metadata.push({ field: 'releaseType', before: beforeAlbum.releaseType, after: afterAlbum.releaseType });
+    if (
+      selections.metadata.releaseType &&
+      beforeAlbum.releaseType !== afterAlbum.releaseType
+    ) {
+      metadata.push({
+        field: 'releaseType',
+        before: beforeAlbum.releaseType,
+        after: afterAlbum.releaseType,
+      });
     }
-    if (selections.metadata.releaseCountry && beforeAlbum.releaseCountry !== afterAlbum.releaseCountry) {
-      metadata.push({ field: 'releaseCountry', before: beforeAlbum.releaseCountry, after: afterAlbum.releaseCountry });
+    if (
+      selections.metadata.releaseCountry &&
+      beforeAlbum.releaseCountry !== afterAlbum.releaseCountry
+    ) {
+      metadata.push({
+        field: 'releaseCountry',
+        before: beforeAlbum.releaseCountry,
+        after: afterAlbum.releaseCountry,
+      });
     }
-    if (selections.metadata.barcode && beforeAlbum.barcode !== afterAlbum.barcode) {
-      metadata.push({ field: 'barcode', before: beforeAlbum.barcode, after: afterAlbum.barcode });
+    if (
+      selections.metadata.barcode &&
+      beforeAlbum.barcode !== afterAlbum.barcode
+    ) {
+      metadata.push({
+        field: 'barcode',
+        before: beforeAlbum.barcode,
+        after: afterAlbum.barcode,
+      });
     }
 
     // External ID deltas
     const externalIds: FieldDelta[] = [];
-    if (selections.externalIds.musicbrainzId && beforeAlbum.musicbrainzId !== afterAlbum.musicbrainzId) {
-      externalIds.push({ field: 'musicbrainzId', before: beforeAlbum.musicbrainzId, after: afterAlbum.musicbrainzId });
+    if (
+      selections.externalIds.musicbrainzId &&
+      beforeAlbum.musicbrainzId !== afterAlbum.musicbrainzId
+    ) {
+      externalIds.push({
+        field: 'musicbrainzId',
+        before: beforeAlbum.musicbrainzId,
+        after: afterAlbum.musicbrainzId,
+      });
     }
 
     // Track change logs - build explicitly to avoid type inference issues
     const tracks: TrackChangeLog[] = [];
-    
+
     for (const match of trackMatches) {
       if (match.matchType === 'NEW' && match.mbTrack) {
         tracks.push({
@@ -612,13 +660,26 @@ export class ApplyCorrectionService {
           position: match.position,
           discNumber: match.discNumber,
         });
-      } else if ((match.matchType === 'POSITION' || match.matchType === 'TITLE_SIMILARITY') && match.dbTrack && match.mbTrack) {
+      } else if (
+        (match.matchType === 'POSITION' ||
+          match.matchType === 'TITLE_SIMILARITY') &&
+        match.dbTrack &&
+        match.mbTrack
+      ) {
         const deltas: FieldDelta[] = [];
         if (match.dbTrack.title !== match.mbTrack.title) {
-          deltas.push({ field: 'title', before: match.dbTrack.title, after: match.mbTrack.title });
+          deltas.push({
+            field: 'title',
+            before: match.dbTrack.title,
+            after: match.mbTrack.title,
+          });
         }
         if (match.dbTrack.durationMs !== match.mbTrack.length) {
-          deltas.push({ field: 'durationMs', before: match.dbTrack.durationMs, after: match.mbTrack.length ?? null });
+          deltas.push({
+            field: 'durationMs',
+            before: match.dbTrack.durationMs,
+            after: match.mbTrack.length ?? null,
+          });
         }
         if (deltas.length > 0) {
           tracks.push({
@@ -634,13 +695,20 @@ export class ApplyCorrectionService {
 
     // Artist change logs
     const artists: ArtistChangeLog[] = [
-      ...artistChanges.added.map((name): ArtistChangeLog => ({ action: 'added', artistName: name })),
-      ...artistChanges.removed.map((name): ArtistChangeLog => ({ action: 'removed', artistName: name })),
+      ...artistChanges.added.map(
+        (name): ArtistChangeLog => ({ action: 'added', artistName: name })
+      ),
+      ...artistChanges.removed.map(
+        (name): ArtistChangeLog => ({ action: 'removed', artistName: name })
+      ),
     ];
 
     // Cover art delta
     let coverArt: FieldDelta | null = null;
-    if (selections.coverArt !== 'keep_current' && beforeAlbum.coverArtUrl !== afterAlbum.coverArtUrl) {
+    if (
+      selections.coverArt !== 'keep_current' &&
+      beforeAlbum.coverArtUrl !== afterAlbum.coverArtUrl
+    ) {
       coverArt = {
         field: 'coverArtUrl',
         before: beforeAlbum.coverArtUrl,
@@ -698,22 +766,35 @@ export class ApplyCorrectionService {
         metadata.push('releaseDate');
       }
     }
-    if (selections.metadata.releaseType && beforeAlbum.releaseType !== afterAlbum.releaseType) {
+    if (
+      selections.metadata.releaseType &&
+      beforeAlbum.releaseType !== afterAlbum.releaseType
+    ) {
       metadata.push('releaseType');
     }
-    if (selections.metadata.releaseCountry && beforeAlbum.releaseCountry !== afterAlbum.releaseCountry) {
+    if (
+      selections.metadata.releaseCountry &&
+      beforeAlbum.releaseCountry !== afterAlbum.releaseCountry
+    ) {
       metadata.push('releaseCountry');
     }
-    if (selections.metadata.barcode && beforeAlbum.barcode !== afterAlbum.barcode) {
+    if (
+      selections.metadata.barcode &&
+      beforeAlbum.barcode !== afterAlbum.barcode
+    ) {
       metadata.push('barcode');
     }
 
     const externalIds: string[] = [];
-    if (selections.externalIds.musicbrainzId && beforeAlbum.musicbrainzId !== afterAlbum.musicbrainzId) {
+    if (
+      selections.externalIds.musicbrainzId &&
+      beforeAlbum.musicbrainzId !== afterAlbum.musicbrainzId
+    ) {
       externalIds.push('musicbrainzId');
     }
 
-    const coverArtChanged = selections.coverArt !== 'keep_current' &&
+    const coverArtChanged =
+      selections.coverArt !== 'keep_current' &&
       beforeAlbum.coverArtUrl !== afterAlbum.coverArtUrl;
 
     return {
