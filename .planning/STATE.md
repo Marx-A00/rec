@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-01-23)
 ## Current Position
 
 Phase: 5 of 12 (GraphQL Integration)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-24 — Completed 05-01-PLAN.md
+Last activity: 2026-01-24 — Completed 05-02-PLAN.md
 
-Progress: [████████░░] 35%
+Progress: [████████░░] 38%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 13
-- Average duration: 3.5min
-- Total execution time: 52.6min
+- Total plans completed: 14
+- Average duration: 3.7min
+- Total execution time: 59.1min
 
 **By Phase:**
 
@@ -32,12 +32,12 @@ Progress: [████████░░] 35%
 | 02    | 3     | 7.1min  | 2.4min   |
 | 03    | 3     | 14min   | 4.7min   |
 | 04    | 3     | 11min   | 3.7min   |
-| 05    | 1     | 5.2min  | 5.2min   |
+| 05    | 2     | 11.7min | 5.9min   |
 
 **Recent Trend:**
 
-- Last 5 plans: 03-03 (7min), 04-01 (2.8min), 04-02 (2.2min), 04-03 (6min), 05-01 (5.2min)
-- Trend: Consistent - schema definition taking slightly longer due to comprehensive type coverage
+- Last 5 plans: 04-01 (2.8min), 04-02 (2.2min), 04-03 (6min), 05-01 (5.2min), 05-02 (6.5min)
+- Trend: Consistent execution times, resolver wiring slightly longer due to type transformations
 
 *Updated after each plan completion*
 
@@ -72,6 +72,8 @@ Recent decisions affecting current work:
 - [04-03]: Audit logging AFTER transaction (failure doesn't roll back)
 - [04-03]: Serializable isolation level for transactions
 - [05-01]: JSON scalar for fieldDiffs union type (flexibility over complexity)
+- [05-02]: Strategy enum mapping via explicit switch statements
+- [05-02]: Preview generated on-demand in correctionApply (not passed from client)
 
 ### Pending Todos
 
@@ -85,11 +87,10 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Completed 05-01-PLAN.md
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
 
 ## Next Steps
 
 Continue Phase 5 (GraphQL Integration):
-- 05-02: Implement thin resolvers calling correction services
-- 05-03: Wire up search, preview, and apply operations
+- 05-03: Wire up final integration and verify end-to-end
