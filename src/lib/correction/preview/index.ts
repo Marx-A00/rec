@@ -1,6 +1,6 @@
 /**
  * Barrel exports for the preview module.
- * Provides all types, normalizers, and diff engine for correction preview system.
+ * Provides all types, normalizers, diff engine, and preview service.
  */
 
 // Types
@@ -32,3 +32,9 @@ export {
 
 // Diff Engine
 export { DiffEngine } from './diff-engine';
+
+// Preview Service
+export {
+  CorrectionPreviewService,
+  getCorrectionPreviewService,
+} from './preview-service';
