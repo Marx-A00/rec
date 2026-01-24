@@ -30,7 +30,7 @@ import {
   type DiscogsGetArtistJobData,
 } from '../jobs';
 
-import { isRetryableError, getErrorCode } from './utils';
+import { toStructuredJobError } from './utils';
 import {
   handleSearchArtists,
   handleSearchReleases,
@@ -299,19 +299,41 @@ export async function processMusicBrainzJob(
     };
   } catch (error) {
     const duration = Date.now() - startTime;
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
 
-    // Determine if error is retryable
-    const isRetryable = isRetryableError(error);
+    // Convert to structured error format for consistent UI interpretation
+    // This provides error.code, error.retryable, and error.retryAfterMs
+    const structuredError = toStructuredJobError(error);
+
+    // Log error with structured info
+    const errorBorder = chalk.red('─'.repeat(60));
+    console.log(errorBorder);
+    console.log(
+      chalk.red('❌ Failed') +
+        ' ' +
+        chalk.yellow('[PROCESSOR LAYER]') +
+        ' ' +
+        chalk.white(job.name) +
+        ' ' +
+        chalk.gray('(ID: ' + job.id + ')') +
+        ' ' +
+        chalk.cyan('in ' + duration + 'ms')
+    );
+    console.log(
+      '   ' +
+        chalk.red('Code:') +
+        ' ' +
+        structuredError.code +
+        ' | ' +
+        chalk.red('Retryable:') +
+        ' ' +
+        structuredError.retryable
+    );
+    console.log('   ' + chalk.red('Message:') + ' ' + structuredError.message);
+    console.log(errorBorder + '\n');
 
     return {
       success: false,
-      error: {
-        message: errorMessage,
-        code: getErrorCode(error),
-        retryable: isRetryable,
-      },
+      error: structuredError,
       metadata: {
         duration,
         timestamp: new Date().toISOString(),

@@ -4,9 +4,50 @@
  */
 
 import { calculateStringSimilarity as fuzzyMatch } from '../../utils/string-similarity';
+import {
+  MusicBrainzApiError,
+  isMusicBrainzApiError,
+  toMusicBrainzApiError,
+  type MusicBrainzErrorCode,
+} from '../../musicbrainz/errors';
 
 // Re-export for use in processors
 export const calculateStringSimilarity = fuzzyMatch;
+// Re-export structured error utilities for processors
+export {
+  MusicBrainzApiError,
+  isMusicBrainzApiError,
+  toMusicBrainzApiError,
+  type MusicBrainzErrorCode,
+};
+
+/**
+ * Structured error result for job processing
+ * Provides consistent error format for UI interpretation
+ */
+export interface StructuredJobError {
+  message: string;
+  code: MusicBrainzErrorCode;
+  retryable: boolean;
+  retryAfterMs?: number;
+}
+
+/**
+ * Convert any error to a structured job error
+ * This ensures all job results have consistent error structure
+ * that the UI can interpret for admin correction workflow
+ */
+export function toStructuredJobError(error: unknown): StructuredJobError {
+  // Convert to MusicBrainzApiError to get structured properties
+  const apiError = toMusicBrainzApiError(error);
+
+  return {
+    message: apiError.message,
+    code: apiError.code,
+    retryable: apiError.retryable,
+    retryAfterMs: apiError.retryAfterMs,
+  };
+}
 
 // ============================================================================
 // Album Matching Utilities
