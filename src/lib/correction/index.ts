@@ -3,6 +3,7 @@
  *
  * Provides services and types for admin album correction workflow.
  * Searches MusicBrainz for correction candidates with ADMIN priority.
+ * Supports scoring, grouping, and deduplication of search results.
  */
 
 // Types
@@ -11,6 +12,9 @@ export type {
   CorrectionArtistCredit,
   CorrectionSearchResult,
   CorrectionSearchResponse,
+  ScoredSearchOptions,
+  GroupedSearchResult,
+  ScoredSearchResponse,
   ScoredSearchResult,
   ScoringStrategy,
   ScoreBreakdown,
