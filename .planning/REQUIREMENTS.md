@@ -106,12 +106,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | MODAL-03    | Phase 6     | Pending |
 | MODAL-04    | Phase 6     | Pending |
 | MODAL-05    | Phase 6     | Pending |
-| SEARCH-01   | Phase 2, 7  | Pending |
-| SEARCH-02   | Phase 2, 7  | Pending |
+| SEARCH-01   | Phase 2, 7  | Partial  |
+| SEARCH-02   | Phase 2, 7  | Partial  |
 | SEARCH-03   | Phase 7     | Pending |
-| SEARCH-04   | Phase 2, 7  | Pending |
-| SEARCH-05   | Phase 2, 7  | Pending |
-| SEARCH-06   | Phase 2, 7  | Pending |
+| SEARCH-04   | Phase 2, 7  | Partial  |
+| SEARCH-05   | Phase 2, 7  | Partial  |
+| SEARCH-06   | Phase 2, 7  | Partial  |
 | SEARCH-07   | Phase 1     | Complete |
 | SEARCH-08   | Phase 1, 12 | Partial  |
 | PREVIEW-01  | Phase 3, 8  | Pending |

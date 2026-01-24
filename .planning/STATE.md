@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Phase 2 Complete - Search Service
+**Current focus:** Phase 3 - Preview Service
 
 ## Current Position
 
-Phase: 2 of 12 (Search Service) - COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-01-24 — Completed 02-03-PLAN.md
+Phase: 3 of 12 (Preview Service)
+Plan: 0 of 3 in current phase
+Status: Ready to plan
+Last activity: 2026-01-23 — Phase 2 complete, verified ✓
 
 Progress: [████░░░░░░] 17%
 
@@ -74,7 +74,7 @@ Resume file: None
 
 ## Next Steps
 
-Phase 3 (GraphQL Layer) is ready to begin:
-- All service layer foundation complete
-- Types ready for schema mapping
-- Service patterns established
+Phase 3 (Preview Service) is ready to begin:
+- All search service layer complete
+- CorrectionSearchService, SearchScoringService patterns established
+- Preview will generate field-by-field diffs between current album and MusicBrainz results

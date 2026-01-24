@@ -12,7 +12,7 @@ This roadmap delivers an admin data correction feature that lets administrators 
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Foundation & Infrastructure** - Queue priority and MBID verification for reliable API calls
-- [ ] **Phase 2: Search Service** - MusicBrainz search with fuzzy matching and rate limiting
+- [x] **Phase 2: Search Service** - MusicBrainz search with fuzzy matching and rate limiting
 - [ ] **Phase 3: Preview Service** - Side-by-side diff generation and field comparison logic
 - [ ] **Phase 4: Apply Service** - Atomic corrections with audit logging
 - [ ] **Phase 5: GraphQL Integration** - Schema, resolvers, and generated hooks
@@ -61,9 +61,9 @@ Plans:
 
 Plans:
 
-- [ ] 02-01-PLAN.md — CorrectionSearchService with ADMIN priority and CAA URLs
-- [ ] 02-02-PLAN.md — Pluggable scoring strategies (normalized, tiered, weighted)
-- [ ] 02-03-PLAN.md — Result grouping, deduplication, and searchWithScoring integration
+- [x] 02-01-PLAN.md — CorrectionSearchService with ADMIN priority and CAA URLs
+- [x] 02-02-PLAN.md — Pluggable scoring strategies (normalized, tiered, weighted)
+- [x] 02-03-PLAN.md — Result grouping, deduplication, and searchWithScoring integration
 
 ### Phase 3: Preview Service
 
@@ -284,7 +284,7 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | Phase                          | Plans Complete | Status      | Completed  |
 | ------------------------------ | -------------- | ----------- | ---------- |
 | 1. Foundation & Infrastructure | 3/3            | Complete    | 2026-01-24 |
-| 2. Search Service              | 0/3            | Ready       | -          |
+| 2. Search Service              | 3/3            | Complete    | 2026-01-23 |
 | 3. Preview Service             | 0/3            | Not started | -          |
 | 4. Apply Service               | 0/4            | Not started | -          |
 | 5. GraphQL Integration         | 0/3            | Not started | -          |
