@@ -3,6 +3,7 @@
  *
  * Wraps MusicBrainz search with ADMIN priority for responsive admin UI.
  * Normalizes results into correction-specific format with Cover Art Archive URLs.
+ * Provides scored, grouped, and deduplicated search via searchWithScoring().
  */
 
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
@@ -13,12 +14,37 @@ import {
 } from '@/lib/musicbrainz/query-builder';
 import type { ReleaseGroupSearchResult } from '@/lib/musicbrainz/basic-service';
 
+import { getSearchScoringService } from './scoring';
+import type { ScoredSearchResult } from './scoring/types';
 import type {
   CorrectionSearchOptions,
   CorrectionSearchResponse,
   CorrectionSearchResult,
   CorrectionArtistCredit,
+  ScoredSearchOptions,
+  ScoredSearchResponse,
+  GroupedSearchResult,
 } from './types';
+
+/**
+ * Primary type priority for sorting groups
+ * Lower number = higher priority (Albums first, then EPs, then Singles)
+ */
+const TYPE_PRIORITY: Record<string, number> = {
+  Album: 1,
+  EP: 2,
+  Single: 3,
+  Broadcast: 4,
+  Other: 5,
+};
+
+/**
+ * Get type priority for sorting (default to 5 for unknown types)
+ */
+function getTypePriority(primaryType?: string): number {
+  if (!primaryType) return 5;
+  return TYPE_PRIORITY[primaryType] ?? 5;
+}
 
 /**
  * Service for searching MusicBrainz for album correction candidates.
@@ -28,7 +54,7 @@ export class CorrectionSearchService {
   private mbService = getQueuedMusicBrainzService();
 
   /**
-   * Search MusicBrainz for correction candidates.
+   * Search MusicBrainz for correction candidates (raw, unscored).
    * Uses ADMIN priority tier for responsive admin UI.
    *
    * @param options - Search options including album title, artist name, and filters
@@ -80,6 +106,156 @@ export class CorrectionSearchService {
         yearFilter: options.yearFilter,
       },
     };
+  }
+
+  /**
+   * Search MusicBrainz with scoring and grouping.
+   * Returns deduplicated results grouped by release group MBID.
+   *
+   * @param options - Search options including scoring strategy and threshold
+   * @returns Scored, grouped, and deduplicated search response
+   */
+  async searchWithScoring(
+    options: ScoredSearchOptions
+  ): Promise<ScoredSearchResponse> {
+    const scoringService = getSearchScoringService();
+
+    // Apply scoring options if provided
+    const strategy = options.strategy ?? scoringService.getStrategy();
+    const threshold =
+      options.lowConfidenceThreshold ??
+      scoringService.getLowConfidenceThreshold();
+
+    // Execute raw search
+    const rawResponse = await this.search({
+      albumTitle: options.albumTitle,
+      artistName: options.artistName,
+      yearFilter: options.yearFilter,
+      limit: options.limit,
+      offset: options.offset,
+    });
+
+    // If no results, return empty response
+    if (rawResponse.results.length === 0) {
+      return {
+        results: [],
+        allResults: [],
+        totalGroups: 0,
+        hasMore: false,
+        query: rawResponse.query,
+        scoring: {
+          strategy,
+          threshold,
+          lowConfidenceCount: 0,
+        },
+      };
+    }
+
+    // Apply scoring
+    const albumQuery = options.albumTitle ?? '';
+    const artistQuery = options.artistName;
+
+    const scoredResults = scoringService.scoreResults(
+      rawResponse.results,
+      albumQuery,
+      artistQuery,
+      { strategy, lowConfidenceThreshold: threshold }
+    );
+
+    // Group results by release group MBID
+    const groupedResults = this.groupByReleaseGroup(scoredResults);
+
+    // Count low-confidence results
+    const lowConfidenceCount = scoredResults.filter(
+      r => r.isLowConfidence
+    ).length;
+
+    return {
+      results: groupedResults,
+      allResults: scoredResults,
+      totalGroups: groupedResults.length,
+      hasMore: rawResponse.hasMore,
+      query: rawResponse.query,
+      scoring: {
+        strategy,
+        threshold,
+        lowConfidenceCount,
+      },
+    };
+  }
+
+  /**
+   * Load more results starting from given offset.
+   * Convenience method for pagination.
+   *
+   * @param options - Search options with offset for next page
+   * @returns Scored search response for next page
+   */
+  async loadMore(options: ScoredSearchOptions): Promise<ScoredSearchResponse> {
+    return this.searchWithScoring(options);
+  }
+
+  /**
+   * Group results by release group MBID.
+   * Prioritizes Albums > EPs > Singles, then by score.
+   *
+   * @param results - Scored search results
+   * @returns Grouped and deduplicated results
+   */
+  private groupByReleaseGroup(
+    results: ScoredSearchResult[]
+  ): GroupedSearchResult[] {
+    // Group by release group MBID
+    const groups = new Map<string, ScoredSearchResult[]>();
+
+    for (const result of results) {
+      const mbid = result.releaseGroupMbid;
+      const existing = groups.get(mbid);
+      if (existing) {
+        existing.push(result);
+      } else {
+        groups.set(mbid, [result]);
+      }
+    }
+
+    // Convert to GroupedSearchResult array
+    const groupedResults: GroupedSearchResult[] = [];
+
+    for (const [mbid, versions] of groups) {
+      // Sort versions: type priority, then score descending
+      versions.sort((a, b) => {
+        const typeDiff =
+          getTypePriority(a.primaryType) - getTypePriority(b.primaryType);
+        if (typeDiff !== 0) return typeDiff;
+        return b.normalizedScore - a.normalizedScore;
+      });
+
+      // First version is primary, rest are alternates
+      const primaryResult = versions[0];
+      const alternateVersions = versions.slice(1);
+
+      // Find best score among all versions
+      const bestScore = Math.max(...versions.map(v => v.normalizedScore));
+
+      groupedResults.push({
+        releaseGroupMbid: mbid,
+        primaryResult,
+        alternateVersions,
+        versionCount: versions.length,
+        bestScore,
+      });
+    }
+
+    // Sort groups by: type priority of primary result, then by best score
+    groupedResults.sort((a, b) => {
+      const typeDiff =
+        getTypePriority(a.primaryResult.primaryType) -
+        getTypePriority(b.primaryResult.primaryType);
+      if (typeDiff !== 0) return typeDiff;
+      return b.bestScore - a.bestScore;
+    });
+
+    return groupedResults;
   }
 
   /**
