@@ -1,0 +1,55 @@
+mutation CorrectionApply($input: CorrectionApplyInput!) {
+  correctionApply(input: $input) {
+    success
+    # Success fields (when success=true)
+    album {
+      id
+      title
+      artistName
+      releaseDate
+      releaseType
+      releaseCountry
+      barcode
+      label
+      musicbrainzId
+      releaseGroupMbid
+      coverImage
+      cloudflareImageId
+      dataQuality
+      updatedAt
+      tracks {
+        id
+        title
+        durationMs
+        trackNumber
+        discNumber
+        isrc
+        musicbrainzId
+      }
+      artists {
+        id
+        name
+        musicbrainzId
+        imageUrl
+      }
+    }
+    changes {
+      fieldsUpdated
+      artists {
+        added
+        updated
+        linked
+      }
+      tracks {
+        added
+        updated
+        removed
+      }
+      coverArt
+    }
+    # Error fields (when success=false)
+    code
+    message
+    context
+  }
+}
