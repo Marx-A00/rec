@@ -74,3 +74,11 @@ export interface CorrectionSearchResponse {
     yearFilter?: number;
   };
 }
+
+// Re-export scoring types for convenience
+export type {
+  ScoredSearchResult,
+  ScoringStrategy,
+  ScoreBreakdown,
+  ConfidenceTier,
+} from './scoring/types';

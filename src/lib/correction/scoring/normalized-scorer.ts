@@ -7,12 +7,10 @@ import {
   calculateStringSimilarity,
   normalizeString,
 } from '@/lib/utils/string-similarity';
+
 import type { CorrectionSearchResult } from '../types';
-import type {
-  SearchScorer,
-  ScoredSearchResult,
-  ScoreBreakdown,
-} from './types';
+
+import type { SearchScorer, ScoredSearchResult, ScoreBreakdown } from './types';
 
 /**
  * Normalized scorer: 0-1 scale using string similarity

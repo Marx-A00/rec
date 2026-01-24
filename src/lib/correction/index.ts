@@ -11,10 +11,18 @@ export type {
   CorrectionArtistCredit,
   CorrectionSearchResult,
   CorrectionSearchResponse,
+  ScoredSearchResult,
+  ScoringStrategy,
+  ScoreBreakdown,
+  ConfidenceTier,
 } from './types';
 
-// Services
+// Search service
 export {
   CorrectionSearchService,
   getCorrectionSearchService,
 } from './search-service';
+
+// Scoring service
+export { SearchScoringService, getSearchScoringService } from './scoring';
+export type { ScoringOptions, SearchScorer } from './scoring';

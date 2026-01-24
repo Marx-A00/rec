@@ -4,8 +4,11 @@
  */
 
 import fuzzysort from 'fuzzysort';
+
 import { normalizeString } from '@/lib/utils/string-similarity';
+
 import type { CorrectionSearchResult } from '../types';
+
 import type {
   SearchScorer,
   ScoredSearchResult,
