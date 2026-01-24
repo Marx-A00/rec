@@ -45,9 +45,7 @@ export function verifyMbid<T extends { id: string }>(
   const wasRedirected = requestedMbid !== result.id;
 
   if (wasRedirected) {
-    console.warn(
-      `🔀 MBID redirect detected: ${requestedMbid} -> ${result.id}`
-    );
+    console.warn(`🔀 MBID redirect detected: ${requestedMbid} -> ${result.id}`);
   }
 
   return {
