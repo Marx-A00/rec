@@ -120,14 +120,14 @@ Deferred to future release. Tracked but not in current roadmap.
 | PREVIEW-04  | Phase 3, 8  | Partial  |
 | PREVIEW-05  | Phase 3, 8  | Partial  |
 | PREVIEW-06  | Phase 8     | Pending  |
-| APPLY-01    | Phase 4, 9  | Pending  |
-| APPLY-02    | Phase 4, 9  | Pending  |
-| APPLY-03    | Phase 4, 9  | Pending  |
-| APPLY-04    | Phase 4, 9  | Pending  |
-| APPLY-05    | Phase 4     | Pending  |
+| APPLY-01    | Phase 4, 9  | Partial  |
+| APPLY-02    | Phase 4, 9  | Partial  |
+| APPLY-03    | Phase 4, 9  | Partial  |
+| APPLY-04    | Phase 4, 9  | Partial  |
+| APPLY-05    | Phase 4     | Complete |
 | APPLY-06    | Phase 9     | Pending  |
-| APPLY-07    | Phase 4     | Pending  |
-| APPLY-08    | Phase 4     | Pending  |
+| APPLY-07    | Phase 4     | Complete |
+| APPLY-08    | Phase 4     | Complete |
 | MANUAL-01   | Phase 10    | Pending  |
 | MANUAL-02   | Phase 10    | Pending  |
 | MANUAL-03   | Phase 10    | Pending  |
@@ -149,4 +149,4 @@ Deferred to future release. Tracked but not in current roadmap.
 ---
 
 _Requirements defined: 2026-01-23_
-_Last updated: 2026-01-23 after roadmap creation_
+_Last updated: 2026-01-24 after Phase 4 completion_
