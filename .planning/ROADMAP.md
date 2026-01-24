@@ -116,13 +116,13 @@ Plans:
 2. Generated hooks are available for React components
 3. Resolvers delegate to service layer (thin resolver pattern)
 4. Admin role check is enforced on all correction operations
-   **Plans**: TBD
+   **Plans**: 3 plans
 
 Plans:
 
-- [ ] 05-01: GraphQL schema definitions for correction types
-- [ ] 05-02: Correction resolvers (search, preview, apply)
-- [ ] 05-03: Codegen and hook generation
+- [ ] 05-01-PLAN.md — GraphQL schema definitions for correction types and enums
+- [ ] 05-02-PLAN.md — Thin resolvers for search, preview, and apply operations
+- [ ] 05-03-PLAN.md — Client query files and hook generation
 
 ### Phase 6: Modal & Entry Point
 
@@ -136,7 +136,7 @@ Plans:
 3. Modal displays current album data prominently (title, artist, date, tracks, cover)
 4. Modal shows which external IDs are present vs. missing
 5. Modal can be closed without making changes (escape, X button)
-   **Plans**: TBD
+   **Plans**: 3 plans
 
 Plans:
 
@@ -158,7 +158,7 @@ Plans:
 4. Results display with source badge [MB]
 5. Each result shows: title, artist, date, track count, thumbnail
 6. Match confidence scores are visible
-   **Plans**: TBD
+   **Plans**: 3 plans
 
 Plans:
 
@@ -179,7 +179,7 @@ Plans:
 4. Track listing from MusicBrainz visible
 5. External ID changes clearly shown
 6. Admin can collapse preview and view other results
-   **Plans**: TBD
+   **Plans**: 3 plans
 
 Plans:
 
@@ -201,7 +201,7 @@ Plans:
 4. Option to trigger re-enrichment after correction
 5. Success message shows applied changes summary
 6. Album data quality indicator updates appropriately
-   **Plans**: TBD
+   **Plans**: 3 plans
 
 Plans:
 
@@ -223,7 +223,7 @@ Plans:
 4. External ID format validation (UUID for MBID, numeric for Discogs)
 5. Preview of changes before applying
 6. Changes logged with "manual_correction" source
-   **Plans**: TBD
+   **Plans**: 3 plans
 
 Plans:
 
@@ -244,7 +244,7 @@ Plans:
 3. Artist search on MusicBrainz returns artists
 4. Preview shows: name, disambiguation, country, type
 5. Corrections logged with admin user ID
-   **Plans**: TBD
+   **Plans**: 3 plans
 
 Plans:
 
@@ -265,7 +265,7 @@ Plans:
 3. Re-enrichment trigger option works after correction
 4. Keyboard shortcuts for common actions (close modal, submit)
 5. Mobile-friendly comparison layout (responsive)
-   **Plans**: TBD
+   **Plans**: 3 plans
 
 Plans:
 
@@ -286,7 +286,7 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 2. Search Service              | 3/3            | Complete    | 2026-01-23 |
 | 3. Preview Service             | 3/3            | Complete    | 2026-01-23 |
 | 4. Apply Service               | 3/3            | Complete    | 2026-01-24 |
-| 5. GraphQL Integration         | 0/3            | Not started | -          |
+| 5. GraphQL Integration         | 0/3            | In Progress | -          |
 | 6. Modal & Entry Point         | 0/4            | Not started | -          |
 | 7. Search UI                   | 0/3            | Not started | -          |
 | 8. Preview UI                  | 0/4            | Not started | -          |
