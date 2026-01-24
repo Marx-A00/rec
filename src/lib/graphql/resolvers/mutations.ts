@@ -26,10 +26,102 @@ import {
 } from '@/lib/logging/activity-logger';
 import { isAdmin } from '@/lib/permissions';
 
+// Correction system imports
+import { getCorrectionSearchService } from '@/lib/correction/search-service';
+import { getCorrectionPreviewService } from '@/lib/correction/preview';
+import {
+  applyCorrectionService,
+  StaleDataError,
+} from '@/lib/correction/apply';
+import type {
+  FieldSelections,
+  MetadataSelections,
+  ExternalIdSelections,
+  CoverArtChoice,
+} from '@/lib/correction/apply/types';
+
 // Utility function to cast return values for GraphQL resolvers
 // Field resolvers will populate missing computed fields
 function asResolverResult<T>(data: any): T {
   return data as T;
+}
+
+
+// ============================================================================
+// Correction System Helper Functions
+// ============================================================================
+
+/**
+ * Transform GraphQL FieldSelectionsInput to service FieldSelections format.
+ * Converts arrays of SelectionEntry to Maps.
+ */
+function transformSelectionsInput(input: {
+  metadata?: {
+    title?: boolean;
+    releaseDate?: boolean;
+    releaseType?: boolean;
+    releaseCountry?: boolean;
+    barcode?: boolean;
+    label?: boolean;
+  } | null;
+  artists?: Array<{ key: string; selected: boolean }> | null;
+  tracks?: Array<{ key: string; selected: boolean }> | null;
+  externalIds?: {
+    musicbrainzId?: boolean;
+    spotifyId?: boolean;
+    discogsId?: boolean;
+  } | null;
+  coverArt?: string | null;
+}): FieldSelections {
+  // Transform metadata (with defaults)
+  const metadata: MetadataSelections = {
+    title: input.metadata?.title ?? true,
+    releaseDate: input.metadata?.releaseDate ?? true,
+    releaseType: input.metadata?.releaseType ?? true,
+    releaseCountry: input.metadata?.releaseCountry ?? true,
+    barcode: input.metadata?.barcode ?? true,
+    label: input.metadata?.label ?? true,
+  };
+
+  // Transform artists array to Map
+  const artists = new Map<string, boolean>();
+  if (input.artists) {
+    for (const entry of input.artists) {
+      artists.set(entry.key, entry.selected);
+    }
+  }
+
+  // Transform tracks array to Map
+  const tracks = new Map<string, boolean>();
+  if (input.tracks) {
+    for (const entry of input.tracks) {
+      tracks.set(entry.key, entry.selected);
+    }
+  }
+
+  // Transform external IDs (with defaults)
+  const externalIds: ExternalIdSelections = {
+    musicbrainzId: input.externalIds?.musicbrainzId ?? true,
+    spotifyId: input.externalIds?.spotifyId ?? false,
+    discogsId: input.externalIds?.discogsId ?? false,
+  };
+
+  // Transform cover art choice
+  let coverArt: CoverArtChoice = 'use_source';
+  if (input.coverArt) {
+    const coverArtUpper = input.coverArt.toUpperCase();
+    if (coverArtUpper === 'USE_SOURCE') coverArt = 'use_source';
+    else if (coverArtUpper === 'KEEP_CURRENT') coverArt = 'keep_current';
+    else if (coverArtUpper === 'CLEAR') coverArt = 'clear';
+  }
+
+  return {
+    metadata,
+    artists,
+    tracks,
+    externalIds,
+    coverArt,
+  };
 }
 
 // @ts-ignore - Temporarily suppress complex GraphQL resolver type issues
@@ -2695,6 +2787,139 @@ export const mutationResolvers: MutationResolvers = {
       return artist;
     } catch (error) {
       throw new GraphQLError(`Failed to update artist data quality: ${error}`);
+    }
+  },
+
+  // ============================================================================
+  // Correction System Mutations (Admin Only)
+  // ============================================================================
+
+  correctionApply: async (_, { input }, { user, prisma }) => {
+    // Authentication check
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Authorization check - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const { albumId, releaseGroupMbid, selections, expectedUpdatedAt } = input;
+
+      // Get album with tracks for preview generation
+      const album = await prisma.album.findUnique({
+        where: { id: albumId },
+        include: {
+          tracks: {
+            orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }],
+          },
+          artists: {
+            include: { artist: true },
+            orderBy: { position: 'asc' },
+          },
+        },
+      });
+
+      if (!album) {
+        return {
+          success: false,
+          code: 'ALBUM_NOT_FOUND',
+          message: 'Album not found: ' + albumId,
+        };
+      }
+
+      // Search for the specific release group to get scored result
+      const searchService = getCorrectionSearchService();
+      const searchResponse = await searchService.searchWithScoring({
+        albumTitle: album.title,
+        artistName: album.artists[0]?.artist?.name,
+        limit: 50,
+      });
+
+      // Find the matching release group result
+      const groupResult = searchResponse.results.find(
+        (g) => g.releaseGroupMbid === releaseGroupMbid
+      );
+
+      if (!groupResult) {
+        return {
+          success: false,
+          code: 'NOT_FOUND',
+          message: 'Release group not found: ' + releaseGroupMbid,
+        };
+      }
+
+      // Generate preview (needed by apply service)
+      const previewService = getCorrectionPreviewService();
+      const preview = await previewService.generatePreview(
+        albumId,
+        groupResult.primaryResult,
+        releaseGroupMbid
+      );
+
+      // Transform GraphQL selections to service FieldSelections format
+      const serviceSelections = transformSelectionsInput(selections);
+
+      // Apply correction
+      const result = await applyCorrectionService.applyCorrection({
+        albumId,
+        preview,
+        selections: serviceSelections,
+        expectedUpdatedAt: new Date(expectedUpdatedAt),
+        adminUserId: user.id,
+      });
+
+      if (result.success) {
+        return {
+          success: true,
+          album: result.album,
+          changes: {
+            metadata: result.changes.metadata,
+            artists: {
+              added: result.changes.artists.added,
+              removed: result.changes.artists.removed,
+            },
+            tracks: {
+              added: result.changes.tracks.added,
+              modified: result.changes.tracks.modified,
+              removed: result.changes.tracks.removed,
+            },
+            externalIds: result.changes.externalIds,
+            coverArt: result.changes.coverArt,
+            dataQualityBefore: result.changes.dataQualityBefore,
+            dataQualityAfter: result.changes.dataQualityAfter,
+          },
+        };
+      } else {
+        // Map error codes
+        const errorCode = result.error?.code === 'STALE_DATA' ? 'STALE_DATA' : result.error?.code;
+        return {
+          success: false,
+          code: errorCode,
+          message: result.error?.message,
+          context: null,
+        };
+      }
+    } catch (error) {
+      if (error instanceof StaleDataError) {
+        return {
+          success: false,
+          code: 'STALE_DATA',
+          message: error.message,
+        };
+      }
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error in correctionApply:', error);
+      throw new GraphQLError(
+        'Correction apply failed: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
+      );
     }
   },
 };
