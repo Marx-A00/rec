@@ -23,6 +23,27 @@ import type {
 } from './basic-service';
 
 /**
+ * Queue position information for a specific job
+ * Used to show "Your request is #3 in queue" in UI
+ */
+export interface QueuePositionInfo {
+  position: number;
+  waitingCount: number;
+  activeCount: number;
+  estimatedWaitMs: number;
+}
+
+/**
+ * Queue summary broken down by priority tier
+ * Used for admin dashboard monitoring
+ */
+export interface QueueSummary {
+  byPriority: Record<number, number>;
+  total: number;
+  oldestJobAge: number | null;
+}
+
+/**
  * MusicBrainz service with automatic job queue integration
  * All API calls are routed through the queue to ensure 1 req/sec rate limiting
  */
@@ -520,6 +541,82 @@ export class QueuedMusicBrainzService {
   }
 
   /**
+   * Get current queue position for a specific job
+   * Useful for showing "Your request is #3 in queue" in UI
+   * @param jobId - The BullMQ job ID to look up
+   * @returns Position info or null if job not found in queue
+   */
+  async getQueuePosition(jobId: string): Promise<QueuePositionInfo | null> {
+    try {
+      const waiting = await this.queue.getQueue().getWaiting();
+      const active = await this.queue.getQueue().getActive();
+
+      const position = waiting.findIndex(job => job.id === jobId);
+
+      if (position === -1) {
+        // Job not in waiting queue - might be active or completed
+        const isActive = active.some(job => job.id === jobId);
+        if (isActive) {
+          return {
+            position: 0, // Currently processing
+            waitingCount: waiting.length,
+            activeCount: active.length,
+            estimatedWaitMs: 0,
+          };
+        }
+        return null; // Job not found
+      }
+
+      // Position is 1-indexed for user display
+      // Estimated wait = position * 1000ms (1 req/sec rate limit)
+      return {
+        position: position + 1,
+        waitingCount: waiting.length,
+        activeCount: active.length,
+        estimatedWaitMs: (position + 1) * 1000,
+      };
+    } catch (error) {
+      console.error('Failed to get queue position:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get summary of queue state by priority tier
+   * Useful for admin dashboard monitoring and debugging slow responses
+   *
+   * Priority tiers reference (from 01-01):
+   * - ADMIN=1: Highest priority, admin corrections
+   * - USER=5: Normal user requests
+   * - ENRICHMENT=8: Background enrichment
+   * - BACKGROUND=10: Lowest priority background tasks
+   */
+  async getQueueSummary(): Promise<QueueSummary> {
+    const waiting = await this.queue.getQueue().getWaiting();
+
+    const byPriority: Record<number, number> = {};
+    let oldestTimestamp: number | null = null;
+
+    for (const job of waiting) {
+      const priority = job.opts?.priority ?? 0;
+      byPriority[priority] = (byPriority[priority] || 0) + 1;
+
+      if (
+        job.timestamp &&
+        (!oldestTimestamp || job.timestamp < oldestTimestamp)
+      ) {
+        oldestTimestamp = job.timestamp;
+      }
+    }
+
+    return {
+      byPriority,
+      total: waiting.length,
+      oldestJobAge: oldestTimestamp ? Date.now() - oldestTimestamp : null,
+    };
+  }
+
+  /**
    * Pause the queue (stops processing jobs)
    */
   async pauseQueue() {
@@ -600,7 +697,11 @@ export class QueuedMusicBrainzService {
   private async waitForJobViaEvents(
     jobId: string,
     timeoutMs = 30000
-  ): Promise<any> {
+  ): Promise<{
+    success: boolean;
+    data?: unknown;
+    error?: { message: string };
+  }> {
     return new Promise((resolve, reject) => {
       // Store the promise resolvers so QueueEvents can call them
       this.pendingJobs.set(jobId, {
