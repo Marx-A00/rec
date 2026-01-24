@@ -50,23 +50,23 @@ The admin data correction feature integrates into an existing Next.js 15 app wit
 
 ### Existing Components (Leverage As-Is)
 
-| Component | Location | Responsibility | Integration Point |
-|-----------|----------|----------------|-------------------|
-| QueuedMusicBrainzService | `/src/lib/musicbrainz/queue-service.ts` | Rate-limited MusicBrainz API calls | All MB searches go through this |
-| MusicBrainzService | `/src/lib/musicbrainz/musicbrainz-service.ts` | Error handling wrapper | Direct lookups with MBID |
-| previewAlbumEnrichment | `/src/lib/enrichment/preview-enrichment.ts` | Dry-run enrichment with diff | Extend for correction preview |
-| EnrichmentPreviewResults | `/src/components/admin/EnrichmentPreviewResults.tsx` | Display field diffs | Reuse for correction UI |
-| EnrichmentLogger | `/src/lib/enrichment/enrichment-logger.ts` | Log all enrichment operations | Log corrections similarly |
-| EnrichmentLog (Prisma) | `/prisma/schema.prisma` | Audit trail storage | Store correction logs |
+| Component                | Location                                             | Responsibility                     | Integration Point               |
+| ------------------------ | ---------------------------------------------------- | ---------------------------------- | ------------------------------- |
+| QueuedMusicBrainzService | `/src/lib/musicbrainz/queue-service.ts`              | Rate-limited MusicBrainz API calls | All MB searches go through this |
+| MusicBrainzService       | `/src/lib/musicbrainz/musicbrainz-service.ts`        | Error handling wrapper             | Direct lookups with MBID        |
+| previewAlbumEnrichment   | `/src/lib/enrichment/preview-enrichment.ts`          | Dry-run enrichment with diff       | Extend for correction preview   |
+| EnrichmentPreviewResults | `/src/components/admin/EnrichmentPreviewResults.tsx` | Display field diffs                | Reuse for correction UI         |
+| EnrichmentLogger         | `/src/lib/enrichment/enrichment-logger.ts`           | Log all enrichment operations      | Log corrections similarly       |
+| EnrichmentLog (Prisma)   | `/prisma/schema.prisma`                              | Audit trail storage                | Store correction logs           |
 
 ### New Components (To Build)
 
-| Component | Recommended Location | Responsibility |
-|-----------|----------------------|----------------|
-| CorrectionService | `/src/lib/correction/correction-service.ts` | Orchestrates search/preview/apply flow |
-| CorrectionPreview | `/src/lib/correction/correction-preview.ts` | Generates diff between current and proposed |
-| ApplyCorrection | `/src/lib/correction/apply-correction.ts` | Atomic database updates with logging |
-| Correction Resolvers | `/src/lib/graphql/resolvers/correction-resolvers.ts` | GraphQL mutations for correction workflow |
+| Component            | Recommended Location                                 | Responsibility                              |
+| -------------------- | ---------------------------------------------------- | ------------------------------------------- |
+| CorrectionService    | `/src/lib/correction/correction-service.ts`          | Orchestrates search/preview/apply flow      |
+| CorrectionPreview    | `/src/lib/correction/correction-preview.ts`          | Generates diff between current and proposed |
+| ApplyCorrection      | `/src/lib/correction/apply-correction.ts`            | Atomic database updates with logging        |
+| Correction Resolvers | `/src/lib/graphql/resolvers/correction-resolvers.ts` | GraphQL mutations for correction workflow   |
 
 ## Data Flow: Correction Workflow
 
@@ -109,6 +109,7 @@ The admin data correction feature integrates into an existing Next.js 15 app wit
 ```
 
 **Key insight:** The existing `PreviewEnrichmentResult` type already contains:
+
 - `fieldsToUpdate: EnrichmentFieldDiff[]`
 - `matchScore: number`
 - `matchedEntity: string`
@@ -173,30 +174,30 @@ src/components/admin/
 ```graphql
 # Correction-specific input and output types
 input SearchMusicBrainzInput {
-  entityType: EnrichmentEntityType!    # ALBUM | ARTIST | TRACK
+  entityType: EnrichmentEntityType! # ALBUM | ARTIST | TRACK
   entityId: UUID!
-  query: String                         # Optional override search query
+  query: String # Optional override search query
   limit: Int = 10
 }
 
 type MusicBrainzSearchResult {
   mbid: String!
-  title: String!                        # Album title or artist name
-  artistCredits: [String!]              # For albums
+  title: String! # Album title or artist name
+  artistCredits: [String!] # For albums
   releaseDate: String
-  score: Int!                           # MusicBrainz relevance score (0-100)
-  matchConfidence: Float!               # Our calculated match (0-1)
-  disambiguation: String                # For artists
-  type: String                          # Album type or artist type
+  score: Int! # MusicBrainz relevance score (0-100)
+  matchConfidence: Float! # Our calculated match (0-1)
+  disambiguation: String # For artists
+  type: String # Album type or artist type
   country: String
 }
 
 input ApplyCorrectionInput {
   entityType: EnrichmentEntityType!
   entityId: UUID!
-  musicbrainzId: String!                # The MB ID to use as source
-  fieldsToApply: [String!]!             # Which fields to update
-  reason: String                        # Admin note for audit
+  musicbrainzId: String! # The MB ID to use as source
+  fieldsToApply: [String!]! # Which fields to update
+  reason: String # Admin note for audit
 }
 
 type ApplyCorrectionResult {
@@ -224,12 +225,9 @@ type Mutation {
     entityType: EnrichmentEntityType!
     entityId: UUID!
     musicbrainzId: String!
-  ): PreviewEnrichmentResult!           # Reuse existing type
-
+  ): PreviewEnrichmentResult! # Reuse existing type
   # Apply the correction with selected fields
-  applyCorrection(
-    input: ApplyCorrectionInput!
-  ): ApplyCorrectionResult!
+  applyCorrection(input: ApplyCorrectionInput!): ApplyCorrectionResult!
 }
 ```
 
@@ -244,6 +242,7 @@ type Mutation {
 **Trade-offs:** Adds latency (queue processing) but prevents 503 errors and bans.
 
 **Example from existing codebase:**
+
 ```typescript
 // From /src/lib/enrichment/preview-enrichment.ts
 import { musicBrainzService } from '../musicbrainz';
@@ -264,6 +263,7 @@ const searchResults = await musicBrainzService.searchReleaseGroups(
 **Trade-offs:** Slightly more complex, but prevents partial updates.
 
 **Example (new pattern for corrections):**
+
 ```typescript
 // /src/lib/correction/apply-correction.ts
 export async function applyAlbumCorrection(
@@ -272,14 +272,14 @@ export async function applyAlbumCorrection(
   userId: string
 ): Promise<ApplyCorrectionResult> {
   const startTime = Date.now();
-  
-  return prisma.$transaction(async (tx) => {
+
+  return prisma.$transaction(async tx => {
     // 1. Get current state for diff
     const before = await tx.album.findUnique({
       where: { id: albumId },
-      include: { artists: { include: { artist: true } } }
+      include: { artists: { include: { artist: true } } },
     });
-    
+
     // 2. Update album
     const updated = await tx.album.update({
       where: { id: albumId },
@@ -288,17 +288,17 @@ export async function applyAlbumCorrection(
         dataQuality: 'HIGH',
         enrichmentStatus: 'COMPLETED',
         lastEnriched: new Date(),
-      }
+      },
     });
-    
+
     // 3. Handle artist updates if needed
     if (correctionData.artistFields) {
       await tx.albumArtist.deleteMany({ where: { albumId } });
       await tx.albumArtist.createMany({
-        data: correctionData.artistFields
+        data: correctionData.artistFields,
       });
     }
-    
+
     // 4. Create correction log (in same transaction)
     const log = await tx.enrichmentLog.create({
       data: {
@@ -319,10 +319,10 @@ export async function applyAlbumCorrection(
         metadata: {
           beforeState: serializeForLog(before),
           musicbrainzId: correctionData.musicbrainzId,
-        }
-      }
+        },
+      },
     });
-    
+
     return {
       success: true,
       updatedEntity: updated,
@@ -340,6 +340,7 @@ export async function applyAlbumCorrection(
 **Trade-offs:** More files, but cleaner separation of concerns.
 
 **Example from existing codebase:**
+
 ```typescript
 // From /src/lib/graphql/resolvers/mutations.ts
 import {
@@ -351,9 +352,9 @@ import {
 previewAlbumEnrichment: async (_, { id }, { user }) => {
   if (!user) throw new GraphQLError('Authentication required');
   if (!isAdmin(user.role)) throw new GraphQLError('Admin required');
-  
-  return previewAlbumEnrichment(id);  // Service does the work
-}
+
+  return previewAlbumEnrichment(id); // Service does the work
+};
 ```
 
 **For corrections:** Follow the same pattern.
@@ -389,6 +390,7 @@ previewAlbumEnrichment: async (_, { id }, { user }) => {
 Based on the architecture, build in this order:
 
 ### Phase 1: Service Layer Foundation
+
 1. **`/src/lib/correction/types.ts`** - Define TypeScript types for correction workflow
 2. **`/src/lib/correction/correction-preview.ts`** - Extend preview-enrichment pattern
 3. **`/src/lib/correction/apply-correction.ts`** - Transaction-based apply logic
@@ -396,12 +398,14 @@ Based on the architecture, build in this order:
 5. **`/src/lib/correction/index.ts`** - Clean exports
 
 ### Phase 2: GraphQL Integration
+
 1. **Update `schema.graphql`** - Add new types and mutations
 2. **Create `/src/lib/graphql/resolvers/correction-resolvers.ts`** - Thin resolvers
 3. **Update `/src/lib/graphql/resolvers/index.ts`** - Export new resolvers
 4. **Run `pnpm codegen`** - Generate TypeScript types and hooks
 
 ### Phase 3: UI Components
+
 1. **`/src/components/admin/CorrectionSearchModal.tsx`** - Search UI
 2. **Extend `EnrichmentPreviewResults.tsx`** - Add "Apply" button for corrections
 3. **Update `/src/app/admin/music-database/page.tsx`** - Wire in correction flow
@@ -418,24 +422,24 @@ Based on the architecture, build in this order:
 
 The correction feature is **adjacent to** but **separate from** auto-enrichment:
 
-| Aspect | Auto-Enrichment | Manual Correction |
-|--------|-----------------|-------------------|
-| Trigger | User action (add to collection, etc.) | Admin explicit action |
-| Source selection | Automatic best-match | Admin selects from candidates |
-| Field selection | All available fields | Admin selects specific fields |
-| Logging operation | `ENRICH_ALBUM` | `MANUAL_CORRECTION` |
-| Data quality result | Determined by match quality | Always `HIGH` (admin verified) |
+| Aspect              | Auto-Enrichment                       | Manual Correction              |
+| ------------------- | ------------------------------------- | ------------------------------ |
+| Trigger             | User action (add to collection, etc.) | Admin explicit action          |
+| Source selection    | Automatic best-match                  | Admin selects from candidates  |
+| Field selection     | All available fields                  | Admin selects specific fields  |
+| Logging operation   | `ENRICH_ALBUM`                        | `MANUAL_CORRECTION`            |
+| Data quality result | Determined by match quality           | Always `HIGH` (admin verified) |
 
 ### Reusable Components
 
-| Component | Reuse Strategy |
-|-----------|----------------|
-| `findBestAlbumMatch()` | Use for initial ranking, but show all candidates to admin |
-| `buildAlbumSearchQuery()` | Use as default, allow admin override |
-| `PreviewEnrichmentResult` type | Reuse as-is for preview response |
-| `EnrichmentFieldDiff` type | Reuse for field diff display |
-| `EnrichmentPreviewResults` component | Extend with "Apply" action button |
-| `enrichmentLogger.logEnrichment()` | Use with different `operation` value |
+| Component                            | Reuse Strategy                                            |
+| ------------------------------------ | --------------------------------------------------------- |
+| `findBestAlbumMatch()`               | Use for initial ranking, but show all candidates to admin |
+| `buildAlbumSearchQuery()`            | Use as default, allow admin override                      |
+| `PreviewEnrichmentResult` type       | Reuse as-is for preview response                          |
+| `EnrichmentFieldDiff` type           | Reuse for field diff display                              |
+| `EnrichmentPreviewResults` component | Extend with "Apply" action button                         |
+| `enrichmentLogger.logEnrichment()`   | Use with different `operation` value                      |
 
 ## Sources
 
@@ -446,6 +450,7 @@ The correction feature is **adjacent to** but **separate from** auto-enrichment:
 - Project CLAUDE.md conventions
 
 ---
-*Architecture research for: Admin Data Correction Feature*
-*Researched: 2026-01-23*
-*Confidence: HIGH - based on established patterns in existing codebase*
+
+_Architecture research for: Admin Data Correction Feature_
+_Researched: 2026-01-23_
+_Confidence: HIGH - based on established patterns in existing codebase_

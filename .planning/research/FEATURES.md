@@ -80,7 +80,7 @@ Features that make this correction tool notably better than alternatives. Not re
 **Speed & Efficiency**
 
 - **Manual field editing without search**
-  - Value Proposition: Quick typo fixes (e.g., "Mama Cass*" to "Mama Cass") without full MusicBrainz lookup
+  - Value Proposition: Quick typo fixes (e.g., "Mama Cass\*" to "Mama Cass") without full MusicBrainz lookup
   - Complexity: LOW
   - Notes: Inline edit mode bypasses search workflow entirely
 
@@ -130,7 +130,7 @@ Features that seem good but create problems or are explicitly out of scope.
 **Auto-Suggestion Without User Action**
 
 - Why Requested: "System should automatically find fixes for problem albums"
-- Why Problematic: 
+- Why Problematic:
   - False positives damage trust (wrong album applied automatically)
   - MusicBrainz matching isn't 100% accurate
   - Creates background noise admins must review anyway
@@ -253,6 +253,7 @@ Features to defer until correction workflow is battle-tested.
 ## Feature Prioritization Matrix
 
 **Priority key:**
+
 - P1: Must have for launch
 - P2: Should have, add when possible
 - P3: Nice to have, future consideration
@@ -262,7 +263,6 @@ Features to defer until correction workflow is battle-tested.
 - Search MusicBrainz by query
   - User Value: HIGH
   - Implementation Cost: LOW
-  
 - Search results with match scores
   - User Value: HIGH
   - Implementation Cost: LOW
@@ -378,5 +378,6 @@ Features to defer until correction workflow is battle-tested.
 - [Admin Dashboard UX Best Practices 2025](https://medium.com/@CarlosSmith24/admin-dashboard-ui-ux-best-practices-for-2025-8bdc6090c57d) - General admin panel patterns
 
 ---
-*Feature research for: Admin Album Data Correction*
-*Researched: 2026-01-23*
+
+_Feature research for: Admin Album Data Correction_
+_Researched: 2026-01-23_

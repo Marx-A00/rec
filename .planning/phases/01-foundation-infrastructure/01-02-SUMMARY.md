@@ -22,8 +22,8 @@ key_files:
 
 decisions:
   - key: verification-wrapper-pattern
-    choice: "Generic MbidVerificationResult<T> wrapper that preserves original data"
-    rationale: "Allows downstream code to access data.wasRedirected without changing return types"
+    choice: 'Generic MbidVerificationResult<T> wrapper that preserves original data'
+    rationale: 'Allows downstream code to access data.wasRedirected without changing return types'
 
 metrics:
   duration: 2.5min
@@ -54,6 +54,7 @@ Created MBID verification utility that detects when MusicBrainz returns a redire
 ## Implementation Details
 
 The verification pattern:
+
 1. Lookup handler calls MusicBrainz API with requested MBID
 2. Result is passed through `verifyMbid(requestedMbid, result)`
 3. Function compares `requestedMbid !== result.id`
@@ -64,6 +65,7 @@ The verification pattern:
    - `wasRedirected`: Boolean flag
 
 **Type Safety:**
+
 - Generic `<T extends { id: string }>` ensures only objects with id property are verified
 - `hasIdProperty()` type guard for runtime checking before verification
 
@@ -82,9 +84,11 @@ None - plan executed exactly as written.
 ## Files Changed
 
 **Created:**
+
 - `src/lib/musicbrainz/mbid-verifier.ts` (new file, 65 lines)
 
 **Modified:**
+
 - `src/lib/musicbrainz/index.ts` (added exports)
 - `src/lib/queue/processors/musicbrainz-processor.ts` (verification integration)
 
@@ -98,9 +102,11 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 **Provides for 01-03:**
+
 - MbidVerificationResult type for redirect-aware operations
 - verifyMbid function for any lookup operation
 
 **Ready for Phase 2:**
+
 - Lookup handlers now return redirect metadata
 - Downstream code can check `.wasRedirected` to identify stale MBIDs

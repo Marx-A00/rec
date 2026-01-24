@@ -45,12 +45,14 @@ Admins can fix a broken album (trackless, wrong metadata, missing IDs) in under 
 ## Context
 
 The platform has accumulated albums with data quality issues:
+
 - Trackless albums imported from Discogs that couldn't match MusicBrainz
-- Artist name corruption (e.g., "Mama Cass*")
+- Artist name corruption (e.g., "Mama Cass\*")
 - Missing or incorrect external IDs
 - Failed automatic enrichment edge cases
 
 Existing infrastructure to leverage:
+
 - MusicBrainz service at `/src/lib/musicbrainz/musicbrainz-service.ts`
 - BullMQ queue system for rate limiting and re-enrichment
 - GraphQL API with codegen
@@ -65,11 +67,12 @@ Existing infrastructure to leverage:
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| MusicBrainz only for v1 | It's the base data source; Discogs/Spotify can come later | — Pending |
-| Core flow before bulk operations | Get search/preview/apply working first | — Pending |
-| Session-only state | No need to persist correction queue to DB | — Pending |
+| Decision                         | Rationale                                                 | Outcome   |
+| -------------------------------- | --------------------------------------------------------- | --------- |
+| MusicBrainz only for v1          | It's the base data source; Discogs/Spotify can come later | — Pending |
+| Core flow before bulk operations | Get search/preview/apply working first                    | — Pending |
+| Session-only state               | No need to persist correction queue to DB                 | — Pending |
 
 ---
-*Last updated: 2026-01-23 after initialization*
+
+_Last updated: 2026-01-23 after initialization_

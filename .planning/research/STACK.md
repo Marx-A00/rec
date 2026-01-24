@@ -17,26 +17,31 @@ This research covers the optimal stack for building an admin data correction fea
 ### Core Technologies (Already in Project)
 
 **Technology:** fuzzysort ^3.1.0
+
 - **Purpose:** Fuzzy string matching for album/artist search results ranking
 - **Why Recommended:** Already installed. Fastest fuzzy search library (13k files in <1ms). Perfect for matching user's local album titles against MusicBrainz results. Simpler API than Fuse.js with excellent scoring for file/title matching.
 - **Confidence:** HIGH (verified via GitHub, already in package.json)
 
 **Technology:** @radix-ui/react-dialog ^1.1.14
+
 - **Purpose:** Modal dialogs for correction workflows
 - **Why Recommended:** Already installed. Industry-standard accessibility, focus trapping, portal rendering. Foundation for the correction modal/panel UI.
 - **Confidence:** HIGH (already in project)
 
 **Technology:** vaul ^1.1.2
+
 - **Purpose:** Bottom sheet/drawer for mobile correction workflows
 - **Why Recommended:** Already installed. Smooth gesture-based drawers that work well for mobile admin interfaces. Can be used for correction panels that slide up from bottom.
 - **Confidence:** HIGH (already in project)
 
 **Technology:** zod ^3.25.67
+
 - **Purpose:** Schema validation for correction form data
 - **Why Recommended:** Already installed. Type-safe validation with excellent TypeScript inference. Integrates seamlessly with React Hook Form via @hookform/resolvers.
 - **Confidence:** HIGH (already in project)
 
 **Technology:** allotment ^1.20.4
+
 - **Purpose:** Resizable split panels for side-by-side comparison
 - **Why Recommended:** Already installed (used in SplitMosaic.tsx). VS Code-derived codebase, industry-standard look and feel. Perfect for showing current data vs MusicBrainz data side-by-side with resizable panels.
 - **Confidence:** HIGH (already in project, actively maintained)
@@ -44,9 +49,10 @@ This research covers the optimal stack for building an admin data correction fea
 ### New Dependencies Required
 
 **Library:** react-hook-form
+
 - **Version:** ^7.71.1
 - **Purpose:** Selective field updates, form state management
-- **Why Recommended:** 
+- **Why Recommended:**
   - Uncontrolled inputs with refs = minimal re-renders (critical for forms with many fields)
   - Native `watch()` and `setValue()` for selective field updates
   - `useFieldArray` for dynamic field management
@@ -57,6 +63,7 @@ This research covers the optimal stack for building an admin data correction fea
 - **Confidence:** HIGH (verified GitHub releases, v7.71.1 released Jan 2025, React 19 compatible)
 
 **Library:** @hookform/resolvers
+
 - **Version:** ^3.9.1
 - **Purpose:** Zod resolver for React Hook Form validation
 - **Why Recommended:** Official resolver package from React Hook Form team. Bridges RHF and Zod for type-safe validation. Supports Zod v4.
@@ -66,6 +73,7 @@ This research covers the optimal stack for building an admin data correction fea
 ### UI Components Pattern (No New Dependencies)
 
 **Pattern:** Custom side-by-side comparison component
+
 - **Purpose:** Visual diff of current vs MusicBrainz data
 - **Why Recommended:**
   - Dedicated diff libraries (react-diff-viewer-continued) have React 19 compatibility issues (open GitHub issue #63)
@@ -81,6 +89,7 @@ This research covers the optimal stack for building an admin data correction fea
 ### Panel/Modal Pattern (No New Dependencies)
 
 **Pattern:** Radix Dialog with Sheet-style variants
+
 - **Purpose:** Correction workflow modal/panel
 - **Why Recommended:**
   - Existing @radix-ui/react-dialog supports overlay, focus trapping, portal rendering
@@ -114,22 +123,27 @@ pnpm add react-hook-form @hookform/resolvers
 ## Alternatives Considered
 
 **Recommended:** react-hook-form
+
 - **Alternative:** Formik
 - **When to Use Alternative:** Large enterprise teams valuing explicit APIs over performance. Not recommended here because RHF's isolated re-renders are critical for a form with many selectable fields.
 
 **Recommended:** fuzzysort (keep existing)
+
 - **Alternative:** Fuse.js
 - **When to Use Alternative:** Need weighted multi-field search with complex scoring. Not needed here - fuzzysort's simpler API and better performance for title matching is sufficient.
 
 **Recommended:** Custom comparison component
+
 - **Alternative:** react-diff-viewer-continued
 - **When to Use Alternative:** Need line-by-line text diff (like code review). Not suitable here because: (1) React 19 compatibility issues, (2) field-by-field comparison is the actual need, not text diff.
 
 **Recommended:** allotment (keep existing)
+
 - **Alternative:** react-resizable-panels (also in project)
 - **When to Use Alternative:** Either works. allotment is already used in SplitMosaic.tsx, prefer consistency.
 
 **Recommended:** Radix Dialog + custom sheet styling
+
 - **Alternative:** @radix-ui/react-sheet (shadcn pattern)
 - **When to Use Alternative:** Need official sheet component. However, Dialog + Tailwind animation achieves same result without new dependency.
 
@@ -138,22 +152,27 @@ pnpm add react-hook-form @hookform/resolvers
 ## What NOT to Use
 
 **Avoid:** react-diff-viewer or react-diff-viewer-continued
+
 - **Why:** React 19 peer dependency not yet supported (GitHub issue #63 open since Feb 2025). Overkill for field comparison - designed for text/code diff, not structured data comparison.
 - **Use Instead:** Custom `ComparisonField` component with Tailwind styling
 
 **Avoid:** Formik
+
 - **Why:** Re-renders entire form on any field change. Performance degrades with many fields. Larger bundle (44kb vs 8.6kb). Project already uses Zod which integrates better with RHF.
 - **Use Instead:** react-hook-form with @hookform/resolvers/zod
 
 **Avoid:** Fuse.js (for this use case)
+
 - **Why:** Already have fuzzysort installed. Fuse.js is slower and more complex for simple title matching. Its advantages (weighted fields, extended search) aren't needed here.
 - **Use Instead:** Keep using fuzzysort ^3.1.0
 
 **Avoid:** Adding new modal/drawer libraries
+
 - **Why:** Project already has @radix-ui/react-dialog and vaul. Adding another modal library creates inconsistency and bloat.
 - **Use Instead:** Existing Dialog/Drawer components with custom styling
 
 **Avoid:** React 19 native form actions (for this use case)
+
 - **Why:** Great for simple forms with server actions. Admin correction UI needs complex client-side state: selective field toggling, preview before submit, undo capability. RHF handles this better.
 - **Use Instead:** react-hook-form for complex client-side form state
 
@@ -192,7 +211,7 @@ const correctionSchema = z.object({
     value: z.string(),
   }),
   artist: z.object({
-    selected: z.boolean(), 
+    selected: z.boolean(),
     value: z.string(),
   }),
   releaseDate: z.object({
@@ -227,7 +246,7 @@ import { Allotment } from 'allotment';
     <CurrentDataPanel album={localAlbum} />
   </Allotment.Pane>
   <Allotment.Pane minSize={300}>
-    <MusicBrainzDataPanel 
+    <MusicBrainzDataPanel
       data={selectedMatch}
       onFieldSelect={(field) => setValue(`${field}.selected`, true)}
     />
@@ -252,29 +271,34 @@ import { Allotment } from 'allotment';
 ## Sources
 
 **Fuzzy Matching:**
+
 - [fuzzysort GitHub](https://github.com/farzher/fuzzysort) - Version 3.1.0, performance characteristics
 - [npm-compare fuzzy libraries](https://npm-compare.com/fuse.js,fuzzy-search,fuzzysort) - Comparison analysis
 
 **Form Handling:**
+
 - [React Hook Form Releases](https://github.com/react-hook-form/react-hook-form/releases) - v7.71.1 (Jan 2025)
 - [React Hook Form Zod Integration](https://github.com/react-hook-form/resolvers) - @hookform/resolvers documentation
 - [LogRocket RHF vs React 19](https://blog.logrocket.com/react-hook-form-vs-react-19/) - Comparison and use cases (Apr 2025)
 - [Makers Den Form Handling 2025](https://makersden.io/blog/composable-form-handling-in-2025-react-hook-form-tanstack-form-and-beyond) - Current landscape
 
 **Diff/Comparison:**
+
 - [react-diff-viewer-continued React 19 Issue](https://github.com/Aeolun/react-diff-viewer-continued/issues/63) - Open issue since Feb 2025
 - [react-diff-viewer-continued GitHub](https://github.com/Aeolun/react-diff-viewer-continued) - v3.4.0, last update Jan 2024
 
 **Panel/Modal Patterns:**
+
 - [Shadcn Sheet](https://www.shadcn.io/ui/sheet) - Sheet component patterns
 - [Radix UI Primitives](https://www.radix-ui.com/primitives) - Dialog documentation
 - [allotment GitHub](https://github.com/johnwalley/allotment) - v1.20.4, actively maintained
 
 **Project Dependencies:**
+
 - package.json analysis - Verified existing dependencies
 
 ---
 
-*Stack research for: Admin Data Correction UI*
-*Researched: 2026-01-23*
-*Next step: Use these recommendations in roadmap creation*
+_Stack research for: Admin Data Correction UI_
+_Researched: 2026-01-23_
+_Next step: Use these recommendations in roadmap creation_

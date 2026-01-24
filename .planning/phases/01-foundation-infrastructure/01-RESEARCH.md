@@ -19,11 +19,13 @@ The established libraries/tools for this domain:
 ### Core (Already Installed)
 
 **BullMQ**
+
 - Version: Already in project (check package.json for exact version)
 - Purpose: Job queue with rate limiting and priority support
 - Why Standard: Built-in priority queuing, rate limiter, Redis-backed persistence
 
 **musicbrainz-api**
+
 - Version: ^0.25.1 (currently installed)
 - Purpose: MusicBrainz API client with TypeScript support
 - Why Standard: Official community library, built-in rate limiting, type definitions
@@ -31,6 +33,7 @@ The established libraries/tools for this domain:
 ### Supporting (Already Available)
 
 **ioredis**
+
 - Version: ^5.3.0 (currently installed)
 - Purpose: Redis client for BullMQ
 - Why Standard: Required by BullMQ, already configured in project
@@ -61,18 +64,19 @@ src/lib/musicbrainz/
 **What:** Define explicit priority tiers as constants instead of magic numbers
 **When to use:** All job additions to the queue
 **Example:**
+
 ```typescript
 // Source: BullMQ official docs - https://docs.bullmq.io/guide/jobs/prioritized
 // In jobs.ts
 
 export const PRIORITY_TIERS = {
-  ADMIN: 1,        // Admin UI searches - highest priority
-  USER: 5,         // User-initiated requests (search, recommendations)
-  ENRICHMENT: 8,   // Enrichment triggered by user actions
-  BACKGROUND: 10,  // Scheduled syncs, background enrichment
+  ADMIN: 1, // Admin UI searches - highest priority
+  USER: 5, // User-initiated requests (search, recommendations)
+  ENRICHMENT: 8, // Enrichment triggered by user actions
+  BACKGROUND: 10, // Scheduled syncs, background enrichment
 } as const;
 
-export type PriorityTier = typeof PRIORITY_TIERS[keyof typeof PRIORITY_TIERS];
+export type PriorityTier = (typeof PRIORITY_TIERS)[keyof typeof PRIORITY_TIERS];
 ```
 
 ### Pattern 2: MBID Verification Wrapper
@@ -80,6 +84,7 @@ export type PriorityTier = typeof PRIORITY_TIERS[keyof typeof PRIORITY_TIERS];
 **What:** Wrap lookup results to detect when returned MBID differs from requested
 **When to use:** All MBID lookup operations (artist, release, release-group, recording)
 **Example:**
+
 ```typescript
 // Source: MusicBrainz behavior - https://eve.gd/2025/10/09/using-a-public-api-or-the-instability-of-musicbrainz-ids/
 
@@ -108,6 +113,7 @@ function verifyMbid<T extends { id: string }>(
 **What:** Modify addJob calls to accept semantic priority tiers
 **When to use:** Queue service public methods
 **Example:**
+
 ```typescript
 // In queue-service.ts
 
@@ -142,16 +148,19 @@ async searchArtists(
 Problems that look simple but have existing solutions:
 
 **Priority Queuing**
+
 - Don't Build: Custom priority queue logic
 - Use Instead: BullMQ's built-in `priority` option
 - Why: BullMQ uses optimized O(log n) insertion, handles race conditions, persists to Redis
 
 **Rate Limiting**
+
 - Don't Build: setInterval-based throttling
 - Use Instead: BullMQ's `limiter: { max: 1, duration: 1000 }`
 - Why: Handles concurrent workers, persists state, respects limits across restarts
 
 **Job Result Waiting**
+
 - Don't Build: Polling with job.getState()
 - Use Instead: QueueEvents listener pattern (already implemented in queue-service.ts)
 - Why: Event-driven, no polling overhead, proper cleanup
@@ -200,8 +209,8 @@ Verified patterns from official sources:
 // Priority range: 1 to 2,097,152 (lower = higher priority)
 // Jobs WITHOUT priority get processed BEFORE jobs with priority
 
-await myQueue.add('job', data, { priority: 1 });  // Highest assignable
-await myQueue.add('job', data, { priority: 5 });  // Medium
+await myQueue.add('job', data, { priority: 1 }); // Highest assignable
+await myQueue.add('job', data, { priority: 5 }); // Medium
 await myQueue.add('job', data, { priority: 10 }); // Lower
 
 // Jobs with same priority: FIFO order
@@ -231,15 +240,13 @@ async function lookupWithVerification(
   lookupFn: (id: string) => Promise<{ id: string; [key: string]: unknown }>
 ) {
   const result = await lookupFn(mbid);
-  
+
   if (result.id !== mbid) {
-    console.warn(
-      `MBID redirect detected: ${mbid} -> ${result.id}`
-    );
+    console.warn(`MBID redirect detected: ${mbid} -> ${result.id}`);
     // Optionally: queue database update job
     // Optionally: add to redirect tracking table
   }
-  
+
   return {
     ...result,
     _mbidRedirect: result.id !== mbid ? { from: mbid, to: result.id } : null,
@@ -256,10 +263,10 @@ async function lookupWithVerification(
 this.worker = new Worker(this.queueName, processor, {
   connection: redisConnection,
   limiter: {
-    max: 1,        // 1 request
+    max: 1, // 1 request
     duration: 1000, // per 1000ms
   },
-  concurrency: 1,  // Single job at a time
+  concurrency: 1, // Single job at a time
 });
 ```
 
@@ -325,6 +332,7 @@ this.worker = new Worker(this.queueName, processor, {
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH - Using existing libraries, no changes needed
 - Architecture: HIGH - Simple additions to existing patterns
 - Pitfalls: HIGH - Well-documented in MusicBrainz community and BullMQ docs

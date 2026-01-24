@@ -116,16 +116,19 @@ src/
 ### Adding a New Feature
 
 **GraphQL endpoint:**
+
 1. Schema: `src/graphql/schema.graphql`
 2. Resolver: `src/lib/graphql/resolvers/queries.ts` or `mutations.ts`
 3. Client query: `src/graphql/queries/[feature].graphql`
 4. Run `pnpm codegen`
 
 **New page:**
+
 - Desktop: `src/app/(main)/[route]/page.tsx`
 - Mobile: `src/app/m/[route]/page.tsx`
 
 **New component:**
+
 - UI primitive: `src/components/ui/`
 - Feature component: `src/components/[feature]/`
 - Mobile component: `src/components/mobile/`
@@ -146,22 +149,25 @@ src/
 ## Naming Conventions
 
 ### Files
+
 - Components: PascalCase (`AlbumCard.tsx`)
 - Hooks: camelCase with `use` prefix (`useAlbumDetails.ts`)
 - Utils: camelCase (`formatDate.ts`)
 - GraphQL: kebab-case (`album-queries.graphql`)
 
 ### Exports
+
 - Components: Named exports
 - Hooks: Named exports
 - Utils: Named exports
 - Types: Named exports
 
 ### Routes
+
 - Desktop routes in `(main)` group
 - Mobile routes in `m/` folder
 - API routes in `api/` folder
 
 ---
 
-*Structure analysis: 2026-01-23*
+_Structure analysis: 2026-01-23_
