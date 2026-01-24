@@ -15,7 +15,7 @@ This roadmap delivers an admin data correction feature that lets administrators 
 - [x] **Phase 2: Search Service** - MusicBrainz search with fuzzy matching and rate limiting
 - [x] **Phase 3: Preview Service** - Side-by-side diff generation and field comparison logic
 - [x] **Phase 4: Apply Service** - Atomic corrections with audit logging
-- [ ] **Phase 5: GraphQL Integration** - Schema, resolvers, and generated hooks
+- [x] **Phase 5: GraphQL Integration** - Schema, resolvers, and generated hooks
 - [ ] **Phase 6: Modal & Entry Point** - Correction modal structure and current data display
 - [ ] **Phase 7: Search UI** - Search interface with results and match scores
 - [ ] **Phase 8: Preview UI** - Side-by-side comparison with field highlighting
@@ -120,9 +120,9 @@ Plans:
 
 Plans:
 
-- [ ] 05-01-PLAN.md — GraphQL schema definitions for correction types and enums
-- [ ] 05-02-PLAN.md — Thin resolvers for search, preview, and apply operations
-- [ ] 05-03-PLAN.md — Client query files and hook generation
+- [x] 05-01-PLAN.md — GraphQL schema definitions for correction types and enums
+- [x] 05-02-PLAN.md — Thin resolvers for search, preview, and apply operations
+- [x] 05-03-PLAN.md — Client query files and hook generation
 
 ### Phase 6: Modal & Entry Point
 
@@ -286,7 +286,7 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 2. Search Service              | 3/3            | Complete    | 2026-01-23 |
 | 3. Preview Service             | 3/3            | Complete    | 2026-01-23 |
 | 4. Apply Service               | 3/3            | Complete    | 2026-01-24 |
-| 5. GraphQL Integration         | 0/3            | In Progress | -          |
+| 5. GraphQL Integration         | 3/3            | Complete    | 2026-01-24 |
 | 6. Modal & Entry Point         | 0/4            | Not started | -          |
 | 7. Search UI                   | 0/3            | Not started | -          |
 | 8. Preview UI                  | 0/4            | Not started | -          |
