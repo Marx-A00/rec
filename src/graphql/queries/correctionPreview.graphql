@@ -1,0 +1,151 @@
+query CorrectionPreview($input: CorrectionPreviewInput!) {
+  correctionPreview(input: $input) {
+    albumId
+    albumTitle
+    albumUpdatedAt
+    sourceResult {
+      resultIndex
+      searchResult {
+        mbid
+        releaseGroupMbid
+        title
+        artistName
+        artistMbid
+        releaseDate
+        country
+        releaseType
+        secondaryTypes
+        coverArtUrl
+        label
+      }
+      scoring {
+        normalizedScore
+        displayScore
+        breakdown {
+          titleMatch
+          artistMatch
+          yearMatch
+          mbScoreContribution
+        }
+        isLowConfidence
+        scoringStrategy
+      }
+    }
+    mbReleaseData {
+      id
+      title
+      date
+      country
+      barcode
+      media {
+        position
+        format
+        trackCount
+        tracks {
+          position
+          title
+          length
+          number
+        }
+      }
+      artistCredit {
+        name
+        joinphrase
+        artist {
+          id
+          name
+          sortName
+          type
+          country
+          disambiguation
+        }
+      }
+    }
+    fieldDiffs
+    artistDiff {
+      changeType
+      currentCredits {
+        name
+        joinphrase
+        artistId
+        artistName
+        artistMbid
+      }
+      sourceCredits {
+        name
+        joinphrase
+        artist {
+          id
+          name
+          sortName
+          type
+          country
+          disambiguation
+        }
+      }
+      artistMappings {
+        position
+        currentArtistId
+        currentArtistName
+        sourceArtistMbid
+        sourceArtistName
+        status
+        confidence
+      }
+    }
+    trackDiffs {
+      position
+      discNumber
+      changeType
+      current {
+        title
+        durationMs
+        trackNumber
+      }
+      source {
+        title
+        durationMs
+        position
+        number
+      }
+      titleDiff {
+        value
+        added
+        removed
+      }
+      durationDelta
+      trackId
+    }
+    trackSummary {
+      totalCurrent
+      totalSource
+      matched
+      added
+      removed
+      modified
+      unchanged
+    }
+    coverArt {
+      changeType
+      currentUrl
+      sourceUrl
+      currentCloudflareId
+      sourceDimensions {
+        width
+        height
+      }
+    }
+    summary {
+      totalFields
+      changedFields
+      addedFields
+      removedFields
+      modifiedFields
+      unchangedFields
+      hasTrackChanges
+      hasArtistChanges
+      hasCoverArtChange
+      overallRisk
+    }
+  }
+}
