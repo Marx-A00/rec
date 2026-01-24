@@ -75,6 +75,79 @@ export interface CorrectionSearchResponse {
   };
 }
 
+// ============================================================================
+// Grouped/Deduplicated Result Types
+// ============================================================================
+
+import type { ScoredSearchResult, ScoringStrategy } from './scoring/types';
+
+/**
+ * Options for scored search with grouping
+ */
+export interface ScoredSearchOptions {
+  /** Album title to search for */
+  albumTitle?: string;
+  /** Artist name to filter by */
+  artistName?: string;
+  /** Optional year filter (e.g., 2023) */
+  yearFilter?: number;
+  /** Maximum groups to return (default 10) */
+  limit?: number;
+  /** Offset for pagination */
+  offset?: number;
+  /** Scoring strategy to use (default: 'normalized') */
+  strategy?: ScoringStrategy;
+  /** Threshold below which results are flagged as low-confidence (0-1) */
+  lowConfidenceThreshold?: number;
+}
+
+/**
+ * A group of related results (same release group MBID)
+ * Groups releases like "OK Computer" regular vs deluxe editions
+ */
+export interface GroupedSearchResult {
+  /** The release group MBID (shared by all versions) */
+  releaseGroupMbid: string;
+  /** Primary result (best version to display) */
+  primaryResult: ScoredSearchResult;
+  /** Alternate versions (deluxe, remaster, etc.) */
+  alternateVersions: ScoredSearchResult[];
+  /** Total number of versions in this group */
+  versionCount: number;
+  /** Highest score among all versions (for sorting groups) */
+  bestScore: number;
+}
+
+/**
+ * Response from searchWithScoring
+ * Contains grouped, deduplicated, scored results
+ */
+export interface ScoredSearchResponse {
+  /** Grouped search results (deduplicated by release group) */
+  results: GroupedSearchResult[];
+  /** All scored results (ungrouped, for debugging) */
+  allResults: ScoredSearchResult[];
+  /** Total number of unique release groups */
+  totalGroups: number;
+  /** Whether more results are available */
+  hasMore: boolean;
+  /** The query that was executed */
+  query: {
+    albumTitle?: string;
+    artistName?: string;
+    yearFilter?: number;
+  };
+  /** Scoring metadata */
+  scoring: {
+    /** Strategy used for scoring */
+    strategy: ScoringStrategy;
+    /** Low-confidence threshold used */
+    threshold: number;
+    /** Number of results below threshold */
+    lowConfidenceCount: number;
+  };
+}
+
 // Re-export scoring types for convenience
 export type {
   ScoredSearchResult,
