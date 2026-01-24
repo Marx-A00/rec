@@ -5,31 +5,69 @@
  * fetches full MusicBrainz release data via queue, and generates all diffs.
  */
 
-import type { Album, Track, Artist } from '@prisma/client';
+import type { Album, Artist, Prisma, Track } from '@prisma/client';
 
-import { PRIORITY_TIERS } from '@/lib/queue';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { prisma } from '@/lib/prisma';
+import { PRIORITY_TIERS } from '@/lib/queue';
+
+import type { CorrectionArtistCredit, ScoredSearchResult } from '../types';
 
 import { DiffEngine } from './diff-engine';
 import type {
-  CorrectionPreview,
-  MBReleaseData,
-  FieldDiff,
   ChangeType,
+  CorrectionPreview,
+  FieldDiff,
+  MBReleaseData,
 } from './types';
-import type { ScoredSearchResult, CorrectionArtistCredit } from '../types';
+
+/**
+ * Raw MusicBrainz API release response structure.
+ */
+interface MBReleaseAPIResponse {
+  id: string;
+  title: string;
+  date?: string;
+  'release-date'?: string;
+  country?: string;
+  barcode?: string;
+  media?: Array<{
+    position: number;
+    format?: string;
+    'track-count': number;
+    tracks?: Array<{
+      id?: string;
+      position: number;
+      title?: string;
+      recording?: {
+        id: string;
+        title: string;
+        length?: number;
+      };
+      length?: number;
+    }>;
+  }>;
+  'artist-credit'?: Array<{
+    name: string;
+    joinphrase?: string;
+    artist: {
+      id: string;
+      name: string;
+      'sort-name'?: string;
+      disambiguation?: string;
+    };
+  }>;
+}
 
 /**
  * Album with tracks and artists for preview generation.
  */
-type AlbumWithRelations = Album & {
-  tracks: Track[];
-  albumArtists: Array<{
-    artist: Artist;
-    position: number;
-  }>;
-};
+type AlbumWithRelations = Prisma.AlbumGetPayload<{
+  include: {
+    tracks: true;
+    artists: { include: { artist: true }; orderBy: { position: 'asc' } };
+  };
+}>;
 
 /**
  * Service for generating correction previews.
@@ -48,11 +86,13 @@ export class CorrectionPreviewService {
    *
    * @param albumId - Internal database ID of the album to correct
    * @param searchResult - Selected MusicBrainz search result
+   * @param releaseMbid - Specific release MBID (different from release group)
    * @returns Complete preview with all diffs and track comparisons
    */
   async generatePreview(
     albumId: string,
-    searchResult: ScoredSearchResult
+    searchResult: ScoredSearchResult,
+    releaseMbid: string
   ): Promise<CorrectionPreview> {
     // Fetch current album with tracks and artists
     const currentAlbumRaw = await this.fetchCurrentAlbum(albumId);
@@ -64,14 +104,14 @@ export class CorrectionPreviewService {
     const currentAlbum = this.transformAlbumWithArtistCredit(currentAlbumRaw);
 
     // Fetch full MusicBrainz release data with tracks (high priority - admin action)
-    const mbReleaseData = await this.fetchMBReleaseData(searchResult.id);
+    const mbReleaseData = await this.fetchMBReleaseData(releaseMbid);
 
     // Generate field diffs
     const fieldDiffs = this.generateFieldDiffs(currentAlbum, mbReleaseData);
 
     // Convert database artist relations to CorrectionArtistCredit format
     const currentArtistCredits = this.convertToArtistCredits(
-      currentAlbumRaw.albumArtists
+      currentAlbumRaw.artists
     );
 
     // Generate artist credit diff
@@ -81,17 +121,16 @@ export class CorrectionPreviewService {
     );
 
     // Generate track listing diffs
-    const { trackDiffs, summary: trackSummary } =
-      this.diffEngine.compareTracks(
-        currentAlbum.tracks,
-        mbReleaseData?.media || []
-      );
+    const { trackDiffs, summary: trackSummary } = this.diffEngine.compareTracks(
+      currentAlbum.tracks,
+      mbReleaseData?.media || []
+    );
 
     // Generate cover art comparison
     const coverArt = this.generateCoverArtDiff(
       currentAlbum,
       mbReleaseData,
-      searchResult.id
+      releaseMbid
     );
 
     // Generate summary statistics
@@ -120,7 +159,7 @@ export class CorrectionPreviewService {
       where: { id: albumId },
       include: {
         tracks: true,
-        albumArtists: {
+        artists: {
           include: { artist: true },
           orderBy: { position: 'asc' },
         },
@@ -136,7 +175,7 @@ export class CorrectionPreviewService {
   ): Album & { tracks: Track[] } {
     // Extract just the album and tracks, dropping the artist relations
     // (we'll handle artist diff separately)
-    const { albumArtists, ...albumData } = album;
+    const { artists: _artists, ...albumData } = album;
     return albumData;
   }
 
@@ -144,9 +183,9 @@ export class CorrectionPreviewService {
    * Convert database artist relations to CorrectionArtistCredit format.
    */
   private convertToArtistCredits(
-    albumArtists: Array<{ artist: Artist; position: number }>
+    artists: Array<{ artist: Artist; position: number }>
   ): CorrectionArtistCredit[] {
-    return albumArtists.map(({ artist }) => ({
+    return artists.map(({ artist }) => ({
       mbid: artist.musicbrainzId || '',
       name: artist.name,
     }));
@@ -160,11 +199,11 @@ export class CorrectionPreviewService {
     releaseMbid: string
   ): Promise<MBReleaseData | null> {
     try {
-      const data = await this.mbService.getRelease(
+      const data = (await this.mbService.getRelease(
         releaseMbid,
         ['artist-credits', 'media', 'recordings'], // Include tracks
         PRIORITY_TIERS.ADMIN
-      );
+      )) as MBReleaseAPIResponse;
 
       // Transform raw MusicBrainz data to MBReleaseData format
       return this.transformMBRelease(data);
@@ -177,7 +216,9 @@ export class CorrectionPreviewService {
   /**
    * Transform raw MusicBrainz API response to MBReleaseData structure.
    */
-  private transformMBRelease(mbData: any): MBReleaseData | null {
+  private transformMBRelease(
+    mbData: MBReleaseAPIResponse
+  ): MBReleaseData | null {
     if (!mbData) return null;
 
     return {
@@ -187,19 +228,23 @@ export class CorrectionPreviewService {
       country: mbData.country,
       barcode: mbData.barcode,
       media:
-        mbData.media?.map((medium: any) => ({
+        mbData.media?.map(medium => ({
           position: medium.position,
           format: medium.format,
           trackCount: medium['track-count'],
           tracks:
-            medium.tracks?.map((track: any) => ({
+            medium.tracks?.map(track => ({
               position: track.position,
-              title: track.title || track.recording?.title,
-              length: track.length,
+              recording: {
+                id: track.recording?.id || track.id || '',
+                title: track.title || track.recording?.title || '',
+                length: track.length || track.recording?.length,
+                position: track.position,
+              },
             })) || [],
         })) || [],
       artistCredit:
-        mbData['artist-credit']?.map((ac: any) => ({
+        mbData['artist-credit']?.map(ac => ({
           name: ac.name,
           joinphrase: ac.joinphrase || '',
           artist: {
@@ -298,46 +343,41 @@ export class CorrectionPreviewService {
     fieldDiffs: FieldDiff[],
     artistDiff: { changeType: ChangeType },
     trackSummary: {
-      modifiedCount: number;
-      addedCount: number;
-      removedCount: number;
+      matching: number;
+      modified: number;
+      added: number;
+      removed: number;
     }
   ) {
-    const totalFields =
-      fieldDiffs.length + 1 + (trackSummary.modifiedCount || 0); // fields + artist + tracks
+    const totalFields = fieldDiffs.length + 1 + (trackSummary.modified || 0); // fields + artist + tracks
     const changedFields = [
-      ...fieldDiffs.filter((d) => d.changeType !== 'UNCHANGED'),
+      ...fieldDiffs.filter(d => d.changeType !== 'UNCHANGED'),
       ...(artistDiff.changeType !== 'UNCHANGED' ? [artistDiff] : []),
     ].length;
 
-    const addedFields = [
-      ...fieldDiffs.filter((d) => d.changeType === 'ADDED'),
-    ].length;
+    const addedFields = [...fieldDiffs.filter(d => d.changeType === 'ADDED')]
+      .length;
 
     const modifiedFields = [
-      ...fieldDiffs.filter((d) => d.changeType === 'MODIFIED'),
-    ].length;
-
-    const removedFields = [
-      ...fieldDiffs.filter((d) => d.changeType === 'REMOVED'),
+      ...fieldDiffs.filter(d => d.changeType === 'MODIFIED'),
     ].length;
 
     const conflictFields = [
-      ...fieldDiffs.filter((d) => d.changeType === 'CONFLICT'),
+      ...fieldDiffs.filter(d => d.changeType === 'CONFLICT'),
     ].length;
+
+    const hasTrackChanges =
+      trackSummary.modified > 0 ||
+      trackSummary.added > 0 ||
+      trackSummary.removed > 0;
 
     return {
       totalFields,
       changedFields,
       addedFields,
       modifiedFields,
-      removedFields,
       conflictFields,
-      trackChanges: {
-        modified: trackSummary.modifiedCount,
-        added: trackSummary.addedCount,
-        removed: trackSummary.removedCount,
-      },
+      hasTrackChanges,
     };
   }
 }
