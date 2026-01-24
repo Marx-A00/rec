@@ -32,7 +32,11 @@ import type { MBRecording } from '../preview/types';
  * - NEW: MusicBrainz track with no corresponding DB track (to be added)
  * - ORPHANED: DB track with no corresponding MB track (to be removed)
  */
-export type TrackMatchType = 'POSITION' | 'TITLE_SIMILARITY' | 'NEW' | 'ORPHANED';
+export type TrackMatchType =
+  | 'POSITION'
+  | 'TITLE_SIMILARITY'
+  | 'NEW'
+  | 'ORPHANED';
 
 /**
  * Result of matching a database track with a MusicBrainz track.
@@ -85,7 +89,10 @@ function normalizeTitle(title: string): string {
  * @param title2 - Second title to compare
  * @returns Similarity score between 0 and 1
  */
-export function calculateTitleSimilarity(title1: string, title2: string): number {
+export function calculateTitleSimilarity(
+  title1: string,
+  title2: string
+): number {
   const normalized1 = normalizeTitle(title1);
   const normalized2 = normalizeTitle(title2);
 
@@ -153,7 +160,8 @@ export function matchTracks(
   for (const mbTrack of mbTracks) {
     // MBRecording uses discNumber from the medium context (passed during preview generation)
     // Default to disc 1 if not provided
-    const discNumber = (mbTrack as MBRecording & { discNumber?: number }).discNumber ?? 1;
+    const discNumber =
+      (mbTrack as MBRecording & { discNumber?: number }).discNumber ?? 1;
     const key = positionKey(discNumber, mbTrack.position);
     mbByPosition.set(key, mbTrack);
   }
@@ -162,7 +170,8 @@ export function matchTracks(
   // Pass 1: Position-based matching (exact disc + track number)
   // ============================================================
   for (const mbTrack of mbTracks) {
-    const discNumber = (mbTrack as MBRecording & { discNumber?: number }).discNumber ?? 1;
+    const discNumber =
+      (mbTrack as MBRecording & { discNumber?: number }).discNumber ?? 1;
     const key = positionKey(discNumber, mbTrack.position);
     const dbTrack = dbByPosition.get(key);
 
@@ -185,12 +194,15 @@ export function matchTracks(
   // Pass 2: Title similarity matching for unmatched tracks
   // ============================================================
   const unmatchedMbTracks = mbTracks.filter(mb => {
-    const discNumber = (mb as MBRecording & { discNumber?: number }).discNumber ?? 1;
+    const discNumber =
+      (mb as MBRecording & { discNumber?: number }).discNumber ?? 1;
     const key = positionKey(discNumber, mb.position);
     return !matchedMbTrackPositions.has(key);
   });
 
-  const unmatchedDbTracks = dbTracks.filter(db => !matchedDbTrackIds.has(db.id));
+  const unmatchedDbTracks = dbTracks.filter(
+    db => !matchedDbTrackIds.has(db.id)
+  );
 
   for (const mbTrack of unmatchedMbTracks) {
     let bestMatch: { dbTrack: Track; similarity: number } | null = null;
@@ -210,7 +222,8 @@ export function matchTracks(
     }
 
     if (bestMatch) {
-      const discNumber = (mbTrack as MBRecording & { discNumber?: number }).discNumber ?? 1;
+      const discNumber =
+        (mbTrack as MBRecording & { discNumber?: number }).discNumber ?? 1;
 
       matches.push({
         dbTrack: bestMatch.dbTrack,
@@ -231,7 +244,8 @@ export function matchTracks(
   // Pass 3: Mark remaining MB tracks as NEW
   // ============================================================
   for (const mbTrack of mbTracks) {
-    const discNumber = (mbTrack as MBRecording & { discNumber?: number }).discNumber ?? 1;
+    const discNumber =
+      (mbTrack as MBRecording & { discNumber?: number }).discNumber ?? 1;
     const key = positionKey(discNumber, mbTrack.position);
 
     if (!matchedMbTrackPositions.has(key)) {

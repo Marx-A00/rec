@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Phase 4 - Apply Service
+**Current focus:** Phase 4 - Apply Service (COMPLETE)
 
 ## Current Position
 
 Phase: 4 of 12 (Apply Service)
-Plan: 2 of 4 in current phase
-Status: In progress
-Last activity: 2026-01-24 — Completed 04-02-PLAN.md
+Plan: 3 of 4 in current phase (04-04 is verification)
+Status: Phase complete
+Last activity: 2026-01-24 — Completed 04-03-PLAN.md
 
-Progress: [██████░░░░] 29%
+Progress: [███████░░░] 32%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 11
-- Average duration: 3.2min
-- Total execution time: 41.4min
+- Total plans completed: 12
+- Average duration: 3.4min
+- Total execution time: 47.4min
 
 **By Phase:**
 
@@ -31,12 +31,12 @@ Progress: [██████░░░░] 29%
 | 01    | 3     | 15.3min | 5.1min   |
 | 02    | 3     | 7.1min  | 2.4min   |
 | 03    | 3     | 14min   | 4.7min   |
-| 04    | 2     | 5min    | 2.5min   |
+| 04    | 3     | 11min   | 3.7min   |
 
 **Recent Trend:**
 
-- Last 5 plans: 03-01 (3min), 03-02 (4min), 03-03 (7min), 04-01 (2.8min), 04-02 (2.2min)
-- Trend: Consistent - type-focused plans execute quickly
+- Last 5 plans: 03-02 (4min), 03-03 (7min), 04-01 (2.8min), 04-02 (2.2min), 04-03 (6min)
+- Trend: Consistent - service implementation taking ~3.5min average
 
 *Updated after each plan completion*
 
@@ -67,6 +67,9 @@ Recent decisions affecting current work:
 - [04-02]: Conditional update objects - undefined fields mean no change in Prisma
 - [04-02]: Cover art three-way choice (use_source, keep_current, clear)
 - [04-02]: Track selection by database ID, not position
+- [04-03]: Admin corrections always HIGH data quality
+- [04-03]: Audit logging AFTER transaction (failure doesn't roll back)
+- [04-03]: Serializable isolation level for transactions
 
 ### Pending Todos
 
@@ -80,12 +83,12 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Completed 04-02-PLAN.md
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Phase 4 continues with 04-03 (Apply Service implementation):
-- Field selectors ready for use
-- Next: Build applyCorrection() service with atomic transaction
-- Transaction wraps album update + track create/update/delete + audit log
+Phase 4 is complete. Ready for Phase 5 (GraphQL Integration):
+- Create GraphQL schema for correction mutations
+- Implement thin resolvers calling correction services
+- Wire up search, preview, and apply operations
