@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-01-23)
 ## Current Position
 
 Phase: 4 of 12 (Apply Service)
-Plan: 0 of 4 in current phase
-Status: Ready to plan
-Last activity: 2026-01-23 — Phase 3 complete, verified ✓
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-01-24 — Completed 04-01-PLAN.md
 
-Progress: [█████░░░░░] 25%
+Progress: [██████░░░░] 26%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 3.3min
-- Total execution time: 36.4min
+- Total execution time: 39.2min
 
 **By Phase:**
 
@@ -31,11 +31,12 @@ Progress: [█████░░░░░] 25%
 | 01    | 3     | 15.3min | 5.1min   |
 | 02    | 3     | 7.1min  | 2.4min   |
 | 03    | 3     | 14min   | 4.7min   |
+| 04    | 1     | 2.8min  | 2.8min   |
 
 **Recent Trend:**
 
-- Last 5 plans: 02-02 (3min), 02-03 (2.3min), 03-01 (3min), 03-02 (4min), 03-03 (7min)
-- Trend: Consistent - service layer plans executing well
+- Last 5 plans: 02-03 (2.3min), 03-01 (3min), 03-02 (4min), 03-03 (7min), 04-01 (2.8min)
+- Trend: Consistent - type-focused plans execute quickly
 
 *Updated after each plan completion*
 
@@ -61,6 +62,8 @@ Recent decisions affecting current work:
 - [03-01]: NFD Unicode normalization for semantic comparison ("Café" = "Cafe")
 - [03-02]: Adaptive text diff - char-level for <100 chars, word-level for longer
 - [03-03]: Preview fetches full MB release via queue with ADMIN priority
+- [04-01]: Track matching strategy - position-first, similarity-fallback (threshold 0.8)
+- [04-01]: Five field selection groups (metadata, artists, tracks, externalIds, coverArt)
 
 ### Pending Todos
 
@@ -73,13 +76,13 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-23
-Stopped at: Completed Phase 3 - Preview Service verified ✓
+Last session: 2026-01-24
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Phase 4 (Apply Service) is ready to begin:
-- All preview service layer complete (types, diff engine, preview service)
-- CorrectionPreviewService generates complete diffs
-- Apply will atomically update database with selected fields and log changes
+Phase 4 continues with 04-02 (Apply Service implementation):
+- Apply types defined
+- Track matcher ready
+- Next: Build applyCorrection() service function with atomic updates
