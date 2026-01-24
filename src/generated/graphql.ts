@@ -231,6 +231,78 @@ export enum AlertType {
   WorkerFailure = 'WORKER_FAILURE',
 }
 
+/** Applied artist changes summary. */
+export type AppliedArtistChanges = {
+  __typename?: 'AppliedArtistChanges';
+  /** Names of artists added to album */
+  added: Array<Scalars['String']['output']>;
+  /** Names of artists removed from album */
+  removed: Array<Scalars['String']['output']>;
+};
+
+/** Summary of changes that were applied to the album. */
+export type AppliedChanges = {
+  __typename?: 'AppliedChanges';
+  /** Artist changes applied */
+  artists: AppliedArtistChanges;
+  /** Whether cover art was changed */
+  coverArt: Scalars['Boolean']['output'];
+  /** Data quality after correction */
+  dataQualityAfter: DataQuality;
+  /** Data quality before correction */
+  dataQualityBefore: DataQuality;
+  /** List of external ID field names that were updated */
+  externalIds: Array<Scalars['String']['output']>;
+  /** List of metadata field names that were updated */
+  metadata: Array<Scalars['String']['output']>;
+  /** Track changes applied */
+  tracks: AppliedTrackChanges;
+};
+
+/** Applied track changes summary. */
+export type AppliedTrackChanges = {
+  __typename?: 'AppliedTrackChanges';
+  /** Number of tracks added */
+  added: Scalars['Int']['output'];
+  /** Number of tracks modified */
+  modified: Scalars['Int']['output'];
+  /** Number of tracks removed */
+  removed: Scalars['Int']['output'];
+};
+
+/** Error codes for correction apply operation failures. */
+export enum ApplyErrorCode {
+  /** Album no longer exists */
+  AlbumNotFound = 'ALBUM_NOT_FOUND',
+  /** Invalid field selection provided */
+  InvalidSelection = 'INVALID_SELECTION',
+  /** Album was modified since preview was generated */
+  StaleData = 'STALE_DATA',
+  /** Database transaction error */
+  TransactionFailed = 'TRANSACTION_FAILED',
+  /** Data validation failed */
+  ValidationError = 'VALIDATION_ERROR',
+}
+
+/** Diff for array fields (genres, secondaryTypes, etc.) */
+export type ArrayDiff = {
+  __typename?: 'ArrayDiff';
+  /** Items added in source */
+  added: Array<Scalars['String']['output']>;
+  /** Overall change classification */
+  changeType: ChangeType;
+  /** Current array values */
+  currentItems: Array<Scalars['String']['output']>;
+  /** Field name (e.g., 'genres', 'secondaryTypes') */
+  field: Scalars['String']['output'];
+  /** Items removed (exist in current but not source) */
+  removed: Array<Scalars['String']['output']>;
+  /** Source array values */
+  sourceItems: Array<Scalars['String']['output']>;
+  /** Items unchanged (exist in both) */
+  unchanged: Array<Scalars['String']['output']>;
+};
+
 export type Artist = {
   __typename?: 'Artist';
   albumCount: Scalars['Int']['output'];
@@ -272,6 +344,23 @@ export type ArtistCredit = {
   artist: Artist;
   position: Scalars['Int']['output'];
   role: Scalars['String']['output'];
+};
+
+/** Diff for artist credits. */
+export type ArtistCreditDiff = {
+  __typename?: 'ArtistCreditDiff';
+  /** Change classification */
+  changeType: ChangeType;
+  /** Current artist credits */
+  current: Array<CorrectionArtistCredit>;
+  /** Formatted current artist string */
+  currentDisplay: Scalars['String']['output'];
+  /** Name diff parts if modified */
+  nameDiff?: Maybe<Array<TextDiffPart>>;
+  /** Source artist credits */
+  source: Array<CorrectionArtistCredit>;
+  /** Formatted source artist string */
+  sourceDisplay: Scalars['String']['output'];
 };
 
 export type ArtistInput = {
@@ -349,6 +438,20 @@ export type CategorizedDiscography = {
   soundtracks: Array<UnifiedRelease>;
 };
 
+/** Five-state classification for field changes in correction previews. */
+export enum ChangeType {
+  /** Field exists in source but not in current (e.g., missing release date) */
+  Added = 'ADDED',
+  /** Both exist but differ significantly (manual review needed) */
+  Conflict = 'CONFLICT',
+  /** Both exist but differ (e.g., title changed) */
+  Modified = 'MODIFIED',
+  /** Field exists in current but not in source (rare for corrections) */
+  Removed = 'REMOVED',
+  /** Values are semantically identical */
+  Unchanged = 'UNCHANGED',
+}
+
 export type Collection = {
   __typename?: 'Collection';
   albumCount: Scalars['Int']['output'];
@@ -401,6 +504,178 @@ export type ComponentHealth = {
   status: HealthStatus;
 };
 
+/** Confidence tier for tiered scoring strategy. */
+export enum ConfidenceTier {
+  High = 'HIGH',
+  Low = 'LOW',
+  Medium = 'MEDIUM',
+  None = 'NONE',
+}
+
+/** Failed correction apply result. */
+export type CorrectionApplyError = {
+  __typename?: 'CorrectionApplyError';
+  /** Error classification code */
+  code: ApplyErrorCode;
+  /** Additional context for debugging (as JSON) */
+  context?: Maybe<Scalars['JSON']['output']>;
+  /** Human-readable error message */
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
+/** Input for applying a correction. */
+export type CorrectionApplyInput = {
+  /** Album ID to apply correction to */
+  albumId: Scalars['UUID']['input'];
+  /** Expected album updatedAt timestamp for optimistic locking */
+  expectedUpdatedAt: Scalars['DateTime']['input'];
+  /** Selected release group MBID */
+  releaseGroupMbid: Scalars['String']['input'];
+  /** Field selections determining which changes to apply */
+  selections: FieldSelectionsInput;
+};
+
+/**
+ * Apply operation result (union returned as interface for simplicity).
+ * Check 'success' field to determine which fields are populated.
+ */
+export type CorrectionApplyResult = {
+  __typename?: 'CorrectionApplyResult';
+  album?: Maybe<Album>;
+  changes?: Maybe<AppliedChanges>;
+  code?: Maybe<ApplyErrorCode>;
+  context?: Maybe<Scalars['JSON']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+/** Successful correction apply result. */
+export type CorrectionApplySuccess = {
+  __typename?: 'CorrectionApplySuccess';
+  /** Updated album record */
+  album: Album;
+  /** Summary of changes applied */
+  changes: AppliedChanges;
+  success: Scalars['Boolean']['output'];
+};
+
+/** Artist credit from MusicBrainz search result. */
+export type CorrectionArtistCredit = {
+  __typename?: 'CorrectionArtistCredit';
+  /** Artist MusicBrainz ID */
+  mbid: Scalars['String']['output'];
+  /** Artist name as credited */
+  name: Scalars['String']['output'];
+};
+
+/** Complete preview of all changes between current album and MusicBrainz source. */
+export type CorrectionPreview = {
+  __typename?: 'CorrectionPreview';
+  /** Album ID being corrected */
+  albumId: Scalars['String']['output'];
+  /** Album title for display */
+  albumTitle: Scalars['String']['output'];
+  /** Album updatedAt for optimistic locking */
+  albumUpdatedAt: Scalars['DateTime']['output'];
+  /** Artist credit comparison */
+  artistDiff: ArtistCreditDiff;
+  /** Cover art comparison */
+  coverArt: CoverArtDiff;
+  /** Field-by-field diffs (as JSON for complex union types) */
+  fieldDiffs: Scalars['JSON']['output'];
+  /** Full MusicBrainz release data (for tracks) */
+  mbReleaseData?: Maybe<MbReleaseData>;
+  /** Selected MusicBrainz search result */
+  sourceResult: ScoredSearchResult;
+  /** Summary of all changes */
+  summary: PreviewSummary;
+  /** Track listing comparison */
+  trackDiffs: Array<TrackDiff>;
+  /** Track summary statistics */
+  trackSummary: TrackListSummary;
+};
+
+/** Input for correction preview operation. */
+export type CorrectionPreviewInput = {
+  /** Album ID to preview corrections for */
+  albumId: Scalars['UUID']['input'];
+  /** Selected release group MBID from search results */
+  releaseGroupMbid: Scalars['String']['input'];
+};
+
+/** Scoring metadata for correction search response. */
+export type CorrectionScoringInfo = {
+  __typename?: 'CorrectionScoringInfo';
+  /** Number of results below threshold */
+  lowConfidenceCount: Scalars['Int']['output'];
+  /** Strategy used for scoring */
+  strategy: ScoringStrategy;
+  /** Low-confidence threshold used */
+  threshold: Scalars['Float']['output'];
+};
+
+/** Input for correction search operation. */
+export type CorrectionSearchInput = {
+  /** Album ID to search corrections for */
+  albumId: Scalars['UUID']['input'];
+  /** Override album title for search */
+  albumTitle?: InputMaybe<Scalars['String']['input']>;
+  /** Override artist name for search */
+  artistName?: InputMaybe<Scalars['String']['input']>;
+  /** Maximum results to return (default 10) */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  /** Threshold below which results are flagged as low-confidence (0-1) */
+  lowConfidenceThreshold?: InputMaybe<Scalars['Float']['input']>;
+  /** Offset for pagination */
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  /** Scoring strategy to use */
+  strategy?: InputMaybe<ScoringStrategy>;
+  /** Optional year filter */
+  yearFilter?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** Query information for correction search. */
+export type CorrectionSearchQuery = {
+  __typename?: 'CorrectionSearchQuery';
+  albumTitle?: Maybe<Scalars['String']['output']>;
+  artistName?: Maybe<Scalars['String']['output']>;
+  yearFilter?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Response from correction search operation. */
+export type CorrectionSearchResponse = {
+  __typename?: 'CorrectionSearchResponse';
+  /** Whether more results are available */
+  hasMore: Scalars['Boolean']['output'];
+  /** The query that was executed */
+  query: CorrectionSearchQuery;
+  /** Grouped search results (deduplicated by release group) */
+  results: Array<GroupedSearchResult>;
+  /** Scoring metadata */
+  scoring: CorrectionScoringInfo;
+  /** Total number of unique release groups */
+  totalGroups: Scalars['Int']['output'];
+};
+
+/** Cover art handling options for correction application. */
+export enum CoverArtChoice {
+  /** Remove cover art entirely */
+  Clear = 'CLEAR',
+  /** Preserve existing cover art */
+  KeepCurrent = 'KEEP_CURRENT',
+  /** Replace current cover with source cover art */
+  UseSource = 'USE_SOURCE',
+}
+
+/** Cover art comparison data. */
+export type CoverArtDiff = {
+  __typename?: 'CoverArtDiff';
+  changeType: ChangeType;
+  currentUrl?: Maybe<Scalars['String']['output']>;
+  sourceUrl?: Maybe<Scalars['String']['output']>;
+};
+
 export type CreateCollectionPayload = {
   __typename?: 'CreateCollectionPayload';
   id: Scalars['String']['output'];
@@ -433,6 +708,40 @@ export type DatabaseStats = {
   totalAlbums: Scalars['Int']['output'];
   totalArtists: Scalars['Int']['output'];
   totalTracks: Scalars['Int']['output'];
+};
+
+/** Per-component change classification for date diff. */
+export type DateComponentChanges = {
+  __typename?: 'DateComponentChanges';
+  day: ChangeType;
+  month: ChangeType;
+  year: ChangeType;
+};
+
+/**
+ * Date components for partial date comparison.
+ * Handles YYYY, YYYY-MM, and YYYY-MM-DD formats.
+ */
+export type DateComponents = {
+  __typename?: 'DateComponents';
+  day?: Maybe<Scalars['Int']['output']>;
+  month?: Maybe<Scalars['Int']['output']>;
+  year?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Diff for release date field with component-level granularity. */
+export type DateDiff = {
+  __typename?: 'DateDiff';
+  /** Overall change classification */
+  changeType: ChangeType;
+  /** Per-component change classification */
+  componentChanges: DateComponentChanges;
+  /** Current date components */
+  current?: Maybe<DateComponents>;
+  /** Always 'releaseDate' */
+  field: Scalars['String']['output'];
+  /** Source date components */
+  source?: Maybe<DateComponents>;
 };
 
 export type DeleteAlbumPayload = {
@@ -540,12 +849,54 @@ export type ErrorMetric = {
   lastOccurrence: Scalars['DateTime']['output'];
 };
 
+/** Selection state for external ID fields. */
+export type ExternalIdSelectionsInput = {
+  /** Discogs release ID */
+  discogsId?: InputMaybe<Scalars['Boolean']['input']>;
+  /** MusicBrainz release ID */
+  musicbrainzId?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Spotify album ID */
+  spotifyId?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Complete field selection state for correction application. */
+export type FieldSelectionsInput = {
+  /** Per-artist selection state (key: artist MBID) */
+  artists?: InputMaybe<Array<SelectionEntry>>;
+  /** Cover art handling choice */
+  coverArt?: InputMaybe<CoverArtChoice>;
+  /** External ID field selections */
+  externalIds?: InputMaybe<ExternalIdSelectionsInput>;
+  /** Core metadata field selections */
+  metadata?: InputMaybe<MetadataSelectionsInput>;
+  /** Per-track selection state (key: "disc-track", e.g., "1-3") */
+  tracks?: InputMaybe<Array<SelectionEntry>>;
+};
+
 export type FollowUserPayload = {
   __typename?: 'FollowUserPayload';
   createdAt: Scalars['DateTime']['output'];
   followedId: Scalars['String']['output'];
   followerId: Scalars['String']['output'];
   id: Scalars['String']['output'];
+};
+
+/**
+ * A group of related search results (same release group MBID).
+ * Groups releases like "OK Computer" regular vs deluxe editions.
+ */
+export type GroupedSearchResult = {
+  __typename?: 'GroupedSearchResult';
+  /** Alternate versions (deluxe, remaster, etc.) */
+  alternateVersions: Array<ScoredSearchResult>;
+  /** Highest score among all versions (for sorting groups) */
+  bestScore: Scalars['Float']['output'];
+  /** Primary result (best version to display) */
+  primaryResult: ScoredSearchResult;
+  /** The release group MBID (shared by all versions) */
+  releaseGroupMbid: Scalars['String']['output'];
+  /** Total number of versions in this group */
+  versionCount: Scalars['Int']['output'];
 };
 
 export type HealthComponents = {
@@ -606,6 +957,103 @@ export type JobStatusUpdate = {
   type: Scalars['String']['output'];
 };
 
+/** MusicBrainz artist data within artist credit. */
+export type MbArtist = {
+  __typename?: 'MBArtist';
+  /** Disambiguation */
+  disambiguation?: Maybe<Scalars['String']['output']>;
+  /** Artist MBID */
+  id: Scalars['String']['output'];
+  /** Artist name */
+  name: Scalars['String']['output'];
+  /** Sort name */
+  sortName?: Maybe<Scalars['String']['output']>;
+};
+
+/** MusicBrainz artist credit entry. */
+export type MbArtistCredit = {
+  __typename?: 'MBArtistCredit';
+  /** Artist data */
+  artist: MbArtist;
+  /** Join phrase (e.g., ' & ', ' feat. ') */
+  joinphrase?: Maybe<Scalars['String']['output']>;
+  /** Artist name as credited */
+  name: Scalars['String']['output'];
+};
+
+/** MusicBrainz medium (disc/vinyl/CD) data. */
+export type MbMedium = {
+  __typename?: 'MBMedium';
+  /** Format (CD, Vinyl, Digital, etc.) */
+  format?: Maybe<Scalars['String']['output']>;
+  /** Medium position (1-based) */
+  position: Scalars['Int']['output'];
+  /** Number of tracks on this medium */
+  trackCount: Scalars['Int']['output'];
+  /** Track listing */
+  tracks: Array<MbMediumTrack>;
+};
+
+/** MusicBrainz medium track wrapper. */
+export type MbMediumTrack = {
+  __typename?: 'MBMediumTrack';
+  /** Track position within medium */
+  position: Scalars['Int']['output'];
+  /** Recording data */
+  recording: MbRecording;
+};
+
+/** MusicBrainz recording (track) data. */
+export type MbRecording = {
+  __typename?: 'MBRecording';
+  /** Recording MBID */
+  id: Scalars['String']['output'];
+  /** Duration in milliseconds */
+  length?: Maybe<Scalars['Int']['output']>;
+  /** Track position within medium */
+  position: Scalars['Int']['output'];
+  /** Track title */
+  title: Scalars['String']['output'];
+};
+
+/**
+ * MusicBrainz release data (full release, not just release group).
+ * Fetched separately for track listing comparison.
+ */
+export type MbReleaseData = {
+  __typename?: 'MBReleaseData';
+  /** Artist credits */
+  artistCredit: Array<MbArtistCredit>;
+  /** Barcode */
+  barcode?: Maybe<Scalars['String']['output']>;
+  /** Country of release */
+  country?: Maybe<Scalars['String']['output']>;
+  /** Release date (YYYY, YYYY-MM, or YYYY-MM-DD) */
+  date?: Maybe<Scalars['String']['output']>;
+  /** Release MBID (not release group) */
+  id: Scalars['String']['output'];
+  /** Media (discs/vinyls/etc.) */
+  media: Array<MbMedium>;
+  /** Album title */
+  title: Scalars['String']['output'];
+};
+
+/** Selection state for metadata fields. */
+export type MetadataSelectionsInput = {
+  /** Barcode / UPC */
+  barcode?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Record label */
+  label?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Release country code */
+  releaseCountry?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Release date */
+  releaseDate?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Release type (Album, EP, Single, etc.) */
+  releaseType?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Album title */
+  title?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   addAlbum: Album;
@@ -616,6 +1064,8 @@ export type Mutation = {
   batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
   clearFailedJobs: Scalars['Boolean']['output'];
+  /** Apply selected corrections from a preview to an album */
+  correctionApply: CorrectionApplyResult;
   createCollection: CreateCollectionPayload;
   createRecommendation: CreateRecommendationPayload;
   createTrack: Track;
@@ -690,6 +1140,10 @@ export type MutationBatchEnrichmentArgs = {
 
 export type MutationCleanQueueArgs = {
   olderThan?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type MutationCorrectionApplyArgs = {
+  input: CorrectionApplyInput;
 };
 
 export type MutationCreateCollectionArgs = {
@@ -902,6 +1356,23 @@ export type PreviewEnrichmentResult = {
   success: Scalars['Boolean']['output'];
 };
 
+/** Summary of all changes in a preview. */
+export type PreviewSummary = {
+  __typename?: 'PreviewSummary';
+  /** Number of fields added */
+  addedFields: Scalars['Int']['output'];
+  /** Number of fields that changed */
+  changedFields: Scalars['Int']['output'];
+  /** Number of conflict fields */
+  conflictFields: Scalars['Int']['output'];
+  /** Whether track listing has changes */
+  hasTrackChanges: Scalars['Boolean']['output'];
+  /** Number of fields modified */
+  modifiedFields: Scalars['Int']['output'];
+  /** Total fields compared */
+  totalFields: Scalars['Int']['output'];
+};
+
 export type Query = {
   __typename?: 'Query';
   activeJobs: Array<JobRecord>;
@@ -915,6 +1386,10 @@ export type Query = {
   artistDiscography: CategorizedDiscography;
   artistRecommendations: ArtistRecommendationsConnection;
   collection?: Maybe<Collection>;
+  /** Generate a preview of changes between album and selected MusicBrainz release */
+  correctionPreview: CorrectionPreview;
+  /** Search MusicBrainz for correction candidates for an album */
+  correctionSearch: CorrectionSearchResponse;
   databaseStats: DatabaseStats;
   enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStats: EnrichmentStats;
@@ -1004,6 +1479,14 @@ export type QueryArtistRecommendationsArgs = {
 
 export type QueryCollectionArgs = {
   id: Scalars['String']['input'];
+};
+
+export type QueryCorrectionPreviewArgs = {
+  input: CorrectionPreviewInput;
+};
+
+export type QueryCorrectionSearchArgs = {
+  input: CorrectionSearchInput;
 };
 
 export type QueryEnrichmentLogsArgs = {
@@ -1290,6 +1773,68 @@ export type RollbackSyncJobResult = {
   syncJobId: Scalars['UUID']['output'];
 };
 
+/** Score breakdown showing component scores for search result scoring. */
+export type ScoreBreakdown = {
+  __typename?: 'ScoreBreakdown';
+  /** Artist match score (strategy-specific range) */
+  artistScore: Scalars['Float']['output'];
+  /** For tiered strategy: confidence level */
+  confidenceTier?: Maybe<ConfidenceTier>;
+  /** MusicBrainz search score component */
+  mbScore?: Maybe<Scalars['Float']['output']>;
+  /** Title match score (strategy-specific range) */
+  titleScore: Scalars['Float']['output'];
+  /** Year/date score (strategy-specific range) */
+  yearScore: Scalars['Float']['output'];
+};
+
+/** A search result with scoring applied. */
+export type ScoredSearchResult = {
+  __typename?: 'ScoredSearchResult';
+  /** Primary artist credits */
+  artistCredits: Array<CorrectionArtistCredit>;
+  /** Component score breakdown */
+  breakdown: ScoreBreakdown;
+  /** Cover Art Archive thumbnail URL (250px) */
+  coverArtUrl?: Maybe<Scalars['String']['output']>;
+  /** Disambiguation (e.g., "deluxe edition") */
+  disambiguation?: Maybe<Scalars['String']['output']>;
+  /** Raw display score (0-1 or 0-100 depending on strategy) */
+  displayScore: Scalars['Float']['output'];
+  /** First release date (YYYY or YYYY-MM-DD) */
+  firstReleaseDate?: Maybe<Scalars['String']['output']>;
+  /** True if score is below low-confidence threshold */
+  isLowConfidence: Scalars['Boolean']['output'];
+  /** MusicBrainz search score (0-100) */
+  mbScore: Scalars['Int']['output'];
+  /** Normalized score 0-1 for sorting */
+  normalizedScore: Scalars['Float']['output'];
+  /** Formatted primary artist name for display */
+  primaryArtistName: Scalars['String']['output'];
+  /** Primary type (Album, EP, Single, etc.) */
+  primaryType?: Maybe<Scalars['String']['output']>;
+  /** Release group MusicBrainz ID */
+  releaseGroupMbid: Scalars['String']['output'];
+  /** Which strategy produced this score */
+  scoringStrategy: ScoringStrategy;
+  /** Secondary types (Compilation, Live, Remix, etc.) */
+  secondaryTypes?: Maybe<Array<Scalars['String']['output']>>;
+  /** Source indicator */
+  source: Scalars['String']['output'];
+  /** Album title */
+  title: Scalars['String']['output'];
+};
+
+/** Available scoring strategies for correction search results. */
+export enum ScoringStrategy {
+  /** 0-1 scale using string-similarity */
+  Normalized = 'NORMALIZED',
+  /** High/medium/low confidence levels */
+  Tiered = 'TIERED',
+  /** 0-100 with multiple signals */
+  Weighted = 'WEIGHTED',
+}
+
 export type SearchInput = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
@@ -1324,6 +1869,14 @@ export enum SearchType {
   Track = 'TRACK',
   User = 'USER',
 }
+
+/** Key-value pair for Map-like selections. */
+export type SelectionEntry = {
+  /** Unique key (artist MBID or track position like "1-3") */
+  key: Scalars['String']['input'];
+  /** Whether to apply this change */
+  selected: Scalars['Boolean']['input'];
+};
 
 export enum SortOrder {
   Asc = 'ASC',
@@ -1518,6 +2071,35 @@ export type SystemHealth = {
   uptime: Scalars['Float']['output'];
 };
 
+/** Diff for a text field (title, disambiguation, etc.) */
+export type TextDiff = {
+  __typename?: 'TextDiff';
+  /** Change classification */
+  changeType: ChangeType;
+  /** Current value in database */
+  currentValue?: Maybe<Scalars['String']['output']>;
+  /** Field name (e.g., 'title', 'disambiguation') */
+  field: Scalars['String']['output'];
+  /** Character-level diff parts (only for MODIFIED/CONFLICT) */
+  parts?: Maybe<Array<TextDiffPart>>;
+  /** Value from MusicBrainz source */
+  sourceValue?: Maybe<Scalars['String']['output']>;
+};
+
+/**
+ * Character-level diff part for text comparison.
+ * Used to highlight exact changes within text fields.
+ */
+export type TextDiffPart = {
+  __typename?: 'TextDiffPart';
+  /** True if this part was added in the source */
+  added?: Maybe<Scalars['Boolean']['output']>;
+  /** True if this part was removed (exists in current but not source) */
+  removed?: Maybe<Scalars['Boolean']['output']>;
+  /** The text content of this part */
+  value: Scalars['String']['output'];
+};
+
 export type ThroughputMetrics = {
   __typename?: 'ThroughputMetrics';
   jobsPerHour: Scalars['Float']['output'];
@@ -1583,6 +2165,38 @@ export type TrackEnrichmentLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
+/** Current track data from database. */
+export type TrackData = {
+  __typename?: 'TrackData';
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  title: Scalars['String']['output'];
+  trackNumber: Scalars['Int']['output'];
+};
+
+/**
+ * Diff for a single track in the track listing.
+ * Position-based comparison (disc + track number).
+ */
+export type TrackDiff = {
+  __typename?: 'TrackDiff';
+  /** Track change classification */
+  changeType: Scalars['String']['output'];
+  /** Current track data (null if ADDED in source) */
+  current?: Maybe<TrackData>;
+  /** Disc number (1-based) */
+  discNumber: Scalars['Int']['output'];
+  /** Duration difference in milliseconds (absolute value) */
+  durationDelta?: Maybe<Scalars['Int']['output']>;
+  /** Track position (1-based) */
+  position: Scalars['Int']['output'];
+  /** Source track from MusicBrainz (null if REMOVED from current) */
+  source?: Maybe<TrackSourceData>;
+  /** Title diff parts (only for MODIFIED) */
+  titleDiff?: Maybe<Array<TextDiffPart>>;
+  /** Database track ID (for selection) */
+  trackId?: Maybe<Scalars['String']['output']>;
+};
+
 export type TrackInput = {
   albumId: Scalars['UUID']['input'];
   artists: Array<ArtistTrackInput>;
@@ -1594,6 +2208,31 @@ export type TrackInput = {
   previewUrl?: InputMaybe<Scalars['String']['input']>;
   title: Scalars['String']['input'];
   trackNumber: Scalars['Int']['input'];
+};
+
+/** Summary statistics for track listing comparison. */
+export type TrackListSummary = {
+  __typename?: 'TrackListSummary';
+  /** Number of tracks added in source */
+  added: Scalars['Int']['output'];
+  /** Number of matching tracks (same position, same title) */
+  matching: Scalars['Int']['output'];
+  /** Number of modified tracks (same position, different title/duration) */
+  modified: Scalars['Int']['output'];
+  /** Number of tracks removed (exist in current but not source) */
+  removed: Scalars['Int']['output'];
+  /** Total tracks in current album */
+  totalCurrent: Scalars['Int']['output'];
+  /** Total tracks in source data */
+  totalSource: Scalars['Int']['output'];
+};
+
+/** Source track data from MusicBrainz. */
+export type TrackSourceData = {
+  __typename?: 'TrackSourceData';
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  mbid?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
 };
 
 export type UnifiedRelease = {
