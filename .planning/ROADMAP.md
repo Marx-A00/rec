@@ -57,13 +57,13 @@ Plans:
 3. Results include fuzzy match confidence scores
 4. Search can be pre-populated with current album data
 5. Results are tagged with source indicator (MusicBrainz)
-   **Plans**: TBD
+   **Plans**: 3 plans
 
 Plans:
 
-- [ ] 02-01: CorrectionSearchService implementation
-- [ ] 02-02: Fuzzy matching integration with fuzzysort
-- [ ] 02-03: Result normalization and scoring
+- [ ] 02-01-PLAN.md — CorrectionSearchService with ADMIN priority and CAA URLs
+- [ ] 02-02-PLAN.md — Pluggable scoring strategies (normalized, tiered, weighted)
+- [ ] 02-03-PLAN.md — Result grouping, deduplication, and searchWithScoring integration
 
 ### Phase 3: Preview Service
 
@@ -281,20 +281,20 @@ Plans:
 **Execution Order:**
 Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 
-| Phase                          | Plans Complete | Status   | Completed  |
-| ------------------------------ | -------------- | -------- | ---------- |
-| 1. Foundation & Infrastructure | 3/3            | Complete | 2026-01-24 |
-| 2. Search Service              | 0/3            | Not started | -         |
-| 3. Preview Service             | 0/3            | Not started | -         |
-| 4. Apply Service               | 0/4            | Not started | -         |
-| 5. GraphQL Integration         | 0/3            | Not started | -         |
-| 6. Modal & Entry Point         | 0/4            | Not started | -         |
-| 7. Search UI                   | 0/3            | Not started | -         |
-| 8. Preview UI                  | 0/4            | Not started | -         |
-| 9. Apply UI                    | 0/4            | Not started | -         |
-| 10. Manual Edit                | 0/4            | Not started | -         |
-| 11. Artist Correction          | 0/4            | Not started | -         |
-| 12. Polish & Recovery          | 0/5            | Not started | -         |
+| Phase                          | Plans Complete | Status      | Completed  |
+| ------------------------------ | -------------- | ----------- | ---------- |
+| 1. Foundation & Infrastructure | 3/3            | Complete    | 2026-01-24 |
+| 2. Search Service              | 0/3            | Ready       | -          |
+| 3. Preview Service             | 0/3            | Not started | -          |
+| 4. Apply Service               | 0/4            | Not started | -          |
+| 5. GraphQL Integration         | 0/3            | Not started | -          |
+| 6. Modal & Entry Point         | 0/4            | Not started | -          |
+| 7. Search UI                   | 0/3            | Not started | -          |
+| 8. Preview UI                  | 0/4            | Not started | -          |
+| 9. Apply UI                    | 0/4            | Not started | -          |
+| 10. Manual Edit                | 0/4            | Not started | -          |
+| 11. Artist Correction          | 0/4            | Not started | -          |
+| 12. Polish & Recovery          | 0/5            | Not started | -          |
 
 **Total Plans:** 44
 **Total Requirements Covered:** 35/35
