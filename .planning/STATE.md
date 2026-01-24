@@ -10,78 +10,36 @@ See: .planning/PROJECT.md (updated 2026-01-23)
 ## Current Position
 
 Phase: 3 of 12 (Preview Service)
-Plan: 1 of 3 in current phase
-Status: In progress
-Last activity: 2026-01-24 — Completed 03-01-PLAN.md
+Plan: 2 of 3 complete (03-02 just finished)
+Status: Executing Wave 2
 
-Progress: [████░░░░░░] 19%
-
-## Performance Metrics
-
-**Velocity:**
-
-- Total plans completed: 7
-- Average duration: 3.4min
-- Total execution time: 25.4min
-
-**By Phase:**
-
-| Phase | Plans | Total   | Avg/Plan |
-| ----- | ----- | ------- | -------- |
-| 01    | 3     | 15.3min | 5.1min   |
-| 02    | 3     | 7.1min  | 2.4min   |
-| 03    | 1     | 3.0min  | 3.0min   |
-
-**Recent Trend:**
-
-- Last 5 plans: 02-01 (1.8min), 02-02 (3min), 02-03 (2.3min), 03-01 (3min)
-- Trend: Stable - foundation plans averaging ~3min
-
-_Updated after each plan completion_
+Progress: [████░░░░░░] 18%
 
 ## Accumulated Context
 
 ### Decisions
-
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
 
 - [Roadmap]: MusicBrainz only for v1 (Discogs/Spotify deferred)
 - [Roadmap]: Session-only state (no DB persistence for correction queue)
 - [Roadmap]: Service layer before UI (thin resolver pattern)
 - [01-01]: Priority values ADMIN=1, USER=5, ENRICHMENT=8, BACKGROUND=10
 - [01-02]: Verification wrapper pattern - generic MbidVerificationResult<T> preserves original data
-- [01-03]: Seven error codes for categorization (RATE_LIMITED, NOT_FOUND, INVALID_MBID, NETWORK_ERROR, TIMEOUT, SERVICE_ERROR, UNKNOWN)
+- [01-03]: Seven error codes for categorization
 - [02-01]: Cover Art Archive URL always computed, UI handles 404 gracefully
-- [02-02]: Scoring weights - title:40, artist:40, year:10, mbScore:10 for weighted strategy
-- [02-02]: Tier thresholds - high:-1000, medium:-3000, low:-5000 fuzzysort scores
-- [02-02]: Default low-confidence threshold 0.5
-- [02-03]: Type priority sorting - Album:1 > EP:2 > Single:3 for group ordering
+- [02-02]: Scoring weights - title:40, artist:40, year:10, mbScore:10
+- [02-02]: Tier thresholds - high:-1000, medium:-3000, low:-5000
+- [02-03]: Type priority sorting - Album:1 > EP:2 > Single:3
 - [03-01]: Five-state change classification (ADDED, MODIFIED, REMOVED, CONFLICT, UNCHANGED)
-- [03-01]: NFD Unicode normalization for text comparison (handles accents)
-- [03-01]: Component-level date diffing (year/month/day granularity)
-- [03-01]: Position-based track comparison (disc + trackNumber, then diff title/duration)
-
-### Pending Todos
-
-None yet.
+- [03-01]: NFD Unicode normalization for semantic comparison
+- [03-02]: 100-char threshold for character vs word diff
+- [03-02]: Position-based track alignment for multi-disc albums
 
 ### Blockers/Concerns
 
 - Research flagged: Mobile comparison layout patterns need attention in Phase 8/12
-- Multi-admin scenarios not deeply researched (single admin at a time is fine for v1)
-- [03-01]: No conflict detection rules yet - CONFLICT state exists but 03-02 needs to define when to use it
 
 ## Session Continuity
 
-Last session: 2026-01-24
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-01-23
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
-
-## Next Steps
-
-Phase 3 (Preview Service) - Plan 02 (Diff Engine):
-
-- Foundation complete: types, normalizers, diff libraries installed
-- Next: Implement diff engine using jsdiff for character-level diffs
-- Then: Preview service in 03-03 to generate CorrectionPreview objects
