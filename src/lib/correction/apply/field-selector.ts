@@ -269,3 +269,167 @@ function handleCoverArtChoice(
       break;
   }
 }
+
+// ============================================================================
+// Track Update Data Builder
+// ============================================================================
+
+/**
+ * Builds a Prisma.TrackUpdateInput for a modified track.
+ * Returns null if the track is not selected for update.
+ *
+ * @param mbRecording - MusicBrainz recording data (source of truth)
+ * @param existingTrack - Current database track being updated
+ * @param selections - Field selections including per-track toggles
+ * @returns TrackUpdateInput if track is selected, null otherwise
+ *
+ * @example
+ * ```typescript
+ * const mbRecording: MBRecording = {
+ *   id: "mb-recording-123",
+ *   title: "Corrected Track Title",
+ *   length: 240000,
+ *   position: 3,
+ * };
+ * const existingTrack: Track = { id: "db-track-456", ... };
+ * const selections: FieldSelections = {
+ *   tracks: new Map([["db-track-456", true]]),
+ *   ...
+ * };
+ *
+ * const updateData = buildTrackUpdateData(mbRecording, existingTrack, selections);
+ * // updateData = {
+ * //   title: "Corrected Track Title",
+ * //   trackNumber: 3,
+ * //   durationMs: 240000,
+ * //   musicbrainzId: "mb-recording-123",
+ * // }
+ * ```
+ */
+export function buildTrackUpdateData(
+  mbRecording: MBRecording,
+  existingTrack: Track,
+  selections: FieldSelections
+): Prisma.TrackUpdateInput | null {
+  // Check if this specific track is selected for update
+  const isSelected = selections.tracks.get(existingTrack.id);
+  if (!isSelected) {
+    return null;
+  }
+
+  // Build update data with all track fields from MB
+  const data: Prisma.TrackUpdateInput = {
+    title: mbRecording.title,
+    trackNumber: mbRecording.position,
+    // MusicBrainz uses 'length' for duration in milliseconds
+    durationMs: mbRecording.length ?? null,
+    musicbrainzId: mbRecording.id,
+    // Mark as enriched
+    lastEnriched: new Date(),
+  };
+
+  return data;
+}
+
+// ============================================================================
+// Track Create Data Builder
+// ============================================================================
+
+/**
+ * Builds a Prisma.TrackCreateInput for a new track from MusicBrainz.
+ * Used when MB has tracks that don't exist in the database.
+ *
+ * @param mbRecording - MusicBrainz recording data for the new track
+ * @param albumId - Database album ID to connect the track to
+ * @param discNumber - Disc number (1-based)
+ * @returns Complete TrackCreateInput ready for Prisma create
+ *
+ * @example
+ * ```typescript
+ * const mbRecording: MBRecording = {
+ *   id: "mb-recording-789",
+ *   title: "New Track",
+ *   length: 180000,
+ *   position: 12,
+ * };
+ *
+ * const createData = buildTrackCreateData(mbRecording, "album-uuid", 1);
+ * // createData = {
+ * //   album: { connect: { id: "album-uuid" } },
+ * //   title: "New Track",
+ * //   trackNumber: 12,
+ * //   discNumber: 1,
+ * //   durationMs: 180000,
+ * //   musicbrainzId: "mb-recording-789",
+ * //   source: "MUSICBRAINZ",
+ * //   dataQuality: "HIGH",
+ * //   enrichmentStatus: "COMPLETED",
+ * // }
+ * ```
+ */
+export function buildTrackCreateData(
+  mbRecording: MBRecording,
+  albumId: string,
+  discNumber: number
+): Prisma.TrackCreateInput {
+  return {
+    // Connect to parent album
+    album: { connect: { id: albumId } },
+
+    // Track identification
+    title: mbRecording.title,
+    trackNumber: mbRecording.position,
+    discNumber,
+
+    // Duration (MB uses 'length' not 'durationMs')
+    durationMs: mbRecording.length ?? null,
+
+    // MusicBrainz ID
+    musicbrainzId: mbRecording.id,
+
+    // Source and quality markers
+    source: 'MUSICBRAINZ',
+    // HIGH quality because it's admin-verified from correction flow
+    dataQuality: 'HIGH',
+    enrichmentStatus: 'COMPLETED',
+    lastEnriched: new Date(),
+  };
+}
+
+// ============================================================================
+// Track Deletion Helper
+// ============================================================================
+
+/**
+ * Filters orphaned track IDs to only include those selected for deletion.
+ * Tracks not selected for update should not be deleted either.
+ *
+ * @param orphanedTrackIds - Array of track IDs that exist in DB but not in MB
+ * @param selections - Field selections with per-track toggles
+ * @returns Array of track IDs that should be deleted (selected for update)
+ *
+ * @example
+ * ```typescript
+ * const orphanedIds = ["track-1", "track-2", "track-3"];
+ * const selections: FieldSelections = {
+ *   tracks: new Map([
+ *     ["track-1", true],   // selected - will be deleted
+ *     ["track-2", false],  // not selected - keep in DB
+ *     // track-3 not in map - treat as not selected, keep
+ *   ]),
+ *   ...
+ * };
+ *
+ * getTrackIdsToDelete(orphanedIds, selections);
+ * // -> ["track-1"]
+ * ```
+ */
+export function getTrackIdsToDelete(
+  orphanedTrackIds: string[],
+  selections: FieldSelections
+): string[] {
+  return orphanedTrackIds.filter(id => {
+    // Only delete if explicitly selected for update
+    return selections.tracks.get(id) === true;
+  });
+}
