@@ -32,6 +32,7 @@ import {
   Loader2,
   Eye,
   ExternalLink,
+  Wrench,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -100,6 +101,13 @@ import {
   EnrichmentPriority,
   DataQuality,
 } from '@/generated/graphql';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { CorrectionModal } from '@/components/admin/correction/CorrectionModal';
 import { EnrichmentLogTable } from '@/components/admin/EnrichmentLogTable';
 import { EnrichmentPreviewResults } from '@/components/admin/EnrichmentPreviewResults';
 
@@ -215,6 +223,9 @@ export default function MusicDatabasePage() {
   const [previewResults, setPreviewResults] = useState<
     Map<string, PreviewEnrichmentResult>
   >(new Map());
+
+  // Correction modal state
+  const [correctionAlbum, setCorrectionAlbum] = useState<AlbumSearchResult | null>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
@@ -1823,6 +1834,28 @@ export default function MusicDatabasePage() {
                           </div>
                         </TableCell>
                         <TableCell onClick={e => e.stopPropagation()}>
+                          <div className='flex items-center gap-2'>
+                            {/* Fix Data button */}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size='icon'
+                                    variant='ghost'
+                                    className={
+                                      album.dataQuality === 'LOW'
+                                        ? 'text-dark-pastel-red hover:text-dark-pastel-red hover:bg-dark-pastel-red/10'
+                                        : 'text-zinc-400 hover:text-zinc-200'
+                                    }
+                                    onClick={() => setCorrectionAlbum(album)}
+                                  >
+                                    <Wrench className='h-4 w-4' />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Fix album data</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            {/* Enrich dropdown */}
                           {enrichingItems.has(album.id) ? (
                             <Button
                               size='sm'
@@ -1904,6 +1937,7 @@ export default function MusicDatabasePage() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
+                          </div>
                         </TableCell>
                       </TableRow>
                       {expandedRows.has(album.id) && (
