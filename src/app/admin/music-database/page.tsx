@@ -1,7 +1,7 @@
 // src/app/admin/music-database/page.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
@@ -2476,6 +2476,13 @@ export default function MusicDatabasePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Correction Modal */}
+      <CorrectionModal
+        albumId={correctionAlbum?.id ?? null}
+        open={correctionAlbum !== null}
+        onClose={() => setCorrectionAlbum(null)}
+      />
     </div>
   );
 }
