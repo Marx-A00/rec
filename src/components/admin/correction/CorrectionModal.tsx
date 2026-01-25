@@ -10,10 +10,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { useCorrectionModalState } from '@/hooks/useCorrectionModalState';
 import { StepIndicator } from './StepIndicator';
+import { CurrentDataView, type CurrentDataViewAlbum } from './CurrentDataView';
 
 export interface CorrectionModalProps {
-  /** Album ID being corrected, or null if modal should be closed */
-  albumId: string | null;
+  /** Album data to display and correct */
+  album: CurrentDataViewAlbum | null;
   /** Whether the modal is open */
   open: boolean;
   /** Callback when modal should close */
@@ -24,14 +25,16 @@ export interface CorrectionModalProps {
  * Modal shell for the 3-step album correction wizard.
  *
  * Steps:
- * 0. Current Data - Shows existing album data (placeholder)
+ * 0. Current Data - Shows existing album data
  * 1. Search - Search for correct MusicBrainz match (placeholder)
  * 2. Apply - Preview and apply corrections (placeholder)
  *
  * State is persisted per album in sessionStorage, allowing users to
  * navigate away and return to the same step.
  */
-export function CorrectionModal({ albumId, open, onClose }: CorrectionModalProps) {
+export function CorrectionModal({ album, open, onClose }: CorrectionModalProps) {
+  const albumId = album?.id ?? null;
+  
   const {
     currentStep,
     setCurrentStep,
@@ -53,20 +56,32 @@ export function CorrectionModal({ albumId, open, onClose }: CorrectionModalProps
     }
   };
 
+  // Get primary artist name for header
+  const primaryArtist = album?.artists.find(
+    (ac) => ac.role === 'primary' || ac.position === 0
+  );
+  const primaryArtistName = primaryArtist?.artist.name ?? 'Unknown Artist';
+  const headerTitle = album
+    ? 'Fixing: ' + album.title + ' by ' + primaryArtistName
+    : 'Fixing: Album Data';
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:!max-w-[1100px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Fixing: Album Data</DialogTitle>
+          <DialogTitle className="truncate pr-8">{headerTitle}</DialogTitle>
         </DialogHeader>
 
         <StepIndicator currentStep={currentStep} onStepClick={setCurrentStep} />
 
         {/* Step content area */}
         <div className="min-h-[300px] py-4">
-          {currentStep === 0 && (
+          {currentStep === 0 && album && (
+            <CurrentDataView album={album} />
+          )}
+          {currentStep === 0 && !album && (
             <div className="flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg">
-              <p className="text-muted-foreground">Current Data content here</p>
+              <p className="text-muted-foreground">No album data available</p>
             </div>
           )}
           {currentStep === 1 && (
