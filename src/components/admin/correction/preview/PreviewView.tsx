@@ -1,20 +1,30 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
+import { CheckCircle } from 'lucide-react';
 
 import { useGetCorrectionPreviewQuery } from '@/generated/graphql';
-import type { FieldDiff, ArtistCreditDiff } from '@/lib/correction/preview/types';
+import type {
+  FieldDiff,
+  ArtistCreditDiff,
+  CorrectionPreview,
+} from '@/lib/correction/preview/types';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
 
 import { PreviewSkeleton } from './PreviewSkeleton';
 import { CoverArtComparison } from './CoverArtComparison';
 import { FieldComparisonList } from './FieldComparisonList';
-import { TrackComparison, type TrackDiff, type TrackListSummary } from './TrackComparison';
+import {
+  TrackComparison,
+  type TrackDiff,
+  type TrackListSummary,
+} from './TrackComparison';
 
 /**
  * Props for PreviewView component
@@ -24,6 +34,10 @@ export interface PreviewViewProps {
   albumId: string;
   /** MusicBrainz release group MBID from search selection */
   releaseGroupMbid: string;
+  /** Callback when admin clicks "Apply This Match" to transition to apply step */
+  onApplyClick?: () => void;
+  /** Callback when preview data loads successfully - exposes data to parent for ApplyView */
+  onPreviewLoaded?: (preview: CorrectionPreview) => void;
 }
 
 /**
@@ -40,8 +54,14 @@ export interface PreviewViewProps {
  *   - Basic Info: Field comparisons (title, date, type, etc.)
  *   - Tracks: Position-aligned track comparison
  *   - External IDs: MusicBrainz, Spotify, Discogs IDs
+ * - Footer: "Apply This Match" button to proceed to apply step
  */
-export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
+export function PreviewView({ 
+  albumId, 
+  releaseGroupMbid,
+  onApplyClick,
+  onPreviewLoaded,
+}: PreviewViewProps) {
   const { data, isLoading, error } = useGetCorrectionPreviewQuery(
     { input: { albumId, releaseGroupMbid } },
     {
@@ -49,6 +69,13 @@ export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
       staleTime: 5 * 60 * 1000, // Cache preview for 5 minutes
     }
   );
+
+  // Notify parent when preview data loads
+  useEffect(() => {
+    if (data?.correctionPreview && onPreviewLoaded) {
+      onPreviewLoaded(data.correctionPreview as unknown as CorrectionPreview);
+    }
+  }, [data?.correctionPreview, onPreviewLoaded]);
 
   // Determine which accordion sections should be expanded by default
   const defaultExpanded = useMemo(() => {
@@ -95,10 +122,12 @@ export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
   // Error state
   if (error) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <p className="text-red-400 font-medium">Failed to load preview data</p>
-          <p className="text-sm text-zinc-500 mt-1">
+      <div className='flex items-center justify-center py-12'>
+        <div className='text-center'>
+          <p className='text-red-400 font-medium'>
+            Failed to load preview data
+          </p>
+          <p className='text-sm text-zinc-500 mt-1'>
             {error instanceof Error ? error.message : 'Unknown error occurred'}
           </p>
         </div>
@@ -111,8 +140,8 @@ export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
   // No data state (shouldn't happen if query succeeds, but guard anyway)
   if (!preview) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-zinc-500">Preview data not available</p>
+      <div className='flex items-center justify-center py-12'>
+        <p className='text-zinc-500'>Preview data not available</p>
       </div>
     );
   }
@@ -124,36 +153,50 @@ export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
 
   // Separate field diffs into categories
   const externalIdFields = ['musicbrainzId', 'spotifyId', 'discogsId'];
-  const basicInfoDiffs = fieldDiffs.filter(d => !externalIdFields.includes(d.field));
-  const externalIdDiffs = fieldDiffs.filter(d => externalIdFields.includes(d.field));
+  const basicInfoDiffs = fieldDiffs.filter(
+    d => !externalIdFields.includes(d.field)
+  );
+  const externalIdDiffs = fieldDiffs.filter(d =>
+    externalIdFields.includes(d.field)
+  );
 
   // Count changes for accordion badges
-  const basicInfoChangeCount = basicInfoDiffs.filter(d => d.changeType !== 'UNCHANGED').length +
+  const basicInfoChangeCount =
+    basicInfoDiffs.filter(d => d.changeType !== 'UNCHANGED').length +
     (artistDiff?.changeType !== 'UNCHANGED' ? 1 : 0);
-  const trackChangeCount = (trackSummary?.modified ?? 0) + (trackSummary?.added ?? 0) + (trackSummary?.removed ?? 0);
-  const externalIdChangeCount = externalIdDiffs.filter(d => d.changeType !== 'UNCHANGED').length;
+  const trackChangeCount =
+    (trackSummary?.modified ?? 0) +
+    (trackSummary?.added ?? 0) +
+    (trackSummary?.removed ?? 0);
+  const externalIdChangeCount = externalIdDiffs.filter(
+    d => d.changeType !== 'UNCHANGED'
+  ).length;
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Summary change counts */}
-      <div className="flex items-center gap-4 p-4 bg-zinc-800/50 rounded-lg text-sm">
-        <span className="text-zinc-400">Changes:</span>
+      <div className='flex items-center gap-4 p-4 bg-zinc-800/50 rounded-lg text-sm'>
+        <span className='text-zinc-400'>Changes:</span>
         {summary.changedFields > 0 && (
-          <span className="text-amber-400">
-            {summary.changedFields} field{summary.changedFields !== 1 ? 's' : ''} modified
+          <span className='text-amber-400'>
+            {summary.changedFields} field
+            {summary.changedFields !== 1 ? 's' : ''} modified
           </span>
         )}
         {summary.addedFields > 0 && (
-          <span className="text-green-400">
-            {summary.addedFields} field{summary.addedFields !== 1 ? 's' : ''} added
+          <span className='text-green-400'>
+            {summary.addedFields} field{summary.addedFields !== 1 ? 's' : ''}{' '}
+            added
           </span>
         )}
         {summary.hasTrackChanges && (
-          <span className="text-blue-400">Track changes</span>
+          <span className='text-blue-400'>Track changes</span>
         )}
-        {summary.changedFields === 0 && summary.addedFields === 0 && !summary.hasTrackChanges && (
-          <span className="text-zinc-500">No changes detected</span>
-        )}
+        {summary.changedFields === 0 &&
+          summary.addedFields === 0 &&
+          !summary.hasTrackChanges && (
+            <span className='text-zinc-500'>No changes detected</span>
+          )}
       </div>
 
       {/* Header: Cover art comparison */}
@@ -164,30 +207,37 @@ export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
       />
 
       {/* Album title + source info */}
-      <div className="border-b border-zinc-700 pb-4">
-        <h3 className="text-lg font-medium text-zinc-100">{preview.albumTitle}</h3>
-        <p className="text-sm text-zinc-400">
-          Comparing with: <span className="text-zinc-300">{sourceResult?.title}</span>
+      <div className='border-b border-zinc-700 pb-4'>
+        <h3 className='text-lg font-medium text-zinc-100'>
+          {preview.albumTitle}
+        </h3>
+        <p className='text-sm text-zinc-400'>
+          Comparing with:{' '}
+          <span className='text-zinc-300'>{sourceResult?.title}</span>
           {sourceResult?.disambiguation && (
-            <span className="text-zinc-500"> ({sourceResult.disambiguation})</span>
+            <span className='text-zinc-500'>
+              {' '}
+              ({sourceResult.disambiguation})
+            </span>
           )}
         </p>
       </div>
 
       {/* Accordion sections */}
       <Accordion
-        type="multiple"
+        type='multiple'
         defaultValue={defaultExpanded}
-        className="w-full"
+        className='w-full'
       >
         {/* Basic Info Section */}
-        <AccordionItem value="basic-info" className="border-zinc-700">
-          <AccordionTrigger className="text-zinc-200 hover:text-zinc-100 hover:no-underline">
-            <div className="flex items-center gap-2">
+        <AccordionItem value='basic-info' className='border-zinc-700'>
+          <AccordionTrigger className='text-zinc-200 hover:text-zinc-100 hover:no-underline'>
+            <div className='flex items-center gap-2'>
               <span>Basic Info</span>
               {basicInfoChangeCount > 0 && (
-                <span className="text-xs text-yellow-400">
-                  ({basicInfoChangeCount} change{basicInfoChangeCount !== 1 ? 's' : ''})
+                <span className='text-xs text-yellow-400'>
+                  ({basicInfoChangeCount} change
+                  {basicInfoChangeCount !== 1 ? 's' : ''})
                 </span>
               )}
             </div>
@@ -201,12 +251,12 @@ export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
         </AccordionItem>
 
         {/* Tracks Section */}
-        <AccordionItem value="tracks" className="border-zinc-700">
-          <AccordionTrigger className="text-zinc-200 hover:text-zinc-100 hover:no-underline">
-            <div className="flex items-center gap-2">
+        <AccordionItem value='tracks' className='border-zinc-700'>
+          <AccordionTrigger className='text-zinc-200 hover:text-zinc-100 hover:no-underline'>
+            <div className='flex items-center gap-2'>
               <span>Tracks</span>
               {trackChangeCount > 0 && (
-                <span className="text-xs text-yellow-400">
+                <span className='text-xs text-yellow-400'>
                   ({trackChangeCount} change{trackChangeCount !== 1 ? 's' : ''})
                 </span>
               )}
@@ -221,13 +271,14 @@ export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
         </AccordionItem>
 
         {/* External IDs Section */}
-        <AccordionItem value="external-ids" className="border-zinc-700">
-          <AccordionTrigger className="text-zinc-200 hover:text-zinc-100 hover:no-underline">
-            <div className="flex items-center gap-2">
+        <AccordionItem value='external-ids' className='border-zinc-700'>
+          <AccordionTrigger className='text-zinc-200 hover:text-zinc-100 hover:no-underline'>
+            <div className='flex items-center gap-2'>
               <span>External IDs</span>
               {externalIdChangeCount > 0 && (
-                <span className="text-xs text-yellow-400">
-                  ({externalIdChangeCount} change{externalIdChangeCount !== 1 ? 's' : ''})
+                <span className='text-xs text-yellow-400'>
+                  ({externalIdChangeCount} change
+                  {externalIdChangeCount !== 1 ? 's' : ''})
                 </span>
               )}
             </div>
@@ -237,6 +288,20 @@ export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      {/* Footer: Apply button */}
+      {onApplyClick && (
+        <div className='flex justify-end pt-4 border-t border-zinc-700'>
+          <Button
+            onClick={onApplyClick}
+            variant='primary'
+            className='gap-2'
+          >
+            <CheckCircle className='h-4 w-4' />
+            Apply This Match
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
