@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Phase 8 - Preview UI (Complete)
+**Current focus:** Phase 9 - Apply UI
 
 ## Current Position
 
-Phase: 8 of 12 (Preview UI)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-01-26 — Completed 08-03-PLAN.md
+Phase: 9 of 12 (Apply UI)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-01-26 — Completed 09-01-PLAN.md
 
-Progress: [████████████████░] 71%
+Progress: [█████████████████] 74%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 24
+- Total plans completed: 25
 - Average duration: 3.6min
-- Total execution time: 93.7min
+- Total execution time: 99.7min
 
 **By Phase:**
 
@@ -34,11 +34,12 @@ Progress: [████████████████░] 71%
 - Phase 06: 3 plans, 13.3min total, 4.4min avg
 - Phase 07: 3 plans, 7.6min total, 2.5min avg
 - Phase 08: 3 plans, 10.8min total, 3.6min avg (complete)
+- Phase 09: 1 plan, 6min total, 6min avg
 
 **Recent Trend:**
 
-- Last 5 plans: 07-02 (2.6min), 07-03 (5min), 08-01 (2.6min), 08-02 (2.6min), 08-03 (5.6min)
-- Trend: Preview UI complete
+- Last 5 plans: 07-03 (5min), 08-01 (2.6min), 08-02 (2.6min), 08-03 (5.6min), 09-01 (6min)
+- Trend: Apply UI components starting
 
 *Updated after each plan completion*
 
@@ -99,6 +100,9 @@ Recent decisions affecting current work:
 - [08-03]: Track row styling per change type (color-coded backgrounds)
 - [08-03]: Accordion default expansion based on sections with changes
 - [08-03]: Change count badges show "(N changes)" in accordion triggers
+- [09-01]: UIFieldSelections uses simpler structures than backend (direct booleans, Set for exclusions)
+- [09-01]: No per-artist selection UI (artists applied as unit from MusicBrainz)
+- [09-01]: Hybrid tracks selection (applyAll boolean + excludedPositions Set)
 
 ### Pending Todos
 
@@ -112,12 +116,11 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-26
-Stopped at: Completed 08-03-PLAN.md (Phase 8 complete)
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Begin Phase 9 (Apply UI):
-- Plan 09-01: Field selection checkboxes and apply button
-- Plan 09-02: Apply mutation integration and success feedback
-- Plan 09-03: Error handling and retry UI
+Continue Phase 9 (Apply UI):
+- Plan 09-02: Apply view integration with mutation
+- Plan 09-03: Error handling and success feedback
