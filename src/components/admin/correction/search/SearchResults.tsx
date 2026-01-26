@@ -2,15 +2,23 @@
 
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { GroupedSearchResult, ScoredSearchResult } from '@/lib/correction/types';
-import { SearchResultCard } from './SearchResultCard';
+import { SearchResultCard, type SearchResultDisplay } from './SearchResultCard';
 import { NoResultsState } from './NoResultsState';
 
-export interface SearchResultsProps {
-  results: GroupedSearchResult[];
+/**
+ * Minimal type for grouped search result display.
+ * Compatible with GraphQL query results.
+ */
+export interface GroupedResultDisplay<T extends SearchResultDisplay> {
+  releaseGroupMbid: string;
+  primaryResult: T;
+}
+
+export interface SearchResultsProps<T extends SearchResultDisplay> {
+  results: GroupedResultDisplay<T>[];
   hasMore: boolean;
   isLoadingMore: boolean;
-  onResultClick: (result: ScoredSearchResult) => void;
+  onResultClick: (result: T) => void;
   onLoadMore: () => void;
   onManualEdit: () => void;
 }
@@ -19,14 +27,14 @@ export interface SearchResultsProps {
  * Container component for displaying search results with pagination.
  * Shows a list of SearchResultCards or NoResultsState if empty.
  */
-export function SearchResults({
+export function SearchResults<T extends SearchResultDisplay>({
   results,
   hasMore,
   isLoadingMore,
   onResultClick,
   onLoadMore,
   onManualEdit,
-}: SearchResultsProps) {
+}: SearchResultsProps<T>) {
   // Show empty state when no results
   if (results.length === 0) {
     return <NoResultsState onManualEdit={onManualEdit} />;

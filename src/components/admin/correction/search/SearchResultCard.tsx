@@ -2,18 +2,36 @@
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Badge } from '@/components/ui/badge';
-import type { ScoredSearchResult } from '@/lib/correction/scoring/types';
 
-export interface SearchResultCardProps {
-  result: ScoredSearchResult;
-  onClick: (result: ScoredSearchResult) => void;
+/**
+ * Minimal type for search result display.
+ * Compatible with GraphQL query results without requiring scoringStrategy.
+ */
+export interface SearchResultDisplay {
+  releaseGroupMbid: string;
+  title: string;
+  disambiguation?: string | null;
+  primaryArtistName: string;
+  firstReleaseDate?: string | null;
+  primaryType?: string | null;
+  secondaryTypes?: string[] | null;
+  coverArtUrl?: string | null;
+  normalizedScore: number;
+}
+
+export interface SearchResultCardProps<T extends SearchResultDisplay> {
+  result: T;
+  onClick: (result: T) => void;
 }
 
 /**
  * A clickable search result card showing album metadata and match score.
  * Used in the correction modal to display MusicBrainz search results.
  */
-export function SearchResultCard({ result, onClick }: SearchResultCardProps) {
+export function SearchResultCard<T extends SearchResultDisplay>({
+  result,
+  onClick,
+}: SearchResultCardProps<T>) {
   const handleClick = () => {
     onClick(result);
   };
