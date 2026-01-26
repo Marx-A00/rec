@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Phase 9 - Apply UI
+**Current focus:** Phase 9 - Apply UI (Complete)
 
 ## Current Position
 
 Phase: 9 of 12 (Apply UI)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-01-26 — Completed 09-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-01-26 — Completed 09-03-PLAN.md
 
-Progress: [█████████████████] 75%
+Progress: [█████████████████░] 79%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 26
+- Total plans completed: 27
 - Average duration: 3.6min
-- Total execution time: 103.7min
+- Total execution time: 110.7min
 
 **By Phase:**
 
@@ -34,12 +34,12 @@ Progress: [█████████████████] 75%
 - Phase 06: 3 plans, 13.3min total, 4.4min avg
 - Phase 07: 3 plans, 7.6min total, 2.5min avg
 - Phase 08: 3 plans, 10.8min total, 3.6min avg (complete)
-- Phase 09: 2 plans, 10min total, 5min avg
+- Phase 09: 3 plans, 17min total, 5.7min avg (complete)
 
 **Recent Trend:**
 
-- Last 5 plans: 08-01 (2.6min), 08-02 (2.6min), 08-03 (5.6min), 09-01 (6min), 09-02 (4min)
-- Trend: Apply UI components progressing steadily
+- Last 5 plans: 08-03 (5.6min), 09-01 (6min), 09-02 (4min), 09-03 (7min)
+- Trend: Apply UI complete, ready for Manual Edit UI (Phase 10)
 
 *Updated after each plan completion*
 
@@ -107,6 +107,9 @@ Recent decisions affecting current work:
 - [09-02]: Apply step itself is confirmation (no separate dialog)
 - [09-02]: Empty selection shows amber warning, disables apply button
 - [09-02]: Inline error display with expandable stack trace
+- [09-03]: Toast shows field count + track count + data quality change
+- [09-03]: 1.5s delay before auto-close after Applied! state
+- [09-03]: expectedUpdatedAt from previewData.currentAlbum.updatedAt for optimistic locking
 
 ### Pending Todos
 
@@ -120,10 +123,12 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-26
-Stopped at: Completed 09-02-PLAN.md
+Stopped at: Completed 09-03-PLAN.md (Phase 9 complete)
 Resume file: None
 
 ## Next Steps
 
-Continue Phase 9 (Apply UI):
-- Plan 09-03: Apply mutation integration and success feedback
+Phase 9 (Apply UI) is complete. Ready for Phase 10 (Manual Edit UI):
+- Manual field editing for cases where MusicBrainz has no good match
+- Fallback workflow when admin clicks "None of these are right, I'll edit manually"
+- Direct field editing with validation
