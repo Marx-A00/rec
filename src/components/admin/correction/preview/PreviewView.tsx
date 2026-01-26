@@ -1,8 +1,20 @@
 'use client';
 
+import { useMemo } from 'react';
+
 import { useGetCorrectionPreviewQuery } from '@/generated/graphql';
-import { ComparisonLayout } from './ComparisonLayout';
+import type { FieldDiff, ArtistCreditDiff } from '@/lib/correction/preview/types';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+
 import { PreviewSkeleton } from './PreviewSkeleton';
+import { CoverArtComparison } from './CoverArtComparison';
+import { FieldComparisonList } from './FieldComparisonList';
+import { TrackComparison, type TrackDiff, type TrackListSummary } from './TrackComparison';
 
 /**
  * Props for PreviewView component
@@ -20,11 +32,14 @@ export interface PreviewViewProps {
  * Fetches correction preview data via GraphQL and renders:
  * - Loading: Skeleton placeholder while fetching
  * - Error: Red error message for query failures
- * - Success: Side-by-side comparison layout with preview data
+ * - Success: Complete preview with cover art, fields, and tracks in accordion
  *
- * The actual field and track comparison components will be added
- * in Plans 08-02 (field comparison) and 08-03 (track comparison).
- * This component provides the shell and data fetching.
+ * Layout:
+ * - Header: Cover art comparison side-by-side
+ * - Accordion sections:
+ *   - Basic Info: Field comparisons (title, date, type, etc.)
+ *   - Tracks: Position-aligned track comparison
+ *   - External IDs: MusicBrainz, Spotify, Discogs IDs
  */
 export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
   const { data, isLoading, error } = useGetCorrectionPreviewQuery(
@@ -34,6 +49,43 @@ export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
       staleTime: 5 * 60 * 1000, // Cache preview for 5 minutes
     }
   );
+
+  // Determine which accordion sections should be expanded by default
+  const defaultExpanded = useMemo(() => {
+    const preview = data?.correctionPreview;
+    if (!preview) return ['basic-info', 'tracks'];
+
+    const expanded: string[] = [];
+
+    // Expand basic info if there are field changes
+    const fieldDiffs = preview.fieldDiffs as FieldDiff[];
+    const hasFieldChanges = fieldDiffs.some(d => d.changeType !== 'UNCHANGED');
+    const hasArtistChanges = preview.artistDiff?.changeType !== 'UNCHANGED';
+    if (hasFieldChanges || hasArtistChanges) {
+      expanded.push('basic-info');
+    }
+
+    // Expand tracks if there are track changes
+    if (preview.summary.hasTrackChanges) {
+      expanded.push('tracks');
+    }
+
+    // Expand external IDs if there are ID changes
+    const externalIdFields = ['musicbrainzId', 'spotifyId', 'discogsId'];
+    const hasIdChanges = fieldDiffs.some(
+      d => externalIdFields.includes(d.field) && d.changeType !== 'UNCHANGED'
+    );
+    if (hasIdChanges) {
+      expanded.push('external-ids');
+    }
+
+    // If nothing has changes, show all sections
+    if (expanded.length === 0) {
+      return ['basic-info', 'tracks', 'external-ids'];
+    }
+
+    return expanded;
+  }, [data?.correctionPreview]);
 
   // Loading state
   if (isLoading) {
@@ -65,8 +117,21 @@ export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
     );
   }
 
-  // Extract data for display
-  const { summary, coverArt, sourceResult } = preview;
+  // Extract and type data
+  const { summary, coverArt, sourceResult, artistDiff, trackSummary } = preview;
+  const fieldDiffs = preview.fieldDiffs as FieldDiff[];
+  const trackDiffs = preview.trackDiffs as TrackDiff[];
+
+  // Separate field diffs into categories
+  const externalIdFields = ['musicbrainzId', 'spotifyId', 'discogsId'];
+  const basicInfoDiffs = fieldDiffs.filter(d => !externalIdFields.includes(d.field));
+  const externalIdDiffs = fieldDiffs.filter(d => externalIdFields.includes(d.field));
+
+  // Count changes for accordion badges
+  const basicInfoChangeCount = basicInfoDiffs.filter(d => d.changeType !== 'UNCHANGED').length +
+    (artistDiff?.changeType !== 'UNCHANGED' ? 1 : 0);
+  const trackChangeCount = (trackSummary?.modified ?? 0) + (trackSummary?.added ?? 0) + (trackSummary?.removed ?? 0);
+  const externalIdChangeCount = externalIdDiffs.filter(d => d.changeType !== 'UNCHANGED').length;
 
   return (
     <div className="space-y-6">
@@ -91,113 +156,87 @@ export function PreviewView({ albumId, releaseGroupMbid }: PreviewViewProps) {
         )}
       </div>
 
-      {/* Cover art comparison */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* Current cover art */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">
-            Cover Art
-          </h4>
-          <div className="w-32 h-32 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700">
-            {coverArt?.currentUrl ? (
-              <img
-                src={coverArt.currentUrl}
-                alt="Current cover art"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-zinc-600 text-xs">
-                No cover
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* MusicBrainz cover art */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">
-            Cover Art
-          </h4>
-          <div className="w-32 h-32 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700">
-            {coverArt?.sourceUrl ? (
-              <img
-                src={coverArt.sourceUrl}
-                alt="MusicBrainz cover art"
-                className="w-full h-full object-cover"
-              />
-            ) : sourceResult?.coverArtUrl ? (
-              <img
-                src={sourceResult.coverArtUrl}
-                alt="MusicBrainz cover art"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-zinc-600 text-xs">
-                No cover
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Side-by-side comparison (placeholder content for Plans 08-02/03) */}
-      <ComparisonLayout
-        current={
-          <div className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50">
-            <p className="text-zinc-400 text-sm">
-              Current data: <span className="text-zinc-200">{preview.albumTitle}</span>
-            </p>
-            <p className="text-zinc-500 text-xs mt-1">
-              Field comparisons will be rendered here (Plan 08-02)
-            </p>
-          </div>
-        }
-        source={
-          <div className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50">
-            <p className="text-zinc-400 text-sm">
-              MusicBrainz source: <span className="text-zinc-200">{sourceResult?.title ?? 'Unknown'}</span>
-            </p>
-            <p className="text-zinc-500 text-xs mt-1">
-              Field comparisons will be rendered here (Plan 08-02)
-            </p>
-          </div>
-        }
+      {/* Header: Cover art comparison */}
+      <CoverArtComparison
+        currentUrl={coverArt?.currentUrl ?? null}
+        sourceUrl={coverArt?.sourceUrl ?? sourceResult?.coverArtUrl ?? null}
+        changeType={coverArt?.changeType ?? 'UNCHANGED'}
       />
 
-      {/* Track comparison placeholder */}
-      <div className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50">
-        <h4 className="text-sm font-medium text-zinc-400 uppercase tracking-wide mb-2">
-          Track Comparison
-        </h4>
-        <p className="text-zinc-500 text-xs">
-          Track-by-track comparison will be rendered here (Plan 08-03)
+      {/* Album title + source info */}
+      <div className="border-b border-zinc-700 pb-4">
+        <h3 className="text-lg font-medium text-zinc-100">{preview.albumTitle}</h3>
+        <p className="text-sm text-zinc-400">
+          Comparing with: <span className="text-zinc-300">{sourceResult?.title}</span>
+          {sourceResult?.disambiguation && (
+            <span className="text-zinc-500"> ({sourceResult.disambiguation})</span>
+          )}
         </p>
-        {preview.trackSummary && (
-          <div className="flex gap-4 mt-3 text-xs">
-            <span className="text-zinc-400">
-              Current: {preview.trackSummary.totalCurrent} tracks
-            </span>
-            <span className="text-zinc-400">
-              Source: {preview.trackSummary.totalSource} tracks
-            </span>
-            {preview.trackSummary.modified > 0 && (
-              <span className="text-amber-400">
-                {preview.trackSummary.modified} modified
-              </span>
-            )}
-            {preview.trackSummary.added > 0 && (
-              <span className="text-green-400">
-                {preview.trackSummary.added} added
-              </span>
-            )}
-            {preview.trackSummary.removed > 0 && (
-              <span className="text-red-400">
-                {preview.trackSummary.removed} removed
-              </span>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Accordion sections */}
+      <Accordion
+        type="multiple"
+        defaultValue={defaultExpanded}
+        className="w-full"
+      >
+        {/* Basic Info Section */}
+        <AccordionItem value="basic-info" className="border-zinc-700">
+          <AccordionTrigger className="text-zinc-200 hover:text-zinc-100 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <span>Basic Info</span>
+              {basicInfoChangeCount > 0 && (
+                <span className="text-xs text-yellow-400">
+                  ({basicInfoChangeCount} change{basicInfoChangeCount !== 1 ? 's' : ''})
+                </span>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <FieldComparisonList
+              fieldDiffs={basicInfoDiffs}
+              artistDiff={artistDiff as ArtistCreditDiff}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Tracks Section */}
+        <AccordionItem value="tracks" className="border-zinc-700">
+          <AccordionTrigger className="text-zinc-200 hover:text-zinc-100 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <span>Tracks</span>
+              {trackChangeCount > 0 && (
+                <span className="text-xs text-yellow-400">
+                  ({trackChangeCount} change{trackChangeCount !== 1 ? 's' : ''})
+                </span>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <TrackComparison
+              trackDiffs={trackDiffs}
+              summary={trackSummary as TrackListSummary}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* External IDs Section */}
+        <AccordionItem value="external-ids" className="border-zinc-700">
+          <AccordionTrigger className="text-zinc-200 hover:text-zinc-100 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <span>External IDs</span>
+              {externalIdChangeCount > 0 && (
+                <span className="text-xs text-yellow-400">
+                  ({externalIdChangeCount} change{externalIdChangeCount !== 1 ? 's' : ''})
+                </span>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <FieldComparisonList fieldDiffs={externalIdDiffs} />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }
