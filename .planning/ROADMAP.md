@@ -194,19 +194,18 @@ Plans:
 **Success Criteria** (what must be TRUE):
 
 1. "Apply This Match" button on selected result
-2. Confirmation dialog shows summary of changes
+2. Confirmation summary shows changes to be made (step transition model)
 3. Admin can select which fields to update via checkboxes
-4. Option to trigger re-enrichment after correction
-5. Success message shows applied changes summary
+4. Success message with toast shows applied changes summary
+5. Modal auto-closes after brief "Applied!" state
 6. Album data quality indicator updates appropriately
-   **Plans**: 3 plans
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 09-01: Field selection checkboxes with react-hook-form
-- [ ] 09-02: Confirmation dialog component
-- [ ] 09-03: Apply mutation integration
-- [ ] 09-04: Success feedback and data refresh
+- [ ] 09-01-PLAN.md — Field selection form with hierarchical checkboxes
+- [ ] 09-02-PLAN.md — ApplyView container with diff summary
+- [ ] 09-03-PLAN.md — Apply mutation integration and feedback
 
 ### Phase 10: Manual Edit
 
@@ -288,10 +287,10 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 6. Modal & Entry Point         | 3/3            | Complete    | 2026-01-25 |
 | 7. Search UI                   | 3/3            | Complete    | 2026-01-26 |
 | 8. Preview UI                  | 3/3            | Complete    | 2026-01-26 |
-| 9. Apply UI                    | 0/4            | Not started | -          |
+| 9. Apply UI                    | 0/3            | Not started | -          |
 | 10. Manual Edit                | 0/4            | Not started | -          |
 | 11. Artist Correction          | 0/4            | Not started | -          |
 | 12. Polish & Recovery          | 0/5            | Not started | -          |
 
-**Total Plans:** 41
+**Total Plans:** 40
 **Total Requirements Covered:** 35/35
