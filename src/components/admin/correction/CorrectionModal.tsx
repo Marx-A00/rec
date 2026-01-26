@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
+
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useCorrectionModalState } from '@/hooks/useCorrectionModalState';
 import { useGetAlbumDetailsAdminQuery, DataQuality } from '@/generated/graphql';
+
 import { StepIndicator } from './StepIndicator';
 import {
   CurrentDataView,
@@ -18,6 +20,7 @@ import {
   type AlbumArtist,
 } from './CurrentDataView';
 import { SearchView } from './search';
+import { PreviewView } from './preview';
 
 export interface CorrectionModalProps {
   /** Album ID to load and correct */
@@ -34,7 +37,7 @@ export interface CorrectionModalProps {
  * Steps:
  * 0. Current Data - Shows existing album data
  * 1. Search - Search for correct MusicBrainz match
- * 2. Apply - Preview and apply corrections (placeholder)
+ * 2. Preview - Preview and apply corrections
  *
  * The modal fetches album details internally using the albumId.
  * State is persisted per album in sessionStorage, allowing users to
@@ -54,6 +57,7 @@ export function CorrectionModal({
     clearState,
     isFirstStep,
     isLastStep,
+    selectedResultMbid,
   } = modalState;
 
   // Fetch album details when modal is open and albumId is provided
@@ -199,10 +203,21 @@ export function CorrectionModal({
             </div>
           )}
 
-          {/* Step 2: Apply */}
-          {currentStep === 2 && !isLoading && (
+          {/* Step 2: Preview */}
+          {currentStep === 2 && !isLoading && !hasError && selectedResultMbid && albumId && (
+            <PreviewView
+              albumId={albumId}
+              releaseGroupMbid={selectedResultMbid}
+            />
+          )}
+          {currentStep === 2 && !isLoading && !hasError && !selectedResultMbid && (
             <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
-              <p className='text-muted-foreground'>Apply content here</p>
+              <div className='text-center'>
+                <p className='text-zinc-500'>No result selected.</p>
+                <p className='text-sm text-zinc-600 mt-1'>
+                  Please go back and select a search result.
+                </p>
+              </div>
             </div>
           )}
         </div>
