@@ -45,44 +45,44 @@ export function ExternalIdStatus({
     {
       name: 'MusicBrainz',
       id: musicbrainzId,
-      getUrl: (id) => 'https://musicbrainz.org/release/' + id,
+      getUrl: id => 'https://musicbrainz.org/release/' + id,
       truncateLength: 8,
     },
     {
       name: 'Spotify',
       id: spotifyId,
-      getUrl: (id) => 'https://open.spotify.com/album/' + id,
+      getUrl: id => 'https://open.spotify.com/album/' + id,
       truncateLength: 12,
     },
     {
       name: 'Discogs',
       id: discogsId,
-      getUrl: (id) => 'https://www.discogs.com/release/' + id,
+      getUrl: id => 'https://www.discogs.com/release/' + id,
       truncateLength: 12,
     },
   ];
 
   return (
     <TooltipProvider>
-      <div className="flex flex-wrap gap-3">
+      <div className='flex flex-wrap gap-3'>
         {idConfigs.map(({ name, id, getUrl, truncateLength }) => (
-          <div key={name} className="flex items-center gap-1.5">
+          <div key={name} className='flex items-center gap-1.5'>
             {id ? (
               <>
-                <CheckCircle2 className="h-4 w-4 text-emeraled-green" />
+                <CheckCircle2 className='h-4 w-4 text-emerald-500' />
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <a
                       href={getUrl(id)}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      target='_blank'
+                      rel='noopener noreferrer'
                       className={cn(
                         'text-sm hover:underline flex items-center gap-1',
-                        'text-foreground hover:text-emeraled-green'
+                        'text-zinc-300 hover:text-emerald-400'
                       )}
                     >
                       {name}: {truncateId(id, truncateLength)}
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLink className='h-3 w-3' />
                     </a>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -92,8 +92,8 @@ export function ExternalIdStatus({
               </>
             ) : (
               <>
-                <XCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{name}</span>
+                <XCircle className='h-4 w-4 text-zinc-600' />
+                <span className='text-sm text-zinc-500'>{name}</span>
               </>
             )}
           </div>

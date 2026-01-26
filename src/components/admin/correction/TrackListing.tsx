@@ -39,8 +39,8 @@ export function TrackListing({ tracks }: TrackListingProps) {
   // Group tracks by disc number
   const discGroups = useMemo(() => {
     const groups = new Map<number, Track[]>();
-    
-    tracks.forEach((track) => {
+
+    tracks.forEach(track => {
       const disc = track.discNumber ?? 1;
       if (!groups.has(disc)) {
         groups.set(disc, []);
@@ -63,13 +63,13 @@ export function TrackListing({ tracks }: TrackListingProps) {
   const renderTrack = (track: Track) => (
     <li
       key={track.discNumber + '-' + track.trackNumber}
-      className="flex justify-between items-center py-0.5 text-sm"
+      className='flex justify-between items-center py-0.5 text-sm'
     >
-      <span className="text-muted-foreground mr-2 tabular-nums w-6 text-right flex-shrink-0">
+      <span className='text-zinc-500 mr-2 tabular-nums w-6 text-right flex-shrink-0'>
         {track.trackNumber}.
       </span>
-      <span className="flex-1 truncate">{track.title}</span>
-      <span className="text-muted-foreground ml-2 tabular-nums">
+      <span className='flex-1 truncate text-zinc-300'>{track.title}</span>
+      <span className='text-zinc-500 ml-2 tabular-nums'>
         {formatDuration(track.durationMs)}
       </span>
     </li>
@@ -77,22 +77,18 @@ export function TrackListing({ tracks }: TrackListingProps) {
 
   // Render tracks without disc grouping (collapsed view or single disc)
   const renderFlatList = () => (
-    <ol className="space-y-0.5">
-      {displayTracks.map(renderTrack)}
-    </ol>
+    <ol className='space-y-0.5'>{displayTracks.map(renderTrack)}</ol>
   );
 
   // Render tracks with disc grouping
   const renderGroupedList = () => (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {discGroups.map(([discNumber, discTracks]) => (
         <div key={discNumber}>
-          <h4 className="text-sm font-medium text-muted-foreground mb-2">
+          <h4 className='text-sm font-medium text-zinc-400 mb-2'>
             Disc {discNumber}
           </h4>
-          <ol className="space-y-0.5">
-            {discTracks.map(renderTrack)}
-          </ol>
+          <ol className='space-y-0.5'>{discTracks.map(renderTrack)}</ol>
         </div>
       ))}
     </div>
@@ -106,19 +102,19 @@ export function TrackListing({ tracks }: TrackListingProps) {
       {/* Expand/Collapse button for large track lists */}
       {shouldAutoCollapse && (
         <Button
-          variant="ghost"
-          size="sm"
-          className="w-full mt-3 text-muted-foreground hover:text-foreground"
+          variant='ghost'
+          size='sm'
+          className='w-full mt-3 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
           onClick={() => setShowAll(!showAll)}
         >
           {showAll ? (
             <>
-              <ChevronUp className="h-4 w-4 mr-1" />
+              <ChevronUp className='h-4 w-4 mr-1' />
               Show less
             </>
           ) : (
             <>
-              <ChevronDown className="h-4 w-4 mr-1" />
+              <ChevronDown className='h-4 w-4 mr-1' />
               Show all {tracks.length} tracks
             </>
           )}

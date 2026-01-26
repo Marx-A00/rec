@@ -27,8 +27,8 @@ export function StepIndicator({
   steps = ['Current Data', 'Search', 'Apply'],
 }: StepIndicatorProps) {
   return (
-    <nav aria-label="Progress" className="w-full py-4">
-      <ol className="flex items-center justify-center">
+    <nav aria-label='Progress' className='w-full py-4'>
+      <ol className='flex items-center justify-center'>
         {steps.map((label, index) => {
           const isCompleted = index < currentStep;
           const isCurrent = index === currentStep;
@@ -37,11 +37,14 @@ export function StepIndicator({
           return (
             <li
               key={label}
-              className={cn('flex items-center', index !== steps.length - 1 && 'flex-1')}
+              className={cn(
+                'flex items-center',
+                index !== steps.length - 1 && 'flex-1'
+              )}
             >
               {/* Step circle and label */}
               <button
-                type="button"
+                type='button'
                 onClick={() => isClickable && onStepClick(index)}
                 disabled={!isClickable}
                 className={cn(
@@ -54,10 +57,12 @@ export function StepIndicator({
                 <span
                   className={cn(
                     'flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors',
-                    isCurrent && 'border-cosmic-latte bg-cosmic-latte text-black',
-                    isCompleted && 'border-cosmic-latte bg-cosmic-latte/20 text-cosmic-latte',
-                    !isCurrent && !isCompleted && 'border-muted-foreground text-muted-foreground',
-                    isClickable && !isCurrent && 'group-hover:border-cosmic-latte/60'
+                    isCurrent && 'border-zinc-100 bg-zinc-100 text-zinc-900',
+                    isCompleted && 'border-zinc-500 bg-zinc-700 text-zinc-300',
+                    !isCurrent &&
+                      !isCompleted &&
+                      'border-zinc-600 text-zinc-500',
+                    isClickable && !isCurrent && 'group-hover:border-zinc-400'
                   )}
                 >
                   {index + 1}
@@ -66,9 +71,9 @@ export function StepIndicator({
                 <span
                   className={cn(
                     'mt-2 text-xs font-medium hidden sm:inline',
-                    isCurrent && 'text-cosmic-latte',
-                    isCompleted && 'text-cosmic-latte/80',
-                    !isCurrent && !isCompleted && 'text-muted-foreground'
+                    isCurrent && 'text-zinc-100',
+                    isCompleted && 'text-zinc-400',
+                    !isCurrent && !isCompleted && 'text-zinc-500'
                   )}
                 >
                   {label}
@@ -80,9 +85,9 @@ export function StepIndicator({
                 <div
                   className={cn(
                     'mx-2 h-0.5 flex-1 transition-colors sm:mx-4',
-                    index < currentStep ? 'bg-cosmic-latte' : 'bg-muted-foreground/30'
+                    index < currentStep ? 'bg-zinc-500' : 'bg-zinc-700'
                   )}
-                  aria-hidden="true"
+                  aria-hidden='true'
                 />
               )}
             </li>

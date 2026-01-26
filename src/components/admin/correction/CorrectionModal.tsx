@@ -12,7 +12,11 @@ import { Button } from '@/components/ui/button';
 import { useCorrectionModalState } from '@/hooks/useCorrectionModalState';
 import { useGetAlbumDetailsAdminQuery, DataQuality } from '@/generated/graphql';
 import { StepIndicator } from './StepIndicator';
-import { CurrentDataView, type CurrentDataViewAlbum, type AlbumArtist } from './CurrentDataView';
+import {
+  CurrentDataView,
+  type CurrentDataViewAlbum,
+  type AlbumArtist,
+} from './CurrentDataView';
 
 export interface CorrectionModalProps {
   /** Album ID to load and correct */
@@ -35,7 +39,11 @@ export interface CorrectionModalProps {
  * State is persisted per album in sessionStorage, allowing users to
  * navigate away and return to the same step.
  */
-export function CorrectionModal({ albumId, open, onClose }: CorrectionModalProps) {
+export function CorrectionModal({
+  albumId,
+  open,
+  onClose,
+}: CorrectionModalProps) {
   const {
     currentStep,
     setCurrentStep,
@@ -74,7 +82,7 @@ export function CorrectionModal({ albumId, open, onClose }: CorrectionModalProps
         dataQuality: (albumData.dataQuality as DataQuality) ?? null,
         label: albumData.label ?? null,
         barcode: albumData.barcode ?? null,
-        tracks: (albumData.tracks ?? []).map((track) => ({
+        tracks: (albumData.tracks ?? []).map(track => ({
           id: track.id,
           title: track.title,
           trackNumber: track.trackNumber,
@@ -82,14 +90,16 @@ export function CorrectionModal({ albumId, open, onClose }: CorrectionModalProps
           durationMs: track.durationMs ?? null,
           isrc: track.isrc ?? null,
         })),
-        artists: (albumData.artists ?? []).map((ac, index): AlbumArtist => ({
-          artist: {
-            id: ac.artist.id,
-            name: ac.artist.name,
-          },
-          role: ac.role ?? 'primary',
-          position: ac.position ?? index,
-        })),
+        artists: (albumData.artists ?? []).map(
+          (ac, index): AlbumArtist => ({
+            artist: {
+              id: ac.artist.id,
+              name: ac.artist.name,
+            },
+            role: ac.role ?? 'primary',
+            position: ac.position ?? index,
+          })
+        ),
       }
     : null;
 
@@ -106,7 +116,7 @@ export function CorrectionModal({ albumId, open, onClose }: CorrectionModalProps
 
   // Get primary artist name for header
   const primaryArtist = album?.artists.find(
-    (ac) => ac.role === 'primary' || ac.position === 0
+    ac => ac.role === 'primary' || ac.position === 0
   );
   const primaryArtistName = primaryArtist?.artist.name ?? 'Unknown Artist';
   const headerTitle = album
@@ -117,27 +127,29 @@ export function CorrectionModal({ albumId, open, onClose }: CorrectionModalProps
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:!max-w-[1100px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className='sm:!max-w-[1100px] max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 [&>button]:text-zinc-500 [&>button]:hover:text-zinc-300'>
         <DialogHeader>
-          <DialogTitle className="truncate pr-8">{headerTitle}</DialogTitle>
+          <DialogTitle className='truncate pr-8 text-cosmic-latte'>
+            {headerTitle}
+          </DialogTitle>
         </DialogHeader>
 
         <StepIndicator currentStep={currentStep} onStepClick={setCurrentStep} />
 
         {/* Step content area */}
-        <div className="min-h-[300px] py-4">
+        <div className='min-h-[300px] py-4'>
           {/* Loading state */}
           {isLoading && (
-            <div className="flex flex-col items-center justify-center h-[300px]">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Loading album data...</p>
+            <div className='flex flex-col items-center justify-center h-[300px]'>
+              <Loader2 className='h-8 w-8 animate-spin text-muted-foreground mb-4' />
+              <p className='text-muted-foreground'>Loading album data...</p>
             </div>
           )}
 
           {/* Error state */}
           {hasError && !isLoading && (
-            <div className="flex items-center justify-center h-[300px] border border-dashed border-destructive/30 rounded-lg">
-              <p className="text-destructive">Failed to load album data</p>
+            <div className='flex items-center justify-center h-[300px] border border-dashed border-destructive/30 rounded-lg'>
+              <p className='text-destructive'>Failed to load album data</p>
             </div>
           )}
 
@@ -146,44 +158,44 @@ export function CorrectionModal({ albumId, open, onClose }: CorrectionModalProps
             <CurrentDataView album={album} />
           )}
           {currentStep === 0 && !isLoading && !hasError && !album && (
-            <div className="flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg">
-              <p className="text-muted-foreground">No album data available</p>
+            <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
+              <p className='text-muted-foreground'>No album data available</p>
             </div>
           )}
 
           {/* Step 1: Search */}
           {currentStep === 1 && !isLoading && (
-            <div className="flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg">
-              <p className="text-muted-foreground">Search content here</p>
+            <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
+              <p className='text-muted-foreground'>Search content here</p>
             </div>
           )}
 
           {/* Step 2: Apply */}
           {currentStep === 2 && !isLoading && (
-            <div className="flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg">
-              <p className="text-muted-foreground">Apply content here</p>
+            <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
+              <p className='text-muted-foreground'>Apply content here</p>
             </div>
           )}
         </div>
 
-        <DialogFooter className="sticky bottom-0 bg-background pt-4 border-t">
-          <div className="flex w-full justify-between">
-            <Button variant="outline" onClick={handleClose}>
+        <DialogFooter className='sticky bottom-0 bg-zinc-900 pt-4 border-t border-zinc-800'>
+          <div className='flex w-full justify-between'>
+            <Button variant='outline' onClick={handleClose}>
               Cancel
             </Button>
-            <div className="flex gap-2">
+            <div className='flex gap-2'>
               {!isFirstStep && (
-                <Button variant="outline" onClick={prevStep}>
+                <Button variant='outline' onClick={prevStep}>
                   Back
                 </Button>
               )}
               {!isLastStep && (
-                <Button variant="primary" onClick={nextStep}>
+                <Button variant='primary' onClick={nextStep}>
                   Next
                 </Button>
               )}
               {isLastStep && (
-                <Button variant="primary" disabled>
+                <Button variant='primary' disabled>
                   Apply
                 </Button>
               )}
