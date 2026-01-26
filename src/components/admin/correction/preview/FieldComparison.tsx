@@ -33,14 +33,16 @@ export interface FieldComparisonProps {
 function formatFieldName(field: string): string {
   return field
     .replace(/([A-Z])/g, ' $1') // Insert space before capitals
-    .replace(/^./, (char) => char.toUpperCase()) // Capitalize first letter
+    .replace(/^./, char => char.toUpperCase()) // Capitalize first letter
     .trim();
 }
 
 /**
  * Get change type badge content and styling.
  */
-function getChangeBadge(changeType: string): { label: string; className: string } | null {
+function getChangeBadge(
+  changeType: string
+): { label: string; className: string } | null {
   switch (changeType) {
     case 'ADDED':
       return { label: '(New)', className: 'text-green-400' };
@@ -71,7 +73,12 @@ function formatValue(value: string | null | undefined): string {
  * Type guard to check if diff is a TextDiff.
  */
 function isTextDiff(diff: FieldDiff): diff is TextDiff {
-  return 'currentValue' in diff && 'sourceValue' in diff && !('componentChanges' in diff) && !('currentItems' in diff);
+  return (
+    'currentValue' in diff &&
+    'sourceValue' in diff &&
+    !('componentChanges' in diff) &&
+    !('currentItems' in diff)
+  );
 }
 
 /**
@@ -95,14 +102,18 @@ function isExternalIdDiff(diff: FieldDiff): diff is ExternalIdDiff {
   return (
     'currentValue' in diff &&
     'sourceValue' in diff &&
-    (diff.field === 'musicbrainzId' || diff.field === 'spotifyId' || diff.field === 'discogsId')
+    (diff.field === 'musicbrainzId' ||
+      diff.field === 'spotifyId' ||
+      diff.field === 'discogsId')
   );
 }
 
 /**
  * Format date components to display string.
  */
-function formatDateComponents(date: { year?: number; month?: number; day?: number } | null | undefined): string {
+function formatDateComponents(
+  date: { year?: number; month?: number; day?: number } | null | undefined
+): string {
   if (!date) return '—';
   const parts: string[] = [];
   if (date.year) parts.push(String(date.year));
@@ -140,28 +151,39 @@ export function FieldComparison({ diff }: FieldComparisonProps) {
     sourceDisplay = formatDateComponents(diff.source);
   } else if (isArrayDiff(diff)) {
     // Render array items with highlights
-    currentDisplay = diff.currentItems.length > 0 ? diff.currentItems.join(', ') : '—';
+    currentDisplay =
+      diff.currentItems.length > 0 ? diff.currentItems.join(', ') : '—';
     sourceDisplay = (
       <span>
         {diff.unchanged.map((item, i) => (
-          <span key={`unchanged-${i}`} className="text-zinc-300">
+          <span key={`unchanged-${i}`} className='text-zinc-300'>
             {i > 0 && ', '}
             {item}
           </span>
         ))}
         {diff.added.map((item, i) => (
-          <span key={`added-${i}`} className="bg-green-500/20 text-green-400 rounded-sm px-0.5">
+          <span
+            key={`added-${i}`}
+            className='bg-green-500/20 text-green-400 rounded-sm px-0.5'
+          >
             {(diff.unchanged.length > 0 || i > 0) && ', '}
             {item}
           </span>
         ))}
         {diff.removed.map((item, i) => (
-          <span key={`removed-${i}`} className="bg-red-500/20 text-red-400 line-through rounded-sm px-0.5">
-            {(diff.unchanged.length > 0 || diff.added.length > 0 || i > 0) && ', '}
+          <span
+            key={`removed-${i}`}
+            className='bg-red-500/20 text-red-400 line-through rounded-sm px-0.5'
+          >
+            {(diff.unchanged.length > 0 || diff.added.length > 0 || i > 0) &&
+              ', '}
             {item}
           </span>
         ))}
-        {diff.unchanged.length === 0 && diff.added.length === 0 && diff.removed.length === 0 && '—'}
+        {diff.unchanged.length === 0 &&
+          diff.added.length === 0 &&
+          diff.removed.length === 0 &&
+          '—'}
       </span>
     );
   } else if (isTextDiff(diff)) {
@@ -182,25 +204,25 @@ export function FieldComparison({ diff }: FieldComparisonProps) {
   }
 
   return (
-    <div className="py-3 border-b border-zinc-800 last:border-b-0">
+    <div className='py-3 border-b border-zinc-800 last:border-b-0'>
       {/* Field label with change badge */}
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-sm font-medium text-zinc-300">{fieldLabel}</span>
+      <div className='flex items-center gap-2 mb-1'>
+        <span className='text-sm font-medium text-zinc-300'>{fieldLabel}</span>
         {badge && (
           <span className={`text-xs ${badge.className}`}>{badge.label}</span>
         )}
       </div>
 
       {/* Current value */}
-      <div className="text-sm">
-        <span className="text-zinc-500 text-xs mr-2">Current:</span>
-        <span className="text-zinc-400">{currentDisplay}</span>
+      <div className='text-sm'>
+        <span className='text-zinc-500 text-xs mr-2'>Current:</span>
+        <span className='text-zinc-400'>{currentDisplay}</span>
       </div>
 
       {/* Source value with diff */}
-      <div className="text-sm mt-1">
-        <span className="text-zinc-500 text-xs mr-2">Source:</span>
-        <span className="text-zinc-200">{sourceDisplay}</span>
+      <div className='text-sm mt-1'>
+        <span className='text-zinc-500 text-xs mr-2'>Source:</span>
+        <span className='text-zinc-200'>{sourceDisplay}</span>
       </div>
     </div>
   );

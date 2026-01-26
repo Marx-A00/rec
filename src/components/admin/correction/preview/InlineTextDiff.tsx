@@ -50,7 +50,7 @@ export function InlineTextDiff({ parts, className = '' }: InlineTextDiffProps) {
           return (
             <span
               key={index}
-              className="bg-green-500/20 text-green-400 rounded-sm px-0.5"
+              className='bg-green-500/20 text-green-400 rounded-sm px-0.5'
             >
               {part.value}
             </span>
@@ -61,7 +61,7 @@ export function InlineTextDiff({ parts, className = '' }: InlineTextDiffProps) {
           return (
             <span
               key={index}
-              className="bg-red-500/20 text-red-400 line-through rounded-sm px-0.5"
+              className='bg-red-500/20 text-red-400 line-through rounded-sm px-0.5'
             >
               {part.value}
             </span>
@@ -70,7 +70,7 @@ export function InlineTextDiff({ parts, className = '' }: InlineTextDiffProps) {
 
         // Unchanged text
         return (
-          <span key={index} className="text-zinc-300">
+          <span key={index} className='text-zinc-300'>
             {part.value}
           </span>
         );
