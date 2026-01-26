@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 
 export interface StepIndicatorProps {
-  /** Current step index (0-2) */
+  /** Current step index (0-3) */
   currentStep: number;
   /** Callback when a step is clicked */
   onStepClick: (step: number) => void;
@@ -12,7 +12,7 @@ export interface StepIndicatorProps {
 }
 
 /**
- * Step indicator showing 3-step wizard progress with clickable navigation.
+ * Step indicator showing wizard progress with clickable navigation.
  *
  * Visual design:
  * - Horizontal layout with numbered circles connected by lines
@@ -24,7 +24,7 @@ export interface StepIndicatorProps {
 export function StepIndicator({
   currentStep,
   onStepClick,
-  steps = ['Current Data', 'Search', 'Apply'],
+  steps = ['Current Data', 'Search', 'Preview', 'Apply'],
 }: StepIndicatorProps) {
   return (
     <nav aria-label='Progress' className='w-full py-4'>
