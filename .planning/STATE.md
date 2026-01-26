@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Phase 7 - Search UI (In Progress)
+**Current focus:** Phase 8 - Preview UI (In Progress)
 
 ## Current Position
 
-Phase: 7 of 12 (Search UI)
-Plan: 2 of 3 in current phase
+Phase: 8 of 12 (Preview UI)
+Plan: 1 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-26 — Completed 07-02-PLAN.md
+Last activity: 2026-01-26 — Completed 08-01-PLAN.md
 
-Progress: [███████████░] 56%
+Progress: [██████████████░] 65%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 20
-- Average duration: 3.6min
-- Total execution time: 77.9min
+- Total plans completed: 22
+- Average duration: 3.5min
+- Total execution time: 85.5min
 
 **By Phase:**
 
@@ -32,12 +32,13 @@ Progress: [███████████░] 56%
 - Phase 04: 3 plans, 11min total, 3.7min avg
 - Phase 05: 3 plans, 14.6min total, 4.9min avg
 - Phase 06: 3 plans, 13.3min total, 4.4min avg
-- Phase 07: 2 plans, 2.6min total, 1.3min avg (in progress)
+- Phase 07: 3 plans, 7.6min total, 2.5min avg (complete)
+- Phase 08: 1 plan, 2.6min total, 2.6min avg (in progress)
 
 **Recent Trend:**
 
-- Last 5 plans: 05-03 (2.9min), 06-01 (2.1min), 06-02 (3.2min), 06-03 (8min), 07-02 (2.6min)
-- Trend: Search UI components executing efficiently
+- Last 5 plans: 06-02 (3.2min), 06-03 (8min), 07-02 (2.6min), 07-03 (5min), 08-01 (2.6min)
+- Trend: Preview UI starting efficiently
 
 *Updated after each plan completion*
 
@@ -87,6 +88,12 @@ Recent decisions affecting current work:
 - [07-02]: MB badge uses smaller 10px text for subtlety
 - [07-02]: Score shown as percentage with 'match' suffix
 - [07-02]: Results use divide-y for subtle row separation
+- [07-03]: Search only triggers on explicit button click (not auto-search on mount)
+- [07-03]: Full skeleton replacement during loading per CONTEXT.md
+- [07-03]: Auto-trigger search when returning from preview with saved state
+- [08-01]: Skeleton mimics final layout with two-column structure
+- [08-01]: 5-minute stale time for preview query caching
+- [08-01]: Cover art comparison separate from ComparisonLayout
 
 ### Pending Todos
 
@@ -100,10 +107,11 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-26
-Stopped at: Completed 07-02-PLAN.md
+Stopped at: Completed 08-01-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Continue Phase 7 (Search UI):
-- Phase 07-03: SearchView integration (wire components + GraphQL)
+Continue Phase 8 (Preview UI):
+- Plan 08-02: Field comparison components (title, artist, date diffs)
+- Plan 08-03: Track comparison table with additions/removals
