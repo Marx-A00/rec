@@ -94,7 +94,14 @@ export function useCorrectionModalState(albumId: string | null) {
       isApplied,
     };
     sessionStorage.setItem(storageKey, JSON.stringify(state));
-  }, [albumId, currentStep, searchQuery, searchOffset, selectedResultMbid, isApplied]);
+  }, [
+    albumId,
+    currentStep,
+    searchQuery,
+    searchOffset,
+    selectedResultMbid,
+    isApplied,
+  ]);
 
   /**
    * Set the current step (0-indexed, 4 steps total: 0=Current, 1=Search, 2=Preview, 3=Apply)
