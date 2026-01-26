@@ -1,20 +1,17 @@
 /**
- * Apply step components for the correction workflow.
+ * Apply workflow components for album correction.
  *
- * Provides field selection UI with accordion sections and hierarchical checkboxes.
+ * Entry point for the apply step, which includes:
+ * - Field selection form (metadata, tracks, external IDs)
+ * - Diff summary for selected changes
+ * - Apply view container with confirmation
  */
 
 export { FieldSelectionForm } from './FieldSelectionForm';
-export type { FieldSelectionFormProps } from './FieldSelectionForm';
-
 export { MetadataSection } from './MetadataSection';
-export type { MetadataSectionProps } from './MetadataSection';
-
 export { TrackSection } from './TrackSection';
-export type { TrackSectionProps } from './TrackSection';
-
 export { ExternalIdSection } from './ExternalIdSection';
-export type { ExternalIdSectionProps } from './ExternalIdSection';
-
+export { DiffSummary } from './DiffSummary';
+export { ApplyView } from './ApplyView';
 export type { UIFieldSelections } from './types';
 export { createDefaultUISelections, toGraphQLSelections } from './types';

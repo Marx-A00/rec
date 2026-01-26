@@ -16,6 +16,7 @@ import type {
   ExternalIdDiff,
   DateComponents,
 } from '@/lib/correction/preview/types';
+
 import type { UIFieldSelections } from './types';
 
 interface DiffSummaryProps {
@@ -68,8 +69,8 @@ export function DiffSummary({ preview, selections }: DiffSummaryProps) {
 
   if (!hasChanges) {
     return (
-      <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">
-        <div className="text-center text-sm text-zinc-400">
+      <div className='rounded-lg border border-zinc-700 bg-zinc-800/50 p-4'>
+        <div className='text-center text-sm text-zinc-400'>
           No changes selected
         </div>
       </div>
@@ -92,19 +93,19 @@ export function DiffSummary({ preview, selections }: DiffSummaryProps) {
   ) as ExternalIdDiff[];
 
   return (
-    <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">
-      <h3 className="mb-4 text-sm font-medium text-zinc-300">
+    <div className='rounded-lg border border-zinc-700 bg-zinc-800/50 p-4'>
+      <h3 className='mb-4 text-sm font-medium text-zinc-300'>
         Summary of Changes
       </h3>
 
-      <div className="space-y-4">
+      <div className='space-y-4'>
         {/* Metadata changes */}
         {metadataDiffs.length > 0 && (
           <div>
-            <div className="mb-2 text-sm font-medium text-zinc-400">
+            <div className='mb-2 text-sm font-medium text-zinc-400'>
               Metadata:
             </div>
-            <div className="space-y-1.5 pl-2">
+            <div className='space-y-1.5 pl-2'>
               {metadataDiffs.map(diff => (
                 <FieldChange key={diff.field} diff={diff} />
               ))}
@@ -115,10 +116,10 @@ export function DiffSummary({ preview, selections }: DiffSummaryProps) {
         {/* Track changes */}
         {selectedTracksCount > 0 && (
           <div>
-            <div className="mb-2 text-sm font-medium text-zinc-400">
+            <div className='mb-2 text-sm font-medium text-zinc-400'>
               Tracks:
             </div>
-            <div className="pl-2 text-sm text-zinc-300">
+            <div className='pl-2 text-sm text-zinc-300'>
               {selectedTracksCount} track{selectedTracksCount !== 1 ? 's' : ''}{' '}
               will be updated
             </div>
@@ -128,10 +129,10 @@ export function DiffSummary({ preview, selections }: DiffSummaryProps) {
         {/* External ID changes */}
         {externalIdDiffs.length > 0 && (
           <div>
-            <div className="mb-2 text-sm font-medium text-zinc-400">
+            <div className='mb-2 text-sm font-medium text-zinc-400'>
               External IDs:
             </div>
-            <div className="space-y-1.5 pl-2">
+            <div className='space-y-1.5 pl-2'>
               {externalIdDiffs.map(diff => (
                 <ExternalIdChange key={diff.field} diff={diff} />
               ))}
@@ -142,10 +143,10 @@ export function DiffSummary({ preview, selections }: DiffSummaryProps) {
         {/* Cover art change */}
         {isCoverArtSelected && (
           <div>
-            <div className="mb-2 text-sm font-medium text-zinc-400">
+            <div className='mb-2 text-sm font-medium text-zinc-400'>
               Cover Art:
             </div>
-            <div className="pl-2 text-sm text-zinc-300">
+            <div className='pl-2 text-sm text-zinc-300'>
               {selections.coverArt === 'use_source'
                 ? 'Will be updated'
                 : 'Will be cleared'}
@@ -184,29 +185,29 @@ function FieldChange({ diff }: { diff: FieldDiff }) {
 
     if (diff.changeType === 'ADDED') {
       return (
-        <div className="text-sm">
-          <span className="text-zinc-400">{fieldLabel}:</span>{' '}
-          <span className="text-green-400">+ {source}</span>
+        <div className='text-sm'>
+          <span className='text-zinc-400'>{fieldLabel}:</span>{' '}
+          <span className='text-green-400'>+ {source}</span>
         </div>
       );
     }
 
     if (diff.changeType === 'REMOVED') {
       return (
-        <div className="text-sm">
-          <span className="text-zinc-400">{fieldLabel}:</span>{' '}
-          <span className="text-red-400 line-through">{current}</span>
+        <div className='text-sm'>
+          <span className='text-zinc-400'>{fieldLabel}:</span>{' '}
+          <span className='text-red-400 line-through'>{current}</span>
         </div>
       );
     }
 
     // MODIFIED or CONFLICT
     return (
-      <div className="text-sm">
-        <span className="text-zinc-400">{fieldLabel}:</span>{' '}
-        <span className="text-red-400 line-through">{current}</span>{' '}
-        <span className="text-zinc-500">→</span>{' '}
-        <span className="text-green-400">{source}</span>
+      <div className='text-sm'>
+        <span className='text-zinc-400'>{fieldLabel}:</span>{' '}
+        <span className='text-red-400 line-through'>{current}</span>{' '}
+        <span className='text-zinc-500'>→</span>{' '}
+        <span className='text-green-400'>{source}</span>
       </div>
     );
   }
@@ -217,16 +218,16 @@ function FieldChange({ diff }: { diff: FieldDiff }) {
     const removedCount = diff.removed.length;
 
     return (
-      <div className="text-sm">
-        <span className="text-zinc-400">{fieldLabel}:</span>{' '}
+      <div className='text-sm'>
+        <span className='text-zinc-400'>{fieldLabel}:</span>{' '}
         {addedCount > 0 && (
-          <span className="text-green-400">+{addedCount} added</span>
+          <span className='text-green-400'>+{addedCount} added</span>
         )}
         {addedCount > 0 && removedCount > 0 && (
-          <span className="text-zinc-500">, </span>
+          <span className='text-zinc-500'>, </span>
         )}
         {removedCount > 0 && (
-          <span className="text-red-400">{removedCount} removed</span>
+          <span className='text-red-400'>{removedCount} removed</span>
         )}
       </div>
     );
@@ -239,29 +240,29 @@ function FieldChange({ diff }: { diff: FieldDiff }) {
 
   if (diff.changeType === 'ADDED') {
     return (
-      <div className="text-sm">
-        <span className="text-zinc-400">{fieldLabel}:</span>{' '}
-        <span className="text-green-400">+ {source}</span>
+      <div className='text-sm'>
+        <span className='text-zinc-400'>{fieldLabel}:</span>{' '}
+        <span className='text-green-400'>+ {source}</span>
       </div>
     );
   }
 
   if (diff.changeType === 'REMOVED') {
     return (
-      <div className="text-sm">
-        <span className="text-zinc-400">{fieldLabel}:</span>{' '}
-        <span className="text-red-400 line-through">{current}</span>
+      <div className='text-sm'>
+        <span className='text-zinc-400'>{fieldLabel}:</span>{' '}
+        <span className='text-red-400 line-through'>{current}</span>
       </div>
     );
   }
 
   // MODIFIED or CONFLICT
   return (
-    <div className="text-sm">
-      <span className="text-zinc-400">{fieldLabel}:</span>{' '}
-      <span className="text-red-400 line-through">{current}</span>{' '}
-      <span className="text-zinc-500">→</span>{' '}
-      <span className="text-green-400">{source}</span>
+    <div className='text-sm'>
+      <span className='text-zinc-400'>{fieldLabel}:</span>{' '}
+      <span className='text-red-400 line-through'>{current}</span>{' '}
+      <span className='text-zinc-500'>→</span>{' '}
+      <span className='text-green-400'>{source}</span>
     </div>
   );
 }
@@ -276,29 +277,29 @@ function ExternalIdChange({ diff }: { diff: ExternalIdDiff }) {
 
   if (diff.changeType === 'ADDED') {
     return (
-      <div className="text-sm">
-        <span className="text-zinc-400">{idLabel}:</span>{' '}
-        <span className="text-green-400">+ {source}</span>
+      <div className='text-sm'>
+        <span className='text-zinc-400'>{idLabel}:</span>{' '}
+        <span className='text-green-400'>+ {source}</span>
       </div>
     );
   }
 
   if (diff.changeType === 'REMOVED') {
     return (
-      <div className="text-sm">
-        <span className="text-zinc-400">{idLabel}:</span>{' '}
-        <span className="text-red-400 line-through">{current}</span>
+      <div className='text-sm'>
+        <span className='text-zinc-400'>{idLabel}:</span>{' '}
+        <span className='text-red-400 line-through'>{current}</span>
       </div>
     );
   }
 
   // MODIFIED
   return (
-    <div className="text-sm">
-      <span className="text-zinc-400">{idLabel}:</span>{' '}
-      <span className="text-red-400 line-through">{current}</span>{' '}
-      <span className="text-zinc-500">→</span>{' '}
-      <span className="text-green-400">{source}</span>
+    <div className='text-sm'>
+      <span className='text-zinc-400'>{idLabel}:</span>{' '}
+      <span className='text-red-400 line-through'>{current}</span>{' '}
+      <span className='text-zinc-500'>→</span>{' '}
+      <span className='text-green-400'>{source}</span>
     </div>
   );
 }
@@ -322,7 +323,9 @@ function formatFieldLabel(field: string): string {
 /**
  * Formats ID type names for display.
  */
-function formatIdType(field: 'musicbrainzId' | 'spotifyId' | 'discogsId'): string {
+function formatIdType(
+  field: 'musicbrainzId' | 'spotifyId' | 'discogsId'
+): string {
   const labels = {
     musicbrainzId: 'MusicBrainz',
     spotifyId: 'Spotify',
