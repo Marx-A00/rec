@@ -18,7 +18,7 @@ This roadmap delivers an admin data correction feature that lets administrators 
 - [x] **Phase 5: GraphQL Integration** - Schema, resolvers, and generated hooks
 - [x] **Phase 6: Modal & Entry Point** - Correction modal structure and current data display
 - [x] **Phase 7: Search UI** - Search interface with results and match scores
-- [ ] **Phase 8: Preview UI** - Side-by-side comparison with field highlighting
+- [x] **Phase 8: Preview UI** - Side-by-side comparison with field highlighting
 - [ ] **Phase 9: Apply UI** - Field selection, confirmation, and success feedback
 - [ ] **Phase 10: Manual Edit** - Direct field editing without external search
 - [ ] **Phase 11: Artist Correction** - Same workflow adapted for artists
@@ -182,9 +182,9 @@ Plans:
 
 Plans:
 
-- [ ] 08-01-PLAN.md — Preview container, layout, and skeleton
-- [ ] 08-02-PLAN.md — Field diff highlighting components
-- [ ] 08-03-PLAN.md — Track comparison, cover art, and modal integration
+- [x] 08-01-PLAN.md — Preview container, layout, and skeleton
+- [x] 08-02-PLAN.md — Field diff highlighting components
+- [x] 08-03-PLAN.md — Track comparison, cover art, and modal integration
 
 ### Phase 9: Apply UI
 
@@ -287,7 +287,7 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 5. GraphQL Integration         | 3/3            | Complete    | 2026-01-24 |
 | 6. Modal & Entry Point         | 3/3            | Complete    | 2026-01-25 |
 | 7. Search UI                   | 3/3            | Complete    | 2026-01-26 |
-| 8. Preview UI                  | 0/3            | Not started | -          |
+| 8. Preview UI                  | 3/3            | Complete    | 2026-01-26 |
 | 9. Apply UI                    | 0/4            | Not started | -          |
 | 10. Manual Edit                | 0/4            | Not started | -          |
 | 11. Artist Correction          | 0/4            | Not started | -          |
