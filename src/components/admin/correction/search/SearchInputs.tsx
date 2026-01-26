@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { Search } from 'lucide-react';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -50,28 +51,28 @@ export function SearchInputs({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form onSubmit={handleSubmit} className='space-y-3'>
       <Input
-        type="text"
-        placeholder="Album title"
+        type='text'
+        placeholder='Album title'
         value={albumTitle}
         onChange={e => setAlbumTitle(e.target.value)}
-        aria-label="Album title"
+        aria-label='Album title'
       />
       <Input
-        type="text"
-        placeholder="Artist name"
+        type='text'
+        placeholder='Artist name'
         value={artistName}
         onChange={e => setArtistName(e.target.value)}
-        aria-label="Artist name"
+        aria-label='Artist name'
       />
       <Button
-        type="submit"
-        variant="default"
-        className="w-full"
+        type='submit'
+        variant='default'
+        className='w-full'
         disabled={isSearchDisabled}
       >
-        <Search className="h-4 w-4 mr-2" />
+        <Search className='h-4 w-4 mr-2' />
         Search MusicBrainz
       </Button>
     </form>
