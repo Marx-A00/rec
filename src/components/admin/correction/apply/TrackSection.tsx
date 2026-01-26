@@ -9,7 +9,10 @@ import {
   AccordionContent,
 } from '@/components/ui/accordion';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { TrackDiff, TrackListSummary } from '@/lib/correction/preview/types';
+import type {
+  TrackDiff,
+  TrackListSummary,
+} from '@/lib/correction/preview/types';
 
 import type { UIFieldSelections } from './types';
 
@@ -49,7 +52,7 @@ export function TrackSection({
   const [showIndividualTracks, setShowIndividualTracks] = useState(false);
 
   // Calculate selected count
-  const selectedCount = trackDiffs.filter((diff) => {
+  const selectedCount = trackDiffs.filter(diff => {
     const positionKey = `${diff.discNumber}-${diff.position}`;
     return !selections.tracks.excludedPositions.has(positionKey);
   }).length;
@@ -62,9 +65,11 @@ export function TrackSection({
         ...selections,
         tracks: {
           applyAll: checked,
-          excludedPositions: checked ? new Set() : new Set(
-            trackDiffs.map((diff) => `${diff.discNumber}-${diff.position}`)
-          ),
+          excludedPositions: checked
+            ? new Set()
+            : new Set(
+                trackDiffs.map(diff => `${diff.discNumber}-${diff.position}`)
+              ),
         },
       });
     },
@@ -110,78 +115,82 @@ export function TrackSection({
   }
 
   return (
-    <AccordionItem value="tracks" className="border-zinc-700">
-      <AccordionTrigger className="px-4 py-3 hover:bg-zinc-800/50">
-        <div className="flex items-center gap-3 w-full">
+    <AccordionItem value='tracks' className='border-zinc-700'>
+      <AccordionTrigger className='px-4 py-3 hover:bg-zinc-800/50'>
+        <div className='flex items-center gap-3 w-full'>
           <Checkbox
             checked={selections.tracks.applyAll}
             onCheckedChange={handleToggleApplyAll}
-            onClick={(e) => e.stopPropagation()}
-            className="shrink-0"
+            onClick={e => e.stopPropagation()}
+            className='shrink-0'
           />
-          <span className="text-sm font-medium text-zinc-100">
+          <span className='text-sm font-medium text-zinc-100'>
             Tracks ({selectedCount} selected / {totalCount} total)
           </span>
         </div>
       </AccordionTrigger>
-      <AccordionContent className="px-4 pb-4 pt-2">
-        <div className="space-y-3">
+      <AccordionContent className='px-4 pb-4 pt-2'>
+        <div className='space-y-3'>
           {/* Apply all checkbox */}
-          <div className="flex items-center gap-3 rounded-md bg-zinc-800 p-3">
+          <div className='flex items-center gap-3 rounded-md bg-zinc-800 p-3'>
             <Checkbox
               checked={selections.tracks.applyAll}
               onCheckedChange={handleToggleApplyAll}
-              className="shrink-0"
+              className='shrink-0'
             />
-            <span className="text-sm text-zinc-200">Apply all tracks</span>
+            <span className='text-sm text-zinc-200'>Apply all tracks</span>
           </div>
 
           {/* Collapsible individual tracks section */}
           <button
-            type="button"
+            type='button'
             onClick={() => setShowIndividualTracks(!showIndividualTracks)}
-            className="flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-300 transition-colors w-full"
+            className='flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-300 transition-colors w-full'
           >
             {showIndividualTracks ? (
-              <ChevronUp className="h-3 w-3" />
+              <ChevronUp className='h-3 w-3' />
             ) : (
-              <ChevronDown className="h-3 w-3" />
+              <ChevronDown className='h-3 w-3' />
             )}
             <span>Show individual tracks</span>
           </button>
 
           {/* Individual track list */}
           {showIndividualTracks && (
-            <div className="space-y-2 mt-2">
-              {trackDiffs.map((diff) => {
+            <div className='space-y-2 mt-2'>
+              {trackDiffs.map(diff => {
                 const positionKey = `${diff.discNumber}-${diff.position}`;
-                const isSelected = !selections.tracks.excludedPositions.has(positionKey);
-                const title = diff.source?.title || diff.current?.title || '(Unknown)';
+                const isSelected =
+                  !selections.tracks.excludedPositions.has(positionKey);
+                const title =
+                  diff.source?.title || diff.current?.title || '(Unknown)';
                 const changeColorClass = getChangeColorClass(diff.changeType);
 
                 return (
                   <div
                     key={positionKey}
-                    className="flex items-start gap-3 rounded-md bg-zinc-800/50 p-2"
+                    className='flex items-start gap-3 rounded-md bg-zinc-800/50 p-2'
                   >
                     <Checkbox
                       checked={isSelected}
-                      onCheckedChange={(checked) =>
+                      onCheckedChange={checked =>
                         handleToggleTrack(positionKey, Boolean(checked))
                       }
-                      className="mt-0.5 shrink-0"
+                      className='mt-0.5 shrink-0'
                     />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-xs font-mono text-zinc-500">
+                    <div className='flex-1 min-w-0'>
+                      <div className='flex items-baseline gap-2'>
+                        <span className='text-xs font-mono text-zinc-500'>
                           {diff.discNumber}-{diff.position}
                         </span>
-                        <span className={`text-xs font-medium truncate ${changeColorClass}`}>
+                        <span
+                          className={`text-xs font-medium truncate ${changeColorClass}`}
+                        >
                           {title}
                         </span>
                       </div>
                       {diff.changeType !== 'MATCH' && (
-                        <div className="text-xs text-zinc-500 mt-0.5">
+                        <div className='text-xs text-zinc-500 mt-0.5'>
                           {diff.changeType === 'MODIFIED' && '(modified)'}
                           {diff.changeType === 'ADDED' && '(added)'}
                           {diff.changeType === 'REMOVED' && '(removed)'}
@@ -195,7 +204,7 @@ export function TrackSection({
           )}
 
           {/* Track summary */}
-          <div className="text-xs text-zinc-500 pt-2">
+          <div className='text-xs text-zinc-500 pt-2'>
             {trackSummary.matching} match · {trackSummary.modified} modified ·{' '}
             {trackSummary.added} added · {trackSummary.removed} removed
           </div>

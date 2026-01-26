@@ -1,13 +1,11 @@
 /**
  * Type definitions and utilities for field selection UI state.
- * 
+ *
  * Manages the UI-friendly state for selecting which fields to apply in a correction.
  * Converts between UI state and GraphQL input format.
  */
 
-import type {
-  CorrectionPreview,
-} from '@/lib/correction/preview/types';
+import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import type {
   FieldSelectionsInput,
   MetadataSelectionsInput,
@@ -22,7 +20,7 @@ import type {
 
 /**
  * UI-friendly field selection state.
- * 
+ *
  * Matches apply service FieldSelections but uses simpler structures:
  * - Direct boolean properties instead of Maps
  * - Set for excluded tracks instead of Map
@@ -61,7 +59,7 @@ export interface UIFieldSelections {
 
 /**
  * Creates default UI selections with all fields selected.
- * 
+ *
  * - All metadata fields: true
  * - Tracks: applyAll=true, no exclusions
  * - All external IDs: true
@@ -101,7 +99,7 @@ export function createDefaultUISelections(
 
 /**
  * Converts UI field selections to GraphQL input format.
- * 
+ *
  * - Metadata: direct object mapping
  * - Artists: all artists from preview applied as unit (no per-artist selection in UI)
  * - Tracks: converts hybrid state to SelectionEntry array
@@ -124,17 +122,17 @@ export function toGraphQLSelections(
 
   // Convert artists - apply all as unit (no per-artist UI selection)
   // Note: Artist credits are typically applied together from MusicBrainz
-  const artists: SelectionEntry[] = preview.artistDiff.source.map((artist) => ({
+  const artists: SelectionEntry[] = preview.artistDiff.source.map(artist => ({
     key: artist.mbid,
     selected: true,
   }));
 
   // Convert tracks - hybrid approach to SelectionEntry array
   // Position key format: "disc-track" (e.g., "1-3" for disc 1, track 3)
-  const tracks: SelectionEntry[] = preview.trackDiffs.map((trackDiff) => {
+  const tracks: SelectionEntry[] = preview.trackDiffs.map(trackDiff => {
     const positionKey = `${trackDiff.discNumber}-${trackDiff.position}`;
     const isExcluded = ui.tracks.excludedPositions.has(positionKey);
-    
+
     return {
       key: positionKey,
       selected: ui.tracks.applyAll && !isExcluded,

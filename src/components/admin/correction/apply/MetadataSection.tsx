@@ -8,7 +8,11 @@ import {
   AccordionContent,
 } from '@/components/ui/accordion';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { FieldDiff, TextDiff, DateDiff } from '@/lib/correction/preview/types';
+import type {
+  FieldDiff,
+  TextDiff,
+  DateDiff,
+} from '@/lib/correction/preview/types';
 
 import type { UIFieldSelections } from './types';
 
@@ -28,7 +32,11 @@ export interface MetadataSectionProps {
  * Type guard to check if a FieldDiff is a TextDiff or DateDiff
  */
 function isMetadataFieldDiff(diff: FieldDiff): diff is TextDiff | DateDiff {
-  return diff.field !== 'musicbrainzId' && diff.field !== 'spotifyId' && diff.field !== 'discogsId';
+  return (
+    diff.field !== 'musicbrainzId' &&
+    diff.field !== 'spotifyId' &&
+    diff.field !== 'discogsId'
+  );
 }
 
 /**
@@ -48,17 +56,24 @@ export function MetadataSection({
   fieldDiffs,
 }: MetadataSectionProps) {
   // Filter to only metadata fields that have changes
-  const metadataFields = ['title', 'releaseDate', 'releaseType', 'releaseCountry', 'barcode', 'label'];
+  const metadataFields = [
+    'title',
+    'releaseDate',
+    'releaseType',
+    'releaseCountry',
+    'barcode',
+    'label',
+  ];
   const changedFields = fieldDiffs.filter(
-    (diff): diff is TextDiff | DateDiff => 
-      isMetadataFieldDiff(diff) && 
-      metadataFields.includes(diff.field) && 
+    (diff): diff is TextDiff | DateDiff =>
+      isMetadataFieldDiff(diff) &&
+      metadataFields.includes(diff.field) &&
       diff.changeType !== 'UNCHANGED'
   );
 
   // Count selected fields
   const selectedCount = changedFields.filter(
-    (diff) => selections.metadata[diff.field as keyof typeof selections.metadata]
+    diff => selections.metadata[diff.field as keyof typeof selections.metadata]
   ).length;
   const totalCount = changedFields.length;
 
@@ -71,7 +86,7 @@ export function MetadataSection({
   const handleToggleAll = useCallback(
     (checked: boolean) => {
       const newMetadata = { ...selections.metadata };
-      changedFields.forEach((diff) => {
+      changedFields.forEach(diff => {
         newMetadata[diff.field as keyof typeof newMetadata] = checked;
       });
       onSelectionsChange({
@@ -97,15 +112,20 @@ export function MetadataSection({
   );
 
   // Format field value for display
-  const formatValue = (diff: TextDiff | DateDiff, isSource: boolean): string => {
+  const formatValue = (
+    diff: TextDiff | DateDiff,
+    isSource: boolean
+  ): string => {
     if (diff.field === 'releaseDate') {
       const dateDiff = diff as DateDiff;
       const dateComponents = isSource ? dateDiff.source : dateDiff.current;
       if (!dateComponents) return '(none)';
       const parts = [];
       if (dateComponents.year) parts.push(dateComponents.year);
-      if (dateComponents.month) parts.push(String(dateComponents.month).padStart(2, '0'));
-      if (dateComponents.day) parts.push(String(dateComponents.day).padStart(2, '0'));
+      if (dateComponents.month)
+        parts.push(String(dateComponents.month).padStart(2, '0'));
+      if (dateComponents.day)
+        parts.push(String(dateComponents.day).padStart(2, '0'));
       return parts.length > 0 ? parts.join('-') : '(none)';
     } else {
       const textDiff = diff as TextDiff;
@@ -132,24 +152,24 @@ export function MetadataSection({
   }
 
   return (
-    <AccordionItem value="metadata" className="border-zinc-700">
-      <AccordionTrigger className="px-4 py-3 hover:bg-zinc-800/50">
-        <div className="flex items-center gap-3 w-full">
+    <AccordionItem value='metadata' className='border-zinc-700'>
+      <AccordionTrigger className='px-4 py-3 hover:bg-zinc-800/50'>
+        <div className='flex items-center gap-3 w-full'>
           <Checkbox
             checked={allSelected}
             onCheckedChange={handleToggleAll}
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             {...(indeterminate && { 'data-state': 'indeterminate' })}
-            className="shrink-0"
+            className='shrink-0'
           />
-          <span className="text-sm font-medium text-zinc-100">
+          <span className='text-sm font-medium text-zinc-100'>
             Metadata ({totalCount} change{totalCount !== 1 ? 's' : ''})
           </span>
         </div>
       </AccordionTrigger>
-      <AccordionContent className="px-4 pb-4 pt-2">
-        <div className="space-y-3">
-          {changedFields.map((diff) => {
+      <AccordionContent className='px-4 pb-4 pt-2'>
+        <div className='space-y-3'>
+          {changedFields.map(diff => {
             const field = diff.field as keyof typeof selections.metadata;
             const isSelected = selections.metadata[field];
             const currentVal = formatValue(diff, false);
@@ -158,25 +178,27 @@ export function MetadataSection({
             return (
               <div
                 key={diff.field}
-                className="flex items-start gap-3 rounded-md bg-zinc-800 p-3"
+                className='flex items-start gap-3 rounded-md bg-zinc-800 p-3'
               >
                 <Checkbox
                   checked={isSelected}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={checked =>
                     handleToggleField(diff.field, Boolean(checked))
                   }
-                  className="mt-0.5 shrink-0"
+                  className='mt-0.5 shrink-0'
                 />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-zinc-200 mb-1">
+                <div className='flex-1 min-w-0'>
+                  <div className='text-sm font-medium text-zinc-200 mb-1'>
                     {formatLabel(diff.field)}
                   </div>
-                  <div className="text-xs text-zinc-400 font-mono space-y-1">
-                    <div className="truncate">
-                      <span className="text-red-400">Current:</span> {currentVal}
+                  <div className='text-xs text-zinc-400 font-mono space-y-1'>
+                    <div className='truncate'>
+                      <span className='text-red-400'>Current:</span>{' '}
+                      {currentVal}
                     </div>
-                    <div className="truncate">
-                      <span className="text-green-400">Source:</span> {sourceVal}
+                    <div className='truncate'>
+                      <span className='text-green-400'>Source:</span>{' '}
+                      {sourceVal}
                     </div>
                   </div>
                 </div>
