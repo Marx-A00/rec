@@ -161,9 +161,9 @@ Plans:
 
 Plans:
 
-- [ ] 07-01: Search input component with pre-population
-- [ ] 07-02: Search results list component
-- [ ] 07-03: Result card with match score display
+- [ ] 07-01-PLAN.md — Search inputs with pre-population and loading skeleton
+- [ ] 07-02-PLAN.md — Search result card and results list with pagination
+- [ ] 07-03-PLAN.md — SearchView container and modal integration
 
 ### Phase 8: Preview UI
 
