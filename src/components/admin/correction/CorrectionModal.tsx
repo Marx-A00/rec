@@ -17,6 +17,7 @@ import {
   type CurrentDataViewAlbum,
   type AlbumArtist,
 } from './CurrentDataView';
+import { SearchView } from './search';
 
 export interface CorrectionModalProps {
   /** Album ID to load and correct */
@@ -32,7 +33,7 @@ export interface CorrectionModalProps {
  *
  * Steps:
  * 0. Current Data - Shows existing album data
- * 1. Search - Search for correct MusicBrainz match (placeholder)
+ * 1. Search - Search for correct MusicBrainz match
  * 2. Apply - Preview and apply corrections (placeholder)
  *
  * The modal fetches album details internally using the albumId.
@@ -44,6 +45,7 @@ export function CorrectionModal({
   open,
   onClose,
 }: CorrectionModalProps) {
+  const modalState = useCorrectionModalState(albumId);
   const {
     currentStep,
     setCurrentStep,
@@ -52,7 +54,7 @@ export function CorrectionModal({
     clearState,
     isFirstStep,
     isLastStep,
-  } = useCorrectionModalState(albumId);
+  } = modalState;
 
   // Fetch album details when modal is open and albumId is provided
   const { data, isLoading, error } = useGetAlbumDetailsAdminQuery(
@@ -114,6 +116,20 @@ export function CorrectionModal({
     }
   };
 
+  // Handle result selection from SearchView
+  const handleResultSelect = (result: { releaseGroupMbid: string }) => {
+    // Store selected result MBID for preview step
+    modalState.setSelectedResult(result.releaseGroupMbid);
+    // Navigate to preview step
+    nextStep();
+  };
+
+  // Handle manual edit request (no good results)
+  const handleManualEdit = () => {
+    // Navigate to manual edit (step 3 in future, for now just log)
+    console.log('Manual edit requested - Phase 10');
+  };
+
   // Get primary artist name for header
   const primaryArtist = album?.artists.find(
     ac => ac.role === 'primary' || ac.position === 0
@@ -164,9 +180,22 @@ export function CorrectionModal({
           )}
 
           {/* Step 1: Search */}
-          {currentStep === 1 && !isLoading && (
-            <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
-              <p className='text-muted-foreground'>Search content here</p>
+          {currentStep === 1 && !isLoading && !hasError && album && (
+            <SearchView
+              album={album}
+              onResultSelect={handleResultSelect}
+              onManualEdit={handleManualEdit}
+              modalState={modalState}
+            />
+          )}
+          {currentStep === 1 && isLoading && (
+            <div className='flex items-center justify-center h-[300px]'>
+              <Loader2 className='h-6 w-6 animate-spin text-zinc-400' />
+            </div>
+          )}
+          {currentStep === 1 && hasError && !isLoading && (
+            <div className='p-4 text-center text-red-400'>
+              Failed to load album data. Please try again.
             </div>
           )}
 
