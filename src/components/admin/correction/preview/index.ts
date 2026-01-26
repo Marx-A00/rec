@@ -5,6 +5,21 @@
  * of current album data vs. MusicBrainz source data.
  */
 
-export { ComparisonLayout, type ComparisonLayoutProps } from './ComparisonLayout';
+// Layout components
+export {
+  ComparisonLayout,
+  type ComparisonLayoutProps,
+} from './ComparisonLayout';
 export { PreviewSkeleton } from './PreviewSkeleton';
 export { PreviewView, type PreviewViewProps } from './PreviewView';
+
+// Field comparison components
+export { InlineTextDiff, type InlineTextDiffProps } from './InlineTextDiff';
+export { FieldComparison, type FieldComparisonProps } from './FieldComparison';
+export {
+  FieldComparisonList,
+  type FieldComparisonListProps,
+} from './FieldComparisonList';
+
+// Re-export types from preview types for convenience
+export type { FieldDiff } from '@/lib/correction/preview/types';
