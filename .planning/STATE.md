@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Phase 8 - Preview UI (In Progress)
+**Current focus:** Phase 8 - Preview UI (Complete)
 
 ## Current Position
 
 Phase: 8 of 12 (Preview UI)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-01-26 — Completed 08-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-01-26 — Completed 08-03-PLAN.md
 
-Progress: [██████████████░] 68%
+Progress: [████████████████░] 71%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 23
-- Average duration: 3.4min
-- Total execution time: 88.5min
+- Total plans completed: 24
+- Average duration: 3.6min
+- Total execution time: 93.7min
 
 **By Phase:**
 
@@ -32,13 +32,13 @@ Progress: [██████████████░] 68%
 - Phase 04: 3 plans, 11min total, 3.7min avg
 - Phase 05: 3 plans, 14.6min total, 4.9min avg
 - Phase 06: 3 plans, 13.3min total, 4.4min avg
-- Phase 07: 3 plans, 7.6min total, 2.5min avg (complete)
-- Phase 08: 2 plans, 5.6min total, 2.8min avg (in progress)
+- Phase 07: 3 plans, 7.6min total, 2.5min avg
+- Phase 08: 3 plans, 10.8min total, 3.6min avg (complete)
 
 **Recent Trend:**
 
-- Last 5 plans: 06-03 (8min), 07-02 (2.6min), 07-03 (5min), 08-01 (2.6min), 08-02 (3min)
-- Trend: Preview UI continuing efficiently
+- Last 5 plans: 07-02 (2.6min), 07-03 (5min), 08-01 (2.6min), 08-02 (2.6min), 08-03 (5.6min)
+- Trend: Preview UI complete
 
 *Updated after each plan completion*
 
@@ -94,9 +94,11 @@ Recent decisions affecting current work:
 - [08-01]: Skeleton mimics final layout with two-column structure
 - [08-01]: 5-minute stale time for preview query caching
 - [08-01]: Cover art comparison separate from ComparisonLayout
-- [08-02]: Type guards for JSON scalar field diffs (TextDiff, DateDiff, ArrayDiff, ExternalIdDiff)
-- [08-02]: Array diff renders unchanged, added, removed items with color highlighting
-- [08-02]: Artist credits rendered as special field with optional name diff
+- [08-02]: InlineTextDiff uses green/red backgrounds for added/removed
+- [08-02]: FieldComparisonList filters UNCHANGED fields automatically
+- [08-03]: Track row styling per change type (color-coded backgrounds)
+- [08-03]: Accordion default expansion based on sections with changes
+- [08-03]: Change count badges show "(N changes)" in accordion triggers
 
 ### Pending Todos
 
@@ -110,10 +112,12 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-26
-Stopped at: Completed 08-02-PLAN.md
+Stopped at: Completed 08-03-PLAN.md (Phase 8 complete)
 Resume file: None
 
 ## Next Steps
 
-Continue Phase 8 (Preview UI):
-- Plan 08-03: Track comparison table with additions/removals
+Begin Phase 9 (Apply UI):
+- Plan 09-01: Field selection checkboxes and apply button
+- Plan 09-02: Apply mutation integration and success feedback
+- Plan 09-03: Error handling and retry UI
