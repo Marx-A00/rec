@@ -18,10 +18,10 @@ export interface ModalState {
   searchQuery?: SearchQueryState;
   searchOffset?: number;
   selectedResultMbid?: string;
+  isApplied?: boolean;
 }
 
 const STORAGE_KEY_PREFIX = 'correction-modal-state-';
-const DEFAULT_STATE: ModalState = { currentStep: 0 };
 
 /**
  * Hook for managing correction modal state with sessionStorage persistence.
@@ -34,9 +34,14 @@ const DEFAULT_STATE: ModalState = { currentStep: 0 };
  */
 export function useCorrectionModalState(albumId: string | null) {
   const [currentStep, setCurrentStepInternal] = useState(0);
-  const [searchQuery, setSearchQueryInternal] = useState<SearchQueryState | undefined>(undefined);
+  const [searchQuery, setSearchQueryInternal] = useState<
+    SearchQueryState | undefined
+  >(undefined);
   const [searchOffset, setSearchOffsetInternal] = useState(0);
-  const [selectedResultMbid, setSelectedResultMbidInternal] = useState<string | undefined>(undefined);
+  const [selectedResultMbid, setSelectedResultMbidInternal] = useState<
+    string | undefined
+  >(undefined);
+  const [isApplied, setIsAppliedInternal] = useState(false);
 
   // Load state from sessionStorage when albumId changes
   useEffect(() => {
@@ -45,6 +50,7 @@ export function useCorrectionModalState(albumId: string | null) {
       setSearchQueryInternal(undefined);
       setSearchOffsetInternal(0);
       setSelectedResultMbidInternal(undefined);
+      setIsAppliedInternal(false);
       return;
     }
 
@@ -58,17 +64,20 @@ export function useCorrectionModalState(albumId: string | null) {
         setSearchQueryInternal(parsed.searchQuery);
         setSearchOffsetInternal(parsed.searchOffset ?? 0);
         setSelectedResultMbidInternal(parsed.selectedResultMbid);
+        setIsAppliedInternal(parsed.isApplied ?? false);
       } catch {
         setCurrentStepInternal(0);
         setSearchQueryInternal(undefined);
         setSearchOffsetInternal(0);
         setSelectedResultMbidInternal(undefined);
+        setIsAppliedInternal(false);
       }
     } else {
       setCurrentStepInternal(0);
       setSearchQueryInternal(undefined);
       setSearchOffsetInternal(0);
       setSelectedResultMbidInternal(undefined);
+      setIsAppliedInternal(false);
     }
   }, [albumId]);
 
@@ -82,15 +91,16 @@ export function useCorrectionModalState(albumId: string | null) {
       searchQuery,
       searchOffset,
       selectedResultMbid,
+      isApplied,
     };
     sessionStorage.setItem(storageKey, JSON.stringify(state));
-  }, [albumId, currentStep, searchQuery, searchOffset, selectedResultMbid]);
+  }, [albumId, currentStep, searchQuery, searchOffset, selectedResultMbid, isApplied]);
 
   /**
-   * Set the current step (0-indexed, 3 steps total)
+   * Set the current step (0-indexed, 4 steps total: 0=Current, 1=Search, 2=Preview, 3=Apply)
    */
   const setCurrentStep = useCallback((step: number) => {
-    if (step >= 0 && step <= 2) {
+    if (step >= 0 && step <= 3) {
       setCurrentStepInternal(step);
     }
   }, []);
@@ -117,6 +127,13 @@ export function useCorrectionModalState(albumId: string | null) {
   }, []);
 
   /**
+   * Set applied status
+   */
+  const setIsApplied = useCallback((value: boolean) => {
+    setIsAppliedInternal(value);
+  }, []);
+
+  /**
    * Clear search state (query, offset, selection)
    */
   const clearSearchState = useCallback(() => {
@@ -138,6 +155,7 @@ export function useCorrectionModalState(albumId: string | null) {
     setSearchQueryInternal(undefined);
     setSearchOffsetInternal(0);
     setSelectedResultMbidInternal(undefined);
+    setIsAppliedInternal(false);
   }, [albumId]);
 
   /**
@@ -161,7 +179,7 @@ export function useCorrectionModalState(albumId: string | null) {
     nextStep,
     prevStep,
     isFirstStep: currentStep === 0,
-    isLastStep: currentStep === 2,
+    isLastStep: currentStep === 3,
     // Search state
     searchQuery,
     setSearchQuery,
@@ -170,6 +188,9 @@ export function useCorrectionModalState(albumId: string | null) {
     selectedResultMbid,
     setSelectedResult,
     clearSearchState,
+    // Apply state
+    isApplied,
+    setIsApplied,
     // Full state clear
     clearState,
   };
