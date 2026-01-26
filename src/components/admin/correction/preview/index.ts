@@ -6,3 +6,4 @@
  */
 
 export { ComparisonLayout, type ComparisonLayoutProps } from './ComparisonLayout';
+export { PreviewSkeleton } from './PreviewSkeleton';
