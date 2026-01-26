@@ -17,7 +17,7 @@ This roadmap delivers an admin data correction feature that lets administrators 
 - [x] **Phase 4: Apply Service** - Atomic corrections with audit logging
 - [x] **Phase 5: GraphQL Integration** - Schema, resolvers, and generated hooks
 - [x] **Phase 6: Modal & Entry Point** - Correction modal structure and current data display
-- [ ] **Phase 7: Search UI** - Search interface with results and match scores
+- [x] **Phase 7: Search UI** - Search interface with results and match scores
 - [ ] **Phase 8: Preview UI** - Side-by-side comparison with field highlighting
 - [ ] **Phase 9: Apply UI** - Field selection, confirmation, and success feedback
 - [ ] **Phase 10: Manual Edit** - Direct field editing without external search
@@ -161,9 +161,9 @@ Plans:
 
 Plans:
 
-- [ ] 07-01-PLAN.md — Search inputs with pre-population and loading skeleton
-- [ ] 07-02-PLAN.md — Search result card and results list with pagination
-- [ ] 07-03-PLAN.md — SearchView container and modal integration
+- [x] 07-01-PLAN.md — Search inputs with pre-population and loading skeleton
+- [x] 07-02-PLAN.md — Search result card and results list with pagination
+- [x] 07-03-PLAN.md — SearchView container and modal integration
 
 ### Phase 8: Preview UI
 
@@ -182,10 +182,9 @@ Plans:
 
 Plans:
 
-- [ ] 08-01: Preview panel component
-- [ ] 08-02: Side-by-side comparison layout (allotment)
-- [ ] 08-03: Field diff highlighting
-- [ ] 08-04: Track listing display
+- [ ] 08-01-PLAN.md — Preview container, layout, and skeleton
+- [ ] 08-02-PLAN.md — Field diff highlighting components
+- [ ] 08-03-PLAN.md — Track comparison, cover art, and modal integration
 
 ### Phase 9: Apply UI
 
@@ -287,12 +286,12 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 4. Apply Service               | 3/3            | Complete    | 2026-01-24 |
 | 5. GraphQL Integration         | 3/3            | Complete    | 2026-01-24 |
 | 6. Modal & Entry Point         | 3/3            | Complete    | 2026-01-25 |
-| 7. Search UI                   | 0/3            | Not started | -          |
-| 8. Preview UI                  | 0/4            | Not started | -          |
+| 7. Search UI                   | 3/3            | Complete    | 2026-01-26 |
+| 8. Preview UI                  | 0/3            | Not started | -          |
 | 9. Apply UI                    | 0/4            | Not started | -          |
 | 10. Manual Edit                | 0/4            | Not started | -          |
 | 11. Artist Correction          | 0/4            | Not started | -          |
 | 12. Polish & Recovery          | 0/5            | Not started | -          |
 
-**Total Plans:** 42
+**Total Plans:** 41
 **Total Requirements Covered:** 35/35
