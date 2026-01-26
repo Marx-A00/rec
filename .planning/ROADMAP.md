@@ -19,7 +19,7 @@ This roadmap delivers an admin data correction feature that lets administrators 
 - [x] **Phase 6: Modal & Entry Point** - Correction modal structure and current data display
 - [x] **Phase 7: Search UI** - Search interface with results and match scores
 - [x] **Phase 8: Preview UI** - Side-by-side comparison with field highlighting
-- [ ] **Phase 9: Apply UI** - Field selection, confirmation, and success feedback
+- [x] **Phase 9: Apply UI** - Field selection, confirmation, and success feedback
 - [ ] **Phase 10: Manual Edit** - Direct field editing without external search
 - [ ] **Phase 11: Artist Correction** - Same workflow adapted for artists
 - [ ] **Phase 12: Polish & Recovery** - Error handling, re-enrichment triggers, and edge cases
@@ -199,13 +199,13 @@ Plans:
 4. Success message with toast shows applied changes summary
 5. Modal auto-closes after brief "Applied!" state
 6. Album data quality indicator updates appropriately
-**Plans**: 3 plans
+   **Plans**: 3 plans
 
 Plans:
 
-- [ ] 09-01-PLAN.md — Field selection form with hierarchical checkboxes
-- [ ] 09-02-PLAN.md — ApplyView container with diff summary
-- [ ] 09-03-PLAN.md — Apply mutation integration and feedback
+- [x] 09-01-PLAN.md — Field selection form with hierarchical checkboxes
+- [x] 09-02-PLAN.md — ApplyView container with diff summary
+- [x] 09-03-PLAN.md — Apply mutation integration and feedback
 
 ### Phase 10: Manual Edit
 
@@ -287,7 +287,7 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 6. Modal & Entry Point         | 3/3            | Complete    | 2026-01-25 |
 | 7. Search UI                   | 3/3            | Complete    | 2026-01-26 |
 | 8. Preview UI                  | 3/3            | Complete    | 2026-01-26 |
-| 9. Apply UI                    | 0/3            | Not started | -          |
+| 9. Apply UI                    | 3/3            | Complete    | 2026-01-26 |
 | 10. Manual Edit                | 0/4            | Not started | -          |
 | 11. Artist Correction          | 0/4            | Not started | -          |
 | 12. Polish & Recovery          | 0/5            | Not started | -          |

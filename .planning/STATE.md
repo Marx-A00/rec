@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Phase 9 - Apply UI (Complete)
+**Current focus:** Phase 10 - Manual Edit (Next)
 
 ## Current Position
 
