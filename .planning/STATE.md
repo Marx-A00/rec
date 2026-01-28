@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-01-23)
 ## Current Position
 
 Phase: 11 of 12 (Artist Correction)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-28 — Completed 11-01-PLAN.md
+Last activity: 2026-01-27 — Completed 11-02-PLAN.md
 
 Progress: [█████████████████████░] 86%
 
@@ -20,9 +20,9 @@ Progress: [█████████████████████░] 8
 
 **Velocity:**
 
-- Total plans completed: 31
+- Total plans completed: 32
 - Average duration: 3.4min
-- Total execution time: ~128min
+- Total execution time: ~130min
 
 **By Phase:**
 
@@ -36,12 +36,12 @@ Progress: [█████████████████████░] 8
 - Phase 08: 3 plans, 10.8min total, 3.6min avg
 - Phase 09: 3 plans, 17min total, 5.7min avg
 - Phase 10: 3 plans, ~14.5min total, 4.8min avg
-- Phase 11: 1 plan, ~3min total, 3min avg (in progress)
+- Phase 11: 2 plans, ~5.5min total, 2.75min avg (in progress)
 
 **Recent Trend:**
 
-- Last 5 plans: 10-01 (3min), 10-02 (2.5min), 10-03 (9min), 11-01 (3min)
-- Trend: Artist search service complete, ready for preview service
+- Last 5 plans: 10-02 (2.5min), 10-03 (9min), 11-01 (2.8min), 11-02 (2.7min)
+- Trend: Artist correction services building quickly, reusing album patterns
 
 *Updated after each plan completion*
 
@@ -124,9 +124,11 @@ Recent decisions affecting current work:
 - [10-03]: Artist update uses delete-all then create pattern
 - [10-03]: Manual corrections set dataQuality to HIGH
 - [10-03]: computeManualPreview creates synthetic ScoredSearchResult for component reuse
-- [11-01]: Store artistType as string VARCHAR, not enum (MusicBrainz may add new types)
-- [11-01]: Preserve partial dates as-is from MusicBrainz
-- [11-01]: Fetch top 3 releases per artist for disambiguation
+- [11-01]: Artist scoring reuses album scoring infrastructure with normalized/tiered/weighted strategies
+- [11-01]: Artist search includes top 3 releases for disambiguation context
+- [11-02]: Gender field only compared when MB type is Person
+- [11-02]: Partial dates stored as strings to preserve MusicBrainz precision
+- [11-02]: First IPI/ISNI only compared (database stores single values)
 
 ### Pending Todos
 
@@ -139,12 +141,11 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-28
-Stopped at: Completed 11-01-PLAN.md
+Last session: 2026-01-27
+Stopped at: Completed 11-02-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Phase 11 (Artist Correction) is in progress. Next:
-- 11-02: Artist preview service (fetch artist, generate field diffs)
-- 11-03: Artist apply service (atomic update with audit logging)
+Continue with Phase 11 (Artist Correction):
+- 11-03: Artist Apply Service (atomic update with audit logging)
