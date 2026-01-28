@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-01-23)
 ## Current Position
 
 Phase: 10 of 12 (Manual Edit)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-28 — Completed 10-01-PLAN.md
+Last activity: 2026-01-28 — Completed 10-02-PLAN.md
 
-Progress: [█████████████████░] 80%
+Progress: [█████████████████░] 81%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 28
+- Total plans completed: 29
 - Average duration: 3.5min
-- Total execution time: 113.7min
+- Total execution time: 116.2min
 
 **By Phase:**
 
@@ -35,12 +35,12 @@ Progress: [█████████████████░] 80%
 - Phase 07: 3 plans, 7.6min total, 2.5min avg
 - Phase 08: 3 plans, 10.8min total, 3.6min avg (complete)
 - Phase 09: 3 plans, 17min total, 5.7min avg (complete)
-- Phase 10: 1 plan, 3min total, 3min avg (in progress)
+- Phase 10: 2 plans, 5.5min total, 2.75min avg (in progress)
 
 **Recent Trend:**
 
-- Last 5 plans: 09-01 (6min), 09-02 (4min), 09-03 (7min), 10-01 (3min)
-- Trend: Manual edit foundation complete, ready for form UI (Plan 10-02)
+- Last 5 plans: 09-02 (4min), 09-03 (7min), 10-01 (3min), 10-02 (2.5min)
+- Trend: Input components complete, ready for ManualEditView (Plan 10-03)
 
 *Updated after each plan completion*
 
@@ -115,6 +115,10 @@ Recent decisions affecting current work:
 - [10-01]: RELEASE_TYPES constant provides common options for dropdown UI
 - [10-01]: Modal state resets to step 0 when switching between search and manual modes
 - [10-01]: StepIndicator uses mode prop to control labels (4 steps for search, 3 for manual)
+- [10-02]: Click-to-edit pattern for EditableField reduces visual clutter
+- [10-02]: Validate external IDs and dates on blur, not on change (better UX)
+- [10-02]: Artist count validated immediately when last artist removed
+- [10-02]: Clear button (X) explicitly sets null, not empty string (clearer intent)
 
 ### Pending Todos
 
@@ -128,13 +132,13 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 10-01-PLAN.md
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Phase 10 (Manual Edit) in progress. Plan 10-01 complete, ready for Plan 10-02:
-- Manual edit form UI with field inputs (title, artists, dates, external IDs)
+Phase 10 (Manual Edit) in progress. Plan 10-02 complete, ready for Plan 10-03:
+- ManualEditView component composing all input components
 - Real-time validation feedback using Zod schemas
 - Unsaved changes warning when navigating away
 - Entry point button in SearchView ("None of these are right, I'll edit manually")
