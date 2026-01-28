@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import type { ManualEditFieldState } from '@/components/admin/correction/manual/types';
 
 /**
  * Search query state for correction modal
@@ -19,6 +20,8 @@ export interface ModalState {
   searchOffset?: number;
   selectedResultMbid?: string;
   isApplied?: boolean;
+  isManualEditMode?: boolean;
+  manualEditState?: ManualEditFieldState;
 }
 
 const STORAGE_KEY_PREFIX = 'correction-modal-state-';
@@ -28,6 +31,9 @@ const STORAGE_KEY_PREFIX = 'correction-modal-state-';
  *
  * State is persisted per albumId so users can navigate away and return
  * to the same step. State is cleared when modal closes or apply succeeds.
+ *
+ * Supports both search mode (4 steps: Current, Search, Preview, Apply) and
+ * manual edit mode (3 steps: Current, Edit, Apply).
  *
  * @param albumId - The album being corrected, or null if modal is closed
  * @returns State management interface
@@ -42,6 +48,10 @@ export function useCorrectionModalState(albumId: string | null) {
     string | undefined
   >(undefined);
   const [isApplied, setIsAppliedInternal] = useState(false);
+  const [isManualEditMode, setIsManualEditModeInternal] = useState(false);
+  const [manualEditState, setManualEditStateInternal] = useState<
+    ManualEditFieldState | undefined
+  >(undefined);
 
   // Load state from sessionStorage when albumId changes
   useEffect(() => {
@@ -51,6 +61,8 @@ export function useCorrectionModalState(albumId: string | null) {
       setSearchOffsetInternal(0);
       setSelectedResultMbidInternal(undefined);
       setIsAppliedInternal(false);
+      setIsManualEditModeInternal(false);
+      setManualEditStateInternal(undefined);
       return;
     }
 
@@ -65,12 +77,16 @@ export function useCorrectionModalState(albumId: string | null) {
         setSearchOffsetInternal(parsed.searchOffset ?? 0);
         setSelectedResultMbidInternal(parsed.selectedResultMbid);
         setIsAppliedInternal(parsed.isApplied ?? false);
+        setIsManualEditModeInternal(parsed.isManualEditMode ?? false);
+        setManualEditStateInternal(parsed.manualEditState);
       } catch {
         setCurrentStepInternal(0);
         setSearchQueryInternal(undefined);
         setSearchOffsetInternal(0);
         setSelectedResultMbidInternal(undefined);
         setIsAppliedInternal(false);
+        setIsManualEditModeInternal(false);
+        setManualEditStateInternal(undefined);
       }
     } else {
       setCurrentStepInternal(0);
@@ -78,6 +94,8 @@ export function useCorrectionModalState(albumId: string | null) {
       setSearchOffsetInternal(0);
       setSelectedResultMbidInternal(undefined);
       setIsAppliedInternal(false);
+      setIsManualEditModeInternal(false);
+      setManualEditStateInternal(undefined);
     }
   }, [albumId]);
 
@@ -92,6 +110,8 @@ export function useCorrectionModalState(albumId: string | null) {
       searchOffset,
       selectedResultMbid,
       isApplied,
+      isManualEditMode,
+      manualEditState,
     };
     sessionStorage.setItem(storageKey, JSON.stringify(state));
   }, [
@@ -101,16 +121,24 @@ export function useCorrectionModalState(albumId: string | null) {
     searchOffset,
     selectedResultMbid,
     isApplied,
+    isManualEditMode,
+    manualEditState,
   ]);
 
   /**
-   * Set the current step (0-indexed, 4 steps total: 0=Current, 1=Search, 2=Preview, 3=Apply)
+   * Set the current step.
+   * Search mode: 0-3 (Current, Search, Preview, Apply)
+   * Manual mode: 0-2 (Current, Edit, Apply)
    */
-  const setCurrentStep = useCallback((step: number) => {
-    if (step >= 0 && step <= 3) {
-      setCurrentStepInternal(step);
-    }
-  }, []);
+  const setCurrentStep = useCallback(
+    (step: number) => {
+      const maxStep = isManualEditMode ? 2 : 3;
+      if (step >= 0 && step <= maxStep) {
+        setCurrentStepInternal(step);
+      }
+    },
+    [isManualEditMode]
+  );
 
   /**
    * Set the search query
@@ -141,6 +169,30 @@ export function useCorrectionModalState(albumId: string | null) {
   }, []);
 
   /**
+   * Set manual edit mode flag
+   */
+  const setManualEditMode = useCallback((mode: boolean) => {
+    setIsManualEditModeInternal(mode);
+    // Reset step to 0 when switching modes
+    setCurrentStepInternal(0);
+  }, []);
+
+  /**
+   * Set manual edit state
+   */
+  const setManualEditState = useCallback((state: ManualEditFieldState) => {
+    setManualEditStateInternal(state);
+  }, []);
+
+  /**
+   * Clear manual edit state
+   */
+  const clearManualEditState = useCallback(() => {
+    setManualEditStateInternal(undefined);
+    setIsManualEditModeInternal(false);
+  }, []);
+
+  /**
    * Clear search state (query, offset, selection)
    */
   const clearSearchState = useCallback(() => {
@@ -163,6 +215,8 @@ export function useCorrectionModalState(albumId: string | null) {
     setSearchOffsetInternal(0);
     setSelectedResultMbidInternal(undefined);
     setIsAppliedInternal(false);
+    setIsManualEditModeInternal(false);
+    setManualEditStateInternal(undefined);
   }, [albumId]);
 
   /**
@@ -186,7 +240,7 @@ export function useCorrectionModalState(albumId: string | null) {
     nextStep,
     prevStep,
     isFirstStep: currentStep === 0,
-    isLastStep: currentStep === 3,
+    isLastStep: currentStep === (isManualEditMode ? 2 : 3),
     // Search state
     searchQuery,
     setSearchQuery,
@@ -195,6 +249,12 @@ export function useCorrectionModalState(albumId: string | null) {
     selectedResultMbid,
     setSelectedResult,
     clearSearchState,
+    // Manual edit state
+    isManualEditMode,
+    setManualEditMode,
+    manualEditState,
+    setManualEditState,
+    clearManualEditState,
     // Apply state
     isApplied,
     setIsApplied,

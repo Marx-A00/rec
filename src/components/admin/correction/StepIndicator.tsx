@@ -3,16 +3,22 @@
 import { cn } from '@/lib/utils';
 
 export interface StepIndicatorProps {
-  /** Current step index (0-3) */
+  /** Current step index (0-based) */
   currentStep: number;
   /** Callback when a step is clicked */
   onStepClick: (step: number) => void;
-  /** Step labels (default: ["Current Data", "Search", "Apply"]) */
+  /** Modal mode affects step labels and count */
+  mode?: 'search' | 'manual';
+  /** Step labels (optional override) */
   steps?: string[];
 }
 
 /**
  * Step indicator showing wizard progress with clickable navigation.
+ *
+ * Supports two modes:
+ * - Search mode (default): 4 steps - Current Data, Search, Preview, Apply
+ * - Manual mode: 3 steps - Current Data, Edit, Apply
  *
  * Visual design:
  * - Horizontal layout with numbered circles connected by lines
@@ -24,12 +30,21 @@ export interface StepIndicatorProps {
 export function StepIndicator({
   currentStep,
   onStepClick,
-  steps = ['Current Data', 'Search', 'Preview', 'Apply'],
+  mode = 'search',
+  steps,
 }: StepIndicatorProps) {
+  // Default step labels based on mode
+  const defaultSteps =
+    mode === 'manual'
+      ? ['Current Data', 'Edit', 'Apply']
+      : ['Current Data', 'Search', 'Preview', 'Apply'];
+
+  const stepLabels = steps ?? defaultSteps;
+
   return (
     <nav aria-label='Progress' className='w-full py-4'>
       <ol className='flex items-center justify-center'>
-        {steps.map((label, index) => {
+        {stepLabels.map((label, index) => {
           const isCompleted = index < currentStep;
           const isCurrent = index === currentStep;
           const isClickable = true; // All steps are clickable for free navigation
@@ -39,7 +54,7 @@ export function StepIndicator({
               key={label}
               className={cn(
                 'flex items-center',
-                index !== steps.length - 1 && 'flex-1'
+                index !== stepLabels.length - 1 && 'flex-1'
               )}
             >
               {/* Step circle and label */}
@@ -81,7 +96,7 @@ export function StepIndicator({
               </button>
 
               {/* Connecting line (except for last step) */}
-              {index !== steps.length - 1 && (
+              {index !== stepLabels.length - 1 && (
                 <div
                   className={cn(
                     'mx-2 h-0.5 flex-1 transition-colors sm:mx-4',
