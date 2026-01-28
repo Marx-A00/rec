@@ -13,7 +13,7 @@ import { AlertCircle } from 'lucide-react';
 import type { CurrentDataViewAlbum } from '../CurrentDataView';
 import type { ManualEditFieldState, ManualEditValidationErrors } from './types';
 import { createInitialEditState, hasUnsavedChanges } from './types';
-import { manualEditSchema } from './validation';
+import { manualEditSchema, musicbrainzIdSchema, spotifyIdSchema, discogsIdSchema } from './validation';
 import { EditableField } from './EditableField';
 import { ArtistChipsInput } from './ArtistChipsInput';
 import { DateInput } from './DateInput';
@@ -120,53 +120,42 @@ export function ManualEditView({
         <h3 className="text-lg font-semibold text-zinc-100">Basic Information</h3>
         
         {/* Title */}
-        <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-2">
-            Title <span className="text-red-400">*</span>
-          </label>
-          <EditableField
-            value={formState.title}
-            onChange={(value) => updateField('title', value)}
-            placeholder="Album title"
-            error={errors.title}
-          />
-        </div>
+        <EditableField
+          label="Title"
+          value={formState.title}
+          onChange={(value) => updateField('title', value)}
+          placeholder="Album title"
+        />
+        {errors.title && (
+          <p className="text-sm text-red-400 mt-1">{errors.title}</p>
+        )}
 
         {/* Artists */}
-        <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-2">
-            Artists <span className="text-red-400">*</span>
-          </label>
-          <ArtistChipsInput
-            value={formState.artists}
-            onChange={(value) => updateField('artists', value)}
-            error={errors.artists}
-          />
-        </div>
+        <ArtistChipsInput
+          artists={formState.artists}
+          onChange={(value) => updateField('artists', value)}
+          error={errors.artists}
+        />
 
         {/* Release Date */}
-        <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-2">
-            Release Date
-          </label>
-          <DateInput
-            value={formState.releaseDate}
-            onChange={(value) => updateField('releaseDate', value)}
-            error={errors.releaseDate}
-          />
-        </div>
+        <DateInput
+          value={formState.releaseDate}
+          onChange={(value) => updateField('releaseDate', value)}
+          label="Release Date"
+        />
+        {errors.releaseDate && (
+          <p className="text-sm text-red-400 mt-1">{errors.releaseDate}</p>
+        )}
 
         {/* Release Type */}
-        <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-2">
-            Release Type
-          </label>
-          <ReleaseTypeSelect
-            value={formState.releaseType}
-            onChange={(value) => updateField('releaseType', value)}
-            error={errors.releaseType}
-          />
-        </div>
+        <ReleaseTypeSelect
+          value={formState.releaseType}
+          onChange={(value) => updateField('releaseType', value)}
+          label="Release Type"
+        />
+        {errors.releaseType && (
+          <p className="text-sm text-red-400 mt-1">{errors.releaseType}</p>
+        )}
       </div>
 
       {/* External IDs Section (Collapsible) */}
@@ -177,46 +166,34 @@ export function ManualEditView({
           </AccordionTrigger>
           <AccordionContent className="px-6 pb-6 space-y-6">
             {/* MusicBrainz ID */}
-            <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-2">
-                MusicBrainz ID
-              </label>
-              <ExternalIdInput
-                value={formState.musicbrainzId}
-                onChange={(value) => updateField('musicbrainzId', value)}
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                format="uuid"
-                error={errors.musicbrainzId}
-              />
-            </div>
+            <ExternalIdInput
+              label="MusicBrainz ID"
+              value={formState.musicbrainzId}
+              onChange={(value) => updateField('musicbrainzId', value)}
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              schema={musicbrainzIdSchema}
+              hint="UUID format (36 characters with dashes)"
+            />
 
             {/* Spotify ID */}
-            <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-2">
-                Spotify ID
-              </label>
-              <ExternalIdInput
-                value={formState.spotifyId}
-                onChange={(value) => updateField('spotifyId', value)}
-                placeholder="22-character alphanumeric ID"
-                format="base62"
-                error={errors.spotifyId}
-              />
-            </div>
+            <ExternalIdInput
+              label="Spotify ID"
+              value={formState.spotifyId}
+              onChange={(value) => updateField('spotifyId', value)}
+              placeholder="22-character alphanumeric ID"
+              schema={spotifyIdSchema}
+              hint="Base62 format (22 characters)"
+            />
 
             {/* Discogs ID */}
-            <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-2">
-                Discogs ID
-              </label>
-              <ExternalIdInput
-                value={formState.discogsId}
-                onChange={(value) => updateField('discogsId', value)}
-                placeholder="Numeric ID"
-                format="numeric"
-                error={errors.discogsId}
-              />
-            </div>
+            <ExternalIdInput
+              label="Discogs ID"
+              value={formState.discogsId}
+              onChange={(value) => updateField('discogsId', value)}
+              placeholder="Numeric ID"
+              schema={discogsIdSchema}
+              hint="Numeric format"
+            />
           </AccordionContent>
         </AccordionItem>
       </Accordion>

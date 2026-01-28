@@ -1012,6 +1012,31 @@ export type MbReleaseData = {
   title: Scalars['String']['output'];
 };
 
+/**
+ * Input for applying a manual correction (no external MBID required).
+ * Admin directly edits album fields without selecting a MusicBrainz source.
+ */
+export type ManualCorrectionApplyInput = {
+  /** Album ID to apply correction to */
+  albumId: Scalars['UUID']['input'];
+  /** Artist names to set */
+  artists: Array<Scalars['String']['input']>;
+  /** Discogs master/release ID */
+  discogsId?: InputMaybe<Scalars['String']['input']>;
+  /** Expected album updatedAt timestamp for optimistic locking */
+  expectedUpdatedAt: Scalars['DateTime']['input'];
+  /** MusicBrainz release group UUID */
+  musicbrainzId?: InputMaybe<Scalars['String']['input']>;
+  /** Release date (YYYY, YYYY-MM, or YYYY-MM-DD format) */
+  releaseDate?: InputMaybe<Scalars['String']['input']>;
+  /** Release type (Album, EP, Single, etc.) */
+  releaseType?: InputMaybe<Scalars['String']['input']>;
+  /** Spotify album ID */
+  spotifyId?: InputMaybe<Scalars['String']['input']>;
+  /** Title to set (required) */
+  title: Scalars['String']['input'];
+};
+
 /** Selection state for metadata fields. */
 export type MetadataSelectionsInput = {
   /** Barcode / UPC */
@@ -1051,6 +1076,8 @@ export type Mutation = {
   dismissUserSuggestion: Scalars['Boolean']['output'];
   ensureListenLaterCollection: Collection;
   followUser: FollowUserPayload;
+  /** Apply manual corrections to an album (no external source) */
+  manualCorrectionApply: CorrectionApplyResult;
   pauseQueue: Scalars['Boolean']['output'];
   previewAlbumEnrichment: PreviewEnrichmentResult;
   previewArtistEnrichment: PreviewEnrichmentResult;
@@ -1162,6 +1189,10 @@ export type MutationDismissUserSuggestionArgs = {
 
 export type MutationFollowUserArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationManualCorrectionApplyArgs = {
+  input: ManualCorrectionApplyInput;
 };
 
 export type MutationPreviewAlbumEnrichmentArgs = {
@@ -2575,6 +2606,7 @@ export type ResolversTypes = ResolversObject<{
   MBMediumTrack: ResolverTypeWrapper<MbMediumTrack>;
   MBRecording: ResolverTypeWrapper<MbRecording>;
   MBReleaseData: ResolverTypeWrapper<MbReleaseData>;
+  ManualCorrectionApplyInput: ManualCorrectionApplyInput;
   MetadataSelectionsInput: MetadataSelectionsInput;
   Mutation: ResolverTypeWrapper<{}>;
   OnboardingStatus: ResolverTypeWrapper<OnboardingStatus>;
@@ -2733,6 +2765,7 @@ export type ResolversParentTypes = ResolversObject<{
   MBMediumTrack: MbMediumTrack;
   MBRecording: MbRecording;
   MBReleaseData: MbReleaseData;
+  ManualCorrectionApplyInput: ManualCorrectionApplyInput;
   MetadataSelectionsInput: MetadataSelectionsInput;
   Mutation: {};
   OnboardingStatus: OnboardingStatus;
@@ -4236,6 +4269,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationFollowUserArgs, 'userId'>
+  >;
+  manualCorrectionApply?: Resolver<
+    ResolversTypes['CorrectionApplyResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationManualCorrectionApplyArgs, 'input'>
   >;
   pauseQueue?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   previewAlbumEnrichment?: Resolver<

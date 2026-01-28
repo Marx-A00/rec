@@ -1038,6 +1038,31 @@ export type MbReleaseData = {
   title: Scalars['String']['output'];
 };
 
+/**
+ * Input for applying a manual correction (no external MBID required).
+ * Admin directly edits album fields without selecting a MusicBrainz source.
+ */
+export type ManualCorrectionApplyInput = {
+  /** Album ID to apply correction to */
+  albumId: Scalars['UUID']['input'];
+  /** Artist names to set */
+  artists: Array<Scalars['String']['input']>;
+  /** Discogs master/release ID */
+  discogsId?: InputMaybe<Scalars['String']['input']>;
+  /** Expected album updatedAt timestamp for optimistic locking */
+  expectedUpdatedAt: Scalars['DateTime']['input'];
+  /** MusicBrainz release group UUID */
+  musicbrainzId?: InputMaybe<Scalars['String']['input']>;
+  /** Release date (YYYY, YYYY-MM, or YYYY-MM-DD format) */
+  releaseDate?: InputMaybe<Scalars['String']['input']>;
+  /** Release type (Album, EP, Single, etc.) */
+  releaseType?: InputMaybe<Scalars['String']['input']>;
+  /** Spotify album ID */
+  spotifyId?: InputMaybe<Scalars['String']['input']>;
+  /** Title to set (required) */
+  title: Scalars['String']['input'];
+};
+
 /** Selection state for metadata fields. */
 export type MetadataSelectionsInput = {
   /** Barcode / UPC */
@@ -1077,6 +1102,8 @@ export type Mutation = {
   dismissUserSuggestion: Scalars['Boolean']['output'];
   ensureListenLaterCollection: Collection;
   followUser: FollowUserPayload;
+  /** Apply manual corrections to an album (no external source) */
+  manualCorrectionApply: CorrectionApplyResult;
   pauseQueue: Scalars['Boolean']['output'];
   previewAlbumEnrichment: PreviewEnrichmentResult;
   previewArtistEnrichment: PreviewEnrichmentResult;
@@ -1188,6 +1215,10 @@ export type MutationDismissUserSuggestionArgs = {
 
 export type MutationFollowUserArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationManualCorrectionApplyArgs = {
+  input: ManualCorrectionApplyInput;
 };
 
 export type MutationPreviewAlbumEnrichmentArgs = {
@@ -2564,6 +2595,34 @@ export type RemoveFromListenLaterMutationVariables = Exact<{
 export type RemoveFromListenLaterMutation = {
   __typename?: 'Mutation';
   removeFromListenLater: boolean;
+};
+
+export type ManualCorrectionApplyMutationVariables = Exact<{
+  input: ManualCorrectionApplyInput;
+}>;
+
+export type ManualCorrectionApplyMutation = {
+  __typename?: 'Mutation';
+  manualCorrectionApply: {
+    __typename?: 'CorrectionApplyResult';
+    success: boolean;
+    code?: ApplyErrorCode | null;
+    message?: string | null;
+    album?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      releaseDate?: Date | null;
+      releaseType?: string | null;
+      musicbrainzId?: string | null;
+      dataQuality?: DataQuality | null;
+      updatedAt: Date;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    } | null;
+  };
 };
 
 export type RemoveAlbumFromCollectionMutationVariables = Exact<{
@@ -5255,6 +5314,60 @@ export const useRemoveFromListenLaterMutation = <
 };
 
 useRemoveFromListenLaterMutation.getKey = () => ['RemoveFromListenLater'];
+
+export const ManualCorrectionApplyDocument = `
+    mutation ManualCorrectionApply($input: ManualCorrectionApplyInput!) {
+  manualCorrectionApply(input: $input) {
+    success
+    album {
+      id
+      title
+      releaseDate
+      releaseType
+      musicbrainzId
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+      dataQuality
+      updatedAt
+    }
+    code
+    message
+  }
+}
+    `;
+
+export const useManualCorrectionApplyMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ManualCorrectionApplyMutation,
+    TError,
+    ManualCorrectionApplyMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ManualCorrectionApplyMutation,
+    TError,
+    ManualCorrectionApplyMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ManualCorrectionApply'],
+    mutationFn: (variables?: ManualCorrectionApplyMutationVariables) =>
+      fetcher<
+        ManualCorrectionApplyMutation,
+        ManualCorrectionApplyMutationVariables
+      >(ManualCorrectionApplyDocument, variables)(),
+    ...options,
+  });
+};
+
+useManualCorrectionApplyMutation.getKey = () => ['ManualCorrectionApply'];
 
 export const RemoveAlbumFromCollectionDocument = `
     mutation RemoveAlbumFromCollection($collectionId: String!, $albumId: UUID!) {

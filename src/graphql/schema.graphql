@@ -674,15 +674,25 @@ enum EnrichmentLogStatus {
 Five-state classification for field changes in correction previews.
 """
 enum ChangeType {
-  """Field exists in source but not in current (e.g., missing release date)"""
+  """
+  Field exists in source but not in current (e.g., missing release date)
+  """
   ADDED
-  """Both exist but differ (e.g., title changed)"""
+  """
+  Both exist but differ (e.g., title changed)
+  """
   MODIFIED
-  """Field exists in current but not in source (rare for corrections)"""
+  """
+  Field exists in current but not in source (rare for corrections)
+  """
   REMOVED
-  """Both exist but differ significantly (manual review needed)"""
+  """
+  Both exist but differ significantly (manual review needed)
+  """
   CONFLICT
-  """Values are semantically identical"""
+  """
+  Values are semantically identical
+  """
   UNCHANGED
 }
 
@@ -690,11 +700,17 @@ enum ChangeType {
 Cover art handling options for correction application.
 """
 enum CoverArtChoice {
-  """Replace current cover with source cover art"""
+  """
+  Replace current cover with source cover art
+  """
   USE_SOURCE
-  """Preserve existing cover art"""
+  """
+  Preserve existing cover art
+  """
   KEEP_CURRENT
-  """Remove cover art entirely"""
+  """
+  Remove cover art entirely
+  """
   CLEAR
 }
 
@@ -702,11 +718,17 @@ enum CoverArtChoice {
 Available scoring strategies for correction search results.
 """
 enum ScoringStrategy {
-  """0-1 scale using string-similarity"""
+  """
+  0-1 scale using string-similarity
+  """
   NORMALIZED
-  """High/medium/low confidence levels"""
+  """
+  High/medium/low confidence levels
+  """
   TIERED
-  """0-100 with multiple signals"""
+  """
+  0-100 with multiple signals
+  """
   WEIGHTED
 }
 
@@ -724,15 +746,25 @@ enum ConfidenceTier {
 Error codes for correction apply operation failures.
 """
 enum ApplyErrorCode {
-  """Album was modified since preview was generated"""
+  """
+  Album was modified since preview was generated
+  """
   STALE_DATA
-  """Album no longer exists"""
+  """
+  Album no longer exists
+  """
   ALBUM_NOT_FOUND
-  """Database transaction error"""
+  """
+  Database transaction error
+  """
   TRANSACTION_FAILED
-  """Invalid field selection provided"""
+  """
+  Invalid field selection provided
+  """
   INVALID_SELECTION
-  """Data validation failed"""
+  """
+  Data validation failed
+  """
   VALIDATION_ERROR
 }
 
@@ -746,9 +778,13 @@ enum ApplyErrorCode {
 Artist credit from MusicBrainz search result.
 """
 type CorrectionArtistCredit {
-  """Artist MusicBrainz ID"""
+  """
+  Artist MusicBrainz ID
+  """
   mbid: String!
-  """Artist name as credited"""
+  """
+  Artist name as credited
+  """
   name: String!
 }
 
@@ -756,15 +792,25 @@ type CorrectionArtistCredit {
 Score breakdown showing component scores for search result scoring.
 """
 type ScoreBreakdown {
-  """Title match score (strategy-specific range)"""
+  """
+  Title match score (strategy-specific range)
+  """
   titleScore: Float!
-  """Artist match score (strategy-specific range)"""
+  """
+  Artist match score (strategy-specific range)
+  """
   artistScore: Float!
-  """Year/date score (strategy-specific range)"""
+  """
+  Year/date score (strategy-specific range)
+  """
   yearScore: Float!
-  """MusicBrainz search score component"""
+  """
+  MusicBrainz search score component
+  """
   mbScore: Float
-  """For tiered strategy: confidence level"""
+  """
+  For tiered strategy: confidence level
+  """
   confidenceTier: ConfidenceTier
 }
 
@@ -772,37 +818,69 @@ type ScoreBreakdown {
 A search result with scoring applied.
 """
 type ScoredSearchResult {
-  """Release group MusicBrainz ID"""
+  """
+  Release group MusicBrainz ID
+  """
   releaseGroupMbid: String!
-  """Album title"""
+  """
+  Album title
+  """
   title: String!
-  """Disambiguation (e.g., "deluxe edition")"""
+  """
+  Disambiguation (e.g., "deluxe edition")
+  """
   disambiguation: String
-  """Primary artist credits"""
+  """
+  Primary artist credits
+  """
   artistCredits: [CorrectionArtistCredit!]!
-  """Formatted primary artist name for display"""
+  """
+  Formatted primary artist name for display
+  """
   primaryArtistName: String!
-  """First release date (YYYY or YYYY-MM-DD)"""
+  """
+  First release date (YYYY or YYYY-MM-DD)
+  """
   firstReleaseDate: String
-  """Primary type (Album, EP, Single, etc.)"""
+  """
+  Primary type (Album, EP, Single, etc.)
+  """
   primaryType: String
-  """Secondary types (Compilation, Live, Remix, etc.)"""
+  """
+  Secondary types (Compilation, Live, Remix, etc.)
+  """
   secondaryTypes: [String!]
-  """MusicBrainz search score (0-100)"""
+  """
+  MusicBrainz search score (0-100)
+  """
   mbScore: Int!
-  """Cover Art Archive thumbnail URL (250px)"""
+  """
+  Cover Art Archive thumbnail URL (250px)
+  """
   coverArtUrl: String
-  """Source indicator"""
+  """
+  Source indicator
+  """
   source: String!
-  """Normalized score 0-1 for sorting"""
+  """
+  Normalized score 0-1 for sorting
+  """
   normalizedScore: Float!
-  """Raw display score (0-1 or 0-100 depending on strategy)"""
+  """
+  Raw display score (0-1 or 0-100 depending on strategy)
+  """
   displayScore: Float!
-  """Component score breakdown"""
+  """
+  Component score breakdown
+  """
   breakdown: ScoreBreakdown!
-  """True if score is below low-confidence threshold"""
+  """
+  True if score is below low-confidence threshold
+  """
   isLowConfidence: Boolean!
-  """Which strategy produced this score"""
+  """
+  Which strategy produced this score
+  """
   scoringStrategy: ScoringStrategy!
 }
 
@@ -811,15 +889,25 @@ A group of related search results (same release group MBID).
 Groups releases like "OK Computer" regular vs deluxe editions.
 """
 type GroupedSearchResult {
-  """The release group MBID (shared by all versions)"""
+  """
+  The release group MBID (shared by all versions)
+  """
   releaseGroupMbid: String!
-  """Primary result (best version to display)"""
+  """
+  Primary result (best version to display)
+  """
   primaryResult: ScoredSearchResult!
-  """Alternate versions (deluxe, remaster, etc.)"""
+  """
+  Alternate versions (deluxe, remaster, etc.)
+  """
   alternateVersions: [ScoredSearchResult!]!
-  """Total number of versions in this group"""
+  """
+  Total number of versions in this group
+  """
   versionCount: Int!
-  """Highest score among all versions (for sorting groups)"""
+  """
+  Highest score among all versions (for sorting groups)
+  """
   bestScore: Float!
 }
 
@@ -827,15 +915,25 @@ type GroupedSearchResult {
 Response from correction search operation.
 """
 type CorrectionSearchResponse {
-  """Grouped search results (deduplicated by release group)"""
+  """
+  Grouped search results (deduplicated by release group)
+  """
   results: [GroupedSearchResult!]!
-  """Total number of unique release groups"""
+  """
+  Total number of unique release groups
+  """
   totalGroups: Int!
-  """Whether more results are available"""
+  """
+  Whether more results are available
+  """
   hasMore: Boolean!
-  """The query that was executed"""
+  """
+  The query that was executed
+  """
   query: CorrectionSearchQuery!
-  """Scoring metadata"""
+  """
+  Scoring metadata
+  """
   scoring: CorrectionScoringInfo!
 }
 
@@ -852,11 +950,17 @@ type CorrectionSearchQuery {
 Scoring metadata for correction search response.
 """
 type CorrectionScoringInfo {
-  """Strategy used for scoring"""
+  """
+  Strategy used for scoring
+  """
   strategy: ScoringStrategy!
-  """Low-confidence threshold used"""
+  """
+  Low-confidence threshold used
+  """
   threshold: Float!
-  """Number of results below threshold"""
+  """
+  Number of results below threshold
+  """
   lowConfidenceCount: Int!
 }
 
@@ -867,11 +971,17 @@ Character-level diff part for text comparison.
 Used to highlight exact changes within text fields.
 """
 type TextDiffPart {
-  """The text content of this part"""
+  """
+  The text content of this part
+  """
   value: String!
-  """True if this part was added in the source"""
+  """
+  True if this part was added in the source
+  """
   added: Boolean
-  """True if this part was removed (exists in current but not source)"""
+  """
+  True if this part was removed (exists in current but not source)
+  """
   removed: Boolean
 }
 
@@ -879,15 +989,25 @@ type TextDiffPart {
 Diff for a text field (title, disambiguation, etc.)
 """
 type TextDiff {
-  """Field name (e.g., 'title', 'disambiguation')"""
+  """
+  Field name (e.g., 'title', 'disambiguation')
+  """
   field: String!
-  """Change classification"""
+  """
+  Change classification
+  """
   changeType: ChangeType!
-  """Current value in database"""
+  """
+  Current value in database
+  """
   currentValue: String
-  """Value from MusicBrainz source"""
+  """
+  Value from MusicBrainz source
+  """
   sourceValue: String
-  """Character-level diff parts (only for MODIFIED/CONFLICT)"""
+  """
+  Character-level diff parts (only for MODIFIED/CONFLICT)
+  """
   parts: [TextDiffPart!]
 }
 
@@ -905,15 +1025,25 @@ type DateComponents {
 Diff for release date field with component-level granularity.
 """
 type DateDiff {
-  """Always 'releaseDate'"""
+  """
+  Always 'releaseDate'
+  """
   field: String!
-  """Overall change classification"""
+  """
+  Overall change classification
+  """
   changeType: ChangeType!
-  """Current date components"""
+  """
+  Current date components
+  """
   current: DateComponents
-  """Source date components"""
+  """
+  Source date components
+  """
   source: DateComponents
-  """Per-component change classification"""
+  """
+  Per-component change classification
+  """
   componentChanges: DateComponentChanges!
 }
 
@@ -930,19 +1060,33 @@ type DateComponentChanges {
 Diff for array fields (genres, secondaryTypes, etc.)
 """
 type ArrayDiff {
-  """Field name (e.g., 'genres', 'secondaryTypes')"""
+  """
+  Field name (e.g., 'genres', 'secondaryTypes')
+  """
   field: String!
-  """Overall change classification"""
+  """
+  Overall change classification
+  """
   changeType: ChangeType!
-  """Current array values"""
+  """
+  Current array values
+  """
   currentItems: [String!]!
-  """Source array values"""
+  """
+  Source array values
+  """
   sourceItems: [String!]!
-  """Items added in source"""
+  """
+  Items added in source
+  """
   added: [String!]!
-  """Items removed (exist in current but not source)"""
+  """
+  Items removed (exist in current but not source)
+  """
   removed: [String!]!
-  """Items unchanged (exist in both)"""
+  """
+  Items unchanged (exist in both)
+  """
   unchanged: [String!]!
 }
 
@@ -951,21 +1095,37 @@ Diff for a single track in the track listing.
 Position-based comparison (disc + track number).
 """
 type TrackDiff {
-  """Track position (1-based)"""
+  """
+  Track position (1-based)
+  """
   position: Int!
-  """Disc number (1-based)"""
+  """
+  Disc number (1-based)
+  """
   discNumber: Int!
-  """Track change classification"""
+  """
+  Track change classification
+  """
   changeType: String!
-  """Current track data (null if ADDED in source)"""
+  """
+  Current track data (null if ADDED in source)
+  """
   current: TrackData
-  """Source track from MusicBrainz (null if REMOVED from current)"""
+  """
+  Source track from MusicBrainz (null if REMOVED from current)
+  """
   source: TrackSourceData
-  """Title diff parts (only for MODIFIED)"""
+  """
+  Title diff parts (only for MODIFIED)
+  """
   titleDiff: [TextDiffPart!]
-  """Duration difference in milliseconds (absolute value)"""
+  """
+  Duration difference in milliseconds (absolute value)
+  """
   durationDelta: Int
-  """Database track ID (for selection)"""
+  """
+  Database track ID (for selection)
+  """
   trackId: String
 }
 
@@ -991,17 +1151,29 @@ type TrackSourceData {
 Summary statistics for track listing comparison.
 """
 type TrackListSummary {
-  """Total tracks in current album"""
+  """
+  Total tracks in current album
+  """
   totalCurrent: Int!
-  """Total tracks in source data"""
+  """
+  Total tracks in source data
+  """
   totalSource: Int!
-  """Number of matching tracks (same position, same title)"""
+  """
+  Number of matching tracks (same position, same title)
+  """
   matching: Int!
-  """Number of modified tracks (same position, different title/duration)"""
+  """
+  Number of modified tracks (same position, different title/duration)
+  """
   modified: Int!
-  """Number of tracks added in source"""
+  """
+  Number of tracks added in source
+  """
   added: Int!
-  """Number of tracks removed (exist in current but not source)"""
+  """
+  Number of tracks removed (exist in current but not source)
+  """
   removed: Int!
 }
 
@@ -1009,17 +1181,29 @@ type TrackListSummary {
 Diff for artist credits.
 """
 type ArtistCreditDiff {
-  """Change classification"""
+  """
+  Change classification
+  """
   changeType: ChangeType!
-  """Current artist credits"""
+  """
+  Current artist credits
+  """
   current: [CorrectionArtistCredit!]!
-  """Source artist credits"""
+  """
+  Source artist credits
+  """
   source: [CorrectionArtistCredit!]!
-  """Formatted current artist string"""
+  """
+  Formatted current artist string
+  """
   currentDisplay: String!
-  """Formatted source artist string"""
+  """
+  Formatted source artist string
+  """
   sourceDisplay: String!
-  """Name diff parts if modified"""
+  """
+  Name diff parts if modified
+  """
   nameDiff: [TextDiffPart!]
 }
 
@@ -1036,17 +1220,29 @@ type CoverArtDiff {
 Summary of all changes in a preview.
 """
 type PreviewSummary {
-  """Total fields compared"""
+  """
+  Total fields compared
+  """
   totalFields: Int!
-  """Number of fields that changed"""
+  """
+  Number of fields that changed
+  """
   changedFields: Int!
-  """Number of fields added"""
+  """
+  Number of fields added
+  """
   addedFields: Int!
-  """Number of fields modified"""
+  """
+  Number of fields modified
+  """
   modifiedFields: Int!
-  """Number of conflict fields"""
+  """
+  Number of conflict fields
+  """
   conflictFields: Int!
-  """Whether track listing has changes"""
+  """
+  Whether track listing has changes
+  """
   hasTrackChanges: Boolean!
 }
 
@@ -1056,13 +1252,21 @@ type PreviewSummary {
 MusicBrainz recording (track) data.
 """
 type MBRecording {
-  """Recording MBID"""
+  """
+  Recording MBID
+  """
   id: String!
-  """Track title"""
+  """
+  Track title
+  """
   title: String!
-  """Duration in milliseconds"""
+  """
+  Duration in milliseconds
+  """
   length: Int
-  """Track position within medium"""
+  """
+  Track position within medium
+  """
   position: Int!
 }
 
@@ -1070,9 +1274,13 @@ type MBRecording {
 MusicBrainz medium track wrapper.
 """
 type MBMediumTrack {
-  """Track position within medium"""
+  """
+  Track position within medium
+  """
   position: Int!
-  """Recording data"""
+  """
+  Recording data
+  """
   recording: MBRecording!
 }
 
@@ -1080,13 +1288,21 @@ type MBMediumTrack {
 MusicBrainz medium (disc/vinyl/CD) data.
 """
 type MBMedium {
-  """Medium position (1-based)"""
+  """
+  Medium position (1-based)
+  """
   position: Int!
-  """Format (CD, Vinyl, Digital, etc.)"""
+  """
+  Format (CD, Vinyl, Digital, etc.)
+  """
   format: String
-  """Number of tracks on this medium"""
+  """
+  Number of tracks on this medium
+  """
   trackCount: Int!
-  """Track listing"""
+  """
+  Track listing
+  """
   tracks: [MBMediumTrack!]!
 }
 
@@ -1094,13 +1310,21 @@ type MBMedium {
 MusicBrainz artist data within artist credit.
 """
 type MBArtist {
-  """Artist MBID"""
+  """
+  Artist MBID
+  """
   id: String!
-  """Artist name"""
+  """
+  Artist name
+  """
   name: String!
-  """Sort name"""
+  """
+  Sort name
+  """
   sortName: String
-  """Disambiguation"""
+  """
+  Disambiguation
+  """
   disambiguation: String
 }
 
@@ -1108,11 +1332,17 @@ type MBArtist {
 MusicBrainz artist credit entry.
 """
 type MBArtistCredit {
-  """Artist name as credited"""
+  """
+  Artist name as credited
+  """
   name: String!
-  """Join phrase (e.g., ' & ', ' feat. ')"""
+  """
+  Join phrase (e.g., ' & ', ' feat. ')
+  """
   joinphrase: String
-  """Artist data"""
+  """
+  Artist data
+  """
   artist: MBArtist!
 }
 
@@ -1121,19 +1351,33 @@ MusicBrainz release data (full release, not just release group).
 Fetched separately for track listing comparison.
 """
 type MBReleaseData {
-  """Release MBID (not release group)"""
+  """
+  Release MBID (not release group)
+  """
   id: String!
-  """Album title"""
+  """
+  Album title
+  """
   title: String!
-  """Release date (YYYY, YYYY-MM, or YYYY-MM-DD)"""
+  """
+  Release date (YYYY, YYYY-MM, or YYYY-MM-DD)
+  """
   date: String
-  """Country of release"""
+  """
+  Country of release
+  """
   country: String
-  """Barcode"""
+  """
+  Barcode
+  """
   barcode: String
-  """Media (discs/vinyls/etc.)"""
+  """
+  Media (discs/vinyls/etc.)
+  """
   media: [MBMedium!]!
-  """Artist credits"""
+  """
+  Artist credits
+  """
   artistCredit: [MBArtistCredit!]!
 }
 
@@ -1141,27 +1385,49 @@ type MBReleaseData {
 Complete preview of all changes between current album and MusicBrainz source.
 """
 type CorrectionPreview {
-  """Album ID being corrected"""
+  """
+  Album ID being corrected
+  """
   albumId: String!
-  """Album title for display"""
+  """
+  Album title for display
+  """
   albumTitle: String!
-  """Album updatedAt for optimistic locking"""
+  """
+  Album updatedAt for optimistic locking
+  """
   albumUpdatedAt: DateTime!
-  """Selected MusicBrainz search result"""
+  """
+  Selected MusicBrainz search result
+  """
   sourceResult: ScoredSearchResult!
-  """Full MusicBrainz release data (for tracks)"""
+  """
+  Full MusicBrainz release data (for tracks)
+  """
   mbReleaseData: MBReleaseData
-  """Field-by-field diffs (as JSON for complex union types)"""
+  """
+  Field-by-field diffs (as JSON for complex union types)
+  """
   fieldDiffs: JSON!
-  """Artist credit comparison"""
+  """
+  Artist credit comparison
+  """
   artistDiff: ArtistCreditDiff!
-  """Track listing comparison"""
+  """
+  Track listing comparison
+  """
   trackDiffs: [TrackDiff!]!
-  """Track summary statistics"""
+  """
+  Track summary statistics
+  """
   trackSummary: TrackListSummary!
-  """Cover art comparison"""
+  """
+  Cover art comparison
+  """
   coverArt: CoverArtDiff!
-  """Summary of all changes"""
+  """
+  Summary of all changes
+  """
   summary: PreviewSummary!
 }
 
@@ -1171,9 +1437,13 @@ type CorrectionPreview {
 Applied artist changes summary.
 """
 type AppliedArtistChanges {
-  """Names of artists added to album"""
+  """
+  Names of artists added to album
+  """
   added: [String!]!
-  """Names of artists removed from album"""
+  """
+  Names of artists removed from album
+  """
   removed: [String!]!
 }
 
@@ -1181,11 +1451,17 @@ type AppliedArtistChanges {
 Applied track changes summary.
 """
 type AppliedTrackChanges {
-  """Number of tracks added"""
+  """
+  Number of tracks added
+  """
   added: Int!
-  """Number of tracks modified"""
+  """
+  Number of tracks modified
+  """
   modified: Int!
-  """Number of tracks removed"""
+  """
+  Number of tracks removed
+  """
   removed: Int!
 }
 
@@ -1193,19 +1469,33 @@ type AppliedTrackChanges {
 Summary of changes that were applied to the album.
 """
 type AppliedChanges {
-  """List of metadata field names that were updated"""
+  """
+  List of metadata field names that were updated
+  """
   metadata: [String!]!
-  """Artist changes applied"""
+  """
+  Artist changes applied
+  """
   artists: AppliedArtistChanges!
-  """Track changes applied"""
+  """
+  Track changes applied
+  """
   tracks: AppliedTrackChanges!
-  """List of external ID field names that were updated"""
+  """
+  List of external ID field names that were updated
+  """
   externalIds: [String!]!
-  """Whether cover art was changed"""
+  """
+  Whether cover art was changed
+  """
   coverArt: Boolean!
-  """Data quality before correction"""
+  """
+  Data quality before correction
+  """
   dataQualityBefore: DataQuality!
-  """Data quality after correction"""
+  """
+  Data quality after correction
+  """
   dataQualityAfter: DataQuality!
 }
 
@@ -1214,9 +1504,13 @@ Successful correction apply result.
 """
 type CorrectionApplySuccess {
   success: Boolean!
-  """Updated album record"""
+  """
+  Updated album record
+  """
   album: Album!
-  """Summary of changes applied"""
+  """
+  Summary of changes applied
+  """
   changes: AppliedChanges!
 }
 
@@ -1225,11 +1519,17 @@ Failed correction apply result.
 """
 type CorrectionApplyError {
   success: Boolean!
-  """Error classification code"""
+  """
+  Error classification code
+  """
   code: ApplyErrorCode!
-  """Human-readable error message"""
+  """
+  Human-readable error message
+  """
   message: String!
-  """Additional context for debugging (as JSON)"""
+  """
+  Additional context for debugging (as JSON)
+  """
   context: JSON
 }
 
@@ -1256,21 +1556,37 @@ type CorrectionApplyResult {
 Input for correction search operation.
 """
 input CorrectionSearchInput {
-  """Album ID to search corrections for"""
+  """
+  Album ID to search corrections for
+  """
   albumId: UUID!
-  """Override album title for search"""
+  """
+  Override album title for search
+  """
   albumTitle: String
-  """Override artist name for search"""
+  """
+  Override artist name for search
+  """
   artistName: String
-  """Optional year filter"""
+  """
+  Optional year filter
+  """
   yearFilter: Int
-  """Maximum results to return (default 10)"""
+  """
+  Maximum results to return (default 10)
+  """
   limit: Int = 10
-  """Offset for pagination"""
+  """
+  Offset for pagination
+  """
   offset: Int = 0
-  """Scoring strategy to use"""
+  """
+  Scoring strategy to use
+  """
   strategy: ScoringStrategy = NORMALIZED
-  """Threshold below which results are flagged as low-confidence (0-1)"""
+  """
+  Threshold below which results are flagged as low-confidence (0-1)
+  """
   lowConfidenceThreshold: Float = 0.5
 }
 
@@ -1278,9 +1594,13 @@ input CorrectionSearchInput {
 Input for correction preview operation.
 """
 input CorrectionPreviewInput {
-  """Album ID to preview corrections for"""
+  """
+  Album ID to preview corrections for
+  """
   albumId: UUID!
-  """Selected release group MBID from search results"""
+  """
+  Selected release group MBID from search results
+  """
   releaseGroupMbid: String!
 }
 
@@ -1288,17 +1608,29 @@ input CorrectionPreviewInput {
 Selection state for metadata fields.
 """
 input MetadataSelectionsInput {
-  """Album title"""
+  """
+  Album title
+  """
   title: Boolean = true
-  """Release date"""
+  """
+  Release date
+  """
   releaseDate: Boolean = true
-  """Release type (Album, EP, Single, etc.)"""
+  """
+  Release type (Album, EP, Single, etc.)
+  """
   releaseType: Boolean = true
-  """Release country code"""
+  """
+  Release country code
+  """
   releaseCountry: Boolean = true
-  """Barcode / UPC"""
+  """
+  Barcode / UPC
+  """
   barcode: Boolean = true
-  """Record label"""
+  """
+  Record label
+  """
   label: Boolean = true
 }
 
@@ -1306,11 +1638,17 @@ input MetadataSelectionsInput {
 Selection state for external ID fields.
 """
 input ExternalIdSelectionsInput {
-  """MusicBrainz release ID"""
+  """
+  MusicBrainz release ID
+  """
   musicbrainzId: Boolean = true
-  """Spotify album ID"""
+  """
+  Spotify album ID
+  """
   spotifyId: Boolean = false
-  """Discogs release ID"""
+  """
+  Discogs release ID
+  """
   discogsId: Boolean = false
 }
 
@@ -1318,9 +1656,13 @@ input ExternalIdSelectionsInput {
 Key-value pair for Map-like selections.
 """
 input SelectionEntry {
-  """Unique key (artist MBID or track position like "1-3")"""
+  """
+  Unique key (artist MBID or track position like "1-3")
+  """
   key: String!
-  """Whether to apply this change"""
+  """
+  Whether to apply this change
+  """
   selected: Boolean!
 }
 
@@ -1328,15 +1670,25 @@ input SelectionEntry {
 Complete field selection state for correction application.
 """
 input FieldSelectionsInput {
-  """Core metadata field selections"""
+  """
+  Core metadata field selections
+  """
   metadata: MetadataSelectionsInput
-  """Per-artist selection state (key: artist MBID)"""
+  """
+  Per-artist selection state (key: artist MBID)
+  """
   artists: [SelectionEntry!]
-  """Per-track selection state (key: "disc-track", e.g., "1-3")"""
+  """
+  Per-track selection state (key: "disc-track", e.g., "1-3")
+  """
   tracks: [SelectionEntry!]
-  """External ID field selections"""
+  """
+  External ID field selections
+  """
   externalIds: ExternalIdSelectionsInput
-  """Cover art handling choice"""
+  """
+  Cover art handling choice
+  """
   coverArt: CoverArtChoice = USE_SOURCE
 }
 
@@ -1344,12 +1696,45 @@ input FieldSelectionsInput {
 Input for applying a correction.
 """
 input CorrectionApplyInput {
+  """
+  Album ID to apply correction to
+  """
+  albumId: UUID!
+  """
+  Selected release group MBID
+  """
+  releaseGroupMbid: String!
+  """
+  Field selections determining which changes to apply
+  """
+  selections: FieldSelectionsInput!
+  """
+  Expected album updatedAt timestamp for optimistic locking
+  """
+  expectedUpdatedAt: DateTime!
+}
+
+"""
+Input for applying a manual correction (no external MBID required).
+Admin directly edits album fields without selecting a MusicBrainz source.
+"""
+input ManualCorrectionApplyInput {
   """Album ID to apply correction to"""
   albumId: UUID!
-  """Selected release group MBID"""
-  releaseGroupMbid: String!
-  """Field selections determining which changes to apply"""
-  selections: FieldSelectionsInput!
+  """Title to set (required)"""
+  title: String!
+  """Artist names to set"""
+  artists: [String!]!
+  """Release date (YYYY, YYYY-MM, or YYYY-MM-DD format)"""
+  releaseDate: String
+  """Release type (Album, EP, Single, etc.)"""
+  releaseType: String
+  """MusicBrainz release group UUID"""
+  musicbrainzId: String
+  """Spotify album ID"""
+  spotifyId: String
+  """Discogs master/release ID"""
+  discogsId: String
   """Expected album updatedAt timestamp for optimistic locking"""
   expectedUpdatedAt: DateTime!
 }
@@ -1921,9 +2306,13 @@ type Query {
   ): EnrichmentStats!
 
   # Correction System queries (Admin)
-  """Search MusicBrainz for correction candidates for an album"""
+  """
+  Search MusicBrainz for correction candidates for an album
+  """
   correctionSearch(input: CorrectionSearchInput!): CorrectionSearchResponse!
-  """Generate a preview of changes between album and selected MusicBrainz release"""
+  """
+  Generate a preview of changes between album and selected MusicBrainz release
+  """
   correctionPreview(input: CorrectionPreviewInput!): CorrectionPreview!
 }
 
@@ -2042,6 +2431,11 @@ type Mutation {
   previewAlbumEnrichment(id: UUID!): PreviewEnrichmentResult!
   previewArtistEnrichment(id: UUID!): PreviewEnrichmentResult!
 
+
+  """Apply manual corrections to an album (no external source)"""
+  manualCorrectionApply(
+    input: ManualCorrectionApplyInput!
+  ): CorrectionApplyResult!
   batchEnrichment(
     ids: [UUID!]!
     type: EnrichmentType!
@@ -2061,7 +2455,9 @@ type Mutation {
   deleteAlbum(id: UUID!): DeleteAlbumPayload!
 
   # Correction System mutations (Admin)
-  """Apply selected corrections from a preview to an album"""
+  """
+  Apply selected corrections from a preview to an album
+  """
   correctionApply(input: CorrectionApplyInput!): CorrectionApplyResult!
 }
 

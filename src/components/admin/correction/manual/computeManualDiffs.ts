@@ -6,6 +6,7 @@ import type {
   ChangeType,
   ArtistCreditDiff,
 } from '@/lib/correction/preview/types';
+import type { ScoredSearchResult } from '@/lib/correction/scoring/types';
 import type { ManualEditFieldState } from './types';
 import type { CurrentDataViewAlbum } from '../CurrentDataView';
 
@@ -129,59 +130,102 @@ export function computeManualPreview(
 
   const artistDiff: ArtistCreditDiff = {
     changeType: artistsChanged ? 'MODIFIED' : 'UNCHANGED',
-    current: currentArtists.map(name => ({ name, joinPhrase: ', ' })),
-    source: editedState.artists.map(name => ({ name, joinPhrase: ', ' })),
+    current: currentArtists.map(name => ({ 
+      mbid: '',  // Manual edits don't have MBIDs yet
+      name,
+    })),
+    source: editedState.artists.map(name => ({ 
+      mbid: '',  // Manual edits don't have MBIDs
+      name,
+    })),
+    currentDisplay: currentArtists.join(', '),
+    sourceDisplay: editedState.artists.join(', '),
   };
 
   // 6. Construct sourceResult (synthetic for manual edits)
-  const sourceResult = {
-    id: 'manual-edit',
-    releaseGroupMbid: null,
+  // Manual edits don't have full scoring data - create minimal valid structure
+  const sourceResult: ScoredSearchResult = {
+    releaseGroupMbid: 'manual-edit',  // Required by interface
     title: editedState.title,
-    artistCredits: editedState.artists.map(name => ({ name, joinPhrase: ', ' })),
-    firstReleaseDate: editedState.releaseDate,
-    primaryType: editedState.releaseType,
+    disambiguation: undefined,
+    artistCredits: editedState.artists.map(name => ({ 
+      mbid: '',  // No MBID for manual artist entry
+      name,
+    })),
+    primaryArtistName: editedState.artists[0] || 'Unknown',
+    firstReleaseDate: editedState.releaseDate || undefined,
+    primaryType: editedState.releaseType || undefined,
     secondaryTypes: [],
-    score: 100,
-    rawScore: 100,
-    tier: 'high' as const,
+    mbScore: 100,
     coverArtUrl: album.coverArtUrl,
+    source: 'musicbrainz',  // Required by interface
+    // Required scoring fields for ScoredSearchResult
+    normalizedScore: 1.0,
+    displayScore: 100,
+    breakdown: {
+      titleScore: 100,
+      artistScore: 100,
+      yearScore: 100,
+      totalScore: 100,
+      mbScore: 100,
+    },
+    isLowConfidence: false,
+    scoringStrategy: 'weighted' as const,
   };
 
   // 7. Calculate summary
   const changedFields = fieldDiffs.length + (artistsChanged ? 1 : 0);
 
+  // Cast album to Album type with required fields
+  const albumWithDefaults = {
+    ...album,
+    id: album.id,
+    title: album.title,
+    releaseDate: album.releaseDate ? new Date(album.releaseDate) : null,
+    releaseType: album.releaseType,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    userId: '',
+    source: "USER_SUBMITTED" as const,
+    dataQuality: album.dataQuality ?? 'LOW' as const,
+    enrichmentStatus: 'PENDING' as const,
+    primaryType: album.releaseType,
+    secondaryTypes: [],
+    country: null,
+    disambiguation: undefined,
+    packaging: null,
+    status: null,
+    catalogNumber: null,
+    musicbrainzId: album.musicbrainzId ? album.musicbrainzId : null,
+    trackCount: album.tracks.length,
+    durationMs: null,
+    lastEnriched: null,
+    releaseStatus: null,
+    releaseCountry: null,
+    genres: [],
+    spotifyUrl: null,
+    discogsUrl: null,
+    appleMusicUrl: null,
+    sourceUrl: null,
+    submittedBy: null,
+    metadata: null,
+    tracks: album.tracks,
+  };
+
   return {
-    currentAlbum: {
-      ...album,
-      // Convert CurrentDataViewAlbum to Album type (add missing fields)
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      userId: '',
-      source: 'MANUAL',
-      dataQuality: album.dataQuality ?? 'LOW',
-      enrichmentStatus: 'PENDING',
-      primaryType: album.releaseType,
-      secondaryTypes: [],
-      country: null,
-      disambiguation: null,
-      packaging: null,
-      status: null,
-      catalogNumber: null,
-      tracks: album.tracks,
-    },
+    currentAlbum: albumWithDefaults as any,
     sourceResult,
     mbReleaseData: null, // Manual edits don't have MB data
     fieldDiffs,
     artistDiff,
     trackDiffs: [], // Manual edit doesn't change tracks in v1
     trackSummary: {
-      currentCount: album.tracks.length,
-      sourceCount: album.tracks.length,
-      matchedCount: album.tracks.length,
-      addedCount: 0,
-      removedCount: 0,
-      modifiedCount: 0,
+      totalCurrent: album.tracks.length,
+      totalSource: album.tracks.length,
+      matching: album.tracks.length,
+      modified: 0,
+      added: 0,
+      removed: 0,
     },
     coverArt: {
       currentUrl: album.coverArtUrl,

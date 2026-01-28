@@ -29,10 +29,7 @@ import { isAdmin } from '@/lib/permissions';
 // Correction system imports
 import { getCorrectionSearchService } from '@/lib/correction/search-service';
 import { getCorrectionPreviewService } from '@/lib/correction/preview';
-import {
-  applyCorrectionService,
-  StaleDataError,
-} from '@/lib/correction/apply';
+import { applyCorrectionService, StaleDataError } from '@/lib/correction/apply';
 import type {
   FieldSelections,
   MetadataSelections,
@@ -45,7 +42,6 @@ import type {
 function asResolverResult<T>(data: any): T {
   return data as T;
 }
-
 
 // ============================================================================
 // Correction System Helper Functions
@@ -2810,7 +2806,8 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      const { albumId, releaseGroupMbid, selections, expectedUpdatedAt } = input;
+      const { albumId, releaseGroupMbid, selections, expectedUpdatedAt } =
+        input;
 
       // Get album with tracks for preview generation
       const album = await prisma.album.findUnique({
@@ -2844,7 +2841,7 @@ export const mutationResolvers: MutationResolvers = {
 
       // Find the matching release group result
       const groupResult = searchResponse.results.find(
-        (g) => g.releaseGroupMbid === releaseGroupMbid
+        g => g.releaseGroupMbid === releaseGroupMbid
       );
 
       if (!groupResult) {
@@ -2898,7 +2895,10 @@ export const mutationResolvers: MutationResolvers = {
         };
       } else {
         // Map error codes
-        const errorCode = result.error?.code === 'STALE_DATA' ? 'STALE_DATA' : result.error?.code;
+        const errorCode =
+          result.error?.code === 'STALE_DATA'
+            ? 'STALE_DATA'
+            : result.error?.code;
         return {
           success: false,
           code: errorCode,
@@ -2917,7 +2917,197 @@ export const mutationResolvers: MutationResolvers = {
       if (error instanceof GraphQLError) throw error;
       console.error('Error in correctionApply:', error);
       throw new GraphQLError(
-        'Correction apply failed: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        'Correction apply failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+        { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
+      );
+    }
+  },
+
+  manualCorrectionApply: async (_, { input }, { user, prisma }) => {
+    // Authentication check
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Authorization check - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      // Fetch album with current artists for optimistic lock check
+      const album = await prisma.album.findUnique({
+        where: { id: input.albumId },
+        include: {
+          artists: {
+            include: { artist: true },
+            orderBy: { position: 'asc' },
+          },
+        },
+      });
+
+      if (!album) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Album not found',
+          },
+        };
+      }
+
+      // Optimistic lock check
+      if (album.updatedAt.toISOString() !== input.expectedUpdatedAt) {
+        return {
+          success: false,
+          error: {
+            code: 'STALE_DATA',
+            message: 'Album was modified by another user. Please refresh and try again.',
+          },
+        };
+      }
+
+      // Parse release date if provided (YYYY, YYYY-MM, or YYYY-MM-DD)
+      let releaseDate: Date | null = null;
+      if (input.releaseDate) {
+        try {
+          // For Date field, we need to parse the partial date string
+          // Database stores it as DATE, so we need a Date object
+          const dateParts = input.releaseDate.split('-');
+          if (dateParts.length === 1) {
+            // YYYY -> January 1st of that year
+            releaseDate = new Date(`${dateParts[0]}-01-01`);
+          } else if (dateParts.length === 2) {
+            // YYYY-MM -> 1st of that month
+            releaseDate = new Date(`${dateParts[0]}-${dateParts[1]}-01`);
+          } else {
+            // YYYY-MM-DD -> exact date
+            releaseDate = new Date(input.releaseDate);
+          }
+        } catch (err) {
+          return {
+            success: false,
+            error: {
+              code: 'INVALID_INPUT',
+              message: `Invalid release date format: ${input.releaseDate}`,
+            },
+          };
+        }
+      }
+
+      // Use transaction to ensure atomicity
+      const updated = await prisma.$transaction(async (tx) => {
+        // 1. Update album basic fields
+        const updatedAlbum = await tx.album.update({
+          where: { id: input.albumId },
+          data: {
+            title: input.title,
+            releaseDate,
+            releaseType: input.releaseType,
+            musicbrainzId: input.musicbrainzId,
+            spotifyId: input.spotifyId,
+            discogsId: input.discogsId,
+            dataQuality: 'HIGH', // Manual admin corrections are HIGH quality
+          },
+        });
+
+        // 2. Update artists via AlbumArtist join table
+        // Pattern: delete all existing associations, then create new ones
+
+        // Delete all existing artist associations for this album
+        await tx.albumArtist.deleteMany({
+          where: { albumId: input.albumId },
+        });
+
+        // Upsert each artist and create association
+        for (let i = 0; i < input.artists.length; i++) {
+          const artistName = input.artists[i];
+
+          // Find existing artist by name, or create new one
+          // Use findFirst since name is not unique - prefer existing artist
+          let artist = await tx.artist.findFirst({
+            where: { name: artistName },
+          });
+
+          if (!artist) {
+            // Create new artist if not found
+            artist = await tx.artist.create({
+              data: {
+                name: artistName,
+                source: 'MANUAL',
+                dataQuality: 'LOW', // Manual entry without external ID
+                enrichmentStatus: 'PENDING',
+              },
+            });
+          }
+
+          // Create album-artist association
+          await tx.albumArtist.create({
+            data: {
+              albumId: input.albumId,
+              artistId: artist.id,
+              role: 'primary',
+              position: i,
+            },
+          });
+        }
+
+        // Return album with updated artists
+        return tx.album.findUnique({
+          where: { id: input.albumId },
+          include: {
+            artists: {
+              include: { artist: true },
+              orderBy: { position: 'asc' },
+            },
+          },
+        });
+      });
+
+      // Log enrichment with source: 'manual_correction'
+      await prisma.enrichmentLog.create({
+        data: {
+          entityType: 'ALBUM',
+          entityId: input.albumId,
+          operation: 'manual_correction',
+          sources: ['manual'],
+          status: 'SUCCESS',
+          fieldsEnriched: [
+            'title',
+            'artists',
+            input.releaseDate ? 'releaseDate' : null,
+            input.releaseType ? 'releaseType' : null,
+            input.musicbrainzId ? 'musicbrainzId' : null,
+            input.spotifyId ? 'spotifyId' : null,
+            input.discogsId ? 'discogsId' : null,
+          ].filter((f): f is string => f !== null),
+          dataQualityBefore: album.dataQuality,
+          dataQualityAfter: 'HIGH',
+          retryCount: 0,
+          apiCallCount: 0,
+          userId: user.id,
+          triggeredBy: 'admin_manual_edit',
+        },
+      });
+
+      return {
+        success: true,
+        album: {
+          ...updated,
+          artists: updated?.artists.map(aa => aa.artist) ?? [],
+        },
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error in manualCorrectionApply:', error);
+      throw new GraphQLError(
+        'Manual correction failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
         { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
       );
     }
