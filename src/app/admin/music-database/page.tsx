@@ -108,6 +108,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { CorrectionModal } from '@/components/admin/correction/CorrectionModal';
+import { ArtistCorrectionModal } from '@/components/admin/correction/artist/ArtistCorrectionModal';
 import { EnrichmentLogTable } from '@/components/admin/EnrichmentLogTable';
 import { EnrichmentPreviewResults } from '@/components/admin/EnrichmentPreviewResults';
 
@@ -225,7 +226,11 @@ export default function MusicDatabasePage() {
   >(new Map());
 
   // Correction modal state
-  const [correctionAlbum, setCorrectionAlbum] = useState<AlbumSearchResult | null>(null);
+  const [correctionAlbum, setCorrectionAlbum] =
+    useState<AlbumSearchResult | null>(null);
+
+  // Artist correction modal state
+  const [correctionArtist, setCorrectionArtist] = useState<ArtistSearchResult | null>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
@@ -1856,87 +1861,93 @@ export default function MusicDatabasePage() {
                               </Tooltip>
                             </TooltipProvider>
                             {/* Enrich dropdown */}
-                          {enrichingItems.has(album.id) ? (
-                            <Button
-                              size='sm'
-                              variant='outline'
-                              disabled
-                              className='text-white border-zinc-700 disabled:opacity-70'
-                            >
-                              <Loader2 className='h-3 w-3 mr-1 animate-spin' />
-                              Enriching...
-                            </Button>
-                          ) : (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  size='sm'
-                                  variant='outline'
-                                  disabled={
-                                    album.enrichmentStatus === 'IN_PROGRESS'
-                                  }
-                                  className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
-                                >
-                                  <RefreshCcw className='h-3 w-3 mr-1' />
-                                  Enrich
-                                  <ChevronDown className='h-3 w-3 ml-1' />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent className='bg-zinc-800 border-zinc-700'>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleEnrichItem(album.id, 'album')
-                                  }
-                                  disabled={!album.needsEnrichment}
-                                  className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  <RefreshCcw className='h-3 w-3 mr-2' />
-                                  Enrich
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleEnrichItem(
-                                      album.id,
-                                      'album',
-                                      EnrichmentPriority.High,
-                                      true
-                                    )
-                                  }
-                                  className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  <Zap className='h-3 w-3 mr-2' />
-                                  Force Re-Enrich
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    // Expand the row if not already expanded
-                                    if (!expandedRows.has(album.id)) {
-                                      toggleExpanded(album.id);
+                            {enrichingItems.has(album.id) ? (
+                              <Button
+                                size='sm'
+                                variant='outline'
+                                disabled
+                                className='text-white border-zinc-700 disabled:opacity-70'
+                              >
+                                <Loader2 className='h-3 w-3 mr-1 animate-spin' />
+                                Enriching...
+                              </Button>
+                            ) : (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    size='sm'
+                                    variant='outline'
+                                    disabled={
+                                      album.enrichmentStatus === 'IN_PROGRESS'
                                     }
-                                    handlePreviewEnrichment(album.id, 'album');
-                                  }}
-                                  disabled={previewingItems.has(album.id)}
-                                  className='text-purple-400 hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  {previewingItems.has(album.id) ? (
-                                    <Loader2 className='h-3 w-3 mr-2 animate-spin' />
-                                  ) : (
-                                    <Eye className='h-3 w-3 mr-2' />
-                                  )}
-                                  Preview Enrichment
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    window.open(`/albums/${album.id}`, '_blank')
-                                  }
-                                  className='text-blue-400 hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  <ExternalLink className='h-3 w-3 mr-2' />
-                                  View Album Page
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                                    className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
+                                  >
+                                    <RefreshCcw className='h-3 w-3 mr-1' />
+                                    Enrich
+                                    <ChevronDown className='h-3 w-3 ml-1' />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className='bg-zinc-800 border-zinc-700'>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleEnrichItem(album.id, 'album')
+                                    }
+                                    disabled={!album.needsEnrichment}
+                                    className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    <RefreshCcw className='h-3 w-3 mr-2' />
+                                    Enrich
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleEnrichItem(
+                                        album.id,
+                                        'album',
+                                        EnrichmentPriority.High,
+                                        true
+                                      )
+                                    }
+                                    className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    <Zap className='h-3 w-3 mr-2' />
+                                    Force Re-Enrich
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      // Expand the row if not already expanded
+                                      if (!expandedRows.has(album.id)) {
+                                        toggleExpanded(album.id);
+                                      }
+                                      handlePreviewEnrichment(
+                                        album.id,
+                                        'album'
+                                      );
+                                    }}
+                                    disabled={previewingItems.has(album.id)}
+                                    className='text-purple-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    {previewingItems.has(album.id) ? (
+                                      <Loader2 className='h-3 w-3 mr-2 animate-spin' />
+                                    ) : (
+                                      <Eye className='h-3 w-3 mr-2' />
+                                    )}
+                                    Preview Enrichment
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      window.open(
+                                        `/albums/${album.id}`,
+                                        '_blank'
+                                      )
+                                    }
+                                    className='text-blue-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    <ExternalLink className='h-3 w-3 mr-2' />
+                                    View Album Page
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -2071,6 +2082,25 @@ export default function MusicDatabasePage() {
                           </div>
                         </TableCell>
                         <TableCell onClick={e => e.stopPropagation()}>
+                          <div className='flex items-center gap-1'>
+                            {/* Fix Data button */}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size='icon'
+                                  variant='ghost'
+                                  className={
+                                    artist.dataQuality === 'LOW'
+                                      ? 'text-dark-pastel-red hover:text-dark-pastel-red hover:bg-dark-pastel-red/10'
+                                      : 'text-zinc-400 hover:text-zinc-200'
+                                  }
+                                  onClick={() => setCorrectionArtist(artist)}
+                                >
+                                  <Wrench className='h-4 w-4' />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Fix artist data</TooltipContent>
+                            </Tooltip>
                           {enrichingItems.has(artist.id) ? (
                             <Button
                               size='sm'
@@ -2158,6 +2188,7 @@ export default function MusicDatabasePage() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
+                          </div>
                         </TableCell>
                       </TableRow>
                       {expandedRows.has(artist.id) && (
@@ -2482,6 +2513,16 @@ export default function MusicDatabasePage() {
         albumId={correctionAlbum?.id ?? null}
         open={correctionAlbum !== null}
         onClose={() => setCorrectionAlbum(null)}
+      />
+
+      {/* Artist Correction Modal */}
+      <ArtistCorrectionModal
+        artist={correctionArtist}
+        onClose={() => setCorrectionArtist(null)}
+        onSuccess={() => {
+          refetchArtists();
+          setCorrectionArtist(null);
+        }}
       />
     </div>
   );
