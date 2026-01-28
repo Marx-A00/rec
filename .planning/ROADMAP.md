@@ -37,7 +37,7 @@ This roadmap delivers an admin data correction feature that lets administrators 
 2. MBID redirects are detected and handled gracefully
 3. Rate limiting is respected (1 request/second to MusicBrainz)
 4. Queue position is observable for debugging
-   **Plans**: 3 plans
+   **Plans**: 4 plans
 
 Plans:
 
@@ -57,7 +57,7 @@ Plans:
 3. Results include fuzzy match confidence scores
 4. Search can be pre-populated with current album data
 5. Results are tagged with source indicator (MusicBrainz)
-   **Plans**: 3 plans
+   **Plans**: 4 plans
 
 Plans:
 
@@ -77,7 +77,7 @@ Plans:
 3. Track listing from source is included in preview
 4. External ID changes are clearly indicated
 5. Preview data is sufficient for UI rendering without additional API calls
-   **Plans**: 3 plans
+   **Plans**: 4 plans
 
 Plans:
 
@@ -97,7 +97,7 @@ Plans:
 3. Before-state is captured in enrichment_logs before any changes
 4. Correction log includes admin user ID and timestamp
 5. Failed transactions leave no partial changes (atomic rollback)
-   **Plans**: 3 plans
+   **Plans**: 4 plans
 
 Plans:
 
@@ -116,7 +116,7 @@ Plans:
 2. Generated hooks are available for React components
 3. Resolvers delegate to service layer (thin resolver pattern)
 4. Admin role check is enforced on all correction operations
-   **Plans**: 3 plans
+   **Plans**: 4 plans
 
 Plans:
 
@@ -136,7 +136,7 @@ Plans:
 3. Modal displays current album data prominently (title, artist, date, tracks, cover)
 4. Modal shows which external IDs are present vs. missing
 5. Modal can be closed without making changes (escape, X button)
-   **Plans**: 3 plans
+   **Plans**: 4 plans
 
 Plans:
 
@@ -157,7 +157,7 @@ Plans:
 4. Results display with source badge [MB]
 5. Each result shows: title, artist, date, track count, thumbnail
 6. Match confidence scores are visible
-   **Plans**: 3 plans
+   **Plans**: 4 plans
 
 Plans:
 
@@ -178,7 +178,7 @@ Plans:
 4. Track listing from MusicBrainz visible
 5. External ID changes clearly shown
 6. Admin can collapse preview and view other results
-   **Plans**: 3 plans
+   **Plans**: 4 plans
 
 Plans:
 
@@ -199,7 +199,7 @@ Plans:
 4. Success message with toast shows applied changes summary
 5. Modal auto-closes after brief "Applied!" state
 6. Album data quality indicator updates appropriately
-   **Plans**: 3 plans
+   **Plans**: 4 plans
 
 Plans:
 
@@ -220,7 +220,7 @@ Plans:
 4. External ID format validation (UUID for MBID, numeric for Discogs)
 5. Preview of changes before applying
 6. Changes logged with "manual_correction" source
-   **Plans**: 3 plans
+   **Plans**: 4 plans
 
 Plans:
 
@@ -241,14 +241,14 @@ Plans:
 3. Artist search on MusicBrainz returns artists
 4. Preview shows: name, disambiguation, country, type
 5. Corrections logged with admin user ID
-   **Plans**: 3 plans
+   **Plans**: 4 plans
 
 Plans:
 
-- [ ] 11-01: Artist search service extension
-- [ ] 11-02: Artist preview service extension
-- [ ] 11-03: Artist correction modal component
-- [ ] 11-04: Artist apply flow with logging
+- [ ] 11-01-PLAN.md — Artist search service with MusicBrainz integration
+- [ ] 11-02-PLAN.md — Artist preview service with field diff engine
+- [ ] 11-03-PLAN.md — Artist apply service and GraphQL schema extension
+- [ ] 11-04-PLAN.md — Artist correction modal UI and entry point
 
 ### Phase 12: Polish & Recovery
 
@@ -262,7 +262,7 @@ Plans:
 3. Re-enrichment trigger option works after correction
 4. Keyboard shortcuts for common actions (close modal, submit)
 5. Mobile-friendly comparison layout (responsive)
-   **Plans**: 3 plans
+   **Plans**: 4 plans
 
 Plans:
 
