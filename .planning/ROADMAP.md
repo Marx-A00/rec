@@ -20,7 +20,7 @@ This roadmap delivers an admin data correction feature that lets administrators 
 - [x] **Phase 7: Search UI** - Search interface with results and match scores
 - [x] **Phase 8: Preview UI** - Side-by-side comparison with field highlighting
 - [x] **Phase 9: Apply UI** - Field selection, confirmation, and success feedback
-- [ ] **Phase 10: Manual Edit** - Direct field editing without external search
+- [x] **Phase 10: Manual Edit** - Direct field editing without external search
 - [ ] **Phase 11: Artist Correction** - Same workflow adapted for artists
 - [ ] **Phase 12: Polish & Recovery** - Error handling, re-enrichment triggers, and edge cases
 
@@ -224,9 +224,9 @@ Plans:
 
 Plans:
 
-- [ ] 10-01-PLAN.md — Validation schemas, types, and modal state extension
-- [ ] 10-02-PLAN.md — Input components (EditableField, ArtistChips, ExternalIdInput)
-- [ ] 10-03-PLAN.md — ManualEditView container and modal integration
+- [x] 10-01-PLAN.md — Validation schemas, types, and modal state extension
+- [x] 10-02-PLAN.md — Input components (EditableField, ArtistChips, ExternalIdInput)
+- [x] 10-03-PLAN.md — ManualEditView container and modal integration
 
 
 ### Phase 11: Artist Correction
@@ -288,7 +288,7 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 7. Search UI                   | 3/3            | Complete    | 2026-01-26 |
 | 8. Preview UI                  | 3/3            | Complete    | 2026-01-26 |
 | 9. Apply UI                    | 3/3            | Complete    | 2026-01-26 |
-| 10. Manual Edit                | 0/3            | Not started | -          |
+| 10. Manual Edit                | 3/3            | Complete    | 2026-01-27 |
 | 11. Artist Correction          | 0/4            | Not started | -          |
 | 12. Polish & Recovery          | 0/5            | Not started | -          |
 
