@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Phase 10 - Manual Edit (Next)
+**Current focus:** Phase 10 - Manual Edit (In Progress)
 
 ## Current Position
 
-Phase: 9 of 12 (Apply UI)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-01-26 — Completed 09-03-PLAN.md
+Phase: 10 of 12 (Manual Edit)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-01-28 — Completed 10-01-PLAN.md
 
-Progress: [█████████████████░] 79%
+Progress: [█████████████████░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 27
-- Average duration: 3.6min
-- Total execution time: 110.7min
+- Total plans completed: 28
+- Average duration: 3.5min
+- Total execution time: 113.7min
 
 **By Phase:**
 
@@ -35,11 +35,12 @@ Progress: [█████████████████░] 79%
 - Phase 07: 3 plans, 7.6min total, 2.5min avg
 - Phase 08: 3 plans, 10.8min total, 3.6min avg (complete)
 - Phase 09: 3 plans, 17min total, 5.7min avg (complete)
+- Phase 10: 1 plan, 3min total, 3min avg (in progress)
 
 **Recent Trend:**
 
-- Last 5 plans: 08-03 (5.6min), 09-01 (6min), 09-02 (4min), 09-03 (7min)
-- Trend: Apply UI complete, ready for Manual Edit UI (Phase 10)
+- Last 5 plans: 09-01 (6min), 09-02 (4min), 09-03 (7min), 10-01 (3min)
+- Trend: Manual edit foundation complete, ready for form UI (Plan 10-02)
 
 *Updated after each plan completion*
 
@@ -110,6 +111,10 @@ Recent decisions affecting current work:
 - [09-03]: Toast shows field count + track count + data quality change
 - [09-03]: 1.5s delay before auto-close after Applied! state
 - [09-03]: expectedUpdatedAt from previewData.currentAlbum.updatedAt for optimistic locking
+- [10-01]: releaseTypeSchema accepts any string (VARCHAR 50) for database flexibility
+- [10-01]: RELEASE_TYPES constant provides common options for dropdown UI
+- [10-01]: Modal state resets to step 0 when switching between search and manual modes
+- [10-01]: StepIndicator uses mode prop to control labels (4 steps for search, 3 for manual)
 
 ### Pending Todos
 
@@ -122,13 +127,14 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-26
-Stopped at: Completed 09-03-PLAN.md (Phase 9 complete)
+Last session: 2026-01-28
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Phase 9 (Apply UI) is complete. Ready for Phase 10 (Manual Edit UI):
-- Manual field editing for cases where MusicBrainz has no good match
-- Fallback workflow when admin clicks "None of these are right, I'll edit manually"
-- Direct field editing with validation
+Phase 10 (Manual Edit) in progress. Plan 10-01 complete, ready for Plan 10-02:
+- Manual edit form UI with field inputs (title, artists, dates, external IDs)
+- Real-time validation feedback using Zod schemas
+- Unsaved changes warning when navigating away
+- Entry point button in SearchView ("None of these are right, I'll edit manually")
