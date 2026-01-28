@@ -2314,6 +2314,14 @@ type Query {
   Generate a preview of changes between album and selected MusicBrainz release
   """
   correctionPreview(input: CorrectionPreviewInput!): CorrectionPreview!
+  """
+  Search MusicBrainz for artist correction candidates
+  """
+  artistCorrectionSearch(query: String!, limit: Int): ArtistCorrectionSearchResponse!
+  """
+  Generate a preview of changes between artist and selected MusicBrainz artist
+  """
+  artistCorrectionPreview(artistId: UUID!, artistMbid: UUID!): ArtistCorrectionPreview!
 }
 
 # =============================================
@@ -2459,6 +2467,10 @@ type Mutation {
   Apply selected corrections from a preview to an album
   """
   correctionApply(input: CorrectionApplyInput!): CorrectionApplyResult!
+  """
+  Apply selected corrections from a preview to an artist
+  """
+  artistCorrectionApply(input: ArtistCorrectionApplyInput!): ArtistCorrectionApplyResult!
 }
 
 type FollowUserPayload {
@@ -2573,4 +2585,188 @@ enum AlertType {
   RATE_LIMIT
   WORKER_FAILURE
   REDIS_CONNECTION
+}
+
+# =============================================
+# ARTIST CORRECTION TYPES
+# =============================================
+
+"""
+A top release for artist disambiguation.
+Helps identify the right artist when multiple share the same name.
+"""
+type ArtistTopRelease {
+  title: String!
+  year: String
+  type: String
+}
+
+"""
+Artist search result from MusicBrainz for correction.
+"""
+type ArtistCorrectionSearchResult {
+  """MusicBrainz artist ID"""
+  artistMbid: UUID!
+  """Artist name"""
+  name: String!
+  """Sort name (e.g., "Beatles, The")"""
+  sortName: String!
+  """Disambiguation comment (e.g., "British rock band")"""
+  disambiguation: String
+  """Artist type: Person, Group, Orchestra, Choir, Character, Other"""
+  type: String
+  """Country code (ISO 3166-1 alpha-2)"""
+  country: String
+  """Area name (city/region)"""
+  area: String
+  """Begin date (partial date string)"""
+  beginDate: String
+  """End date (partial date string)"""
+  endDate: String
+  """Whether the artist has ended"""
+  ended: Boolean
+  """Gender (only meaningful for Person type)"""
+  gender: String
+  """MusicBrainz search score (0-100)"""
+  mbScore: Int!
+  """Top releases for disambiguation"""
+  topReleases: [ArtistTopRelease!]
+}
+
+"""
+Response from artist correction search operation.
+"""
+type ArtistCorrectionSearchResponse {
+  """Search results"""
+  results: [ArtistCorrectionSearchResult!]!
+  """Whether more results are available"""
+  hasMore: Boolean!
+  """The query that was executed"""
+  query: String!
+}
+
+"""
+Diff for a single artist field.
+"""
+type ArtistFieldDiff {
+  """Field name"""
+  field: String!
+  """Change classification"""
+  changeType: ChangeType!
+  """Current value in database"""
+  current: String
+  """Value from MusicBrainz source"""
+  source: String
+}
+
+"""
+Summary statistics for artist field changes.
+"""
+type ArtistPreviewSummary {
+  """Total number of fields compared"""
+  totalFields: Int!
+  """Number of fields that changed"""
+  changedFields: Int!
+  """Number of fields added"""
+  addedFields: Int!
+  """Number of fields modified"""
+  modifiedFields: Int!
+}
+
+"""
+Complete preview of all changes between current artist and MusicBrainz source.
+"""
+type ArtistCorrectionPreview {
+  """Current artist data from database"""
+  currentArtist: Artist!
+  """Full MusicBrainz artist data"""
+  mbArtistData: JSON
+  """Field-by-field diffs"""
+  fieldDiffs: [ArtistFieldDiff!]!
+  """Number of albums by this artist"""
+  albumCount: Int!
+  """Summary statistics"""
+  summary: ArtistPreviewSummary!
+}
+
+"""
+Summary of changes applied to an artist.
+"""
+type ArtistAppliedChanges {
+  """List of metadata field names updated"""
+  metadata: [String!]!
+  """List of external ID field names updated"""
+  externalIds: [String!]!
+  """Number of albums affected"""
+  affectedAlbumCount: Int!
+  """Data quality before correction"""
+  dataQualityBefore: DataQuality!
+  """Data quality after correction"""
+  dataQualityAfter: DataQuality!
+}
+
+"""
+Result of artist correction apply operation.
+"""
+type ArtistCorrectionApplyResult {
+  success: Boolean!
+  """Updated artist (when success=true)"""
+  artist: Artist
+  """Summary of changes applied (when success=true)"""
+  changes: ArtistAppliedChanges
+  """Number of affected albums (when success=true)"""
+  affectedAlbumCount: Int
+  """Error code (when success=false)"""
+  code: ApplyErrorCode
+  """Error message (when success=false)"""
+  message: String
+}
+
+# =============================================
+# ARTIST CORRECTION INPUT TYPES
+# =============================================
+
+"""
+Artist metadata field selections.
+"""
+input ArtistMetadataSelectionsInput {
+  name: Boolean
+  disambiguation: Boolean
+  countryCode: Boolean
+  artistType: Boolean
+  area: Boolean
+  beginDate: Boolean
+  endDate: Boolean
+  gender: Boolean
+}
+
+"""
+Artist external ID field selections.
+"""
+input ArtistExternalIdSelectionsInput {
+  musicbrainzId: Boolean
+  ipi: Boolean
+  isni: Boolean
+}
+
+"""
+Complete field selections for artist correction.
+"""
+input ArtistFieldSelectionsInput {
+  metadata: ArtistMetadataSelectionsInput!
+  externalIds: ArtistExternalIdSelectionsInput!
+}
+
+"""
+Input for applying an artist correction.
+"""
+input ArtistCorrectionApplyInput {
+  """Artist ID to apply correction to"""
+  artistId: UUID!
+  """Selected MusicBrainz artist MBID"""
+  artistMbid: UUID!
+  """Field selections determining which changes to apply"""
+  selections: ArtistFieldSelectionsInput!
+  """Expected artist updatedAt timestamp for optimistic locking"""
+  expectedUpdatedAt: DateTime!
 }

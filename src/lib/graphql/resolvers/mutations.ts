@@ -3112,4 +3112,118 @@ export const mutationResolvers: MutationResolvers = {
       );
     }
   },
+
+  // ============================================================================
+  // Artist Correction System Mutations (Admin Only)
+  // ============================================================================
+
+  artistCorrectionApply: async (_, { input }, { user }) => {
+    // Authentication check
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Authorization check - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      // Import services
+      const { getArtistCorrectionPreviewService } = await import(
+        '@/lib/correction/artist/preview/preview-service'
+      );
+      const { getArtistCorrectionApplyService, StaleDataError } = await import(
+        '@/lib/correction/artist/apply'
+      );
+
+      // Generate preview first (same pattern as album correction)
+      const previewService = getArtistCorrectionPreviewService();
+      const preview = await previewService.generatePreview(
+        input.artistId,
+        input.artistMbid
+      );
+
+      // Apply correction
+      const applyService = getArtistCorrectionApplyService();
+      const result = await applyService.applyCorrection({
+        artistId: input.artistId,
+        preview,
+        selections: {
+          metadata: {
+            name: input.selections.metadata?.name ?? false,
+            disambiguation: input.selections.metadata?.disambiguation ?? false,
+            countryCode: input.selections.metadata?.countryCode ?? false,
+            artistType: input.selections.metadata?.artistType ?? false,
+            area: input.selections.metadata?.area ?? false,
+            beginDate: input.selections.metadata?.beginDate ?? false,
+            endDate: input.selections.metadata?.endDate ?? false,
+            gender: input.selections.metadata?.gender ?? false,
+          },
+          externalIds: {
+            musicbrainzId: input.selections.externalIds?.musicbrainzId ?? false,
+            ipi: input.selections.externalIds?.ipi ?? false,
+            isni: input.selections.externalIds?.isni ?? false,
+          },
+        },
+        expectedUpdatedAt: new Date(input.expectedUpdatedAt),
+        adminUserId: user.id,
+      });
+
+      if (result.success) {
+        return {
+          success: true,
+          artist: result.artist,
+          changes: result.changes,
+          affectedAlbumCount: result.affectedAlbumCount,
+          code: null,
+          message: null,
+        };
+      } else {
+        // Map error codes
+        const errorCode =
+          result.error.code === 'STALE_DATA'
+            ? 'STALE_DATA'
+            : result.error.code === 'ARTIST_NOT_FOUND'
+              ? 'ALBUM_NOT_FOUND' // Reuse existing error code enum
+              : 'TRANSACTION_FAILED';
+
+        return {
+          success: false,
+          artist: null,
+          changes: null,
+          affectedAlbumCount: null,
+          code: errorCode,
+          message: result.error.message,
+        };
+      }
+    } catch (error) {
+      // Handle StaleDataError separately
+      const { StaleDataError } = await import(
+        '@/lib/correction/artist/apply'
+      );
+      if (error instanceof StaleDataError) {
+        return {
+          success: false,
+          artist: null,
+          changes: null,
+          affectedAlbumCount: null,
+          code: 'STALE_DATA',
+          message: error.message,
+        };
+      }
+
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error in artistCorrectionApply:', error);
+      throw new GraphQLError(
+        'Artist correction apply failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+        { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
+      );
+    }
+  },
 };

@@ -339,6 +339,106 @@ export type ArtistAlbumInput = {
   role?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Summary of changes applied to an artist. */
+export type ArtistAppliedChanges = {
+  __typename?: 'ArtistAppliedChanges';
+  /** Number of albums affected */
+  affectedAlbumCount: Scalars['Int']['output'];
+  /** Data quality after correction */
+  dataQualityAfter: DataQuality;
+  /** Data quality before correction */
+  dataQualityBefore: DataQuality;
+  /** List of external ID field names updated */
+  externalIds: Array<Scalars['String']['output']>;
+  /** List of metadata field names updated */
+  metadata: Array<Scalars['String']['output']>;
+};
+
+/** Input for applying an artist correction. */
+export type ArtistCorrectionApplyInput = {
+  /** Artist ID to apply correction to */
+  artistId: Scalars['UUID']['input'];
+  /** Selected MusicBrainz artist MBID */
+  artistMbid: Scalars['UUID']['input'];
+  /** Expected artist updatedAt timestamp for optimistic locking */
+  expectedUpdatedAt: Scalars['DateTime']['input'];
+  /** Field selections determining which changes to apply */
+  selections: ArtistFieldSelectionsInput;
+};
+
+/** Result of artist correction apply operation. */
+export type ArtistCorrectionApplyResult = {
+  __typename?: 'ArtistCorrectionApplyResult';
+  /** Number of affected albums (when success=true) */
+  affectedAlbumCount?: Maybe<Scalars['Int']['output']>;
+  /** Updated artist (when success=true) */
+  artist?: Maybe<Artist>;
+  /** Summary of changes applied (when success=true) */
+  changes?: Maybe<ArtistAppliedChanges>;
+  /** Error code (when success=false) */
+  code?: Maybe<ApplyErrorCode>;
+  /** Error message (when success=false) */
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+/** Complete preview of all changes between current artist and MusicBrainz source. */
+export type ArtistCorrectionPreview = {
+  __typename?: 'ArtistCorrectionPreview';
+  /** Number of albums by this artist */
+  albumCount: Scalars['Int']['output'];
+  /** Current artist data from database */
+  currentArtist: Artist;
+  /** Field-by-field diffs */
+  fieldDiffs: Array<ArtistFieldDiff>;
+  /** Full MusicBrainz artist data */
+  mbArtistData?: Maybe<Scalars['JSON']['output']>;
+  /** Summary statistics */
+  summary: ArtistPreviewSummary;
+};
+
+/** Response from artist correction search operation. */
+export type ArtistCorrectionSearchResponse = {
+  __typename?: 'ArtistCorrectionSearchResponse';
+  /** Whether more results are available */
+  hasMore: Scalars['Boolean']['output'];
+  /** The query that was executed */
+  query: Scalars['String']['output'];
+  /** Search results */
+  results: Array<ArtistCorrectionSearchResult>;
+};
+
+/** Artist search result from MusicBrainz for correction. */
+export type ArtistCorrectionSearchResult = {
+  __typename?: 'ArtistCorrectionSearchResult';
+  /** Area name (city/region) */
+  area?: Maybe<Scalars['String']['output']>;
+  /** MusicBrainz artist ID */
+  artistMbid: Scalars['UUID']['output'];
+  /** Begin date (partial date string) */
+  beginDate?: Maybe<Scalars['String']['output']>;
+  /** Country code (ISO 3166-1 alpha-2) */
+  country?: Maybe<Scalars['String']['output']>;
+  /** Disambiguation comment (e.g., "British rock band") */
+  disambiguation?: Maybe<Scalars['String']['output']>;
+  /** End date (partial date string) */
+  endDate?: Maybe<Scalars['String']['output']>;
+  /** Whether the artist has ended */
+  ended?: Maybe<Scalars['Boolean']['output']>;
+  /** Gender (only meaningful for Person type) */
+  gender?: Maybe<Scalars['String']['output']>;
+  /** MusicBrainz search score (0-100) */
+  mbScore: Scalars['Int']['output'];
+  /** Artist name */
+  name: Scalars['String']['output'];
+  /** Sort name (e.g., "Beatles, The") */
+  sortName: Scalars['String']['output'];
+  /** Top releases for disambiguation */
+  topReleases?: Maybe<Array<ArtistTopRelease>>;
+  /** Artist type: Person, Group, Orchestra, Choir, Character, Other */
+  type?: Maybe<Scalars['String']['output']>;
+};
+
 export type ArtistCredit = {
   __typename?: 'ArtistCredit';
   artist: Artist;
@@ -363,11 +463,62 @@ export type ArtistCreditDiff = {
   sourceDisplay: Scalars['String']['output'];
 };
 
+/** Artist external ID field selections. */
+export type ArtistExternalIdSelectionsInput = {
+  ipi?: InputMaybe<Scalars['Boolean']['input']>;
+  isni?: InputMaybe<Scalars['Boolean']['input']>;
+  musicbrainzId?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Diff for a single artist field. */
+export type ArtistFieldDiff = {
+  __typename?: 'ArtistFieldDiff';
+  /** Change classification */
+  changeType: ChangeType;
+  /** Current value in database */
+  current?: Maybe<Scalars['String']['output']>;
+  /** Field name */
+  field: Scalars['String']['output'];
+  /** Value from MusicBrainz source */
+  source?: Maybe<Scalars['String']['output']>;
+};
+
+/** Complete field selections for artist correction. */
+export type ArtistFieldSelectionsInput = {
+  externalIds: ArtistExternalIdSelectionsInput;
+  metadata: ArtistMetadataSelectionsInput;
+};
+
 export type ArtistInput = {
   countryCode?: InputMaybe<Scalars['String']['input']>;
   imageUrl?: InputMaybe<Scalars['String']['input']>;
   musicbrainzId?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
+};
+
+/** Artist metadata field selections. */
+export type ArtistMetadataSelectionsInput = {
+  area?: InputMaybe<Scalars['Boolean']['input']>;
+  artistType?: InputMaybe<Scalars['Boolean']['input']>;
+  beginDate?: InputMaybe<Scalars['Boolean']['input']>;
+  countryCode?: InputMaybe<Scalars['Boolean']['input']>;
+  disambiguation?: InputMaybe<Scalars['Boolean']['input']>;
+  endDate?: InputMaybe<Scalars['Boolean']['input']>;
+  gender?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Summary statistics for artist field changes. */
+export type ArtistPreviewSummary = {
+  __typename?: 'ArtistPreviewSummary';
+  /** Number of fields added */
+  addedFields: Scalars['Int']['output'];
+  /** Number of fields that changed */
+  changedFields: Scalars['Int']['output'];
+  /** Number of fields modified */
+  modifiedFields: Scalars['Int']['output'];
+  /** Total number of fields compared */
+  totalFields: Scalars['Int']['output'];
 };
 
 export type ArtistRecommendation = {
@@ -395,6 +546,17 @@ export type ArtistRecommendationsConnection = {
   hasMore: Scalars['Boolean']['output'];
   recommendations: Array<ArtistRecommendation>;
   totalCount: Scalars['Int']['output'];
+};
+
+/**
+ * A top release for artist disambiguation.
+ * Helps identify the right artist when multiple share the same name.
+ */
+export type ArtistTopRelease = {
+  __typename?: 'ArtistTopRelease';
+  title: Scalars['String']['output'];
+  type?: Maybe<Scalars['String']['output']>;
+  year?: Maybe<Scalars['String']['output']>;
 };
 
 export type ArtistTrackInput = {
@@ -1086,6 +1248,8 @@ export type Mutation = {
   addArtist: Artist;
   addToListenLater: CollectionAlbum;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
+  /** Apply selected corrections from a preview to an artist */
+  artistCorrectionApply: ArtistCorrectionApplyResult;
   batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
   clearFailedJobs: Scalars['Boolean']['output'];
@@ -1157,6 +1321,10 @@ export type MutationAddToListenLaterArgs = {
 export type MutationAdminUpdateUserShowTourArgs = {
   showOnboardingTour: Scalars['Boolean']['input'];
   userId: Scalars['String']['input'];
+};
+
+export type MutationArtistCorrectionApplyArgs = {
+  input: ArtistCorrectionApplyInput;
 };
 
 export type MutationBatchEnrichmentArgs = {
@@ -1414,6 +1582,10 @@ export type Query = {
   albumsByJobId: Array<Album>;
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
+  /** Generate a preview of changes between artist and selected MusicBrainz artist */
+  artistCorrectionPreview: ArtistCorrectionPreview;
+  /** Search MusicBrainz for artist correction candidates */
+  artistCorrectionSearch: ArtistCorrectionSearchResponse;
   artistDiscography: CategorizedDiscography;
   artistRecommendations: ArtistRecommendationsConnection;
   collection?: Maybe<Collection>;
@@ -1493,6 +1665,16 @@ export type QueryArtistArgs = {
 
 export type QueryArtistByMusicBrainzIdArgs = {
   musicbrainzId: Scalars['UUID']['input'];
+};
+
+export type QueryArtistCorrectionPreviewArgs = {
+  artistId: Scalars['UUID']['input'];
+  artistMbid: Scalars['UUID']['input'];
+};
+
+export type QueryArtistCorrectionSearchArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
 };
 
 export type QueryArtistDiscographyArgs = {
@@ -2915,6 +3097,114 @@ export type GetArtistByMusicBrainzIdQuery = {
     lastEnriched?: Date | null;
     needsEnrichment: boolean;
   } | null;
+};
+
+export type SearchArtistCorrectionCandidatesQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type SearchArtistCorrectionCandidatesQuery = {
+  __typename?: 'Query';
+  artistCorrectionSearch: {
+    __typename?: 'ArtistCorrectionSearchResponse';
+    hasMore: boolean;
+    query: string;
+    results: Array<{
+      __typename?: 'ArtistCorrectionSearchResult';
+      artistMbid: string;
+      name: string;
+      sortName: string;
+      disambiguation?: string | null;
+      type?: string | null;
+      country?: string | null;
+      area?: string | null;
+      beginDate?: string | null;
+      endDate?: string | null;
+      ended?: boolean | null;
+      gender?: string | null;
+      mbScore: number;
+      topReleases?: Array<{
+        __typename?: 'ArtistTopRelease';
+        title: string;
+        year?: string | null;
+        type?: string | null;
+      }> | null;
+    }>;
+  };
+};
+
+export type GetArtistCorrectionPreviewQueryVariables = Exact<{
+  artistId: Scalars['UUID']['input'];
+  artistMbid: Scalars['UUID']['input'];
+}>;
+
+export type GetArtistCorrectionPreviewQuery = {
+  __typename?: 'Query';
+  artistCorrectionPreview: {
+    __typename?: 'ArtistCorrectionPreview';
+    mbArtistData?: any | null;
+    albumCount: number;
+    currentArtist: {
+      __typename?: 'Artist';
+      id: string;
+      name: string;
+      musicbrainzId?: string | null;
+      countryCode?: string | null;
+      formedYear?: number | null;
+      biography?: string | null;
+      dataQuality?: DataQuality | null;
+      updatedAt: Date;
+    };
+    fieldDiffs: Array<{
+      __typename?: 'ArtistFieldDiff';
+      field: string;
+      changeType: ChangeType;
+      current?: string | null;
+      source?: string | null;
+    }>;
+    summary: {
+      __typename?: 'ArtistPreviewSummary';
+      totalFields: number;
+      changedFields: number;
+      addedFields: number;
+      modifiedFields: number;
+    };
+  };
+};
+
+export type ApplyArtistCorrectionMutationVariables = Exact<{
+  input: ArtistCorrectionApplyInput;
+}>;
+
+export type ApplyArtistCorrectionMutation = {
+  __typename?: 'Mutation';
+  artistCorrectionApply: {
+    __typename?: 'ArtistCorrectionApplyResult';
+    success: boolean;
+    affectedAlbumCount?: number | null;
+    code?: ApplyErrorCode | null;
+    message?: string | null;
+    artist?: {
+      __typename?: 'Artist';
+      id: string;
+      name: string;
+      musicbrainzId?: string | null;
+      countryCode?: string | null;
+      formedYear?: number | null;
+      dataQuality?: DataQuality | null;
+      enrichmentStatus?: EnrichmentStatus | null;
+      updatedAt: Date;
+    } | null;
+    changes?: {
+      __typename?: 'ArtistAppliedChanges';
+      metadata: Array<string>;
+      externalIds: Array<string>;
+      affectedAlbumCount: number;
+      dataQualityBefore: DataQuality;
+      dataQualityAfter: DataQuality;
+    } | null;
+  };
 };
 
 export type GetArtistDiscographyQueryVariables = Exact<{
@@ -6115,6 +6405,270 @@ export const useInfiniteGetArtistByMusicBrainzIdQuery = <
 useInfiniteGetArtistByMusicBrainzIdQuery.getKey = (
   variables: GetArtistByMusicBrainzIdQueryVariables
 ) => ['GetArtistByMusicBrainzId.infinite', variables];
+
+export const SearchArtistCorrectionCandidatesDocument = `
+    query SearchArtistCorrectionCandidates($query: String!, $limit: Int) {
+  artistCorrectionSearch(query: $query, limit: $limit) {
+    results {
+      artistMbid
+      name
+      sortName
+      disambiguation
+      type
+      country
+      area
+      beginDate
+      endDate
+      ended
+      gender
+      mbScore
+      topReleases {
+        title
+        year
+        type
+      }
+    }
+    hasMore
+    query
+  }
+}
+    `;
+
+export const useSearchArtistCorrectionCandidatesQuery = <
+  TData = SearchArtistCorrectionCandidatesQuery,
+  TError = unknown,
+>(
+  variables: SearchArtistCorrectionCandidatesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SearchArtistCorrectionCandidatesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      SearchArtistCorrectionCandidatesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<SearchArtistCorrectionCandidatesQuery, TError, TData>({
+    queryKey: ['SearchArtistCorrectionCandidates', variables],
+    queryFn: fetcher<
+      SearchArtistCorrectionCandidatesQuery,
+      SearchArtistCorrectionCandidatesQueryVariables
+    >(SearchArtistCorrectionCandidatesDocument, variables),
+    ...options,
+  });
+};
+
+useSearchArtistCorrectionCandidatesQuery.getKey = (
+  variables: SearchArtistCorrectionCandidatesQueryVariables
+) => ['SearchArtistCorrectionCandidates', variables];
+
+export const useInfiniteSearchArtistCorrectionCandidatesQuery = <
+  TData = InfiniteData<SearchArtistCorrectionCandidatesQuery>,
+  TError = unknown,
+>(
+  variables: SearchArtistCorrectionCandidatesQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<
+      SearchArtistCorrectionCandidatesQuery,
+      TError,
+      TData
+    >,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SearchArtistCorrectionCandidatesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SearchArtistCorrectionCandidatesQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'SearchArtistCorrectionCandidates.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            SearchArtistCorrectionCandidatesQuery,
+            SearchArtistCorrectionCandidatesQueryVariables
+          >(SearchArtistCorrectionCandidatesDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSearchArtistCorrectionCandidatesQuery.getKey = (
+  variables: SearchArtistCorrectionCandidatesQueryVariables
+) => ['SearchArtistCorrectionCandidates.infinite', variables];
+
+export const GetArtistCorrectionPreviewDocument = `
+    query GetArtistCorrectionPreview($artistId: UUID!, $artistMbid: UUID!) {
+  artistCorrectionPreview(artistId: $artistId, artistMbid: $artistMbid) {
+    currentArtist {
+      id
+      name
+      musicbrainzId
+      countryCode
+      formedYear
+      biography
+      dataQuality
+      updatedAt
+    }
+    mbArtistData
+    fieldDiffs {
+      field
+      changeType
+      current
+      source
+    }
+    albumCount
+    summary {
+      totalFields
+      changedFields
+      addedFields
+      modifiedFields
+    }
+  }
+}
+    `;
+
+export const useGetArtistCorrectionPreviewQuery = <
+  TData = GetArtistCorrectionPreviewQuery,
+  TError = unknown,
+>(
+  variables: GetArtistCorrectionPreviewQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetArtistCorrectionPreviewQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetArtistCorrectionPreviewQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetArtistCorrectionPreviewQuery, TError, TData>({
+    queryKey: ['GetArtistCorrectionPreview', variables],
+    queryFn: fetcher<
+      GetArtistCorrectionPreviewQuery,
+      GetArtistCorrectionPreviewQueryVariables
+    >(GetArtistCorrectionPreviewDocument, variables),
+    ...options,
+  });
+};
+
+useGetArtistCorrectionPreviewQuery.getKey = (
+  variables: GetArtistCorrectionPreviewQueryVariables
+) => ['GetArtistCorrectionPreview', variables];
+
+export const useInfiniteGetArtistCorrectionPreviewQuery = <
+  TData = InfiniteData<GetArtistCorrectionPreviewQuery>,
+  TError = unknown,
+>(
+  variables: GetArtistCorrectionPreviewQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetArtistCorrectionPreviewQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetArtistCorrectionPreviewQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetArtistCorrectionPreviewQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'GetArtistCorrectionPreview.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            GetArtistCorrectionPreviewQuery,
+            GetArtistCorrectionPreviewQueryVariables
+          >(GetArtistCorrectionPreviewDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetArtistCorrectionPreviewQuery.getKey = (
+  variables: GetArtistCorrectionPreviewQueryVariables
+) => ['GetArtistCorrectionPreview.infinite', variables];
+
+export const ApplyArtistCorrectionDocument = `
+    mutation ApplyArtistCorrection($input: ArtistCorrectionApplyInput!) {
+  artistCorrectionApply(input: $input) {
+    success
+    artist {
+      id
+      name
+      musicbrainzId
+      countryCode
+      formedYear
+      dataQuality
+      enrichmentStatus
+      updatedAt
+    }
+    changes {
+      metadata
+      externalIds
+      affectedAlbumCount
+      dataQualityBefore
+      dataQualityAfter
+    }
+    affectedAlbumCount
+    code
+    message
+  }
+}
+    `;
+
+export const useApplyArtistCorrectionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ApplyArtistCorrectionMutation,
+    TError,
+    ApplyArtistCorrectionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ApplyArtistCorrectionMutation,
+    TError,
+    ApplyArtistCorrectionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ApplyArtistCorrection'],
+    mutationFn: (variables?: ApplyArtistCorrectionMutationVariables) =>
+      fetcher<
+        ApplyArtistCorrectionMutation,
+        ApplyArtistCorrectionMutationVariables
+      >(ApplyArtistCorrectionDocument, variables)(),
+    ...options,
+  });
+};
+
+useApplyArtistCorrectionMutation.getKey = () => ['ApplyArtistCorrection'];
 
 export const GetArtistDiscographyDocument = `
     query GetArtistDiscography($id: String!, $source: DataSource!) {

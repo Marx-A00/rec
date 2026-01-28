@@ -16,19 +16,21 @@ import {
 import type { ResolversTypes } from '@/generated/resolvers-types';
 import { JobStatus as GqlJobStatus } from '@/generated/resolvers-types';
 
-import { getSearchService } from '../search';
 // Correction system imports
 import { isAdmin } from '@/lib/permissions';
 import { getCorrectionSearchService } from '@/lib/correction/search-service';
 import { getCorrectionPreviewService } from '@/lib/correction/preview';
-import type { ScoredSearchResult, ScoringStrategy as ServiceScoringStrategy } from '@/lib/correction/scoring/types';
+import type {
+  ScoredSearchResult,
+  ScoringStrategy as ServiceScoringStrategy,
+} from '@/lib/correction/scoring/types';
 import type { GroupedSearchResult } from '@/lib/correction/types';
 import {
   ScoringStrategy as GqlScoringStrategy,
   ConfidenceTier as GqlConfidenceTier,
 } from '@/generated/resolvers-types';
 
-
+import { getSearchService } from '../search';
 
 // ============================================================================
 // Correction System Helper Functions
@@ -112,7 +114,8 @@ function transformScoredResult(result: ScoredSearchResult) {
     coverArtUrl: result.coverArtUrl,
     source: result.source,
     normalizedScore: result.normalizedScore,
-    displayScore: typeof result.displayScore === 'number' ? result.displayScore : 0,
+    displayScore:
+      typeof result.displayScore === 'number' ? result.displayScore : 0,
     breakdown: {
       titleScore: result.breakdown.titleScore,
       artistScore: result.breakdown.artistScore,
@@ -203,7 +206,6 @@ function transformMBReleaseData(mbData: {
     })),
   };
 }
-
 
 // TODO: Fix GraphQL resolver return types to match generated types
 // Prisma returns partial objects; field resolvers populate computed/relational fields
@@ -2561,7 +2563,8 @@ export const queryResolvers: QueryResolvers = {
       if (error instanceof GraphQLError) throw error;
       console.error('Error in correctionSearch:', error);
       throw new GraphQLError(
-        'Correction search failed: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        'Correction search failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
         { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
       );
     }
@@ -2619,10 +2622,9 @@ export const queryResolvers: QueryResolvers = {
       );
 
       if (!groupResult) {
-        throw new GraphQLError(
-          'Release group not found: ' + releaseGroupMbid,
-          { extensions: { code: 'NOT_FOUND' } }
-        );
+        throw new GraphQLError('Release group not found: ' + releaseGroupMbid, {
+          extensions: { code: 'NOT_FOUND' },
+        });
       }
 
       // Use the primary result's release group MBID as the release MBID for preview
@@ -2684,7 +2686,119 @@ export const queryResolvers: QueryResolvers = {
       if (error instanceof GraphQLError) throw error;
       console.error('Error in correctionPreview:', error);
       throw new GraphQLError(
-        'Correction preview failed: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        'Correction preview failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+        { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
+      );
+    }
+  },
+
+  // ============================================================================
+  // Artist Correction System Queries (Admin Only)
+  // ============================================================================
+
+  artistCorrectionSearch: async (_, { query, limit }, { user }) => {
+    // Authentication check
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Authorization check - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const { getArtistCorrectionSearchService } = await import(
+        '@/lib/correction/artist/search-service'
+      );
+      const searchService = getArtistCorrectionSearchService();
+
+      const response = await searchService.search({
+        query,
+        limit: limit ?? 10,
+      });
+
+      return {
+        results: response.results.map(result => ({
+          artistMbid: result.artistMbid,
+          name: result.name,
+          sortName: result.sortName,
+          disambiguation: result.disambiguation ?? null,
+          type: result.type ?? null,
+          country: result.country ?? null,
+          area: result.area ?? null,
+          beginDate: result.beginDate ?? null,
+          endDate: result.endDate ?? null,
+          ended: result.ended ?? null,
+          gender: result.gender ?? null,
+          mbScore: result.mbScore,
+          topReleases: result.topReleases ?? null,
+        })),
+        hasMore: response.hasMore,
+        query: response.query,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error in artistCorrectionSearch:', error);
+      throw new GraphQLError(
+        'Artist correction search failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+        { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
+      );
+    }
+  },
+
+  artistCorrectionPreview: async (_, { artistId, artistMbid }, { user }) => {
+    // Authentication check
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Authorization check - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const { getArtistCorrectionPreviewService } = await import(
+        '@/lib/correction/artist/preview/preview-service'
+      );
+      const previewService = getArtistCorrectionPreviewService();
+
+      const preview = await previewService.generatePreview(artistId, artistMbid);
+
+      return {
+        currentArtist: preview.currentArtist,
+        mbArtistData: preview.mbArtistData,
+        fieldDiffs: preview.fieldDiffs.map(diff => ({
+          field: diff.field,
+          changeType: diff.changeType,
+          current: diff.current,
+          source: diff.source,
+        })),
+        albumCount: preview.albumCount,
+        summary: {
+          totalFields: preview.summary.totalFields,
+          changedFields: preview.summary.changedFields,
+          addedFields: preview.summary.addedFields,
+          modifiedFields: preview.summary.modifiedFields,
+        },
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error in artistCorrectionPreview:', error);
+      throw new GraphQLError(
+        'Artist correction preview failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
         { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
       );
     }

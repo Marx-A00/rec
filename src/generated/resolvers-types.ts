@@ -313,6 +313,106 @@ export type ArtistAlbumInput = {
   role?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Summary of changes applied to an artist. */
+export type ArtistAppliedChanges = {
+  __typename?: 'ArtistAppliedChanges';
+  /** Number of albums affected */
+  affectedAlbumCount: Scalars['Int']['output'];
+  /** Data quality after correction */
+  dataQualityAfter: DataQuality;
+  /** Data quality before correction */
+  dataQualityBefore: DataQuality;
+  /** List of external ID field names updated */
+  externalIds: Array<Scalars['String']['output']>;
+  /** List of metadata field names updated */
+  metadata: Array<Scalars['String']['output']>;
+};
+
+/** Input for applying an artist correction. */
+export type ArtistCorrectionApplyInput = {
+  /** Artist ID to apply correction to */
+  artistId: Scalars['UUID']['input'];
+  /** Selected MusicBrainz artist MBID */
+  artistMbid: Scalars['UUID']['input'];
+  /** Expected artist updatedAt timestamp for optimistic locking */
+  expectedUpdatedAt: Scalars['DateTime']['input'];
+  /** Field selections determining which changes to apply */
+  selections: ArtistFieldSelectionsInput;
+};
+
+/** Result of artist correction apply operation. */
+export type ArtistCorrectionApplyResult = {
+  __typename?: 'ArtistCorrectionApplyResult';
+  /** Number of affected albums (when success=true) */
+  affectedAlbumCount?: Maybe<Scalars['Int']['output']>;
+  /** Updated artist (when success=true) */
+  artist?: Maybe<Artist>;
+  /** Summary of changes applied (when success=true) */
+  changes?: Maybe<ArtistAppliedChanges>;
+  /** Error code (when success=false) */
+  code?: Maybe<ApplyErrorCode>;
+  /** Error message (when success=false) */
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+/** Complete preview of all changes between current artist and MusicBrainz source. */
+export type ArtistCorrectionPreview = {
+  __typename?: 'ArtistCorrectionPreview';
+  /** Number of albums by this artist */
+  albumCount: Scalars['Int']['output'];
+  /** Current artist data from database */
+  currentArtist: Artist;
+  /** Field-by-field diffs */
+  fieldDiffs: Array<ArtistFieldDiff>;
+  /** Full MusicBrainz artist data */
+  mbArtistData?: Maybe<Scalars['JSON']['output']>;
+  /** Summary statistics */
+  summary: ArtistPreviewSummary;
+};
+
+/** Response from artist correction search operation. */
+export type ArtistCorrectionSearchResponse = {
+  __typename?: 'ArtistCorrectionSearchResponse';
+  /** Whether more results are available */
+  hasMore: Scalars['Boolean']['output'];
+  /** The query that was executed */
+  query: Scalars['String']['output'];
+  /** Search results */
+  results: Array<ArtistCorrectionSearchResult>;
+};
+
+/** Artist search result from MusicBrainz for correction. */
+export type ArtistCorrectionSearchResult = {
+  __typename?: 'ArtistCorrectionSearchResult';
+  /** Area name (city/region) */
+  area?: Maybe<Scalars['String']['output']>;
+  /** MusicBrainz artist ID */
+  artistMbid: Scalars['UUID']['output'];
+  /** Begin date (partial date string) */
+  beginDate?: Maybe<Scalars['String']['output']>;
+  /** Country code (ISO 3166-1 alpha-2) */
+  country?: Maybe<Scalars['String']['output']>;
+  /** Disambiguation comment (e.g., "British rock band") */
+  disambiguation?: Maybe<Scalars['String']['output']>;
+  /** End date (partial date string) */
+  endDate?: Maybe<Scalars['String']['output']>;
+  /** Whether the artist has ended */
+  ended?: Maybe<Scalars['Boolean']['output']>;
+  /** Gender (only meaningful for Person type) */
+  gender?: Maybe<Scalars['String']['output']>;
+  /** MusicBrainz search score (0-100) */
+  mbScore: Scalars['Int']['output'];
+  /** Artist name */
+  name: Scalars['String']['output'];
+  /** Sort name (e.g., "Beatles, The") */
+  sortName: Scalars['String']['output'];
+  /** Top releases for disambiguation */
+  topReleases?: Maybe<Array<ArtistTopRelease>>;
+  /** Artist type: Person, Group, Orchestra, Choir, Character, Other */
+  type?: Maybe<Scalars['String']['output']>;
+};
+
 export type ArtistCredit = {
   __typename?: 'ArtistCredit';
   artist: Artist;
@@ -337,11 +437,62 @@ export type ArtistCreditDiff = {
   sourceDisplay: Scalars['String']['output'];
 };
 
+/** Artist external ID field selections. */
+export type ArtistExternalIdSelectionsInput = {
+  ipi?: InputMaybe<Scalars['Boolean']['input']>;
+  isni?: InputMaybe<Scalars['Boolean']['input']>;
+  musicbrainzId?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Diff for a single artist field. */
+export type ArtistFieldDiff = {
+  __typename?: 'ArtistFieldDiff';
+  /** Change classification */
+  changeType: ChangeType;
+  /** Current value in database */
+  current?: Maybe<Scalars['String']['output']>;
+  /** Field name */
+  field: Scalars['String']['output'];
+  /** Value from MusicBrainz source */
+  source?: Maybe<Scalars['String']['output']>;
+};
+
+/** Complete field selections for artist correction. */
+export type ArtistFieldSelectionsInput = {
+  externalIds: ArtistExternalIdSelectionsInput;
+  metadata: ArtistMetadataSelectionsInput;
+};
+
 export type ArtistInput = {
   countryCode?: InputMaybe<Scalars['String']['input']>;
   imageUrl?: InputMaybe<Scalars['String']['input']>;
   musicbrainzId?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
+};
+
+/** Artist metadata field selections. */
+export type ArtistMetadataSelectionsInput = {
+  area?: InputMaybe<Scalars['Boolean']['input']>;
+  artistType?: InputMaybe<Scalars['Boolean']['input']>;
+  beginDate?: InputMaybe<Scalars['Boolean']['input']>;
+  countryCode?: InputMaybe<Scalars['Boolean']['input']>;
+  disambiguation?: InputMaybe<Scalars['Boolean']['input']>;
+  endDate?: InputMaybe<Scalars['Boolean']['input']>;
+  gender?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Summary statistics for artist field changes. */
+export type ArtistPreviewSummary = {
+  __typename?: 'ArtistPreviewSummary';
+  /** Number of fields added */
+  addedFields: Scalars['Int']['output'];
+  /** Number of fields that changed */
+  changedFields: Scalars['Int']['output'];
+  /** Number of fields modified */
+  modifiedFields: Scalars['Int']['output'];
+  /** Total number of fields compared */
+  totalFields: Scalars['Int']['output'];
 };
 
 export type ArtistRecommendation = {
@@ -369,6 +520,17 @@ export type ArtistRecommendationsConnection = {
   hasMore: Scalars['Boolean']['output'];
   recommendations: Array<ArtistRecommendation>;
   totalCount: Scalars['Int']['output'];
+};
+
+/**
+ * A top release for artist disambiguation.
+ * Helps identify the right artist when multiple share the same name.
+ */
+export type ArtistTopRelease = {
+  __typename?: 'ArtistTopRelease';
+  title: Scalars['String']['output'];
+  type?: Maybe<Scalars['String']['output']>;
+  year?: Maybe<Scalars['String']['output']>;
 };
 
 export type ArtistTrackInput = {
@@ -1060,6 +1222,8 @@ export type Mutation = {
   addArtist: Artist;
   addToListenLater: CollectionAlbum;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
+  /** Apply selected corrections from a preview to an artist */
+  artistCorrectionApply: ArtistCorrectionApplyResult;
   batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
   clearFailedJobs: Scalars['Boolean']['output'];
@@ -1131,6 +1295,10 @@ export type MutationAddToListenLaterArgs = {
 export type MutationAdminUpdateUserShowTourArgs = {
   showOnboardingTour: Scalars['Boolean']['input'];
   userId: Scalars['String']['input'];
+};
+
+export type MutationArtistCorrectionApplyArgs = {
+  input: ArtistCorrectionApplyInput;
 };
 
 export type MutationBatchEnrichmentArgs = {
@@ -1388,6 +1556,10 @@ export type Query = {
   albumsByJobId: Array<Album>;
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
+  /** Generate a preview of changes between artist and selected MusicBrainz artist */
+  artistCorrectionPreview: ArtistCorrectionPreview;
+  /** Search MusicBrainz for artist correction candidates */
+  artistCorrectionSearch: ArtistCorrectionSearchResponse;
   artistDiscography: CategorizedDiscography;
   artistRecommendations: ArtistRecommendationsConnection;
   collection?: Maybe<Collection>;
@@ -1467,6 +1639,16 @@ export type QueryArtistArgs = {
 
 export type QueryArtistByMusicBrainzIdArgs = {
   musicbrainzId: Scalars['UUID']['input'];
+};
+
+export type QueryArtistCorrectionPreviewArgs = {
+  artistId: Scalars['UUID']['input'];
+  artistMbid: Scalars['UUID']['input'];
+};
+
+export type QueryArtistCorrectionSearchArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
 };
 
 export type QueryArtistDiscographyArgs = {
@@ -2534,12 +2716,24 @@ export type ResolversTypes = ResolversObject<{
   ArrayDiff: ResolverTypeWrapper<ArrayDiff>;
   Artist: ResolverTypeWrapper<Artist>;
   ArtistAlbumInput: ArtistAlbumInput;
+  ArtistAppliedChanges: ResolverTypeWrapper<ArtistAppliedChanges>;
+  ArtistCorrectionApplyInput: ArtistCorrectionApplyInput;
+  ArtistCorrectionApplyResult: ResolverTypeWrapper<ArtistCorrectionApplyResult>;
+  ArtistCorrectionPreview: ResolverTypeWrapper<ArtistCorrectionPreview>;
+  ArtistCorrectionSearchResponse: ResolverTypeWrapper<ArtistCorrectionSearchResponse>;
+  ArtistCorrectionSearchResult: ResolverTypeWrapper<ArtistCorrectionSearchResult>;
   ArtistCredit: ResolverTypeWrapper<ArtistCredit>;
   ArtistCreditDiff: ResolverTypeWrapper<ArtistCreditDiff>;
+  ArtistExternalIdSelectionsInput: ArtistExternalIdSelectionsInput;
+  ArtistFieldDiff: ResolverTypeWrapper<ArtistFieldDiff>;
+  ArtistFieldSelectionsInput: ArtistFieldSelectionsInput;
   ArtistInput: ArtistInput;
+  ArtistMetadataSelectionsInput: ArtistMetadataSelectionsInput;
+  ArtistPreviewSummary: ResolverTypeWrapper<ArtistPreviewSummary>;
   ArtistRecommendation: ResolverTypeWrapper<ArtistRecommendation>;
   ArtistRecommendationSort: ArtistRecommendationSort;
   ArtistRecommendationsConnection: ResolverTypeWrapper<ArtistRecommendationsConnection>;
+  ArtistTopRelease: ResolverTypeWrapper<ArtistTopRelease>;
   ArtistTrackInput: ArtistTrackInput;
   AudioFeatures: ResolverTypeWrapper<AudioFeatures>;
   BatchEnrichmentResult: ResolverTypeWrapper<BatchEnrichmentResult>;
@@ -2707,11 +2901,23 @@ export type ResolversParentTypes = ResolversObject<{
   ArrayDiff: ArrayDiff;
   Artist: Artist;
   ArtistAlbumInput: ArtistAlbumInput;
+  ArtistAppliedChanges: ArtistAppliedChanges;
+  ArtistCorrectionApplyInput: ArtistCorrectionApplyInput;
+  ArtistCorrectionApplyResult: ArtistCorrectionApplyResult;
+  ArtistCorrectionPreview: ArtistCorrectionPreview;
+  ArtistCorrectionSearchResponse: ArtistCorrectionSearchResponse;
+  ArtistCorrectionSearchResult: ArtistCorrectionSearchResult;
   ArtistCredit: ArtistCredit;
   ArtistCreditDiff: ArtistCreditDiff;
+  ArtistExternalIdSelectionsInput: ArtistExternalIdSelectionsInput;
+  ArtistFieldDiff: ArtistFieldDiff;
+  ArtistFieldSelectionsInput: ArtistFieldSelectionsInput;
   ArtistInput: ArtistInput;
+  ArtistMetadataSelectionsInput: ArtistMetadataSelectionsInput;
+  ArtistPreviewSummary: ArtistPreviewSummary;
   ArtistRecommendation: ArtistRecommendation;
   ArtistRecommendationsConnection: ArtistRecommendationsConnection;
+  ArtistTopRelease: ArtistTopRelease;
   ArtistTrackInput: ArtistTrackInput;
   AudioFeatures: AudioFeatures;
   BatchEnrichmentResult: BatchEnrichmentResult;
@@ -3263,6 +3469,130 @@ export type ArtistResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type ArtistAppliedChangesResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArtistAppliedChanges'] = ResolversParentTypes['ArtistAppliedChanges'],
+> = ResolversObject<{
+  affectedAlbumCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  dataQualityAfter?: Resolver<
+    ResolversTypes['DataQuality'],
+    ParentType,
+    ContextType
+  >;
+  dataQualityBefore?: Resolver<
+    ResolversTypes['DataQuality'],
+    ParentType,
+    ContextType
+  >;
+  externalIds?: Resolver<
+    Array<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  metadata?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ArtistCorrectionApplyResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArtistCorrectionApplyResult'] = ResolversParentTypes['ArtistCorrectionApplyResult'],
+> = ResolversObject<{
+  affectedAlbumCount?: Resolver<
+    Maybe<ResolversTypes['Int']>,
+    ParentType,
+    ContextType
+  >;
+  artist?: Resolver<Maybe<ResolversTypes['Artist']>, ParentType, ContextType>;
+  changes?: Resolver<
+    Maybe<ResolversTypes['ArtistAppliedChanges']>,
+    ParentType,
+    ContextType
+  >;
+  code?: Resolver<
+    Maybe<ResolversTypes['ApplyErrorCode']>,
+    ParentType,
+    ContextType
+  >;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ArtistCorrectionPreviewResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArtistCorrectionPreview'] = ResolversParentTypes['ArtistCorrectionPreview'],
+> = ResolversObject<{
+  albumCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  currentArtist?: Resolver<ResolversTypes['Artist'], ParentType, ContextType>;
+  fieldDiffs?: Resolver<
+    Array<ResolversTypes['ArtistFieldDiff']>,
+    ParentType,
+    ContextType
+  >;
+  mbArtistData?: Resolver<
+    Maybe<ResolversTypes['JSON']>,
+    ParentType,
+    ContextType
+  >;
+  summary?: Resolver<
+    ResolversTypes['ArtistPreviewSummary'],
+    ParentType,
+    ContextType
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ArtistCorrectionSearchResponseResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArtistCorrectionSearchResponse'] = ResolversParentTypes['ArtistCorrectionSearchResponse'],
+> = ResolversObject<{
+  hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  query?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  results?: Resolver<
+    Array<ResolversTypes['ArtistCorrectionSearchResult']>,
+    ParentType,
+    ContextType
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ArtistCorrectionSearchResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArtistCorrectionSearchResult'] = ResolversParentTypes['ArtistCorrectionSearchResult'],
+> = ResolversObject<{
+  area?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  artistMbid?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  beginDate?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  country?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  disambiguation?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  endDate?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  ended?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
+  gender?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  mbScore?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  sortName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  topReleases?: Resolver<
+    Maybe<Array<ResolversTypes['ArtistTopRelease']>>,
+    ParentType,
+    ContextType
+  >;
+  type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type ArtistCreditResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -3297,6 +3627,30 @@ export type ArtistCreditDiffResolvers<
     ContextType
   >;
   sourceDisplay?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ArtistFieldDiffResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArtistFieldDiff'] = ResolversParentTypes['ArtistFieldDiff'],
+> = ResolversObject<{
+  changeType?: Resolver<ResolversTypes['ChangeType'], ParentType, ContextType>;
+  current?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  field?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  source?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ArtistPreviewSummaryResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArtistPreviewSummary'] = ResolversParentTypes['ArtistPreviewSummary'],
+> = ResolversObject<{
+  addedFields?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  changedFields?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  modifiedFields?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalFields?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -3337,6 +3691,17 @@ export type ArtistRecommendationsConnectionResolvers<
     ContextType
   >;
   totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ArtistTopReleaseResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['ArtistTopRelease'] = ResolversParentTypes['ArtistTopRelease'],
+> = ResolversObject<{
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  year?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -4179,6 +4544,12 @@ export type MutationResolvers<
       'showOnboardingTour' | 'userId'
     >
   >;
+  artistCorrectionApply?: Resolver<
+    ResolversTypes['ArtistCorrectionApplyResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationArtistCorrectionApplyArgs, 'input'>
+  >;
   batchEnrichment?: Resolver<
     ResolversTypes['BatchEnrichmentResult'],
     ParentType,
@@ -4594,6 +4965,18 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryArtistByMusicBrainzIdArgs, 'musicbrainzId'>
+  >;
+  artistCorrectionPreview?: Resolver<
+    ResolversTypes['ArtistCorrectionPreview'],
+    ParentType,
+    ContextType,
+    RequireFields<QueryArtistCorrectionPreviewArgs, 'artistId' | 'artistMbid'>
+  >;
+  artistCorrectionSearch?: Resolver<
+    ResolversTypes['ArtistCorrectionSearchResponse'],
+    ParentType,
+    ContextType,
+    RequireFields<QueryArtistCorrectionSearchArgs, 'query'>
   >;
   artistDiscography?: Resolver<
     ResolversTypes['CategorizedDiscography'],
@@ -5995,10 +6378,18 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   AppliedTrackChanges?: AppliedTrackChangesResolvers<ContextType>;
   ArrayDiff?: ArrayDiffResolvers<ContextType>;
   Artist?: ArtistResolvers<ContextType>;
+  ArtistAppliedChanges?: ArtistAppliedChangesResolvers<ContextType>;
+  ArtistCorrectionApplyResult?: ArtistCorrectionApplyResultResolvers<ContextType>;
+  ArtistCorrectionPreview?: ArtistCorrectionPreviewResolvers<ContextType>;
+  ArtistCorrectionSearchResponse?: ArtistCorrectionSearchResponseResolvers<ContextType>;
+  ArtistCorrectionSearchResult?: ArtistCorrectionSearchResultResolvers<ContextType>;
   ArtistCredit?: ArtistCreditResolvers<ContextType>;
   ArtistCreditDiff?: ArtistCreditDiffResolvers<ContextType>;
+  ArtistFieldDiff?: ArtistFieldDiffResolvers<ContextType>;
+  ArtistPreviewSummary?: ArtistPreviewSummaryResolvers<ContextType>;
   ArtistRecommendation?: ArtistRecommendationResolvers<ContextType>;
   ArtistRecommendationsConnection?: ArtistRecommendationsConnectionResolvers<ContextType>;
+  ArtistTopRelease?: ArtistTopReleaseResolvers<ContextType>;
   AudioFeatures?: AudioFeaturesResolvers<ContextType>;
   BatchEnrichmentResult?: BatchEnrichmentResultResolvers<ContextType>;
   CategorizedDiscography?: CategorizedDiscographyResolvers<ContextType>;
