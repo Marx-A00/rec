@@ -8,6 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+
 import { DataQualityBadge } from './DataQualityBadge';
 import { ExternalIdStatus } from './ExternalIdStatus';
 import { TrackListing, type Track } from './TrackListing';
@@ -34,6 +35,7 @@ export interface CurrentDataViewAlbum {
   dataQuality: DataQuality | null;
   label: string | null;
   barcode: string | null;
+  updatedAt?: string;
   tracks: Track[];
   artists: AlbumArtist[];
 }

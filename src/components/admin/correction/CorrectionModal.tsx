@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle, Pencil, Search } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import {
@@ -17,6 +17,7 @@ import {
   useGetAlbumDetailsAdminQuery,
   DataQuality,
   useApplyCorrectionMutation,
+  useManualCorrectionApplyMutation,
 } from '@/generated/graphql';
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import Toast, { useToast } from '@/components/ui/toast';
@@ -34,6 +35,15 @@ import {
   toGraphQLSelections,
   type UIFieldSelections,
 } from './apply';
+import {
+  ManualEditView,
+  UnsavedChangesDialog,
+  computeManualPreview,
+  hasUnsavedChanges,
+  createInitialEditState,
+  type ManualEditFieldState,
+} from './manual';
+import { FieldComparisonList } from './preview/FieldComparisonList';
 
 export interface CorrectionModalProps {
   /** Album ID to load and correct */
@@ -45,13 +55,18 @@ export interface CorrectionModalProps {
 }
 
 /**
- * Modal shell for the 4-step album correction wizard.
+ * Modal shell for the album correction wizard.
  *
- * Steps:
+ * Search Mode (4 steps):
  * 0. Current Data - Shows existing album data
  * 1. Search - Search for correct MusicBrainz match
  * 2. Preview - Preview changes from selected match
  * 3. Apply - Select fields and apply corrections
+ *
+ * Manual Edit Mode (3 steps):
+ * 0. Current Data - Shows existing album data
+ * 1. Edit - Inline edit album fields
+ * 2. Apply - Preview changes and apply (combined)
  *
  * The modal fetches album details internally using the albumId.
  * State is persisted per album in sessionStorage, allowing users to
@@ -72,6 +87,11 @@ export function CorrectionModal({
     isFirstStep,
     isLastStep,
     selectedResultMbid,
+    isManualEditMode,
+    setManualEditMode,
+    manualEditState,
+    setManualEditState,
+    clearManualEditState,
   } = modalState;
 
   // Preview data state - shared between PreviewView and ApplyView
@@ -79,8 +99,16 @@ export function CorrectionModal({
     null
   );
 
+  // Manual edit preview data (separate from search preview)
+  const [manualPreviewData, setManualPreviewData] =
+    useState<CorrectionPreview | null>(null);
+
   // Success animation state
   const [showAppliedState, setShowAppliedState] = useState(false);
+
+  // Unsaved changes dialog state
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   // Toast state
   const { toast, showToast, hideToast } = useToast();
@@ -96,7 +124,7 @@ export function CorrectionModal({
 
   const albumData = data?.album;
 
-  // Apply mutation
+  // Apply mutation (search mode)
   const applyMutation = useApplyCorrectionMutation({
     onSuccess: response => {
       if (response.correctionApply.success) {
@@ -158,6 +186,46 @@ export function CorrectionModal({
     },
   });
 
+  // Manual apply mutation
+  const manualApplyMutation = useManualCorrectionApplyMutation({
+    onSuccess: response => {
+      if (response.manualCorrectionApply.success) {
+        // Show "Applied!" state
+        setShowAppliedState(true);
+
+        // Build toast message
+        const changedCount = manualPreviewData?.summary.changedFields ?? 0;
+        showToast(
+          `Updated ${changedCount} field${changedCount !== 1 ? 's' : ''}`,
+          'success'
+        );
+
+        // Invalidate album queries
+        if (albumId) {
+          queryClient.invalidateQueries({ queryKey: ['album', albumId] });
+        }
+
+        // Auto-close modal after 1.5s
+        setTimeout(() => {
+          clearState();
+          clearManualEditState();
+          onClose();
+        }, 1500);
+      } else {
+        const errorMsg =
+          response.manualCorrectionApply.message ??
+          'Failed to apply correction';
+        showToast(errorMsg, 'error');
+      }
+    },
+    onError: error => {
+      showToast(
+        error instanceof Error ? error.message : 'Failed to apply correction',
+        'error'
+      );
+    },
+  });
+
   // Transform fetched data to CurrentDataViewAlbum format
   const album: CurrentDataViewAlbum | null = albumData
     ? {
@@ -178,6 +246,11 @@ export function CorrectionModal({
         dataQuality: (albumData.dataQuality as DataQuality) ?? null,
         label: albumData.label ?? null,
         barcode: albumData.barcode ?? null,
+        updatedAt: albumData.updatedAt
+          ? typeof albumData.updatedAt === 'string'
+            ? albumData.updatedAt
+            : (albumData.updatedAt as Date).toISOString()
+          : new Date().toISOString(),
         tracks: (albumData.tracks ?? []).map(track => ({
           id: track.id,
           title: track.title,
@@ -200,8 +273,27 @@ export function CorrectionModal({
     : null;
 
   const handleClose = () => {
+    // Check for unsaved changes in manual edit mode
+    if (isManualEditMode && manualEditState && album) {
+      const originalState = createInitialEditState(album);
+      if (hasUnsavedChanges(originalState, manualEditState)) {
+        setPendingAction(() => () => {
+          clearState();
+          clearManualEditState();
+          setPreviewData(null);
+          setManualPreviewData(null);
+          setShowAppliedState(false);
+          onClose();
+        });
+        setShowUnsavedDialog(true);
+        return;
+      }
+    }
+
     clearState();
+    clearManualEditState();
     setPreviewData(null);
+    setManualPreviewData(null);
     setShowAppliedState(false);
     onClose();
   };
@@ -220,10 +312,99 @@ export function CorrectionModal({
     nextStep();
   };
 
-  // Handle manual edit request (no good results)
-  const handleManualEdit = () => {
-    // Navigate to manual edit (step 4 in future, for now just log)
-    console.log('Manual edit requested - Phase 10');
+  // Handle entering manual edit mode
+  const handleEnterManualEdit = () => {
+    setManualEditMode(true);
+    setCurrentStep(1);
+  };
+
+  // Handle entering search mode
+  const handleEnterSearch = () => {
+    // Check for unsaved changes if switching from manual mode
+    if (isManualEditMode && manualEditState && album) {
+      const originalState = createInitialEditState(album);
+      if (hasUnsavedChanges(originalState, manualEditState)) {
+        setPendingAction(() => () => {
+          setManualEditMode(false);
+          clearManualEditState();
+          setManualPreviewData(null);
+          setCurrentStep(1);
+        });
+        setShowUnsavedDialog(true);
+        return;
+      }
+    }
+    setManualEditMode(false);
+    clearManualEditState();
+    setManualPreviewData(null);
+    setCurrentStep(1);
+  };
+
+  // Handle manual edit preview click
+  const handleManualPreview = (editedState: ManualEditFieldState) => {
+    if (!album) return;
+    setManualEditState(editedState);
+    const preview = computeManualPreview(album, editedState);
+    setManualPreviewData(preview);
+    setCurrentStep(2); // Go to combined Preview+Apply step
+  };
+
+  // Handle cancel from manual edit view
+  const handleCancelManualEdit = () => {
+    // Check for unsaved changes
+    if (manualEditState && album) {
+      const originalState = createInitialEditState(album);
+      if (hasUnsavedChanges(originalState, manualEditState)) {
+        setPendingAction(() => () => {
+          setManualEditMode(false);
+          clearManualEditState();
+          setManualPreviewData(null);
+          setCurrentStep(0);
+        });
+        setShowUnsavedDialog(true);
+        return;
+      }
+    }
+    setManualEditMode(false);
+    clearManualEditState();
+    setManualPreviewData(null);
+    setCurrentStep(0);
+  };
+
+  // Handle manual apply
+  const handleManualApply = () => {
+    if (!manualEditState || !album) return;
+
+    manualApplyMutation.mutate({
+      input: {
+        albumId: album.id,
+        title: manualEditState.title,
+        artists: manualEditState.artists,
+        releaseDate: manualEditState.releaseDate || undefined,
+        releaseType: manualEditState.releaseType || undefined,
+        musicbrainzId: manualEditState.musicbrainzId || undefined,
+        spotifyId: manualEditState.spotifyId || undefined,
+        discogsId: manualEditState.discogsId || undefined,
+        expectedUpdatedAt: album.updatedAt
+          ? new Date(album.updatedAt)
+          : new Date(),
+      },
+    });
+  };
+
+  // Handle unsaved changes dialog confirm
+  const handleUnsavedConfirm = () => {
+    setShowUnsavedDialog(false);
+    if (pendingAction) {
+      pendingAction();
+      setPendingAction(null);
+    }
+  };
+
+  // Handle unsaved changes dialog cancel
+  const handleUnsavedCancel = () => {
+    setShowUnsavedDialog(false);
+    setPendingAction(null);
   };
 
   // Handle preview loaded callback
@@ -268,6 +449,14 @@ export function CorrectionModal({
 
   const hasError = !!error;
 
+  // Determine step labels based on mode
+  const stepLabels = isManualEditMode
+    ? ['Current Data', 'Edit', 'Apply']
+    : ['Current Data', 'Search', 'Preview', 'Apply'];
+
+  // Calculate max step for current mode
+  const maxStep = isManualEditMode ? 2 : 3;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className='sm:!max-w-[1100px] max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 [&>button]:text-zinc-500 [&>button]:hover:text-zinc-300'>
@@ -277,7 +466,11 @@ export function CorrectionModal({
           </DialogTitle>
         </DialogHeader>
 
-        <StepIndicator currentStep={currentStep} onStepClick={setCurrentStep} />
+        <StepIndicator
+          currentStep={currentStep}
+          onStepClick={setCurrentStep}
+          steps={stepLabels}
+        />
 
         {/* Step content area */}
         <div className='min-h-[300px] py-4'>
@@ -298,7 +491,29 @@ export function CorrectionModal({
 
           {/* Step 0: Current Data */}
           {currentStep === 0 && !isLoading && !hasError && album && (
-            <CurrentDataView album={album} />
+            <div className='space-y-6'>
+              <CurrentDataView album={album} />
+
+              {/* Action buttons for step 0 */}
+              <div className='flex gap-3 pt-4 border-t border-zinc-800'>
+                <Button
+                  variant='outline'
+                  onClick={handleEnterSearch}
+                  className='flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800'
+                >
+                  <Search className='w-4 h-4 mr-2' />
+                  Search MusicBrainz
+                </Button>
+                <Button
+                  variant='outline'
+                  onClick={handleEnterManualEdit}
+                  className='flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800'
+                >
+                  <Pencil className='w-4 h-4 mr-2' />
+                  Edit Manually
+                </Button>
+              </div>
+            </div>
           )}
           {currentStep === 0 && !isLoading && !hasError && !album && (
             <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
@@ -306,15 +521,34 @@ export function CorrectionModal({
             </div>
           )}
 
-          {/* Step 1: Search */}
-          {currentStep === 1 && !isLoading && !hasError && album && (
-            <SearchView
-              album={album}
-              onResultSelect={handleResultSelect}
-              onManualEdit={handleManualEdit}
-              modalState={modalState}
-            />
-          )}
+          {/* Step 1: Search (search mode) */}
+          {currentStep === 1 &&
+            !isManualEditMode &&
+            !isLoading &&
+            !hasError &&
+            album && (
+              <SearchView
+                album={album}
+                onResultSelect={handleResultSelect}
+                onManualEdit={handleEnterManualEdit}
+                modalState={modalState}
+              />
+            )}
+
+          {/* Step 1: Manual Edit (manual mode) */}
+          {currentStep === 1 &&
+            isManualEditMode &&
+            !isLoading &&
+            !hasError &&
+            album && (
+              <ManualEditView
+                album={album}
+                onPreviewClick={handleManualPreview}
+                onCancel={handleCancelManualEdit}
+                initialState={manualEditState ?? undefined}
+              />
+            )}
+
           {currentStep === 1 && isLoading && (
             <div className='flex items-center justify-center h-[300px]'>
               <Loader2 className='h-6 w-6 animate-spin text-zinc-400' />
@@ -326,8 +560,9 @@ export function CorrectionModal({
             </div>
           )}
 
-          {/* Step 2: Preview */}
+          {/* Step 2: Preview (search mode) */}
           {currentStep === 2 &&
+            !isManualEditMode &&
             !isLoading &&
             !hasError &&
             selectedResultMbid &&
@@ -340,6 +575,7 @@ export function CorrectionModal({
               />
             )}
           {currentStep === 2 &&
+            !isManualEditMode &&
             !isLoading &&
             !hasError &&
             !selectedResultMbid && (
@@ -353,8 +589,113 @@ export function CorrectionModal({
               </div>
             )}
 
-          {/* Step 3: Apply */}
+          {/* Step 2: Combined Preview+Apply (manual mode) */}
+          {currentStep === 2 &&
+            isManualEditMode &&
+            !isLoading &&
+            !hasError &&
+            manualPreviewData && (
+              <>
+                {showAppliedState ? (
+                  // Success state - show "Applied!" with checkmark
+                  <div className='flex flex-col items-center justify-center h-[300px]'>
+                    <CheckCircle className='h-16 w-16 text-green-400 mb-4' />
+                    <p className='text-2xl font-semibold text-green-400'>
+                      Applied!
+                    </p>
+                  </div>
+                ) : (
+                  // Combined preview + apply view
+                  <div className='space-y-6'>
+                    {/* Preview section */}
+                    <div className='border border-zinc-800 rounded-lg p-6 bg-zinc-900/50'>
+                      <h3 className='text-lg font-semibold text-zinc-100 mb-4'>
+                        Preview Changes
+                      </h3>
+                      <p className='text-sm text-zinc-400 mb-4'>
+                        Review the changes before applying them to the album.
+                      </p>
+
+                      {/* Field diffs */}
+                      {manualPreviewData.fieldDiffs.length > 0 ? (
+                        <FieldComparisonList
+                          fieldDiffs={manualPreviewData.fieldDiffs}
+                          artistDiff={manualPreviewData.artistDiff}
+                        />
+                      ) : (
+                        <p className='text-zinc-500 text-sm'>
+                          No field changes detected.
+                        </p>
+                      )}
+
+                      {/* Artist changes */}
+                      {manualPreviewData.artistDiff.changeType !==
+                        'UNCHANGED' && (
+                        <div className='mt-4 p-3 bg-zinc-800/50 rounded-md'>
+                          <p className='text-sm font-medium text-zinc-300 mb-2'>
+                            Artists
+                          </p>
+                          <div className='flex gap-4 text-sm'>
+                            <div className='flex-1'>
+                              <p className='text-zinc-500 text-xs mb-1'>
+                                Current
+                              </p>
+                              <p className='text-zinc-300'>
+                                {manualPreviewData.artistDiff.currentDisplay}
+                              </p>
+                            </div>
+                            <div className='flex-1'>
+                              <p className='text-zinc-500 text-xs mb-1'>New</p>
+                              <p className='text-green-400'>
+                                {manualPreviewData.artistDiff.sourceDisplay}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Apply section */}
+                    <div className='flex justify-between gap-3 pt-4 border-t border-zinc-800'>
+                      <Button
+                        variant='outline'
+                        onClick={() => setCurrentStep(1)}
+                        className='border-zinc-700 text-zinc-300 hover:bg-zinc-800'
+                      >
+                        Back to Edit
+                      </Button>
+                      <Button
+                        onClick={handleManualApply}
+                        disabled={manualApplyMutation.isPending}
+                        className='bg-blue-600 hover:bg-blue-700 text-white'
+                      >
+                        {manualApplyMutation.isPending
+                          ? 'Applying...'
+                          : 'Apply Changes'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          {currentStep === 2 &&
+            isManualEditMode &&
+            !isLoading &&
+            !hasError &&
+            !manualPreviewData && (
+              <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
+                <div className='text-center'>
+                  <p className='text-zinc-500'>No preview data available.</p>
+                  <p className='text-sm text-zinc-600 mt-1'>
+                    Please go back and make some edits first.
+                  </p>
+                </div>
+              </div>
+            )}
+
+          {/* Step 3: Apply (search mode only) */}
           {currentStep === 3 &&
+            !isManualEditMode &&
             !isLoading &&
             !hasError &&
             albumId &&
@@ -386,6 +727,7 @@ export function CorrectionModal({
               </>
             )}
           {currentStep === 3 &&
+            !isManualEditMode &&
             !isLoading &&
             !hasError &&
             (!albumId || !previewData) && (
@@ -406,16 +748,23 @@ export function CorrectionModal({
               Cancel
             </Button>
             <div className='flex gap-2'>
-              {!isFirstStep && currentStep !== 3 && (
-                <Button variant='outline' onClick={prevStep}>
-                  Back
-                </Button>
-              )}
-              {!isLastStep && currentStep !== 2 && (
-                <Button variant='primary' onClick={nextStep}>
-                  Next
-                </Button>
-              )}
+              {/* Back button - show on steps 1+ but not on apply steps */}
+              {!isFirstStep &&
+                !(isManualEditMode && currentStep === 2) &&
+                !(!isManualEditMode && currentStep === 3) && (
+                  <Button variant='outline' onClick={prevStep}>
+                    Back
+                  </Button>
+                )}
+              {/* Next button - only on step 0 (handled by action buttons now) or step 2 in search mode */}
+              {!isManualEditMode &&
+                currentStep !== 0 &&
+                currentStep !== 2 &&
+                currentStep < maxStep && (
+                  <Button variant='primary' onClick={nextStep}>
+                    Next
+                  </Button>
+                )}
             </div>
           </div>
         </DialogFooter>
@@ -426,6 +775,13 @@ export function CorrectionModal({
           type={toast.type}
           isVisible={toast.isVisible}
           onClose={hideToast}
+        />
+
+        {/* Unsaved changes dialog */}
+        <UnsavedChangesDialog
+          open={showUnsavedDialog}
+          onConfirm={handleUnsavedConfirm}
+          onCancel={handleUnsavedCancel}
         />
       </DialogContent>
     </Dialog>
