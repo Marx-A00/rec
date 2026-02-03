@@ -68,12 +68,12 @@ export class ArtistDiffEngine {
    * - isni (first ISNI code)
    *
    * @param currentArtist - Current artist data from database
-   * @param mbData - MusicBrainz artist data (may be null)
+   * @param mbData - MusicBrainz artist data
    * @returns Array of field diffs
    */
   generateFieldDiffs(
     currentArtist: Artist,
-    mbData: MBArtistData | null
+    mbData: MBArtistData
   ): ArtistFieldDiff[] {
     const diffs: ArtistFieldDiff[] = [];
 

@@ -128,8 +128,8 @@ export interface ArtistPreviewSummary {
 export interface ArtistCorrectionPreview {
   /** Current artist data from database */
   currentArtist: Artist;
-  /** Full MusicBrainz artist data (null if fetch failed) */
-  mbArtistData: MBArtistData | null;
+  /** Full MusicBrainz artist data */
+  mbArtistData: MBArtistData;
   /** Field-by-field diffs */
   fieldDiffs: ArtistFieldDiff[];
   /** Number of albums by this artist (for impact context) */

@@ -20,31 +20,31 @@ The established libraries/tools for this phase:
 
 ### Core
 
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| Radix UI Accordion | 1.2.12 | Collapsible sections | Already in project, used in Phase 8 preview, accessible ARIA patterns |
-| Radix UI Checkbox | 1.3.3 | Field selection controls | Already in project, proper indeterminate state support for nested selections |
-| TanStack Query | v5 | GraphQL mutation execution | Already in project, mutation callbacks (onSuccess/onError) work perfectly for toast feedback |
-| React 19 | stable | UI framework with form improvements | Project standard, useActionState and form patterns for complex checkbox state |
-| Next.js | 15 | App framework | Project standard, client components for interactive forms |
-| sonner | 2.0.7 | Toast notifications (alternative) | Already installed, could replace custom Toast if needed |
+| Library            | Version | Purpose                             | Why Standard                                                                                 |
+| ------------------ | ------- | ----------------------------------- | -------------------------------------------------------------------------------------------- |
+| Radix UI Accordion | 1.2.12  | Collapsible sections                | Already in project, used in Phase 8 preview, accessible ARIA patterns                        |
+| Radix UI Checkbox  | 1.3.3   | Field selection controls            | Already in project, proper indeterminate state support for nested selections                 |
+| TanStack Query     | v5      | GraphQL mutation execution          | Already in project, mutation callbacks (onSuccess/onError) work perfectly for toast feedback |
+| React 19           | stable  | UI framework with form improvements | Project standard, useActionState and form patterns for complex checkbox state                |
+| Next.js            | 15      | App framework                       | Project standard, client components for interactive forms                                    |
+| sonner             | 2.0.7   | Toast notifications (alternative)   | Already installed, could replace custom Toast if needed                                      |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| Custom Toast | current | Success/error notifications | Already in use (src/components/ui/toast.tsx), matches existing UI patterns |
-| deep-object-diff | 1.1.9 | Change detection | Already in project, useful for tracking checkbox state changes |
-| framer-motion | 12.23.14 | Row highlight animations | Already in project, use for "flash" effect on updated album row |
+| Library          | Version  | Purpose                     | When to Use                                                                |
+| ---------------- | -------- | --------------------------- | -------------------------------------------------------------------------- |
+| Custom Toast     | current  | Success/error notifications | Already in use (src/components/ui/toast.tsx), matches existing UI patterns |
+| deep-object-diff | 1.1.9    | Change detection            | Already in project, useful for tracking checkbox state changes             |
+| framer-motion    | 12.23.14 | Row highlight animations    | Already in project, use for "flash" effect on updated album row            |
 
 ### Alternatives Considered
 
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| Controlled checkboxes | Uncontrolled with FormData | Controlled gives immediate validation feedback and enables conditional logic |
-| TanStack Query mutations | Server Actions | Server Actions don't provide optimistic UI or fine-grained loading states for mutations |
-| Custom Toast | sonner | Custom Toast is already working and styled consistently with admin UI |
-| Step transition | Separate confirmation dialog | Step model provides better context (user sees diff while confirming) |
+| Instead of               | Could Use                    | Tradeoff                                                                                |
+| ------------------------ | ---------------------------- | --------------------------------------------------------------------------------------- |
+| Controlled checkboxes    | Uncontrolled with FormData   | Controlled gives immediate validation feedback and enables conditional logic            |
+| TanStack Query mutations | Server Actions               | Server Actions don't provide optimistic UI or fine-grained loading states for mutations |
+| Custom Toast             | sonner                       | Custom Toast is already working and styled consistently with admin UI                   |
+| Step transition          | Separate confirmation dialog | Step model provides better context (user sees diff while confirming)                    |
 
 **Installation:**
 No new packages needed - all dependencies already installed in project.
@@ -70,6 +70,7 @@ src/components/admin/correction/
 **What:** Three-level checkbox state: global "Select all" → section "Select all" → individual fields
 **When to use:** Complex forms with grouped checkboxes requiring master/detail control
 **Example:**
+
 ```typescript
 // Source: React checkbox patterns + Radix UI indeterminate state
 interface FieldSelections {
@@ -163,6 +164,7 @@ export function FieldSelectionForm({ preview }: { preview: CorrectionPreview }) 
 **What:** "Apply all tracks" checkbox with expandable per-track checkboxes for exclusions
 **When to use:** Large lists where users typically want all items but need occasional exclusions
 **Example:**
+
 ```typescript
 // Source: User decision (CONTEXT.md) + React checkbox patterns
 interface TrackSelectionState {
@@ -224,7 +226,7 @@ export function TrackSection({ trackDiffs }: { trackDiffs: TrackDiff[] }) {
           >
             {showIndividual ? 'Hide' : 'Show'} individual tracks
           </Button>
-          
+
           {showIndividual && (
             <div className="space-y-1 pl-6">
               {trackDiffs.map(diff => (
@@ -255,6 +257,7 @@ export function TrackSection({ trackDiffs }: { trackDiffs: TrackDiff[] }) {
 **What:** GraphQL mutation with onSuccess/onError callbacks for toast notifications and modal auto-close
 **When to use:** All mutations requiring user feedback in this project
 **Example:**
+
 ```typescript
 // Source: TanStack Query v5 docs + existing project patterns
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -282,14 +285,14 @@ export function ApplyView({ albumId, preview, onComplete }: ApplyViewProps) {
     onSuccess: (result) => {
       // Show success state briefly
       setIsApplied(true);
-      
+
       // Show toast with summary
       const summary = buildChangeSummary(result.changes);
       showToast(`Updated: ${summary}`, 'success');
-      
+
       // Invalidate album queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['album', albumId] });
-      
+
       // Auto-close modal after 1.5s
       setTimeout(() => {
         onComplete(result); // Triggers modal close + row highlight
@@ -352,6 +355,7 @@ function buildChangeSummary(changes: AppliedChanges): string {
 **What:** Stay on apply step with error message, allow retry by re-clicking Apply button
 **When to use:** Mutations that might fail (network errors, conflicts, validation)
 **Example:**
+
 ```typescript
 // Source: User decision (CONTEXT.md) + UX best practices
 export function ApplyErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
@@ -364,7 +368,7 @@ export function ApplyErrorState({ error, onRetry }: { error: Error; onRetry: () 
         <div className="flex-1">
           <p className="text-red-400 font-medium">Failed to apply correction</p>
           <p className="text-sm text-red-300 mt-1">{error.message}</p>
-          
+
           {/* Expandable technical details */}
           <button
             onClick={() => setShowDetails(!showDetails)}
@@ -372,7 +376,7 @@ export function ApplyErrorState({ error, onRetry }: { error: Error; onRetry: () 
           >
             {showDetails ? 'Hide' : 'Show'} details
           </button>
-          
+
           {showDetails && (
             <pre className="mt-2 text-xs text-red-300 bg-red-950/50 p-2 rounded overflow-x-auto">
               {error.stack || 'No additional details available'}
@@ -395,6 +399,7 @@ export function ApplyErrorState({ error, onRetry }: { error: Error; onRetry: () 
 **What:** Compact before/after display for all selected fields, confirming what will change
 **When to use:** Final confirmation before destructive/complex operations
 **Example:**
+
 ```typescript
 // Source: Phase 8 FieldComparison patterns + user decisions
 export function DiffSummary({ preview, selections }: DiffSummaryProps) {
@@ -411,7 +416,7 @@ export function DiffSummary({ preview, selections }: DiffSummaryProps) {
   return (
     <div className="space-y-4 p-4 bg-zinc-800/50 rounded-lg">
       <h3 className="font-medium text-cosmic-latte">Summary of Changes</h3>
-      
+
       {/* Metadata changes */}
       {selectedFieldDiffs.length > 0 && (
         <div className="space-y-2">
@@ -460,6 +465,7 @@ export function DiffSummary({ preview, selections }: DiffSummaryProps) {
 **What:** Brief visual flash/pulse on the album row in admin table to show update
 **When to use:** After successful mutation to draw attention to updated data
 **Example:**
+
 ```typescript
 // Source: framer-motion (already in project) + UX feedback patterns
 // In parent component (admin table or wherever modal is triggered)
@@ -492,14 +498,14 @@ const handleApplyComplete = (result: ApplyResult) => {
 
 Problems that look simple but have existing solutions:
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Checkbox indeterminate state | Custom checkbox with CSS | Radix UI Checkbox with `indeterminate` prop | Handles ARIA attributes, keyboard nav, and visual state correctly |
-| Nested checkbox state sync | Manual parent-child tracking | Controlled state with derived values | Prevents state bugs, easier to test and maintain |
-| Toast notifications | Custom position/z-index logic | Existing Toast component with portal | Already handles stacking context and auto-dismiss |
-| Mutation loading states | Manual boolean flags | TanStack Query `isPending` | Provides consistent loading/error/success states across app |
-| Change summary generation | String concatenation | Utility function from Phase 4 apply service | Already tested, handles pluralization and edge cases |
-| Form validation | Manual field checking | Derive validation from selections state | Real-time feedback without extra state management |
+| Problem                      | Don't Build                   | Use Instead                                 | Why                                                               |
+| ---------------------------- | ----------------------------- | ------------------------------------------- | ----------------------------------------------------------------- |
+| Checkbox indeterminate state | Custom checkbox with CSS      | Radix UI Checkbox with `indeterminate` prop | Handles ARIA attributes, keyboard nav, and visual state correctly |
+| Nested checkbox state sync   | Manual parent-child tracking  | Controlled state with derived values        | Prevents state bugs, easier to test and maintain                  |
+| Toast notifications          | Custom position/z-index logic | Existing Toast component with portal        | Already handles stacking context and auto-dismiss                 |
+| Mutation loading states      | Manual boolean flags          | TanStack Query `isPending`                  | Provides consistent loading/error/success states across app       |
+| Change summary generation    | String concatenation          | Utility function from Phase 4 apply service | Already tested, handles pluralization and edge cases              |
+| Form validation              | Manual field checking         | Derive validation from selections state     | Real-time feedback without extra state management                 |
 
 **Key insight:** The checkbox state hierarchy (global → section → field) is the most complex part. Don't try to optimize prematurely - use simple controlled state with derived values for section-level indeterminate states. React 19's improved rendering performance makes this pattern fast enough.
 
@@ -513,6 +519,7 @@ Problems that look simple but have existing solutions:
 **Warning signs:** Accordion unexpectedly closing/opening when selecting checkboxes
 
 **Example:**
+
 ```typescript
 // BAD - Checkbox toggles accordion
 <AccordionTrigger>
@@ -539,6 +546,7 @@ Problems that look simple but have existing solutions:
 **Warning signs:** Modal doesn't close after success, or closes with wrong state
 
 **Example:**
+
 ```typescript
 // BAD - Captures stale albumId
 useEffect(() => {
@@ -570,6 +578,7 @@ useEffect(() => {
 **Warning signs:** Network tab shows multiple identical mutation requests
 
 **Example:**
+
 ```typescript
 // BAD - No disabled state
 <Button onClick={() => applyMutation.mutate(selections)}>
@@ -593,6 +602,7 @@ useEffect(() => {
 **Warning signs:** Data doesn't update until page refresh
 
 **Example:**
+
 ```typescript
 // BAD - Mutation succeeds but UI shows old data
 const applyMutation = useMutation({
@@ -621,15 +631,16 @@ const applyMutation = useMutation({
 **Warning signs:** Mutation payload includes fields with identical before/after values
 
 **Example:**
+
 ```typescript
 // BAD - Send all selections blindly
 const applyMutation = useMutation({
-  mutationFn: (selections) => applyCorrection({ albumId, selections }),
+  mutationFn: selections => applyCorrection({ albumId, selections }),
 });
 
 // GOOD - Filter to only changed fields (or rely on apply service to handle)
 const applyMutation = useMutation({
-  mutationFn: (selections) => {
+  mutationFn: selections => {
     // Phase 4 apply service already filters unchanged fields
     // Just pass selections as-is, service handles optimization
     return applyCorrection({ albumId, preview, selections });
@@ -648,7 +659,9 @@ Verified patterns from project structure:
 
 ```typescript
 // Source: Phase 4 apply service types.ts
-export function createDefaultSelections(preview: CorrectionPreview): FieldSelections {
+export function createDefaultSelections(
+  preview: CorrectionPreview
+): FieldSelections {
   return {
     metadata: {
       title: true,
@@ -744,12 +757,12 @@ function ApplyView() {
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|------------|----------------|--------------|---------|
-| Separate confirmation dialog | Step transition model | 2026 UX trends | Better context preservation, user sees diff while confirming |
-| Select what to apply (opt-in) | Deselect what NOT to apply (opt-out) | Modern form UX | Faster workflow for typical case (apply most/all fields) |
-| Manual query invalidation | TanStack Query v5 auto-invalidation | TanStack Query v4→v5 | Can use `invalidateQueries` patterns or rely on cache tags |
-| React 18 checkbox patterns | React 19 form improvements | React 19 release | Better form state handling with useActionState (optional for this phase) |
+| Old Approach                  | Current Approach                     | When Changed         | Impact                                                                   |
+| ----------------------------- | ------------------------------------ | -------------------- | ------------------------------------------------------------------------ |
+| Separate confirmation dialog  | Step transition model                | 2026 UX trends       | Better context preservation, user sees diff while confirming             |
+| Select what to apply (opt-in) | Deselect what NOT to apply (opt-out) | Modern form UX       | Faster workflow for typical case (apply most/all fields)                 |
+| Manual query invalidation     | TanStack Query v5 auto-invalidation  | TanStack Query v4→v5 | Can use `invalidateQueries` patterns or rely on cache tags               |
+| React 18 checkbox patterns    | React 19 form improvements           | React 19 release     | Better form state handling with useActionState (optional for this phase) |
 
 **Deprecated/outdated:**
 

@@ -4,12 +4,19 @@ plan: 03
 subsystem: correction-service
 tags: [prisma, transaction, audit, data-quality, atomic-update]
 dependency-graph:
-  requires: ["04-01", "04-02"]
-  provides: ["ApplyCorrectionService", "applyCorrectionService", "calculateDataQuality"]
-  affects: ["05-graphql-resolver", "08-admin-ui"]
+  requires: ['04-01', '04-02']
+  provides:
+    ['ApplyCorrectionService', 'applyCorrectionService', 'calculateDataQuality']
+  affects: ['05-graphql-resolver', '08-admin-ui']
 tech-stack:
   added: []
-  patterns: ["interactive-transaction", "optimistic-locking", "singleton-pattern", "audit-logging"]
+  patterns:
+    [
+      'interactive-transaction',
+      'optimistic-locking',
+      'singleton-pattern',
+      'audit-logging',
+    ]
 files:
   created:
     - src/lib/correction/apply/data-quality-calculator.ts
@@ -18,15 +25,15 @@ files:
     - src/lib/correction/apply/index.ts
     - src/lib/correction/index.ts
 decisions:
-  - id: "data-quality-admin-high"
-    choice: "Admin corrections always return HIGH data quality"
-    rationale: "Admin-verified = highest confidence, no scoring needed"
-  - id: "audit-outside-transaction"
-    choice: "Audit logging happens AFTER transaction succeeds"
-    rationale: "Logging failure should not roll back a successful correction"
-  - id: "serializable-isolation"
-    choice: "Use Serializable isolation level for transactions"
-    rationale: "Strongest isolation prevents concurrent modification edge cases"
+  - id: 'data-quality-admin-high'
+    choice: 'Admin corrections always return HIGH data quality'
+    rationale: 'Admin-verified = highest confidence, no scoring needed'
+  - id: 'audit-outside-transaction'
+    choice: 'Audit logging happens AFTER transaction succeeds'
+    rationale: 'Logging failure should not roll back a successful correction'
+  - id: 'serializable-isolation'
+    choice: 'Use Serializable isolation level for transactions'
+    rationale: 'Strongest isolation prevents concurrent modification edge cases'
 metrics:
   duration: 6min
   completed: 2026-01-24
@@ -39,12 +46,14 @@ ApplyCorrectionService with Prisma interactive transactions, optimistic locking,
 ## What Was Built
 
 **1. Data Quality Calculator (`data-quality-calculator.ts`)**
+
 - `DataQualityFactors` type with field presence booleans
 - `calculateDataQuality()` - admin corrections return HIGH, others use weighted scoring
 - `buildQualityFactors()` - extracts factors from album with relations
 - Weighted scoring for future use (enrichment, user submissions)
 
 **2. ApplyCorrectionService (`apply-service.ts`)**
+
 - Core `applyCorrection()` method with three phases:
   - Pre-transaction: Fetch before-state, match tracks, prepare update data
   - Transaction: Optimistic lock check, album update, artist upsert/link, track CRUD
@@ -54,12 +63,14 @@ ApplyCorrectionService with Prisma interactive transactions, optimistic locking,
 - Singleton pattern for Next.js HMR safety
 
 **3. Barrel Exports**
+
 - `apply/index.ts` exports all service, types, and utilities
 - `correction/index.ts` updated with full apply module exports
 
 ## Key Implementation Details
 
 **Optimistic Locking:**
+
 ```typescript
 const current = await tx.album.findUnique({
   where: { id: albumId },
@@ -71,6 +82,7 @@ if (current?.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
 ```
 
 **Transaction Configuration:**
+
 ```typescript
 await this.prisma.$transaction(async (tx) => { ... }, {
   timeout: 10000,  // 10s for admin operations
@@ -79,6 +91,7 @@ await this.prisma.$transaction(async (tx) => { ... }, {
 ```
 
 **Audit Logging:**
+
 - Creates `enrichmentLog` entry with `operation: 'admin_correction'`
 - Captures before/after deltas for metadata, artists, tracks, cover art
 - `triggeredBy: 'admin_ui'` for traceability
@@ -87,10 +100,12 @@ await this.prisma.$transaction(async (tx) => { ... }, {
 ## Files Changed
 
 **Created:**
+
 - `src/lib/correction/apply/data-quality-calculator.ts` - Quality scoring
 - `src/lib/correction/apply/apply-service.ts` - Core service
 
 **Modified:**
+
 - `src/lib/correction/apply/index.ts` - Added service and quality exports
 - `src/lib/correction/index.ts` - Full apply module in correction barrel
 
@@ -125,6 +140,7 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 Phase 4 complete. Ready for Phase 5 (GraphQL Integration):
+
 - `applyCorrectionService` singleton ready for resolver
 - Types exported for GraphQL schema mapping
 - Error codes ready for GraphQL error handling

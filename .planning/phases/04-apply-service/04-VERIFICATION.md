@@ -16,57 +16,57 @@ score: 5/5 must-haves verified
 
 ### Observable Truths
 
-| # | Truth | Status | Evidence |
-|---|-------|--------|----------|
-| 1 | Apply function updates Album, AlbumArtist, and Track tables in one transaction | VERIFIED | `apply-service.ts:162` uses `prisma.$transaction()` with Serializable isolation. Updates album (line 185-201), artists (line 204-207, method at 334-386), and tracks (line 210-213, method at 391-441) all within the same transaction block. |
-| 2 | Partial field selection is supported (admin chooses which fields to update) | VERIFIED | `types.ts` defines `FieldSelections` with 5 logical groups (metadata, artists, tracks, externalIds, coverArt). `field-selector.ts` implements `buildAlbumUpdateData` and `buildTrackUpdateData` that only include fields where selection is true. Per-track/per-artist granularity via Map<string, boolean>. |
-| 3 | Before-state is captured in enrichment_logs before any changes | VERIFIED | `apply-service.ts:130-142` fetches complete album with tracks and artists before transaction. `logCorrection()` at line 508-578 creates enrichment log with `buildAuditPayload()` containing before/after deltas for metadata, tracks, artists, externalIds, and coverArt. |
-| 4 | Correction log includes admin user ID and timestamp | VERIFIED | `apply-service.ts:547-569` creates enrichmentLog with `userId: adminUserId`, `operation: 'admin_correction'`, `triggeredBy: 'admin_ui'`. Timestamp via `createdAt` default in Prisma schema. |
-| 5 | Failed transactions leave no partial changes (atomic rollback) | VERIFIED | Uses Prisma interactive transaction with `isolationLevel: Prisma.TransactionIsolationLevel.Serializable` (line 247). Optimistic locking via `expectedUpdatedAt` check (line 168-180). `StaleDataError` thrown inside transaction causes full rollback. |
+| #   | Truth                                                                          | Status   | Evidence                                                                                                                                                                                                                                                                                                     |
+| --- | ------------------------------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Apply function updates Album, AlbumArtist, and Track tables in one transaction | VERIFIED | `apply-service.ts:162` uses `prisma.$transaction()` with Serializable isolation. Updates album (line 185-201), artists (line 204-207, method at 334-386), and tracks (line 210-213, method at 391-441) all within the same transaction block.                                                                |
+| 2   | Partial field selection is supported (admin chooses which fields to update)    | VERIFIED | `types.ts` defines `FieldSelections` with 5 logical groups (metadata, artists, tracks, externalIds, coverArt). `field-selector.ts` implements `buildAlbumUpdateData` and `buildTrackUpdateData` that only include fields where selection is true. Per-track/per-artist granularity via Map<string, boolean>. |
+| 3   | Before-state is captured in enrichment_logs before any changes                 | VERIFIED | `apply-service.ts:130-142` fetches complete album with tracks and artists before transaction. `logCorrection()` at line 508-578 creates enrichment log with `buildAuditPayload()` containing before/after deltas for metadata, tracks, artists, externalIds, and coverArt.                                   |
+| 4   | Correction log includes admin user ID and timestamp                            | VERIFIED | `apply-service.ts:547-569` creates enrichmentLog with `userId: adminUserId`, `operation: 'admin_correction'`, `triggeredBy: 'admin_ui'`. Timestamp via `createdAt` default in Prisma schema.                                                                                                                 |
+| 5   | Failed transactions leave no partial changes (atomic rollback)                 | VERIFIED | Uses Prisma interactive transaction with `isolationLevel: Prisma.TransactionIsolationLevel.Serializable` (line 247). Optimistic locking via `expectedUpdatedAt` check (line 168-180). `StaleDataError` thrown inside transaction causes full rollback.                                                       |
 
 **Score:** 5/5 truths verified
 
 ### Required Artifacts
 
-| Artifact | Expected | Status | Details |
-|----------|----------|--------|---------|
-| `src/lib/correction/apply/types.ts` | Apply types (FieldSelections, ApplyInput, ApplyResult) | EXISTS + SUBSTANTIVE (308 lines) | Exports: FieldSelections, MetadataSelections, ExternalIdSelections, CoverArtChoice, ApplyInput, ApplyResult, ApplyError, ApplyErrorCode, FieldDelta, TrackChangeLog, ArtistChangeLog, AuditLogPayload, createDefaultSelections, selectAllFromPreview |
-| `src/lib/correction/apply/track-matcher.ts` | Track matching strategy | EXISTS + SUBSTANTIVE (290 lines) | Exports: matchTracks, TrackMatch, TrackMatchType, SIMILARITY_THRESHOLD, calculateTitleSimilarity. Implements 4-pass algorithm: POSITION, TITLE_SIMILARITY, NEW, ORPHANED |
-| `src/lib/correction/apply/field-selector.ts` | Selective field update logic | EXISTS + SUBSTANTIVE (435 lines) | Exports: buildAlbumUpdateData, buildTrackUpdateData, buildTrackCreateData, getTrackIdsToDelete, hasAnyMetadataSelected, parseReleaseDate |
-| `src/lib/correction/apply/data-quality-calculator.ts` | Data quality recalculation | EXISTS + SUBSTANTIVE (211 lines) | Exports: calculateDataQuality, buildQualityFactors, QUALITY_THRESHOLDS, QUALITY_WEIGHTS, DataQualityFactors, DataQualitySource |
-| `src/lib/correction/apply/apply-service.ts` | ApplyCorrectionService with atomic transaction | EXISTS + SUBSTANTIVE (829 lines) | Exports: ApplyCorrectionService, applyCorrectionService (singleton), StaleDataError |
-| `src/lib/correction/apply/index.ts` | Barrel export | EXISTS + SUBSTANTIVE (104 lines) | Re-exports all types, functions, and service from submodules |
+| Artifact                                              | Expected                                               | Status                           | Details                                                                                                                                                                                                                                              |
+| ----------------------------------------------------- | ------------------------------------------------------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/correction/apply/types.ts`                   | Apply types (FieldSelections, ApplyInput, ApplyResult) | EXISTS + SUBSTANTIVE (308 lines) | Exports: FieldSelections, MetadataSelections, ExternalIdSelections, CoverArtChoice, ApplyInput, ApplyResult, ApplyError, ApplyErrorCode, FieldDelta, TrackChangeLog, ArtistChangeLog, AuditLogPayload, createDefaultSelections, selectAllFromPreview |
+| `src/lib/correction/apply/track-matcher.ts`           | Track matching strategy                                | EXISTS + SUBSTANTIVE (290 lines) | Exports: matchTracks, TrackMatch, TrackMatchType, SIMILARITY_THRESHOLD, calculateTitleSimilarity. Implements 4-pass algorithm: POSITION, TITLE_SIMILARITY, NEW, ORPHANED                                                                             |
+| `src/lib/correction/apply/field-selector.ts`          | Selective field update logic                           | EXISTS + SUBSTANTIVE (435 lines) | Exports: buildAlbumUpdateData, buildTrackUpdateData, buildTrackCreateData, getTrackIdsToDelete, hasAnyMetadataSelected, parseReleaseDate                                                                                                             |
+| `src/lib/correction/apply/data-quality-calculator.ts` | Data quality recalculation                             | EXISTS + SUBSTANTIVE (211 lines) | Exports: calculateDataQuality, buildQualityFactors, QUALITY_THRESHOLDS, QUALITY_WEIGHTS, DataQualityFactors, DataQualitySource                                                                                                                       |
+| `src/lib/correction/apply/apply-service.ts`           | ApplyCorrectionService with atomic transaction         | EXISTS + SUBSTANTIVE (829 lines) | Exports: ApplyCorrectionService, applyCorrectionService (singleton), StaleDataError                                                                                                                                                                  |
+| `src/lib/correction/apply/index.ts`                   | Barrel export                                          | EXISTS + SUBSTANTIVE (104 lines) | Re-exports all types, functions, and service from submodules                                                                                                                                                                                         |
 
 ### Key Link Verification
 
-| From | To | Via | Status | Details |
-|------|----|----|--------|---------|
-| apply-service.ts | prisma.$transaction | Interactive transaction with tx client | WIRED | Line 162: `await this.prisma.$transaction(async tx => {...})` |
-| apply-service.ts | prisma.enrichmentLog.create | Audit logging after transaction | WIRED | Line 547: creates enrichmentLog with full audit payload |
-| apply-service.ts | field-selector.ts | buildAlbumUpdateData, buildTrackUpdateData | WIRED | Lines 40-45 import from './field-selector' |
-| apply-service.ts | track-matcher.ts | matchTracks function | WIRED | Line 46: `import { matchTracks, type TrackMatch } from './track-matcher'` |
-| track-matcher.ts | fastest-levenshtein | distance function for similarity | WIRED | Line 20: `import { distance } from 'fastest-levenshtein'` |
-| field-selector.ts | types.ts | FieldSelections import | WIRED | Line 7: `import type { CoverArtChoice, FieldSelections } from './types'` |
-| correction/index.ts | apply module | Full module re-export | WIRED | Lines 75-108 export all apply module artifacts |
+| From                | To                          | Via                                        | Status | Details                                                                   |
+| ------------------- | --------------------------- | ------------------------------------------ | ------ | ------------------------------------------------------------------------- |
+| apply-service.ts    | prisma.$transaction         | Interactive transaction with tx client     | WIRED  | Line 162: `await this.prisma.$transaction(async tx => {...})`             |
+| apply-service.ts    | prisma.enrichmentLog.create | Audit logging after transaction            | WIRED  | Line 547: creates enrichmentLog with full audit payload                   |
+| apply-service.ts    | field-selector.ts           | buildAlbumUpdateData, buildTrackUpdateData | WIRED  | Lines 40-45 import from './field-selector'                                |
+| apply-service.ts    | track-matcher.ts            | matchTracks function                       | WIRED  | Line 46: `import { matchTracks, type TrackMatch } from './track-matcher'` |
+| track-matcher.ts    | fastest-levenshtein         | distance function for similarity           | WIRED  | Line 20: `import { distance } from 'fastest-levenshtein'`                 |
+| field-selector.ts   | types.ts                    | FieldSelections import                     | WIRED  | Line 7: `import type { CoverArtChoice, FieldSelections } from './types'`  |
+| correction/index.ts | apply module                | Full module re-export                      | WIRED  | Lines 75-108 export all apply module artifacts                            |
 
 ### Requirements Coverage
 
-| Requirement | Status | Notes |
-|-------------|--------|-------|
-| APPLY-01: Apply button | Phase 9 (UI) | Service layer ready, UI in later phase |
-| APPLY-02: Confirmation dialog | Phase 9 (UI) | AppliedChanges type ready for UI |
-| APPLY-03: Field selection checkboxes | SATISFIED | FieldSelections type with per-field granularity |
-| APPLY-04: Re-enrichment trigger | Not in Phase 4 | Future enhancement |
-| APPLY-05: Atomic changes | SATISFIED | Prisma transaction with Serializable isolation |
-| APPLY-06: Success message | Phase 9 (UI) | ApplyResult provides success data |
-| APPLY-07: Correction logged | SATISFIED | enrichmentLog.create with admin userId, operation, metadata |
-| APPLY-08: Data quality updated | SATISFIED | Always sets dataQuality: 'HIGH' for admin corrections |
+| Requirement                          | Status         | Notes                                                       |
+| ------------------------------------ | -------------- | ----------------------------------------------------------- |
+| APPLY-01: Apply button               | Phase 9 (UI)   | Service layer ready, UI in later phase                      |
+| APPLY-02: Confirmation dialog        | Phase 9 (UI)   | AppliedChanges type ready for UI                            |
+| APPLY-03: Field selection checkboxes | SATISFIED      | FieldSelections type with per-field granularity             |
+| APPLY-04: Re-enrichment trigger      | Not in Phase 4 | Future enhancement                                          |
+| APPLY-05: Atomic changes             | SATISFIED      | Prisma transaction with Serializable isolation              |
+| APPLY-06: Success message            | Phase 9 (UI)   | ApplyResult provides success data                           |
+| APPLY-07: Correction logged          | SATISFIED      | enrichmentLog.create with admin userId, operation, metadata |
+| APPLY-08: Data quality updated       | SATISFIED      | Always sets dataQuality: 'HIGH' for admin corrections       |
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
-|------|------|---------|----------|--------|
-| None | - | - | - | - |
+| ---- | ---- | ------- | -------- | ------ |
+| None | -    | -       | -        | -      |
 
 No blocking anti-patterns found. All `return null` statements are legitimate edge case handling (invalid dates, unselected tracks).
 
@@ -88,5 +88,5 @@ All 6 artifacts exist, are substantive (2,177 total lines), and properly wired t
 
 ---
 
-*Verified: 2026-01-24*
-*Verifier: Claude (gsd-verifier)*
+_Verified: 2026-01-24_
+_Verifier: Claude (gsd-verifier)_

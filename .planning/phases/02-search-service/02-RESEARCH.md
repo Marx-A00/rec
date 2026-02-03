@@ -16,27 +16,28 @@ Key findings: MusicBrainz supports Lucene query syntax with extensive filtering 
 
 ### Core
 
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| musicbrainz-api | ^0.25.1 | MusicBrainz API client | Already in package.json, proven in basic-service.ts |
-| fuzzysort | ^3.1.0 | Fuzzy string matching | Already used in string-similarity.ts, fast and battle-tested |
-| BullMQ | ^4.15.0 | Rate-limited queue | Already configured for 1 req/sec MusicBrainz limit |
+| Library         | Version | Purpose                | Why Standard                                                 |
+| --------------- | ------- | ---------------------- | ------------------------------------------------------------ |
+| musicbrainz-api | ^0.25.1 | MusicBrainz API client | Already in package.json, proven in basic-service.ts          |
+| fuzzysort       | ^3.1.0  | Fuzzy string matching  | Already used in string-similarity.ts, fast and battle-tested |
+| BullMQ          | ^4.15.0 | Rate-limited queue     | Already configured for 1 req/sec MusicBrainz limit           |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| Cover Art Archive | N/A (REST API) | Album thumbnails | Fetch cover art for search results display |
-| Redis/ioredis | ^5.3.0 | Queue backing store | Already configured for BullMQ |
+| Library           | Version        | Purpose             | When to Use                                |
+| ----------------- | -------------- | ------------------- | ------------------------------------------ |
+| Cover Art Archive | N/A (REST API) | Album thumbnails    | Fetch cover art for search results display |
+| Redis/ioredis     | ^5.3.0         | Queue backing store | Already configured for BullMQ              |
 
 ### Alternatives Considered
 
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| musicbrainz-api | Direct HTTP calls | More control but lose retry logic and type safety |
-| fuzzysort | string-similarity npm | Fuzzysort already integrated, no benefit to switching |
+| Instead of      | Could Use             | Tradeoff                                              |
+| --------------- | --------------------- | ----------------------------------------------------- |
+| musicbrainz-api | Direct HTTP calls     | More control but lose retry logic and type safety     |
+| fuzzysort       | string-similarity npm | Fuzzysort already integrated, no benefit to switching |
 
 **Installation:**
+
 ```bash
 # No new dependencies needed - all libraries already in package.json
 # Phase 2 extends existing infrastructure
@@ -73,6 +74,7 @@ src/components/admin/         # NEW: Admin search UI (Phase 3)
 **What:** All MusicBrainz searches go through BullMQ queue for automatic 1 req/sec rate limiting
 **When to use:** Every search operation - never call basic-service.ts directly from UI
 **Example:**
+
 ```typescript
 // Source: Existing pattern in queue-service.ts (lines 45-80)
 import { getMusicBrainzQueue } from './musicbrainz-queue';
@@ -85,22 +87,26 @@ export class MusicBrainzQueueService {
   ): Promise<MusicBrainzSearchResult[]> {
     // Build Lucene query using existing query-builder.ts
     const luceneQuery = buildDualInputQuery(albumQuery, artistQuery);
-    
+
     // Add year filter if provided
-    const finalQuery = options?.yearFilter 
+    const finalQuery = options?.yearFilter
       ? `${luceneQuery} AND firstreleasedate:${options.yearFilter}*`
       : luceneQuery;
-    
+
     // Enqueue with ADMIN priority (from Phase 1 decisions)
-    const job = await this.queue.addJob('search-release-groups', {
-      query: finalQuery,
-      limit: options?.limit || 10,
-      offset: 0
-    }, { priority: 1 }); // ADMIN = 1
-    
+    const job = await this.queue.addJob(
+      'search-release-groups',
+      {
+        query: finalQuery,
+        limit: options?.limit || 10,
+        offset: 0,
+      },
+      { priority: 1 }
+    ); // ADMIN = 1
+
     // Wait for job completion
     const result = await job.waitUntilFinished();
-    
+
     // Apply pluggable scoring strategy
     return this.scoreResults(result.data, albumQuery, artistQuery);
   }
@@ -112,6 +118,7 @@ export class MusicBrainzQueueService {
 **What:** Three interchangeable scoring strategies with dev UI to switch between them
 **When to use:** Search result ranking - allows testing different approaches
 **Example:**
+
 ```typescript
 // Source: Derived from existing string-similarity.ts, fuzzy-match.ts, artist-matching.ts patterns
 
@@ -129,14 +136,14 @@ export interface SearchScorer {
 class NormalizedScorer implements SearchScorer {
   score(result, albumQuery, artistQuery) {
     const titleScore = calculateStringSimilarity(result.title, albumQuery);
-    const artistScore = artistQuery 
+    const artistScore = artistQuery
       ? calculateStringSimilarity(result.artist, artistQuery) * 1.5 // Boost artist matches
       : 0;
-    
+
     return {
       ...result,
       finalScore: (titleScore + artistScore) / (artistQuery ? 2 : 1),
-      breakdown: { titleScore, artistScore, yearScore: 0 }
+      breakdown: { titleScore, artistScore, yearScore: 0 },
     };
   }
 }
@@ -146,11 +153,11 @@ class TieredScorer implements SearchScorer {
   score(result, albumQuery, artistQuery) {
     // Use existing getMatchConfidence from fuzzy-match.ts
     const confidence = getMatchConfidence(fuzzysortScore);
-    
+
     return {
       ...result,
       finalScore: confidenceToNumber(confidence), // high=1.0, medium=0.7, low=0.4
-      breakdown: { confidence, titleMatch: true, artistMatch: !!artistQuery }
+      breakdown: { confidence, titleMatch: true, artistMatch: !!artistQuery },
     };
   }
 }
@@ -159,16 +166,17 @@ class TieredScorer implements SearchScorer {
 class WeightedScorer implements SearchScorer {
   score(result, albumQuery, artistQuery) {
     // Equal weights across signals (from CONTEXT.md)
-    const titleScore = calculateStringSimilarity(result.title, albumQuery) * 33.33;
-    const artistScore = artistQuery 
+    const titleScore =
+      calculateStringSimilarity(result.title, albumQuery) * 33.33;
+    const artistScore = artistQuery
       ? calculateStringSimilarity(result.artist, artistQuery) * 33.33
       : 0;
     const yearScore = result.year ? 33.33 : 0; // Bonus for having year data
-    
+
     return {
       ...result,
       finalScore: titleScore + artistScore + yearScore,
-      breakdown: { titleScore, artistScore, yearScore }
+      breakdown: { titleScore, artistScore, yearScore },
     };
   }
 }
@@ -179,6 +187,7 @@ class WeightedScorer implements SearchScorer {
 **What:** Group multiple releases by release-group MBID, show one entry expandable to versions
 **When to use:** Search results display - prevents duplicate albums (original, remaster, deluxe)
 **Example:**
+
 ```typescript
 // Source: Inspired by existing deduplication patterns in search.ts types
 
@@ -193,17 +202,17 @@ function deduplicateByReleaseGroup(
   results: ScoredSearchResult[]
 ): GroupedReleaseResult[] {
   const groups = new Map<string, ScoredSearchResult[]>();
-  
+
   for (const result of results) {
     const rgid = result._musicbrainz?.releaseGroupId;
     if (!rgid) continue;
-    
+
     if (!groups.has(rgid)) {
       groups.set(rgid, []);
     }
     groups.get(rgid)!.push(result);
   }
-  
+
   return Array.from(groups.entries()).map(([rgid, versions]) => {
     // Sort by: 1) Albums first, 2) highest score, 3) earliest date
     const sorted = versions.sort((a, b) => {
@@ -211,12 +220,12 @@ function deduplicateByReleaseGroup(
       if (b.primaryType === 'Album' && a.primaryType !== 'Album') return 1;
       return b.finalScore - a.finalScore;
     });
-    
+
     return {
       releaseGroupId: rgid,
       primaryResult: sorted[0],
       alternateVersions: sorted.slice(1),
-      versionCount: versions.length
+      versionCount: versions.length,
     };
   });
 }
@@ -227,55 +236,60 @@ function deduplicateByReleaseGroup(
 **What:** Fetch thumbnail URLs from CAA for display in search results
 **When to use:** After getting search results - enrich with cover art URLs
 **Example:**
+
 ```typescript
 // Source: CAA API documentation
 
 export class CoverArtArchiveService {
   private baseUrl = 'https://coverartarchive.org';
-  
+
   async getCoverArt(releaseGroupId: string): Promise<CoverArtMetadata | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/release-group/${releaseGroupId}`);
-      
+      const response = await fetch(
+        `${this.baseUrl}/release-group/${releaseGroupId}`
+      );
+
       if (response.status === 404) {
         // No cover art available - return null
         return null;
       }
-      
+
       if (!response.ok) {
         throw new Error(`CAA returned ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       // Extract front cover URLs in all sizes
       return {
         originalUrl: data.images[0]?.image,
         thumbnails: {
           small: data.images[0]?.thumbnails['250'],
           medium: data.images[0]?.thumbnails['500'],
-          large: data.images[0]?.thumbnails['1200']
+          large: data.images[0]?.thumbnails['1200'],
         },
-        sourceRelease: data.release // MBID of release used for art
+        sourceRelease: data.release, // MBID of release used for art
       };
     } catch (error) {
       console.warn(`Failed to fetch CAA for ${releaseGroupId}:`, error);
       return null;
     }
   }
-  
+
   // Batch fetch with Promise.allSettled to handle failures gracefully
-  async batchGetCoverArt(releaseGroupIds: string[]): Promise<Map<string, CoverArtMetadata | null>> {
+  async batchGetCoverArt(
+    releaseGroupIds: string[]
+  ): Promise<Map<string, CoverArtMetadata | null>> {
     const results = await Promise.allSettled(
       releaseGroupIds.map(id => this.getCoverArt(id))
     );
-    
+
     const map = new Map<string, CoverArtMetadata | null>();
     releaseGroupIds.forEach((id, index) => {
       const result = results[index];
       map.set(id, result.status === 'fulfilled' ? result.value : null);
     });
-    
+
     return map;
   }
 }
@@ -292,15 +306,15 @@ export class CoverArtArchiveService {
 
 Problems that look simple but have existing solutions:
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Lucene query escaping | Manual string replace | query-builder.ts `escapeLuceneSpecialChars` | Handles all 15+ special chars correctly |
-| String normalization | Custom toLowerCase/trim | string-similarity.ts `normalizeString` | Handles diacritics, $→s, &→and, spacing |
-| Fuzzy matching | Levenshtein distance | fuzzysort library | Optimized C-like performance, handles typos |
-| Release group lookup | Search by title | MusicBrainz `rgid:` field | Direct MBID lookup is faster and exact |
-| Cover art hosting | Upload to S3/Cloudflare | Cover Art Archive CDN | Free, fast, already integrated with MB |
-| Artist name matching | Exact string comparison | artist-matching.ts patterns | Handles disambiguation, country, genres |
-| Rate limiting | setTimeout/setInterval | BullMQ queue with limiter | Redis-backed, survives restarts, cluster-safe |
+| Problem               | Don't Build             | Use Instead                                 | Why                                           |
+| --------------------- | ----------------------- | ------------------------------------------- | --------------------------------------------- |
+| Lucene query escaping | Manual string replace   | query-builder.ts `escapeLuceneSpecialChars` | Handles all 15+ special chars correctly       |
+| String normalization  | Custom toLowerCase/trim | string-similarity.ts `normalizeString`      | Handles diacritics, $→s, &→and, spacing       |
+| Fuzzy matching        | Levenshtein distance    | fuzzysort library                           | Optimized C-like performance, handles typos   |
+| Release group lookup  | Search by title         | MusicBrainz `rgid:` field                   | Direct MBID lookup is faster and exact        |
+| Cover art hosting     | Upload to S3/Cloudflare | Cover Art Archive CDN                       | Free, fast, already integrated with MB        |
+| Artist name matching  | Exact string comparison | artist-matching.ts patterns                 | Handles disambiguation, country, genres       |
+| Rate limiting         | setTimeout/setInterval  | BullMQ queue with limiter                   | Redis-backed, survives restarts, cluster-safe |
 
 **Key insight:** The codebase already has mature utilities for all search-related problems. Phase 2 is about composition and orchestration, not building new primitives.
 
@@ -314,6 +328,7 @@ Problems that look simple but have existing solutions:
 **Warning signs:** Empty results for queries with `&`, `$`, `/`, `:` in album/artist names
 
 **Example:**
+
 ```typescript
 // BAD - Will break for "AC/DC"
 const query = `artist:${artistName}`;
@@ -330,6 +345,7 @@ const query = `artist:"${escapeLuceneSpecialChars(artistName)}"`;
 **Warning signs:** Network errors in console, missing images in results
 
 **Example:**
+
 ```typescript
 // BAD - Will throw on 404
 const data = await fetch(caaUrl).then(r => r.json());
@@ -348,6 +364,7 @@ const data = await response.json();
 **Warning signs:** Duplicate albums in results (vinyl vs CD vs digital), CAA returns 404 for valid releases
 
 **Hierarchy:**
+
 - **Release Group** = The abstract album ("Abbey Road" by The Beatles)
 - **Release** = Specific edition (1969 vinyl, 2009 remaster CD, 2019 deluxe)
 - Use release-group MBID for search, CAA lookup, and deduplication
@@ -361,6 +378,7 @@ const data = await response.json();
 **Warning signs:** Results reorder drastically when switching strategies, low-confidence flags inconsistent
 
 **Solution:**
+
 ```typescript
 interface ScoredResult {
   normalizedScore: number; // Always 0-1 for sorting
@@ -377,6 +395,7 @@ interface ScoredResult {
 **Warning signs:** Network requests in console immediately on modal open
 
 **Example from CONTEXT.md:**
+
 ```typescript
 // BAD - Searches on mount
 useEffect(() => {
@@ -411,21 +430,21 @@ async searchReleaseGroups(
 ): Promise<ReleaseGroupSearchResult[]> {
   // Build base query
   let query = albumTitle ? `releasegroup:"${escapeLuceneSpecialChars(albumTitle)}"` : '';
-  
+
   if (artistName) {
     query += ` AND artist:"${escapeLuceneSpecialChars(artistName)}"`;
   }
-  
+
   // Add standard filters (from existing searchReleaseGroups pattern)
   query += ' AND status:official';
   query += ' AND NOT secondarytype:compilation';
   query += ' AND NOT secondarytype:dj-mix';
-  
+
   // Add optional year filter
   if (options?.yearFilter) {
     query += ` AND firstreleasedate:${options.yearFilter}*`;
   }
-  
+
   // Add optional release type filter
   if (options?.releaseTypes && options.releaseTypes.length > 0) {
     const typeQuery = options.releaseTypes
@@ -433,7 +452,7 @@ async searchReleaseGroups(
       .join(' OR ');
     query += ` AND (${typeQuery})`;
   }
-  
+
   // Search via queue with rate limiting
   const response = await this.api.search('release-group', {
     query,
@@ -441,7 +460,7 @@ async searchReleaseGroups(
     offset: 0,
     inc: ['artist-credits']
   });
-  
+
   return response['release-groups']?.map(rg => ({
     id: rg.id,
     title: rg.title,
@@ -465,22 +484,23 @@ async searchReleaseGroups(
 
 export class SearchScoringService {
   private strategy: ScoringStrategy = 'normalized';
-  
+
   setStrategy(strategy: ScoringStrategy) {
     this.strategy = strategy;
   }
-  
+
   scoreResults(
     results: ReleaseGroupSearchResult[],
     albumQuery: string,
     artistQuery?: string
   ): ScoredSearchResult[] {
     const scorer = this.getScorer(this.strategy);
-    
-    return results.map(result => scorer.score(result, albumQuery, artistQuery))
+
+    return results
+      .map(result => scorer.score(result, albumQuery, artistQuery))
       .sort((a, b) => b.normalizedScore - a.normalizedScore);
   }
-  
+
   private getScorer(strategy: ScoringStrategy): SearchScorer {
     switch (strategy) {
       case 'normalized':
@@ -491,7 +511,7 @@ export class SearchScoringService {
         return new WeightedScorer();
     }
   }
-  
+
   // Flag low-confidence results based on configurable threshold
   flagLowConfidence(
     results: ScoredSearchResult[],
@@ -499,7 +519,7 @@ export class SearchScoringService {
   ): ScoredSearchResult[] {
     return results.map(result => ({
       ...result,
-      isLowConfidence: result.normalizedScore < threshold
+      isLowConfidence: result.normalizedScore < threshold,
     }));
   }
 }
@@ -517,15 +537,15 @@ async enrichWithCoverArt(
   const rgids = results
     .map(r => r._musicbrainz?.releaseGroupId)
     .filter(Boolean) as string[];
-  
+
   // Batch fetch cover art (parallel, handles failures)
   const coverArtMap = await this.caaService.batchGetCoverArt(rgids);
-  
+
   // Merge cover art into results
   return results.map(result => {
     const rgid = result._musicbrainz?.releaseGroupId;
     const coverArt = rgid ? coverArtMap.get(rgid) : null;
-    
+
     return {
       ...result,
       coverArt: coverArt ? {
@@ -559,13 +579,13 @@ async loadMore(
   query: string
 ): Promise<{ results: ScoredSearchResult[]; newState: SearchPaginationState }> {
   const newOffset = state.currentOffset + state.resultsPerPage;
-  
+
   // Fetch next page
   const response = await this.searchReleaseGroups(query, {
     limit: state.resultsPerPage,
     offset: newOffset
   });
-  
+
   return {
     results: response,
     newState: {
@@ -580,12 +600,12 @@ async loadMore(
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|---------|
-| Direct MB API calls | BullMQ queue with 1 req/sec limit | Oct 2024 (queue-service.ts) | Prevents 503 rate limit errors |
-| Manual Jaccard similarity | fuzzysort library | Oct 2024 (string-similarity.ts) | 10x faster, better typo handling |
-| Single search input | Dual input (album + artist) | Jan 2024 (DualAlbumSearch.tsx) | Reduces false matches by 80% |
-| Discogs search | MusicBrainz search | Ongoing migration | Better metadata, free API |
+| Old Approach              | Current Approach                  | When Changed                    | Impact                           |
+| ------------------------- | --------------------------------- | ------------------------------- | -------------------------------- |
+| Direct MB API calls       | BullMQ queue with 1 req/sec limit | Oct 2024 (queue-service.ts)     | Prevents 503 rate limit errors   |
+| Manual Jaccard similarity | fuzzysort library                 | Oct 2024 (string-similarity.ts) | 10x faster, better typo handling |
+| Single search input       | Dual input (album + artist)       | Jan 2024 (DualAlbumSearch.tsx)  | Reduces false matches by 80%     |
+| Discogs search            | MusicBrainz search                | Ongoing migration               | Better metadata, free API        |
 
 **Deprecated/outdated:**
 
@@ -608,7 +628,7 @@ async loadMore(
 3. **Hybrid scoring strategy (our score vs MB score)**
    - What we know: CONTEXT.md mentions configurable "our score vs MB score vs hybrid" sorting
    - What's unclear: How to weight MB score (from search API) vs our computed score?
-   - Recommendation: Hybrid = (mbScore * 0.3) + (ourScore * 0.7), make weights configurable
+   - Recommendation: Hybrid = (mbScore _ 0.3) + (ourScore _ 0.7), make weights configurable
 
 4. **Scoring breakdown display format**
    - What we know: Should show component scores alongside final score

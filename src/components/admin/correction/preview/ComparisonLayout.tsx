@@ -25,21 +25,21 @@ export interface ComparisonLayoutProps {
  */
 export function ComparisonLayout({ current, source }: ComparisonLayoutProps) {
   return (
-    <div className="grid grid-cols-2 gap-6">
+    <div className='grid grid-cols-2 gap-6'>
       {/* Left column: Current data */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">
+      <div className='space-y-4'>
+        <h3 className='text-sm font-medium text-zinc-400 uppercase tracking-wide'>
           Current
         </h3>
-        <div className="space-y-4">{current}</div>
+        <div className='space-y-4'>{current}</div>
       </div>
 
       {/* Right column: MusicBrainz source */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">
+      <div className='space-y-4'>
+        <h3 className='text-sm font-medium text-zinc-400 uppercase tracking-wide'>
           MusicBrainz Source
         </h3>
-        <div className="space-y-4">{source}</div>
+        <div className='space-y-4'>{source}</div>
       </div>
     </div>
   );

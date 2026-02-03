@@ -18,8 +18,8 @@ key-files:
     - src/lib/correction/index.ts
 decisions:
   - id: type-priority-sorting
-    choice: "Album:1 > EP:2 > Single:3 > Broadcast:4 > Other:5"
-    rationale: "Albums are primary use case, group best version first"
+    choice: 'Album:1 > EP:2 > Single:3 > Broadcast:4 > Other:5'
+    rationale: 'Albums are primary use case, group best version first'
 metrics:
   duration: 2m 19s
   completed: 2026-01-24
@@ -47,6 +47,7 @@ metrics:
 ### New Methods (`src/lib/correction/search-service.ts`)
 
 **searchWithScoring(options)**
+
 ```typescript
 const response = await searchService.searchWithScoring({
   albumTitle: 'OK Computer',
@@ -58,6 +59,7 @@ const response = await searchService.searchWithScoring({
 ```
 
 Pipeline:
+
 1. Execute raw search via `search()`
 2. Apply scoring via `scoringService.scoreResults()`
 3. Group by release group MBID
@@ -65,12 +67,14 @@ Pipeline:
 5. Return with scoring metadata
 
 **groupByReleaseGroup(results)**
+
 - Groups scored results by `releaseGroupMbid`
 - Sorts within groups: type priority first, then score descending
 - First result becomes `primaryResult`, rest become `alternateVersions`
 - Groups sorted by: primary type priority, then best score
 
 **loadMore(options)**
+
 - Convenience method for pagination
 - Passes offset to searchWithScoring
 
@@ -78,11 +82,11 @@ Pipeline:
 
 ```typescript
 const TYPE_PRIORITY = {
-  Album: 1,    // Highest priority
+  Album: 1, // Highest priority
   EP: 2,
   Single: 3,
   Broadcast: 4,
-  Other: 5,    // Default for unknown types
+  Other: 5, // Default for unknown types
 };
 ```
 
@@ -91,6 +95,7 @@ Ensures albums appear before EPs/singles in search results.
 ## Key Implementation Details
 
 **Scoring Integration:**
+
 ```typescript
 const scoredResults = scoringService.scoreResults(
   rawResponse.results,
@@ -101,6 +106,7 @@ const scoredResults = scoringService.scoreResults(
 ```
 
 **Grouping Algorithm:**
+
 ```typescript
 // Group by MBID
 const groups = new Map<string, ScoredSearchResult[]>();
@@ -112,6 +118,7 @@ for (const result of results) {
 ```
 
 **Response Shape:**
+
 ```typescript
 {
   results: GroupedSearchResult[],       // Deduplicated
@@ -144,7 +151,7 @@ for (const group of response.results) {
   console.log('Primary:', group.primaryResult.title);
   console.log('  Score:', group.primaryResult.normalizedScore);
   console.log('  Versions:', group.versionCount);
-  
+
   for (const alt of group.alternateVersions) {
     console.log('  Alt:', alt.title, alt.disambiguation);
   }
@@ -180,11 +187,13 @@ This plan completes Phase 2 (Search Service). The correction module now provides
 3. **Scored search** (`searchWithScoring()`) - Integrated search with scoring and grouping
 
 **Ready for Phase 3 (GraphQL Layer):**
+
 - Types exported for GraphQL schema mapping
 - Service patterns established for resolver integration
 - `ScoredSearchResponse` shape ready for query response
 
 **Ready for Phase 4 (Correction Flow):**
+
 - Complete search service foundation
 - Grouped results ready for correction selection UI
 - Low-confidence flagging ready for admin workflow

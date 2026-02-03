@@ -20,28 +20,28 @@ The established libraries/tools for search UI in Next.js 15 + React 19:
 
 ### Core
 
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| TanStack Query | v5 | Client-side data fetching and caching | De facto standard for server state in React; supports pagination, caching, background updates |
-| React 19 | stable | UI framework | Latest stable with improved form handling, useActionState for forms |
-| Next.js | 15 | App framework | Project standard; App Router with client components |
-| Tailwind CSS | 3.x | Styling | Project standard; existing dark theme in zinc colors |
-| TypeScript | 5.x | Type safety | Project standard; full type inference with TanStack Query |
+| Library        | Version | Purpose                               | Why Standard                                                                                  |
+| -------------- | ------- | ------------------------------------- | --------------------------------------------------------------------------------------------- |
+| TanStack Query | v5      | Client-side data fetching and caching | De facto standard for server state in React; supports pagination, caching, background updates |
+| React 19       | stable  | UI framework                          | Latest stable with improved form handling, useActionState for forms                           |
+| Next.js        | 15      | App framework                         | Project standard; App Router with client components                                           |
+| Tailwind CSS   | 3.x     | Styling                               | Project standard; existing dark theme in zinc colors                                          |
+| TypeScript     | 5.x     | Type safety                           | Project standard; full type inference with TanStack Query                                     |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| use-debounce | 10.x | Input debouncing | Optional - user wants explicit search, not live feedback |
-| react-intersection-observer | 9.x | Infinite scroll detection | Alternative to "Load more" button (not needed per CONTEXT) |
+| Library                     | Version | Purpose                   | When to Use                                                |
+| --------------------------- | ------- | ------------------------- | ---------------------------------------------------------- |
+| use-debounce                | 10.x    | Input debouncing          | Optional - user wants explicit search, not live feedback   |
+| react-intersection-observer | 9.x     | Infinite scroll detection | Alternative to "Load more" button (not needed per CONTEXT) |
 
 ### Alternatives Considered
 
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| TanStack Query | SWR | Similar features but TanStack has better infinite query support, TypeScript, and ecosystem integration |
-| Client-side fetch | Server Actions | Server Actions better for mutations, but search needs instant feedback and caching |
-| Infinite scroll | Load more button | User decided on Load more for explicit control (CONTEXT.md) |
+| Instead of        | Could Use        | Tradeoff                                                                                               |
+| ----------------- | ---------------- | ------------------------------------------------------------------------------------------------------ |
+| TanStack Query    | SWR              | Similar features but TanStack has better infinite query support, TypeScript, and ecosystem integration |
+| Client-side fetch | Server Actions   | Server Actions better for mutations, but search needs instant feedback and caching                     |
+| Infinite scroll   | Load more button | User decided on Load more for explicit control (CONTEXT.md)                                            |
 
 **Installation:**
 No new packages needed - all dependencies already installed in project.
@@ -65,6 +65,7 @@ src/components/admin/correction/
 **What:** Form with two controlled inputs and explicit submission (button or Enter key)
 **When to use:** When users need control over when searches execute (not live search)
 **Example:**
+
 ```typescript
 // Source: React 19 form patterns + user decisions
 export function SearchInputs({ albumTitle, artistName, onSearch }) {
@@ -103,6 +104,7 @@ export function SearchInputs({ albumTitle, artistName, onSearch }) {
 **What:** Manual pagination using offset-based queries with "Load more" button
 **When to use:** When users want control over loading additional results
 **Example:**
+
 ```typescript
 // Source: TanStack Query v5 docs + Next.js 15 patterns
 export function SearchResults({ query }) {
@@ -135,6 +137,7 @@ export function SearchResults({ query }) {
 **What:** Full row click navigation with hover state and scroll position preservation
 **When to use:** When results act as navigation to next step
 **Example:**
+
 ```typescript
 // Source: User decisions (CONTEXT.md) + web design patterns
 export function SearchResultCard({ result, onClick }) {
@@ -171,6 +174,7 @@ export function SearchResultCard({ result, onClick }) {
 **What:** Skeleton replaces entire search area (inputs + results) during loading
 **When to use:** When user wants clear visual feedback that search is executing
 **Example:**
+
 ```typescript
 // Source: User decisions + existing LoadingStates.tsx patterns
 export function SearchSkeleton() {
@@ -201,11 +205,12 @@ export function SearchSkeleton() {
 **What:** Browser automatically preserves scroll position when navigating back
 **When to use:** Multi-step flows where users return to search results
 **Example:**
+
 ```typescript
 // Source: Next.js navigation behavior + user decisions
 // Browser natively preserves scroll position in most cases
 // If needed, can explicitly save/restore:
-const handleResultClick = (result) => {
+const handleResultClick = result => {
   // Save scroll position
   sessionStorage.setItem('search-scroll', window.scrollY.toString());
   // Navigate to preview step
@@ -235,13 +240,13 @@ useEffect(() => {
 
 Problems that look simple but have existing solutions:
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Debounced search | Custom debounce logic | use-debounce library | Edge cases with cleanup, race conditions |
-| Query caching | Manual cache with useState | TanStack Query | Cache invalidation, stale-while-revalidate, background updates |
-| Form validation | Custom validation functions | HTML5 validation + controlled inputs | Browser-native, accessible, well-tested |
-| Skeleton loading | Custom pulse animations | Existing Skeleton component | Already styled for dark theme, consistent |
-| Image fallback handling | Custom error states | AlbumImage component | Already handles Cover Art Archive 404s, retries, fallbacks |
+| Problem                 | Don't Build                 | Use Instead                          | Why                                                            |
+| ----------------------- | --------------------------- | ------------------------------------ | -------------------------------------------------------------- |
+| Debounced search        | Custom debounce logic       | use-debounce library                 | Edge cases with cleanup, race conditions                       |
+| Query caching           | Manual cache with useState  | TanStack Query                       | Cache invalidation, stale-while-revalidate, background updates |
+| Form validation         | Custom validation functions | HTML5 validation + controlled inputs | Browser-native, accessible, well-tested                        |
+| Skeleton loading        | Custom pulse animations     | Existing Skeleton component          | Already styled for dark theme, consistent                      |
+| Image fallback handling | Custom error states         | AlbumImage component                 | Already handles Cover Art Archive 404s, retries, fallbacks     |
 
 **Key insight:** Search UI has well-established patterns in React ecosystem. The existing project infrastructure (TanStack Query, Skeleton components, AlbumImage) handles most complexity. Focus on wiring existing pieces together per user decisions.
 
@@ -359,15 +364,16 @@ interface SearchParams {
 
 export function useSearchMusicBrainz(params: SearchParams, enabled: boolean) {
   const searchService = getCorrectionSearchService();
-  
+
   return useQuery({
     queryKey: ['musicbrainz-search', params],
-    queryFn: () => searchService.searchWithScoring({
-      albumTitle: params.albumTitle,
-      artistName: params.artistName,
-      offset: params.offset ?? 0,
-      limit: params.limit ?? 10,
-    }),
+    queryFn: () =>
+      searchService.searchWithScoring({
+        albumTitle: params.albumTitle,
+        artistName: params.artistName,
+        offset: params.offset ?? 0,
+        limit: params.limit ?? 10,
+      }),
     enabled: enabled && !!(params.albumTitle || params.artistName),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -405,7 +411,7 @@ export function SearchResultCard({ result, onClick }: SearchResultCardProps) {
         className="rounded flex-shrink-0"
         showSkeleton={false}
       />
-      
+
       {/* Details */}
       <div className="flex-1 min-w-0">
         {/* Title + Score */}
@@ -417,7 +423,7 @@ export function SearchResultCard({ result, onClick }: SearchResultCardProps) {
             {Math.round(result.normalizedScore * 100)}% match
           </span>
         </div>
-        
+
         {/* Artist + Year */}
         <div className="text-sm text-zinc-400 truncate mb-1">
           {result.primaryArtistName}
@@ -425,7 +431,7 @@ export function SearchResultCard({ result, onClick }: SearchResultCardProps) {
             <> • {result.firstReleaseDate.split('-')[0]}</>
           )}
         </div>
-        
+
         {/* Metadata row */}
         <div className="flex items-center gap-2 text-xs text-zinc-500">
           {result.primaryType && (
@@ -472,16 +478,16 @@ export function SearchForm({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    
+
     // Validation: at least one field required
     const trimmedTitle = albumTitle.trim();
     const trimmedArtist = artistName.trim();
-    
+
     if (!trimmedTitle && !trimmedArtist) {
       // Could show toast error here
       return;
     }
-    
+
     onSearch({ albumTitle: trimmedTitle, artistName: trimmedArtist });
   };
 
@@ -548,13 +554,13 @@ export function NoResultsState({ onManualEdit }: NoResultsStateProps) {
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|---------|
-| useQuery overloads | Single object parameter | TanStack Query v5 (2023) | Simpler API, better TypeScript inference |
-| isLoading state | isPending state | TanStack Query v5 (2023) | More accurate lifecycle representation |
-| Infinite scroll default | Load more button option | 2024-2025 UX trends | Better user control, accessibility |
-| Live search always | Explicit search gaining favor | 2024-2026 | Reduces noise, respects user agency |
-| Color-coded confidence | Numeric scores | AI/ML UI patterns 2025-2026 | Reduces cognitive load, lets users judge |
+| Old Approach            | Current Approach              | When Changed                | Impact                                   |
+| ----------------------- | ----------------------------- | --------------------------- | ---------------------------------------- |
+| useQuery overloads      | Single object parameter       | TanStack Query v5 (2023)    | Simpler API, better TypeScript inference |
+| isLoading state         | isPending state               | TanStack Query v5 (2023)    | More accurate lifecycle representation   |
+| Infinite scroll default | Load more button option       | 2024-2025 UX trends         | Better user control, accessibility       |
+| Live search always      | Explicit search gaining favor | 2024-2026                   | Reduces noise, respects user agency      |
+| Color-coded confidence  | Numeric scores                | AI/ML UI patterns 2025-2026 | Reduces cognitive load, lets users judge |
 
 **Deprecated/outdated:**
 

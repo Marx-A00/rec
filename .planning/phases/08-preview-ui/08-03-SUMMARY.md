@@ -5,7 +5,13 @@ subsystem: admin-correction-ui
 tags: [react, track-comparison, cover-art, accordion, preview]
 dependency-graph:
   requires: [08-01, 08-02]
-  provides: [complete-preview-step, track-comparison, cover-art-comparison, modal-integration]
+  provides:
+    [
+      complete-preview-step,
+      track-comparison,
+      cover-art-comparison,
+      modal-integration,
+    ]
   affects: [09-apply-ui]
 tech-stack:
   added: []
@@ -19,21 +25,21 @@ key-files:
     - src/components/admin/correction/preview/index.ts
     - src/components/admin/correction/CorrectionModal.tsx
 decisions:
-  - id: "08-03-01"
-    title: "Track row styling per change type"
-    choice: "Color-coded backgrounds and text per changeType"
-    rationale: "MATCH=neutral, MODIFIED=yellow bg, ADDED=green bg, REMOVED=red bg with opacity"
-  - id: "08-03-02"
-    title: "Accordion default expansion"
-    choice: "Expand sections with changes, collapse unchanged"
-    rationale: "Focuses admin attention on what matters"
-  - id: "08-03-03"
-    title: "Change count badges"
+  - id: '08-03-01'
+    title: 'Track row styling per change type'
+    choice: 'Color-coded backgrounds and text per changeType'
+    rationale: 'MATCH=neutral, MODIFIED=yellow bg, ADDED=green bg, REMOVED=red bg with opacity'
+  - id: '08-03-02'
+    title: 'Accordion default expansion'
+    choice: 'Expand sections with changes, collapse unchanged'
+    rationale: 'Focuses admin attention on what matters'
+  - id: '08-03-03'
+    title: 'Change count badges'
     choice: "Show '(N changes)' in yellow next to section titles"
-    rationale: "Quick visual indication of work needed per section"
+    rationale: 'Quick visual indication of work needed per section'
 metrics:
-  duration: "5m 35s"
-  completed: "2026-01-26"
+  duration: '5m 35s'
+  completed: '2026-01-26'
 ---
 
 # Phase 8 Plan 3: Track/Cover Art Comparison and Modal Integration Summary
@@ -43,7 +49,9 @@ Complete preview UI with track comparison, cover art, and modal integration.
 ## What Was Built
 
 ### TrackComparison Component (305 lines)
+
 Position-aligned track listing with diff highlighting:
+
 - Summary header with matching/modified/added/removed counts
 - Two-column grid: current track | source track
 - Color-coded rows per changeType:
@@ -56,7 +64,9 @@ Position-aligned track listing with diff highlighting:
 - Duration formatting to mm:ss
 
 ### CoverArtComparison Component (115 lines)
+
 Side-by-side cover art display:
+
 - Current: AlbumImage with Cloudflare support
 - Source: Next/Image for CAA URLs
 - Change badge below images:
@@ -66,7 +76,9 @@ Side-by-side cover art display:
 - 128x128 thumbnails with placeholder fallback
 
 ### PreviewView Update (242 lines)
+
 Complete preview with all sections:
+
 - Summary change counts bar at top
 - Cover art comparison header
 - Album title with source comparison info
@@ -78,7 +90,9 @@ Complete preview with all sections:
 - Default expanded based on sections with changes
 
 ### CorrectionModal Integration
+
 Step 2 now renders PreviewView:
+
 - Passes albumId and selectedResultMbid
 - Guard for missing selection with helpful message
 - Back button preserves search state via modalState
@@ -113,6 +127,7 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 Phase 9 (Apply UI) can proceed:
+
 - Preview step complete with full comparison display
 - Modal integration done with proper state flow
 - Apply button placeholder ready for Phase 9 implementation

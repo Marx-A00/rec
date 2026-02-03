@@ -89,9 +89,11 @@ Implemented the CorrectionPreviewService that provides a single `generatePreview
 - Change counts → Summary statistics with hasTrackChanges flag
 
 **Files created:**
+
 - `src/lib/correction/preview/preview-service.ts` - CorrectionPreviewService (405 lines)
 
 **Files modified:**
+
 - `src/lib/correction/preview/index.ts` - Added service exports
 - `src/lib/correction/index.ts` - Re-exported preview service and types
 
@@ -128,6 +130,7 @@ None - plan executed exactly as written.
 ## Integration Points
 
 **Consumes:**
+
 - `@/lib/prisma` - Database access for current album
 - `@/lib/musicbrainz/queue-service` - getQueuedMusicBrainzService for API calls
 - `@/lib/queue` - PRIORITY_TIERS.ADMIN constant
@@ -135,6 +138,7 @@ None - plan executed exactly as written.
 - Types from `./types` and `../types`
 
 **Provides:**
+
 - `getCorrectionPreviewService(): CorrectionPreviewService` - Singleton getter
 - `CorrectionPreviewService` class
 - Re-exported from correction module barrel for easy import
@@ -144,9 +148,9 @@ None - plan executed exactly as written.
 ```typescript
 const previewService = getCorrectionPreviewService();
 const preview = await previewService.generatePreview(
-  albumId,           // Internal DB ID
-  searchResult,      // Selected search result (has releaseGroupMbid)
-  releaseMbid        // Specific release MBID for track data
+  albumId, // Internal DB ID
+  searchResult, // Selected search result (has releaseGroupMbid)
+  releaseMbid // Specific release MBID for track data
 );
 
 // preview contains:
@@ -171,6 +175,7 @@ No automated tests created in this plan. Testing will be done via integration in
 ## Next Phase Readiness
 
 **Ready for 03-04:** ✅
+
 - Preview service fully implemented and typed
 - All dependencies resolved (DiffEngine, types, queue service)
 - Clean barrel exports for easy import
@@ -179,6 +184,7 @@ No automated tests created in this plan. Testing will be done via integration in
 **Blockers:** None
 
 **Recommendations for 03-04:**
+
 1. Handle MusicBrainz API errors gracefully in UI (preview.mbReleaseData can be null)
 2. Consider caching previews to avoid re-fetching on navigation
 3. Add loading states for queue job processing

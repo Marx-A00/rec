@@ -20,14 +20,14 @@ file-tracking:
     modified: []
 decisions:
   - id: 08-01-01
-    description: "Skeleton mimics final layout with two-column structure"
+    description: 'Skeleton mimics final layout with two-column structure'
   - id: 08-01-02
-    description: "5-minute stale time for preview query caching"
+    description: '5-minute stale time for preview query caching'
   - id: 08-01-03
-    description: "Cover art comparison separate from ComparisonLayout"
+    description: 'Cover art comparison separate from ComparisonLayout'
 metrics:
   duration: 2.6min
-  completed: "2026-01-26"
+  completed: '2026-01-26'
 ---
 
 # Phase 8 Plan 1: Preview Container and Layout Foundation Summary
@@ -37,6 +37,7 @@ metrics:
 ## What Was Built
 
 ### PreviewView Container (203 lines)
+
 - Main container component for correction preview workflow
 - Fetches data via `useGetCorrectionPreviewQuery` GraphQL hook
 - Three states: loading (skeleton), error (red message), success (preview data)
@@ -44,12 +45,14 @@ metrics:
 - 5-minute stale time for query caching
 
 ### ComparisonLayout (46 lines)
+
 - Reusable two-column grid layout (`grid grid-cols-2 gap-6`)
 - Left column: "Current" header with zinc-400 uppercase styling
 - Right column: "MusicBrainz Source" header
 - Accepts any React children for flexible content
 
 ### PreviewSkeleton (117 lines)
+
 - Animated loading skeleton matching preview layout structure
 - Two-column skeleton with:
   - Summary change counts placeholder
@@ -59,6 +62,7 @@ metrics:
 - Uses `animate-pulse` on `bg-zinc-800` elements
 
 ### Module Barrel Export
+
 - `src/components/admin/correction/preview/index.ts`
 - Exports: `PreviewView`, `ComparisonLayout`, `PreviewSkeleton`
 
@@ -86,10 +90,12 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 Ready for Plan 08-02 (Field Comparison):
+
 - PreviewView provides `fieldDiffs` and `artistDiff` data from query
 - ComparisonLayout ready to host field comparison components
 - Placeholder content marked for replacement
 
 Ready for Plan 08-03 (Track Comparison):
+
 - PreviewView provides `trackDiffs` and `trackSummary` data
 - Track summary preview already displayed in placeholder section

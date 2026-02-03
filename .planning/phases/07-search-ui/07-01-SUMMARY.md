@@ -29,6 +29,7 @@ metrics:
 ## What Was Built
 
 ### SearchInputs Component
+
 - Two controlled input fields (album title, artist name)
 - Pre-populates with initial values from current album data
 - Form validation: at least one field must have non-empty trimmed content
@@ -37,24 +38,28 @@ metrics:
 - Uses existing Input/Button components with dark theme styling
 
 ### SearchSkeleton Component
+
 - Loading skeleton for search step visual feedback
 - Input field skeletons (3 rows: title, artist, button)
 - Result row skeletons (5 rows with 48px thumbnail + text lines)
 - Matches expected search area layout
 
 ### Barrel Export
+
 - `src/components/admin/correction/search/index.ts`
 - Exports SearchInputs and SearchSkeleton
 
 ## Key Implementation Details
 
 ### Props Interface (SearchInputs)
+
 - `initialAlbumTitle: string` - pre-populate from current album
 - `initialArtistName: string` - pre-populate from primary artist
 - `onSearch: (query: { albumTitle: string; artistName: string }) => void`
 - `isLoading?: boolean` - disable search button during loading
 
 ### Form Behavior
+
 - Prevents default on submit
 - Trims values before validation and callback
 - Button disabled when both inputs empty OR loading
@@ -78,6 +83,7 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 Ready for 07-02 (Search Results Display):
+
 - SearchInputs ready to call onSearch callback
 - SearchSkeleton ready to show during search loading
 - Barrel export set up for easy imports

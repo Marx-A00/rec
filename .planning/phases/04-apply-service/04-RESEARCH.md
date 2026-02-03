@@ -9,6 +9,7 @@
 This phase implements the Apply Correction Service that atomically updates Album, AlbumArtist, and Track tables based on admin-selected MusicBrainz corrections. The system uses Prisma's interactive transactions to ensure all-or-nothing updates with full audit trail logging.
 
 **Key Technical Challenges:**
+
 1. Atomic updates across multiple tables (Album, AlbumArtist, Track, Artist creation)
 2. Selective field updates based on admin choices (partial apply)
 3. Track matching strategy (position-first, title-fallback)
@@ -24,28 +25,29 @@ The established libraries/tools for this domain:
 
 ### Core
 
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| Prisma Client | Current | Database ORM with transaction support | Industry standard for TypeScript + PostgreSQL, built-in transaction API |
-| @prisma/client | Current | Generated Prisma types | Type-safe database operations with full IDE support |
-| fastest-levenshtein | Latest | String similarity for track matching | Fastest JS/TS implementation of Levenshtein distance (O(mn) complexity) |
+| Library             | Version | Purpose                               | Why Standard                                                            |
+| ------------------- | ------- | ------------------------------------- | ----------------------------------------------------------------------- |
+| Prisma Client       | Current | Database ORM with transaction support | Industry standard for TypeScript + PostgreSQL, built-in transaction API |
+| @prisma/client      | Current | Generated Prisma types                | Type-safe database operations with full IDE support                     |
+| fastest-levenshtein | Latest  | String similarity for track matching  | Fastest JS/TS implementation of Levenshtein distance (O(mn) complexity) |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| jsdiff | Already in use | Character-level text diffs (from Phase 3) | Reuse for audit log change details |
+| Library | Version        | Purpose                                   | When to Use                        |
+| ------- | -------------- | ----------------------------------------- | ---------------------------------- |
+| jsdiff  | Already in use | Character-level text diffs (from Phase 3) | Reuse for audit log change details |
 
 ### Alternatives Considered
 
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| Interactive transactions | Sequential operations (`$transaction([])`) | Arrays don't support conditional logic between operations |
-| Interactive transactions | Nested writes | Can't handle complex track matching/deletion logic |
-| fastest-levenshtein | js-levenshtein or custom | fastest-levenshtein is most performant, actively maintained |
-| Optimistic locking | Database row locks | Row locks hurt concurrency, optimistic approach scales better |
+| Instead of               | Could Use                                  | Tradeoff                                                      |
+| ------------------------ | ------------------------------------------ | ------------------------------------------------------------- |
+| Interactive transactions | Sequential operations (`$transaction([])`) | Arrays don't support conditional logic between operations     |
+| Interactive transactions | Nested writes                              | Can't handle complex track matching/deletion logic            |
+| fastest-levenshtein      | js-levenshtein or custom                   | fastest-levenshtein is most performant, actively maintained   |
+| Optimistic locking       | Database row locks                         | Row locks hurt concurrency, optimistic approach scales better |
 
 **Installation:**
+
 ```bash
 npm install fastest-levenshtein
 # Prisma already installed, jsdiff already installed from Phase 3
@@ -70,6 +72,7 @@ src/lib/correction/apply/
 **What:** Fetch all necessary data BEFORE opening transaction, then execute writes quickly
 **When to use:** All complex database operations requiring atomicity
 **Example:**
+
 ```typescript
 // Source: Prisma docs + best practices
 async applyCorrection(albumId: string, preview: CorrectionPreview, selections: FieldSelections) {
@@ -78,10 +81,10 @@ async applyCorrection(albumId: string, preview: CorrectionPreview, selections: F
     where: { id: albumId },
     include: { tracks: true, artists: true }
   });
-  
+
   // 2. PREPARE: Build update payloads outside transaction
   const updates = this.buildUpdatePayloads(currentAlbum, preview, selections);
-  
+
   // 3. TRANSACTION: Only writes, no complex logic
   const result = await prisma.$transaction(async (tx) => {
     // Optimistic locking check
@@ -89,20 +92,20 @@ async applyCorrection(albumId: string, preview: CorrectionPreview, selections: F
     if (current.updatedAt > expectedUpdatedAt) {
       throw new StaleDataError('Album was modified by another user');
     }
-    
+
     // Fast writes only
     await tx.album.update({ where: { id: albumId }, data: updates.album });
     await tx.albumArtist.deleteMany({ where: { albumId } });
     await tx.albumArtist.createMany({ data: updates.artists });
     await tx.track.deleteMany({ where: { albumId, id: { notIn: updates.tracksToKeep } } });
     // ... more writes
-    
+
     return updatedAlbum;
   }, {
     timeout: 10000, // 10s for safety
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable
   });
-  
+
   return result;
 }
 ```
@@ -112,6 +115,7 @@ async applyCorrection(albumId: string, preview: CorrectionPreview, selections: F
 **What:** Use `updatedAt` timestamp to detect concurrent modifications
 **When to use:** Prevent lost updates in multi-admin scenarios
 **Example:**
+
 ```typescript
 // Source: Concurrency Control in Node.js and Prisma article
 interface ApplyInput {
@@ -123,15 +127,15 @@ interface ApplyInput {
 async applyWithOptimisticLock(input: ApplyInput) {
   return await prisma.$transaction(async (tx) => {
     // Check if record was modified since preview was generated
-    const current = await tx.album.findUnique({ 
+    const current = await tx.album.findUnique({
       where: { id: input.albumId },
       select: { updatedAt: true }
     });
-    
+
     if (current.updatedAt.getTime() !== input.expectedUpdatedAt.getTime()) {
       throw new Error('STALE_DATA: Album was modified. Refresh and retry.');
     }
-    
+
     // Proceed with update (updatedAt auto-updates via Prisma)
     return await tx.album.update({
       where: { id: input.albumId },
@@ -146,14 +150,15 @@ async applyWithOptimisticLock(input: ApplyInput) {
 **What:** Build Prisma update data object conditionally based on field selection
 **When to use:** Admin chooses which fields to update (partial apply)
 **Example:**
+
 ```typescript
 // Source: Prisma type safety docs + community patterns
 function buildAlbumUpdateData(
-  preview: CorrectionPreview, 
+  preview: CorrectionPreview,
   selections: FieldSelections
 ): Prisma.AlbumUpdateInput {
   const data: Prisma.AlbumUpdateInput = {};
-  
+
   // Only include selected fields (undefined = not updated)
   if (selections.metadata.title) {
     data.title = preview.sourceResult.title;
@@ -165,11 +170,11 @@ function buildAlbumUpdateData(
     data.musicbrainzId = preview.sourceResult.releaseGroupMbid;
   }
   // ... more fields
-  
+
   // Always update timestamps and data quality
   data.dataQuality = calculateDataQuality(data);
   data.lastEnriched = new Date();
-  
+
   return data;
 }
 ```
@@ -179,6 +184,7 @@ function buildAlbumUpdateData(
 **What:** Match tracks by position first, fall back to title similarity for reordered tracklists
 **When to use:** Merging MusicBrainz tracks with existing database tracks
 **Example:**
+
 ```typescript
 // Source: Music track matching research + fastest-levenshtein
 import { distance } from 'fastest-levenshtein';
@@ -190,63 +196,65 @@ interface TrackMatch {
   confidence: number; // 0-1
 }
 
-function matchTracks(
-  dbTracks: Track[], 
-  mbTracks: MBRecording[]
-): TrackMatch[] {
+function matchTracks(dbTracks: Track[], mbTracks: MBRecording[]): TrackMatch[] {
   const matches: TrackMatch[] = [];
   const usedDbTracks = new Set<string>();
-  
+
   for (const mbTrack of mbTracks) {
     // 1. Try position match first (disc + track number)
     const positionMatch = dbTracks.find(
-      t => t.discNumber === mbTrack.discNumber && 
-           t.trackNumber === mbTrack.position &&
-           !usedDbTracks.has(t.id)
+      t =>
+        t.discNumber === mbTrack.discNumber &&
+        t.trackNumber === mbTrack.position &&
+        !usedDbTracks.has(t.id)
     );
-    
+
     if (positionMatch) {
       usedDbTracks.add(positionMatch.id);
       matches.push({
         dbTrack: positionMatch,
         mbTrack,
         matchType: 'POSITION',
-        confidence: 1.0
+        confidence: 1.0,
       });
       continue;
     }
-    
+
     // 2. Fall back to title similarity (Levenshtein distance)
     const similarityMatches = dbTracks
       .filter(t => !usedDbTracks.has(t.id))
       .map(t => ({
         track: t,
-        similarity: 1 - (distance(t.title.toLowerCase(), mbTrack.title.toLowerCase()) / 
-                    Math.max(t.title.length, mbTrack.title.length))
+        similarity:
+          1 -
+          distance(t.title.toLowerCase(), mbTrack.title.toLowerCase()) /
+            Math.max(t.title.length, mbTrack.title.length),
       }))
       .filter(m => m.similarity > 0.8); // 80% similarity threshold
-    
+
     if (similarityMatches.length > 0) {
-      const best = similarityMatches.sort((a, b) => b.similarity - a.similarity)[0];
+      const best = similarityMatches.sort(
+        (a, b) => b.similarity - a.similarity
+      )[0];
       usedDbTracks.add(best.track.id);
       matches.push({
         dbTrack: best.track,
         mbTrack,
         matchType: 'TITLE_SIMILARITY',
-        confidence: best.similarity
+        confidence: best.similarity,
       });
       continue;
     }
-    
+
     // 3. No match - this is a new track
     matches.push({
       dbTrack: null,
       mbTrack,
       matchType: 'NEW',
-      confidence: 1.0
+      confidence: 1.0,
     });
   }
-  
+
   return matches;
 }
 ```
@@ -256,6 +264,7 @@ function matchTracks(
 **What:** Log only changed fields with before/after values to enrichment_logs
 **When to use:** Admin corrections requiring full audit trail
 **Example:**
+
 ```typescript
 // Source: @sourceloop/audit-log pattern + existing enrichment_logs schema
 interface FieldDelta {
@@ -266,7 +275,10 @@ interface FieldDelta {
 
 interface AuditLogPayload {
   metadata: FieldDelta[];
-  tracks: Array<{ action: 'added' | 'modified' | 'removed'; delta: FieldDelta[] }>;
+  tracks: Array<{
+    action: 'added' | 'modified' | 'removed';
+    delta: FieldDelta[];
+  }>;
   artists: Array<{ action: 'added' | 'removed'; artistName: string }>;
   externalIds: FieldDelta[];
   coverArt: FieldDelta[];
@@ -284,33 +296,37 @@ async function logCorrection(
     tracks: [],
     artists: [],
     externalIds: [],
-    coverArt: []
+    coverArt: [],
   };
-  
+
   // Capture only changed fields
   if (before.title !== after.title) {
-    deltas.metadata.push({ field: 'title', before: before.title, after: after.title });
+    deltas.metadata.push({
+      field: 'title',
+      before: before.title,
+      after: after.title,
+    });
   }
   if (before.releaseDate?.getTime() !== after.releaseDate?.getTime()) {
-    deltas.metadata.push({ 
-      field: 'releaseDate', 
-      before: before.releaseDate, 
-      after: after.releaseDate 
+    deltas.metadata.push({
+      field: 'releaseDate',
+      before: before.releaseDate,
+      after: after.releaseDate,
     });
   }
   // ... more fields
-  
+
   // Track changes (detailed)
   for (const match of trackChanges) {
     if (match.matchType === 'NEW') {
       deltas.tracks.push({
         action: 'added',
-        delta: [{ field: 'title', before: null, after: match.mbTrack.title }]
+        delta: [{ field: 'title', before: null, after: match.mbTrack.title }],
       });
     }
     // ... handle modified/removed
   }
-  
+
   // Write to enrichment_logs table
   await prisma.enrichmentLog.create({
     data: {
@@ -322,8 +338,8 @@ async function logCorrection(
       sources: ['musicbrainz'],
       fieldsEnriched: Object.keys(deltas).filter(k => deltas[k].length > 0),
       metadata: deltas, // JSON structure
-      triggeredBy: 'admin_ui'
-    }
+      triggeredBy: 'admin_ui',
+    },
   });
 }
 ```
@@ -341,13 +357,13 @@ async function logCorrection(
 
 Problems that look simple but have existing solutions:
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| String similarity | Custom edit distance | `fastest-levenshtein` | Optimized C-level implementation, handles Unicode correctly |
-| Transaction rollback | Manual try/catch rollback | Prisma auto-rollback on error | Automatic, reliable, handles nested failures |
-| Track matching | Exact title match only | Position-first + similarity fallback | Handles reordered tracks, typos, remasters |
-| Data quality scoring | Binary (has data / no data) | Weighted field completeness + source confidence | Nuanced scores enable better enrichment decisions |
-| Concurrent updates | No locking strategy | Optimistic locking with `updatedAt` | Prevents lost updates, better than pessimistic locks for read-heavy workloads |
+| Problem              | Don't Build                 | Use Instead                                     | Why                                                                           |
+| -------------------- | --------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------- |
+| String similarity    | Custom edit distance        | `fastest-levenshtein`                           | Optimized C-level implementation, handles Unicode correctly                   |
+| Transaction rollback | Manual try/catch rollback   | Prisma auto-rollback on error                   | Automatic, reliable, handles nested failures                                  |
+| Track matching       | Exact title match only      | Position-first + similarity fallback            | Handles reordered tracks, typos, remasters                                    |
+| Data quality scoring | Binary (has data / no data) | Weighted field completeness + source confidence | Nuanced scores enable better enrichment decisions                             |
+| Concurrent updates   | No locking strategy         | Optimistic locking with `updatedAt`             | Prevents lost updates, better than pessimistic locks for read-heavy workloads |
 
 **Key insight:** Interactive transactions are deceptively complex. Naïve implementations (reads inside transaction, no timeout config, missing error handling) lead to deadlocks and performance issues. Prisma's automatic rollback is safer than manual control.
 
@@ -357,61 +373,67 @@ Problems that look simple but have existing solutions:
 
 **What goes wrong:** `Transaction timeout exceeded` error after 5 seconds
 **Why it happens:** Default timeout is 5s, fetching related data or complex logic inside transaction exceeds limit
-**How to avoid:** 
+**How to avoid:**
+
 - Fetch ALL data BEFORE opening transaction
 - Configure timeout: `$transaction(async (tx) => {...}, { timeout: 10000 })`
 - Keep transaction code to writes only, no business logic
-**Warning signs:** Logs show `PrismaClientKnownRequestError: Transaction already closed`
+  **Warning signs:** Logs show `PrismaClientKnownRequestError: Transaction already closed`
 
 ### Pitfall 2: Stale Transaction Client Reference
 
 **What goes wrong:** Using global `prisma` client inside transaction instead of `tx` parameter
 **Why it happens:** Developers forget to use transaction-scoped client, leading to queries outside transaction
-**How to avoid:** 
+**How to avoid:**
+
 - Always use `tx` parameter passed to transaction callback
 - Lint rule: Disallow `prisma` usage inside `$transaction` callback
 - Pass `tx` to helper functions instead of global `prisma`
-**Warning signs:** Updates not atomic, partial changes visible before commit
+  **Warning signs:** Updates not atomic, partial changes visible before commit
 
 ### Pitfall 3: Lost Updates from Concurrent Modifications
 
 **What goes wrong:** Two admins apply corrections simultaneously, second overwrites first's changes
 **Why it happens:** No optimistic locking, album.updatedAt not validated
 **How to avoid:**
+
 - Capture `album.updatedAt` in preview generation
 - Validate `updatedAt` matches at start of transaction
 - Return error `STALE_DATA` if mismatch, force admin to refresh
-**Warning signs:** Admins report changes disappearing, enrichment_logs show conflicting corrections
+  **Warning signs:** Admins report changes disappearing, enrichment_logs show conflicting corrections
 
 ### Pitfall 4: Orphaned Artist Records
 
 **What goes wrong:** Artist records created but not linked to album when transaction rolls back
 **Why it happens:** Artist creation happens outside transaction scope
 **How to avoid:**
+
 - Create new artists INSIDE transaction using `tx.artist.create()`
 - Use `connectOrCreate` for existing artists
 - Delete orphaned artists in cleanup job (separate concern)
-**Warning signs:** Artists table grows with unlinked records
+  **Warning signs:** Artists table grows with unlinked records
 
 ### Pitfall 5: Incomplete Audit Logs
 
 **What goes wrong:** Audit log missing track changes or only logs "corrected album"
 **Why it happens:** Logging called before transaction commit, or logs only top-level fields
 **How to avoid:**
+
 - Log AFTER transaction succeeds (in finally block or separate call)
 - Capture detailed deltas: metadata, tracks, artists, external IDs, cover art
 - Test audit log completeness in integration tests
-**Warning signs:** enrichment_logs.metadata contains `{}` or missing fieldsEnriched
+  **Warning signs:** enrichment_logs.metadata contains `{}` or missing fieldsEnriched
 
 ### Pitfall 6: Data Quality Not Recalculated
 
 **What goes wrong:** Album data quality remains LOW after correction
 **Why it happens:** Forgot to update `dataQuality` field in transaction
 **How to avoid:**
+
 - Always call `calculateDataQuality()` on updated data
 - Include `dataQuality` in album update payload
 - Log before/after quality in enrichment_logs
-**Warning signs:** Corrected albums still flagged for enrichment
+  **Warning signs:** Corrected albums still flagged for enrichment
 
 ## Code Examples
 
@@ -421,13 +443,16 @@ Verified patterns from official sources:
 
 ```typescript
 // Source: Prisma transaction docs
-await prisma.$transaction(async (tx) => {
-  // Admin correction operations
-}, {
-  maxWait: 5000,      // Wait up to 5s to acquire connection
-  timeout: 10000,     // Transaction can run up to 10s (admin UI workflow)
-  isolationLevel: Prisma.TransactionIsolationLevel.Serializable // Strictest isolation
-});
+await prisma.$transaction(
+  async tx => {
+    // Admin correction operations
+  },
+  {
+    maxWait: 5000, // Wait up to 5s to acquire connection
+    timeout: 10000, // Transaction can run up to 10s (admin UI workflow)
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable, // Strictest isolation
+  }
+);
 ```
 
 ### Error Handling with Rollback
@@ -437,7 +462,7 @@ await prisma.$transaction(async (tx) => {
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 try {
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async tx => {
     // Operations that might fail
   });
 } catch (error) {
@@ -463,16 +488,17 @@ function buildUpdateData(
   selections: FieldSelections
 ): Prisma.AlbumUpdateInput {
   const data: Prisma.AlbumUpdateInput = {};
-  
+
   // Metadata group
   if (selections.metadata.title) data.title = preview.sourceResult.title;
-  if (selections.metadata.releaseType) data.releaseType = preview.sourceResult.primaryType;
+  if (selections.metadata.releaseType)
+    data.releaseType = preview.sourceResult.primaryType;
   if (selections.metadata.releaseDate) {
-    data.releaseDate = preview.sourceResult.firstReleaseDate 
-      ? new Date(preview.sourceResult.firstReleaseDate) 
+    data.releaseDate = preview.sourceResult.firstReleaseDate
+      ? new Date(preview.sourceResult.firstReleaseDate)
       : null;
   }
-  
+
   // External IDs group
   if (selections.externalIds.musicbrainzId) {
     data.musicbrainzId = preview.sourceResult.releaseGroupMbid;
@@ -480,7 +506,7 @@ function buildUpdateData(
   if (selections.externalIds.spotifyId && preview.mbReleaseData?.spotifyId) {
     data.spotifyId = preview.mbReleaseData.spotifyId;
   }
-  
+
   // Cover art (three-way choice: use MB, keep current, clear)
   if (selections.coverArt === 'use_source') {
     data.coverArtUrl = preview.sourceResult.coverArtUrl;
@@ -489,7 +515,7 @@ function buildUpdateData(
     data.cloudflareImageId = null;
   }
   // 'keep_current' = don't include in data object
-  
+
   return data;
 }
 ```
@@ -507,8 +533,8 @@ async function deleteOrphanedTracks(
   await tx.track.deleteMany({
     where: {
       albumId,
-      id: { notIn: tracksToKeep } // Prisma filter: not in array
-    }
+      id: { notIn: tracksToKeep }, // Prisma filter: not in array
+    },
   });
 }
 ```
@@ -524,11 +550,11 @@ async function updateAlbumArtists(
 ) {
   // 1. Clear existing associations
   await tx.albumArtist.deleteMany({ where: { albumId } });
-  
+
   // 2. Create or link artists, then associate
   for (let i = 0; i < artistCredits.length; i++) {
     const credit = artistCredits[i];
-    
+
     // Find or create artist (by MBID)
     const artist = await tx.artist.upsert({
       where: { musicbrainzId: credit.mbid },
@@ -536,18 +562,18 @@ async function updateAlbumArtists(
       create: {
         musicbrainzId: credit.mbid,
         name: credit.name,
-        dataQuality: 'LOW' // Will be enriched separately
-      }
+        dataQuality: 'LOW', // Will be enriched separately
+      },
     });
-    
+
     // 3. Create association
     await tx.albumArtist.create({
       data: {
         albumId,
         artistId: artist.id,
         role: 'primary',
-        position: i
-      }
+        position: i,
+      },
     });
   }
 }
@@ -555,15 +581,16 @@ async function updateAlbumArtists(
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|---------|
-| Sequential array transactions | Interactive transactions | Prisma 4.7.0+ (2022) | Enables conditional logic, complex workflows |
-| Manual rollback with try/catch | Automatic rollback on exception | Prisma core feature | Safer, less error-prone |
-| Global prisma client | Transaction-scoped `tx` client | Prisma 2.0+ | Ensures operations are truly atomic |
-| Pessimistic row locks | Optimistic locking (timestamp) | Community best practice (2023+) | Better scalability for read-heavy workloads |
-| fastest-levenshtein | Superseded js-levenshtein | 2020+ | 1.5-2x faster, better TypeScript support |
+| Old Approach                   | Current Approach                | When Changed                    | Impact                                       |
+| ------------------------------ | ------------------------------- | ------------------------------- | -------------------------------------------- |
+| Sequential array transactions  | Interactive transactions        | Prisma 4.7.0+ (2022)            | Enables conditional logic, complex workflows |
+| Manual rollback with try/catch | Automatic rollback on exception | Prisma core feature             | Safer, less error-prone                      |
+| Global prisma client           | Transaction-scoped `tx` client  | Prisma 2.0+                     | Ensures operations are truly atomic          |
+| Pessimistic row locks          | Optimistic locking (timestamp)  | Community best practice (2023+) | Better scalability for read-heavy workloads  |
+| fastest-levenshtein            | Superseded js-levenshtein       | 2020+                           | 1.5-2x faster, better TypeScript support     |
 
 **Deprecated/outdated:**
+
 - Manual `BEGIN/COMMIT/ROLLBACK` via raw SQL: Prisma doesn't support this, use interactive transactions instead
 - `Prisma.validator()` for type inference: Superseded by generated types from Prisma 4.0+
 - `extendedWhereUnique` preview flag: Graduated to stable in Prisma 5.0.0, no longer needs flag
@@ -617,6 +644,7 @@ Things that couldn't be fully resolved:
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH - Prisma is the established choice, fastest-levenshtein is proven
 - Architecture: HIGH - Patterns verified against Prisma official docs and production codebases
 - Pitfalls: HIGH - Documented in Prisma issues and community articles

@@ -6,22 +6,22 @@ tags: [modal, data-display, accordion, quality-badge]
 
 dependency_graph:
   requires:
-    - "06-01: CorrectionModal shell and step navigation"
-    - "05-03: GraphQL types (DataQuality enum)"
+    - '06-01: CorrectionModal shell and step navigation'
+    - '05-03: GraphQL types (DataQuality enum)'
   provides:
-    - "CurrentDataView component for Step 0 content"
-    - "DataQualityBadge for 4-level quality indication"
-    - "ExternalIdStatus for external ID presence/absence display"
-    - "TrackListing with auto-collapse for large albums"
+    - 'CurrentDataView component for Step 0 content'
+    - 'DataQualityBadge for 4-level quality indication'
+    - 'ExternalIdStatus for external ID presence/absence display'
+    - 'TrackListing with auto-collapse for large albums'
   affects:
-    - "06-03: SearchView will need same album type for comparison"
+    - '06-03: SearchView will need same album type for comparison'
 
 tech_stack:
   added: []
   patterns:
-    - "Accordion sections with multiple default expanded"
-    - "Auto-collapse threshold pattern (30 tracks)"
-    - "External link rendering with tooltip for full IDs"
+    - 'Accordion sections with multiple default expanded'
+    - 'Auto-collapse threshold pattern (30 tracks)'
+    - 'External link rendering with tooltip for full IDs'
 
 key_files:
   created:
@@ -34,18 +34,18 @@ key_files:
 
 decisions:
   - id: quality-levels
-    choice: "4-level badge: Excellent (HIGH+all IDs), Good (HIGH), Fair (MEDIUM), Poor (LOW)"
-    rationale: "Distinguish between high quality with/without complete external ID coverage"
+    choice: '4-level badge: Excellent (HIGH+all IDs), Good (HIGH), Fair (MEDIUM), Poor (LOW)'
+    rationale: 'Distinguish between high quality with/without complete external ID coverage'
   - id: track-collapse-threshold
-    choice: "30 tracks triggers auto-collapse, showing first 10"
-    rationale: "Balances visibility for typical albums vs overwhelming for box sets"
+    choice: '30 tracks triggers auto-collapse, showing first 10'
+    rationale: 'Balances visibility for typical albums vs overwhelming for box sets'
   - id: id-truncation
-    choice: "MusicBrainz: 8 chars, Spotify: 12 chars with tooltip for full ID"
-    rationale: "MusicBrainz UUIDs are longer, Spotify IDs are more readable"
+    choice: 'MusicBrainz: 8 chars, Spotify: 12 chars with tooltip for full ID'
+    rationale: 'MusicBrainz UUIDs are longer, Spotify IDs are more readable'
 
 metrics:
-  duration: "3.2min"
-  completed: "2026-01-25"
+  duration: '3.2min'
+  completed: '2026-01-25'
 ---
 
 # Phase 06 Plan 02: CurrentDataView Component Summary
@@ -127,10 +127,12 @@ interface CurrentDataViewAlbum {
 ## Integration Points
 
 **For Plan 06-03 (SearchView/ApplyView):**
+
 - SearchView can reuse same album type for comparison display
 - ApplyView will need to show diff between current and selected candidate
 
 **For Entry Point (future):**
+
 - Parent component must fetch album data matching CurrentDataViewAlbum shape
 - Pass album to CorrectionModal along with open state and onClose handler
 

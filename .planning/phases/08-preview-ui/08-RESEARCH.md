@@ -19,26 +19,31 @@ The established libraries/tools for diff comparison UI:
 ### Core
 
 **Component Library:** shadcn/ui (Radix UI primitives) - Already installed
+
 - Version: @radix-ui/react-accordion ^1.2.12
 - Purpose: Collapsible sections, modal primitives
 - Why Standard: WAI-ARIA compliant, TypeScript native, unstyled primitives with Tailwind integration
 
 **Diff Data Source:** GetCorrectionPreviewQuery (GraphQL)
+
 - Purpose: Pre-computed field diffs with TextDiffPart arrays
 - Why Standard: Backend DiffEngine handles normalization, character-level diffing, and change classification
 - Already implemented in Phase 5
 
 **Styling:** Tailwind CSS with custom color scheme
+
 - Purpose: Inline diff highlighting, dark zinc theme
 - Why Standard: Utility-first, responsive, matches existing admin components
 
 ### Supporting
 
 **Icon Library:** lucide-react 0.471.1
+
 - Purpose: Visual indicators (chevrons, badges, status icons)
 - When to Use: Expand/collapse buttons, change type indicators, external ID status
 
 **Type Safety:** Generated GraphQL types
+
 - Purpose: CorrectionPreview, TextDiffPart, FieldDiff union types
 - When to Use: All preview data consumption
 
@@ -82,9 +87,9 @@ src/components/admin/correction/
 
 ```typescript
 // Two-column grid within 1100px modal width
-export function ComparisonLayout({ 
-  current, 
-  source 
+export function ComparisonLayout({
+  current,
+  source
 }: ComparisonLayoutProps) {
   return (
     <div className="grid grid-cols-2 gap-6">
@@ -95,7 +100,7 @@ export function ComparisonLayout({
         </h3>
         {current}
       </div>
-      
+
       {/* Right column - MusicBrainz Source */}
       <div className="space-y-4">
         <h3 className="text-sm font-medium text-zinc-400 uppercase">
@@ -122,16 +127,16 @@ interface TextDiffPart {
   removed?: boolean;
 }
 
-export function InlineTextDiff({ 
-  parts 
+export function InlineTextDiff({
+  parts
 }: { parts: TextDiffPart[] }) {
   return (
     <span className="inline">
       {parts.map((part, index) => {
         if (part.added) {
           return (
-            <span 
-              key={index} 
+            <span
+              key={index}
               className="bg-green-500/20 text-green-400"
             >
               {part.value}
@@ -140,8 +145,8 @@ export function InlineTextDiff({
         }
         if (part.removed) {
           return (
-            <span 
-              key={index} 
+            <span
+              key={index}
               className="bg-red-500/20 text-red-400 line-through"
             >
               {part.value}
@@ -167,7 +172,7 @@ type ChangeType = 'ADDED' | 'MODIFIED' | 'REMOVED' | 'CONFLICT' | 'UNCHANGED';
 export function FieldComparison({ diff }: { diff: FieldDiff }) {
   // Skip unchanged fields in preview
   if (diff.changeType === 'UNCHANGED') return null;
-  
+
   return (
     <div className="py-2 border-b border-zinc-800">
       <dt className="text-sm text-zinc-500 mb-1">
@@ -205,22 +210,22 @@ export function FieldComparison({ diff }: { diff: FieldDiff }) {
 **Example:**
 
 ```typescript
-export function TrackComparison({ 
+export function TrackComparison({
   trackDiffs,
-  summary 
+  summary
 }: TrackComparisonProps) {
   return (
     <div className="space-y-2">
       {/* Summary stats */}
       <div className="text-sm text-zinc-400 mb-4">
-        {summary.matching} matching, {summary.modified} modified, 
+        {summary.matching} matching, {summary.modified} modified,
         {summary.added} added, {summary.removed} removed
       </div>
-      
+
       {/* Track list */}
       {trackDiffs.map(diff => (
-        <div 
-          key={diff.position} 
+        <div
+          key={diff.position}
           className="grid grid-cols-2 gap-4 py-1 text-sm"
         >
           {/* Current track */}
@@ -237,7 +242,7 @@ export function TrackComparison({
               <span className="text-zinc-600">—</span>
             )}
           </div>
-          
+
           {/* Source track */}
           <div className={diff.changeType === 'ADDED' ? 'text-green-400' : ''}>
             {diff.source ? (
@@ -273,8 +278,8 @@ export function TrackComparison({
 export function PreviewView({ preview }: PreviewViewProps) {
   return (
     <div className="space-y-6">
-      <Accordion 
-        type="multiple" 
+      <Accordion
+        type="multiple"
         defaultValue={['basic', 'tracks', 'external-ids']}
       >
         {/* Basic Info Section */}
@@ -294,7 +299,7 @@ export function PreviewView({ preview }: PreviewViewProps) {
             />
           </AccordionContent>
         </AccordionItem>
-        
+
         {/* Similar patterns for Tracks, External IDs */}
       </Accordion>
     </div>
@@ -438,10 +443,10 @@ export function PreviewView({ albumId, resultMbid }: PreviewViewProps) {
 ```typescript
 // Tailwind classes for diff highlighting (dark zinc theme)
 const diffColors = {
-  added: 'bg-green-500/20 text-green-400',      // Green for new data
-  modified: 'bg-yellow-500/20 text-yellow-400',  // Yellow/amber for changes
-  removed: 'bg-red-500/20 text-red-400',         // Red for removals
-  unchanged: 'text-zinc-300',                     // Neutral for no change
+  added: 'bg-green-500/20 text-green-400', // Green for new data
+  modified: 'bg-yellow-500/20 text-yellow-400', // Yellow/amber for changes
+  removed: 'bg-red-500/20 text-red-400', // Red for removals
+  unchanged: 'text-zinc-300', // Neutral for no change
 };
 
 // Opacity-based backgrounds (/20) provide subtle highlighting on dark zinc-900
@@ -451,8 +456,8 @@ const diffColors = {
 
 ```typescript
 // Source: src/components/admin/correction/CurrentDataView.tsx
-<Accordion 
-  type="multiple" 
+<Accordion
+  type="multiple"
   defaultValue={['basic', 'tracks', 'external-ids']}
   className="w-full"
 >
@@ -470,11 +475,11 @@ const COLLAPSED_TRACK_COUNT = 10;
 export function TrackListing({ tracks }: TrackListingProps) {
   const shouldAutoCollapse = tracks.length >= AUTO_COLLAPSE_THRESHOLD;
   const [showAll, setShowAll] = useState(!shouldAutoCollapse);
-  
-  const displayTracks = showAll 
-    ? tracks 
+
+  const displayTracks = showAll
+    ? tracks
     : tracks.slice(0, COLLAPSED_TRACK_COUNT);
-  
+
   // Show "Show all N tracks" button if collapsed
 }
 ```
@@ -482,24 +487,28 @@ export function TrackListing({ tracks }: TrackListingProps) {
 ## State of the Art
 
 **Change Classification:**
+
 - Old Approach: Boolean "has changes" flag
 - Current Approach: Five-state classification (ADDED/MODIFIED/REMOVED/CONFLICT/UNCHANGED)
 - When Changed: Phase 3 implementation
 - Impact: Admin sees exact nature of change, can filter by change type
 
 **Diff Presentation:**
+
 - Old Approach: Full-field backgrounds (green row = added, red row = removed)
 - Current Approach: Inline span-level highlighting with TextDiffPart arrays
 - When Changed: Industry pattern (GitHub, GitLab, modern code review tools)
 - Impact: Precise character-level visibility, less visual noise
 
 **Component Libraries:**
+
 - Old Approach: Styled components (Material-UI, Ant Design) with pre-designed styles
 - Current Approach: Unstyled primitives (Radix UI) with Tailwind utility classes
 - When Changed: 2023-2024 shift toward headless UI libraries
 - Impact: Full control over styling, smaller bundle size, better TypeScript support
 
 **Side-by-Side Layout:**
+
 - Old Approach: Unified diff view (GitHub-style line-by-line)
 - Current Approach: Split view with aligned fields for metadata comparison
 - When Changed: Pattern for structured data diffs (not code diffs)
@@ -528,7 +537,7 @@ Things that couldn't be fully resolved:
 3. **External ID link handling**
    - What we know: External IDs should be displayed with click-to-open links
    - What's unclear: Open in new tab or same tab? Show truncated or full ID?
-   - Recommendation: Match Phase 6 pattern - truncate to 8-12 chars, hover tooltip shows full ID, click opens in new tab (target="_blank").
+   - Recommendation: Match Phase 6 pattern - truncate to 8-12 chars, hover tooltip shows full ID, click opens in new tab (target="\_blank").
 
 4. **Collapsed vs expanded default state**
    - What we know: CurrentDataView defaults to all sections expanded

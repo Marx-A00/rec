@@ -11,6 +11,7 @@ This phase exposes the three correction services (SearchCorrectionService, Corre
 The existing architecture follows a "thin resolver" pattern where resolvers handle authentication/authorization and delegate to service layer functions. All resolvers use inline admin checks with `isAdmin(user.role)` and throw `GraphQLError` with standardized error codes. The codegen system automatically generates TypeScript types and React Query hooks from schema definitions and `.graphql` query files.
 
 Key findings:
+
 - Schema location: `src/graphql/schema.graphql` (1482 lines, well-organized by domain)
 - Resolvers split into: `queries.ts` (2285 lines), `mutations.ts` (2700 lines), `index.ts` (orchestrator)
 - Codegen config: `codegen.yml` generates both resolver types and client-side React Query hooks
@@ -25,21 +26,21 @@ The GraphQL layer uses established libraries with zero additional dependencies n
 
 ### Core
 
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| graphql | (installed) | GraphQL schema and execution | Core GraphQL implementation for Apollo Server |
-| @apollo/server | (installed) | GraphQL server | Industry-standard GraphQL server with excellent TypeScript support |
-| @graphql-codegen/cli | (installed) | Code generation orchestrator | Automates TypeScript type generation from schema |
-| @tanstack/react-query | v5 | Client-side data fetching | Modern replacement for Apollo Client, used throughout codebase |
+| Library               | Version     | Purpose                      | Why Standard                                                       |
+| --------------------- | ----------- | ---------------------------- | ------------------------------------------------------------------ |
+| graphql               | (installed) | GraphQL schema and execution | Core GraphQL implementation for Apollo Server                      |
+| @apollo/server        | (installed) | GraphQL server               | Industry-standard GraphQL server with excellent TypeScript support |
+| @graphql-codegen/cli  | (installed) | Code generation orchestrator | Automates TypeScript type generation from schema                   |
+| @tanstack/react-query | v5          | Client-side data fetching    | Modern replacement for Apollo Client, used throughout codebase     |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| @graphql-codegen/typescript | (installed) | Generate TypeScript types from schema | Automatic - part of codegen pipeline |
-| @graphql-codegen/typescript-operations | (installed) | Generate operation types | Automatic - for query/mutation types |
-| @graphql-codegen/typescript-react-query | (installed) | Generate React Query hooks | Automatic - creates `useXQuery` hooks |
-| @graphql-codegen/typescript-resolvers | (installed) | Generate resolver types | Automatic - for server-side type safety |
+| Library                                 | Version     | Purpose                               | When to Use                             |
+| --------------------------------------- | ----------- | ------------------------------------- | --------------------------------------- |
+| @graphql-codegen/typescript             | (installed) | Generate TypeScript types from schema | Automatic - part of codegen pipeline    |
+| @graphql-codegen/typescript-operations  | (installed) | Generate operation types              | Automatic - for query/mutation types    |
+| @graphql-codegen/typescript-react-query | (installed) | Generate React Query hooks            | Automatic - creates `useXQuery` hooks   |
+| @graphql-codegen/typescript-resolvers   | (installed) | Generate resolver types               | Automatic - for server-side type safety |
 
 ### Alternatives Considered
 
@@ -88,6 +89,7 @@ type Mutation {
 ```
 
 **Pattern observed in codebase:**
+
 - Scalars at top
 - Enums before types
 - Input types use `Input` suffix
@@ -98,6 +100,7 @@ type Mutation {
 ### Resolver Organization
 
 File structure:
+
 ```
 src/lib/graphql/resolvers/
 ├── index.ts           # Exports combined resolver map
@@ -183,7 +186,7 @@ export const queryResolvers: QueryResolvers = {
       // Import and use search service
       const { getSearchScoringService } = await import('@/lib/correction');
       const searchService = getSearchScoringService();
-      
+
       const results = await searchService.searchWithScoring({
         albumTitle: input.albumTitle,
         artistName: input.artistName,
@@ -218,14 +221,14 @@ export const queryResolvers: QueryResolvers = {
 
 Problems that existing infrastructure already solves:
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Type generation | Manual TypeScript interfaces | GraphQL Codegen | Generates types from schema automatically, keeps client/server types in sync |
-| Client hooks | Custom fetch functions | Generated React Query hooks | `pnpm codegen` creates typed `useXQuery` hooks with caching, refetch, error handling |
-| Error handling | Custom error classes | GraphQLError with extensions | Apollo Server standard, client libraries understand error structure |
-| Auth middleware | Wrapper functions | Inline `isAdmin()` checks | Existing pattern across 50+ resolvers, explicit is better than magic |
-| Input validation | Zod/Yup schemas | GraphQL schema types | Schema enforces structure, codegen provides TypeScript types |
-| Service singletons | Re-instantiation | Existing `getX()` factories | `getSearchScoringService()`, `getCorrectionPreviewService()` already exist |
+| Problem            | Don't Build                  | Use Instead                  | Why                                                                                  |
+| ------------------ | ---------------------------- | ---------------------------- | ------------------------------------------------------------------------------------ |
+| Type generation    | Manual TypeScript interfaces | GraphQL Codegen              | Generates types from schema automatically, keeps client/server types in sync         |
+| Client hooks       | Custom fetch functions       | Generated React Query hooks  | `pnpm codegen` creates typed `useXQuery` hooks with caching, refetch, error handling |
+| Error handling     | Custom error classes         | GraphQLError with extensions | Apollo Server standard, client libraries understand error structure                  |
+| Auth middleware    | Wrapper functions            | Inline `isAdmin()` checks    | Existing pattern across 50+ resolvers, explicit is better than magic                 |
+| Input validation   | Zod/Yup schemas              | GraphQL schema types         | Schema enforces structure, codegen provides TypeScript types                         |
+| Service singletons | Re-instantiation             | Existing `getX()` factories  | `getSearchScoringService()`, `getCorrectionPreviewService()` already exist           |
 
 **Key insight:** The correction services were designed with GraphQL integration in mind. They return structured data that maps cleanly to GraphQL types, handle their own validation, and use error codes that align with GraphQL error extensions.
 
@@ -238,11 +241,13 @@ Problems that existing infrastructure already solves:
 **Why it happens:** Codegen is a manual step (`pnpm codegen`), not automatic on save
 
 **How to avoid:**
+
 1. After modifying `schema.graphql`, immediately run `pnpm codegen`
 2. After creating `.graphql` query files, immediately run `pnpm codegen`
 3. Check `src/generated/graphql.ts` modification timestamp to verify generation
 
 **Warning signs:**
+
 - Import errors for `useXQuery` hooks
 - Type mismatches between schema and TypeScript
 - `src/generated/graphql.ts` modified date is older than schema changes
@@ -254,6 +259,7 @@ Problems that existing infrastructure already solves:
 **Why it happens:** Service layer types evolve separately from schema types
 
 **How to avoid:**
+
 1. When defining GraphQL types, reference service layer types (`src/lib/correction/types.ts`)
 2. Map service types 1:1 to GraphQL types when possible
 3. Add transformation layer in resolver only when necessary (e.g., Date → DateTime scalar)
@@ -281,6 +287,7 @@ type CorrectionSearchResult {
 ```
 
 **Warning signs:**
+
 - Resolver has complex transformation logic
 - Field names differ between service and GraphQL (e.g., `mbid` vs `releaseGroupMbid`)
 - Need to destructure/reshape objects before returning
@@ -301,7 +308,7 @@ try {
   // Check for known service errors
   if (error instanceof StaleDataError) {
     throw new GraphQLError('Album was modified since preview was generated', {
-      extensions: { 
+      extensions: {
         code: 'STALE_DATA',
         albumId: error.albumId,
         expectedVersion: error.expectedUpdatedAt,
@@ -309,12 +316,12 @@ try {
       },
     });
   }
-  
+
   // Re-throw GraphQLErrors as-is
   if (error instanceof GraphQLError) {
     throw error;
   }
-  
+
   // Catch-all for unexpected errors
   console.error('Unexpected correction error:', error);
   throw new GraphQLError('Internal server error', {
@@ -324,6 +331,7 @@ try {
 ```
 
 **Warning signs:**
+
 - Service layer has custom error classes (e.g., `StaleDataError`)
 - Resolver doesn't have try/catch around service calls
 - Errors in logs show stack traces instead of structured GraphQL errors
@@ -335,15 +343,18 @@ try {
 **Why it happens:** Confusion between "fetches external data" and "modifies database"
 
 **How to avoid:** Follow GraphQL semantics:
+
 - **Query:** Reads data (database or external API), safe to cache/retry
 - **Mutation:** Writes to database, side effects, not idempotent
 
 **Correct classification for this phase:**
+
 - `correctionSearch` → **Query** (reads from MusicBrainz, no DB writes)
 - `correctionPreview` → **Query** (fetches MB release data, generates diff, no DB writes)
 - `correctionApply` → **Mutation** (writes to database, modifies album/tracks)
 
 **Warning signs:**
+
 - Query results aren't cached by React Query
 - Read operations trigger "refetch on mutation" behavior
 - Operations can't be run in parallel
@@ -355,6 +366,7 @@ try {
 **Why it happens:** Codegen requires `.graphql` files in `src/graphql/queries/` or `src/graphql/mutations/`
 
 **How to avoid:**
+
 1. After adding to schema, create corresponding `.graphql` file:
    - Queries → `src/graphql/queries/correctionSearch.graphql`
    - Mutations → `src/graphql/mutations/correctionApply.graphql`
@@ -383,6 +395,7 @@ query CorrectionSearch($input: CorrectionSearchInput!) {
 After codegen, this generates: `useCorrectionSearchQuery()` hook
 
 **Warning signs:**
+
 - `useXQuery` hook doesn't exist in `src/generated/graphql.ts`
 - Only resolver types exist, no operation types
 - Import errors when trying to use hook in components
@@ -418,7 +431,7 @@ export const mutationResolvers: MutationResolvers = {
     try {
       // Step 3: Delegate to service layer
       const { applyCorrectionService } = await import('@/lib/correction');
-      
+
       const result = await applyCorrectionService.applyCorrection({
         albumId: input.albumId,
         preview: input.preview,
@@ -435,7 +448,7 @@ export const mutationResolvers: MutationResolvers = {
       if (error instanceof GraphQLError) {
         throw error; // Re-throw GraphQL errors as-is
       }
-      
+
       console.error('Error applying correction:', error);
       throw new GraphQLError(`Failed to apply correction: ${error}`, {
         extensions: { code: 'INTERNAL_ERROR' },
@@ -487,7 +500,7 @@ export const queryResolvers: QueryResolvers = {
       return results;
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
-      
+
       console.error('Correction search error:', error);
       throw new GraphQLError(`Search failed: ${error}`, {
         extensions: { code: 'INTERNAL_ERROR' },
@@ -504,15 +517,16 @@ export const queryResolvers: QueryResolvers = {
 // Context provides: { user, prisma, dataloaders, activityTracker, ... }
 
 export interface GraphQLContext {
-  prisma: PrismaClient;              // Database access
-  user?: {                           // Authenticated user (if logged in)
+  prisma: PrismaClient; // Database access
+  user?: {
+    // Authenticated user (if logged in)
     id: string;
     email?: string;
-    role?: string;                   // UserRole enum: USER, MODERATOR, ADMIN, OWNER
+    role?: string; // UserRole enum: USER, MODERATOR, ADMIN, OWNER
   } | null;
-  dataloaders: DataLoaders;          // N+1 query prevention
-  activityTracker: ActivityTracker;  // Activity logging
-  requestId: string;                 // Request tracing
+  dataloaders: DataLoaders; // N+1 query prevention
+  activityTracker: ActivityTracker; // Activity logging
+  requestId: string; // Request tracing
   // ... other metadata
 }
 
@@ -520,7 +534,7 @@ export interface GraphQLContext {
 async (parent, args, context) => {
   const { user, prisma } = context;
   // ...
-}
+};
 ```
 
 ### Client Query File Example
@@ -569,7 +583,7 @@ After running `pnpm codegen`, this generates:
 // Auto-generated in src/generated/graphql.ts
 export const useCorrectionSearchQuery = <
   TData = CorrectionSearchQuery,
-  TError = unknown
+  TError = unknown,
 >(
   variables: CorrectionSearchQueryVariables,
   options?: UseQueryOptions<CorrectionSearchQuery, TError, TData>
@@ -596,19 +610,19 @@ function SearchResults({ albumId, albumTitle, artistName }) {
 
   if (isLoading) return <Loading />;
   if (error) return <Error message={error.message} />;
-  
+
   return <ResultsList results={data.correctionSearch.results} />;
 }
 ```
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|---------|
-| Apollo Client | TanStack Query (React Query v5) | 2024 | Simpler API, better TypeScript support, lighter bundle |
-| Manual fetch functions | Generated hooks via codegen | Existing pattern | Type safety, less boilerplate, automatic caching |
-| Apollo error policies | Standard GraphQLError | Existing pattern | Consistent error handling, works with any client |
-| Middleware auth | Inline `isAdmin()` checks | Existing pattern | Explicit authorization, easier to audit |
+| Old Approach           | Current Approach                | When Changed     | Impact                                                 |
+| ---------------------- | ------------------------------- | ---------------- | ------------------------------------------------------ |
+| Apollo Client          | TanStack Query (React Query v5) | 2024             | Simpler API, better TypeScript support, lighter bundle |
+| Manual fetch functions | Generated hooks via codegen     | Existing pattern | Type safety, less boilerplate, automatic caching       |
+| Apollo error policies  | Standard GraphQLError           | Existing pattern | Consistent error handling, works with any client       |
+| Middleware auth        | Inline `isAdmin()` checks       | Existing pattern | Explicit authorization, easier to audit                |
 
 **Deprecated/outdated:**
 

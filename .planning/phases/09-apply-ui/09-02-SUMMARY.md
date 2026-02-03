@@ -85,6 +85,7 @@ Created the ApplyView container that combines field selection with change summar
 ## Key Changes
 
 **DiffSummary.tsx (376 lines):**
+
 - Props: preview, selections
 - Filters fieldDiffs, trackDiffs, coverArt by selections
 - Type guards: isDateDiff(), isArrayDiff()
@@ -92,6 +93,7 @@ Created the ApplyView container that combines field selection with change summar
 - Formatters: formatFieldLabel, formatIdType, formatValue, formatId, formatDateComponents
 
 **ApplyView.tsx (215 lines):**
+
 - Props: albumId (future use), preview, onApply, onBack, isApplying, error
 - Layout: header, two-column grid, summary, actions
 - calculateHasSelections: metadata || tracks || externalIds || coverArt
@@ -99,6 +101,7 @@ Created the ApplyView container that combines field selection with change summar
 - Button: disabled when !hasSelections || isApplying
 
 **index.ts:**
+
 - Added exports: DiffSummary, ApplyView
 - Utility exports: createDefaultUISelections, toGraphQLSelections
 
@@ -122,14 +125,17 @@ Two columns on desktop (lg:grid-cols-2), stacked on mobile. Form on left, summar
 ## Technical Patterns
 
 **Type Guards for Union Types:**
+
 ```typescript
 function isDateDiff(diff: FieldDiff): diff is DateDiff {
   return diff.field === 'releaseDate';
 }
 ```
+
 Narrows FieldDiff union to specific type for safe property access.
 
 **Selection Validation Helper:**
+
 ```typescript
 function calculateHasSelections(selections, preview): boolean {
   const hasMetadata = selections.metadata.title || ...;
@@ -137,18 +143,22 @@ function calculateHasSelections(selections, preview): boolean {
   return hasMetadata || hasTracks || hasExternalIds || hasCoverArt;
 }
 ```
+
 Centralized validation prevents duplication, easy to test.
 
 **Expandable Error Details:**
+
 ```typescript
 const [showErrorDetails, setShowErrorDetails] = useState(false);
 // Toggle button + conditional <pre> with error.stack
 ```
+
 Admin-friendly pattern: show error message always, stack trace on demand.
 
 ## Testing Notes
 
 **Manual verification needed:**
+
 1. DiffSummary shows only selected fields (toggle selections in form)
 2. Empty selection shows amber warning, disables button
 3. Apply button loading state (spinner) during isApplying
@@ -157,6 +167,7 @@ Admin-friendly pattern: show error message always, stack trace on demand.
 6. Back link returns to preview step
 
 **Type safety verified:**
+
 - TypeScript compiles without errors
 - Type guards narrow FieldDiff union correctly
 - All props interfaces match component usage
@@ -164,6 +175,7 @@ Admin-friendly pattern: show error message always, stack trace on demand.
 ## Next Phase Readiness
 
 **For Plan 09-03 (Apply mutation integration):**
+
 - ApplyView provides onApply callback interface
 - Expects UIFieldSelections parameter
 - Ready to connect to GraphQL mutation
@@ -171,6 +183,7 @@ Admin-friendly pattern: show error message always, stack trace on demand.
 - isApplying prop ready for mutation loading state
 
 **Components ready:**
+
 - FieldSelectionForm (09-01) ✓
 - DiffSummary (09-02) ✓
 - ApplyView (09-02) ✓
@@ -179,11 +192,13 @@ Admin-friendly pattern: show error message always, stack trace on demand.
 ## Metrics
 
 **Files:**
+
 - Created: 2 (DiffSummary.tsx, ApplyView.tsx)
 - Modified: 1 (index.ts)
 - Total lines: ~600
 
 **Commits:** 3
+
 - 3ab6c38: DiffSummary component
 - 41b8240: ApplyView container
 - d0fa8b1: Exports and lint fixes

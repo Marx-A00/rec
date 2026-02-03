@@ -5,14 +5,14 @@ subsystem: ui-apply
 tags: [react, typescript, ui, checkboxes, accordion, field-selection]
 dependencies:
   requires:
-    - 08-03-SUMMARY.md  # Preview UI components
-    - 05-02-SUMMARY.md  # GraphQL field selections input types
+    - 08-03-SUMMARY.md # Preview UI components
+    - 05-02-SUMMARY.md # GraphQL field selections input types
   provides:
     - Field selection form with hierarchical checkboxes
     - UI state types with conversion utilities
     - Accordion sections for metadata/tracks/external IDs
   affects:
-    - 09-02-PLAN.md  # Apply view will integrate this form
+    - 09-02-PLAN.md # Apply view will integrate this form
 tech-stack:
   added: []
   patterns:
@@ -65,18 +65,21 @@ Created the field selection form UI for the apply workflow step. Admins can gran
 ### 1. UI Selection State Types (types.ts)
 
 **UIFieldSelections interface:**
+
 - metadata: Direct boolean properties for title, releaseDate, releaseType, etc.
 - tracks: Hybrid pattern with applyAll boolean + excludedPositions Set<string>
 - externalIds: Boolean properties for musicbrainzId, spotifyId, discogsId
 - coverArt: Choice enum ('use_source' | 'keep_current' | 'clear')
 
 **Factory and conversion functions:**
+
 - createDefaultUISelections(preview): Returns selections with all fields true
 - toGraphQLSelections(ui, preview): Converts UI state to GraphQL FieldSelectionsInput format
 
 ### 2. Accordion Section Components
 
 **MetadataSection:**
+
 - Checkboxes for title, releaseDate, releaseType, releaseCountry, barcode, label
 - Master checkbox with indeterminate state when partially selected
 - Shows current → source value preview for each field
@@ -84,6 +87,7 @@ Created the field selection form UI for the apply workflow step. Admins can gran
 - Type guards to narrow FieldDiff union type (TextDiff | DateDiff)
 
 **TrackSection:**
+
 - Implements hybrid "apply all with exclusions" pattern
 - Main "Apply all tracks" checkbox
 - Collapsible "Show individual tracks" section
@@ -91,6 +95,7 @@ Created the field selection form UI for the apply workflow step. Admins can gran
 - Track summary showing counts by change type
 
 **ExternalIdSection:**
+
 - Checkboxes for MusicBrainz ID, Spotify ID, Discogs ID
 - ID value truncation (8 chars for MB, 12 for Spotify)
 - Current → source value comparison
@@ -99,12 +104,14 @@ Created the field selection form UI for the apply workflow step. Admins can gran
 ### 3. FieldSelectionForm Container
 
 **Main form structure:**
+
 - Global select all / deselect all buttons
 - Accordion with type="multiple" for collapsible sections
 - Auto-expand sections that have changes
 - Selection summary showing total fields selected + breakdown
 
 **Features:**
+
 - Passes preview data to section components
 - Controlled state via selections prop and onSelectionsChange callback
 - Calculates selection counts per category
@@ -118,13 +125,17 @@ FieldDiff is a union type (TextDiff | DateDiff | ArrayDiff | ExternalIdDiff). Us
 
 ```typescript
 function isMetadataFieldDiff(diff: FieldDiff): diff is TextDiff | DateDiff {
-  return diff.field !== 'musicbrainzId' && diff.field !== 'spotifyId' && diff.field !== 'discogsId';
+  return (
+    diff.field !== 'musicbrainzId' &&
+    diff.field !== 'spotifyId' &&
+    diff.field !== 'discogsId'
+  );
 }
 
 const changedFields = fieldDiffs.filter(
-  (diff): diff is TextDiff | DateDiff => 
-    isMetadataFieldDiff(diff) && 
-    metadataFields.includes(diff.field) && 
+  (diff): diff is TextDiff | DateDiff =>
+    isMetadataFieldDiff(diff) &&
+    metadataFields.includes(diff.field) &&
     diff.changeType !== 'UNCHANGED'
 );
 ```
@@ -141,6 +152,7 @@ tracks: {
 ```
 
 Benefits:
+
 - Default case (apply all) is simple: `applyAll: true, excludedPositions: new Set()`
 - Deselecting individual tracks adds to excludedPositions Set
 - Cleaner for common case where all tracks are applied
@@ -159,6 +171,7 @@ Radix UI Checkbox supports indeterminate via data-state attribute:
 ### GraphQL Conversion
 
 toGraphQLSelections converts:
+
 - metadata: direct object mapping
 - artists: all artists from preview.artistDiff.source with selected=true
 - tracks: maps to SelectionEntry[] array based on excludedPositions Set
@@ -168,14 +181,17 @@ toGraphQLSelections converts:
 ## Integration Points
 
 **Inputs:**
+
 - CorrectionPreview from preview step (preview types)
 - UIFieldSelections state (managed by parent ApplyView)
 
 **Outputs:**
+
 - FieldSelectionsInput for GraphQL correctionApply mutation
 - Selection change callbacks to parent component
 
 **Used by:**
+
 - ApplyView (next plan) will integrate this form
 - Passes selections to toGraphQLSelections for mutation
 
@@ -186,6 +202,7 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 **Ready for 09-02 (ApplyView integration):**
+
 - FieldSelectionForm is complete and exported
 - createDefaultUISelections ready to initialize state
 - toGraphQLSelections ready to convert for mutation

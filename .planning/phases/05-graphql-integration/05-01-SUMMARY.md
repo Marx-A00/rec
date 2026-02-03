@@ -21,13 +21,13 @@ key-files:
     - src/generated/resolvers-types.ts
 
 decisions:
-  - id: "05-01-01"
-    decision: "Use JSON scalar for fieldDiffs union type"
-    rationale: "GraphQL unions are complex; JSON provides flexibility for heterogeneous diff types"
+  - id: '05-01-01'
+    decision: 'Use JSON scalar for fieldDiffs union type'
+    rationale: 'GraphQL unions are complex; JSON provides flexibility for heterogeneous diff types'
 
 metrics:
-  duration: "5.2min"
-  completed: "2026-01-24"
+  duration: '5.2min'
+  completed: '2026-01-24'
 ---
 
 # Phase 5 Plan 1: GraphQL Schema Definitions Summary
@@ -49,11 +49,13 @@ This plan added comprehensive GraphQL schema definitions for the admin album cor
 ### Types Added (30+)
 
 **Search Types:**
+
 - CorrectionArtistCredit, ScoreBreakdown, ScoredSearchResult
 - GroupedSearchResult, CorrectionSearchResponse
 - CorrectionSearchQuery, CorrectionScoringInfo
 
 **Preview/Diff Types:**
+
 - TextDiffPart, TextDiff, DateComponents, DateDiff
 - DateComponentChanges, ArrayDiff, TrackDiff
 - TrackData, TrackSourceData, TrackListSummary
@@ -61,10 +63,12 @@ This plan added comprehensive GraphQL schema definitions for the admin album cor
 - CorrectionPreview
 
 **MusicBrainz Data Types:**
+
 - MBRecording, MBMediumTrack, MBMedium
 - MBArtist, MBArtistCredit, MBReleaseData
 
 **Apply Types:**
+
 - AppliedArtistChanges, AppliedTrackChanges, AppliedChanges
 - CorrectionApplySuccess, CorrectionApplyError, CorrectionApplyResult
 
@@ -81,10 +85,12 @@ This plan added comprehensive GraphQL schema definitions for the admin album cor
 ### Operations Added (3)
 
 **Queries:**
+
 - `correctionSearch(input: CorrectionSearchInput!): CorrectionSearchResponse!`
 - `correctionPreview(input: CorrectionPreviewInput!): CorrectionPreview!`
 
 **Mutations:**
+
 - `correctionApply(input: CorrectionApplyInput!): CorrectionApplyResult!`
 
 ## Technical Decisions
@@ -96,6 +102,7 @@ Used JSON scalar type for `fieldDiffs` in CorrectionPreview instead of GraphQL u
 ### Type Mapping from TypeScript
 
 All GraphQL types map directly to the TypeScript types defined in the correction service layer:
+
 - `src/lib/correction/types.ts` - Base correction types
 - `src/lib/correction/scoring/types.ts` - Scoring types
 - `src/lib/correction/preview/types.ts` - Preview/diff types
@@ -118,6 +125,7 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 Phase 5 Plan 2 (Resolver Implementation) can begin immediately:
+
 - Schema definitions provide complete type contracts
 - Generated resolver types ready for implementation
 - Correction services from Phase 4 ready to be called

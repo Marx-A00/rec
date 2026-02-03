@@ -6,15 +6,29 @@
  */
 
 // Layout components
-export { ComparisonLayout, type ComparisonLayoutProps } from './ComparisonLayout';
+export {
+  ComparisonLayout,
+  type ComparisonLayoutProps,
+} from './ComparisonLayout';
 export { PreviewSkeleton } from './PreviewSkeleton';
 export { PreviewView, type PreviewViewProps } from './PreviewView';
 
 // Field comparison components
 export { InlineTextDiff, type InlineTextDiffProps } from './InlineTextDiff';
 export { FieldComparison, type FieldComparisonProps } from './FieldComparison';
-export { FieldComparisonList, type FieldComparisonListProps } from './FieldComparisonList';
+export {
+  FieldComparisonList,
+  type FieldComparisonListProps,
+} from './FieldComparisonList';
 
 // Track and cover art comparison
-export { TrackComparison, type TrackComparisonProps, type TrackDiff, type TrackListSummary } from './TrackComparison';
-export { CoverArtComparison, type CoverArtComparisonProps } from './CoverArtComparison';
+export {
+  TrackComparison,
+  type TrackComparisonProps,
+  type TrackDiff,
+  type TrackListSummary,
+} from './TrackComparison';
+export {
+  CoverArtComparison,
+  type CoverArtComparisonProps,
+} from './CoverArtComparison';

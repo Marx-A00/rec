@@ -5,19 +5,29 @@ subsystem: graphql-resolvers
 tags: [graphql, resolvers, admin, authorization, correction]
 dependency-graph:
   requires: [05-01]
-  provides: ["correctionSearch resolver", "correctionPreview resolver", "correctionApply resolver"]
+  provides:
+    [
+      'correctionSearch resolver',
+      'correctionPreview resolver',
+      'correctionApply resolver',
+    ]
   affects: [05-03, 06-xx, 07-xx]
 tech-stack:
   added: []
-  patterns: ["thin resolver pattern", "admin authorization guard", "GraphQL error codes"]
+  patterns:
+    [
+      'thin resolver pattern',
+      'admin authorization guard',
+      'GraphQL error codes',
+    ]
 key-files:
   created: []
   modified:
     - src/lib/graphql/resolvers/queries.ts
     - src/lib/graphql/resolvers/mutations.ts
 decisions:
-  - "[05-02] Strategy enum mapping via explicit switch statements"
-  - "[05-02] Preview generated on-demand in correctionApply (not passed from client)"
+  - '[05-02] Strategy enum mapping via explicit switch statements'
+  - '[05-02] Preview generated on-demand in correctionApply (not passed from client)'
 metrics:
   duration: 6.5min
   completed: 2026-01-24
@@ -54,6 +64,7 @@ metrics:
 ## Key Patterns
 
 **Authorization Guard:**
+
 ```typescript
 if (!user) {
   throw new GraphQLError('Authentication required', {
@@ -68,18 +79,26 @@ if (!isAdmin(user.role)) {
 ```
 
 **Type Transformation (enum mapping):**
+
 ```typescript
-function mapGqlStrategyToService(strategy: GqlScoringStrategy): ServiceScoringStrategy {
+function mapGqlStrategyToService(
+  strategy: GqlScoringStrategy
+): ServiceScoringStrategy {
   switch (strategy) {
-    case GqlScoringStrategy.Normalized: return 'normalized';
-    case GqlScoringStrategy.Tiered: return 'tiered';
-    case GqlScoringStrategy.Weighted: return 'weighted';
-    default: return 'normalized';
+    case GqlScoringStrategy.Normalized:
+      return 'normalized';
+    case GqlScoringStrategy.Tiered:
+      return 'tiered';
+    case GqlScoringStrategy.Weighted:
+      return 'weighted';
+    default:
+      return 'normalized';
   }
 }
 ```
 
 **Selections Input Transformation:**
+
 ```typescript
 function transformSelectionsInput(input): FieldSelections {
   // Convert arrays of { key, selected } to Map<string, boolean>
@@ -109,6 +128,7 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 Phase 5 Plan 3 can proceed:
+
 - All resolvers are implemented and type-safe
 - Services are properly wired
 - Admin authorization is in place

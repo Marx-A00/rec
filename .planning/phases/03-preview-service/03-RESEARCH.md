@@ -18,27 +18,28 @@ The established libraries/tools for diff generation and data comparison:
 
 ### Core
 
-| Library | Version | Purpose | Why Standard |
-| --- | --- | --- | --- |
-| diff | 8.0.3 | Character/word/line level text diffing | Most widely used JS diff library (7,644+ dependents), actively maintained, implements Myers' O(ND) algorithm |
-| deep-object-diff | 1.1.9 | Deep comparison of nested objects | Lightweight, zero dependencies, handles circular references, TypeScript support |
+| Library          | Version | Purpose                                | Why Standard                                                                                                 |
+| ---------------- | ------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| diff             | 8.0.3   | Character/word/line level text diffing | Most widely used JS diff library (7,644+ dependents), actively maintained, implements Myers' O(ND) algorithm |
+| deep-object-diff | 1.1.9   | Deep comparison of nested objects      | Lightweight, zero dependencies, handles circular references, TypeScript support                              |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-| --- | --- | --- | --- |
-| String.normalize() | Native | Unicode normalization (NFD/NFC) | Comparing text with accents/diacritics (e.g., "Cancún" vs "Cancun") |
-| date-fns | 3.x | Date component extraction and comparison | When need to highlight year/month/day differences separately |
+| Library            | Version | Purpose                                  | When to Use                                                         |
+| ------------------ | ------- | ---------------------------------------- | ------------------------------------------------------------------- |
+| String.normalize() | Native  | Unicode normalization (NFD/NFC)          | Comparing text with accents/diacritics (e.g., "Cancún" vs "Cancun") |
+| date-fns           | 3.x     | Date component extraction and comparison | When need to highlight year/month/day differences separately        |
 
 ### Alternatives Considered
 
-| Instead of | Could Use | Tradeoff |
-| --- | --- | --- |
-| diff | simple-text-diff | Simpler but less feature-rich, no unified diff support |
-| deep-object-diff | lodash.isEqual | Only returns boolean, not the differences themselves |
+| Instead of         | Could Use             | Tradeoff                                                       |
+| ------------------ | --------------------- | -------------------------------------------------------------- |
+| diff               | simple-text-diff      | Simpler but less feature-rich, no unified diff support         |
+| deep-object-diff   | lodash.isEqual        | Only returns boolean, not the differences themselves           |
 | String.normalize() | Custom accent removal | More complex, harder to maintain, potential Unicode edge cases |
 
 **Installation:**
+
 ```bash
 npm install diff deep-object-diff date-fns
 ```
@@ -65,6 +66,7 @@ src/lib/correction/
 **What:** PreviewService orchestrates diff generation, delegates to specialized engines
 **When to use:** Need to swap diff strategies or add new data sources
 **Example:**
+
 ```typescript
 // Source: Phase 2 pattern (correction-search.service.ts)
 export class CorrectionPreviewService {
@@ -80,16 +82,18 @@ export class CorrectionPreviewService {
     searchResult: CorrectionSearchResult
   ): Promise<CorrectionPreview> {
     // Fetch full MB release data if needed (inc=recordings+artist-credits)
-    const mbRelease = await this.fetchMBReleaseData(searchResult.releaseGroupMbid);
-    
+    const mbRelease = await this.fetchMBReleaseData(
+      searchResult.releaseGroupMbid
+    );
+
     // Generate field-by-field diff
     const fieldDiffs = this.diffEngine.compareAlbums(currentAlbum, mbRelease);
-    
+
     return {
       currentData: currentAlbum,
       sourceData: mbRelease,
       diffs: fieldDiffs,
-      summary: this.summarizeChanges(fieldDiffs)
+      summary: this.summarizeChanges(fieldDiffs),
     };
   }
 }
@@ -100,8 +104,14 @@ export class CorrectionPreviewService {
 **What:** Added, Modified, Removed, Conflict, Unchanged states for each field
 **When to use:** Need to distinguish between different change types for UI rendering
 **Example:**
+
 ```typescript
-export type ChangeType = 'ADDED' | 'MODIFIED' | 'REMOVED' | 'CONFLICT' | 'UNCHANGED';
+export type ChangeType =
+  | 'ADDED'
+  | 'MODIFIED'
+  | 'REMOVED'
+  | 'CONFLICT'
+  | 'UNCHANGED';
 
 export interface FieldDiff {
   field: string;
@@ -121,15 +131,15 @@ export interface FieldDiff {
 function classifyChange(current: unknown, source: unknown): ChangeType {
   const hasCurrentValue = current !== null && current !== undefined;
   const hasSourceValue = source !== null && source !== undefined;
-  
+
   if (!hasCurrentValue && hasSourceValue) return 'ADDED';
   if (hasCurrentValue && !hasSourceValue) return 'REMOVED';
   if (!hasCurrentValue && !hasSourceValue) return 'UNCHANGED';
-  
+
   // Both have values - check if different
   const currentNorm = normalize(current);
   const sourceNorm = normalize(source);
-  
+
   if (currentNorm === sourceNorm) return 'UNCHANGED';
   return 'CONFLICT'; // Both have different non-null values
 }
@@ -140,6 +150,7 @@ function classifyChange(current: unknown, source: unknown): ChangeType {
 **What:** Apply consistent normalization (trim, lowercase, Unicode NFD) before diffing
 **When to use:** Every text comparison to avoid false positives from formatting
 **Example:**
+
 ```typescript
 // Source: MDN String.normalize() + research findings
 export class TextNormalizer {
@@ -148,19 +159,22 @@ export class TextNormalizer {
    */
   static normalize(text: string | null | undefined): string {
     if (!text) return '';
-    
+
     return text
-      .normalize('NFD')                    // Decompose Unicode (é → e + ́)
-      .replace(/[\u0300-\u036f]/g, '')    // Remove diacritics
+      .normalize('NFD') // Decompose Unicode (é → e + ́)
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
       .toLowerCase()
       .trim()
-      .replace(/\s+/g, ' ');              // Collapse whitespace
+      .replace(/\s+/g, ' '); // Collapse whitespace
   }
-  
+
   /**
    * Check if two strings are semantically equal (normalized match)
    */
-  static areEqual(a: string | null | undefined, b: string | null | undefined): boolean {
+  static areEqual(
+    a: string | null | undefined,
+    b: string | null | undefined
+  ): boolean {
     return this.normalize(a) === this.normalize(b);
   }
 }
@@ -171,6 +185,7 @@ export class TextNormalizer {
 **What:** Align tracks by position (track 1 vs track 1), show additions/removals at end
 **When to use:** Comparing track listings from different sources
 **Example:**
+
 ```typescript
 interface TrackDiff {
   position: number;
@@ -187,35 +202,49 @@ function alignTracks(
 ): TrackDiff[] {
   const maxLength = Math.max(currentTracks.length, sourceTracks.length);
   const aligned: TrackDiff[] = [];
-  
+
   for (let i = 0; i < maxLength; i++) {
     const current = currentTracks[i];
     const source = sourceTracks[i];
-    
+
     if (current && source) {
       // Both exist - check for modifications
       const titleNorm = TextNormalizer.normalize(current.title);
       const sourceNorm = TextNormalizer.normalize(source.title);
-      
+
       aligned.push({
         position: i + 1,
         currentTrack: current,
         sourceTrack: source,
         changeType: titleNorm === sourceNorm ? 'MATCH' : 'MODIFIED',
-        titleDiff: titleNorm !== sourceNorm 
-          ? diffChars(current.title, source.title) 
-          : undefined,
-        durationDiff: current.durationMs !== source.length 
-          ? { current: current.durationMs, source: source.length, delta: Math.abs(current.durationMs - source.length) }
-          : undefined
+        titleDiff:
+          titleNorm !== sourceNorm
+            ? diffChars(current.title, source.title)
+            : undefined,
+        durationDiff:
+          current.durationMs !== source.length
+            ? {
+                current: current.durationMs,
+                source: source.length,
+                delta: Math.abs(current.durationMs - source.length),
+              }
+            : undefined,
       });
     } else if (current && !source) {
-      aligned.push({ position: i + 1, currentTrack: current, changeType: 'REMOVED' });
+      aligned.push({
+        position: i + 1,
+        currentTrack: current,
+        changeType: 'REMOVED',
+      });
     } else if (!current && source) {
-      aligned.push({ position: i + 1, sourceTrack: source, changeType: 'ADDED' });
+      aligned.push({
+        position: i + 1,
+        sourceTrack: source,
+        changeType: 'ADDED',
+      });
     }
   }
-  
+
   return aligned;
 }
 ```
@@ -225,6 +254,7 @@ function alignTracks(
 **What:** Parse dates into year/month/day, highlight which components changed
 **When to use:** Comparing release dates where partial information may differ
 **Example:**
+
 ```typescript
 interface DateDiff {
   field: 'releaseDate';
@@ -238,21 +268,28 @@ interface DateDiff {
   };
 }
 
-function parseDateComponents(dateString: string | null): { year?: number; month?: number; day?: number } | null {
+function parseDateComponents(
+  dateString: string | null
+): { year?: number; month?: number; day?: number } | null {
   if (!dateString) return null;
-  
+
   const parts = dateString.split('-');
   return {
     year: parts[0] ? parseInt(parts[0]) : undefined,
     month: parts[1] ? parseInt(parts[1]) : undefined,
-    day: parts[2] ? parseInt(parts[2]) : undefined
+    day: parts[2] ? parseInt(parts[2]) : undefined,
   };
 }
 
-function compareDateComponents(current: Date | null, source: string | null): DateDiff {
-  const currentParts = current ? parseDateComponents(current.toISOString().split('T')[0]) : null;
+function compareDateComponents(
+  current: Date | null,
+  source: string | null
+): DateDiff {
+  const currentParts = current
+    ? parseDateComponents(current.toISOString().split('T')[0])
+    : null;
   const sourceParts = parseDateComponents(source);
-  
+
   return {
     field: 'releaseDate',
     changeType: classifyChange(currentParts, sourceParts),
@@ -261,8 +298,8 @@ function compareDateComponents(current: Date | null, source: string | null): Dat
     componentChanges: {
       year: classifyChange(currentParts?.year, sourceParts?.year),
       month: classifyChange(currentParts?.month, sourceParts?.month),
-      day: classifyChange(currentParts?.day, sourceParts?.day)
-    }
+      day: classifyChange(currentParts?.day, sourceParts?.day),
+    },
   };
 }
 ```
@@ -279,13 +316,13 @@ function compareDateComponents(current: Date | null, source: string | null): Dat
 
 Problems that look simple but have existing solutions:
 
-| Problem | Don't Build | Use Instead | Why |
-| --- | --- | --- | --- |
-| Character-level text diff | Custom string comparison algorithm | `diff` library's `diffChars()` | Myers' algorithm is complex, handles edge cases, outputs standardized format |
-| Unicode normalization | Regex to remove accents | `String.normalize('NFD')` + diacritic range removal | Native method handles all Unicode forms correctly (NFD, NFC, NFKC, NFKD) |
-| Deep object comparison | Recursive property check | `deep-object-diff` or lodash.isEqual | Handles circular refs, special types (Date, Map, Set), prototype chains |
-| Array diff with edits | Manual index tracking | Position-based alignment with change classification | Track additions/removals/modifications is error-prone with indices |
-| Date parsing/comparison | String splitting | Native Date constructor or `date-fns` | Timezone handling, leap years, invalid dates edge cases |
+| Problem                   | Don't Build                        | Use Instead                                         | Why                                                                          |
+| ------------------------- | ---------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Character-level text diff | Custom string comparison algorithm | `diff` library's `diffChars()`                      | Myers' algorithm is complex, handles edge cases, outputs standardized format |
+| Unicode normalization     | Regex to remove accents            | `String.normalize('NFD')` + diacritic range removal | Native method handles all Unicode forms correctly (NFD, NFC, NFKC, NFKD)     |
+| Deep object comparison    | Recursive property check           | `deep-object-diff` or lodash.isEqual                | Handles circular refs, special types (Date, Map, Set), prototype chains      |
+| Array diff with edits     | Manual index tracking              | Position-based alignment with change classification | Track additions/removals/modifications is error-prone with indices           |
+| Date parsing/comparison   | String splitting                   | Native Date constructor or `date-fns`               | Timezone handling, leap years, invalid dates edge cases                      |
 
 **Key insight:** Diff algorithms have subtle edge cases (longest common subsequence, optimal edit distance) that are well-solved in libraries. Custom implementations miss edge cases and are harder to test.
 
@@ -352,14 +389,14 @@ import { diffChars } from 'diff';
 
 function computeTextDiff(current: string, source: string) {
   const changes = diffChars(current, source);
-  
+
   // changes = [
   //   { value: 'The Dark Side of ', count: 17 },
   //   { value: 'T', removed: true },
   //   { value: 't', added: true },
   //   { value: 'he Moon', count: 7 }
   // ]
-  
+
   return changes;
 }
 ```
@@ -372,14 +409,14 @@ function computeTextDiff(current: string, source: string) {
 
 function normalizeForComparison(text: string): string {
   return text
-    .normalize('NFD')                    // Decompose: é → e + ́
-    .replace(/[\u0300-\u036f]/g, '')    // Remove combining diacritics
+    .normalize('NFD') // Decompose: é → e + ́
+    .replace(/[\u0300-\u036f]/g, '') // Remove combining diacritics
     .toLowerCase()
     .trim();
 }
 
 // Example: "Cancún" vs "Cancun"
-normalizeForComparison("Cancún") === normalizeForComparison("Cancun"); // true
+normalizeForComparison('Cancún') === normalizeForComparison('Cancun'); // true
 ```
 
 ### Deep Object Difference
@@ -408,15 +445,15 @@ function compareDateComponents(current: Date | null, source: string | null) {
   if (!current && !source) return { changeType: 'UNCHANGED' };
   if (!current) return { changeType: 'ADDED', source: parseDate(source) };
   if (!source) return { changeType: 'REMOVED', current: formatDate(current) };
-  
+
   const currentParts = {
     year: current.getFullYear(),
     month: current.getMonth() + 1,
-    day: current.getDate()
+    day: current.getDate(),
   };
-  
+
   const sourceParts = parseDate(source); // "2023-04-15" → { year: 2023, month: 4, day: 15 }
-  
+
   return {
     changeType: 'MODIFIED',
     current: currentParts,
@@ -424,8 +461,8 @@ function compareDateComponents(current: Date | null, source: string | null) {
     changes: {
       year: currentParts.year !== sourceParts.year,
       month: currentParts.month !== sourceParts.month,
-      day: currentParts.day !== sourceParts.day
-    }
+      day: currentParts.day !== sourceParts.day,
+    },
   };
 }
 ```
@@ -442,18 +479,18 @@ function alignArrays<T>(
 ) {
   const maxLength = Math.max(currentItems.length, sourceItems.length);
   const aligned = [];
-  
+
   for (let i = 0; i < maxLength; i++) {
     const current = currentItems[i];
     const source = sourceItems[i];
-    
+
     if (current && source) {
       const isMatch = keyExtractor(current) === keyExtractor(source);
-      aligned.push({ 
-        position: i + 1, 
-        current, 
-        source, 
-        changeType: isMatch ? 'MATCH' : 'MODIFIED' 
+      aligned.push({
+        position: i + 1,
+        current,
+        source,
+        changeType: isMatch ? 'MATCH' : 'MODIFIED',
       });
     } else if (current) {
       aligned.push({ position: i + 1, current, changeType: 'REMOVED' });
@@ -461,7 +498,7 @@ function alignArrays<T>(
       aligned.push({ position: i + 1, source, changeType: 'ADDED' });
     }
   }
-  
+
   return aligned;
 }
 
@@ -469,7 +506,7 @@ function alignArrays<T>(
 const trackDiffs = alignArrays(
   currentAlbum.tracks,
   mbRelease.recordings,
-  (track) => normalizeForComparison(track.title)
+  track => normalizeForComparison(track.title)
 );
 ```
 
@@ -489,24 +526,26 @@ Based on MusicBrainz API capabilities and current Album schema:
 ### Artist Fields (Full Detail)
 
 MusicBrainz `artist-credit` structure:
+
 ```typescript
 {
   artistCredit: [
     {
-      name: "John Lennon",        // As credited on release
+      name: 'John Lennon', // As credited on release
       artist: {
-        id: "...",                // MBID
-        name: "John Lennon",      // Canonical name
-        sortName: "Lennon, John",
-        disambiguation: "The Beatles member"
+        id: '...', // MBID
+        name: 'John Lennon', // Canonical name
+        sortName: 'Lennon, John',
+        disambiguation: 'The Beatles member',
       },
-      joinphrase: " & "           // Connector to next artist
-    }
-  ]
+      joinphrase: ' & ', // Connector to next artist
+    },
+  ];
 }
 ```
 
 Compare:
+
 - Artist names (all credited artists, not just primary)
 - Artist MBIDs (for linking to artist entities)
 - Joinphrases (how artists are connected: " & ", " feat. ", etc.)
@@ -514,11 +553,13 @@ Compare:
 ### Track Fields (Position-Based Alignment)
 
 For each track position:
+
 - **title** - Character-level diff if modified
 - **durationMs** - Show any difference (even 1 second), admin decides
 - **trackNumber** / **discNumber** - Position-based, extra tracks marked as added/removed
 
 Track summary for UI:
+
 ```typescript
 {
   totalCurrent: 12,
@@ -539,6 +580,7 @@ Track summary for UI:
 ### External IDs (Link Changes)
 
 Compare these linking fields:
+
 - **musicbrainzId** - Primary link, show if added/changed
 - **spotifyId** - If available in MB (requires url-rels)
 - **discogsId** - If available in MB (requires url-rels)
@@ -553,6 +595,7 @@ Compare these linking fields:
 ### Fields to Exclude
 
 Don't compare these (internal/computed):
+
 - id, createdAt, updatedAt (internal)
 - searchVector (computed)
 - dataQuality, enrichmentStatus (system state)
@@ -561,12 +604,12 @@ Don't compare these (internal/computed):
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-| --- | --- | --- | --- |
-| Simple string equality | Normalized comparison with Unicode NFD | Ongoing (2020+) | Avoids false positives for accented characters |
-| Boolean "has changes" | Five-state classification (Added/Modified/Removed/Conflict/Unchanged) | Industry pattern | Admin sees exactly what decision to make |
-| Manual diff loops | Myers' O(ND) algorithm in libraries | Algorithm from 1986, libs since 2010+ | Optimal diff performance, standard output format |
-| Count-based track comparison | Position-based alignment with title normalization | N/A (project-specific) | Detects track order changes and title variations |
+| Old Approach                 | Current Approach                                                      | When Changed                          | Impact                                           |
+| ---------------------------- | --------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------ |
+| Simple string equality       | Normalized comparison with Unicode NFD                                | Ongoing (2020+)                       | Avoids false positives for accented characters   |
+| Boolean "has changes"        | Five-state classification (Added/Modified/Removed/Conflict/Unchanged) | Industry pattern                      | Admin sees exactly what decision to make         |
+| Manual diff loops            | Myers' O(ND) algorithm in libraries                                   | Algorithm from 1986, libs since 2010+ | Optimal diff performance, standard output format |
+| Count-based track comparison | Position-based alignment with title normalization                     | N/A (project-specific)                | Detects track order changes and title variations |
 
 **Deprecated/outdated:**
 

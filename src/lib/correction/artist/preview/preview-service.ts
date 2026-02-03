@@ -131,28 +131,37 @@ export class ArtistCorrectionPreviewService {
    * Uses ADMIN priority tier for immediate processing.
    *
    * @param artistMbid - MusicBrainz artist ID
-   * @returns Transformed MBArtistData or null if fetch failed
+   * @returns Transformed MBArtistData
+   * @throws Error if MusicBrainz fetch fails
    */
-  private async fetchMBArtistData(
-    artistMbid: string
-  ): Promise<MBArtistData | null> {
-    try {
-      const mbService = getQueuedMusicBrainzService();
+  private async fetchMBArtistData(artistMbid: string): Promise<MBArtistData> {
+    const mbService = getQueuedMusicBrainzService();
 
-      const data = (await mbService.getArtist(
-        artistMbid,
-        ['aliases', 'tags'], // Include aliases and tags
-        PRIORITY_TIERS.ADMIN
-      )) as MBArtistAPIResponse;
+    const response = await mbService.getArtist(
+      artistMbid,
+      ['aliases', 'tags'], // Include aliases and tags
+      PRIORITY_TIERS.ADMIN
+    );
 
-      return this.transformMBArtist(data);
-    } catch (error) {
-      console.error(
-        `[ArtistCorrectionPreviewService] Failed to fetch MusicBrainz artist ${artistMbid}:`,
-        error
+    // Queue service returns { data, requestedMbid, returnedMbid, wasRedirected }
+    // Extract the actual artist data from the response
+    const mbData = (response as { data: MBArtistAPIResponse }).data;
+
+    if (!mbData) {
+      throw new Error(
+        `MusicBrainz returned empty data for artist ${artistMbid}`
       );
-      return null;
     }
+
+    const transformed = this.transformMBArtist(mbData);
+
+    if (!transformed) {
+      throw new Error(
+        `Failed to transform MusicBrainz data for artist ${artistMbid}`
+      );
+    }
+
+    return transformed;
   }
 
   /**
@@ -164,9 +173,7 @@ export class ArtistCorrectionPreviewService {
    * - Extract first IPI and ISNI from arrays
    * - Map area.name to area string
    */
-  private transformMBArtist(
-    mbData: MBArtistAPIResponse
-  ): MBArtistData | null {
+  private transformMBArtist(mbData: MBArtistAPIResponse): MBArtistData | null {
     if (!mbData) return null;
 
     return {

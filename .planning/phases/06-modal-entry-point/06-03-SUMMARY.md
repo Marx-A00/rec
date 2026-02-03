@@ -6,21 +6,21 @@ tags: [modal, entry-point, wrench-button, album-table, graphql]
 
 dependency_graph:
   requires:
-    - "06-01: CorrectionModal shell and step navigation"
-    - "06-02: CurrentDataView component for displaying album data"
+    - '06-01: CorrectionModal shell and step navigation'
+    - '06-02: CurrentDataView component for displaying album data'
   provides:
-    - "Fix Data entry point in admin music database page"
-    - "CorrectionModal fetches album data internally via GraphQL"
-    - "Dark theme styling for modal components"
+    - 'Fix Data entry point in admin music database page'
+    - 'CorrectionModal fetches album data internally via GraphQL'
+    - 'Dark theme styling for modal components'
   affects:
-    - "07: SearchView will be next step content to implement"
+    - '07: SearchView will be next step content to implement'
 
 tech_stack:
   added: []
   patterns:
-    - "GraphQL query within modal for data fetching"
-    - "Quality-based button coloring for visual indication"
-    - "Dark zinc color scheme for admin modals"
+    - 'GraphQL query within modal for data fetching'
+    - 'Quality-based button coloring for visual indication'
+    - 'Dark zinc color scheme for admin modals'
 
 key_files:
   created: []
@@ -34,18 +34,18 @@ key_files:
 
 decisions:
   - id: internal-data-fetch
-    choice: "CorrectionModal fetches album data internally using useGetAlbumDetailsAdminQuery"
-    rationale: "Parent only needs to pass albumId; modal handles full data loading"
+    choice: 'CorrectionModal fetches album data internally using useGetAlbumDetailsAdminQuery'
+    rationale: 'Parent only needs to pass albumId; modal handles full data loading'
   - id: quality-color-coding
-    choice: "LOW quality albums show red/orange wrench icon"
-    rationale: "Visual indication helps admins prioritize corrections"
+    choice: 'LOW quality albums show red/orange wrench icon'
+    rationale: 'Visual indication helps admins prioritize corrections'
   - id: dark-theme-styling
-    choice: "Dark zinc color scheme (zinc-900 background, zinc-100/300/500 text)"
-    rationale: "Matches admin dashboard aesthetic and provides better contrast"
+    choice: 'Dark zinc color scheme (zinc-900 background, zinc-100/300/500 text)'
+    rationale: 'Matches admin dashboard aesthetic and provides better contrast'
 
 metrics:
-  duration: "8min"
-  completed: "2026-01-25"
+  duration: '8min'
+  completed: '2026-01-25'
 ---
 
 # Phase 06 Plan 03: Entry Point Integration Summary
@@ -126,16 +126,19 @@ None - implementation proceeded smoothly.
 ## Integration Points
 
 **For Phase 07 (SearchView):**
+
 - Will implement Step 1 content (Search for correction candidates)
 - Will use same album type for comparison display
 
 **For Phase 08 (ApplyView):**
+
 - Will implement Step 2 content (Preview and apply changes)
 - Apply button in footer will trigger mutation
 
 ## Next Phase Readiness
 
 Phase 6 is complete. The correction modal foundation is fully implemented:
+
 - Entry point accessible from admin page
 - Modal displays current album data
 - Step navigation working with sessionStorage persistence

@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+
 import { TourProvider } from '@/contexts/TourContext';
 import { TourDebugPanel } from '@/components/TourDebugPanel';
 

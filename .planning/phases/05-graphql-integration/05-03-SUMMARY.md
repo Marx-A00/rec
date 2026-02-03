@@ -4,12 +4,17 @@ plan: 03
 subsystem: graphql-client
 tags: [graphql, codegen, react-query, hooks, typescript]
 dependency-graph:
-  requires: ["05-01", "05-02"]
-  provides: ["useSearchCorrectionCandidatesQuery", "useGetCorrectionPreviewQuery", "useApplyCorrectionMutation"]
-  affects: ["06-admin-ui"]
+  requires: ['05-01', '05-02']
+  provides:
+    [
+      'useSearchCorrectionCandidatesQuery',
+      'useGetCorrectionPreviewQuery',
+      'useApplyCorrectionMutation',
+    ]
+  affects: ['06-admin-ui']
 tech-stack:
   added: []
-  patterns: ["GraphQL codegen", "React Query hooks", "typed operations"]
+  patterns: ['GraphQL codegen', 'React Query hooks', 'typed operations']
 key-files:
   created:
     - src/graphql/queries/correctionSearch.graphql
@@ -18,13 +23,13 @@ key-files:
   modified:
     - src/generated/graphql.ts
 decisions:
-  - id: "05-03-01"
-    area: "naming"
-    choice: "Prefix client operations to avoid type collisions"
-    rationale: "Schema has CorrectionSearchQuery type; client query named CorrectionSearch would generate conflicting CorrectionSearchQuery type"
+  - id: '05-03-01'
+    area: 'naming'
+    choice: 'Prefix client operations to avoid type collisions'
+    rationale: 'Schema has CorrectionSearchQuery type; client query named CorrectionSearch would generate conflicting CorrectionSearchQuery type'
 metrics:
-  duration: "2.9min"
-  completed: "2026-01-24"
+  duration: '2.9min'
+  completed: '2026-01-24'
 ---
 
 # Phase 5 Plan 3: Client Queries and Hook Generation Summary
@@ -36,11 +41,13 @@ metrics:
 Created client-side GraphQL query/mutation files and generated typed React Query hooks:
 
 **Query/Mutation Files:**
+
 - `correctionSearch.graphql` - SearchCorrectionCandidates operation with grouped results, scoring breakdown
 - `correctionPreview.graphql` - GetCorrectionPreview operation with all diff fields and MB release data
 - `correctionApply.graphql` - ApplyCorrection operation with success/error union response
 
 **Generated Hooks:**
+
 - `useSearchCorrectionCandidatesQuery` - Query hook for correction candidate search
 - `useGetCorrectionPreviewQuery` - Query hook for correction preview generation
 - `useApplyCorrectionMutation` - Mutation hook for applying corrections
@@ -50,6 +57,7 @@ Created client-side GraphQL query/mutation files and generated typed React Query
 ### Operation Naming Convention
 
 Operations were named to avoid type collisions with schema types:
+
 - `SearchCorrectionCandidates` (not `CorrectionSearch`) to avoid collision with `CorrectionSearchQuery` schema type
 - `GetCorrectionPreview` (not `CorrectionPreview`) for consistency
 - `ApplyCorrection` (not `CorrectionApply`) for consistency
@@ -57,6 +65,7 @@ Operations were named to avoid type collisions with schema types:
 ### Field Selection
 
 **Search query selects:**
+
 - Grouped results with primary and alternate versions
 - Full scoring breakdown (titleScore, artistScore, yearScore, mbScore, confidenceTier)
 - Artist credits, release dates, types, cover art URLs
@@ -64,6 +73,7 @@ Operations were named to avoid type collisions with schema types:
 - Scoring metadata (strategy, threshold, low-confidence count)
 
 **Preview query selects:**
+
 - Album identification (id, title, updatedAt for optimistic locking)
 - Source result with scoring
 - Full MusicBrainz release data (media, tracks, artist credits)
@@ -75,6 +85,7 @@ Operations were named to avoid type collisions with schema types:
 - Preview summary counts
 
 **Apply mutation selects:**
+
 - Success/error discriminator
 - Updated album with tracks and artists on success
 - Applied changes summary (metadata, artists, tracks, externalIds, coverArt, dataQuality)
@@ -83,6 +94,7 @@ Operations were named to avoid type collisions with schema types:
 ## Decisions Made
 
 **05-03-01: Prefix client operations to avoid type collisions**
+
 - Schema defines `CorrectionSearchQuery` type
 - Client query named `CorrectionSearch` would generate conflicting `CorrectionSearchQuery` type
 - Solution: Use prefixed names (SearchCorrectionCandidates, GetCorrectionPreview, ApplyCorrection)
@@ -92,6 +104,7 @@ Operations were named to avoid type collisions with schema types:
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] Fixed schema type mismatches in query files**
+
 - **Found during:** Task 3 (codegen)
 - **Issue:** Initial query files assumed nested structures (searchResult, scoring) but ScoredSearchResult has flat fields
 - **Fix:** Rewrote queries to match actual schema structure
@@ -99,6 +112,7 @@ Operations were named to avoid type collisions with schema types:
 - **Commit:** 50557bc
 
 **2. [Rule 3 - Blocking] Resolved TypeScript duplicate identifier error**
+
 - **Found during:** Task 3 (type-check)
 - **Issue:** Generated `CorrectionSearchQuery` type collided with schema type of same name
 - **Fix:** Renamed client operation from `CorrectionSearch` to `SearchCorrectionCandidates`
@@ -108,6 +122,7 @@ Operations were named to avoid type collisions with schema types:
 ## Verification Results
 
 All verification criteria met:
+
 - Query files exist with correct operations
 - Codegen runs without errors
 - All three hooks are generated in `src/generated/graphql.ts`
@@ -122,11 +137,13 @@ All verification criteria met:
 ## Next Phase Readiness
 
 **Prerequisites for Phase 6 (Admin UI):**
+
 - Schema types defined (05-01)
 - Resolvers wired (05-02)
 - Client hooks available (05-03)
 
 **Ready to build:**
+
 - SearchPanel component using `useSearchCorrectionCandidatesQuery`
 - PreviewPanel component using `useGetCorrectionPreviewQuery`
 - ApplyButton component using `useApplyCorrectionMutation`

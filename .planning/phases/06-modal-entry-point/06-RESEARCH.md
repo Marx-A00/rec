@@ -75,6 +75,7 @@ The established libraries/tools for this domain:
 **Tradeoff:** User decision from roadmap - no URL state, no DB persistence, modal state is ephemeral
 
 **Installation:**
+
 ```bash
 # Install missing components
 npx shadcn@latest add accordion
@@ -120,6 +121,7 @@ src/
 **What:** Dialog open/close state managed by parent component, modal receives data as props  
 **When to use:** Admin page manages which album is being corrected, modal is stateless regarding open/close  
 **Example:**
+
 ```typescript
 // Admin page (Server Component boundary)
 'use client';
@@ -129,15 +131,15 @@ import CorrectionModal from './CorrectionModal';
 
 export default function MusicDatabasePage() {
   const [correctionAlbumId, setCorrectionAlbumId] = useState<string | null>(null);
-  
+
   return (
     <>
       <Table>
         {albums.map(album => (
           <TableRow key={album.id}>
             <TableCell>
-              <Button 
-                size="icon" 
+              <Button
+                size="icon"
                 variant="ghost"
                 onClick={() => setCorrectionAlbumId(album.id)}
               >
@@ -147,7 +149,7 @@ export default function MusicDatabasePage() {
           </TableRow>
         ))}
       </Table>
-      
+
       <CorrectionModal
         albumId={correctionAlbumId}
         open={correctionAlbumId !== null}
@@ -163,6 +165,7 @@ export default function MusicDatabasePage() {
 **What:** Persist current step per album using sessionStorage, restore on modal reopen  
 **When to use:** User decision - reopening modal picks up where admin left off  
 **Example:**
+
 ```typescript
 // hooks/useCorrectionModalState.ts
 import { useState, useEffect } from 'react';
@@ -176,32 +179,32 @@ interface ModalState {
 
 export function useCorrectionModalState(albumId: string | null) {
   const [currentStep, setCurrentStep] = useState(0);
-  
+
   // Load state from session storage
   useEffect(() => {
     if (!albumId) return;
-    
+
     const stored = sessionStorage.getItem(`${STORAGE_KEY}-${albumId}`);
     if (stored) {
       const state: ModalState = JSON.parse(stored);
       setCurrentStep(state.currentStep);
     }
   }, [albumId]);
-  
+
   // Save state to session storage
   useEffect(() => {
     if (!albumId) return;
-    
+
     const state: ModalState = { currentStep };
     sessionStorage.setItem(`${STORAGE_KEY}-${albumId}`, JSON.stringify(state));
   }, [albumId, currentStep]);
-  
+
   const clearState = () => {
     if (albumId) {
       sessionStorage.removeItem(`${STORAGE_KEY}-${albumId}`);
     }
   };
-  
+
   return { currentStep, setCurrentStep, clearState };
 }
 ```
@@ -211,6 +214,7 @@ export function useCorrectionModalState(albumId: string | null) {
 **What:** Override shadcn Dialog default max-w-lg to 1000px+ for side-by-side comparison  
 **When to use:** User decision - maximum space for later preview comparison  
 **Example:**
+
 ```typescript
 // components/admin/correction/CorrectionModal.tsx
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -236,6 +240,7 @@ export default function CorrectionModal({ albumId, open, onClose }) {
 **What:** Group album fields into collapsible sections with expand/collapse state  
 **When to use:** User decision - all sections collapsible, admin controls focus  
 **Example:**
+
 ```typescript
 // components/admin/correction/CurrentDataView.tsx
 import {
@@ -248,7 +253,7 @@ import {
 export default function CurrentDataView({ album }) {
   // Default all sections expanded
   const [openSections, setOpenSections] = useState(['basic', 'tracks', 'external-ids']);
-  
+
   return (
     <Accordion type="multiple" value={openSections} onValueChange={setOpenSections}>
       <AccordionItem value="basic">
@@ -262,14 +267,14 @@ export default function CurrentDataView({ album }) {
           </dl>
         </AccordionContent>
       </AccordionItem>
-      
+
       <AccordionItem value="tracks">
         <AccordionTrigger>Tracks</AccordionTrigger>
         <AccordionContent>
           <TrackListing tracks={album.tracks} />
         </AccordionContent>
       </AccordionItem>
-      
+
       <AccordionItem value="external-ids">
         <AccordionTrigger>External IDs</AccordionTrigger>
         <AccordionContent>
@@ -286,6 +291,7 @@ export default function CurrentDataView({ album }) {
 **What:** Prevent modal close when admin has made changes (future phases)  
 **When to use:** User decision - custom styled dialog warns of unsaved changes  
 **Example:**
+
 ```typescript
 // Pattern for future phases (Step 2/3)
 const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -302,8 +308,8 @@ const handleClose = () => {
 };
 
 // Radix Dialog supports onOpenAutoFocus and onCloseAutoFocus
-<Dialog 
-  open={open} 
+<Dialog
+  open={open}
   onOpenChange={(isOpen) => {
     if (!isOpen) handleClose();
   }}
@@ -412,8 +418,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 <TooltipProvider>
   <Tooltip>
     <TooltipTrigger asChild>
-      <Button 
-        size="icon" 
+      <Button
+        size="icon"
         variant="ghost"
         onClick={() => openCorrectionModal(album.id)}
         className={cn(
@@ -442,10 +448,10 @@ interface DataQualityBadgeProps {
   onClick?: () => void;
 }
 
-export default function DataQualityBadge({ 
-  quality, 
+export default function DataQualityBadge({
+  quality,
   hasAllExternalIds,
-  onClick 
+  onClick
 }: DataQualityBadgeProps) {
   // Map schema enum to 4-level display
   const getLevel = () => {
@@ -454,18 +460,18 @@ export default function DataQualityBadge({
     if (quality === 'MEDIUM') return 'Fair';
     return 'Poor';
   };
-  
+
   const level = getLevel();
-  
+
   const variants = {
     Excellent: 'bg-emeraled-green text-white',
     Good: 'bg-maximum-yellow text-black',
     Fair: 'bg-zinc-600 text-white',
     Poor: 'bg-dark-pastel-red text-white',
   };
-  
+
   return (
-    <Badge 
+    <Badge
       className={cn(
         'cursor-pointer',
         variants[level]
@@ -495,26 +501,26 @@ interface ExternalIdStatusProps {
 
 export default function ExternalIdStatus({ album }: ExternalIdStatusProps) {
   const ids = [
-    { 
-      name: 'MusicBrainz', 
+    {
+      name: 'MusicBrainz',
       value: album.musicbrainzId,
       url: album.musicbrainzId ? `https://musicbrainz.org/release/${album.musicbrainzId}` : null,
       short: album.musicbrainzId ? album.musicbrainzId.slice(0, 8) + '...' : null
     },
-    { 
-      name: 'Discogs', 
+    {
+      name: 'Discogs',
       value: album.discogsId,
       url: album.discogsId ? `https://www.discogs.com/release/${album.discogsId}` : null,
       short: album.discogsId
     },
-    { 
-      name: 'Spotify', 
+    {
+      name: 'Spotify',
       value: album.spotifyId,
       url: album.spotifyId ? `https://open.spotify.com/album/${album.spotifyId}` : null,
       short: album.spotifyId ? album.spotifyId.slice(0, 12) + '...' : null
     },
   ];
-  
+
   return (
     <div className="flex gap-3">
       {ids.map(id => (
@@ -525,7 +531,7 @@ export default function ExternalIdStatus({ album }: ExternalIdStatusProps) {
                 {id.value ? (
                   <>
                     <CheckCircle2 className="h-4 w-4 text-emeraled-green" />
-                    <a 
+                    <a
                       href={id.url!}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -575,16 +581,16 @@ interface TrackListingProps {
 export default function TrackListing({ tracks }: TrackListingProps) {
   const COLLAPSE_THRESHOLD = 30;
   const [showAll, setShowAll] = useState(tracks.length < COLLAPSE_THRESHOLD);
-  
+
   const displayTracks = showAll ? tracks : tracks.slice(0, 10);
-  
+
   const formatDuration = (ms: number | null) => {
     if (!ms) return '—';
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
-  
+
   return (
     <div className="space-y-2">
       <ol className="space-y-1">
@@ -599,10 +605,10 @@ export default function TrackListing({ tracks }: TrackListingProps) {
           </li>
         ))}
       </ol>
-      
+
       {tracks.length >= COLLAPSE_THRESHOLD && (
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           size="sm"
           onClick={() => setShowAll(!showAll)}
           className="w-full"
@@ -645,7 +651,7 @@ export default function StepIndicator({ currentStep, steps, onStepClick }: StepI
                 index !== currentStep && 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <span 
+              <span
                 className={cn(
                   'flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors',
                   index === currentStep && 'border-cosmic-latte bg-cosmic-latte text-black',
@@ -656,9 +662,9 @@ export default function StepIndicator({ currentStep, steps, onStepClick }: StepI
               </span>
               <span className="hidden sm:inline">{label}</span>
             </button>
-            
+
             {index < steps.length - 1 && (
-              <div 
+              <div
                 className={cn(
                   'mx-2 h-0.5 flex-1 transition-colors',
                   index < currentStep ? 'bg-cosmic-latte' : 'bg-muted-foreground'
@@ -682,34 +688,34 @@ import { Button } from '@/components/ui/button';
 
 <DialogFooter className="sticky bottom-0 bg-background border-t pt-4 mt-6">
   <div className="flex justify-between w-full">
-    <Button 
+    <Button
       variant="outline"
       onClick={handleClose}
     >
       Cancel
     </Button>
-    
+
     <div className="flex gap-2">
       {currentStep > 0 && (
-        <Button 
+        <Button
           variant="outline"
           onClick={() => setCurrentStep(currentStep - 1)}
         >
           Back
         </Button>
       )}
-      
+
       {currentStep < 2 && (
-        <Button 
+        <Button
           variant="primary"
           onClick={() => setCurrentStep(currentStep + 1)}
         >
           Next
         </Button>
       )}
-      
+
       {currentStep === 2 && (
-        <Button 
+        <Button
           variant="success"
           onClick={handleApplyCorrection}
         >
@@ -768,17 +774,21 @@ Things that couldn't be fully resolved:
 ### Primary (HIGH confidence)
 
 **Radix UI Dialog Documentation**
+
 - [Dialog – Radix Primitives](https://www.radix-ui.com/primitives/docs/components/dialog) - API reference, accessibility features
 - [Alert Dialog – Radix Primitives](https://www.radix-ui.com/primitives/docs/components/alert-dialog) - Unsaved changes pattern
 
 **shadcn/ui Documentation**
+
 - [How do I change Dialog Modal width?](https://github.com/shadcn-ui/ui/issues/1870) - Width override pattern with `!` prefix
 - [Accordion - shadcn/ui](https://ui.shadcn.com/docs/components/accordion) - Installation and API
 
 **Next.js Official Documentation**
+
 - [Getting Started: Server and Client Components](https://nextjs.org/docs/app/getting-started/server-and-client-components) - Client boundary pattern
 
 **Codebase**
+
 - `/prisma/schema.prisma` - Album model, DataQuality enum, external ID fields
 - `/src/components/ui/dialog.tsx` - Existing shadcn Dialog implementation
 - `/src/lib/correction/preview/types.ts` - Phase 5 correction types
@@ -787,19 +797,23 @@ Things that couldn't be fully resolved:
 ### Secondary (MEDIUM confidence)
 
 **React Patterns**
+
 - [React: Building a Multi-Step Form with Wizard Pattern](https://medium.com/@vandanpatel29122001/react-building-a-multi-step-form-with-wizard-pattern-85edec21f793) - Multi-step modal patterns
 - [Shareable Modals in Next.js: URL-Synced UI Made Simple](https://javascript-conference.com/blog/shareable-modals-nextjs/) - Next.js modal architecture (not using URL sync but good context)
 
 **Keyboard Shortcuts**
+
 - [How to Design Keyboard Accessibility for Complex React Experiences](https://www.freecodecamp.org/news/designing-keyboard-accessibility-for-complex-react-experiences/) - Esc key handling, focus management
 
 **Unsaved Changes**
+
 - [How to Create a Custom Hook for Unsaved Changes Alerts in React](https://medium.com/@ignatovich.dm/how-to-create-a-custom-hook-for-unsaved-changes-alerts-in-react-b1441f0ae712) - useBlocker pattern
 - [Communicating unsaved changes - Cloudscape Design System](https://cloudscape.design/patterns/general/unsaved-changes/) - UX best practices
 
 ### Tertiary (LOW confidence)
 
 **Badge Design**
+
 - [Exploring Badge UI Design: Tips, Tricks, Usability, and Use Cases](https://www.setproduct.com/blog/badge-ui-design) - General badge UX patterns (not React-specific)
 
 ## Metadata

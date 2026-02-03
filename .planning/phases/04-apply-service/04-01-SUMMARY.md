@@ -36,7 +36,7 @@ decisions:
     choice: Position-first, similarity-fallback
     reason: Position match is most reliable; similarity handles reordered tracks
   - name: Similarity threshold
-    choice: "0.8 (80%)"
+    choice: '0.8 (80%)'
     reason: Balance between false positives and legitimate matches
   - name: Field selection granularity
     choice: Five groups (metadata, artists, tracks, externalIds, coverArt)

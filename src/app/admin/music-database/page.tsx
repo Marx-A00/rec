@@ -230,7 +230,8 @@ export default function MusicDatabasePage() {
     useState<AlbumSearchResult | null>(null);
 
   // Artist correction modal state
-  const [correctionArtist, setCorrectionArtist] = useState<ArtistSearchResult | null>(null);
+  const [correctionArtist, setCorrectionArtist] =
+    useState<ArtistSearchResult | null>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
@@ -2084,110 +2085,112 @@ export default function MusicDatabasePage() {
                         <TableCell onClick={e => e.stopPropagation()}>
                           <div className='flex items-center gap-1'>
                             {/* Fix Data button */}
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  size='icon'
-                                  variant='ghost'
-                                  className={
-                                    artist.dataQuality === 'LOW'
-                                      ? 'text-dark-pastel-red hover:text-dark-pastel-red hover:bg-dark-pastel-red/10'
-                                      : 'text-zinc-400 hover:text-zinc-200'
-                                  }
-                                  onClick={() => setCorrectionArtist(artist)}
-                                >
-                                  <Wrench className='h-4 w-4' />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Fix artist data</TooltipContent>
-                            </Tooltip>
-                          {enrichingItems.has(artist.id) ? (
-                            <Button
-                              size='sm'
-                              variant='outline'
-                              disabled
-                              className='text-white border-zinc-700 disabled:opacity-70'
-                            >
-                              <Loader2 className='h-3 w-3 mr-1 animate-spin' />
-                              Enriching...
-                            </Button>
-                          ) : (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  size='sm'
-                                  variant='outline'
-                                  disabled={
-                                    artist.enrichmentStatus === 'IN_PROGRESS'
-                                  }
-                                  className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
-                                >
-                                  <RefreshCcw className='h-3 w-3 mr-1' />
-                                  Enrich
-                                  <ChevronDown className='h-3 w-3 ml-1' />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent className='bg-zinc-800 border-zinc-700'>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleEnrichItem(artist.id, 'artist')
-                                  }
-                                  disabled={!artist.needsEnrichment}
-                                  className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  <RefreshCcw className='h-3 w-3 mr-2' />
-                                  Enrich
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleEnrichItem(
-                                      artist.id,
-                                      'artist',
-                                      EnrichmentPriority.High,
-                                      true
-                                    )
-                                  }
-                                  className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  <Zap className='h-3 w-3 mr-2' />
-                                  Force Re-Enrich
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    // Expand the row if not already expanded
-                                    if (!expandedRows.has(artist.id)) {
-                                      toggleExpanded(artist.id);
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size='icon'
+                                    variant='ghost'
+                                    className={
+                                      artist.dataQuality === 'LOW'
+                                        ? 'text-dark-pastel-red hover:text-dark-pastel-red hover:bg-dark-pastel-red/10'
+                                        : 'text-zinc-400 hover:text-zinc-200'
                                     }
-                                    handlePreviewEnrichment(
-                                      artist.id,
-                                      'artist'
-                                    );
-                                  }}
-                                  disabled={previewingItems.has(artist.id)}
-                                  className='text-purple-400 hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  {previewingItems.has(artist.id) ? (
-                                    <Loader2 className='h-3 w-3 mr-2 animate-spin' />
-                                  ) : (
-                                    <Eye className='h-3 w-3 mr-2' />
-                                  )}
-                                  Preview Enrichment
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    window.open(
-                                      `/artists/${artist.id}`,
-                                      '_blank'
-                                    )
-                                  }
-                                  className='text-blue-400 hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  <ExternalLink className='h-3 w-3 mr-2' />
-                                  View Artist Page
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                                    onClick={() => setCorrectionArtist(artist)}
+                                  >
+                                    <Wrench className='h-4 w-4' />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Fix artist data</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            {enrichingItems.has(artist.id) ? (
+                              <Button
+                                size='sm'
+                                variant='outline'
+                                disabled
+                                className='text-white border-zinc-700 disabled:opacity-70'
+                              >
+                                <Loader2 className='h-3 w-3 mr-1 animate-spin' />
+                                Enriching...
+                              </Button>
+                            ) : (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    size='sm'
+                                    variant='outline'
+                                    disabled={
+                                      artist.enrichmentStatus === 'IN_PROGRESS'
+                                    }
+                                    className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
+                                  >
+                                    <RefreshCcw className='h-3 w-3 mr-1' />
+                                    Enrich
+                                    <ChevronDown className='h-3 w-3 ml-1' />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className='bg-zinc-800 border-zinc-700'>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleEnrichItem(artist.id, 'artist')
+                                    }
+                                    disabled={!artist.needsEnrichment}
+                                    className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    <RefreshCcw className='h-3 w-3 mr-2' />
+                                    Enrich
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleEnrichItem(
+                                        artist.id,
+                                        'artist',
+                                        EnrichmentPriority.High,
+                                        true
+                                      )
+                                    }
+                                    className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    <Zap className='h-3 w-3 mr-2' />
+                                    Force Re-Enrich
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      // Expand the row if not already expanded
+                                      if (!expandedRows.has(artist.id)) {
+                                        toggleExpanded(artist.id);
+                                      }
+                                      handlePreviewEnrichment(
+                                        artist.id,
+                                        'artist'
+                                      );
+                                    }}
+                                    disabled={previewingItems.has(artist.id)}
+                                    className='text-purple-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    {previewingItems.has(artist.id) ? (
+                                      <Loader2 className='h-3 w-3 mr-2 animate-spin' />
+                                    ) : (
+                                      <Eye className='h-3 w-3 mr-2' />
+                                    )}
+                                    Preview Enrichment
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      window.open(
+                                        `/artists/${artist.id}`,
+                                        '_blank'
+                                      )
+                                    }
+                                    className='text-blue-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    <ExternalLink className='h-3 w-3 mr-2' />
+                                    View Artist Page
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

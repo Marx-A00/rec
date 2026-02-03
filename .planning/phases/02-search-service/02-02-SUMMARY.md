@@ -22,14 +22,14 @@ key-files:
     - src/lib/correction/index.ts
 decisions:
   - id: scoring-weights
-    choice: "title:40, artist:40, year:10, mbScore:10 for weighted strategy"
-    rationale: "Equal emphasis on title/artist matching, bonus for metadata presence"
+    choice: 'title:40, artist:40, year:10, mbScore:10 for weighted strategy'
+    rationale: 'Equal emphasis on title/artist matching, bonus for metadata presence'
   - id: tier-thresholds
-    choice: "high:-1000, medium:-3000, low:-5000 fuzzysort scores"
-    rationale: "Based on fuzzysort score ranges used in existing fuzzy-match.ts"
+    choice: 'high:-1000, medium:-3000, low:-5000 fuzzysort scores'
+    rationale: 'Based on fuzzysort score ranges used in existing fuzzy-match.ts'
   - id: default-threshold
-    choice: "0.5 low-confidence threshold"
-    rationale: "Per RESEARCH.md recommendation for flagging uncertain matches"
+    choice: '0.5 low-confidence threshold'
+    rationale: 'Per RESEARCH.md recommendation for flagging uncertain matches'
 metrics:
   duration: 3min
   completed: 2026-01-24
@@ -42,6 +42,7 @@ metrics:
 ## What Was Built
 
 ### Scoring Types (`src/lib/correction/scoring/types.ts`)
+
 - `ScoringStrategy`: Type union for 'normalized' | 'tiered' | 'weighted'
 - `ConfidenceTier`: Type union for 'high' | 'medium' | 'low' | 'none'
 - `ScoreBreakdown`: Interface for component scores (title, artist, year)
@@ -51,23 +52,27 @@ metrics:
 ### Three Scorer Implementations
 
 **NormalizedScorer** (`normalized-scorer.ts`)
+
 - Uses `calculateStringSimilarity` from string-similarity.ts
 - Produces 0-1 scores for all components
-- Weighted average: title + artist + (year * 0.5)
+- Weighted average: title + artist + (year \* 0.5)
 - Best for: Simple, interpretable scores
 
 **TieredScorer** (`tiered-scorer.ts`)
+
 - Uses fuzzysort for fuzzy matching
 - Categorizes into high/medium/low/none tiers
 - Thresholds: high >= -1000, medium >= -3000, low >= -5000
 - Best for: Clear categorical feedback
 
 **WeightedScorer** (`weighted-scorer.ts`)
+
 - 0-100 scale with transparent point breakdown
 - Title: 40 points, Artist: 40 points, Year: 10 points, MB Score: 10 points
 - Best for: Fine-grained ranking with visible breakdown
 
 ### SearchScoringService (`scoring/index.ts`)
+
 - `setStrategy(strategy)`: Switch between scoring approaches
 - `getStrategy()`: Get current strategy
 - `setLowConfidenceThreshold(threshold)`: Configure flagging (0-1)
@@ -86,7 +91,10 @@ metrics:
 ## API Usage
 
 ```typescript
-import { getSearchScoringService, getCorrectionSearchService } from '@/lib/correction';
+import {
+  getSearchScoringService,
+  getCorrectionSearchService,
+} from '@/lib/correction';
 
 const searchService = getCorrectionSearchService();
 const scoringService = getSearchScoringService();
@@ -96,7 +104,9 @@ scoringService.setStrategy('weighted');
 scoringService.setLowConfidenceThreshold(0.4);
 
 // Search and score
-const searchResponse = await searchService.search({ albumTitle: 'OK Computer' });
+const searchResponse = await searchService.search({
+  albumTitle: 'OK Computer',
+});
 const scored = scoringService.scoreResults(
   searchResponse.results,
   'OK Computer',
@@ -122,9 +132,11 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 **For 02-03 (MusicBrainz Integration):**
+
 - Scoring service ready to be applied to search results
 - All types exported from `@/lib/correction`
 
 **For 03-01 (GraphQL Layer):**
+
 - ScoredSearchResult type ready for GraphQL schema mapping
 - Service pattern established for resolver integration

@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+
 import AlbumImage from '@/components/ui/AlbumImage';
 
 /**
@@ -20,14 +21,25 @@ export interface CoverArtComparisonProps {
 /**
  * Get change badge content and styling
  */
-function getChangeBadge(changeType: string): { label: string; className: string } | null {
+function getChangeBadge(
+  changeType: string
+): { label: string; className: string } | null {
   switch (changeType) {
     case 'ADDED':
-      return { label: 'New cover art available', className: 'text-green-400 bg-green-500/10' };
+      return {
+        label: 'New cover art available',
+        className: 'text-green-400 bg-green-500/10',
+      };
     case 'MODIFIED':
-      return { label: 'Cover art differs', className: 'text-yellow-400 bg-yellow-500/10' };
+      return {
+        label: 'Cover art differs',
+        className: 'text-yellow-400 bg-yellow-500/10',
+      };
     case 'REMOVED':
-      return { label: 'Cover art would be removed', className: 'text-red-400 bg-red-500/10' };
+      return {
+        label: 'Cover art would be removed',
+        className: 'text-red-400 bg-red-500/10',
+      };
     case 'UNCHANGED':
       return null;
     default:
@@ -54,26 +66,26 @@ export function CoverArtComparison({
   const badge = getChangeBadge(changeType);
 
   return (
-    <div className="space-y-3">
+    <div className='space-y-3'>
       {/* Side-by-side images */}
-      <div className="flex gap-6">
+      <div className='flex gap-6'>
         {/* Current cover art */}
-        <div className="space-y-2">
-          <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
+        <div className='space-y-2'>
+          <h4 className='text-xs font-medium text-zinc-500 uppercase tracking-wide'>
             Current
           </h4>
-          <div className="w-32 h-32 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700 flex-shrink-0">
+          <div className='w-32 h-32 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700 flex-shrink-0'>
             {currentUrl || currentCloudflareId ? (
               <AlbumImage
                 src={currentUrl}
                 cloudflareImageId={currentCloudflareId}
-                alt="Current cover art"
+                alt='Current cover art'
                 width={128}
                 height={128}
-                className="w-full h-full object-cover"
+                className='w-full h-full object-cover'
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-zinc-600 text-xs">
+              <div className='w-full h-full flex items-center justify-center text-zinc-600 text-xs'>
                 No cover
               </div>
             )}
@@ -81,22 +93,22 @@ export function CoverArtComparison({
         </div>
 
         {/* Source cover art */}
-        <div className="space-y-2">
-          <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
+        <div className='space-y-2'>
+          <h4 className='text-xs font-medium text-zinc-500 uppercase tracking-wide'>
             MusicBrainz
           </h4>
-          <div className="w-32 h-32 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700 flex-shrink-0">
+          <div className='w-32 h-32 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700 flex-shrink-0'>
             {sourceUrl ? (
               <Image
                 src={sourceUrl}
-                alt="MusicBrainz cover art"
+                alt='MusicBrainz cover art'
                 width={128}
                 height={128}
-                className="w-full h-full object-cover"
+                className='w-full h-full object-cover'
                 unoptimized
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-zinc-600 text-xs">
+              <div className='w-full h-full flex items-center justify-center text-zinc-600 text-xs'>
                 No cover
               </div>
             )}
@@ -106,7 +118,9 @@ export function CoverArtComparison({
 
       {/* Change badge */}
       {badge && (
-        <div className={`inline-block text-xs px-2 py-1 rounded ${badge.className}`}>
+        <div
+          className={`inline-block text-xs px-2 py-1 rounded ${badge.className}`}
+        >
           {badge.label}
         </div>
       )}

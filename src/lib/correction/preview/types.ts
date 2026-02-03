@@ -4,6 +4,7 @@
  */
 
 import type { Album, Track } from '@prisma/client';
+
 import type { CorrectionArtistCredit, ScoredSearchResult } from '../types';
 
 // ============================================================================

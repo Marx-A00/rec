@@ -95,22 +95,22 @@ Updated job processor to use structured errors:
 
 ### Error Code Mapping
 
-| HTTP Status | Error Code | Retryable | Retry After |
-|-------------|------------|-----------|-------------|
-| 400 | INVALID_MBID | No | - |
-| 404 | NOT_FOUND | No | - |
-| 429, 503 | RATE_LIMITED | Yes | 5000ms |
-| 500, 502, 504 | SERVICE_ERROR | Yes | 10000ms |
-| Network errors | NETWORK_ERROR | Yes | 3000ms |
-| Timeout | TIMEOUT | Yes | 5000ms |
+| HTTP Status    | Error Code    | Retryable | Retry After |
+| -------------- | ------------- | --------- | ----------- |
+| 400            | INVALID_MBID  | No        | -           |
+| 404            | NOT_FOUND     | No        | -           |
+| 429, 503       | RATE_LIMITED  | Yes       | 5000ms      |
+| 500, 502, 504  | SERVICE_ERROR | Yes       | 10000ms     |
+| Network errors | NETWORK_ERROR | Yes       | 3000ms      |
+| Timeout        | TIMEOUT       | Yes       | 5000ms      |
 
 ### Queue Position Interface
 
 ```typescript
 interface QueuePositionInfo {
-  position: number;      // 1-indexed, 0 if currently processing
-  waitingCount: number;  // Total jobs waiting
-  activeCount: number;   // Jobs currently processing
+  position: number; // 1-indexed, 0 if currently processing
+  waitingCount: number; // Total jobs waiting
+  activeCount: number; // Jobs currently processing
   estimatedWaitMs: number; // position * 1000 (1 req/sec)
 }
 ```
@@ -118,7 +118,7 @@ interface QueuePositionInfo {
 ## Commits
 
 - `edba4cb`: Add structured MusicBrainz API error types
-- `fe30359`: Add queue position observability methods  
+- `fe30359`: Add queue position observability methods
 - `4849785`: Use structured errors in processor error handling
 
 ## Files Modified
@@ -137,6 +137,7 @@ None - plan executed exactly as written.
 **Phase 1 Complete:** All three foundation plans (01-01, 01-02, 01-03) are now complete.
 
 Ready for Phase 2 (Admin Correction UI) with:
+
 - Priority queue system for admin priority handling
 - MBID verification with redirect detection
 - Structured error types for clear user feedback

@@ -22,9 +22,9 @@ key-files:
     - src/components/admin/correction/search/index.ts
 
 decisions:
-  - "[07-02]: MB badge uses smaller 10px text for subtlety"
+  - '[07-02]: MB badge uses smaller 10px text for subtlety'
   - "[07-02]: Score shown as percentage with 'match' suffix"
-  - "[07-02]: Results use divide-y for subtle row separation"
+  - '[07-02]: Results use divide-y for subtle row separation'
 
 metrics:
   duration: 2m 34s
@@ -38,6 +38,7 @@ Search result components showing album metadata, match scores, pagination, and e
 ## What Was Built
 
 **SearchResultCard** - Clickable result row with:
+
 - 48x48 album thumbnail (AlbumImage component)
 - Title with disambiguation + match score percentage
 - Artist name and year in secondary row
@@ -46,12 +47,14 @@ Search result components showing album metadata, match scores, pagination, and e
 - Full accessibility with aria-label
 
 **SearchResults** - Container component with:
+
 - Renders list of SearchResultCard from GroupedSearchResult[]
 - Shows NoResultsState when results empty
 - Load more button with loading spinner
 - Uses divide-y for subtle row separation
 
 **NoResultsState** - Empty state with:
+
 - AlertCircle icon and helpful message
 - Link to Manual Edit as escape hatch
 - Centered layout with proper spacing
@@ -59,21 +62,25 @@ Search result components showing album metadata, match scores, pagination, and e
 ## Key Implementation Details
 
 **Type Integration:**
+
 - SearchResultCard accepts ScoredSearchResult from scoring system
 - SearchResults accepts GroupedSearchResult[] for deduplicated results
 - Uses primaryResult from each group for display
 
 **Match Score Display:**
+
 - `Math.round(result.normalizedScore * 100)% match` format
 - Positioned in title row with emeraled-green color
 - Font-semibold for visibility without being overwhelming
 
 **Source Badge:**
+
 - Small [MB] badge (10px text) with outline variant
 - zinc-500/zinc-700 colors for subtlety
 - Positioned at end of metadata row with ml-auto
 
 **Results List:**
+
 - Maps over GroupedSearchResult using releaseGroupMbid as key
 - Extracts primaryResult for each SearchResultCard
 - divide-y divide-zinc-800/50 for subtle separation
@@ -81,11 +88,13 @@ Search result components showing album metadata, match scores, pagination, and e
 ## Files Created/Modified
 
 **Created:**
+
 - `src/components/admin/correction/search/SearchResultCard.tsx` - 90 lines
 - `src/components/admin/correction/search/SearchResults.tsx` - 56 lines
 - `src/components/admin/correction/search/NoResultsState.tsx` - 30 lines
 
 **Modified:**
+
 - `src/components/admin/correction/search/index.ts` - added new exports
 
 ## Decisions Made
@@ -107,6 +116,7 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 Ready for 07-03 (SearchView integration) which will:
+
 - Wire SearchInputs, SearchResults, and GraphQL mutation
 - Handle search state management
 - Navigate to Preview on result selection

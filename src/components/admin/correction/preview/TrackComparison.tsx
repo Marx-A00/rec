@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import type { TextDiffPart } from '@/generated/graphql';
+
 import { InlineTextDiff } from './InlineTextDiff';
 
 /**
@@ -74,7 +75,10 @@ function formatDuration(ms: number | null): string {
 /**
  * Gets the position display string (disc.track or just track)
  */
-function getPositionDisplay(diff: TrackDiff, hasMultipleDiscs: boolean): string {
+function getPositionDisplay(
+  diff: TrackDiff,
+  hasMultipleDiscs: boolean
+): string {
   if (hasMultipleDiscs && diff.discNumber > 1) {
     return diff.discNumber + '.' + diff.position.toString();
   }
@@ -110,47 +114,47 @@ export function TrackComparison({ trackDiffs, summary }: TrackComparisonProps) {
   // Empty state
   if (trackDiffs.length === 0) {
     return (
-      <div className="text-zinc-500 text-sm py-4 text-center">
+      <div className='text-zinc-500 text-sm py-4 text-center'>
         No track data available
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {/* Summary header */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <span className="text-zinc-400">Tracks:</span>
+      <div className='flex flex-wrap items-center gap-x-4 gap-y-1 text-sm'>
+        <span className='text-zinc-400'>Tracks:</span>
         {summary.matching > 0 && (
-          <span className="text-zinc-300">{summary.matching} matching</span>
+          <span className='text-zinc-300'>{summary.matching} matching</span>
         )}
         {summary.modified > 0 && (
-          <span className="text-yellow-400">{summary.modified} modified</span>
+          <span className='text-yellow-400'>{summary.modified} modified</span>
         )}
         {summary.added > 0 && (
-          <span className="text-green-400">{summary.added} added</span>
+          <span className='text-green-400'>{summary.added} added</span>
         )}
         {summary.removed > 0 && (
-          <span className="text-red-400">{summary.removed} removed</span>
+          <span className='text-red-400'>{summary.removed} removed</span>
         )}
       </div>
 
       {/* Track list header */}
-      <div className="grid grid-cols-2 gap-4 text-xs text-zinc-500 uppercase tracking-wide pb-1 border-b border-zinc-700">
-        <div className="flex">
-          <span className="w-8">#</span>
-          <span className="flex-1">Current</span>
-          <span className="w-14 text-right">Time</span>
+      <div className='grid grid-cols-2 gap-4 text-xs text-zinc-500 uppercase tracking-wide pb-1 border-b border-zinc-700'>
+        <div className='flex'>
+          <span className='w-8'>#</span>
+          <span className='flex-1'>Current</span>
+          <span className='w-14 text-right'>Time</span>
         </div>
-        <div className="flex">
-          <span className="w-8">#</span>
-          <span className="flex-1">MusicBrainz</span>
-          <span className="w-14 text-right">Time</span>
+        <div className='flex'>
+          <span className='w-8'>#</span>
+          <span className='flex-1'>MusicBrainz</span>
+          <span className='w-14 text-right'>Time</span>
         </div>
       </div>
 
       {/* Track rows */}
-      <div className="space-y-1">
+      <div className='space-y-1'>
         {displayTracks.map((diff, idx) => (
           <TrackRow
             key={`${diff.discNumber}-${diff.position}-${idx}`}
@@ -163,19 +167,19 @@ export function TrackComparison({ trackDiffs, summary }: TrackComparisonProps) {
       {/* Expand/collapse button */}
       {shouldAutoCollapse && (
         <Button
-          variant="ghost"
-          size="sm"
-          className="w-full mt-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+          variant='ghost'
+          size='sm'
+          className='w-full mt-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
           onClick={() => setShowAll(!showAll)}
         >
           {showAll ? (
             <>
-              <ChevronUp className="h-4 w-4 mr-1" />
+              <ChevronUp className='h-4 w-4 mr-1' />
               Show less
             </>
           ) : (
             <>
-              <ChevronDown className="h-4 w-4 mr-1" />
+              <ChevronDown className='h-4 w-4 mr-1' />
               Show all {trackDiffs.length} tracks
             </>
           )}
@@ -200,23 +204,31 @@ function TrackRow({ diff, hasMultipleDiscs }: TrackRowProps) {
   const rowStyles = getRowStyles(diff.changeType);
 
   return (
-    <div className={`grid grid-cols-2 gap-4 py-1.5 text-sm ${rowStyles.container}`}>
+    <div
+      className={`grid grid-cols-2 gap-4 py-1.5 text-sm ${rowStyles.container}`}
+    >
       {/* Current track (left) */}
-      <div className="flex items-start">
-        <span className={`w-8 tabular-nums text-right pr-2 ${rowStyles.currentPosition}`}>
+      <div className='flex items-start'>
+        <span
+          className={`w-8 tabular-nums text-right pr-2 ${rowStyles.currentPosition}`}
+        >
           {diff.current ? positionDisplay + '.' : ''}
         </span>
         <span className={`flex-1 truncate ${rowStyles.currentTitle}`}>
           {diff.current ? diff.current.title : '—'}
         </span>
-        <span className={`w-14 text-right tabular-nums ${rowStyles.currentDuration}`}>
+        <span
+          className={`w-14 text-right tabular-nums ${rowStyles.currentDuration}`}
+        >
           {diff.current ? formatDuration(diff.current.durationMs) : '—'}
         </span>
       </div>
 
       {/* Source track (right) */}
-      <div className="flex items-start">
-        <span className={`w-8 tabular-nums text-right pr-2 ${rowStyles.sourcePosition}`}>
+      <div className='flex items-start'>
+        <span
+          className={`w-8 tabular-nums text-right pr-2 ${rowStyles.sourcePosition}`}
+        >
           {diff.source ? positionDisplay + '.' : ''}
         </span>
         <span className={`flex-1 truncate ${rowStyles.sourceTitle}`}>
@@ -230,7 +242,9 @@ function TrackRow({ diff, hasMultipleDiscs }: TrackRowProps) {
             '—'
           )}
         </span>
-        <span className={`w-14 text-right tabular-nums ${rowStyles.sourceDuration}`}>
+        <span
+          className={`w-14 text-right tabular-nums ${rowStyles.sourceDuration}`}
+        >
           {diff.source ? formatDuration(diff.source.durationMs) : '—'}
         </span>
       </div>

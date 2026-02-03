@@ -1,7 +1,9 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
+
 import { SearchResultCard, type SearchResultDisplay } from './SearchResultCard';
 import { NoResultsState } from './NoResultsState';
 
@@ -41,10 +43,10 @@ export function SearchResults<T extends SearchResultDisplay>({
   }
 
   return (
-    <div className="space-y-1">
+    <div className='space-y-1'>
       {/* Results list */}
-      <div className="divide-y divide-zinc-800/50">
-        {results.map((group) => (
+      <div className='divide-y divide-zinc-800/50'>
+        {results.map(group => (
           <SearchResultCard
             key={group.releaseGroupMbid}
             result={group.primaryResult}
@@ -55,16 +57,16 @@ export function SearchResults<T extends SearchResultDisplay>({
 
       {/* Load more button */}
       {hasMore && (
-        <div className="pt-4">
+        <div className='pt-4'>
           <Button
-            variant="outline"
-            className="w-full"
+            variant='outline'
+            className='w-full'
             onClick={onLoadMore}
             disabled={isLoadingMore}
           >
             {isLoadingMore ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                 Loading...
               </>
             ) : (

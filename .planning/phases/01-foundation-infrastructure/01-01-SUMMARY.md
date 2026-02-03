@@ -22,8 +22,8 @@ key-files:
 
 decisions:
   - id: priority-values
-    decision: "ADMIN=1, USER=5, ENRICHMENT=8, BACKGROUND=10"
-    rationale: "Lower number = higher priority (BullMQ convention). Wide spacing allows future tiers."
+    decision: 'ADMIN=1, USER=5, ENRICHMENT=8, BACKGROUND=10'
+    rationale: 'Lower number = higher priority (BullMQ convention). Wide spacing allows future tiers.'
 
 metrics:
   duration: 5m
@@ -41,12 +41,14 @@ Added semantic priority tiers to the BullMQ queue system so admin requests can b
 ## Tasks Completed
 
 **Task 1: Add PRIORITY_TIERS constant and type to jobs.ts**
+
 - Added PRIORITY_TIERS constant with four semantic tiers: ADMIN(1), USER(5), ENRICHMENT(8), BACKGROUND(10)
 - Created PriorityTier type for type-safe priority usage
 - Exported both from src/lib/queue/index.ts
 - Commit: 0400abc
 
 **Task 2: Update queue-service.ts to accept priority tier parameter**
+
 - Updated all 8 public MusicBrainz methods to accept optional priorityTier parameter
 - Default is PRIORITY_TIERS.USER (5) for backward compatibility
 - Methods updated: searchArtists, searchReleaseGroups, searchRecordings, getArtist, getRelease, getReleaseGroup, getRecording, browseReleaseGroupsByArtist
@@ -70,6 +72,7 @@ None - plan executed exactly as written.
 ## What's Ready for Next Phase
 
 The queue infrastructure now supports priority-based job scheduling:
+
 - Admin correction service (01-02) can import PRIORITY_TIERS.ADMIN
 - Background sync jobs (01-03) can use PRIORITY_TIERS.BACKGROUND
 - All existing user-facing code works unchanged with USER priority
@@ -83,6 +86,7 @@ The queue infrastructure now supports priority-based job scheduling:
 ## Next Phase Readiness
 
 Ready for 01-02 (Admin Correction Service):
+
 - PRIORITY_TIERS.ADMIN available for high-priority corrections
 - Queue service methods can receive explicit priority
 - No blockers identified

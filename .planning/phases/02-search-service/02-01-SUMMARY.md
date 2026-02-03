@@ -51,16 +51,18 @@ Created the `src/lib/correction/` module with:
 ## Key Implementation Details
 
 **Priority Queue Integration:**
+
 ```typescript
 const results = await this.mbService.searchReleaseGroups(
   query,
   limit,
   offset,
-  PRIORITY_TIERS.ADMIN  // Value 1, highest priority
+  PRIORITY_TIERS.ADMIN // Value 1, highest priority
 );
 ```
 
 **Year Filter Support:**
+
 ```typescript
 if (options.yearFilter) {
   query += ` AND firstreleasedate:${options.yearFilter}*`;
@@ -68,6 +70,7 @@ if (options.yearFilter) {
 ```
 
 **Artist Credit Handling:**
+
 - Extracts MBID and name from each credit
 - Joins names with comma for display: "Artist A, Artist B"
 - Defaults to "Unknown Artist" if empty

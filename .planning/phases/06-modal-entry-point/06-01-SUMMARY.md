@@ -6,22 +6,22 @@ tags: [modal, wizard, session-storage, radix-ui]
 
 dependency_graph:
   requires:
-    - "05-03: GraphQL client operations for correction workflow"
+    - '05-03: GraphQL client operations for correction workflow'
   provides:
-    - "CorrectionModal shell with 3-step navigation"
-    - "StepIndicator for wizard progress"
-    - "useCorrectionModalState for session persistence"
+    - 'CorrectionModal shell with 3-step navigation'
+    - 'StepIndicator for wizard progress'
+    - 'useCorrectionModalState for session persistence'
   affects:
-    - "06-02: Modal will integrate CurrentDataView"
-    - "06-03: Modal will integrate SearchView and ApplyView"
+    - '06-02: Modal will integrate CurrentDataView'
+    - '06-03: Modal will integrate SearchView and ApplyView'
 
 tech_stack:
   added:
-    - "@radix-ui/react-accordion"
+    - '@radix-ui/react-accordion'
   patterns:
-    - "Session storage persistence per entity ID"
-    - "Multi-step wizard with free navigation"
-    - "Controlled modal with external open state"
+    - 'Session storage persistence per entity ID'
+    - 'Multi-step wizard with free navigation'
+    - 'Controlled modal with external open state'
 
 key_files:
   created:
@@ -33,18 +33,18 @@ key_files:
 
 decisions:
   - id: modal-width
-    choice: "1100px max-width for modal"
-    rationale: "Accommodates side-by-side comparison layout in preview step"
+    choice: '1100px max-width for modal'
+    rationale: 'Accommodates side-by-side comparison layout in preview step'
   - id: session-storage-key
-    choice: "correction-modal-state-{albumId} key pattern"
-    rationale: "Per-album persistence so multiple corrections can be in progress"
+    choice: 'correction-modal-state-{albumId} key pattern'
+    rationale: 'Per-album persistence so multiple corrections can be in progress'
   - id: free-navigation
-    choice: "All steps clickable, not locked progression"
-    rationale: "Admin power users need to jump between steps quickly"
+    choice: 'All steps clickable, not locked progression'
+    rationale: 'Admin power users need to jump between steps quickly'
 
 metrics:
-  duration: "2.1min"
-  completed: "2026-01-25"
+  duration: '2.1min'
+  completed: '2026-01-25'
 ---
 
 # Phase 06 Plan 01: Modal Shell and Step Navigation Summary
@@ -93,10 +93,12 @@ None - plan executed exactly as written.
 ## Integration Points
 
 **For Plan 06-02 (CurrentDataView):**
+
 - Will replace step 0 placeholder div
 - Will receive albumId from modal props
 
 **For Plan 06-03 (SearchView/ApplyView):**
+
 - Will replace step 1 and 2 placeholder divs
 - Apply button will be enabled with mutation binding
 
