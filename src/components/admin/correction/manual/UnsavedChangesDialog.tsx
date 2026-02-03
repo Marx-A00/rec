@@ -18,7 +18,7 @@ export interface UnsavedChangesDialogProps {
 
 /**
  * Confirmation dialog for discarding unsaved manual edits.
- * 
+ *
  * Shown when user tries to navigate away from manual edit mode
  * with unsaved changes.
  */
@@ -28,7 +28,7 @@ export function UnsavedChangesDialog({
   onCancel,
 }: UnsavedChangesDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
+    <Dialog open={open} onOpenChange={isOpen => !isOpen && onCancel()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Unsaved Changes</DialogTitle>
@@ -37,13 +37,10 @@ export function UnsavedChangesDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant='outline' onClick={onCancel}>
             Keep Editing
           </Button>
-          <Button
-            variant="destructive"
-            onClick={onConfirm}
-          >
+          <Button variant='destructive' onClick={onConfirm}>
             Discard
           </Button>
         </DialogFooter>

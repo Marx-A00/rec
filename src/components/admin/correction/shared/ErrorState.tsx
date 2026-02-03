@@ -1,7 +1,9 @@
 'use client';
 
 import { AlertCircle, WifiOff, Clock, AlertTriangle } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
+
 import { RetryButton } from './RetryButton';
 
 export type ErrorType = 'network' | 'rate-limit' | 'validation' | 'unknown';

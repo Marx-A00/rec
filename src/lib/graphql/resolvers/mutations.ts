@@ -2967,7 +2967,8 @@ export const mutationResolvers: MutationResolvers = {
           success: false,
           error: {
             code: 'STALE_DATA',
-            message: 'Album was modified by another user. Please refresh and try again.',
+            message:
+              'Album was modified by another user. Please refresh and try again.',
           },
         };
       }
@@ -3001,7 +3002,7 @@ export const mutationResolvers: MutationResolvers = {
       }
 
       // Use transaction to ensure atomicity
-      const updated = await prisma.$transaction(async (tx) => {
+      const updated = await prisma.$transaction(async tx => {
         // 1. Update album basic fields
         const updatedAlbum = await tx.album.update({
           where: { id: input.albumId },
@@ -3203,9 +3204,7 @@ export const mutationResolvers: MutationResolvers = {
       }
     } catch (error) {
       // Handle StaleDataError separately
-      const { StaleDataError } = await import(
-        '@/lib/correction/artist/apply'
-      );
+      const { StaleDataError } = await import('@/lib/correction/artist/apply');
       if (error instanceof StaleDataError) {
         return {
           success: false,

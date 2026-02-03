@@ -1,6 +1,7 @@
 'use client';
 
 import { User } from 'lucide-react';
+
 import { type Artist, DataQuality } from '@/generated/graphql';
 import {
   Accordion,
@@ -59,11 +60,13 @@ export function ArtistCurrentDataView({ artist }: ArtistCurrentDataViewProps) {
           <p className='text-zinc-400'>
             {artist.countryCode && <span>{artist.countryCode}</span>}
             {artist.formedYear && (
-              <span>{artist.countryCode ? ' • ' : ''}Formed {artist.formedYear}</span>
+              <span>
+                {artist.countryCode ? ' • ' : ''}Formed {artist.formedYear}
+              </span>
             )}
             {artist.albumCount > 0 && (
               <span>
-                {(artist.countryCode || artist.formedYear) ? ' • ' : ''}
+                {artist.countryCode || artist.formedYear ? ' • ' : ''}
                 {artist.albumCount} album{artist.albumCount !== 1 ? 's' : ''}
               </span>
             )}

@@ -3,8 +3,6 @@
 import { useMemo, useEffect } from 'react';
 import { CheckCircle, AlertTriangle } from 'lucide-react';
 
-import { ErrorState, categorizeError } from '../../shared';
-
 import {
   useGetArtistCorrectionPreviewQuery,
   type ArtistCorrectionPreview,
@@ -19,6 +17,8 @@ import {
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeletons';
+
+import { ErrorState, categorizeError } from '../../shared';
 
 export interface ArtistPreviewViewProps {
   /** Database artist ID */

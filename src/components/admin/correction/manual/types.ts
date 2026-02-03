@@ -58,7 +58,7 @@ export function createInitialEditState(
 ): ManualEditFieldState {
   return {
     title: album.title,
-    artists: album.artists.map((a) => a.artist.name),
+    artists: album.artists.map(a => a.artist.name),
     releaseDate: album.releaseDate,
     releaseType: album.releaseType,
     musicbrainzId: album.musicbrainzId,

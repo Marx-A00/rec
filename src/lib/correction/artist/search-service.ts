@@ -121,17 +121,19 @@ export class ArtistCorrectionSearchService {
     // Extract release groups from response
     const releaseGroups = response?.['release-groups'] || [];
 
-    return releaseGroups.slice(0, 3).map(
-      (rg: {
-        title?: string;
-        'first-release-date'?: string;
-        'primary-type'?: string;
-      }) => ({
-        title: rg.title || 'Unknown Title',
-        year: rg['first-release-date']?.substring(0, 4),
-        type: rg['primary-type'],
-      })
-    );
+    return releaseGroups
+      .slice(0, 3)
+      .map(
+        (rg: {
+          title?: string;
+          'first-release-date'?: string;
+          'primary-type'?: string;
+        }) => ({
+          title: rg.title || 'Unknown Title',
+          year: rg['first-release-date']?.substring(0, 4),
+          type: rg['primary-type'],
+        })
+      );
   }
 
   /**

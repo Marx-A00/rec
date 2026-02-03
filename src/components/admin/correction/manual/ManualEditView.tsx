@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { AlertCircle } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import {
   Accordion,
@@ -8,12 +10,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { AlertCircle } from 'lucide-react';
 
 import type { CurrentDataViewAlbum } from '../CurrentDataView';
+
 import type { ManualEditFieldState, ManualEditValidationErrors } from './types';
 import { createInitialEditState, hasUnsavedChanges } from './types';
-import { manualEditSchema, musicbrainzIdSchema, spotifyIdSchema, discogsIdSchema } from './validation';
+import {
+  manualEditSchema,
+  musicbrainzIdSchema,
+  spotifyIdSchema,
+  discogsIdSchema,
+} from './validation';
 import { EditableField } from './EditableField';
 import { ArtistChipsInput } from './ArtistChipsInput';
 import { DateInput } from './DateInput';
@@ -29,7 +36,7 @@ export interface ManualEditViewProps {
 
 /**
  * Main container for manual edit step.
- * 
+ *
  * Provides inline editing for all album fields with validation.
  * Blocks preview button until all fields are valid.
  */
@@ -67,7 +74,7 @@ export function ManualEditView({
   // Validate entire form before preview
   const handlePreviewClick = () => {
     const result = manualEditSchema.safeParse(formState);
-    
+
     if (!result.success) {
       // Extract errors from Zod
       const newErrors: ManualEditValidationErrors = {};
@@ -75,12 +82,12 @@ export function ManualEditView({
         const field = err.path[0] as keyof ManualEditFieldState;
         newErrors[field] = err.message;
       });
-      
+
       setErrors(newErrors);
       setShowValidationBanner(true);
       return;
     }
-    
+
     // All valid - proceed to preview
     setErrors({});
     setShowValidationBanner(false);
@@ -91,24 +98,24 @@ export function ManualEditView({
   const errorCount = Object.keys(errors).length;
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Header */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-zinc-100">Edit Album Data</h2>
-        <p className="text-sm text-zinc-400">
+      <div className='space-y-2'>
+        <h2 className='text-2xl font-bold text-zinc-100'>Edit Album Data</h2>
+        <p className='text-sm text-zinc-400'>
           Make changes directly, then preview before applying
         </p>
       </div>
 
       {/* Validation banner */}
       {showValidationBanner && errorCount > 0 && (
-        <div className="flex items-start gap-3 p-4 rounded-lg border border-amber-500/50 bg-amber-500/10">
-          <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="font-medium text-amber-200">
+        <div className='flex items-start gap-3 p-4 rounded-lg border border-amber-500/50 bg-amber-500/10'>
+          <AlertCircle className='w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5' />
+          <div className='flex-1'>
+            <p className='font-medium text-amber-200'>
               {errorCount} validation {errorCount === 1 ? 'error' : 'errors'}
             </p>
-            <p className="text-sm text-amber-300/80 mt-1">
+            <p className='text-sm text-amber-300/80 mt-1'>
               Please fix the errors below before previewing changes.
             </p>
           </div>
@@ -116,101 +123,108 @@ export function ManualEditView({
       )}
 
       {/* Basic Info Section */}
-      <div className="border border-zinc-800 rounded-lg p-6 space-y-6 bg-zinc-900/50">
-        <h3 className="text-lg font-semibold text-zinc-100">Basic Information</h3>
-        
+      <div className='border border-zinc-800 rounded-lg p-6 space-y-6 bg-zinc-900/50'>
+        <h3 className='text-lg font-semibold text-zinc-100'>
+          Basic Information
+        </h3>
+
         {/* Title */}
         <EditableField
-          label="Title"
+          label='Title'
           value={formState.title}
-          onChange={(value) => updateField('title', value)}
-          placeholder="Album title"
+          onChange={value => updateField('title', value)}
+          placeholder='Album title'
         />
         {errors.title && (
-          <p className="text-sm text-red-400 mt-1">{errors.title}</p>
+          <p className='text-sm text-red-400 mt-1'>{errors.title}</p>
         )}
 
         {/* Artists */}
         <ArtistChipsInput
           artists={formState.artists}
-          onChange={(value) => updateField('artists', value)}
+          onChange={value => updateField('artists', value)}
           error={errors.artists}
         />
 
         {/* Release Date */}
         <DateInput
           value={formState.releaseDate}
-          onChange={(value) => updateField('releaseDate', value)}
-          label="Release Date"
+          onChange={value => updateField('releaseDate', value)}
+          label='Release Date'
         />
         {errors.releaseDate && (
-          <p className="text-sm text-red-400 mt-1">{errors.releaseDate}</p>
+          <p className='text-sm text-red-400 mt-1'>{errors.releaseDate}</p>
         )}
 
         {/* Release Type */}
         <ReleaseTypeSelect
           value={formState.releaseType}
-          onChange={(value) => updateField('releaseType', value)}
-          label="Release Type"
+          onChange={value => updateField('releaseType', value)}
+          label='Release Type'
         />
         {errors.releaseType && (
-          <p className="text-sm text-red-400 mt-1">{errors.releaseType}</p>
+          <p className='text-sm text-red-400 mt-1'>{errors.releaseType}</p>
         )}
       </div>
 
       {/* External IDs Section (Collapsible) */}
-      <Accordion type="single" collapsible defaultValue="external-ids">
-        <AccordionItem value="external-ids" className="border border-zinc-800 rounded-lg bg-zinc-900/50">
-          <AccordionTrigger className="px-6 py-4 hover:no-underline">
-            <h3 className="text-lg font-semibold text-zinc-100">External IDs</h3>
+      <Accordion type='single' collapsible defaultValue='external-ids'>
+        <AccordionItem
+          value='external-ids'
+          className='border border-zinc-800 rounded-lg bg-zinc-900/50'
+        >
+          <AccordionTrigger className='px-6 py-4 hover:no-underline'>
+            <h3 className='text-lg font-semibold text-zinc-100'>
+              External IDs
+            </h3>
           </AccordionTrigger>
-          <AccordionContent className="px-6 pb-6 space-y-6">
+          <AccordionContent className='px-6 pb-6 space-y-6'>
             {/* MusicBrainz ID */}
             <ExternalIdInput
-              label="MusicBrainz ID"
+              label='MusicBrainz ID'
               value={formState.musicbrainzId}
-              onChange={(value) => updateField('musicbrainzId', value)}
-              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              onChange={value => updateField('musicbrainzId', value)}
+              placeholder='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
               schema={musicbrainzIdSchema}
-              hint="UUID format (36 characters with dashes)"
+              hint='UUID format (36 characters with dashes)'
             />
 
             {/* Spotify ID */}
             <ExternalIdInput
-              label="Spotify ID"
+              label='Spotify ID'
               value={formState.spotifyId}
-              onChange={(value) => updateField('spotifyId', value)}
-              placeholder="22-character alphanumeric ID"
+              onChange={value => updateField('spotifyId', value)}
+              placeholder='22-character alphanumeric ID'
               schema={spotifyIdSchema}
-              hint="Base62 format (22 characters)"
+              hint='Base62 format (22 characters)'
             />
 
             {/* Discogs ID */}
             <ExternalIdInput
-              label="Discogs ID"
+              label='Discogs ID'
               value={formState.discogsId}
-              onChange={(value) => updateField('discogsId', value)}
-              placeholder="Numeric ID"
+              onChange={value => updateField('discogsId', value)}
+              placeholder='Numeric ID'
               schema={discogsIdSchema}
-              hint="Numeric format"
+              hint='Numeric format'
             />
           </AccordionContent>
         </AccordionItem>
       </Accordion>
 
       {/* Footer */}
-      <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
+      <div className='flex justify-end gap-3 pt-4 border-t border-zinc-800'>
         <Button
-          variant="outline"
+          variant='outline'
           onClick={onCancel}
-          className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+          className='border-zinc-700 text-zinc-300 hover:bg-zinc-800'
         >
           Cancel
         </Button>
         <Button
           onClick={handlePreviewClick}
           disabled={!isDirty || errorCount > 0}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className='bg-blue-600 hover:bg-blue-700 text-white'
         >
           Preview Changes
         </Button>

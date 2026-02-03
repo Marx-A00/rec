@@ -2,8 +2,10 @@
 
 import * as React from 'react';
 import { X } from 'lucide-react';
+
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+
 import { partialDateSchema } from './validation';
 
 export interface DateInputProps {
@@ -14,7 +16,7 @@ export interface DateInputProps {
 
 /**
  * Flexible partial date input component.
- * 
+ *
  * Accepts YYYY, YYYY-MM, or YYYY-MM-DD formats.
  * Validates on blur using partialDateSchema.
  * Clear button (X) sets value to null.
@@ -37,12 +39,13 @@ export function DateInput({
     setIsFocused(false);
 
     const trimmed = localValue.trim();
-    
+
     // Validate with schema
     const result = partialDateSchema.safeParse(trimmed || null);
-    
+
     if (!result.success) {
-      const errorMessage = result.error.errors[0]?.message || 'Invalid date format';
+      const errorMessage =
+        result.error.errors[0]?.message || 'Invalid date format';
       setError(errorMessage);
     } else {
       setError(undefined);
@@ -63,15 +66,15 @@ export function DateInput({
   const showError = !isFocused && error;
 
   return (
-    <div className="space-y-1">
-      <label className="text-sm text-zinc-400">{label}</label>
-      <div className="relative">
+    <div className='space-y-1'>
+      <label className='text-sm text-zinc-400'>{label}</label>
+      <div className='relative'>
         <Input
           value={localValue}
-          onChange={(e) => setLocalValue(e.target.value)}
+          onChange={e => setLocalValue(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={handleBlur}
-          placeholder="e.g., 2024 or 2024-05-15"
+          placeholder='e.g., 2024 or 2024-05-15'
           className={cn(
             'bg-zinc-800 border-zinc-700 pr-8',
             error && 'border-red-500'
@@ -79,21 +82,21 @@ export function DateInput({
         />
         {localValue && (
           <button
-            type="button"
+            type='button'
             onClick={handleClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
-            aria-label="Clear date"
+            className='absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors'
+            aria-label='Clear date'
           >
-            <X className="h-4 w-4" />
+            <X className='h-4 w-4' />
           </button>
         )}
       </div>
       {showHint && (
-        <p className="text-xs text-zinc-500">Format: YYYY, YYYY-MM, or YYYY-MM-DD</p>
+        <p className='text-xs text-zinc-500'>
+          Format: YYYY, YYYY-MM, or YYYY-MM-DD
+        </p>
       )}
-      {showError && (
-        <p className="text-xs text-red-400">{error}</p>
-      )}
+      {showError && <p className='text-xs text-red-400'>{error}</p>}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { User } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import { type ArtistCorrectionSearchResult } from '@/generated/graphql';
 
@@ -71,7 +72,10 @@ export function ArtistSearchCard({ result, onClick }: ArtistSearchCardProps) {
         {/* Row 3: Type + Country + MB badge */}
         <div className='flex items-center gap-2 text-xs text-zinc-500'>
           {result.type && (
-            <Badge variant='outline' className='text-zinc-400 border-zinc-700 text-[10px] px-1.5 py-0'>
+            <Badge
+              variant='outline'
+              className='text-zinc-400 border-zinc-700 text-[10px] px-1.5 py-0'
+            >
               {result.type}
             </Badge>
           )}

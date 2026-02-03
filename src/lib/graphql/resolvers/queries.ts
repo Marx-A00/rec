@@ -2774,7 +2774,10 @@ export const queryResolvers: QueryResolvers = {
       );
       const previewService = getArtistCorrectionPreviewService();
 
-      const preview = await previewService.generatePreview(artistId, artistMbid);
+      const preview = await previewService.generatePreview(
+        artistId,
+        artistMbid
+      );
 
       return {
         currentArtist: preview.currentArtist,

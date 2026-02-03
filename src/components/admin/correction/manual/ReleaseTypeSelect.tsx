@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+
 import {
   Select,
   SelectContent,
@@ -8,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
 import { RELEASE_TYPES } from './validation';
 
 export interface ReleaseTypeSelectProps {
@@ -18,7 +20,7 @@ export interface ReleaseTypeSelectProps {
 
 /**
  * Release type dropdown component.
- * 
+ *
  * Uses Radix UI Select with common release type options.
  * Includes "None" option to allow clearing the field.
  */
@@ -28,21 +30,21 @@ export function ReleaseTypeSelect({
   label = 'Release Type',
 }: ReleaseTypeSelectProps) {
   return (
-    <div className="space-y-1">
-      <label className="text-sm text-zinc-400">{label}</label>
+    <div className='space-y-1'>
+      <label className='text-sm text-zinc-400'>{label}</label>
       <Select
         value={value ?? 'none'}
-        onValueChange={(val) => onChange(val === 'none' ? null : val)}
+        onValueChange={val => onChange(val === 'none' ? null : val)}
       >
-        <SelectTrigger className="bg-zinc-800 border-zinc-700 text-zinc-100">
-          <SelectValue placeholder="Select type" />
+        <SelectTrigger className='bg-zinc-800 border-zinc-700 text-zinc-100'>
+          <SelectValue placeholder='Select type' />
         </SelectTrigger>
-        <SelectContent className="bg-zinc-800 border-zinc-700">
-          <SelectItem value="none" className="text-zinc-400">
+        <SelectContent className='bg-zinc-800 border-zinc-700'>
+          <SelectItem value='none' className='text-zinc-400'>
             None
           </SelectItem>
-          {RELEASE_TYPES.map((type) => (
-            <SelectItem key={type} value={type} className="text-zinc-100">
+          {RELEASE_TYPES.map(type => (
+            <SelectItem key={type} value={type} className='text-zinc-100'>
               {type}
             </SelectItem>
           ))}

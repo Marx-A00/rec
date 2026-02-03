@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { X } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -13,7 +14,7 @@ export interface ArtistChipsInputProps {
 
 /**
  * Multi-value artist input with chips.
- * 
+ *
  * - Each artist renders as a removable Badge chip
  * - Enter key adds new artist (no duplicates)
  * - Backspace on empty input removes last artist
@@ -26,7 +27,9 @@ export function ArtistChipsInput({
   error: externalError,
 }: ArtistChipsInputProps) {
   const [inputValue, setInputValue] = React.useState('');
-  const [internalError, setInternalError] = React.useState<string | undefined>();
+  const [internalError, setInternalError] = React.useState<
+    string | undefined
+  >();
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Combined error (external or internal)
@@ -59,10 +62,10 @@ export function ArtistChipsInput({
     // Add to array
     const newArtists = [...artists, trimmed];
     onChange(newArtists);
-    
+
     // Clear error when artist added
     setInternalError(undefined);
-    
+
     // Clear input and keep focus for rapid entry
     setInputValue('');
     inputRef.current?.focus();
@@ -91,8 +94,8 @@ export function ArtistChipsInput({
   };
 
   return (
-    <div className="space-y-1">
-      <label className="text-sm text-zinc-400">Artists</label>
+    <div className='space-y-1'>
+      <label className='text-sm text-zinc-400'>Artists</label>
       <div
         className={cn(
           'flex flex-wrap gap-2 p-2 border rounded-md bg-zinc-800',
@@ -102,36 +105,34 @@ export function ArtistChipsInput({
         {artists.map((artist, index) => (
           <Badge
             key={index}
-            variant="secondary"
-            className="gap-1.5 pl-2.5 pr-1.5"
+            variant='secondary'
+            className='gap-1.5 pl-2.5 pr-1.5'
           >
             {artist}
             <button
-              type="button"
-              role="button"
+              type='button'
+              role='button'
               tabIndex={0}
               onClick={() => handleRemove(index)}
-              onKeyDown={(e) => handleChipKeyDown(e, index)}
-              className="hover:bg-zinc-700 rounded-sm p-0.5 transition-colors"
+              onKeyDown={e => handleChipKeyDown(e, index)}
+              className='hover:bg-zinc-700 rounded-sm p-0.5 transition-colors'
               aria-label={`Remove ${artist}`}
             >
-              <X className="h-3 w-3" />
+              <X className='h-3 w-3' />
             </button>
           </Badge>
         ))}
         <input
           ref={inputRef}
-          type="text"
+          type='text'
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={e => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={artists.length === 0 ? 'Add artist name' : 'Add another'}
-          className="flex-1 min-w-[120px] bg-transparent border-none outline-none text-sm text-zinc-100 placeholder:text-zinc-500"
+          className='flex-1 min-w-[120px] bg-transparent border-none outline-none text-sm text-zinc-100 placeholder:text-zinc-500'
         />
       </div>
-      {error && (
-        <p className="text-xs text-red-400">{error}</p>
-      )}
+      {error && <p className='text-xs text-red-400'>{error}</p>}
     </div>
   );
 }

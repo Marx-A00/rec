@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Search, AlertCircle, Loader2 } from 'lucide-react';
 
-import { ErrorState, categorizeError } from '../../shared';
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,6 +12,8 @@ import {
 } from '@/generated/graphql';
 import { type useArtistCorrectionModalState } from '@/hooks/useArtistCorrectionModalState';
 import { Skeleton } from '@/components/ui/skeletons';
+
+import { ErrorState, categorizeError } from '../../shared';
 
 import { ArtistSearchCard } from './ArtistSearchCard';
 

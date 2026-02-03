@@ -1,0 +1,2546 @@
+# GraphQL Schema for Rec - Music Recommendation Platform
+# Canonical music entities schema aligned with Prisma models
+
+# =============================================
+# SCALAR TYPES
+# =============================================
+
+scalar DateTime
+scalar UUID
+scalar JSON
+
+# =============================================
+# CORE MUSIC ENTITIES
+# =============================================
+
+type Artist {
+  id: UUID!
+  musicbrainzId: UUID
+  name: String!
+  biography: String
+  formedYear: Int
+  countryCode: String
+  imageUrl: String
+  cloudflareImageId: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Enrichment tracking
+  dataQuality: DataQuality
+  enrichmentStatus: EnrichmentStatus
+  lastEnriched: DateTime
+
+  # Relationships
+  albums: [Album!]!
+  tracks: [Track!]!
+
+  # Computed fields
+  albumCount: Int!
+  trackCount: Int!
+  popularity: Float
+  needsEnrichment: Boolean!
+
+  # Last.fm data
+  listeners: Int
+
+  # Enrichment logs
+  enrichmentLogs(limit: Int): [EnrichmentLog!]!
+  latestEnrichmentLog: EnrichmentLog
+}
+
+type Album {
+  id: UUID!
+  musicbrainzId: UUID
+  title: String!
+  releaseDate: DateTime
+  releaseType: String
+  trackCount: Int
+  durationMs: Int
+  coverArtUrl: String
+  cloudflareImageId: String
+  barcode: String
+  label: String
+  catalogNumber: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Enrichment tracking
+  dataQuality: DataQuality
+  enrichmentStatus: EnrichmentStatus
+  lastEnriched: DateTime
+
+  # Relationships
+  artists: [ArtistCredit!]!
+  tracks: [Track!]!
+  collectionAlbums: [CollectionAlbum!]!
+  basisRecommendations: [Recommendation!]!
+  targetRecommendations: [Recommendation!]!
+
+  # Computed fields
+  duration: String # Formatted duration (e.g., "42:30")
+  averageRating: Float
+  inCollectionsCount: Int!
+  recommendationScore: Float
+  needsEnrichment: Boolean!
+
+  # Enrichment logs
+  enrichmentLogs(limit: Int): [EnrichmentLog!]!
+  latestEnrichmentLog: EnrichmentLog
+}
+
+type Track {
+  id: UUID!
+  albumId: UUID
+  musicbrainzId: UUID
+  isrc: String
+  title: String!
+  trackNumber: Int!
+  discNumber: Int!
+  durationMs: Int
+  explicit: Boolean!
+  previewUrl: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Audio Features (limited availability)
+  audioFeatures: AudioFeatures
+
+  # Relationships
+  album: Album
+  artists: [ArtistCredit!]!
+
+  # Computed fields
+  duration: String # Formatted duration (e.g., "3:42")
+  popularity: Float
+
+  # Search metadata (populated for MusicBrainz/external search results)
+  searchCoverArtUrl: String
+  searchArtistName: String
+
+  # Enrichment logs
+  enrichmentLogs(limit: Int): [EnrichmentLog!]!
+  latestEnrichmentLog: EnrichmentLog
+}
+
+# =============================================
+# UNIFIED TYPES (Multi-source Support)
+# =============================================
+
+type UnifiedRelease {
+  id: String!
+  source: DataSource!
+  title: String!
+  releaseDate: DateTime
+  primaryType: String
+  secondaryTypes: [String!]
+  imageUrl: String
+  artistName: String
+  artistCredits: [ArtistCredit!] # Minimal credits for linking
+  trackCount: Int
+  year: Int
+}
+
+type CategorizedDiscography {
+  albums: [UnifiedRelease!]!
+  eps: [UnifiedRelease!]!
+  singles: [UnifiedRelease!]!
+  compilations: [UnifiedRelease!]!
+  liveAlbums: [UnifiedRelease!]!
+  remixes: [UnifiedRelease!]!
+  soundtracks: [UnifiedRelease!]!
+  other: [UnifiedRelease!]!
+}
+
+enum DataSource {
+  LOCAL
+  MUSICBRAINZ
+  DISCOGS
+}
+
+# =============================================
+# RELATIONSHIP TYPES
+# =============================================
+
+type ArtistCredit {
+  artist: Artist!
+  role: String!
+  position: Int!
+}
+
+type AudioFeatures {
+  energy: Float
+  valence: Float
+  danceability: Float
+  tempo: Float
+  acousticness: Float
+  instrumentalness: Float
+  liveness: Float
+  loudness: Float
+  speechiness: Float
+  key: Int
+  mode: Int
+  timeSignature: Int
+}
+
+# =============================================
+# USER & SOCIAL TYPES
+# =============================================
+
+type OnboardingStatus {
+  isNewUser: Boolean!
+  profileUpdatedAt: DateTime
+  hasCompletedTour: Boolean!
+}
+
+type UserStats {
+  userId: String!
+  followersCount: Int!
+  followingCount: Int!
+  recommendationsCount: Int!
+  collectionsCount: Int!
+  totalAlbumsInCollections: Int!
+  averageRecommendationScore: Float
+  topGenres: [String!]!
+  joinedAt: DateTime!
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+  OWNER
+}
+
+enum UserSortField {
+  NAME
+  EMAIL
+  CREATED_AT
+  LAST_ACTIVE
+  COLLECTIONS_COUNT
+  RECOMMENDATIONS_COUNT
+  FOLLOWERS_COUNT
+}
+
+enum SortOrder {
+  ASC
+  DESC
+}
+
+type User {
+  id: String!
+  username: String
+  email: String
+  emailVerified: DateTime
+  image: String
+  bio: String
+  role: UserRole!
+  followersCount: Int!
+  followingCount: Int!
+  recommendationsCount: Int!
+  profileUpdatedAt: DateTime
+  lastActive: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relationships
+  collections: [Collection!]!
+  recommendations: [Recommendation!]!
+  followers: [UserFollow!]!
+  following: [UserFollow!]!
+  settings: UserSettings
+
+  # Computed fields
+  isFollowing: Boolean # Context-dependent based on current user
+  mutualFollowers: [User!]!
+
+  # Count aggregations for admin
+  _count: UserCount
+}
+
+type UserCount {
+  collections: Int!
+  recommendations: Int!
+}
+
+type UserSettings {
+  id: String!
+  userId: String!
+
+  # Dashboard customization
+  dashboardLayout: JSON
+
+  # Display preferences
+  theme: String!
+  language: String!
+
+  # Privacy settings
+  profileVisibility: String!
+  showRecentActivity: Boolean!
+  showCollections: Boolean!
+  showListenLaterInFeed: Boolean!
+  showCollectionAddsInFeed: Boolean!
+
+  # Onboarding
+  showOnboardingTour: Boolean!
+
+  # Notification preferences
+  emailNotifications: Boolean!
+  recommendationAlerts: Boolean!
+  followAlerts: Boolean!
+
+  # Music preferences
+  defaultCollectionView: String!
+  autoplayPreviews: Boolean!
+
+  # Timestamps
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Collection {
+  id: String!
+  name: String!
+  description: String
+  isPublic: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relationships
+  user: User!
+  albums: [CollectionAlbum!]!
+
+  # Computed fields
+  albumCount: Int!
+  totalDuration: Int
+  averageRating: Float
+}
+
+type CollectionAlbum {
+  id: String!
+  personalRating: Int
+  personalNotes: String
+  position: Int!
+  addedAt: DateTime!
+
+  # Relationships
+  collection: Collection!
+  album: Album!
+}
+
+type Recommendation {
+  id: String!
+  score: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relationships
+  user: User!
+  basisAlbum: Album!
+  recommendedAlbum: Album!
+
+  # Computed fields
+  normalizedScore: Float! # Score normalized to 0-1
+  similarity: Float # Computed similarity metric
+}
+
+type UserFollow {
+  id: String!
+  createdAt: DateTime!
+
+  # Relationships
+  follower: User!
+  followed: User!
+}
+
+# =============================================
+# SEARCH & DISCOVERY TYPES
+# =============================================
+
+union SearchResult = Artist | Album | Track
+
+type SearchResults {
+  artists: [Artist!]!
+  albums: [UnifiedRelease!]!
+  tracks: [Track!]!
+  users: [User!]!
+  total: Int!
+  hasMore: Boolean!
+  currentCount: Int!
+}
+
+type RecommendationFeed {
+  recommendations: [Recommendation!]!
+  cursor: String
+  hasMore: Boolean!
+}
+
+type AlbumRecommendationsResponse {
+  recommendations: [AlbumRecommendation!]!
+  pagination: PaginationInfo!
+}
+
+type AlbumRecommendation {
+  id: String!
+  score: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  userId: String!
+  albumRole: String! # 'basis' or 'recommended'
+  otherAlbum: OtherAlbumInfo!
+  user: User!
+}
+
+type OtherAlbumInfo {
+  id: String!
+  title: String!
+  artist: String!
+  imageUrl: String
+  cloudflareImageId: String
+  year: String
+}
+
+type PaginationInfo {
+  page: Int!
+  perPage: Int!
+  total: Int!
+  hasMore: Boolean!
+}
+
+# Top Recommended Types
+type TopRecommendedAlbum {
+  album: Album!
+  recommendationCount: Int!
+  asBasisCount: Int!
+  asTargetCount: Int!
+  averageScore: Float!
+}
+
+type TopRecommendedArtist {
+  artist: Artist!
+  recommendationCount: Int!
+  albumsInRecommendations: Int!
+  averageScore: Float!
+}
+
+# Artist Recommendations Types
+enum AlbumRole {
+  BASIS
+  RECOMMENDED
+  BOTH
+}
+
+enum ArtistRecommendationSort {
+  NEWEST
+  OLDEST
+  HIGHEST_SCORE
+  LOWEST_SCORE
+}
+
+type ArtistRecommendation {
+  id: ID!
+  score: Int!
+  description: String
+  createdAt: DateTime!
+  albumRole: AlbumRole!
+  basisAlbum: Album!
+  recommendedAlbum: Album!
+  user: User!
+  isOwnRecommendation: Boolean!
+}
+
+type ArtistRecommendationsConnection {
+  recommendations: [ArtistRecommendation!]!
+  totalCount: Int!
+  hasMore: Boolean!
+}
+
+# Social Activity Types
+enum ActivityType {
+  FOLLOW
+  RECOMMENDATION
+  COLLECTION_ADD
+  PROFILE_UPDATE
+}
+
+type Activity {
+  id: String!
+  type: ActivityType!
+  createdAt: DateTime!
+
+  # Actor (who performed the activity)
+  actor: User!
+
+  # Target (for follow activities)
+  targetUser: User
+
+  # Album data (for recommendations and collection adds)
+  album: Album
+
+  # Additional context based on activity type
+  recommendation: Recommendation
+  collection: Collection
+
+  # Metadata
+  metadata: ActivityMetadata
+}
+
+type ActivityMetadata {
+  # For recommendations
+  score: Int
+  basisAlbum: Album
+
+  # For collection adds
+  collectionName: String
+  personalRating: Int
+  position: Int
+}
+
+type ActivityFeed {
+  activities: [Activity!]!
+  cursor: String
+  hasMore: Boolean!
+}
+
+# =============================================
+# INPUT TYPES
+# =============================================
+
+input SearchInput {
+  query: String!
+  type: SearchType
+  limit: Int = 20
+  offset: Int = 0
+  searchMode: SearchMode = LOCAL_ONLY
+}
+
+enum SearchMode {
+  LOCAL_ONLY
+  LOCAL_AND_EXTERNAL
+  EXTERNAL_ONLY
+}
+
+input RecommendationInput {
+  albumId: UUID!
+  limit: Int = 10
+  includeExplicit: Boolean = true
+}
+
+input CollectionAlbumInput {
+  albumId: UUID!
+  personalRating: Int
+  personalNotes: String
+  position: Int
+}
+
+input AlbumInput {
+  title: String!
+  releaseDate: String # ISO date string
+  albumType: String # "ALBUM", "EP", "SINGLE", etc.
+  totalTracks: Int
+  coverImageUrl: String
+  musicbrainzId: String
+  spotifyId: String
+  appleMusicId: String
+  discogsMasterReleaseId: String
+  discogsReleaseId: String
+
+  # Artist associations
+  artists: [ArtistAlbumInput!]!
+}
+
+input ArtistAlbumInput {
+  artistId: UUID # Use existing artist
+  artistName: String # Create new artist
+  role: String # "PRIMARY", "FEATURED", "PRODUCER", etc.
+}
+
+input ArtistInput {
+  name: String!
+  musicbrainzId: String
+  imageUrl: String
+  countryCode: String
+}
+
+input TrackInput {
+  title: String!
+  albumId: UUID!
+  trackNumber: Int!
+  discNumber: Int = 1
+  durationMs: Int
+  explicit: Boolean = false
+  previewUrl: String
+  isrc: String
+  musicbrainzId: UUID
+
+  # Artist associations
+  artists: [ArtistTrackInput!]!
+}
+
+input ArtistTrackInput {
+  artistId: UUID # Use existing artist
+  artistName: String # Create new artist
+  role: String # "PRIMARY", "FEATURED", "PRODUCER", etc.
+}
+
+input UpdateTrackInput {
+  title: String
+  trackNumber: Int
+  discNumber: Int
+  durationMs: Int
+  explicit: Boolean
+  previewUrl: String
+  isrc: String
+  musicbrainzId: UUID
+}
+
+input AlertThresholdsInput {
+  queueDepth: Int
+  errorRatePercent: Float
+  avgProcessingTimeMs: Int
+  memoryUsageMB: Int
+}
+
+type AlertThresholds {
+  queueDepth: Int!
+  errorRatePercent: Float!
+  avgProcessingTimeMs: Int!
+  memoryUsageMB: Int!
+}
+
+# =============================================
+# ENUMS
+# =============================================
+
+enum SearchType {
+  ALL
+  ARTIST
+  ALBUM
+  TRACK
+  USER
+}
+
+enum RecommendationSort {
+  SCORE_DESC
+  SCORE_ASC
+  DATE_DESC
+  DATE_ASC
+  POPULARITY_DESC
+}
+
+enum CollectionSort {
+  POSITION_ASC
+  POSITION_DESC
+  ADDED_DATE_DESC
+  ADDED_DATE_ASC
+  TITLE_ASC
+  TITLE_DESC
+  RATING_DESC
+  RATING_ASC
+}
+
+enum DataQuality {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum EnrichmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum EnrichmentEntityType {
+  ARTIST
+  ALBUM
+  TRACK
+}
+
+enum EnrichmentLogStatus {
+  SUCCESS
+  PARTIAL_SUCCESS
+  FAILED
+  NO_DATA_AVAILABLE
+  SKIPPED
+  PREVIEW
+}
+
+# =============================================
+# CORRECTION SYSTEM ENUMS
+# =============================================
+
+"""
+Five-state classification for field changes in correction previews.
+"""
+enum ChangeType {
+  """
+  Field exists in source but not in current (e.g., missing release date)
+  """
+  ADDED
+  """
+  Both exist but differ (e.g., title changed)
+  """
+  MODIFIED
+  """
+  Field exists in current but not in source (rare for corrections)
+  """
+  REMOVED
+  """
+  Both exist but differ significantly (manual review needed)
+  """
+  CONFLICT
+  """
+  Values are semantically identical
+  """
+  UNCHANGED
+}
+
+"""
+Cover art handling options for correction application.
+"""
+enum CoverArtChoice {
+  """
+  Replace current cover with source cover art
+  """
+  USE_SOURCE
+  """
+  Preserve existing cover art
+  """
+  KEEP_CURRENT
+  """
+  Remove cover art entirely
+  """
+  CLEAR
+}
+
+"""
+Available scoring strategies for correction search results.
+"""
+enum ScoringStrategy {
+  """
+  0-1 scale using string-similarity
+  """
+  NORMALIZED
+  """
+  High/medium/low confidence levels
+  """
+  TIERED
+  """
+  0-100 with multiple signals
+  """
+  WEIGHTED
+}
+
+"""
+Confidence tier for tiered scoring strategy.
+"""
+enum ConfidenceTier {
+  HIGH
+  MEDIUM
+  LOW
+  NONE
+}
+
+"""
+Error codes for correction apply operation failures.
+"""
+enum ApplyErrorCode {
+  """
+  Album was modified since preview was generated
+  """
+  STALE_DATA
+  """
+  Album no longer exists
+  """
+  ALBUM_NOT_FOUND
+  """
+  Database transaction error
+  """
+  TRANSACTION_FAILED
+  """
+  Invalid field selection provided
+  """
+  INVALID_SELECTION
+  """
+  Data validation failed
+  """
+  VALIDATION_ERROR
+}
+
+# =============================================
+# CORRECTION SYSTEM TYPES
+# =============================================
+
+# --- Search Types ---
+
+"""
+Artist credit from MusicBrainz search result.
+"""
+type CorrectionArtistCredit {
+  """
+  Artist MusicBrainz ID
+  """
+  mbid: String!
+  """
+  Artist name as credited
+  """
+  name: String!
+}
+
+"""
+Score breakdown showing component scores for search result scoring.
+"""
+type ScoreBreakdown {
+  """
+  Title match score (strategy-specific range)
+  """
+  titleScore: Float!
+  """
+  Artist match score (strategy-specific range)
+  """
+  artistScore: Float!
+  """
+  Year/date score (strategy-specific range)
+  """
+  yearScore: Float!
+  """
+  MusicBrainz search score component
+  """
+  mbScore: Float
+  """
+  For tiered strategy: confidence level
+  """
+  confidenceTier: ConfidenceTier
+}
+
+"""
+A search result with scoring applied.
+"""
+type ScoredSearchResult {
+  """
+  Release group MusicBrainz ID
+  """
+  releaseGroupMbid: String!
+  """
+  Album title
+  """
+  title: String!
+  """
+  Disambiguation (e.g., "deluxe edition")
+  """
+  disambiguation: String
+  """
+  Primary artist credits
+  """
+  artistCredits: [CorrectionArtistCredit!]!
+  """
+  Formatted primary artist name for display
+  """
+  primaryArtistName: String!
+  """
+  First release date (YYYY or YYYY-MM-DD)
+  """
+  firstReleaseDate: String
+  """
+  Primary type (Album, EP, Single, etc.)
+  """
+  primaryType: String
+  """
+  Secondary types (Compilation, Live, Remix, etc.)
+  """
+  secondaryTypes: [String!]
+  """
+  MusicBrainz search score (0-100)
+  """
+  mbScore: Int!
+  """
+  Cover Art Archive thumbnail URL (250px)
+  """
+  coverArtUrl: String
+  """
+  Source indicator
+  """
+  source: String!
+  """
+  Normalized score 0-1 for sorting
+  """
+  normalizedScore: Float!
+  """
+  Raw display score (0-1 or 0-100 depending on strategy)
+  """
+  displayScore: Float!
+  """
+  Component score breakdown
+  """
+  breakdown: ScoreBreakdown!
+  """
+  True if score is below low-confidence threshold
+  """
+  isLowConfidence: Boolean!
+  """
+  Which strategy produced this score
+  """
+  scoringStrategy: ScoringStrategy!
+}
+
+"""
+A group of related search results (same release group MBID).
+Groups releases like "OK Computer" regular vs deluxe editions.
+"""
+type GroupedSearchResult {
+  """
+  The release group MBID (shared by all versions)
+  """
+  releaseGroupMbid: String!
+  """
+  Primary result (best version to display)
+  """
+  primaryResult: ScoredSearchResult!
+  """
+  Alternate versions (deluxe, remaster, etc.)
+  """
+  alternateVersions: [ScoredSearchResult!]!
+  """
+  Total number of versions in this group
+  """
+  versionCount: Int!
+  """
+  Highest score among all versions (for sorting groups)
+  """
+  bestScore: Float!
+}
+
+"""
+Response from correction search operation.
+"""
+type CorrectionSearchResponse {
+  """
+  Grouped search results (deduplicated by release group)
+  """
+  results: [GroupedSearchResult!]!
+  """
+  Total number of unique release groups
+  """
+  totalGroups: Int!
+  """
+  Whether more results are available
+  """
+  hasMore: Boolean!
+  """
+  The query that was executed
+  """
+  query: CorrectionSearchQuery!
+  """
+  Scoring metadata
+  """
+  scoring: CorrectionScoringInfo!
+}
+
+"""
+Query information for correction search.
+"""
+type CorrectionSearchQuery {
+  albumTitle: String
+  artistName: String
+  yearFilter: Int
+}
+
+"""
+Scoring metadata for correction search response.
+"""
+type CorrectionScoringInfo {
+  """
+  Strategy used for scoring
+  """
+  strategy: ScoringStrategy!
+  """
+  Low-confidence threshold used
+  """
+  threshold: Float!
+  """
+  Number of results below threshold
+  """
+  lowConfidenceCount: Int!
+}
+
+# --- Preview/Diff Types ---
+
+"""
+Character-level diff part for text comparison.
+Used to highlight exact changes within text fields.
+"""
+type TextDiffPart {
+  """
+  The text content of this part
+  """
+  value: String!
+  """
+  True if this part was added in the source
+  """
+  added: Boolean
+  """
+  True if this part was removed (exists in current but not source)
+  """
+  removed: Boolean
+}
+
+"""
+Diff for a text field (title, disambiguation, etc.)
+"""
+type TextDiff {
+  """
+  Field name (e.g., 'title', 'disambiguation')
+  """
+  field: String!
+  """
+  Change classification
+  """
+  changeType: ChangeType!
+  """
+  Current value in database
+  """
+  currentValue: String
+  """
+  Value from MusicBrainz source
+  """
+  sourceValue: String
+  """
+  Character-level diff parts (only for MODIFIED/CONFLICT)
+  """
+  parts: [TextDiffPart!]
+}
+
+"""
+Date components for partial date comparison.
+Handles YYYY, YYYY-MM, and YYYY-MM-DD formats.
+"""
+type DateComponents {
+  year: Int
+  month: Int
+  day: Int
+}
+
+"""
+Diff for release date field with component-level granularity.
+"""
+type DateDiff {
+  """
+  Always 'releaseDate'
+  """
+  field: String!
+  """
+  Overall change classification
+  """
+  changeType: ChangeType!
+  """
+  Current date components
+  """
+  current: DateComponents
+  """
+  Source date components
+  """
+  source: DateComponents
+  """
+  Per-component change classification
+  """
+  componentChanges: DateComponentChanges!
+}
+
+"""
+Per-component change classification for date diff.
+"""
+type DateComponentChanges {
+  year: ChangeType!
+  month: ChangeType!
+  day: ChangeType!
+}
+
+"""
+Diff for array fields (genres, secondaryTypes, etc.)
+"""
+type ArrayDiff {
+  """
+  Field name (e.g., 'genres', 'secondaryTypes')
+  """
+  field: String!
+  """
+  Overall change classification
+  """
+  changeType: ChangeType!
+  """
+  Current array values
+  """
+  currentItems: [String!]!
+  """
+  Source array values
+  """
+  sourceItems: [String!]!
+  """
+  Items added in source
+  """
+  added: [String!]!
+  """
+  Items removed (exist in current but not source)
+  """
+  removed: [String!]!
+  """
+  Items unchanged (exist in both)
+  """
+  unchanged: [String!]!
+}
+
+"""
+Diff for a single track in the track listing.
+Position-based comparison (disc + track number).
+"""
+type TrackDiff {
+  """
+  Track position (1-based)
+  """
+  position: Int!
+  """
+  Disc number (1-based)
+  """
+  discNumber: Int!
+  """
+  Track change classification
+  """
+  changeType: String!
+  """
+  Current track data (null if ADDED in source)
+  """
+  current: TrackData
+  """
+  Source track from MusicBrainz (null if REMOVED from current)
+  """
+  source: TrackSourceData
+  """
+  Title diff parts (only for MODIFIED)
+  """
+  titleDiff: [TextDiffPart!]
+  """
+  Duration difference in milliseconds (absolute value)
+  """
+  durationDelta: Int
+  """
+  Database track ID (for selection)
+  """
+  trackId: String
+}
+
+"""
+Current track data from database.
+"""
+type TrackData {
+  title: String!
+  durationMs: Int
+  trackNumber: Int!
+}
+
+"""
+Source track data from MusicBrainz.
+"""
+type TrackSourceData {
+  title: String!
+  durationMs: Int
+  mbid: String
+}
+
+"""
+Summary statistics for track listing comparison.
+"""
+type TrackListSummary {
+  """
+  Total tracks in current album
+  """
+  totalCurrent: Int!
+  """
+  Total tracks in source data
+  """
+  totalSource: Int!
+  """
+  Number of matching tracks (same position, same title)
+  """
+  matching: Int!
+  """
+  Number of modified tracks (same position, different title/duration)
+  """
+  modified: Int!
+  """
+  Number of tracks added in source
+  """
+  added: Int!
+  """
+  Number of tracks removed (exist in current but not source)
+  """
+  removed: Int!
+}
+
+"""
+Diff for artist credits.
+"""
+type ArtistCreditDiff {
+  """
+  Change classification
+  """
+  changeType: ChangeType!
+  """
+  Current artist credits
+  """
+  current: [CorrectionArtistCredit!]!
+  """
+  Source artist credits
+  """
+  source: [CorrectionArtistCredit!]!
+  """
+  Formatted current artist string
+  """
+  currentDisplay: String!
+  """
+  Formatted source artist string
+  """
+  sourceDisplay: String!
+  """
+  Name diff parts if modified
+  """
+  nameDiff: [TextDiffPart!]
+}
+
+"""
+Cover art comparison data.
+"""
+type CoverArtDiff {
+  currentUrl: String
+  sourceUrl: String
+  changeType: ChangeType!
+}
+
+"""
+Summary of all changes in a preview.
+"""
+type PreviewSummary {
+  """
+  Total fields compared
+  """
+  totalFields: Int!
+  """
+  Number of fields that changed
+  """
+  changedFields: Int!
+  """
+  Number of fields added
+  """
+  addedFields: Int!
+  """
+  Number of fields modified
+  """
+  modifiedFields: Int!
+  """
+  Number of conflict fields
+  """
+  conflictFields: Int!
+  """
+  Whether track listing has changes
+  """
+  hasTrackChanges: Boolean!
+}
+
+# --- MusicBrainz Release Data Types ---
+
+"""
+MusicBrainz recording (track) data.
+"""
+type MBRecording {
+  """
+  Recording MBID
+  """
+  id: String!
+  """
+  Track title
+  """
+  title: String!
+  """
+  Duration in milliseconds
+  """
+  length: Int
+  """
+  Track position within medium
+  """
+  position: Int!
+}
+
+"""
+MusicBrainz medium track wrapper.
+"""
+type MBMediumTrack {
+  """
+  Track position within medium
+  """
+  position: Int!
+  """
+  Recording data
+  """
+  recording: MBRecording!
+}
+
+"""
+MusicBrainz medium (disc/vinyl/CD) data.
+"""
+type MBMedium {
+  """
+  Medium position (1-based)
+  """
+  position: Int!
+  """
+  Format (CD, Vinyl, Digital, etc.)
+  """
+  format: String
+  """
+  Number of tracks on this medium
+  """
+  trackCount: Int!
+  """
+  Track listing
+  """
+  tracks: [MBMediumTrack!]!
+}
+
+"""
+MusicBrainz artist data within artist credit.
+"""
+type MBArtist {
+  """
+  Artist MBID
+  """
+  id: String!
+  """
+  Artist name
+  """
+  name: String!
+  """
+  Sort name
+  """
+  sortName: String
+  """
+  Disambiguation
+  """
+  disambiguation: String
+}
+
+"""
+MusicBrainz artist credit entry.
+"""
+type MBArtistCredit {
+  """
+  Artist name as credited
+  """
+  name: String!
+  """
+  Join phrase (e.g., ' & ', ' feat. ')
+  """
+  joinphrase: String
+  """
+  Artist data
+  """
+  artist: MBArtist!
+}
+
+"""
+MusicBrainz release data (full release, not just release group).
+Fetched separately for track listing comparison.
+"""
+type MBReleaseData {
+  """
+  Release MBID (not release group)
+  """
+  id: String!
+  """
+  Album title
+  """
+  title: String!
+  """
+  Release date (YYYY, YYYY-MM, or YYYY-MM-DD)
+  """
+  date: String
+  """
+  Country of release
+  """
+  country: String
+  """
+  Barcode
+  """
+  barcode: String
+  """
+  Media (discs/vinyls/etc.)
+  """
+  media: [MBMedium!]!
+  """
+  Artist credits
+  """
+  artistCredit: [MBArtistCredit!]!
+}
+
+"""
+Complete preview of all changes between current album and MusicBrainz source.
+"""
+type CorrectionPreview {
+  """
+  Album ID being corrected
+  """
+  albumId: String!
+  """
+  Album title for display
+  """
+  albumTitle: String!
+  """
+  Album updatedAt for optimistic locking
+  """
+  albumUpdatedAt: DateTime!
+  """
+  Selected MusicBrainz search result
+  """
+  sourceResult: ScoredSearchResult!
+  """
+  Full MusicBrainz release data (for tracks)
+  """
+  mbReleaseData: MBReleaseData
+  """
+  Field-by-field diffs (as JSON for complex union types)
+  """
+  fieldDiffs: JSON!
+  """
+  Artist credit comparison
+  """
+  artistDiff: ArtistCreditDiff!
+  """
+  Track listing comparison
+  """
+  trackDiffs: [TrackDiff!]!
+  """
+  Track summary statistics
+  """
+  trackSummary: TrackListSummary!
+  """
+  Cover art comparison
+  """
+  coverArt: CoverArtDiff!
+  """
+  Summary of all changes
+  """
+  summary: PreviewSummary!
+}
+
+# --- Apply Types ---
+
+"""
+Applied artist changes summary.
+"""
+type AppliedArtistChanges {
+  """
+  Names of artists added to album
+  """
+  added: [String!]!
+  """
+  Names of artists removed from album
+  """
+  removed: [String!]!
+}
+
+"""
+Applied track changes summary.
+"""
+type AppliedTrackChanges {
+  """
+  Number of tracks added
+  """
+  added: Int!
+  """
+  Number of tracks modified
+  """
+  modified: Int!
+  """
+  Number of tracks removed
+  """
+  removed: Int!
+}
+
+"""
+Summary of changes that were applied to the album.
+"""
+type AppliedChanges {
+  """
+  List of metadata field names that were updated
+  """
+  metadata: [String!]!
+  """
+  Artist changes applied
+  """
+  artists: AppliedArtistChanges!
+  """
+  Track changes applied
+  """
+  tracks: AppliedTrackChanges!
+  """
+  List of external ID field names that were updated
+  """
+  externalIds: [String!]!
+  """
+  Whether cover art was changed
+  """
+  coverArt: Boolean!
+  """
+  Data quality before correction
+  """
+  dataQualityBefore: DataQuality!
+  """
+  Data quality after correction
+  """
+  dataQualityAfter: DataQuality!
+}
+
+"""
+Successful correction apply result.
+"""
+type CorrectionApplySuccess {
+  success: Boolean!
+  """
+  Updated album record
+  """
+  album: Album!
+  """
+  Summary of changes applied
+  """
+  changes: AppliedChanges!
+}
+
+"""
+Failed correction apply result.
+"""
+type CorrectionApplyError {
+  success: Boolean!
+  """
+  Error classification code
+  """
+  code: ApplyErrorCode!
+  """
+  Human-readable error message
+  """
+  message: String!
+  """
+  Additional context for debugging (as JSON)
+  """
+  context: JSON
+}
+
+"""
+Apply operation result (union returned as interface for simplicity).
+Check 'success' field to determine which fields are populated.
+"""
+type CorrectionApplyResult {
+  success: Boolean!
+  # Success fields (populated when success=true)
+  album: Album
+  changes: AppliedChanges
+  # Error fields (populated when success=false)
+  code: ApplyErrorCode
+  message: String
+  context: JSON
+}
+
+# =============================================
+# CORRECTION SYSTEM INPUT TYPES
+# =============================================
+
+"""
+Input for correction search operation.
+"""
+input CorrectionSearchInput {
+  """
+  Album ID to search corrections for
+  """
+  albumId: UUID!
+  """
+  Override album title for search
+  """
+  albumTitle: String
+  """
+  Override artist name for search
+  """
+  artistName: String
+  """
+  Optional year filter
+  """
+  yearFilter: Int
+  """
+  Maximum results to return (default 10)
+  """
+  limit: Int = 10
+  """
+  Offset for pagination
+  """
+  offset: Int = 0
+  """
+  Scoring strategy to use
+  """
+  strategy: ScoringStrategy = NORMALIZED
+  """
+  Threshold below which results are flagged as low-confidence (0-1)
+  """
+  lowConfidenceThreshold: Float = 0.5
+}
+
+"""
+Input for correction preview operation.
+"""
+input CorrectionPreviewInput {
+  """
+  Album ID to preview corrections for
+  """
+  albumId: UUID!
+  """
+  Selected release group MBID from search results
+  """
+  releaseGroupMbid: String!
+}
+
+"""
+Selection state for metadata fields.
+"""
+input MetadataSelectionsInput {
+  """
+  Album title
+  """
+  title: Boolean = true
+  """
+  Release date
+  """
+  releaseDate: Boolean = true
+  """
+  Release type (Album, EP, Single, etc.)
+  """
+  releaseType: Boolean = true
+  """
+  Release country code
+  """
+  releaseCountry: Boolean = true
+  """
+  Barcode / UPC
+  """
+  barcode: Boolean = true
+  """
+  Record label
+  """
+  label: Boolean = true
+}
+
+"""
+Selection state for external ID fields.
+"""
+input ExternalIdSelectionsInput {
+  """
+  MusicBrainz release ID
+  """
+  musicbrainzId: Boolean = true
+  """
+  Spotify album ID
+  """
+  spotifyId: Boolean = false
+  """
+  Discogs release ID
+  """
+  discogsId: Boolean = false
+}
+
+"""
+Key-value pair for Map-like selections.
+"""
+input SelectionEntry {
+  """
+  Unique key (artist MBID or track position like "1-3")
+  """
+  key: String!
+  """
+  Whether to apply this change
+  """
+  selected: Boolean!
+}
+
+"""
+Complete field selection state for correction application.
+"""
+input FieldSelectionsInput {
+  """
+  Core metadata field selections
+  """
+  metadata: MetadataSelectionsInput
+  """
+  Per-artist selection state (key: artist MBID)
+  """
+  artists: [SelectionEntry!]
+  """
+  Per-track selection state (key: "disc-track", e.g., "1-3")
+  """
+  tracks: [SelectionEntry!]
+  """
+  External ID field selections
+  """
+  externalIds: ExternalIdSelectionsInput
+  """
+  Cover art handling choice
+  """
+  coverArt: CoverArtChoice = USE_SOURCE
+}
+
+"""
+Input for applying a correction.
+"""
+input CorrectionApplyInput {
+  """
+  Album ID to apply correction to
+  """
+  albumId: UUID!
+  """
+  Selected release group MBID
+  """
+  releaseGroupMbid: String!
+  """
+  Field selections determining which changes to apply
+  """
+  selections: FieldSelectionsInput!
+  """
+  Expected album updatedAt timestamp for optimistic locking
+  """
+  expectedUpdatedAt: DateTime!
+}
+
+# =============================================
+# ENRICHMENT LOGGING TYPES
+# =============================================
+
+type EnrichmentLog {
+  id: UUID!
+  entityType: EnrichmentEntityType
+  entityId: UUID
+  operation: String!
+  sources: [String!]!
+  status: EnrichmentLogStatus!
+  reason: String # Human-readable explanation of why this enrichment occurred/was skipped
+  fieldsEnriched: [String!]!
+  dataQualityBefore: DataQuality
+  dataQualityAfter: DataQuality
+  errorMessage: String
+  errorCode: String
+  retryCount: Int!
+  durationMs: Int
+  apiCallCount: Int!
+  metadata: JSON
+  previewData: JSON # Stores raw API response and field diffs for preview enrichments
+  jobId: String
+  triggeredBy: String
+  userId: String # Track which user made manual changes
+  createdAt: DateTime!
+}
+
+input TimeRangeInput {
+  from: DateTime!
+  to: DateTime!
+}
+
+type EnrichmentStats {
+  totalAttempts: Int!
+  successCount: Int!
+  failedCount: Int!
+  noDataCount: Int!
+  skippedCount: Int!
+  averageDurationMs: Float!
+  sourceStats: [SourceStat!]!
+}
+
+type SourceStat {
+  source: String!
+  attempts: Int!
+  successRate: Float!
+}
+
+# =============================================
+# MONITORING & HEALTH TYPES
+# =============================================
+
+type SystemHealth {
+  status: HealthStatus!
+  timestamp: DateTime!
+  uptime: Float!
+  components: HealthComponents!
+  metrics: HealthMetrics!
+  alerts: [String!]!
+}
+
+type HealthComponents {
+  queue: ComponentHealth!
+  redis: ComponentHealth!
+  worker: ComponentHealth!
+  spotify: ComponentHealth!
+  memory: ComponentHealth!
+}
+
+type ComponentHealth {
+  status: HealthStatus!
+  message: String!
+  details: JSON
+  lastCheck: DateTime!
+}
+
+type HealthMetrics {
+  queueDepth: Int!
+  activeJobs: Int!
+  failedJobs: Int!
+  completedJobs: Int!
+  errorRate: Float!
+  avgProcessingTime: Float!
+}
+
+enum HealthStatus {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+}
+
+type QueueStatus {
+  name: String!
+  isPaused: Boolean!
+  stats: QueueStats!
+  rateLimitInfo: RateLimitInfo!
+  workers: [WorkerInfo!]!
+}
+
+type QueueStats {
+  waiting: Int!
+  active: Int!
+  completed: Int!
+  failed: Int!
+  delayed: Int!
+  paused: Int!
+}
+
+type RateLimitInfo {
+  maxRequestsPerSecond: Int!
+  currentWindowRequests: Int!
+  windowResetTime: DateTime!
+}
+
+type WorkerInfo {
+  id: String!
+  isRunning: Boolean!
+  isPaused: Boolean!
+  activeJobCount: Int!
+}
+
+type QueueMetrics {
+  timeRange: TimeRange!
+  jobsProcessed: Int!
+  jobsFailed: Int!
+  avgProcessingTime: Float!
+  successRate: Float!
+  errorRate: Float!
+  throughput: ThroughputMetrics!
+  topErrors: [ErrorMetric!]!
+}
+
+type ThroughputMetrics {
+  jobsPerMinute: Float!
+  jobsPerHour: Float!
+  peakJobsPerMinute: Float!
+}
+
+type ErrorMetric {
+  error: String!
+  count: Int!
+  lastOccurrence: DateTime!
+}
+
+type JobRecord {
+  id: String!
+  type: String!
+  status: JobStatus!
+  data: JSON
+  result: JSON
+  error: String
+  attempts: Int!
+  startedAt: DateTime
+  completedAt: DateTime
+  duration: Int
+  priority: Int!
+}
+
+enum JobStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+  FAILED
+  DELAYED
+}
+
+enum TimeRange {
+  LAST_HOUR
+  LAST_DAY
+  LAST_WEEK
+  LAST_MONTH
+}
+
+# =============================================
+# SPOTIFY INTEGRATION TYPES
+# =============================================
+
+type SpotifyAlbum {
+  id: String!
+  name: String!
+  artists: String!
+  artistIds: [String!]!
+  releaseDate: String!
+  image: String
+  spotifyUrl: String!
+  type: String!
+  totalTracks: Int!
+}
+
+type SpotifyPlaylist {
+  id: String!
+  name: String!
+  description: String
+  image: String
+  tracksTotal: Int!
+  spotifyUrl: String!
+  owner: String!
+}
+
+type SpotifyTrack {
+  id: String!
+  name: String!
+  artists: String!
+  artistIds: [String!]
+  album: String
+  albumId: String
+  popularity: Int
+  image: String
+}
+
+type SpotifyTopChart {
+  playlistName: String!
+  playlistId: String!
+  playlistImage: String
+  tracks: [SpotifyTrack!]!
+}
+
+type SpotifyArtist {
+  id: String!
+  name: String!
+  popularity: Int!
+  followers: Int!
+  genres: [String!]!
+  image: String
+  spotifyUrl: String!
+}
+
+type SpotifyPopularArtists {
+  searchTerm: String!
+  artists: [SpotifyArtist!]!
+}
+
+type SpotifyTrendingData {
+  newReleases: [SpotifyAlbum!]!
+  featuredPlaylists: [SpotifyPlaylist!]!
+  topCharts: [SpotifyTopChart!]!
+  popularArtists: [SpotifyPopularArtists!]!
+  needsSync: Boolean!
+  expires: DateTime
+  lastUpdated: DateTime
+}
+
+enum SpotifySyncType {
+  NEW_RELEASES
+  FEATURED_PLAYLISTS
+  BOTH
+}
+
+# =============================================
+# MUSIC DATABASE TYPES
+# =============================================
+
+type DatabaseStats {
+  totalAlbums: Int!
+  totalArtists: Int!
+  totalTracks: Int!
+  albumsNeedingEnrichment: Int!
+  artistsNeedingEnrichment: Int!
+  recentlyEnriched: Int!
+  failedEnrichments: Int!
+  averageDataQuality: Float!
+}
+
+type EnrichmentResult {
+  success: Boolean!
+  jobId: String
+  message: String!
+}
+
+type BatchEnrichmentResult {
+  success: Boolean!
+  jobsQueued: Int!
+  message: String!
+}
+
+# Preview Enrichment Types
+type EnrichmentFieldDiff {
+  field: String!
+  currentValue: String
+  newValue: String
+  source: String!
+}
+
+type PreviewEnrichmentResult {
+  success: Boolean!
+  message: String
+  matchScore: Float
+  matchedEntity: String
+  sources: [String!]!
+  fieldsToUpdate: [EnrichmentFieldDiff!]!
+  enrichmentLogId: UUID!
+  rawData: JSON
+}
+
+enum EnrichmentPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum EnrichmentType {
+  ALBUM
+  ARTIST
+}
+
+type SpotifySyncResult {
+  success: Boolean!
+  jobId: String
+  message: String!
+  stats: SpotifySyncStats
+}
+
+type SpotifySyncStats {
+  albumsQueued: Int!
+  albumsCreated: Int!
+  albumsUpdated: Int!
+  enrichmentJobsQueued: Int!
+}
+
+# =============================================
+# SYNC JOB TRACKING
+# =============================================
+
+enum SyncJobType {
+  SPOTIFY_NEW_RELEASES
+  SPOTIFY_FEATURED_PLAYLISTS
+  MUSICBRAINZ_NEW_RELEASES
+  MUSICBRAINZ_SYNC
+  DISCOGS_SYNC
+  ENRICHMENT_BATCH
+}
+
+enum SyncJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+type SyncJob {
+  id: UUID!
+  jobId: String!
+  jobType: SyncJobType!
+  status: SyncJobStatus!
+
+  # Timing
+  startedAt: DateTime!
+  completedAt: DateTime
+  durationMs: Int
+
+  # Results
+  albumsCreated: Int!
+  albumsUpdated: Int!
+  albumsSkipped: Int!
+  artistsCreated: Int!
+  artistsUpdated: Int!
+
+  # Error tracking
+  errorMessage: String
+  errorCode: String
+
+  # Metadata (query params, filters used, etc.)
+  metadata: JSON
+
+  # Audit
+  triggeredBy: String
+
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Computed: albums created by this job
+  albums(limit: Int = 50): [Album!]!
+}
+
+type SyncJobsConnection {
+  jobs: [SyncJob!]!
+  totalCount: Int!
+  hasMore: Boolean!
+}
+
+input SyncJobsInput {
+  jobType: SyncJobType
+  status: SyncJobStatus
+  startedAfter: DateTime
+  startedBefore: DateTime
+  limit: Int = 20
+  offset: Int = 0
+}
+
+# Rollback result for sync job deletion
+type RollbackSyncJobResult {
+  success: Boolean!
+  syncJobId: UUID!
+  albumsDeleted: Int!
+  artistsDeleted: Int!
+  message: String!
+  # Dry run returns what would be deleted without actually deleting
+  dryRun: Boolean!
+}
+
+# =============================================
+# ROOT QUERY TYPE
+# =============================================
+
+type Query {
+  # Health check
+  health: String!
+  systemHealth: SystemHealth!
+
+  # Monitoring & Queue Management
+  queueStatus: QueueStatus!
+  queueMetrics(timeRange: TimeRange = LAST_HOUR): QueueMetrics!
+  jobHistory(limit: Int = 100, status: JobStatus): [JobRecord!]!
+  activeJobs: [JobRecord!]!
+  failedJobs(limit: Int = 50): [JobRecord!]!
+
+  # Search & Discovery
+  search(input: SearchInput!): SearchResults!
+  albumRecommendations(input: RecommendationInput!): [Album!]!
+  trackRecommendations(trackId: UUID!, limit: Int = 10): [Track!]!
+
+  # Spotify Data
+  spotifyTrending: SpotifyTrendingData!
+
+  # Entity retrieval
+  artist(id: UUID!): Artist
+  artistByMusicBrainzId(musicbrainzId: UUID!): Artist
+  album(id: UUID!): Album
+  albumByMusicBrainzId(musicbrainzId: String!): Album
+  track(id: UUID!): Track
+  albumTracks(albumId: UUID!): [Track!]!
+  searchTracks(query: String!, skip: Int, limit: Int = 20): [Track!]!
+  user(id: String!): User
+  collection(id: String!): Collection
+  recommendation(id: String!): Recommendation
+
+  # Unified artist discography (supports local, MusicBrainz, and Discogs IDs)
+  # Note: artistDetails is handled directly by server components
+  # Returns all releases categorized by type (albums, EPs, singles, etc.)
+  artistDiscography(id: String!, source: DataSource!): CategorizedDiscography!
+
+  # Feed & Social
+  recommendationFeed(cursor: String, limit: Int = 20): RecommendationFeed!
+  trendingAlbums(limit: Int = 20): [Album!]!
+  trendingArtists(limit: Int = 20): [Artist!]!
+
+  # Top Recommended (most frequently appearing in recommendations)
+  topRecommendedAlbums(limit: Int = 20): [TopRecommendedAlbum!]!
+  topRecommendedArtists(limit: Int = 20): [TopRecommendedArtist!]!
+  userSuggestions(limit: Int = 10): [User!]!
+
+  # Artist Recommendations (recommendations featuring an artist's albums)
+  artistRecommendations(
+    artistId: ID!
+    filter: AlbumRole
+    sort: ArtistRecommendationSort = NEWEST
+    limit: Int = 12
+    offset: Int = 0
+  ): ArtistRecommendationsConnection!
+
+  # Album-specific queries
+  getAlbumRecommendations(
+    albumId: UUID!
+    filter: String # 'all', 'basis', 'recommended'
+    sort: String # 'newest', 'oldest', 'highest_score', 'lowest_score'
+    skip: Int
+    limit: Int = 12
+  ): AlbumRecommendationsResponse!
+
+  # User-specific queries
+  myCollections: [Collection!]!
+  myCollectionAlbums: [CollectionAlbum!]! # All albums across all user collections
+  publicCollections(limit: Int = 20, offset: Int = 0): [Collection!]!
+  userCollections(userId: String!): [Collection!]!
+  myRecommendations(
+    cursor: String
+    limit: Int = 10
+    sort: RecommendationSort = SCORE_DESC
+  ): RecommendationFeed!
+  followingActivity(limit: Int = 50): [Recommendation!]!
+  socialFeed(type: ActivityType, cursor: String, limit: Int = 20): ActivityFeed!
+
+  # User social queries
+  userFollowers(userId: String!, limit: Int = 50, offset: Int = 0): [User!]!
+  userFollowing(userId: String!, limit: Int = 50, offset: Int = 0): [User!]!
+  mutualConnections(userId: String!): [User!]!
+  isFollowing(userId: String!): Boolean!
+
+  # User status queries
+  onboardingStatus: OnboardingStatus!
+  userStats(userId: String!): UserStats!
+
+  # Admin queries
+  users(
+    offset: Int = 0
+    limit: Int = 20
+    search: String
+    role: UserRole
+    sortBy: UserSortField = CREATED_AT
+    sortOrder: SortOrder = DESC
+    createdAfter: DateTime
+    createdBefore: DateTime
+    lastActiveAfter: DateTime
+    lastActiveBefore: DateTime
+    hasActivity: Boolean
+  ): [User!]!
+  usersCount(
+    search: String
+    role: UserRole
+    createdAfter: DateTime
+    createdBefore: DateTime
+    lastActiveAfter: DateTime
+    lastActiveBefore: DateTime
+    hasActivity: Boolean
+  ): Int!
+  mySettings: UserSettings
+
+  # Sync Job queries
+  syncJobs(input: SyncJobsInput): SyncJobsConnection!
+  syncJob(id: UUID!): SyncJob
+  syncJobByJobId(jobId: String!): SyncJob
+
+  # Music Database queries
+  databaseStats: DatabaseStats!
+  albumsByJobId(jobId: String!): [Album!]!
+  searchAlbums(
+    query: String
+    id: UUID
+    dataQuality: String
+    enrichmentStatus: String
+    needsEnrichment: Boolean
+    source: String
+    sortBy: String
+    sortOrder: String
+    skip: Int
+    limit: Int
+  ): [Album!]!
+  searchArtists(
+    query: String
+    id: UUID
+    dataQuality: String
+    enrichmentStatus: String
+    needsEnrichment: Boolean
+    sortBy: String
+    sortOrder: String
+    skip: Int
+    limit: Int
+  ): [Artist!]!
+
+  # Enrichment Logging queries
+  enrichmentLogs(
+    entityType: EnrichmentEntityType
+    entityId: UUID
+    status: EnrichmentLogStatus
+    sources: [String!]
+    skip: Int
+    limit: Int
+  ): [EnrichmentLog!]!
+
+  enrichmentStats(
+    entityType: EnrichmentEntityType
+    timeRange: TimeRangeInput
+  ): EnrichmentStats!
+
+  # Correction System queries (Admin)
+  """
+  Search MusicBrainz for correction candidates for an album
+  """
+  correctionSearch(input: CorrectionSearchInput!): CorrectionSearchResponse!
+  """
+  Generate a preview of changes between album and selected MusicBrainz release
+  """
+  correctionPreview(input: CorrectionPreviewInput!): CorrectionPreview!
+}
+
+# =============================================
+# MUTATIONS (Placeholder for future implementation)
+# =============================================
+
+type Mutation {
+  # Queue Management
+  pauseQueue: Boolean!
+  resumeQueue: Boolean!
+  retryJob(jobId: String!): Boolean!
+  retryAllFailed: Int! # Returns count of retried jobs
+  cleanQueue(olderThan: Int): Boolean!
+  clearFailedJobs: Boolean!
+
+  # Spotify Sync
+  triggerSpotifySync(type: SpotifySyncType!): SpotifySyncResult!
+
+  # Sync Job Management
+  rollbackSyncJob(
+    syncJobId: UUID!
+    dryRun: Boolean = true
+  ): RollbackSyncJobResult!
+
+  # Alert Configuration
+  updateAlertThresholds(input: AlertThresholdsInput!): AlertThresholds!
+
+  # Album management
+  addAlbum(input: AlbumInput!): Album!
+  updateAlbum(id: UUID!, input: AlbumInput!): Album!
+
+  # Artist management
+  addArtist(input: ArtistInput!): Artist!
+  deleteArtist(id: UUID!): DeleteArtistPayload!
+
+  # Track management
+  createTrack(input: TrackInput!): Track!
+  updateTrack(id: UUID!, input: UpdateTrackInput!): Track!
+  deleteTrack(id: UUID!): Boolean!
+
+  # Collection management
+  createCollection(
+    name: String!
+    description: String
+    isPublic: Boolean = false
+  ): CreateCollectionPayload!
+  updateCollection(
+    id: String!
+    name: String
+    description: String
+    isPublic: Boolean
+  ): UpdateCollectionPayload!
+  deleteCollection(id: String!): Boolean!
+  addAlbumToCollection(
+    collectionId: String!
+    input: CollectionAlbumInput!
+  ): AddAlbumToCollectionPayload!
+  removeAlbumFromCollection(collectionId: String!, albumId: UUID!): Boolean!
+  updateCollectionAlbum(
+    id: String!
+    input: CollectionAlbumInput!
+  ): UpdateCollectionAlbumPayload!
+  reorderCollectionAlbums(
+    collectionId: String!
+    albumIds: [UUID!]!
+  ): ReorderCollectionAlbumsPayload!
+  # Listen Later convenience without schema change
+  ensureListenLaterCollection: Collection!
+  addToListenLater(albumId: UUID!, albumData: AlbumInput): CollectionAlbum!
+  removeFromListenLater(albumId: UUID!): Boolean!
+
+  # Recommendation system
+  createRecommendation(
+    basisAlbumId: UUID!
+    recommendedAlbumId: UUID!
+    score: Int!
+  ): CreateRecommendationPayload!
+  updateRecommendation(id: String!, score: Int!): UpdateRecommendationPayload!
+  deleteRecommendation(id: String!): Boolean!
+
+  # Social features
+  followUser(userId: String!): FollowUserPayload!
+  unfollowUser(userId: String!): Boolean!
+  dismissUserSuggestion(userId: String!): Boolean!
+
+  # Profile management
+  updateProfile(username: String, bio: String): UpdateProfilePayload!
+  updateOnboardingStatus(hasCompletedTour: Boolean!): OnboardingStatus!
+  resetOnboardingStatus: OnboardingStatus!
+  updateDashboardLayout(layout: JSON!): UserSettings!
+  updateUserSettings(
+    theme: String
+    language: String
+    profileVisibility: String
+    showRecentActivity: Boolean
+    showCollections: Boolean
+    showListenLaterInFeed: Boolean
+    showCollectionAddsInFeed: Boolean
+    showOnboardingTour: Boolean
+  ): UserSettings!
+
+  # Music Database enrichment mutations
+  triggerAlbumEnrichment(
+    id: UUID!
+    priority: EnrichmentPriority
+    force: Boolean
+  ): EnrichmentResult!
+  triggerArtistEnrichment(
+    id: UUID!
+    priority: EnrichmentPriority
+    force: Boolean
+  ): EnrichmentResult!
+
+  # Preview Enrichment (dry-run without persisting to album/artist)
+  previewAlbumEnrichment(id: UUID!): PreviewEnrichmentResult!
+  previewArtistEnrichment(id: UUID!): PreviewEnrichmentResult!
+
+  batchEnrichment(
+    ids: [UUID!]!
+    type: EnrichmentType!
+    priority: EnrichmentPriority
+  ): BatchEnrichmentResult!
+  resetAlbumEnrichment(id: UUID!): Album!
+  resetArtistEnrichment(id: UUID!): Artist!
+  updateAlbumDataQuality(id: UUID!, dataQuality: DataQuality!): Album!
+  updateArtistDataQuality(id: UUID!, dataQuality: DataQuality!): Artist!
+
+  # Admin mutations
+  updateUserRole(userId: String!, role: UserRole!): UpdateUserRolePayload!
+  adminUpdateUserShowTour(
+    userId: String!
+    showOnboardingTour: Boolean!
+  ): AdminUpdateUserSettingsPayload!
+  deleteAlbum(id: UUID!): DeleteAlbumPayload!
+
+  # Correction System mutations (Admin)
+  """
+  Apply selected corrections from a preview to an album
+  """
+  correctionApply(input: CorrectionApplyInput!): CorrectionApplyResult!
+}
+
+type FollowUserPayload {
+  id: String!
+  followerId: String!
+  followedId: String!
+  createdAt: DateTime!
+}
+
+type UpdateProfilePayload {
+  id: String!
+  username: String
+  bio: String
+}
+
+type UpdateUserRolePayload {
+  success: Boolean!
+  user: User
+  message: String
+}
+
+type AdminUpdateUserSettingsPayload {
+  success: Boolean!
+  userId: String!
+  showOnboardingTour: Boolean
+  message: String
+}
+
+type DeleteAlbumPayload {
+  success: Boolean!
+  message: String
+  deletedId: UUID
+}
+
+type DeleteArtistPayload {
+  success: Boolean!
+  message: String
+  deletedId: UUID
+}
+
+type CreateRecommendationPayload {
+  id: String!
+}
+type UpdateRecommendationPayload {
+  id: String!
+}
+
+type ReorderCollectionAlbumsPayload {
+  ids: [String!]!
+}
+
+type UpdateCollectionAlbumPayload {
+  id: String!
+}
+
+type AddAlbumToCollectionPayload {
+  id: String!
+}
+
+type UpdateCollectionPayload {
+  id: String!
+}
+
+# Minimal payload for collection creation
+type CreateCollectionPayload {
+  id: String!
+}
+
+# =============================================
+# SUBSCRIPTIONS
+# =============================================
+
+type Subscription {
+  # Real-time queue monitoring
+  queueStatusUpdates: QueueStatus!
+  jobStatusUpdates(jobId: String): JobStatusUpdate!
+  systemHealthUpdates: SystemHealth!
+  alertStream: Alert!
+  metricsStream(interval: Int = 10): QueueMetrics!
+}
+
+type JobStatusUpdate {
+  jobId: String!
+  type: String!
+  status: JobStatus!
+  progress: Float
+  message: String
+  timestamp: DateTime!
+}
+
+type Alert {
+  id: String!
+  level: AlertLevel!
+  type: AlertType!
+  message: String!
+  details: JSON
+  timestamp: DateTime!
+}
+
+enum AlertLevel {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum AlertType {
+  QUEUE_DEPTH
+  ERROR_RATE
+  MEMORY_USAGE
+  PROCESSING_TIME
+  RATE_LIMIT
+  WORKER_FAILURE
+  REDIS_CONNECTION
+}

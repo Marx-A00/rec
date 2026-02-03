@@ -31,10 +31,7 @@ export const musicbrainzIdSchema = z
 // Spotify IDs are 22-character base62 strings
 export const spotifyIdSchema = z
   .string()
-  .regex(
-    /^[a-zA-Z0-9]{22}$/,
-    'Spotify ID must be 22 alphanumeric characters'
-  )
+  .regex(/^[a-zA-Z0-9]{22}$/, 'Spotify ID must be 22 alphanumeric characters')
   .nullable()
   .optional();
 
@@ -109,7 +106,6 @@ export function validateField<T>(
   }
 
   // Extract first error message
-  const errorMessage =
-    result.error.errors[0]?.message || 'Validation failed';
+  const errorMessage = result.error.errors[0]?.message || 'Validation failed';
   return { success: false, error: errorMessage };
 }

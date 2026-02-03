@@ -107,10 +107,7 @@ export class ArtistCorrectionApplyService {
       }
 
       // 2. Build artist update data from preview and selections
-      const artistUpdateData = this.buildArtistUpdateData(
-        preview,
-        selections
-      );
+      const artistUpdateData = this.buildArtistUpdateData(preview, selections);
 
       // ================================================================
       // Transaction Phase: Apply all changes atomically
@@ -285,10 +282,7 @@ export class ArtistCorrectionApplyService {
             'Transaction failed due to write conflict or deadlock'
           );
         case 'P2025':
-          return this.createErrorResult(
-            'ARTIST_NOT_FOUND',
-            'Artist not found'
-          );
+          return this.createErrorResult('ARTIST_NOT_FOUND', 'Artist not found');
         default:
           return this.createErrorResult(
             'TRANSACTION_FAILED',

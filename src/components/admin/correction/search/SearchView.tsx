@@ -9,8 +9,8 @@ import {
 import type { useCorrectionModalState } from '@/hooks/useCorrectionModalState';
 
 import type { CurrentDataViewAlbum } from '../CurrentDataView';
-
 import { ErrorState, categorizeError } from '../shared';
+
 import { SearchInputs } from './SearchInputs';
 import { SearchResults } from './SearchResults';
 import { SearchSkeleton } from './SearchSkeleton';

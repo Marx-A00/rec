@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { z } from 'zod';
 import { X } from 'lucide-react';
+
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -17,7 +18,7 @@ export interface ExternalIdInputProps {
 
 /**
  * External ID input with format validation and clear button.
- * 
+ *
  * Validates on blur using Zod schema.
  * Clear button (X) explicitly sets field to null (cleared state).
  * Distinguishes between null (cleared) and empty string (invalid/in-progress).
@@ -43,10 +44,10 @@ export function ExternalIdInput({
     setIsFocused(false);
 
     const trimmed = localValue.trim();
-    
+
     // Validate with schema
     const result = schema.safeParse(trimmed || null);
-    
+
     if (!result.success) {
       const errorMessage = result.error.errors[0]?.message || 'Invalid format';
       setError(errorMessage);
@@ -69,12 +70,12 @@ export function ExternalIdInput({
   const showError = !isFocused && error;
 
   return (
-    <div className="space-y-1">
-      <label className="text-sm text-zinc-400">{label}</label>
-      <div className="relative">
+    <div className='space-y-1'>
+      <label className='text-sm text-zinc-400'>{label}</label>
+      <div className='relative'>
         <Input
           value={localValue}
-          onChange={(e) => setLocalValue(e.target.value)}
+          onChange={e => setLocalValue(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={handleBlur}
           placeholder={placeholder}
@@ -85,21 +86,17 @@ export function ExternalIdInput({
         />
         {localValue && (
           <button
-            type="button"
+            type='button'
             onClick={handleClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+            className='absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors'
             aria-label={`Clear ${label}`}
           >
-            <X className="h-4 w-4" />
+            <X className='h-4 w-4' />
           </button>
         )}
       </div>
-      {showHint && (
-        <p className="text-xs text-zinc-500">{hint}</p>
-      )}
-      {showError && (
-        <p className="text-xs text-red-400">{error}</p>
-      )}
+      {showHint && <p className='text-xs text-zinc-500'>{hint}</p>}
+      {showError && <p className='text-xs text-red-400'>{error}</p>}
     </div>
   );
 }

@@ -89,7 +89,14 @@ export function useArtistCorrectionModalState(artistId: string | null) {
       isApplied,
     };
     sessionStorage.setItem(storageKey, JSON.stringify(state));
-  }, [artistId, currentStep, searchQuery, searchOffset, selectedArtistMbid, isApplied]);
+  }, [
+    artistId,
+    currentStep,
+    searchQuery,
+    searchOffset,
+    selectedArtistMbid,
+    isApplied,
+  ]);
 
   /**
    * Set the current step (0-3).

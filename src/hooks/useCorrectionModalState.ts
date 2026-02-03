@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+
 import type { ManualEditFieldState } from '@/components/admin/correction/manual/types';
 
 /**

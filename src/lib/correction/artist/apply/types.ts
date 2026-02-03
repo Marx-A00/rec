@@ -147,7 +147,9 @@ export interface ArtistApplyFailureResult {
 /**
  * Apply operation result (success or failure).
  */
-export type ArtistApplyResult = ArtistApplySuccessResult | ArtistApplyFailureResult;
+export type ArtistApplyResult =
+  | ArtistApplySuccessResult
+  | ArtistApplyFailureResult;
 
 // ============================================================================
 // Error Types
