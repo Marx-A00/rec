@@ -21,11 +21,15 @@ import {
 } from '@/generated/graphql';
 import Toast, { useToast } from '@/components/ui/toast';
 
+import { ModalSkeleton } from '../shared';
 import { StepIndicator } from '../StepIndicator';
 import { ArtistCurrentDataView } from './ArtistCurrentDataView';
 import { ArtistSearchView } from './search/ArtistSearchView';
 import { ArtistPreviewView } from './preview/ArtistPreviewView';
-import { ArtistApplyView, type UIArtistFieldSelections } from './apply/ArtistApplyView';
+import {
+  ArtistApplyView,
+  type UIArtistFieldSelections,
+} from './apply/ArtistApplyView';
 
 export interface ArtistCorrectionModalProps {
   /** Artist to correct, or null if modal should be closed */
@@ -68,7 +72,8 @@ export function ArtistCorrectionModal({
   } = modalState;
 
   // Preview data state - shared between PreviewView and ApplyView
-  const [previewData, setPreviewData] = useState<ArtistCorrectionPreview | null>(null);
+  const [previewData, setPreviewData] =
+    useState<ArtistCorrectionPreview | null>(null);
 
   // Success animation state
   const [showAppliedState, setShowAppliedState] = useState(false);
@@ -94,17 +99,24 @@ export function ArtistCorrectionModal({
         setShowAppliedState(true);
 
         const changes = response.artistCorrectionApply.changes;
-        const affectedAlbums = response.artistCorrectionApply.affectedAlbumCount ?? 0;
+        const affectedAlbums =
+          response.artistCorrectionApply.affectedAlbumCount ?? 0;
 
         let message = 'Artist correction applied';
         if (changes) {
-          const fieldCount = changes.metadata.length + changes.externalIds.length;
+          const fieldCount =
+            changes.metadata.length + changes.externalIds.length;
           const parts: string[] = [];
           if (fieldCount > 0) {
             parts.push(fieldCount + ' field' + (fieldCount !== 1 ? 's' : ''));
           }
           if (affectedAlbums > 0) {
-            parts.push(affectedAlbums + ' album' + (affectedAlbums !== 1 ? 's' : '') + ' affected');
+            parts.push(
+              affectedAlbums +
+                ' album' +
+                (affectedAlbums !== 1 ? 's' : '') +
+                ' affected'
+            );
           }
           if (parts.length > 0) {
             message = 'Updated: ' + parts.join(', ');
@@ -126,7 +138,9 @@ export function ArtistCorrectionModal({
           onSuccess();
         }, 1500);
       } else {
-        const errorMsg = response.artistCorrectionApply.message ?? 'Failed to apply correction';
+        const errorMsg =
+          response.artistCorrectionApply.message ??
+          'Failed to apply correction';
         showToast(errorMsg, 'error');
       }
     },
@@ -225,12 +239,7 @@ export function ArtistCorrectionModal({
         {/* Step content area */}
         <div className='min-h-[300px] py-4'>
           {/* Loading state */}
-          {isLoading && (
-            <div className='flex flex-col items-center justify-center h-[300px]'>
-              <Loader2 className='h-8 w-8 animate-spin text-muted-foreground mb-4' />
-              <p className='text-muted-foreground'>Loading artist data...</p>
-            </div>
-          )}
+          {isLoading && <ModalSkeleton variant='artist' />}
 
           {/* Error state */}
           {hasError && !isLoading && (
@@ -278,54 +287,74 @@ export function ArtistCorrectionModal({
           )}
 
           {/* Step 2: Preview */}
-          {currentStep === 2 && !isLoading && !hasError && selectedArtistMbid && artistId && (
-            <ArtistPreviewView
-              artistId={artistId}
-              artistMbid={selectedArtistMbid}
-              onApplyClick={handleApplyClick}
-              onPreviewLoaded={handlePreviewLoaded}
-            />
-          )}
-          {currentStep === 2 && !isLoading && !hasError && !selectedArtistMbid && (
-            <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
-              <div className='text-center'>
-                <p className='text-zinc-500'>No result selected.</p>
-                <p className='text-sm text-zinc-600 mt-1'>
-                  Please go back and select a search result.
-                </p>
+          {currentStep === 2 &&
+            !isLoading &&
+            !hasError &&
+            selectedArtistMbid &&
+            artistId && (
+              <ArtistPreviewView
+                artistId={artistId}
+                artistMbid={selectedArtistMbid}
+                onApplyClick={handleApplyClick}
+                onPreviewLoaded={handlePreviewLoaded}
+              />
+            )}
+          {currentStep === 2 &&
+            !isLoading &&
+            !hasError &&
+            !selectedArtistMbid && (
+              <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
+                <div className='text-center'>
+                  <p className='text-zinc-500'>No result selected.</p>
+                  <p className='text-sm text-zinc-600 mt-1'>
+                    Please go back and select a search result.
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Step 3: Apply */}
-          {currentStep === 3 && !isLoading && !hasError && artistId && previewData && (
-            <>
-              {showAppliedState ? (
-                <div className='flex flex-col items-center justify-center h-[300px]'>
-                  <CheckCircle className='h-16 w-16 text-green-400 mb-4' />
-                  <p className='text-2xl font-semibold text-green-400'>Applied!</p>
+          {currentStep === 3 &&
+            !isLoading &&
+            !hasError &&
+            artistId &&
+            previewData && (
+              <>
+                {showAppliedState ? (
+                  <div className='flex flex-col items-center justify-center h-[300px]'>
+                    <CheckCircle className='h-16 w-16 text-green-400 mb-4' />
+                    <p className='text-2xl font-semibold text-green-400'>
+                      Applied!
+                    </p>
+                  </div>
+                ) : (
+                  <ArtistApplyView
+                    preview={previewData}
+                    onApply={handleApply}
+                    onBack={prevStep}
+                    isApplying={applyMutation.isPending}
+                    error={
+                      applyMutation.error instanceof Error
+                        ? applyMutation.error
+                        : null
+                    }
+                  />
+                )}
+              </>
+            )}
+          {currentStep === 3 &&
+            !isLoading &&
+            !hasError &&
+            (!artistId || !previewData) && (
+              <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
+                <div className='text-center'>
+                  <p className='text-zinc-500'>Preview data not available.</p>
+                  <p className='text-sm text-zinc-600 mt-1'>
+                    Please go back and load the preview first.
+                  </p>
                 </div>
-              ) : (
-                <ArtistApplyView
-                  preview={previewData}
-                  onApply={handleApply}
-                  onBack={prevStep}
-                  isApplying={applyMutation.isPending}
-                  error={applyMutation.error instanceof Error ? applyMutation.error : null}
-                />
-              )}
-            </>
-          )}
-          {currentStep === 3 && !isLoading && !hasError && (!artistId || !previewData) && (
-            <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
-              <div className='text-center'>
-                <p className='text-zinc-500'>Preview data not available.</p>
-                <p className='text-sm text-zinc-600 mt-1'>
-                  Please go back and load the preview first.
-                </p>
               </div>
-            </div>
-          )}
+            )}
         </div>
 
         <DialogFooter className='sticky bottom-0 bg-zinc-900 pt-4 border-t border-zinc-800'>

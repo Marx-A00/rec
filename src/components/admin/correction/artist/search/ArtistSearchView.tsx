@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Search, AlertCircle, Loader2 } from 'lucide-react';
 
+import { ErrorState, categorizeError } from '../../shared';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -50,10 +52,14 @@ export function ArtistSearchView({
   const initialArtistName = artist.name;
 
   // Local input state
-  const [inputValue, setInputValue] = useState<string>(searchQuery ?? initialArtistName);
+  const [inputValue, setInputValue] = useState<string>(
+    searchQuery ?? initialArtistName
+  );
 
   // Track whether search has been triggered
-  const [isSearchTriggered, setIsSearchTriggered] = useState(() => !!searchQuery);
+  const [isSearchTriggered, setIsSearchTriggered] = useState(
+    () => !!searchQuery
+  );
 
   // GraphQL query - only enabled when search is triggered
   const { data, isLoading, error, isFetching } =
@@ -153,9 +159,16 @@ export function ArtistSearchView({
 
       {/* Error state */}
       {!!error && isSearchTriggered && (
-        <div className='p-4 text-center text-red-400 border border-red-900/30 rounded-lg bg-red-900/10'>
-          Search failed. Please try again.
-        </div>
+        <ErrorState
+          message={
+            error instanceof Error
+              ? error.message
+              : 'Search failed. Please try again.'
+          }
+          type={categorizeError(error)}
+          onRetry={handleSearch}
+          isRetrying={isFetching}
+        />
       )}
 
       {/* Initial state - before first search */}
@@ -173,7 +186,8 @@ export function ArtistSearchView({
             No results found
           </h3>
           <p className='text-sm text-zinc-400 max-w-sm'>
-            We couldn't find any matches in MusicBrainz. Try adjusting your search.
+            We couldn't find any matches in MusicBrainz. Try adjusting your
+            search.
           </p>
         </div>
       )}

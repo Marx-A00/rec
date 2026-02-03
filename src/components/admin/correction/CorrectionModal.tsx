@@ -22,6 +22,7 @@ import {
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import Toast, { useToast } from '@/components/ui/toast';
 
+import { ModalSkeleton } from './shared';
 import { StepIndicator } from './StepIndicator';
 import {
   CurrentDataView,
@@ -475,12 +476,7 @@ export function CorrectionModal({
         {/* Step content area */}
         <div className='min-h-[300px] py-4'>
           {/* Loading state */}
-          {isLoading && (
-            <div className='flex flex-col items-center justify-center h-[300px]'>
-              <Loader2 className='h-8 w-8 animate-spin text-muted-foreground mb-4' />
-              <p className='text-muted-foreground'>Loading album data...</p>
-            </div>
-          )}
+          {isLoading && <ModalSkeleton variant='album' />}
 
           {/* Error state */}
           {hasError && !isLoading && (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Loader2 } from 'lucide-react';
 
 import {
   type ArtistCorrectionPreview,
@@ -10,7 +10,6 @@ import {
 } from '@/generated/graphql';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-
 
 export interface UIArtistFieldSelections {
   metadata: {
@@ -41,8 +40,19 @@ interface ArtistApplyViewProps {
 /**
  * Create default selections with changed fields selected.
  */
-function createDefaultSelections(preview: ArtistCorrectionPreview): UIArtistFieldSelections {
-  const metadataFields = ['name', 'disambiguation', 'countryCode', 'artistType', 'area', 'beginDate', 'endDate', 'gender'];
+function createDefaultSelections(
+  preview: ArtistCorrectionPreview
+): UIArtistFieldSelections {
+  const metadataFields = [
+    'name',
+    'disambiguation',
+    'countryCode',
+    'artistType',
+    'area',
+    'beginDate',
+    'endDate',
+    'gender',
+  ];
   const externalIdFields = ['musicbrainzId', 'ipi', 'isni'];
 
   const metadata: UIArtistFieldSelections['metadata'] = {
@@ -93,7 +103,10 @@ function formatFieldName(field: string): string {
     ipi: 'IPI',
     isni: 'ISNI',
   };
-  return labels[field] || field.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
+  return (
+    labels[field] ||
+    field.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase())
+  );
 }
 
 /**
@@ -111,7 +124,7 @@ function FieldSelectionItem({
   onCheckedChange: (checked: boolean) => void;
 }) {
   const hasChange = diff && diff.changeType !== ChangeType.Unchanged;
-  
+
   if (!hasChange) return null;
 
   return (
@@ -123,7 +136,10 @@ function FieldSelectionItem({
         className='mt-1'
       />
       <div className='flex-1'>
-        <label htmlFor={field} className='text-sm font-medium text-zinc-300 cursor-pointer'>
+        <label
+          htmlFor={field}
+          className='text-sm font-medium text-zinc-300 cursor-pointer'
+        >
           {formatFieldName(field)}
         </label>
         <div className='text-xs mt-1'>
@@ -152,15 +168,28 @@ export function ArtistApplyView({
   const [showErrorDetails, setShowErrorDetails] = useState(false);
 
   // Group diffs by category
-  const metadataFields = ['name', 'disambiguation', 'countryCode', 'artistType', 'area', 'beginDate', 'endDate', 'gender'];
+  const metadataFields = [
+    'name',
+    'disambiguation',
+    'countryCode',
+    'artistType',
+    'area',
+    'beginDate',
+    'endDate',
+    'gender',
+  ];
   const externalIdFields = ['musicbrainzId', 'ipi', 'isni'];
 
   const getDiff = (field: string): ArtistFieldDiff | undefined =>
     preview.fieldDiffs.find(d => d.field === field);
 
   // Count selected fields
-  const metadataCount = Object.values(selections.metadata).filter(Boolean).length;
-  const externalIdCount = Object.values(selections.externalIds).filter(Boolean).length;
+  const metadataCount = Object.values(selections.metadata).filter(
+    Boolean
+  ).length;
+  const externalIdCount = Object.values(selections.externalIds).filter(
+    Boolean
+  ).length;
   const totalSelected = metadataCount + externalIdCount;
 
   const handleApply = () => {
@@ -168,14 +197,20 @@ export function ArtistApplyView({
     onApply(selections);
   };
 
-  const updateMetadata = (field: keyof UIArtistFieldSelections['metadata'], value: boolean) => {
+  const updateMetadata = (
+    field: keyof UIArtistFieldSelections['metadata'],
+    value: boolean
+  ) => {
     setSelections(prev => ({
       ...prev,
       metadata: { ...prev.metadata, [field]: value },
     }));
   };
 
-  const updateExternalId = (field: keyof UIArtistFieldSelections['externalIds'], value: boolean) => {
+  const updateExternalId = (
+    field: keyof UIArtistFieldSelections['externalIds'],
+    value: boolean
+  ) => {
     setSelections(prev => ({
       ...prev,
       externalIds: { ...prev.externalIds, [field]: value },
@@ -187,7 +222,9 @@ export function ArtistApplyView({
       {/* Header */}
       <div className='flex items-center justify-between'>
         <div>
-          <h2 className='text-xl font-semibold text-zinc-100'>Apply Correction</h2>
+          <h2 className='text-xl font-semibold text-zinc-100'>
+            Apply Correction
+          </h2>
           <p className='mt-1 text-sm text-zinc-400'>
             Select fields to apply and review changes
           </p>
@@ -216,8 +253,17 @@ export function ArtistApplyView({
                   key={field}
                   field={field}
                   diff={getDiff(field)}
-                  checked={selections.metadata[field as keyof typeof selections.metadata]}
-                  onCheckedChange={(checked) => updateMetadata(field as keyof typeof selections.metadata, checked)}
+                  checked={
+                    selections.metadata[
+                      field as keyof typeof selections.metadata
+                    ]
+                  }
+                  onCheckedChange={checked =>
+                    updateMetadata(
+                      field as keyof typeof selections.metadata,
+                      checked
+                    )
+                  }
                 />
               ))}
             </div>
@@ -226,7 +272,8 @@ export function ArtistApplyView({
           {/* External IDs section */}
           <div className='rounded-lg border border-zinc-800 p-4'>
             <h3 className='text-sm font-medium text-zinc-200 mb-4'>
-              External IDs {externalIdCount > 0 && '(' + externalIdCount + ' selected)'}
+              External IDs{' '}
+              {externalIdCount > 0 && '(' + externalIdCount + ' selected)'}
             </h3>
             <div className='divide-y divide-zinc-800'>
               {externalIdFields.map(field => (
@@ -234,8 +281,17 @@ export function ArtistApplyView({
                   key={field}
                   field={field}
                   diff={getDiff(field)}
-                  checked={selections.externalIds[field as keyof typeof selections.externalIds]}
-                  onCheckedChange={(checked) => updateExternalId(field as keyof typeof selections.externalIds, checked)}
+                  checked={
+                    selections.externalIds[
+                      field as keyof typeof selections.externalIds
+                    ]
+                  }
+                  onCheckedChange={checked =>
+                    updateExternalId(
+                      field as keyof typeof selections.externalIds,
+                      checked
+                    )
+                  }
                 />
               ))}
             </div>
@@ -250,11 +306,15 @@ export function ArtistApplyView({
             <p className='text-sm text-zinc-400'>
               {totalSelected === 0
                 ? 'No fields selected'
-                : totalSelected + ' field' + (totalSelected !== 1 ? 's' : '') + ' will be updated'}
+                : totalSelected +
+                  ' field' +
+                  (totalSelected !== 1 ? 's' : '') +
+                  ' will be updated'}
             </p>
             {preview.albumCount > 0 && (
               <p className='text-sm text-amber-400 mt-2'>
-                This will affect {preview.albumCount} album{preview.albumCount !== 1 ? 's' : ''} by this artist
+                This will affect {preview.albumCount} album
+                {preview.albumCount !== 1 ? 's' : ''} by this artist
               </p>
             )}
           </div>
@@ -302,26 +362,7 @@ export function ArtistApplyView({
             >
               {isApplying ? (
                 <>
-                  <svg
-                    className='mr-2 h-4 w-4 animate-spin'
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                  >
-                    <circle
-                      className='opacity-25'
-                      cx='12'
-                      cy='12'
-                      r='10'
-                      stroke='currentColor'
-                      strokeWidth='4'
-                    />
-                    <path
-                      className='opacity-75'
-                      fill='currentColor'
-                      d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                    />
-                  </svg>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                   Applying...
                 </>
               ) : (

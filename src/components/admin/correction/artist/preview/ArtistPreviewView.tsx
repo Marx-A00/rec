@@ -3,6 +3,8 @@
 import { useMemo, useEffect } from 'react';
 import { CheckCircle, AlertTriangle } from 'lucide-react';
 
+import { ErrorState, categorizeError } from '../../shared';
+
 import {
   useGetArtistCorrectionPreviewQuery,
   type ArtistCorrectionPreview,
@@ -46,13 +48,18 @@ function formatFieldName(field: string): string {
     ipi: 'IPI',
     isni: 'ISNI',
   };
-  return labels[field] || field.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
+  return (
+    labels[field] ||
+    field.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase())
+  );
 }
 
 /**
  * Get change badge for display.
  */
-function getChangeBadge(changeType: ChangeType): { label: string; className: string } | null {
+function getChangeBadge(
+  changeType: ChangeType
+): { label: string; className: string } | null {
   switch (changeType) {
     case ChangeType.Added:
       return { label: '(New)', className: 'text-green-400' };
@@ -128,13 +135,14 @@ export function ArtistPreviewView({
   onApplyClick,
   onPreviewLoaded,
 }: ArtistPreviewViewProps) {
-  const { data, isLoading, error } = useGetArtistCorrectionPreviewQuery(
-    { artistId, artistMbid },
-    {
-      enabled: Boolean(artistId && artistMbid),
-      staleTime: 5 * 60 * 1000,
-    }
-  );
+  const { data, isLoading, error, refetch, isFetching } =
+    useGetArtistCorrectionPreviewQuery(
+      { artistId, artistMbid },
+      {
+        enabled: Boolean(artistId && artistMbid),
+        staleTime: 5 * 60 * 1000,
+      }
+    );
 
   // Notify parent when preview data loads
   useEffect(() => {
@@ -151,16 +159,29 @@ export function ArtistPreviewView({
     const expanded: string[] = [];
 
     // Check for metadata changes
-    const metadataFields = ['name', 'disambiguation', 'countryCode', 'artistType', 'area', 'beginDate', 'endDate', 'gender'];
+    const metadataFields = [
+      'name',
+      'disambiguation',
+      'countryCode',
+      'artistType',
+      'area',
+      'beginDate',
+      'endDate',
+      'gender',
+    ];
     const hasMetadataChanges = preview.fieldDiffs.some(
-      d => metadataFields.includes(d.field) && d.changeType !== ChangeType.Unchanged
+      d =>
+        metadataFields.includes(d.field) &&
+        d.changeType !== ChangeType.Unchanged
     );
     if (hasMetadataChanges) expanded.push('metadata');
 
     // Check for external ID changes
     const externalIdFields = ['musicbrainzId', 'ipi', 'isni'];
     const hasIdChanges = preview.fieldDiffs.some(
-      d => externalIdFields.includes(d.field) && d.changeType !== ChangeType.Unchanged
+      d =>
+        externalIdFields.includes(d.field) &&
+        d.changeType !== ChangeType.Unchanged
     );
     if (hasIdChanges) expanded.push('external-ids');
 
@@ -173,14 +194,18 @@ export function ArtistPreviewView({
   }
 
   if (error) {
+    const errorType = categorizeError(error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Failed to load preview data';
+
     return (
       <div className='flex items-center justify-center py-12'>
-        <div className='text-center'>
-          <p className='text-red-400 font-medium'>Failed to load preview data</p>
-          <p className='text-sm text-zinc-500 mt-1'>
-            {error instanceof Error ? error.message : 'Unknown error occurred'}
-          </p>
-        </div>
+        <ErrorState
+          message={errorMessage}
+          type={errorType}
+          onRetry={() => refetch()}
+          isRetrying={isFetching}
+        />
       </div>
     );
   }
@@ -197,15 +222,32 @@ export function ArtistPreviewView({
   const { summary, fieldDiffs, albumCount, currentArtist } = preview;
 
   // Separate field diffs into categories
-  const metadataFields = ['name', 'disambiguation', 'countryCode', 'artistType', 'area', 'beginDate', 'endDate', 'gender'];
+  const metadataFields = [
+    'name',
+    'disambiguation',
+    'countryCode',
+    'artistType',
+    'area',
+    'beginDate',
+    'endDate',
+    'gender',
+  ];
   const externalIdFields = ['musicbrainzId', 'ipi', 'isni'];
 
-  const metadataDiffs = fieldDiffs.filter(d => metadataFields.includes(d.field));
-  const externalIdDiffs = fieldDiffs.filter(d => externalIdFields.includes(d.field));
+  const metadataDiffs = fieldDiffs.filter(d =>
+    metadataFields.includes(d.field)
+  );
+  const externalIdDiffs = fieldDiffs.filter(d =>
+    externalIdFields.includes(d.field)
+  );
 
   // Count changes per section
-  const metadataChangeCount = metadataDiffs.filter(d => d.changeType !== ChangeType.Unchanged).length;
-  const externalIdChangeCount = externalIdDiffs.filter(d => d.changeType !== ChangeType.Unchanged).length;
+  const metadataChangeCount = metadataDiffs.filter(
+    d => d.changeType !== ChangeType.Unchanged
+  ).length;
+  const externalIdChangeCount = externalIdDiffs.filter(
+    d => d.changeType !== ChangeType.Unchanged
+  ).length;
 
   return (
     <div className='space-y-6'>
@@ -214,12 +256,14 @@ export function ArtistPreviewView({
         <span className='text-zinc-400'>Changes:</span>
         {summary.changedFields > 0 && (
           <span className='text-amber-400'>
-            {summary.changedFields} field{summary.changedFields !== 1 ? 's' : ''} modified
+            {summary.changedFields} field
+            {summary.changedFields !== 1 ? 's' : ''} modified
           </span>
         )}
         {summary.addedFields > 0 && (
           <span className='text-green-400'>
-            {summary.addedFields} field{summary.addedFields !== 1 ? 's' : ''} added
+            {summary.addedFields} field{summary.addedFields !== 1 ? 's' : ''}{' '}
+            added
           </span>
         )}
         {summary.changedFields === 0 && summary.addedFields === 0 && (
@@ -232,21 +276,26 @@ export function ArtistPreviewView({
         <div className='flex items-center gap-3 p-3 bg-amber-900/20 border border-amber-800/50 rounded-lg'>
           <AlertTriangle className='h-5 w-5 text-amber-400 flex-shrink-0' />
           <p className='text-sm text-amber-300'>
-            This artist has <strong>{albumCount}</strong> album{albumCount !== 1 ? 's' : ''} in the database
+            This artist has <strong>{albumCount}</strong> album
+            {albumCount !== 1 ? 's' : ''} in the database
           </p>
         </div>
       )}
 
       {/* Artist info header */}
       <div className='border-b border-zinc-700 pb-4'>
-        <h3 className='text-lg font-medium text-zinc-100'>{currentArtist.name}</h3>
-        <p className='text-sm text-zinc-400'>
-          Comparing with MusicBrainz data
-        </p>
+        <h3 className='text-lg font-medium text-zinc-100'>
+          {currentArtist.name}
+        </h3>
+        <p className='text-sm text-zinc-400'>Comparing with MusicBrainz data</p>
       </div>
 
       {/* Accordion sections */}
-      <Accordion type='multiple' defaultValue={defaultExpanded} className='w-full'>
+      <Accordion
+        type='multiple'
+        defaultValue={defaultExpanded}
+        className='w-full'
+      >
         {/* Metadata Section */}
         <AccordionItem value='metadata' className='border-zinc-700'>
           <AccordionTrigger className='text-zinc-200 hover:text-zinc-100 hover:no-underline'>
@@ -254,7 +303,8 @@ export function ArtistPreviewView({
               <span>Metadata</span>
               {metadataChangeCount > 0 && (
                 <span className='text-xs text-yellow-400'>
-                  ({metadataChangeCount} change{metadataChangeCount !== 1 ? 's' : ''})
+                  ({metadataChangeCount} change
+                  {metadataChangeCount !== 1 ? 's' : ''})
                 </span>
               )}
             </div>
@@ -275,7 +325,8 @@ export function ArtistPreviewView({
               <span>External IDs</span>
               {externalIdChangeCount > 0 && (
                 <span className='text-xs text-yellow-400'>
-                  ({externalIdChangeCount} change{externalIdChangeCount !== 1 ? 's' : ''})
+                  ({externalIdChangeCount} change
+                  {externalIdChangeCount !== 1 ? 's' : ''})
                 </span>
               )}
             </div>

@@ -1,18 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
 import {
   useSearchCorrectionCandidatesQuery,
   type SearchCorrectionCandidatesQuery,
 } from '@/generated/graphql';
 import type { useCorrectionModalState } from '@/hooks/useCorrectionModalState';
+
 import type { CurrentDataViewAlbum } from '../CurrentDataView';
+
+import { ErrorState, categorizeError } from '../shared';
 import { SearchInputs } from './SearchInputs';
 import { SearchResults } from './SearchResults';
 import { SearchSkeleton } from './SearchSkeleton';
 
 // Extract types from GraphQL query result
-type GraphQLGroupedResult = SearchCorrectionCandidatesQuery['correctionSearch']['results'][number];
+type GraphQLGroupedResult =
+  SearchCorrectionCandidatesQuery['correctionSearch']['results'][number];
 type GraphQLScoredResult = GraphQLGroupedResult['primaryResult'];
 
 export interface SearchViewProps {
@@ -61,7 +66,9 @@ export function SearchView({
 
   // Track whether search has been triggered (only true after first search submission)
   // If searchQuery exists in state, we're returning from preview and should auto-search
-  const [isSearchTriggered, setIsSearchTriggered] = useState(() => !!searchQuery);
+  const [isSearchTriggered, setIsSearchTriggered] = useState(
+    () => !!searchQuery
+  );
 
   // Use persisted query or fallback to album data
   const currentQuery = searchQuery ?? {
@@ -70,20 +77,23 @@ export function SearchView({
   };
 
   // GraphQL query - only enabled when search is triggered and query has content
-  const { data, isLoading, error, isFetching } = useSearchCorrectionCandidatesQuery(
-    {
-      input: {
-        albumId: album.id,
-        albumTitle: currentQuery.albumTitle,
-        artistName: currentQuery.artistName,
-        limit: 10,
-        offset: searchOffset,
+  const { data, isLoading, error, isFetching } =
+    useSearchCorrectionCandidatesQuery(
+      {
+        input: {
+          albumId: album.id,
+          albumTitle: currentQuery.albumTitle,
+          artistName: currentQuery.artistName,
+          limit: 10,
+          offset: searchOffset,
+        },
       },
-    },
-    {
-      enabled: isSearchTriggered && !!(currentQuery.albumTitle || currentQuery.artistName),
-    }
-  );
+      {
+        enabled:
+          isSearchTriggered &&
+          !!(currentQuery.albumTitle || currentQuery.artistName),
+      }
+    );
 
   // Extract results from GraphQL response
   const results = data?.correctionSearch?.results ?? [];
@@ -120,19 +130,36 @@ export function SearchView({
   // Loading more indicator (pagination)
   const isLoadingMore = isFetching && searchOffset > 0;
 
+  // Handle retry
+  const handleRetry = () => {
+    // Re-trigger the search with the same query
+    if (searchQuery) {
+      handleSearch(searchQuery);
+    }
+  };
+
   // Error state
   if (error && isSearchTriggered) {
+    const errorType = categorizeError(error);
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : 'Search failed. Please try again.';
+
     return (
-      <div className="space-y-4">
+      <div className='space-y-4'>
         <SearchInputs
           initialAlbumTitle={currentQuery.albumTitle}
           initialArtistName={currentQuery.artistName}
           onSearch={handleSearch}
           isLoading={false}
         />
-        <div className="p-4 text-center text-red-400 border border-red-900/30 rounded-lg bg-red-900/10">
-          Search failed. Please try again.
-        </div>
+        <ErrorState
+          message={errorMessage}
+          type={errorType}
+          onRetry={handleRetry}
+          isRetrying={isFetching}
+        />
       </div>
     );
   }
@@ -143,7 +170,7 @@ export function SearchView({
   }
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       <SearchInputs
         initialAlbumTitle={currentQuery.albumTitle}
         initialArtistName={currentQuery.artistName}
@@ -153,7 +180,7 @@ export function SearchView({
 
       {/* Initial state - before first search */}
       {!isSearchTriggered && (
-        <div className="p-6 text-center text-zinc-400 border border-dashed border-zinc-700 rounded-lg">
+        <div className='p-6 text-center text-zinc-400 border border-dashed border-zinc-700 rounded-lg'>
           Search MusicBrainz for the correct album data
         </div>
       )}

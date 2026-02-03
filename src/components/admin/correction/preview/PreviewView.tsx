@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 
+import { ErrorState, categorizeError } from '../shared';
 import { PreviewSkeleton } from './PreviewSkeleton';
 import { CoverArtComparison } from './CoverArtComparison';
 import { FieldComparisonList } from './FieldComparisonList';
@@ -56,19 +57,20 @@ export interface PreviewViewProps {
  *   - External IDs: MusicBrainz, Spotify, Discogs IDs
  * - Footer: "Apply This Match" button to proceed to apply step
  */
-export function PreviewView({ 
-  albumId, 
+export function PreviewView({
+  albumId,
   releaseGroupMbid,
   onApplyClick,
   onPreviewLoaded,
 }: PreviewViewProps) {
-  const { data, isLoading, error } = useGetCorrectionPreviewQuery(
-    { input: { albumId, releaseGroupMbid } },
-    {
-      enabled: Boolean(albumId && releaseGroupMbid),
-      staleTime: 5 * 60 * 1000, // Cache preview for 5 minutes
-    }
-  );
+  const { data, isLoading, error, refetch, isFetching } =
+    useGetCorrectionPreviewQuery(
+      { input: { albumId, releaseGroupMbid } },
+      {
+        enabled: Boolean(albumId && releaseGroupMbid),
+        staleTime: 5 * 60 * 1000, // Cache preview for 5 minutes
+      }
+    );
 
   // Notify parent when preview data loads
   useEffect(() => {
@@ -121,16 +123,18 @@ export function PreviewView({
 
   // Error state
   if (error) {
+    const errorType = categorizeError(error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Failed to load preview data';
+
     return (
       <div className='flex items-center justify-center py-12'>
-        <div className='text-center'>
-          <p className='text-red-400 font-medium'>
-            Failed to load preview data
-          </p>
-          <p className='text-sm text-zinc-500 mt-1'>
-            {error instanceof Error ? error.message : 'Unknown error occurred'}
-          </p>
-        </div>
+        <ErrorState
+          message={errorMessage}
+          type={errorType}
+          onRetry={() => refetch()}
+          isRetrying={isFetching}
+        />
       </div>
     );
   }
@@ -292,11 +296,7 @@ export function PreviewView({
       {/* Footer: Apply button */}
       {onApplyClick && (
         <div className='flex justify-end pt-4 border-t border-zinc-700'>
-          <Button
-            onClick={onApplyClick}
-            variant='primary'
-            className='gap-2'
-          >
+          <Button onClick={onApplyClick} variant='primary' className='gap-2'>
             <CheckCircle className='h-4 w-4' />
             Apply This Match
           </Button>
