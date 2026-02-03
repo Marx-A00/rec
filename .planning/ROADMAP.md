@@ -21,8 +21,8 @@ This roadmap delivers an admin data correction feature that lets administrators 
 - [x] **Phase 8: Preview UI** - Side-by-side comparison with field highlighting
 - [x] **Phase 9: Apply UI** - Field selection, confirmation, and success feedback
 - [x] **Phase 10: Manual Edit** - Direct field editing without external search
-- [ ] **Phase 11: Artist Correction** - Same workflow adapted for artists
-- [ ] **Phase 12: Polish & Recovery** - Error handling, re-enrichment triggers, and edge cases
+- [x] **Phase 11: Artist Correction** - Same workflow adapted for artists
+- [x] **Phase 12: Polish & Recovery** - Error handling, re-enrichment triggers, and edge cases
 
 ## Phase Details
 
@@ -245,10 +245,10 @@ Plans:
 
 Plans:
 
-- [ ] 11-01-PLAN.md — Artist search service with MusicBrainz integration
-- [ ] 11-02-PLAN.md — Artist preview service with field diff engine
-- [ ] 11-03-PLAN.md — Artist apply service and GraphQL schema extension
-- [ ] 11-04-PLAN.md — Artist correction modal UI and entry point
+- [x] 11-01-PLAN.md — Artist search service with MusicBrainz integration
+- [x] 11-02-PLAN.md — Artist preview service with field diff engine
+- [x] 11-03-PLAN.md — Artist apply service and GraphQL schema extension
+- [x] 11-04-PLAN.md — Artist correction modal UI and entry point
 
 ### Phase 12: Polish & Recovery
 
@@ -266,11 +266,10 @@ Plans:
 
 Plans:
 
-- [ ] 12-01: Error state components and messaging
-- [ ] 12-02: Loading indicators and skeleton states
-- [ ] 12-03: Re-enrichment trigger integration
-- [ ] 12-04: Keyboard shortcuts and accessibility
-- [ ] 12-05: Mobile responsive adjustments
+- [x] 12-01-PLAN.md — Error state components and messaging
+- [x] 12-02-PLAN.md — Loading indicators and skeleton states
+- [x] 12-03-PLAN.md — Re-enrichment trigger integration
+- [x] 12-04-PLAN.md — Keyboard shortcuts and accessibility
 
 ## Progress
 
@@ -289,8 +288,8 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 8. Preview UI                  | 3/3            | Complete    | 2026-01-26 |
 | 9. Apply UI                    | 3/3            | Complete    | 2026-01-26 |
 | 10. Manual Edit                | 3/3            | Complete    | 2026-01-27 |
-| 11. Artist Correction          | 0/4            | Not started | -          |
-| 12. Polish & Recovery          | 0/5            | Not started | -          |
+| 11. Artist Correction          | 4/4            | Complete    | 2026-02-03 |
+| 12. Polish & Recovery          | 4/4            | Complete    | 2026-02-03 |
 
-**Total Plans:** 39
+**Total Plans:** 37
 **Total Requirements Covered:** 35/35
