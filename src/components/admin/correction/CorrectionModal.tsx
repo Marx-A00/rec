@@ -19,7 +19,8 @@ import {
   useApplyCorrectionMutation,
   useManualCorrectionApplyMutation,
   useTriggerAlbumEnrichmentMutation,
-  EnrichmentPriority,} from '@/generated/graphql';
+  EnrichmentPriority,
+} from '@/generated/graphql';
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import Toast, { useToast } from '@/components/ui/toast';
 
@@ -175,13 +176,14 @@ export function CorrectionModal({
                 onSuccess: () => {
                   showToast('Enrichment queued', 'success');
                 },
-                onError: (error) => {
+                onError: error => {
                   console.error('Failed to queue enrichment:', error);
                   // Don't show toast - correction already succeeded
                 },
               }
             );
-          }        } else {
+          }
+        } else {
           showToast('Correction applied successfully', 'success');
         }
 
@@ -465,7 +467,10 @@ export function CorrectionModal({
   };
 
   // Handle apply action from ApplyView
-  const handleApply = (selections: UIFieldSelections, triggerEnrichment?: boolean) => {
+  const handleApply = (
+    selections: UIFieldSelections,
+    triggerEnrichment?: boolean
+  ) => {
     if (!albumId || !previewData) return;
 
     // Store enrichment preference for onSuccess callback

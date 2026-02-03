@@ -138,7 +138,9 @@ export function ApplyView({
             <Checkbox
               id='trigger-enrichment'
               checked={triggerEnrichment}
-              onCheckedChange={(checked) => setTriggerEnrichment(checked === true)}
+              onCheckedChange={checked =>
+                setTriggerEnrichment(checked === true)
+              }
             />
             <label
               htmlFor='trigger-enrichment'

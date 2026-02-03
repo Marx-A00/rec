@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, CheckCircle, Search } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -23,6 +23,7 @@ import Toast, { useToast } from '@/components/ui/toast';
 
 import { ModalSkeleton } from '../shared';
 import { StepIndicator } from '../StepIndicator';
+
 import { ArtistCurrentDataView } from './ArtistCurrentDataView';
 import { ArtistSearchView } from './search/ArtistSearchView';
 import { ArtistPreviewView } from './preview/ArtistPreviewView';
@@ -151,6 +152,29 @@ export function ArtistCorrectionModal({
       );
     },
   });
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if typing in an input or textarea
+      const target = e.target as HTMLElement;
+      const isTyping =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable;
+
+      // Escape closes modal (works with Radix Dialog's built-in handler)
+      if (e.key === 'Escape' && !isTyping) {
+        handleClose();
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open]);
 
   const handleClose = () => {
     clearState();
