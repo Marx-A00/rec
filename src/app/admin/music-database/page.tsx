@@ -44,7 +44,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ClearableInput } from '@/components/ui/ClearableInput';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -111,6 +111,7 @@ import { CorrectionModal } from '@/components/admin/correction/CorrectionModal';
 import { ArtistCorrectionModal } from '@/components/admin/correction/artist/ArtistCorrectionModal';
 import { EnrichmentLogTable } from '@/components/admin/EnrichmentLogTable';
 import { EnrichmentPreviewResults } from '@/components/admin/EnrichmentPreviewResults';
+import { MusicDatabaseTableSkeleton } from '@/components/admin/MusicDatabaseTableSkeleton';
 
 interface AlbumSearchResult {
   id: string;
@@ -1494,17 +1495,18 @@ export default function MusicDatabasePage() {
           <div className='space-y-4'>
             <div className='flex gap-2'>
               <div className='relative flex-1'>
-                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 h-4 w-4' />
-                <Input
+                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 h-4 w-4 z-10' />
+                <ClearableInput
                   placeholder={`Search ${activeTab}...`}
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
+                  onClear={() => setSearchQuery('')}
                   className='pl-10 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500'
                 />
               </div>
               <div className='relative flex-1'>
-                <Hash className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 h-4 w-4' />
-                <Input
+                <Hash className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 h-4 w-4 z-10' />
+                <ClearableInput
                   placeholder='Or search by ID...'
                   value={idSearch}
                   onChange={e => {
@@ -1515,6 +1517,7 @@ export default function MusicDatabasePage() {
                       setSearchQuery('');
                     }
                   }}
+                  onClear={() => setIdSearch('')}
                   className='pl-10 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500 font-mono text-sm'
                 />
               </div>
@@ -1966,9 +1969,12 @@ export default function MusicDatabasePage() {
                   ))}
                 </TableBody>
               </Table>
-              {displayAlbums.length === 0 && !loading && (
+              {albumsLoading && (
+                <MusicDatabaseTableSkeleton type='albums' rows={10} />
+              )}
+              {displayAlbums.length === 0 && !albumsLoading && (
                 <div className='text-center py-8 text-zinc-500'>
-                  {searchQuery ? 'No albums found' : 'Loading albums...'}
+                  No albums found
                 </div>
               )}
             </CardContent>
@@ -2208,9 +2214,12 @@ export default function MusicDatabasePage() {
                   ))}
                 </TableBody>
               </Table>
-              {displayArtists.length === 0 && !loading && (
+              {artistsLoading && (
+                <MusicDatabaseTableSkeleton type='artists' rows={10} />
+              )}
+              {displayArtists.length === 0 && !artistsLoading && (
                 <div className='text-center py-8 text-zinc-500'>
-                  {searchQuery ? 'No artists found' : 'Loading artists...'}
+                  No artists found
                 </div>
               )}
             </CardContent>
@@ -2280,9 +2289,12 @@ export default function MusicDatabasePage() {
                   ))}
                 </TableBody>
               </Table>
-              {displayTracks.length === 0 && !loading && (
+              {tracksLoading && (
+                <MusicDatabaseTableSkeleton type='tracks' rows={10} />
+              )}
+              {displayTracks.length === 0 && !tracksLoading && (
                 <div className='text-center py-8 text-zinc-500'>
-                  {searchQuery ? 'No tracks found' : 'Loading tracks...'}
+                  No tracks found
                 </div>
               )}
             </CardContent>

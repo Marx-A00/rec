@@ -45,6 +45,11 @@ export default function SimpleSearchBar({
     setQuery(value);
   }, []);
 
+  // Handle clear button click
+  const handleClear = useCallback(() => {
+    setQuery('');
+  }, []);
+
   // Handle Enter key to navigate to search page with type parameter
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -123,6 +128,7 @@ export default function SimpleSearchBar({
               value={query}
               onValueChange={handleValueChange}
               onKeyDown={handleKeyDown}
+              onClear={handleClear}
               className='h-9 text-white placeholder:text-zinc-400'
             />
           </div>

@@ -3,7 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { Search } from 'lucide-react';
 
-import { Input } from '@/components/ui/input';
+import { ClearableInput } from '@/components/ui/ClearableInput';
 import { Button } from '@/components/ui/button';
 
 export interface SearchInputsProps {
@@ -52,18 +52,20 @@ export function SearchInputs({
 
   return (
     <form onSubmit={handleSubmit} className='space-y-3'>
-      <Input
+      <ClearableInput
         type='text'
         placeholder='Album title'
         value={albumTitle}
         onChange={e => setAlbumTitle(e.target.value)}
+        onClear={() => setAlbumTitle('')}
         aria-label='Album title'
       />
-      <Input
+      <ClearableInput
         type='text'
         placeholder='Artist name'
         value={artistName}
         onChange={e => setArtistName(e.target.value)}
+        onClear={() => setArtistName('')}
         aria-label='Artist name'
       />
       <Button
