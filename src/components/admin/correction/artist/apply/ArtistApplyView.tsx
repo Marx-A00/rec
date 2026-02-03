@@ -31,7 +31,7 @@ export interface UIArtistFieldSelections {
 
 interface ArtistApplyViewProps {
   preview: ArtistCorrectionPreview;
-  onApply: (selections: UIArtistFieldSelections) => void;
+  onApply: (selections: UIArtistFieldSelections, triggerEnrichment?: boolean) => void;
   onBack: () => void;
   isApplying?: boolean;
   error?: Error | null;
@@ -166,6 +166,9 @@ export function ArtistApplyView({
     createDefaultSelections(preview)
   );
   const [showErrorDetails, setShowErrorDetails] = useState(false);
+  
+  // Re-enrichment checkbox state
+  const [triggerEnrichment, setTriggerEnrichment] = useState(false);
 
   // Group diffs by category
   const metadataFields = [
@@ -194,7 +197,7 @@ export function ArtistApplyView({
 
   const handleApply = () => {
     if (totalSelected === 0 || isApplying) return;
-    onApply(selections);
+    onApply(selections, triggerEnrichment);
   };
 
   const updateMetadata = (
@@ -352,6 +355,21 @@ export function ArtistApplyView({
               </div>
             </div>
           )}
+
+          {/* Re-enrichment checkbox */}
+          <div className='flex items-center gap-2'>
+            <Checkbox
+              id='trigger-enrichment-artist'
+              checked={triggerEnrichment}
+              onCheckedChange={(checked) => setTriggerEnrichment(checked === true)}
+            />
+            <label
+              htmlFor='trigger-enrichment-artist'
+              className='text-sm text-zinc-400 cursor-pointer'
+            >
+              Re-enrich from MusicBrainz after applying
+            </label>
+          </div>
 
           {/* Apply button */}
           <div className='flex justify-end'>

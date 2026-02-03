@@ -16,7 +16,8 @@ import { useArtistCorrectionModalState } from '@/hooks/useArtistCorrectionModalS
 import {
   useGetArtistDetailsQuery,
   useApplyArtistCorrectionMutation,
-  type Artist,
+  useTriggerArtistEnrichmentMutation,
+  EnrichmentPriority,  type Artist,
   type ArtistCorrectionPreview,
 } from '@/generated/graphql';
 import Toast, { useToast } from '@/components/ui/toast';
@@ -79,6 +80,8 @@ export function ArtistCorrectionModal({
   // Success animation state
   const [showAppliedState, setShowAppliedState] = useState(false);
 
+  // Store enrichment preference from ApplyView
+  const [shouldEnrich, setShouldEnrich] = useState(false);
   // Toast state
   const { toast, showToast, hideToast } = useToast();
 
@@ -94,6 +97,8 @@ export function ArtistCorrectionModal({
   const artistData = data?.artist;
 
   // Apply mutation
+  // Enrichment mutation for re-enriching after correction
+  const enrichMutation = useTriggerArtistEnrichmentMutation();
   const applyMutation = useApplyArtistCorrectionMutation({
     onSuccess: response => {
       if (response.artistCorrectionApply.success) {
@@ -126,6 +131,24 @@ export function ArtistCorrectionModal({
 
         showToast(message, 'success');
 
+        // Queue enrichment if requested
+        if (shouldEnrich && artistId) {
+          enrichMutation.mutate(
+            {
+              id: artistId,
+              priority: EnrichmentPriority.High,
+            },
+            {
+              onSuccess: () => {
+                showToast('Enrichment queued', 'success');
+              },
+              onError: (error) => {
+                console.error('Failed to queue enrichment:', error);
+                // Don't show toast - correction already succeeded
+              },
+            }
+          );
+        }
         // Invalidate artist queries
         if (artistId) {
           queryClient.invalidateQueries({ queryKey: ['artist', artistId] });
@@ -206,8 +229,14 @@ export function ArtistCorrectionModal({
   };
 
   // Handle apply action from ApplyView
-  const handleApply = (selections: UIArtistFieldSelections) => {
+  const handleApply = (
+    selections: UIArtistFieldSelections,
+    triggerEnrichment?: boolean
+  ) => {
     if (!artistId || !previewData || !selectedArtistMbid) return;
+
+    // Store enrichment preference for onSuccess callback
+    setShouldEnrich(triggerEnrichment ?? false);
 
     // Get expectedUpdatedAt from current artist
     const expectedUpdatedAt = artistData?.updatedAt
