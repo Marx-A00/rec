@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, CheckCircle, Pencil, Search } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -18,7 +18,8 @@ import {
   DataQuality,
   useApplyCorrectionMutation,
   useManualCorrectionApplyMutation,
-} from '@/generated/graphql';
+  useTriggerAlbumEnrichmentMutation,
+  EnrichmentPriority,} from '@/generated/graphql';
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import Toast, { useToast } from '@/components/ui/toast';
 
@@ -111,6 +112,8 @@ export function CorrectionModal({
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
+  // Store enrichment preference from ApplyView
+  const [shouldEnrich, setShouldEnrich] = useState(false);
   // Toast state
   const { toast, showToast, hideToast } = useToast();
 
@@ -125,6 +128,8 @@ export function CorrectionModal({
 
   const albumData = data?.album;
 
+  // Enrichment mutation for re-enriching after correction
+  const enrichMutation = useTriggerAlbumEnrichmentMutation();
   // Apply mutation (search mode)
   const applyMutation = useApplyCorrectionMutation({
     onSuccess: response => {
@@ -158,7 +163,25 @@ export function CorrectionModal({
           }
 
           showToast(message, 'success');
-        } else {
+
+          // Queue enrichment if requested
+          if (shouldEnrich && albumId) {
+            enrichMutation.mutate(
+              {
+                id: albumId,
+                priority: EnrichmentPriority.High,
+              },
+              {
+                onSuccess: () => {
+                  showToast('Enrichment queued', 'success');
+                },
+                onError: (error) => {
+                  console.error('Failed to queue enrichment:', error);
+                  // Don't show toast - correction already succeeded
+                },
+              }
+            );
+          }        } else {
           showToast('Correction applied successfully', 'success');
         }
 
@@ -226,6 +249,29 @@ export function CorrectionModal({
       );
     },
   });
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if typing in an input or textarea
+      const target = e.target as HTMLElement;
+      const isTyping =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable;
+
+      // Escape closes modal (works with Radix Dialog's built-in handler)
+      if (e.key === 'Escape' && !isTyping) {
+        handleClose();
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open]);
 
   // Transform fetched data to CurrentDataViewAlbum format
   const album: CurrentDataViewAlbum | null = albumData
@@ -419,8 +465,11 @@ export function CorrectionModal({
   };
 
   // Handle apply action from ApplyView
-  const handleApply = (selections: UIFieldSelections) => {
+  const handleApply = (selections: UIFieldSelections, triggerEnrichment?: boolean) => {
     if (!albumId || !previewData) return;
+
+    // Store enrichment preference for onSuccess callback
+    setShouldEnrich(triggerEnrichment ?? false);
 
     // Convert UI selections to GraphQL format
     const graphqlSelections = toGraphQLSelections(selections, previewData);

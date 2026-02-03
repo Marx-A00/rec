@@ -13,6 +13,7 @@ import { ChevronLeft, Loader2 } from 'lucide-react';
 
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import { FieldSelectionForm } from './FieldSelectionForm';
 import { DiffSummary } from './DiffSummary';
@@ -24,7 +25,7 @@ interface ApplyViewProps {
   /** Correction preview data */
   preview: CorrectionPreview;
   /** Callback when admin confirms and applies correction */
-  onApply: (selections: UIFieldSelections) => void;
+  onApply: (selections: UIFieldSelections, triggerEnrichment?: boolean) => void;
   /** Callback to return to preview step */
   onBack: () => void;
   /** Whether apply mutation is in progress */
@@ -49,13 +50,16 @@ export function ApplyView({
   // Show/hide error details
   const [showErrorDetails, setShowErrorDetails] = useState(false);
 
+  // Re-enrichment checkbox state
+  const [triggerEnrichment, setTriggerEnrichment] = useState(false);
+
   // Calculate if any changes are selected
   const hasSelections = calculateHasSelections(selections, preview);
 
   // Handle apply button click
   const handleApply = () => {
     if (!hasSelections || isApplying) return;
-    onApply(selections);
+    onApply(selections, triggerEnrichment);
   };
 
   return (
@@ -128,6 +132,21 @@ export function ApplyView({
               </div>
             </div>
           )}
+
+          {/* Re-enrichment checkbox */}
+          <div className='flex items-center gap-2'>
+            <Checkbox
+              id='trigger-enrichment'
+              checked={triggerEnrichment}
+              onCheckedChange={(checked) => setTriggerEnrichment(checked === true)}
+            />
+            <label
+              htmlFor='trigger-enrichment'
+              className='text-sm text-zinc-400 cursor-pointer'
+            >
+              Re-enrich from MusicBrainz after applying
+            </label>
+          </div>
 
           {/* Apply button */}
           <div className='flex justify-end'>
