@@ -520,7 +520,7 @@ export function CorrectionModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className='sm:!max-w-[1100px] max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 [&>button]:text-zinc-500 [&>button]:hover:text-zinc-300'>
+      <DialogContent className='sm:!max-w-[1100px] max-h-[90vh] overflow-y-auto custom-scrollbar bg-zinc-900 border-zinc-800 [&>button]:text-zinc-500 [&>button]:hover:text-zinc-300'>
         <DialogHeader>
           <DialogTitle className='truncate pr-8 text-cosmic-latte'>
             {headerTitle}
