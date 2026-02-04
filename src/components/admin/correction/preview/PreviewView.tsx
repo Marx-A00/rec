@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 
 import { useGetCorrectionPreviewQuery } from '@/generated/graphql';
 import type {
@@ -58,6 +58,7 @@ export function PreviewView({
   releaseGroupMbid,
   onPreviewLoaded,
 }: PreviewViewProps) {
+  const [showOnlyChanges, setShowOnlyChanges] = useState(true);
   const { data, isLoading, error, refetch, isFetching } =
     useGetCorrectionPreviewQuery(
       { input: { albumId, releaseGroupMbid } },
@@ -174,28 +175,42 @@ export function PreviewView({
   return (
     <div className='space-y-6'>
       {/* Summary change counts */}
-      <div className='flex items-center gap-4 p-4 bg-zinc-800/50 rounded-lg text-sm'>
-        <span className='text-zinc-400'>Changes:</span>
-        {summary.changedFields > 0 && (
-          <span className='text-amber-400'>
-            {summary.changedFields} field
-            {summary.changedFields !== 1 ? 's' : ''} modified
-          </span>
-        )}
-        {summary.addedFields > 0 && (
-          <span className='text-green-400'>
-            {summary.addedFields} field{summary.addedFields !== 1 ? 's' : ''}{' '}
-            added
-          </span>
-        )}
-        {summary.hasTrackChanges && (
-          <span className='text-blue-400'>Track changes</span>
-        )}
-        {summary.changedFields === 0 &&
-          summary.addedFields === 0 &&
-          !summary.hasTrackChanges && (
-            <span className='text-zinc-500'>No changes detected</span>
+      <div className='flex flex-wrap items-center justify-between gap-3 p-4 bg-zinc-800/50 rounded-lg text-sm'>
+        <div className='flex flex-wrap items-center gap-4'>
+          <span className='text-zinc-400'>Changes:</span>
+          {summary.changedFields > 0 && (
+            <span className='text-amber-400'>
+              {summary.changedFields} field
+              {summary.changedFields !== 1 ? 's' : ''} modified
+            </span>
           )}
+          {summary.addedFields > 0 && (
+            <span className='text-green-400'>
+              {summary.addedFields} field{summary.addedFields !== 1 ? 's' : ''}{' '}
+              added
+            </span>
+          )}
+          {summary.hasTrackChanges && (
+            <span className='text-blue-400'>Track changes</span>
+          )}
+          {summary.changedFields === 0 &&
+            summary.addedFields === 0 &&
+            !summary.hasTrackChanges && (
+              <span className='text-zinc-500'>No changes detected</span>
+            )}
+        </div>
+        <button
+          type='button'
+          onClick={() => setShowOnlyChanges(prev => !prev)}
+          className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+            showOnlyChanges
+              ? 'bg-zinc-700 text-zinc-100 hover:bg-zinc-600'
+              : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-700'
+          }`}
+          aria-pressed={showOnlyChanges}
+        >
+          {showOnlyChanges ? 'Show all fields' : 'Only show changes'}
+        </button>
       </div>
 
       {/* Header: Cover art comparison */}
@@ -245,6 +260,7 @@ export function PreviewView({
             <FieldComparisonList
               fieldDiffs={basicInfoDiffs}
               artistDiff={artistDiff as ArtistCreditDiff}
+              showOnlyChanges={showOnlyChanges}
             />
           </AccordionContent>
         </AccordionItem>
@@ -283,7 +299,10 @@ export function PreviewView({
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <FieldComparisonList fieldDiffs={externalIdDiffs} />
+            <FieldComparisonList
+              fieldDiffs={externalIdDiffs}
+              showOnlyChanges={showOnlyChanges}
+            />
           </AccordionContent>
         </AccordionItem>
       </Accordion>

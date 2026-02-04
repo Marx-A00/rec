@@ -29,7 +29,7 @@ export function ComparisonLayout({ current, source }: ComparisonLayoutProps) {
       {/* Left column: Current data */}
       <div className='space-y-4'>
         <h3 className='text-sm font-medium text-zinc-400 uppercase tracking-wide'>
-          Current
+          REC DATABASE
         </h3>
         <div className='space-y-4'>{current}</div>
       </div>

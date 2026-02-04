@@ -24,6 +24,8 @@ import { InlineTextDiff } from './InlineTextDiff';
 export interface FieldComparisonProps {
   /** Field diff data from preview - comes from JSON scalar */
   diff: FieldDiff;
+  /** Whether to render unchanged fields */
+  showUnchanged?: boolean;
 }
 
 /**
@@ -133,9 +135,9 @@ function formatDateComponents(
  *
  * Returns null for UNCHANGED fields (they should be filtered out).
  */
-export function FieldComparison({ diff }: FieldComparisonProps) {
+export function FieldComparison({ diff, showUnchanged = false }: FieldComparisonProps) {
   // Skip unchanged fields - they shouldn't be rendered
-  if (diff.changeType === 'UNCHANGED') {
+  if (diff.changeType === 'UNCHANGED' && !showUnchanged) {
     return null;
   }
 

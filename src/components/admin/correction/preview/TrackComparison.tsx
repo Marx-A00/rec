@@ -143,7 +143,7 @@ export function TrackComparison({ trackDiffs, summary }: TrackComparisonProps) {
       <div className='grid grid-cols-2 gap-4 text-xs text-zinc-500 uppercase tracking-wide pb-1 border-b border-zinc-700'>
         <div className='flex'>
           <span className='w-8'>#</span>
-          <span className='flex-1'>Current</span>
+          <span className='flex-1'>REC DATABASE</span>
           <span className='w-14 text-right'>Time</span>
         </div>
         <div className='flex'>

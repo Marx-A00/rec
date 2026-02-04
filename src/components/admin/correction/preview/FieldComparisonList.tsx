@@ -22,6 +22,8 @@ export interface FieldComparisonListProps {
   fieldDiffs: FieldDiff[];
   /** Optional artist credit diff for special handling */
   artistDiff?: ArtistCreditDiff;
+  /** Whether to show only changed fields */
+  showOnlyChanges?: boolean;
 }
 
 /**
@@ -66,17 +68,20 @@ function getArtistChangeBadge(
 export function FieldComparisonList({
   fieldDiffs,
   artistDiff,
+  showOnlyChanges = true,
 }: FieldComparisonListProps) {
   // Filter out unchanged fields
   const changedFields = fieldDiffs.filter(
     diff => diff.changeType !== 'UNCHANGED'
   );
+  const visibleFields = showOnlyChanges ? changedFields : fieldDiffs;
 
   // Check if artist diff has changes
   const hasArtistChanges = artistDiff && artistDiff.changeType !== 'UNCHANGED';
+  const showArtist = showOnlyChanges ? hasArtistChanges : Boolean(artistDiff);
 
   // Empty state if no changes
-  if (changedFields.length === 0 && !hasArtistChanges) {
+  if (showOnlyChanges && changedFields.length === 0 && !hasArtistChanges) {
     return (
       <div className='py-4 text-center'>
         <p className='text-zinc-500 text-sm'>No field changes detected</p>
@@ -87,16 +92,20 @@ export function FieldComparisonList({
   return (
     <div className='space-y-1 divide-y divide-zinc-800'>
       <div className='grid grid-cols-2 gap-4 text-xs text-zinc-500 uppercase tracking-wide pb-1 border-b border-zinc-800'>
-        <div>Current</div>
+        <div>REC DATABASE</div>
         <div>MusicBrainz</div>
       </div>
       {/* Render changed field diffs */}
-      {changedFields.map(diff => (
-        <FieldComparison key={diff.field} diff={diff} />
+      {visibleFields.map(diff => (
+        <FieldComparison
+          key={diff.field}
+          diff={diff}
+          showUnchanged={!showOnlyChanges}
+        />
       ))}
 
       {/* Special artist credits display */}
-      {hasArtistChanges && artistDiff && (
+      {showArtist && artistDiff && (
         <div className='py-3 border-b border-zinc-800 last:border-b-0'>
           {/* Field label with change badge */}
           <div className='flex items-center gap-2 mb-1'>

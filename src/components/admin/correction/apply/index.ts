@@ -15,3 +15,4 @@ export { DiffSummary } from './DiffSummary';
 export { ApplyView } from './ApplyView';
 export type { UIFieldSelections } from './types';
 export { createDefaultUISelections, toGraphQLSelections } from './types';
+export { calculateHasSelections } from './ApplyView';

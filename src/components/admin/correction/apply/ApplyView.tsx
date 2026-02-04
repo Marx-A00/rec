@@ -9,58 +9,49 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, Loader2 } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 
 import { FieldSelectionForm } from './FieldSelectionForm';
 import { DiffSummary } from './DiffSummary';
-import { createDefaultUISelections, type UIFieldSelections } from './types';
+import { type UIFieldSelections } from './types';
 
 interface ApplyViewProps {
   /** Album being corrected */
   _albumId: string;
   /** Correction preview data */
   preview: CorrectionPreview;
-  /** Callback when admin confirms and applies correction */
-  onApply: (selections: UIFieldSelections, triggerEnrichment?: boolean) => void;
+  /** Current field selections */
+  selections: UIFieldSelections;
+  /** Callback when selections change */
+  onSelectionsChange: (selections: UIFieldSelections) => void;
   /** Callback to return to preview step */
   onBack: () => void;
-  /** Whether apply mutation is in progress */
-  isApplying?: boolean;
   /** Error from apply mutation, if any */
   error?: Error | null;
+  /** Re-enrichment checkbox state */
+  triggerEnrichment: boolean;
+  /** Callback when re-enrichment checkbox changes */
+  onTriggerEnrichmentChange: (checked: boolean) => void;
 }
 
 export function ApplyView({
   _albumId,
   preview,
-  onApply,
+  selections,
+  onSelectionsChange,
   onBack,
-  isApplying = false,
   error = null,
+  triggerEnrichment,
+  onTriggerEnrichmentChange,
 }: ApplyViewProps) {
-  // Initialize selections with all fields selected by default
-  const [selections, setSelections] = useState<UIFieldSelections>(() =>
-    createDefaultUISelections(preview)
-  );
-
   // Show/hide error details
   const [showErrorDetails, setShowErrorDetails] = useState(false);
 
-  // Re-enrichment checkbox state
-  const [triggerEnrichment, setTriggerEnrichment] = useState(false);
-
   // Calculate if any changes are selected
   const hasSelections = calculateHasSelections(selections, preview);
-
-  // Handle apply button click
-  const handleApply = () => {
-    if (!hasSelections || isApplying) return;
-    onApply(selections, triggerEnrichment);
-  };
 
   return (
     <div className='space-y-6'>
@@ -90,7 +81,7 @@ export function ApplyView({
           <FieldSelectionForm
             preview={preview}
             selections={selections}
-            onSelectionsChange={setSelections}
+            onSelectionsChange={onSelectionsChange}
           />
         </div>
 
@@ -139,7 +130,7 @@ export function ApplyView({
               id='trigger-enrichment'
               checked={triggerEnrichment}
               onCheckedChange={checked =>
-                setTriggerEnrichment(checked === true)
+                onTriggerEnrichmentChange(checked === true)
               }
             />
             <label
@@ -150,23 +141,7 @@ export function ApplyView({
             </label>
           </div>
 
-          {/* Apply button */}
-          <div className='flex justify-end'>
-            <Button
-              onClick={handleApply}
-              disabled={!hasSelections || isApplying}
-              className='min-w-[180px]'
-            >
-              {isApplying ? (
-                <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  Applying...
-                </>
-              ) : (
-                'Confirm & Apply'
-              )}
-            </Button>
-          </div>
+          {/* Apply button moved to sticky footer */}
         </div>
       </div>
     </div>
@@ -182,7 +157,7 @@ export function ApplyView({
  * - External IDs
  * - Cover art
  */
-function calculateHasSelections(
+export function calculateHasSelections(
   selections: UIFieldSelections,
   preview: CorrectionPreview
 ): boolean {

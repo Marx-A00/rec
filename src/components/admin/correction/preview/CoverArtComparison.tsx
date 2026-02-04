@@ -66,13 +66,13 @@ export function CoverArtComparison({
   return (
     <div className='space-y-3'>
       {/* Side-by-side images */}
-      <div className='flex gap-6'>
-        {/* Current cover art */}
+      <div className='grid grid-cols-2 gap-4'>
+        {/* REC database cover art */}
         <div className='space-y-2'>
           <h4 className='text-xs font-medium text-zinc-500 uppercase tracking-wide'>
-            Current
+            REC DATABASE
           </h4>
-          <div className='w-32 h-32 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700 flex-shrink-0'>
+          <div className='w-32 h-32 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700'>
             {currentUrl || currentCloudflareId ? (
               <AlbumImage
                 src={currentUrl}
@@ -90,12 +90,12 @@ export function CoverArtComparison({
           </div>
         </div>
 
-        {/* Source cover art */}
+        {/* MusicBrainz cover art */}
         <div className='space-y-2'>
           <h4 className='text-xs font-medium text-zinc-500 uppercase tracking-wide'>
             MusicBrainz
           </h4>
-          <div className='w-32 h-32 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700 flex-shrink-0'>
+          <div className='w-32 h-32 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700'>
             {sourceUrl ? (
               <AlbumImage
                 src={sourceUrl}

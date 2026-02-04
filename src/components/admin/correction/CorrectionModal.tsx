@@ -35,6 +35,8 @@ import { SearchView } from './search';
 import { PreviewView } from './preview';
 import {
   ApplyView,
+  calculateHasSelections,
+  createDefaultUISelections,
   toGraphQLSelections,
   type UIFieldSelections,
 } from './apply';
@@ -101,6 +103,8 @@ export function CorrectionModal({
   const [previewData, setPreviewData] = useState<CorrectionPreview | null>(
     null
   );
+  const [applySelections, setApplySelections] =
+    useState<UIFieldSelections | null>(null);
 
   // Manual edit preview data (separate from search preview)
   const [manualPreviewData, setManualPreviewData] =
@@ -342,8 +346,10 @@ export function CorrectionModal({
     clearState();
     clearManualEditState();
     setPreviewData(null);
+    setApplySelections(null);
     setManualPreviewData(null);
     setShowAppliedState(false);
+    setShouldEnrich(false);
     onClose();
   };
 
@@ -459,6 +465,8 @@ export function CorrectionModal({
   // Handle preview loaded callback
   const handlePreviewLoaded = (preview: CorrectionPreview) => {
     setPreviewData(preview);
+    setApplySelections(createDefaultUISelections(preview));
+    setShouldEnrich(false);
   };
 
   // Handle "Apply This Match" click from PreviewView
@@ -749,14 +757,18 @@ export function CorrectionModal({
                   <ApplyView
                     _albumId={albumId}
                     preview={previewData}
-                    onApply={handleApply}
+                    selections={
+                      applySelections ?? createDefaultUISelections(previewData)
+                    }
+                    onSelectionsChange={setApplySelections}
                     onBack={prevStep}
-                    isApplying={applyMutation.isPending}
                     error={
                       applyMutation.error instanceof Error
                         ? applyMutation.error
                         : null
                     }
+                    triggerEnrichment={shouldEnrich}
+                    onTriggerEnrichmentChange={setShouldEnrich}
                   />
                 )}
               </>
@@ -806,6 +818,26 @@ export function CorrectionModal({
                   !showAppliedState && (
                     <Button variant='primary' onClick={handleApplyClick}>
                       Apply This Match
+                    </Button>
+                  )}
+                {!isManualEditMode &&
+                  currentStep === 3 &&
+                  previewData &&
+                  !showAppliedState && (
+                    <Button
+                      variant='success'
+                      onClick={() => {
+                        if (!applySelections) return;
+                        handleApply(applySelections, shouldEnrich);
+                      }}
+                      className='text-white'
+                      disabled={
+                        !applySelections ||
+                        !calculateHasSelections(applySelections, previewData) ||
+                        applyMutation.isPending
+                      }
+                    >
+                      Confirm & Apply
                     </Button>
                   )}
               {/* Persistent mode-switch buttons (visible on all steps except apply/success) */}
