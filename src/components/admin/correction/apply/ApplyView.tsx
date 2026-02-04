@@ -79,7 +79,7 @@ export function ApplyView({
           className='flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-zinc-300'
         >
           <ChevronLeft className='h-4 w-4' />
-          Back to preview
+            Back to compare
         </button>
       </div>
 

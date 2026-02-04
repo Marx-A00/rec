@@ -213,16 +213,13 @@ export function FieldComparison({ diff }: FieldComparisonProps) {
         )}
       </div>
 
-      {/* Current value */}
-      <div className='text-sm'>
-        <span className='text-zinc-500 text-xs mr-2'>Current:</span>
-        <span className='text-zinc-400'>{currentDisplay}</span>
-      </div>
-
-      {/* Source value with diff */}
-      <div className='text-sm mt-1'>
-        <span className='text-zinc-500 text-xs mr-2'>Source:</span>
-        <span className='text-zinc-200'>{sourceDisplay}</span>
+      <div className='grid grid-cols-2 gap-4 text-sm'>
+        <div className='text-zinc-400 min-w-0 break-words'>
+          {currentDisplay}
+        </div>
+        <div className='text-zinc-200 min-w-0 break-words'>
+          {sourceDisplay}
+        </div>
       </div>
     </div>
   );

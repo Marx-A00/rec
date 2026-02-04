@@ -513,7 +513,7 @@ export function CorrectionModal({
   // Determine step labels based on mode
   const stepLabels = isManualEditMode
     ? ['Current Data', 'Edit', 'Apply']
-    : ['Current Data', 'Search', 'Preview', 'Apply'];
+      : ['Current Data', 'Search', 'Compare', 'Apply'];
 
   // Calculate max step for current mode
   const maxStep = isManualEditMode ? 2 : 3;
@@ -809,34 +809,27 @@ export function CorrectionModal({
                     </Button>
                   )}
               {/* Persistent mode-switch buttons (visible on all steps except apply/success) */}
-              {!showAppliedState &&
-                !(isManualEditMode && currentStep === 2) &&
-                !(!isManualEditMode && currentStep === 3) &&
-                album && (
-                  <>
-                    {(isManualEditMode || currentStep !== 1) && (
-                      <Button
-                        size='sm'
-                        onClick={handleEnterSearch}
-                        className='bg-red-600 hover:bg-red-700 text-white'
-                      >
-                        <Search className='w-3.5 h-3.5 mr-1.5' />
-                        Search MB
-                      </Button>
-                    )}
-                    {(!isManualEditMode || currentStep !== 1) && (
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        onClick={handleEnterManualEdit}
-                        className='border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                      >
-                        <Pencil className='w-3.5 h-3.5 mr-1.5' />
-                        Edit Manually
-                      </Button>
-                    )}
-                  </>
-                )}
+              {!showAppliedState && currentStep === 0 && album && (
+                <>
+                  <Button
+                    size='sm'
+                    onClick={handleEnterSearch}
+                    className='bg-red-600 hover:bg-red-700 text-white'
+                  >
+                    <Search className='w-3.5 h-3.5 mr-1.5' />
+                    Go To Search
+                  </Button>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={handleEnterManualEdit}
+                    className='border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                  >
+                    <Pencil className='w-3.5 h-3.5 mr-1.5' />
+                    Edit Manually
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </DialogFooter>

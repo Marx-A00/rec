@@ -86,6 +86,10 @@ export function FieldComparisonList({
 
   return (
     <div className='space-y-1 divide-y divide-zinc-800'>
+      <div className='grid grid-cols-2 gap-4 text-xs text-zinc-500 uppercase tracking-wide pb-1 border-b border-zinc-800'>
+        <div>Current</div>
+        <div>MusicBrainz</div>
+      </div>
       {/* Render changed field diffs */}
       {changedFields.map(diff => (
         <FieldComparison key={diff.field} diff={diff} />
@@ -109,24 +113,17 @@ export function FieldComparisonList({
             })()}
           </div>
 
-          {/* Current artist display */}
-          <div className='text-sm'>
-            <span className='text-zinc-500 text-xs mr-2'>Current:</span>
-            <span className='text-zinc-400'>
+          <div className='grid grid-cols-2 gap-4 text-sm'>
+            <div className='text-zinc-400 min-w-0 break-words'>
               {artistDiff.currentDisplay || '—'}
-            </span>
-          </div>
-
-          {/* Source artist display with optional diff */}
-          <div className='text-sm mt-1'>
-            <span className='text-zinc-500 text-xs mr-2'>Source:</span>
-            {artistDiff.nameDiff && artistDiff.nameDiff.length > 0 ? (
-              <InlineTextDiff parts={artistDiff.nameDiff as TextDiffPart[]} />
-            ) : (
-              <span className='text-zinc-200'>
-                {artistDiff.sourceDisplay || '—'}
-              </span>
-            )}
+            </div>
+            <div className='text-zinc-200 min-w-0 break-words'>
+              {artistDiff.nameDiff && artistDiff.nameDiff.length > 0 ? (
+                <InlineTextDiff parts={artistDiff.nameDiff as TextDiffPart[]} />
+              ) : (
+                artistDiff.sourceDisplay || '—'
+              )}
+            </div>
           </div>
         </div>
       )}

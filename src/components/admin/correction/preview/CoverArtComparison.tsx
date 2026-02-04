@@ -1,7 +1,5 @@
 'use client';
 
-import Image from 'next/image';
-
 import AlbumImage from '@/components/ui/AlbumImage';
 
 /**
@@ -99,13 +97,13 @@ export function CoverArtComparison({
           </h4>
           <div className='w-32 h-32 rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700 flex-shrink-0'>
             {sourceUrl ? (
-              <Image
+              <AlbumImage
                 src={sourceUrl}
                 alt='MusicBrainz cover art'
                 width={128}
                 height={128}
                 className='w-full h-full object-cover'
-                unoptimized
+                showSkeleton={false}
               />
             ) : (
               <div className='w-full h-full flex items-center justify-center text-zinc-600 text-xs'>

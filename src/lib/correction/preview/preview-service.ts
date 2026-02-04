@@ -134,7 +134,7 @@ export class CorrectionPreviewService {
     const coverArt = this.generateCoverArtDiff(
       currentAlbum,
       mbReleaseData,
-      releaseMbid
+      searchResult
     );
 
     // Generate summary statistics
@@ -399,17 +399,18 @@ export class CorrectionPreviewService {
   private generateCoverArtDiff(
     currentAlbum: Album,
     mbData: MBReleaseData | null,
-    sourceMbid: string
+    searchResult: ScoredSearchResult
   ): {
     currentUrl: string | null;
     sourceUrl: string | null;
     changeType: ChangeType;
   } {
     const currentUrl = currentAlbum.coverArtUrl;
-    // Cover Art Archive URL pattern: https://coverartarchive.org/release/{mbid}/front
-    const sourceUrl = mbData
-      ? `https://coverartarchive.org/release/${sourceMbid}/front`
-      : null;
+    const sourceUrl =
+      mbData && searchResult.releaseGroupMbid
+        ? searchResult.coverArtUrl ??
+          `https://coverartarchive.org/release-group/${searchResult.releaseGroupMbid}/front-250`
+        : null;
 
     const changeType = this.diffEngine.classifyChange(currentUrl, sourceUrl);
 

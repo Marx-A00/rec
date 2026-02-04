@@ -201,7 +201,7 @@ export function PreviewView({
       {/* Header: Cover art comparison */}
       <CoverArtComparison
         currentUrl={coverArt?.currentUrl ?? null}
-        sourceUrl={coverArt?.sourceUrl ?? sourceResult?.coverArtUrl ?? null}
+        sourceUrl={sourceResult?.coverArtUrl ?? coverArt?.sourceUrl ?? null}
         changeType={coverArt?.changeType ?? 'UNCHANGED'}
       />
 

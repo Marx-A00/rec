@@ -70,7 +70,7 @@ export function SearchInputs({
       />
       <Button
         type='submit'
-        variant='default'
+        variant='primary'
         className='w-full'
         disabled={isSearchDisabled}
       >

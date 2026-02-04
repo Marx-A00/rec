@@ -157,7 +157,9 @@ export function CurrentDataView({ album }: CurrentDataViewProps) {
           </AccordionTrigger>
           <AccordionContent>
             {album.tracks.length > 0 ? (
-              <TrackListing tracks={album.tracks} />
+              <div className='max-h-64 overflow-y-auto pr-2 custom-scrollbar'>
+                <TrackListing tracks={album.tracks} />
+              </div>
             ) : (
               <p className='text-zinc-500 text-sm'>No tracks available</p>
             )}
