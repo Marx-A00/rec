@@ -549,26 +549,6 @@ export function CorrectionModal({
           {currentStep === 0 && !isLoading && !hasError && album && (
             <div className='space-y-6'>
               <CurrentDataView album={album} />
-
-              {/* Action buttons for step 0 */}
-              <div className='flex gap-3 pt-4 border-t border-zinc-800'>
-                <Button
-                  variant='outline'
-                  onClick={handleEnterSearch}
-                  className='flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-                >
-                  <Search className='w-4 h-4 mr-2' />
-                  Search MusicBrainz
-                </Button>
-                <Button
-                  variant='outline'
-                  onClick={handleEnterManualEdit}
-                  className='flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-                >
-                  <Pencil className='w-4 h-4 mr-2' />
-                  Edit Manually
-                </Button>
-              </div>
             </div>
           )}
           {currentStep === 0 && !isLoading && !hasError && !album && (
@@ -626,7 +606,6 @@ export function CorrectionModal({
               <PreviewView
                 albumId={albumId}
                 releaseGroupMbid={selectedResultMbid}
-                onApplyClick={handleApplyClick}
                 onPreviewLoaded={handlePreviewLoaded}
               />
             )}
@@ -821,6 +800,14 @@ export function CorrectionModal({
                     Next
                   </Button>
                 )}
+                {!isManualEditMode &&
+                  currentStep === 2 &&
+                  previewData &&
+                  !showAppliedState && (
+                    <Button variant='primary' onClick={handleApplyClick}>
+                      Apply This Match
+                    </Button>
+                  )}
               {/* Persistent mode-switch buttons (visible on all steps except apply/success) */}
               {!showAppliedState &&
                 !(isManualEditMode && currentStep === 2) &&

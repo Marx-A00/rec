@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useEffect } from 'react';
-import { CheckCircle } from 'lucide-react';
 
 import { useGetCorrectionPreviewQuery } from '@/generated/graphql';
 import type {
@@ -15,8 +14,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
-
 import { ErrorState, categorizeError } from '../shared';
 
 import { PreviewSkeleton } from './PreviewSkeleton';
@@ -36,8 +33,6 @@ export interface PreviewViewProps {
   albumId: string;
   /** MusicBrainz release group MBID from search selection */
   releaseGroupMbid: string;
-  /** Callback when admin clicks "Apply This Match" to transition to apply step */
-  onApplyClick?: () => void;
   /** Callback when preview data loads successfully - exposes data to parent for ApplyView */
   onPreviewLoaded?: (preview: CorrectionPreview) => void;
 }
@@ -61,7 +56,6 @@ export interface PreviewViewProps {
 export function PreviewView({
   albumId,
   releaseGroupMbid,
-  onApplyClick,
   onPreviewLoaded,
 }: PreviewViewProps) {
   const { data, isLoading, error, refetch, isFetching } =
@@ -294,15 +288,6 @@ export function PreviewView({
         </AccordionItem>
       </Accordion>
 
-      {/* Footer: Apply button */}
-      {onApplyClick && (
-        <div className='flex justify-end pt-4 border-t border-zinc-700'>
-          <Button onClick={onApplyClick} variant='primary' className='gap-2'>
-            <CheckCircle className='h-4 w-4' />
-            Apply This Match
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

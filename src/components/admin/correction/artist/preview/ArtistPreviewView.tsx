@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useEffect } from 'react';
-import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 import {
   useGetArtistCorrectionPreviewQuery,
@@ -15,7 +15,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeletons';
 
 import { ErrorState, categorizeError } from '../../shared';
@@ -25,8 +24,6 @@ export interface ArtistPreviewViewProps {
   artistId: string;
   /** MusicBrainz artist ID from search selection */
   artistMbid: string;
-  /** Callback when admin clicks "Select Fields & Apply" */
-  onApplyClick?: () => void;
   /** Callback when preview data loads successfully */
   onPreviewLoaded?: (preview: ArtistCorrectionPreview) => void;
 }
@@ -132,7 +129,6 @@ function ArtistPreviewSkeleton() {
 export function ArtistPreviewView({
   artistId,
   artistMbid,
-  onApplyClick,
   onPreviewLoaded,
 }: ArtistPreviewViewProps) {
   const { data, isLoading, error, refetch, isFetching } =
@@ -341,15 +337,6 @@ export function ArtistPreviewView({
         </AccordionItem>
       </Accordion>
 
-      {/* Footer: Apply button */}
-      {onApplyClick && (
-        <div className='flex justify-end pt-4 border-t border-zinc-700'>
-          <Button onClick={onApplyClick} variant='primary' className='gap-2'>
-            <CheckCircle className='h-4 w-4' />
-            Select Fields & Apply
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

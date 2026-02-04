@@ -348,7 +348,6 @@ export function ArtistCorrectionModal({
               <ArtistPreviewView
                 artistId={artistId}
                 artistMbid={selectedArtistMbid}
-                onApplyClick={handleApplyClick}
                 onPreviewLoaded={handlePreviewLoaded}
               />
             )}
@@ -420,6 +419,11 @@ export function ArtistCorrectionModal({
               {!isFirstStep && currentStep !== 3 && (
                 <Button variant='outline' onClick={prevStep}>
                   Back
+                </Button>
+              )}
+              {currentStep === 2 && previewData && !showAppliedState && (
+                <Button variant='primary' onClick={handleApplyClick}>
+                  Select Fields & Apply
                 </Button>
               )}
             </div>
