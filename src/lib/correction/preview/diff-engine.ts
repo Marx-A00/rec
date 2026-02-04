@@ -253,9 +253,13 @@ export class DiffEngine {
       name: s.name,
     }));
 
-    // Classify overall change
-    const normalizedCurrent = TextNormalizer.normalize(currentDisplay);
-    const normalizedSource = TextNormalizer.normalize(sourceDisplay);
+    // Classify overall change by comparing artist names (not joinphrases)
+    const normalizedCurrentNames = current
+      .map(c => TextNormalizer.normalize(c.name))
+      .sort();
+    const normalizedSourceNames = sourceCredits
+      .map(s => TextNormalizer.normalize(s.name))
+      .sort();
 
     let changeType: ChangeType;
     if (!current.length && !source.length) {
@@ -264,7 +268,12 @@ export class DiffEngine {
       changeType = 'ADDED';
     } else if (current.length && !source.length) {
       changeType = 'REMOVED';
-    } else if (normalizedCurrent === normalizedSource) {
+    } else if (
+      normalizedCurrentNames.length === normalizedSourceNames.length &&
+      normalizedCurrentNames.every(
+        (name, i) => name === normalizedSourceNames[i]
+      )
+    ) {
       changeType = 'UNCHANGED';
     } else {
       changeType = 'CONFLICT';

@@ -153,20 +153,19 @@ export function MetadataSection({
 
   return (
     <AccordionItem value='metadata' className='border-zinc-700'>
-      <AccordionTrigger className='px-4 py-3 hover:bg-zinc-800/50'>
-        <div className='flex items-center gap-3 w-full'>
-          <Checkbox
-            checked={allSelected}
-            onCheckedChange={handleToggleAll}
-            onClick={e => e.stopPropagation()}
-            {...(indeterminate && { 'data-state': 'indeterminate' })}
-            className='shrink-0'
-          />
+      <div className='flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50'>
+        <Checkbox
+          checked={allSelected}
+          onCheckedChange={handleToggleAll}
+          {...(indeterminate && { 'data-state': 'indeterminate' })}
+          className='shrink-0'
+        />
+        <AccordionTrigger className='flex-1 py-0 hover:no-underline [&>svg]:ml-auto'>
           <span className='text-sm font-medium text-zinc-100'>
             Metadata ({totalCount} change{totalCount !== 1 ? 's' : ''})
           </span>
-        </div>
-      </AccordionTrigger>
+        </AccordionTrigger>
+      </div>
       <AccordionContent className='px-4 pb-4 pt-2'>
         <div className='space-y-3'>
           {changedFields.map(diff => {

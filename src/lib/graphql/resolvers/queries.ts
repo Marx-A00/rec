@@ -191,6 +191,7 @@ function transformMBReleaseData(mbData: {
           id: track.recording.id,
           title: track.recording.title,
           length: track.recording.length ?? null,
+          position: track.position, // Use track position for recording position
         },
       })),
     })),
@@ -2608,26 +2609,18 @@ export const queryResolvers: QueryResolvers = {
         });
       }
 
-      // Search for the specific release group to get scored result
+      // Fetch release group directly by MBID (no need to re-search)
       const searchService = getCorrectionSearchService();
-      const searchResponse = await searchService.searchWithScoring({
-        albumTitle: album.title,
-        artistName: album.artists[0]?.artist?.name,
-        limit: 50, // Fetch more to find the specific release group
-      });
-
-      // Find the matching release group result
-      const groupResult = searchResponse.results.find(
-        g => g.releaseGroupMbid === releaseGroupMbid
-      );
-
-      if (!groupResult) {
+      let scoredResult;
+      try {
+        scoredResult = await searchService.getByMbid(releaseGroupMbid);
+      } catch (error) {
         throw new GraphQLError('Release group not found: ' + releaseGroupMbid, {
           extensions: { code: 'NOT_FOUND' },
         });
       }
 
-      // Use the primary result's release group MBID as the release MBID for preview
+      // Use the release group MBID as the release MBID for preview
       // Note: In a more complete implementation, we would look up specific releases within the group
       const releaseMbid = releaseGroupMbid;
 
@@ -2635,7 +2628,7 @@ export const queryResolvers: QueryResolvers = {
       const previewService = getCorrectionPreviewService();
       const preview = await previewService.generatePreview(
         albumId,
-        groupResult.primaryResult,
+        scoredResult,
         releaseMbid
       );
 
@@ -2644,7 +2637,7 @@ export const queryResolvers: QueryResolvers = {
         albumId: albumId,
         albumTitle: album.title,
         albumUpdatedAt: album.updatedAt,
-        sourceResult: transformScoredResult(groupResult.primaryResult),
+        sourceResult: transformScoredResult(scoredResult),
         mbReleaseData: preview.mbReleaseData
           ? transformMBReleaseData(preview.mbReleaseData)
           : null,
@@ -2653,20 +2646,21 @@ export const queryResolvers: QueryResolvers = {
           changeType: preview.artistDiff.changeType,
           current: preview.artistDiff.current || [],
           source: preview.artistDiff.source || [],
+          currentDisplay:
+            (preview.artistDiff.current || []).map(ac => ac.name).join(', ') ||
+            'Unknown Artist',
+          sourceDisplay:
+            (preview.artistDiff.source || []).map(ac => ac.name).join(', ') ||
+            'Unknown Artist',
         },
-        trackDiff: {
-          tracks: preview.trackDiffs,
-          summary: {
-            matching: preview.trackSummary.matching,
-            modified: preview.trackSummary.modified,
-            added: preview.trackSummary.added,
-            removed: preview.trackSummary.removed,
-            total:
-              preview.trackSummary.matching +
-              preview.trackSummary.modified +
-              preview.trackSummary.added +
-              preview.trackSummary.removed,
-          },
+        trackDiffs: preview.trackDiffs || [],
+        trackSummary: {
+          totalCurrent: preview.trackSummary?.totalCurrent ?? 0,
+          totalSource: preview.trackSummary?.totalSource ?? 0,
+          matching: preview.trackSummary?.matching ?? 0,
+          modified: preview.trackSummary?.modified ?? 0,
+          added: preview.trackSummary?.added ?? 0,
+          removed: preview.trackSummary?.removed ?? 0,
         },
         coverArt: {
           currentUrl: preview.coverArt.currentUrl,

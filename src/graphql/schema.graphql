@@ -766,6 +766,10 @@ enum ApplyErrorCode {
   Data validation failed
   """
   VALIDATION_ERROR
+  """
+  Resource not found (release group, etc.)
+  """
+  NOT_FOUND
 }
 
 # =============================================

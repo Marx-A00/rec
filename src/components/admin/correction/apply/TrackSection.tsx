@@ -116,19 +116,18 @@ export function TrackSection({
 
   return (
     <AccordionItem value='tracks' className='border-zinc-700'>
-      <AccordionTrigger className='px-4 py-3 hover:bg-zinc-800/50'>
-        <div className='flex items-center gap-3 w-full'>
-          <Checkbox
-            checked={selections.tracks.applyAll}
-            onCheckedChange={handleToggleApplyAll}
-            onClick={e => e.stopPropagation()}
-            className='shrink-0'
-          />
+      <div className='flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50'>
+        <Checkbox
+          checked={selections.tracks.applyAll}
+          onCheckedChange={handleToggleApplyAll}
+          className='shrink-0'
+        />
+        <AccordionTrigger className='flex-1 py-0 hover:no-underline [&>svg]:ml-auto'>
           <span className='text-sm font-medium text-zinc-100'>
             Tracks ({selectedCount} selected / {totalCount} total)
           </span>
-        </div>
-      </AccordionTrigger>
+        </AccordionTrigger>
+      </div>
       <AccordionContent className='px-4 pb-4 pt-2'>
         <div className='space-y-3'>
           {/* Apply all checkbox */}

@@ -276,6 +276,8 @@ export enum ApplyErrorCode {
   AlbumNotFound = 'ALBUM_NOT_FOUND',
   /** Invalid field selection provided */
   InvalidSelection = 'INVALID_SELECTION',
+  /** Resource not found (release group, etc.) */
+  NotFound = 'NOT_FOUND',
   /** Album was modified since preview was generated */
   StaleData = 'STALE_DATA',
   /** Database transaction error */

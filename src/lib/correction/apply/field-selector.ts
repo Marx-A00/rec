@@ -312,7 +312,12 @@ export function buildTrackUpdateData(
   selections: FieldSelections
 ): Prisma.TrackUpdateInput | null {
   // Check if this specific track is selected for update
-  const isSelected = selections.tracks.get(existingTrack.id);
+  // UI sends position keys like "1-3" (disc-position), try that first
+  const positionKey = `${existingTrack.discNumber ?? 1}-${existingTrack.trackNumber}`;
+  const isSelected =
+    selections.tracks.get(positionKey) ??
+    selections.tracks.get(existingTrack.id) ??
+    false;
   if (!isSelected) {
     return null;
   }

@@ -3,11 +3,7 @@
 
 import { prisma } from '@/lib/prisma';
 
-import {
-  musicBrainzService,
-  verifyMbid,
-  hasIdProperty,
-} from '../../musicbrainz';
+import { musicBrainzService, hasIdProperty } from '../../musicbrainz';
 import type {
   MusicBrainzSearchArtistsJobData,
   MusicBrainzSearchReleasesJobData,
@@ -60,9 +56,9 @@ export async function handleSearchRecordings(
 export async function handleLookupArtist(data: MusicBrainzLookupArtistJobData) {
   const result = await musicBrainzService.getArtist(data.mbid, data.includes);
 
-  // Verify MBID wasn't redirected
-  if (hasIdProperty(result)) {
-    return verifyMbid(data.mbid, result);
+  // Log warning if MBID was redirected (but return raw data for consumers)
+  if (hasIdProperty(result) && result.id !== data.mbid) {
+    console.warn(`🔀 MBID redirect detected: ${data.mbid} -> ${result.id}`);
   }
 
   return result;
@@ -73,9 +69,9 @@ export async function handleLookupRelease(
 ) {
   const result = await musicBrainzService.getRelease(data.mbid, data.includes);
 
-  // Verify MBID wasn't redirected
-  if (hasIdProperty(result)) {
-    return verifyMbid(data.mbid, result);
+  // Log warning if MBID was redirected (but return raw data for consumers)
+  if (hasIdProperty(result) && result.id !== data.mbid) {
+    console.warn(`🔀 MBID redirect detected: ${data.mbid} -> ${result.id}`);
   }
 
   return result;
@@ -89,9 +85,9 @@ export async function handleLookupRecording(
     data.includes
   );
 
-  // Verify MBID wasn't redirected
-  if (hasIdProperty(result)) {
-    return verifyMbid(data.mbid, result);
+  // Log warning if MBID was redirected (but return raw data for consumers)
+  if (hasIdProperty(result) && result.id !== data.mbid) {
+    console.warn(`🔀 MBID redirect detected: ${data.mbid} -> ${result.id}`);
   }
 
   return result;
@@ -105,9 +101,9 @@ export async function handleLookupReleaseGroup(
     data.includes
   );
 
-  // Verify MBID wasn't redirected
-  if (hasIdProperty(result)) {
-    return verifyMbid(data.mbid, result);
+  // Log warning if MBID was redirected (but return raw data for consumers)
+  if (hasIdProperty(result) && result.id !== data.mbid) {
+    console.warn(`🔀 MBID redirect detected: ${data.mbid} -> ${result.id}`);
   }
 
   return result;

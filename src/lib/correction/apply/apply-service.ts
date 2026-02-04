@@ -459,7 +459,9 @@ export class ApplyCorrectionService {
         case 'ORPHANED': {
           // DB track not in MB - potentially delete
           if (match.dbTrack) {
+            const positionKey = `${match.dbTrack.discNumber ?? 1}-${match.dbTrack.trackNumber}`;
             const shouldDelete =
+              selections.tracks.get(positionKey) === true ||
               selections.tracks.get(match.dbTrack.id) === true;
             if (shouldDelete) {
               await tx.track.delete({ where: { id: match.dbTrack.id } });

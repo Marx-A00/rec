@@ -1,7 +1,7 @@
 // src/app/admin/music-database/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
@@ -112,6 +112,10 @@ import { ArtistCorrectionModal } from '@/components/admin/correction/artist/Arti
 import { EnrichmentLogTable } from '@/components/admin/EnrichmentLogTable';
 import { EnrichmentPreviewResults } from '@/components/admin/EnrichmentPreviewResults';
 import { MusicDatabaseTableSkeleton } from '@/components/admin/MusicDatabaseTableSkeleton';
+import {
+  AlbumExpandedSkeleton,
+  ArtistExpandedSkeleton,
+} from '@/components/admin/MusicDatabaseExpandedSkeleton';
 
 interface AlbumSearchResult {
   id: string;
@@ -234,14 +238,17 @@ export default function MusicDatabasePage() {
   const [correctionArtist, setCorrectionArtist] =
     useState<ArtistSearchResult | null>(null);
 
+  // Ref to track if we've processed the URL target (prevents re-render cascade)
+  const hasProcessedTargetId = useRef(false);
+
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-  // Auto-search and expand target row from URL parameter
+  // Auto-search target row from URL parameter (INITIAL LOAD ONLY)
+  // This only runs on initial page load from a deep link, not during in-session browsing
   useEffect(() => {
-    if (targetId) {
-      // Set the ID search to find this specific album/artist
-      setIdSearch(targetId);
-    }
+    if (!targetId || hasProcessedTargetId.current) return;
+    // Don't set hasProcessedTargetId here - let the auto-expand effect do it after data loads
+    setIdSearch(targetId);
   }, [targetId]);
 
   // Calculate skip for pagination
@@ -437,28 +444,29 @@ export default function MusicDatabasePage() {
     return displayTracks;
   };
 
-  // Auto-expand and scroll to target row ONLY after data is loaded
+  // Auto-expand and scroll to target row ONLY after data is loaded (runs once)
   useEffect(() => {
-    if (!targetId) return;
+    // Skip if no target or already processed (prevents re-render cascade from URL updates)
+    if (!targetId || hasProcessedTargetId.current) return;
 
     // Check if the target ID is in the loaded data
     const allItems = [...albums, ...artists];
     const targetExists = allItems.some((item: any) => item.id === targetId);
 
     // Only proceed if data is loaded and target exists
-    if (
-      targetExists &&
-      !expandedRows.has(targetId) &&
-      !albumsLoading &&
-      !artistsLoading
-    ) {
+    if (targetExists && !albumsLoading && !artistsLoading) {
+      // Mark as processed BEFORE making changes to prevent re-triggers
+      hasProcessedTargetId.current = true;
+
       console.log(
         'Target found in data, expanding and scrolling to:',
         targetId
       );
 
-      // Expand the target row
-      setExpandedRows(prev => new Set(prev).add(targetId));
+      // Only expand if not already expanded
+      if (!expandedRows.has(targetId)) {
+        setExpandedRows(prev => new Set(prev).add(targetId));
+      }
 
       // Use requestAnimationFrame for better timing with DOM updates
       requestAnimationFrame(() => {
@@ -874,20 +882,10 @@ export default function MusicDatabasePage() {
   const toggleExpanded = (id: string) => {
     setExpandedRows(prev => {
       const newSet = new Set(prev);
-      const isExpanding = !newSet.has(id);
-
       if (newSet.has(id)) {
         newSet.delete(id);
-        // Remove URL params when collapsing
-        window.history.replaceState({}, '', '/admin/music-database');
       } else {
         newSet.add(id);
-        // Update URL params when expanding
-        window.history.replaceState(
-          {},
-          '',
-          `/admin/music-database?id=${id}&type=${activeTab}`
-        );
       }
       return newSet;
     });
@@ -970,12 +968,7 @@ export default function MusicDatabasePage() {
     const albumDetails = data?.album;
 
     if (isLoading) {
-      return (
-        <div className='p-4 text-center text-zinc-400'>
-          <RefreshCcw className='h-5 w-5 animate-spin mx-auto mb-2' />
-          Loading details...
-        </div>
-      );
+      return <AlbumExpandedSkeleton />;
     }
 
     if (error || !albumDetails) {
@@ -1197,12 +1190,7 @@ export default function MusicDatabasePage() {
     const artistDetails = data?.artist;
 
     if (isLoading) {
-      return (
-        <div className='p-4 text-center text-zinc-400'>
-          <RefreshCcw className='h-5 w-5 animate-spin mx-auto mb-2' />
-          Loading details...
-        </div>
-      );
+      return <ArtistExpandedSkeleton />;
     }
 
     if (error || !artistDetails) {

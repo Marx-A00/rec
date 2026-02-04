@@ -29,7 +29,10 @@ import { isAdmin } from '@/lib/permissions';
 // Correction system imports
 import { getCorrectionSearchService } from '@/lib/correction/search-service';
 import { getCorrectionPreviewService } from '@/lib/correction/preview';
-import { applyCorrectionService, StaleDataError } from '@/lib/correction/apply';
+import {
+  applyCorrectionService,
+  StaleDataError,
+} from '@/lib/correction/apply';
 import type {
   FieldSelections,
   MetadataSelections,
@@ -2831,20 +2834,12 @@ export const mutationResolvers: MutationResolvers = {
         };
       }
 
-      // Search for the specific release group to get scored result
+      // Fetch release group directly by MBID (no need to re-search)
       const searchService = getCorrectionSearchService();
-      const searchResponse = await searchService.searchWithScoring({
-        albumTitle: album.title,
-        artistName: album.artists[0]?.artist?.name,
-        limit: 50,
-      });
-
-      // Find the matching release group result
-      const groupResult = searchResponse.results.find(
-        g => g.releaseGroupMbid === releaseGroupMbid
-      );
-
-      if (!groupResult) {
+      let scoredResult;
+      try {
+        scoredResult = await searchService.getByMbid(releaseGroupMbid);
+      } catch (error) {
         return {
           success: false,
           code: 'NOT_FOUND',
@@ -2856,7 +2851,7 @@ export const mutationResolvers: MutationResolvers = {
       const previewService = getCorrectionPreviewService();
       const preview = await previewService.generatePreview(
         albumId,
-        groupResult.primaryResult,
+        scoredResult,
         releaseGroupMbid
       );
 

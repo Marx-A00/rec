@@ -259,6 +259,93 @@ export class CorrectionSearchService {
   }
 
   /**
+   * Fetch a release group directly by MBID and convert to ScoredSearchResult.
+   * Use this instead of re-searching when you already know the MBID.
+   *
+   * @param releaseGroupMbid - The MusicBrainz release group ID
+   * @returns ScoredSearchResult with placeholder scoring (since we're not searching)
+   */
+  async getByMbid(releaseGroupMbid: string): Promise<ScoredSearchResult> {
+    // Fetch release group directly from MusicBrainz
+    const rgData = await this.mbService.getReleaseGroup(
+      releaseGroupMbid,
+      ['artist-credits'], // Include artist credits
+      PRIORITY_TIERS.ADMIN
+    );
+
+    if (!rgData) {
+      throw new Error(`Release group not found: ${releaseGroupMbid}`);
+    }
+
+    // Transform to CorrectionSearchResult format
+    const baseResult = this.mapLookupToResult(rgData);
+
+    // Return as ScoredSearchResult with placeholder scoring
+    // (scoring doesn't apply when fetching directly by MBID)
+    return {
+      ...baseResult,
+      normalizedScore: 1.0, // Perfect match since user selected it
+      displayScore: 100,
+      breakdown: {
+        titleScore: 1.0,
+        artistScore: 1.0,
+        yearScore: 1.0,
+        confidenceTier: 'high',
+      },
+      isLowConfidence: false,
+      scoringStrategy: 'normalized',
+    };
+  }
+
+  /**
+   * Map MusicBrainz release group lookup response to correction result format.
+   * Used for direct MBID lookups (different structure than search results).
+   *
+   * @param rg - MusicBrainz release group lookup response
+   * @returns Normalized correction search result with CAA URL
+   */
+  private mapLookupToResult(rg: {
+    id: string;
+    title: string;
+    disambiguation?: string;
+    'first-release-date'?: string;
+    'primary-type'?: string;
+    'secondary-types'?: string[];
+    'artist-credit'?: Array<{
+      name: string;
+      artist: { id: string; name: string };
+    }>;
+  }): CorrectionSearchResult {
+    // Extract artist credits from lookup format (uses 'artist-credit' not 'artistCredit')
+    const artistCredits: CorrectionArtistCredit[] = (
+      rg['artist-credit'] || []
+    ).map(ac => ({
+      mbid: ac.artist.id,
+      name: ac.name,
+    }));
+
+    // Build primary artist name from credits (comma-separated)
+    const primaryArtistName = artistCredits.map(ac => ac.name).join(', ');
+
+    // Compute CAA URL (250px thumbnail)
+    const coverArtUrl = `https://coverartarchive.org/release-group/${rg.id}/front-250`;
+
+    return {
+      releaseGroupMbid: rg.id,
+      title: rg.title,
+      disambiguation: rg.disambiguation,
+      artistCredits,
+      primaryArtistName: primaryArtistName || 'Unknown Artist',
+      firstReleaseDate: rg['first-release-date'],
+      primaryType: rg['primary-type'],
+      secondaryTypes: rg['secondary-types'],
+      mbScore: 100, // Not from search, so use max score
+      coverArtUrl,
+      source: 'musicbrainz',
+    };
+  }
+
+  /**
    * Map MusicBrainz release group to correction result format.
    *
    * @param rg - MusicBrainz release group search result

@@ -137,15 +137,11 @@ export class ArtistCorrectionPreviewService {
   private async fetchMBArtistData(artistMbid: string): Promise<MBArtistData> {
     const mbService = getQueuedMusicBrainzService();
 
-    const response = await mbService.getArtist(
+    const mbData = (await mbService.getArtist(
       artistMbid,
       ['aliases', 'tags'], // Include aliases and tags
       PRIORITY_TIERS.ADMIN
-    );
-
-    // Queue service returns { data, requestedMbid, returnedMbid, wasRedirected }
-    // Extract the actual artist data from the response
-    const mbData = (response as { data: MBArtistAPIResponse }).data;
+    )) as MBArtistAPIResponse;
 
     if (!mbData) {
       throw new Error(

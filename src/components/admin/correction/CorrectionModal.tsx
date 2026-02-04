@@ -480,7 +480,13 @@ export function CorrectionModal({
     const graphqlSelections = toGraphQLSelections(selections, previewData);
 
     // Extract expectedUpdatedAt from preview data for optimistic locking
-    const expectedUpdatedAt = previewData.currentAlbum.updatedAt;
+    // albumUpdatedAt is a GraphQL-level field added by the resolver (not in the service CorrectionPreview type)
+    const albumUpdatedAtStr = (
+      previewData as CorrectionPreview & { albumUpdatedAt?: string }
+    ).albumUpdatedAt;
+    const expectedUpdatedAt = albumUpdatedAtStr
+      ? new Date(albumUpdatedAtStr)
+      : (previewData.currentAlbum?.updatedAt ?? new Date());
 
     // Call mutation
     applyMutation.mutate({
@@ -814,6 +820,35 @@ export function CorrectionModal({
                   <Button variant='primary' onClick={nextStep}>
                     Next
                   </Button>
+                )}
+              {/* Persistent mode-switch buttons (visible on all steps except apply/success) */}
+              {!showAppliedState &&
+                !(isManualEditMode && currentStep === 2) &&
+                !(!isManualEditMode && currentStep === 3) &&
+                album && (
+                  <>
+                    {(isManualEditMode || currentStep !== 1) && (
+                      <Button
+                        size='sm'
+                        onClick={handleEnterSearch}
+                        className='bg-red-600 hover:bg-red-700 text-white'
+                      >
+                        <Search className='w-3.5 h-3.5 mr-1.5' />
+                        Search MB
+                      </Button>
+                    )}
+                    {(!isManualEditMode || currentStep !== 1) && (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={handleEnterManualEdit}
+                        className='border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                      >
+                        <Pencil className='w-3.5 h-3.5 mr-1.5' />
+                        Edit Manually
+                      </Button>
+                    )}
+                  </>
                 )}
             </div>
           </div>

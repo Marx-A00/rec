@@ -106,8 +106,12 @@ export class CorrectionPreviewService {
     // Fetch full MusicBrainz release data with tracks (high priority - admin action)
     const mbReleaseData = await this.fetchMBReleaseData(releaseMbid);
 
-    // Generate field diffs
-    const fieldDiffs = this.generateFieldDiffs(currentAlbum, mbReleaseData);
+    // Generate field diffs (pass release group MBID for musicbrainzId comparison)
+    const fieldDiffs = this.generateFieldDiffs(
+      currentAlbum,
+      mbReleaseData,
+      searchResult.releaseGroupMbid
+    );
 
     // Convert database artist relations to CorrectionArtistCredit format
     const currentArtistCredits = this.convertToArtistCredits(
@@ -194,21 +198,96 @@ export class CorrectionPreviewService {
   /**
    * Fetch full MusicBrainz release data with tracks via queue.
    * Uses ADMIN priority tier for immediate processing.
+   *
+   * Note: This accepts a release GROUP MBID (from search results), not a release MBID.
+   * It fetches the release group to find the first release, then fetches that release
+   * to get track information.
    */
   private async fetchMBReleaseData(
-    releaseMbid: string
+    releaseGroupMbid: string
   ): Promise<MBReleaseData | null> {
     try {
+      // First, fetch the release group to get the list of releases
+      const releaseGroup = (await this.mbService.getReleaseGroup(
+        releaseGroupMbid,
+        ['releases', 'artist-credits'],
+        PRIORITY_TIERS.ADMIN
+      )) as {
+        id: string;
+        title: string;
+        releases?: Array<{
+          id: string;
+          title: string;
+          date?: string;
+          status?: string;
+        }>;
+        'artist-credit'?: Array<{
+          name: string;
+          joinphrase?: string;
+          artist: {
+            id: string;
+            name: string;
+            'sort-name'?: string;
+            disambiguation?: string;
+          };
+        }>;
+      } | null;
+
+      if (!releaseGroup) {
+        console.error('Release group not found:', releaseGroupMbid);
+        return null;
+      }
+
+      // Find the best release (prefer official releases, then by date)
+      const releases = releaseGroup.releases || [];
+      if (releases.length === 0) {
+        console.warn('Release group has no releases:', releaseGroupMbid);
+        // Return basic data from release group without tracks
+        return {
+          id: releaseGroup.id,
+          title: releaseGroup.title,
+          date: undefined,
+          country: undefined,
+          barcode: undefined,
+          media: [],
+          artistCredit: (releaseGroup['artist-credit'] || []).map(ac => ({
+            name: ac.name,
+            joinphrase: ac.joinphrase || '',
+            artist: {
+              id: ac.artist.id,
+              name: ac.artist.name,
+              sortName: ac.artist['sort-name'],
+              disambiguation: ac.artist.disambiguation,
+            },
+          })),
+        };
+      }
+
+      // Sort releases: prefer official, then by date (oldest first for original release)
+      const sortedReleases = [...releases].sort((a, b) => {
+        // Prefer official releases
+        if (a.status === 'Official' && b.status !== 'Official') return -1;
+        if (b.status === 'Official' && a.status !== 'Official') return 1;
+        // Then by date (oldest first)
+        if (a.date && b.date) return a.date.localeCompare(b.date);
+        if (a.date) return -1;
+        if (b.date) return 1;
+        return 0;
+      });
+
+      const bestRelease = sortedReleases[0];
+
+      // Now fetch the full release data with tracks
       const data = (await this.mbService.getRelease(
-        releaseMbid,
-        ['artist-credits', 'media', 'recordings'], // Include tracks
+        bestRelease.id,
+        ['artist-credits', 'media', 'recordings'],
         PRIORITY_TIERS.ADMIN
       )) as MBReleaseAPIResponse;
 
       // Transform raw MusicBrainz data to MBReleaseData format
       return this.transformMBRelease(data);
     } catch (error) {
-      console.error('Failed to fetch MusicBrainz release:', error);
+      console.error('Failed to fetch MusicBrainz release data:', error);
       return null;
     }
   }
@@ -262,7 +341,8 @@ export class CorrectionPreviewService {
    */
   private generateFieldDiffs(
     currentAlbum: Album,
-    mbData: MBReleaseData | null
+    mbData: MBReleaseData | null,
+    releaseGroupMbid?: string
   ): FieldDiff[] {
     const diffs: FieldDiff[] = [];
 
@@ -301,12 +381,12 @@ export class CorrectionPreviewService {
       )
     );
 
-    // MusicBrainz ID (external ID change)
+    // MusicBrainz ID (use release group MBID, not release MBID)
     diffs.push(
       this.diffEngine.compareExternalId(
         'musicbrainzId',
         currentAlbum.musicbrainzId,
-        mbData?.id || null
+        releaseGroupMbid || null
       )
     );
 
