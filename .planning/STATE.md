@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-04)
 ## Current Position
 
 Phase: 13 of 14 (Album Correction Store)
-Plan: 2 of 3 (CorrectionModal and SearchView migrated)
-Status: In progress
-Last activity: 2026-02-04 — Completed 13-02-PLAN.md (CorrectionModal and SearchView migrated to Zustand)
+Plan: 3 of 3 (Phase complete)
+Status: Phase 13 complete
+Last activity: 2026-02-05 — Completed 13-03-PLAN.md (Child components migrated, legacy hook deleted)
 
-Progress: [██░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/5 plans (40%)
+Progress: [███░░░░░░░░░░░░░░░░░░░░░░░░░] 3/5 plans (60%)
 
 ## Performance Metrics
 
@@ -28,10 +28,17 @@ Progress: [██░░░░░░░░░░░░░░░░░░░░░
 **Milestone v1.1 (In Progress):**
 
 - Phases: 2 (13-14)
-- Plans: 5 (1 complete, 4 remaining)
+- Plans: 5 (3 complete, 2 remaining)
 - Requirements: 30/30 mapped
 - Estimated duration: 2-3 days (focused refactor)
-- Current velocity: 1 plan per 2 minutes
+- Current velocity: 3 plans in 6 minutes (2 min/plan average)
+
+**Phase 13 Complete:**
+
+- Plans: 3/3 (100%)
+- Duration: 6 minutes total
+- Tasks: 5 (all auto)
+- Commits: 5 (atomic per-task commits)
 
 ## Accumulated Context
 
@@ -52,26 +59,36 @@ Progress: [██░░░░░░░░░░░░░░░░░░░░░
 - StepIndicator stays prop-driven (reused by both modals, no store needed)
 
 **Plan 13-01 Decisions:**
-
-**Plan 13-02 Decisions:**
-- **ACHILD-01:** SearchView props reduced to album-only (all search state in store)
-- **AMODAL-03:** Mutation callbacks remain in CorrectionModal (orchestrate toast + store + queryClient)
-- **CLEAN-04:** StepIndicator stays prop-driven (reusable across modals, no store dependency)
-
 - **STORE-PERSIST:** Only 6 fields persist to sessionStorage (step, mode, searchQuery, searchOffset, selectedMbid, manualEditState); 7 transient fields excluded (previewData, applySelections, manualPreviewData, shouldEnrich, showAppliedState, pendingAction, showUnsavedDialog)
 - **STORE-FACTORY:** Factory pattern with Map cache instead of singleton for better encapsulation and cleanup
 - **ATOMIC-ACTIONS:** Multi-field updates in single set() call (selectResult, setPreviewLoaded, confirmUnsavedDiscard) to prevent intermediate states
 
+**Plan 13-02 Decisions:**
+- **AMODAL-01:** CorrectionModal initializes store on mount (createOrResetStore on albumId change)
+- **AMODAL-02:** Store reset on modal close keeps cache entry (no removeStore call)
+- **AMODAL-03:** Mutation callbacks remain in CorrectionModal (orchestrate toast + store + queryClient)
+- **ACHILD-01:** SearchView props reduced to album-only (all search state in store)
+- **CLEAN-04:** StepIndicator stays prop-driven (reusable across modals, no store dependency)
+
+**Plan 13-03 Decisions:**
+- **ACHILD-02:** PreviewView props reduced to { albumId: string } only
+- **ACHILD-03:** Preserve lastPreviewKeyRef infinite loop guard in PreviewView
+- **ACHILD-04:** ApplyView props reduced to { albumId: string; error?: Error | null }
+- **ACHILD-05:** ManualEditView props reduced to { album: CurrentDataViewAlbum } only
+- **ACHILD-06:** ManualEditView internal form state stays local (formState, errors, showValidationBanner)
+- **STORE-07:** Add cancelManualEdit action to store (returns to search mode step 0)
+- **CLEAN-01:** Delete useCorrectionModalState.ts after migration complete
+
 ### Pending Todos
 
-**Phase 13 (In Progress):**
+**Phase 13 (Complete):**
 
-1. ✅ Create useCorrectionStore with persist middleware (sessionStorage keyed by albumId)
-2. ✅ Refactor CorrectionModal to initialize/reset store on open/close
-3. ⏳ Refactor SearchView (✅), PreviewView, ApplyView, ManualEditView to read from store
-4. ⏳ Delete useCorrectionModalState.ts after verifying zero imports
+1. ✅ Create useCorrectionStore with persist middleware (13-01)
+2. ✅ Refactor CorrectionModal to initialize/reset store on open/close (13-02)
+3. ✅ Refactor SearchView (13-02), PreviewView, ApplyView, ManualEditView to read from store (13-03)
+4. ✅ Delete useCorrectionModalState.ts after verifying zero imports (13-03)
 
-**Phase 14:**
+**Phase 14 (Next):**
 
 1. Create useArtistCorrectionStore (simpler than album — no dual mode)
 2. Refactor ArtistCorrectionModal and child components
@@ -79,19 +96,32 @@ Progress: [██░░░░░░░░░░░░░░░░░░░░░
 
 ### Blockers/Concerns
 
-None. Zustand already in codebase (v5.0.8), patterns established. Store creation passed type checking with zero errors.
+None. Phase 13 complete with zero type errors, zero lint errors (existing warnings unrelated), zero any types introduced.
 
 ## Session Continuity
 
-Last session: 2026-02-04 19:58 UTC
-Stopped at: Completed 13-02-PLAN.md (CorrectionModal and SearchView migrated)
-Resume file: .planning/phases/13-album-correction-store/13-03-PLAN.md (next)
+Last session: 2026-02-05 02:04 UTC
+Stopped at: Completed Phase 13 (Album Correction Store)
+Resume file: .planning/phases/14-artist-correction-store/14-01-PLAN.md (next)
 
-**Next action:** Execute Phase 13 Plan 2 (refactor CorrectionModal to use store)
+**Next action:** Begin Phase 14 Plan 1 (create useArtistCorrectionStore with simpler state shape)
 
-**Store readiness:**
+**Milestone v1.1 Progress:**
 
-- `src/stores/useCorrectionStore.ts` created (478 lines)
-- Zero consumers yet (ready for Plan 02)
-- Export verification complete (11 exports)
-- Type checking passes
+- Phase 13: ✅ Complete (3/3 plans, 6 minutes)
+- Phase 14: ⏳ Next (2 plans remaining)
+- Estimated time to milestone completion: ~4 minutes
+
+Config:
+{
+  "mode": "yolo",
+  "depth": "comprehensive",
+  "parallelization": true,
+  "commit_docs": true,
+  "model_profile": "balanced",
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true
+  }
+}
