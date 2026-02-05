@@ -10,7 +10,7 @@ export interface StepIndicatorProps {
   /** Modal mode affects step labels and count */
   mode?: 'search' | 'manual';
   /** Step labels (optional override) */
-  steps?: string[];
+  steps?: readonly string[];
 }
 
 /**

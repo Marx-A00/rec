@@ -468,15 +468,23 @@ export function maxStep(state: CorrectionState): number {
   return state.mode === 'manual' ? 2 : 3;
 }
 
+// Pre-defined step label arrays to avoid creating new arrays on each selector call
+// (which would cause infinite re-renders with Zustand)
+const MANUAL_STEP_LABELS = ['Current Data', 'Edit', 'Apply'] as const;
+const SEARCH_STEP_LABELS = [
+  'Current Data',
+  'Search',
+  'Compare',
+  'Apply',
+] as const;
+
 /**
  * Get step labels for current mode.
  * - Search mode: ['Current Data', 'Search', 'Compare', 'Apply']
  * - Manual mode: ['Current Data', 'Edit', 'Apply']
  */
-export function stepLabels(state: CorrectionState): string[] {
-  return state.mode === 'manual'
-    ? ['Current Data', 'Edit', 'Apply']
-    : ['Current Data', 'Search', 'Compare', 'Apply'];
+export function stepLabels(state: CorrectionState): readonly string[] {
+  return state.mode === 'manual' ? MANUAL_STEP_LABELS : SEARCH_STEP_LABELS;
 }
 
 /**
