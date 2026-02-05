@@ -31,7 +31,10 @@ export interface UIArtistFieldSelections {
 
 interface ArtistApplyViewProps {
   preview: ArtistCorrectionPreview;
-  onApply: (selections: UIArtistFieldSelections, triggerEnrichment?: boolean) => void;
+  onApply: (
+    selections: UIArtistFieldSelections,
+    triggerEnrichment?: boolean
+  ) => void;
   onBack: () => void;
   isApplying?: boolean;
   error?: Error | null;
@@ -40,7 +43,7 @@ interface ArtistApplyViewProps {
 /**
  * Create default selections with changed fields selected.
  */
-function createDefaultSelections(
+export function createDefaultArtistSelections(
   preview: ArtistCorrectionPreview
 ): UIArtistFieldSelections {
   const metadataFields = [
@@ -163,10 +166,10 @@ export function ArtistApplyView({
   error = null,
 }: ArtistApplyViewProps) {
   const [selections, setSelections] = useState<UIArtistFieldSelections>(() =>
-    createDefaultSelections(preview)
+    createDefaultArtistSelections(preview)
   );
   const [showErrorDetails, setShowErrorDetails] = useState(false);
-  
+
   // Re-enrichment checkbox state
   const [triggerEnrichment, setTriggerEnrichment] = useState(false);
 
@@ -361,7 +364,9 @@ export function ArtistApplyView({
             <Checkbox
               id='trigger-enrichment-artist'
               checked={triggerEnrichment}
-              onCheckedChange={(checked) => setTriggerEnrichment(checked === true)}
+              onCheckedChange={checked =>
+                setTriggerEnrichment(checked === true)
+              }
             />
             <label
               htmlFor='trigger-enrichment-artist'
