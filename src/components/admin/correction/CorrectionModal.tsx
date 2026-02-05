@@ -178,10 +178,10 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
           showToast('Correction applied successfully', 'success');
         }
 
-        // Invalidate album queries
-        if (albumId) {
-          queryClient.invalidateQueries({ queryKey: ['album', albumId] });
-        }
+        // Invalidate album queries so table updates immediately
+        queryClient.invalidateQueries({ queryKey: ['album', albumId] });
+        queryClient.invalidateQueries({ queryKey: ['SearchAlbumsAdmin'] });
+        queryClient.invalidateQueries({ queryKey: ['GetAlbumDetailsAdmin'] });
 
         // Auto-close modal after 1.5s
         setTimeout(() => {
@@ -217,14 +217,14 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
           'success'
         );
 
-        // Invalidate album queries
-        if (albumId) {
-          queryClient.invalidateQueries({ queryKey: ['album', albumId] });
-        }
+        // Invalidate album queries so table updates immediately
+        queryClient.invalidateQueries({ queryKey: ['album', albumId] });
+        queryClient.invalidateQueries({ queryKey: ['SearchAlbumsAdmin'] });
+        queryClient.invalidateQueries({ queryKey: ['GetAlbumDetailsAdmin'] });
 
         // Auto-close modal after 1.5s
         setTimeout(() => {
-          if (albumId) clearCorrectionStoreCache(albumId);
+          clearCorrectionStoreCache(albumId);
           // Manual edit state cleared by store reset
           onClose();
         }, 1500);
