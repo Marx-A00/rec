@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-04)
 
 ## Current Position
 
-Phase: 13 (Album Correction Store)
-Plan: Not started
-Status: Ready to begin Phase 13
-Last activity: 2026-02-04 — Roadmap created for v1.1
+Phase: 13 of 14 (Album Correction Store)
+Plan: 1 of 3 (useCorrectionStore created)
+Status: In progress
+Last activity: 2026-02-04 — Completed 13-01-PLAN.md (useCorrectionStore with persist middleware)
 
-Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0/5 plans (0%)
+Progress: [█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/5 plans (20%)
 
 ## Performance Metrics
 
@@ -24,11 +24,12 @@ Progress: [░░░░░░░░░░░░░░░░░░░░░░░
 - Duration: 11 days (2026-01-23 to 2026-02-03)
 - Requirements covered: 35/35
 
-**Milestone v1.1 (Started 2026-02-04):**
+**Milestone v1.1 (In Progress):**
 - Phases: 2 (13-14)
-- Plans: 5
+- Plans: 5 (1 complete, 4 remaining)
 - Requirements: 30/30 mapped
 - Estimated duration: 2-3 days (focused refactor)
+- Current velocity: 1 plan per 2 minutes
 
 ## Accumulated Context
 
@@ -46,13 +47,18 @@ Progress: [░░░░░░░░░░░░░░░░░░░░░░░
 - ManualEditView internal form state stays local (formState, errors, showValidationBanner)
 - StepIndicator stays prop-driven (reused by both modals, no store needed)
 
+**Plan 13-01 Decisions:**
+- **STORE-PERSIST:** Only 6 fields persist to sessionStorage (step, mode, searchQuery, searchOffset, selectedMbid, manualEditState); 7 transient fields excluded (previewData, applySelections, manualPreviewData, shouldEnrich, showAppliedState, pendingAction, showUnsavedDialog)
+- **STORE-FACTORY:** Factory pattern with Map cache instead of singleton for better encapsulation and cleanup
+- **ATOMIC-ACTIONS:** Multi-field updates in single set() call (selectResult, setPreviewLoaded, confirmUnsavedDiscard) to prevent intermediate states
+
 ### Pending Todos
 
-**Phase 13:**
-1. Create useCorrectionStore with persist middleware (sessionStorage keyed by albumId)
-2. Refactor CorrectionModal to initialize/reset store on open/close
-3. Refactor SearchView, PreviewView, ApplyView, ManualEditView to read from store
-4. Delete useCorrectionModalState.ts after verifying zero imports
+**Phase 13 (In Progress):**
+1. ✅ Create useCorrectionStore with persist middleware (sessionStorage keyed by albumId)
+2. ⏳ Refactor CorrectionModal to initialize/reset store on open/close
+3. ⏳ Refactor SearchView, PreviewView, ApplyView, ManualEditView to read from store
+4. ⏳ Delete useCorrectionModalState.ts after verifying zero imports
 
 **Phase 14:**
 1. Create useArtistCorrectionStore (simpler than album — no dual mode)
@@ -61,12 +67,18 @@ Progress: [░░░░░░░░░░░░░░░░░░░░░░░
 
 ### Blockers/Concerns
 
-None. Zustand already in codebase (v5.0.8), patterns established in useSearchStore.ts and useTourStore.ts.
+None. Zustand already in codebase (v5.0.8), patterns established. Store creation passed type checking with zero errors.
 
 ## Session Continuity
 
-Last session: 2026-02-04
-Stopped at: Roadmap creation for v1.1
-Resume file: .planning/phases/13-01-PLAN.md (ready to create)
+Last session: 2026-02-04 19:46 UTC
+Stopped at: Completed 13-01-PLAN.md (useCorrectionStore)
+Resume file: .planning/phases/13-album-correction-store/13-02-PLAN.md (next)
 
-**Next action:** Create Phase 13 Plan 1 (useCorrectionStore with persist middleware)
+**Next action:** Execute Phase 13 Plan 2 (refactor CorrectionModal to use store)
+
+**Store readiness:**
+- `src/stores/useCorrectionStore.ts` created (478 lines)
+- Zero consumers yet (ready for Plan 02)
+- Export verification complete (11 exports)
+- Type checking passes
