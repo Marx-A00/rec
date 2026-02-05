@@ -32,10 +32,10 @@ All infrastructure exists in the project. No new dependencies required.
 
 ### Supporting
 
-| Library | Version | Purpose                   | When to Use                                    |
-| ------- | ------- | ------------------------- | ---------------------------------------------- |
-| fuzzysort | 3.1.0 | Artist name matching      | Reuse existing scoring strategies for artists  |
-| Redis   | 5.3.0 | Session state persistence | Optional for cross-session correction tracking |
+| Library   | Version | Purpose                   | When to Use                                    |
+| --------- | ------- | ------------------------- | ---------------------------------------------- |
+| fuzzysort | 3.1.0   | Artist name matching      | Reuse existing scoring strategies for artists  |
+| Redis     | 5.3.0   | Session state persistence | Optional for cross-session correction tracking |
 
 ### Alternatives Considered
 
@@ -101,12 +101,13 @@ export interface ArtistSearchResult {
   type?: 'Person' | 'Group' | 'Orchestra' | 'Choir' | 'Character' | 'Other';
   country?: string;
   area?: string;
-  beginDate?: string;  // Partial date: "1965" or "1965-03" or "1965-03-21"
+  beginDate?: string; // Partial date: "1965" or "1965-03" or "1965-03-21"
   endDate?: string;
   ended?: boolean;
   gender?: string;
   mbScore: number;
-  topReleases?: Array<{  // NEW: For disambiguation in UI
+  topReleases?: Array<{
+    // NEW: For disambiguation in UI
     title: string;
     year?: string;
     type?: string;
@@ -138,11 +139,12 @@ export class ArtistCorrectionSearchService {
 
           return {
             ...this.mapToArtistResult(artist),
-            topReleases: releases.releaseGroups?.slice(0, 3).map(rg => ({
-              title: rg.title,
-              year: rg.firstReleaseDate?.substring(0, 4),
-              type: rg.primaryType,
-            })) || [],
+            topReleases:
+              releases.releaseGroups?.slice(0, 3).map(rg => ({
+                title: rg.title,
+                year: rg.firstReleaseDate?.substring(0, 4),
+                type: rg.primaryType,
+              })) || [],
           };
         } catch (error) {
           // If release fetch fails, still return artist without releases
@@ -191,7 +193,7 @@ export interface ArtistCorrectionPreview {
   sourceResult: ArtistSearchResult;
   mbArtistData: MBArtistData | null;
   fieldDiffs: ArtistFieldDiff[];
-  albumCount: number;  // NEW: How many albums will be affected
+  albumCount: number; // NEW: How many albums will be affected
   summary: {
     totalFields: number;
     changedFields: number;
@@ -222,9 +224,7 @@ export class ArtistCorrectionPreviewService {
     });
 
     // Fetch full MusicBrainz artist data
-    const mbArtistData = await this.fetchMBArtistData(
-      searchResult.artistMbid
-    );
+    const mbArtistData = await this.fetchMBArtistData(searchResult.artistMbid);
 
     // Generate field diffs
     const fieldDiffs = this.generateFieldDiffs(currentArtist, mbArtistData);
@@ -248,13 +248,7 @@ export class ArtistCorrectionPreviewService {
     try {
       const data = await this.mbService.getArtist(
         artistMbid,
-        [
-          'aliases',
-          'area-rels',
-          'tags',
-          'ratings',
-          'release-groups',
-        ],
+        ['aliases', 'area-rels', 'tags', 'ratings', 'release-groups'],
         PRIORITY_TIERS.ADMIN
       );
 
@@ -352,10 +346,7 @@ export class ArtistCorrectionPreviewService {
     // MusicBrainz ID
     diffs.push({
       field: 'musicbrainzId',
-      changeType: this.classifyChange(
-        currentArtist.musicbrainzId,
-        mbData?.id
-      ),
+      changeType: this.classifyChange(currentArtist.musicbrainzId, mbData?.id),
       current: currentArtist.musicbrainzId,
       source: mbData?.id || null,
     });
@@ -421,7 +412,7 @@ export interface ArtistApplyInput {
   selections: ArtistFieldSelections;
   expectedUpdatedAt: Date;
   adminUserId: string;
-  reenrichAlbums?: boolean;  // NEW: Trigger album re-enrichment
+  reenrichAlbums?: boolean; // NEW: Trigger album re-enrichment
 }
 
 export class ArtistCorrectionApplyService {
@@ -726,15 +717,15 @@ Album→Artist relation is through AlbumArtist join table. Don't copy artist nam
 
 Problems with existing solutions:
 
-| Problem                 | Don't Build             | Use Instead                                        | Why                                                          |
-| ----------------------- | ----------------------- | -------------------------------------------------- | ------------------------------------------------------------ |
-| Artist search scoring   | Custom artist matcher   | Extend existing SearchScoringService               | Normalized/tiered/weighted strategies work for artist names  |
-| Diff visualization      | Artist-specific diff UI | Reuse FieldComparison components with artist props | Album field diff pattern applies to artist fields            |
-| Partial date handling   | Custom date parser      | Store as-is from MusicBrainz, display as text     | MB partial dates ("1965", "1965-03") don't need parsing     |
-| Artist type enum        | Database enum           | Store as string, validate in application layer     | MusicBrainz types can change, string is more flexible        |
-| Album cascade updates   | Manual AlbumArtist sync | Let Prisma relations handle                        | No denormalization needed, relations are efficient           |
-| Modal state management  | Artist-specific state   | Extend useCorrectionModalState with artist mode    | Session storage pattern works for both albums and artists    |
-| Re-enrichment triggering| Custom enrichment queue | Use existing enrichment job queue                  | BullMQ queue already handles album enrichment, add job types |
+| Problem                  | Don't Build             | Use Instead                                        | Why                                                          |
+| ------------------------ | ----------------------- | -------------------------------------------------- | ------------------------------------------------------------ |
+| Artist search scoring    | Custom artist matcher   | Extend existing SearchScoringService               | Normalized/tiered/weighted strategies work for artist names  |
+| Diff visualization       | Artist-specific diff UI | Reuse FieldComparison components with artist props | Album field diff pattern applies to artist fields            |
+| Partial date handling    | Custom date parser      | Store as-is from MusicBrainz, display as text      | MB partial dates ("1965", "1965-03") don't need parsing      |
+| Artist type enum         | Database enum           | Store as string, validate in application layer     | MusicBrainz types can change, string is more flexible        |
+| Album cascade updates    | Manual AlbumArtist sync | Let Prisma relations handle                        | No denormalization needed, relations are efficient           |
+| Modal state management   | Artist-specific state   | Extend useCorrectionModalState with artist mode    | Session storage pattern works for both albums and artists    |
+| Re-enrichment triggering | Custom enrichment queue | Use existing enrichment job queue                  | BullMQ queue already handles album enrichment, add job types |
 
 **Key insight:** Artist correction is 95% pattern reuse. The 5% of new code is artist-specific field mapping, not infrastructure.
 
@@ -804,8 +795,8 @@ const scoringService = getSearchScoringService();
 
 const scoredArtists = scoringService.scoreResults(
   artistSearchResults,
-  artistQueryName,  // Use artist name as primary query
-  undefined,        // No secondary query for artists
+  artistQueryName, // Use artist name as primary query
+  undefined, // No secondary query for artists
   { strategy: 'normalized', lowConfidenceThreshold: 0.5 }
 );
 
@@ -818,10 +809,10 @@ const scoredArtists = scoringService.scoreResults(
 // Source: Extend existing hook (src/hooks/useCorrectionModalState.ts)
 export function useCorrectionModalState(
   entityId: string | null,
-  entityType: 'album' | 'artist' = 'album'  // NEW: Support both
+  entityType: 'album' | 'artist' = 'album' // NEW: Support both
 ) {
   const storageKey = entityId
-    ? `correction-modal-${entityType}-${entityId}`  // Separate namespaces
+    ? `correction-modal-${entityType}-${entityId}` // Separate namespaces
     : null;
 
   // Rest of hook logic stays identical
@@ -918,15 +909,15 @@ export function ArtistFieldComparison({ diff }: { diff: ArtistFieldDiff }) {
 
 ## State of the Art
 
-| Old Approach                   | Current Approach                        | When Changed | Impact                                                  |
-| ------------------------------ | --------------------------------------- | ------------ | ------------------------------------------------------- |
-| Manual artist enrichment       | Admin correction workflow               | Phase 11     | Structured process, audit trail, quality tracking       |
-| Direct MusicBrainz API calls   | Queue-based rate limiting               | Phase 1      | No rate limit violations, reliable service              |
-| Single scoring strategy        | Pluggable scoring (3 strategies)        | Phase 2      | Admins can experiment, pick best for their data         |
-| Full database refresh          | Selective field application             | Phase 9      | Preserve good data, only update incorrect fields        |
-| Album-only correction          | Album + Artist correction               | Phase 11     | Complete data quality coverage for music entities       |
-| No cascade handling            | AlbumArtist-aware corrections           | Phase 11     | Artist changes reflected on all linked albums           |
-| Manual enrichment coordination | Optional re-enrichment trigger          | Phase 11     | Efficient bulk album updates after artist correction    |
+| Old Approach                   | Current Approach                 | When Changed | Impact                                               |
+| ------------------------------ | -------------------------------- | ------------ | ---------------------------------------------------- |
+| Manual artist enrichment       | Admin correction workflow        | Phase 11     | Structured process, audit trail, quality tracking    |
+| Direct MusicBrainz API calls   | Queue-based rate limiting        | Phase 1      | No rate limit violations, reliable service           |
+| Single scoring strategy        | Pluggable scoring (3 strategies) | Phase 2      | Admins can experiment, pick best for their data      |
+| Full database refresh          | Selective field application      | Phase 9      | Preserve good data, only update incorrect fields     |
+| Album-only correction          | Album + Artist correction        | Phase 11     | Complete data quality coverage for music entities    |
+| No cascade handling            | AlbumArtist-aware corrections    | Phase 11     | Artist changes reflected on all linked albums        |
+| Manual enrichment coordination | Optional re-enrichment trigger   | Phase 11     | Efficient bulk album updates after artist correction |
 
 **Deprecated/outdated:**
 

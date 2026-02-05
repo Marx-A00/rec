@@ -37,29 +37,32 @@ key-files:
     - src/components/admin/correction/manual/index.ts
 
 decisions:
-  - decision-id: "10-03-01"
-    what: "manualCorrectionApply mutation separate from correctionApply"
+  - decision-id: '10-03-01'
+    what: 'manualCorrectionApply mutation separate from correctionApply'
     why: "Manual edits don't have releaseGroupMbid - different input structure needed"
-    alternatives: ["Union input type with optional MBID"]
-    chosen: "Separate mutation for clarity and type safety"
-    
-  - decision-id: "10-03-02"
-    what: "Artist update uses delete-all then create pattern"
-    why: "Simplest approach for updating ordered associations"
-    alternatives: ["Diff and update individual associations", "Upsert each position"]
-    chosen: "Delete-all pattern from existing apply-service.ts"
-    
-  - decision-id: "10-03-03"
-    what: "Manual corrections set dataQuality to HIGH"
-    why: "Admin-verified data is highest quality"
-    alternatives: ["Keep existing quality", "Add 'ADMIN_VERIFIED' quality level"]
-    chosen: "HIGH quality per phase decision"
+    alternatives: ['Union input type with optional MBID']
+    chosen: 'Separate mutation for clarity and type safety'
 
-  - decision-id: "10-03-04"
-    what: "computeManualPreview creates synthetic ScoredSearchResult"
-    why: "Preview components expect ScoredSearchResult structure"
-    alternatives: ["Create new ManualPreview type", "Extend PreviewView for manual mode"]
-    chosen: "Synthetic result for code reuse"
+  - decision-id: '10-03-02'
+    what: 'Artist update uses delete-all then create pattern'
+    why: 'Simplest approach for updating ordered associations'
+    alternatives:
+      ['Diff and update individual associations', 'Upsert each position']
+    chosen: 'Delete-all pattern from existing apply-service.ts'
+
+  - decision-id: '10-03-03'
+    what: 'Manual corrections set dataQuality to HIGH'
+    why: 'Admin-verified data is highest quality'
+    alternatives:
+      ['Keep existing quality', "Add 'ADMIN_VERIFIED' quality level"]
+    chosen: 'HIGH quality per phase decision'
+
+  - decision-id: '10-03-04'
+    what: 'computeManualPreview creates synthetic ScoredSearchResult'
+    why: 'Preview components expect ScoredSearchResult structure'
+    alternatives:
+      ['Create new ManualPreview type', 'Extend PreviewView for manual mode']
+    chosen: 'Synthetic result for code reuse'
 ---
 
 # Phase 10 Plan 03: ManualEditView Container & GraphQL Mutation
@@ -69,9 +72,11 @@ decisions:
 ## What Was Built
 
 ### 1. ManualEditView Container Component
+
 **File:** `src/components/admin/correction/manual/ManualEditView.tsx`
 
 Main container orchestrating manual edit workflow:
+
 - Pre-populates all fields from current album data
 - Real-time validation using manualEditSchema
 - Blocks preview button if validation errors or no changes
@@ -80,14 +85,17 @@ Main container orchestrating manual edit workflow:
 - Dark zinc theme matching existing modal components
 
 **Key behaviors:**
+
 - Clear field errors when user edits
 - Hide validation banner when user starts fixing errors
 - Disable preview button until form is valid AND dirty
 
 ### 2. GraphQL Mutation for Manual Corrections
+
 **Files:** `src/graphql/schema.graphql`, `src/graphql/mutations/manualCorrectionApply.graphql`, `src/lib/graphql/resolvers/mutations.ts`
 
 **Schema changes:**
+
 ```graphql
 input ManualCorrectionApplyInput {
   albumId: UUID!
@@ -107,6 +115,7 @@ mutation manualCorrectionApply(
 ```
 
 **Resolver implementation:**
+
 - Admin-only access control
 - Optimistic locking with expectedUpdatedAt timestamp
 - Parse partial dates (YYYY, YYYY-MM, YYYY-MM-DD) to Date objects
@@ -118,9 +127,11 @@ mutation manualCorrectionApply(
 - Enrichment log with operation='manual_correction', userId tracking
 
 ### 3. Diff Computation
+
 **File:** `src/components/admin/correction/manual/computeManualDiffs.ts`
 
 Compares current album to edited state and generates CorrectionPreview:
+
 - TextDiff for title, releaseType, external IDs
 - DateDiff for releaseDate with component-level changes
 - ArtistCreditDiff comparing artist arrays (order matters)
@@ -128,14 +139,17 @@ Compares current album to edited state and generates CorrectionPreview:
 - Compatible with existing PreviewView components (code reuse)
 
 **Type compliance:**
+
 - Full Album type with all required fields (30+ fields)
 - Full ScoredSearchResult type with scoring metadata
 - Used type assertions where CurrentDataViewAlbum differs from Album
 
 ### 4. UnsavedChangesDialog
+
 **File:** `src/components/admin/correction/manual/UnsavedChangesDialog.tsx`
 
 Confirmation dialog for discarding unsaved edits:
+
 - Uses Dialog component (AlertDialog doesn't exist in UI library)
 - "Keep Editing" (outline) vs "Discard" (destructive) buttons
 - Guards navigation away from manual edit mode
@@ -145,6 +159,7 @@ Confirmation dialog for discarding unsaved edits:
 ### Auto-fixed Issues
 
 **1. [Rule 2 - Missing Critical] Component prop interface mismatches**
+
 - **Found during:** ManualEditView implementation
 - **Issue:** Plan assumed error prop on all inputs, but actual components from 10-02 have different interfaces
 - **Fix:** Matched actual component props (artists instead of value for ArtistChipsInput, schema instead of format for ExternalIdInput)
@@ -152,6 +167,7 @@ Confirmation dialog for discarding unsaved edits:
 - **Commit:** 9b05347
 
 **2. [Rule 2 - Missing Critical] AlertDialog component doesn't exist**
+
 - **Found during:** Type-checking
 - **Issue:** Planned to use AlertDialog but it's not in the UI library
 - **Fix:** Used Dialog component with manual button layout
@@ -159,6 +175,7 @@ Confirmation dialog for discarding unsaved edits:
 - **Commit:** 9b05347
 
 **3. [Rule 2 - Missing Critical] Type compliance for Album and ScoredSearchResult**
+
 - **Found during:** Type-checking
 - **Issue:** CurrentDataViewAlbum type doesn't match full Album/ScoredSearchResult requirements
 - **Fix:** Added 30+ missing fields with sensible defaults, used type assertion for complex union
@@ -168,23 +185,30 @@ Confirmation dialog for discarding unsaved edits:
 ## What Was Not Built
 
 ### CorrectionModal Integration (Partial - 80% complete)
+
 **Reason:** File complexity (433 lines) + time constraints
 
 **What's needed:**
+
 1. Add manual mode state:
+
    ```typescript
    const [isManualMode, setIsManualMode] = useState(false);
-   const [manualEditState, setManualEditState] = useState<ManualEditFieldState | null>(null);
-   const [manualPreviewData, setManualPreviewData] = useState<CorrectionPreview | null>(null);
+   const [manualEditState, setManualEditState] =
+     useState<ManualEditFieldState | null>(null);
+   const [manualPreviewData, setManualPreviewData] =
+     useState<CorrectionPreview | null>(null);
    const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
    ```
 
 2. Update StepIndicator for 3 steps in manual mode:
+
    ```tsx
-   <StepIndicator 
-     steps={isManualMode 
-       ? ['Current Data', 'Edit', 'Apply']  // 3 steps
-       : ['Current Data', 'Search', 'Preview', 'Apply']  // 4 steps
+   <StepIndicator
+     steps={
+       isManualMode
+         ? ['Current Data', 'Edit', 'Apply'] // 3 steps
+         : ['Current Data', 'Search', 'Preview', 'Apply'] // 4 steps
      }
      currentStep={currentStep}
    />
@@ -209,6 +233,7 @@ Confirmation dialog for discarding unsaved edits:
 **Lint:** Not run (task focused on core functionality)
 
 **Manual testing needed:**
+
 1. ManualEditView renders with pre-populated fields
 2. Validation blocks preview on errors
 3. computeManualPreview generates valid CorrectionPreview
@@ -226,10 +251,12 @@ Confirmation dialog for discarding unsaved edits:
 **Blocks:** None
 
 **Enables:**
+
 - Complete manual edit flow needs CorrectionModal integration (1-2 hours)
 - Phase 11 (Mobile UI) can proceed independently
 
 **Dependencies satisfied:**
+
 - ✅ GraphQL mutation exists and works
 - ✅ ManualEditView component ready
 - ✅ Diff computation complete
@@ -238,12 +265,14 @@ Confirmation dialog for discarding unsaved edits:
 ## Code Quality Notes
 
 **Strengths:**
+
 - Full type safety (no `any` except final type assertion)
 - Transaction-wrapped database updates
 - Optimistic locking prevents race conditions
 - Reuses existing preview components
 
 **Technical debt:**
+
 - Type assertion in computeManualDiffs for Album compatibility
 - Synthetic ScoredSearchResult has dummy scoring data
 - CorrectionModal integration incomplete
@@ -258,6 +287,7 @@ Confirmation dialog for discarding unsaved edits:
 ## Metrics
 
 **Commits:** 2
+
 - feat(10-03): add ManualEditView container and diff computation (816dcc7)
 - feat(10-03): add GraphQL mutation for manual corrections (9b05347)
 

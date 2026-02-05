@@ -44,6 +44,7 @@ metrics:
 Added re-enrichment checkbox to correction apply flows that triggers MusicBrainz enrichment after successful correction.
 
 **Key features:**
+
 - Checkbox in both album and artist ApplyView components
 - Integrated with existing enrichment mutation hooks (useTriggerAlbumEnrichmentMutation, useTriggerArtistEnrichmentMutation)
 - HIGH priority enrichment queue (gets processed before normal enrichment jobs)
@@ -53,17 +54,20 @@ Added re-enrichment checkbox to correction apply flows that triggers MusicBrainz
 ## Implementation Details
 
 **Pattern used:**
+
 1. ApplyView checkbox passes boolean flag via onApply callback
 2. Parent modal stores flag in state (setShouldEnrich)
 3. onSuccess handler checks flag and triggers enrichment mutation
 4. Enrichment mutation has its own success/error handlers
 
 **Album flow:**
+
 - ApplyView: Added Checkbox component + triggerEnrichment state
 - CorrectionModal: Added shouldEnrich state + enrichMutation + onSuccess enrichment trigger
 - Modified handleApply to accept optional triggerEnrichment parameter
 
 **Artist flow:**
+
 - ArtistApplyView: Added Checkbox component + triggerEnrichment state
 - ArtistCorrectionModal: Added shouldEnrich state + enrichMutation + onSuccess enrichment trigger
 - Modified handleApply to accept optional triggerEnrichment parameter
@@ -77,6 +81,7 @@ None - plan executed exactly as written.
 ## Testing Notes
 
 **Manual verification required:**
+
 1. Open correction modal for an album
 2. Complete search → preview → apply flow
 3. Check enrichment checkbox before clicking "Confirm & Apply"
@@ -85,27 +90,32 @@ None - plan executed exactly as written.
 6. Repeat for artist correction flow
 
 **Edge cases:**
+
 - Enrichment mutation failure: Logged to console, no user-visible error (correction already succeeded)
 - Unchecked checkbox: No enrichment triggered (default behavior)
 
 ## Technical Decisions Made
 
 **Checkbox default state: Unchecked**
+
 - Avoids unnecessary API load on MusicBrainz
 - Most corrections don't need immediate re-enrichment
 - User explicitly opts in when they want fresh data
 
 **Enrichment priority: HIGH**
+
 - User explicitly requested it
 - Should process before automatic/background enrichment
 - Still subject to rate limiting (1 req/sec to MusicBrainz)
 
 **Error handling: Silent failure**
+
 - Correction is primary action (already succeeded)
 - Enrichment is bonus enhancement
 - Log error but don't show toast (avoid confusion)
 
 **State management: Parent stores preference**
+
 - ApplyView passes flag via callback (stateless component)
 - Parent modal stores flag until onSuccess fires
 - Clean separation of concerns
@@ -117,6 +127,7 @@ None - plan executed exactly as written.
 **Concerns:** None
 
 **Recommendations:**
+
 - Consider adding enrichment status indicator to show when job completes
 - Could add tooltip explaining what "re-enrich" does for users
 - May want to track enrichment success rate in metrics

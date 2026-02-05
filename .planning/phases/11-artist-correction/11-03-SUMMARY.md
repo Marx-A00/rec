@@ -4,12 +4,23 @@ plan: 03
 subsystem: artist-correction
 tags: [apply-service, graphql, atomic-updates, audit-logging]
 dependency-graph:
-  requires: ["11-01", "11-02"]
-  provides: ["artist-apply-service", "artist-correction-graphql", "artist-audit-logging"]
-  affects: ["11-04"]
+  requires: ['11-01', '11-02']
+  provides:
+    [
+      'artist-apply-service',
+      'artist-correction-graphql',
+      'artist-audit-logging',
+    ]
+  affects: ['11-04']
 tech-stack:
   added: []
-  patterns: ["serializable-isolation", "optimistic-locking", "audit-logging", "singleton-factory"]
+  patterns:
+    [
+      'serializable-isolation',
+      'optimistic-locking',
+      'audit-logging',
+      'singleton-factory',
+    ]
 key-files:
   created:
     - src/lib/correction/artist/apply/types.ts
@@ -50,6 +61,7 @@ ArtistCorrectionApplyService uses Serializable isolation with optimistic locking
 **Task 1: Artist Apply Types and Service**
 
 Types (`src/lib/correction/artist/apply/types.ts`):
+
 - `ArtistMetadataSelections`: Field-by-field selection for name, disambiguation, countryCode, artistType, area, beginDate, endDate, gender
 - `ArtistExternalIdSelections`: Selection for musicbrainzId, ipi, isni
 - `ArtistFieldSelections`: Combined metadata and external ID selections
@@ -59,6 +71,7 @@ Types (`src/lib/correction/artist/apply/types.ts`):
 - `ArtistAuditLogPayload`: Before/after deltas for enrichment log
 
 Service (`src/lib/correction/artist/apply/apply-service.ts`):
+
 - `ArtistCorrectionApplyService.applyCorrection()`:
   - Fetches current artist for audit "before" state
   - Transaction with Serializable isolation level
@@ -73,6 +86,7 @@ Service (`src/lib/correction/artist/apply/apply-service.ts`):
 **Task 2: GraphQL Schema and Resolvers**
 
 Schema additions:
+
 - `ArtistTopRelease`, `ArtistCorrectionSearchResult`, `ArtistCorrectionSearchResponse` types
 - `ArtistFieldDiff`, `ArtistPreviewSummary`, `ArtistCorrectionPreview` types
 - `ArtistAppliedChanges`, `ArtistCorrectionApplyResult` types
@@ -80,25 +94,31 @@ Schema additions:
 - `ArtistCorrectionApplyInput` input
 
 Query operations:
+
 - `artistCorrectionSearch(query: String!, limit: Int)`: Returns artist search results with top releases
 - `artistCorrectionPreview(artistId: UUID!, artistMbid: UUID!)`: Returns preview with diffs and album count
 
 Mutation operation:
+
 - `artistCorrectionApply(input: ArtistCorrectionApplyInput!)`: Applies selected corrections atomically
 
 Query resolvers (`queries.ts`):
+
 - `artistCorrectionSearch`: Admin role check, calls search service, maps response
 - `artistCorrectionPreview`: Admin role check, calls preview service, maps response
 
 Mutation resolver (`mutations.ts`):
+
 - `artistCorrectionApply`: Admin role check, generates preview, maps selections, calls apply service
 
 Client queries (`artistCorrection.graphql`):
+
 - `SearchArtistCorrectionCandidates` query
 - `GetArtistCorrectionPreview` query
 - `ApplyArtistCorrection` mutation
 
 Generated hooks:
+
 - `useSearchArtistCorrectionCandidatesQuery`
 - `useGetArtistCorrectionPreviewQuery`
 - `useApplyArtistCorrectionMutation`
@@ -131,6 +151,7 @@ None - plan executed exactly as written.
 **Ready for 11-04 (Artist Correction UI)**
 
 Prerequisites met:
+
 - GraphQL hooks generated for search, preview, and apply
 - All three operations exposed with admin role enforcement
 - Apply service handles atomic updates with audit logging

@@ -4,12 +4,13 @@ plan: 02
 subsystem: artist-correction
 tags: [preview, diff-engine, musicbrainz, types]
 dependency-graph:
-  requires: ["11-01"]
-  provides: ["artist-preview-types", "artist-diff-engine", "artist-preview-service"]
-  affects: ["11-03"]
+  requires: ['11-01']
+  provides:
+    ['artist-preview-types', 'artist-diff-engine', 'artist-preview-service']
+  affects: ['11-03']
 tech-stack:
   added: []
-  patterns: ["singleton-factory", "diff-engine", "text-normalization"]
+  patterns: ['singleton-factory', 'diff-engine', 'text-normalization']
 key-files:
   created:
     - src/lib/correction/artist/preview/types.ts
@@ -44,11 +45,13 @@ ArtistCorrectionPreviewService compares 11 artist fields with MusicBrainz data a
 **Task 1: Artist preview types and diff engine**
 
 Created type definitions mirroring album preview pattern:
+
 - `MBArtistData`: Full MusicBrainz artist response including lifeSpan, area, aliases, ipis, isnis
 - `ArtistFieldDiff`: Field-level comparison with ChangeType (ADDED/MODIFIED/REMOVED/UNCHANGED)
 - `ArtistCorrectionPreview`: Complete preview with currentArtist, mbArtistData, fieldDiffs, albumCount, summary
 
 Implemented `ArtistDiffEngine` class:
+
 - `classifyChange()`: Determines change type using TextNormalizer for semantic comparison
 - `generateFieldDiffs()`: Compares 11 fields (name, disambiguation, countryCode, artistType, area, beginDate, endDate, gender, musicbrainzId, ipi, isni)
 - `generateSummary()`: Counts changes by type
@@ -57,6 +60,7 @@ Implemented `ArtistDiffEngine` class:
 **Task 2: Artist preview service**
 
 Created `ArtistCorrectionPreviewService`:
+
 - Constructor accepts optional PrismaClient for testing
 - `generatePreview(artistId, artistMbid)`: Main entry point
   - Fetches current artist via `prisma.artist.findUnique`
@@ -66,6 +70,7 @@ Created `ArtistCorrectionPreviewService`:
   - Returns complete ArtistCorrectionPreview
 
 Included helper methods:
+
 - `fetchMBArtistData()`: Queue-based fetch with error handling
 - `transformMBArtist()`: Converts MB API response to MBArtistData shape
 
@@ -96,6 +101,7 @@ None - plan executed exactly as written.
 **Ready for 11-03 (Artist Apply Service)**
 
 Prerequisites met:
+
 - ArtistCorrectionPreview type defined with all necessary fields
 - ArtistFieldDiff covers all updatable fields
 - Album count available for impact messaging

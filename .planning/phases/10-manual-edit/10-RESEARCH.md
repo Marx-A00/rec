@@ -18,29 +18,30 @@ The established libraries/tools for this domain:
 
 ### Core
 
-| Library | Version | Purpose | Why Standard |
-| --- | --- | --- | --- |
-| Zod | ^3.25.67 | Schema validation | Already installed, TypeScript-first validation with type inference |
-| React Hook Form | Not installed | Form state management | Optional - controlled inputs may be simpler for inline editing |
-| Radix UI Select | ^2.2.6 | Release type dropdown | Already installed, accessible dropdown component |
-| Radix UI Dialog | ^1.1.14 | Unsaved changes warning | Already installed, accessible modal pattern |
+| Library         | Version       | Purpose                 | Why Standard                                                       |
+| --------------- | ------------- | ----------------------- | ------------------------------------------------------------------ |
+| Zod             | ^3.25.67      | Schema validation       | Already installed, TypeScript-first validation with type inference |
+| React Hook Form | Not installed | Form state management   | Optional - controlled inputs may be simpler for inline editing     |
+| Radix UI Select | ^2.2.6        | Release type dropdown   | Already installed, accessible dropdown component                   |
+| Radix UI Dialog | ^1.1.14       | Unsaved changes warning | Already installed, accessible modal pattern                        |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-| --- | --- | --- | --- |
-| class-variance-authority | Installed | Badge variants for chips | Already used in Badge component for styling |
-| lucide-react | Installed | Icons (X for clear, Plus for add) | Consistent with existing UI |
+| Library                  | Version   | Purpose                           | When to Use                                 |
+| ------------------------ | --------- | --------------------------------- | ------------------------------------------- |
+| class-variance-authority | Installed | Badge variants for chips          | Already used in Badge component for styling |
+| lucide-react             | Installed | Icons (X for clear, Plus for add) | Consistent with existing UI                 |
 
 ### Alternatives Considered
 
-| Instead of | Could Use | Tradeoff |
-| --- | --- | --- |
-| Controlled inputs | react-contenteditable | contenteditable has accessibility issues and requires suppressContentEditableWarning |
-| Custom chip component | Material UI Chip | Adds large dependency for single component |
-| Zod validation | Yup | Zod already installed, better TypeScript integration |
+| Instead of            | Could Use             | Tradeoff                                                                             |
+| --------------------- | --------------------- | ------------------------------------------------------------------------------------ |
+| Controlled inputs     | react-contenteditable | contenteditable has accessibility issues and requires suppressContentEditableWarning |
+| Custom chip component | Material UI Chip      | Adds large dependency for single component                                           |
+| Zod validation        | Yup                   | Zod already installed, better TypeScript integration                                 |
 
 **Installation:**
+
 ```bash
 # No new dependencies needed - Zod already installed
 # Optional if complex form state needed:
@@ -69,6 +70,7 @@ src/components/admin/correction/
 **What:** Click-to-edit pattern using controlled inputs that swap between display and edit modes
 **When to use:** For single-value fields (title, release date, release type)
 **Example:**
+
 ```typescript
 // Source: Research synthesis from LogRocket and emgoto.com patterns
 const [isEditing, setIsEditing] = useState(false);
@@ -120,6 +122,7 @@ return isEditing ? (
 **What:** Tag-style input where artists are displayed as removable chips with an add button
 **When to use:** For multi-value artist credits field
 **Example:**
+
 ```typescript
 // Source: Synthesized from MUI Chip and DEV Community patterns
 const [artists, setArtists] = useState<string[]>(initialArtists);
@@ -173,6 +176,7 @@ return (
 **What:** Validate field values on blur or change using Zod schemas
 **When to use:** All editable fields, especially external IDs
 **Example:**
+
 ```typescript
 // Source: Official Zod documentation and Contentful blog
 import { z } from 'zod';
@@ -180,13 +184,19 @@ import { z } from 'zod';
 // Define schemas
 const titleSchema = z.string().min(1, 'Title is required').max(500);
 const mbidSchema = z.string().uuid('Must be a valid UUID').nullable();
-const spotifyIdSchema = z.string().regex(/^[a-zA-Z0-9]{22}$/, 'Must be 22 character base62 ID').nullable();
+const spotifyIdSchema = z
+  .string()
+  .regex(/^[a-zA-Z0-9]{22}$/, 'Must be 22 character base62 ID')
+  .nullable();
 const discogsIdSchema = z.string().regex(/^\d+$/, 'Must be numeric').nullable();
 
 // Partial date schema accepting YYYY, YYYY-MM, or YYYY-MM-DD
-const partialDateSchema = z.string()
-  .regex(/^(\d{4})(-((0[1-9]|1[0-2])(-((0[1-9]|[12]\d|3[01])))?)?)?$/, 
-    'Must be YYYY, YYYY-MM, or YYYY-MM-DD')
+const partialDateSchema = z
+  .string()
+  .regex(
+    /^(\d{4})(-((0[1-9]|1[0-2])(-((0[1-9]|[12]\d|3[01])))?)?)?$/,
+    'Must be YYYY, YYYY-MM, or YYYY-MM-DD'
+  )
   .nullable();
 
 // Use in component
@@ -201,6 +211,7 @@ if (!result.success) {
 **What:** Warn before switching tabs if manual edit fields have unsaved changes
 **When to use:** When switching from manual edit to search, or closing modal
 **Example:**
+
 ```typescript
 // Source: DEV Community and Medium - React Router useBlocker patterns
 const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -240,6 +251,7 @@ const handleConfirmLeave = () => {
 **What:** Show same diff view as search flow before applying manual edits
 **When to use:** After admin finishes editing and clicks preview
 **Example:**
+
 ```typescript
 // Reuse existing PreviewView component with manually constructed preview data
 const manualPreview: CorrectionPreview = {
@@ -255,7 +267,7 @@ const manualPreview: CorrectionPreview = {
   // ... other preview fields
 };
 
-<PreviewView 
+<PreviewView
   albumId={album.id}
   manualPreview={manualPreview} // New prop for manual mode
   onApplyClick={handleApplyManual}
@@ -273,13 +285,13 @@ const manualPreview: CorrectionPreview = {
 
 Problems that look simple but have existing solutions:
 
-| Problem | Don't Build | Use Instead | Why |
-| --- | --- | --- | --- |
-| UUID validation | Custom regex | Zod `.uuid()` method | Handles edge cases, better error messages |
-| Date parsing | String manipulation | Zod regex with capture groups | Validates partial dates correctly |
-| Chip component | Custom div styling | Extend existing Badge component | Consistent with design system |
-| Unsaved changes detection | Manual dirty tracking | React Hook Form's isDirty (if using RHF) | Automatic tracking, less error-prone |
-| Dropdown component | Custom select | Radix UI Select (already installed) | Accessibility, keyboard navigation built-in |
+| Problem                   | Don't Build           | Use Instead                              | Why                                         |
+| ------------------------- | --------------------- | ---------------------------------------- | ------------------------------------------- |
+| UUID validation           | Custom regex          | Zod `.uuid()` method                     | Handles edge cases, better error messages   |
+| Date parsing              | String manipulation   | Zod regex with capture groups            | Validates partial dates correctly           |
+| Chip component            | Custom div styling    | Extend existing Badge component          | Consistent with design system               |
+| Unsaved changes detection | Manual dirty tracking | React Hook Form's isDirty (if using RHF) | Automatic tracking, less error-prone        |
+| Dropdown component        | Custom select         | Radix UI Select (already installed)      | Accessibility, keyboard navigation built-in |
 
 **Key insight:** External ID validation formats are specific and error-prone. Use established patterns rather than custom validation.
 
@@ -338,25 +350,29 @@ Verified patterns from official sources:
 import { z } from 'zod';
 
 // MusicBrainz ID - standard UUID v4 format
-const musicbrainzIdSchema = z.string()
+const musicbrainzIdSchema = z
+  .string()
   .uuid('MusicBrainz ID must be a valid UUID')
   .nullable()
   .optional();
 
 // Spotify ID - 22-character base62 (alphanumeric)
-const spotifyIdSchema = z.string()
+const spotifyIdSchema = z
+  .string()
   .regex(/^[a-zA-Z0-9]{22}$/, 'Spotify ID must be 22 alphanumeric characters')
   .nullable()
   .optional();
 
 // Discogs ID - numeric only
-const discogsIdSchema = z.string()
+const discogsIdSchema = z
+  .string()
   .regex(/^\d+$/, 'Discogs ID must be numeric')
   .nullable()
   .optional();
 
 // Partial date validation - YYYY, YYYY-MM, or YYYY-MM-DD
-const partialDateSchema = z.string()
+const partialDateSchema = z
+  .string()
   .regex(
     /^(\d{4})(-((0[1-9]|1[0-2])(-((0[1-9]|[12]\d|3[01])))?)?)?$/,
     'Date must be YYYY, YYYY-MM, or YYYY-MM-DD format'
@@ -369,7 +385,18 @@ const manualEditSchema = z.object({
   title: z.string().min(1, 'Title is required').max(500),
   artists: z.array(z.string().min(1)).min(1, 'At least one artist required'),
   releaseDate: partialDateSchema,
-  releaseType: z.enum(['Album', 'EP', 'Single', 'Compilation', 'Soundtrack', 'Live', 'Remix', 'Other']).nullable(),
+  releaseType: z
+    .enum([
+      'Album',
+      'EP',
+      'Single',
+      'Compilation',
+      'Soundtrack',
+      'Live',
+      'Remix',
+      'Other',
+    ])
+    .nullable(),
   musicbrainzId: musicbrainzIdSchema,
   spotifyId: spotifyIdSchema,
   discogsId: discogsIdSchema,
@@ -473,7 +500,7 @@ export function ArtistChipsInput({ artists, onChange }: ArtistChipsInputProps) {
   const handleAdd = () => {
     const trimmed = inputValue.trim();
     if (!trimmed || artists.includes(trimmed)) return;
-    
+
     onChange([...artists, trimmed]);
     setInputValue('');
     inputRef.current?.focus();
@@ -499,9 +526,9 @@ export function ArtistChipsInput({ artists, onChange }: ArtistChipsInputProps) {
       <label className="text-sm font-medium text-zinc-300">Artists</label>
       <div className="flex flex-wrap gap-2 p-2 border border-zinc-700 rounded-md bg-zinc-800">
         {artists.map((artist, index) => (
-          <Badge 
-            key={index} 
-            variant="secondary" 
+          <Badge
+            key={index}
+            variant="secondary"
             className="gap-1.5 pl-2.5 pr-1.5"
           >
             <span>{artist}</span>
@@ -542,13 +569,14 @@ export function ArtistChipsInput({ artists, onChange }: ArtistChipsInputProps) {
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-| --- | --- | --- | --- |
-| react-hook-form only | Zod + optional RHF | 2023-2024 | Better type inference, simpler validation for inline editing |
-| contenteditable for inline edit | Controlled inputs | Ongoing | Better accessibility, simpler state management |
-| Complex validation libraries | Zod with built-in methods | 2023-present | .uuid(), .regex() more maintainable than custom functions |
+| Old Approach                    | Current Approach          | When Changed | Impact                                                       |
+| ------------------------------- | ------------------------- | ------------ | ------------------------------------------------------------ |
+| react-hook-form only            | Zod + optional RHF        | 2023-2024    | Better type inference, simpler validation for inline editing |
+| contenteditable for inline edit | Controlled inputs         | Ongoing      | Better accessibility, simpler state management               |
+| Complex validation libraries    | Zod with built-in methods | 2023-present | .uuid(), .regex() more maintainable than custom functions    |
 
 **Deprecated/outdated:**
+
 - react-contenteditable: Not recommended for forms due to accessibility issues and React warnings
 - Manual UUID regex: Zod's `.uuid()` method is more reliable
 - onChange validation only: onBlur validation provides better UX (per research)

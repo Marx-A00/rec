@@ -138,80 +138,89 @@ gaps: []
 
 **Plan 09-01 Artifacts:**
 
-| Artifact | Status | Details |
-|----------|--------|---------|
-| `src/components/admin/correction/apply/types.ts` | ✓ VERIFIED | 137 lines, exports UIFieldSelections, createDefaultUISelections, toGraphQLSelections |
-| `src/components/admin/correction/apply/FieldSelectionForm.tsx` | ✓ VERIFIED | 220 lines, exports FieldSelectionForm, has accordion sections |
-| `src/components/admin/correction/apply/MetadataSection.tsx` | ✓ VERIFIED | 212 lines, exports MetadataSection, implements checkboxes with indeterminate |
-| `src/components/admin/correction/apply/TrackSection.tsx` | ✓ VERIFIED | 215 lines, exports TrackSection, hybrid selection pattern |
-| `src/components/admin/correction/apply/ExternalIdSection.tsx` | ✓ VERIFIED | 189 lines, exports ExternalIdSection, checkbox implementation |
-| `src/components/admin/correction/apply/index.ts` | ✓ VERIFIED | 20 lines, exports all components and utilities |
+| Artifact                                                       | Status     | Details                                                                              |
+| -------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------ |
+| `src/components/admin/correction/apply/types.ts`               | ✓ VERIFIED | 137 lines, exports UIFieldSelections, createDefaultUISelections, toGraphQLSelections |
+| `src/components/admin/correction/apply/FieldSelectionForm.tsx` | ✓ VERIFIED | 220 lines, exports FieldSelectionForm, has accordion sections                        |
+| `src/components/admin/correction/apply/MetadataSection.tsx`    | ✓ VERIFIED | 212 lines, exports MetadataSection, implements checkboxes with indeterminate         |
+| `src/components/admin/correction/apply/TrackSection.tsx`       | ✓ VERIFIED | 215 lines, exports TrackSection, hybrid selection pattern                            |
+| `src/components/admin/correction/apply/ExternalIdSection.tsx`  | ✓ VERIFIED | 189 lines, exports ExternalIdSection, checkbox implementation                        |
+| `src/components/admin/correction/apply/index.ts`               | ✓ VERIFIED | 20 lines, exports all components and utilities                                       |
 
 **Plan 09-02 Artifacts:**
 
-| Artifact | Status | Details |
-|----------|--------|---------|
-| `src/components/admin/correction/apply/DiffSummary.tsx` | ✓ VERIFIED | 379 lines, exports DiffSummary, filters by selections |
-| `src/components/admin/correction/apply/ApplyView.tsx` | ✓ VERIFIED | 215 lines, exports ApplyView, two-column layout with form and button |
+| Artifact                                                | Status     | Details                                                              |
+| ------------------------------------------------------- | ---------- | -------------------------------------------------------------------- |
+| `src/components/admin/correction/apply/DiffSummary.tsx` | ✓ VERIFIED | 379 lines, exports DiffSummary, filters by selections                |
+| `src/components/admin/correction/apply/ApplyView.tsx`   | ✓ VERIFIED | 215 lines, exports ApplyView, two-column layout with form and button |
 
 **Plan 09-03 Artifacts:**
 
-| Artifact | Status | Details |
-|----------|--------|---------|
-| `src/components/admin/correction/preview/PreviewView.tsx` | ✓ VERIFIED | 100+ lines (substantive), has "Apply This Match" button |
-| `src/components/admin/correction/CorrectionModal.tsx` | ✓ VERIFIED | 433 lines, integrates ApplyView, handles mutation, toast, auto-close |
-| `src/hooks/useCorrectionModalState.ts` | ✓ VERIFIED | Updated to support 4 steps (isLastStep: currentStep === 3), isApplied state |
-| `src/generated/graphql.ts` | ✓ VERIFIED | useApplyCorrectionMutation exists and is properly typed |
+| Artifact                                                  | Status     | Details                                                                     |
+| --------------------------------------------------------- | ---------- | --------------------------------------------------------------------------- |
+| `src/components/admin/correction/preview/PreviewView.tsx` | ✓ VERIFIED | 100+ lines (substantive), has "Apply This Match" button                     |
+| `src/components/admin/correction/CorrectionModal.tsx`     | ✓ VERIFIED | 433 lines, integrates ApplyView, handles mutation, toast, auto-close        |
+| `src/hooks/useCorrectionModalState.ts`                    | ✓ VERIFIED | Updated to support 4 steps (isLastStep: currentStep === 3), isApplied state |
+| `src/generated/graphql.ts`                                | ✓ VERIFIED | useApplyCorrectionMutation exists and is properly typed                     |
 
 **Fixed Artifacts (post-verification):**
 
-| Artifact | Status | Details |
-|----------|--------|---------|
+| Artifact                                            | Status  | Details                                            |
+| --------------------------------------------------- | ------- | -------------------------------------------------- |
 | `src/components/admin/correction/StepIndicator.tsx` | ✓ FIXED | Default labels updated to 4 items (commit 2f87bfc) |
 
 ### Key Link Verification
 
 **Link: FieldSelectionForm → preview types**
+
 - Pattern: CorrectionPreview prop
 - Status: ✓ WIRED
 - Evidence: FieldSelectionForm.tsx line 17 defines preview prop, used throughout sections
 
 **Link: TrackSection → TrackDiff[]**
+
 - Pattern: trackDiffs prop
 - Status: ✓ WIRED
 - Evidence: TrackSection receives preview.trackDiffs, renders based on this data
 
 **Link: ApplyView → FieldSelectionForm**
+
 - Pattern: import and render
 - Status: ✓ WIRED
 - Evidence: ApplyView.tsx imports FieldSelectionForm (via types), renders at line 78+
 
 **Link: DiffSummary → UIFieldSelections**
+
 - Pattern: selections prop
 - Status: ✓ WIRED
 - Evidence: DiffSummary.tsx line 23 receives selections, filters diffs accordingly
 
 **Link: CorrectionModal → useApplyCorrectionMutation**
+
 - Pattern: import and use
 - Status: ✓ WIRED
 - Evidence: CorrectionModal.tsx line 19 imports, line 100 instantiates with callbacks
 
 **Link: CorrectionModal → ApplyView**
+
 - Pattern: render in step 3
 - Status: ✓ WIRED
 - Evidence: CorrectionModal.tsx lines 357-388 conditionally render ApplyView when currentStep === 3
 
 **Link: ApplyView → toGraphQLSelections**
+
 - Pattern: conversion before mutation
 - Status: ✓ WIRED
 - Evidence: CorrectionModal.tsx line 244 calls toGraphQLSelections(selections, previewData)
 
 **Link: Mutation success → queryClient.invalidateQueries**
+
 - Pattern: data quality update trigger
 - Status: ✓ WIRED
 - Evidence: CorrectionModal.tsx line 138 invalidates ['album', albumId] queries
 
 **Link: PreviewView → handleApplyClick**
+
 - Pattern: button click navigation
 - Status: ✓ WIRED
 - Evidence: PreviewView.tsx line 295 onClick={onApplyClick}, CorrectionModal line 338 passes handleApplyClick
@@ -245,6 +254,7 @@ No requirements explicitly mapped to Phase 9 in REQUIREMENTS.md, but ROADMAP suc
 **Fixed Gap: Step indicator labels (commit 2f87bfc)**
 
 The StepIndicator default labels were updated from 3 to 4 items to match the actual workflow:
+
 - Before: `["Current Data", "Search", "Apply"]`
 - After: `["Current Data", "Search", "Preview", "Apply"]`
 

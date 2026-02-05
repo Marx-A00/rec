@@ -9,6 +9,7 @@
 This research covers implementing a Zustand store to replace the current custom hook (`useCorrectionModalState`) for album correction modal state management. The existing implementation uses React hooks with manual sessionStorage persistence. The migration to Zustand will centralize state, reduce prop drilling, enable atomic state updates, and maintain the current sessionStorage-based persistence behavior with zero UI changes.
 
 **Key findings:**
+
 - Zustand v5.0.8 is already installed and actively used in the codebase (`useSearchStore.ts`, `useTourStore.ts`)
 - Persist middleware with `partialize` and custom sessionStorage adapter is the standard pattern for selective persistence
 - Atomic actions using single `set()` calls prevent intermediate states and are automatically batched by React 18+
@@ -20,25 +21,29 @@ This research covers implementing a Zustand store to replace the current custom 
 ## Standard Stack
 
 ### Core
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| zustand | ^5.0.8 | State management | Already in use; lightweight, zero-boilerplate stores with middleware support |
-| zustand/middleware | (included) | Persist + createJSONStorage | Official middleware for persistence with custom storage adapters |
+
+| Library            | Version    | Purpose                     | Why Standard                                                                 |
+| ------------------ | ---------- | --------------------------- | ---------------------------------------------------------------------------- |
+| zustand            | ^5.0.8     | State management            | Already in use; lightweight, zero-boilerplate stores with middleware support |
+| zustand/middleware | (included) | Persist + createJSONStorage | Official middleware for persistence with custom storage adapters             |
 
 ### Supporting
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| react-query v5 | (existing) | Server state caching | Already used for GraphQL queries; handles preview data caching |
-| jsdiff | (existing) | Text diffs for preview | Already used in correction preview system |
+
+| Library        | Version    | Purpose                | When to Use                                                    |
+| -------------- | ---------- | ---------------------- | -------------------------------------------------------------- |
+| react-query v5 | (existing) | Server state caching   | Already used for GraphQL queries; handles preview data caching |
+| jsdiff         | (existing) | Text diffs for preview | Already used in correction preview system                      |
 
 ### Alternatives Considered
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| Zustand persist | React Context + useEffect | More boilerplate, manual storage sync, harder to test |
-| sessionStorage | localStorage | Would persist across browser sessions (undesirable for correction state) |
-| Single hook with useState | Multiple context providers | More React re-renders, harder to share state between components |
+
+| Instead of                | Could Use                  | Tradeoff                                                                 |
+| ------------------------- | -------------------------- | ------------------------------------------------------------------------ |
+| Zustand persist           | React Context + useEffect  | More boilerplate, manual storage sync, harder to test                    |
+| sessionStorage            | localStorage               | Would persist across browser sessions (undesirable for correction state) |
+| Single hook with useState | Multiple context providers | More React re-renders, harder to share state between components          |
 
 **Installation:**
+
 ```bash
 # Already installed - no new dependencies needed
 # Verify: pnpm list zustand
@@ -47,6 +52,7 @@ This research covers implementing a Zustand store to replace the current custom 
 ## Architecture Patterns
 
 ### Recommended Project Structure
+
 ```
 src/
 ├── stores/
@@ -69,6 +75,7 @@ src/
 **When to use:** State needs to survive page navigation but not browser sessions, and only specific fields should be persisted (exclude derived/transient state).
 
 **Example:**
+
 ```typescript
 // Source: https://zustand.docs.pmnd.rs/middlewares/persist
 import { create } from 'zustand';
@@ -81,7 +88,7 @@ interface CorrectionState {
   searchQuery?: { albumTitle: string; artistName: string };
   selectedMbid?: string;
   manualEditState?: ManualEditFieldState;
-  
+
   // Transient fields (not persisted)
   previewData: CorrectionPreview | null;
   applySelections: UIFieldSelections | null;
@@ -90,7 +97,7 @@ interface CorrectionState {
 
 export const useCorrectionStore = create<CorrectionState>()(
   persist(
-    (set) => ({
+    set => ({
       step: 0,
       mode: 'search',
       previewData: null,
@@ -101,7 +108,7 @@ export const useCorrectionStore = create<CorrectionState>()(
     {
       name: (albumId: string) => `correction-modal-${albumId}`,
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (state) => ({
+      partialize: state => ({
         step: state.step,
         mode: state.mode,
         searchQuery: state.searchQuery,
@@ -123,6 +130,7 @@ export const useCorrectionStore = create<CorrectionState>()(
 **When to use:** Multiple fields need to change together atomically (e.g., advancing step + clearing selection).
 
 **Example:**
+
 ```typescript
 // Source: https://zustand.docs.pmnd.rs/guides/flux-inspired-practice
 interface CorrectionActions {
@@ -131,12 +139,12 @@ interface CorrectionActions {
     set({ selectedMbid: mbid });
     set({ step: 2 }); // Brief moment where step=2 but mbid is old
   };
-  
+
   // ✅ GOOD: Single atomic set() call
   selectResult: (mbid: string) => {
     set({ selectedMbid: mbid, step: 2 });
   };
-  
+
   // ✅ GOOD: Complex atomic update with derived values
   setPreviewLoaded: (preview: CorrectionPreview) => {
     set({
@@ -157,6 +165,7 @@ interface CorrectionActions {
 **When to use:** Values can be computed from existing state (e.g., `isFirstStep = step === 0`).
 
 **Example:**
+
 ```typescript
 // Source: https://github.com/pmndrs/zustand/discussions/2867
 // ❌ BAD: Storing derived state (redundant, can desync)
@@ -171,9 +180,9 @@ export const useCorrectionStore = create<CorrectionState>()(/* ... */);
 
 // Standalone derived selectors
 export const isFirstStep = (state: CorrectionState) => state.step === 0;
-export const isLastStep = (state: CorrectionState) => 
+export const isLastStep = (state: CorrectionState) =>
   state.step === (state.mode === 'manual' ? 2 : 3);
-export const maxStep = (state: CorrectionState) => 
+export const maxStep = (state: CorrectionState) =>
   state.mode === 'manual' ? 2 : 3;
 export const stepLabels = (state: CorrectionState) =>
   state.mode === 'manual'
@@ -181,7 +190,7 @@ export const stepLabels = (state: CorrectionState) =>
     : ['Current Data', 'Search', 'Preview', 'Apply'];
 
 // Usage in components
-const step = useCorrectionStore((s) => s.step);
+const step = useCorrectionStore(s => s.step);
 const isFirst = useCorrectionStore(isFirstStep);
 const labels = useCorrectionStore(stepLabels);
 ```
@@ -193,12 +202,15 @@ const labels = useCorrectionStore(stepLabels);
 **When to use:** State must be isolated per entity (e.g., per albumId) with separate persistence.
 
 **Example:**
+
 ```typescript
 // Store factory pattern for dynamic keys
 const createCorrectionStore = (albumId: string) =>
   create<CorrectionState>()(
     persist(
-      (set) => ({ /* ... */ }),
+      set => ({
+        /* ... */
+      }),
       {
         name: `correction-modal-${albumId}`,
         storage: createJSONStorage(() => sessionStorage),
@@ -211,11 +223,11 @@ const storeCache = new Map<string, ReturnType<typeof createCorrectionStore>>();
 
 export const useCorrectionStore = (albumId: string | null) => {
   if (!albumId) return null; // Modal closed
-  
+
   if (!storeCache.has(albumId)) {
     storeCache.set(albumId, createCorrectionStore(albumId));
   }
-  
+
   return storeCache.get(albumId)!;
 };
 ```
@@ -231,12 +243,12 @@ export const useCorrectionStore = (albumId: string | null) => {
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| SessionStorage sync | Custom useEffect + useState | Zustand persist middleware | Handles serialization, rehydration, partial updates, race conditions |
-| Derived state caching | useMemo in every component | Standalone selector functions | Single source of truth, no cache invalidation bugs |
-| Multi-step wizard state | Separate useState per field | Zustand store with atomic actions | Atomic updates prevent intermediate states |
-| Deep object merging | Custom spread operators | Zustand's built-in shallow merge (or custom `merge` option) | Handles nested updates correctly, less error-prone |
+| Problem                 | Don't Build                 | Use Instead                                                 | Why                                                                  |
+| ----------------------- | --------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------- |
+| SessionStorage sync     | Custom useEffect + useState | Zustand persist middleware                                  | Handles serialization, rehydration, partial updates, race conditions |
+| Derived state caching   | useMemo in every component  | Standalone selector functions                               | Single source of truth, no cache invalidation bugs                   |
+| Multi-step wizard state | Separate useState per field | Zustand store with atomic actions                           | Atomic updates prevent intermediate states                           |
+| Deep object merging     | Custom spread operators     | Zustand's built-in shallow merge (or custom `merge` option) | Handles nested updates correctly, less error-prone                   |
 
 **Key insight:** Custom sessionStorage hooks look simple but hide complexity: JSON serialization edge cases, concurrent tab handling, stale data after browser refresh, rehydration timing. Zustand persist middleware handles all these correctly.
 
@@ -248,12 +260,14 @@ export const useCorrectionStore = (albumId: string | null) => {
 
 **Why it happens:** Copy-paste error or forgetting to make keys unique when using store factories.
 
-**How to avoid:** 
+**How to avoid:**
+
 - Use descriptive, unique names: `correction-modal-${albumId}` not just `modal-state`
 - Test multiple instances (e.g., open two album corrections in different tabs)
 - Use TypeScript to enforce albumId is always provided
 
-**Warning signs:** 
+**Warning signs:**
+
 - State persists when it shouldn't (albumId changes but state doesn't reset)
 - Two tabs editing different albums see each other's state
 
@@ -264,11 +278,13 @@ export const useCorrectionStore = (albumId: string | null) => {
 **Why it happens:** `partialize` filters what to save, not when to save. [Per GitHub Discussion #1273](https://github.com/pmndrs/zustand/discussions/1273), this is intended behavior.
 
 **How to avoid:**
+
 - Accept the behavior - sessionStorage writes are fast
 - If truly problematic, debounce writes using custom storage adapter
 - Don't over-subscribe to non-persisted fields (each subscription triggers persist check)
 
 **Warning signs:**
+
 - Excessive sessionStorage writes in DevTools (Performance > Storage events)
 - Input lag in forms that update store frequently
 
@@ -279,11 +295,13 @@ export const useCorrectionStore = (albumId: string | null) => {
 **Why it happens:** Zustand v5 uses referential equality by default. Selectors like `(s) => [s.a, s.b]` create new arrays.
 
 **How to avoid:**
+
 - Use primitive selectors: `(s) => s.step`
 - Use `useShallow` for multi-value selectors: `useShallow((s) => [s.a, s.b])`
 - Export standalone selectors and memoize in components if needed
 
 **Warning signs:**
+
 - "Maximum update depth exceeded" errors
 - DevTools showing repeated renders for same state
 - Component re-renders on every keystroke despite no relevant state changes
@@ -295,11 +313,13 @@ export const useCorrectionStore = (albumId: string | null) => {
 **Why it happens:** Store factory cache not keyed correctly, or using single store without albumId isolation.
 
 **How to avoid:**
+
 - Use store factory pattern with Map cache keyed by albumId
 - Clear cache when modal closes: `storeCache.delete(albumId)`
 - Test rapid album switching in the UI
 
 **Warning signs:**
+
 - Search query from Album A appears when opening Album B
 - sessionStorage shows multiple album keys but state doesn't match
 
@@ -310,11 +330,13 @@ export const useCorrectionStore = (albumId: string | null) => {
 **Why it happens:** sessionStorage is browser-only. Server-rendered components access undefined storage.
 
 **How to avoid:**
+
 - Mark store-consuming components as `'use client'`
 - Use `skipHydration: false` (default) to let middleware handle rehydration
 - Guard store access: `if (typeof window === 'undefined') return defaultState;`
 
 **Warning signs:**
+
 - "sessionStorage is not defined" errors in server logs
 - Hydration mismatches between server and client HTML
 - State resets on page refresh despite persistence
@@ -349,7 +371,7 @@ export interface CorrectionState {
   searchOffset: number;
   selectedMbid?: string;
   manualEditState?: ManualEditFieldState;
-  
+
   // Transient fields (not persisted)
   previewData: CorrectionPreview | null;
   applySelections: UIFieldSelections | null;
@@ -362,31 +384,31 @@ export interface CorrectionActions {
   setStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
-  
+
   // Mode switching
   enterSearch: () => void;
   enterManualEdit: () => void;
-  
+
   // Search state
   setSearchQuery: (query: SearchQuery) => void;
   setSearchOffset: (offset: number) => void;
-  
+
   // Atomic: Select result and advance step
   selectResult: (mbid: string) => void;
-  
+
   // Atomic: Set preview data with default selections
   setPreviewLoaded: (preview: CorrectionPreview) => void;
-  
+
   // Manual edit state
   setManualEditState: (state: ManualEditFieldState) => void;
-  
+
   // Apply selections
   setApplySelections: (selections: UIFieldSelections) => void;
   setShouldEnrich: (value: boolean) => void;
-  
+
   // Unsaved changes dialog
   setPendingAction: (action: (() => void) | null) => void;
-  
+
   // Reset actions
   clearState: () => void;
   clearManualEditState: () => void;
@@ -411,15 +433,15 @@ const createCorrectionStore = (albumId: string) =>
         applySelections: null,
         shouldEnrich: false,
         pendingAction: null,
-        
+
         // Actions
-        setStep: (step) => {
+        setStep: step => {
           const maxStep = get().mode === 'manual' ? 2 : 3;
           if (step >= 0 && step <= maxStep) {
             set({ step });
           }
         },
-        
+
         nextStep: () => {
           const { step, mode } = get();
           const maxStep = mode === 'manual' ? 2 : 3;
@@ -427,14 +449,14 @@ const createCorrectionStore = (albumId: string) =>
             set({ step: step + 1 });
           }
         },
-        
+
         prevStep: () => {
           const step = get().step;
           if (step > 0) {
             set({ step: step - 1 });
           }
         },
-        
+
         enterSearch: () => {
           set({
             mode: 'search',
@@ -442,7 +464,7 @@ const createCorrectionStore = (albumId: string) =>
             manualEditState: undefined,
           });
         },
-        
+
         enterManualEdit: () => {
           set({
             mode: 'manual',
@@ -451,46 +473,48 @@ const createCorrectionStore = (albumId: string) =>
             selectedMbid: undefined,
           });
         },
-        
-        setSearchQuery: (query) => {
+
+        setSearchQuery: query => {
           set({ searchQuery: query, searchOffset: 0 });
         },
-        
-        setSearchOffset: (offset) => {
+
+        setSearchOffset: offset => {
           set({ searchOffset: offset });
         },
-        
+
         // Atomic: Select result and advance to preview step
-        selectResult: (mbid) => {
+        selectResult: mbid => {
           set({ selectedMbid: mbid, step: 2 });
         },
-        
+
         // Atomic: Set preview data with default selections and reset enrichment
-        setPreviewLoaded: (preview) => {
-          const { createDefaultUISelections } = require('@/components/admin/correction/apply/types');
+        setPreviewLoaded: preview => {
+          const {
+            createDefaultUISelections,
+          } = require('@/components/admin/correction/apply/types');
           set({
             previewData: preview,
             applySelections: createDefaultUISelections(preview),
             shouldEnrich: false,
           });
         },
-        
-        setManualEditState: (state) => {
+
+        setManualEditState: state => {
           set({ manualEditState: state });
         },
-        
-        setApplySelections: (selections) => {
+
+        setApplySelections: selections => {
           set({ applySelections: selections });
         },
-        
-        setShouldEnrich: (value) => {
+
+        setShouldEnrich: value => {
           set({ shouldEnrich: value });
         },
-        
-        setPendingAction: (action) => {
+
+        setPendingAction: action => {
           set({ pendingAction: action });
         },
-        
+
         clearState: () => {
           set({
             step: 0,
@@ -505,11 +529,11 @@ const createCorrectionStore = (albumId: string) =>
             pendingAction: null,
           });
         },
-        
+
         clearManualEditState: () => {
           set({ manualEditState: undefined });
         },
-        
+
         clearSearchState: () => {
           set({
             searchQuery: undefined,
@@ -521,7 +545,7 @@ const createCorrectionStore = (albumId: string) =>
       {
         name: `correction-modal-${albumId}`,
         storage: createJSONStorage(() => sessionStorage),
-        partialize: (state) => ({
+        partialize: state => ({
           step: state.step,
           mode: state.mode,
           searchQuery: state.searchQuery,
@@ -545,11 +569,11 @@ export const useCorrectionStore = (albumId: string | null) => {
     // Modal closed - return null or throw error
     throw new Error('useCorrectionStore requires albumId');
   }
-  
+
   if (!storeCache.has(albumId)) {
     storeCache.set(albumId, createCorrectionStore(albumId));
   }
-  
+
   return storeCache.get(albumId)!;
 };
 
@@ -576,7 +600,8 @@ export const stepLabels = (state: CorrectionState) =>
   state.mode === 'manual'
     ? ['Current Data', 'Edit', 'Apply']
     : ['Current Data', 'Search', 'Preview', 'Apply'];
-export const isManualEditMode = (state: CorrectionState) => state.mode === 'manual';
+export const isManualEditMode = (state: CorrectionState) =>
+  state.mode === 'manual';
 ```
 
 ### Component Usage Pattern
@@ -590,12 +615,12 @@ import { useCorrectionStore, clearCorrectionStoreCache } from '@/stores/useCorre
 export function CorrectionModal({ albumId, open, onClose }: CorrectionModalProps) {
   // Get store instance for this album
   const store = albumId ? useCorrectionStore(albumId) : null;
-  
+
   // Subscribe to specific fields
   const step = store?.((s) => s.step) ?? 0;
   const mode = store?.((s) => s.mode) ?? 'search';
   const nextStep = store?.((s) => s.nextStep);
-  
+
   // Cleanup on close
   const handleClose = () => {
     if (albumId) {
@@ -603,18 +628,18 @@ export function CorrectionModal({ albumId, open, onClose }: CorrectionModalProps
     }
     onClose();
   };
-  
+
   // ...rest of component
 }
 
 // SearchView.tsx - No more modal state props
 export function SearchView({ album }: { album: CurrentDataViewAlbum }) {
   const store = useCorrectionStore(album.id);
-  
+
   const searchQuery = store((s) => s.searchQuery);
   const setSearchQuery = store((s) => s.setSearchQuery);
   const selectResult = store((s) => s.selectResult);
-  
+
   // ...rest of component
 }
 
@@ -622,24 +647,25 @@ export function SearchView({ album }: { album: CurrentDataViewAlbum }) {
 export function PreviewView() {
   const albumId = /* get from context or URL param */;
   const store = useCorrectionStore(albumId);
-  
+
   const selectedMbid = store((s) => s.selectedMbid);
   const setPreviewLoaded = store((s) => s.setPreviewLoaded);
-  
+
   // ...rest of component
 }
 ```
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| Custom useEffect + sessionStorage | Zustand persist middleware | Phase 13 (this phase) | Less boilerplate, automatic rehydration, atomic updates |
-| Props drilling through 4 layers | Direct store subscription | Phase 13 | Reduced re-renders, cleaner component APIs |
-| Multiple useState calls in modal | Single store with atomic actions | Phase 13 | No intermediate states, easier debugging |
-| Manual sessionStorage key management | Persist middleware with partialize | Phase 13 | No JSON parse/stringify errors, automatic typing |
+| Old Approach                         | Current Approach                   | When Changed          | Impact                                                  |
+| ------------------------------------ | ---------------------------------- | --------------------- | ------------------------------------------------------- |
+| Custom useEffect + sessionStorage    | Zustand persist middleware         | Phase 13 (this phase) | Less boilerplate, automatic rehydration, atomic updates |
+| Props drilling through 4 layers      | Direct store subscription          | Phase 13              | Reduced re-renders, cleaner component APIs              |
+| Multiple useState calls in modal     | Single store with atomic actions   | Phase 13              | No intermediate states, easier debugging                |
+| Manual sessionStorage key management | Persist middleware with partialize | Phase 13              | No JSON parse/stringify errors, automatic typing        |
 
 **Deprecated/outdated:**
+
 - `useCorrectionModalState.ts` hook: Will be deleted in Phase 13, replaced by `useCorrectionStore.ts`
 - Props `modalState`, `onResultSelect`, `onPreviewLoaded` in child components: Replaced by direct store access
 
@@ -648,10 +674,12 @@ export function PreviewView() {
 ### 1. Should we use store factory or single store with albumId keys?
 
 **What we know:**
+
 - Store factory: Isolated persistence per album, cleaner mental model, matches current hook behavior
 - Single store: Simpler implementation, easier to debug (one store instance), requires manual albumId filtering
 
 **What's unclear:**
+
 - Performance implications of Map cache with 50+ albums
 - Whether multiple tabs editing different albums will conflict (needs testing)
 
@@ -660,11 +688,13 @@ export function PreviewView() {
 ### 2. How to handle unsaved changes dialog state?
 
 **What we know:**
+
 - `pendingAction` is a closure (cannot be serialized)
 - Current implementation uses local useState in modal
 - Dialog should show before navigation away from manual edit with changes
 
 **What's unclear:**
+
 - Should dialog state live in store at all, or stay in component?
 - How to trigger dialog from child components (ManualEditView) without prop drilling
 
@@ -673,11 +703,13 @@ export function PreviewView() {
 ### 3. Should preview data be cached or re-fetched?
 
 **What we know:**
+
 - Current implementation re-fetches on every preview step load
 - React Query caches for 5 minutes (staleTime)
 - Preview data is large (~5-50KB depending on track count)
 
 **What's unclear:**
+
 - Whether stale preview data could cause apply errors if album updated externally
 - Performance impact of re-fetching vs. persisting large objects
 
@@ -686,6 +718,7 @@ export function PreviewView() {
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - [Zustand Official Docs — Persisting Store Data](https://zustand.docs.pmnd.rs/integrations/persisting-store-data)
 - [Zustand Official Docs — persist middleware](https://zustand.docs.pmnd.rs/middlewares/persist)
 - [GitHub — pmndrs/zustand v5.0.8](https://github.com/pmndrs/zustand)
@@ -694,16 +727,19 @@ export function PreviewView() {
 - Local codebase: `src/stores/useSearchStore.ts`, `src/stores/useTourStore.ts`
 
 ### Secondary (MEDIUM confidence)
+
 - [Zustand v5 and v4 context example with persist](https://gist.github.com/mahbubmaruf178/48c53bd70e551d28c61dd84b7a46ccf0)
 - [TkDodo's blog — Working with Zustand](https://tkdodo.eu/blog/working-with-zustand)
 - [GitHub Discussion #1583 — Two actions, single state update](https://github.com/pmndrs/zustand/discussions/1583)
 
 ### Tertiary (LOW confidence)
+
 - [Medium — Zustand Middleware Guide](https://beyondthecode.medium.com/zustand-middleware-the-architectural-core-of-scalable-state-management-d8d1053489ac) — General overview, not v5-specific
 
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH - Zustand is already in use, patterns established
 - Architecture: HIGH - Official docs + local codebase examples confirm patterns
 - Pitfalls: MEDIUM - Based on GitHub discussions and common Zustand issues, not all tested in this specific context

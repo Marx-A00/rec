@@ -86,21 +86,25 @@ Each task was committed atomically:
 ## Decisions Made
 
 **releaseTypeSchema design:**
+
 - Database stores VARCHAR(50), so schema accepts any string up to 50 chars
 - RELEASE_TYPES constant provides common values for dropdown (Album, EP, Single, etc.)
 - Allows custom values while providing sensible defaults
 
 **Modal mode switching:**
+
 - Switching between search and manual modes resets currentStep to 0
 - Prevents invalid step state when step counts differ (3 vs 4 steps)
 - Each mode has independent step flow
 
 **Step indicator flexibility:**
+
 - Mode prop controls default labels, but allows custom override via steps prop
 - Manual mode: Current Data → Edit → Apply (3 steps)
 - Search mode: Current Data → Search → Preview → Apply (4 steps)
 
 **Type safety with Zod:**
+
 - ManualEditFormData type inferred from manualEditSchema for type safety
 - validateField helper provides typed result for single field validation
 - User-friendly error messages ("Spotify ID must be 22 alphanumeric characters")
@@ -116,6 +120,7 @@ None - all validation schemas and type functions worked as expected.
 ## Next Phase Readiness
 
 Foundation complete for Plan 10-02 (Manual Edit Form UI):
+
 - Validation schemas ready for form field validation
 - Types ready for React state management
 - Modal state hook ready to track manual edit mode

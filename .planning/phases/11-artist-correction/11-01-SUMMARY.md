@@ -24,18 +24,18 @@ key-files:
     - src/lib/correction/artist/search-service.ts
   modified: []
 decisions:
-  - id: "11-01-types"
-    decision: "Store artistType as string, not enum"
-    rationale: "MusicBrainz may add new artist types (Person, Group, Orchestra, Choir, Character, Other)"
-  - id: "11-01-dates"
-    decision: "Preserve partial dates as-is from MusicBrainz"
+  - id: '11-01-types'
+    decision: 'Store artistType as string, not enum'
+    rationale: 'MusicBrainz may add new artist types (Person, Group, Orchestra, Choir, Character, Other)'
+  - id: '11-01-dates'
+    decision: 'Preserve partial dates as-is from MusicBrainz'
     rationale: "Dates can be '1965', '1965-03', or '1965-03-21' - no parsing needed"
-  - id: "11-01-releases"
-    decision: "Fetch top 3 releases per artist for disambiguation"
-    rationale: "Multiple artists share common names - releases help identify correct artist"
+  - id: '11-01-releases'
+    decision: 'Fetch top 3 releases per artist for disambiguation'
+    rationale: 'Multiple artists share common names - releases help identify correct artist'
 metrics:
-  duration: "3min"
-  completed: "2026-01-28"
+  duration: '3min'
+  completed: '2026-01-28'
 ---
 
 # Phase 11 Plan 01: Artist Search Service Summary
@@ -47,12 +47,14 @@ metrics:
 Created the foundational types and search service for artist correction, mirroring the established album correction patterns.
 
 **Types (`src/lib/correction/artist/types.ts`):**
+
 - `ArtistSearchResult` - Full MusicBrainz artist fields (name, sortName, disambiguation, type, country, area, beginDate, endDate, ended, gender, mbScore)
 - `ArtistTopRelease` - Release info for disambiguation (title, year, type)
 - `ArtistCorrectionSearchOptions` - Query, limit, offset
 - `ArtistCorrectionSearchResponse` - Results array with pagination info
 
 **Search Service (`src/lib/correction/artist/search-service.ts`):**
+
 - `ArtistCorrectionSearchService` class with `search()` method
 - Uses `PRIORITY_TIERS.ADMIN` for responsive admin UI
 - Fetches top 3 release groups per artist via `browseReleaseGroupsByArtist`
@@ -84,6 +86,7 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 **Ready for 11-02 (Preview Service):**
+
 - Types are exported and ready for import
 - Search result structure matches what preview will consume
 - No blockers identified

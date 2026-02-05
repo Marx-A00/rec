@@ -14,6 +14,7 @@ Polished loading states for correction modals: skeleton placeholder during initi
 ## Tasks Completed
 
 ### Task 1: Create ModalSkeleton Component ✓
+
 - Created `src/components/admin/correction/shared/ModalSkeleton.tsx`
 - Props: `variant?: 'album' | 'artist'` for different layouts
 - Includes:
@@ -26,16 +27,19 @@ Polished loading states for correction modals: skeleton placeholder during initi
 - Uses animate-pulse with zinc-700/zinc-800 colors
 
 ### Task 2: Integrate Skeleton into Album Modal ✓
+
 - Updated `CorrectionModal.tsx`
 - Replaced Loader2 spinner + text with `<ModalSkeleton variant="album" />`
 - Shows skeleton while `useGetAlbumDetailsAdminQuery` is loading
 
 ### Task 3: Integrate Skeleton into Artist Modal ✓
+
 - Updated `ArtistCorrectionModal.tsx`
 - Replaced Loader2 spinner + text with `<ModalSkeleton variant="artist" />`
 - Shows skeleton while `useGetArtistDetailsQuery` is loading
 
 ### Task 4: Clean Up Apply Button Spinners ✓
+
 - Updated `ApplyView.tsx` and `ArtistApplyView.tsx`
 - Replaced inline SVG spinner with `Loader2` from lucide-react
 - Consistent with other loading spinners in the codebase
@@ -61,6 +65,7 @@ pnpm type-check  # ✓ Pass
 ## What's Next
 
 Continue with Phase 12:
+
 - 12-03: Keyboard Shortcuts & Accessibility (Escape to close, focus management)
 - 12-04: Mobile Responsive Layout
 - 12-05: Re-enrichment Trigger (optional)

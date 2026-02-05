@@ -18,14 +18,16 @@ re_verification: false
 ### Observable Truths
 
 **Truth 1: "Manual Edit" tab accessible from step 1 (Current Data)**
+
 - Status: VERIFIED
-- Evidence: 
+- Evidence:
   - "Edit Manually" button rendered in CurrentDataView at step 0
   - Button calls `handleEnterManualEdit()` which sets `isManualEditMode = true` and navigates to step 1
   - Button location: CorrectionModal.tsx lines 507-514
   - Also accessible via SearchView's `onManualEdit` prop (line 533)
 
 **Truth 2: Editable fields for title, artist names, release date, release type**
+
 - Status: VERIFIED
 - Evidence:
   - ManualEditView.tsx renders all required fields:
@@ -37,6 +39,7 @@ re_verification: false
   - All have proper validation and error handling
 
 **Truth 3: Editable external IDs with format validation**
+
 - Status: VERIFIED
 - Evidence:
   - All three external IDs rendered in ManualEditView.tsx lines 169-198:
@@ -48,6 +51,7 @@ re_verification: false
   - Validation runs on blur via ExternalIdInput component
 
 **Truth 4: Preview shows diff between original and edited values**
+
 - Status: VERIFIED
 - Evidence:
   - `computeManualPreview()` function in computeManualDiffs.ts (256 lines)
@@ -57,6 +61,7 @@ re_verification: false
   - Uses FieldComparisonList component to display diffs
 
 **Truth 5: Form validation blocks preview until all fields valid**
+
 - Status: VERIFIED
 - Evidence:
   - ManualEditView.tsx line 84: `manualEditSchema.safeParse(formState)`
@@ -65,6 +70,7 @@ re_verification: false
   - Error count tracked and displayed to user
 
 **Truth 6: Changes logged with "manual_correction" source**
+
 - Status: VERIFIED
 - Evidence:
   - mutations.ts line 3077: `operation: 'manual_correction'`
@@ -74,6 +80,7 @@ re_verification: false
   - Logging occurs in manualCorrectionApply resolver after successful update
 
 **Truth 7: Unsaved changes warning when switching away with edits**
+
 - Status: VERIFIED
 - Evidence:
   - UnsavedChangesDialog component exists (53 lines)
@@ -86,6 +93,7 @@ re_verification: false
 ### Required Artifacts
 
 **Artifact: src/components/admin/correction/manual/validation.ts**
+
 - Expected: Zod schemas for external IDs and field validation
 - Status: VERIFIED
 - Details:
@@ -95,6 +103,7 @@ re_verification: false
   - Wired: Imported by ManualEditView, ExternalIdInput, DateInput, index.ts
 
 **Artifact: src/components/admin/correction/manual/types.ts**
+
 - Expected: TypeScript types for manual edit form state
 - Status: VERIFIED
 - Details:
@@ -104,6 +113,7 @@ re_verification: false
   - Wired: Imported by ManualEditView, CorrectionModal, index.ts
 
 **Artifact: src/hooks/useCorrectionModalState.ts**
+
 - Expected: Extended modal state with manual edit support
 - Status: VERIFIED
 - Details:
@@ -114,6 +124,7 @@ re_verification: false
   - Wired: Used by CorrectionModal.tsx
 
 **Artifact: src/components/admin/correction/manual/EditableField.tsx**
+
 - Expected: Inline editable text field with click-to-edit
 - Status: VERIFIED
 - Details:
@@ -124,6 +135,7 @@ re_verification: false
   - Wired: Used by ManualEditView for title field
 
 **Artifact: src/components/admin/correction/manual/ArtistChipsInput.tsx**
+
 - Expected: Multi-value artist input with removable chips
 - Status: VERIFIED
 - Details:
@@ -134,6 +146,7 @@ re_verification: false
   - Wired: Used by ManualEditView for artists field
 
 **Artifact: src/components/admin/correction/manual/ExternalIdInput.tsx**
+
 - Expected: External ID input with validation and clear button
 - Status: VERIFIED
 - Details:
@@ -144,6 +157,7 @@ re_verification: false
   - Wired: Used by ManualEditView for all three external IDs
 
 **Artifact: src/components/admin/correction/manual/DateInput.tsx**
+
 - Expected: Flexible date input (YYYY, YYYY-MM, YYYY-MM-DD)
 - Status: VERIFIED
 - Details:
@@ -154,6 +168,7 @@ re_verification: false
   - Wired: Used by ManualEditView for release date
 
 **Artifact: src/components/admin/correction/manual/ReleaseTypeSelect.tsx**
+
 - Expected: Release type dropdown
 - Status: VERIFIED
 - Details:
@@ -164,6 +179,7 @@ re_verification: false
   - Wired: Used by ManualEditView for release type
 
 **Artifact: src/components/admin/correction/manual/ManualEditView.tsx**
+
 - Expected: Main container for manual edit step
 - Status: VERIFIED
 - Details:
@@ -174,6 +190,7 @@ re_verification: false
   - Wired: Rendered by CorrectionModal when isManualEditMode is true
 
 **Artifact: src/components/admin/correction/manual/UnsavedChangesDialog.tsx**
+
 - Expected: Confirmation dialog for discarding edits
 - Status: VERIFIED
 - Details:
@@ -183,6 +200,7 @@ re_verification: false
   - Wired: Rendered by CorrectionModal, shown when hasUnsavedChanges is true
 
 **Artifact: src/components/admin/correction/manual/computeManualDiffs.ts**
+
 - Expected: Diff computation for manual edits
 - Status: VERIFIED
 - Details:
@@ -193,6 +211,7 @@ re_verification: false
   - Wired: Called by CorrectionModal.handleManualPreview
 
 **Artifact: src/graphql/schema.graphql**
+
 - Expected: ManualCorrectionApplyInput type
 - Status: VERIFIED
 - Details:
@@ -202,6 +221,7 @@ re_verification: false
   - Wired: Referenced by resolver
 
 **Artifact: src/graphql/mutations/manualCorrectionApply.graphql**
+
 - Expected: Client mutation for manual apply
 - Status: VERIFIED
 - Details:
@@ -210,6 +230,7 @@ re_verification: false
   - Wired: Codegen creates useManualCorrectionApplyMutation hook
 
 **Artifact: src/lib/graphql/resolvers/mutations.ts**
+
 - Expected: manualCorrectionApply resolver
 - Status: VERIFIED
 - Details:
@@ -221,6 +242,7 @@ re_verification: false
 ### Key Link Verification
 
 **Link 1: CorrectionModal → ManualEditView**
+
 - From: CorrectionModal.tsx
 - To: ManualEditView component
 - Via: Import from './manual' (line 45), render when isManualEditMode is true (line 544)
@@ -228,6 +250,7 @@ re_verification: false
 - Details: Component properly imported and conditionally rendered
 
 **Link 2: ManualEditView → validation schemas**
+
 - From: ManualEditView.tsx
 - To: validation.ts schemas
 - Via: Import and use in validation (lines 15, 84), passed to ExternalIdInput as schema prop
@@ -235,6 +258,7 @@ re_verification: false
 - Details: Schemas imported, used in form validation, passed to child components
 
 **Link 3: ExternalIdInput → validation schemas**
+
 - From: ExternalIdInput.tsx
 - To: musicbrainzIdSchema/spotifyIdSchema/discogsIdSchema
 - Via: schema prop, safeParse on blur
@@ -242,6 +266,7 @@ re_verification: false
 - Details: Schema passed as prop, validation executed on blur event
 
 **Link 4: CorrectionModal → useManualCorrectionApplyMutation**
+
 - From: CorrectionModal.tsx
 - To: Generated GraphQL mutation hook
 - Via: Import at line 20, hook call at line 190
@@ -249,6 +274,7 @@ re_verification: false
 - Details: Hook imported from generated/graphql.ts, mutation executed on apply
 
 **Link 5: GraphQL mutation → resolver**
+
 - From: manualCorrectionApply.graphql
 - To: mutations.ts resolver
 - Via: Codegen generates types, resolver implements manualCorrectionApply at line 2927
@@ -256,6 +282,7 @@ re_verification: false
 - Details: Mutation defined in schema, resolver handles execution
 
 **Link 6: Resolver → enrichment log**
+
 - From: manualCorrectionApply resolver
 - To: prisma.enrichmentLog.create
 - Via: Transaction at line 3073
@@ -263,6 +290,7 @@ re_verification: false
 - Details: Log created with operation 'manual_correction', sources ['manual'], userId set
 
 **Link 7: Modal state hook → manual edit mode**
+
 - From: useCorrectionModalState.ts
 - To: isManualEditMode flag
 - Via: useState at line 51, exported at line 253
@@ -272,29 +300,35 @@ re_verification: false
 ### Requirements Coverage
 
 **MANUAL-01: "Manual Edit" tab in the correction modal**
+
 - Status: SATISFIED
 - Evidence: "Edit Manually" button in CurrentDataView (step 0)
 
 **MANUAL-02: Editable fields: title, artist name(s), release date, release type**
+
 - Status: SATISFIED
 - Evidence: All four fields rendered in ManualEditView with proper input components
 
 **MANUAL-03: Editable external IDs: MusicBrainz ID, Discogs ID, Spotify ID**
+
 - Status: SATISFIED
 - Evidence: All three IDs rendered in ManualEditView with ExternalIdInput component
 
 **MANUAL-04: Validation on external IDs (format checking)**
+
 - Status: SATISFIED
-- Evidence: 
+- Evidence:
   - MusicBrainz: UUID regex validation
   - Spotify: 22-char base62 regex validation
   - Discogs: Numeric regex validation
 
 **MANUAL-05: Preview of changes before applying**
+
 - Status: SATISFIED
 - Evidence: computeManualPreview generates diffs, PreviewView displays them
 
 **MANUAL-06: Changes logged with "manual_correction" source**
+
 - Status: SATISFIED
 - Evidence: Resolver logs operation as 'manual_correction' with source 'manual'
 
@@ -303,6 +337,7 @@ re_verification: false
 **No blocking anti-patterns detected.**
 
 Minor observations:
+
 - All components follow proper React patterns
 - No TODO/FIXME comments found
 - No console.log debugging statements
@@ -313,7 +348,8 @@ Minor observations:
 ### Human Verification Required
 
 **Test 1: Visual Field Editing Flow**
-- Test: 
+
+- Test:
   1. Open correction modal for any album
   2. Click "Edit Manually" button
   3. Click on title field, edit text, press Enter
@@ -333,6 +369,7 @@ Minor observations:
 - Why human: Visual UI behavior, interaction patterns, validation UX cannot be verified programmatically
 
 **Test 2: Unsaved Changes Warning**
+
 - Test:
   1. Edit any field in manual mode
   2. Click "Search MusicBrainz" button (switch modes without saving)
@@ -344,6 +381,7 @@ Minor observations:
 - Why human: Dialog interaction and state preservation requires user interaction
 
 **Test 3: Apply Manual Correction**
+
 - Test:
   1. Make edits in manual mode
   2. Click "Preview Changes"
@@ -358,6 +396,7 @@ Minor observations:
 - Why human: End-to-end flow with database and visual feedback
 
 **Test 4: External ID Format Validation**
+
 - Test:
   1. Enter invalid MusicBrainz ID: "abc123" (not UUID)
   2. Tab out of field
@@ -379,6 +418,7 @@ Minor observations:
 **All 7 must-have truths verified. Phase 10 goal achieved.**
 
 **What exists:**
+
 - Complete manual edit UI with all required fields
 - External ID validation (UUID, base62, numeric)
 - Preview with diff computation
@@ -387,6 +427,7 @@ Minor observations:
 - Form validation blocking preview
 
 **What works:**
+
 - Manual edit mode accessible from Current Data step
 - All fields editable with proper validation
 - External IDs validated on format
@@ -395,6 +436,7 @@ Minor observations:
 - Modal state properly tracks manual mode
 
 **Human verification needed:**
+
 - Visual field editing flow (Test 1)
 - Unsaved changes warning (Test 2)
 - Apply manual correction end-to-end (Test 3)
