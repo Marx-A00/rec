@@ -90,29 +90,29 @@ export function CorrectionModal({
   onClose,
 }: CorrectionModalProps) {
   // Initialize Zustand store for this album
-  const store = albumId ? getCorrectionStore(albumId) : null;
+  // IMPORTANT: We always get a store (using empty string as fallback) to ensure
+  // hooks are called consistently. The actual albumId check happens in render logic.
+  const store = getCorrectionStore(albumId ?? '');
 
-  // Subscribe to state fields
-  const step = store?.(s => s.step) ?? 0;
-  const mode = store?.(s => s.mode) ?? 'search';
-  const selectedMbid = store?.(s => s.selectedMbid);
-  const manualEditState = store?.(s => s.manualEditState);
-  const previewData = store?.(s => s.previewData) ?? null;
-  const applySelections = store?.(s => s.applySelections);
-  const manualPreviewData = store?.(s => s.manualPreviewData) ?? null;
-  const shouldEnrich = store?.(s => s.shouldEnrich) ?? false;
-  const showAppliedState = store?.(s => s.showAppliedState) ?? false;
-  const showUnsavedDialog = store?.(s => s.showUnsavedDialog) ?? false;
-  const pendingAction = store?.(s => s.pendingAction) ?? null;
+  // Subscribe to state fields - these are hook calls, so they must always be called
+  const step = store(s => s.step);
+  const mode = store(s => s.mode);
+  const selectedMbid = store(s => s.selectedMbid);
+  const manualEditState = store(s => s.manualEditState);
+  const previewData = store(s => s.previewData);
+  const applySelections = store(s => s.applySelections);
+  const manualPreviewData = store(s => s.manualPreviewData);
+  const shouldEnrich = store(s => s.shouldEnrich);
+  const showAppliedState = store(s => s.showAppliedState);
+  const showUnsavedDialog = store(s => s.showUnsavedDialog);
+  const pendingAction = store(s => s.pendingAction);
 
-  // Use derived selectors
-  const isFirstStep = store ? store(isFirstStepSelector) : true;
-  const isLastStep = store ? store(isLastStepSelector) : false;
-  const maxStepVal = store ? store(maxStepSelector) : 3;
-  const stepLabels = store
-    ? store(stepLabelsSelector)
-    : ['Current Data', 'Search', 'Compare', 'Apply'];
-  const isManualEditMode = store ? store(isManualEditModeSelector) : false;
+  // Use derived selectors - these are also hook calls
+  const isFirstStep = store(isFirstStepSelector);
+  const isLastStep = store(isLastStepSelector);
+  const maxStepVal = store(maxStepSelector);
+  const stepLabels = store(stepLabelsSelector);
+  const isManualEditMode = store(isManualEditModeSelector);
 
   // Preview data state - shared between PreviewView and ApplyView
 
@@ -137,7 +137,7 @@ export function CorrectionModal({
     onSuccess: response => {
       if (response.correctionApply.success) {
         // Show "Applied!" state
-        store?.getState().setShowAppliedState(true);
+        store.getState().setShowAppliedState(true);
 
         // Build toast message from changes
         const changes = response.correctionApply.changes;
@@ -218,7 +218,7 @@ export function CorrectionModal({
     onSuccess: response => {
       if (response.manualCorrectionApply.success) {
         // Show "Applied!" state
-        store?.getState().setShowAppliedState(true);
+        store.getState().setShowAppliedState(true);
 
         // Build toast message
         const changedCount = manualPreviewData?.summary.changedFields ?? 0;
@@ -327,15 +327,15 @@ export function CorrectionModal({
     if (isManualEditMode && manualEditState && album) {
       const originalState = createInitialEditState(album);
       if (hasUnsavedChanges(originalState, manualEditState)) {
-        store?.getState().setPendingAction(() => () => {
+        store.getState().setPendingAction(() => () => {
           if (albumId) clearCorrectionStoreCache(albumId);
           // Manual edit state cleared by store reset
           // Preview data cleared by store reset
           // Manual preview cleared by store reset
-          store?.getState().setShowAppliedState(false);
+          store.getState().setShowAppliedState(false);
           onClose();
         });
-        store?.getState().setShowUnsavedDialog(true);
+        store.getState().setShowUnsavedDialog(true);
         return;
       }
     }
@@ -345,8 +345,8 @@ export function CorrectionModal({
     // Preview data cleared by store reset
     // Apply selections cleared by store reset
     // Manual preview cleared by store reset
-    store?.getState().setShowAppliedState(false);
-    store?.getState().setShouldEnrich(false);
+    store.getState().setShowAppliedState(false);
+    store.getState().setShouldEnrich(false);
     onClose();
   };
 
@@ -359,14 +359,14 @@ export function CorrectionModal({
   // Handle result selection from SearchView
   const handleResultSelect = (result: { releaseGroupMbid: string }) => {
     // Store selected result MBID for preview step
-    store?.getState().selectResult(result.releaseGroupMbid);
+    store.getState().selectResult(result.releaseGroupMbid);
     // Navigate to preview step
-    store?.getState().nextStep();
+    store.getState().nextStep();
   };
 
   // Handle entering manual edit mode
   const handleEnterManualEdit = () => {
-    store?.getState().enterManualEdit();
+    store.getState().enterManualEdit();
   };
 
   // Handle entering search mode
@@ -375,20 +375,20 @@ export function CorrectionModal({
     if (isManualEditMode && manualEditState && album) {
       const originalState = createInitialEditState(album);
       if (hasUnsavedChanges(originalState, manualEditState)) {
-        store?.getState().setPendingAction(() => () => {
+        store.getState().setPendingAction(() => () => {
           // Mode changed by store action;
           // Manual edit state cleared by store reset
           // Manual preview cleared by store reset
-          store?.getState().setStep(1);
+          store.getState().setStep(1);
         });
-        store?.getState().setShowUnsavedDialog(true);
+        store.getState().setShowUnsavedDialog(true);
         return;
       }
     }
     // Mode changed by store action;
     // Manual edit state cleared by store reset
     // Manual preview cleared by store reset
-    store?.getState().setStep(1);
+    store.getState().setStep(1);
   };
 
   // Handle manual edit preview click
@@ -415,23 +415,23 @@ export function CorrectionModal({
 
   // Handle unsaved changes dialog confirm
   const handleUnsavedConfirm = () => {
-    store?.getState().setShowUnsavedDialog(false);
+    store.getState().setShowUnsavedDialog(false);
     if (pendingAction) {
       pendingAction();
-      store?.getState().setPendingAction(null);
+      store.getState().setPendingAction(null);
     }
   };
 
   // Handle unsaved changes dialog cancel
   const handleUnsavedCancel = () => {
-    store?.getState().setShowUnsavedDialog(false);
-    store?.getState().setPendingAction(null);
+    store.getState().setShowUnsavedDialog(false);
+    store.getState().setPendingAction(null);
   };
 
   // Handle preview loaded callback
   // Handle "Apply This Match" click from PreviewView
   const handleApplyClick = () => {
-    store?.getState().nextStep(); // Navigate from step 2 (Preview) to step 3 (Apply)
+    store.getState().nextStep(); // Navigate from step 2 (Preview) to step 3 (Apply)
   };
 
   // Handle apply action from ApplyView
@@ -442,7 +442,7 @@ export function CorrectionModal({
     if (!albumId || !previewData) return;
 
     // Store enrichment preference for onSuccess callback
-    store?.getState().setShouldEnrich(triggerEnrichment ?? false);
+    store.getState().setShouldEnrich(triggerEnrichment ?? false);
 
     // Convert UI selections to GraphQL format
     const graphqlSelections = toGraphQLSelections(selections, previewData);
@@ -489,7 +489,7 @@ export function CorrectionModal({
 
         <StepIndicator
           currentStep={step}
-          onStepClick={newStep => store?.getState().setStep(newStep)}
+          onStepClick={newStep => store.getState().setStep(newStep)}
           steps={stepLabels}
         />
 
@@ -529,9 +529,7 @@ export function CorrectionModal({
             isManualEditMode &&
             !isLoading &&
             !hasError &&
-            album && (
-              <ManualEditView album={album} />
-            )}
+            album && <ManualEditView album={album} />}
 
           {step === 1 && isLoading && (
             <div className='flex items-center justify-center h-[300px]'>
@@ -550,9 +548,7 @@ export function CorrectionModal({
             !isLoading &&
             !hasError &&
             selectedMbid &&
-            albumId && (
-              <PreviewView albumId={albumId} />
-            )}
+            albumId && <PreviewView albumId={albumId} />}
           {step === 2 &&
             !isManualEditMode &&
             !isLoading &&
@@ -638,7 +634,7 @@ export function CorrectionModal({
                     <div className='flex justify-between gap-3 pt-4 border-t border-zinc-800'>
                       <Button
                         variant='outline'
-                        onClick={() => store?.getState().setStep(1)}
+                        onClick={() => store.getState().setStep(1)}
                         className='border-zinc-700 text-zinc-300 hover:bg-zinc-800'
                       >
                         Back to Edit
@@ -729,7 +725,7 @@ export function CorrectionModal({
                 !(!isManualEditMode && step === 3) && (
                   <Button
                     variant='outline'
-                    onClick={() => store?.getState().prevStep()}
+                    onClick={() => store.getState().prevStep()}
                   >
                     Back
                   </Button>
@@ -741,7 +737,7 @@ export function CorrectionModal({
                 step < maxStepVal && (
                   <Button
                     variant='primary'
-                    onClick={() => store?.getState().nextStep()}
+                    onClick={() => store.getState().nextStep()}
                   >
                     Next
                   </Button>

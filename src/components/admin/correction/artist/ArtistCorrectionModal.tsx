@@ -65,16 +65,18 @@ export function ArtistCorrectionModal({
   const open = artist !== null;
 
   // Get or create store instance for this artist
-  const store = artistId ? getArtistCorrectionStore(artistId) : null;
+  // IMPORTANT: We always get a store (using empty string as fallback) to ensure
+  // hooks are called consistently. The actual artistId check happens in render logic.
+  const store = getArtistCorrectionStore(artistId ?? '');
 
-  // Subscribe to store state
-  const step = store?.((s) => s.step) ?? 0;
-  const selectedArtistMbid = store?.((s) => s.selectedArtistMbid);
-  const previewData = store?.((s) => s.previewData);
-  const showAppliedState = store?.((s) => s.showAppliedState);
+  // Subscribe to store state - these are hook calls, so they must always be called
+  const step = store(s => s.step);
+  const selectedArtistMbid = store(s => s.selectedArtistMbid);
+  const previewData = store(s => s.previewData);
+  const showAppliedState = store(s => s.showAppliedState);
 
-  // Derived selectors
-  const isFirstStep = store ? store(isFirstStepSelector) : true;
+  // Derived selectors - these are also hook calls
+  const isFirstStep = store(isFirstStepSelector);
 
   // Toast state
   const { toast, showToast, hideToast } = useToast();
@@ -97,7 +99,7 @@ export function ArtistCorrectionModal({
   const applyMutation = useApplyArtistCorrectionMutation({
     onSuccess: response => {
       if (response.artistCorrectionApply.success) {
-        store?.getState().setShowAppliedState(true);
+        store.getState().setShowAppliedState(true);
 
         const changes = response.artistCorrectionApply.changes;
         const affectedAlbums =
@@ -127,7 +129,7 @@ export function ArtistCorrectionModal({
         showToast(message, 'success');
 
         // Queue enrichment if requested (read from store)
-        const shouldEnrich = store?.getState().shouldEnrich;
+        const shouldEnrich = store.getState().shouldEnrich;
         if (shouldEnrich && artistId) {
           enrichMutation.mutate(
             {
@@ -213,12 +215,12 @@ export function ArtistCorrectionModal({
 
   // Handle "Select Fields & Apply" click from PreviewView
   const handleApplyClick = () => {
-    store?.getState().nextStep();
+    store.getState().nextStep();
   };
 
   // Handle apply action from ApplyView
   const handleApply = () => {
-    const state = store?.getState();
+    const state = store.getState();
     if (
       !artistId ||
       !state?.previewData ||
@@ -274,7 +276,7 @@ export function ArtistCorrectionModal({
 
         <StepIndicator
           currentStep={step}
-          onStepClick={(s: number) => store?.getState().setStep(s)}
+          onStepClick={(s: number) => store.getState().setStep(s)}
           steps={stepLabels}
         />
 
@@ -299,7 +301,7 @@ export function ArtistCorrectionModal({
               <div className='flex gap-3 pt-4 border-t border-zinc-800'>
                 <Button
                   variant='outline'
-                  onClick={() => store?.getState().setStep(1)}
+                  onClick={() => store.getState().setStep(1)}
                   className='flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800'
                 >
                   <Search className='w-4 h-4 mr-2' />
@@ -390,7 +392,7 @@ export function ArtistCorrectionModal({
               {!isFirstStep && step !== 3 && (
                 <Button
                   variant='outline'
-                  onClick={() => store?.getState().prevStep()}
+                  onClick={() => store.getState().prevStep()}
                 >
                   Back
                 </Button>
