@@ -89,12 +89,39 @@ export function CorrectionModal({
   open,
   onClose,
 }: CorrectionModalProps) {
-  // Initialize Zustand store for this album
-  // IMPORTANT: We always get a store (using empty string as fallback) to ensure
-  // hooks are called consistently. The actual albumId check happens in render logic.
-  const store = getCorrectionStore(albumId ?? '');
+  // Toast state - must be called before any conditional returns
+  const { toast, showToast, hideToast } = useToast();
 
-  // Subscribe to state fields - these are hook calls, so they must always be called
+  // Query client for cache invalidation
+  const queryClient = useQueryClient();
+
+  // Fetch album details when modal is open and albumId is provided
+  const { data, isLoading, error } = useGetAlbumDetailsAdminQuery(
+    { id: albumId! },
+    { enabled: open && !!albumId }
+  );
+
+  // Enrichment mutation for re-enriching after correction
+  const enrichMutation = useTriggerAlbumEnrichmentMutation();
+
+  // Early return for closed modal - no store hooks needed
+  // This is safe because the Dialog won't render content when open=false
+  if (!albumId || !open) {
+    return (
+      <Dialog open={false} onOpenChange={() => onClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Loading...</DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Initialize Zustand store for this album - only when modal is open
+  const store = getCorrectionStore(albumId);
+
+  // Subscribe to state fields
   const step = store(s => s.step);
   const mode = store(s => s.mode);
   const selectedMbid = store(s => s.selectedMbid);
@@ -107,31 +134,14 @@ export function CorrectionModal({
   const showUnsavedDialog = store(s => s.showUnsavedDialog);
   const pendingAction = store(s => s.pendingAction);
 
-  // Use derived selectors - these are also hook calls
+  // Use derived selectors
   const isFirstStep = store(isFirstStepSelector);
   const isLastStep = store(isLastStepSelector);
   const maxStepVal = store(maxStepSelector);
   const stepLabels = store(stepLabelsSelector);
   const isManualEditMode = store(isManualEditModeSelector);
 
-  // Preview data state - shared between PreviewView and ApplyView
-
-  // Toast state
-  const { toast, showToast, hideToast } = useToast();
-
-  // Query client for cache invalidation
-  const queryClient = useQueryClient();
-
-  // Fetch album details when modal is open and albumId is provided
-  const { data, isLoading, error } = useGetAlbumDetailsAdminQuery(
-    { id: albumId! },
-    { enabled: open && !!albumId }
-  );
-
   const albumData = data?.album;
-
-  // Enrichment mutation for re-enriching after correction
-  const enrichMutation = useTriggerAlbumEnrichmentMutation();
   // Apply mutation (search mode)
   const applyMutation = useApplyCorrectionMutation({
     onSuccess: response => {

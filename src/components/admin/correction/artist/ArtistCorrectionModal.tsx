@@ -64,21 +64,7 @@ export function ArtistCorrectionModal({
   const artistId = artist?.id ?? null;
   const open = artist !== null;
 
-  // Get or create store instance for this artist
-  // IMPORTANT: We always get a store (using empty string as fallback) to ensure
-  // hooks are called consistently. The actual artistId check happens in render logic.
-  const store = getArtistCorrectionStore(artistId ?? '');
-
-  // Subscribe to store state - these are hook calls, so they must always be called
-  const step = store(s => s.step);
-  const selectedArtistMbid = store(s => s.selectedArtistMbid);
-  const previewData = store(s => s.previewData);
-  const showAppliedState = store(s => s.showAppliedState);
-
-  // Derived selectors - these are also hook calls
-  const isFirstStep = store(isFirstStepSelector);
-
-  // Toast state
+  // Toast state - must be called before any conditional returns
   const { toast, showToast, hideToast } = useToast();
 
   // Query client for cache invalidation
@@ -90,10 +76,36 @@ export function ArtistCorrectionModal({
     { enabled: open && !!artistId }
   );
 
-  const artistData = data?.artist;
-
   // Enrichment mutation for re-enriching after correction
   const enrichMutation = useTriggerArtistEnrichmentMutation();
+
+  // Early return for closed modal - no store hooks needed
+  // This is safe because the Dialog won't render content when open=false
+  if (!artistId || !open) {
+    return (
+      <Dialog open={false} onOpenChange={() => onClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Loading...</DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Get or create store instance for this artist - only when modal is open
+  const store = getArtistCorrectionStore(artistId);
+
+  // Subscribe to store state
+  const step = store(s => s.step);
+  const selectedArtistMbid = store(s => s.selectedArtistMbid);
+  const previewData = store(s => s.previewData);
+  const showAppliedState = store(s => s.showAppliedState);
+
+  // Derived selectors
+  const isFirstStep = store(isFirstStepSelector);
+
+  const artistData = data?.artist;
 
   // Apply mutation
   const applyMutation = useApplyArtistCorrectionMutation({
