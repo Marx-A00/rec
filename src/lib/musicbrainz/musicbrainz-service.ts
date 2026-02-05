@@ -10,6 +10,8 @@ import type {
   ArtistSearchResult,
   ReleaseGroupSearchResult,
   RecordingSearchResult,
+  ReleaseSearchResult,
+  ReleaseBrowseResult,
 } from './basic-service';
 
 export class MusicBrainzService {
@@ -58,6 +60,39 @@ export class MusicBrainzService {
       () => this.baseService.searchRecordings(query, limit, offset),
       'searchRecordings',
       { query, limit, offset }
+    );
+  }
+
+  /**
+   * Search for releases (specific editions/versions) with enhanced error handling
+   * Use this for finding edition-specific albums like "Deluxe Edition", "10th Anniversary", etc.
+   */
+  async searchReleases(
+    query: string,
+    limit = 25,
+    offset = 0
+  ): Promise<ReleaseSearchResult[]> {
+    return this.errorHandler.withErrorHandling(
+      () => this.baseService.searchReleases(query, limit, offset),
+      'searchReleases',
+      { query, limit, offset }
+    );
+  }
+
+  /**
+   * Browse all releases under a release-group with enhanced error handling
+   * Useful for finding all editions of an album (standard, deluxe, anniversary, etc.)
+   */
+  async getReleaseGroupReleases(
+    releaseGroupId: string,
+    limit = 50,
+    offset = 0
+  ): Promise<ReleaseBrowseResult[]> {
+    return this.errorHandler.withErrorHandling(
+      () =>
+        this.baseService.getReleaseGroupReleases(releaseGroupId, limit, offset),
+      'getReleaseGroupReleases',
+      { releaseGroupId, limit, offset }
     );
   }
 
