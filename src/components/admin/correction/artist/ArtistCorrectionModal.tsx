@@ -64,11 +64,25 @@ export function ArtistCorrectionModal({
   const artistId = artist?.id ?? null;
   const open = artist !== null;
 
-  // Toast state - must be called before any conditional returns
+  // Toast state
   const { toast, showToast, hideToast } = useToast();
 
   // Query client for cache invalidation
   const queryClient = useQueryClient();
+
+  // Initialize Zustand store for this artist
+  // Use a stable placeholder ID when artistId is null to keep hook count stable
+  const storeId = artistId ?? '__placeholder__';
+  const store = getArtistCorrectionStore(storeId);
+
+  // Subscribe to store state - these are hook calls, must always run
+  const step = store(s => s.step);
+  const selectedArtistMbid = store(s => s.selectedArtistMbid);
+  const previewData = store(s => s.previewData);
+  const showAppliedState = store(s => s.showAppliedState);
+
+  // Derived selectors - also hook calls
+  const isFirstStep = store(isFirstStepSelector);
 
   // Fetch artist details when modal is open
   const { data, isLoading, error } = useGetArtistDetailsQuery(
@@ -78,32 +92,6 @@ export function ArtistCorrectionModal({
 
   // Enrichment mutation for re-enriching after correction
   const enrichMutation = useTriggerArtistEnrichmentMutation();
-
-  // Early return for closed modal - no store hooks needed
-  // This is safe because the Dialog won't render content when open=false
-  if (!artistId || !open) {
-    return (
-      <Dialog open={false} onOpenChange={() => onClose()}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Loading...</DialogTitle>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  // Get or create store instance for this artist - only when modal is open
-  const store = getArtistCorrectionStore(artistId);
-
-  // Subscribe to store state
-  const step = store(s => s.step);
-  const selectedArtistMbid = store(s => s.selectedArtistMbid);
-  const previewData = store(s => s.previewData);
-  const showAppliedState = store(s => s.showAppliedState);
-
-  // Derived selectors
-  const isFirstStep = store(isFirstStepSelector);
 
   const artistData = data?.artist;
 

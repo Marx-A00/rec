@@ -89,39 +89,18 @@ export function CorrectionModal({
   open,
   onClose,
 }: CorrectionModalProps) {
-  // Toast state - must be called before any conditional returns
+  // Toast state
   const { toast, showToast, hideToast } = useToast();
 
   // Query client for cache invalidation
   const queryClient = useQueryClient();
 
-  // Fetch album details when modal is open and albumId is provided
-  const { data, isLoading, error } = useGetAlbumDetailsAdminQuery(
-    { id: albumId! },
-    { enabled: open && !!albumId }
-  );
+  // Initialize Zustand store for this album
+  // Use a stable placeholder ID when albumId is null to keep hook count stable
+  const storeId = albumId ?? '__placeholder__';
+  const store = getCorrectionStore(storeId);
 
-  // Enrichment mutation for re-enriching after correction
-  const enrichMutation = useTriggerAlbumEnrichmentMutation();
-
-  // Early return for closed modal - no store hooks needed
-  // This is safe because the Dialog won't render content when open=false
-  if (!albumId || !open) {
-    return (
-      <Dialog open={false} onOpenChange={() => onClose()}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Loading...</DialogTitle>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  // Initialize Zustand store for this album - only when modal is open
-  const store = getCorrectionStore(albumId);
-
-  // Subscribe to state fields
+  // Subscribe to state fields - these are hook calls, must always run
   const step = store(s => s.step);
   const mode = store(s => s.mode);
   const selectedMbid = store(s => s.selectedMbid);
@@ -134,12 +113,21 @@ export function CorrectionModal({
   const showUnsavedDialog = store(s => s.showUnsavedDialog);
   const pendingAction = store(s => s.pendingAction);
 
-  // Use derived selectors
+  // Use derived selectors - these are also hook calls
   const isFirstStep = store(isFirstStepSelector);
   const isLastStep = store(isLastStepSelector);
   const maxStepVal = store(maxStepSelector);
   const stepLabels = store(stepLabelsSelector);
   const isManualEditMode = store(isManualEditModeSelector);
+
+  // Fetch album details when modal is open and albumId is provided
+  const { data, isLoading, error } = useGetAlbumDetailsAdminQuery(
+    { id: albumId! },
+    { enabled: open && !!albumId }
+  );
+
+  // Enrichment mutation for re-enriching after correction
+  const enrichMutation = useTriggerAlbumEnrichmentMutation();
 
   const albumData = data?.album;
   // Apply mutation (search mode)
