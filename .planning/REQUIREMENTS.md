@@ -34,27 +34,27 @@
 
 ### Artist Store
 
-- [ ] **XSTORE-01**: Zustand store created with ArtistCorrectionState + ArtistCorrectionActions interfaces
-- [ ] **XSTORE-02**: Persist middleware with custom sessionStorage adapter keyed by artistId
-- [ ] **XSTORE-03**: Selective persistence via partialize (step, query, offset, selectedMbid only)
-- [ ] **XSTORE-04**: Atomic action for selectResult (sets mbid + advances step)
-- [ ] **XSTORE-05**: Atomic action for setPreviewLoaded (sets previewData)
+- [x] **XSTORE-01**: Zustand store created with ArtistCorrectionState + ArtistCorrectionActions interfaces
+- [x] **XSTORE-02**: Persist middleware with custom sessionStorage adapter keyed by artistId
+- [x] **XSTORE-03**: Selective persistence via partialize (step, query, offset, selectedMbid only)
+- [x] **XSTORE-04**: Atomic action for selectResult (sets mbid + advances step)
+- [x] **XSTORE-05**: Atomic action for setPreviewLoaded (sets previewData)
 
 ### Artist Modal Refactor
 
-- [ ] **XMODAL-01**: ArtistCorrectionModal reads state from useArtistCorrectionStore instead of useState calls
-- [ ] **XMODAL-02**: ArtistCorrectionModal initializes store on open, resets on close
+- [x] **XMODAL-01**: ArtistCorrectionModal reads state from useArtistCorrectionStore instead of useState calls
+- [x] **XMODAL-02**: ArtistCorrectionModal initializes store on open, resets on close
 
 ### Artist Child Component Refactor
 
-- [ ] **XCHILD-01**: ArtistSearchView props reduced to `artist` only
-- [ ] **XCHILD-02**: ArtistPreviewView props reduced to zero
-- [ ] **XCHILD-03**: ArtistApplyView props reduced to `isApplying` + `error` only
+- [x] **XCHILD-01**: ArtistSearchView props reduced to `artist` only
+- [x] **XCHILD-02**: ArtistPreviewView props reduced to zero
+- [x] **XCHILD-03**: ArtistApplyView props reduced to `isApplying` + `error` only
 
 ### Cleanup
 
 - [x] **CLEAN-01**: useCorrectionModalState.ts deleted with zero remaining imports
-- [ ] **CLEAN-02**: useArtistCorrectionModalState.ts deleted with zero remaining imports
+- [x] **CLEAN-02**: useArtistCorrectionModalState.ts deleted with zero remaining imports
 - [x] **CLEAN-03**: Zero `any` types introduced across all changes
 - [x] **CLEAN-04**: StepIndicator stays prop-driven (reused by both modals)
 
@@ -140,12 +140,12 @@ Coverage: 30/30 (100%)
 
 **Status by Phase:**
 
-| Phase | Requirements | Status      |
-| ----- | ------------ | ----------- |
-| 13    | 20           | Complete    |
-| 14    | 10           | Not Started |
+| Phase | Requirements | Status   |
+| ----- | ------------ | -------- |
+| 13    | 20           | Complete |
+| 14    | 10           | Complete |
 
 ---
 
 _Requirements defined: 2026-02-04_
-_Last updated: 2026-02-05 after Phase 13 completion_
+_Last updated: 2026-02-05 after Phase 14 completion_

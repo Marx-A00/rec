@@ -26,10 +26,10 @@ This roadmap spans two milestones for the admin data correction feature. Milesto
 - [x] **Phase 11: Artist Correction** - Same workflow adapted for artists
 - [x] **Phase 12: Polish & Recovery** - Error handling, re-enrichment triggers, and edge cases
 
-**Milestone v1.1 (Zustand Refactor)**
+**Milestone v1.1 (Zustand Refactor) (Complete)**
 
-- [ ] **Phase 13: Album Correction Store** - Replace useState chaos with Zustand for album correction modal
-- [ ] **Phase 14: Artist Correction Store** - Replace useState chaos with Zustand for artist correction modal
+- [x] **Phase 13: Album Correction Store** - Replace useState chaos with Zustand for album correction modal
+- [x] **Phase 14: Artist Correction Store** - Replace useState chaos with Zustand for artist correction modal
 
 ## Phase Details
 
@@ -324,8 +324,8 @@ Plans:
 
 Plans:
 
-- [ ] 14-01-PLAN.md — Create useArtistCorrectionStore with persist middleware and atomic actions
-- [ ] 14-02-PLAN.md — Refactor artist modal + child components, delete legacy hook
+- [x] 14-01-PLAN.md — Create useArtistCorrectionStore with persist middleware and atomic actions
+- [x] 14-02-PLAN.md — Refactor artist modal + child components, delete legacy hook
 
 ## Progress
 
@@ -349,12 +349,12 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 14
 | 11. Artist Correction          | 4/4            | Complete | 2026-02-03 |
 | 12. Polish & Recovery          | 4/4            | Complete | 2026-02-03 |
 
-**Milestone v1.1 (In Progress - Started 2026-02-04)**
+**Milestone v1.1 (Complete - 2026-02-05)**
 
-| Phase                       | Plans Complete | Status      | Completed |
-| --------------------------- | -------------- | ----------- | --------- |
-| 13. Album Correction Store  | 3/3            | Complete    | 2026-02-05 |
-| 14. Artist Correction Store | 0/2            | Not Started | —          |
+| Phase                       | Plans Complete | Status   | Completed  |
+| --------------------------- | -------------- | -------- | ---------- |
+| 13. Album Correction Store  | 3/3            | Complete | 2026-02-05 |
+| 14. Artist Correction Store | 2/2            | Complete | 2026-02-05 |
 
 **Total Plans (v1.0):** 37
 **Total Plans (v1.1):** 5
