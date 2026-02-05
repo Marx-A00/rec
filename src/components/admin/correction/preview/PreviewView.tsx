@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 
 import { useGetCorrectionPreviewQuery } from '@/generated/graphql';
 import type {
@@ -15,6 +15,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { ErrorState, categorizeError } from '../shared';
+import { getCorrectionStore } from '@/stores/useCorrectionStore';
 
 import { PreviewSkeleton } from './PreviewSkeleton';
 import { CoverArtComparison } from './CoverArtComparison';
@@ -31,10 +32,6 @@ import {
 export interface PreviewViewProps {
   /** Database album ID to preview corrections for */
   albumId: string;
-  /** MusicBrainz release group MBID from search selection */
-  releaseGroupMbid: string;
-  /** Callback when preview data loads successfully - exposes data to parent for ApplyView */
-  onPreviewLoaded?: (preview: CorrectionPreview) => void;
 }
 
 /**
@@ -53,27 +50,38 @@ export interface PreviewViewProps {
  *   - External IDs: MusicBrainz, Spotify, Discogs IDs
  * - Footer: "Apply This Match" button to proceed to apply step
  */
-export function PreviewView({
-  albumId,
-  releaseGroupMbid,
-  onPreviewLoaded,
-}: PreviewViewProps) {
+export function PreviewView({ albumId }: PreviewViewProps) {
   const [showOnlyChanges, setShowOnlyChanges] = useState(true);
+  const lastPreviewKeyRef = useRef<string | null>(null);
+
+  // Read state from Zustand store
+  const store = getCorrectionStore(albumId);
+  const selectedMbid = store(s => s.selectedMbid);
+  const setPreviewLoaded = store.getState().setPreviewLoaded;
+
   const { data, isLoading, error, refetch, isFetching } =
     useGetCorrectionPreviewQuery(
-      { input: { albumId, releaseGroupMbid } },
+      { input: { albumId, releaseGroupMbid: selectedMbid! } },
       {
-        enabled: Boolean(albumId && releaseGroupMbid),
-        staleTime: 5 * 60 * 1000, // Cache preview for 5 minutes
+        enabled: Boolean(albumId && selectedMbid),
+        staleTime: 5 * 60 * 1000,
       }
     );
 
-  // Notify parent when preview data loads
+  // Notify store when preview data loads (preserve lastPreviewKeyRef guard)
   useEffect(() => {
-    if (data?.correctionPreview && onPreviewLoaded) {
-      onPreviewLoaded(data.correctionPreview as unknown as CorrectionPreview);
-    }
-  }, [data?.correctionPreview, onPreviewLoaded]);
+    if (!data?.correctionPreview) return;
+
+    const preview = data.correctionPreview;
+    const releaseGroupMbid = preview.sourceResult?.releaseGroupMbid ?? '';
+    const albumUpdatedAt = preview.albumUpdatedAt ?? '';
+    const previewKey = `${preview.albumId}:${releaseGroupMbid}:${albumUpdatedAt}`;
+
+    if (lastPreviewKeyRef.current === previewKey) return;
+
+    lastPreviewKeyRef.current = previewKey;
+    setPreviewLoaded(preview as unknown as CorrectionPreview);
+  }, [data?.correctionPreview, setPreviewLoaded]);
 
   // Determine which accordion sections should be expanded by default
   const defaultExpanded = useMemo(() => {
@@ -131,6 +139,15 @@ export function PreviewView({
           onRetry={() => refetch()}
           isRetrying={isFetching}
         />
+      </div>
+    );
+  }
+
+  // Guard for missing selected MBID
+  if (!selectedMbid) {
+    return (
+      <div className='flex items-center justify-center py-12'>
+        <p className='text-zinc-500'>No result selected</p>
       </div>
     );
   }
@@ -306,7 +323,6 @@ export function PreviewView({
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-
     </div>
   );
 }

@@ -13,42 +13,41 @@ import { ChevronLeft } from 'lucide-react';
 
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import { Checkbox } from '@/components/ui/checkbox';
+import { getCorrectionStore } from '@/stores/useCorrectionStore';
 
 import { FieldSelectionForm } from './FieldSelectionForm';
 import { DiffSummary } from './DiffSummary';
 import { type UIFieldSelections } from './types';
 
 interface ApplyViewProps {
-  /** Album being corrected */
-  _albumId: string;
-  /** Correction preview data */
-  preview: CorrectionPreview;
-  /** Current field selections */
-  selections: UIFieldSelections;
-  /** Callback when selections change */
-  onSelectionsChange: (selections: UIFieldSelections) => void;
-  /** Callback to return to preview step */
-  onBack: () => void;
+  /** Album being corrected (for store access) */
+  albumId: string;
   /** Error from apply mutation, if any */
   error?: Error | null;
-  /** Re-enrichment checkbox state */
-  triggerEnrichment: boolean;
-  /** Callback when re-enrichment checkbox changes */
-  onTriggerEnrichmentChange: (checked: boolean) => void;
 }
 
-export function ApplyView({
-  _albumId,
-  preview,
-  selections,
-  onSelectionsChange,
-  onBack,
-  error = null,
-  triggerEnrichment,
-  onTriggerEnrichmentChange,
-}: ApplyViewProps) {
+export function ApplyView({ albumId, error = null }: ApplyViewProps) {
   // Show/hide error details
   const [showErrorDetails, setShowErrorDetails] = useState(false);
+
+  // Read state from Zustand store
+  const store = getCorrectionStore(albumId);
+  const preview = store(s => s.previewData);
+  const selections = store(s => s.applySelections);
+  const shouldEnrich = store(s => s.shouldEnrich);
+
+  const setApplySelections = store.getState().setApplySelections;
+  const setShouldEnrich = store.getState().setShouldEnrich;
+  const prevStep = store.getState().prevStep;
+
+  // Guard for null preview/selections (shouldn't happen in normal flow)
+  if (!preview || !selections) {
+    return (
+      <div className='flex items-center justify-center py-12'>
+        <p className='text-zinc-500'>Preview data not available</p>
+      </div>
+    );
+  }
 
   // Calculate if any changes are selected
   const hasSelections = calculateHasSelections(selections, preview);
@@ -66,11 +65,11 @@ export function ApplyView({
           </p>
         </div>
         <button
-          onClick={onBack}
+          onClick={prevStep}
           className='flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-zinc-300'
         >
           <ChevronLeft className='h-4 w-4' />
-            Back to compare
+          Back to compare
         </button>
       </div>
 
@@ -81,7 +80,7 @@ export function ApplyView({
           <FieldSelectionForm
             preview={preview}
             selections={selections}
-            onSelectionsChange={onSelectionsChange}
+            onSelectionsChange={setApplySelections}
           />
         </div>
 
@@ -128,9 +127,9 @@ export function ApplyView({
           <div className='flex items-center gap-2'>
             <Checkbox
               id='trigger-enrichment'
-              checked={triggerEnrichment}
+              checked={shouldEnrich}
               onCheckedChange={checked =>
-                onTriggerEnrichmentChange(checked === true)
+                setShouldEnrich(checked === true)
               }
             />
             <label
