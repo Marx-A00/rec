@@ -302,9 +302,9 @@ Plans:
 
 Plans:
 
-- [ ] 13-01-PLAN.md — Create useCorrectionStore with persist middleware and atomic actions
-- [ ] 13-02-PLAN.md — Refactor CorrectionModal and SearchView to read from store
-- [ ] 13-03-PLAN.md — Refactor PreviewView, ApplyView, ManualEditView, delete legacy hook
+- [ ] 13-01-PLAN.md — Create useCorrectionStore Zustand store with persist middleware, atomic actions, and derived selectors
+- [ ] 13-02-PLAN.md — Refactor CorrectionModal and SearchView to consume store, remove useCorrectionModalState import
+- [ ] 13-03-PLAN.md — Refactor PreviewView, ApplyView, ManualEditView to read from store, delete legacy hook
 
 ### Phase 14: Artist Correction Store
 
