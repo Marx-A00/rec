@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 
 import {
-  type ArtistCorrectionPreview,
   type ArtistFieldDiff,
   ChangeType,
 } from '@/generated/graphql';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { getArtistCorrectionStore } from '@/stores/useArtistCorrectionStore';
 
 export interface UIArtistFieldSelections {
   metadata: {
@@ -30,13 +30,13 @@ export interface UIArtistFieldSelections {
 }
 
 interface ArtistApplyViewProps {
-  preview: ArtistCorrectionPreview;
-  onApply: (
-    selections: UIArtistFieldSelections,
-    triggerEnrichment?: boolean
-  ) => void;
-  onBack: () => void;
+  /** Database artist ID for store lookup */
+  artistId: string;
+  /** Callback to trigger apply (reads from store) */
+  onApply: () => void;
+  /** Apply mutation loading state */
   isApplying?: boolean;
+  /** Apply mutation error state */
   error?: Error | null;
 }
 
@@ -44,7 +44,7 @@ interface ArtistApplyViewProps {
  * Create default selections with changed fields selected.
  */
 export function createDefaultArtistSelections(
-  preview: ArtistCorrectionPreview
+  preview: { fieldDiffs: ArtistFieldDiff[] }
 ): UIArtistFieldSelections {
   const metadataFields = [
     'name',
@@ -157,21 +157,30 @@ function FieldSelectionItem({
 
 /**
  * Artist apply view for selecting fields and applying corrections.
+ * Reads preview data and selections from store.
  */
 export function ArtistApplyView({
-  preview,
+  artistId,
   onApply,
-  onBack,
   isApplying = false,
   error = null,
 }: ArtistApplyViewProps) {
-  const [selections, setSelections] = useState<UIArtistFieldSelections>(() =>
-    createDefaultArtistSelections(preview)
-  );
+  // Get store for this artist
+  const store = getArtistCorrectionStore(artistId);
+  const preview = store((s) => s.previewData);
+  const selections = store((s) => s.applySelections);
+  const triggerEnrichment = store((s) => s.shouldEnrich);
+
   const [showErrorDetails, setShowErrorDetails] = useState(false);
 
-  // Re-enrichment checkbox state
-  const [triggerEnrichment, setTriggerEnrichment] = useState(false);
+  // Guard: preview and selections required
+  if (!preview || !selections) {
+    return (
+      <div className='flex items-center justify-center py-12'>
+        <p className='text-zinc-500'>Preview data not available</p>
+      </div>
+    );
+  }
 
   // Group diffs by category
   const metadataFields = [
@@ -200,27 +209,27 @@ export function ArtistApplyView({
 
   const handleApply = () => {
     if (totalSelected === 0 || isApplying) return;
-    onApply(selections, triggerEnrichment);
+    onApply();
   };
 
   const updateMetadata = (
     field: keyof UIArtistFieldSelections['metadata'],
     value: boolean
   ) => {
-    setSelections(prev => ({
-      ...prev,
-      metadata: { ...prev.metadata, [field]: value },
-    }));
+    store.getState().setApplySelections({
+      ...selections,
+      metadata: { ...selections.metadata, [field]: value },
+    });
   };
 
   const updateExternalId = (
     field: keyof UIArtistFieldSelections['externalIds'],
     value: boolean
   ) => {
-    setSelections(prev => ({
-      ...prev,
-      externalIds: { ...prev.externalIds, [field]: value },
-    }));
+    store.getState().setApplySelections({
+      ...selections,
+      externalIds: { ...selections.externalIds, [field]: value },
+    });
   };
 
   return (
@@ -236,7 +245,7 @@ export function ArtistApplyView({
           </p>
         </div>
         <button
-          onClick={onBack}
+          onClick={() => store.getState().prevStep()}
           className='flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-zinc-300'
         >
           <ChevronLeft className='h-4 w-4' />
@@ -365,7 +374,7 @@ export function ArtistApplyView({
               id='trigger-enrichment-artist'
               checked={triggerEnrichment}
               onCheckedChange={checked =>
-                setTriggerEnrichment(checked === true)
+                store.getState().setShouldEnrich(checked === true)
               }
             />
             <label

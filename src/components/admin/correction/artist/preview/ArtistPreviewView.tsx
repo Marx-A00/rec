@@ -16,16 +16,13 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Skeleton } from '@/components/ui/skeletons';
+import { getArtistCorrectionStore } from '@/stores/useArtistCorrectionStore';
 
 import { ErrorState, categorizeError } from '../../shared';
 
 export interface ArtistPreviewViewProps {
-  /** Database artist ID */
+  /** Database artist ID for store lookup */
   artistId: string;
-  /** MusicBrainz artist ID from search selection */
-  artistMbid: string;
-  /** Callback when preview data loads successfully */
-  onPreviewLoaded?: (preview: ArtistCorrectionPreview) => void;
 }
 
 /**
@@ -125,27 +122,30 @@ function ArtistPreviewSkeleton() {
  *
  * Shows all artist fields with diff highlighting.
  * Includes warning about affected albums count.
+ * Reads artistMbid from store and writes preview data back to store on load.
  */
-export function ArtistPreviewView({
-  artistId,
-  artistMbid,
-  onPreviewLoaded,
-}: ArtistPreviewViewProps) {
+export function ArtistPreviewView({ artistId }: ArtistPreviewViewProps) {
+  // Get store for this artist
+  const store = getArtistCorrectionStore(artistId);
+  const selectedArtistMbid = store((s) => s.selectedArtistMbid);
+
   const { data, isLoading, error, refetch, isFetching } =
     useGetArtistCorrectionPreviewQuery(
-      { artistId, artistMbid },
+      { artistId, artistMbid: selectedArtistMbid! },
       {
-        enabled: Boolean(artistId && artistMbid),
+        enabled: Boolean(artistId && selectedArtistMbid),
         staleTime: 5 * 60 * 1000,
       }
     );
 
-  // Notify parent when preview data loads
+  // Write preview data to store when it loads
   useEffect(() => {
-    if (data?.artistCorrectionPreview && onPreviewLoaded) {
-      onPreviewLoaded(data.artistCorrectionPreview as ArtistCorrectionPreview);
+    if (data?.artistCorrectionPreview) {
+      store.getState().setPreviewLoaded(
+        data.artistCorrectionPreview as ArtistCorrectionPreview
+      );
     }
-  }, [data?.artistCorrectionPreview, onPreviewLoaded]);
+  }, [data?.artistCorrectionPreview, store]);
 
   // Determine which accordion sections should be expanded by default
   const defaultExpanded = useMemo(() => {
@@ -184,6 +184,15 @@ export function ArtistPreviewView({
     if (expanded.length === 0) return ['metadata', 'external-ids'];
     return expanded;
   }, [data?.artistCorrectionPreview]);
+
+  // Guard: selectedArtistMbid required
+  if (!selectedArtistMbid) {
+    return (
+      <div className='flex items-center justify-center py-12'>
+        <p className='text-zinc-500'>No artist selected</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return <ArtistPreviewSkeleton />;
@@ -336,7 +345,6 @@ export function ArtistPreviewView({
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-
     </div>
   );
 }
