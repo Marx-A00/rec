@@ -2,7 +2,7 @@
 
 ## Overview
 
-This roadmap delivers an admin data correction feature that lets administrators fix problematic albums and artists directly from the admin dashboard. The journey moves from infrastructure (queue priority, MBID verification) through service layer (search, preview, apply logic), GraphQL integration, and finally UI implementation across modal entry, search results, preview comparison, manual editing, and artist correction workflows. Each phase delivers a coherent, testable capability that builds toward the complete correction system.
+This roadmap spans two milestones for the admin data correction feature. Milestone v1.0 (Phases 1-12) delivered the complete correction workflow with search, preview, apply, and manual edit capabilities for both albums and artists. Milestone v1.1 (Phases 13-14) refactors state management to use Zustand stores, eliminating prop drilling and manual sessionStorage synchronization while maintaining identical UI behavior.
 
 ## Phases
 
@@ -10,6 +10,8 @@ This roadmap delivers an admin data correction feature that lets administrators 
 
 - Integer phases (1, 2, 3...): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+**Milestone v1.0 (Complete)**
 
 - [x] **Phase 1: Foundation & Infrastructure** - Queue priority and MBID verification for reliable API calls
 - [x] **Phase 2: Search Service** - MusicBrainz search with fuzzy matching and rate limiting
@@ -23,6 +25,11 @@ This roadmap delivers an admin data correction feature that lets administrators 
 - [x] **Phase 10: Manual Edit** - Direct field editing without external search
 - [x] **Phase 11: Artist Correction** - Same workflow adapted for artists
 - [x] **Phase 12: Polish & Recovery** - Error handling, re-enrichment triggers, and edge cases
+
+**Milestone v1.1 (Zustand Refactor)**
+
+- [ ] **Phase 13: Album Correction Store** - Replace useState chaos with Zustand for album correction modal
+- [ ] **Phase 14: Artist Correction Store** - Replace useState chaos with Zustand for artist correction modal
 
 ## Phase Details
 
@@ -271,10 +278,62 @@ Plans:
 - [x] 12-03-PLAN.md — Re-enrichment trigger integration
 - [x] 12-04-PLAN.md — Keyboard shortcuts and accessibility
 
+---
+
+## Milestone v1.1: Zustand Refactor
+
+### Phase 13: Album Correction Store
+
+**Goal**: Album correction modal state managed by single Zustand store with zero UI changes
+**Depends on**: Phase 12 (v1.0 complete)
+**Requirements**: ASTORE-01, ASTORE-02, ASTORE-03, ASTORE-04, ASTORE-05, ASTORE-06, ASTORE-07, ASTORE-08, AMODAL-01, AMODAL-02, AMODAL-03, ACHILD-01, ACHILD-02, ACHILD-03, ACHILD-04, ACHILD-05, ACHILD-06, CLEAN-01, CLEAN-03, CLEAN-04
+**Success Criteria** (what must be TRUE):
+
+1. Admin opens correction modal and sees same UI as before (zero visual changes)
+2. Search query persists across page navigations via sessionStorage keyed by albumId
+3. Selected result and preview data persist across page navigations
+4. Manual edit mode and unsaved changes state persist correctly
+5. Step navigation works identically (mode switches, preview loading, atomic transitions)
+6. Child components receive minimal props (SearchView gets album only, PreviewView gets zero props, ApplyView gets error only, ManualEditView gets album only)
+7. useCorrectionModalState.ts deleted with zero remaining imports
+8. Zero any types introduced
+
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 13-01-PLAN.md — Create useCorrectionStore with persist middleware and atomic actions
+- [ ] 13-02-PLAN.md — Refactor CorrectionModal and SearchView to read from store
+- [ ] 13-03-PLAN.md — Refactor PreviewView, ApplyView, ManualEditView, delete legacy hook
+
+### Phase 14: Artist Correction Store
+
+**Goal**: Artist correction modal state managed by single Zustand store with zero UI changes
+**Depends on**: Phase 13
+**Requirements**: XSTORE-01, XSTORE-02, XSTORE-03, XSTORE-04, XSTORE-05, XMODAL-01, XMODAL-02, XCHILD-01, XCHILD-02, XCHILD-03, CLEAN-02, CLEAN-03
+**Success Criteria** (what must be TRUE):
+
+1. Admin opens artist correction modal and sees same UI as before (zero visual changes)
+2. Search query persists across page navigations via sessionStorage keyed by artistId
+3. Selected result and preview data persist correctly
+4. Step navigation works identically (search → preview → apply)
+5. Child components receive minimal props (ArtistSearchView gets artist only, ArtistPreviewView gets zero props, ArtistApplyView gets isApplying + error only)
+6. useArtistCorrectionModalState.ts deleted with zero remaining imports
+7. Zero any types introduced
+
+**Plans**: 2 plans
+
+Plans:
+
+- [ ] 14-01-PLAN.md — Create useArtistCorrectionStore with persist middleware and atomic actions
+- [ ] 14-02-PLAN.md — Refactor artist modal + child components, delete legacy hook
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → ... → 12
+Phases execute in numeric order: 1 → 2 → 3 → ... → 14
+
+**Milestone v1.0 (Complete - 2026-02-03)**
 
 | Phase                          | Plans Complete | Status      | Completed  |
 | ------------------------------ | -------------- | ----------- | ---------- |
@@ -291,5 +350,14 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 12
 | 11. Artist Correction          | 4/4            | Complete    | 2026-02-03 |
 | 12. Polish & Recovery          | 4/4            | Complete    | 2026-02-03 |
 
-**Total Plans:** 37
-**Total Requirements Covered:** 35/35
+**Milestone v1.1 (In Progress - Started 2026-02-04)**
+
+| Phase                     | Plans Complete | Status      | Completed |
+| ------------------------- | -------------- | ----------- | --------- |
+| 13. Album Correction Store | 0/3            | Not Started | —         |
+| 14. Artist Correction Store | 0/2            | Not Started | —         |
+
+**Total Plans (v1.0):** 37
+**Total Plans (v1.1):** 5
+**Total Requirements Covered (v1.0):** 35/35
+**Total Requirements Covered (v1.1):** 30/30

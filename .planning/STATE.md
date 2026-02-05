@@ -2,74 +2,71 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-23)
+See: .planning/PROJECT.md (updated 2026-02-04)
 
 **Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Milestone Complete — All phases executed
+**Current focus:** Milestone v1.1 — Zustand Correction Modal Refactor
 
 ## Current Position
 
-Phase: 12 of 12 (Polish & Recovery)
-Plan: 4 of 4 in current phase (All Complete)
-Status: Complete
-Last activity: 2026-02-03 — Completed Phase 12 (all plans executed, goal verified)
+Phase: 13 (Album Correction Store)
+Plan: Not started
+Status: Ready to begin Phase 13
+Last activity: 2026-02-04 — Roadmap created for v1.1
 
-Progress: [████████████████████████████] 100%
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0/5 plans (0%)
 
 ## Performance Metrics
 
-**Velocity:**
+**Milestone v1.0 (Completed 2026-02-03):**
+- Phases: 12
+- Plans: 37
+- Duration: 11 days (2026-01-23 to 2026-02-03)
+- Requirements covered: 35/35
 
-- Total plans completed: 37
-- Average duration: 3.5min
-- Total execution time: ~150min
-
-**By Phase:**
-
-- Phase 01: 3 plans, 15.3min total, 5.1min avg
-- Phase 02: 3 plans, 7.1min total, 2.4min avg
-- Phase 03: 3 plans, 14min total, 4.7min avg
-- Phase 04: 3 plans, 11min total, 3.7min avg
-- Phase 05: 3 plans, 14.6min total, 4.9min avg
-- Phase 06: 3 plans, 13.3min total, 4.4min avg
-- Phase 07: 3 plans, 7.6min total, 2.5min avg
-- Phase 08: 3 plans, 10.8min total, 3.6min avg
-- Phase 09: 3 plans, 17min total, 5.7min avg
-- Phase 10: 3 plans, ~14.5min total, 4.8min avg
-- Phase 11: 4 plans, ~18min total, 4.5min avg
-- Phase 12: 4 plans, ~12min total, 3min avg
-
-*Updated after each plan completion*
+**Milestone v1.1 (Started 2026-02-04):**
+- Phases: 2 (13-14)
+- Plans: 5
+- Requirements: 30/30 mapped
+- Estimated duration: 2-3 days (focused refactor)
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+**v1.0 Carried Forward:**
+- MusicBrainz only for v1 (Discogs/Spotify deferred)
+- Session-only state (no DB persistence for correction queue)
+- Thin resolver pattern — all business logic in services
 
-- [12-04]: Cmd/Ctrl+Enter deferred — native Enter in inputs works well, Escape key provides main keyboard benefit
-- [12-03]: Re-enrichment checkbox unchecked by default to avoid unnecessary API load
-- [11-03]: Store MusicBrainz disambiguation in Artist.biography field
-- [11-03]: Extract year from lifeSpan.begin and store in formedYear
-- [11-03]: Generate preview inside artistCorrectionApply mutation (consistent with album pattern)
+**v1.1 New Decisions:**
+- Separate stores for album and artist (different state shapes: dual mode vs search-only)
+- Accept one-time sessionStorage format reset on migration (admin-only, corrections are short-lived)
+- pendingAction (closure) excluded from persistence — not serializable
+- ManualEditView internal form state stays local (formState, errors, showValidationBanner)
+- StepIndicator stays prop-driven (reused by both modals, no store needed)
 
 ### Pending Todos
 
-None.
+**Phase 13:**
+1. Create useCorrectionStore with persist middleware (sessionStorage keyed by albumId)
+2. Refactor CorrectionModal to initialize/reset store on open/close
+3. Refactor SearchView, PreviewView, ApplyView, ManualEditView to read from store
+4. Delete useCorrectionModalState.ts after verifying zero imports
+
+**Phase 14:**
+1. Create useArtistCorrectionStore (simpler than album — no dual mode)
+2. Refactor ArtistCorrectionModal and child components
+3. Delete useArtistCorrectionModalState.ts
 
 ### Blockers/Concerns
 
-None — milestone complete.
+None. Zustand already in codebase (v5.0.8), patterns established in useSearchStore.ts and useTourStore.ts.
 
 ## Session Continuity
 
-Last session: 2026-02-03
-Stopped at: Milestone complete — all 12 phases executed
-Resume file: None
+Last session: 2026-02-04
+Stopped at: Roadmap creation for v1.1
+Resume file: .planning/phases/13-01-PLAN.md (ready to create)
 
-## Next Steps
-
-All phases complete! Ready for milestone audit:
-- `/gsd:audit-milestone` — verify requirements, cross-phase integration, E2E flows
-- `/gsd:complete-milestone` — skip audit, archive directly
+**Next action:** Create Phase 13 Plan 1 (useCorrectionStore with persist middleware)

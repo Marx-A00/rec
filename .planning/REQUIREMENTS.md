@@ -1,152 +1,143 @@
-# Requirements: Admin Album Data Correction
+# Requirements: Zustand Correction Modal Refactor
 
-**Defined:** 2026-01-23
+**Defined:** 2026-02-04
 **Core Value:** Admins can fix a broken album in under a minute without touching the database.
+**Milestone:** v1.1 — Pure state management refactor, zero visual changes.
 
-## v1 Requirements
+## v1.1 Requirements
 
-Requirements for initial release. Each maps to roadmap phases.
+### Album Store
 
-### Modal & Entry Point
+- [ ] **ASTORE-01**: Zustand store created with full CorrectionState + CorrectionActions interfaces
+- [ ] **ASTORE-02**: Persist middleware with custom sessionStorage adapter keyed by albumId
+- [ ] **ASTORE-03**: Selective persistence via partialize (step, mode, query, offset, selectedMbid, manualEditState only)
+- [ ] **ASTORE-04**: Derived selectors exported as standalone functions (isFirstStep, isLastStep, maxStep, stepLabels, isManualEditMode)
+- [ ] **ASTORE-05**: Atomic action for selectResult (sets mbid + advances step in one set())
+- [ ] **ASTORE-06**: Atomic action for setPreviewLoaded (sets previewData + applySelections + resets shouldEnrich in one set())
+- [ ] **ASTORE-07**: Atomic action for enterSearch/enterManualEdit (mode + step + cleanup in one set())
+- [ ] **ASTORE-08**: Unsaved changes dialog actions (show, confirm discard, cancel)
 
-- [ ] **MODAL-01**: "Fix Data" button appears on album rows in admin music database page
-- [ ] **MODAL-02**: Clicking "Fix Data" opens a correction modal/panel
-- [ ] **MODAL-03**: Modal shows current album data prominently (title, artist, release date, track count, cover art)
-- [ ] **MODAL-04**: Modal shows which external IDs are present/missing (MusicBrainz, Discogs, Spotify)
-- [ ] **MODAL-05**: Modal can be closed without making changes
+### Album Modal Refactor
 
-### Search MusicBrainz
+- [ ] **AMODAL-01**: CorrectionModal reads state from useCorrectionStore instead of useState calls
+- [ ] **AMODAL-02**: CorrectionModal initializes store on open, resets on close
+- [ ] **AMODAL-03**: Mutation callbacks stay in CorrectionModal (toast + store + queryClient orchestration)
 
-- [ ] **SEARCH-01**: Search bar in modal to search MusicBrainz
-- [ ] **SEARCH-02**: Search query pre-populated with current album title and artist
-- [ ] **SEARCH-03**: Admin can modify search query freely
-- [ ] **SEARCH-04**: Results displayed with source indicator [MB]
-- [ ] **SEARCH-05**: Each result shows: title, artist, release date, track count, cover art thumbnail
-- [ ] **SEARCH-06**: Results show match confidence score (fuzzy matching)
-- [ ] **SEARCH-07**: Rate limiting respected (results may load progressively)
-- [ ] **SEARCH-08**: Error states shown if MusicBrainz fails
+### Album Child Component Refactor
 
-### Preview & Comparison
+- [ ] **ACHILD-01**: SearchView props reduced to `album` only — reads search state from store
+- [ ] **ACHILD-02**: PreviewView props reduced to zero — reads albumId, selectedResultMbid from store
+- [ ] **ACHILD-03**: PreviewView preserves lastPreviewKeyRef guard against useEffect loops
+- [ ] **ACHILD-04**: ApplyView props reduced to `error` only — reads preview, selections, enrichment from store
+- [ ] **ACHILD-05**: ManualEditView props reduced to `album` only — reads manualEditState from store
+- [ ] **ACHILD-06**: ManualEditView internal form state (formState, errors, showValidationBanner) stays as local useState
 
-- [ ] **PREVIEW-01**: Clicking a search result shows detailed preview
-- [ ] **PREVIEW-02**: Preview shows side-by-side comparison: current data vs. MusicBrainz data
-- [ ] **PREVIEW-03**: Changed fields are highlighted (additions in green, changes in yellow)
-- [ ] **PREVIEW-04**: Preview includes track listing from MusicBrainz
-- [ ] **PREVIEW-05**: Preview shows which external IDs would be linked
-- [ ] **PREVIEW-06**: Admin can collapse preview and view other results
+### Artist Store
 
-### Apply Correction
+- [ ] **XSTORE-01**: Zustand store created with ArtistCorrectionState + ArtistCorrectionActions interfaces
+- [ ] **XSTORE-02**: Persist middleware with custom sessionStorage adapter keyed by artistId
+- [ ] **XSTORE-03**: Selective persistence via partialize (step, query, offset, selectedMbid only)
+- [ ] **XSTORE-04**: Atomic action for selectResult (sets mbid + advances step)
+- [ ] **XSTORE-05**: Atomic action for setPreviewLoaded (sets previewData)
 
-- [ ] **APPLY-01**: "Apply This Match" button on selected result
-- [ ] **APPLY-02**: Confirmation dialog shows summary of changes to be made
-- [ ] **APPLY-03**: Admin can choose which fields to update (checkboxes)
-- [ ] **APPLY-04**: Admin can choose whether to trigger full re-enrichment
-- [ ] **APPLY-05**: Changes are applied atomically (all or nothing)
-- [ ] **APPLY-06**: Success message shown with summary of applied changes
-- [ ] **APPLY-07**: Correction logged in enrichment_logs table with admin user ID
-- [ ] **APPLY-08**: Album's data quality updated appropriately
+### Artist Modal Refactor
 
-### Manual Edit
+- [ ] **XMODAL-01**: ArtistCorrectionModal reads state from useArtistCorrectionStore instead of useState calls
+- [ ] **XMODAL-02**: ArtistCorrectionModal initializes store on open, resets on close
 
-- [ ] **MANUAL-01**: "Manual Edit" tab in the correction modal
-- [ ] **MANUAL-02**: Editable fields: title, artist name(s), release date, release type
-- [ ] **MANUAL-03**: Editable external IDs: MusicBrainz ID, Discogs ID, Spotify ID
-- [ ] **MANUAL-04**: Validation on external IDs (format checking)
-- [ ] **MANUAL-05**: Preview of changes before applying
-- [ ] **MANUAL-06**: Changes logged with "manual_correction" source
+### Artist Child Component Refactor
 
-### Artist Correction
+- [ ] **XCHILD-01**: ArtistSearchView props reduced to `artist` only
+- [ ] **XCHILD-02**: ArtistPreviewView props reduced to zero
+- [ ] **XCHILD-03**: ArtistApplyView props reduced to `isApplying` + `error` only
 
-- [ ] **ARTIST-01**: "Fix Data" button on artist rows in admin artist view
-- [ ] **ARTIST-02**: Artist correction modal with same search/preview/apply pattern
-- [ ] **ARTIST-03**: Artist search on MusicBrainz
-- [ ] **ARTIST-04**: Preview shows: name, disambiguation, country, type
-- [ ] **ARTIST-05**: Corrections logged with admin user ID
+### Cleanup
 
-## v2 Requirements
-
-Deferred to future release. Tracked but not in current roadmap.
-
-### Additional Sources
-
-- **SOURCE-01**: Search Discogs for album matches
-- **SOURCE-02**: Search Spotify for album matches
-- **SOURCE-03**: Unified results from all sources with source badges
-
-### Bulk Operations
-
-- **BULK-01**: Checkbox selection on album rows in music database
-- **BULK-02**: "Add to Correction Queue" action for selected albums
-- **BULK-03**: Navigate between queued albums without closing modal
-- **BULK-04**: Queue persists during session
-
-### Discovery
-
-- **DISC-01**: Filter albums by data quality (LOW, MEDIUM, HIGH)
-- **DISC-02**: Filter albums by enrichment status
-- **DISC-03**: Filter albums that have zero tracks
-- **DISC-04**: "Needs correction" indicator on problematic albums
+- [ ] **CLEAN-01**: useCorrectionModalState.ts deleted with zero remaining imports
+- [ ] **CLEAN-02**: useArtistCorrectionModalState.ts deleted with zero remaining imports
+- [ ] **CLEAN-03**: Zero `any` types introduced across all changes
+- [ ] **CLEAN-04**: StepIndicator stays prop-driven (reused by both modals)
 
 ## Out of Scope
 
-| Feature                      | Reason                                                            |
-| ---------------------------- | ----------------------------------------------------------------- |
-| Auto-correction suggestions  | v1 is manual search only; ML-based matching is future enhancement |
-| Duplicate album merging      | Separate feature with different complexity                        |
-| User-submitted corrections   | Admin-only for data integrity in v1                               |
-| Correction history/revert UI | Audit log exists but no UI to browse/revert                       |
-| Real-time collaboration      | Single admin at a time is fine for v1                             |
+- React Query migration — server state stays as React Query hooks
+- ManualEditView internal form state — stays as local useState
+- Shared store between album and artist — different state shapes warrant separate stores
+- New UI features, steps, or modes — pure refactor
+- Toast state migration — stays local in modals
+- Component tree changes — same hierarchy, different wiring
 
 ## Traceability
 
-| Requirement | Phase       | Status   |
-| ----------- | ----------- | -------- |
-| MODAL-01    | Phase 6     | Pending  |
-| MODAL-02    | Phase 6     | Pending  |
-| MODAL-03    | Phase 6     | Pending  |
-| MODAL-04    | Phase 6     | Pending  |
-| MODAL-05    | Phase 6     | Pending  |
-| SEARCH-01   | Phase 2, 7  | Partial  |
-| SEARCH-02   | Phase 2, 7  | Partial  |
-| SEARCH-03   | Phase 7     | Pending  |
-| SEARCH-04   | Phase 2, 7  | Partial  |
-| SEARCH-05   | Phase 2, 7  | Partial  |
-| SEARCH-06   | Phase 2, 7  | Partial  |
-| SEARCH-07   | Phase 1     | Complete |
-| SEARCH-08   | Phase 1, 12 | Partial  |
-| PREVIEW-01  | Phase 3, 8  | Partial  |
-| PREVIEW-02  | Phase 3, 8  | Partial  |
-| PREVIEW-03  | Phase 3, 8  | Partial  |
-| PREVIEW-04  | Phase 3, 8  | Partial  |
-| PREVIEW-05  | Phase 3, 8  | Partial  |
-| PREVIEW-06  | Phase 8     | Pending  |
-| APPLY-01    | Phase 4, 9  | Partial  |
-| APPLY-02    | Phase 4, 9  | Partial  |
-| APPLY-03    | Phase 4, 9  | Partial  |
-| APPLY-04    | Phase 4, 9  | Partial  |
-| APPLY-05    | Phase 4     | Complete |
-| APPLY-06    | Phase 9     | Pending  |
-| APPLY-07    | Phase 4     | Complete |
-| APPLY-08    | Phase 4     | Complete |
-| MANUAL-01   | Phase 10    | Pending  |
-| MANUAL-02   | Phase 10    | Pending  |
-| MANUAL-03   | Phase 10    | Pending  |
-| MANUAL-04   | Phase 10    | Pending  |
-| MANUAL-05   | Phase 10    | Pending  |
-| MANUAL-06   | Phase 10    | Pending  |
-| ARTIST-01   | Phase 11    | Pending  |
-| ARTIST-02   | Phase 11    | Pending  |
-| ARTIST-03   | Phase 11    | Pending  |
-| ARTIST-04   | Phase 11    | Pending  |
-| ARTIST-05   | Phase 11    | Pending  |
+**Phase 13: Album Correction Store**
 
-**Coverage:**
+Album Store Requirements:
+- ASTORE-01 → Phase 13
+- ASTORE-02 → Phase 13
+- ASTORE-03 → Phase 13
+- ASTORE-04 → Phase 13
+- ASTORE-05 → Phase 13
+- ASTORE-06 → Phase 13
+- ASTORE-07 → Phase 13
+- ASTORE-08 → Phase 13
 
-- v1 requirements: 35 total
-- Mapped to phases: 35/35
+Album Modal Refactor Requirements:
+- AMODAL-01 → Phase 13
+- AMODAL-02 → Phase 13
+- AMODAL-03 → Phase 13
+
+Album Child Component Refactor Requirements:
+- ACHILD-01 → Phase 13
+- ACHILD-02 → Phase 13
+- ACHILD-03 → Phase 13
+- ACHILD-04 → Phase 13
+- ACHILD-05 → Phase 13
+- ACHILD-06 → Phase 13
+
+Cleanup Requirements (Album):
+- CLEAN-01 → Phase 13
+- CLEAN-03 → Phase 13 (enforced during album refactor)
+- CLEAN-04 → Phase 13 (verified during refactor)
+
+**Phase 14: Artist Correction Store**
+
+Artist Store Requirements:
+- XSTORE-01 → Phase 14
+- XSTORE-02 → Phase 14
+- XSTORE-03 → Phase 14
+- XSTORE-04 → Phase 14
+- XSTORE-05 → Phase 14
+
+Artist Modal Refactor Requirements:
+- XMODAL-01 → Phase 14
+- XMODAL-02 → Phase 14
+
+Artist Child Component Refactor Requirements:
+- XCHILD-01 → Phase 14
+- XCHILD-02 → Phase 14
+- XCHILD-03 → Phase 14
+
+Cleanup Requirements (Artist):
+- CLEAN-02 → Phase 14
+- CLEAN-03 → Phase 14 (enforced during artist refactor)
+
+**Coverage Summary:**
+
+- Total v1.1 requirements: 30
+- Mapped to Phase 13: 20 requirements
+- Mapped to Phase 14: 10 requirements
 - Unmapped: 0
+
+Coverage: 30/30 (100%)
+
+**Status by Phase:**
+
+| Phase | Requirements | Status      |
+| ----- | ------------ | ----------- |
+| 13    | 20           | Not Started |
+| 14    | 10           | Not Started |
 
 ---
 
-_Requirements defined: 2026-01-23_
-_Last updated: 2026-01-24 after Phase 4 completion_
+*Requirements defined: 2026-02-04*
+*Last updated: 2026-02-04 after roadmap creation*
