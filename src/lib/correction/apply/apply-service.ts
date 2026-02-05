@@ -220,7 +220,16 @@ export class ApplyCorrectionService {
             selections
           );
 
-          // 5. Fetch updated album with relations for response
+          // 5. Update trackCount to match actual track count after changes
+          const actualTrackCount = await tx.track.count({
+            where: { albumId },
+          });
+          await tx.album.update({
+            where: { id: albumId },
+            data: { trackCount: actualTrackCount },
+          });
+
+          // 6. Fetch updated album with relations for response
           const afterAlbum = await tx.album.findUnique({
             where: { id: albumId },
             include: {
