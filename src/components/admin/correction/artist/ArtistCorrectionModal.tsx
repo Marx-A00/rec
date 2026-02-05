@@ -12,12 +12,17 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useArtistCorrectionModalState } from '@/hooks/useArtistCorrectionModalState';
+import {
+  getArtistCorrectionStore,
+  clearArtistCorrectionStoreCache,
+  isFirstStep as isFirstStepSelector,
+} from '@/stores/useArtistCorrectionStore';
 import {
   useGetArtistDetailsQuery,
   useApplyArtistCorrectionMutation,
   useTriggerArtistEnrichmentMutation,
-  EnrichmentPriority,  type Artist,
+  EnrichmentPriority,
+  type Artist,
   type ArtistCorrectionPreview,
 } from '@/generated/graphql';
 import Toast, { useToast } from '@/components/ui/toast';
@@ -28,10 +33,7 @@ import { StepIndicator } from '../StepIndicator';
 import { ArtistCurrentDataView } from './ArtistCurrentDataView';
 import { ArtistSearchView } from './search/ArtistSearchView';
 import { ArtistPreviewView } from './preview/ArtistPreviewView';
-import {
-  ArtistApplyView,
-  type UIArtistFieldSelections,
-} from './apply/ArtistApplyView';
+import { ArtistApplyView } from './apply/ArtistApplyView';
 
 export interface ArtistCorrectionModalProps {
   /** Artist to correct, or null if modal should be closed */
@@ -52,7 +54,7 @@ export interface ArtistCorrectionModalProps {
  * 3. Apply - Select fields and apply corrections
  *
  * The modal fetches artist details internally using the artist ID.
- * State is persisted per artist in sessionStorage.
+ * State is persisted per artist in sessionStorage via Zustand store.
  */
 export function ArtistCorrectionModal({
   artist,
@@ -62,26 +64,18 @@ export function ArtistCorrectionModal({
   const artistId = artist?.id ?? null;
   const open = artist !== null;
 
-  const modalState = useArtistCorrectionModalState(artistId);
-  const {
-    currentStep,
-    setCurrentStep,
-    nextStep,
-    prevStep,
-    clearState,
-    isFirstStep,
-    selectedArtistMbid,
-  } = modalState;
+  // Get or create store instance for this artist
+  const store = artistId ? getArtistCorrectionStore(artistId) : null;
 
-  // Preview data state - shared between PreviewView and ApplyView
-  const [previewData, setPreviewData] =
-    useState<ArtistCorrectionPreview | null>(null);
+  // Subscribe to store state
+  const step = store?.((s) => s.step) ?? 0;
+  const selectedArtistMbid = store?.((s) => s.selectedArtistMbid);
+  const previewData = store?.((s) => s.previewData);
+  const showAppliedState = store?.((s) => s.showAppliedState);
 
-  // Success animation state
-  const [showAppliedState, setShowAppliedState] = useState(false);
+  // Derived selectors
+  const isFirstStep = store ? store(isFirstStepSelector) : true;
 
-  // Store enrichment preference from ApplyView
-  const [shouldEnrich, setShouldEnrich] = useState(false);
   // Toast state
   const { toast, showToast, hideToast } = useToast();
 
@@ -96,13 +90,14 @@ export function ArtistCorrectionModal({
 
   const artistData = data?.artist;
 
-  // Apply mutation
   // Enrichment mutation for re-enriching after correction
   const enrichMutation = useTriggerArtistEnrichmentMutation();
+
+  // Apply mutation
   const applyMutation = useApplyArtistCorrectionMutation({
     onSuccess: response => {
       if (response.artistCorrectionApply.success) {
-        setShowAppliedState(true);
+        store?.getState().setShowAppliedState(true);
 
         const changes = response.artistCorrectionApply.changes;
         const affectedAlbums =
@@ -131,7 +126,8 @@ export function ArtistCorrectionModal({
 
         showToast(message, 'success');
 
-        // Queue enrichment if requested
+        // Queue enrichment if requested (read from store)
+        const shouldEnrich = store?.getState().shouldEnrich;
         if (shouldEnrich && artistId) {
           enrichMutation.mutate(
             {
@@ -142,13 +138,14 @@ export function ArtistCorrectionModal({
               onSuccess: () => {
                 showToast('Enrichment queued', 'success');
               },
-              onError: (error) => {
+              onError: error => {
                 console.error('Failed to queue enrichment:', error);
                 // Don't show toast - correction already succeeded
               },
             }
           );
         }
+
         // Invalidate artist queries
         if (artistId) {
           queryClient.invalidateQueries({ queryKey: ['artist', artistId] });
@@ -158,7 +155,9 @@ export function ArtistCorrectionModal({
 
         // Auto-close after 1.5s
         setTimeout(() => {
-          clearState();
+          if (artistId) {
+            clearArtistCorrectionStoreCache(artistId);
+          }
           onSuccess();
         }, 1500);
       } else {
@@ -200,9 +199,9 @@ export function ArtistCorrectionModal({
   }, [open]);
 
   const handleClose = () => {
-    clearState();
-    setPreviewData(null);
-    setShowAppliedState(false);
+    if (artistId) {
+      clearArtistCorrectionStoreCache(artistId);
+    }
     onClose();
   };
 
@@ -212,31 +211,21 @@ export function ArtistCorrectionModal({
     }
   };
 
-  // Handle result selection from SearchView
-  const handleResultSelect = (mbid: string) => {
-    modalState.setSelectedResult(mbid);
-    nextStep();
-  };
-
-  // Handle preview loaded callback
-  const handlePreviewLoaded = (preview: ArtistCorrectionPreview) => {
-    setPreviewData(preview);
-  };
-
   // Handle "Select Fields & Apply" click from PreviewView
   const handleApplyClick = () => {
-    nextStep();
+    store?.getState().nextStep();
   };
 
   // Handle apply action from ApplyView
-  const handleApply = (
-    selections: UIArtistFieldSelections,
-    triggerEnrichment?: boolean
-  ) => {
-    if (!artistId || !previewData || !selectedArtistMbid) return;
-
-    // Store enrichment preference for onSuccess callback
-    setShouldEnrich(triggerEnrichment ?? false);
+  const handleApply = () => {
+    const state = store?.getState();
+    if (
+      !artistId ||
+      !state?.previewData ||
+      !state?.selectedArtistMbid ||
+      !state?.applySelections
+    )
+      return;
 
     // Get expectedUpdatedAt from current artist
     const expectedUpdatedAt = artistData?.updatedAt
@@ -246,22 +235,22 @@ export function ArtistCorrectionModal({
     applyMutation.mutate({
       input: {
         artistId,
-        artistMbid: selectedArtistMbid,
+        artistMbid: state.selectedArtistMbid,
         selections: {
           metadata: {
-            name: selections.metadata.name,
-            disambiguation: selections.metadata.disambiguation,
-            countryCode: selections.metadata.countryCode,
-            artistType: selections.metadata.artistType,
-            area: selections.metadata.area,
-            beginDate: selections.metadata.beginDate,
-            endDate: selections.metadata.endDate,
-            gender: selections.metadata.gender,
+            name: state.applySelections.metadata.name,
+            disambiguation: state.applySelections.metadata.disambiguation,
+            countryCode: state.applySelections.metadata.countryCode,
+            artistType: state.applySelections.metadata.artistType,
+            area: state.applySelections.metadata.area,
+            beginDate: state.applySelections.metadata.beginDate,
+            endDate: state.applySelections.metadata.endDate,
+            gender: state.applySelections.metadata.gender,
           },
           externalIds: {
-            musicbrainzId: selections.externalIds.musicbrainzId,
-            ipi: selections.externalIds.ipi,
-            isni: selections.externalIds.isni,
+            musicbrainzId: state.applySelections.externalIds.musicbrainzId,
+            ipi: state.applySelections.externalIds.ipi,
+            isni: state.applySelections.externalIds.isni,
           },
         },
         expectedUpdatedAt,
@@ -284,8 +273,8 @@ export function ArtistCorrectionModal({
         </DialogHeader>
 
         <StepIndicator
-          currentStep={currentStep}
-          onStepClick={setCurrentStep}
+          currentStep={step}
+          onStepClick={(s: number) => store?.getState().setStep(s)}
           steps={stepLabels}
         />
 
@@ -302,7 +291,7 @@ export function ArtistCorrectionModal({
           )}
 
           {/* Step 0: Current Data */}
-          {currentStep === 0 && !isLoading && !hasError && artistData && (
+          {step === 0 && !isLoading && !hasError && artistData && (
             <div className='space-y-6'>
               <ArtistCurrentDataView artist={artistData as Artist} />
 
@@ -310,7 +299,7 @@ export function ArtistCorrectionModal({
               <div className='flex gap-3 pt-4 border-t border-zinc-800'>
                 <Button
                   variant='outline'
-                  onClick={() => setCurrentStep(1)}
+                  onClick={() => store?.getState().setStep(1)}
                   className='flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800'
                 >
                   <Search className='w-4 h-4 mr-2' />
@@ -319,82 +308,64 @@ export function ArtistCorrectionModal({
               </div>
             </div>
           )}
-          {currentStep === 0 && !isLoading && !hasError && !artistData && (
+          {step === 0 && !isLoading && !hasError && !artistData && (
             <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
               <p className='text-muted-foreground'>No artist data available</p>
             </div>
           )}
 
           {/* Step 1: Search */}
-          {currentStep === 1 && !isLoading && !hasError && artistData && (
-            <ArtistSearchView
-              artist={artistData as Artist}
-              onResultSelect={handleResultSelect}
-              modalState={modalState}
-            />
+          {step === 1 && !isLoading && !hasError && artistData && (
+            <ArtistSearchView artist={artistData as Artist} />
           )}
-          {currentStep === 1 && isLoading && (
+          {step === 1 && isLoading && (
             <div className='flex items-center justify-center h-[300px]'>
               <Loader2 className='h-6 w-6 animate-spin text-zinc-400' />
             </div>
           )}
 
           {/* Step 2: Preview */}
-          {currentStep === 2 &&
+          {step === 2 &&
             !isLoading &&
             !hasError &&
             selectedArtistMbid &&
-            artistId && (
-              <ArtistPreviewView
-                artistId={artistId}
-                artistMbid={selectedArtistMbid}
-                onPreviewLoaded={handlePreviewLoaded}
-              />
-            )}
-          {currentStep === 2 &&
-            !isLoading &&
-            !hasError &&
-            !selectedArtistMbid && (
-              <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
-                <div className='text-center'>
-                  <p className='text-zinc-500'>No result selected.</p>
-                  <p className='text-sm text-zinc-600 mt-1'>
-                    Please go back and select a search result.
-                  </p>
-                </div>
+            artistId && <ArtistPreviewView artistId={artistId} />}
+          {step === 2 && !isLoading && !hasError && !selectedArtistMbid && (
+            <div className='flex items-center justify-center h-[300px] border border-dashed border-muted-foreground/30 rounded-lg'>
+              <div className='text-center'>
+                <p className='text-zinc-500'>No result selected.</p>
+                <p className='text-sm text-zinc-600 mt-1'>
+                  Please go back and select a search result.
+                </p>
               </div>
-            )}
+            </div>
+          )}
 
           {/* Step 3: Apply */}
-          {currentStep === 3 &&
-            !isLoading &&
-            !hasError &&
-            artistId &&
-            previewData && (
-              <>
-                {showAppliedState ? (
-                  <div className='flex flex-col items-center justify-center h-[300px]'>
-                    <CheckCircle className='h-16 w-16 text-green-400 mb-4' />
-                    <p className='text-2xl font-semibold text-green-400'>
-                      Applied!
-                    </p>
-                  </div>
-                ) : (
-                  <ArtistApplyView
-                    preview={previewData}
-                    onApply={handleApply}
-                    onBack={prevStep}
-                    isApplying={applyMutation.isPending}
-                    error={
-                      applyMutation.error instanceof Error
-                        ? applyMutation.error
-                        : null
-                    }
-                  />
-                )}
-              </>
-            )}
-          {currentStep === 3 &&
+          {step === 3 && !isLoading && !hasError && artistId && previewData && (
+            <>
+              {showAppliedState ? (
+                <div className='flex flex-col items-center justify-center h-[300px]'>
+                  <CheckCircle className='h-16 w-16 text-green-400 mb-4' />
+                  <p className='text-2xl font-semibold text-green-400'>
+                    Applied!
+                  </p>
+                </div>
+              ) : (
+                <ArtistApplyView
+                  artistId={artistId}
+                  onApply={handleApply}
+                  isApplying={applyMutation.isPending}
+                  error={
+                    applyMutation.error instanceof Error
+                      ? applyMutation.error
+                      : null
+                  }
+                />
+              )}
+            </>
+          )}
+          {step === 3 &&
             !isLoading &&
             !hasError &&
             (!artistId || !previewData) && (
@@ -416,12 +387,15 @@ export function ArtistCorrectionModal({
             </Button>
             <div className='flex gap-2'>
               {/* Back button - show on steps 1-2 (not on apply step 3) */}
-              {!isFirstStep && currentStep !== 3 && (
-                <Button variant='outline' onClick={prevStep}>
+              {!isFirstStep && step !== 3 && (
+                <Button
+                  variant='outline'
+                  onClick={() => store?.getState().prevStep()}
+                >
                   Back
                 </Button>
               )}
-              {currentStep === 2 && previewData && !showAppliedState && (
+              {step === 2 && previewData && !showAppliedState && (
                 <Button variant='primary' onClick={handleApplyClick}>
                   Select Fields & Apply
                 </Button>

@@ -10,7 +10,7 @@ import {
   type Artist,
   type ArtistCorrectionSearchResult,
 } from '@/generated/graphql';
-import { type useArtistCorrectionModalState } from '@/hooks/useArtistCorrectionModalState';
+import { getArtistCorrectionStore } from '@/stores/useArtistCorrectionStore';
 import { Skeleton } from '@/components/ui/skeletons';
 
 import { ErrorState, categorizeError } from '../../shared';
@@ -20,10 +20,6 @@ import { ArtistSearchCard } from './ArtistSearchCard';
 export interface ArtistSearchViewProps {
   /** Current artist data (for pre-populating search input) */
   artist: Artist;
-  /** Callback when user selects a search result */
-  onResultSelect: (mbid: string) => void;
-  /** Modal state for persistence */
-  modalState: ReturnType<typeof useArtistCorrectionModalState>;
 }
 
 /**
@@ -35,18 +31,11 @@ export interface ArtistSearchViewProps {
  * - If returning from preview step with saved state, auto-triggers search
  * - Results persist when navigating back from preview
  */
-export function ArtistSearchView({
-  artist,
-  onResultSelect,
-  modalState,
-}: ArtistSearchViewProps) {
-  const {
-    searchQuery,
-    setSearchQuery,
-    searchOffset,
-    setSearchOffset,
-    setSelectedResult,
-  } = modalState;
+export function ArtistSearchView({ artist }: ArtistSearchViewProps) {
+  // Get store for this artist
+  const store = getArtistCorrectionStore(artist.id);
+  const searchQuery = store((s) => s.searchQuery);
+  const searchOffset = store((s) => s.searchOffset);
 
   // Extract initial value from artist
   const initialArtistName = artist.name;
@@ -80,8 +69,7 @@ export function ArtistSearchView({
   // Handle search submission
   const handleSearch = () => {
     if (!inputValue.trim()) return;
-    setSearchQuery(inputValue.trim());
-    setSearchOffset(0);
+    store.getState().setSearchQuery(inputValue.trim());
     setIsSearchTriggered(true);
   };
 
@@ -92,10 +80,9 @@ export function ArtistSearchView({
     }
   };
 
-  // Handle result click
+  // Handle result click - atomic action (sets mbid AND advances step)
   const handleResultClick = (result: ArtistCorrectionSearchResult) => {
-    setSelectedResult(result.artistMbid);
-    onResultSelect(result.artistMbid);
+    store.getState().selectResult(result.artistMbid);
   };
 
   // Auto-trigger search on mount if returning from preview with saved state
@@ -208,7 +195,9 @@ export function ArtistSearchView({
             <div className='pt-4 text-center'>
               <Button
                 variant='outline'
-                onClick={() => setSearchOffset(searchOffset + 10)}
+                onClick={() =>
+                  store.getState().setSearchOffset(searchOffset + 10)
+                }
                 disabled={isLoadingMore}
                 className='border-zinc-700'
               >
