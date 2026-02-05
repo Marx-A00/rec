@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-04)
 ## Current Position
 
 Phase: 14 (Artist Correction Store)
-Plan: 1 of 3
-Status: In progress — 14-01 complete
-Last activity: 2026-02-05 — Completed 14-01-PLAN.md (Create Artist Correction Store)
+Plan: 2 of 3
+Status: In progress — 14-02 complete
+Last activity: 2026-02-05 — Completed 14-02-PLAN.md (Wire Store to Components)
 
-Progress: [████████████████░░░░░░░░░░░░░] 4/5 plans (80%)
+Progress: [████████████████████░░░░░░░░] 5/6 plans (83%)
 
 ## Performance Metrics
 
@@ -26,8 +26,8 @@ Progress: [████████████████░░░░░░░
 
 **Milestone v1.1 (In Progress):**
 - Phases: 2 (13-14)
-- Plans: 5 (4 complete, 1 remaining)
-- Requirements: 30/30 mapped (24 complete, 6 remaining)
+- Plans: 6 (5 complete, 1 remaining)
+- Requirements: 30/30 mapped (28 complete, 2 remaining)
 
 ## Accumulated Context
 
@@ -61,6 +61,12 @@ Progress: [████████████████░░░░░░░
 - **ARTIST-STORE-03:** Search query is plain string (not object like album store) — artist search is single-field
 - **ARTIST-STORE-04:** Step count hard-coded for search mode (maxStep=3), manual mode logic included but not implemented
 
+**Phase 14 Decisions (14-02):**
+- **ACHILD-01-ARTIST:** ArtistSearchView props reduced to artist-only (all search state in store)
+- **AMODAL-03-ARTIST:** Mutation callbacks remain in ArtistCorrectionModal (orchestrate toast + store + queryClient)
+- **CLEAN-04-ARTIST:** StepIndicator stays prop-driven (reusable across modals, no store dependency)
+- **IDENTITY-PROP-ARTIST:** ArtistPreviewView and ArtistApplyView keep artistId as prop (required to locate store instance)
+
 ### Pending Todos
 
 **Phase 13 (Complete):**
@@ -71,20 +77,21 @@ Progress: [████████████████░░░░░░░
 
 **Phase 14:**
 1. ✅ Create useArtistCorrectionStore (simpler than album — search-only mode)
-2. ⏳ Refactor ArtistCorrectionModal and child components (14-02)
-3. ⏳ Delete useArtistCorrectionModalState.ts (14-03)
+2. ✅ Refactor ArtistCorrectionModal and child components (14-02)
+3. ✅ Delete useArtistCorrectionModalState.ts (14-02)
+4. ⏳ Final verification (14-03)
 
 ### Blockers/Concerns
 
-None. Store creation complete, ready for component migration.
+None. All component migrations complete, ready for final verification.
 
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Completed 14-01-PLAN.md
-Resume file: .planning/phases/14-artist-correction-store/14-02-PLAN.md
+Stopped at: Completed 14-02-PLAN.md
+Resume file: .planning/phases/14-artist-correction-store/14-03-PLAN.md
 
-**Next action:** Execute 14-02-PLAN.md (Wire Store to Components)
+**Next action:** Execute 14-03-PLAN.md (Verification) if exists, or mark phase complete
 
 Config:
 {
