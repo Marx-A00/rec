@@ -308,6 +308,98 @@ export function findMatchingTrack(
 }
 
 // ============================================================================
+// Release Matching Utilities (for edition/version albums)
+// ============================================================================
+
+import type { ReleaseBrowseResult } from '../../musicbrainz/basic-service';
+
+/**
+ * Find the best matching release from a release-group's releases
+ * Used when searching for edition/version albums (e.g., "Deluxe Edition")
+ *
+ * @param releases - Array of releases from getReleaseGroupReleases()
+ * @param targetTitle - The album title we're trying to match (with edition suffix)
+ * @returns The best matching release or null if no good match found
+ */
+export function findBestReleaseMatch(
+  releases: ReleaseBrowseResult[],
+  targetTitle: string
+): { release: ReleaseBrowseResult; score: number } | null {
+  if (!releases || releases.length === 0) return null;
+
+  const normalizedTarget = targetTitle.toLowerCase().trim();
+  let bestMatch: { release: ReleaseBrowseResult; score: number } | null = null;
+  let bestScore = 0;
+
+  for (const release of releases) {
+    const normalizedRelease = release.title.toLowerCase().trim();
+
+    // Calculate title similarity
+    const titleSimilarity = calculateStringSimilarity(
+      normalizedTarget,
+      normalizedRelease
+    );
+
+    // Exact match gets highest score
+    if (normalizedTarget === normalizedRelease) {
+      return { release, score: 1.0 };
+    }
+
+    // Check if target title contains or is contained by release title
+    let containmentBonus = 0;
+    if (
+      normalizedTarget.includes(normalizedRelease) ||
+      normalizedRelease.includes(normalizedTarget)
+    ) {
+      containmentBonus = 0.1;
+    }
+
+    // Prefer official releases
+    let statusBonus = 0;
+    if (release.status?.toLowerCase() === 'official') {
+      statusBonus = 0.05;
+    }
+
+    // Prefer releases with tracks (have media with track data)
+    let trackDataBonus = 0;
+    if (release.media?.some(m => m.tracks && m.tracks.length > 0)) {
+      trackDataBonus = 0.1;
+    }
+
+    const combinedScore =
+      titleSimilarity + containmentBonus + statusBonus + trackDataBonus;
+
+    if (combinedScore > bestScore) {
+      bestScore = combinedScore;
+      bestMatch = { release, score: combinedScore };
+    }
+  }
+
+  // Only return matches with reasonable confidence (70%+)
+  return bestMatch && bestMatch.score >= 0.7 ? bestMatch : null;
+}
+
+/**
+ * Build a search query for release search (not release-group)
+ * Used for finding specific editions/versions
+ */
+export function buildReleaseSearchQuery(
+  title: string,
+  artistName?: string
+): string {
+  let query = `release:"${title}"`;
+
+  if (artistName) {
+    query += ` AND artist:"${artistName}"`;
+  }
+
+  // Only include official releases
+  query += ` AND status:official`;
+
+  return query;
+}
+
+// ============================================================================
 // Discogs Matching Utilities
 // ============================================================================
 

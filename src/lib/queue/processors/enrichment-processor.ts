@@ -27,12 +27,16 @@ import {
 import {
   calculateStringSimilarity,
   buildAlbumSearchQuery,
+  buildReleaseSearchQuery,
   findBestAlbumMatch,
   findBestArtistMatch,
   findBestTrackMatch,
+  findBestReleaseMatch,
   normalizeTrackTitle,
   findMatchingTrack,
 } from './utils';
+
+import { analyzeTitle } from '../../musicbrainz/title-utils';
 
 // ============================================================================
 // Field Change Tracking Types
@@ -473,11 +477,23 @@ export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
     }
 
     // If no MusicBrainz ID or lookup failed, try searching
+    // Enhanced flow: handles edition/version albums (Deluxe, Anniversary, etc.)
     if (!enrichmentResult && album.title) {
       try {
         if (!sourcesAttempted.includes('MUSICBRAINZ')) {
           sourcesAttempted.push('MUSICBRAINZ');
         }
+
+        // Analyze the title for edition/version indicators
+        const titleAnalysis = analyzeTitle(album.title);
+        if (titleAnalysis.isEditionOrVersion) {
+          console.log(
+            `📀 Edition detected: "${album.title}" (keywords: ${titleAnalysis.detectedKeywords.join(', ')})`
+          );
+          console.log(`   Base title: "${titleAnalysis.baseTitle}"`);
+        }
+
+        // Step 1: Try full title search on release-groups (current behavior)
         apiCallCount++;
         const searchQuery = buildAlbumSearchQuery(album);
         const searchResults = await musicBrainzService.searchReleaseGroups(
@@ -485,80 +501,231 @@ export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
           5
         );
 
+        let bestMatch = null;
         if (searchResults && searchResults.length > 0) {
           console.log(
-            `🔍 Found ${searchResults.length} search results for "${album.title}"`
+            `🔍 Found ${searchResults.length} release-group results for "${album.title}"`
           );
           console.log(
             `📊 First result: "${searchResults[0].title}" by ${searchResults[0].artistCredit?.map((ac: { name: string }) => ac.name).join(', ')} (score: ${searchResults[0].score})`
           );
 
-          const bestMatch = findBestAlbumMatch(album, searchResults);
+          bestMatch = findBestAlbumMatch(album, searchResults);
           console.log(
-            `🎯 Best match: ${
+            `🎯 Best release-group match: ${
               bestMatch
                 ? `"${bestMatch.result.title}" - Combined: ${(bestMatch.score * 100).toFixed(1)}% (MB: ${bestMatch.mbScore}, Jaccard: ${(bestMatch.jaccardScore * 100).toFixed(1)}%)`
                 : 'None found'
             }`
           );
+        }
 
-          if (bestMatch && bestMatch.score > 0.8) {
-            apiCallCount++;
-            const mbData = await musicBrainzService.getReleaseGroup(
-              bestMatch.result.id,
-              ['artists', 'tags', 'releases']
+        // Step 2: If edition detected AND no good release-group match, try release search
+        let releaseMatch = null;
+        if (!bestMatch && titleAnalysis.isEditionOrVersion) {
+          console.log(
+            `🔍 No release-group match, trying direct release search for edition...`
+          );
+          apiCallCount++;
+          const releaseQuery = buildReleaseSearchQuery(album.title, artistName);
+          const releaseResults = await musicBrainzService.searchReleases(
+            releaseQuery,
+            5
+          );
+
+          if (releaseResults && releaseResults.length > 0) {
+            console.log(
+              `📀 Found ${releaseResults.length} release results for "${album.title}"`
             );
-            if (mbData) {
-              const updateResult = await updateAlbumFromMusicBrainz(
-                album,
-                mbData
+            // Find best match based on title similarity
+            for (const release of releaseResults) {
+              const titleSimilarity = calculateStringSimilarity(
+                album.title.toLowerCase(),
+                release.title.toLowerCase()
               );
-              enrichmentResult = updateResult.updateData;
-              allFieldChanges.push(...updateResult.fieldChanges);
-              newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
+              if (titleSimilarity > 0.8) {
+                releaseMatch = release;
+                console.log(
+                  `🎯 Found release match: "${release.title}" (${(titleSimilarity * 100).toFixed(1)}% similar)`
+                );
+                break;
+              }
+            }
+          }
+        }
 
-              if (mbData.title) fieldsEnriched.push('title');
-              if (mbData['first-release-date'])
-                fieldsEnriched.push('releaseDate');
-              if (mbData['artist-credit']) fieldsEnriched.push('artists');
+        // Step 3: If still no match AND edition detected, search with base title
+        let baseMatch = null;
+        if (!bestMatch && !releaseMatch && titleAnalysis.isEditionOrVersion) {
+          console.log(
+            `🔍 Trying base title search: "${titleAnalysis.baseTitle}"`
+          );
+          apiCallCount++;
+          // Build query with base title
+          const baseAlbum = { ...album, title: titleAnalysis.baseTitle };
+          const baseQuery = buildAlbumSearchQuery(baseAlbum);
+          const baseResults = await musicBrainzService.searchReleaseGroups(
+            baseQuery,
+            5
+          );
 
-              // Fetch tracks for this album
-              if (mbData.releases && mbData.releases.length > 0) {
-                try {
-                  const primaryRelease = mbData.releases[0];
+          if (baseResults && baseResults.length > 0) {
+            baseMatch = findBestAlbumMatch(baseAlbum, baseResults);
+            if (baseMatch && baseMatch.score > 0.8) {
+              console.log(
+                `🎯 Found base title match: "${baseMatch.result.title}" (${(baseMatch.score * 100).toFixed(1)}%)`
+              );
+
+              // Step 4: Get all releases under this release-group and find the specific edition
+              apiCallCount++;
+              const releases = await musicBrainzService.getReleaseGroupReleases(
+                baseMatch.result.id,
+                50
+              );
+              console.log(
+                `📀 Found ${releases.length} releases under "${baseMatch.result.title}"`
+              );
+
+              const specificRelease = findBestReleaseMatch(
+                releases,
+                album.title
+              );
+              if (specificRelease) {
+                console.log(
+                  `✅ Found specific edition: "${specificRelease.release.title}" (${(specificRelease.score * 100).toFixed(1)}% match)`
+                );
+                releaseMatch = {
+                  id: specificRelease.release.id,
+                  title: specificRelease.release.title,
+                  releaseGroup: { id: baseMatch.result.id },
+                };
+              } else {
+                console.log(
+                  `⚠️ No specific edition found, using first official release`
+                );
+                // Use base match, tracks will come from first release
+                bestMatch = baseMatch;
+              }
+            }
+          }
+        }
+
+        // Process the match we found (either release-group or specific release)
+        if (bestMatch && bestMatch.score > 0.8) {
+          apiCallCount++;
+          const mbData = await musicBrainzService.getReleaseGroup(
+            bestMatch.result.id,
+            ['artists', 'tags', 'releases']
+          );
+          if (mbData) {
+            const updateResult = await updateAlbumFromMusicBrainz(
+              album,
+              mbData
+            );
+            enrichmentResult = updateResult.updateData;
+            allFieldChanges.push(...updateResult.fieldChanges);
+            newDataQuality = bestMatch.score > 0.9 ? 'HIGH' : 'MEDIUM';
+
+            if (mbData.title) fieldsEnriched.push('title');
+            if (mbData['first-release-date'])
+              fieldsEnriched.push('releaseDate');
+            if (mbData['artist-credit']) fieldsEnriched.push('artists');
+
+            // Fetch tracks for this album
+            if (mbData.releases && mbData.releases.length > 0) {
+              try {
+                const primaryRelease = mbData.releases[0];
+                console.log(
+                  `🎵 Fetching tracks for release: ${primaryRelease.title}`
+                );
+
+                apiCallCount++;
+                const releaseWithTracks = await musicBrainzService.getRelease(
+                  primaryRelease.id,
+                  ['recordings', 'artist-credits', 'isrcs', 'url-rels']
+                );
+
+                if (releaseWithTracks?.media) {
+                  const totalTracks = releaseWithTracks.media.reduce(
+                    (sum: number, medium: { tracks?: unknown[] }) =>
+                      sum + (medium.tracks?.length || 0),
+                    0
+                  );
                   console.log(
-                    `🎵 Fetching tracks for release: ${primaryRelease.title}`
+                    `✅ Fetched ${totalTracks} tracks for "${album.title}" in one API call!`
                   );
 
-                  apiCallCount++;
-                  const releaseWithTracks = await musicBrainzService.getRelease(
-                    primaryRelease.id,
-                    ['recordings', 'artist-credits', 'isrcs', 'url-rels']
-                  );
-
-                  if (releaseWithTracks?.media) {
-                    const totalTracks = releaseWithTracks.media.reduce(
-                      (sum: number, medium: { tracks?: unknown[] }) =>
-                        sum + (medium.tracks?.length || 0),
-                      0
-                    );
-                    console.log(
-                      `✅ Fetched ${totalTracks} tracks for "${album.title}" in one API call!`
-                    );
-
-                    fieldsEnriched.push('tracks');
-                    await processMusicBrainzTracksForAlbum(
-                      album.id,
-                      releaseWithTracks
-                    );
-                  }
-                } catch (error) {
-                  console.warn(
-                    `⚠️ Failed to fetch tracks for album "${album.title}":`,
-                    error
+                  fieldsEnriched.push('tracks');
+                  await processMusicBrainzTracksForAlbum(
+                    album.id,
+                    releaseWithTracks
                   );
                 }
+              } catch (error) {
+                console.warn(
+                  `⚠️ Failed to fetch tracks for album "${album.title}":`,
+                  error
+                );
               }
+            }
+          }
+        } else if (releaseMatch) {
+          // We found a specific release (edition), fetch its data
+          console.log(
+            `🎵 Fetching tracks from specific release: "${releaseMatch.title}"`
+          );
+          apiCallCount++;
+          const releaseWithTracks = await musicBrainzService.getRelease(
+            releaseMatch.id,
+            [
+              'recordings',
+              'artist-credits',
+              'isrcs',
+              'url-rels',
+              'release-groups',
+            ]
+          );
+
+          if (releaseWithTracks) {
+            // Update album with release-group data if available
+            if (releaseMatch.releaseGroup?.id) {
+              apiCallCount++;
+              const mbData = await musicBrainzService.getReleaseGroup(
+                releaseMatch.releaseGroup.id,
+                ['artists', 'tags']
+              );
+              if (mbData) {
+                const updateResult = await updateAlbumFromMusicBrainz(
+                  album,
+                  mbData
+                );
+                enrichmentResult = updateResult.updateData;
+                allFieldChanges.push(...updateResult.fieldChanges);
+                newDataQuality = 'MEDIUM'; // Edition match is medium confidence
+
+                if (mbData.title) fieldsEnriched.push('title');
+                if (mbData['first-release-date'])
+                  fieldsEnriched.push('releaseDate');
+                if (mbData['artist-credit']) fieldsEnriched.push('artists');
+              }
+            }
+
+            // Process tracks from the specific release
+            if (releaseWithTracks.media) {
+              const totalTracks = releaseWithTracks.media.reduce(
+                (sum: number, medium: { tracks?: unknown[] }) =>
+                  sum + (medium.tracks?.length || 0),
+                0
+              );
+              console.log(
+                `✅ Fetched ${totalTracks} tracks from edition "${releaseMatch.title}"`
+              );
+
+              fieldsEnriched.push('tracks');
+              await processMusicBrainzTracksForAlbum(
+                album.id,
+                releaseWithTracks
+              );
             }
           }
         }
