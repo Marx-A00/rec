@@ -235,7 +235,6 @@ Plans:
 - [x] 10-02-PLAN.md — Input components (EditableField, ArtistChips, ExternalIdInput)
 - [x] 10-03-PLAN.md — ManualEditView container and modal integration
 
-
 ### Phase 11: Artist Correction
 
 **Goal**: Same correction workflow works for artists
@@ -302,9 +301,9 @@ Plans:
 
 Plans:
 
-- [ ] 13-01-PLAN.md — Create useCorrectionStore Zustand store with persist middleware, atomic actions, and derived selectors
-- [ ] 13-02-PLAN.md — Refactor CorrectionModal and SearchView to consume store, remove useCorrectionModalState import
-- [ ] 13-03-PLAN.md — Refactor PreviewView, ApplyView, ManualEditView to read from store, delete legacy hook
+- [x] 13-01-PLAN.md — Create useCorrectionStore Zustand store with persist middleware, atomic actions, and derived selectors
+- [x] 13-02-PLAN.md — Refactor CorrectionModal and SearchView to consume store, remove useCorrectionModalState import
+- [x] 13-03-PLAN.md — Refactor PreviewView, ApplyView, ManualEditView to read from store, delete legacy hook
 
 ### Phase 14: Artist Correction Store
 
@@ -335,27 +334,27 @@ Phases execute in numeric order: 1 → 2 → 3 → ... → 14
 
 **Milestone v1.0 (Complete - 2026-02-03)**
 
-| Phase                          | Plans Complete | Status      | Completed  |
-| ------------------------------ | -------------- | ----------- | ---------- |
-| 1. Foundation & Infrastructure | 3/3            | Complete    | 2026-01-24 |
-| 2. Search Service              | 3/3            | Complete    | 2026-01-23 |
-| 3. Preview Service             | 3/3            | Complete    | 2026-01-23 |
-| 4. Apply Service               | 3/3            | Complete    | 2026-01-24 |
-| 5. GraphQL Integration         | 3/3            | Complete    | 2026-01-24 |
-| 6. Modal & Entry Point         | 3/3            | Complete    | 2026-01-25 |
-| 7. Search UI                   | 3/3            | Complete    | 2026-01-26 |
-| 8. Preview UI                  | 3/3            | Complete    | 2026-01-26 |
-| 9. Apply UI                    | 3/3            | Complete    | 2026-01-26 |
-| 10. Manual Edit                | 3/3            | Complete    | 2026-01-27 |
-| 11. Artist Correction          | 4/4            | Complete    | 2026-02-03 |
-| 12. Polish & Recovery          | 4/4            | Complete    | 2026-02-03 |
+| Phase                          | Plans Complete | Status   | Completed  |
+| ------------------------------ | -------------- | -------- | ---------- |
+| 1. Foundation & Infrastructure | 3/3            | Complete | 2026-01-24 |
+| 2. Search Service              | 3/3            | Complete | 2026-01-23 |
+| 3. Preview Service             | 3/3            | Complete | 2026-01-23 |
+| 4. Apply Service               | 3/3            | Complete | 2026-01-24 |
+| 5. GraphQL Integration         | 3/3            | Complete | 2026-01-24 |
+| 6. Modal & Entry Point         | 3/3            | Complete | 2026-01-25 |
+| 7. Search UI                   | 3/3            | Complete | 2026-01-26 |
+| 8. Preview UI                  | 3/3            | Complete | 2026-01-26 |
+| 9. Apply UI                    | 3/3            | Complete | 2026-01-26 |
+| 10. Manual Edit                | 3/3            | Complete | 2026-01-27 |
+| 11. Artist Correction          | 4/4            | Complete | 2026-02-03 |
+| 12. Polish & Recovery          | 4/4            | Complete | 2026-02-03 |
 
 **Milestone v1.1 (In Progress - Started 2026-02-04)**
 
-| Phase                     | Plans Complete | Status      | Completed |
-| ------------------------- | -------------- | ----------- | --------- |
-| 13. Album Correction Store | 0/3            | Not Started | —         |
-| 14. Artist Correction Store | 0/2            | Not Started | —         |
+| Phase                       | Plans Complete | Status      | Completed |
+| --------------------------- | -------------- | ----------- | --------- |
+| 13. Album Correction Store  | 3/3            | Complete    | 2026-02-05 |
+| 14. Artist Correction Store | 0/2            | Not Started | —          |
 
 **Total Plans (v1.0):** 37
 **Total Plans (v1.1):** 5
