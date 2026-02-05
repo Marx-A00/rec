@@ -10,6 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { getCorrectionStore } from '@/stores/useCorrectionStore';
 
 import type { CurrentDataViewAlbum } from '../CurrentDataView';
 
@@ -21,6 +22,7 @@ import {
   spotifyIdSchema,
   discogsIdSchema,
 } from './validation';
+import { computeManualPreview } from './computeManualDiffs';
 import { EditableField } from './EditableField';
 import { ArtistChipsInput } from './ArtistChipsInput';
 import { DateInput } from './DateInput';
@@ -29,9 +31,6 @@ import { ExternalIdInput } from './ExternalIdInput';
 
 export interface ManualEditViewProps {
   album: CurrentDataViewAlbum;
-  onPreviewClick: (editedState: ManualEditFieldState) => void;
-  onCancel: () => void;
-  initialState?: ManualEditFieldState;
 }
 
 /**
@@ -40,14 +39,14 @@ export interface ManualEditViewProps {
  * Provides inline editing for all album fields with validation.
  * Blocks preview button until all fields are valid.
  */
-export function ManualEditView({
-  album,
-  onPreviewClick,
-  onCancel,
-  initialState,
-}: ManualEditViewProps) {
+export function ManualEditView({ album }: ManualEditViewProps) {
+  // Read state from Zustand store
+  const store = getCorrectionStore(album.id);
+  const manualEditState = store(s => s.manualEditState);
+
+  // Internal form state (stays local per ACHILD-06)
   const [formState, setFormState] = useState<ManualEditFieldState>(
-    () => initialState ?? createInitialEditState(album)
+    () => manualEditState ?? createInitialEditState(album)
   );
   const [errors, setErrors] = useState<ManualEditValidationErrors>({});
   const [showValidationBanner, setShowValidationBanner] = useState(false);
@@ -91,7 +90,27 @@ export function ManualEditView({
     // All valid - proceed to preview
     setErrors({});
     setShowValidationBanner(false);
-    onPreviewClick(formState);
+
+    // Use store actions instead of callbacks
+    store.getState().setManualEditState(formState);
+    const preview = computeManualPreview(album, formState);
+    store.getState().setManualPreviewData(preview);
+    store.getState().setStep(2); // Go to combined Preview+Apply step
+  };
+
+  // Handle cancel with unsaved changes check
+  const handleCancel = () => {
+    if (formState) {
+      const originalStateCheck = createInitialEditState(album);
+      if (hasUnsavedChanges(originalStateCheck, formState)) {
+        store.getState().setPendingAction(() => {
+          store.getState().cancelManualEdit();
+        });
+        store.getState().setShowUnsavedDialog(true);
+        return;
+      }
+    }
+    store.getState().cancelManualEdit();
   };
 
   // Count errors for banner
@@ -216,7 +235,7 @@ export function ManualEditView({
       <div className='flex justify-end gap-3 pt-4 border-t border-zinc-800'>
         <Button
           variant='outline'
-          onClick={onCancel}
+          onClick={handleCancel}
           className='border-zinc-700 text-zinc-300 hover:bg-zinc-800'
         >
           Cancel

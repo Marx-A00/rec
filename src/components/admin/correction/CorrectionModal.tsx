@@ -44,7 +44,6 @@ import { PreviewView } from './preview';
 import {
   ApplyView,
   calculateHasSelections,
-  createDefaultUISelections,
   toGraphQLSelections,
   type UIFieldSelections,
 } from './apply';
@@ -393,36 +392,6 @@ export function CorrectionModal({
   };
 
   // Handle manual edit preview click
-  const handleManualPreview = (editedState: ManualEditFieldState) => {
-    if (!album) return;
-    store?.getState().setManualEditState(editedState);
-    const preview = computeManualPreview(album, editedState);
-    store?.getState().setManualPreviewData(preview);
-    store?.getState().setStep(2); // Go to combined Preview+Apply step
-  };
-
-  // Handle cancel from manual edit view
-  const handleCancelManualEdit = () => {
-    // Check for unsaved changes
-    if (manualEditState && album) {
-      const originalState = createInitialEditState(album);
-      if (hasUnsavedChanges(originalState, manualEditState)) {
-        store?.getState().setPendingAction(() => () => {
-          // Mode changed by store action;
-          // Manual edit state cleared by store reset
-          // Manual preview cleared by store reset
-          store?.getState().setStep(0);
-        });
-        store?.getState().setShowUnsavedDialog(true);
-        return;
-      }
-    }
-    // Mode changed by store action;
-    // Manual edit state cleared by store reset
-    // Manual preview cleared by store reset
-    store?.getState().setStep(0);
-  };
-
   // Handle manual apply
   const handleManualApply = () => {
     if (!manualEditState || !album) return;
@@ -460,12 +429,6 @@ export function CorrectionModal({
   };
 
   // Handle preview loaded callback
-  const handlePreviewLoaded = (preview: CorrectionPreview) => {
-    store?.getState().setPreviewLoaded(preview);
-    store?.getState().setApplySelections(createDefaultUISelections(preview));
-    store?.getState().setShouldEnrich(false);
-  };
-
   // Handle "Apply This Match" click from PreviewView
   const handleApplyClick = () => {
     store?.getState().nextStep(); // Navigate from step 2 (Preview) to step 3 (Apply)
@@ -567,12 +530,7 @@ export function CorrectionModal({
             !isLoading &&
             !hasError &&
             album && (
-              <ManualEditView
-                album={album}
-                onPreviewClick={handleManualPreview}
-                onCancel={handleCancelManualEdit}
-                initialState={manualEditState ?? undefined}
-              />
+              <ManualEditView album={album} />
             )}
 
           {step === 1 && isLoading && (
@@ -593,11 +551,7 @@ export function CorrectionModal({
             !hasError &&
             selectedMbid &&
             albumId && (
-              <PreviewView
-                albumId={albumId}
-                releaseGroupMbid={selectedMbid}
-                onPreviewLoaded={handlePreviewLoaded}
-              />
+              <PreviewView albumId={albumId} />
             )}
           {step === 2 &&
             !isManualEditMode &&
@@ -737,23 +691,11 @@ export function CorrectionModal({
                 ) : (
                   // Normal apply view
                   <ApplyView
-                    _albumId={albumId}
-                    preview={previewData}
-                    selections={
-                      applySelections ?? createDefaultUISelections(previewData)
-                    }
-                    onSelectionsChange={sel =>
-                      store?.getState().setApplySelections(sel)
-                    }
-                    onBack={() => store?.getState().prevStep()}
+                    albumId={albumId}
                     error={
                       applyMutation.error instanceof Error
                         ? applyMutation.error
                         : null
-                    }
-                    triggerEnrichment={shouldEnrich}
-                    onTriggerEnrichmentChange={val =>
-                      store?.getState().setShouldEnrich(val)
                     }
                   />
                 )}

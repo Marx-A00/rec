@@ -107,6 +107,9 @@ export interface CorrectionActions {
   /** Switch to manual edit mode (resets search state, sets step to 1) */
   enterManualEdit: () => void;
 
+  /** Cancel manual edit and return to search mode step 0 (clears manual state) */
+  cancelManualEdit: () => void;
+
   // ========== Search State ==========
 
   /** Set search query (resets offset to 0) */
@@ -259,6 +262,15 @@ const createCorrectionStore = (albumId: string) =>
           });
         },
 
+        cancelManualEdit: () => {
+          set({
+            mode: 'search',
+            step: 0,
+            manualEditState: undefined,
+            manualPreviewData: null,
+          });
+        },
+
         // ========== Search State ==========
 
         setSearchQuery: (query: SearchQueryState) => {
@@ -359,7 +371,7 @@ const createCorrectionStore = (albumId: string) =>
       {
         name: `correction-modal-${albumId}`,
         storage: createJSONStorage(() => sessionStorage),
-        partialize: (state) => ({
+        partialize: state => ({
           // Only persist these fields
           step: state.step,
           mode: state.mode,
@@ -382,10 +394,7 @@ const createCorrectionStore = (albumId: string) =>
  * Module-level cache for store instances.
  * Prevents recreation on re-renders and supports cleanup on modal close.
  */
-const storeCache = new Map<
-  string,
-  UseBoundStore<StoreApi<CorrectionStore>>
->();
+const storeCache = new Map<string, UseBoundStore<StoreApi<CorrectionStore>>>();
 
 /**
  * Get or create a correction store for the given albumId.
