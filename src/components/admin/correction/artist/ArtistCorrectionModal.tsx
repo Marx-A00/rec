@@ -36,8 +36,8 @@ import { ArtistPreviewView } from './preview/ArtistPreviewView';
 import { ArtistApplyView } from './apply/ArtistApplyView';
 
 export interface ArtistCorrectionModalProps {
-  /** Artist to correct, or null if modal should be closed */
-  artist: { id: string; name: string } | null;
+  /** Artist to correct (required - parent should conditionally render) */
+  artist: { id: string; name: string };
   /** Callback when modal should close */
   onClose: () => void;
   /** Callback when correction is successfully applied */
@@ -61,8 +61,7 @@ export function ArtistCorrectionModal({
   onClose,
   onSuccess,
 }: ArtistCorrectionModalProps) {
-  const artistId = artist?.id ?? null;
-  const open = artist !== null;
+  const artistId = artist.id;
 
   // Toast state
   const { toast, showToast, hideToast } = useToast();
@@ -71,23 +70,21 @@ export function ArtistCorrectionModal({
   const queryClient = useQueryClient();
 
   // Initialize Zustand store for this artist
-  // Use a stable placeholder ID when artistId is null to keep hook count stable
-  const storeId = artistId ?? '__placeholder__';
-  const store = getArtistCorrectionStore(storeId);
+  const store = getArtistCorrectionStore(artistId);
 
-  // Subscribe to store state - these are hook calls, must always run
+  // Subscribe to store state
   const step = store(s => s.step);
   const selectedArtistMbid = store(s => s.selectedArtistMbid);
   const previewData = store(s => s.previewData);
   const showAppliedState = store(s => s.showAppliedState);
 
-  // Derived selectors - also hook calls
+  // Derived selectors
   const isFirstStep = store(isFirstStepSelector);
 
-  // Fetch artist details when modal is open
+  // Fetch artist details
   const { data, isLoading, error } = useGetArtistDetailsQuery(
-    { id: artistId! },
-    { enabled: open && !!artistId }
+    { id: artistId },
+    { enabled: true }
   );
 
   // Enrichment mutation for re-enriching after correction
@@ -179,8 +176,6 @@ export function ArtistCorrectionModal({
 
   // Keyboard shortcuts
   useEffect(() => {
-    if (!open) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if typing in an input or textarea
       const target = e.target as HTMLElement;
@@ -198,7 +193,7 @@ export function ArtistCorrectionModal({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open]);
+  }, []);
 
   const handleClose = () => {
     if (artistId) {
@@ -260,13 +255,13 @@ export function ArtistCorrectionModal({
     });
   };
 
-  const headerTitle = artist ? 'Fixing: ' + artist.name : 'Fixing: Artist Data';
+  const headerTitle = 'Fixing: ' + artist.name;
   const hasError = !!error;
 
   const stepLabels = ['Current', 'Search', 'Preview', 'Apply'];
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={true} onOpenChange={handleOpenChange}>
       <DialogContent className='sm:!max-w-[1100px] max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 [&>button]:text-zinc-500 [&>button]:hover:text-zinc-300'>
         <DialogHeader>
           <DialogTitle className='truncate pr-8 text-cosmic-latte'>

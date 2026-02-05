@@ -58,10 +58,8 @@ import {
 import { FieldComparisonList } from './preview/FieldComparisonList';
 
 export interface CorrectionModalProps {
-  /** Album ID to load and correct */
-  albumId: string | null;
-  /** Whether the modal is open */
-  open: boolean;
+  /** Album ID to load and correct (required - parent should conditionally render) */
+  albumId: string;
   /** Callback when modal should close */
   onClose: () => void;
 }
@@ -84,11 +82,7 @@ export interface CorrectionModalProps {
  * State is persisted per album in sessionStorage, allowing users to
  * navigate away and return to the same step.
  */
-export function CorrectionModal({
-  albumId,
-  open,
-  onClose,
-}: CorrectionModalProps) {
+export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
   // Toast state
   const { toast, showToast, hideToast } = useToast();
 
@@ -96,9 +90,7 @@ export function CorrectionModal({
   const queryClient = useQueryClient();
 
   // Initialize Zustand store for this album
-  // Use a stable placeholder ID when albumId is null to keep hook count stable
-  const storeId = albumId ?? '__placeholder__';
-  const store = getCorrectionStore(storeId);
+  const store = getCorrectionStore(albumId);
 
   // Subscribe to state fields - these are hook calls, must always run
   const step = store(s => s.step);
@@ -120,10 +112,10 @@ export function CorrectionModal({
   const stepLabels = store(stepLabelsSelector);
   const isManualEditMode = store(isManualEditModeSelector);
 
-  // Fetch album details when modal is open and albumId is provided
+  // Fetch album details
   const { data, isLoading, error } = useGetAlbumDetailsAdminQuery(
-    { id: albumId! },
-    { enabled: open && !!albumId }
+    { id: albumId },
+    { enabled: true }
   );
 
   // Enrichment mutation for re-enriching after correction
@@ -253,8 +245,6 @@ export function CorrectionModal({
 
   // Keyboard shortcuts
   useEffect(() => {
-    if (!open) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if typing in an input or textarea
       const target = e.target as HTMLElement;
@@ -272,7 +262,7 @@ export function CorrectionModal({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open]);
+  }, []);
 
   // Transform fetched data to CurrentDataViewAlbum format
   const album: CurrentDataViewAlbum | null = albumData
@@ -477,7 +467,7 @@ export function CorrectionModal({
   const hasError = !!error;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={true} onOpenChange={handleOpenChange}>
       <DialogContent className='sm:!max-w-[1100px] max-h-[90vh] overflow-y-auto custom-scrollbar bg-zinc-900 border-zinc-800 [&>button]:text-zinc-500 [&>button]:hover:text-zinc-300'>
         <DialogHeader>
           <DialogTitle className='truncate pr-8 text-cosmic-latte'>

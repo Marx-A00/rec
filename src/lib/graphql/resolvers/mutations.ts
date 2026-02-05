@@ -29,10 +29,7 @@ import { isAdmin } from '@/lib/permissions';
 // Correction system imports
 import { getCorrectionSearchService } from '@/lib/correction/search-service';
 import { getCorrectionPreviewService } from '@/lib/correction/preview';
-import {
-  applyCorrectionService,
-  StaleDataError,
-} from '@/lib/correction/apply';
+import { applyCorrectionService, StaleDataError } from '@/lib/correction/apply';
 import type {
   FieldSelections,
   MetadataSelections,

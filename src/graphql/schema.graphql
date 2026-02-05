@@ -1723,23 +1723,41 @@ Input for applying a manual correction (no external MBID required).
 Admin directly edits album fields without selecting a MusicBrainz source.
 """
 input ManualCorrectionApplyInput {
-  """Album ID to apply correction to"""
+  """
+  Album ID to apply correction to
+  """
   albumId: UUID!
-  """Title to set (required)"""
+  """
+  Title to set (required)
+  """
   title: String!
-  """Artist names to set"""
+  """
+  Artist names to set
+  """
   artists: [String!]!
-  """Release date (YYYY, YYYY-MM, or YYYY-MM-DD format)"""
+  """
+  Release date (YYYY, YYYY-MM, or YYYY-MM-DD format)
+  """
   releaseDate: String
-  """Release type (Album, EP, Single, etc.)"""
+  """
+  Release type (Album, EP, Single, etc.)
+  """
   releaseType: String
-  """MusicBrainz release group UUID"""
+  """
+  MusicBrainz release group UUID
+  """
   musicbrainzId: String
-  """Spotify album ID"""
+  """
+  Spotify album ID
+  """
   spotifyId: String
-  """Discogs master/release ID"""
+  """
+  Discogs master/release ID
+  """
   discogsId: String
-  """Expected album updatedAt timestamp for optimistic locking"""
+  """
+  Expected album updatedAt timestamp for optimistic locking
+  """
   expectedUpdatedAt: DateTime!
 }
 
@@ -2321,11 +2339,17 @@ type Query {
   """
   Search MusicBrainz for artist correction candidates
   """
-  artistCorrectionSearch(query: String!, limit: Int): ArtistCorrectionSearchResponse!
+  artistCorrectionSearch(
+    query: String!
+    limit: Int
+  ): ArtistCorrectionSearchResponse!
   """
   Generate a preview of changes between artist and selected MusicBrainz artist
   """
-  artistCorrectionPreview(artistId: UUID!, artistMbid: UUID!): ArtistCorrectionPreview!
+  artistCorrectionPreview(
+    artistId: UUID!
+    artistMbid: UUID!
+  ): ArtistCorrectionPreview!
 }
 
 # =============================================
@@ -2443,8 +2467,9 @@ type Mutation {
   previewAlbumEnrichment(id: UUID!): PreviewEnrichmentResult!
   previewArtistEnrichment(id: UUID!): PreviewEnrichmentResult!
 
-
-  """Apply manual corrections to an album (no external source)"""
+  """
+  Apply manual corrections to an album (no external source)
+  """
   manualCorrectionApply(
     input: ManualCorrectionApplyInput!
   ): CorrectionApplyResult!
@@ -2474,7 +2499,9 @@ type Mutation {
   """
   Apply selected corrections from a preview to an artist
   """
-  artistCorrectionApply(input: ArtistCorrectionApplyInput!): ArtistCorrectionApplyResult!
+  artistCorrectionApply(
+    input: ArtistCorrectionApplyInput!
+  ): ArtistCorrectionApplyResult!
 }
 
 type FollowUserPayload {
@@ -2609,31 +2636,57 @@ type ArtistTopRelease {
 Artist search result from MusicBrainz for correction.
 """
 type ArtistCorrectionSearchResult {
-  """MusicBrainz artist ID"""
+  """
+  MusicBrainz artist ID
+  """
   artistMbid: UUID!
-  """Artist name"""
+  """
+  Artist name
+  """
   name: String!
-  """Sort name (e.g., "Beatles, The")"""
+  """
+  Sort name (e.g., "Beatles, The")
+  """
   sortName: String!
-  """Disambiguation comment (e.g., "British rock band")"""
+  """
+  Disambiguation comment (e.g., "British rock band")
+  """
   disambiguation: String
-  """Artist type: Person, Group, Orchestra, Choir, Character, Other"""
+  """
+  Artist type: Person, Group, Orchestra, Choir, Character, Other
+  """
   type: String
-  """Country code (ISO 3166-1 alpha-2)"""
+  """
+  Country code (ISO 3166-1 alpha-2)
+  """
   country: String
-  """Area name (city/region)"""
+  """
+  Area name (city/region)
+  """
   area: String
-  """Begin date (partial date string)"""
+  """
+  Begin date (partial date string)
+  """
   beginDate: String
-  """End date (partial date string)"""
+  """
+  End date (partial date string)
+  """
   endDate: String
-  """Whether the artist has ended"""
+  """
+  Whether the artist has ended
+  """
   ended: Boolean
-  """Gender (only meaningful for Person type)"""
+  """
+  Gender (only meaningful for Person type)
+  """
   gender: String
-  """MusicBrainz search score (0-100)"""
+  """
+  MusicBrainz search score (0-100)
+  """
   mbScore: Int!
-  """Top releases for disambiguation"""
+  """
+  Top releases for disambiguation
+  """
   topReleases: [ArtistTopRelease!]
 }
 
@@ -2641,11 +2694,17 @@ type ArtistCorrectionSearchResult {
 Response from artist correction search operation.
 """
 type ArtistCorrectionSearchResponse {
-  """Search results"""
+  """
+  Search results
+  """
   results: [ArtistCorrectionSearchResult!]!
-  """Whether more results are available"""
+  """
+  Whether more results are available
+  """
   hasMore: Boolean!
-  """The query that was executed"""
+  """
+  The query that was executed
+  """
   query: String!
 }
 
@@ -2653,13 +2712,21 @@ type ArtistCorrectionSearchResponse {
 Diff for a single artist field.
 """
 type ArtistFieldDiff {
-  """Field name"""
+  """
+  Field name
+  """
   field: String!
-  """Change classification"""
+  """
+  Change classification
+  """
   changeType: ChangeType!
-  """Current value in database"""
+  """
+  Current value in database
+  """
   current: String
-  """Value from MusicBrainz source"""
+  """
+  Value from MusicBrainz source
+  """
   source: String
 }
 
@@ -2667,13 +2734,21 @@ type ArtistFieldDiff {
 Summary statistics for artist field changes.
 """
 type ArtistPreviewSummary {
-  """Total number of fields compared"""
+  """
+  Total number of fields compared
+  """
   totalFields: Int!
-  """Number of fields that changed"""
+  """
+  Number of fields that changed
+  """
   changedFields: Int!
-  """Number of fields added"""
+  """
+  Number of fields added
+  """
   addedFields: Int!
-  """Number of fields modified"""
+  """
+  Number of fields modified
+  """
   modifiedFields: Int!
 }
 
@@ -2681,15 +2756,25 @@ type ArtistPreviewSummary {
 Complete preview of all changes between current artist and MusicBrainz source.
 """
 type ArtistCorrectionPreview {
-  """Current artist data from database"""
+  """
+  Current artist data from database
+  """
   currentArtist: Artist!
-  """Full MusicBrainz artist data"""
+  """
+  Full MusicBrainz artist data
+  """
   mbArtistData: JSON
-  """Field-by-field diffs"""
+  """
+  Field-by-field diffs
+  """
   fieldDiffs: [ArtistFieldDiff!]!
-  """Number of albums by this artist"""
+  """
+  Number of albums by this artist
+  """
   albumCount: Int!
-  """Summary statistics"""
+  """
+  Summary statistics
+  """
   summary: ArtistPreviewSummary!
 }
 
@@ -2697,15 +2782,25 @@ type ArtistCorrectionPreview {
 Summary of changes applied to an artist.
 """
 type ArtistAppliedChanges {
-  """List of metadata field names updated"""
+  """
+  List of metadata field names updated
+  """
   metadata: [String!]!
-  """List of external ID field names updated"""
+  """
+  List of external ID field names updated
+  """
   externalIds: [String!]!
-  """Number of albums affected"""
+  """
+  Number of albums affected
+  """
   affectedAlbumCount: Int!
-  """Data quality before correction"""
+  """
+  Data quality before correction
+  """
   dataQualityBefore: DataQuality!
-  """Data quality after correction"""
+  """
+  Data quality after correction
+  """
   dataQualityAfter: DataQuality!
 }
 
@@ -2714,15 +2809,25 @@ Result of artist correction apply operation.
 """
 type ArtistCorrectionApplyResult {
   success: Boolean!
-  """Updated artist (when success=true)"""
+  """
+  Updated artist (when success=true)
+  """
   artist: Artist
-  """Summary of changes applied (when success=true)"""
+  """
+  Summary of changes applied (when success=true)
+  """
   changes: ArtistAppliedChanges
-  """Number of affected albums (when success=true)"""
+  """
+  Number of affected albums (when success=true)
+  """
   affectedAlbumCount: Int
-  """Error code (when success=false)"""
+  """
+  Error code (when success=false)
+  """
   code: ApplyErrorCode
-  """Error message (when success=false)"""
+  """
+  Error message (when success=false)
+  """
   message: String
 }
 
@@ -2765,12 +2870,20 @@ input ArtistFieldSelectionsInput {
 Input for applying an artist correction.
 """
 input ArtistCorrectionApplyInput {
-  """Artist ID to apply correction to"""
+  """
+  Artist ID to apply correction to
+  """
   artistId: UUID!
-  """Selected MusicBrainz artist MBID"""
+  """
+  Selected MusicBrainz artist MBID
+  """
   artistMbid: UUID!
-  """Field selections determining which changes to apply"""
+  """
+  Field selections determining which changes to apply
+  """
   selections: ArtistFieldSelectionsInput!
-  """Expected artist updatedAt timestamp for optimistic locking"""
+  """
+  Expected artist updatedAt timestamp for optimistic locking
+  """
   expectedUpdatedAt: DateTime!
 }

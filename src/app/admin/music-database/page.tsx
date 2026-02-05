@@ -2511,22 +2511,25 @@ export default function MusicDatabasePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Correction Modal */}
-      <CorrectionModal
-        albumId={correctionAlbum?.id ?? null}
-        open={correctionAlbum !== null}
-        onClose={() => setCorrectionAlbum(null)}
-      />
+      {/* Correction Modal - only render when correctionAlbum exists */}
+      {correctionAlbum && (
+        <CorrectionModal
+          albumId={correctionAlbum.id}
+          onClose={() => setCorrectionAlbum(null)}
+        />
+      )}
 
-      {/* Artist Correction Modal */}
-      <ArtistCorrectionModal
-        artist={correctionArtist}
-        onClose={() => setCorrectionArtist(null)}
-        onSuccess={() => {
-          refetchArtists();
-          setCorrectionArtist(null);
-        }}
-      />
+      {/* Artist Correction Modal - only render when correctionArtist exists */}
+      {correctionArtist && (
+        <ArtistCorrectionModal
+          artist={correctionArtist}
+          onClose={() => setCorrectionArtist(null)}
+          onSuccess={() => {
+            refetchArtists();
+            setCorrectionArtist(null);
+          }}
+        />
+      )}
     </div>
   );
 }

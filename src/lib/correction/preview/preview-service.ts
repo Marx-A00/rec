@@ -408,8 +408,8 @@ export class CorrectionPreviewService {
     const currentUrl = currentAlbum.coverArtUrl;
     const sourceUrl =
       mbData && searchResult.releaseGroupMbid
-        ? searchResult.coverArtUrl ??
-          `https://coverartarchive.org/release-group/${searchResult.releaseGroupMbid}/front-250`
+        ? (searchResult.coverArtUrl ??
+          `https://coverartarchive.org/release-group/${searchResult.releaseGroupMbid}/front-250`)
         : null;
 
     const changeType = this.diffEngine.classifyChange(currentUrl, sourceUrl);

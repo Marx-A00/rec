@@ -135,7 +135,10 @@ function formatDateComponents(
  *
  * Returns null for UNCHANGED fields (they should be filtered out).
  */
-export function FieldComparison({ diff, showUnchanged = false }: FieldComparisonProps) {
+export function FieldComparison({
+  diff,
+  showUnchanged = false,
+}: FieldComparisonProps) {
   // Skip unchanged fields - they shouldn't be rendered
   if (diff.changeType === 'UNCHANGED' && !showUnchanged) {
     return null;
@@ -219,9 +222,7 @@ export function FieldComparison({ diff, showUnchanged = false }: FieldComparison
         <div className='text-zinc-400 min-w-0 break-words'>
           {currentDisplay}
         </div>
-        <div className='text-zinc-200 min-w-0 break-words'>
-          {sourceDisplay}
-        </div>
+        <div className='text-zinc-200 min-w-0 break-words'>{sourceDisplay}</div>
       </div>
     </div>
   );
