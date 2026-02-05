@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-04)
 ## Current Position
 
 Phase: 14 (Artist Correction Store)
-Plan: Not started
-Status: Phase 13 complete, ready to begin Phase 14
-Last activity: 2026-02-05 — Completed Phase 13 (Album Correction Store)
+Plan: 1 of 3
+Status: In progress — 14-01 complete
+Last activity: 2026-02-05 — Completed 14-01-PLAN.md (Create Artist Correction Store)
 
-Progress: [██████████████░░░░░░░░░░░░░░░] 3/5 plans (60%)
+Progress: [████████████████░░░░░░░░░░░░░] 4/5 plans (80%)
 
 ## Performance Metrics
 
@@ -26,8 +26,8 @@ Progress: [██████████████░░░░░░░░░
 
 **Milestone v1.1 (In Progress):**
 - Phases: 2 (13-14)
-- Plans: 5 (3 complete, 2 remaining)
-- Requirements: 30/30 mapped (20 complete, 10 remaining)
+- Plans: 5 (4 complete, 1 remaining)
+- Requirements: 30/30 mapped (24 complete, 6 remaining)
 
 ## Accumulated Context
 
@@ -55,6 +55,12 @@ Progress: [██████████████░░░░░░░░░
 - **cancelManualEdit:** Added atomic action for returning to search mode at step 0 (not covered by enterSearch which goes to step 1)
 - **albumId as identity prop:** PreviewView and ApplyView keep albumId as prop (needed to locate store instance) — meets minimal props intent
 
+**Phase 14 Decisions (14-01):**
+- **ARTIST-STORE-01:** Factory pattern with Map cache keyed by artistId (matches Phase 13 album store)
+- **ARTIST-STORE-02:** Include mode field and ManualArtistEditState type for future expansion (search-only in Phase 14)
+- **ARTIST-STORE-03:** Search query is plain string (not object like album store) — artist search is single-field
+- **ARTIST-STORE-04:** Step count hard-coded for search mode (maxStep=3), manual mode logic included but not implemented
+
 ### Pending Todos
 
 **Phase 13 (Complete):**
@@ -64,18 +70,32 @@ Progress: [██████████████░░░░░░░░░
 4. ✅ Delete useCorrectionModalState.ts after verifying zero imports
 
 **Phase 14:**
-1. Create useArtistCorrectionStore (simpler than album — no dual mode)
-2. Refactor ArtistCorrectionModal and child components
-3. Delete useArtistCorrectionModalState.ts
+1. ✅ Create useArtistCorrectionStore (simpler than album — search-only mode)
+2. ⏳ Refactor ArtistCorrectionModal and child components (14-02)
+3. ⏳ Delete useArtistCorrectionModalState.ts (14-03)
 
 ### Blockers/Concerns
 
-None. Phase 13 pattern fully established — Phase 14 follows the same approach with a simpler store (no dual mode).
+None. Store creation complete, ready for component migration.
 
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Phase 13 complete
-Resume file: .planning/phases/14-artist-correction-store/ (ready to plan)
+Stopped at: Completed 14-01-PLAN.md
+Resume file: .planning/phases/14-artist-correction-store/14-02-PLAN.md
 
-**Next action:** Plan Phase 14 (Artist Correction Store)
+**Next action:** Execute 14-02-PLAN.md (Wire Store to Components)
+
+Config:
+{
+  "mode": "yolo",
+  "depth": "comprehensive",
+  "parallelization": true,
+  "commit_docs": true,
+  "model_profile": "balanced",
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true
+  }
+}
