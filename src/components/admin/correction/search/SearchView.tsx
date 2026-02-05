@@ -6,7 +6,7 @@ import {
   useSearchCorrectionCandidatesQuery,
   type SearchCorrectionCandidatesQuery,
 } from '@/generated/graphql';
-import type { useCorrectionModalState } from '@/hooks/useCorrectionModalState';
+import { getCorrectionStore } from '@/stores/useCorrectionStore';
 
 import type { CurrentDataViewAlbum } from '../CurrentDataView';
 import { ErrorState, categorizeError } from '../shared';
@@ -23,12 +23,6 @@ type GraphQLScoredResult = GraphQLGroupedResult['primaryResult'];
 export interface SearchViewProps {
   /** Current album data (for pre-populating search inputs) */
   album: CurrentDataViewAlbum;
-  /** Callback when user selects a search result */
-  onResultSelect: (result: GraphQLScoredResult) => void;
-  /** Callback when user wants manual edit (no good results) */
-  onManualEdit: () => void;
-  /** Modal state for persistence */
-  modalState: ReturnType<typeof useCorrectionModalState>;
 }
 
 /**
@@ -38,7 +32,7 @@ export interface SearchViewProps {
  * - SearchInputs for album/artist search fields
  * - GraphQL query for MusicBrainz search
  * - SearchResults for displaying results
- * - State persistence via modalState hook
+ * - State persistence via Zustand store
  *
  * Behavior:
  * - Pre-populates inputs with current album title and artist
@@ -46,19 +40,17 @@ export interface SearchViewProps {
  * - If returning from preview step with saved state, auto-triggers search
  * - Results persist when navigating back from preview
  */
-export function SearchView({
-  album,
-  onResultSelect,
-  onManualEdit,
-  modalState,
-}: SearchViewProps) {
-  const {
-    searchQuery,
-    setSearchQuery,
-    searchOffset,
-    setSearchOffset,
-    setSelectedResult,
-  } = modalState;
+export function SearchView({ album }: SearchViewProps) {
+  // Initialize store for this album
+  const store = getCorrectionStore(album.id);
+  const searchQuery = store(s => s.searchQuery);
+  const searchOffset = store(s => s.searchOffset);
+
+  // Get actions from store
+  const setSearchQuery = store.getState().setSearchQuery;
+  const setSearchOffset = store.getState().setSearchOffset;
+  const selectResult = store.getState().selectResult;
+  const enterManualEdit = store.getState().enterManualEdit;
 
   // Extract initial values from album
   const initialAlbumTitle = album.title;
@@ -108,13 +100,13 @@ export function SearchView({
 
   // Handle load more pagination
   const handleLoadMore = () => {
-    setSearchOffset(searchOffset + 10);
+    store.getState().setSearchOffset(searchOffset + 10);
   };
 
   // Handle result click
   const handleResultClick = (result: GraphQLScoredResult) => {
-    setSelectedResult(result.releaseGroupMbid);
-    onResultSelect(result);
+    // Store handles selection and step navigation
+    selectResult(result.releaseGroupMbid);
   };
 
   // Auto-trigger search on mount if returning from preview with saved state
@@ -193,7 +185,7 @@ export function SearchView({
           isLoadingMore={isLoadingMore}
           onResultClick={handleResultClick}
           onLoadMore={handleLoadMore}
-          onManualEdit={onManualEdit}
+          onManualEdit={enterManualEdit}
         />
       )}
     </div>
