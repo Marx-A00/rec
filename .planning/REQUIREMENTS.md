@@ -38,10 +38,10 @@ Requirements for Job History Timeline UI milestone.
 
 ### EnrichmentLogTable
 
-- [ ] **TBL-01**: Table fetches only parent logs (parentJobId = null) by default
-- [ ] **TBL-02**: Rows with children show expand chevron
-- [ ] **TBL-03**: Expanded row shows Timeline component with parent + children
-- [ ] **TBL-04**: Child logs hidden from main table rows
+- [x] **TBL-01**: Table fetches only parent logs (parentJobId = null) by default
+- [x] **TBL-02**: Rows with children show expand chevron
+- [x] **TBL-03**: Expanded row shows Timeline component with parent + children
+- [x] **TBL-04**: Child logs hidden from main table rows
 
 ### Job History Tab
 
@@ -93,10 +93,10 @@ Deferred to later milestones.
 | UI-01       | Phase 18 | Complete |
 | UI-02       | Phase 18 | Complete |
 | UI-03       | Phase 18 | Complete |
-| TBL-01      | Phase 19 | Pending  |
-| TBL-02      | Phase 19 | Pending  |
-| TBL-03      | Phase 19 | Pending  |
-| TBL-04      | Phase 19 | Pending  |
+| TBL-01      | Phase 19 | Complete |
+| TBL-02      | Phase 19 | Complete |
+| TBL-03      | Phase 19 | Complete |
+| TBL-04      | Phase 19 | Complete |
 | JOB-01      | Phase 20 | Pending  |
 | JOB-02      | Phase 20 | Pending  |
 
@@ -109,4 +109,4 @@ Deferred to later milestones.
 ---
 
 _Requirements defined: 2026-02-06_
-_Last updated: 2026-02-06 after initial definition_
+_Last updated: 2026-02-06 — Phase 19 TBL requirements complete_

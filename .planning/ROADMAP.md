@@ -12,7 +12,7 @@
 | 16    | Job Linking          | Propagate `parentJobId` through all job chains   | LINK-01 through LINK-07   |
 | 17    | GraphQL Layer ✓      | Expose `jobId`, `parentJobId`, and tree fetching | GQL-01 through GQL-04     |
 | 18    | Timeline Component ✓ | Add shadcn-timeline with status/icon mapping     | UI-01, UI-02, UI-03       |
-| 19    | EnrichmentLogTable   | Integrate timeline into table expand rows        | TBL-01 through TBL-04     |
+| 19    | EnrichmentLogTable ✓ | Integrate timeline into table expand rows        | TBL-01 through TBL-04     |
 | 20    | Job History Tab      | Add timeline to Job History tab                  | JOB-01, JOB-02            |
 
 ---
@@ -146,9 +146,9 @@ Plans:
 
 Plans:
 
-- [ ] 19-01-PLAN.md — Add parentOnly filter to GraphQL schema, resolver, and codegen
-- [ ] 19-02-PLAN.md — Add compact variant to EnrichmentTimeline, create SkeletonTimeline and modal
-- [ ] 19-03-PLAN.md — Wire timeline into EnrichmentLogTable with lazy child loading
+- [x] 19-01-PLAN.md — Add parentOnly filter to GraphQL schema, resolver, and codegen
+- [x] 19-02-PLAN.md — Add compact variant to EnrichmentTimeline, create SkeletonTimeline and modal
+- [x] 19-03-PLAN.md — Wire timeline into EnrichmentLogTable with lazy child loading
 
 **Success Criteria:**
 
@@ -218,4 +218,4 @@ Phase 16 (Job Linking) ──→ Phase 17 (GraphQL)
 ---
 
 _Roadmap created: 2026-02-06_
-_Last updated: 2026-02-06 — Phase 18 complete_
+_Last updated: 2026-02-06 — Phase 19 complete_
