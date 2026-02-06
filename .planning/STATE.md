@@ -9,12 +9,20 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 
 ## Current Position
 
-Phase: 15 (Schema & Migration)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-02-06 — Roadmap created
+Phase: 15 of 20 (Schema & Migration)
+Plan: 1 of 1 complete
+Status: Phase complete
+Last activity: 2026-02-06 — Completed 15-01-PLAN.md (Schema Migration)
 
-Progress: 0/6 phases complete
+Progress: 1/6 phases complete
+```
+Phase 15 [██████████] 100% - Schema migration
+Phase 16 [░░░░░░░░░░]   0% - Logging updates
+Phase 17 [░░░░░░░░░░]   0% - GraphQL schema
+Phase 18 [░░░░░░░░░░]   0% - Timeline component
+Phase 19 [░░░░░░░░░░]   0% - UI integration
+Phase 20 [░░░░░░░░░░]   0% - Polish & testing
+```
 
 ## Performance Metrics
 
@@ -30,7 +38,11 @@ Progress: 0/6 phases complete
 - Duration: 1 day
 - Requirements: 30/30
 
-**Total shipped:** 14 phases, 42 plans
+**Milestone v1.2 (In Progress):**
+- Phases completed: 1 of 6
+- Plans completed: 1
+
+**Total shipped:** 15 phases, 43 plans
 
 ## Accumulated Context
 
@@ -43,13 +55,14 @@ Progress: 0/6 phases complete
 - Factory pattern with Map cache for per-entity store instances
 - Atomic actions for multi-field state updates
 
-### v1.2 Context (from exploration)
+### v1.2 Context (from exploration + Phase 15)
 
 - `parentJobId` field approach chosen over unified requestId
 - shadcn-timeline component for UI (Framer Motion required)
 - Need to add logging to cache/discogs processors
 - EnrichmentLogTable used in: album detail, artist detail panels
 - Job History tab is separate (shows BullMQ jobs, not EnrichmentLog)
+- **Phase 15 Decision:** VARCHAR(100) for parentJobId matches jobId type
 
 ### Blockers/Concerns
 
@@ -57,22 +70,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-06
-Stopped at: Milestone v1.2 started, running research
+Last session: 2026-02-06 15:44 UTC
+Stopped at: Completed 15-01-PLAN.md (Schema Migration)
 Resume file: N/A
 
-**Next action:** Complete research, then define requirements
-
-Config:
-{
-  "mode": "yolo",
-  "depth": "comprehensive",
-  "parallelization": true,
-  "commit_docs": true,
-  "model_profile": "balanced",
-  "workflow": {
-    "research": true,
-    "plan_check": true,
-    "verifier": true
-  }
-}
+**Next action:** Execute Phase 16 (Logging Updates)
