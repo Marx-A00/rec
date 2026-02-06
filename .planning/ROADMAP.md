@@ -58,6 +58,17 @@
 - `src/lib/queue/processors/cache-processor.ts`
 - `src/lib/queue/jobs.ts` (add `parentJobId` to job data types)
 
+
+**Plans:** 6 plans
+
+Plans:
+- [ ] 16-01-PLAN.md - Schema (isRootJob) and job data interfaces (parentJobId)
+- [ ] 16-02-PLAN.md - Processor index passes Job objects, logger supports isRootJob
+- [ ] 16-03-PLAN.md - Enrichment processor updates (ENRICH_ALBUM, ENRICH_ARTIST)
+- [ ] 16-04-PLAN.md - Discogs processor logging (DISCOGS_SEARCH, DISCOGS_GET)
+- [ ] 16-05-PLAN.md - Cache processor logging (CACHE_ARTIST, CACHE_ALBUM)
+- [ ] 16-06-PLAN.md - Verification and type checking
+
 ---
 
 ## Phase 17: GraphQL Layer
