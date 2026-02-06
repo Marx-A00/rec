@@ -69,6 +69,12 @@ interface EnrichmentTimelineProps {
   logs: EnrichmentLog[];
   /** Optional container class name */
   className?: string;
+  /** Display variant - 'default' for full timeline, 'compact' for table rows */
+  variant?: 'default' | 'compact';
+  /** Optional max height with scrolling */
+  maxHeight?: string;
+  /** Override truncation threshold (default: 15) */
+  truncateChildren?: number;
 }
 
 interface TimelineLogItemProps {
@@ -78,6 +84,8 @@ interface TimelineLogItemProps {
   showAllChildren: boolean;
   onToggleShowAll: () => void;
   isChild?: boolean;
+  compact?: boolean;
+  truncationThreshold?: number;
 }
 
 // ============================================================================
@@ -164,6 +172,8 @@ function TimelineLogItem({
   showAllChildren,
   onToggleShowAll,
   isChild = false,
+  compact = false,
+  truncationThreshold = TRUNCATION_THRESHOLD,
 }: TimelineLogItemProps) {
   const Icon = getOperationIcon(log.operation, log.status);
   const iconColor = getStatusColor(log.status);
@@ -173,8 +183,8 @@ function TimelineLogItem({
   const childCount = log.children?.length ?? 0;
   const displayedChildren = showAllChildren
     ? log.children
-    : log.children?.slice(0, TRUNCATION_THRESHOLD);
-  const hiddenCount = childCount - TRUNCATION_THRESHOLD;
+    : log.children?.slice(0, truncationThreshold);
+  const hiddenCount = childCount - truncationThreshold;
 
   return (
     <TimelineItem
@@ -187,26 +197,28 @@ function TimelineLogItem({
       onClick={onToggleExpand}
     >
       <TimelineIcon color={iconColor}>
-        <Icon className='h-4 w-4' />
+        <Icon className={cn('h-4 w-4', compact && 'h-3 w-3')} />
       </TimelineIcon>
 
       <TimelineConnector />
 
       <TimelineHeader>
-        <TimelineTitle className={cn(isChild && 'text-sm')}>
+        <TimelineTitle className={cn(isChild && 'text-sm', compact && 'text-xs')}>
           {formatOperationTitle(log.operation, log.entityType)}
         </TimelineTitle>
-        <TimelineTime className='text-xs text-zinc-500'>
+        <TimelineTime className={cn('text-xs text-zinc-500', compact && 'text-[10px]')}>
           {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
         </TimelineTime>
       </TimelineHeader>
 
-      <TimelineContent>
-        <TimelineDescription>{getItemDescription(log)}</TimelineDescription>
+      <TimelineContent className={cn(compact && 'mt-1 p-2')}>
+        {(!compact || isExpanded) && (
+          <TimelineDescription>{getItemDescription(log)}</TimelineDescription>
+        )}
 
         {/* Inline error preview (not expanded) */}
         {hasError && !isExpanded && log.errorMessage && (
-          <p className='mt-1 text-xs text-red-400'>
+          <p className={cn('mt-1 text-xs text-red-400', compact && 'text-[10px]')}>
             {truncateError(log.errorMessage)}
           </p>
         )}
@@ -218,8 +230,8 @@ function TimelineLogItem({
 
         {/* Children timeline (nested) */}
         {hasChildren && (
-          <div className='mt-4'>
-            <Timeline size='sm' animate={false}>
+          <div className={cn('mt-4', compact && 'mt-2')}>
+            <Timeline size={compact ? 'sm' : 'md'} animate={false}>
               {displayedChildren?.map(child => (
                 <TimelineLogItem
                   key={child.id}
@@ -229,6 +241,8 @@ function TimelineLogItem({
                   showAllChildren={true}
                   onToggleShowAll={() => {}}
                   isChild
+                  compact={compact}
+                  truncationThreshold={truncationThreshold}
                 />
               ))}
             </Timeline>
@@ -335,7 +349,15 @@ function ViewSwitcher({ viewMode, onViewModeChange }: ViewSwitcherProps) {
 export function EnrichmentTimeline({
   logs,
   className,
+  variant = 'default',
+  maxHeight,
+  truncateChildren,
 }: EnrichmentTimelineProps) {
+  // Derived values
+  const truncationThreshold = truncateChildren ?? TRUNCATION_THRESHOLD;
+  const isCompact = variant === 'compact';
+  const showViewSwitcher = !isCompact;
+
   // State
   const [viewMode, setViewMode] = React.useState<ViewMode>('timeline');
   const [expandedItems, setExpandedItems] = React.useState<Set<string>>(
@@ -369,15 +391,22 @@ export function EnrichmentTimeline({
   if (logs.length === 0) {
     return (
       <div className={cn('flex flex-col', className)}>
-        <ViewSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
+        {showViewSwitcher && (
+          <ViewSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
+        )}
         <TimelineEmpty>No enrichment history</TimelineEmpty>
       </div>
     );
   }
 
   return (
-    <div className={cn('flex flex-col', className)}>
-      <ViewSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
+    <div
+      className={cn('flex flex-col', className)}
+      style={maxHeight ? { maxHeight, overflowY: 'auto' } : undefined}
+    >
+      {showViewSwitcher && (
+        <ViewSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
+      )}
 
       {viewMode === 'tree' ? (
         <EnrichmentTree logs={logs} />
@@ -387,7 +416,7 @@ export function EnrichmentTimeline({
           initial='hidden'
           animate='visible'
         >
-          <Timeline>
+          <Timeline size={isCompact ? 'sm' : undefined}>
             {logs.map(log => (
               <motion.div key={log.id} variants={itemVariants}>
                 <TimelineLogItem
@@ -396,6 +425,8 @@ export function EnrichmentTimeline({
                   onToggleExpand={() => toggleExpand(log.id)}
                   showAllChildren={showAllChildren[log.id] ?? false}
                   onToggleShowAll={() => toggleShowAll(log.id)}
+                  compact={isCompact}
+                  truncationThreshold={truncationThreshold}
                 />
               </motion.div>
             ))}

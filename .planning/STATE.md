@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 
 ## Current Position
 
-Phase: 18 (Timeline Component) — COMPLETE
-Plan: 2/2
-Status: Phase complete
-Last activity: 2026-02-06 — Completed 18-02-PLAN.md
+Phase: 19 (EnrichmentLogTable Integration) — IN PROGRESS
+Plan: 1 of 6
+Status: In progress
+Last activity: 2026-02-06 — Completed 19-01-PLAN.md
 
-Progress: ██████░░░░░░░░░░░░░░ 3/6 phases complete (15, 17, 18)
+Progress: ██████░░░░░░░░░░░░░░ 3.5/6 phases complete (15, 17, 18 complete; 19 in progress)
 
 ## Performance Metrics
 
@@ -32,10 +32,10 @@ Progress: ██████░░░░░░░░░░░░░░ 3/6 phase
 
 **Milestone v1.2 (In Progress):**
 - Phases complete: 3/6 (Phase 15, 17, 18)
-- Plans complete: 5 (15-01, 17-01, 17-02, 18-01, 18-02)
-- Requirements: 10/20 (DATA-01, DATA-02, DATA-03, GQL-01, GQL-02, GQL-03, GQL-04, UI-01, UI-02, UI-03)
+- Plans complete: 6 (15-01, 17-01, 17-02, 18-01, 18-02, 19-01)
+- Requirements: 11/20 (DATA-01, DATA-02, DATA-03, GQL-01, GQL-02, GQL-03, GQL-04, GQL-05, UI-01, UI-02, UI-03)
 
-**Total shipped:** 14 phases, 47 plans
+**Total shipped:** 14 phases, 48 plans
 
 ## Accumulated Context
 
@@ -85,17 +85,26 @@ Progress: ██████░░░░░░░░░░░░░░ 3/6 phase
   - 15-child truncation threshold with show more/less
   - Click-to-expand for detailed log information
 
+### Phase 19 In Progress
+
+- Plan 19-01: GraphQL filtering layer (COMPLETE)
+  - Added parentOnly: Boolean parameter to enrichmentLogs query
+  - Added parentJobId: String parameter to enrichmentLogs query
+  - Resolver filters by parentJobId: null when parentOnly true
+  - Resolver filters by specific parentJobId when provided
+  - Generated hooks: GetEnrichmentLogsQueryVariables includes both parameters
+
 ### Blockers/Concerns
 
 None.
 
 ## Session Continuity
 
-Last session: 2026-02-06
-Stopped at: Completed 18-02-PLAN.md
+Last session: 2026-02-06 23:34
+Stopped at: Completed 19-01-PLAN.md
 Resume file: N/A
 
-**Next action:** Execute Phase 19 (Timeline Integration) or Phase 16 (Processor Logging)
+**Next action:** Execute Phase 19 Plan 02 (EnrichmentLogTable component integration)
 
 Config:
 {
