@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 ## Current Position
 
 Phase: 19 (EnrichmentLogTable Integration) — IN PROGRESS
-Plan: 2 of 6
-Status: In progress
-Last activity: 2026-02-06 — Completed 19-02-PLAN.md
+Plan: 3 of 3 (Wave 2 complete - all autonomous plans done)
+Status: In progress - awaiting checkpoint plan 19-04
+Last activity: 2026-02-06 — Completed 19-03-PLAN.md
 
-Progress: ██████░░░░░░░░░░░░░░ 3.7/6 phases complete (15, 17, 18 complete; 19 in progress)
+Progress: ██████░░░░░░░░░░░░░░ 4/6 phases complete (15, 17, 18 complete; 19 at 3/3 autonomous plans)
 
 ## Performance Metrics
 
@@ -35,8 +35,8 @@ Progress: ██████░░░░░░░░░░░░░░ 3.7/6 pha
 **Milestone v1.2 (In Progress):**
 
 - Phases complete: 3/6 (Phase 15, 17, 18)
-- Plans complete: 7 (15-01, 17-01, 17-02, 18-01, 18-02, 19-01, 19-02)
-- Requirements: 12/20 (DATA-01, DATA-02, DATA-03, GQL-01, GQL-02, GQL-03, GQL-04, GQL-05, UI-01, UI-02, UI-03, UI-04)
+- Plans complete: 8 (15-01, 17-01, 17-02, 18-01, 18-02, 19-01, 19-02, 19-03)
+- Requirements: 16/20 (DATA-01, DATA-02, DATA-03, GQL-01, GQL-02, GQL-03, GQL-04, GQL-05, UI-01, UI-02, UI-03, UI-04, TBL-01, TBL-02, TBL-03, TBL-04)
 
 **Total shipped:** 14 phases, 49 plans
 
@@ -58,6 +58,7 @@ Progress: ██████░░░░░░░░░░░░░░ 3.7/6 pha
 - Need to add logging to cache/discogs processors
 - EnrichmentLogTable used in: album detail, artist detail panels
 - Job History tab is separate (shows BullMQ jobs, not EnrichmentLog)
+- Direct child query approach (parentJobId filter) preferred over tree assembly (includeChildren)
 
 ### Phase 15 Complete
 
@@ -103,6 +104,15 @@ Progress: ██████░░░░░░░░░░░░░░ 3.7/6 pha
   - SkeletonTimeline loading component with accessibility support
   - EnrichmentTimelineModal dialog wrapper for full timeline inspection
   - Modal uses max-w-3xl and max-h-85vh for optimal viewing
+- Plan 19-03: EnrichmentLogTable integration (COMPLETE)
+  - Table fetches only parent/root logs (parentOnly: true)
+  - All rows expandable with chevron icon
+  - Children lazy-loaded via useGetEnrichmentLogsQuery({ parentJobId: log.jobId })
+  - Expanded rows show compact EnrichmentTimeline with parent + children
+  - SkeletonTimeline loading state, error state with retry
+  - EnrichmentTimelineModal for full timeline inspection
+  - Row count shows "X jobs" format
+  - Removed FieldChangesPanel (replaced by timeline)
 
 ### Blockers/Concerns
 
@@ -110,11 +120,11 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-06 23:37
-Stopped at: Completed 19-02-PLAN.md
+Last session: 2026-02-06 23:45
+Stopped at: Completed 19-03-PLAN.md
 Resume file: N/A
 
-**Next action:** Execute Phase 19 Plan 03 (EnrichmentLogTable refactor)
+**Next action:** Execute Phase 19 Plan 04 (checkpoint:human-verify)
 
 Config:
 {
