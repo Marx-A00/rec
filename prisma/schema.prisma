@@ -417,6 +417,7 @@ model EnrichmentLog {
   metadata           Json?
   previewData        Json?                  @map("preview_data") // Stores raw API response and field diffs for preview enrichments
   jobId              String?                @map("job_id") @db.VarChar(100)
+  parentJobId        String?                @map("parent_job_id") @db.VarChar(100)
   triggeredBy        String?                @map("triggered_by") @db.VarChar(50)
   userId             String?                @map("user_id") // Track which user made manual changes
   createdAt          DateTime               @default(now()) @map("created_at")
@@ -433,6 +434,7 @@ model EnrichmentLog {
   @@index([operation])
   @@index([sources])
   @@index([userId])
+  @@index([parentJobId])
   @@map("enrichment_logs")
 }
 
