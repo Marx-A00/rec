@@ -2012,23 +2012,76 @@ export const queryResolvers: QueryResolvers = {
   // Enrichment log queries
   enrichmentLogs: async (_, args, { prisma }) => {
     try {
+      const { includeChildren = false, ...filterArgs } = args;
+      
+      // Build where clause for filters
       const where: Record<string, unknown> = {};
-
-      if (args.entityType) where.entityType = args.entityType;
-      if (args.entityId) where.entityId = args.entityId;
-      if (args.status) where.status = args.status;
-      if (args.sources && args.sources.length > 0) {
-        where.sources = { hasSome: args.sources };
+      if (filterArgs.entityType) where.entityType = filterArgs.entityType;
+      if (filterArgs.entityId) where.entityId = filterArgs.entityId;
+      if (filterArgs.status) where.status = filterArgs.status;
+      if (filterArgs.sources && filterArgs.sources.length > 0) {
+        where.sources = { hasSome: filterArgs.sources };
       }
 
-      const logs = await prisma.enrichmentLog.findMany({
-        where,
+      // Simple flat fetch (default behavior)
+      if (!includeChildren) {
+        const logs = await prisma.enrichmentLog.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: filterArgs.skip || 0,
+          take: filterArgs.limit || 50,
+        });
+        return logs.map(log => ({ ...log, children: null }));
+      }
+
+      // Tree fetch: get root logs only (parentJobId is null)
+      const parentLogs = await prisma.enrichmentLog.findMany({
+        where: {
+          ...where,
+          parentJobId: null,
+        },
         orderBy: { createdAt: 'desc' },
-        skip: args.skip || 0,
-        take: args.limit || 50,
+        skip: filterArgs.skip || 0,
+        take: filterArgs.limit || 50,
       });
 
-      return logs;
+      // Collect all parent jobIds for batch child fetch
+      const parentJobIds = parentLogs
+        .map(log => log.jobId)
+        .filter((id): id is string => Boolean(id));
+
+      // If no parents have jobIds, return with empty children
+      if (parentJobIds.length === 0) {
+        return parentLogs.map(log => ({ ...log, children: [] }));
+      }
+
+      // Batch fetch all children in single query
+      const childLogs = await prisma.enrichmentLog.findMany({
+        where: {
+          parentJobId: { in: parentJobIds },
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      // Build children map for O(n) lookup
+      const childrenMap = new Map<string, typeof childLogs>();
+      for (const child of childLogs) {
+        if (!child.parentJobId) continue;
+        const siblings = childrenMap.get(child.parentJobId) || [];
+        siblings.push(child);
+        childrenMap.set(child.parentJobId, siblings);
+      }
+
+      // Attach children to parents
+      return parentLogs.map(parent => ({
+        ...parent,
+        children: parent.jobId
+          ? (childrenMap.get(parent.jobId) || []).map(child => ({
+              ...child,
+              children: null, // Leaf nodes have no children (one level only)
+            }))
+          : [],
+      }));
     } catch (error) {
       throw new GraphQLError(`Failed to fetch enrichment logs: ${error}`);
     }
