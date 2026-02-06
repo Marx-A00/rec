@@ -939,6 +939,7 @@ export type EnrichmentFieldDiff = {
 export type EnrichmentLog = {
   __typename?: 'EnrichmentLog';
   apiCallCount: Scalars['Int']['output'];
+  children?: Maybe<Array<EnrichmentLog>>;
   createdAt: Scalars['DateTime']['output'];
   dataQualityAfter?: Maybe<DataQuality>;
   dataQualityBefore?: Maybe<DataQuality>;
@@ -952,6 +953,7 @@ export type EnrichmentLog = {
   jobId?: Maybe<Scalars['String']['output']>;
   metadata?: Maybe<Scalars['JSON']['output']>;
   operation: Scalars['String']['output'];
+  parentJobId?: Maybe<Scalars['String']['output']>;
   previewData?: Maybe<Scalars['JSON']['output']>;
   reason?: Maybe<Scalars['String']['output']>;
   retryCount: Scalars['Int']['output'];
@@ -1707,6 +1709,7 @@ export type QueryCorrectionSearchArgs = {
 export type QueryEnrichmentLogsArgs = {
   entityId?: InputMaybe<Scalars['UUID']['input']>;
   entityType?: InputMaybe<EnrichmentEntityType>;
+  includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   skip?: InputMaybe<Scalars['Int']['input']>;
   sources?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -3708,6 +3711,7 @@ export type GetEnrichmentLogsQueryVariables = Exact<{
   status?: InputMaybe<EnrichmentLogStatus>;
   skip?: InputMaybe<Scalars['Int']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 export type GetEnrichmentLogsQuery = {
@@ -3730,6 +3734,59 @@ export type GetEnrichmentLogsQuery = {
     apiCallCount: number;
     metadata?: any | null;
     createdAt: Date;
+    jobId?: string | null;
+    parentJobId?: string | null;
+  }>;
+};
+
+export type GetEnrichmentLogsWithChildrenQueryVariables = Exact<{
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  entityId?: InputMaybe<Scalars['UUID']['input']>;
+  status?: InputMaybe<EnrichmentLogStatus>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetEnrichmentLogsWithChildrenQuery = {
+  __typename?: 'Query';
+  enrichmentLogs: Array<{
+    __typename?: 'EnrichmentLog';
+    id: string;
+    entityType?: EnrichmentEntityType | null;
+    entityId?: string | null;
+    operation: string;
+    sources: Array<string>;
+    status: EnrichmentLogStatus;
+    reason?: string | null;
+    fieldsEnriched: Array<string>;
+    dataQualityBefore?: DataQuality | null;
+    dataQualityAfter?: DataQuality | null;
+    errorMessage?: string | null;
+    errorCode?: string | null;
+    durationMs?: number | null;
+    apiCallCount: number;
+    metadata?: any | null;
+    createdAt: Date;
+    jobId?: string | null;
+    parentJobId?: string | null;
+    children?: Array<{
+      __typename?: 'EnrichmentLog';
+      id: string;
+      entityType?: EnrichmentEntityType | null;
+      entityId?: string | null;
+      operation: string;
+      sources: Array<string>;
+      status: EnrichmentLogStatus;
+      reason?: string | null;
+      fieldsEnriched: Array<string>;
+      errorMessage?: string | null;
+      errorCode?: string | null;
+      durationMs?: number | null;
+      apiCallCount: number;
+      createdAt: Date;
+      jobId?: string | null;
+      parentJobId?: string | null;
+    }> | null;
   }>;
 };
 
@@ -7462,13 +7519,14 @@ useInfiniteSearchCorrectionCandidatesQuery.getKey = (
 ) => ['SearchCorrectionCandidates.infinite', variables];
 
 export const GetEnrichmentLogsDocument = `
-    query GetEnrichmentLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: EnrichmentLogStatus, $skip: Int, $limit: Int) {
+    query GetEnrichmentLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: EnrichmentLogStatus, $skip: Int, $limit: Int, $includeChildren: Boolean) {
   enrichmentLogs(
     entityType: $entityType
     entityId: $entityId
     status: $status
     skip: $skip
     limit: $limit
+    includeChildren: $includeChildren
   ) {
     id
     entityType
@@ -7486,6 +7544,8 @@ export const GetEnrichmentLogsDocument = `
     apiCallCount
     metadata
     createdAt
+    jobId
+    parentJobId
   }
 }
     `;
@@ -7567,6 +7627,136 @@ useInfiniteGetEnrichmentLogsQuery.getKey = (
   variables === undefined
     ? ['GetEnrichmentLogs.infinite']
     : ['GetEnrichmentLogs.infinite', variables];
+
+export const GetEnrichmentLogsWithChildrenDocument = `
+    query GetEnrichmentLogsWithChildren($entityType: EnrichmentEntityType, $entityId: UUID, $status: EnrichmentLogStatus, $skip: Int, $limit: Int) {
+  enrichmentLogs(
+    entityType: $entityType
+    entityId: $entityId
+    status: $status
+    skip: $skip
+    limit: $limit
+    includeChildren: true
+  ) {
+    id
+    entityType
+    entityId
+    operation
+    sources
+    status
+    reason
+    fieldsEnriched
+    dataQualityBefore
+    dataQualityAfter
+    errorMessage
+    errorCode
+    durationMs
+    apiCallCount
+    metadata
+    createdAt
+    jobId
+    parentJobId
+    children {
+      id
+      entityType
+      entityId
+      operation
+      sources
+      status
+      reason
+      fieldsEnriched
+      errorMessage
+      errorCode
+      durationMs
+      apiCallCount
+      createdAt
+      jobId
+      parentJobId
+    }
+  }
+}
+    `;
+
+export const useGetEnrichmentLogsWithChildrenQuery = <
+  TData = GetEnrichmentLogsWithChildrenQuery,
+  TError = unknown,
+>(
+  variables?: GetEnrichmentLogsWithChildrenQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetEnrichmentLogsWithChildrenQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetEnrichmentLogsWithChildrenQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetEnrichmentLogsWithChildrenQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetEnrichmentLogsWithChildren']
+        : ['GetEnrichmentLogsWithChildren', variables],
+    queryFn: fetcher<
+      GetEnrichmentLogsWithChildrenQuery,
+      GetEnrichmentLogsWithChildrenQueryVariables
+    >(GetEnrichmentLogsWithChildrenDocument, variables),
+    ...options,
+  });
+};
+
+useGetEnrichmentLogsWithChildrenQuery.getKey = (
+  variables?: GetEnrichmentLogsWithChildrenQueryVariables
+) =>
+  variables === undefined
+    ? ['GetEnrichmentLogsWithChildren']
+    : ['GetEnrichmentLogsWithChildren', variables];
+
+export const useInfiniteGetEnrichmentLogsWithChildrenQuery = <
+  TData = InfiniteData<GetEnrichmentLogsWithChildrenQuery>,
+  TError = unknown,
+>(
+  variables: GetEnrichmentLogsWithChildrenQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetEnrichmentLogsWithChildrenQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetEnrichmentLogsWithChildrenQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetEnrichmentLogsWithChildrenQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetEnrichmentLogsWithChildren.infinite']
+            : ['GetEnrichmentLogsWithChildren.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            GetEnrichmentLogsWithChildrenQuery,
+            GetEnrichmentLogsWithChildrenQueryVariables
+          >(GetEnrichmentLogsWithChildrenDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetEnrichmentLogsWithChildrenQuery.getKey = (
+  variables?: GetEnrichmentLogsWithChildrenQueryVariables
+) =>
+  variables === undefined
+    ? ['GetEnrichmentLogsWithChildren.infinite']
+    : ['GetEnrichmentLogsWithChildren.infinite', variables];
 
 export const GetEnrichmentStatsDocument = `
     query GetEnrichmentStats($entityType: EnrichmentEntityType, $timeRange: TimeRangeInput) {

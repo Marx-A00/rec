@@ -913,6 +913,7 @@ export type EnrichmentFieldDiff = {
 export type EnrichmentLog = {
   __typename?: 'EnrichmentLog';
   apiCallCount: Scalars['Int']['output'];
+  children?: Maybe<Array<EnrichmentLog>>;
   createdAt: Scalars['DateTime']['output'];
   dataQualityAfter?: Maybe<DataQuality>;
   dataQualityBefore?: Maybe<DataQuality>;
@@ -926,6 +927,7 @@ export type EnrichmentLog = {
   jobId?: Maybe<Scalars['String']['output']>;
   metadata?: Maybe<Scalars['JSON']['output']>;
   operation: Scalars['String']['output'];
+  parentJobId?: Maybe<Scalars['String']['output']>;
   previewData?: Maybe<Scalars['JSON']['output']>;
   reason?: Maybe<Scalars['String']['output']>;
   retryCount: Scalars['Int']['output'];
@@ -1681,6 +1683,7 @@ export type QueryCorrectionSearchArgs = {
 export type QueryEnrichmentLogsArgs = {
   entityId?: InputMaybe<Scalars['UUID']['input']>;
   entityType?: InputMaybe<EnrichmentEntityType>;
+  includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   skip?: InputMaybe<Scalars['Int']['input']>;
   sources?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -4194,6 +4197,11 @@ export type EnrichmentLogResolvers<
     ResolversParentTypes['EnrichmentLog'] = ResolversParentTypes['EnrichmentLog'],
 > = ResolversObject<{
   apiCallCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  children?: Resolver<
+    Maybe<Array<ResolversTypes['EnrichmentLog']>>,
+    ParentType,
+    ContextType
+  >;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   dataQualityAfter?: Resolver<
     Maybe<ResolversTypes['DataQuality']>,
@@ -4231,6 +4239,11 @@ export type EnrichmentLogResolvers<
   jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   metadata?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
   operation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  parentJobId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   previewData?: Resolver<
     Maybe<ResolversTypes['JSON']>,
     ParentType,
