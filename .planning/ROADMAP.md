@@ -142,6 +142,14 @@ Plans:
 
 **Requirements:** TBL-01, TBL-02, TBL-03, TBL-04
 
+**Plans:** 3 plans
+
+Plans:
+
+- [ ] 19-01-PLAN.md — Add parentOnly filter to GraphQL schema, resolver, and codegen
+- [ ] 19-02-PLAN.md — Add compact variant to EnrichmentTimeline, create SkeletonTimeline and modal
+- [ ] 19-03-PLAN.md — Wire timeline into EnrichmentLogTable with lazy child loading
+
 **Success Criteria:**
 
 1. Table query fetches only parent logs (`parentJobId: null`) by default
