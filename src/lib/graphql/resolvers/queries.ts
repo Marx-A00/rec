@@ -2012,8 +2012,8 @@ export const queryResolvers: QueryResolvers = {
   // Enrichment log queries
   enrichmentLogs: async (_, args, { prisma }) => {
     try {
-      const { includeChildren = false, ...filterArgs } = args;
-      
+      const { includeChildren = false, parentOnly = false, parentJobId, ...filterArgs } = args;
+
       // Build where clause for filters
       const where: Record<string, unknown> = {};
       if (filterArgs.entityType) where.entityType = filterArgs.entityType;
@@ -2025,6 +2025,13 @@ export const queryResolvers: QueryResolvers = {
 
       // Simple flat fetch (default behavior)
       if (!includeChildren) {
+        // Add parentJobId filtering
+        if (parentOnly) {
+          where.parentJobId = null;
+        } else if (parentJobId) {
+          where.parentJobId = parentJobId;
+        }
+
         const logs = await prisma.enrichmentLog.findMany({
           where,
           orderBy: { createdAt: 'desc' },

@@ -1711,6 +1711,8 @@ export type QueryEnrichmentLogsArgs = {
   entityType?: InputMaybe<EnrichmentEntityType>;
   includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  parentJobId?: InputMaybe<Scalars['String']['input']>;
+  parentOnly?: InputMaybe<Scalars['Boolean']['input']>;
   skip?: InputMaybe<Scalars['Int']['input']>;
   sources?: InputMaybe<Array<Scalars['String']['input']>>;
   status?: InputMaybe<EnrichmentLogStatus>;
@@ -3711,6 +3713,8 @@ export type GetEnrichmentLogsQueryVariables = Exact<{
   status?: InputMaybe<EnrichmentLogStatus>;
   skip?: InputMaybe<Scalars['Int']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  parentOnly?: InputMaybe<Scalars['Boolean']['input']>;
+  parentJobId?: InputMaybe<Scalars['String']['input']>;
   includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
@@ -7519,13 +7523,15 @@ useInfiniteSearchCorrectionCandidatesQuery.getKey = (
 ) => ['SearchCorrectionCandidates.infinite', variables];
 
 export const GetEnrichmentLogsDocument = `
-    query GetEnrichmentLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: EnrichmentLogStatus, $skip: Int, $limit: Int, $includeChildren: Boolean) {
+    query GetEnrichmentLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: EnrichmentLogStatus, $skip: Int, $limit: Int, $parentOnly: Boolean, $parentJobId: String, $includeChildren: Boolean) {
   enrichmentLogs(
     entityType: $entityType
     entityId: $entityId
     status: $status
     skip: $skip
     limit: $limit
+    parentOnly: $parentOnly
+    parentJobId: $parentJobId
     includeChildren: $includeChildren
   ) {
     id

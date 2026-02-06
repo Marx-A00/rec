@@ -1685,6 +1685,8 @@ export type QueryEnrichmentLogsArgs = {
   entityType?: InputMaybe<EnrichmentEntityType>;
   includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  parentJobId?: InputMaybe<Scalars['String']['input']>;
+  parentOnly?: InputMaybe<Scalars['Boolean']['input']>;
   skip?: InputMaybe<Scalars['Int']['input']>;
   sources?: InputMaybe<Array<Scalars['String']['input']>>;
   status?: InputMaybe<EnrichmentLogStatus>;
