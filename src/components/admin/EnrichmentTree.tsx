@@ -6,7 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { EnrichmentLogStatus, type EnrichmentLog } from '@/generated/graphql';
 
-import { formatOperationTitle, getStatusColor } from './enrichment-timeline-utils';
+import {
+  formatOperationTitle,
+  getStatusColor,
+} from './enrichment-timeline-utils';
 
 // ============================================================================
 // Types
@@ -70,9 +73,9 @@ interface TreeItemProps {
 
 function TreeItem({ log, depth = 0 }: TreeItemProps) {
   const hasChildren = log.children && log.children.length > 0;
-  
+
   return (
-    <div className="flex flex-col">
+    <div className='flex flex-col'>
       {/* Tree item row */}
       <div
         className={cn(
@@ -83,8 +86,8 @@ function TreeItem({ log, depth = 0 }: TreeItemProps) {
       >
         {/* Indent indicator for nested items */}
         {depth > 0 && (
-          <div className="flex h-full items-center">
-            <div className="h-px w-4 bg-zinc-700" />
+          <div className='flex h-full items-center'>
+            <div className='h-px w-4 bg-zinc-700' />
           </div>
         )}
 
@@ -101,21 +104,21 @@ function TreeItem({ log, depth = 0 }: TreeItemProps) {
         {/* Status badge */}
         <Badge
           variant={getStatusBadgeVariant(log.status)}
-          className="shrink-0 text-xs"
+          className='shrink-0 text-xs'
         >
           {getStatusLabel(log.status)}
         </Badge>
 
         {/* Relative timestamp */}
-        <span className="shrink-0 text-xs text-zinc-500">
+        <span className='shrink-0 text-xs text-zinc-500'>
           {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
         </span>
       </div>
 
       {/* Nested children */}
       {hasChildren && (
-        <div className="flex flex-col">
-          {log.children?.map((child) => (
+        <div className='flex flex-col'>
+          {log.children?.map(child => (
             <TreeItem key={child.id} log={child} depth={depth + 1} />
           ))}
         </div>
@@ -130,11 +133,11 @@ function TreeItem({ log, depth = 0 }: TreeItemProps) {
 
 /**
  * EnrichmentTree - Simple tree view fallback for enrichment logs.
- * 
+ *
  * A compact, indented list view of enrichment operations.
  * Used as a fallback when the timeline view is problematic or for
  * users who prefer a simpler representation.
- * 
+ *
  * @example
  * ```tsx
  * <EnrichmentTree logs={enrichmentLogs} />
@@ -149,14 +152,14 @@ export function EnrichmentTree({ logs, className }: EnrichmentTreeProps) {
           className
         )}
       >
-        <p className="text-sm text-zinc-500">No enrichment history</p>
+        <p className='text-sm text-zinc-500'>No enrichment history</p>
       </div>
     );
   }
 
   return (
     <div className={cn('flex flex-col gap-1', className)}>
-      {logs.map((log) => (
+      {logs.map(log => (
         <TreeItem key={log.id} log={log} />
       ))}
     </div>
