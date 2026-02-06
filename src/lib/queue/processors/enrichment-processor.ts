@@ -737,6 +737,105 @@ export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
       }
     }
 
+    // ========================================================================
+    // Spotify Track Fallback
+    // If MusicBrainz search failed to find tracks and album has a Spotify ID,
+    // fetch tracks from Spotify as a fallback (lower quality but better than nothing)
+    // ========================================================================
+    const hasTracksEnriched = fieldsEnriched.includes('tracks');
+    if (!hasTracksEnriched && album.spotifyId) {
+      console.log(
+        `📀 No MusicBrainz tracks found for "${album.title}", trying Spotify fallback...`
+      );
+
+      try {
+        // Import the Spotify track fetcher
+        const { fetchSpotifyAlbumTracks, processSpotifyTracks } = await import(
+          '../../spotify/mappers'
+        );
+
+        // Fetch tracks from Spotify API
+        const spotifyTracks = await fetchSpotifyAlbumTracks(album.spotifyId);
+
+        if (spotifyTracks.length > 0) {
+          console.log(
+            `🎵 Found ${spotifyTracks.length} tracks from Spotify for "${album.title}"`
+          );
+
+          // Build artist ID map from album artists
+          const artistIdMap = new Map<string, string>();
+          for (const albumArtist of album.artists) {
+            if (albumArtist.artist.spotifyId) {
+              artistIdMap.set(
+                albumArtist.artist.spotifyId,
+                albumArtist.artist.id
+              );
+            }
+          }
+
+          // Process and create tracks
+          const result = await processSpotifyTracks(
+            spotifyTracks,
+            album.id,
+            artistIdMap
+          );
+
+          if (result.tracksCreated > 0) {
+            fieldsEnriched.push('tracks');
+            sourcesAttempted.push('SPOTIFY');
+
+            // Set data quality to MEDIUM (better than LOW, but not as good as MusicBrainz HIGH)
+            if (newDataQuality === 'LOW') {
+              newDataQuality = 'MEDIUM';
+            }
+
+            console.log(
+              `✅ Created ${result.tracksCreated} tracks from Spotify fallback for "${album.title}"`
+            );
+
+            // Log the Spotify fallback as a separate operation with same jobId
+            // This links the two log entries together
+            await enrichmentLogger.logEnrichment({
+              entityType: 'ALBUM',
+              entityId: album.id,
+              operation: 'SPOTIFY_TRACK_FALLBACK',
+              sources: ['SPOTIFY'],
+              status: 'SUCCESS',
+              reason:
+                'Created tracks from Spotify after MusicBrainz search failed',
+              fieldsEnriched: ['tracks'],
+              dataQualityBefore,
+              dataQualityAfter: newDataQuality,
+              durationMs: Date.now() - startTime,
+              apiCallCount: apiCallCount + 1,
+              metadata: {
+                albumTitle: album.title,
+                artistName,
+                tracksCreated: result.tracksCreated,
+                fallbackReason: 'No MusicBrainz match found',
+                spotifyId: album.spotifyId,
+              },
+              jobId: data.requestId,
+              triggeredBy: data.userAction || 'manual',
+            });
+          } else {
+            console.warn(
+              `⚠️ Spotify returned tracks but none were created for "${album.title}"`
+            );
+          }
+        } else {
+          console.log(
+            `⚠️ No tracks available from Spotify for "${album.title}"`
+          );
+        }
+      } catch (spotifyError) {
+        console.warn(
+          `⚠️ Spotify track fallback failed for "${album.title}":`,
+          spotifyError
+        );
+      }
+    }
+
     // Determine final status
     let finalStatus: 'SUCCESS' | 'NO_DATA_AVAILABLE' | 'PARTIAL_SUCCESS' =
       'SUCCESS';

@@ -530,8 +530,9 @@ export async function processCachedSpotifyData(
 
 /**
  * Fetch tracks for a Spotify album using the Spotify API
+ * Used as fallback when MusicBrainz enrichment fails to find tracks
  */
-async function fetchSpotifyAlbumTracks(
+export async function fetchSpotifyAlbumTracks(
   albumId: string
 ): Promise<SpotifyTrackData[]> {
   try {
