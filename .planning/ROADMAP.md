@@ -118,8 +118,13 @@ Plans:
 - `src/components/ui/timeline/index.ts`
 - `src/components/admin/EnrichmentTimeline.tsx` (wrapper with mapping)
 
----
+**Plans:** 2 plans
 
+Plans:
+- [ ] 18-01-PLAN.md — Copy timeline components and create mapping utilities
+- [ ] 18-02-PLAN.md — Create EnrichmentTimeline wrapper with view switcher
+
+---
 ## Phase 19: EnrichmentLogTable Integration
 
 **Goal:** Integrate timeline into EnrichmentLogTable expanded rows.
