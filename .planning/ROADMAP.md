@@ -153,11 +153,11 @@ Plans:
 **Success Criteria:**
 
 1. Table query fetches only parent logs (`parentJobId: null`) by default
-2. Rows with children show expand chevron (based on existence of children)
+2. All rows show expand chevron (expandable for timeline view)
 3. Clicking expand loads children and shows Timeline component
 4. Child logs do not appear as separate rows in main table
 5. Timeline shows parent job first, then children in chronological order
-6. Existing field changes panel still works alongside timeline
+6. Compact timeline in table rows, full timeline available via modal
 
 **Key Files:**
 
