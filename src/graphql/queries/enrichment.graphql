@@ -4,6 +4,8 @@ query GetEnrichmentLogs(
   $status: EnrichmentLogStatus
   $skip: Int
   $limit: Int
+  $parentOnly: Boolean
+  $parentJobId: String
   $includeChildren: Boolean
 ) {
   enrichmentLogs(
@@ -12,6 +14,8 @@ query GetEnrichmentLogs(
     status: $status
     skip: $skip
     limit: $limit
+    parentOnly: $parentOnly
+    parentJobId: $parentJobId
     includeChildren: $includeChildren
   ) {
     id

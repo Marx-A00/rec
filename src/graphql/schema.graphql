@@ -1784,11 +1784,11 @@ type EnrichmentLog {
   metadata: JSON
   previewData: JSON # Stores raw API response and field diffs for preview enrichments
   jobId: String
-  parentJobId: String  # Links child job to parent job for tree display
+  parentJobId: String # Links child job to parent job for tree display
   triggeredBy: String
   userId: String # Track which user made manual changes
   createdAt: DateTime!
-  children: [EnrichmentLog!]  # Populated when includeChildren=true
+  children: [EnrichmentLog!] # Populated when includeChildren=true
 }
 
 input TimeRangeInput {
@@ -2322,7 +2322,9 @@ type Query {
     sources: [String!]
     skip: Int
     limit: Int
-    includeChildren: Boolean  # When true, returns root logs with nested children
+    parentOnly: Boolean # When true, returns only root logs (parentJobId is null)
+    parentJobId: String # When provided, returns only children of this parent job
+    includeChildren: Boolean # When true, returns root logs with nested children
   ): [EnrichmentLog!]!
 
   enrichmentStats(
