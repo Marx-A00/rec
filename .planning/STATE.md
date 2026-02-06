@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 
 ## Current Position
 
-Phase: 17 (GraphQL Layer) — COMPLETE
-Plan: 2/2
-Status: Phase complete, verified
-Last activity: 2026-02-06 — Phase 17 complete
+Phase: 18 (Timeline Component) — IN PROGRESS
+Plan: 1/2
+Status: Plan 18-01 complete
+Last activity: 2026-02-06 — Completed 18-01-PLAN.md
 
-Progress: 2/6 phases complete (15, 17)
+Progress: 3/6 phases complete (15, 17, 18-01)
 
 ## Performance Metrics
 
@@ -32,10 +32,10 @@ Progress: 2/6 phases complete (15, 17)
 
 **Milestone v1.2 (In Progress):**
 - Phases complete: 2/6 (Phase 15, 17)
-- Plans complete: 3 (15-01, 17-01, 17-02)
-- Requirements: 7/20 (DATA-01, DATA-02, DATA-03, GQL-01, GQL-02, GQL-03, GQL-04)
+- Plans complete: 4 (15-01, 17-01, 17-02, 18-01)
+- Requirements: 8/20 (DATA-01, DATA-02, DATA-03, GQL-01, GQL-02, GQL-03, GQL-04, UI-01)
 
-**Total shipped:** 14 phases, 45 plans
+**Total shipped:** 14 phases, 46 plans
 
 ## Accumulated Context
 
@@ -72,6 +72,15 @@ Progress: 2/6 phases complete (15, 17)
 - Generated hooks: useGetEnrichmentLogsQuery, useGetEnrichmentLogsWithChildrenQuery
 - Verification passed: 6/6 success criteria
 
+### Phase 18-01 Complete
+
+- Timeline component in src/components/ui/timeline/
+- TimelineLayout with Framer Motion animations
+- Mapping utilities in src/components/admin/enrichment-timeline-utils.tsx
+- mapEnrichmentStatus, getOperationIcon, getStatusColor, formatOperationTitle
+- mapLogToTimelineItem for full EnrichmentLog -> TimelineLayoutItem conversion
+- Used .tsx extension for JSX support in mapping function
+
 ### Blockers/Concerns
 
 None.
@@ -79,12 +88,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Phase 17 complete
+Stopped at: Completed 18-01-PLAN.md
 Resume file: N/A
 
-**Next action:** Plan/Execute Phase 16 (Job Linking) or Phase 18 (Timeline Component)
-
-Note: Phase 16 is in progress on branch but not committed. Phase 18 can proceed independently.
+**Next action:** Execute Phase 18-02 (EnrichmentTimeline Component)
 
 Config:
 {
