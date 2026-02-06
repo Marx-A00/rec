@@ -4,6 +4,7 @@ query GetEnrichmentLogs(
   $status: EnrichmentLogStatus
   $skip: Int
   $limit: Int
+  $includeChildren: Boolean
 ) {
   enrichmentLogs(
     entityType: $entityType
@@ -11,6 +12,7 @@ query GetEnrichmentLogs(
     status: $status
     skip: $skip
     limit: $limit
+    includeChildren: $includeChildren
   ) {
     id
     entityType
@@ -28,6 +30,61 @@ query GetEnrichmentLogs(
     apiCallCount
     metadata
     createdAt
+    jobId
+    parentJobId
+  }
+}
+
+query GetEnrichmentLogsWithChildren(
+  $entityType: EnrichmentEntityType
+  $entityId: UUID
+  $status: EnrichmentLogStatus
+  $skip: Int
+  $limit: Int
+) {
+  enrichmentLogs(
+    entityType: $entityType
+    entityId: $entityId
+    status: $status
+    skip: $skip
+    limit: $limit
+    includeChildren: true
+  ) {
+    id
+    entityType
+    entityId
+    operation
+    sources
+    status
+    reason
+    fieldsEnriched
+    dataQualityBefore
+    dataQualityAfter
+    errorMessage
+    errorCode
+    durationMs
+    apiCallCount
+    metadata
+    createdAt
+    jobId
+    parentJobId
+    children {
+      id
+      entityType
+      entityId
+      operation
+      sources
+      status
+      reason
+      fieldsEnriched
+      errorMessage
+      errorCode
+      durationMs
+      apiCallCount
+      createdAt
+      jobId
+      parentJobId
+    }
   }
 }
 
