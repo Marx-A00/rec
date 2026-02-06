@@ -10,11 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 ## Current Position
 
 Phase: 17 (GraphQL Layer)
-Plan: 01 of 3
-Status: Plan 01 complete
-Last activity: 2026-02-06 — Completed 17-01-PLAN.md
+Plan: 02 of 3
+Status: Plan 02 complete
+Last activity: 2026-02-06 — Completed 17-02-PLAN.md
 
-Progress: 2/6 phases complete (15, 17-01)
+Progress: 3/6 phases complete (15, 17-01, 17-02)
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█░░░░░░░░░░ 50%
 
 ## Performance Metrics
 
@@ -32,10 +33,10 @@ Progress: 2/6 phases complete (15, 17-01)
 
 **Milestone v1.2 (In Progress):**
 - Phases complete: 1/6 (Phase 15)
-- Plans complete: 1 (17-01)
-- Requirements: 6/20 (DATA-01, DATA-02, DATA-03, GQL-01, GQL-02, GQL-03)
+- Plans complete: 2 (17-01, 17-02)
+- Requirements: 7/20 (DATA-01, DATA-02, DATA-03, GQL-01, GQL-02, GQL-03, GQL-04)
 
-**Total shipped:** 14 phases, 43 plans
+**Total shipped:** 14 phases, 44 plans
 
 ## Accumulated Context
 
@@ -71,6 +72,14 @@ Progress: 2/6 phases complete (15, 17-01)
 - Added `GetEnrichmentLogsWithChildren` client query
 - Schema ready for codegen
 
+### Phase 17 Plan 02 Complete
+
+- Implemented tree assembly logic in enrichmentLogs resolver
+- Batch child fetch via `{ in: parentJobIds }` (no N+1)
+- Map-based O(n) child lookup for tree assembly
+- Generated hooks include parentJobId, children, includeChildren
+- GetEnrichmentLogsWithChildrenQuery hook available
+
 ### Blockers/Concerns
 
 None.
@@ -78,7 +87,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 17-01-PLAN.md
+Stopped at: Completed 17-02-PLAN.md
 Resume file: N/A
 
-**Next action:** Execute Plan 17-02 (codegen and resolver)
+**Next action:** Execute Plan 17-03 (Client Hooks + Integration)
