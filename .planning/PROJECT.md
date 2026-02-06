@@ -20,6 +20,18 @@ The correction feature is complete with clean state management:
 
 **Tech stack:** Next.js 15, GraphQL (Apollo), Prisma, React Query, Zustand 5.0.8
 
+## Current Milestone: v1.2 Job History Timeline UI
+
+**Goal:** Show enrichment jobs as a linked timeline with parent-child relationships visible in the UI.
+
+**Target features:**
+- Add `parentJobId` field to EnrichmentLog for job linking
+- Propagate `parentJobId` through job chains (enrichment → discogs → cache)
+- Add enrichment logging to processors that don't currently log (cache, discogs)
+- Timeline UI component (shadcn-timeline) for expanded job rows
+- Group/hide child jobs in main table, show in timeline on expand
+- Apply to both Job History tab and EnrichmentLogTable (album/artist panels)
+
 ## Requirements
 
 ### Validated
@@ -48,7 +60,15 @@ The correction feature is complete with clean state management:
 
 ### Active
 
-(None — planning next milestone)
+- [ ] EnrichmentLog has `parentJobId` field for job linking
+- [ ] All job processors propagate `parentJobId` through job chains
+- [ ] Cache processors (album cover, artist image) log to EnrichmentLog
+- [ ] Discogs processors (search, get) log to EnrichmentLog
+- [ ] GraphQL query fetches `jobId` and `parentJobId`
+- [ ] Timeline component displays job hierarchy on row expand
+- [ ] Child jobs hidden from main table, shown in parent's timeline
+- [ ] Job History tab shows linked job timelines
+- [ ] EnrichmentLogTable (album/artist panels) shows linked job timelines
 
 ### Out of Scope
 
@@ -68,12 +88,20 @@ The platform accumulated albums with data quality issues. The correction feature
 - 7 child components migrated to store consumption
 - Legacy hooks deleted: `useCorrectionModalState.ts`, `useArtistCorrectionModalState.ts`
 
+**v1.2 context:**
+- EnrichmentLog already has `jobId` field but not `parentJobId`
+- Only `ENRICH_ALBUM` → `SPOTIFY_TRACK_FALLBACK` currently share same `jobId`
+- Cache/Discogs processors don't log to EnrichmentLog
+- `requestId` propagation creates unique IDs per job (e.g., `{parent}-artist-{id}`)
+- shadcn-timeline component will be added for timeline UI
+
 ## Constraints
 
 - **API Rate Limits**: MusicBrainz allows 1 request/second — use existing BullMQ queue
 - **Tech Stack**: Next.js 15, GraphQL (Apollo), Prisma, React Query — follow existing patterns
 - **Auth**: Only ADMIN/OWNER roles can access correction features
 - **No `any` types**: Fully typed stores, actions, selectors
+- **Framer Motion**: Required for shadcn-timeline animations
 
 ## Key Decisions
 
@@ -86,7 +114,9 @@ The platform accumulated albums with data quality issues. The correction feature
 | Accept one-time sessionStorage reset | Admin-only, corrections are short-lived                   | ✓ Good  |
 | Factory pattern with Map cache       | Per-entity store instances with proper cleanup            | ✓ Good  |
 | Atomic actions for multi-field state | Prevents intermediate states and race conditions          | ✓ Good  |
+| `parentJobId` over unified requestId | Preserves unique job IDs for debugging, adds explicit relationship | — Pending |
+| shadcn-timeline for UI               | Consistent with shadcn/ui patterns, Framer Motion animations | — Pending |
 
 ---
 
-_Last updated: 2026-02-05 after v1.1 milestone completion_
+_Last updated: 2026-02-06 after v1.2 milestone started_

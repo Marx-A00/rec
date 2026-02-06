@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-05)
+See: .planning/PROJECT.md (updated 2026-02-06)
 
 **Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Milestone v1.1 complete — Ready for next milestone planning
+**Current focus:** Milestone v1.2 — Job History Timeline UI
 
 ## Current Position
 
-Phase: N/A — Between milestones
-Plan: N/A
-Status: Ready to plan next milestone
-Last activity: 2026-02-05 — v1.1 milestone complete
+Phase: 15 (Schema & Migration)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-02-06 — Roadmap created
 
-Progress: Milestone v1.1 shipped (2 phases, 5 plans)
+Progress: 0/6 phases complete
 
 ## Performance Metrics
 
@@ -43,17 +43,25 @@ Progress: Milestone v1.1 shipped (2 phases, 5 plans)
 - Factory pattern with Map cache for per-entity store instances
 - Atomic actions for multi-field state updates
 
+### v1.2 Context (from exploration)
+
+- `parentJobId` field approach chosen over unified requestId
+- shadcn-timeline component for UI (Framer Motion required)
+- Need to add logging to cache/discogs processors
+- EnrichmentLogTable used in: album detail, artist detail panels
+- Job History tab is separate (shows BullMQ jobs, not EnrichmentLog)
+
 ### Blockers/Concerns
 
 None.
 
 ## Session Continuity
 
-Last session: 2026-02-05
-Stopped at: v1.1 milestone complete, archived
+Last session: 2026-02-06
+Stopped at: Milestone v1.2 started, running research
 Resume file: N/A
 
-**Next action:** `/gsd:new-milestone` to start next milestone
+**Next action:** Complete research, then define requirements
 
 Config:
 {
