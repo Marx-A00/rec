@@ -8,7 +8,7 @@
 
 | Phase | Name | Goal | Requirements |
 |-------|------|------|--------------|
-| 15 | Schema & Migration | Add `parentJobId` field to EnrichmentLog | DATA-01, DATA-02, DATA-03 |
+| 15 | Schema & Migration ✓ | Add `parentJobId` field to EnrichmentLog | DATA-01, DATA-02, DATA-03 |
 | 16 | Job Linking | Propagate `parentJobId` through all job chains | LINK-01 through LINK-07 |
 | 17 | GraphQL Layer | Expose `jobId`, `parentJobId`, and tree fetching | GQL-01 through GQL-04 |
 | 18 | Timeline Component | Add shadcn-timeline with status/icon mapping | UI-01, UI-02, UI-03 |
@@ -173,4 +173,4 @@ Phase 16 (Job Linking) ──→ Phase 17 (GraphQL)
 ---
 
 *Roadmap created: 2026-02-06*
-*Last updated: 2026-02-06*
+*Last updated: 2026-02-06 — Phase 15 complete*

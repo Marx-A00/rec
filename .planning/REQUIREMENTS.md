@@ -9,9 +9,9 @@ Requirements for Job History Timeline UI milestone.
 
 ### Data Layer
 
-- [ ] **DATA-01**: EnrichmentLog has `parentJobId` field (nullable VARCHAR)
-- [ ] **DATA-02**: EnrichmentLog has index on `parentJobId` for efficient child lookups
-- [ ] **DATA-03**: Existing logs without `parentJobId` treated as standalone (no migration needed)
+- [x] **DATA-01**: EnrichmentLog has `parentJobId` field (nullable VARCHAR)
+- [x] **DATA-02**: EnrichmentLog has index on `parentJobId` for efficient child lookups
+- [x] **DATA-03**: Existing logs without `parentJobId` treated as standalone (no migration needed)
 
 ### Job Linking
 
@@ -76,9 +76,9 @@ Deferred to later milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 15 | Pending |
-| DATA-02 | Phase 15 | Pending |
-| DATA-03 | Phase 15 | Pending |
+| DATA-01 | Phase 15 | Complete |
+| DATA-02 | Phase 15 | Complete |
+| DATA-03 | Phase 15 | Complete |
 | LINK-01 | Phase 16 | Pending |
 | LINK-02 | Phase 16 | Pending |
 | LINK-03 | Phase 16 | Pending |
