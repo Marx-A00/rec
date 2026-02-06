@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 
 ## Current Position
 
-Phase: 16 (Job Linking)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-02-06 — Phase 15 complete
+Phase: 17 (GraphQL Layer)
+Plan: 01 of 3
+Status: Plan 01 complete
+Last activity: 2026-02-06 — Completed 17-01-PLAN.md
 
-Progress: 1/6 phases complete
+Progress: 2/6 phases complete (15, 17-01)
 
 ## Performance Metrics
 
@@ -32,9 +32,10 @@ Progress: 1/6 phases complete
 
 **Milestone v1.2 (In Progress):**
 - Phases complete: 1/6 (Phase 15)
-- Requirements: 3/20 (DATA-01, DATA-02, DATA-03)
+- Plans complete: 1 (17-01)
+- Requirements: 6/20 (DATA-01, DATA-02, DATA-03, GQL-01, GQL-02, GQL-03)
 
-**Total shipped:** 14 phases, 42 plans
+**Total shipped:** 14 phases, 43 plans
 
 ## Accumulated Context
 
@@ -62,6 +63,14 @@ Progress: 1/6 phases complete
 - Migration: `20260206154227_add_parent_job_id`
 - Prisma client regenerated with new field
 
+### Phase 17 Plan 01 Complete
+
+- Added `parentJobId: String` to EnrichmentLog GraphQL type
+- Added `children: [EnrichmentLog!]` field (nullable, conditionally populated)
+- Added `includeChildren: Boolean` param to enrichmentLogs query
+- Added `GetEnrichmentLogsWithChildren` client query
+- Schema ready for codegen
+
 ### Blockers/Concerns
 
 None.
@@ -69,21 +78,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Phase 15 complete, ready for Phase 16
+Stopped at: Completed 17-01-PLAN.md
 Resume file: N/A
 
-**Next action:** Plan Phase 16 (Job Linking)
-
-Config:
-{
-  "mode": "yolo",
-  "depth": "comprehensive",
-  "parallelization": true,
-  "commit_docs": true,
-  "model_profile": "balanced",
-  "workflow": {
-    "research": true,
-    "plan_check": true,
-    "verifier": true
-  }
-}
+**Next action:** Execute Plan 17-02 (codegen and resolver)
