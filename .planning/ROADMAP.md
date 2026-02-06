@@ -88,7 +88,13 @@ Plans:
 **Key Files:**
 - `src/graphql/schema.graphql`
 - `src/graphql/queries/enrichment.graphql`
-- `src/lib/graphql/resolvers/enrichment-resolvers.ts`
+- `src/lib/graphql/resolvers/queries.ts`
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 17-01-PLAN.md — Schema and client query updates (parentJobId, children, includeChildren)
+- [ ] 17-02-PLAN.md — Resolver tree logic and codegen verification
 
 ---
 
@@ -184,4 +190,4 @@ Phase 16 (Job Linking) ──→ Phase 17 (GraphQL)
 ---
 
 *Roadmap created: 2026-02-06*
-*Last updated: 2026-02-06 — Phase 15 complete*
+*Last updated: 2026-02-06 — Phase 17 planned*
