@@ -9,13 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 
 ## Current Position
 
-Phase: 17 (GraphQL Layer)
-Plan: 02 of 3
-Status: Plan 02 complete
-Last activity: 2026-02-06 — Completed 17-02-PLAN.md
+Phase: 17 (GraphQL Layer) — COMPLETE
+Plan: 2/2
+Status: Phase complete, verified
+Last activity: 2026-02-06 — Phase 17 complete
 
-Progress: 3/6 phases complete (15, 17-01, 17-02)
-░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█░░░░░░░░░░ 50%
+Progress: 2/6 phases complete (15, 17)
 
 ## Performance Metrics
 
@@ -32,11 +31,11 @@ Progress: 3/6 phases complete (15, 17-01, 17-02)
 - Requirements: 30/30
 
 **Milestone v1.2 (In Progress):**
-- Phases complete: 1/6 (Phase 15)
-- Plans complete: 2 (17-01, 17-02)
+- Phases complete: 2/6 (Phase 15, 17)
+- Plans complete: 3 (15-01, 17-01, 17-02)
 - Requirements: 7/20 (DATA-01, DATA-02, DATA-03, GQL-01, GQL-02, GQL-03, GQL-04)
 
-**Total shipped:** 14 phases, 44 plans
+**Total shipped:** 14 phases, 45 plans
 
 ## Accumulated Context
 
@@ -64,21 +63,14 @@ Progress: 3/6 phases complete (15, 17-01, 17-02)
 - Migration: `20260206154227_add_parent_job_id`
 - Prisma client regenerated with new field
 
-### Phase 17 Plan 01 Complete
+### Phase 17 Complete
 
 - Added `parentJobId: String` to EnrichmentLog GraphQL type
 - Added `children: [EnrichmentLog!]` field (nullable, conditionally populated)
 - Added `includeChildren: Boolean` param to enrichmentLogs query
-- Added `GetEnrichmentLogsWithChildren` client query
-- Schema ready for codegen
-
-### Phase 17 Plan 02 Complete
-
-- Implemented tree assembly logic in enrichmentLogs resolver
-- Batch child fetch via `{ in: parentJobIds }` (no N+1)
-- Map-based O(n) child lookup for tree assembly
-- Generated hooks include parentJobId, children, includeChildren
-- GetEnrichmentLogsWithChildrenQuery hook available
+- Resolver tree assembly: batch child fetch with Map for O(n) lookup
+- Generated hooks: useGetEnrichmentLogsQuery, useGetEnrichmentLogsWithChildrenQuery
+- Verification passed: 6/6 success criteria
 
 ### Blockers/Concerns
 
@@ -87,7 +79,23 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 17-02-PLAN.md
+Stopped at: Phase 17 complete
 Resume file: N/A
 
-**Next action:** Execute Plan 17-03 (Client Hooks + Integration)
+**Next action:** Plan/Execute Phase 16 (Job Linking) or Phase 18 (Timeline Component)
+
+Note: Phase 16 is in progress on branch but not committed. Phase 18 can proceed independently.
+
+Config:
+{
+  "mode": "yolo",
+  "depth": "comprehensive",
+  "parallelization": true,
+  "commit_docs": true,
+  "model_profile": "balanced",
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true
+  }
+}

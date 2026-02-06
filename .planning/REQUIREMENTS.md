@@ -25,10 +25,10 @@ Requirements for Job History Timeline UI milestone.
 
 ### GraphQL
 
-- [ ] **GQL-01**: `EnrichmentLog` type includes `jobId` field
-- [ ] **GQL-02**: `EnrichmentLog` type includes `parentJobId` field
-- [ ] **GQL-03**: `enrichmentLogs` query supports `includeChildren` parameter
-- [ ] **GQL-04**: Resolver assembles parent-child tree when `includeChildren=true`
+- [x] **GQL-01**: `EnrichmentLog` type includes `jobId` field
+- [x] **GQL-02**: `EnrichmentLog` type includes `parentJobId` field
+- [x] **GQL-03**: `enrichmentLogs` query supports `includeChildren` parameter
+- [x] **GQL-04**: Resolver assembles parent-child tree when `includeChildren=true`
 
 ### Timeline Component
 
@@ -86,10 +86,10 @@ Deferred to later milestones.
 | LINK-05 | Phase 16 | Pending |
 | LINK-06 | Phase 16 | Pending |
 | LINK-07 | Phase 16 | Pending |
-| GQL-01 | Phase 17 | Pending |
-| GQL-02 | Phase 17 | Pending |
-| GQL-03 | Phase 17 | Pending |
-| GQL-04 | Phase 17 | Pending |
+| GQL-01 | Phase 17 | Complete |
+| GQL-02 | Phase 17 | Complete |
+| GQL-03 | Phase 17 | Complete |
+| GQL-04 | Phase 17 | Complete |
 | UI-01 | Phase 18 | Pending |
 | UI-02 | Phase 18 | Pending |
 | UI-03 | Phase 18 | Pending |
