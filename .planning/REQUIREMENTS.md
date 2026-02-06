@@ -32,9 +32,9 @@ Requirements for Job History Timeline UI milestone.
 
 ### Timeline Component
 
-- [ ] **UI-01**: Timeline component copied from shadcn-timeline (timeline.tsx, timeline-layout.tsx)
-- [ ] **UI-02**: Timeline maps EnrichmentLog status to timeline status (completed/in-progress/pending)
-- [ ] **UI-03**: Timeline shows operation-specific icons (album, artist, spotify, discogs, cache)
+- [x] **UI-01**: Timeline component copied from shadcn-timeline (timeline.tsx, timeline-layout.tsx)
+- [x] **UI-02**: Timeline maps EnrichmentLog status to timeline status (completed/in-progress/pending)
+- [x] **UI-03**: Timeline shows operation-specific icons (album, artist, spotify, discogs, cache)
 
 ### EnrichmentLogTable
 
@@ -65,46 +65,48 @@ Deferred to later milestones.
 
 ## Out of Scope
 
-| Feature | Reason |
-|---------|--------|
+| Feature                        | Reason                                       |
+| ------------------------------ | -------------------------------------------- |
 | Recursive SQL (WITH RECURSIVE) | Overkill for shallow job chains (2-4 levels) |
-| Real-time timeline updates | Polling on expand is sufficient |
-| Timeline for non-admin users | Admin-only feature |
-| Undo/revert from timeline | Separate feature |
+| Real-time timeline updates     | Polling on expand is sufficient              |
+| Timeline for non-admin users   | Admin-only feature                           |
+| Undo/revert from timeline      | Separate feature                             |
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| DATA-01 | Phase 15 | Complete |
-| DATA-02 | Phase 15 | Complete |
-| DATA-03 | Phase 15 | Complete |
-| LINK-01 | Phase 16 | Pending |
-| LINK-02 | Phase 16 | Pending |
-| LINK-03 | Phase 16 | Pending |
-| LINK-04 | Phase 16 | Pending |
-| LINK-05 | Phase 16 | Pending |
-| LINK-06 | Phase 16 | Pending |
-| LINK-07 | Phase 16 | Pending |
-| GQL-01 | Phase 17 | Complete |
-| GQL-02 | Phase 17 | Complete |
-| GQL-03 | Phase 17 | Complete |
-| GQL-04 | Phase 17 | Complete |
-| UI-01 | Phase 18 | Pending |
-| UI-02 | Phase 18 | Pending |
-| UI-03 | Phase 18 | Pending |
-| TBL-01 | Phase 19 | Pending |
-| TBL-02 | Phase 19 | Pending |
-| TBL-03 | Phase 19 | Pending |
-| TBL-04 | Phase 19 | Pending |
-| JOB-01 | Phase 20 | Pending |
-| JOB-02 | Phase 20 | Pending |
+| Requirement | Phase    | Status   |
+| ----------- | -------- | -------- |
+| DATA-01     | Phase 15 | Complete |
+| DATA-02     | Phase 15 | Complete |
+| DATA-03     | Phase 15 | Complete |
+| LINK-01     | Phase 16 | Pending  |
+| LINK-02     | Phase 16 | Pending  |
+| LINK-03     | Phase 16 | Pending  |
+| LINK-04     | Phase 16 | Pending  |
+| LINK-05     | Phase 16 | Pending  |
+| LINK-06     | Phase 16 | Pending  |
+| LINK-07     | Phase 16 | Pending  |
+| GQL-01      | Phase 17 | Complete |
+| GQL-02      | Phase 17 | Complete |
+| GQL-03      | Phase 17 | Complete |
+| GQL-04      | Phase 17 | Complete |
+| UI-01       | Phase 18 | Complete |
+| UI-02       | Phase 18 | Complete |
+| UI-03       | Phase 18 | Complete |
+| TBL-01      | Phase 19 | Pending  |
+| TBL-02      | Phase 19 | Pending  |
+| TBL-03      | Phase 19 | Pending  |
+| TBL-04      | Phase 19 | Pending  |
+| JOB-01      | Phase 20 | Pending  |
+| JOB-02      | Phase 20 | Pending  |
 
 **Coverage:**
+
 - v1.2 requirements: 20 total
 - Mapped to phases: 20
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-02-06*
-*Last updated: 2026-02-06 after initial definition*
+
+_Requirements defined: 2026-02-06_
+_Last updated: 2026-02-06 after initial definition_
