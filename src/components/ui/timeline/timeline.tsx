@@ -36,8 +36,8 @@ const Timeline = React.forwardRef<HTMLOListElement, TimelineProps>(
       <ol
         ref={ref}
         className={cn(timelineVariants({ size }), className)}
-        role="list"
-        aria-label="Timeline"
+        role='list'
+        aria-label='Timeline'
         {...props}
       >
         {React.Children.map(children, (child, index) => {
@@ -192,9 +192,11 @@ const timelineIconVariants = cva(
     variants: {
       color: {
         primary: 'border-primary bg-primary text-primary-foreground',
-        secondary: 'border-destructive bg-destructive text-destructive-foreground',
+        secondary:
+          'border-destructive bg-destructive text-destructive-foreground',
         muted: 'border-muted-foreground/50 bg-muted text-muted-foreground',
-        accent: 'border-amber-500 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+        accent:
+          'border-amber-500 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
       },
       size: {
         sm: 'h-6 w-6',
@@ -238,18 +240,20 @@ const TimelineIcon = React.forwardRef<HTMLDivElement, TimelineIconProps>(
   ) => {
     const renderIcon = () => {
       if (loading) {
-        return <Loader2 className="h-4 w-4 animate-spin" />;
+        return <Loader2 className='h-4 w-4 animate-spin' />;
       }
       if (error) {
-        return <AlertCircle className="h-4 w-4" />;
+        return <AlertCircle className='h-4 w-4' />;
       }
       if (success) {
-        return <Check className="h-4 w-4" />;
+        return <Check className='h-4 w-4' />;
       }
       return icon;
     };
 
-    const effectiveColor: TimelineIconColor | null | undefined = error ? 'secondary' : color;
+    const effectiveColor: TimelineIconColor | null | undefined = error
+      ? 'secondary'
+      : color;
 
     return (
       <div
@@ -276,28 +280,29 @@ interface TimelineConnectorProps extends React.HTMLAttributes<HTMLDivElement> {
   completed?: boolean;
 }
 
-const TimelineConnector = React.forwardRef<HTMLDivElement, TimelineConnectorProps>(
-  ({ className, completed = false, ...props }, ref) => {
-    return (
-      <div
-        ref={ref}
-        className={cn(
-          'absolute left-4 top-10 h-[calc(100%-2rem)] w-0.5 -translate-x-1/2',
-          completed ? 'bg-primary' : 'bg-muted-foreground/30',
-          className
-        )}
-        {...props}
-      />
-    );
-  }
-);
+const TimelineConnector = React.forwardRef<
+  HTMLDivElement,
+  TimelineConnectorProps
+>(({ className, completed = false, ...props }, ref) => {
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        'absolute left-4 top-10 h-[calc(100%-2rem)] w-0.5 -translate-x-1/2',
+        completed ? 'bg-primary' : 'bg-muted-foreground/30',
+        className
+      )}
+      {...props}
+    />
+  );
+});
 TimelineConnector.displayName = 'TimelineConnector';
 
 // ============================================================================
 // Timeline Header
 // ============================================================================
 
-interface TimelineHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+type TimelineHeaderProps = React.HTMLAttributes<HTMLDivElement>;
 
 const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
   ({ className, ...props }, ref) => {
@@ -316,7 +321,7 @@ TimelineHeader.displayName = 'TimelineHeader';
 // Timeline Title
 // ============================================================================
 
-interface TimelineTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {}
+type TimelineTitleProps = React.HTMLAttributes<HTMLHeadingElement>;
 
 const TimelineTitle = React.forwardRef<HTMLHeadingElement, TimelineTitleProps>(
   ({ className, ...props }, ref) => {
@@ -335,8 +340,7 @@ TimelineTitle.displayName = 'TimelineTitle';
 // Timeline Description
 // ============================================================================
 
-interface TimelineDescriptionProps
-  extends React.HTMLAttributes<HTMLParagraphElement> {}
+type TimelineDescriptionProps = React.HTMLAttributes<HTMLParagraphElement>;
 
 const TimelineDescription = React.forwardRef<
   HTMLParagraphElement,
@@ -440,7 +444,7 @@ TimelineTime.displayName = 'TimelineTime';
 // Timeline Content
 // ============================================================================
 
-interface TimelineContentProps extends React.HTMLAttributes<HTMLDivElement> {}
+type TimelineContentProps = React.HTMLAttributes<HTMLDivElement>;
 
 const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
   ({ className, ...props }, ref) => {
@@ -488,11 +492,9 @@ const TimelineEmpty = React.forwardRef<HTMLDivElement, TimelineEmptyProps>(
         )}
         {...props}
       >
-        {icon && (
-          <div className="mb-3 text-muted-foreground">{icon}</div>
-        )}
-        <h3 className="text-sm font-medium">{title}</h3>
-        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+        {icon && <div className='mb-3 text-muted-foreground'>{icon}</div>}
+        <h3 className='text-sm font-medium'>{title}</h3>
+        <p className='mt-1 text-sm text-muted-foreground'>{description}</p>
       </div>
     );
   }
