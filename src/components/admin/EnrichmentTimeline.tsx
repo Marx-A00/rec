@@ -203,10 +203,14 @@ function TimelineLogItem({
       <TimelineConnector />
 
       <TimelineHeader>
-        <TimelineTitle className={cn(isChild && 'text-sm', compact && 'text-xs')}>
+        <TimelineTitle
+          className={cn(isChild && 'text-sm', compact && 'text-xs')}
+        >
           {formatOperationTitle(log.operation, log.entityType)}
         </TimelineTitle>
-        <TimelineTime className={cn('text-xs text-zinc-500', compact && 'text-[10px]')}>
+        <TimelineTime
+          className={cn('text-xs text-zinc-500', compact && 'text-[10px]')}
+        >
           {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
         </TimelineTime>
       </TimelineHeader>
@@ -218,7 +222,12 @@ function TimelineLogItem({
 
         {/* Inline error preview (not expanded) */}
         {hasError && !isExpanded && log.errorMessage && (
-          <p className={cn('mt-1 text-xs text-red-400', compact && 'text-[10px]')}>
+          <p
+            className={cn(
+              'mt-1 text-xs text-red-400',
+              compact && 'text-[10px]'
+            )}
+          >
             {truncateError(log.errorMessage)}
           </p>
         )}

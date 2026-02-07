@@ -128,9 +128,7 @@ export function ApplyView({ albumId, error = null }: ApplyViewProps) {
             <Checkbox
               id='trigger-enrichment'
               checked={shouldEnrich}
-              onCheckedChange={checked =>
-                setShouldEnrich(checked === true)
-              }
+              onCheckedChange={checked => setShouldEnrich(checked === true)}
             />
             <label
               htmlFor='trigger-enrichment'

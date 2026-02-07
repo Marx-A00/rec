@@ -14,8 +14,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { ErrorState, categorizeError } from '../shared';
 import { getCorrectionStore } from '@/stores/useCorrectionStore';
+
+import { ErrorState, categorizeError } from '../shared';
 
 import { PreviewSkeleton } from './PreviewSkeleton';
 import { CoverArtComparison } from './CoverArtComparison';

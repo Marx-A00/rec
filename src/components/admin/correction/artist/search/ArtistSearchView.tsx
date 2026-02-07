@@ -34,8 +34,8 @@ export interface ArtistSearchViewProps {
 export function ArtistSearchView({ artist }: ArtistSearchViewProps) {
   // Get store for this artist
   const store = getArtistCorrectionStore(artist.id);
-  const searchQuery = store((s) => s.searchQuery);
-  const searchOffset = store((s) => s.searchOffset);
+  const searchQuery = store(s => s.searchQuery);
+  const searchOffset = store(s => s.searchOffset);
 
   // Extract initial value from artist
   const initialArtistName = artist.name;

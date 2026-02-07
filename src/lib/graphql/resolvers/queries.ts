@@ -2012,7 +2012,12 @@ export const queryResolvers: QueryResolvers = {
   // Enrichment log queries
   enrichmentLogs: async (_, args, { prisma }) => {
     try {
-      const { includeChildren = false, parentOnly = false, parentJobId, ...filterArgs } = args;
+      const {
+        includeChildren = false,
+        parentOnly = false,
+        parentJobId,
+        ...filterArgs
+      } = args;
 
       // Build where clause for filters
       const where: Record<string, unknown> = {};

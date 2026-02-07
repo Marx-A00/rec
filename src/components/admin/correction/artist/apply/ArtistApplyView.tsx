@@ -3,10 +3,7 @@
 import { useState } from 'react';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 
-import {
-  type ArtistFieldDiff,
-  ChangeType,
-} from '@/generated/graphql';
+import { type ArtistFieldDiff, ChangeType } from '@/generated/graphql';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { getArtistCorrectionStore } from '@/stores/useArtistCorrectionStore';
@@ -43,9 +40,9 @@ interface ArtistApplyViewProps {
 /**
  * Create default selections with changed fields selected.
  */
-export function createDefaultArtistSelections(
-  preview: { fieldDiffs: ArtistFieldDiff[] }
-): UIArtistFieldSelections {
+export function createDefaultArtistSelections(preview: {
+  fieldDiffs: ArtistFieldDiff[];
+}): UIArtistFieldSelections {
   const metadataFields = [
     'name',
     'disambiguation',
@@ -167,9 +164,9 @@ export function ArtistApplyView({
 }: ArtistApplyViewProps) {
   // Get store for this artist
   const store = getArtistCorrectionStore(artistId);
-  const preview = store((s) => s.previewData);
-  const selections = store((s) => s.applySelections);
-  const triggerEnrichment = store((s) => s.shouldEnrich);
+  const preview = store(s => s.previewData);
+  const selections = store(s => s.applySelections);
+  const triggerEnrichment = store(s => s.shouldEnrich);
 
   const [showErrorDetails, setShowErrorDetails] = useState(false);
 

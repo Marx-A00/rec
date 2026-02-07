@@ -19,10 +19,12 @@ Investigation into why albums end up with no tracks after enrichment. Found **26
 ### The Key Distinction
 
 **Release Group** = The abstract concept of an album
+
 - "This Is Acting" by Sia is ONE release group
 - Contains metadata like primary type (album/single/EP), secondary types (live, compilation, remix)
 
 **Release** = A specific physical/digital release of that album
+
 - "This Is Acting (10th Anniversary Edition)" is a **release** under the "This Is Acting" release group
 - Multiple releases can exist: original, deluxe, remastered, regional variants, etc.
 
@@ -43,11 +45,13 @@ const response = await this.api.search('release-group', {
 ### The Problem
 
 When Spotify has "This Is Acting (10th Anniversary Edition)", our search query is:
+
 ```
 releasegroup:"This Is Acting (10th Anniversary Edition)" AND artist:"Sia"
 ```
 
 But MusicBrainz has:
+
 ```
 release-group: "This Is Acting"
   └── release: "This Is Acting (10th Anniversary Edition)"
@@ -58,18 +62,21 @@ release-group: "This Is Acting"
 ### Verified Example: Sia - "This Is Acting (10th Anniversary Edition)"
 
 **Search for full title (FAILS):**
+
 ```
 GET /ws/2/release-group/?query=releasegroup:"This Is Acting (10th Anniversary Edition)" AND artist:"Sia"
 Result: 0 release groups found
 ```
 
 **Search for base title (SUCCEEDS):**
+
 ```
 GET /ws/2/release-group/?query=releasegroup:"This Is Acting" AND artist:"Sia"
 Result: 1 release group found (ID: 2eb49f55-ad2a-43fa-a54f-90d0759d7f62)
 ```
 
 **The 10th Anniversary Edition exists as a release under that group:**
+
 ```
 GET /ws/2/release-group/2eb49f55-ad2a-43fa-a54f-90d0759d7f62?inc=releases
 Result: 17 releases including "This Is Acting - 2026-01-29 (10th anniversary edition)"
@@ -103,11 +110,13 @@ Result: 17 releases including "This Is Acting - 2026-01-29 (10th anniversary edi
 MusicBrainz is community-edited, so new releases take time to be catalogued. Albums released in late 2025/2026 often don't exist in MusicBrainz.
 
 **Examples:**
+
 - "Poema" by J Balvin (2026-01-29) - Not in MusicBrainz
 - "Deletreo" by Nicky Jam (2026-01-29) - Not in MusicBrainz
 - "Ever Since U Left Me" by French Montana (2026-01-23) - Not in MusicBrainz
 
 **Current Behavior:**
+
 - Enrichment searches MusicBrainz → No match found
 - Album marked `COMPLETED` with `data_quality: LOW`
 - **0 tracks created**
@@ -121,11 +130,13 @@ MusicBrainz is community-edited, so new releases take time to be catalogued. Alb
 **Problem:** Spotify title includes edition suffix that doesn't exist as a release-group in MusicBrainz.
 
 **Examples:**
+
 - "This Is Acting (10th Anniversary Edition)" - Sia
 - "Wasteland, Baby! (Special Edition)" - Hozier
 - "The End Of Genesys (Deluxe)" - Anyma
 
 **Current Behavior:**
+
 - Search: `releasegroup:"This Is Acting (10th Anniversary Edition)"`
 - Result: 0 matches (because it's a release, not a release-group)
 - Album marked `COMPLETED` with no MusicBrainz ID
@@ -140,6 +151,7 @@ MusicBrainz is community-edited, so new releases take time to be catalogued. Alb
 **Problem:** Albums imported directly from MusicBrainz already have `musicbrainz_id` but tracks were never fetched.
 
 **Examples:**
+
 - Madvillainy by Madvillain (2002) - Tracks never fetched
 - Delete Yourself by Atari Teenage Riot (1994) - Never enriched (`last_enriched: null`)
 - MM..FOOD by MF DOOM (2004) - No artist linked
@@ -179,7 +191,9 @@ MusicBrainz is community-edited, so new releases take time to be catalogued. Alb
 
 ```typescript
 // src/lib/spotify/mappers.ts - EXISTS but NEVER CALLED
-async function fetchSpotifyAlbumTracks(albumId: string): Promise<SpotifyTrackData[]>
+async function fetchSpotifyAlbumTracks(
+  albumId: string
+): Promise<SpotifyTrackData[]>;
 ```
 
 **Design Decision:** MusicBrainz track data is preferred because it includes ISRC codes, proper artist credits, and YouTube URLs. But when MusicBrainz fails, we get **nothing** instead of lower-quality Spotify data.
@@ -332,6 +346,7 @@ New Album from Spotify
 **Example: Album "Poema" by J Balvin**
 
 **Initial enrichment (Feb 5):**
+
 ```
 EnrichmentLog #1 (jobId: "enrich-poema-abc123"):
   operation: ENRICH_ALBUM
@@ -361,6 +376,7 @@ EnrichmentLog #2 (jobId: "enrich-poema-abc123"):  ← Same jobId!
 ```
 
 **Weekly re-enrichment (Feb 12):**
+
 ```
 EnrichmentLog #3 (jobId: "re-enrich-poema-def456"):  ← New jobId
   operation: RE_ENRICH_ALBUM
@@ -401,8 +417,8 @@ JOIN albums a ON el.album_id = a.id
 WHERE el.operation = 'SPOTIFY_TRACK_FALLBACK'
   AND el.status = 'SUCCESS'
   AND NOT EXISTS (
-    SELECT 1 FROM enrichment_logs el2 
-    WHERE el2.album_id = el.album_id 
+    SELECT 1 FROM enrichment_logs el2
+    WHERE el2.album_id = el.album_id
       AND el2.operation = 'RE_ENRICH_ALBUM'
       AND el2.created_at > NOW() - INTERVAL '7 days'
   )
@@ -423,12 +439,12 @@ WHERE el.operation = 'SPOTIFY_TRACK_FALLBACK'
 ```typescript
 interface TitleAnalysis {
   originalTitle: string;
-  isEditionOrVersion: boolean;    // true if Deluxe, Remix, Live, etc.
-  hasFeaturing: boolean;          // true if feat./with detected
-  editionText: string | null;     // e.g., "10th Anniversary Edition"
-  featuringText: string | null;   // e.g., "feat. Travis Scott"
-  baseTitle: string;              // title with edition stripped, featuring kept
-  detectedKeywords: string[];     // which keywords triggered detection
+  isEditionOrVersion: boolean; // true if Deluxe, Remix, Live, etc.
+  hasFeaturing: boolean; // true if feat./with detected
+  editionText: string | null; // e.g., "10th Anniversary Edition"
+  featuringText: string | null; // e.g., "feat. Travis Scott"
+  baseTitle: string; // title with edition stripped, featuring kept
+  detectedKeywords: string[]; // which keywords triggered detection
 }
 
 function analyzeTitle(title: string): TitleAnalysis;
@@ -439,10 +455,12 @@ function getBaseTitle(title: string): string;
 **Keywords Detected:**
 
 Edition keywords:
+
 - `deluxe`, `anniversary`, `edition`, `special`, `extended`, `expanded`
 - `remaster`, `remastered`, `collector`, `collector's`, `limited`, `bonus`, `complete`
 
 Version keywords:
+
 - `remix`, `mix`, `live`, `unplugged`, `acoustic`, `symphonic`, `orchestral`
 - `instrumental`, `version`, `ver.`, `sped up`, `slowed`, `super slowed`
 - `en vivo`, `ao vivo` (Spanish/Portuguese live)
@@ -531,20 +549,24 @@ Album: "This Is Acting (10th Anniversary Edition)" by Sia
 ## 9. Implementation Plan
 
 ### Phase 1: Title Analysis ✅ COMPLETE
+
 - [x] Create `src/lib/musicbrainz/title-utils.ts`
 - [x] Implement `analyzeTitle()`, `isEditionOrVersion()`, `getBaseTitle()`
 - [x] Test with real album titles from database
 
 ### Phase 2: MusicBrainz Release Search
+
 - [ ] Add `searchReleases(query)` method to `basic-service.ts`
 - [ ] Add method to browse releases by release-group ID
 - [ ] Implement `findBestReleaseMatch()` for matching releases by title
 
 **Files to modify:**
+
 - `src/lib/musicbrainz/basic-service.ts`
 - `src/lib/musicbrainz/musicbrainz-service.ts` (wrapper)
 
 ### Phase 3: Enrichment Pipeline Update
+
 - [ ] Update `enrichment-processor.ts` to use title analysis
 - [ ] Implement the edition search flow (full title → release search → base title)
 - [ ] Store release IDs (not just release-group IDs) when matching editions
@@ -552,10 +574,12 @@ Album: "This Is Acting (10th Anniversary Edition)" by Sia
 - [ ] Test with edition albums: Sia, Hozier, Panic! at the Disco
 
 **Files to modify:**
+
 - `src/lib/queue/processors/enrichment-processor.ts`
 - `src/lib/queue/processors/utils.ts` (add release matching)
 
 ### Phase 4: Spotify Track Fallback
+
 - [ ] Add new operation type: `SPOTIFY_TRACK_FALLBACK`
 - [ ] Wire up `fetchSpotifyAlbumTracks()` in enrichment pipeline
 - [ ] Create tracks with `source: 'SPOTIFY'` when MusicBrainz fails
@@ -564,11 +588,13 @@ Album: "This Is Acting (10th Anniversary Edition)" by Sia
 - [ ] Add descriptive `reason` field explaining why fallback was used
 
 **Files to modify:**
+
 - `src/lib/queue/processors/enrichment-processor.ts`
 - `src/lib/queue/jobs.ts` (add operation constant)
 - `src/lib/logging/activity-logger.ts` (add operation constant)
 
 ### Phase 5: Weekly Re-enrichment Job
+
 - [ ] Add new operation type: `RE_ENRICH_ALBUM`
 - [ ] Create BullMQ repeatable job for weekly re-enrichment
 - [ ] Query EnrichmentLog for `SPOTIFY_TRACK_FALLBACK` successes
@@ -578,24 +604,29 @@ Album: "This Is Acting (10th Anniversary Edition)" by Sia
 - [ ] Log each attempt with descriptive `reason`
 
 **Files to create/modify:**
+
 - `src/lib/queue/jobs.ts` (add job type)
 - `src/lib/queue/processors/enrichment-processor.ts` (add handler)
 - `src/workers/queue-worker.ts` (register handler)
 
 ### Phase 6: Re-enrich Existing Trackless Albums
+
 - [ ] One-time script to re-enrich 9 albums with MB IDs but no tracks
 - [ ] One-time script to run Spotify fallback for 256 trackless albums
 - [ ] Monitor EnrichmentLog to verify tracks are created
 
 **Files to create:**
+
 - `src/scripts/re-enrich-trackless-albums.ts`
 
 ### Phase 7: UI Enhancements (Optional)
+
 - [ ] Group EnrichmentLog entries by `jobId` in the UI
 - [ ] Show "Track Source: MusicBrainz ✓" or "Track Source: Spotify ⚠️" on album pages
 - [ ] Add admin dashboard metrics for track sources
 
 **Files to modify:**
+
 - `src/components/admin/EnrichmentLogTable.tsx`
 - `src/components/albumDetails/AlbumAdminActions.tsx`
 
@@ -604,24 +635,29 @@ Album: "This Is Acting (10th Anniversary Edition)" by Sia
 ## 10. Related Files
 
 **Enrichment Pipeline:**
+
 - `src/lib/queue/processors/enrichment-processor.ts` - Main enrichment logic
 - `src/lib/queue/processors/utils.ts` - Matching utilities
 - `src/lib/queue/jobs.ts` - Job type definitions
 
 **MusicBrainz Integration:**
+
 - `src/lib/musicbrainz/basic-service.ts` - Direct MusicBrainz API calls
 - `src/lib/musicbrainz/musicbrainz-service.ts` - Rate-limited wrapper
 - `src/lib/musicbrainz/title-utils.ts` - Edition/version detection ✅
 
 **Spotify Integration:**
+
 - `src/lib/spotify/mappers.ts` - Contains `fetchSpotifyAlbumTracks()`
 - `src/lib/spotify/scheduler.ts` - New releases sync
 
 **Logging:**
+
 - `src/lib/logging/activity-logger.ts` - Operation/source constants
 - `src/lib/enrichment/enrichment-logger.ts` - EnrichmentLog helper
 
 **UI:**
+
 - `src/components/admin/EnrichmentLogTable.tsx` - Enrichment history display
 
 ---
@@ -629,8 +665,9 @@ Album: "This Is Acting (10th Anniversary Edition)" by Sia
 ## Appendix: SQL Queries
 
 ### Find all trackless albums
+
 ```sql
-SELECT 
+SELECT
   a.id, a.title, a.source, a.spotify_id, a.musicbrainz_id,
   a.enrichment_status, a.data_quality, a.release_date
 FROM albums a
@@ -640,6 +677,7 @@ ORDER BY a.release_date DESC;
 ```
 
 ### Find albums that used Spotify fallback (after implementation)
+
 ```sql
 SELECT DISTINCT el.album_id, a.title, el.created_at
 FROM enrichment_logs el
@@ -650,6 +688,7 @@ ORDER BY el.created_at DESC;
 ```
 
 ### Find re-enrichment candidates
+
 ```sql
 SELECT DISTINCT el.album_id, a.title, a.spotify_id,
   (SELECT COUNT(*) FROM enrichment_logs el3
@@ -659,24 +698,26 @@ JOIN albums a ON el.album_id = a.id
 WHERE el.operation = 'SPOTIFY_TRACK_FALLBACK'
   AND el.status = 'SUCCESS'
   AND NOT EXISTS (
-    SELECT 1 FROM enrichment_logs el2 
-    WHERE el2.album_id = el.album_id 
+    SELECT 1 FROM enrichment_logs el2
+    WHERE el2.album_id = el.album_id
       AND el2.operation = 'RE_ENRICH_ALBUM'
       AND el2.created_at > NOW() - INTERVAL '7 days'
   );
 ```
 
 ### Find albums with MusicBrainz IDs but no tracks
+
 ```sql
 SELECT id, title, musicbrainz_id, enrichment_status, last_enriched
-FROM albums 
+FROM albums
 WHERE musicbrainz_id IS NOT NULL
   AND id NOT IN (SELECT DISTINCT album_id FROM tracks WHERE album_id IS NOT NULL);
 ```
 
 ### Track source distribution (after implementation)
+
 ```sql
-SELECT 
+SELECT
   t.source,
   COUNT(DISTINCT t.album_id) as album_count,
   COUNT(*) as track_count

@@ -29,5 +29,11 @@ export type {
 } from './timeline';
 
 // Pre-built timeline layout
-export { TimelineLayout, default as TimelineLayoutDefault } from './timeline-layout';
-export type { TimelineLayoutItem, TimelineLayoutProps } from './timeline-layout';
+export {
+  TimelineLayout,
+  default as TimelineLayoutDefault,
+} from './timeline-layout';
+export type {
+  TimelineLayoutItem,
+  TimelineLayoutProps,
+} from './timeline-layout';

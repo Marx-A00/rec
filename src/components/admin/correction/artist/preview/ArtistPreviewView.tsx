@@ -127,7 +127,7 @@ function ArtistPreviewSkeleton() {
 export function ArtistPreviewView({ artistId }: ArtistPreviewViewProps) {
   // Get store for this artist
   const store = getArtistCorrectionStore(artistId);
-  const selectedArtistMbid = store((s) => s.selectedArtistMbid);
+  const selectedArtistMbid = store(s => s.selectedArtistMbid);
 
   const { data, isLoading, error, refetch, isFetching } =
     useGetArtistCorrectionPreviewQuery(
@@ -141,9 +141,11 @@ export function ArtistPreviewView({ artistId }: ArtistPreviewViewProps) {
   // Write preview data to store when it loads
   useEffect(() => {
     if (data?.artistCorrectionPreview) {
-      store.getState().setPreviewLoaded(
-        data.artistCorrectionPreview as ArtistCorrectionPreview
-      );
+      store
+        .getState()
+        .setPreviewLoaded(
+          data.artistCorrectionPreview as ArtistCorrectionPreview
+        );
     }
   }, [data?.artistCorrectionPreview, store]);
 

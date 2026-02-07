@@ -121,7 +121,7 @@ export function TimelineLayout({
             error={item.error}
           >
             {/* Icon column with connector */}
-            <div className="relative flex flex-col items-center">
+            <div className='relative flex flex-col items-center'>
               <TimelineIcon
                 icon={item.icon}
                 color={item.iconColor}
@@ -136,15 +136,12 @@ export function TimelineLayout({
             </div>
 
             {/* Content column */}
-            <div className="flex-1 pb-4">
+            <div className='flex-1 pb-4'>
               <TimelineHeader>
-                <div className="flex items-start justify-between gap-2">
+                <div className='flex items-start justify-between gap-2'>
                   <TimelineTitle>{item.title}</TimelineTitle>
                   {item.date && (
-                    <TimelineTime
-                      date={item.date}
-                      relative={relativeTime}
-                    />
+                    <TimelineTime date={item.date} relative={relativeTime} />
                   )}
                 </div>
                 {item.description && (
@@ -165,14 +162,14 @@ export function TimelineLayout({
 
               {/* Nested children */}
               {item.children && item.children.length > 0 && (
-                <div className="mt-4 ml-4 border-l-2 border-muted-foreground/20 pl-4">
+                <div className='mt-4 ml-4 border-l-2 border-muted-foreground/20 pl-4'>
                   <TimelineLayout
                     items={item.children}
                     relativeTime={relativeTime}
                     reverseOrder={false}
                     hideLastConnector={hideLastConnector}
                     animate={animate}
-                    size="sm"
+                    size='sm'
                   />
                 </div>
               )}
