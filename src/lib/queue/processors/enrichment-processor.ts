@@ -1,6 +1,8 @@
 // src/lib/queue/processors/enrichment-processor.ts
 // Album, artist, and track enrichment handlers
 
+import { Job } from 'bullmq';
+
 import { prisma } from '@/lib/prisma';
 
 import { musicBrainzService } from '../../musicbrainz';
@@ -23,6 +25,7 @@ import {
   type EnrichTrackJobData,
   type CacheArtistImageJobData,
 } from '../jobs';
+import { analyzeTitle } from '../../musicbrainz/title-utils';
 
 import {
   calculateStringSimilarity,
@@ -35,8 +38,6 @@ import {
   normalizeTrackTitle,
   findMatchingTrack,
 } from './utils';
-
-import { analyzeTitle } from '../../musicbrainz/title-utils';
 
 // ============================================================================
 // Field Change Tracking Types
@@ -66,8 +67,11 @@ function formatFieldValue(value: unknown): string | null {
 // ============================================================================
 
 export async function handleCheckAlbumEnrichment(
-  data: CheckAlbumEnrichmentJobData
+  job: Job<CheckAlbumEnrichmentJobData>
 ) {
+  const data = job.data;
+  const rootJobId = data.parentJobId || job.id;
+
   console.log(
     `🔍 Checking if album ${data.albumId} needs enrichment (source: ${data.source}, force: ${data.force || false})`
   );
@@ -110,6 +114,7 @@ export async function handleCheckAlbumEnrichment(
         force: data.force,
         userAction: mapSourceToUserAction(data.source),
         requestId: data.requestId,
+        parentJobId: rootJobId,
       },
       {
         priority: calculateEnrichmentPriority(data.source, data.priority),
@@ -126,6 +131,7 @@ export async function handleCheckAlbumEnrichment(
           source: data.source,
           priority: 'medium', // Artists get medium priority
           requestId: `${data.requestId}-artist-${albumArtist.artist.id}`,
+          parentJobId: rootJobId,
         },
         {
           priority: calculateEnrichmentPriority(data.source, 'medium'),
@@ -155,8 +161,11 @@ export async function handleCheckAlbumEnrichment(
 }
 
 export async function handleCheckArtistEnrichment(
-  data: CheckArtistEnrichmentJobData
+  job: Job<CheckArtistEnrichmentJobData>
 ) {
+  const data = job.data;
+  const rootJobId = data.parentJobId || job.id;
+
   console.log(
     `🔍 Checking if artist ${data.artistId} needs enrichment (source: ${data.source}, force: ${data.force || false})`
   );
@@ -195,6 +204,7 @@ export async function handleCheckArtistEnrichment(
         force: data.force,
         userAction: mapSourceToUserAction(data.source),
         requestId: data.requestId,
+        parentJobId: rootJobId,
       },
       {
         priority: calculateEnrichmentPriority(data.source, data.priority),
@@ -222,8 +232,11 @@ export async function handleCheckArtistEnrichment(
 }
 
 export async function handleCheckTrackEnrichment(
-  data: CheckTrackEnrichmentJobData
+  job: Job<CheckTrackEnrichmentJobData>
 ) {
+  const data = job.data;
+  const rootJobId = data.parentJobId || job.id;
+
   console.log(
     `🔍 Checking if track ${data.trackId} needs enrichment (source: ${data.source})`
   );
@@ -287,6 +300,7 @@ export async function handleCheckTrackEnrichment(
     priority: data.priority || 'low',
     userAction: data.source === 'spotify_sync' ? 'browse' : data.source,
     requestId: data.requestId,
+    parentJobId: rootJobId,
   };
 
   await queue.addJob(JOB_TYPES.ENRICH_TRACK, enrichmentJobData, {
@@ -318,7 +332,10 @@ export async function handleCheckTrackEnrichment(
 // Album Enrichment Handler
 // ============================================================================
 
-export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
+export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
+  const data = job.data;
+  const rootJobId = data.parentJobId || job.id;
+
   console.log(`🎵 Starting album enrichment for album ${data.albumId}`);
 
   // Initialize enrichment logger
@@ -382,7 +399,9 @@ export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
           artistName,
           confidence: enrichmentDecision.confidence,
         },
-        jobId: data.requestId,
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
         triggeredBy: data.userAction || 'manual',
       });
 
@@ -815,7 +834,9 @@ export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
                 fallbackReason: 'No MusicBrainz match found',
                 spotifyId: album.spotifyId,
               },
-              jobId: data.requestId,
+              jobId: job.id,
+              parentJobId: data.parentJobId || null,
+              isRootJob: false, // Fallback is always child of album enrichment
               triggeredBy: data.userAction || 'manual',
             });
           } else {
@@ -886,7 +907,9 @@ export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
           after: formatFieldValue(fc.after),
         })),
       },
-      jobId: data.requestId,
+      jobId: job.id,
+      parentJobId: data.parentJobId || null,
+      isRootJob: !data.parentJobId,
       triggeredBy: data.userAction || 'manual',
     });
 
@@ -927,7 +950,9 @@ export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
         artistName,
         errorStack: error instanceof Error ? error.stack : undefined,
       },
-      jobId: data.requestId,
+      jobId: job.id,
+      parentJobId: data.parentJobId || null,
+      isRootJob: !data.parentJobId,
       triggeredBy: data.userAction || 'manual',
     });
 
@@ -939,7 +964,10 @@ export async function handleEnrichAlbum(data: EnrichAlbumJobData) {
 // Artist Enrichment Handler
 // ============================================================================
 
-export async function handleEnrichArtist(data: EnrichArtistJobData) {
+export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
+  const data = job.data;
+  const rootJobId = data.parentJobId || job.id;
+
   console.log(`🎤 Starting artist enrichment for artist ${data.artistId}`);
 
   // Initialize enrichment logger
@@ -1000,7 +1028,9 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
           artistName: artist.name,
           confidence: enrichmentDecision.confidence,
         },
-        jobId: data.requestId,
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
         triggeredBy: data.userAction || 'manual',
       });
 
@@ -1129,6 +1159,7 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
             artistId: artist.id,
             artistName: artist.name,
             requestId: `${data.requestId}-discogs-search`,
+            parentJobId: rootJobId,
           },
           {
             priority: 7,
@@ -1195,7 +1226,9 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
           after: formatFieldValue(fc.after),
         })),
       },
-      jobId: data.requestId,
+      jobId: job.id,
+      parentJobId: data.parentJobId || null,
+      isRootJob: !data.parentJobId,
       triggeredBy: data.userAction || 'manual',
     });
 
@@ -1213,6 +1246,7 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
         const cacheJobData: CacheArtistImageJobData = {
           artistId: data.artistId,
           requestId: `enrich-cache-artist-${data.artistId}`,
+          parentJobId: rootJobId,
         };
 
         await queue.addJob(JOB_TYPES.CACHE_ARTIST_IMAGE, cacheJobData, {
@@ -1266,7 +1300,9 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
         artistName: artist.name,
         errorStack: error instanceof Error ? error.stack : undefined,
       },
-      jobId: data.requestId,
+      jobId: job.id,
+      parentJobId: data.parentJobId || null,
+      isRootJob: !data.parentJobId,
       triggeredBy: data.userAction || 'manual',
     });
 
@@ -1278,7 +1314,8 @@ export async function handleEnrichArtist(data: EnrichArtistJobData) {
 // Track Enrichment Handler
 // ============================================================================
 
-export async function handleEnrichTrack(data: EnrichTrackJobData) {
+export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
+  const data = job.data;
   console.log(`🎵 Enriching track ${data.trackId}`);
 
   // Initialize enrichment logger
@@ -1434,7 +1471,9 @@ export async function handleEnrichTrack(data: EnrichTrackJobData) {
         artistName,
         hadMusicBrainzData: !!musicbrainzData,
       },
-      jobId: data.requestId,
+      jobId: job.id,
+      parentJobId: data.parentJobId || null,
+      isRootJob: !data.parentJobId,
       triggeredBy: data.userAction || 'manual',
     });
 
@@ -1517,7 +1556,9 @@ export async function handleEnrichTrack(data: EnrichTrackJobData) {
         artistName: trackArtistName,
         errorStack: error instanceof Error ? error.stack : undefined,
       },
-      jobId: data.requestId,
+      jobId: job.id,
+      parentJobId: data.parentJobId || null,
+      isRootJob: !data.parentJobId,
       triggeredBy: data.userAction || 'manual',
     });
 
