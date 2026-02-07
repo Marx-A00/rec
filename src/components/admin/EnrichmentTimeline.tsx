@@ -190,7 +190,10 @@ function TimelineLogItem({
     <TimelineItem
       status={status}
       error={hasError}
-      className={cn(isChild && 'ml-4 scale-95')}
+      className={cn(
+        'outline-none focus:outline-none',
+        isChild && 'ml-4 scale-95'
+      )}
     >
       <TimelineIcon color={iconColor}>
         <Icon className={cn('h-4 w-4', compact && 'h-3 w-3')} />
@@ -200,7 +203,12 @@ function TimelineLogItem({
 
       <TimelineHeader>
         <TimelineTitle
-          className={cn(isChild && 'text-sm', compact && 'text-xs')}
+          className={cn(
+            'cursor-pointer hover:text-white transition-colors',
+            isChild && 'text-sm',
+            compact && 'text-xs'
+          )}
+          onClick={onToggleExpand}
         >
           {formatOperationTitle(log.operation, log.entityType)}
         </TimelineTitle>
