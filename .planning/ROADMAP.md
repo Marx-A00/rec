@@ -168,6 +168,12 @@ Plans:
 
 ## Phase 20: Job History Tab
 
+**Plans:** 1 plan
+
+Plans:
+
+- [ ] 20-01-PLAN.md — Integrate EnrichmentTimeline into Job History expandable rows
+
 **Goal:** Add linked job timeline display to Job History tab.
 
 **Requirements:** JOB-01, JOB-02
@@ -182,7 +188,7 @@ Plans:
 **Key Files:**
 
 - `src/app/admin/job-history/page.tsx`
-- `src/components/admin/JobHistoryTimeline.tsx` (new)
+- `src/components/admin/ExpandableJobRow.tsx` (new)
 
 ---
 
