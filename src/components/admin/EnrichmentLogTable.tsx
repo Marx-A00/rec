@@ -172,10 +172,7 @@ function ExpandableLogRow({
 
   return (
     <React.Fragment>
-      <TableRow
-        className='border-zinc-800 hover:bg-zinc-800/50 cursor-pointer'
-        onClick={onToggle}
-      >
+      <TableRow className='border-zinc-800 cursor-pointer' onClick={onToggle}>
         <TableCell className='w-8 px-2'>
           {isExpanded ? (
             <ChevronDown className='h-4 w-4 text-zinc-400' />
