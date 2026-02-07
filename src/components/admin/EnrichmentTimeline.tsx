@@ -190,10 +190,7 @@ function TimelineLogItem({
     <TimelineItem
       status={status}
       error={hasError}
-      className={cn(
-        'cursor-pointer transition-shadow hover:shadow-md',
-        isChild && 'ml-4 scale-95'
-      )}
+      className={cn('cursor-pointer', isChild && 'ml-4 scale-95')}
       onClick={onToggleExpand}
     >
       <TimelineIcon color={iconColor}>
