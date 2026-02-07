@@ -70,7 +70,8 @@ export async function handleCheckAlbumEnrichment(
   job: Job<CheckAlbumEnrichmentJobData>
 ) {
   const data = job.data;
-  const rootJobId = data.parentJobId || job.id;
+  // Don't pass parentJobId to ENRICH_ALBUM - let it be the root job
+  // CHECK_* jobs are just dispatchers, not meaningful enrichment operations
 
   console.log(
     `🔍 Checking if album ${data.albumId} needs enrichment (source: ${data.source}, force: ${data.force || false})`
@@ -114,7 +115,7 @@ export async function handleCheckAlbumEnrichment(
         force: data.force,
         userAction: mapSourceToUserAction(data.source),
         requestId: data.requestId,
-        parentJobId: rootJobId,
+        // No parentJobId - ENRICH_ALBUM is the root job
       },
       {
         priority: calculateEnrichmentPriority(data.source, data.priority),
@@ -131,7 +132,7 @@ export async function handleCheckAlbumEnrichment(
           source: data.source,
           priority: 'medium', // Artists get medium priority
           requestId: `${data.requestId}-artist-${albumArtist.artist.id}`,
-          parentJobId: rootJobId,
+          // No parentJobId - ENRICH_ARTIST will be its own root job
         },
         {
           priority: calculateEnrichmentPriority(data.source, 'medium'),
@@ -164,7 +165,8 @@ export async function handleCheckArtistEnrichment(
   job: Job<CheckArtistEnrichmentJobData>
 ) {
   const data = job.data;
-  const rootJobId = data.parentJobId || job.id;
+  // Don't pass parentJobId to ENRICH_ARTIST - let it be the root job
+  // CHECK_* jobs are just dispatchers, not meaningful enrichment operations
 
   console.log(
     `🔍 Checking if artist ${data.artistId} needs enrichment (source: ${data.source}, force: ${data.force || false})`
@@ -204,7 +206,7 @@ export async function handleCheckArtistEnrichment(
         force: data.force,
         userAction: mapSourceToUserAction(data.source),
         requestId: data.requestId,
-        parentJobId: rootJobId,
+        // No parentJobId - ENRICH_ARTIST is the root job
       },
       {
         priority: calculateEnrichmentPriority(data.source, data.priority),
@@ -235,7 +237,8 @@ export async function handleCheckTrackEnrichment(
   job: Job<CheckTrackEnrichmentJobData>
 ) {
   const data = job.data;
-  const rootJobId = data.parentJobId || job.id;
+  // Don't pass parentJobId to ENRICH_TRACK - let it be the root job
+  // CHECK_* jobs are just dispatchers, not meaningful enrichment operations
 
   console.log(
     `🔍 Checking if track ${data.trackId} needs enrichment (source: ${data.source})`
@@ -300,7 +303,7 @@ export async function handleCheckTrackEnrichment(
     priority: data.priority || 'low',
     userAction: data.source === 'spotify_sync' ? 'browse' : data.source,
     requestId: data.requestId,
-    parentJobId: rootJobId,
+    // No parentJobId - ENRICH_TRACK is the root job
   };
 
   await queue.addJob(JOB_TYPES.ENRICH_TRACK, enrichmentJobData, {
