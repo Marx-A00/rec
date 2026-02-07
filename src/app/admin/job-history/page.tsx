@@ -41,7 +41,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ExpandableJobRow, type JobHistoryItem } from '@/components/admin/ExpandableJobRow';
+import {
+  ExpandableJobRow,
+  type JobHistoryItem,
+} from '@/components/admin/ExpandableJobRow';
 
 // Simple date formatting function
 function formatDistanceToNow(date: Date): string {
@@ -357,7 +360,8 @@ export default function JobHistoryPage() {
   const filteredJobs = jobs.filter(job => {
     if (jobTypeFilter === 'all') return true;
     if (jobTypeFilter === 'spotify') return job.name.includes('spotify');
-    if (jobTypeFilter === 'musicbrainz') return job.name.includes('musicbrainz');
+    if (jobTypeFilter === 'musicbrainz')
+      return job.name.includes('musicbrainz');
     if (jobTypeFilter === 'enrichment') return job.name.includes('enrichment');
     if (jobTypeFilter === 'cache') return job.name.includes('cache');
     if (jobTypeFilter === 'discogs') return job.name.includes('discogs');

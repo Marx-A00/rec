@@ -12,7 +12,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { useGetEnrichmentLogsQuery, type EnrichmentLog } from '@/generated/graphql';
+import {
+  useGetEnrichmentLogsQuery,
+  type EnrichmentLog,
+} from '@/generated/graphql';
 
 import { EnrichmentTimeline } from './EnrichmentTimeline';
 import { SkeletonTimeline } from './SkeletonTimeline';
@@ -113,7 +116,13 @@ export function ExpandableJobRow({
           <div className='flex items-center gap-2'>
             {getStatusIcon(job.status)}
             <Badge
-              variant={getStatusBadgeVariant(job.status) as 'default' | 'destructive' | 'secondary' | 'outline'}
+              variant={
+                getStatusBadgeVariant(job.status) as
+                  | 'default'
+                  | 'destructive'
+                  | 'secondary'
+                  | 'outline'
+              }
               className='text-xs'
             >
               {job.status}
@@ -138,9 +147,7 @@ export function ExpandableJobRow({
         </TableCell>
 
         {/* Album column */}
-        <TableCell className='text-zinc-400'>
-          {job.albumName || '-'}
-        </TableCell>
+        <TableCell className='text-zinc-400'>{job.albumName || '-'}</TableCell>
 
         {/* Created column */}
         <TableCell className='text-zinc-400'>
@@ -153,9 +160,7 @@ export function ExpandableJobRow({
         </TableCell>
 
         {/* Attempts column */}
-        <TableCell className='text-zinc-400'>
-          {job.attempts}
-        </TableCell>
+        <TableCell className='text-zinc-400'>{job.attempts}</TableCell>
 
         {/* Actions column */}
         <TableCell>
