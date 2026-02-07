@@ -9,7 +9,7 @@
 | Phase | Name                 | Goal                                             | Requirements              |
 | ----- | -------------------- | ------------------------------------------------ | ------------------------- |
 | 15    | Schema & Migration ✓ | Add `parentJobId` field to EnrichmentLog         | DATA-01, DATA-02, DATA-03 |
-| 16    | Job Linking          | Propagate `parentJobId` through all job chains   | LINK-01 through LINK-07   |
+| 16    | Job Linking ✓        | Propagate `parentJobId` through all job chains   | LINK-01 through LINK-07   |
 | 17    | GraphQL Layer ✓      | Expose `jobId`, `parentJobId`, and tree fetching | GQL-01 through GQL-04     |
 | 18    | Timeline Component ✓ | Add shadcn-timeline with status/icon mapping     | UI-01, UI-02, UI-03       |
 | 19    | EnrichmentLogTable ✓ | Integrate timeline into table expand rows        | TBL-01 through TBL-04     |
@@ -66,12 +66,12 @@
 
 Plans:
 
-- [ ] 16-01-PLAN.md - Schema (isRootJob) and job data interfaces (parentJobId)
-- [ ] 16-02-PLAN.md - Processor index passes Job objects, logger supports isRootJob
-- [ ] 16-03-PLAN.md - Enrichment processor updates (ENRICH_ALBUM, ENRICH_ARTIST)
-- [ ] 16-04-PLAN.md - Discogs processor logging (DISCOGS_SEARCH, DISCOGS_GET)
-- [ ] 16-05-PLAN.md - Cache processor logging (CACHE_ARTIST, CACHE_ALBUM)
-- [ ] 16-06-PLAN.md - Verification and type checking
+- [x] 16-01-PLAN.md - Schema (isRootJob) and job data interfaces (parentJobId)
+- [x] 16-02-PLAN.md - Processor index passes Job objects, logger supports isRootJob
+- [x] 16-03-PLAN.md - Enrichment processor updates (ENRICH_ALBUM, ENRICH_ARTIST)
+- [x] 16-04-PLAN.md - Discogs processor logging (DISCOGS_SEARCH, DISCOGS_GET)
+- [x] 16-05-PLAN.md - Cache processor logging (CACHE_ARTIST, CACHE_ALBUM)
+- [x] 16-06-PLAN.md - Verification and type checking
 
 ---
 
@@ -218,4 +218,4 @@ Phase 16 (Job Linking) ──→ Phase 17 (GraphQL)
 ---
 
 _Roadmap created: 2026-02-06_
-_Last updated: 2026-02-06 — Phase 19 complete_
+_Last updated: 2026-02-07 — Phase 16 complete_

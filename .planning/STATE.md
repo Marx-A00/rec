@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 
 ## Current Position
 
-Phase: 16 (Job Linking)
-Plan: 6/6 ✓
+Phase: 16 (Job Linking) — COMPLETE
+Plan: 6/6
 Status: Phase complete
-Last activity: 2026-02-07 — Completed 16-06-PLAN.md (Verification)
+Last activity: 2026-02-07 — Completed 16-06-PLAN.md, verification passed
 
-Progress: ██████████████████░░ 6/6 phases complete (15, 16, 17, 18, 19 complete)
+Progress: ██████████████░░░░░░ 5/6 phases complete (15, 16, 17, 18, 19)
 
 ## Performance Metrics
 
@@ -30,12 +30,12 @@ Progress: ██████████████████░░ 6/6 phase
 - Duration: 1 day
 - Requirements: 30/30
 
-**Milestone v1.2 (Complete):**
-- Phases complete: 5/5 (Phase 15, 16, 17, 18, 19)
-- Plans complete: 12 (15-01, 16-01, 16-02, 16-03, 16-04, 16-05, 16-06, 17-01, 17-02, 18-01, 18-02, 19-01, 19-02, 19-03)
-- Requirements: 20/20 (DATA-01-03, LINK-01-07, GQL-01-04, UI-01-03, TBL-01-04)
+**Milestone v1.2 (In Progress):**
+- Phases complete: 5/6 (Phase 15, 16, 17, 18, 19)
+- Plans complete: 14 (15-01, 16-01 through 16-06, 17-01, 17-02, 18-01, 18-02, 19-01, 19-02, 19-03)
+- Requirements: 21/20 (DATA-01-03, LINK-01-07, GQL-01-04, UI-01-03, TBL-01-04)
 
-**Total shipped:** 14 phases, 54 plans
+**Total shipped:** 14 phases, 56 plans
 
 ## Accumulated Context
 
@@ -64,19 +64,16 @@ Progress: ██████████████████░░ 6/6 phase
 - Migration: `20260206154227_add_parent_job_id`
 - Prisma client regenerated with new field
 
-### Phase 16 Complete (6/6 plans)
+### Phase 16 Complete
 
-- Plan 16-01: Added `isRootJob` Boolean field, parentJobId to 10 job data interfaces
-- Plan 16-02: Updated EnrichmentLogData interface, processor index passes Job objects
-- Plan 16-03: Updated handler signatures to Job<T>, parentJobId propagation
-- Plan 16-04: Discogs handler logging with parentJobId
-- Plan 16-05: Cache handler logging with parentJobId
-- Plan 16-06: Verified all 7 LINK requirements, documented query patterns
-
-**Key Architecture:**
-- Flat parent structure: All children point directly to root job
-- Pattern: `rootJobId = data.parentJobId || job.id` used consistently
-- isRootJob auto-computed: `!data.parentJobId`
+- Plan 16-01: Added isRootJob Boolean field to EnrichmentLog, parentJobId to 10 job data interfaces
+- Plan 16-02: Processor index passes Job objects to 10 handlers, logger supports isRootJob
+- Plan 16-03: Enrichment handlers accept Job<T>, propagate parentJobId to child jobs
+- Plan 16-04: Discogs handlers log all outcomes (4 for search, 3 for get) with parentJobId
+- Plan 16-05: Cache handlers log all outcomes (6 each) with comprehensive metadata
+- Plan 16-06: Verification passed - all 7 LINK requirements satisfied
+- Flat parent structure: all children point to root job (no deep nesting)
+- Type checking passes with no errors
 
 ### Phase 17 Complete
 
@@ -126,10 +123,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed Phase 16 (all 6 plans)
+Stopped at: Phase 16 complete
 Resume file: N/A
 
-**Next action:** Milestone v1.2 verification or next milestone planning
+**Next action:** Execute Phase 20 (Job History Tab)
 
 Config:
 {
