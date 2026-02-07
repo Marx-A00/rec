@@ -13,38 +13,44 @@ Propagate `parentJobId` through all job chains so EnrichmentLog entries form a q
 <decisions>
 ## Implementation Decisions
 
-### Logging gaps
-- All processors that don't currently log (cache, discogs) must create EnrichmentLog entries
-- Log both success AND failure — every operation creates an entry
-- Match existing EnrichmentLog detail level, plus any additional fields useful for timeline
-- CACHE operations: capture full image info — before/after URLs, cache location, size, format, cloudflare ID, source URL
-- DISCOGS operations: capture full response — Discogs ID, confidence score, matched name, profile, images found, genres
+### Log detail level
+- **Rich detail for all processors** — capture everything useful for timeline and debugging
+- CACHE operations: source URL, Cloudflare ID, file size, format, dimensions, cache location, before/after URLs
+- DISCOGS operations: Discogs ID, confidence score, matched name, profile, images found, genres
+- **Per-processor detail shape** — each processor type logs fields specific to its domain, not a shared envelope
+- **Capture duration** — log start time and duration (ms) for every operation to spot slow API calls
 
-### Parent ID flow
-- Use native BullMQ `job.id` as `parentJobId` value
-- Pass `parentJobId` in job data payload when spawning child jobs
-- **Flat structure**: all children point directly to the root job (not immediate parent)
-  - Simplifies queries: `WHERE parentJobId = rootJobId` gets all related jobs
-  - No recursive tree traversal needed
-  - Timeline shows: root first, then all children sorted by timestamp
+### Job chain structure
+- **Truly flat** — every child points to the root job regardless of chain depth (ENRICH_ALBUM → ENRICH_ARTIST → CACHE_IMAGE all have same parentJobId)
+- No recursive tree traversal needed; single `WHERE parentJobId = rootJobId` gets all children
+- **Standalone jobs = root jobs** — any job without a parent gets `isRootJob: true` (manually triggered ENRICH_ARTIST, etc.)
+- **SPOTIFY_TRACK_FALLBACK is a child** of ENRICH_ALBUM — it's part of the album enrichment chain
+- **Timeline sort: chronological by start time** — shows actual execution sequence
 
 ### Root jobs
 - Add `isRootJob: Boolean` field to EnrichmentLog schema (default false)
-- Any job without a parent (manually triggered, top of chain) sets `isRootJob: true`
+- Jobs without a parent set `isRootJob: true`
 - Table query: `WHERE isRootJob = true` shows top-level entries
 - Expand to see children via `WHERE parentJobId = rootJobId`
-- This cleanly distinguishes roots from orphaned legacy logs (pre-feature)
+- Cleanly distinguishes roots from orphaned legacy logs
 
-### Error scenarios
-- Each log entry is independent — parent status not updated when child fails
-- Timeline UI shows individual statuses; no need to cascade
-- If parent log deleted, children keep their `parentJobId` reference (soft orphan)
-- No cascade updates needed
+### Failure & retry behavior
+- **Update existing entry on retry** — single log entry per job, updated on each retry (not one entry per attempt)
+- **Track retry count and last error** — retryCount and lastError fields for debugging flaky operations
+- **Root status reflects children** — if any child job fails permanently, root log gets a "partial" or "degraded" status
+- No other cascading updates; timeline shows individual child statuses
+
+### Legacy log handling
+- **Show legacy logs as roots** — treat all existing logs (null parentJobId, null isRootJob) as root entries in the table
+- **Backfill via migration** — data migration sets `isRootJob=true` on all existing logs for clean data
+- **Separate migration** — first migration adds the isRootJob column, second migration backfills existing rows
+- **Single entry timeline for legacy** — expanding a legacy row shows it as a single-item timeline (consistent UX, every row expandable)
 
 ### Claude's Discretion
-- Which specific job type definitions need `parentJobId` added (based on actual job chains)
+- Log creation timing (on start vs on complete vs both) — pick based on existing logger patterns
+- Which specific job type definitions need `parentJobId` added (based on actual job chains in code)
 - Exact field names in job data payloads
-- How to handle edge cases with existing logs during migration
+- How to handle edge cases during migration
 
 </decisions>
 
@@ -53,6 +59,7 @@ Propagate `parentJobId` through all job chains so EnrichmentLog entries form a q
 
 - "In the UI we can just show every enrichment log that isRootJob" — table shows only roots, expand for children
 - Flat parent structure chosen for query simplicity over hierarchical tree
+- Root "partial" status provides at-a-glance signal that something in the chain went wrong
 
 </specifics>
 
@@ -65,5 +72,5 @@ None — discussion stayed within phase scope
 
 ---
 
-*Phase: 16-job-linking*
-*Context gathered: 2026-02-06*
+_Phase: 16-job-linking_
+_Context gathered: 2026-02-06_
