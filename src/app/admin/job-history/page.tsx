@@ -18,7 +18,6 @@ import {
   Music,
   Database,
   Pause,
-  Play,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -27,13 +26,6 @@ import { useAlbumsByJobIdQuery } from '@/generated/graphql';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -49,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ExpandableJobRow, type JobHistoryItem } from '@/components/admin/ExpandableJobRow';
 
 // Simple date formatting function
 function formatDistanceToNow(date: Date): string {
@@ -65,22 +58,6 @@ function formatDistanceToNow(date: Date): string {
   if (months < 12) return `${months} month${months !== 1 ? 's' : ''} ago`;
   const years = Math.floor(months / 12);
   return `${years} year${years !== 1 ? 's' : ''} ago`;
-}
-
-interface JobHistoryItem {
-  id: string;
-  name: string;
-  status: 'completed' | 'failed' | 'active' | 'waiting' | 'delayed';
-  data: any;
-  result?: any;
-  error?: string;
-  createdAt: string;
-  completedAt?: string;
-  processedOn?: string;
-  duration?: number;
-  attempts: number;
-  albumId?: string;
-  albumName?: string;
 }
 
 interface JobStats {
@@ -232,7 +209,19 @@ export default function JobHistoryPage() {
   const [timeFilter, setTimeFilter] = useState<string>('24h');
   const [jobTypeFilter, setJobTypeFilter] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<JobHistoryItem | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleRow = (jobId: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(jobId)) {
+        next.delete(jobId);
+      } else {
+        next.add(jobId);
+      }
+      return next;
+    });
+  };
 
   const fetchSchedulerStatus = async () => {
     setSchedulerLoading(true);
@@ -363,6 +352,17 @@ export default function JobHistoryPage() {
     if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
     return `${(ms / 60000).toFixed(1)}m`;
   };
+
+  // Filter jobs by type
+  const filteredJobs = jobs.filter(job => {
+    if (jobTypeFilter === 'all') return true;
+    if (jobTypeFilter === 'spotify') return job.name.includes('spotify');
+    if (jobTypeFilter === 'musicbrainz') return job.name.includes('musicbrainz');
+    if (jobTypeFilter === 'enrichment') return job.name.includes('enrichment');
+    if (jobTypeFilter === 'cache') return job.name.includes('cache');
+    if (jobTypeFilter === 'discogs') return job.name.includes('discogs');
+    return true;
+  });
 
   return (
     <div className='p-8'>
@@ -645,13 +645,11 @@ export default function JobHistoryPage() {
                 </SelectTrigger>
                 <SelectContent className='bg-zinc-800 border-zinc-700'>
                   <SelectItem value='all'>All Job Types</SelectItem>
-                  <SelectItem value='spotify'>🎵 Spotify Sync</SelectItem>
-                  <SelectItem value='musicbrainz'>
-                    🎼 MusicBrainz Sync
-                  </SelectItem>
-                  <SelectItem value='enrichment'>✨ Enrichment</SelectItem>
-                  <SelectItem value='cache'>💾 Cache</SelectItem>
-                  <SelectItem value='discogs'>💿 Discogs</SelectItem>
+                  <SelectItem value='spotify'>Spotify Sync</SelectItem>
+                  <SelectItem value='musicbrainz'>MusicBrainz Sync</SelectItem>
+                  <SelectItem value='enrichment'>Enrichment</SelectItem>
+                  <SelectItem value='cache'>Cache</SelectItem>
+                  <SelectItem value='discogs'>Discogs</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -684,6 +682,7 @@ export default function JobHistoryPage() {
             <Table>
               <TableHeader>
                 <TableRow className='border-zinc-800'>
+                  <TableHead className='text-zinc-400 w-8'></TableHead>
                   <TableHead className='text-zinc-400'>Status</TableHead>
                   <TableHead className='text-zinc-400'>Job Name</TableHead>
                   <TableHead className='text-zinc-400'>Album</TableHead>
@@ -697,7 +696,7 @@ export default function JobHistoryPage() {
                 {loading ? (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={8}
                       className='text-center text-zinc-500 py-8'
                     >
                       Loading job history...
@@ -705,7 +704,7 @@ export default function JobHistoryPage() {
                   </TableRow>
                 ) : error ? (
                   <TableRow>
-                    <TableCell colSpan={7} className='py-12'>
+                    <TableCell colSpan={8} className='py-12'>
                       <div className='flex flex-col items-center gap-4'>
                         <div className='flex items-center gap-2 text-red-400'>
                           <AlertCircle className='h-5 w-5' />
@@ -726,93 +725,29 @@ export default function JobHistoryPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : jobs.length === 0 ? (
+                ) : filteredJobs.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={8}
                       className='text-center text-zinc-500 py-8'
                     >
                       No jobs found for the selected filters
                     </TableCell>
                   </TableRow>
                 ) : (
-                  jobs
-                    .filter(job => {
-                      // Filter by job type
-                      if (jobTypeFilter === 'all') return true;
-                      if (jobTypeFilter === 'spotify')
-                        return job.name.includes('spotify');
-                      if (jobTypeFilter === 'musicbrainz')
-                        return job.name.includes('musicbrainz');
-                      if (jobTypeFilter === 'enrichment')
-                        return job.name.includes('enrichment');
-                      if (jobTypeFilter === 'cache')
-                        return job.name.includes('cache');
-                      if (jobTypeFilter === 'discogs')
-                        return job.name.includes('discogs');
-                      return true;
-                    })
-                    .map(job => (
-                      <TableRow
-                        key={job.id}
-                        className='border-zinc-800 cursor-pointer hover:bg-zinc-800/50 transition-colors'
-                        onClick={() => setSelectedJob(job)}
-                      >
-                        <TableCell>
-                          <div className='flex items-center gap-2'>
-                            {getStatusIcon(job.status)}
-                            <Badge
-                              variant={getStatusBadgeVariant(job.status) as any}
-                              className='text-xs'
-                            >
-                              {job.status}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell className='text-zinc-300 font-medium'>
-                          {job.name}
-                        </TableCell>
-                        <TableCell className='text-zinc-400'>
-                          {job.albumName || '-'}
-                        </TableCell>
-                        <TableCell className='text-zinc-400'>
-                          {formatDistanceToNow(new Date(job.createdAt))}
-                        </TableCell>
-                        <TableCell className='text-zinc-400'>
-                          {formatDuration(job.duration)}
-                        </TableCell>
-                        <TableCell className='text-zinc-400'>
-                          {job.attempts}
-                        </TableCell>
-                        <TableCell>
-                          {job.status === 'failed' && (
-                            <Button
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleRetryJob(job.id);
-                              }}
-                              size='sm'
-                              variant='ghost'
-                              className='text-zinc-400 hover:text-white'
-                            >
-                              <RefreshCw className='h-3 w-3 mr-1' />
-                              Retry
-                            </Button>
-                          )}
-                          {job.error && (
-                            <Button
-                              onClick={e => e.stopPropagation()}
-                              size='sm'
-                              variant='ghost'
-                              className='text-zinc-400 hover:text-white'
-                              title={job.error}
-                            >
-                              <AlertCircle className='h-3 w-3' />
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                  filteredJobs.map(job => (
+                    <ExpandableJobRow
+                      key={job.id}
+                      job={job}
+                      isExpanded={expandedRows.has(job.id)}
+                      onToggle={() => toggleRow(job.id)}
+                      getStatusIcon={getStatusIcon}
+                      getStatusBadgeVariant={getStatusBadgeVariant}
+                      formatDuration={formatDuration}
+                      formatDistanceToNow={formatDistanceToNow}
+                      onRetryJob={handleRetryJob}
+                    />
+                  ))
                 )}
               </TableBody>
             </Table>
@@ -850,136 +785,6 @@ export default function JobHistoryPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Job Details Modal */}
-      <Dialog
-        open={!!selectedJob}
-        onOpenChange={open => !open && setSelectedJob(null)}
-      >
-        <DialogContent className='max-w-3xl max-h-[80vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white'>
-          <DialogHeader>
-            <DialogTitle className='text-white'>Job Details</DialogTitle>
-            <DialogDescription className='text-zinc-400'>
-              Full details for job {selectedJob?.id}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedJob && (
-            <div className='space-y-4'>
-              {/* Job Status and Basic Info */}
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <div className='text-sm text-zinc-400'>Status</div>
-                  <div className='flex items-center gap-2'>
-                    {getStatusIcon(selectedJob.status)}
-                    <Badge
-                      variant={getStatusBadgeVariant(selectedJob.status) as any}
-                    >
-                      {selectedJob.status}
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className='space-y-2'>
-                  <div className='text-sm text-zinc-400'>Job Name</div>
-                  <div className='text-white font-medium'>
-                    {selectedJob.name}
-                  </div>
-                </div>
-
-                <div className='space-y-2'>
-                  <div className='text-sm text-zinc-400'>Created</div>
-                  <div className='text-white'>
-                    {new Date(selectedJob.createdAt).toLocaleString()}
-                  </div>
-                </div>
-
-                {selectedJob.completedAt && (
-                  <div className='space-y-2'>
-                    <div className='text-sm text-zinc-400'>Completed</div>
-                    <div className='text-white'>
-                      {new Date(selectedJob.completedAt).toLocaleString()}
-                    </div>
-                  </div>
-                )}
-
-                <div className='space-y-2'>
-                  <div className='text-sm text-zinc-400'>Duration</div>
-                  <div className='text-white'>
-                    {formatDuration(selectedJob.duration)}
-                  </div>
-                </div>
-
-                <div className='space-y-2'>
-                  <div className='text-sm text-zinc-400'>Attempts</div>
-                  <div className='text-white'>{selectedJob.attempts}</div>
-                </div>
-              </div>
-
-              {/* Job Data */}
-              <div className='space-y-2'>
-                <div className='text-sm text-zinc-400'>Job Data</div>
-                <div className='bg-zinc-800 rounded-lg p-3'>
-                  <pre className='text-xs text-zinc-300 overflow-x-auto'>
-                    {JSON.stringify(selectedJob.data, null, 2)}
-                  </pre>
-                </div>
-              </div>
-
-              {/* Job Result (if completed) */}
-              {selectedJob.result && (
-                <div className='space-y-2'>
-                  <div className='text-sm text-zinc-400'>Result</div>
-                  <div className='bg-zinc-800 rounded-lg p-3'>
-                    <pre className='text-xs text-zinc-300 overflow-x-auto'>
-                      {JSON.stringify(selectedJob.result, null, 2)}
-                    </pre>
-                  </div>
-                </div>
-              )}
-
-              {/* Error Details (if failed) */}
-              {selectedJob.error && (
-                <div className='space-y-2'>
-                  <div className='text-sm text-zinc-400'>Error</div>
-                  <div className='bg-red-900/20 border border-red-800 rounded-lg p-3'>
-                    <pre className='text-xs text-red-300 overflow-x-auto'>
-                      {selectedJob.error}
-                    </pre>
-                  </div>
-                </div>
-              )}
-
-              {/* Albums Added (for Spotify sync jobs) */}
-              <JobAlbums jobId={selectedJob.id} jobName={selectedJob.name} />
-
-              {/* Actions */}
-              <div className='flex justify-end gap-2 pt-4 border-t border-zinc-800'>
-                {selectedJob.status === 'failed' && (
-                  <Button
-                    onClick={() => {
-                      handleRetryJob(selectedJob.id);
-                      setSelectedJob(null);
-                    }}
-                    variant='outline'
-                    className='border-zinc-700 text-white hover:bg-zinc-800'
-                  >
-                    <RefreshCw className='h-4 w-4 mr-2' />
-                    Retry Job
-                  </Button>
-                )}
-                <Button
-                  onClick={() => setSelectedJob(null)}
-                  variant='outline'
-                  className='border-zinc-700 text-white hover:bg-zinc-800'
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
