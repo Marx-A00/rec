@@ -9,6 +9,7 @@
 This phase adds the shadcn-timeline component from [timDeHof/shadcn-timeline](https://github.com/timDeHof/shadcn-timeline) and creates mapping utilities to connect EnrichmentLog data to timeline display. The component requires copying two core files (`timeline.tsx` and `timeline-layout.tsx`) and creating status/icon mapping utilities.
 
 The project already has all required dependencies installed:
+
 - `framer-motion` v12.23.14 (latest major)
 - `lucide-react` v0.471.1
 - `class-variance-authority` v0.7.1
@@ -60,7 +61,9 @@ import type { EnrichmentLogStatus } from '@/generated/graphql';
 
 type TimelineStatus = 'completed' | 'in-progress' | 'pending';
 
-export function mapEnrichmentStatus(status: EnrichmentLogStatus): TimelineStatus {
+export function mapEnrichmentStatus(
+  status: EnrichmentLogStatus
+): TimelineStatus {
   switch (status) {
     case 'SUCCESS':
     case 'PARTIAL_SUCCESS':
@@ -89,16 +92,16 @@ type IconColor = 'primary' | 'secondary' | 'muted' | 'accent';
 export function getStatusColor(status: EnrichmentLogStatus): IconColor {
   switch (status) {
     case 'SUCCESS':
-      return 'primary';   // Green - success
+      return 'primary'; // Green - success
     case 'PARTIAL_SUCCESS':
-      return 'accent';    // Yellow - partial
+      return 'accent'; // Yellow - partial
     case 'FAILED':
       return 'secondary'; // Red - failed (customize CSS)
     case 'NO_DATA_AVAILABLE':
     case 'SKIPPED':
-      return 'muted';     // Gray - neutral
+      return 'muted'; // Gray - neutral
     case 'PREVIEW':
-      return 'accent';    // Blue - preview
+      return 'accent'; // Blue - preview
     default:
       return 'muted';
   }
@@ -129,27 +132,27 @@ const OPERATION_ICONS: Record<string, LucideIcon> = {
   'enrichment:album': Disc,
   'check:album-enrichment': Disc,
   'cache:album-cover-art': Cloud,
-  
+
   // Artist operations
   'enrichment:artist': User,
   'check:artist-enrichment': User,
   'cache:artist-image': Cloud,
-  
+
   // Track operations
   'enrichment:track': Music,
   'check:track-enrichment': Music,
-  
+
   // Discogs operations
   'discogs:search-artist': Search,
   'discogs:get-artist': Database,
-  
+
   // MusicBrainz operations
   'musicbrainz:search-artists': Search,
   'musicbrainz:lookup-artist': Database,
   'musicbrainz:lookup-release': Database,
-  
+
   // Preview operations
-  'PREVIEW_ENRICHMENT': Disc,
+  PREVIEW_ENRICHMENT: Disc,
 };
 
 export function getOperationIcon(operation: string): LucideIcon {
@@ -378,7 +381,7 @@ interface TimelineItemData {
 
 export function mapLogToTimelineItem(log: EnrichmentLog): TimelineItemData {
   const Icon = getOperationIcon(log.operation);
-  
+
   return {
     date: new Date(log.createdAt),
     title: formatOperationTitle(log.operation, log.entityType),
@@ -408,7 +411,7 @@ type ViewMode = 'timeline' | 'tree';
 
 function EnrichmentHistory({ logs }: { logs: EnrichmentLog[] }) {
   const [viewMode, setViewMode] = useState<ViewMode>('timeline');
-  
+
   return (
     <div>
       {/* View switcher at top */}
@@ -426,7 +429,7 @@ function EnrichmentHistory({ logs }: { logs: EnrichmentLog[] }) {
           <GitBranch size={16} /> Tree
         </button>
       </div>
-      
+
       {viewMode === 'timeline' ? (
         <EnrichmentTimeline logs={logs} />
       ) : (
@@ -448,7 +451,7 @@ function ChildrenList({ children }: { children: EnrichmentLog[] }) {
   const shouldTruncate = children.length > TRUNCATION_THRESHOLD;
   const visibleChildren = showAll ? children : children.slice(0, TRUNCATION_THRESHOLD);
   const hiddenCount = children.length - TRUNCATION_THRESHOLD;
-  
+
   return (
     <Timeline size="sm">
       {visibleChildren.map((child) => (

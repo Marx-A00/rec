@@ -14,28 +14,33 @@ Replace useState + manual sessionStorage synchronization in the artist correctio
 ## Implementation Decisions
 
 ### Store shape
+
 - Mirror the album store structure — include `mode` field (search/manualEdit) even though artist only uses search mode today
 - Include full manual edit state fields in the type definition now (name, disambiguation, country, type, area, beginDate, endDate, gender, externalIds) — unused but ready for when manual edit ships for artists
 - Factory pattern with Map cache, keyed by artistId (same as album store keyed by albumId)
 - Persist to sessionStorage with key pattern matching album convention
 
 ### Preview data ownership
+
 - `previewData` (ArtistCorrectionPreview) moves into the store — same as album pattern
 - `showAppliedState` (success animation boolean) stays as local modal state — transient UI feedback, shouldn't persist
 - `shouldEnrich` (re-enrichment checkbox preference) stays as local modal state — ephemeral per-session choice
 
 ### Prop reduction targets
+
 - ArtistSearchView: `artistId` only (to locate store instance + fetch artist details)
 - ArtistPreviewView: `artistId` only (to locate store instance; reads everything else from store)
 - ArtistApplyView: `artistId`, `isApplying`, `error` (artistId for store access, mutation state from parent)
 - ArtistCorrectionModal: keeps mutation callbacks (orchestrates toast + store + queryClient invalidation) — same pattern as album
 
 ### Persistence
+
 - Same persist middleware pattern as album store (sessionStorage)
 - Persisted fields: step, mode, searchQuery, searchOffset, selectedArtistMbid, manualEditState
 - Transient fields (not persisted): previewData, isPreviewLoading, pendingAction, and any derived state
 
 ### Claude's Discretion
+
 - Exact atomic action names and signatures (follow album store conventions)
 - Derived selector implementations
 - Store cleanup/reset logic on modal close
@@ -60,5 +65,5 @@ Replace useState + manual sessionStorage synchronization in the artist correctio
 
 ---
 
-*Phase: 14-artist-correction-store*
-*Context gathered: 2026-02-04*
+_Phase: 14-artist-correction-store_
+_Context gathered: 2026-02-04_

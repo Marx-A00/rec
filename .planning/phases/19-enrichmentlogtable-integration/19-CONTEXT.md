@@ -14,12 +14,14 @@ Integrate the EnrichmentTimeline component into EnrichmentLogTable expanded rows
 ## Implementation Decisions
 
 ### Expand row layout
+
 - Timeline replaces FieldChangesPanel entirely — field change info moves into timeline items' expanded details
 - Standalone logs (no children) show as single-item timeline for consistent experience
 - Fixed max height (~300-400px) with scroll for the expand area
 - View switcher (timeline/tree) included in the expand row
 
 ### Parent vs child row filtering
+
 - Child logs (those with parentJobId) hidden from main table rows entirely — only parent/root logs appear as rows
 - Children only visible inside the expand timeline
 - Old logs (null parentJobId from before the migration) treated as standalone parents — show as normal rows with single-item timeline when expanded
@@ -27,12 +29,14 @@ Integrate the EnrichmentTimeline component into EnrichmentLogTable expanded rows
 - All rows are expandable (every row gets a chevron) since even solo logs get a single-item timeline
 
 ### Expand trigger & loading
+
 - Lazy load children on expand — table query fetches parent-only rows, children fetched on demand when row is expanded
 - Skeleton timeline (2-3 placeholder items with shimmer) while children are loading
 - Error state shows error message with Retry button inside the expand area
 - Polling continues while row is expanded — timeline updates live as new child jobs complete (great for watching active enrichment)
 
 ### Timeline density in table
+
 - Compact variant for table context — not the full standalone component
 - Compact view hides descriptions: shows only operation name + status + time per item
 - Click-to-expand on items shows full details inline (description, reason, fields, errors)
@@ -41,6 +45,7 @@ Integrate the EnrichmentTimeline component into EnrichmentLogTable expanded rows
 - Full view in modal shows all children with the standard 15 threshold
 
 ### Claude's Discretion
+
 - Exact compact variant styling (spacing, icon sizes, text sizes)
 - Skeleton timeline design specifics
 - Modal component choice and sizing
@@ -66,5 +71,5 @@ None — discussion stayed within phase scope
 
 ---
 
-*Phase: 19-enrichmentlogtable-integration*
-*Context gathered: 2026-02-06*
+_Phase: 19-enrichmentlogtable-integration_
+_Context gathered: 2026-02-06_

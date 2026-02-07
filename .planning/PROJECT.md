@@ -13,6 +13,7 @@ Admins can fix a broken album (trackless, wrong metadata, missing IDs) in under 
 **Shipped:** v1.1 Zustand Correction Modal Refactor (2026-02-05)
 
 The correction feature is complete with clean state management:
+
 - Album and artist correction modals use Zustand stores with sessionStorage persistence
 - All child components read state from stores (no prop drilling)
 - Atomic state transitions ensure consistent UI
@@ -25,6 +26,7 @@ The correction feature is complete with clean state management:
 **Goal:** Show enrichment jobs as a linked timeline with parent-child relationships visible in the UI.
 
 **Target features:**
+
 - Add `parentJobId` field to EnrichmentLog for job linking
 - Propagate `parentJobId` through job chains (enrichment → discogs → cache)
 - Add enrichment logging to processors that don't currently log (cache, discogs)
@@ -84,11 +86,13 @@ The correction feature is complete with clean state management:
 The platform accumulated albums with data quality issues. The correction feature shipped in v1.0 with full functionality. v1.1 refactored state management from fragmented useState + manual sessionStorage to clean Zustand stores.
 
 **Current codebase:**
+
 - 2 Zustand stores: `useCorrectionStore.ts` (487 lines), `useArtistCorrectionStore.ts` (491 lines)
 - 7 child components migrated to store consumption
 - Legacy hooks deleted: `useCorrectionModalState.ts`, `useArtistCorrectionModalState.ts`
 
 **v1.2 context:**
+
 - EnrichmentLog already has `jobId` field but not `parentJobId`
 - Only `ENRICH_ALBUM` → `SPOTIFY_TRACK_FALLBACK` currently share same `jobId`
 - Cache/Discogs processors don't log to EnrichmentLog
@@ -105,17 +109,17 @@ The platform accumulated albums with data quality issues. The correction feature
 
 ## Key Decisions
 
-| Decision                             | Rationale                                                 | Outcome |
-| ------------------------------------ | --------------------------------------------------------- | ------- |
-| MusicBrainz only for v1              | It's the base data source; Discogs/Spotify can come later | ✓ Good  |
-| Core flow before bulk operations     | Get search/preview/apply working first                    | ✓ Good  |
-| Session-only state                   | No need to persist correction queue to DB                 | ✓ Good  |
-| Separate stores for album and artist | Different state shapes (dual mode vs search-only)         | ✓ Good  |
-| Accept one-time sessionStorage reset | Admin-only, corrections are short-lived                   | ✓ Good  |
-| Factory pattern with Map cache       | Per-entity store instances with proper cleanup            | ✓ Good  |
-| Atomic actions for multi-field state | Prevents intermediate states and race conditions          | ✓ Good  |
+| Decision                             | Rationale                                                          | Outcome   |
+| ------------------------------------ | ------------------------------------------------------------------ | --------- |
+| MusicBrainz only for v1              | It's the base data source; Discogs/Spotify can come later          | ✓ Good    |
+| Core flow before bulk operations     | Get search/preview/apply working first                             | ✓ Good    |
+| Session-only state                   | No need to persist correction queue to DB                          | ✓ Good    |
+| Separate stores for album and artist | Different state shapes (dual mode vs search-only)                  | ✓ Good    |
+| Accept one-time sessionStorage reset | Admin-only, corrections are short-lived                            | ✓ Good    |
+| Factory pattern with Map cache       | Per-entity store instances with proper cleanup                     | ✓ Good    |
+| Atomic actions for multi-field state | Prevents intermediate states and race conditions                   | ✓ Good    |
 | `parentJobId` over unified requestId | Preserves unique job IDs for debugging, adds explicit relationship | — Pending |
-| shadcn-timeline for UI               | Consistent with shadcn/ui patterns, Framer Motion animations | — Pending |
+| shadcn-timeline for UI               | Consistent with shadcn/ui patterns, Framer Motion animations       | — Pending |
 
 ---
 

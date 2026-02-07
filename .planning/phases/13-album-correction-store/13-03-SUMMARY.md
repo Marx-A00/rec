@@ -196,7 +196,10 @@ const handlePreviewClick = () => {
 };
 
 const handleCancel = () => {
-  if (formState && hasUnsavedChanges(createInitialEditState(album), formState)) {
+  if (
+    formState &&
+    hasUnsavedChanges(createInitialEditState(album), formState)
+  ) {
     store.getState().setPendingAction(() => {
       store.getState().cancelManualEdit();
     });

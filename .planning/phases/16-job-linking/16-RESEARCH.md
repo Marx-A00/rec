@@ -20,26 +20,26 @@ The established libraries and patterns for this domain:
 
 ### Core
 
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|-------------|
-| BullMQ | v5.66+ | Job queue with parent-child relationships | Industry standard for Node.js job processing, built-in support for job hierarchies via Flows |
-| Prisma | Current | Database ORM with schema management | Type-safe database access, migration system already in place |
-| PostgreSQL | Current | Database with indexes on parentJobId | ACID compliance, excellent support for parent-child queries with indexes |
+| Library    | Version | Purpose                                   | Why Standard                                                                                 |
+| ---------- | ------- | ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| BullMQ     | v5.66+  | Job queue with parent-child relationships | Industry standard for Node.js job processing, built-in support for job hierarchies via Flows |
+| Prisma     | Current | Database ORM with schema management       | Type-safe database access, migration system already in place                                 |
+| PostgreSQL | Current | Database with indexes on parentJobId      | ACID compliance, excellent support for parent-child queries with indexes                     |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| Job class | BullMQ v5 | Access job.id, job.data, job.parent properties | Every processor needs to access job.id to pass to children |
-| EnrichmentLogger | Internal | Centralized logging with metadata | Already exists, needs parentJobId parameter added |
+| Library          | Version   | Purpose                                        | When to Use                                                |
+| ---------------- | --------- | ---------------------------------------------- | ---------------------------------------------------------- |
+| Job class        | BullMQ v5 | Access job.id, job.data, job.parent properties | Every processor needs to access job.id to pass to children |
+| EnrichmentLogger | Internal  | Centralized logging with metadata              | Already exists, needs parentJobId parameter added          |
 
 ### Alternatives Considered
 
-| Instead of | Could Use | Tradeoff |
-|-----------|-----------|----------|
-| Flat parent structure | Deep hierarchy (child → parent → grandparent) | Deep requires recursive CTEs, flat enables simple WHERE queries |
-| BullMQ job.id | Custom UUID generation | Native job.id is guaranteed unique per queue, no duplication risk |
-| Database logging | Redis-only tracking | Database provides persistence, queryability, and timeline UI support |
+| Instead of            | Could Use                                     | Tradeoff                                                             |
+| --------------------- | --------------------------------------------- | -------------------------------------------------------------------- |
+| Flat parent structure | Deep hierarchy (child → parent → grandparent) | Deep requires recursive CTEs, flat enables simple WHERE queries      |
+| BullMQ job.id         | Custom UUID generation                        | Native job.id is guaranteed unique per queue, no duplication risk    |
+| Database logging      | Redis-only tracking                           | Database provides persistence, queryability, and timeline UI support |
 
 **Installation:**
 No new packages needed - BullMQ and Prisma already installed.
@@ -74,6 +74,7 @@ Root Job (ENRICH_ALBUM)
 **When to use:** Every processor that spawns child jobs (ENRICH_ALBUM, ENRICH_ARTIST)
 
 **Example:**
+
 ```typescript
 // Source: Current codebase pattern + BullMQ Job API
 export async function handleEnrichAlbum(
@@ -81,7 +82,7 @@ export async function handleEnrichAlbum(
   data: EnrichAlbumJobData
 ): Promise<any> {
   const rootJobId = data.parentJobId || job.id; // If already has parent, use it; else this is root
-  
+
   // When spawning child artist enrichment
   const queue = await getMusicBrainzQueue();
   await queue.addJob(
@@ -102,6 +103,7 @@ export async function handleEnrichAlbum(
 **When to use:** Every processor operation (success and failure)
 
 **Example:**
+
 ```typescript
 // Source: Existing enrichment-logger.ts + new fields
 const enrichmentLogger = createEnrichmentLogger(prisma);
@@ -138,6 +140,7 @@ await enrichmentLogger.logEnrichment({
 **When to use:** Timeline UI, debugging, audit trails
 
 **Example:**
+
 ```typescript
 // Find all jobs in a chain
 const jobFamily = await prisma.enrichmentLog.findMany({
@@ -163,6 +166,7 @@ const rootJobs = await prisma.enrichmentLog.findMany({
 **When to use:** Every log entry, especially cache and discogs operations
 
 **CACHE operations metadata:**
+
 ```typescript
 metadata: {
   operation: 'cache_artist_image',
@@ -177,6 +181,7 @@ metadata: {
 ```
 
 **DISCOGS operations metadata:**
+
 ```typescript
 metadata: {
   operation: 'discogs_search_artist',
@@ -203,13 +208,13 @@ metadata: {
 
 Problems that look simple but have existing solutions:
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Job ID generation | Custom UUID system | BullMQ job.id | Native, unique per queue, type-safe string |
+| Problem               | Don't Build               | Use Instead                                   | Why                                                            |
+| --------------------- | ------------------------- | --------------------------------------------- | -------------------------------------------------------------- |
+| Job ID generation     | Custom UUID system        | BullMQ job.id                                 | Native, unique per queue, type-safe string                     |
 | Parent-child tracking | Custom parent chain table | BullMQ job.parent + EnrichmentLog.parentJobId | BullMQ provides parent metadata, database index already exists |
-| Hierarchical queries | Manual tree traversal | Simple WHERE clauses with flat structure | Flat: `WHERE parentJobId = X`; Deep: recursive CTE overhead |
-| Job execution logging | Console.log only | EnrichmentLog with metadata JSON | Queryable, persistent, supports timeline UI |
-| Retry tracking | Custom retry counter | BullMQ job.attemptsMade | Built-in, tracks failures and backoff |
+| Hierarchical queries  | Manual tree traversal     | Simple WHERE clauses with flat structure      | Flat: `WHERE parentJobId = X`; Deep: recursive CTE overhead    |
+| Job execution logging | Console.log only          | EnrichmentLog with metadata JSON              | Queryable, persistent, supports timeline UI                    |
+| Retry tracking        | Custom retry counter      | BullMQ job.attemptsMade                       | Built-in, tracks failures and backoff                          |
 
 **Key insight:** BullMQ already provides job relationships via `job.parent` and `job.parentKey`, but for this use case passing `job.id` in data payload is simpler because the flat structure doesn't need BullMQ's deep hierarchy features (which are designed for FlowProducer patterns).
 
@@ -273,9 +278,11 @@ export async function handleEnrichAlbum(
 ): Promise<any> {
   const data = job.data; // Extract data
   const rootJobId = data.parentJobId || job.id; // Determine root
-  
-  console.log(`Processing album ${data.albumId} (Job: ${job.id}, Root: ${rootJobId})`);
-  
+
+  console.log(
+    `Processing album ${data.albumId} (Job: ${job.id}, Root: ${rootJobId})`
+  );
+
   // ... processing logic
 }
 ```
@@ -284,7 +291,7 @@ export async function handleEnrichAlbum(
 
 ```typescript
 // Source: Current enrichment-processor.ts pattern + new parentJobId field
-const queue = await import('../musicbrainz-queue').then(m => 
+const queue = await import('../musicbrainz-queue').then(m =>
   m.getMusicBrainzQueue()
 );
 
@@ -313,13 +320,13 @@ export async function handleCacheArtistImage(
   const data = job.data;
   const startTime = Date.now();
   const enrichmentLogger = createEnrichmentLogger(prisma);
-  
+
   try {
     const artist = await prisma.artist.findUnique({
       where: { id: data.artistId },
       select: { id: true, name: true, imageUrl: true, cloudflareImageId: true },
     });
-    
+
     if (!artist) {
       await enrichmentLogger.logEnrichment({
         entityType: 'ARTIST',
@@ -341,7 +348,7 @@ export async function handleCacheArtistImage(
       });
       throw new Error(`Artist ${data.artistId} not found`);
     }
-    
+
     // Skip if already cached
     if (artist.cloudflareImageId && artist.cloudflareImageId !== 'none') {
       await enrichmentLogger.logEnrichment({
@@ -363,7 +370,7 @@ export async function handleCacheArtistImage(
         isRootJob: !data.parentJobId,
         triggeredBy: 'system',
       });
-      
+
       return {
         success: true,
         cached: true,
@@ -372,11 +379,15 @@ export async function handleCacheArtistImage(
         message: 'Already cached',
       };
     }
-    
+
     // Upload to Cloudflare
     const { cacheArtistImage } = await import('@/lib/cloudflare-images');
-    const result = await cacheArtistImage(artist.imageUrl, artist.id, artist.name);
-    
+    const result = await cacheArtistImage(
+      artist.imageUrl,
+      artist.id,
+      artist.name
+    );
+
     if (!result) {
       await enrichmentLogger.logEnrichment({
         entityType: 'ARTIST',
@@ -399,22 +410,22 @@ export async function handleCacheArtistImage(
         isRootJob: !data.parentJobId,
         triggeredBy: 'system',
       });
-      
+
       // Mark as 'none' in database
       await prisma.artist.update({
         where: { id: artist.id },
         data: { cloudflareImageId: 'none' },
       });
-      
+
       return { success: true, cached: false, cloudflareImageId: 'none' };
     }
-    
+
     // Update database
     await prisma.artist.update({
       where: { id: artist.id },
       data: { cloudflareImageId: result.id },
     });
-    
+
     // Log success with comprehensive metadata
     await enrichmentLogger.logEnrichment({
       entityType: 'ARTIST',
@@ -443,7 +454,7 @@ export async function handleCacheArtistImage(
       isRootJob: !data.parentJobId,
       triggeredBy: 'system',
     });
-    
+
     return {
       success: true,
       cached: false,
@@ -453,8 +464,9 @@ export async function handleCacheArtistImage(
       message: 'Successfully cached',
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+
     await enrichmentLogger.logEnrichment({
       entityType: 'ARTIST',
       entityId: data.artistId,
@@ -473,7 +485,7 @@ export async function handleCacheArtistImage(
       isRootJob: !data.parentJobId,
       triggeredBy: 'system',
     });
-    
+
     throw error; // Re-throw for BullMQ retry
   }
 }
@@ -489,7 +501,7 @@ export async function handleDiscogsSearchArtist(
   const data = job.data;
   const startTime = Date.now();
   const enrichmentLogger = createEnrichmentLogger(prisma);
-  
+
   try {
     const Discogs = await import('disconnect');
     const discogsClient = new Discogs.default.Client({
@@ -497,13 +509,13 @@ export async function handleDiscogsSearchArtist(
       consumerKey: process.env.CONSUMER_KEY!,
       consumerSecret: process.env.CONSUMER_SECRET!,
     }).database();
-    
+
     const searchResults = await discogsClient.search({
       query: data.artistName,
       type: 'artist',
       per_page: 10,
     });
-    
+
     if (!searchResults.results || searchResults.results.length === 0) {
       await enrichmentLogger.logEnrichment({
         entityType: 'ARTIST',
@@ -524,12 +536,15 @@ export async function handleDiscogsSearchArtist(
         isRootJob: !data.parentJobId,
         triggeredBy: 'system',
       });
-      
+
       return { artistId: data.artistId, action: 'no_results' };
     }
-    
-    const bestMatch = findBestDiscogsArtistMatch(data.artistName, searchResults.results);
-    
+
+    const bestMatch = findBestDiscogsArtistMatch(
+      data.artistName,
+      searchResults.results
+    );
+
     if (!bestMatch) {
       await enrichmentLogger.logEnrichment({
         entityType: 'ARTIST',
@@ -544,29 +559,36 @@ export async function handleDiscogsSearchArtist(
         metadata: {
           searchQuery: data.artistName,
           resultsCount: searchResults.results.length,
-          bestScore: Math.max(...searchResults.results.map(r => 
-            calculateStringSimilarity(data.artistName.toLowerCase(), r.title.toLowerCase())
-          )),
+          bestScore: Math.max(
+            ...searchResults.results.map(r =>
+              calculateStringSimilarity(
+                data.artistName.toLowerCase(),
+                r.title.toLowerCase()
+              )
+            )
+          ),
         },
         jobId: job.id,
         parentJobId: data.parentJobId || null,
         isRootJob: !data.parentJobId,
         triggeredBy: 'system',
       });
-      
+
       return { artistId: data.artistId, action: 'no_confident_match' };
     }
-    
+
     // Update database with Discogs ID
     await prisma.artist.update({
       where: { id: data.artistId },
       data: { discogsId: String(bestMatch.result.id) },
     });
-    
+
     // Queue fetch job
-    const queue = await import('../musicbrainz-queue').then(m => m.getMusicBrainzQueue());
+    const queue = await import('../musicbrainz-queue').then(m =>
+      m.getMusicBrainzQueue()
+    );
     const rootJobId = data.parentJobId || job.id; // Determine root
-    
+
     await queue.addJob(
       JOB_TYPES.DISCOGS_GET_ARTIST,
       {
@@ -577,7 +599,7 @@ export async function handleDiscogsSearchArtist(
       },
       { priority: 6, attempts: 3 }
     );
-    
+
     // Log success
     await enrichmentLogger.logEnrichment({
       entityType: 'ARTIST',
@@ -604,7 +626,7 @@ export async function handleDiscogsSearchArtist(
       isRootJob: !data.parentJobId,
       triggeredBy: 'system',
     });
-    
+
     return {
       artistId: data.artistId,
       action: 'found_and_queued',
@@ -612,8 +634,9 @@ export async function handleDiscogsSearchArtist(
       matchConfidence: bestMatch.score,
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+
     await enrichmentLogger.logEnrichment({
       entityType: 'ARTIST',
       entityId: data.artistId,
@@ -635,7 +658,7 @@ export async function handleDiscogsSearchArtist(
       isRootJob: !data.parentJobId,
       triggeredBy: 'system',
     });
-    
+
     throw error;
   }
 }
@@ -649,7 +672,14 @@ export interface EnrichAlbumJobData {
   albumId: string;
   priority?: 'low' | 'medium' | 'high';
   force?: boolean;
-  userAction?: 'collection_add' | 'recommendation_create' | 'search' | 'browse' | 'manual' | 'spotify_sync' | 'admin_manual';
+  userAction?:
+    | 'collection_add'
+    | 'recommendation_create'
+    | 'search'
+    | 'browse'
+    | 'manual'
+    | 'spotify_sync'
+    | 'admin_manual';
   requestId?: string;
   parentJobId?: string; // NEW: for job chain tracking
 }
@@ -672,14 +702,15 @@ export interface DiscogsSearchArtistJobData {
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| No parent tracking | parentJobId field with index | Phase 15 (migration) | Enables job chain queries |
-| Cache/discogs no logging | Comprehensive EnrichmentLog entries | Phase 16 (implementation) | Complete audit trail |
-| Deep hierarchy tracking | Flat parent structure | Phase 16 (architecture decision) | Simpler queries, no recursive CTEs |
-| Console.log only | Structured metadata in database | Previous phases | Queryable timeline, debugging support |
+| Old Approach             | Current Approach                    | When Changed                     | Impact                                |
+| ------------------------ | ----------------------------------- | -------------------------------- | ------------------------------------- |
+| No parent tracking       | parentJobId field with index        | Phase 15 (migration)             | Enables job chain queries             |
+| Cache/discogs no logging | Comprehensive EnrichmentLog entries | Phase 16 (implementation)        | Complete audit trail                  |
+| Deep hierarchy tracking  | Flat parent structure               | Phase 16 (architecture decision) | Simpler queries, no recursive CTEs    |
+| Console.log only         | Structured metadata in database     | Previous phases                  | Queryable timeline, debugging support |
 
 **Deprecated/outdated:**
+
 - **Console-only logging**: Previous approach had console.log but no database persistence - replaced by EnrichmentLog system
 - **BullMQ FlowProducer**: Advanced BullMQ feature for complex parent-child workflows - overkill for this use case, flat structure with data payload passing is simpler
 
@@ -726,6 +757,7 @@ export interface DiscogsSearchArtistJobData {
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH - BullMQ and Prisma already in use, patterns verified in codebase
 - Architecture: HIGH - Flat structure decision documented, database schema confirmed with migration
 - Pitfalls: MEDIUM - Based on common patterns and TypeScript/BullMQ experience, needs validation during implementation

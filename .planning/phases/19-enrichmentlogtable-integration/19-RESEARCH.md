@@ -17,26 +17,29 @@ Key findings: React table expansion with lazy loading is a well-established patt
 ## Standard Stack
 
 ### Core
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| TanStack Query | v5.79.0 | Data fetching + polling | Already used throughout app, supports dynamic `refetchInterval` functions |
-| Radix UI Dialog | v1.1.14 | Modal for full timeline | Already in use, accessible by default, composable primitives |
-| Framer Motion | v12.23.14 | Timeline animations | Already used in EnrichmentTimeline, required by timeline primitives |
-| React state (useState) | React 19.2.3 | Expansion state tracking | Standard pattern for table row expansion, already used in table |
+
+| Library                | Version      | Purpose                  | Why Standard                                                              |
+| ---------------------- | ------------ | ------------------------ | ------------------------------------------------------------------------- |
+| TanStack Query         | v5.79.0      | Data fetching + polling  | Already used throughout app, supports dynamic `refetchInterval` functions |
+| Radix UI Dialog        | v1.1.14      | Modal for full timeline  | Already in use, accessible by default, composable primitives              |
+| Framer Motion          | v12.23.14    | Timeline animations      | Already used in EnrichmentTimeline, required by timeline primitives       |
+| React state (useState) | React 19.2.3 | Expansion state tracking | Standard pattern for table row expansion, already used in table           |
 
 ### Supporting
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| date-fns | v4.1.0 | Time formatting | Already imported in table and timeline |
-| Skeleton component | Custom | Loading states | Already exists at `src/components/ui/skeletons/Skeleton.tsx` |
-| cn utility | Custom | Class name merging | Standard pattern in codebase for Tailwind |
+
+| Library            | Version | Purpose            | When to Use                                                  |
+| ------------------ | ------- | ------------------ | ------------------------------------------------------------ |
+| date-fns           | v4.1.0  | Time formatting    | Already imported in table and timeline                       |
+| Skeleton component | Custom  | Loading states     | Already exists at `src/components/ui/skeletons/Skeleton.tsx` |
+| cn utility         | Custom  | Class name merging | Standard pattern in codebase for Tailwind                    |
 
 ### Alternatives Considered
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| Local state for expansion | Zustand store | Overkill - expansion state doesn't need persistence or cross-component sharing |
+
+| Instead of                  | Could Use                | Tradeoff                                                                               |
+| --------------------------- | ------------------------ | -------------------------------------------------------------------------------------- |
+| Local state for expansion   | Zustand store            | Overkill - expansion state doesn't need persistence or cross-component sharing         |
 | Separate query for children | Nested query in resolver | Current resolver already supports `includeChildren`, but lazy fetch is more performant |
-| Dialog for full view | Popover or sheet | Dialog provides better focus management for large content inspection |
+| Dialog for full view        | Popover or sheet         | Dialog provides better focus management for large content inspection                   |
 
 **Installation:**
 No new dependencies required - all libraries already installed.
@@ -44,6 +47,7 @@ No new dependencies required - all libraries already installed.
 ## Architecture Patterns
 
 ### Recommended Project Structure
+
 ```
 src/components/admin/
 ├── EnrichmentLogTable.tsx          # Main table component (existing)
@@ -59,6 +63,7 @@ src/components/admin/
 **When to use:** Table displays parent-only rows initially, children are expensive to fetch or numerous.
 
 **Example:**
+
 ```typescript
 // Current table pattern (simplified)
 const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -80,10 +85,10 @@ const { data: childrenData, isLoading: loadingChildren } =
   useGetEnrichmentLogsQuery(
     {
       parentJobId: log.jobId, // Query by parent
-      limit: 100
+      limit: 100,
     },
     {
-      enabled: expandedRows.has(log.id) && !!log.jobId // Only fetch when expanded
+      enabled: expandedRows.has(log.id) && !!log.jobId, // Only fetch when expanded
     }
   );
 ```
@@ -97,14 +102,18 @@ const { data: childrenData, isLoading: loadingChildren } =
 **When to use:** Real-time updates needed for expanded rows (watching active enrichment jobs).
 
 **Example:**
+
 ```typescript
 // Current table uses this pattern for top-level polling
 const { data } = useGetEnrichmentLogsQuery(
   { entityType, entityId, limit },
   {
-    refetchInterval: (query) => {
+    refetchInterval: query => {
       // Poll if enrichment is active OR recent logs exist
-      if (enrichmentStatus === 'PENDING' || enrichmentStatus === 'IN_PROGRESS') {
+      if (
+        enrichmentStatus === 'PENDING' ||
+        enrichmentStatus === 'IN_PROGRESS'
+      ) {
         return 3000;
       }
 
@@ -115,7 +124,7 @@ const { data } = useGetEnrichmentLogsQuery(
       }
 
       return false; // Stop polling
-    }
+    },
   }
 );
 
@@ -124,7 +133,7 @@ const { data: childrenData } = useGetEnrichmentLogsQuery(
   { parentJobId: log.jobId, limit: 100 },
   {
     enabled: expandedRows.has(log.id),
-    refetchInterval: (query) => {
+    refetchInterval: query => {
       // Only poll if row is still expanded AND has recent activity
       if (!expandedRows.has(log.id)) return false;
 
@@ -135,7 +144,7 @@ const { data: childrenData } = useGetEnrichmentLogsQuery(
       const age = Date.now() - new Date(mostRecent.createdAt).getTime();
 
       return age < 30000 ? 3000 : false; // Poll for 30s after last child
-    }
+    },
   }
 );
 ```
@@ -149,6 +158,7 @@ const { data: childrenData } = useGetEnrichmentLogsQuery(
 **When to use:** Component needs different density levels for different contexts (standalone vs. nested in table).
 
 **Example:**
+
 ```typescript
 // EnrichmentTimeline.tsx (existing)
 interface EnrichmentTimelineProps {
@@ -185,6 +195,7 @@ interface EnrichmentTimelineProps {
 **When to use:** Async data fetching with expected content structure known upfront.
 
 **Example:**
+
 ```typescript
 // In expanded row content
 {isLoadingChildren ? (
@@ -217,6 +228,7 @@ interface EnrichmentTimelineProps {
 **When to use:** Compact view hides details that user may want to inspect without leaving table context.
 
 **Example:**
+
 ```typescript
 // In table expanded row
 <Dialog>
@@ -252,13 +264,13 @@ interface EnrichmentTimelineProps {
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Row expansion state | Custom context provider | `useState` in component | Simple local state, no cross-component needs |
-| Skeleton placeholders | Custom shimmer animation | Existing Skeleton component | Already handles accessibility, Tailwind integration |
-| Modal/dialog | Custom overlay + focus trap | Radix UI Dialog (existing) | Accessibility, focus management, portal rendering |
-| Polling logic | `setInterval` or manual timers | TanStack Query `refetchInterval` | Handles cleanup, pause on window blur, cancellation |
-| Loading states | Manual isLoading flags | TanStack Query status | Integrated with cache, handles race conditions |
+| Problem               | Don't Build                    | Use Instead                      | Why                                                 |
+| --------------------- | ------------------------------ | -------------------------------- | --------------------------------------------------- |
+| Row expansion state   | Custom context provider        | `useState` in component          | Simple local state, no cross-component needs        |
+| Skeleton placeholders | Custom shimmer animation       | Existing Skeleton component      | Already handles accessibility, Tailwind integration |
+| Modal/dialog          | Custom overlay + focus trap    | Radix UI Dialog (existing)       | Accessibility, focus management, portal rendering   |
+| Polling logic         | `setInterval` or manual timers | TanStack Query `refetchInterval` | Handles cleanup, pause on window blur, cancellation |
+| Loading states        | Manual isLoading flags         | TanStack Query status            | Integrated with cache, handles race conditions      |
 
 **Key insight:** TanStack Query handles complex async state (loading, error, stale, refetching) and edge cases (race conditions, cleanup, cache invalidation) that are error-prone to hand-roll. Radix UI handles accessibility requirements (focus traps, ARIA attributes, keyboard navigation) that are often forgotten in custom implementations.
 
@@ -271,6 +283,7 @@ interface EnrichmentTimelineProps {
 **Why it happens:** Current table query doesn't filter by `parentJobId: null`, so it fetches all logs.
 
 **How to avoid:**
+
 ```typescript
 // Add parentJobId filter to main table query
 const { data } = useGetEnrichmentLogsQuery({
@@ -290,8 +303,9 @@ const { data } = useGetEnrichmentLogsQuery({
 **Why it happens:** Each children query has `refetchInterval: 3000` without considering global state.
 
 **How to avoid:** Use function form of `refetchInterval` that checks expansion state:
+
 ```typescript
-refetchInterval: (query) => {
+refetchInterval: query => {
   // Stop polling if row was collapsed
   if (!expandedRows.has(logId)) return false;
 
@@ -299,9 +313,10 @@ refetchInterval: (query) => {
   const children = query.state.data?.enrichmentLogs || [];
   if (children.length === 0) return false;
 
-  const age = Date.now() - new Date(children[children.length - 1].createdAt).getTime();
+  const age =
+    Date.now() - new Date(children[children.length - 1].createdAt).getTime();
   return age < 30000 ? 3000 : false;
-}
+};
 ```
 
 **Warning signs:** Network tab shows many simultaneous requests, performance degradation with multiple expanded rows, high server load.
@@ -313,6 +328,7 @@ refetchInterval: (query) => {
 **Why it happens:** Expansion state stored by array index instead of stable ID.
 
 **How to avoid:** Use log.id (UUID) for expansion tracking, not array indices:
+
 ```typescript
 // WRONG
 const [expandedIndices, setExpandedIndices] = useState<Set<number>>(new Set());
@@ -330,6 +346,7 @@ const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 **Why it happens:** Assuming `jobId` presence means children exist.
 
 **How to avoid:** Show single-item timeline for solo logs:
+
 ```typescript
 const children = childrenData?.enrichmentLogs || [];
 const timelineLogs = children.length > 0
@@ -348,6 +365,7 @@ const timelineLogs = children.length > 0
 **Why it happens:** Conditionals based on `variant` prop affect default behavior unintentionally.
 
 **How to avoid:** Make compact variant additive, not subtractive:
+
 ```typescript
 // Default behavior always available
 const truncationThreshold = props.truncateChildren ?? TRUNCATION_THRESHOLD;
@@ -729,15 +747,16 @@ export function EnrichmentTimelineModal({
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| Fetch all logs flat | Lazy-load children on expand | Phase 19 (this phase) | Faster initial table load, scales to large hierarchies |
-| Static polling interval | Function-based `refetchInterval` | TanStack Query v4+ | Conditional polling based on state, fewer unnecessary requests |
-| Separate compact component | Variant prop pattern | Modern React best practice | Single source of truth, easier maintenance |
-| Manual skeleton markup | Reusable Skeleton component | Already adopted | Consistency, accessibility built-in |
-| Hand-rolled modals | Radix UI primitives | Already adopted | Accessibility, focus management, portability |
+| Old Approach               | Current Approach                 | When Changed               | Impact                                                         |
+| -------------------------- | -------------------------------- | -------------------------- | -------------------------------------------------------------- |
+| Fetch all logs flat        | Lazy-load children on expand     | Phase 19 (this phase)      | Faster initial table load, scales to large hierarchies         |
+| Static polling interval    | Function-based `refetchInterval` | TanStack Query v4+         | Conditional polling based on state, fewer unnecessary requests |
+| Separate compact component | Variant prop pattern             | Modern React best practice | Single source of truth, easier maintenance                     |
+| Manual skeleton markup     | Reusable Skeleton component      | Already adopted            | Consistency, accessibility built-in                            |
+| Hand-rolled modals         | Radix UI primitives              | Already adopted            | Accessibility, focus management, portability                   |
 
 **Deprecated/outdated:**
+
 - Table row expansion with nested queries: Use lazy loading instead - batching children upfront doesn't scale
 - Polling all queries unconditionally: Use function form to poll only active/expanded rows
 - Separate component files for variants: Use props - variants should share core logic
@@ -767,6 +786,7 @@ export function EnrichmentTimelineModal({
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - TanStack Query v5 documentation - `refetchInterval` function signature verified
 - Radix UI Dialog v1.1 documentation - sizing and accessibility patterns
 - Codebase files (read directly):
@@ -783,6 +803,7 @@ export function EnrichmentTimelineModal({
 - [TanStack Query - Data-dependent query refetch interval](https://github.com/TanStack/query/discussions/2086)
 
 ### Secondary (MEDIUM confidence)
+
 - [Handling React loading states with React Loading Skeleton - LogRocket](https://blog.logrocket.com/handling-react-loading-states-react-loading-skeleton/)
 - [The do's and dont's of Skeleton Loading in React - Ironeko](https://ironeko.com/posts/the-dos-and-donts-of-skeleton-loading-in-react)
 - [Material React Table V3 - Density Toggle Guide](https://www.material-react-table.com/docs/guides/density-toggle)
@@ -790,11 +811,13 @@ export function EnrichmentTimelineModal({
 - [Radix UI Dialog - Themes Documentation](https://www.radix-ui.com/themes/docs/components/dialog)
 
 ### Tertiary (LOW confidence)
+
 - Web search results for compact timeline patterns - general design principles, not library-specific
 
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH - All libraries already in use, versions verified from package.json
 - Architecture patterns: HIGH - Based on existing codebase patterns and verified library capabilities
 - Pitfalls: HIGH - Common issues identified from codebase review and community discussions
@@ -805,6 +828,7 @@ export function EnrichmentTimelineModal({
 **Valid until:** 2026-04-06 (60 days - stable libraries, existing codebase patterns)
 
 **Codebase-specific notes:**
+
 - Table already has expansion pattern with `Set<string>` state
 - Timeline component already has animation and truncation logic
 - GraphQL resolver already supports both flat and tree fetching

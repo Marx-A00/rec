@@ -49,7 +49,7 @@ migration-notes:
   breaking-changes:
     - SearchView props interface changed (album-only)
     - CorrectionModal no longer uses useCorrectionModalState hook
-  
+
   backward-compatibility:
     - Modal UI identical to users
     - Search behavior unchanged
@@ -66,6 +66,7 @@ migration-notes:
 ### Task 1: Refactor CorrectionModal to use Zustand store
 
 **Changes:**
+
 - Removed `import { useCorrectionModalState } from '@/hooks/useCorrectionModalState'`
 - Added imports for `getCorrectionStore`, `clearCorrectionStoreCache`, and derived selectors
 - Replaced `useCorrectionModalState(albumId)` with `getCorrectionStore(albumId)`
@@ -79,13 +80,14 @@ migration-notes:
   - `pendingAction`, `setPendingAction`
 
 **State subscription pattern:**
+
 ```typescript
 const store = albumId ? getCorrectionStore(albumId) : null;
 
 // Subscribe to individual fields
-const step = store?.((s) => s.step) ?? 0;
-const mode = store?.((s) => s.mode) ?? 'search';
-const selectedMbid = store?.((s) => s.selectedMbid);
+const step = store?.(s => s.step) ?? 0;
+const mode = store?.(s => s.mode) ?? 'search';
+const selectedMbid = store?.(s => s.selectedMbid);
 // ... etc
 
 // Use derived selectors
@@ -94,6 +96,7 @@ const isManualEditMode = store ? store(isManualEditModeSelector) : false;
 ```
 
 **Handler function refactoring:**
+
 - `handleResultSelect` → `store.getState().selectResult(mbid)` (atomic action)
 - `handleEnterManualEdit` → `store.getState().enterManualEdit()` (atomic action)
 - `handleEnterSearch` → `store.getState().enterSearch()` (atomic action)
@@ -103,25 +106,30 @@ const isManualEditMode = store ? store(isManualEditModeSelector) : false;
 - `handleClose` → `clearCorrectionStoreCache(albumId)` on cleanup
 
 **What stayed in CorrectionModal (AMODAL-03):**
+
 - Mutation callbacks (`onSuccess`, `onError`) for `applyMutation` and `manualApplyMutation`
 - Toast orchestration
 - QueryClient cache invalidation
 - Auto-close timer logic after successful apply
 
 **Props to child components:**
+
 - `SearchView`: Now receives only `album` prop (modalState, onResultSelect, onManualEdit removed)
 - `PreviewView`, `ApplyView`, `ManualEditView`: Props unchanged (migrated in Plan 03)
 - `StepIndicator`: Still receives props (CLEAN-04)
 
 **Files modified:**
+
 - `src/components/admin/correction/CorrectionModal.tsx` (155 insertions, 163 deletions)
 
 ### Task 2: Refactor SearchView to read from store
 
 **Changes:**
-- Removed `import type { useCorrectionModalState }` 
+
+- Removed `import type { useCorrectionModalState }`
 - Added `import { getCorrectionStore }`
 - Props interface reduced from 4 props to 1:
+
   ```typescript
   // Before
   export interface SearchViewProps {
@@ -130,7 +138,7 @@ const isManualEditMode = store ? store(isManualEditModeSelector) : false;
     onManualEdit: () => void;
     modalState: ReturnType<typeof useCorrectionModalState>;
   }
-  
+
   // After
   export interface SearchViewProps {
     album: CurrentDataViewAlbum;
@@ -138,10 +146,11 @@ const isManualEditMode = store ? store(isManualEditModeSelector) : false;
   ```
 
 **Store integration:**
+
 ```typescript
 const store = getCorrectionStore(album.id);
-const searchQuery = store((s) => s.searchQuery);
-const searchOffset = store((s) => s.searchOffset);
+const searchQuery = store(s => s.searchQuery);
+const searchOffset = store(s => s.searchOffset);
 
 // Actions
 const setSearchQuery = store.getState().setSearchQuery;
@@ -150,12 +159,14 @@ const enterManualEdit = store.getState().enterManualEdit;
 ```
 
 **Handler updates:**
+
 - `handleSearch` → uses `setSearchQuery(query)` (automatically resets offset)
 - `handleLoadMore` → uses `store.getState().setSearchOffset(searchOffset + 10)`
 - `handleResultClick` → uses `selectResult(mbid)` (atomic: sets mbid + advances step)
 - Manual edit button → uses `enterManualEdit()` (atomic: sets mode + step)
 
 **Preserved functionality:**
+
 - Search query persistence across navigation
 - Pagination state
 - Auto-trigger search on mount if returning from preview
@@ -163,6 +174,7 @@ const enterManualEdit = store.getState().enterManualEdit;
 - Error states and skeleton loading
 
 **Files modified:**
+
 - `src/components/admin/correction/search/SearchView.tsx` (17 insertions, 25 deletions)
 
 ## Deviations from Plan
@@ -172,18 +184,21 @@ None. Plan executed exactly as written.
 ## Testing Evidence
 
 **Type checking:**
+
 ```bash
 pnpm type-check
 # ✅ Passes with zero errors
 ```
 
 **Linting:**
+
 ```bash
 pnpm lint
 # ✅ Passes (only prettier formatting applied)
 ```
 
 **Verification checks:**
+
 - ✅ `useCorrectionModalState` import removed from both files
 - ✅ Zero `useState` calls for shared state in CorrectionModal
 - ✅ SearchView props reduced to `{ album }` only
@@ -194,12 +209,14 @@ pnpm lint
 ## Next Phase Readiness
 
 **Phase 13 Plan 03 Prerequisites:**
+
 - ✅ CorrectionModal successfully using store
 - ✅ SearchView migrated and tested
 - ✅ Mutation callbacks still orchestrate side effects correctly
 - ✅ Store actions proven to work (selectResult, enterManualEdit, etc.)
 
 **What's ready for Plan 03:**
+
 - PreviewView, ApplyView, ManualEditView can now be migrated
 - Pattern established: props → store selectors + actions
 - Atomic actions working correctly
@@ -207,21 +224,25 @@ pnpm lint
 ## Technical Notes
 
 **Store subscription pattern:**
+
 - Individual field subscriptions prevent unnecessary re-renders
 - Null-coalescing ensures safe defaults when modal closed
 - Derived selectors encapsulate complex logic (isFirstStep, stepLabels)
 
 **Cleanup on modal close:**
+
 - `clearCorrectionStoreCache(albumId)` removes store instance from Map cache
 - Also clears sessionStorage key for that album
 - Prevents memory leaks from long-lived modal sessions
 
 **sessionStorage persistence:**
+
 - Store automatically persists 6 fields (step, mode, searchQuery, searchOffset, selectedMbid, manualEditState)
 - 7 transient fields excluded (preview data, UI state, callbacks)
 - Users can navigate away and return to same correction step
 
 **Performance:**
+
 - Line count reduced (CorrectionModal: -8 net, SearchView: -8 net)
 - Fewer prop drilling layers
 - Store enables fine-grained subscriptions (only re-render on relevant state changes)
@@ -229,9 +250,11 @@ pnpm lint
 ## Commits
 
 **Task 1:**
+
 - `7c128a2` - refactor(13-02): CorrectionModal uses Zustand store
 
 **Task 2:**
+
 - `0b1088a` - refactor(13-02): SearchView reads from Zustand store
 
 ## Summary

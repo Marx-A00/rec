@@ -61,7 +61,7 @@ migration-notes:
     - ArtistPreviewView props interface changed (artistId-only)
     - ArtistApplyView props interface changed (artistId + onApply + isApplying + error)
     - ArtistCorrectionModal no longer uses useArtistCorrectionModalState hook
-  
+
   backward-compatibility:
     - Modal UI identical to users
     - Search behavior unchanged
@@ -80,6 +80,7 @@ migration-notes:
 ### Task 1: Refactor ArtistCorrectionModal and ArtistSearchView
 
 **ArtistCorrectionModal changes:**
+
 - Removed `import { useArtistCorrectionModalState } from '@/hooks/useArtistCorrectionModalState'`
 - Added imports for `getArtistCorrectionStore`, `clearArtistCorrectionStoreCache`, and `isFirstStep` selector
 - Replaced `useArtistCorrectionModalState(artistId)` with `getArtistCorrectionStore(artistId)`
@@ -89,20 +90,22 @@ migration-notes:
   - `shouldEnrich`, `setShouldEnrich`
 
 **State subscription pattern:**
+
 ```typescript
 const store = artistId ? getArtistCorrectionStore(artistId) : null;
 
 // Subscribe to individual fields
-const step = store?.((s) => s.step) ?? 0;
-const selectedArtistMbid = store?.((s) => s.selectedArtistMbid);
-const previewData = store?.((s) => s.previewData);
-const showAppliedState = store?.((s) => s.showAppliedState);
+const step = store?.(s => s.step) ?? 0;
+const selectedArtistMbid = store?.(s => s.selectedArtistMbid);
+const previewData = store?.(s => s.previewData);
+const showAppliedState = store?.(s => s.showAppliedState);
 
 // Use derived selectors
 const isFirstStep = store ? store(isFirstStepSelector) : true;
 ```
 
 **Handler function refactoring:**
+
 - `handleClose` → `clearArtistCorrectionStoreCache(artistId)` instead of `clearState()`
 - `handleApplyClick` → `store.getState().nextStep()` (advance to apply step)
 - `handleApply` → Reads `applySelections` and `shouldEnrich` from `store.getState()`
@@ -110,11 +113,13 @@ const isFirstStep = store ? store(isFirstStepSelector) : true;
 - Step navigation → `store.getState().setStep()`, `prevStep()`, `nextStep()`
 
 **Child component prop updates:**
+
 - **ArtistSearchView**: `{ artist }` only (removed `onResultSelect` and `modalState`)
 - **ArtistPreviewView**: `{ artistId }` only (removed `artistMbid` and `onPreviewLoaded`)
 - **ArtistApplyView**: `{ artistId, onApply, isApplying, error }` (removed `preview` and `onBack`)
 
 **Kept in modal (not moved to store):**
+
 - Mutation definitions (`applyMutation`, `enrichMutation`)
 - Toast state (`useToast`)
 - Keyboard shortcuts effect
@@ -122,21 +127,28 @@ const isFirstStep = store ? store(isFirstStepSelector) : true;
 - The `handleApply` function (orchestrates mutations + toast + cache invalidation)
 
 **ArtistSearchView changes:**
+
 - Removed `import { type useArtistCorrectionModalState }`
 - Added `import { getArtistCorrectionStore }`
 - Props interface reduced from 3 to 1:
+
   ```typescript
   // Before
-  { artist, onResultSelect, modalState }
-  
+  {
+    (artist, onResultSelect, modalState);
+  }
+
   // After
-  { artist }
+  {
+    artist;
+  }
   ```
+
 - Replaced `modalState` destructuring with store access:
   ```typescript
   const store = getArtistCorrectionStore(artist.id);
-  const searchQuery = store((s) => s.searchQuery);
-  const searchOffset = store((s) => s.searchOffset);
+  const searchQuery = store(s => s.searchQuery);
+  const searchOffset = store(s => s.searchOffset);
   ```
 - Handler updates:
   - `handleSearch` → `store.getState().setSearchQuery(inputValue.trim())`
@@ -150,48 +162,64 @@ const isFirstStep = store ? store(isFirstStepSelector) : true;
 ### Task 2: Refactor ArtistPreviewView and ArtistApplyView, delete legacy hook
 
 **ArtistPreviewView changes:**
+
 - Added `import { getArtistCorrectionStore }`
 - Props interface reduced from 3 to 1:
+
   ```typescript
   // Before
-  { artistId, artistMbid, onPreviewLoaded }
-  
+  {
+    (artistId, artistMbid, onPreviewLoaded);
+  }
+
   // After
-  { artistId }
+  {
+    artistId;
+  }
   ```
+
 - Read `selectedArtistMbid` from store:
   ```typescript
   const store = getArtistCorrectionStore(artistId);
-  const selectedArtistMbid = store((s) => s.selectedArtistMbid);
+  const selectedArtistMbid = store(s => s.selectedArtistMbid);
   ```
 - Replaced `onPreviewLoaded` callback with store action:
   ```typescript
   useEffect(() => {
     if (data?.artistCorrectionPreview) {
-      store.getState().setPreviewLoaded(
-        data.artistCorrectionPreview as ArtistCorrectionPreview
-      );
+      store
+        .getState()
+        .setPreviewLoaded(
+          data.artistCorrectionPreview as ArtistCorrectionPreview
+        );
     }
   }, [data?.artistCorrectionPreview, store]);
   ```
 - Added guard rendering if `selectedArtistMbid` is undefined
 
 **ArtistApplyView changes:**
+
 - Added `import { getArtistCorrectionStore }`
 - Props interface reduced from 5 to 4:
+
   ```typescript
   // Before
-  { preview, onApply, onBack, isApplying, error }
-  
+  {
+    (preview, onApply, onBack, isApplying, error);
+  }
+
   // After
-  { artistId, onApply, isApplying, error }
+  {
+    (artistId, onApply, isApplying, error);
+  }
   ```
+
 - Read state from store:
   ```typescript
   const store = getArtistCorrectionStore(artistId);
-  const preview = store((s) => s.previewData);
-  const selections = store((s) => s.applySelections);
-  const triggerEnrichment = store((s) => s.shouldEnrich);
+  const preview = store(s => s.previewData);
+  const selections = store(s => s.applySelections);
+  const triggerEnrichment = store(s => s.shouldEnrich);
   ```
 - Removed local `useState` for:
   - `selections` (now from store)
@@ -204,6 +232,7 @@ const isFirstStep = store ? store(isFirstStepSelector) : true;
 - Added guard rendering if `preview` or `selections` is null
 
 **Legacy hook deletion:**
+
 - Deleted `src/hooks/useArtistCorrectionModalState.ts`
 - Verified zero remaining imports: `grep -r "useArtistCorrectionModalState" src/` returns nothing
 
@@ -214,18 +243,21 @@ const isFirstStep = store ? store(isFirstStepSelector) : true;
 ## Verification Results
 
 **Type checking:**
+
 ```bash
 pnpm type-check
 # ✅ PASS - Zero errors
 ```
 
 **Linting:**
+
 ```bash
 pnpm lint
 # ✅ PASS - Only pre-existing warnings unrelated to changes
 ```
 
 **Store imports verified:**
+
 ```bash
 grep -r "getArtistCorrectionStore" src/components/admin/correction/artist/
 # ✅ Found in all 4 components:
@@ -236,6 +268,7 @@ grep -r "getArtistCorrectionStore" src/components/admin/correction/artist/
 ```
 
 **Legacy hook removed:**
+
 ```bash
 ls src/hooks/useArtistCorrectionModalState.ts
 # ✅ File not found (deleted)
@@ -245,12 +278,14 @@ grep -r "useArtistCorrectionModalState" src/
 ```
 
 **Zero `any` types:**
+
 ```bash
 grep -n "any" src/components/admin/correction/artist/*.tsx
 # ✅ Only word "any" in user-facing strings, no any types
 ```
 
 **Props reduction verified:**
+
 - **ArtistSearchView**: 3 props → 1 prop (artist only) ✅
 - **ArtistPreviewView**: 3 props → 1 prop (artistId only) ✅
 - **ArtistApplyView**: 5 props → 4 props (artistId, onApply, isApplying, error) ✅
@@ -281,6 +316,7 @@ The only difference: artist correction is simpler (search-only mode, no manual e
 ## Next Phase Readiness
 
 **Phase 14 Plan 03 (Verification):**
+
 - ✅ All 4 components migrated to store
 - ✅ Legacy hook deleted
 - ✅ Type checking passes
@@ -288,6 +324,7 @@ The only difference: artist correction is simpler (search-only mode, no manual e
 - ✅ sessionStorage persistence working (via store middleware)
 
 **Ready for final phase verification:**
+
 - End-to-end modal flow testing
 - Step navigation verification
 - Search persistence across navigation
@@ -300,6 +337,7 @@ The only difference: artist correction is simpler (search-only mode, no manual e
 ## Lessons Learned
 
 **What went well:**
+
 - Exact pattern replication from Phase 13 made implementation straightforward
 - Zero type errors on first refactor (pattern was well-established)
 - Props reduction targets achieved (SearchView: 1, PreviewView: 1, ApplyView: 4)
@@ -307,12 +345,14 @@ The only difference: artist correction is simpler (search-only mode, no manual e
 - Net reduction: 336 lines deleted, 177 lines added = **159 lines removed**
 
 **Pattern confirmation:**
+
 - Factory pattern with Map cache works perfectly for per-artist stores
 - Atomic actions (selectResult) prevent intermediate states
 - Identity props (artistId) are pragmatic for store lookup
 - Mutation orchestration stays in modal (toast + queryClient coordination)
 
 **Zero issues encountered:**
+
 - No type errors
 - No runtime errors expected
 - No behavior changes

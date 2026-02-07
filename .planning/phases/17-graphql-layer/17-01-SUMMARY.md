@@ -44,31 +44,36 @@ metrics:
 ## What Was Built
 
 **Schema additions to EnrichmentLog type:**
+
 - `parentJobId: String` - Links child job to parent for tree display
 - `children: [EnrichmentLog!]` - Nested logs (populated when includeChildren=true)
 
 **Query parameter addition:**
+
 - `includeChildren: Boolean` on `enrichmentLogs` query
 
 **Client query updates:**
+
 - GetEnrichmentLogs now includes `jobId`, `parentJobId`, and accepts `includeChildren`
 - New `GetEnrichmentLogsWithChildren` query with nested children selection
 
 ## Commits
 
-| Commit  | Description                                         | Files                              |
-|---------|-----------------------------------------------------|-----------------------------------|
-| b9ea58f | Add parentJobId and children to EnrichmentLog type  | src/graphql/schema.graphql        |
-| 37c094f | Update client enrichment queries with hierarchy     | src/graphql/queries/enrichment.graphql |
+| Commit  | Description                                        | Files                                  |
+| ------- | -------------------------------------------------- | -------------------------------------- |
+| b9ea58f | Add parentJobId and children to EnrichmentLog type | src/graphql/schema.graphql             |
+| 37c094f | Update client enrichment queries with hierarchy    | src/graphql/queries/enrichment.graphql |
 
 ## Key Decisions
 
 **1. Nullable children field**
+
 - Children array is nullable (not `[EnrichmentLog!]!`)
 - Only populated when `includeChildren=true`
 - Keeps flat query behavior unchanged
 
 **2. Separate query variant**
+
 - Added `GetEnrichmentLogsWithChildren` for explicit tree fetch
 - Keeps `GetEnrichmentLogs` lightweight for existing usages
 
@@ -89,5 +94,6 @@ None - plan executed exactly as written.
 **Blockers:** None
 
 **Dependencies resolved:**
+
 - Phase 15 database migration (parentJobId column) is complete
 - GraphQL types now match Prisma schema

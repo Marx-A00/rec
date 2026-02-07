@@ -9,7 +9,8 @@ dependency-graph:
   affects: [19-integration]
 tech-stack:
   added: []
-  patterns: [view-switcher-pattern, truncation-with-show-more, staggered-animation]
+  patterns:
+    [view-switcher-pattern, truncation-with-show-more, staggered-animation]
 key-files:
   created:
     - src/components/admin/EnrichmentTimeline.tsx
@@ -32,6 +33,7 @@ metrics:
 ## Completed Tasks
 
 **Task 1: EnrichmentTree fallback component**
+
 - Created simple tree view as timeline alternative
 - Indented parent-child hierarchy with left border
 - Status badges mapped from EnrichmentLogStatus
@@ -40,6 +42,7 @@ metrics:
 - Commit: 411f22a
 
 **Task 2: EnrichmentTimeline wrapper component**
+
 - View switcher (timeline/tree) at top
 - Parent logs render at full size, children at sm size
 - Truncation: first 15 children shown by default
@@ -52,6 +55,7 @@ metrics:
 ## Key Artifacts
 
 **EnrichmentTimeline.tsx (409 lines)**
+
 - Main timeline component
 - Props: logs (EnrichmentLog[]), className
 - State: viewMode, expandedItems (Set), showAllChildren (Record)
@@ -60,6 +64,7 @@ metrics:
 - ExpandedDetails sub-component for click-to-expand
 
 **EnrichmentTree.tsx (169 lines)**
+
 - Simple fallback tree view
 - TreeItem recursive component
 - Status badge with proper variant mapping
@@ -83,12 +88,14 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 **For Phase 19 (Integration):**
+
 - EnrichmentTimeline is ready to import
 - Accepts EnrichmentLog[] from useGetEnrichmentLogsWithChildrenQuery
 - No additional setup required
 - Tree view available as fallback if timeline has rendering issues
 
 **Usage example:**
+
 ```tsx
 import { EnrichmentTimeline } from '@/components/admin/EnrichmentTimeline';
 
@@ -97,5 +104,5 @@ const { data } = useGetEnrichmentLogsWithChildrenQuery({
   includeChildren: true,
 });
 
-<EnrichmentTimeline logs={data?.enrichmentLogs ?? []} />
+<EnrichmentTimeline logs={data?.enrichmentLogs ?? []} />;
 ```

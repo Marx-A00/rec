@@ -44,6 +44,7 @@ parentJobId        String?                @map("parent_job_id") @db.VarChar(100)
 ```
 
 Key attributes:
+
 - **Optional (`String?`)**: Existing logs will have `null`, which is correct (standalone jobs)
 - **Column mapping (`@map("parent_job_id")`)**: Snake_case for PostgreSQL convention
 - **Type annotation (`@db.VarChar(100)`)**: Matches `jobId` type exactly
@@ -68,6 +69,7 @@ Follow existing EnrichmentLog index conventions:
 ```
 
 Single-column index is sufficient because:
+
 - Primary use case: `WHERE parentJobId = ?` to fetch children
 - No common compound query patterns expected
 - Index on `createdAt` already exists separately
@@ -86,11 +88,11 @@ CREATE INDEX "enrichment_logs_parent_job_id_idx" ON "enrichment_logs"("parent_jo
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Migration SQL | Raw SQL files | `prisma migrate dev` | Type-safe, versioned, rollback-ready |
-| Index syntax | Custom CREATE INDEX | Prisma `@@index()` | Automatic naming, schema sync |
-| Null handling | Manual COALESCE | Optional field (`?`) | Prisma handles NULL safely |
+| Problem       | Don't Build         | Use Instead          | Why                                  |
+| ------------- | ------------------- | -------------------- | ------------------------------------ |
+| Migration SQL | Raw SQL files       | `prisma migrate dev` | Type-safe, versioned, rollback-ready |
+| Index syntax  | Custom CREATE INDEX | Prisma `@@index()`   | Automatic naming, schema sync        |
+| Null handling | Manual COALESCE     | Optional field (`?`) | Prisma handles NULL safely           |
 
 **Key insight:** Prisma generates correct PostgreSQL DDL for nullable fields. Adding a nullable column requires no data migration since existing rows get `NULL` automatically.
 
@@ -205,10 +207,10 @@ WHERE tablename = 'enrichment_logs' AND indexname LIKE '%parent_job_id%';
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| `db push` for changes | `migrate dev` with named migrations | Project standard | Version-controlled migrations |
-| Raw SQL migrations | Prisma schema-first | Prisma 1 → 2+ (2020) | Type-safe schema management |
+| Old Approach          | Current Approach                    | When Changed         | Impact                        |
+| --------------------- | ----------------------------------- | -------------------- | ----------------------------- |
+| `db push` for changes | `migrate dev` with named migrations | Project standard     | Version-controlled migrations |
+| Raw SQL migrations    | Prisma schema-first                 | Prisma 1 → 2+ (2020) | Type-safe schema management   |
 
 **No deprecated patterns in this domain.** Prisma 6.x migration workflow is stable and matches project conventions.
 
@@ -239,6 +241,7 @@ All requirements (DATA-01, DATA-02, DATA-03) are covered by this approach.
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH - Prisma 6.17.1 verified, project patterns well-established
 - Architecture: HIGH - Exact pattern exists (jobId field), 38 prior migrations as reference
 - Pitfalls: HIGH - Common issues documented from codebase conventions (CLAUDE.md)

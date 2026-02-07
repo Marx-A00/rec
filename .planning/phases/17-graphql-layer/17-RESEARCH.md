@@ -20,27 +20,27 @@ Phase 17 involves exposing `jobId` and `parentJobId` fields in the GraphQL schem
 
 ### Core
 
-| Library | Version | Purpose | Why Standard |
-| --- | --- | --- | --- |
-| @graphql-codegen/cli | 5.0.3 | GraphQL code generator | Industry standard for type-safe GraphQL in TypeScript |
-| @graphql-codegen/typescript | 4.1.1 | Generate TypeScript types from schema | Core plugin for TypeScript type generation |
-| @graphql-codegen/typescript-resolvers | 4.3.1 | Generate resolver signatures | Type-safe resolver implementation |
-| graphql | 16.x | GraphQL implementation | Reference JavaScript implementation |
-| @apollo/server | 4.x | GraphQL server | Most popular GraphQL server for Node.js |
-| DataLoader | 2.x | Batching and caching | Solves N+1 query problem in GraphQL |
+| Library                               | Version | Purpose                               | Why Standard                                          |
+| ------------------------------------- | ------- | ------------------------------------- | ----------------------------------------------------- |
+| @graphql-codegen/cli                  | 5.0.3   | GraphQL code generator                | Industry standard for type-safe GraphQL in TypeScript |
+| @graphql-codegen/typescript           | 4.1.1   | Generate TypeScript types from schema | Core plugin for TypeScript type generation            |
+| @graphql-codegen/typescript-resolvers | 4.3.1   | Generate resolver signatures          | Type-safe resolver implementation                     |
+| graphql                               | 16.x    | GraphQL implementation                | Reference JavaScript implementation                   |
+| @apollo/server                        | 4.x     | GraphQL server                        | Most popular GraphQL server for Node.js               |
+| DataLoader                            | 2.x     | Batching and caching                  | Solves N+1 query problem in GraphQL                   |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-| --- | --- | --- | --- |
-| @graphql-codegen/typescript-react-query | 6.1.1 | React hooks for queries | Client-side data fetching (already in use) |
+| Library                                 | Version | Purpose                 | When to Use                                |
+| --------------------------------------- | ------- | ----------------------- | ------------------------------------------ |
+| @graphql-codegen/typescript-react-query | 6.1.1   | React hooks for queries | Client-side data fetching (already in use) |
 
 ### Alternatives Considered
 
-| Instead of | Could Use | Tradeoff |
-| --- | --- | --- |
+| Instead of               | Could Use                   | Tradeoff                                                                            |
+| ------------------------ | --------------------------- | ----------------------------------------------------------------------------------- |
 | Custom resolver assembly | Prisma recursive extensions | Prisma doesn't support recursive queries natively; must use raw SQL or custom logic |
-| Flat array return | GraphQL @defer directive | Not widely supported; client complexity increases |
+| Flat array return        | GraphQL @defer directive    | Not widely supported; client complexity increases                                   |
 
 **Installation:**
 Already installed - no new dependencies required.
@@ -55,9 +55,9 @@ For tree structures in GraphQL, the standard pattern is to add an optional `chil
 type EnrichmentLog {
   id: UUID!
   jobId: String
-  parentJobId: String  # NEW FIELD
+  parentJobId: String # NEW FIELD
   # ... other fields ...
-  children: [EnrichmentLog!]  # NEW FIELD - populated conditionally
+  children: [EnrichmentLog!] # NEW FIELD - populated conditionally
 }
 ```
 
@@ -71,7 +71,7 @@ type Query {
     status: EnrichmentLogStatus
     skip: Int
     limit: Int
-    includeChildren: Boolean  # NEW PARAMETER
+    includeChildren: Boolean # NEW PARAMETER
   ): [EnrichmentLog!]!
 }
 ```
@@ -88,7 +88,7 @@ type Query {
 // Source: Apollo GraphQL best practices
 enrichmentLogs: async (_, args, { prisma }) => {
   const { includeChildren, ...filters } = args;
-  
+
   if (!includeChildren) {
     // Simple case - return flat list
     return prisma.enrichmentLog.findMany({
@@ -96,7 +96,7 @@ enrichmentLogs: async (_, args, { prisma }) => {
       orderBy: { createdAt: 'desc' },
     });
   }
-  
+
   // Tree case - fetch parents and all their children
   const parentLogs = await prisma.enrichmentLog.findMany({
     where: {
@@ -109,7 +109,7 @@ enrichmentLogs: async (_, args, { prisma }) => {
     },
     orderBy: { createdAt: 'desc' },
   });
-  
+
   // Fetch all children for these parents in single query
   const parentJobIds = parentLogs.map(log => log.jobId).filter(Boolean);
   const childLogs = await prisma.enrichmentLog.findMany({
@@ -118,7 +118,7 @@ enrichmentLogs: async (_, args, { prisma }) => {
     },
     orderBy: { createdAt: 'asc' },
   });
-  
+
   // Assemble tree structure
   const childrenMap = new Map<string, typeof childLogs>();
   for (const child of childLogs) {
@@ -127,11 +127,11 @@ enrichmentLogs: async (_, args, { prisma }) => {
     siblings.push(child);
     childrenMap.set(child.parentJobId, siblings);
   }
-  
+
   // Attach children to parents
   return parentLogs.map(parent => ({
     ...parent,
-    children: parent.jobId ? (childrenMap.get(parent.jobId) || []) : [],
+    children: parent.jobId ? childrenMap.get(parent.jobId) || [] : [],
   }));
 };
 ```
@@ -151,7 +151,7 @@ const childrenByParentJobIdLoader = new DataLoader(
     const allChildren = await prisma.enrichmentLog.findMany({
       where: { parentJobId: { in: parentJobIds } },
     });
-    
+
     // Group by parentJobId
     const grouped = new Map<string, typeof allChildren>();
     for (const child of allChildren) {
@@ -159,7 +159,7 @@ const childrenByParentJobIdLoader = new DataLoader(
       siblings.push(child);
       grouped.set(child.parentJobId!, siblings);
     }
-    
+
     // Return in same order as input keys
     return parentJobIds.map(id => grouped.get(id) || []);
   }
@@ -183,12 +183,12 @@ EnrichmentLog: {
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-| --- | --- | --- | --- |
-| Type generation from schema | Custom TypeScript types | @graphql-codegen/typescript-resolvers | Keeps types in sync with schema, prevents drift |
-| N+1 query prevention | Manual batching logic | DataLoader | Battle-tested, handles edge cases, caching built-in |
-| Tree depth limiting | Custom recursion guards | Schema-level parameter with resolver logic | Explicit contract in schema, easier to test |
-| Resolver type safety | `any` types | Generated resolver types | TypeScript catches resolver signature mismatches |
+| Problem                     | Don't Build             | Use Instead                                | Why                                                 |
+| --------------------------- | ----------------------- | ------------------------------------------ | --------------------------------------------------- |
+| Type generation from schema | Custom TypeScript types | @graphql-codegen/typescript-resolvers      | Keeps types in sync with schema, prevents drift     |
+| N+1 query prevention        | Manual batching logic   | DataLoader                                 | Battle-tested, handles edge cases, caching built-in |
+| Tree depth limiting         | Custom recursion guards | Schema-level parameter with resolver logic | Explicit contract in schema, easier to test         |
+| Resolver type safety        | `any` types             | Generated resolver types                   | TypeScript catches resolver signature mismatches    |
 
 **Key insight:** GraphQL codegen eliminates an entire class of bugs by generating types that must match the schema. The resolver signatures are type-checked against the schema at compile time.
 
@@ -200,7 +200,8 @@ EnrichmentLog: {
 
 **Why it happens:** GraphQL spec allows querying `log { children { children { children { ... } } } }` infinitely
 
-**How to avoid:** 
+**How to avoid:**
+
 - Use query parameter approach (`includeChildren: Boolean`) for one-level trees
 - If multi-level needed, add `maxDepth` parameter and enforce in resolver
 - Consider Apollo Server's `validationRules` for query depth limiting
@@ -214,11 +215,13 @@ EnrichmentLog: {
 **Why it happens:** Field resolvers run for each item in parent array without batching
 
 **How to avoid:**
+
 - Fetch all children in single query in root resolver, attach as property
 - Or use DataLoader in field resolver to batch child fetching
 - Monitor query counts with Prisma query events
 
-**Warning signs:** 
+**Warning signs:**
+
 ```
 Query count scales linearly with result count
 Database connection pool exhaustion
@@ -231,12 +234,14 @@ Database connection pool exhaustion
 **Why it happens:** Generated types in `src/generated/resolvers-types.ts` don't include new field
 
 **How to avoid:**
+
 1. Modify `src/graphql/schema.graphql`
 2. Run `pnpm codegen` immediately
 3. Fix TypeScript errors in resolvers
 4. Never commit schema changes without running codegen
 
 **Warning signs:**
+
 ```
 Type 'EnrichmentLog' is not assignable to type 'ResolversTypes["EnrichmentLog"]'
 Property 'children' does not exist on type...
@@ -249,11 +254,13 @@ Property 'children' does not exist on type...
 **Why it happens:** Prisma self-relations require explicit relation fields in schema - can't infer from `parentJobId`
 
 **How to avoid:**
+
 - Don't add Prisma relation - it's unnecessary complexity for this use case
 - Fetch via `where: { parentJobId: { in: [...] } }` instead
 - Assemble tree structure in application code
 
 **Warning signs:**
+
 ```
 Error: Unknown relation 'children' on model 'EnrichmentLog'
 ```
@@ -282,8 +289,8 @@ type EnrichmentLog {
   apiCallCount: Int!
   metadata: JSON
   previewData: JSON
-  jobId: String              # EXISTING
-  parentJobId: String        # NEW - from Phase 15 DB migration
+  jobId: String # EXISTING
+  parentJobId: String # NEW - from Phase 15 DB migration
   triggeredBy: String
   userId: String
   createdAt: DateTime!
@@ -296,7 +303,7 @@ type EnrichmentLog {
 # Source: Project's src/graphql/schema.graphql Query type pattern
 type Query {
   # ... other queries ...
-  
+
   enrichmentLogs(
     entityType: EnrichmentEntityType
     entityId: UUID
@@ -304,7 +311,7 @@ type Query {
     sources: [String!]
     skip: Int
     limit: Int
-    includeChildren: Boolean  # NEW - default false for backward compatibility
+    includeChildren: Boolean # NEW - default false for backward compatibility
   ): [EnrichmentLog!]!
 }
 ```
@@ -319,7 +326,7 @@ query GetEnrichmentLogs(
   $status: EnrichmentLogStatus
   $skip: Int
   $limit: Int
-  $includeChildren: Boolean  # NEW
+  $includeChildren: Boolean # NEW
 ) {
   enrichmentLogs(
     entityType: $entityType
@@ -327,7 +334,7 @@ query GetEnrichmentLogs(
     status: $status
     skip: $skip
     limit: $limit
-    includeChildren: $includeChildren  # NEW
+    includeChildren: $includeChildren # NEW
   ) {
     id
     entityType
@@ -345,8 +352,8 @@ query GetEnrichmentLogs(
     apiCallCount
     metadata
     createdAt
-    jobId          # EXISTING
-    parentJobId    # NEW
+    jobId # EXISTING
+    parentJobId # NEW
   }
 }
 ```
@@ -356,16 +363,16 @@ query GetEnrichmentLogs(
 ```typescript
 // Source: Adapted from project's src/lib/graphql/resolvers/queries.ts pattern
 enrichmentLogs: async (_, args, { prisma }) => {
-  const { 
-    entityType, 
-    entityId, 
-    status, 
-    sources, 
-    skip, 
+  const {
+    entityType,
+    entityId,
+    status,
+    sources,
+    skip,
     limit,
-    includeChildren = false  // NEW - default false
+    includeChildren = false, // NEW - default false
   } = args;
-  
+
   // Build where clause (existing pattern)
   const where: Record<string, unknown> = {};
   if (entityType) where.entityType = entityType;
@@ -374,7 +381,7 @@ enrichmentLogs: async (_, args, { prisma }) => {
   if (sources && sources.length > 0) {
     where.sources = { hasSome: sources };
   }
-  
+
   // EXISTING: Simple flat fetch
   if (!includeChildren) {
     return prisma.enrichmentLog.findMany({
@@ -384,36 +391,36 @@ enrichmentLogs: async (_, args, { prisma }) => {
       take: limit || 50,
     });
   }
-  
+
   // NEW: Tree fetch - parents with children
   // Only return root logs (parentJobId is null) when includeChildren=true
   const parentLogs = await prisma.enrichmentLog.findMany({
     where: {
       ...where,
-      parentJobId: null,  // Root logs only
+      parentJobId: null, // Root logs only
     },
     orderBy: { createdAt: 'desc' },
     skip: skip || 0,
     take: limit || 50,
   });
-  
+
   // Fetch all children for these parents in single query
   const parentJobIds = parentLogs
     .map(log => log.jobId)
     .filter((id): id is string => Boolean(id));
-  
+
   if (parentJobIds.length === 0) {
     // No parents with jobIds, return as-is
     return parentLogs.map(log => ({ ...log, children: [] }));
   }
-  
+
   const childLogs = await prisma.enrichmentLog.findMany({
     where: {
       parentJobId: { in: parentJobIds },
     },
     orderBy: { createdAt: 'asc' },
   });
-  
+
   // Build children map for O(n) lookup
   const childrenMap = new Map<string, typeof childLogs>();
   for (const child of childLogs) {
@@ -422,14 +429,14 @@ enrichmentLogs: async (_, args, { prisma }) => {
     siblings.push(child);
     childrenMap.set(child.parentJobId, siblings);
   }
-  
+
   // Attach children to parents - add empty children arrays to leaf nodes
   return parentLogs.map(parent => ({
     ...parent,
-    children: parent.jobId 
+    children: parent.jobId
       ? (childrenMap.get(parent.jobId) || []).map(child => ({
           ...child,
-          children: [],  // Children are leaf nodes (no grandchildren)
+          children: [], // Children are leaf nodes (no grandchildren)
         }))
       : [],
   }));
@@ -438,12 +445,12 @@ enrichmentLogs: async (_, args, { prisma }) => {
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-| --- | --- | --- | --- |
-| Manual schema-to-type mapping | @graphql-codegen auto-generation | ~2020 | Type safety, reduced bugs |
-| Separate DataLoader imports | Context-scoped DataLoader factory | ~2021 | Request-scoped caching, memory efficiency |
-| Field-by-field resolvers for relations | DataLoader batching | ~2019 | N+1 query elimination |
-| GraphQL v15 | GraphQL v16 | 2021 | Better TypeScript support, async iterators |
+| Old Approach                           | Current Approach                  | When Changed | Impact                                     |
+| -------------------------------------- | --------------------------------- | ------------ | ------------------------------------------ |
+| Manual schema-to-type mapping          | @graphql-codegen auto-generation  | ~2020        | Type safety, reduced bugs                  |
+| Separate DataLoader imports            | Context-scoped DataLoader factory | ~2021        | Request-scoped caching, memory efficiency  |
+| Field-by-field resolvers for relations | DataLoader batching               | ~2019        | N+1 query elimination                      |
+| GraphQL v15                            | GraphQL v16                       | 2021         | Better TypeScript support, async iterators |
 
 **Deprecated/outdated:**
 

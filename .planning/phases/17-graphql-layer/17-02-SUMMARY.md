@@ -28,17 +28,17 @@ files:
 
 decisions:
   - id: batch-children
-    choice: "Batch fetch all children in single query"
-    rationale: "Prevents N+1 queries when assembling tree"
-    impact: "Performance-optimal for any number of parent logs"
+    choice: 'Batch fetch all children in single query'
+    rationale: 'Prevents N+1 queries when assembling tree'
+    impact: 'Performance-optimal for any number of parent logs'
   - id: map-lookup
-    choice: "Use Map for O(n) child lookup"
-    rationale: "More efficient than filtering array for each parent"
-    impact: "Linear time complexity regardless of child count"
+    choice: 'Use Map for O(n) child lookup'
+    rationale: 'More efficient than filtering array for each parent'
+    impact: 'Linear time complexity regardless of child count'
 
 metrics:
   duration: 2m
-  completed: "2026-02-06"
+  completed: '2026-02-06'
 ---
 
 # Phase 17 Plan 02: Resolver Tree Fetching Summary

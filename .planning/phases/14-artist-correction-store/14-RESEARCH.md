@@ -24,24 +24,24 @@ This research covers migrating artist correction modal state from the custom hoo
 
 ### Core
 
-| Library            | Version | Purpose                     | Why Standard                                                 |
-| ------------------ | ------- | --------------------------- | ------------------------------------------------------------ |
-| zustand            | ^5.0.8  | State management            | Already used in Phase 13 album store; proven pattern        |
-| zustand/middleware | (incl.) | Persist + createJSONStorage | Official middleware for sessionStorage persistence           |
+| Library            | Version | Purpose                     | Why Standard                                         |
+| ------------------ | ------- | --------------------------- | ---------------------------------------------------- |
+| zustand            | ^5.0.8  | State management            | Already used in Phase 13 album store; proven pattern |
+| zustand/middleware | (incl.) | Persist + createJSONStorage | Official middleware for sessionStorage persistence   |
 
 ### Supporting
 
-| Library        | Version    | Purpose              | When to Use                                              |
-| -------------- | ---------- | -------------------- | -------------------------------------------------------- |
-| react-query v5 | (existing) | Server state caching | Preview data fetching (not persisted, cached by RQ)      |
+| Library        | Version    | Purpose              | When to Use                                         |
+| -------------- | ---------- | -------------------- | --------------------------------------------------- |
+| react-query v5 | (existing) | Server state caching | Preview data fetching (not persisted, cached by RQ) |
 
 ### Alternatives Considered
 
-| Instead of           | Could Use           | Tradeoff                                                     |
-| -------------------- | ------------------- | ------------------------------------------------------------ |
-| Zustand store        | Keep custom hook    | More boilerplate, prop drilling continues, inconsistent with Phase 13 |
-| Factory pattern      | Single store        | Loses per-artist persistence isolation                       |
-| sessionStorage       | localStorage        | Would persist across sessions (undesirable for corrections)  |
+| Instead of      | Could Use        | Tradeoff                                                              |
+| --------------- | ---------------- | --------------------------------------------------------------------- |
+| Zustand store   | Keep custom hook | More boilerplate, prop drilling continues, inconsistent with Phase 13 |
+| Factory pattern | Single store     | Loses per-artist persistence isolation                                |
+| sessionStorage  | localStorage     | Would persist across sessions (undesirable for corrections)           |
 
 **Installation:**
 
@@ -109,7 +109,10 @@ const createArtistCorrectionStore = (artistId: string) =>
   );
 
 // Map cache prevents recreation on re-renders
-const storeCache = new Map<string, ReturnType<typeof createArtistCorrectionStore>>();
+const storeCache = new Map<
+  string,
+  ReturnType<typeof createArtistCorrectionStore>
+>();
 
 export function getArtistCorrectionStore(artistId: string) {
   const cached = storeCache.get(artistId);
@@ -185,7 +188,7 @@ export interface ArtistCorrectionState {
   mode: 'search' | 'manual'; // Type includes both, but only 'search' used in Phase 14
   searchQuery?: string;
   selectedArtistMbid?: string;
-  
+
   // Manual edit state - typed for future but not used in Phase 14
   manualEditState?: ManualArtistEditState; // Include in persisted fields
 }
@@ -221,11 +224,11 @@ interface ManualArtistEditState {
 
 (Same as Phase 13 - pattern already established)
 
-| Problem                 | Don't Build                   | Use Instead                    | Why                                                    |
-| ----------------------- | ----------------------------- | ------------------------------ | ------------------------------------------------------ |
-| SessionStorage sync     | Custom useEffect + useState   | Zustand persist middleware     | Handles serialization, rehydration, race conditions   |
-| Derived state           | useMemo in every component    | Standalone selector functions  | Single source of truth                                 |
-| Multi-step wizard state | Separate useState per field   | Zustand store with atomics     | Atomic updates prevent intermediate states            |
+| Problem                 | Don't Build                 | Use Instead                   | Why                                                 |
+| ----------------------- | --------------------------- | ----------------------------- | --------------------------------------------------- |
+| SessionStorage sync     | Custom useEffect + useState | Zustand persist middleware    | Handles serialization, rehydration, race conditions |
+| Derived state           | useMemo in every component  | Standalone selector functions | Single source of truth                              |
+| Multi-step wizard state | Separate useState per field | Zustand store with atomics    | Atomic updates prevent intermediate states          |
 
 ## Common Pitfalls
 
@@ -296,7 +299,7 @@ export const isLastStep = (state: ArtistCorrectionState) => state.step === 3;
 export const maxStep = (state: ArtistCorrectionState) => 3;
 
 // ❌ WRONG - this is album logic (dual mode)
-export const isLastStep = (state: ArtistCorrectionState) => 
+export const isLastStep = (state: ArtistCorrectionState) =>
   state.step === (state.mode === 'manual' ? 2 : 3);
 ```
 
@@ -367,42 +370,42 @@ export interface UIArtistFieldSelections {
  */
 export interface ArtistCorrectionState {
   // ========== Persisted Fields ==========
-  
+
   /** Current wizard step (0-3 for search mode) */
   step: number;
-  
+
   /** Correction mode - only 'search' implemented in Phase 14 */
   mode: 'search' | 'manual';
-  
+
   /** Search query (artist name) */
   searchQuery: string | undefined;
-  
+
   /** Search pagination offset */
   searchOffset: number;
-  
+
   /** Selected MusicBrainz artist MBID */
   selectedArtistMbid: string | undefined;
-  
+
   /** Manual edit state - typed for future, not used in Phase 14 */
   manualEditState: ManualArtistEditState | undefined;
-  
+
   // ========== Transient Fields (NOT persisted) ==========
-  
+
   /** Loaded preview data */
   previewData: ArtistCorrectionPreview | null;
-  
+
   /** Field selections for apply step */
   applySelections: UIArtistFieldSelections | null;
-  
+
   /** Enrichment checkbox state */
   shouldEnrich: boolean;
-  
+
   /** Success animation visibility flag */
   showAppliedState: boolean;
-  
+
   /** Pending action closure (not serializable) */
   pendingAction: (() => void) | null;
-  
+
   /** Unsaved changes dialog visibility */
   showUnsavedDialog: boolean;
 }
@@ -415,34 +418,35 @@ export interface ArtistCorrectionActions {
   setStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
-  
+
   // Search state
   setSearchQuery: (query: string) => void;
   setSearchOffset: (offset: number) => void;
   clearSearchState: () => void;
-  
+
   // Atomic: Select result and advance step
   selectResult: (mbid: string) => void;
-  
+
   // Atomic: Set preview data with default selections
   setPreviewLoaded: (preview: ArtistCorrectionPreview) => void;
-  
+
   // Apply selections
   setApplySelections: (selections: UIArtistFieldSelections) => void;
   setShouldEnrich: (value: boolean) => void;
   setShowAppliedState: (value: boolean) => void;
-  
+
   // Unsaved changes dialog
   setPendingAction: (action: (() => void) | null) => void;
   setShowUnsavedDialog: (show: boolean) => void;
   confirmUnsavedDiscard: () => void;
   cancelUnsavedDialog: () => void;
-  
+
   // Full state reset
   clearState: () => void;
 }
 
-export type ArtistCorrectionStore = ArtistCorrectionState & ArtistCorrectionActions;
+export type ArtistCorrectionStore = ArtistCorrectionState &
+  ArtistCorrectionActions;
 
 // ============================================================================
 // Default State
@@ -472,35 +476,35 @@ const createArtistCorrectionStore = (artistId: string) =>
     persist(
       (set, get) => ({
         ...DEFAULT_STATE,
-        
+
         setStep: (step: number) => {
           if (step >= 0 && step <= 3) {
             set({ step });
           }
         },
-        
+
         nextStep: () => {
           const { step } = get();
           if (step < 3) {
             set({ step: step + 1 });
           }
         },
-        
+
         prevStep: () => {
           const { step } = get();
           if (step > 0) {
             set({ step: step - 1 });
           }
         },
-        
+
         setSearchQuery: (query: string) => {
           set({ searchQuery: query, searchOffset: 0 });
         },
-        
+
         setSearchOffset: (offset: number) => {
           set({ searchOffset: offset });
         },
-        
+
         clearSearchState: () => {
           set({
             searchQuery: undefined,
@@ -508,7 +512,7 @@ const createArtistCorrectionStore = (artistId: string) =>
             selectedArtistMbid: undefined,
           });
         },
-        
+
         // Atomic: Select result and advance to preview
         selectResult: (mbid: string) => {
           set({
@@ -516,37 +520,39 @@ const createArtistCorrectionStore = (artistId: string) =>
             step: 2,
           });
         },
-        
+
         // Atomic: Set preview with default selections
         setPreviewLoaded: (preview: ArtistCorrectionPreview) => {
-          const { createDefaultUISelections } = require('@/components/admin/correction/artist/apply/ArtistApplyView');
+          const {
+            createDefaultUISelections,
+          } = require('@/components/admin/correction/artist/apply/ArtistApplyView');
           set({
             previewData: preview,
             applySelections: createDefaultUISelections(preview),
             shouldEnrich: false,
           });
         },
-        
+
         setApplySelections: (selections: UIArtistFieldSelections) => {
           set({ applySelections: selections });
         },
-        
+
         setShouldEnrich: (value: boolean) => {
           set({ shouldEnrich: value });
         },
-        
+
         setShowAppliedState: (value: boolean) => {
           set({ showAppliedState: value });
         },
-        
+
         setPendingAction: (action: (() => void) | null) => {
           set({ pendingAction: action });
         },
-        
+
         setShowUnsavedDialog: (show: boolean) => {
           set({ showUnsavedDialog: show });
         },
-        
+
         confirmUnsavedDiscard: () => {
           const { pendingAction } = get();
           if (pendingAction) {
@@ -557,14 +563,14 @@ const createArtistCorrectionStore = (artistId: string) =>
             showUnsavedDialog: false,
           });
         },
-        
+
         cancelUnsavedDialog: () => {
           set({
             pendingAction: null,
             showUnsavedDialog: false,
           });
         },
-        
+
         clearState: () => {
           set(DEFAULT_STATE);
         },
@@ -590,14 +596,19 @@ const createArtistCorrectionStore = (artistId: string) =>
 // Store Cache
 // ============================================================================
 
-const storeCache = new Map<string, UseBoundStore<StoreApi<ArtistCorrectionStore>>>();
+const storeCache = new Map<
+  string,
+  UseBoundStore<StoreApi<ArtistCorrectionStore>>
+>();
 
-export function getArtistCorrectionStore(artistId: string): UseBoundStore<StoreApi<ArtistCorrectionStore>> {
+export function getArtistCorrectionStore(
+  artistId: string
+): UseBoundStore<StoreApi<ArtistCorrectionStore>> {
   const cached = storeCache.get(artistId);
   if (cached) {
     return cached;
   }
-  
+
   const store = createArtistCorrectionStore(artistId);
   storeCache.set(artistId, store);
   return store;
@@ -609,7 +620,7 @@ export function clearArtistCorrectionStoreCache(artistId: string): void {
     store.getState().clearState();
     storeCache.delete(artistId);
   }
-  
+
   sessionStorage.removeItem(`artist-correction-modal-${artistId}`);
 }
 
@@ -644,33 +655,36 @@ export function isManualEditMode(state: ArtistCorrectionState): boolean {
 // ArtistCorrectionModal.tsx - Store initialization
 'use client';
 
-import { getArtistCorrectionStore, clearArtistCorrectionStoreCache } from '@/stores/useArtistCorrectionStore';
+import {
+  getArtistCorrectionStore,
+  clearArtistCorrectionStoreCache,
+} from '@/stores/useArtistCorrectionStore';
 
 export function ArtistCorrectionModal({ artist, onClose }: Props) {
   const artistId = artist?.id ?? null;
-  
+
   // Get store instance
   const store = artistId ? getArtistCorrectionStore(artistId) : null;
-  const step = store?.((s) => s.step) ?? 0;
-  
+  const step = store?.(s => s.step) ?? 0;
+
   const handleClose = () => {
     if (artistId) {
       clearArtistCorrectionStoreCache(artistId);
     }
     onClose();
   };
-  
+
   // ...rest
 }
 
 // ArtistSearchView.tsx - Zero props except artist
 export function ArtistSearchView({ artist }: { artist: Artist }) {
   const store = getArtistCorrectionStore(artist.id);
-  
-  const searchQuery = store((s) => s.searchQuery);
-  const setSearchQuery = store((s) => s.setSearchQuery);
-  const selectResult = store((s) => s.selectResult);
-  
+
+  const searchQuery = store(s => s.searchQuery);
+  const setSearchQuery = store(s => s.setSearchQuery);
+  const selectResult = store(s => s.selectResult);
+
   // ...rest
 }
 
@@ -679,30 +693,30 @@ export function ArtistPreviewView() {
   // Get artistId from URL param or context
   const params = useParams();
   const artistId = params.artistId as string;
-  
+
   const store = getArtistCorrectionStore(artistId);
-  const selectedMbid = store((s) => s.selectedArtistMbid);
-  const setPreviewLoaded = store((s) => s.setPreviewLoaded);
-  
+  const selectedMbid = store(s => s.selectedArtistMbid);
+  const setPreviewLoaded = store(s => s.setPreviewLoaded);
+
   // ...rest
 }
 
 // ArtistApplyView.tsx - Only isApplying + error props
-export function ArtistApplyView({ 
-  isApplying, 
-  error 
-}: { 
-  isApplying: boolean; 
-  error: Error | null; 
+export function ArtistApplyView({
+  isApplying,
+  error,
+}: {
+  isApplying: boolean;
+  error: Error | null;
 }) {
   const params = useParams();
   const artistId = params.artistId as string;
-  
+
   const store = getArtistCorrectionStore(artistId);
-  const previewData = store((s) => s.previewData);
-  const applySelections = store((s) => s.applySelections);
-  const setApplySelections = store((s) => s.setApplySelections);
-  
+  const previewData = store(s => s.previewData);
+  const applySelections = store(s => s.applySelections);
+  const setApplySelections = store(s => s.setApplySelections);
+
   // ...rest
 }
 ```
@@ -711,14 +725,14 @@ export function ArtistApplyView({
 
 ### State Shape Comparison
 
-| Aspect             | Album Correction                                  | Artist Correction                                   |
-| ------------------ | ------------------------------------------------- | --------------------------------------------------- |
-| **Mode**           | Dual: 'search' (4 steps), 'manual' (3 steps)     | Single: 'search' only (4 steps) in Phase 14         |
-| **Search Query**   | `{ albumTitle: string, artistName: string }`      | `string` (artist name only)                         |
-| **Selected MBID**  | `selectedMbid: string` (release group)            | `selectedArtistMbid: string`                        |
-| **Preview Type**   | `CorrectionPreview` (album + tracks)              | `ArtistCorrectionPreview` (artist + album count)    |
-| **Apply Selections**| `UIFieldSelections` (metadata, tracks, external) | `UIArtistFieldSelections` (metadata, externalIds)   |
-| **Manual Edit**    | Fully implemented with ManualEditFieldState       | Type defined but NOT implemented in Phase 14        |
+| Aspect               | Album Correction                                 | Artist Correction                                 |
+| -------------------- | ------------------------------------------------ | ------------------------------------------------- |
+| **Mode**             | Dual: 'search' (4 steps), 'manual' (3 steps)     | Single: 'search' only (4 steps) in Phase 14       |
+| **Search Query**     | `{ albumTitle: string, artistName: string }`     | `string` (artist name only)                       |
+| **Selected MBID**    | `selectedMbid: string` (release group)           | `selectedArtistMbid: string`                      |
+| **Preview Type**     | `CorrectionPreview` (album + tracks)             | `ArtistCorrectionPreview` (artist + album count)  |
+| **Apply Selections** | `UIFieldSelections` (metadata, tracks, external) | `UIArtistFieldSelections` (metadata, externalIds) |
+| **Manual Edit**      | Fully implemented with ManualEditFieldState      | Type defined but NOT implemented in Phase 14      |
 
 ### Step Definitions
 
@@ -800,12 +814,12 @@ interface ArtistApplyViewProps {
 
 ## State of the Art
 
-| Old Approach                           | Current Approach                     | When Changed          | Impact                                        |
-| -------------------------------------- | ------------------------------------ | --------------------- | --------------------------------------------- |
-| Custom hook with manual sessionStorage | Zustand persist middleware           | Phase 14 (this phase) | Consistent with album store (Phase 13)        |
-| Props drilling through 3 layers        | Direct store subscription            | Phase 14              | Zero prop changes in child components         |
-| Multiple useState in modal             | Single store with atomic actions     | Phase 14              | No intermediate states, easier debugging      |
-| Separate album and artist patterns     | Unified correction store pattern     | Phase 14              | Easier maintenance, consistent developer UX   |
+| Old Approach                           | Current Approach                 | When Changed          | Impact                                      |
+| -------------------------------------- | -------------------------------- | --------------------- | ------------------------------------------- |
+| Custom hook with manual sessionStorage | Zustand persist middleware       | Phase 14 (this phase) | Consistent with album store (Phase 13)      |
+| Props drilling through 3 layers        | Direct store subscription        | Phase 14              | Zero prop changes in child components       |
+| Multiple useState in modal             | Single store with atomic actions | Phase 14              | No intermediate states, easier debugging    |
+| Separate album and artist patterns     | Unified correction store pattern | Phase 14              | Easier maintenance, consistent developer UX |
 
 **Deprecated/outdated:**
 

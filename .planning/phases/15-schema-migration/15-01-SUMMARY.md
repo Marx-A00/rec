@@ -21,9 +21,9 @@ key_files:
   modified:
     - prisma/schema.prisma
 decisions:
-  - "Field type: VARCHAR(100) matches existing jobId type"
-  - "Index strategy: Simple single-column index for parentJobId lookups"
-  - "Nullability: Field is nullable since existing logs have no parent"
+  - 'Field type: VARCHAR(100) matches existing jobId type'
+  - 'Index strategy: Simple single-column index for parentJobId lookups'
+  - 'Nullability: Field is nullable since existing logs have no parent'
 metrics:
   duration: 3m
   completed: 2026-02-06
@@ -42,10 +42,12 @@ metrics:
 ## Key Changes
 
 **prisma/schema.prisma**
+
 - Added `parentJobId String? @map("parent_job_id") @db.VarChar(100)` after `jobId` field
 - Added `@@index([parentJobId])` to EnrichmentLog model
 
 **Migration SQL**
+
 ```sql
 ALTER TABLE "enrichment_logs" ADD COLUMN "parent_job_id" VARCHAR(100);
 CREATE INDEX "enrichment_logs_parent_job_id_idx" ON "enrichment_logs"("parent_job_id");
@@ -70,6 +72,7 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 Ready for Phase 16 (Logging Updates):
+
 - EnrichmentLog now has parentJobId field
 - Prisma client regenerated with new field
 - Enrichment services can now pass parentJobId when creating child logs

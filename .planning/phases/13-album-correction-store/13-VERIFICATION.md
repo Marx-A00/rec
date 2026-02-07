@@ -33,11 +33,13 @@ human_verification:
 ### Observable Truths
 
 **Truth 1: Admin opens correction modal and sees same UI as before (zero visual changes)**
+
 - Status: ✓ VERIFIED (pending human)
 - Evidence: No component render logic changed, only state source (useState → Zustand). Same JSX, same styles, same event handlers.
 - Human needed: Visual appearance requires human confirmation
 
 **Truth 2: Search query persists across page navigations via sessionStorage keyed by albumId**
+
 - Status: ✓ VERIFIED (pending human)
 - Evidence:
   - Store uses persist middleware with sessionStorage: Line 373 `storage: createJSONStorage(() => sessionStorage)`
@@ -46,6 +48,7 @@ human_verification:
 - Human needed: Navigation persistence requires browser test
 
 **Truth 3: Selected result and preview data persist across page navigations**
+
 - Status: ✓ VERIFIED (pending human)
 - Evidence:
   - selectedMbid in partialize list (Line 380)
@@ -54,6 +57,7 @@ human_verification:
 - Human needed: Navigation behavior requires browser test
 
 **Truth 4: Manual edit mode and unsaved changes state persist correctly**
+
 - Status: ✓ VERIFIED (pending human)
 - Evidence:
   - manualEditState in partialize list (Line 381)
@@ -62,6 +66,7 @@ human_verification:
 - Human needed: Navigation with unsaved changes requires browser test
 
 **Truth 5: Step navigation works identically (mode switches, preview loading, atomic transitions)**
+
 - Status: ✓ VERIFIED (pending human)
 - Evidence:
   - Atomic actions use single set() call: setPreviewLoaded (Lines 298-304), selectResult (Lines 262-269)
@@ -70,6 +75,7 @@ human_verification:
 - Human needed: Smoothness of transitions requires human observation
 
 **Truth 6: Child components receive minimal props**
+
 - Status: ⚠️ VERIFIED (with clarification)
 - Evidence:
   - SearchView: `{ album }` only (Line 23-26 of SearchView.tsx)
@@ -79,12 +85,14 @@ human_verification:
 - Clarification: Components need albumId to access correct store instance via `getCorrectionStore(albumId)`. This is a necessary architectural prop, not domain data. ROADMAP criteria "zero props" for PreviewView is technically incorrect but spirit is met (minimal props - just store key).
 
 **Truth 7: useCorrectionModalState.ts deleted with zero remaining imports**
+
 - Status: ✓ VERIFIED
 - Evidence:
   - File deletion confirmed: `ls src/hooks/useCorrectionModalState.ts` returns exit code 1
   - Zero imports found: `grep -r "useCorrectionModalState" src/` returns no matches
 
 **Truth 8: Zero any types introduced**
+
 - Status: ✓ VERIFIED
 - Evidence:
   - useCorrectionStore.ts: No `any` types (checked with pattern `:\s*any\b|<any>|Array<any>`)
@@ -99,6 +107,7 @@ human_verification:
 ### Required Artifacts
 
 **Artifact: src/stores/useCorrectionStore.ts**
+
 - Expected: Zustand store factory with persist middleware, atomic actions, derived selectors, cache management
 - Status: ✓ VERIFIED
 - Details:
@@ -108,6 +117,7 @@ human_verification:
   - Contains: createCorrectionStore factory (Line 213), persist middleware (Line 215), partialize (Line 374), storeCache Map (Line 397)
 
 **Artifact: src/components/admin/correction/CorrectionModal.tsx**
+
 - Expected: Refactored modal shell using Zustand store instead of useState/hook
 - Status: ✓ VERIFIED
 - Details:
@@ -117,6 +127,7 @@ human_verification:
   - No local useState for managed state (previewData, applySelections, step, mode, etc.)
 
 **Artifact: src/components/admin/correction/search/SearchView.tsx**
+
 - Expected: Search view reading state from store with album-only prop
 - Status: ✓ VERIFIED
 - Details:
@@ -125,6 +136,7 @@ human_verification:
   - Wired: Uses getCorrectionStore (Line 45), reads searchQuery/searchOffset from store (Lines 46-47), calls store actions (Lines 50-53)
 
 **Artifact: src/components/admin/correction/preview/PreviewView.tsx**
+
 - Expected: Preview view reading albumId and selectedMbid from store
 - Status: ✓ VERIFIED
 - Details:
@@ -134,6 +146,7 @@ human_verification:
   - lastPreviewKeyRef guard preserved (prevents useEffect infinite loops)
 
 **Artifact: src/components/admin/correction/apply/ApplyView.tsx**
+
 - Expected: Apply view reading preview, selections, enrichment from store
 - Status: ✓ VERIFIED
 - Details:
@@ -142,6 +155,7 @@ human_verification:
   - Wired: Uses getCorrectionStore (Line 34), reads preview/selections/shouldEnrich (Lines 35-37), calls setApplySelections (Line 39)
 
 **Artifact: src/components/admin/correction/manual/ManualEditView.tsx**
+
 - Expected: Manual edit view reading manualEditState from store
 - Status: ✓ VERIFIED
 - Details:
@@ -151,6 +165,7 @@ human_verification:
   - Internal form state (formState, errors, showValidationBanner) correctly stays as local useState (per ACHILD-06 requirement)
 
 **Artifact: src/hooks/useCorrectionModalState.ts**
+
 - Expected: DELETED
 - Status: ✓ VERIFIED
 - Details: File does not exist, zero imports found across codebase
@@ -158,36 +173,43 @@ human_verification:
 ### Key Link Verification
 
 **Link 1: useCorrectionStore.ts → zustand/middleware**
+
 - Pattern: persist + createJSONStorage import
 - Status: ✓ WIRED
 - Evidence: Line 16 `import { persist, createJSONStorage } from 'zustand/middleware'`
 
 **Link 2: useCorrectionStore.ts → sessionStorage**
+
 - Pattern: createJSONStorage(() => sessionStorage)
 - Status: ✓ WIRED
 - Evidence: Line 373 `storage: createJSONStorage(() => sessionStorage)`
 
 **Link 3: CorrectionModal.tsx → useCorrectionStore.ts**
+
 - Pattern: getCorrectionStore and clearCorrectionStoreCache imports
 - Status: ✓ WIRED
 - Evidence: Lines 16-17 import, Line 93 getCorrectionStore(albumId) call, Lines 198/237/331/343 clearCorrectionStoreCache calls
 
 **Link 4: SearchView.tsx → useCorrectionStore.ts**
+
 - Pattern: getCorrectionStore import for reading search state
 - Status: ✓ WIRED
 - Evidence: Line 18 import, Line 45 getCorrectionStore(album.id), Lines 46-47 state reads, Lines 50-53 action calls
 
 **Link 5: PreviewView.tsx → useCorrectionStore.ts**
+
 - Pattern: getCorrectionStore for albumId and selectedMbid
 - Status: ✓ WIRED
 - Evidence: Line 18 import, Line 58 getCorrectionStore(albumId), Lines 59-60 state/action access
 
 **Link 6: ApplyView.tsx → useCorrectionStore.ts**
+
 - Pattern: getCorrectionStore for preview, selections, enrichment
 - Status: ✓ WIRED
 - Evidence: Line 17 import, Line 34 getCorrectionStore(albumId), Lines 35-39 state/action access
 
 **Link 7: ManualEditView.tsx → useCorrectionStore.ts**
+
 - Pattern: getCorrectionStore for manualEditState and actions
 - Status: ✓ WIRED
 - Evidence: Line 19 import, Line 44 getCorrectionStore(album.id), Lines 45+ state/action access
@@ -205,11 +227,13 @@ human_verification:
 ### Human Verification Required
 
 **1. Visual Appearance - Zero UI Changes**
+
 - Test: Open album correction modal, interact with all steps (search, preview, apply, manual edit)
 - Expected: UI looks identical to before Phase 13, same layout, controls, styling
 - Why human: Visual appearance and layout cannot be verified programmatically
 
 **2. sessionStorage Persistence - Search State**
+
 - Test:
   1. Open correction modal for album A
   2. Enter search query "Beatles"
@@ -219,6 +243,7 @@ human_verification:
 - Why human: Browser navigation and sessionStorage interaction requires manual testing
 
 **3. sessionStorage Persistence - Selected Result**
+
 - Test:
   1. Search for release, select a result (highlight it)
   2. Navigate away from page
@@ -227,6 +252,7 @@ human_verification:
 - Why human: Persistence across navigation requires browser test
 
 **4. sessionStorage Persistence - Manual Edit State**
+
 - Test:
   1. Enter manual edit mode
   2. Fill in some fields (title, artist)
@@ -236,11 +262,13 @@ human_verification:
 - Why human: Form state persistence requires browser test
 
 **5. Atomic State Transitions**
+
 - Test: Complete full workflow: search → select result → preview loads → apply
 - Expected: No flickering, no intermediate states visible, smooth transitions
 - Why human: Smoothness and absence of visual glitches require human observation
 
 **6. Store Cache Cleanup**
+
 - Test:
   1. Open modal for album A
   2. Close modal
@@ -249,6 +277,7 @@ human_verification:
 - Why human: sessionStorage inspection requires browser dev tools
 
 **7. Multi-Album Store Isolation**
+
 - Test:
   1. Open modal for album A, search "Beatles"
   2. Close modal, open modal for album B, search "Radiohead"
