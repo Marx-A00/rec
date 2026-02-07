@@ -47,7 +47,7 @@ export function EnrichmentTimelineModal({
             {childLogs.length > 0 && ` (${childLogs.length} child jobs)`}
           </DialogDescription>
         </DialogHeader>
-        <div className='flex-1 overflow-y-auto pr-2'>
+        <div className='flex-1 overflow-y-auto pr-2 custom-scrollbar'>
           <EnrichmentTimeline
             logs={timelineLogs}
             variant='default'

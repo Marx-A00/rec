@@ -294,7 +294,7 @@ function ExpandableLogRow({
       {isExpanded && (
         <TableRow className='border-zinc-800 bg-zinc-900/80 hover:bg-zinc-900/80'>
           <TableCell colSpan={10} className='p-0'>
-            <div className='p-4 max-h-96 overflow-y-auto'>
+            <div className='p-4 max-h-96 overflow-y-auto custom-scrollbar'>
               {loadingChildren ? (
                 <SkeletonTimeline itemCount={3} />
               ) : childrenError ? (
