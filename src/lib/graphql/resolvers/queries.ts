@@ -550,7 +550,9 @@ export const queryResolvers: QueryResolvers = {
 
       const album = await prisma.album.findUnique({ where: { id } });
       if (!album) return null;
-      return { id: album.id } as ResolversTypes['Album'];
+      // Return full album object - field resolvers will handle relationships (artists, tracks)
+      // but scalar fields (title, genres, etc.) come directly from this object
+      return album as ResolversTypes['Album'];
     } catch (error) {
       throw new GraphQLError(`Failed to fetch album: ${error}`);
     }

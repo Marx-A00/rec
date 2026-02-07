@@ -54,6 +54,7 @@ type Album {
   title: String!
   releaseDate: DateTime
   releaseType: String
+  genres: [String!]
   trackCount: Int
   durationMs: Int
   coverArtUrl: String

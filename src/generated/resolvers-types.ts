@@ -104,6 +104,7 @@ export type Album = {
   durationMs?: Maybe<Scalars['Int']['output']>;
   enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
+  genres?: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
   label?: Maybe<Scalars['String']['output']>;
@@ -3197,6 +3198,11 @@ export type AlbumResolvers<
   >;
   enrichmentStatus?: Resolver<
     Maybe<ResolversTypes['EnrichmentStatus']>,
+    ParentType,
+    ContextType
+  >;
+  genres?: Resolver<
+    Maybe<Array<ResolversTypes['String']>>,
     ParentType,
     ContextType
   >;

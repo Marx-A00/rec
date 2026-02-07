@@ -22,6 +22,7 @@ query GetAlbumDetailsAdmin($id: UUID!) {
     title
     releaseDate
     releaseType
+    genres
     trackCount
     durationMs
     coverArtUrl

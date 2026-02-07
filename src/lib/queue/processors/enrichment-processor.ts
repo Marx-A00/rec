@@ -437,10 +437,10 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
       try {
         sourcesAttempted.push('MUSICBRAINZ');
         apiCallCount++;
-        const mbData = await musicBrainzService.getReleaseGroup(
+        const mbData = (await musicBrainzService.getReleaseGroup(
           album.musicbrainzId,
-          ['artists', 'releases']
-        );
+          ['artists', 'releases', 'tags']
+        )) as MusicBrainzReleaseGroupData;
         if (mbData) {
           const updateResult = await updateAlbumFromMusicBrainz(album, mbData);
           enrichmentResult = updateResult.updateData;
@@ -451,6 +451,8 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
           if (mbData.title) fieldsEnriched.push('title');
           if (mbData['first-release-date']) fieldsEnriched.push('releaseDate');
           if (mbData['artist-credit']) fieldsEnriched.push('artists');
+          if (mbData.tags && mbData.tags.length > 0)
+            fieldsEnriched.push('genres');
 
           // Fetch tracks for albums that already have MusicBrainz IDs
           if (mbData.releases && mbData.releases.length > 0) {
@@ -635,10 +637,10 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
         // Process the match we found (either release-group or specific release)
         if (bestMatch && bestMatch.score > 0.8) {
           apiCallCount++;
-          const mbData = await musicBrainzService.getReleaseGroup(
+          const mbData = (await musicBrainzService.getReleaseGroup(
             bestMatch.result.id,
             ['artists', 'tags', 'releases']
-          );
+          )) as MusicBrainzReleaseGroupData;
           if (mbData) {
             const updateResult = await updateAlbumFromMusicBrainz(
               album,
@@ -652,6 +654,8 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
             if (mbData['first-release-date'])
               fieldsEnriched.push('releaseDate');
             if (mbData['artist-credit']) fieldsEnriched.push('artists');
+            if (mbData.tags && mbData.tags.length > 0)
+              fieldsEnriched.push('genres');
 
             // Fetch tracks for this album
             if (mbData.releases && mbData.releases.length > 0) {
@@ -712,10 +716,10 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
             // Update album with release-group data if available
             if (releaseMatch.releaseGroup?.id) {
               apiCallCount++;
-              const mbData = await musicBrainzService.getReleaseGroup(
+              const mbData = (await musicBrainzService.getReleaseGroup(
                 releaseMatch.releaseGroup.id,
                 ['artists', 'tags']
-              );
+              )) as MusicBrainzReleaseGroupData;
               if (mbData) {
                 const updateResult = await updateAlbumFromMusicBrainz(
                   album,
@@ -729,6 +733,8 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
                 if (mbData['first-release-date'])
                   fieldsEnriched.push('releaseDate');
                 if (mbData['artist-credit']) fieldsEnriched.push('artists');
+                if (mbData.tags && mbData.tags.length > 0)
+                  fieldsEnriched.push('genres');
               }
             }
 

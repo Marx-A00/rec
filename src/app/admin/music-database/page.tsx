@@ -1016,6 +1016,26 @@ export default function MusicDatabasePage() {
             </div>
           </div>
           <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>Genres</div>
+            <div className='text-sm text-zinc-300'>
+              {albumDetails.genres && albumDetails.genres.length > 0 ? (
+                <div className='flex flex-wrap gap-1'>
+                  {albumDetails.genres.map((genre: string) => (
+                    <Badge
+                      key={genre}
+                      variant='secondary'
+                      className='text-xs bg-zinc-700 text-zinc-300'
+                    >
+                      {genre}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                'N/A'
+              )}
+            </div>
+          </div>
+          <div>
             <div className='text-xs text-zinc-500 uppercase mb-1'>Barcode</div>
             <div className='text-sm text-zinc-300 font-mono'>
               {albumDetails.barcode || 'N/A'}

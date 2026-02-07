@@ -130,6 +130,7 @@ export type Album = {
   durationMs?: Maybe<Scalars['Int']['output']>;
   enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
+  genres?: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
   label?: Maybe<Scalars['String']['output']>;
@@ -2991,6 +2992,7 @@ export type GetAlbumDetailsAdminQuery = {
     title: string;
     releaseDate?: Date | null;
     releaseType?: string | null;
+    genres?: Array<string> | null;
     trackCount?: number | null;
     durationMs?: number | null;
     coverArtUrl?: string | null;
@@ -6146,6 +6148,7 @@ export const GetAlbumDetailsAdminDocument = `
     title
     releaseDate
     releaseType
+    genres
     trackCount
     durationMs
     coverArtUrl
