@@ -1,8 +1,11 @@
 // src/lib/queue/processors/discogs-processor.ts
 // Discogs API search and fetch handlers
 
+import { Job } from 'bullmq';
+
 import { prisma } from '@/lib/prisma';
 
+import { createEnrichmentLogger } from '../../enrichment/enrichment-logger';
 import type {
   DiscogsSearchArtistJobData,
   DiscogsGetArtistJobData,
@@ -20,8 +23,13 @@ import { calculateStringSimilarity } from './utils';
  * Search Discogs for artist by name when MusicBrainz doesn't provide Discogs ID
  */
 export async function handleDiscogsSearchArtist(
-  data: DiscogsSearchArtistJobData
-): Promise<any> {
+  job: Job<DiscogsSearchArtistJobData>
+): Promise<unknown> {
+  const data = job.data;
+  const rootJobId = data.parentJobId || job.id;
+  const startTime = Date.now();
+  const enrichmentLogger = createEnrichmentLogger(prisma);
+
   console.log(`🔍 Searching Discogs for artist: "${data.artistName}"`);
 
   try {
@@ -43,6 +51,27 @@ export async function handleDiscogsSearchArtist(
 
     if (!searchResults.results || searchResults.results.length === 0) {
       console.log(`❌ No Discogs results found for "${data.artistName}"`);
+
+      await enrichmentLogger.logEnrichment({
+        entityType: 'ARTIST',
+        entityId: data.artistId,
+        operation: JOB_TYPES.DISCOGS_SEARCH_ARTIST,
+        sources: ['DISCOGS'],
+        status: 'NO_DATA_AVAILABLE',
+        reason: 'No Discogs results found for artist',
+        fieldsEnriched: [],
+        durationMs: Date.now() - startTime,
+        apiCallCount: 1,
+        metadata: {
+          searchQuery: data.artistName,
+          resultsCount: 0,
+        },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
+
       return {
         artistId: data.artistId,
         action: 'no_results',
@@ -62,6 +91,27 @@ export async function handleDiscogsSearchArtist(
 
     if (!bestMatch) {
       console.log(`❌ No confident match found for "${data.artistName}"`);
+
+      await enrichmentLogger.logEnrichment({
+        entityType: 'ARTIST',
+        entityId: data.artistId,
+        operation: JOB_TYPES.DISCOGS_SEARCH_ARTIST,
+        sources: ['DISCOGS'],
+        status: 'NO_DATA_AVAILABLE',
+        reason: 'No confident match found (confidence < 85%)',
+        fieldsEnriched: [],
+        durationMs: Date.now() - startTime,
+        apiCallCount: 1,
+        metadata: {
+          searchQuery: data.artistName,
+          resultsCount: searchResults.results.length,
+        },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
+
       return {
         artistId: data.artistId,
         action: 'no_confident_match',
@@ -93,6 +143,7 @@ export async function handleDiscogsSearchArtist(
         artistId: data.artistId,
         discogsId: String(discogsId),
         requestId: data.requestId,
+        parentJobId: rootJobId,
       },
       {
         priority: 6, // Medium-low priority
@@ -103,6 +154,31 @@ export async function handleDiscogsSearchArtist(
 
     console.log(`📤 Queued Discogs fetch for artist ${data.artistId}`);
 
+    await enrichmentLogger.logEnrichment({
+      entityType: 'ARTIST',
+      entityId: data.artistId,
+      operation: JOB_TYPES.DISCOGS_SEARCH_ARTIST,
+      sources: ['DISCOGS'],
+      status: 'SUCCESS',
+      reason: 'Found Discogs artist match and queued fetch job',
+      fieldsEnriched: ['discogsId'],
+      dataQualityBefore: 'LOW',
+      dataQualityAfter: 'MEDIUM',
+      durationMs: Date.now() - startTime,
+      apiCallCount: 1,
+      metadata: {
+        searchQuery: data.artistName,
+        discogsId: String(discogsId),
+        discogsTitle: bestMatch.result.title,
+        matchConfidence: bestMatch.score,
+        resultsCount: searchResults.results.length,
+      },
+      jobId: job.id,
+      parentJobId: data.parentJobId || null,
+      isRootJob: !data.parentJobId,
+      triggeredBy: 'system',
+    });
+
     return {
       artistId: data.artistId,
       action: 'found_and_queued',
@@ -112,6 +188,26 @@ export async function handleDiscogsSearchArtist(
     };
   } catch (error) {
     console.error(`❌ Discogs search failed for "${data.artistName}":`, error);
+
+    await enrichmentLogger.logEnrichment({
+      entityType: 'ARTIST',
+      entityId: data.artistId,
+      operation: JOB_TYPES.DISCOGS_SEARCH_ARTIST,
+      sources: ['DISCOGS'],
+      status: 'FAILED',
+      reason: 'Discogs API error',
+      fieldsEnriched: [],
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorCode: 'DISCOGS_API_ERROR',
+      durationMs: Date.now() - startTime,
+      apiCallCount: 1,
+      metadata: { searchQuery: data.artistName },
+      jobId: job.id,
+      parentJobId: data.parentJobId || null,
+      isRootJob: !data.parentJobId,
+      triggeredBy: 'system',
+    });
+
     throw error;
   }
 }
@@ -124,8 +220,13 @@ export async function handleDiscogsSearchArtist(
  * Fetch artist details and image from Discogs using Discogs ID
  */
 export async function handleDiscogsGetArtist(
-  data: DiscogsGetArtistJobData
-): Promise<any> {
+  job: Job<DiscogsGetArtistJobData>
+): Promise<unknown> {
+  const data = job.data;
+  const rootJobId = data.parentJobId || job.id;
+  const startTime = Date.now();
+  const enrichmentLogger = createEnrichmentLogger(prisma);
+
   console.log(`🎤 Fetching Discogs artist details for ID: ${data.discogsId}`);
 
   try {
@@ -140,6 +241,27 @@ export async function handleDiscogsGetArtist(
 
     if (!discogsArtist.imageUrl) {
       console.log(`⚠️ No image found for Discogs artist ${data.discogsId}`);
+
+      await enrichmentLogger.logEnrichment({
+        entityType: 'ARTIST',
+        entityId: data.artistId,
+        operation: JOB_TYPES.DISCOGS_GET_ARTIST,
+        sources: ['DISCOGS'],
+        status: 'PARTIAL_SUCCESS',
+        reason: 'Discogs artist found but no image available',
+        fieldsEnriched: [],
+        durationMs: Date.now() - startTime,
+        apiCallCount: 1,
+        metadata: {
+          discogsId: data.discogsId,
+          imageFound: false,
+        },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
+
       return {
         artistId: data.artistId,
         action: 'no_image',
@@ -163,6 +285,7 @@ export async function handleDiscogsGetArtist(
     const cacheJobData: CacheArtistImageJobData = {
       artistId: data.artistId,
       requestId: `discogs-cache-${data.artistId}`,
+      parentJobId: rootJobId,
     };
 
     await queue.addJob(JOB_TYPES.CACHE_ARTIST_IMAGE, cacheJobData, {
@@ -172,6 +295,29 @@ export async function handleDiscogsGetArtist(
     });
 
     console.log(`📤 Queued Cloudflare caching for artist ${data.artistId}`);
+
+    await enrichmentLogger.logEnrichment({
+      entityType: 'ARTIST',
+      entityId: data.artistId,
+      operation: JOB_TYPES.DISCOGS_GET_ARTIST,
+      sources: ['DISCOGS'],
+      status: 'SUCCESS',
+      reason: 'Fetched Discogs artist details and queued image caching',
+      fieldsEnriched: ['imageUrl'],
+      dataQualityBefore: 'LOW',
+      dataQualityAfter: 'MEDIUM',
+      durationMs: Date.now() - startTime,
+      apiCallCount: 1,
+      metadata: {
+        discogsId: data.discogsId,
+        imageUrl: discogsArtist.imageUrl,
+        imageFound: true,
+      },
+      jobId: job.id,
+      parentJobId: data.parentJobId || null,
+      isRootJob: !data.parentJobId,
+      triggeredBy: 'system',
+    });
 
     return {
       artistId: data.artistId,
@@ -184,6 +330,26 @@ export async function handleDiscogsGetArtist(
       `❌ Failed to fetch Discogs artist ${data.discogsId}:`,
       error
     );
+
+    await enrichmentLogger.logEnrichment({
+      entityType: 'ARTIST',
+      entityId: data.artistId,
+      operation: JOB_TYPES.DISCOGS_GET_ARTIST,
+      sources: ['DISCOGS'],
+      status: 'FAILED',
+      reason: 'Failed to fetch Discogs artist details',
+      fieldsEnriched: [],
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorCode: 'DISCOGS_FETCH_ERROR',
+      durationMs: Date.now() - startTime,
+      apiCallCount: 1,
+      metadata: { discogsId: data.discogsId },
+      jobId: job.id,
+      parentJobId: data.parentJobId || null,
+      isRootJob: !data.parentJobId,
+      triggeredBy: 'system',
+    });
+
     throw error;
   }
 }
