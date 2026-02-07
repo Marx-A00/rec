@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 ## Current Position
 
 Phase: 16 (Job Linking)
-Plan: 5/6
+Plan: 3/6
 Status: In progress
-Last activity: 2026-02-07 — Completed 16-05-PLAN.md
+Last activity: 2026-02-07 — Completed 16-03-PLAN.md
 
-Progress: █████████░░░░░░░░░░░ 5/6 phases complete (15, 16 partial, 17, 18, 19)
+Progress: ████████░░░░░░░░░░░░ 5/6 phases complete (15, 16 partial, 17, 18, 19)
 
 ## Performance Metrics
 
@@ -32,10 +32,10 @@ Progress: █████████░░░░░░░░░░░ 5/6 phase
 
 **Milestone v1.2 (In Progress):**
 - Phases complete: 4/6 (Phase 15, 17, 18, 19)
-- Plans complete: 13 (15-01, 16-01, 16-02, 16-05, 17-01, 17-02, 18-01, 18-02, 19-01, 19-02, 19-03)
-- Requirements: 16/20 (DATA-01-03, GQL-01-04, UI-01-03, TBL-01-04, LINK-06, LINK-07)
+- Plans complete: 11 (15-01, 16-01, 16-02, 16-03, 17-01, 17-02, 18-01, 18-02, 19-01, 19-02, 19-03)
+- Requirements: 14/20 (DATA-01-03, GQL-01-04, UI-01-03, TBL-01-04)
 
-**Total shipped:** 14 phases, 55 plans
+**Total shipped:** 14 phases, 53 plans
 
 ## Accumulated Context
 
@@ -64,7 +64,7 @@ Progress: █████████░░░░░░░░░░░ 5/6 phase
 - Migration: `20260206154227_add_parent_job_id`
 - Prisma client regenerated with new field
 
-### Phase 16 In Progress (5/6 plans)
+### Phase 16 In Progress (3/6 plans)
 
 - Plan 16-01 Complete:
   - Added `isRootJob` Boolean field to EnrichmentLog (default false)
@@ -78,11 +78,12 @@ Progress: █████████░░░░░░░░░░░ 5/6 phase
   - Processor index passes Job object to 10 handlers
   - Handlers: CHECK_*_ENRICHMENT (3), ENRICH_* (3), CACHE_* (2), DISCOGS_* (2)
 
-- Plan 16-05 Complete:
-  - handleCacheArtistImage logs 6 code paths with parentJobId/isRootJob
-  - handleCacheAlbumCoverArt logs 6 code paths with parentJobId/isRootJob
-  - Metadata includes before/after URLs, cloudflareImageId, entity names
-  - LINK-06 and LINK-07 requirements satisfied
+- Plan 16-03 Complete:
+  - All 6 enrichment handlers updated: signature (data: T) -> (job: Job<T>)
+  - Flat parent structure: rootJobId = data.parentJobId || job.id
+  - Propagates parentJobId to: ENRICH_ALBUM, ENRICH_ARTIST, ENRICH_TRACK, CHECK_ARTIST_ENRICHMENT, DISCOGS_SEARCH_ARTIST, CACHE_ARTIST_IMAGE
+  - All log entries include jobId, parentJobId, isRootJob
+  - SPOTIFY_TRACK_FALLBACK sets isRootJob: false explicitly
 
 ### Phase 17 Complete
 
@@ -132,10 +133,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed 16-05-PLAN.md
+Stopped at: Completed 16-03-PLAN.md
 Resume file: N/A
 
-**Next action:** Execute Phase 16-03 or 16-04 or 16-06 (Handler updates or Discogs logging)
+**Next action:** Execute Phase 16-04 (Discogs Handler Logging)
 
 Config:
 {
