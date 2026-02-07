@@ -465,14 +465,7 @@ type TimelineContentProps = React.HTMLAttributes<HTMLDivElement>;
 const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
   ({ className, ...props }, ref) => {
     return (
-      <div
-        ref={ref}
-        className={cn(
-          'mt-2 rounded-lg border bg-muted/30 p-3 text-sm',
-          className
-        )}
-        {...props}
-      />
+      <div ref={ref} className={cn('mt-2 text-sm', className)} {...props} />
     );
   }
 );
