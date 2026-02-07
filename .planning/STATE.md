@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 ## Current Position
 
 Phase: 16 (Job Linking)
-Plan: 1/6
+Plan: 2/6
 Status: In progress
-Last activity: 2026-02-07 — Completed 16-01-PLAN.md
+Last activity: 2026-02-07 — Completed 16-02-PLAN.md
 
 Progress: ████████░░░░░░░░░░░░ 5/6 phases complete (15, 16 partial, 17, 18, 19)
 
@@ -32,10 +32,10 @@ Progress: ████████░░░░░░░░░░░░ 5/6 phase
 
 **Milestone v1.2 (In Progress):**
 - Phases complete: 4/6 (Phase 15, 17, 18, 19)
-- Plans complete: 9 (15-01, 16-01, 17-01, 17-02, 18-01, 18-02, 19-01, 19-02, 19-03)
+- Plans complete: 10 (15-01, 16-01, 16-02, 17-01, 17-02, 18-01, 18-02, 19-01, 19-02, 19-03)
 - Requirements: 14/20 (DATA-01-03, GQL-01-04, UI-01-03, TBL-01-04)
 
-**Total shipped:** 14 phases, 51 plans
+**Total shipped:** 14 phases, 52 plans
 
 ## Accumulated Context
 
@@ -64,13 +64,19 @@ Progress: ████████░░░░░░░░░░░░ 5/6 phase
 - Migration: `20260206154227_add_parent_job_id`
 - Prisma client regenerated with new field
 
-### Phase 16 In Progress
+### Phase 16 In Progress (2/6 plans)
 
 - Plan 16-01 Complete:
   - Added `isRootJob` Boolean field to EnrichmentLog (default false)
   - Added `@@index([isRootJob, createdAt])` for efficient root queries
   - Added `parentJobId?: string` to 10 job data interfaces
   - Migration: `20260206182344_add_is_root_job`
+
+- Plan 16-02 Complete:
+  - Added parentJobId/isRootJob to EnrichmentLogData interface
+  - Auto-compute isRootJob from parentJobId when not provided
+  - Processor index passes Job object to 10 handlers
+  - Handlers: CHECK_*_ENRICHMENT (3), ENRICH_* (3), CACHE_* (2), DISCOGS_* (2)
 
 ### Phase 17 Complete
 
@@ -120,10 +126,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed 16-01-PLAN.md
+Stopped at: Completed 16-02-PLAN.md
 Resume file: N/A
 
-**Next action:** Execute Phase 16-02 (Enrichment Processor Parent Propagation)
+**Next action:** Execute Phase 16-03 (Handler Signature Updates)
 
 Config:
 {
