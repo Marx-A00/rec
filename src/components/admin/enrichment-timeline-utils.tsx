@@ -29,7 +29,14 @@ import { EnrichmentLogStatus, type EnrichmentLog } from '@/generated/graphql';
 export type TimelineStatus = 'completed' | 'in-progress' | 'pending';
 
 /** Color variants for timeline icons */
-export type TimelineIconColor = 'primary' | 'secondary' | 'muted' | 'accent';
+export type TimelineIconColor =
+  | 'primary'
+  | 'secondary'
+  | 'muted'
+  | 'accent'
+  | 'success'
+  | 'error'
+  | 'warning';
 
 // ============================================================================
 // Status Mapping
@@ -68,16 +75,16 @@ export function mapEnrichmentStatus(
 export function getStatusColor(status: EnrichmentLogStatus): TimelineIconColor {
   switch (status) {
     case EnrichmentLogStatus.Success:
-      return 'primary'; // green
+      return 'success'; // green
     case EnrichmentLogStatus.PartialSuccess:
-      return 'accent'; // yellow/amber
+      return 'warning'; // amber
     case EnrichmentLogStatus.Failed:
-      return 'secondary'; // red
+      return 'error'; // red
     case EnrichmentLogStatus.NoDataAvailable:
     case EnrichmentLogStatus.Skipped:
       return 'muted'; // gray
     case EnrichmentLogStatus.Preview:
-      return 'accent'; // blue-ish (preview state)
+      return 'accent'; // preview state
     default:
       return 'muted';
   }

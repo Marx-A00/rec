@@ -197,6 +197,12 @@ const timelineIconVariants = cva(
         muted: 'border-muted-foreground/50 bg-muted text-muted-foreground',
         accent:
           'border-amber-500 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+        success:
+          'border-emerald-500 bg-emerald-500 text-white dark:border-emerald-400 dark:bg-emerald-500',
+        error:
+          'border-red-500 bg-red-500 text-white dark:border-red-400 dark:bg-red-500',
+        warning:
+          'border-amber-500 bg-amber-500 text-white dark:border-amber-400 dark:bg-amber-500',
       },
       size: {
         sm: 'h-6 w-6',
@@ -211,7 +217,14 @@ const timelineIconVariants = cva(
   }
 );
 
-type TimelineIconColor = 'primary' | 'secondary' | 'muted' | 'accent';
+type TimelineIconColor =
+  | 'primary'
+  | 'secondary'
+  | 'muted'
+  | 'accent'
+  | 'success'
+  | 'error'
+  | 'warning';
 type TimelineIconSize = 'sm' | 'md' | 'lg';
 
 interface TimelineIconProps
