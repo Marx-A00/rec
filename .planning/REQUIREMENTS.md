@@ -15,13 +15,13 @@ Requirements for Job History Timeline UI milestone.
 
 ### Job Linking
 
-- [ ] **LINK-01**: `ENRICH_ALBUM` passes its `jobId` as `parentJobId` to child jobs
-- [ ] **LINK-02**: `ENRICH_ARTIST` passes its `jobId` as `parentJobId` to child jobs
-- [ ] **LINK-03**: `SPOTIFY_TRACK_FALLBACK` logs with parent's `jobId` as `parentJobId`
-- [ ] **LINK-04**: `DISCOGS_SEARCH_ARTIST` logs to EnrichmentLog with `parentJobId`
-- [ ] **LINK-05**: `DISCOGS_GET_ARTIST` logs to EnrichmentLog with `parentJobId`
-- [ ] **LINK-06**: `CACHE_ARTIST_IMAGE` logs to EnrichmentLog with `parentJobId`
-- [ ] **LINK-07**: `CACHE_ALBUM_COVER_ART` logs to EnrichmentLog with `parentJobId`
+- [x] **LINK-01**: `ENRICH_ALBUM` passes its `jobId` as `parentJobId` to child jobs
+- [x] **LINK-02**: `ENRICH_ARTIST` passes its `jobId` as `parentJobId` to child jobs
+- [x] **LINK-03**: `SPOTIFY_TRACK_FALLBACK` logs with parent's `jobId` as `parentJobId`
+- [x] **LINK-04**: `DISCOGS_SEARCH_ARTIST` logs to EnrichmentLog with `parentJobId`
+- [x] **LINK-05**: `DISCOGS_GET_ARTIST` logs to EnrichmentLog with `parentJobId`
+- [x] **LINK-06**: `CACHE_ARTIST_IMAGE` logs to EnrichmentLog with `parentJobId`
+- [x] **LINK-07**: `CACHE_ALBUM_COVER_ART` logs to EnrichmentLog with `parentJobId`
 
 ### GraphQL
 
@@ -45,8 +45,8 @@ Requirements for Job History Timeline UI milestone.
 
 ### Job History Tab
 
-- [ ] **JOB-01**: Job History tab shows linked job timelines
-- [ ] **JOB-02**: Expand job row to see EnrichmentLog timeline for that job
+- [x] **JOB-01**: Job History tab shows linked job timelines
+- [x] **JOB-02**: Expand job row to see EnrichmentLog timeline for that job
 
 ## Future Requirements
 
@@ -79,13 +79,13 @@ Deferred to later milestones.
 | DATA-01     | Phase 15 | Complete |
 | DATA-02     | Phase 15 | Complete |
 | DATA-03     | Phase 15 | Complete |
-| LINK-01     | Phase 16 | Pending  |
-| LINK-02     | Phase 16 | Pending  |
-| LINK-03     | Phase 16 | Pending  |
-| LINK-04     | Phase 16 | Pending  |
-| LINK-05     | Phase 16 | Pending  |
-| LINK-06     | Phase 16 | Pending  |
-| LINK-07     | Phase 16 | Pending  |
+| LINK-01     | Phase 16 | Complete |
+| LINK-02     | Phase 16 | Complete |
+| LINK-03     | Phase 16 | Complete |
+| LINK-04     | Phase 16 | Complete |
+| LINK-05     | Phase 16 | Complete |
+| LINK-06     | Phase 16 | Complete |
+| LINK-07     | Phase 16 | Complete |
 | GQL-01      | Phase 17 | Complete |
 | GQL-02      | Phase 17 | Complete |
 | GQL-03      | Phase 17 | Complete |
@@ -97,8 +97,8 @@ Deferred to later milestones.
 | TBL-02      | Phase 19 | Complete |
 | TBL-03      | Phase 19 | Complete |
 | TBL-04      | Phase 19 | Complete |
-| JOB-01      | Phase 20 | Pending  |
-| JOB-02      | Phase 20 | Pending  |
+| JOB-01      | Phase 20 | Complete |
+| JOB-02      | Phase 20 | Complete |
 
 **Coverage:**
 
@@ -109,4 +109,4 @@ Deferred to later milestones.
 ---
 
 _Requirements defined: 2026-02-06_
-_Last updated: 2026-02-06 — Phase 19 TBL requirements complete_
+_Last updated: 2026-02-07 — All v1.2 requirements complete_

@@ -13,7 +13,7 @@
 | 17    | GraphQL Layer ✓      | Expose `jobId`, `parentJobId`, and tree fetching | GQL-01 through GQL-04     |
 | 18    | Timeline Component ✓ | Add shadcn-timeline with status/icon mapping     | UI-01, UI-02, UI-03       |
 | 19    | EnrichmentLogTable ✓ | Integrate timeline into table expand rows        | TBL-01 through TBL-04     |
-| 20    | Job History Tab      | Add timeline to Job History tab                  | JOB-01, JOB-02            |
+| 20    | Job History Tab ✓    | Add timeline to Job History tab                  | JOB-01, JOB-02            |
 
 ---
 
@@ -172,7 +172,7 @@ Plans:
 
 Plans:
 
-- [ ] 20-01-PLAN.md — Integrate EnrichmentTimeline into Job History expandable rows
+- [x] 20-01-PLAN.md — Integrate EnrichmentTimeline into Job History expandable rows
 
 **Goal:** Add linked job timeline display to Job History tab.
 
@@ -224,4 +224,4 @@ Phase 16 (Job Linking) ──→ Phase 17 (GraphQL)
 ---
 
 _Roadmap created: 2026-02-06_
-_Last updated: 2026-02-07 — Phase 16 complete_
+_Last updated: 2026-02-07 — Phase 20 complete, v1.2 milestone complete_
