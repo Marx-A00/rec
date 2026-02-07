@@ -166,36 +166,36 @@ export async function processMusicBrainzJob(
         );
         break;
 
-      // Enrichment check handlers
+      // Enrichment check handlers (pass full Job for parentJobId access)
       case JOB_TYPES.CHECK_ALBUM_ENRICHMENT:
         result = await handleCheckAlbumEnrichment(
-          job.data as CheckAlbumEnrichmentJobData
+          job as Job<CheckAlbumEnrichmentJobData>
         );
         break;
 
       case JOB_TYPES.CHECK_ARTIST_ENRICHMENT:
         result = await handleCheckArtistEnrichment(
-          job.data as CheckArtistEnrichmentJobData
+          job as Job<CheckArtistEnrichmentJobData>
         );
         break;
 
       case JOB_TYPES.CHECK_TRACK_ENRICHMENT:
         result = await handleCheckTrackEnrichment(
-          job.data as CheckTrackEnrichmentJobData
+          job as Job<CheckTrackEnrichmentJobData>
         );
         break;
 
-      // Enrichment handlers
+      // Enrichment handlers (pass full Job for parentJobId access)
       case JOB_TYPES.ENRICH_ALBUM:
-        result = await handleEnrichAlbum(job.data as EnrichAlbumJobData);
+        result = await handleEnrichAlbum(job as Job<EnrichAlbumJobData>);
         break;
 
       case JOB_TYPES.ENRICH_ARTIST:
-        result = await handleEnrichArtist(job.data as EnrichArtistJobData);
+        result = await handleEnrichArtist(job as Job<EnrichArtistJobData>);
         break;
 
       case JOB_TYPES.ENRICH_TRACK:
-        result = await handleEnrichTrack(job.data as EnrichTrackJobData);
+        result = await handleEnrichTrack(job as Job<EnrichTrackJobData>);
         break;
 
       // Spotify sync handlers
@@ -220,29 +220,29 @@ export async function processMusicBrainzJob(
         );
         break;
 
-      // Cache handlers
+      // Cache handlers (pass full Job for parentJobId access)
       case JOB_TYPES.CACHE_ALBUM_COVER_ART:
         result = await handleCacheAlbumCoverArt(
-          job.data as CacheAlbumCoverArtJobData
+          job as Job<CacheAlbumCoverArtJobData>
         );
         break;
 
       case JOB_TYPES.CACHE_ARTIST_IMAGE:
         result = await handleCacheArtistImage(
-          job.data as CacheArtistImageJobData
+          job as Job<CacheArtistImageJobData>
         );
         break;
 
-      // Discogs handlers
+      // Discogs handlers (pass full Job for parentJobId access)
       case JOB_TYPES.DISCOGS_SEARCH_ARTIST:
         result = await handleDiscogsSearchArtist(
-          job.data as DiscogsSearchArtistJobData
+          job as Job<DiscogsSearchArtistJobData>
         );
         break;
 
       case JOB_TYPES.DISCOGS_GET_ARTIST:
         result = await handleDiscogsGetArtist(
-          job.data as DiscogsGetArtistJobData
+          job as Job<DiscogsGetArtistJobData>
         );
         break;
 
