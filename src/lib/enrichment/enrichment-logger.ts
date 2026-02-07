@@ -57,6 +57,10 @@ export interface EnrichmentLogData {
   apiCallCount?: number;
   metadata?: Record<string, unknown> | null;
   jobId?: string | null;
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string | null;
+  /** Whether this is a root job (true) or child job (false). Auto-computed from parentJobId if not provided. */
+  isRootJob?: boolean;
   triggeredBy?: string | null;
 }
 
@@ -96,6 +100,10 @@ export class EnrichmentLogger {
         trackId = data.trackId;
       }
 
+      // Auto-compute isRootJob from parentJobId if not explicitly provided
+      const isRootJob =
+        data.isRootJob !== undefined ? data.isRootJob : !data.parentJobId;
+
       await this.prisma.enrichmentLog.create({
         data: {
           entityType: data.entityType ?? undefined,
@@ -119,12 +127,15 @@ export class EnrichmentLogger {
             ? (data.metadata as Prisma.InputJsonValue)
             : undefined,
           jobId: data.jobId ?? undefined,
+          parentJobId: data.parentJobId ?? undefined,
+          isRootJob,
           triggeredBy: data.triggeredBy ?? undefined,
         },
       });
 
+      const rootIndicator = isRootJob ? ' [ROOT]' : '';
       console.log(
-        `[EnrichmentLogger] Logged ${data.operation} for ${data.entityType}:${data.entityId} - Status: ${data.status}`
+        `[EnrichmentLogger] Logged ${data.operation} for ${data.entityType}:${data.entityId} - Status: ${data.status}${rootIndicator}`
       );
     } catch (error) {
       console.warn('[EnrichmentLogger] Failed to log enrichment:', error);
