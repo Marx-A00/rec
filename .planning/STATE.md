@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 21 of 25 (Source Selection UI)
-Plan: 1 of TBD in current phase
+Plan: 2 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-08 — Completed 21-01-PLAN.md
+Last activity: 2026-02-08 — Completed 21-02-PLAN.md
 
-Progress: [██░░░░░░░░░░░░░░░░░░] 1/5 phases (plan 1 of phase 21 complete)
+Progress: [████░░░░░░░░░░░░░░░░] 2/5 phases (plan 2 of phase 21 complete)
 
 ## Performance Metrics
 
@@ -57,6 +57,8 @@ Progress: [██░░░░░░░░░░░░░░░░░░] 1/5 pha
 - shadcn-timeline for enrichment visualization
 - [21-01] CorrectionSource type defined in album store, re-exported from artist store
 - [21-01] Atomic state clearing on source switch (prevents stale data)
+- [21-02] Discogs shows placeholder until Phase 22+ implements search
+- [21-02] Source toggle disabled during loading to prevent race conditions
 
 ### v1.3 Context
 
@@ -73,8 +75,10 @@ Progress: [██░░░░░░░░░░░░░░░░░░] 1/5 pha
 - Discogs service layer: `src/lib/discogs/mappers.ts`
 - MusicBrainz correction services in `src/lib/correction/`
 - Zustand stores: `useCorrectionStore.ts`, `useArtistCorrectionStore.ts`
-- **NEW:** Toggle Group component: `src/components/ui/toggle-group.tsx`
-- **NEW:** correctionSource state in both stores with sessionStorage persistence
+- Toggle Group component: `src/components/ui/toggle-group.tsx`
+- correctionSource state in both stores with sessionStorage persistence
+- **NEW:** SourceToggle component: `src/components/admin/correction/shared/SourceToggle.tsx`
+- **NEW:** Source-aware SearchView and ArtistSearchView
 
 ### Blockers/Concerns
 
@@ -82,8 +86,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-08 21:27 UTC
-Stopped at: Completed 21-01-PLAN.md
+Last session: 2026-02-08 21:32 UTC
+Stopped at: Completed 21-02-PLAN.md
 Resume file: N/A
 
-**Next action:** Execute 21-02-PLAN.md (Source Selector Toggle)
+**Next action:** Execute 21-03-PLAN.md (if exists) or proceed to Phase 22
