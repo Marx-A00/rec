@@ -1,112 +1,91 @@
-# Requirements: Job History Timeline UI
+# Requirements: Discogs Correction Source
 
-**Defined:** 2026-02-06
-**Core Value:** Admins can see the full picture of what happened during enrichment — parent jobs and all their children in a linked timeline.
+**Defined:** 2026-02-08
+**Core Value:** Admins can choose MusicBrainz or Discogs when correcting album/artist data, using whichever source has better data.
 
-## v1.2 Requirements
+## v1.3 Requirements
 
-Requirements for Job History Timeline UI milestone.
+Requirements for Discogs Correction Source milestone.
 
-### Data Layer
+### UI — Source Selection
 
-- [x] **DATA-01**: EnrichmentLog has `parentJobId` field (nullable VARCHAR)
-- [x] **DATA-02**: EnrichmentLog has index on `parentJobId` for efficient child lookups
-- [x] **DATA-03**: Existing logs without `parentJobId` treated as standalone (no migration needed)
+- [ ] **UI-01**: Correction modal shows source toggle (MusicBrainz / Discogs)
+- [ ] **UI-02**: Selected source persists in Zustand store
+- [ ] **UI-03**: Search view adapts to selected source
+- [ ] **UI-04**: Preview view shows source indicator
 
-### Job Linking
+### Album Corrections — Discogs
 
-- [x] **LINK-01**: `ENRICH_ALBUM` passes its `jobId` as `parentJobId` to child jobs
-- [x] **LINK-02**: `ENRICH_ARTIST` passes its `jobId` as `parentJobId` to child jobs
-- [x] **LINK-03**: `SPOTIFY_TRACK_FALLBACK` logs with parent's `jobId` as `parentJobId`
-- [x] **LINK-04**: `DISCOGS_SEARCH_ARTIST` logs to EnrichmentLog with `parentJobId`
-- [x] **LINK-05**: `DISCOGS_GET_ARTIST` logs to EnrichmentLog with `parentJobId`
-- [x] **LINK-06**: `CACHE_ARTIST_IMAGE` logs to EnrichmentLog with `parentJobId`
-- [x] **LINK-07**: `CACHE_ALBUM_COVER_ART` logs to EnrichmentLog with `parentJobId`
+- [ ] **ALB-01**: Admin can search Discogs for albums by query
+- [ ] **ALB-02**: Discogs album search uses existing queue infrastructure
+- [ ] **ALB-03**: Discogs album results display in same format as MusicBrainz
+- [ ] **ALB-04**: Admin can preview Discogs album data side-by-side
+- [ ] **ALB-05**: Admin can apply album correction from Discogs source
 
-### GraphQL
+### Artist Corrections — Discogs
 
-- [x] **GQL-01**: `EnrichmentLog` type includes `jobId` field
-- [x] **GQL-02**: `EnrichmentLog` type includes `parentJobId` field
-- [x] **GQL-03**: `enrichmentLogs` query supports `includeChildren` parameter
-- [x] **GQL-04**: Resolver assembles parent-child tree when `includeChildren=true`
+- [ ] **ART-01**: Admin can search Discogs for artists by query
+- [ ] **ART-02**: Discogs artist search uses existing queue infrastructure
+- [ ] **ART-03**: Discogs artist results display in same format as MusicBrainz
+- [ ] **ART-04**: Admin can preview Discogs artist data side-by-side
+- [ ] **ART-05**: Admin can apply artist correction from Discogs source
 
-### Timeline Component
+### Data Mapping
 
-- [x] **UI-01**: Timeline component copied from shadcn-timeline (timeline.tsx, timeline-layout.tsx)
-- [x] **UI-02**: Timeline maps EnrichmentLog status to timeline status (completed/in-progress/pending)
-- [x] **UI-03**: Timeline shows operation-specific icons (album, artist, spotify, discogs, cache)
-
-### EnrichmentLogTable
-
-- [x] **TBL-01**: Table fetches only parent logs (parentJobId = null) by default
-- [x] **TBL-02**: Rows with children show expand chevron
-- [x] **TBL-03**: Expanded row shows Timeline component with parent + children
-- [x] **TBL-04**: Child logs hidden from main table rows
-
-### Job History Tab
-
-- [x] **JOB-01**: Job History tab shows linked job timelines
-- [x] **JOB-02**: Expand job row to see EnrichmentLog timeline for that job
+- [ ] **MAP-01**: Discogs album fields map to Album model
+- [ ] **MAP-02**: Discogs artist fields map to Artist model
+- [ ] **MAP-03**: Discogs IDs stored as external IDs on apply
 
 ## Future Requirements
 
 Deferred to later milestones.
+
+### Additional Sources
+
+- **SRC-01**: Spotify as correction source
+- **SRC-02**: Search multiple sources simultaneously
 
 ### Bulk Operations
 
 - **BULK-01**: Bulk re-enrichment for albums matching criteria
 - **BULK-02**: Progress tracking for bulk operations
 
-### Filtering
-
-- **FILT-01**: Filter enrichment logs by operation type
-- **FILT-02**: Filter enrichment logs by status
-- **FILT-03**: Filter enrichment logs by date range
-
 ## Out of Scope
 
-| Feature                        | Reason                                       |
-| ------------------------------ | -------------------------------------------- |
-| Recursive SQL (WITH RECURSIVE) | Overkill for shallow job chains (2-4 levels) |
-| Real-time timeline updates     | Polling on expand is sufficient              |
-| Timeline for non-admin users   | Admin-only feature                           |
-| Undo/revert from timeline      | Separate feature                             |
+| Feature | Reason |
+|---------|--------|
+| Spotify integration | Defer to future milestone |
+| Combined search (both sources at once) | Keep it simple — pick one, search that |
+| Auto-suggestion of best source | Manual selection for now |
+| Bulk corrections | One at a time for v1 |
 
 ## Traceability
 
-| Requirement | Phase    | Status   |
-| ----------- | -------- | -------- |
-| DATA-01     | Phase 15 | Complete |
-| DATA-02     | Phase 15 | Complete |
-| DATA-03     | Phase 15 | Complete |
-| LINK-01     | Phase 16 | Complete |
-| LINK-02     | Phase 16 | Complete |
-| LINK-03     | Phase 16 | Complete |
-| LINK-04     | Phase 16 | Complete |
-| LINK-05     | Phase 16 | Complete |
-| LINK-06     | Phase 16 | Complete |
-| LINK-07     | Phase 16 | Complete |
-| GQL-01      | Phase 17 | Complete |
-| GQL-02      | Phase 17 | Complete |
-| GQL-03      | Phase 17 | Complete |
-| GQL-04      | Phase 17 | Complete |
-| UI-01       | Phase 18 | Complete |
-| UI-02       | Phase 18 | Complete |
-| UI-03       | Phase 18 | Complete |
-| TBL-01      | Phase 19 | Complete |
-| TBL-02      | Phase 19 | Complete |
-| TBL-03      | Phase 19 | Complete |
-| TBL-04      | Phase 19 | Complete |
-| JOB-01      | Phase 20 | Complete |
-| JOB-02      | Phase 20 | Complete |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| UI-01 | TBD | Pending |
+| UI-02 | TBD | Pending |
+| UI-03 | TBD | Pending |
+| UI-04 | TBD | Pending |
+| ALB-01 | TBD | Pending |
+| ALB-02 | TBD | Pending |
+| ALB-03 | TBD | Pending |
+| ALB-04 | TBD | Pending |
+| ALB-05 | TBD | Pending |
+| ART-01 | TBD | Pending |
+| ART-02 | TBD | Pending |
+| ART-03 | TBD | Pending |
+| ART-04 | TBD | Pending |
+| ART-05 | TBD | Pending |
+| MAP-01 | TBD | Pending |
+| MAP-02 | TBD | Pending |
+| MAP-03 | TBD | Pending |
 
 **Coverage:**
-
-- v1.2 requirements: 20 total
-- Mapped to phases: 20
-- Unmapped: 0 ✓
+- v1.3 requirements: 17 total
+- Mapped to phases: 0
+- Unmapped: 17 ⚠️
 
 ---
-
-_Requirements defined: 2026-02-06_
-_Last updated: 2026-02-07 — All v1.2 requirements complete_
+*Requirements defined: 2026-02-08*
+*Last updated: 2026-02-08 after initial definition*
