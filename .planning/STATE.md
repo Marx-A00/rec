@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-08 — Milestone v1.3 started
+Phase: 21 of 25 (Source Selection UI)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-02-08 — Roadmap created for v1.3
 
-Progress: ░░░░░░░░░░░░░░░░░░░░ 0/? phases
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0/5 phases
 
 ## Performance Metrics
 
@@ -36,6 +36,11 @@ Progress: ░░░░░░░░░░░░░░░░░░░░ 0/? phase
 - Duration: 2 days
 - Requirements: 20/20
 
+**Milestone v1.3 (In Progress):**
+- Phases: 5 (21-25)
+- Plans: TBD
+- Requirements: 17
+
 **Total shipped:** 20 phases, 57 plans
 
 ## Accumulated Context
@@ -54,10 +59,18 @@ Progress: ░░░░░░░░░░░░░░░░░░░░ 0/? phase
 ### v1.3 Context
 
 - Adding Discogs as second search source for corrections
-- Toggle/tabs UI to select source before searching
-- Reuse existing Discogs queue infrastructure
+- Toggle UI to select source before searching
+- Reuse existing Discogs queue infrastructure (DISCOGS_SEARCH_ARTIST, DISCOGS_GET_ARTIST)
+- Need to add DISCOGS_SEARCH_ALBUM job type
 - Both album and artist corrections supported
 - Same preview/apply pattern as MusicBrainz
+
+### Existing Infrastructure
+
+- Discogs queue processors: `DISCOGS_SEARCH_ARTIST`, `DISCOGS_GET_ARTIST`
+- Discogs service layer: `src/lib/discogs/mappers.ts`
+- MusicBrainz correction services in `src/lib/correction/`
+- Zustand stores: `useCorrectionStore.ts`, `useArtistCorrectionStore.ts`
 
 ### Blockers/Concerns
 
@@ -66,10 +79,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Milestone initialization
+Stopped at: Roadmap created
 Resume file: N/A
 
-**Next action:** Define requirements → Create roadmap
+**Next action:** `/gsd:plan-phase 21`
 
 Config:
 {

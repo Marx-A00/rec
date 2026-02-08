@@ -61,31 +61,31 @@ Deferred to later milestones.
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| UI-01 | TBD | Pending |
-| UI-02 | TBD | Pending |
-| UI-03 | TBD | Pending |
-| UI-04 | TBD | Pending |
-| ALB-01 | TBD | Pending |
-| ALB-02 | TBD | Pending |
-| ALB-03 | TBD | Pending |
-| ALB-04 | TBD | Pending |
-| ALB-05 | TBD | Pending |
-| ART-01 | TBD | Pending |
-| ART-02 | TBD | Pending |
-| ART-03 | TBD | Pending |
-| ART-04 | TBD | Pending |
-| ART-05 | TBD | Pending |
-| MAP-01 | TBD | Pending |
-| MAP-02 | TBD | Pending |
-| MAP-03 | TBD | Pending |
+| Requirement | Phase | Status  |
+|-------------|-------|---------|
+| UI-01       | 21    | Pending |
+| UI-02       | 21    | Pending |
+| UI-03       | 21    | Pending |
+| UI-04       | 21    | Pending |
+| ALB-01      | 22    | Pending |
+| ALB-02      | 22    | Pending |
+| ALB-03      | 22    | Pending |
+| ALB-04      | 23    | Pending |
+| ALB-05      | 23    | Pending |
+| ART-01      | 24    | Pending |
+| ART-02      | 24    | Pending |
+| ART-03      | 24    | Pending |
+| ART-04      | 25    | Pending |
+| ART-05      | 25    | Pending |
+| MAP-01      | 22    | Pending |
+| MAP-02      | 24    | Pending |
+| MAP-03      | 25    | Pending |
 
 **Coverage:**
 - v1.3 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17 ⚠️
+- Mapped to phases: 17
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-08*
-*Last updated: 2026-02-08 after initial definition*
+*Last updated: 2026-02-08 — Traceability updated with phase mappings*
