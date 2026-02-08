@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 21 of 25 (Source Selection UI)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-08 — Roadmap created for v1.3
+Plan: 1 of TBD in current phase
+Status: In progress
+Last activity: 2026-02-08 — Completed 21-01-PLAN.md
 
-Progress: [░░░░░░░░░░░░░░░░░░░░] 0/5 phases
+Progress: [██░░░░░░░░░░░░░░░░░░] 1/5 phases (plan 1 of phase 21 complete)
 
 ## Performance Metrics
 
@@ -45,7 +45,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/5 pha
 
 ## Accumulated Context
 
-### Key Decisions (from v1.0 + v1.1 + v1.2)
+### Key Decisions (from v1.0 + v1.1 + v1.2 + v1.3)
 
 - MusicBrainz only for v1 (Discogs/Spotify deferred) — NOW ADDING DISCOGS
 - Session-only state (no DB persistence for correction queue)
@@ -55,6 +55,8 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/5 pha
 - Atomic actions for multi-field state updates
 - `parentJobId` for job linking (flat parent structure)
 - shadcn-timeline for enrichment visualization
+- [21-01] CorrectionSource type defined in album store, re-exported from artist store
+- [21-01] Atomic state clearing on source switch (prevents stale data)
 
 ### v1.3 Context
 
@@ -71,6 +73,8 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0/5 pha
 - Discogs service layer: `src/lib/discogs/mappers.ts`
 - MusicBrainz correction services in `src/lib/correction/`
 - Zustand stores: `useCorrectionStore.ts`, `useArtistCorrectionStore.ts`
+- **NEW:** Toggle Group component: `src/components/ui/toggle-group.tsx`
+- **NEW:** correctionSource state in both stores with sessionStorage persistence
 
 ### Blockers/Concerns
 
@@ -78,22 +82,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-08
-Stopped at: Roadmap created
+Last session: 2026-02-08 21:27 UTC
+Stopped at: Completed 21-01-PLAN.md
 Resume file: N/A
 
-**Next action:** `/gsd:plan-phase 21`
-
-Config:
-{
-  "mode": "yolo",
-  "depth": "comprehensive",
-  "parallelization": true,
-  "commit_docs": true,
-  "model_profile": "balanced",
-  "workflow": {
-    "research": true,
-    "plan_check": true,
-    "verifier": true
-  }
-}
+**Next action:** Execute 21-02-PLAN.md (Source Selector Toggle)
