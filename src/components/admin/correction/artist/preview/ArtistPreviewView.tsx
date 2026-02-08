@@ -15,6 +15,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeletons';
 import { getArtistCorrectionStore } from '@/stores/useArtistCorrectionStore';
 
@@ -128,6 +129,7 @@ export function ArtistPreviewView({ artistId }: ArtistPreviewViewProps) {
   // Get store for this artist
   const store = getArtistCorrectionStore(artistId);
   const selectedArtistMbid = store(s => s.selectedArtistMbid);
+  const correctionSource = store(s => s.correctionSource);
 
   const { data, isLoading, error, refetch, isFetching } =
     useGetArtistCorrectionPreviewQuery(
@@ -289,12 +291,23 @@ export function ArtistPreviewView({ artistId }: ArtistPreviewViewProps) {
         </div>
       )}
 
-      {/* Artist info header */}
+      {/* Artist info header with source badge */}
       <div className='border-b border-zinc-700 pb-4'>
-        <h3 className='text-lg font-medium text-zinc-100'>
-          {currentArtist.name}
-        </h3>
-        <p className='text-sm text-zinc-400'>Comparing with MusicBrainz data</p>
+        <div className='flex items-center gap-2 mb-1'>
+          <h3 className='text-lg font-medium text-zinc-100'>
+            {currentArtist.name}
+          </h3>
+          <Badge
+            variant='outline'
+            className='text-xs border-zinc-600 text-zinc-300'
+          >
+            {correctionSource === 'musicbrainz' ? 'MusicBrainz' : 'Discogs'}
+          </Badge>
+        </div>
+        <p className='text-sm text-zinc-400'>
+          Comparing with{' '}
+          {correctionSource === 'musicbrainz' ? 'MusicBrainz' : 'Discogs'} data
+        </p>
       </div>
 
       {/* Accordion sections */}
