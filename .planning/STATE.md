@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-06)
+See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Milestone v1.2 — Job History Timeline UI
+**Current focus:** Milestone v1.3 — Discogs Correction Source
 
 ## Current Position
 
-Phase: 20 (Job History Tab) — COMPLETE
-Plan: 1/1
-Status: Phase complete
-Last activity: 2026-02-07 — Completed 20-01-PLAN.md
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-08 — Milestone v1.3 started
 
-Progress: ████████████████████ 6/6 phases complete (15, 16, 17, 18, 19, 20)
+Progress: ░░░░░░░░░░░░░░░░░░░░ 0/? phases
 
 ## Performance Metrics
 
@@ -30,114 +30,46 @@ Progress: ████████████████████ 6/6 phase
 - Duration: 1 day
 - Requirements: 30/30
 
-**Milestone v1.2 (Complete):**
-- Phases complete: 6/6 (Phase 15, 16, 17, 18, 19, 20)
-- Plans complete: 15 (15-01, 16-01 through 16-06, 17-01, 17-02, 18-01, 18-02, 19-01, 19-02, 19-03, 20-01)
-- Requirements: 23/20+ (DATA-01-03, LINK-01-07, GQL-01-04, UI-01-03, TBL-01-04, JOB-01-02)
+**Milestone v1.2 (Shipped 2026-02-07):**
+- Phases: 6 (15-20)
+- Plans: 15
+- Duration: 2 days
+- Requirements: 20/20
 
-**Total shipped:** 15 phases, 57 plans
+**Total shipped:** 20 phases, 57 plans
 
 ## Accumulated Context
 
-### Key Decisions (from v1.0 + v1.1)
+### Key Decisions (from v1.0 + v1.1 + v1.2)
 
-- MusicBrainz only for v1 (Discogs/Spotify deferred)
+- MusicBrainz only for v1 (Discogs/Spotify deferred) — NOW ADDING DISCOGS
 - Session-only state (no DB persistence for correction queue)
 - Thin resolver pattern — all business logic in services
 - Separate Zustand stores for album and artist (different state shapes)
 - Factory pattern with Map cache for per-entity store instances
 - Atomic actions for multi-field state updates
+- `parentJobId` for job linking (flat parent structure)
+- shadcn-timeline for enrichment visualization
 
-### v1.2 Context (from exploration)
+### v1.3 Context
 
-- `parentJobId` field approach chosen over unified requestId
-- shadcn-timeline component for UI (Framer Motion required)
-- Need to add logging to cache/discogs processors
-- EnrichmentLogTable used in: album detail, artist detail panels
-- Job History tab is separate (shows BullMQ jobs, not EnrichmentLog)
-- Direct child query approach (parentJobId filter) preferred over tree assembly (includeChildren)
-
-### Phase 15 Complete
-
-- Added `parentJobId` field to EnrichmentLog (nullable VARCHAR 100)
-- Added `@@index([parentJobId])` for efficient child lookups
-- Migration: `20260206154227_add_parent_job_id`
-- Prisma client regenerated with new field
-
-### Phase 16 Complete
-
-- Plan 16-01: Added isRootJob Boolean field to EnrichmentLog, parentJobId to 10 job data interfaces
-- Plan 16-02: Processor index passes Job objects to 10 handlers, logger supports isRootJob
-- Plan 16-03: Enrichment handlers accept Job<T>, propagate parentJobId to child jobs
-- Plan 16-04: Discogs handlers log all outcomes (4 for search, 3 for get) with parentJobId
-- Plan 16-05: Cache handlers log all outcomes (6 each) with comprehensive metadata
-- Plan 16-06: Verification passed - all 7 LINK requirements satisfied
-- Flat parent structure: all children point to root job (no deep nesting)
-- Type checking passes with no errors
-
-### Phase 17 Complete
-
-- Added `parentJobId: String` to EnrichmentLog GraphQL type
-- Added `children: [EnrichmentLog!]` field (nullable, conditionally populated)
-- Added `includeChildren: Boolean` param to enrichmentLogs query
-- Resolver tree assembly: batch child fetch with Map for O(n) lookup
-- Generated hooks: useGetEnrichmentLogsQuery, useGetEnrichmentLogsWithChildrenQuery
-- Verification passed: 6/6 success criteria
-
-### Phase 18 Complete
-
-- Plan 18-01: Timeline primitives and mapping utilities
-  - Timeline component in src/components/ui/timeline/
-  - TimelineLayout with Framer Motion animations
-  - Mapping utilities in src/components/admin/enrichment-timeline-utils.tsx
-  - mapEnrichmentStatus, getOperationIcon, getStatusColor, formatOperationTitle
-- Plan 18-02: EnrichmentTimeline wrapper
-  - EnrichmentTimeline.tsx (409 lines) with view switcher, truncation, animations
-  - EnrichmentTree.tsx (169 lines) as simple tree fallback
-  - 15-child truncation threshold with show more/less
-  - Click-to-expand for detailed log information
-
-### Phase 19 Complete
-
-- Plan 19-01: GraphQL filtering layer
-  - Added parentOnly: Boolean parameter to enrichmentLogs query
-  - Added parentJobId: String parameter to enrichmentLogs query
-  - Resolver filters by parentJobId: null when parentOnly true
-  - Resolver filters by specific parentJobId when provided
-- Plan 19-02: Timeline variants
-  - EnrichmentTimeline accepts variant='compact' for table context
-  - SkeletonTimeline loading component with accessibility support
-  - EnrichmentTimelineModal dialog wrapper for full inspection
-- Plan 19-03: EnrichmentLogTable integration
-  - Table fetches only parent/root logs (parentOnly: true)
-  - All rows expandable with chevron icon
-  - Children lazy-loaded via useGetEnrichmentLogsQuery({ parentJobId: log.jobId })
-  - Compact timeline in expanded rows, modal for full view
-  - Removed FieldChangesPanel (replaced by timeline)
-- Verification passed: 8/8 must-haves, 6/6 success criteria
-
-### Phase 20 Complete
-
-- Plan 20-01: Job History Timeline Integration
-  - Created ExpandableJobRow component with lazy-loaded EnrichmentTimeline
-  - Lazy fetch enrichment logs using parentJobId: job.id filter
-  - Badge with count appears after first expansion (cached by TanStack Query)
-  - EnrichmentTimeline variant='compact' in expanded rows
-  - Job History page uses ExpandableJobRow instead of inline rows
-  - Removed job detail dialog (replaced by expandable rows)
-- Verification passed: 2/2 JOB requirements, all success criteria met
+- Adding Discogs as second search source for corrections
+- Toggle/tabs UI to select source before searching
+- Reuse existing Discogs queue infrastructure
+- Both album and artist corrections supported
+- Same preview/apply pattern as MusicBrainz
 
 ### Blockers/Concerns
 
-None - Milestone v1.2 complete.
+None.
 
 ## Session Continuity
 
-Last session: 2026-02-07
-Stopped at: Phase 20 complete, Milestone v1.2 complete
+Last session: 2026-02-08
+Stopped at: Milestone initialization
 Resume file: N/A
 
-**Next action:** Milestone verification or next milestone planning
+**Next action:** Define requirements → Create roadmap
 
 Config:
 {
