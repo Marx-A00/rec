@@ -342,7 +342,7 @@ const TimelineTitle = React.forwardRef<HTMLHeadingElement, TimelineTitleProps>(
       <h3
         ref={ref}
         className={cn(
-          'text-sm font-semibold leading-none text-zinc-100',
+          'text-sm font-semibold leading-none text-zinc-300 transition-colors hover:text-white',
           className
         )}
         {...props}

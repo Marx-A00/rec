@@ -2024,7 +2024,34 @@ export const queryResolvers: QueryResolvers = {
       // Build where clause for filters
       const where: Record<string, unknown> = {};
       if (filterArgs.entityType) where.entityType = filterArgs.entityType;
-      if (filterArgs.entityId) where.entityId = filterArgs.entityId;
+      if (filterArgs.entityId) {
+        // Query by both entityId and typed ID fields (albumId/artistId/trackId)
+        // This ensures we find logs regardless of which field was populated
+        if (filterArgs.entityType === 'ALBUM') {
+          where.OR = [
+            { entityId: filterArgs.entityId },
+            { albumId: filterArgs.entityId },
+          ];
+        } else if (filterArgs.entityType === 'ARTIST') {
+          where.OR = [
+            { entityId: filterArgs.entityId },
+            { artistId: filterArgs.entityId },
+          ];
+        } else if (filterArgs.entityType === 'TRACK') {
+          where.OR = [
+            { entityId: filterArgs.entityId },
+            { trackId: filterArgs.entityId },
+          ];
+        } else {
+          // Fallback: query all ID fields
+          where.OR = [
+            { entityId: filterArgs.entityId },
+            { albumId: filterArgs.entityId },
+            { artistId: filterArgs.entityId },
+            { trackId: filterArgs.entityId },
+          ];
+        }
+      }
       if (filterArgs.status) where.status = filterArgs.status;
       if (filterArgs.sources && filterArgs.sources.length > 0) {
         where.sources = { hasSome: filterArgs.sources };

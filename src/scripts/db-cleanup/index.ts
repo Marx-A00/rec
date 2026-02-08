@@ -16,6 +16,9 @@ import { PrismaClient } from '@prisma/client';
 import * as p from '@clack/prompts';
 import color from 'picocolors';
 
+import { getMusicBrainzQueue } from '@/lib/queue';
+import { JOB_TYPES } from '@/lib/queue/jobs';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -311,29 +314,84 @@ const tasks: TaskConfig[] = [
   {
     id: 6,
     name: 'Enrich Artist Images',
-    description: 'Check artists missing images',
+    description: 'Queue artist image enrichment jobs',
     dependencies: [],
     priority: 'high',
     run: async ctx => {
-      ctx.log('Checking artists without images...');
+      ctx.log('Finding artists without images...');
 
-      const without = await ctx.prisma.$queryRaw<{ count: bigint }[]>`
-        SELECT COUNT(*) as count FROM artists WHERE image_url IS NULL
-      `;
-      const withImages = await ctx.prisma.$queryRaw<{ count: bigint }[]>`
-        SELECT COUNT(*) as count FROM artists WHERE image_url IS NOT NULL
-      `;
+      // Find artists with MBID but no image
+      const artists = await ctx.prisma.artist.findMany({
+        where: {
+          musicbrainzId: { not: null },
+          OR: [{ imageUrl: null }, { imageUrl: '' }],
+        },
+        select: { id: true, name: true },
+      });
+
+      // Also get counts for stats
+      const withImages = await ctx.prisma.artist.count({
+        where: { imageUrl: { not: null } },
+      });
+
+      if (artists.length === 0) {
+        return {
+          success: true,
+          message: 'All artists with MusicBrainz IDs have images',
+          stats: {
+            'Artists with images': withImages,
+            'Artists needing images': 0,
+          },
+        };
+      }
+
+      if (ctx.dryRun) {
+        return {
+          success: true,
+          message: `Would queue ${artists.length} artists for enrichment`,
+          stats: {
+            'Artists with images': withImages,
+            'Artists to enrich': artists.length,
+            'Estimated time': `~${Math.ceil(artists.length / 60)} minutes`,
+          },
+        };
+      }
+
+      // Queue enrichment jobs
+      ctx.log(`Queueing ${artists.length} artist enrichment jobs...`);
+      const queue = getMusicBrainzQueue();
+      let queued = 0;
+
+      for (const artist of artists) {
+        await queue.addJob(
+          JOB_TYPES.ENRICH_ARTIST,
+          {
+            artistId: artist.id,
+            priority: 'medium',
+            userAction: 'admin_manual',
+            requestId: `cli-task6-${artist.id}`,
+          },
+          {
+            priority: 5,
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 2000 },
+          }
+        );
+        queued++;
+        if (queued % 50 === 0) ctx.log(`Queued ${queued}/${artists.length}...`);
+      }
 
       return {
         success: true,
-        message: `${Number(without[0]?.count || 0)} artists need images`,
+        message: `Queued ${queued} artists for enrichment`,
         stats: {
-          'Artists with images': Number(withImages[0]?.count || 0),
-          'Artists needing images': Number(without[0]?.count || 0),
+          'Artists with images': withImages,
+          'Jobs queued': queued,
+          Rate: '1 request/second',
+          'Estimated time': `~${Math.ceil(queued / 60)} minutes`,
         },
         warnings: [
-          'Run: npx tsx src/scripts/enrich-artist-images.ts --dry-run',
-          'Then: npx tsx src/scripts/enrich-artist-images.ts --limit 100',
+          'Monitor progress: pnpm queue:dev (Bull Board at localhost:3001)',
         ],
       };
     },
@@ -571,9 +629,104 @@ const tasks: TaskConfig[] = [
 
   {
     id: 12,
+    name: 'Re-enrich Trackless Albums',
+    description:
+      'Queue trackless albums for re-enrichment before considering deletion',
+    dependencies: [],
+    priority: 'high',
+    run: async ctx => {
+      ctx.log('Finding trackless albums...');
+
+      const tracklessAlbums = await ctx.prisma.$queryRaw<
+        { id: string; title: string; source: string }[]
+      >`
+        SELECT a.id, a.title, a.source::text FROM albums a
+        WHERE a.id NOT IN (SELECT DISTINCT album_id FROM tracks)
+        AND (a.musicbrainz_id IS NOT NULL OR a.spotify_id IS NOT NULL)
+      `;
+
+      if (tracklessAlbums.length === 0) {
+        return {
+          success: true,
+          message: 'No trackless albums found',
+          stats: { 'Trackless albums': 0 },
+        };
+      }
+
+      // Group by source for stats
+      const bySource = tracklessAlbums.reduce(
+        (acc, a) => {
+          acc[a.source] = (acc[a.source] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+
+      if (ctx.dryRun) {
+        const albumList = tracklessAlbums.map(a => `${a.title} [${a.source}]`);
+
+        return {
+          success: true,
+          message: `Would queue ${tracklessAlbums.length} trackless albums for re-enrichment`,
+          stats: {
+            'Albums to re-enrich': tracklessAlbums.length,
+            'Estimated time': `~${Math.ceil(tracklessAlbums.length / 60)} minutes`,
+            ...bySource,
+          },
+          warnings: ['Albums to be re-enriched:', ...albumList],
+        };
+      }
+
+      ctx.log(`Queueing ${tracklessAlbums.length} albums for re-enrichment...`);
+
+      // Queue actual ENRICH_ALBUM jobs (with Spotify fallback)
+      const queue = getMusicBrainzQueue();
+      let queued = 0;
+
+      for (const album of tracklessAlbums) {
+        await queue.addJob(
+          JOB_TYPES.ENRICH_ALBUM,
+          {
+            albumId: album.id,
+            priority: 'medium',
+            force: true, // Force re-enrichment even if already enriched
+            userAction: 'admin_manual',
+            requestId: `cli-task12-${album.id}`,
+          },
+          {
+            priority: 5,
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 2000 },
+          }
+        );
+        queued++;
+        if (queued % 50 === 0)
+          ctx.log(`Queued ${queued}/${tracklessAlbums.length}...`);
+      }
+
+      return {
+        success: true,
+        message: `Queued ${queued} trackless albums for re-enrichment`,
+        stats: {
+          'Albums queued': queued,
+          Rate: '1 request/second',
+          'Estimated time': `~${Math.ceil(queued / 60)} minutes`,
+          ...bySource,
+        },
+        warnings: [
+          'Jobs will use MusicBrainz → Spotify fallback for tracks',
+          'Monitor progress: pnpm queue:dev (Bull Board at localhost:3001)',
+          'Run task 13 (Delete Orphan Trackless Albums) AFTER enrichment completes',
+        ],
+      };
+    },
+  },
+
+  {
+    id: 13,
     name: 'Delete Orphan Trackless Albums',
     description: 'Remove albums with no tracks and no user relationships',
-    dependencies: [],
+    dependencies: [12], // Run after re-enrichment attempt
     priority: 'medium',
     run: async ctx => {
       ctx.log('Finding orphan trackless albums...');
@@ -606,6 +759,9 @@ const tasks: TaskConfig[] = [
       );
 
       if (ctx.dryRun) {
+        // Build album list as a single string for warnings output
+        const albumList = orphanAlbums.map(a => `${a.title} [${a.source}]`);
+
         return {
           success: true,
           message: `Would delete ${orphanAlbums.length} orphan trackless albums`,
@@ -613,6 +769,7 @@ const tasks: TaskConfig[] = [
             'Albums to delete': orphanAlbums.length,
             ...bySource,
           },
+          warnings: ['Albums to be deleted:', ...albumList],
         };
       }
 
@@ -635,7 +792,65 @@ const tasks: TaskConfig[] = [
   },
 
   {
-    id: 13,
+    id: 14,
+    name: 'Delete Orphan Artists',
+    description: 'Remove artists with no album relationships',
+    dependencies: [11, 13], // Run after album cleanup
+    priority: 'medium',
+    run: async ctx => {
+      ctx.log('Finding orphan artists (no albums)...');
+
+      const orphanArtists = await ctx.prisma.$queryRaw<
+        { id: string; name: string }[]
+      >`
+        SELECT a.id, a.name FROM artists a
+        LEFT JOIN album_artists aa ON a.id = aa.artist_id
+        WHERE aa.artist_id IS NULL
+      `;
+
+      if (orphanArtists.length === 0) {
+        return {
+          success: true,
+          message: 'No orphan artists found',
+          stats: { 'Orphan artists': 0 },
+        };
+      }
+
+      if (ctx.dryRun) {
+        return {
+          success: true,
+          message: `Would delete ${orphanArtists.length} orphan artists`,
+          stats: {
+            'Artists to delete': orphanArtists.length,
+            'Sample names': orphanArtists
+              .slice(0, 10)
+              .map(a => a.name)
+              .join(', '),
+          },
+        };
+      }
+
+      ctx.log(`Deleting ${orphanArtists.length} orphan artists...`);
+      const ids = orphanArtists.map(a => a.id);
+
+      // Delete related records first
+      await ctx.prisma
+        .$executeRaw`DELETE FROM track_artists WHERE artist_id = ANY(${ids}::uuid[])`;
+      await ctx.prisma
+        .$executeRaw`DELETE FROM enrichment_logs WHERE artist_id = ANY(${ids}::uuid[])`;
+      await ctx.prisma
+        .$executeRaw`DELETE FROM artists WHERE id = ANY(${ids}::uuid[])`;
+
+      return {
+        success: true,
+        message: `Deleted ${orphanArtists.length} orphan artists`,
+        stats: { 'Artists deleted': orphanArtists.length },
+      };
+    },
+  },
+
+  {
+    id: 15,
     name: 'Re-enrich Albums Missing Genres',
     description:
       'Queue albums with MusicBrainz IDs but no genres for re-enrichment',
@@ -716,7 +931,7 @@ const tasks: TaskConfig[] = [
   },
 
   {
-    id: 14,
+    id: 16,
     name: 'Re-enrich Trackless Albums with Users',
     description:
       'Queue trackless albums that have user relationships for re-enrichment',
@@ -791,6 +1006,7 @@ function parseArgs() {
     fromTask: undefined as number | undefined,
     interactive: false,
     help: false,
+    selectedTasks: undefined as number[] | undefined,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -851,7 +1067,10 @@ ${color.cyan('Examples:')}
 // ORCHESTRATOR
 // ═══════════════════════════════════════════════════════════════════════════
 
-async function runOrchestrator(options: ReturnType<typeof parseArgs>) {
+async function runOrchestrator(
+  options: ReturnType<typeof parseArgs>,
+  skipIntro = false
+) {
   const prisma = new PrismaClient();
   const results = new Map<
     number,
@@ -863,8 +1082,10 @@ async function runOrchestrator(options: ReturnType<typeof parseArgs>) {
     results.set(task.id, { status: 'pending' });
   }
 
-  console.clear();
-  p.intro(color.bgCyan(color.black(' Database Cleanup Orchestrator ')));
+  if (!skipIntro) {
+    console.clear();
+    p.intro(color.bgCyan(color.black(' Database Cleanup Orchestrator ')));
+  }
 
   if (options.dryRun) {
     p.log.warn(color.yellow('DRY RUN MODE - No changes will be made'));
@@ -872,7 +1093,10 @@ async function runOrchestrator(options: ReturnType<typeof parseArgs>) {
 
   // Filter tasks
   let tasksToRun = tasks;
-  if (options.taskId) {
+  if (options.selectedTasks && options.selectedTasks.length > 0) {
+    // Interactive menu selection
+    tasksToRun = tasks.filter(t => options.selectedTasks!.includes(t.id));
+  } else if (options.taskId) {
     tasksToRun = tasks.filter(t => t.id === options.taskId);
     if (tasksToRun.length === 0) {
       p.log.error(`Task ${options.taskId} not found`);
@@ -1024,17 +1248,95 @@ async function runOrchestrator(options: ReturnType<typeof parseArgs>) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// INTERACTIVE MENU
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function showInteractiveMenu(): Promise<ReturnType<typeof parseArgs>> {
+  console.clear();
+  p.intro(color.bgCyan(color.black(' Database Cleanup Orchestrator ')));
+
+  // Task selection with multiselect
+  const selectedTasks = await p.multiselect({
+    message: 'Select tasks to run (space to toggle, enter to confirm):',
+    options: tasks.map(t => {
+      const priorityColor =
+        t.priority === 'high'
+          ? color.red
+          : t.priority === 'medium'
+            ? color.yellow
+            : color.dim;
+      return {
+        value: t.id,
+        label: `${color.bold(`Task ${t.id}:`)} ${t.name} ${priorityColor(`[${t.priority}]`)}`,
+        hint: t.description,
+      };
+    }),
+    required: true,
+  });
+
+  if (p.isCancel(selectedTasks)) {
+    p.cancel('Cancelled');
+    process.exit(0);
+  }
+
+  // Dry run selection
+  const dryRun = await p.confirm({
+    message:
+      'Run in dry-run mode? (preview changes without modifying database)',
+    initialValue: true,
+  });
+
+  if (p.isCancel(dryRun)) {
+    p.cancel('Cancelled');
+    process.exit(0);
+  }
+
+  // Interactive confirmation per task
+  const interactive = await p.confirm({
+    message: 'Confirm each task before running?',
+    initialValue: false,
+  });
+
+  if (p.isCancel(interactive)) {
+    p.cancel('Cancelled');
+    process.exit(0);
+  }
+
+  return {
+    dryRun: dryRun as boolean,
+    taskId: undefined,
+    fromTask: undefined,
+    interactive: interactive as boolean,
+    help: false,
+    selectedTasks: selectedTasks as number[],
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════
 
-const options = parseArgs();
+async function main() {
+  const args = process.argv.slice(2);
 
-if (options.help) {
-  printHelp();
-  process.exit(0);
+  // If no args provided, show interactive menu
+  if (args.length === 0) {
+    const menuOptions = await showInteractiveMenu();
+    await runOrchestrator(menuOptions, true); // skipIntro since menu already showed it
+    return;
+  }
+
+  const options = parseArgs();
+
+  if (options.help) {
+    printHelp();
+    process.exit(0);
+  }
+
+  await runOrchestrator(options);
 }
 
-runOrchestrator(options).catch(err => {
+main().catch(err => {
   p.log.error(color.red(`Fatal error: ${err}`));
   process.exit(1);
 });

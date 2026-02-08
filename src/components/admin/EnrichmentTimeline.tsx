@@ -212,6 +212,13 @@ function TimelineLogItem({
         >
           {formatOperationTitle(log.operation, log.entityType)}
         </TimelineTitle>
+        {log.triggeredBy && (
+          <span
+            className={cn('text-xs text-zinc-500', compact && 'text-[10px]')}
+          >
+            by {log.triggeredBy}
+          </span>
+        )}
         <TimelineTime
           className={cn('text-xs text-zinc-500', compact && 'text-[10px]')}
         >

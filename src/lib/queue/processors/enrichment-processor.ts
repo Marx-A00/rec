@@ -1423,7 +1423,25 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
     };
 
     if (matchFound && musicbrainzData) {
-      updateData.musicbrainzId = musicbrainzData.id;
+      // Check if another track on this album already has this MusicBrainz ID
+      const existingTrack = await prisma.track.findFirst({
+        where: {
+          albumId: track.albumId,
+          musicbrainzId: musicbrainzData.id,
+          NOT: { id: track.id },
+        },
+        select: { id: true, title: true },
+      });
+
+      if (existingTrack) {
+        console.warn(
+          `⚠️ Skipping musicbrainzId - already used by track "${existingTrack.title}" on same album`
+        );
+        matchFound = false; // Don't count as enriched
+        fieldsEnriched.splice(fieldsEnriched.indexOf('musicbrainzId'), 1);
+      } else {
+        updateData.musicbrainzId = musicbrainzData.id;
+      }
 
       // Fetch detailed recording data with relationships
       try {
