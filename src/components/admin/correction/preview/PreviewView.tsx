@@ -14,6 +14,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 import { getCorrectionStore } from '@/stores/useCorrectionStore';
 
 import { ErrorState, categorizeError } from '../shared';
@@ -58,6 +59,7 @@ export function PreviewView({ albumId }: PreviewViewProps) {
   // Read state from Zustand store
   const store = getCorrectionStore(albumId);
   const selectedMbid = store(s => s.selectedMbid);
+  const correctionSource = store(s => s.correctionSource);
   const setPreviewLoaded = store.getState().setPreviewLoaded;
 
   const { data, isLoading, error, refetch, isFetching } =
@@ -240,9 +242,17 @@ export function PreviewView({ albumId }: PreviewViewProps) {
 
       {/* Album title + source info */}
       <div className='border-b border-zinc-700 pb-4'>
-        <h3 className='text-lg font-medium text-zinc-100'>
-          {preview.albumTitle}
-        </h3>
+        <div className='flex items-center gap-2 mb-1'>
+          <h3 className='text-lg font-medium text-zinc-100'>
+            {preview.albumTitle}
+          </h3>
+          <Badge 
+            variant='outline' 
+            className='text-xs border-zinc-600 text-zinc-300'
+          >
+            {correctionSource === 'musicbrainz' ? 'MusicBrainz' : 'Discogs'}
+          </Badge>
+        </div>
         <p className='text-sm text-zinc-400'>
           Comparing with:{' '}
           <span className='text-zinc-300'>{sourceResult?.title}</span>
