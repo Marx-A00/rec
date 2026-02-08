@@ -9,7 +9,7 @@ import {
 import { getCorrectionStore } from '@/stores/useCorrectionStore';
 
 import type { CurrentDataViewAlbum } from '../CurrentDataView';
-import { ErrorState, categorizeError } from '../shared';
+import { ErrorState, categorizeError, SourceToggle } from '../shared';
 
 import { SearchInputs } from './SearchInputs';
 import { SearchResults } from './SearchResults';
@@ -29,6 +29,7 @@ export interface SearchViewProps {
  * SearchView - Main search step container for correction modal.
  *
  * Wires together:
+ * - SourceToggle for MusicBrainz/Discogs selection
  * - SearchInputs for album/artist search fields
  * - GraphQL query for MusicBrainz search
  * - SearchResults for displaying results
@@ -45,12 +46,14 @@ export function SearchView({ album }: SearchViewProps) {
   const store = getCorrectionStore(album.id);
   const searchQuery = store(s => s.searchQuery);
   const searchOffset = store(s => s.searchOffset);
+  const correctionSource = store(s => s.correctionSource);
 
   // Get actions from store
   const setSearchQuery = store.getState().setSearchQuery;
   const setSearchOffset = store.getState().setSearchOffset;
   const selectResult = store.getState().selectResult;
   const enterManualEdit = store.getState().enterManualEdit;
+  const setCorrectionSource = store.getState().setCorrectionSource;
 
   // Extract initial values from album
   const initialAlbumTitle = album.title;
@@ -69,6 +72,7 @@ export function SearchView({ album }: SearchViewProps) {
   };
 
   // GraphQL query - only enabled when search is triggered and query has content
+  // Only enabled for MusicBrainz source (Discogs not implemented yet)
   const { data, isLoading, error, isFetching } =
     useSearchCorrectionCandidatesQuery(
       {
@@ -82,6 +86,7 @@ export function SearchView({ album }: SearchViewProps) {
       },
       {
         enabled:
+          correctionSource === 'musicbrainz' &&
           isSearchTriggered &&
           !!(currentQuery.albumTitle || currentQuery.artistName),
       }
@@ -130,8 +135,8 @@ export function SearchView({ album }: SearchViewProps) {
     }
   };
 
-  // Error state
-  if (error && isSearchTriggered) {
+  // Error state (only for MusicBrainz)
+  if (error && isSearchTriggered && correctionSource === 'musicbrainz') {
     const errorType = categorizeError(error);
     const errorMessage =
       error instanceof Error
@@ -139,7 +144,14 @@ export function SearchView({ album }: SearchViewProps) {
         : 'Search failed. Please try again.';
 
     return (
-      <div className='space-y-4'>
+      <div className="space-y-4">
+        {/* Source toggle */}
+        <SourceToggle
+          value={correctionSource}
+          onChange={setCorrectionSource}
+          disabled={false}
+        />
+
         <SearchInputs
           initialAlbumTitle={currentQuery.albumTitle}
           initialArtistName={currentQuery.artistName}
@@ -157,36 +169,58 @@ export function SearchView({ album }: SearchViewProps) {
   }
 
   // Loading skeleton (full replacement per CONTEXT.md)
-  if (showSkeleton) {
+  if (showSkeleton && correctionSource === 'musicbrainz') {
     return <SearchSkeleton />;
   }
 
   return (
-    <div className='space-y-4'>
-      <SearchInputs
-        initialAlbumTitle={currentQuery.albumTitle}
-        initialArtistName={currentQuery.artistName}
-        onSearch={handleSearch}
-        isLoading={isLoading}
+    <div className="space-y-4">
+      {/* Source toggle */}
+      <SourceToggle
+        value={correctionSource}
+        onChange={setCorrectionSource}
+        disabled={isLoading}
       />
 
-      {/* Initial state - before first search */}
-      {!isSearchTriggered && (
-        <div className='p-6 text-center text-zinc-400 border border-dashed border-zinc-700 rounded-lg'>
-          Search MusicBrainz for the correct album data
+      {/* Discogs placeholder (Phase 22+) */}
+      {correctionSource === 'discogs' && (
+        <div className="p-4 text-center text-zinc-500 border border-dashed border-zinc-700 rounded-lg">
+          <p className="text-sm">Discogs search coming soon</p>
+          <p className="text-xs text-zinc-600 mt-1">
+            Switch to MusicBrainz to search
+          </p>
         </div>
       )}
 
-      {/* Results - after search triggered and not loading */}
-      {isSearchTriggered && !isLoading && (
-        <SearchResults
-          results={results}
-          hasMore={hasMore}
-          isLoadingMore={isLoadingMore}
-          onResultClick={handleResultClick}
-          onLoadMore={handleLoadMore}
-          onManualEdit={enterManualEdit}
-        />
+      {/* MusicBrainz search content */}
+      {correctionSource === 'musicbrainz' && (
+        <>
+          <SearchInputs
+            initialAlbumTitle={currentQuery.albumTitle}
+            initialArtistName={currentQuery.artistName}
+            onSearch={handleSearch}
+            isLoading={isLoading}
+          />
+
+          {/* Initial state - before first search */}
+          {!isSearchTriggered && (
+            <div className="p-6 text-center text-zinc-400 border border-dashed border-zinc-700 rounded-lg">
+              Search MusicBrainz for the correct album data
+            </div>
+          )}
+
+          {/* Results - after search triggered and not loading */}
+          {isSearchTriggered && !isLoading && (
+            <SearchResults
+              results={results}
+              hasMore={hasMore}
+              isLoadingMore={isLoadingMore}
+              onResultClick={handleResultClick}
+              onLoadMore={handleLoadMore}
+              onManualEdit={enterManualEdit}
+            />
+          )}
+        </>
       )}
     </div>
   );
