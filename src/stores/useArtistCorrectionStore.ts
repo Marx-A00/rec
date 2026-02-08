@@ -7,6 +7,10 @@
  * Supports search-only mode in Phase 14 (4 steps): Current → Search → Preview → Apply
  * Mode field and manual edit types included for future expansion but not implemented.
  *
+ * Supports multiple correction sources:
+ * - MusicBrainz (default)
+ * - Discogs
+ *
  * Atomic actions ensure consistent state transitions with no intermediate states.
  */
 
@@ -19,6 +23,7 @@ import {
   createDefaultArtistSelections,
   type UIArtistFieldSelections,
 } from '@/components/admin/correction/artist/apply/ArtistApplyView';
+import type { CorrectionSource } from './useCorrectionStore';
 
 // ============================================================================
 // Type Definitions
@@ -59,6 +64,9 @@ export interface ArtistCorrectionState {
 
   /** Current correction mode - only 'search' implemented in Phase 14 */
   mode: 'search' | 'manual';
+
+  /** Selected correction source (MusicBrainz or Discogs) */
+  correctionSource: CorrectionSource;
 
   /** Search query for MusicBrainz artist search */
   searchQuery: string | undefined;
@@ -121,6 +129,11 @@ export interface ArtistCorrectionActions {
 
   /** Cancel manual edit and return to search mode step 0 (clears manual state) - NOT IMPLEMENTED in Phase 14 */
   cancelManualEdit: () => void;
+
+  // ========== Source Selection ==========
+
+  /** Set correction source and atomically clear search state */
+  setCorrectionSource: (source: CorrectionSource) => void;
 
   // ========== Search State ==========
 
@@ -185,6 +198,9 @@ export type ArtistCorrectionStore = ArtistCorrectionState &
 // Re-export UIArtistFieldSelections for convenience
 export type { UIArtistFieldSelections } from '@/components/admin/correction/artist/apply/ArtistApplyView';
 
+// Re-export CorrectionSource for components that only import from this store
+export type { CorrectionSource } from './useCorrectionStore';
+
 // ============================================================================
 // Default State Values
 // ============================================================================
@@ -193,6 +209,7 @@ const DEFAULT_STATE: ArtistCorrectionState = {
   // Persisted
   step: 0,
   mode: 'search',
+  correctionSource: 'musicbrainz',
   searchQuery: undefined,
   searchOffset: 0,
   selectedArtistMbid: undefined,
@@ -279,6 +296,23 @@ const createArtistCorrectionStore = (artistId: string) =>
             mode: 'search',
             step: 0,
             manualEditState: undefined,
+          });
+        },
+
+        // ========== Source Selection ==========
+
+        setCorrectionSource: (source: CorrectionSource) => {
+          const current = get().correctionSource;
+          if (current === source) return; // No-op if same source
+
+          set({
+            correctionSource: source,
+            // Clear search state atomically
+            searchQuery: undefined,
+            searchOffset: 0,
+            selectedArtistMbid: undefined,
+            previewData: null,
+            applySelections: null,
           });
         },
 
@@ -375,6 +409,7 @@ const createArtistCorrectionStore = (artistId: string) =>
           // Only persist these fields
           step: state.step,
           mode: state.mode,
+          correctionSource: state.correctionSource,
           searchQuery: state.searchQuery,
           searchOffset: state.searchOffset,
           selectedArtistMbid: state.selectedArtistMbid,
