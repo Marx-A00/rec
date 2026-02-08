@@ -1,5 +1,39 @@
 # Milestones
 
+## v1.2 — Job History Timeline UI
+
+**Shipped:** 2026-02-07
+**Phases:** 15–20 (15 plans)
+**Branch:** `feat/admin-enrich-UI`
+
+**What shipped:**
+
+- `parentJobId` field in EnrichmentLog for job linking
+- All processors propagate `parentJobId` through job chains
+- Cache and Discogs processors now log to EnrichmentLog
+- shadcn-timeline component with Framer Motion animations
+- EnrichmentTimeline wrapper with compact/modal variants
+- EnrichmentLogTable shows only parent logs, children in expanded timeline
+- Job History tab with expandable rows showing enrichment timelines
+
+**Key accomplishments:**
+
+- Flat parent structure: all children point to root job (no deep nesting)
+- Lazy-loaded children via parentJobId filter
+- Timeline maps status to visual indicators (icons, colors)
+- 15-child truncation with show more/less
+- Removed FieldChangesPanel (replaced by timeline)
+
+**Stats:**
+
+- 6 phases, 15 plans
+- 2 days (2026-02-06 to 2026-02-07)
+- 20 requirements delivered
+
+**What's next:** v1.3 Discogs Correction Source
+
+---
+
 ## v1.1 — Zustand Correction Modal Refactor
 
 **Shipped:** 2026-02-05
@@ -30,8 +64,6 @@
 - 1 day (2026-02-04 to 2026-02-05)
 
 **Git range:** `5adcd03` → `ac3e480`
-
-**What's next:** Planning next milestone
 
 ---
 
