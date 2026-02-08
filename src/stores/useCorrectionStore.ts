@@ -8,6 +8,10 @@
  * - Search mode (4 steps): Current Data → Search → Compare → Apply
  * - Manual mode (3 steps): Current Data → Edit → Apply
  *
+ * Supports multiple correction sources:
+ * - MusicBrainz (default)
+ * - Discogs
+ *
  * Atomic actions ensure consistent state transitions with no intermediate states.
  */
 
@@ -23,6 +27,12 @@ import type { CorrectionPreview } from '@/lib/correction/preview/types';
 // ============================================================================
 // Type Definitions
 // ============================================================================
+
+/**
+ * Correction source selection.
+ * Determines which external service is used for metadata lookup.
+ */
+export type CorrectionSource = 'musicbrainz' | 'discogs';
 
 /**
  * Search query state for MusicBrainz search.
@@ -47,6 +57,9 @@ export interface CorrectionState {
 
   /** Current correction mode */
   mode: 'search' | 'manual';
+
+  /** Selected correction source (MusicBrainz or Discogs) */
+  correctionSource: CorrectionSource;
 
   /** Search query for MusicBrainz (search mode only) */
   searchQuery: SearchQueryState | undefined;
@@ -109,6 +122,11 @@ export interface CorrectionActions {
 
   /** Cancel manual edit and return to search mode step 0 (clears manual state) */
   cancelManualEdit: () => void;
+
+  // ========== Source Selection ==========
+
+  /** Set correction source and atomically clear search state */
+  setCorrectionSource: (source: CorrectionSource) => void;
 
   // ========== Search State ==========
 
@@ -183,6 +201,7 @@ const DEFAULT_STATE: CorrectionState = {
   // Persisted
   step: 0,
   mode: 'search',
+  correctionSource: 'musicbrainz',
   searchQuery: undefined,
   searchOffset: 0,
   selectedMbid: undefined,
@@ -268,6 +287,24 @@ const createCorrectionStore = (albumId: string) =>
             step: 0,
             manualEditState: undefined,
             manualPreviewData: null,
+          });
+        },
+
+        // ========== Source Selection ==========
+
+        setCorrectionSource: (source: CorrectionSource) => {
+          const current = get().correctionSource;
+          if (current === source) return; // No-op if same source
+
+          set({
+            correctionSource: source,
+            // Clear ALL search-related state atomically
+            searchQuery: undefined,
+            searchOffset: 0,
+            selectedMbid: undefined,
+            previewData: null,
+            applySelections: null,
+            // Keep mode unchanged - manual/search mode is separate concern
           });
         },
 
@@ -375,6 +412,7 @@ const createCorrectionStore = (albumId: string) =>
           // Only persist these fields
           step: state.step,
           mode: state.mode,
+          correctionSource: state.correctionSource,
           searchQuery: state.searchQuery,
           searchOffset: state.searchOffset,
           selectedMbid: state.selectedMbid,
