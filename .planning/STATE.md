@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 21 of 25 (Source Selection UI)
-Plan: 2 of TBD in current phase
+Plan: 3 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-08 — Completed 21-02-PLAN.md
+Last activity: 2026-02-08 — Completed 21-03-PLAN.md
 
-Progress: [████░░░░░░░░░░░░░░░░] 2/5 phases (plan 2 of phase 21 complete)
+Progress: [███░░░░░░░░░░░░░░░░░] 3/5 phases (plans 1-3 of phase 21 complete)
 
 ## Performance Metrics
 
@@ -57,8 +57,9 @@ Progress: [████░░░░░░░░░░░░░░░░] 2/5 pha
 - shadcn-timeline for enrichment visualization
 - [21-01] CorrectionSource type defined in album store, re-exported from artist store
 - [21-01] Atomic state clearing on source switch (prevents stale data)
-- [21-02] Discogs shows placeholder until Phase 22+ implements search
-- [21-02] Source toggle disabled during loading to prevent race conditions
+- [21-02] SourceToggle placed below search input in both album/artist flows
+- [21-02] Toggle disabled during loading to prevent mid-query source switch
+- [21-03] Source badge in preview header (not per-field)
 
 ### v1.3 Context
 
@@ -76,9 +77,9 @@ Progress: [████░░░░░░░░░░░░░░░░] 2/5 pha
 - MusicBrainz correction services in `src/lib/correction/`
 - Zustand stores: `useCorrectionStore.ts`, `useArtistCorrectionStore.ts`
 - Toggle Group component: `src/components/ui/toggle-group.tsx`
+- SourceToggle component: `src/components/admin/correction/shared/SourceToggle.tsx`
 - correctionSource state in both stores with sessionStorage persistence
-- **NEW:** SourceToggle component: `src/components/admin/correction/shared/SourceToggle.tsx`
-- **NEW:** Source-aware SearchView and ArtistSearchView
+- Source badges in PreviewView and ArtistPreviewView
 
 ### Blockers/Concerns
 
@@ -86,8 +87,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-08 21:32 UTC
-Stopped at: Completed 21-02-PLAN.md
+Last session: 2026-02-08 21:37 UTC
+Stopped at: Completed 21-03-PLAN.md
 Resume file: N/A
 
-**Next action:** Execute 21-03-PLAN.md (if exists) or proceed to Phase 22
+**Next action:** Execute 21-04-PLAN.md (Discogs album search integration)
