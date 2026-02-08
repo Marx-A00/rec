@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 ## Current Position
 
-Phase: 21 of 25 (Source Selection UI)
-Plan: 3 of TBD in current phase
-Status: In progress
-Last activity: 2026-02-08 — Completed 21-03-PLAN.md
+Phase: 21 of 25 (Source Selection UI) — COMPLETE
+Plan: 3 of 3 in current phase
+Status: Phase complete, ready for Phase 22
+Last activity: 2026-02-08 — Phase 21 verified and complete
 
-Progress: [███░░░░░░░░░░░░░░░░░] 3/5 phases (plans 1-3 of phase 21 complete)
+Progress: [████░░░░░░░░░░░░░░░░] 1/5 phases complete
 
 ## Performance Metrics
 
@@ -38,10 +38,10 @@ Progress: [███░░░░░░░░░░░░░░░░░] 3/5 pha
 
 **Milestone v1.3 (In Progress):**
 - Phases: 5 (21-25)
-- Plans: TBD
-- Requirements: 17
+- Plans: 3 complete (phase 21)
+- Requirements: 4/17 complete (UI-01 through UI-04)
 
-**Total shipped:** 20 phases, 57 plans
+**Total shipped:** 21 phases, 60 plans
 
 ## Accumulated Context
 
@@ -57,14 +57,14 @@ Progress: [███░░░░░░░░░░░░░░░░░] 3/5 pha
 - shadcn-timeline for enrichment visualization
 - [21-01] CorrectionSource type defined in album store, re-exported from artist store
 - [21-01] Atomic state clearing on source switch (prevents stale data)
-- [21-02] SourceToggle placed below search input in both album/artist flows
+- [21-02] SourceToggle placed at top of search views
 - [21-02] Toggle disabled during loading to prevent mid-query source switch
 - [21-03] Source badge in preview header (not per-field)
 
 ### v1.3 Context
 
 - Adding Discogs as second search source for corrections
-- Toggle UI to select source before searching
+- Toggle UI to select source before searching — COMPLETE (Phase 21)
 - Reuse existing Discogs queue infrastructure (DISCOGS_SEARCH_ARTIST, DISCOGS_GET_ARTIST)
 - Need to add DISCOGS_SEARCH_ALBUM job type
 - Both album and artist corrections supported
@@ -87,8 +87,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-08 21:37 UTC
-Stopped at: Completed 21-03-PLAN.md
+Last session: 2026-02-08
+Stopped at: Phase 21 complete
 Resume file: N/A
 
-**Next action:** Execute 21-04-PLAN.md (Discogs album search integration)
+**Next action:** `/gsd:plan-phase 22` (Discogs Album Search)

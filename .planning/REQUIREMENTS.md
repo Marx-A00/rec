@@ -9,10 +9,10 @@ Requirements for Discogs Correction Source milestone.
 
 ### UI — Source Selection
 
-- [ ] **UI-01**: Correction modal shows source toggle (MusicBrainz / Discogs)
-- [ ] **UI-02**: Selected source persists in Zustand store
-- [ ] **UI-03**: Search view adapts to selected source
-- [ ] **UI-04**: Preview view shows source indicator
+- [x] **UI-01**: Correction modal shows source toggle (MusicBrainz / Discogs)
+- [x] **UI-02**: Selected source persists in Zustand store
+- [x] **UI-03**: Search view adapts to selected source
+- [x] **UI-04**: Preview view shows source indicator
 
 ### Album Corrections — Discogs
 
@@ -63,10 +63,10 @@ Deferred to later milestones.
 
 | Requirement | Phase | Status  |
 |-------------|-------|---------|
-| UI-01       | 21    | Pending |
-| UI-02       | 21    | Pending |
-| UI-03       | 21    | Pending |
-| UI-04       | 21    | Pending |
+| UI-01       | 21    | Complete |
+| UI-02       | 21    | Complete |
+| UI-03       | 21    | Complete |
+| UI-04       | 21    | Complete |
 | ALB-01      | 22    | Pending |
 | ALB-02      | 22    | Pending |
 | ALB-03      | 22    | Pending |
@@ -88,4 +88,4 @@ Deferred to later milestones.
 
 ---
 *Requirements defined: 2026-02-08*
-*Last updated: 2026-02-08 — Traceability updated with phase mappings*
+*Last updated: 2026-02-08 — Phase 21 complete (UI-01 through UI-04)*

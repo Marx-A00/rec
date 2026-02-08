@@ -43,9 +43,11 @@
 **Plans:** 3 plans
 
 Plans:
-- [ ] 21-01-PLAN.md — State infrastructure (stores + toggle group component)
-- [ ] 21-02-PLAN.md — SourceToggle component and search view integration
-- [ ] 21-03-PLAN.md — Preview view source badges
+- [x] 21-01-PLAN.md — State infrastructure (stores + toggle group component)
+- [x] 21-02-PLAN.md — SourceToggle component and search view integration
+- [x] 21-03-PLAN.md — Preview view source badges
+
+**Status:** Complete (2026-02-08)
 
 ---
 
