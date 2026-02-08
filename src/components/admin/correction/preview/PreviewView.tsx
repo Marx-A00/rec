@@ -246,8 +246,8 @@ export function PreviewView({ albumId }: PreviewViewProps) {
           <h3 className='text-lg font-medium text-zinc-100'>
             {preview.albumTitle}
           </h3>
-          <Badge 
-            variant='outline' 
+          <Badge
+            variant='outline'
             className='text-xs border-zinc-600 text-zinc-300'
           >
             {correctionSource === 'musicbrainz' ? 'MusicBrainz' : 'Discogs'}
