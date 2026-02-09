@@ -10,6 +10,7 @@ import type {
   DiscogsSearchArtistJobData,
   DiscogsGetArtistJobData,
   DiscogsSearchAlbumJobData,
+  DiscogsGetMasterJobData,
   CacheArtistImageJobData,
 } from '../jobs';
 import { JOB_TYPES } from '../jobs';
@@ -468,6 +469,57 @@ export async function handleDiscogsSearchAlbum(
     };
   } catch (error) {
     console.error(`❌ [Discogs Album Search] Failed:`, error);
+    throw error;
+  }
+}
+
+// ============================================================================
+// Discogs Get Master Handler (for Admin Correction Preview)
+// ============================================================================
+
+/**
+ * Fetch full Discogs master data by ID
+ * Used by admin correction preview via QueuedDiscogsService
+ */
+export async function handleDiscogsGetMaster(
+  job: Job<DiscogsGetMasterJobData>
+): Promise<unknown> {
+  const data = job.data;
+  const startTime = Date.now();
+
+  console.log('[Discogs Get Master] Fetching master ID: ' + data.masterId);
+
+  try {
+    // Initialize Discogs client via dynamic import (ESM-friendly)
+    const Discogs = await import('disconnect');
+    const discogsClient = new Discogs.default.Client({
+      userAgent: 'RecProject/1.0 +https://rec-music.org',
+      consumerKey: process.env.CONSUMER_KEY!,
+      consumerSecret: process.env.CONSUMER_SECRET!,
+    }).database();
+
+    // Fetch master
+    const master = await discogsClient.getMaster(parseInt(data.masterId, 10));
+
+    const duration = Date.now() - startTime;
+    const year = master.year || 'unknown year';
+    console.log(
+      '[Discogs Get Master] Fetched "' +
+        master.title +
+        '" (' +
+        year +
+        ') in ' +
+        duration +
+        'ms'
+    );
+
+    // Return full master object
+    return master;
+  } catch (error) {
+    console.error(
+      '[Discogs Get Master] Failed for ID ' + data.masterId + ':',
+      error
+    );
     throw error;
   }
 }

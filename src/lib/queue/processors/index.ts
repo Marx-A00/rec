@@ -28,6 +28,8 @@ import {
   type CacheArtistImageJobData,
   type DiscogsSearchArtistJobData,
   type DiscogsGetArtistJobData,
+  type DiscogsSearchAlbumJobData,
+  type DiscogsGetMasterJobData,
 } from '../jobs';
 
 import { toStructuredJobError } from './utils';
@@ -61,6 +63,8 @@ import {
 import {
   handleDiscogsSearchArtist,
   handleDiscogsGetArtist,
+  handleDiscogsSearchAlbum,
+  handleDiscogsGetMaster,
 } from './discogs-processor';
 
 // Re-export JOB_TYPES for convenience
@@ -246,6 +250,18 @@ export async function processMusicBrainzJob(
         );
         break;
 
+      case JOB_TYPES.DISCOGS_SEARCH_ALBUM:
+        result = await handleDiscogsSearchAlbum(
+          job as Job<DiscogsSearchAlbumJobData>
+        );
+        break;
+
+      case JOB_TYPES.DISCOGS_GET_MASTER:
+        result = await handleDiscogsGetMaster(
+          job as Job<DiscogsGetMasterJobData>
+        );
+        break;
+
       default:
         throw new Error(`Unknown job type: ${job.name}`);
     }
@@ -274,6 +290,8 @@ export async function processMusicBrainzJob(
       queryInfo = entityName
         ? `"${entityName}" • MBID: ${mbid.substring(0, 8)}...`
         : `MBID: ${mbid.substring(0, 8)}...`;
+    } else if (jobData.masterId) {
+      queryInfo = `Master: ${jobData.masterId}`;
     } else if (jobData.albumId) {
       queryInfo = `Album: ${jobData.albumId}`;
     } else if (jobData.artistId) {
