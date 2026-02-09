@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 ## Current Position
 
-Phase: 24 of 25 (Discogs Artist Search) — COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase 24 complete
-Last activity: 2026-02-09 — Completed 24-03-PLAN.md (frontend integration)
+Phase: 25 of 25 (Discogs Artist Apply)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-09 — Completed 25-01-PLAN.md (artist preview service Discogs support)
 
-Progress: [█████████████░░░░░░░] 13/18 plans complete (v1.3)
+Progress: [█████████████░░░░░░░] 14/18 plans complete (v1.3)
 
 ## Performance Metrics
 
@@ -42,8 +42,8 @@ Progress: [█████████████░░░░░░░] 13/18 p
 **Milestone v1.3 (In Progress):**
 
 - Phases: 5 (21-25)
-- Plans: 13 complete (phase 21 + phase 22 + phase 23 + phase 24)
-- Requirements: 14/17 complete (UI-01 through UI-04, ALB-01 through ALB-05, ART-01 through ART-03, MAP-01, MAP-02)
+- Plans: 14 complete (phase 21 + phase 22 + phase 23 + phase 24 + 25-01)
+- Requirements: 15/17 complete (UI-01 through UI-04, ALB-01 through ALB-05, ART-01 through ART-04, MAP-01, MAP-02)
 
 **Total shipped:** 21 phases, 63 plans
 
@@ -94,6 +94,13 @@ Progress: [█████████████░░░░░░░] 13/18 p
 - [24-02] source field on ArtistCorrectionSearchResult type
 - [24-03] ArtistSearchView passes graphqlSource to query
 - [24-03] ArtistSearchCard with orange accent for Discogs results
+- [25-01] CorrectionSource type in artist preview/types.ts
+- [25-01] generatePreview() accepts source parameter with 'musicbrainz' default
+- [25-01] fetchDiscogsArtistData() uses UnifiedArtistService
+- [25-01] Biography built from profile + realname + members + groups
+- [25-01] BBCode stripping for Discogs profile text
+- [25-01] Source-conditional field diffs (artistType/area/countryCode only for MB)
+- [25-01] External ID uses musicbrainzId or discogsId based on source
 
 ### v1.3 Context
 
@@ -110,8 +117,9 @@ Progress: [█████████████░░░░░░░] 13/18 p
 - Artist search backend (searchArtists method) — COMPLETE (24-01)
 - Artist search GraphQL routing — COMPLETE (24-02)
 - Artist search frontend integration — COMPLETE (24-03)
-- Both album and artist SEARCH now supported
-- Artist preview/apply pending (Phase 25)
+- Artist preview service Discogs support — COMPLETE (25-01)
+- Artist preview GraphQL routing pending (25-02)
+- Artist apply source wiring pending (25-03)
 
 ### Existing Infrastructure
 
@@ -125,11 +133,12 @@ Progress: [█████████████░░░░░░░] 13/18 p
 - Source badges in PreviewView and ArtistPreviewView
 - QueuedDiscogsService with searchAlbums(), getMaster(), and searchArtists() methods
 - CorrectionSource enum in GraphQL schema
-- CorrectionSource type in preview/types.ts
+- CorrectionSource type in preview/types.ts (album) and artist/preview/types.ts (artist)
 - CorrectionPreviewInput.source field for preview source selection
 - SearchView passes source to GraphQL query
 - SearchResultCard with source-aware styling
 - CorrectionPreviewService.generatePreview() accepts source parameter
+- ArtistCorrectionPreviewService.generatePreview() accepts source parameter
 - ApplyCorrectionService stores correct external ID based on source
 - correctionPreview resolver routes to Discogs when source is DISCOGS
 - artistCorrectionSearch resolver routes to Discogs when source is DISCOGS
@@ -143,7 +152,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed Phase 24 (Discogs Artist Search)
+Stopped at: Completed 25-01-PLAN.md
 Resume file: N/A
 
-**Next action:** Plan Phase 25 (Discogs Artist Apply)
+**Next action:** Execute 25-02-PLAN.md (GraphQL resolver routing for artist preview)
