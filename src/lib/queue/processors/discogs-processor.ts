@@ -78,6 +78,7 @@ export async function handleDiscogsSearchArtist(
         artistId: data.artistId,
         action: 'no_results',
         searchedName: data.artistName,
+        searchResults: [], // Return empty array for correction UI
       };
     }
 
@@ -119,6 +120,7 @@ export async function handleDiscogsSearchArtist(
         action: 'no_confident_match',
         searchedName: data.artistName,
         resultsCount: searchResults.results.length,
+        searchResults: searchResults.results, // Return all results for correction UI
       };
     }
 
@@ -187,6 +189,7 @@ export async function handleDiscogsSearchArtist(
       discogsId: String(discogsId),
       matchConfidence: bestMatch.score,
       discogsTitle: bestMatch.result.title,
+      searchResults: searchResults.results, // Return all results for correction UI
     };
   } catch (error) {
     console.error(`❌ Discogs search failed for "${data.artistName}":`, error);
