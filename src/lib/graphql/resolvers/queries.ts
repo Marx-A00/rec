@@ -2865,7 +2865,7 @@ export const queryResolvers: QueryResolvers = {
   // Artist Correction System Queries (Admin Only)
   // ============================================================================
 
-  artistCorrectionSearch: async (_, { query, limit }, { user }) => {
+  artistCorrectionSearch: async (_, { query, limit, source }, { user }) => {
     // Authentication check
     if (!user) {
       throw new GraphQLError('Authentication required', {
@@ -2881,6 +2881,37 @@ export const queryResolvers: QueryResolvers = {
     }
 
     try {
+      // Route to Discogs if source is DISCOGS
+      if (source === GqlCorrectionSource.Discogs) {
+        const queuedDiscogsService = getQueuedDiscogsService();
+        const response = await queuedDiscogsService.searchArtists({
+          artistName: query,
+          limit: limit ?? 10,
+        });
+
+        return {
+          results: response.results.map(result => ({
+            artistMbid: result.artistMbid,
+            name: result.name,
+            sortName: result.sortName,
+            disambiguation: result.disambiguation ?? null,
+            type: result.type ?? null,
+            country: result.country ?? null,
+            area: result.area ?? null,
+            beginDate: result.beginDate ?? null,
+            endDate: result.endDate ?? null,
+            ended: result.ended ?? null,
+            gender: result.gender ?? null,
+            mbScore: result.mbScore,
+            topReleases: result.topReleases ?? null,
+            source: result.source ?? 'discogs',
+          })),
+          hasMore: false, // Discogs search doesn't support pagination
+          query,
+        };
+      }
+
+      // MusicBrainz search (default)
       const { getArtistCorrectionSearchService } = await import(
         '@/lib/correction/artist/search-service'
       );
@@ -2906,6 +2937,7 @@ export const queryResolvers: QueryResolvers = {
           gender: result.gender ?? null,
           mbScore: result.mbScore,
           topReleases: result.topReleases ?? null,
+          source: 'musicbrainz',
         })),
         hasMore: response.hasMore,
         query: response.query,
