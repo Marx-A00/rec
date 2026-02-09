@@ -20,6 +20,7 @@ import { JobStatus as GqlJobStatus } from '@/generated/resolvers-types';
 import { isAdmin } from '@/lib/permissions';
 import { getCorrectionSearchService } from '@/lib/correction/search-service';
 import { getCorrectionPreviewService } from '@/lib/correction/preview';
+import { getQueuedDiscogsService } from '@/lib/discogs/queued-service';
 import type {
   ScoredSearchResult,
   ScoringStrategy as ServiceScoringStrategy,
@@ -28,6 +29,7 @@ import type { GroupedSearchResult } from '@/lib/correction/types';
 import {
   ScoringStrategy as GqlScoringStrategy,
   ConfidenceTier as GqlConfidenceTier,
+  CorrectionSource as GqlCorrectionSource,
 } from '@/generated/resolvers-types';
 
 import { getSearchService } from '../search';
@@ -2594,6 +2596,7 @@ export const queryResolvers: QueryResolvers = {
         offset,
         strategy,
         lowConfidenceThreshold,
+        source,
       } = input;
 
       // Get album data if title/artist not provided
@@ -2620,6 +2623,58 @@ export const queryResolvers: QueryResolvers = {
         searchAlbumTitle = searchAlbumTitle ?? album.title;
         searchArtistName = searchArtistName ?? album.artists[0]?.artist?.name;
       }
+      // Route to Discogs via queue if source is DISCOGS
+      if (source === GqlCorrectionSource.Discogs) {
+        const queuedDiscogsService = getQueuedDiscogsService();
+        const discogsResponse = await queuedDiscogsService.searchAlbums({
+          albumId,
+          albumTitle: searchAlbumTitle,
+          artistName: searchArtistName,
+          limit: limit ?? 10,
+        });
+
+        // Transform Discogs results to GraphQL format
+        // Discogs does not have scoring, so wrap each result as a single-item group
+        const transformedResults = discogsResponse.results.map(result => ({
+          releaseGroupMbid: result.releaseGroupMbid,
+          primaryResult: {
+            ...result,
+            normalizedScore: 1.0,
+            displayScore: 100,
+            breakdown: {
+              titleScore: 1.0,
+              artistScore: 1.0,
+              yearScore: 1.0,
+              mbScore: 100,
+              confidenceTier: null,
+            },
+            isLowConfidence: false,
+            scoringStrategy: GqlScoringStrategy.Normalized,
+          },
+          alternateVersions: [],
+          versionCount: 1,
+          bestScore: 1.0,
+        }));
+
+        return {
+          results: transformedResults,
+          totalGroups: transformedResults.length,
+          hasMore: false, // Discogs search does not paginate in this implementation
+          query: {
+            albumTitle: searchAlbumTitle ?? null,
+            artistName: searchArtistName ?? null,
+            yearFilter: null,
+          },
+          scoring: {
+            strategy: GqlScoringStrategy.Normalized,
+            threshold: 0.5,
+            lowConfidenceCount: 0,
+          },
+        };
+      }
+
+      // MusicBrainz path (default)
+
 
       // Map GraphQL strategy enum to service strategy
       const serviceStrategy = mapGqlStrategyToService(strategy);
