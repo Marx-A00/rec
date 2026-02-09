@@ -39,6 +39,7 @@ export const JOB_TYPES = {
   // Discogs Jobs
   DISCOGS_SEARCH_ARTIST: 'discogs:search-artist',
   DISCOGS_GET_ARTIST: 'discogs:get-artist',
+  DISCOGS_SEARCH_ALBUM: 'discogs:search-album',
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -330,6 +331,16 @@ export interface DiscogsGetArtistJobData {
   parentJobId?: string;
 }
 
+export interface DiscogsSearchAlbumJobData {
+  albumId: string; // Local database album ID (for logging)
+  albumTitle?: string; // Album title to search
+  artistName?: string; // Artist name filter (optional)
+  limit?: number; // Results per page (default 10)
+  requestId?: string; // Request tracking
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string;
+}
+
 // ============================================================================
 // Job Data Union Type
 // ============================================================================
@@ -356,7 +367,8 @@ export type MusicBrainzJobData =
   | CacheAlbumCoverArtJobData
   | CacheArtistImageJobData
   | DiscogsSearchArtistJobData
-  | DiscogsGetArtistJobData;
+  | DiscogsGetArtistJobData
+  | DiscogsSearchAlbumJobData;
 
 // ============================================================================
 // Job Result Interfaces

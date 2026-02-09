@@ -54,7 +54,7 @@ export interface CorrectionSearchResult {
   /** Cover Art Archive thumbnail URL (250px) */
   coverArtUrl: string | null;
   /** Source indicator */
-  source: 'musicbrainz';
+  source: 'musicbrainz' | 'discogs';
 }
 
 /**

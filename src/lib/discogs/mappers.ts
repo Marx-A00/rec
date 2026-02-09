@@ -165,3 +165,50 @@ export function mapDiscogsReleaseToAlbum(
     master_id: discogsRelease.master_id,
   } as Album & { _discogs?: DiscogsMetadata; master_id?: number | null };
 }
+
+// ============================================================================
+// Correction Search Mapper
+// ============================================================================
+
+import type {
+  CorrectionSearchResult,
+  CorrectionArtistCredit,
+} from '@/lib/correction/types';
+
+/**
+ * Map a Discogs Master to CorrectionSearchResult format
+ * Used by queue handler and QueuedDiscogsService for correction search results
+ */
+export function mapMasterToCorrectionSearchResult(
+  master: DiscogsMaster
+): CorrectionSearchResult {
+  // Map artist credits
+  const artistCredits: CorrectionArtistCredit[] = master.artists.map(a => ({
+    mbid: a.id.toString(),
+    name: a.name,
+  }));
+
+  // Build primary artist name from all artists
+  const primaryArtistName =
+    master.artists.map(a => a.name).join(', ') || 'Unknown Artist';
+
+  // Merge genres + styles per CONTEXT.md
+  const genres = [...(master.genres || []), ...(master.styles || [])];
+
+  // Get cover art (first image)
+  const coverImage = master.images?.[0];
+
+  return {
+    releaseGroupMbid: master.id.toString(),
+    title: master.title,
+    disambiguation: undefined,
+    artistCredits,
+    primaryArtistName,
+    firstReleaseDate: master.year?.toString(),
+    primaryType: 'Album',
+    secondaryTypes: genres.length > 0 ? genres : [],
+    mbScore: 100, // Discogs has no relevance score
+    coverArtUrl: coverImage?.uri || null,
+    source: 'discogs',
+  };
+}

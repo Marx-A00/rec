@@ -9,6 +9,7 @@ import { createEnrichmentLogger } from '../../enrichment/enrichment-logger';
 import type {
   DiscogsSearchArtistJobData,
   DiscogsGetArtistJobData,
+  DiscogsSearchAlbumJobData,
   CacheArtistImageJobData,
 } from '../jobs';
 import { JOB_TYPES } from '../jobs';
@@ -350,6 +351,123 @@ export async function handleDiscogsGetArtist(
       triggeredBy: 'system',
     });
 
+    throw error;
+  }
+}
+
+// ============================================================================
+// Discogs Album Search Handler (for Admin Correction)
+// ============================================================================
+
+/**
+ * Search Discogs for albums (masters) by title
+ * Used by admin correction modal via QueuedDiscogsService
+ */
+export async function handleDiscogsSearchAlbum(
+  job: Job<DiscogsSearchAlbumJobData>
+): Promise<unknown> {
+  const data = job.data;
+  const startTime = Date.now();
+
+  const { mapMasterToCorrectionSearchResult } = await import(
+    '@/lib/discogs/mappers'
+  );
+
+  const artistInfo = data.artistName ? ` by "${data.artistName}"` : '';
+  console.log(
+    `🔍 [Discogs Album Search] Searching for: "${data.albumTitle}"${artistInfo}`
+  );
+
+  try {
+    // Initialize Discogs client via dynamic import (ESM-friendly)
+    const Discogs = await import('disconnect');
+    const discogsClient = new Discogs.default.Client({
+      userAgent: 'RecProject/1.0 +https://rec-music.org',
+      consumerKey: process.env.CONSUMER_KEY!,
+      consumerSecret: process.env.CONSUMER_SECRET!,
+    }).database();
+
+    // Build search options
+    interface DiscogsSearchOptions {
+      type: 'master';
+      per_page: number;
+      release_title?: string;
+      artist?: string;
+    }
+
+    const searchOptions: DiscogsSearchOptions = {
+      type: 'master',
+      per_page: data.limit || 10,
+    };
+
+    if (data.albumTitle) {
+      searchOptions.release_title = data.albumTitle;
+    }
+
+    if (data.artistName) {
+      searchOptions.artist = data.artistName;
+    }
+
+    // Execute search
+    const searchResults = await discogsClient.search(searchOptions);
+
+    if (!searchResults.results || searchResults.results.length === 0) {
+      console.log(
+        `❌ [Discogs Album Search] No results found for "${data.albumTitle}"`
+      );
+      return {
+        albumId: data.albumId,
+        action: 'search_complete',
+        resultsCount: 0,
+        results: [],
+      };
+    }
+
+    console.log(
+      `📊 [Discogs Album Search] Found ${searchResults.results.length} search results, fetching master details...`
+    );
+
+    // Fetch full master details for each result
+    interface DiscogsSearchResultItem {
+      id: number;
+      type?: string;
+      master_id?: number;
+    }
+
+    const masterPromises = searchResults.results.map(
+      async (result: DiscogsSearchResultItem) => {
+        try {
+          // Use master_id if available (more reliable), otherwise use result id
+          const masterId = result.master_id || result.id;
+          const master = await discogsClient.getMaster(masterId);
+          return mapMasterToCorrectionSearchResult(master);
+        } catch (error) {
+          console.warn(
+            `⚠️ [Discogs Album Search] Failed to fetch master ${result.id}:`,
+            error
+          );
+          return null;
+        }
+      }
+    );
+
+    const results = (await Promise.all(masterPromises)).filter(
+      (r): r is NonNullable<typeof r> => r !== null
+    );
+
+    const duration = Date.now() - startTime;
+    console.log(
+      `✅ [Discogs Album Search] Returning ${results.length} mapped results (took ${duration}ms)`
+    );
+
+    return {
+      albumId: data.albumId,
+      action: 'search_complete',
+      resultsCount: results.length,
+      results,
+    };
+  } catch (error) {
+    console.error(`❌ [Discogs Album Search] Failed:`, error);
     throw error;
   }
 }
