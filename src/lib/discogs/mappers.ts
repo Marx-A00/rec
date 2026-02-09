@@ -212,3 +212,54 @@ export function mapMasterToCorrectionSearchResult(
     source: 'discogs',
   };
 }
+
+// ============================================================================
+// Artist Correction Search Mapper
+// ============================================================================
+
+import type { ArtistSearchResult } from '@/lib/correction/artist/types';
+
+/**
+ * Discogs search result structure (from disconnect library)
+ * Search returns minimal data: id, title (name), thumb, resource_url
+ */
+interface DiscogsArtistSearchResult {
+  id: number;
+  title: string;
+  thumb?: string;
+  resource_url?: string;
+  type?: string;
+}
+
+/**
+ * Map Discogs artist search result to ArtistSearchResult format
+ * Used by QueuedDiscogsService for correction search results
+ *
+ * NOTE: Discogs search results are minimal (id, title, thumb)
+ * Many fields like country, area, beginDate don't exist in search results
+ */
+export function mapDiscogsSearchResultToArtistSearchResult(
+  searchResult: DiscogsArtistSearchResult,
+  score?: number
+): ArtistSearchResult {
+  // Discogs title may include disambiguation in parentheses: "Artist Name (2)"
+  // We preserve it as-is for now; disambiguation field is separate in UI
+  const name = searchResult.title;
+
+  return {
+    artistMbid: searchResult.id.toString(), // Use Discogs ID as identifier
+    name: name,
+    sortName: name, // Discogs doesn't have sort names
+    disambiguation: undefined, // Discogs doesn't have disambiguation in search
+    type: undefined, // Discogs doesn't categorize Person/Group in search
+    country: undefined, // Not in search results
+    area: undefined, // Not in search results
+    beginDate: undefined, // Not in search results
+    endDate: undefined, // Not in search results
+    ended: undefined, // Not in search results
+    gender: undefined, // Not in search results
+    mbScore: score !== undefined ? Math.round(score * 100) : 100, // Convert 0-1 to 0-100
+    topReleases: undefined, // Don't fetch releases for search results (too slow)
+    source: 'discogs',
+  };
+}
