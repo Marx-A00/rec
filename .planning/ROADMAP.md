@@ -40,7 +40,7 @@
 - `src/components/admin/correction/artist/ArtistCorrectionModal.tsx`
 - `src/components/admin/correction/search/SearchView.tsx`
 
-**Plans:** 3 plans
+**Plans:** 4 plans
 
 Plans:
 
@@ -76,7 +76,7 @@ Plans:
 - `src/lib/queue/processors/discogs-processor.ts` (add album search)
 - `src/graphql/schema.graphql` (add Discogs album search mutation)
 
-**Plans:** 3 plans
+**Plans:** 4 plans
 
 Plans:
 
@@ -111,13 +111,14 @@ Plans:
 - `src/components/admin/correction/preview/PreviewView.tsx`
 - `src/components/admin/correction/apply/ApplyView.tsx`
 
-**Plans:** 3 plans
+**Plans:** 4 plans
 
 Plans:
 
 - [ ] 23-01-PLAN.md — Queue infrastructure (DISCOGS_GET_MASTER job, getMaster method)
 - [ ] 23-02-PLAN.md — Preview and apply service extensions for Discogs
 - [ ] 23-03-PLAN.md — GraphQL layer (source parameter in preview input)
+- [ ] 23-04-PLAN.md — Gap closure (wire source param in frontend and apply resolver)
 
 ---
 
