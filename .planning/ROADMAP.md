@@ -181,7 +181,14 @@ Plans:
 - `src/components/admin/correction/artist/preview/ArtistPreviewView.tsx`
 - `src/components/admin/correction/artist/apply/ArtistApplyView.tsx`
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 25-01-PLAN.md — Preview service extension for Discogs
+- [ ] 25-02-PLAN.md — Apply service extension for Discogs
+- [ ] 25-03-PLAN.md — GraphQL layer for artist correction
+
+**Status:** Planned
 
 ---
 
