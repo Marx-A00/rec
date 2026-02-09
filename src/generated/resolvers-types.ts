@@ -410,6 +410,8 @@ export type ArtistCorrectionSearchResult = {
   name: Scalars['String']['output'];
   /** Sort name (e.g., "Beatles, The") */
   sortName: Scalars['String']['output'];
+  /** Data source this result came from (musicbrainz or discogs) */
+  source?: Maybe<Scalars['String']['output']>;
   /** Top releases for disambiguation */
   topReleases?: Maybe<Array<ArtistTopRelease>>;
   /** Artist type: Person, Group, Orchestra, Choir, Character, Other */
@@ -1577,7 +1579,7 @@ export type Query = {
   artistByMusicBrainzId?: Maybe<Artist>;
   /** Generate a preview of changes between artist and selected MusicBrainz artist */
   artistCorrectionPreview: ArtistCorrectionPreview;
-  /** Search MusicBrainz for artist correction candidates */
+  /** Search MusicBrainz or Discogs for artist correction candidates */
   artistCorrectionSearch: ArtistCorrectionSearchResponse;
   artistDiscography: CategorizedDiscography;
   artistRecommendations: ArtistRecommendationsConnection;
@@ -1668,6 +1670,7 @@ export type QueryArtistCorrectionPreviewArgs = {
 export type QueryArtistCorrectionSearchArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
+  source?: InputMaybe<CorrectionSource>;
 };
 
 export type QueryArtistDiscographyArgs = {
@@ -3612,6 +3615,7 @@ export type ArtistCorrectionSearchResultResolvers<
   mbScore?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   sortName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  source?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   topReleases?: Resolver<
     Maybe<Array<ResolversTypes['ArtistTopRelease']>>,
     ParentType,
@@ -5014,7 +5018,7 @@ export type QueryResolvers<
     ResolversTypes['ArtistCorrectionSearchResponse'],
     ParentType,
     ContextType,
-    RequireFields<QueryArtistCorrectionSearchArgs, 'query'>
+    RequireFields<QueryArtistCorrectionSearchArgs, 'query' | 'source'>
   >;
   artistDiscography?: Resolver<
     ResolversTypes['CategorizedDiscography'],

@@ -436,6 +436,8 @@ export type ArtistCorrectionSearchResult = {
   name: Scalars['String']['output'];
   /** Sort name (e.g., "Beatles, The") */
   sortName: Scalars['String']['output'];
+  /** Data source this result came from (musicbrainz or discogs) */
+  source?: Maybe<Scalars['String']['output']>;
   /** Top releases for disambiguation */
   topReleases?: Maybe<Array<ArtistTopRelease>>;
   /** Artist type: Person, Group, Orchestra, Choir, Character, Other */
@@ -1603,7 +1605,7 @@ export type Query = {
   artistByMusicBrainzId?: Maybe<Artist>;
   /** Generate a preview of changes between artist and selected MusicBrainz artist */
   artistCorrectionPreview: ArtistCorrectionPreview;
-  /** Search MusicBrainz for artist correction candidates */
+  /** Search MusicBrainz or Discogs for artist correction candidates */
   artistCorrectionSearch: ArtistCorrectionSearchResponse;
   artistDiscography: CategorizedDiscography;
   artistRecommendations: ArtistRecommendationsConnection;
@@ -1694,6 +1696,7 @@ export type QueryArtistCorrectionPreviewArgs = {
 export type QueryArtistCorrectionSearchArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
+  source?: InputMaybe<CorrectionSource>;
 };
 
 export type QueryArtistDiscographyArgs = {
@@ -3125,6 +3128,7 @@ export type GetArtistByMusicBrainzIdQuery = {
 export type SearchArtistCorrectionCandidatesQueryVariables = Exact<{
   query: Scalars['String']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
+  source?: InputMaybe<CorrectionSource>;
 }>;
 
 export type SearchArtistCorrectionCandidatesQuery = {
@@ -3147,6 +3151,7 @@ export type SearchArtistCorrectionCandidatesQuery = {
       ended?: boolean | null;
       gender?: string | null;
       mbScore: number;
+      source?: string | null;
       topReleases?: Array<{
         __typename?: 'ArtistTopRelease';
         title: string;
@@ -6487,8 +6492,8 @@ useInfiniteGetArtistByMusicBrainzIdQuery.getKey = (
 ) => ['GetArtistByMusicBrainzId.infinite', variables];
 
 export const SearchArtistCorrectionCandidatesDocument = `
-    query SearchArtistCorrectionCandidates($query: String!, $limit: Int) {
-  artistCorrectionSearch(query: $query, limit: $limit) {
+    query SearchArtistCorrectionCandidates($query: String!, $limit: Int, $source: CorrectionSource) {
+  artistCorrectionSearch(query: $query, limit: $limit, source: $source) {
     results {
       artistMbid
       name
@@ -6507,6 +6512,7 @@ export const SearchArtistCorrectionCandidatesDocument = `
         year
         type
       }
+      source
     }
     hasMore
     query
