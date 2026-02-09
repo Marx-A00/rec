@@ -2,7 +2,10 @@
 
 import { useMemo, useEffect, useState, useRef } from 'react';
 
-import { useGetCorrectionPreviewQuery } from '@/generated/graphql';
+import {
+  useGetCorrectionPreviewQuery,
+  CorrectionSource,
+} from '@/generated/graphql';
 import type {
   FieldDiff,
   ArtistCreditDiff,
@@ -64,7 +67,13 @@ export function PreviewView({ albumId }: PreviewViewProps) {
 
   const { data, isLoading, error, refetch, isFetching } =
     useGetCorrectionPreviewQuery(
-      { input: { albumId, releaseGroupMbid: selectedMbid! } },
+      {
+        input: {
+          albumId,
+          releaseGroupMbid: selectedMbid!,
+          source: correctionSource.toUpperCase() as CorrectionSource,
+        },
+      },
       {
         enabled: Boolean(albumId && selectedMbid),
         staleTime: 5 * 60 * 1000,
