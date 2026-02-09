@@ -2,6 +2,7 @@
 
 import { User } from 'lucide-react';
 
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { type ArtistCorrectionSearchResult } from '@/generated/graphql';
 
@@ -12,19 +13,24 @@ export interface ArtistSearchCardProps {
 
 /**
  * A clickable search result card showing artist metadata and match score.
- * Used in the artist correction modal to display MusicBrainz search results.
+ * Used in the artist correction modal to display search results from MusicBrainz or Discogs.
  *
  * Displays:
  * - Artist name (large) with disambiguation (smaller subtitle)
  * - Type badge: Person, Group, etc.
  * - Country flag/code if available
  * - Top releases list (2-3 items with year and type)
- * - MB score as percentage match
+ * - Match score as percentage
+ * - Source badge (MB for MusicBrainz, DG for Discogs)
  */
 export function ArtistSearchCard({ result, onClick }: ArtistSearchCardProps) {
   const handleClick = () => {
     onClick(result);
   };
+
+  // Determine source for visual distinction
+  const isDiscogs = result.source === 'discogs';
+  const badgeText = isDiscogs ? 'DG' : 'MB';
 
   // Format match score as percentage
   const matchScore = result.mbScore;
@@ -42,7 +48,12 @@ export function ArtistSearchCard({ result, onClick }: ArtistSearchCardProps) {
     <button
       type='button'
       onClick={handleClick}
-      className='w-full flex gap-3 p-3 text-left transition-colors duration-150 hover:bg-zinc-800/50 active:bg-zinc-800 rounded-md'
+      className={cn(
+        'w-full flex gap-3 p-3 text-left transition-colors duration-150 rounded-md',
+        isDiscogs
+          ? 'border border-orange-900/30 hover:bg-orange-950/20 active:bg-orange-950/30'
+          : 'hover:bg-zinc-800/50 active:bg-zinc-800'
+      )}
       aria-label={'Select ' + result.name}
     >
       {/* Artist avatar placeholder */}
@@ -69,7 +80,7 @@ export function ArtistSearchCard({ result, onClick }: ArtistSearchCardProps) {
           </div>
         )}
 
-        {/* Row 3: Type + Country + MB badge */}
+        {/* Row 3: Type + Country + Source badge */}
         <div className='flex items-center gap-2 text-xs text-zinc-500'>
           {result.type && (
             <Badge
@@ -87,9 +98,14 @@ export function ArtistSearchCard({ result, onClick }: ArtistSearchCardProps) {
           )}
           <Badge
             variant='outline'
-            className='ml-auto text-zinc-500 border-zinc-700 text-[10px] px-1.5 py-0'
+            className={cn(
+              'ml-auto text-[10px] px-1.5 py-0',
+              isDiscogs
+                ? 'text-orange-400 border-orange-700'
+                : 'text-zinc-500 border-zinc-700'
+            )}
           >
-            MB
+            {badgeText}
           </Badge>
         </div>
 
