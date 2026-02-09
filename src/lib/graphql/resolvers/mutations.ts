@@ -4,7 +4,10 @@
 
 import { GraphQLError } from 'graphql';
 
-import { MutationResolvers, CorrectionSource as GqlCorrectionSource } from '@/generated/graphql';
+import {
+  MutationResolvers,
+  CorrectionSource as GqlCorrectionSource,
+} from '@/generated/graphql';
 import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
 import {
   previewAlbumEnrichment,
@@ -32,7 +35,7 @@ import { getCorrectionPreviewService } from '@/lib/correction/preview';
 import { applyCorrectionService, StaleDataError } from '@/lib/correction/apply';
 import { getQueuedDiscogsService } from '@/lib/discogs/queued-service';
 import { mapMasterToCorrectionSearchResult } from '@/lib/discogs/mappers';
-import { PRIORITY_TIERS } from '@/lib/queue/priority';
+import { PRIORITY_TIERS } from '@/lib/queue/jobs';
 import type {
   FieldSelections,
   MetadataSelections,
@@ -2809,9 +2812,16 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      const { albumId, releaseGroupMbid, selections, expectedUpdatedAt, source } =
-        input;
-      const normalizedSource = (source?.toLowerCase() ?? 'musicbrainz') as 'musicbrainz' | 'discogs';
+      const {
+        albumId,
+        releaseGroupMbid,
+        selections,
+        expectedUpdatedAt,
+        source,
+      } = input;
+      const normalizedSource = (source?.toLowerCase() ?? 'musicbrainz') as
+        | 'musicbrainz'
+        | 'discogs';
 
       // Get album with tracks for preview generation
       const album = await prisma.album.findUnique({
@@ -2842,7 +2852,10 @@ export const mutationResolvers: MutationResolvers = {
         if (normalizedSource === 'discogs') {
           // Fetch Discogs master and map to CorrectionSearchResult
           const discogsService = getQueuedDiscogsService();
-          const master = await discogsService.getMaster(releaseGroupMbid, PRIORITY_TIERS.ADMIN);
+          const master = await discogsService.getMaster(
+            releaseGroupMbid,
+            PRIORITY_TIERS.ADMIN
+          );
           const baseResult = mapMasterToCorrectionSearchResult(master);
           // Wrap with default scoring (same as correctionPreview resolver)
           scoredResult = {
@@ -3165,7 +3178,9 @@ export const mutationResolvers: MutationResolvers = {
 
       // Convert GraphQL enum to lowercase string for service layer
       const sourceStr =
-        input.source === GqlCorrectionSource.Discogs ? 'discogs' : 'musicbrainz';
+        input.source === GqlCorrectionSource.Discogs
+          ? 'discogs'
+          : 'musicbrainz';
 
       // Generate preview first (same pattern as album correction)
       const previewService = getArtistCorrectionPreviewService();
