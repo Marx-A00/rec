@@ -40,6 +40,7 @@ export const JOB_TYPES = {
   DISCOGS_SEARCH_ARTIST: 'discogs:search-artist',
   DISCOGS_GET_ARTIST: 'discogs:get-artist',
   DISCOGS_SEARCH_ALBUM: 'discogs:search-album',
+  DISCOGS_GET_MASTER: 'discogs:get-master',
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -341,6 +342,15 @@ export interface DiscogsSearchAlbumJobData {
   parentJobId?: string;
 }
 
+export interface DiscogsGetMasterJobData {
+  /** Discogs master ID to fetch */
+  masterId: string;
+  /** Request ID for tracking */
+  requestId?: string;
+  /** Parent job ID for job linking */
+  parentJobId?: string;
+}
+
 // ============================================================================
 // Job Data Union Type
 // ============================================================================
@@ -368,13 +378,14 @@ export type MusicBrainzJobData =
   | CacheArtistImageJobData
   | DiscogsSearchArtistJobData
   | DiscogsGetArtistJobData
-  | DiscogsSearchAlbumJobData;
+  | DiscogsSearchAlbumJobData
+  | DiscogsGetMasterJobData;
 
 // ============================================================================
 // Job Result Interfaces
 // ============================================================================
 
-export interface JobResult<T = any> {
+export interface JobResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: {
