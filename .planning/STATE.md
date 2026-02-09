@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 23 of 25 (Discogs Album Apply) — COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase 23 complete
-Last activity: 2026-02-09 — Completed 23-03-PLAN.md
+Plan: 4 of 4 in current phase (gap closure)
+Status: Phase 23 complete (all gaps closed)
+Last activity: 2026-02-09 — Completed 23-04-PLAN.md (gap closure)
 
-Progress: [█████████░░░░░░░░░░░] 9/18 plans complete (v1.3)
+Progress: [██████████░░░░░░░░░░] 10/18 plans complete (v1.3)
 
 ## Performance Metrics
 
@@ -42,10 +42,10 @@ Progress: [█████████░░░░░░░░░░░] 9/18 pl
 **Milestone v1.3 (In Progress):**
 
 - Phases: 5 (21-25)
-- Plans: 9 complete (phase 21 + phase 22 + phase 23)
-- Requirements: 11/17 complete (UI-01 through UI-04, ALB-01, ALB-02, ALB-03, MAP-01, ALB-04, ALB-05, ALB-06)
+- Plans: 10 complete (phase 21 + phase 22 + phase 23 including gap closure)
+- Requirements: 12/17 complete (UI-01 through UI-04, ALB-01 through ALB-07)
 
-**Total shipped:** 21 phases, 62 plans
+**Total shipped:** 21 phases, 63 plans
 
 ## Accumulated Context
 
@@ -82,6 +82,9 @@ Progress: [█████████░░░░░░░░░░░] 9/18 pl
 - [23-02] Source-conditional external ID storage (musicbrainzId vs discogsId)
 - [23-03] Source field on CorrectionPreviewInput with MUSICBRAINZ default
 - [23-03] Discogs results wrapped with default scoring (normalizedScore: 1.0)
+- [23-04] Source parameter threading pattern: UI (lowercase) → GraphQL (uppercase) → services (lowercase)
+- [23-04] CorrectionApplyInput.source field with MUSICBRAINZ default
+- [23-04] Conditional service routing in correctionApply resolver
 
 ### v1.3 Context
 
@@ -124,7 +127,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed Phase 23 (Discogs Album Apply)
+Stopped at: Completed Phase 23 including gap closure (23-04-PLAN.md)
 Resume file: N/A
 
 **Next action:** Execute Phase 24 (Discogs Artist Search)
