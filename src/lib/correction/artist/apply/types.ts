@@ -32,6 +32,8 @@ export interface ArtistMetadataSelections {
   endDate?: boolean;
   /** Gender (only meaningful for Person type) */
   gender?: boolean;
+  /** Image URL */
+  imageUrl?: boolean;
 }
 
 /**
@@ -41,6 +43,8 @@ export interface ArtistMetadataSelections {
 export interface ArtistExternalIdSelections {
   /** MusicBrainz artist ID */
   musicbrainzId?: boolean;
+  /** Discogs artist ID */
+  discogsId?: boolean;
   /** IPI code (Interested Parties Information) */
   ipi?: boolean;
   /** ISNI code (International Standard Name Identifier) */
@@ -73,9 +77,11 @@ export function createDefaultArtistSelections(): ArtistFieldSelections {
       beginDate: true,
       endDate: true,
       gender: true,
+      imageUrl: true,
     },
     externalIds: {
       musicbrainzId: true,
+      discogsId: true,
       ipi: true,
       isni: true,
     },
