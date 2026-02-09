@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 22 of 25 (Discogs Album Search)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-09 — Completed 22-01-PLAN.md
+Last activity: 2026-02-09 — Completed 22-02-PLAN.md
 
-Progress: [█████░░░░░░░░░░░░░░░] 4/18 plans complete (v1.3)
+Progress: [█████░░░░░░░░░░░░░░░] 5/18 plans complete (v1.3)
 
 ## Performance Metrics
 
@@ -42,10 +42,10 @@ Progress: [█████░░░░░░░░░░░░░░░] 4/18 pl
 **Milestone v1.3 (In Progress):**
 
 - Phases: 5 (21-25)
-- Plans: 4 complete (phase 21 + 22-01)
-- Requirements: 4/17 complete (UI-01 through UI-04)
+- Plans: 5 complete (phase 21 + 22-01 + 22-02)
+- Requirements: 5/17 complete (UI-01 through UI-04, ALB-01)
 
-**Total shipped:** 21 phases, 61 plans
+**Total shipped:** 21 phases, 62 plans
 
 ## Accumulated Context
 
@@ -67,6 +67,8 @@ Progress: [█████░░░░░░░░░░░░░░░] 4/18 pl
 - [22-01] DISCOGS_SEARCH_ALBUM job type added
 - [22-01] Shared mapper mapMasterToCorrectionSearchResult in mappers.ts
 - [22-01] QueuedDiscogsService follows QueuedMusicBrainzService pattern
+- [22-02] CorrectionSource enum in GraphQL schema (MUSICBRAINZ, DISCOGS)
+- [22-02] Resolver routes to QueuedDiscogsService when source is DISCOGS
 
 ### v1.3 Context
 
@@ -74,6 +76,7 @@ Progress: [█████░░░░░░░░░░░░░░░] 4/18 pl
 - Toggle UI to select source before searching — COMPLETE (Phase 21)
 - Reuse existing Discogs queue infrastructure (DISCOGS_SEARCH_ARTIST, DISCOGS_GET_ARTIST)
 - DISCOGS_SEARCH_ALBUM job type — COMPLETE (22-01)
+- GraphQL resolver routing — COMPLETE (22-02)
 - Both album and artist corrections supported
 - Same preview/apply pattern as MusicBrainz
 
@@ -88,6 +91,7 @@ Progress: [█████░░░░░░░░░░░░░░░] 4/18 pl
 - correctionSource state in both stores with sessionStorage persistence
 - Source badges in PreviewView and ArtistPreviewView
 - QueuedDiscogsService for resolver integration
+- CorrectionSource enum in GraphQL schema
 
 ### Blockers/Concerns
 
@@ -96,7 +100,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed 22-01-PLAN.md
+Stopped at: Completed 22-02-PLAN.md
 Resume file: N/A
 
-**Next action:** Execute 22-02-PLAN.md (GraphQL resolver integration)
+**Next action:** Execute 22-03-PLAN.md (Frontend integration)
