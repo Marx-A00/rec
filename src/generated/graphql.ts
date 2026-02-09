@@ -794,6 +794,8 @@ export type CorrectionSearchInput = {
   lowConfidenceThreshold?: InputMaybe<Scalars['Float']['input']>;
   /** Offset for pagination */
   offset?: InputMaybe<Scalars['Int']['input']>;
+  /** Data source to search (default: MUSICBRAINZ) */
+  source?: InputMaybe<CorrectionSource>;
   /** Scoring strategy to use */
   strategy?: InputMaybe<ScoringStrategy>;
   /** Optional year filter */
@@ -822,6 +824,14 @@ export type CorrectionSearchResponse = {
   /** Total number of unique release groups */
   totalGroups: Scalars['Int']['output'];
 };
+
+/** Source for correction data. */
+export enum CorrectionSource {
+  /** Discogs database */
+  Discogs = 'DISCOGS',
+  /** MusicBrainz database */
+  Musicbrainz = 'MUSICBRAINZ',
+}
 
 /** Cover art handling options for correction application. */
 export enum CoverArtChoice {
