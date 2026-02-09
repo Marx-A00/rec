@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 ## Current Position
 
-Phase: 23 of 25 (Discogs Album Apply)
-Plan: 2 of 3 in current phase
-Status: Plan 02 complete
-Last activity: 2026-02-09 — Completed 23-02-PLAN.md
+Phase: 23 of 25 (Discogs Album Apply) — COMPLETE
+Plan: 3 of 3 in current phase
+Status: Phase 23 complete
+Last activity: 2026-02-09 — Completed 23-03-PLAN.md
 
-Progress: [████████░░░░░░░░░░░░] 8/18 plans complete (v1.3)
+Progress: [█████████░░░░░░░░░░░] 9/18 plans complete (v1.3)
 
 ## Performance Metrics
 
@@ -42,8 +42,8 @@ Progress: [████████░░░░░░░░░░░░] 8/18 pl
 **Milestone v1.3 (In Progress):**
 
 - Phases: 5 (21-25)
-- Plans: 8 complete (phase 21 + phase 22 + 23-01 + 23-02)
-- Requirements: 10/17 complete (UI-01 through UI-04, ALB-01, ALB-02, ALB-03, MAP-01, ALB-04, ALB-05)
+- Plans: 9 complete (phase 21 + phase 22 + phase 23)
+- Requirements: 11/17 complete (UI-01 through UI-04, ALB-01, ALB-02, ALB-03, MAP-01, ALB-04, ALB-05, ALB-06)
 
 **Total shipped:** 21 phases, 62 plans
 
@@ -80,6 +80,8 @@ Progress: [████████░░░░░░░░░░░░] 8/18 pl
 - [23-02] Year-only dates converted to YYYY-01-01 format
 - [23-02] Source-conditional field diffs (country/barcode only for MB)
 - [23-02] Source-conditional external ID storage (musicbrainzId vs discogsId)
+- [23-03] Source field on CorrectionPreviewInput with MUSICBRAINZ default
+- [23-03] Discogs results wrapped with default scoring (normalizedScore: 1.0)
 
 ### v1.3 Context
 
@@ -87,10 +89,11 @@ Progress: [████████░░░░░░░░░░░░] 8/18 pl
 - Toggle UI to select source before searching — COMPLETE (Phase 21)
 - Reuse existing Discogs queue infrastructure (DISCOGS_SEARCH_ARTIST, DISCOGS_GET_ARTIST)
 - DISCOGS_SEARCH_ALBUM job type — COMPLETE (22-01)
-- GraphQL resolver routing — COMPLETE (22-02)
-- Frontend integration — COMPLETE (22-03)
+- GraphQL resolver routing for search — COMPLETE (22-02)
+- Frontend search integration — COMPLETE (22-03)
 - DISCOGS_GET_MASTER job type — COMPLETE (23-01)
 - Preview/apply service source support — COMPLETE (23-02)
+- GraphQL resolver routing for preview — COMPLETE (23-03)
 - Both album and artist corrections supported
 - Same preview/apply pattern as MusicBrainz
 
@@ -107,10 +110,12 @@ Progress: [████████░░░░░░░░░░░░] 8/18 pl
 - QueuedDiscogsService with searchAlbums() and getMaster() methods
 - CorrectionSource enum in GraphQL schema
 - CorrectionSource type in preview/types.ts
+- CorrectionPreviewInput.source field for preview source selection
 - SearchView passes source to GraphQL query
 - SearchResultCard with source-aware styling
 - CorrectionPreviewService.generatePreview() accepts source parameter
 - ApplyCorrectionService stores correct external ID based on source
+- correctionPreview resolver routes to Discogs when source is DISCOGS
 
 ### Blockers/Concerns
 
@@ -119,7 +124,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed 23-02-PLAN.md
+Stopped at: Completed Phase 23 (Discogs Album Apply)
 Resume file: N/A
 
-**Next action:** Execute 23-03-PLAN.md (Frontend Integration)
+**Next action:** Execute Phase 24 (Discogs Artist Search)
