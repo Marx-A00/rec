@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 23 of 25 (Discogs Album Apply)
-Plan: 1 of 3 in current phase
-Status: Plan 01 complete
-Last activity: 2026-02-09 — Completed 23-01-PLAN.md
+Plan: 2 of 3 in current phase
+Status: Plan 02 complete
+Last activity: 2026-02-09 — Completed 23-02-PLAN.md
 
-Progress: [███████░░░░░░░░░░░░░] 7/18 plans complete (v1.3)
+Progress: [████████░░░░░░░░░░░░] 8/18 plans complete (v1.3)
 
 ## Performance Metrics
 
@@ -42,8 +42,8 @@ Progress: [███████░░░░░░░░░░░░░] 7/18 pl
 **Milestone v1.3 (In Progress):**
 
 - Phases: 5 (21-25)
-- Plans: 7 complete (phase 21 + phase 22 + 23-01)
-- Requirements: 9/17 complete (UI-01 through UI-04, ALB-01, ALB-02, ALB-03, MAP-01, ALB-04)
+- Plans: 8 complete (phase 21 + phase 22 + 23-01 + 23-02)
+- Requirements: 10/17 complete (UI-01 through UI-04, ALB-01, ALB-02, ALB-03, MAP-01, ALB-04, ALB-05)
 
 **Total shipped:** 21 phases, 62 plans
 
@@ -75,6 +75,11 @@ Progress: [███████░░░░░░░░░░░░░] 7/18 pl
 - [23-01] DISCOGS_GET_MASTER job type for master detail fetching
 - [23-01] getMaster() returns full DiscogsMaster (tracklist + images)
 - [23-01] ADMIN priority tier for getMaster (immediate feedback)
+- [23-02] CorrectionSource type in preview/types.ts for service layer
+- [23-02] Discogs tracklist parsing handles A1/B1 vinyl positions
+- [23-02] Year-only dates converted to YYYY-01-01 format
+- [23-02] Source-conditional field diffs (country/barcode only for MB)
+- [23-02] Source-conditional external ID storage (musicbrainzId vs discogsId)
 
 ### v1.3 Context
 
@@ -85,6 +90,7 @@ Progress: [███████░░░░░░░░░░░░░] 7/18 pl
 - GraphQL resolver routing — COMPLETE (22-02)
 - Frontend integration — COMPLETE (22-03)
 - DISCOGS_GET_MASTER job type — COMPLETE (23-01)
+- Preview/apply service source support — COMPLETE (23-02)
 - Both album and artist corrections supported
 - Same preview/apply pattern as MusicBrainz
 
@@ -100,8 +106,11 @@ Progress: [███████░░░░░░░░░░░░░] 7/18 pl
 - Source badges in PreviewView and ArtistPreviewView
 - QueuedDiscogsService with searchAlbums() and getMaster() methods
 - CorrectionSource enum in GraphQL schema
+- CorrectionSource type in preview/types.ts
 - SearchView passes source to GraphQL query
 - SearchResultCard with source-aware styling
+- CorrectionPreviewService.generatePreview() accepts source parameter
+- ApplyCorrectionService stores correct external ID based on source
 
 ### Blockers/Concerns
 
@@ -110,7 +119,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed 23-01-PLAN.md
+Stopped at: Completed 23-02-PLAN.md
 Resume file: N/A
 
-**Next action:** Execute 23-02-PLAN.md (Preview Generation Service)
+**Next action:** Execute 23-03-PLAN.md (Frontend Integration)
