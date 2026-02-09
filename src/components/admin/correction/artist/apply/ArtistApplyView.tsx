@@ -21,6 +21,7 @@ export interface UIArtistFieldSelections {
   };
   externalIds: {
     musicbrainzId: boolean;
+    discogsId: boolean;
     ipi: boolean;
     isni: boolean;
   };
@@ -53,7 +54,7 @@ export function createDefaultArtistSelections(preview: {
     'endDate',
     'gender',
   ];
-  const externalIdFields = ['musicbrainzId', 'ipi', 'isni'];
+  const externalIdFields = ['musicbrainzId', 'discogsId', 'ipi', 'isni'];
 
   const metadata: UIArtistFieldSelections['metadata'] = {
     name: false,
@@ -68,6 +69,7 @@ export function createDefaultArtistSelections(preview: {
 
   const externalIds: UIArtistFieldSelections['externalIds'] = {
     musicbrainzId: false,
+    discogsId: false,
     ipi: false,
     isni: false,
   };
@@ -190,7 +192,7 @@ export function ArtistApplyView({
     'endDate',
     'gender',
   ];
-  const externalIdFields = ['musicbrainzId', 'ipi', 'isni'];
+  const externalIdFields = ['musicbrainzId', 'discogsId', 'ipi', 'isni'];
 
   const getDiff = (field: string): ArtistFieldDiff | undefined =>
     preview.fieldDiffs.find(d => d.field === field);

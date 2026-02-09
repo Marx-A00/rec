@@ -8,6 +8,7 @@ import {
   type ArtistCorrectionPreview,
   type ArtistFieldDiff,
   ChangeType,
+  CorrectionSource,
 } from '@/generated/graphql';
 import {
   Accordion,
@@ -133,7 +134,7 @@ export function ArtistPreviewView({ artistId }: ArtistPreviewViewProps) {
 
   const { data, isLoading, error, refetch, isFetching } =
     useGetArtistCorrectionPreviewQuery(
-      { artistId, artistMbid: selectedArtistMbid! },
+      { artistId, sourceArtistId: selectedArtistMbid!, source: correctionSource === 'discogs' ? CorrectionSource.Discogs : CorrectionSource.Musicbrainz },
       {
         enabled: Boolean(artistId && selectedArtistMbid),
         staleTime: 5 * 60 * 1000,

@@ -29,12 +29,21 @@ query SearchArtistCorrectionCandidates(
   }
 }
 
-query GetArtistCorrectionPreview($artistId: UUID!, $artistMbid: UUID!) {
-  artistCorrectionPreview(artistId: $artistId, artistMbid: $artistMbid) {
+query GetArtistCorrectionPreview(
+  $artistId: UUID!
+  $sourceArtistId: String!
+  $source: CorrectionSource
+) {
+  artistCorrectionPreview(
+    artistId: $artistId
+    sourceArtistId: $sourceArtistId
+    source: $source
+  ) {
     currentArtist {
       id
       name
       musicbrainzId
+      discogsId
       countryCode
       formedYear
       biography
@@ -55,6 +64,7 @@ query GetArtistCorrectionPreview($artistId: UUID!, $artistMbid: UUID!) {
       addedFields
       modifiedFields
     }
+    source
   }
 }
 
@@ -65,6 +75,7 @@ mutation ApplyArtistCorrection($input: ArtistCorrectionApplyInput!) {
       id
       name
       musicbrainzId
+      discogsId
       countryCode
       formedYear
       dataQuality

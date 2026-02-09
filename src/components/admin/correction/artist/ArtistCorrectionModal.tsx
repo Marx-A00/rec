@@ -24,6 +24,7 @@ import {
   EnrichmentPriority,
   type Artist,
   type ArtistCorrectionPreview,
+  CorrectionSource,
 } from '@/generated/graphql';
 import Toast, { useToast } from '@/components/ui/toast';
 
@@ -75,6 +76,7 @@ export function ArtistCorrectionModal({
   // Subscribe to store state
   const step = store(s => s.step);
   const selectedArtistMbid = store(s => s.selectedArtistMbid);
+  const correctionSource = store(s => s.correctionSource);
   const previewData = store(s => s.previewData);
   const showAppliedState = store(s => s.showAppliedState);
 
@@ -232,7 +234,8 @@ export function ArtistCorrectionModal({
     applyMutation.mutate({
       input: {
         artistId,
-        artistMbid: state.selectedArtistMbid,
+        sourceArtistId: state.selectedArtistMbid,
+        source: state.correctionSource === 'discogs' ? CorrectionSource.Discogs : CorrectionSource.Musicbrainz,
         selections: {
           metadata: {
             name: state.applySelections.metadata.name,
@@ -246,6 +249,7 @@ export function ArtistCorrectionModal({
           },
           externalIds: {
             musicbrainzId: state.applySelections.externalIds.musicbrainzId,
+            discogsId: state.applySelections.externalIds.discogsId,
             ipi: state.applySelections.externalIds.ipi,
             isni: state.applySelections.externalIds.isni,
           },

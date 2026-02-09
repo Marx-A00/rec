@@ -4,7 +4,7 @@
 
 import { GraphQLError } from 'graphql';
 
-import { MutationResolvers } from '@/generated/graphql';
+import { MutationResolvers, CorrectionSource as GqlCorrectionSource } from '@/generated/graphql';
 import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
 import {
   previewAlbumEnrichment,
@@ -3163,11 +3163,16 @@ export const mutationResolvers: MutationResolvers = {
         '@/lib/correction/artist/apply'
       );
 
+      // Convert GraphQL enum to lowercase string for service layer
+      const sourceStr =
+        input.source === GqlCorrectionSource.Discogs ? 'discogs' : 'musicbrainz';
+
       // Generate preview first (same pattern as album correction)
       const previewService = getArtistCorrectionPreviewService();
       const preview = await previewService.generatePreview(
         input.artistId,
-        input.artistMbid
+        input.sourceArtistId,
+        sourceStr
       );
 
       // Apply correction
@@ -3188,6 +3193,7 @@ export const mutationResolvers: MutationResolvers = {
           },
           externalIds: {
             musicbrainzId: input.selections.externalIds?.musicbrainzId ?? false,
+            discogsId: input.selections.externalIds?.discogsId ?? false,
             ipi: input.selections.externalIds?.ipi ?? false,
             isni: input.selections.externalIds?.isni ?? false,
           },

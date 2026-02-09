@@ -100,6 +100,7 @@ export type Album = {
   coverArtUrl?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
+  discogsId?: Maybe<Scalars['String']['output']>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
   enrichmentLogs: Array<EnrichmentLog>;
@@ -289,6 +290,7 @@ export type Artist = {
   countryCode?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
+  discogsId?: Maybe<Scalars['String']['output']>;
   enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
@@ -335,12 +337,14 @@ export type ArtistAppliedChanges = {
 export type ArtistCorrectionApplyInput = {
   /** Artist ID to apply correction to */
   artistId: Scalars['UUID']['input'];
-  /** Selected MusicBrainz artist MBID */
-  artistMbid: Scalars['UUID']['input'];
   /** Expected artist updatedAt timestamp for optimistic locking */
   expectedUpdatedAt: Scalars['DateTime']['input'];
   /** Field selections determining which changes to apply */
   selections: ArtistFieldSelectionsInput;
+  /** Source of correction data (default: MUSICBRAINZ) */
+  source?: InputMaybe<CorrectionSource>;
+  /** Source artist ID (MusicBrainz MBID or Discogs ID) */
+  sourceArtistId: Scalars['String']['input'];
 };
 
 /** Result of artist correction apply operation. */
@@ -359,7 +363,7 @@ export type ArtistCorrectionApplyResult = {
   success: Scalars['Boolean']['output'];
 };
 
-/** Complete preview of all changes between current artist and MusicBrainz source. */
+/** Complete preview of all changes between current artist and external source. */
 export type ArtistCorrectionPreview = {
   __typename?: 'ArtistCorrectionPreview';
   /** Number of albums by this artist */
@@ -370,6 +374,8 @@ export type ArtistCorrectionPreview = {
   fieldDiffs: Array<ArtistFieldDiff>;
   /** Full MusicBrainz artist data */
   mbArtistData?: Maybe<Scalars['JSON']['output']>;
+  /** Data source used for this preview */
+  source: CorrectionSource;
   /** Summary statistics */
   summary: ArtistPreviewSummary;
 };
@@ -444,6 +450,7 @@ export type ArtistCreditDiff = {
 
 /** Artist external ID field selections. */
 export type ArtistExternalIdSelectionsInput = {
+  discogsId?: InputMaybe<Scalars['Boolean']['input']>;
   ipi?: InputMaybe<Scalars['Boolean']['input']>;
   isni?: InputMaybe<Scalars['Boolean']['input']>;
   musicbrainzId?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1577,7 +1584,7 @@ export type Query = {
   albumsByJobId: Array<Album>;
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
-  /** Generate a preview of changes between artist and selected MusicBrainz artist */
+  /** Generate a preview of changes between artist and selected MusicBrainz or Discogs artist */
   artistCorrectionPreview: ArtistCorrectionPreview;
   /** Search MusicBrainz or Discogs for artist correction candidates */
   artistCorrectionSearch: ArtistCorrectionSearchResponse;
@@ -1664,7 +1671,8 @@ export type QueryArtistByMusicBrainzIdArgs = {
 
 export type QueryArtistCorrectionPreviewArgs = {
   artistId: Scalars['UUID']['input'];
-  artistMbid: Scalars['UUID']['input'];
+  source?: InputMaybe<CorrectionSource>;
+  sourceArtistId: Scalars['String']['input'];
 };
 
 export type QueryArtistCorrectionSearchArgs = {
@@ -2356,6 +2364,7 @@ export type Track = {
   audioFeatures?: Maybe<AudioFeatures>;
   createdAt: Scalars['DateTime']['output'];
   discNumber: Scalars['Int']['output'];
+  discogsId?: Maybe<Scalars['String']['output']>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
   enrichmentLogs: Array<EnrichmentLog>;
@@ -2413,6 +2422,7 @@ export type TrackInput = {
   albumId: Scalars['UUID']['input'];
   artists: Array<ArtistTrackInput>;
   discNumber?: InputMaybe<Scalars['Int']['input']>;
+  discogsId?: InputMaybe<Scalars['String']['input']>;
   durationMs?: InputMaybe<Scalars['Int']['input']>;
   explicit?: InputMaybe<Scalars['Boolean']['input']>;
   isrc?: InputMaybe<Scalars['String']['input']>;
@@ -2486,6 +2496,7 @@ export type UpdateRecommendationPayload = {
 
 export type UpdateTrackInput = {
   discNumber?: InputMaybe<Scalars['Int']['input']>;
+  discogsId?: InputMaybe<Scalars['String']['input']>;
   durationMs?: InputMaybe<Scalars['Int']['input']>;
   explicit?: InputMaybe<Scalars['Boolean']['input']>;
   isrc?: InputMaybe<Scalars['String']['input']>;
@@ -3206,6 +3217,11 @@ export type AlbumResolvers<
     ParentType,
     ContextType
   >;
+  discogsId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   duration?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   enrichmentLogs?: Resolver<
@@ -3453,6 +3469,11 @@ export type ArtistResolvers<
     ParentType,
     ContextType
   >;
+  discogsId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   enrichmentLogs?: Resolver<
     Array<ResolversTypes['EnrichmentLog']>,
     ParentType,
@@ -3565,6 +3586,11 @@ export type ArtistCorrectionPreviewResolvers<
   >;
   mbArtistData?: Resolver<
     Maybe<ResolversTypes['JSON']>,
+    ParentType,
+    ContextType
+  >;
+  source?: Resolver<
+    ResolversTypes['CorrectionSource'],
     ParentType,
     ContextType
   >;
@@ -5012,7 +5038,10 @@ export type QueryResolvers<
     ResolversTypes['ArtistCorrectionPreview'],
     ParentType,
     ContextType,
-    RequireFields<QueryArtistCorrectionPreviewArgs, 'artistId' | 'artistMbid'>
+    RequireFields<
+      QueryArtistCorrectionPreviewArgs,
+      'artistId' | 'source' | 'sourceArtistId'
+    >
   >;
   artistCorrectionSearch?: Resolver<
     ResolversTypes['ArtistCorrectionSearchResponse'],
@@ -5981,6 +6010,11 @@ export type TrackResolvers<
   >;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   discNumber?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  discogsId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   duration?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   enrichmentLogs?: Resolver<

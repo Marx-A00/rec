@@ -126,6 +126,7 @@ export type Album = {
   coverArtUrl?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
+  discogsId?: Maybe<Scalars['String']['output']>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
   enrichmentLogs: Array<EnrichmentLog>;
@@ -315,6 +316,7 @@ export type Artist = {
   countryCode?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
+  discogsId?: Maybe<Scalars['String']['output']>;
   enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
@@ -361,12 +363,14 @@ export type ArtistAppliedChanges = {
 export type ArtistCorrectionApplyInput = {
   /** Artist ID to apply correction to */
   artistId: Scalars['UUID']['input'];
-  /** Selected MusicBrainz artist MBID */
-  artistMbid: Scalars['UUID']['input'];
   /** Expected artist updatedAt timestamp for optimistic locking */
   expectedUpdatedAt: Scalars['DateTime']['input'];
   /** Field selections determining which changes to apply */
   selections: ArtistFieldSelectionsInput;
+  /** Source of correction data (default: MUSICBRAINZ) */
+  source?: InputMaybe<CorrectionSource>;
+  /** Source artist ID (MusicBrainz MBID or Discogs ID) */
+  sourceArtistId: Scalars['String']['input'];
 };
 
 /** Result of artist correction apply operation. */
@@ -385,7 +389,7 @@ export type ArtistCorrectionApplyResult = {
   success: Scalars['Boolean']['output'];
 };
 
-/** Complete preview of all changes between current artist and MusicBrainz source. */
+/** Complete preview of all changes between current artist and external source. */
 export type ArtistCorrectionPreview = {
   __typename?: 'ArtistCorrectionPreview';
   /** Number of albums by this artist */
@@ -396,6 +400,8 @@ export type ArtistCorrectionPreview = {
   fieldDiffs: Array<ArtistFieldDiff>;
   /** Full MusicBrainz artist data */
   mbArtistData?: Maybe<Scalars['JSON']['output']>;
+  /** Data source used for this preview */
+  source: CorrectionSource;
   /** Summary statistics */
   summary: ArtistPreviewSummary;
 };
@@ -470,6 +476,7 @@ export type ArtistCreditDiff = {
 
 /** Artist external ID field selections. */
 export type ArtistExternalIdSelectionsInput = {
+  discogsId?: InputMaybe<Scalars['Boolean']['input']>;
   ipi?: InputMaybe<Scalars['Boolean']['input']>;
   isni?: InputMaybe<Scalars['Boolean']['input']>;
   musicbrainzId?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1603,7 +1610,7 @@ export type Query = {
   albumsByJobId: Array<Album>;
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
-  /** Generate a preview of changes between artist and selected MusicBrainz artist */
+  /** Generate a preview of changes between artist and selected MusicBrainz or Discogs artist */
   artistCorrectionPreview: ArtistCorrectionPreview;
   /** Search MusicBrainz or Discogs for artist correction candidates */
   artistCorrectionSearch: ArtistCorrectionSearchResponse;
@@ -1690,7 +1697,8 @@ export type QueryArtistByMusicBrainzIdArgs = {
 
 export type QueryArtistCorrectionPreviewArgs = {
   artistId: Scalars['UUID']['input'];
-  artistMbid: Scalars['UUID']['input'];
+  source?: InputMaybe<CorrectionSource>;
+  sourceArtistId: Scalars['String']['input'];
 };
 
 export type QueryArtistCorrectionSearchArgs = {
@@ -2382,6 +2390,7 @@ export type Track = {
   audioFeatures?: Maybe<AudioFeatures>;
   createdAt: Scalars['DateTime']['output'];
   discNumber: Scalars['Int']['output'];
+  discogsId?: Maybe<Scalars['String']['output']>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
   enrichmentLogs: Array<EnrichmentLog>;
@@ -2439,6 +2448,7 @@ export type TrackInput = {
   albumId: Scalars['UUID']['input'];
   artists: Array<ArtistTrackInput>;
   discNumber?: InputMaybe<Scalars['Int']['input']>;
+  discogsId?: InputMaybe<Scalars['String']['input']>;
   durationMs?: InputMaybe<Scalars['Int']['input']>;
   explicit?: InputMaybe<Scalars['Boolean']['input']>;
   isrc?: InputMaybe<Scalars['String']['input']>;
@@ -2512,6 +2522,7 @@ export type UpdateRecommendationPayload = {
 
 export type UpdateTrackInput = {
   discNumber?: InputMaybe<Scalars['Int']['input']>;
+  discogsId?: InputMaybe<Scalars['String']['input']>;
   durationMs?: InputMaybe<Scalars['Int']['input']>;
   explicit?: InputMaybe<Scalars['Boolean']['input']>;
   isrc?: InputMaybe<Scalars['String']['input']>;
@@ -3164,7 +3175,8 @@ export type SearchArtistCorrectionCandidatesQuery = {
 
 export type GetArtistCorrectionPreviewQueryVariables = Exact<{
   artistId: Scalars['UUID']['input'];
-  artistMbid: Scalars['UUID']['input'];
+  sourceArtistId: Scalars['String']['input'];
+  source?: InputMaybe<CorrectionSource>;
 }>;
 
 export type GetArtistCorrectionPreviewQuery = {
@@ -3173,11 +3185,13 @@ export type GetArtistCorrectionPreviewQuery = {
     __typename?: 'ArtistCorrectionPreview';
     mbArtistData?: any | null;
     albumCount: number;
+    source: CorrectionSource;
     currentArtist: {
       __typename?: 'Artist';
       id: string;
       name: string;
       musicbrainzId?: string | null;
+      discogsId?: string | null;
       countryCode?: string | null;
       formedYear?: number | null;
       biography?: string | null;
@@ -3218,6 +3232,7 @@ export type ApplyArtistCorrectionMutation = {
       id: string;
       name: string;
       musicbrainzId?: string | null;
+      discogsId?: string | null;
       countryCode?: string | null;
       formedYear?: number | null;
       dataQuality?: DataQuality | null;
@@ -6597,12 +6612,17 @@ useInfiniteSearchArtistCorrectionCandidatesQuery.getKey = (
 ) => ['SearchArtistCorrectionCandidates.infinite', variables];
 
 export const GetArtistCorrectionPreviewDocument = `
-    query GetArtistCorrectionPreview($artistId: UUID!, $artistMbid: UUID!) {
-  artistCorrectionPreview(artistId: $artistId, artistMbid: $artistMbid) {
+    query GetArtistCorrectionPreview($artistId: UUID!, $sourceArtistId: String!, $source: CorrectionSource) {
+  artistCorrectionPreview(
+    artistId: $artistId
+    sourceArtistId: $sourceArtistId
+    source: $source
+  ) {
     currentArtist {
       id
       name
       musicbrainzId
+      discogsId
       countryCode
       formedYear
       biography
@@ -6623,6 +6643,7 @@ export const GetArtistCorrectionPreviewDocument = `
       addedFields
       modifiedFields
     }
+    source
   }
 }
     `;
@@ -6707,6 +6728,7 @@ export const ApplyArtistCorrectionDocument = `
       id
       name
       musicbrainzId
+      discogsId
       countryCode
       formedYear
       dataQuality

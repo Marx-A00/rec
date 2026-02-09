@@ -2953,7 +2953,11 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-  artistCorrectionPreview: async (_, { artistId, artistMbid }, { user }) => {
+  artistCorrectionPreview: async (
+    _,
+    { artistId, sourceArtistId, source },
+    { user }
+  ) => {
     // Authentication check
     if (!user) {
       throw new GraphQLError('Authentication required', {
@@ -2974,9 +2978,14 @@ export const queryResolvers: QueryResolvers = {
       );
       const previewService = getArtistCorrectionPreviewService();
 
+      // Convert GraphQL enum to lowercase string for service layer
+      const sourceStr =
+        source === GqlCorrectionSource.Discogs ? 'discogs' : 'musicbrainz';
+
       const preview = await previewService.generatePreview(
         artistId,
-        artistMbid
+        sourceArtistId,
+        sourceStr
       );
 
       return {
@@ -2995,6 +3004,7 @@ export const queryResolvers: QueryResolvers = {
           addedFields: preview.summary.addedFields,
           modifiedFields: preview.summary.modifiedFields,
         },
+        source: source ?? GqlCorrectionSource.Musicbrainz,
       };
     } catch (error) {
       if (error instanceof GraphQLError) throw error;

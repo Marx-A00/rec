@@ -16,6 +16,7 @@ scalar JSON
 type Artist {
   id: UUID!
   musicbrainzId: UUID
+  discogsId: String
   name: String!
   biography: String
   formedYear: Int
@@ -51,7 +52,7 @@ type Artist {
 type Album {
   id: UUID!
   musicbrainzId: UUID
-  title: String!
+  discogsId: String  title: String!
   releaseDate: DateTime
   releaseType: String
   genres: [String!]
@@ -93,7 +94,7 @@ type Track {
   id: UUID!
   albumId: UUID
   musicbrainzId: UUID
-  isrc: String
+  discogsId: String  isrc: String
   title: String!
   trackNumber: Int!
   discNumber: Int!
@@ -572,7 +573,7 @@ input TrackInput {
   previewUrl: String
   isrc: String
   musicbrainzId: UUID
-
+  discogsId: String
   # Artist associations
   artists: [ArtistTrackInput!]!
 }
@@ -592,7 +593,7 @@ input UpdateTrackInput {
   previewUrl: String
   isrc: String
   musicbrainzId: UUID
-}
+  discogsId: String}
 
 input AlertThresholdsInput {
   queueDepth: Int
@@ -2380,11 +2381,18 @@ type Query {
     source: CorrectionSource = MUSICBRAINZ
   ): ArtistCorrectionSearchResponse!
   """
-  Generate a preview of changes between artist and selected MusicBrainz artist
+  Generate a preview of changes between artist and selected MusicBrainz or Discogs artist
   """
   artistCorrectionPreview(
     artistId: UUID!
-    artistMbid: UUID!
+    """
+    Source artist ID (MusicBrainz MBID or Discogs ID)
+    """
+    sourceArtistId: String!
+    """
+    Data source (default: MUSICBRAINZ)
+    """
+    source: CorrectionSource = MUSICBRAINZ
   ): ArtistCorrectionPreview!
 }
 
@@ -2793,7 +2801,7 @@ type ArtistPreviewSummary {
 }
 
 """
-Complete preview of all changes between current artist and MusicBrainz source.
+Complete preview of all changes between current artist and external source.
 """
 type ArtistCorrectionPreview {
   """
@@ -2816,6 +2824,10 @@ type ArtistCorrectionPreview {
   Summary statistics
   """
   summary: ArtistPreviewSummary!
+  """
+  Data source used for this preview
+  """
+  source: CorrectionSource!
 }
 
 """
@@ -2894,6 +2906,7 @@ Artist external ID field selections.
 """
 input ArtistExternalIdSelectionsInput {
   musicbrainzId: Boolean
+  discogsId: Boolean
   ipi: Boolean
   isni: Boolean
 }
@@ -2915,9 +2928,9 @@ input ArtistCorrectionApplyInput {
   """
   artistId: UUID!
   """
-  Selected MusicBrainz artist MBID
+  Source artist ID (MusicBrainz MBID or Discogs ID)
   """
-  artistMbid: UUID!
+  sourceArtistId: String!
   """
   Field selections determining which changes to apply
   """
@@ -2926,4 +2939,8 @@ input ArtistCorrectionApplyInput {
   Expected artist updatedAt timestamp for optimistic locking
   """
   expectedUpdatedAt: DateTime!
+  """
+  Source of correction data (default: MUSICBRAINZ)
+  """
+  source: CorrectionSource = MUSICBRAINZ
 }
