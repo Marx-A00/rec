@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 ## Current Position
 
-Phase: 22 of 25 (Discogs Album Search) — COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase complete, verified (11/11 must-haves)
-Last activity: 2026-02-09 — Phase 22 verified and complete
+Phase: 23 of 25 (Discogs Album Apply)
+Plan: 1 of 3 in current phase
+Status: Plan 01 complete
+Last activity: 2026-02-09 — Completed 23-01-PLAN.md
 
-Progress: [██████░░░░░░░░░░░░░░] 6/18 plans complete (v1.3)
+Progress: [███████░░░░░░░░░░░░░] 7/18 plans complete (v1.3)
 
 ## Performance Metrics
 
@@ -42,8 +42,8 @@ Progress: [██████░░░░░░░░░░░░░░] 6/18 pl
 **Milestone v1.3 (In Progress):**
 
 - Phases: 5 (21-25)
-- Plans: 6 complete (phase 21 + phase 22)
-- Requirements: 8/17 complete (UI-01 through UI-04, ALB-01, ALB-02, ALB-03, MAP-01)
+- Plans: 7 complete (phase 21 + phase 22 + 23-01)
+- Requirements: 9/17 complete (UI-01 through UI-04, ALB-01, ALB-02, ALB-03, MAP-01, ALB-04)
 
 **Total shipped:** 21 phases, 62 plans
 
@@ -72,6 +72,9 @@ Progress: [██████░░░░░░░░░░░░░░] 6/18 pl
 - [22-03] Orange accent for Discogs cards (border + hover)
 - [22-03] Badge labels 'DG'/'MB' for source indication
 - [22-03] Unified search UI for both sources
+- [23-01] DISCOGS_GET_MASTER job type for master detail fetching
+- [23-01] getMaster() returns full DiscogsMaster (tracklist + images)
+- [23-01] ADMIN priority tier for getMaster (immediate feedback)
 
 ### v1.3 Context
 
@@ -81,12 +84,13 @@ Progress: [██████░░░░░░░░░░░░░░] 6/18 pl
 - DISCOGS_SEARCH_ALBUM job type — COMPLETE (22-01)
 - GraphQL resolver routing — COMPLETE (22-02)
 - Frontend integration — COMPLETE (22-03)
+- DISCOGS_GET_MASTER job type — COMPLETE (23-01)
 - Both album and artist corrections supported
 - Same preview/apply pattern as MusicBrainz
 
 ### Existing Infrastructure
 
-- Discogs queue processors: `DISCOGS_SEARCH_ARTIST`, `DISCOGS_GET_ARTIST`, `DISCOGS_SEARCH_ALBUM`
+- Discogs queue processors: `DISCOGS_SEARCH_ARTIST`, `DISCOGS_GET_ARTIST`, `DISCOGS_SEARCH_ALBUM`, `DISCOGS_GET_MASTER`
 - Discogs service layer: `src/lib/discogs/mappers.ts`, `src/lib/discogs/queued-service.ts`
 - MusicBrainz correction services in `src/lib/correction/`
 - Zustand stores: `useCorrectionStore.ts`, `useArtistCorrectionStore.ts`
@@ -94,7 +98,7 @@ Progress: [██████░░░░░░░░░░░░░░] 6/18 pl
 - SourceToggle component: `src/components/admin/correction/shared/SourceToggle.tsx`
 - correctionSource state in both stores with sessionStorage persistence
 - Source badges in PreviewView and ArtistPreviewView
-- QueuedDiscogsService for resolver integration
+- QueuedDiscogsService with searchAlbums() and getMaster() methods
 - CorrectionSource enum in GraphQL schema
 - SearchView passes source to GraphQL query
 - SearchResultCard with source-aware styling
@@ -106,7 +110,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Phase 22 verified and complete
+Stopped at: Completed 23-01-PLAN.md
 Resume file: N/A
 
-**Next action:** `/gsd:plan-phase 23` (Discogs Album Apply)
+**Next action:** Execute 23-02-PLAN.md (Preview Generation Service)
