@@ -7,10 +7,13 @@
 import { QueueEvents } from 'bullmq';
 import chalk from 'chalk';
 
+import type { ArtistSearchResult } from '@/lib/correction/artist/types';
 import type { CorrectionSearchResult } from '@/lib/correction/types';
 import { getMusicBrainzQueue, JOB_TYPES, PRIORITY_TIERS } from '@/lib/queue';
 import { createRedisConnection } from '@/lib/queue/redis';
 import type { DiscogsMaster } from '@/types/discogs/master';
+
+import { mapDiscogsSearchResultToArtistSearchResult } from './mappers';
 
 // ============================================================================
 // Types
@@ -32,6 +35,19 @@ export interface DiscogsAlbumSearchResponse {
   action: string;
   resultsCount: number;
   results: CorrectionSearchResult[];
+}
+
+export interface DiscogsArtistSearchOptions {
+  /** Artist name to search */
+  artistName: string;
+  /** Results limit (default 10) */
+  limit?: number;
+}
+
+export interface DiscogsArtistSearchResponse {
+  action: string;
+  resultsCount: number;
+  results: ArtistSearchResult[];
 }
 
 // ============================================================================
@@ -150,6 +166,75 @@ export class QueuedDiscogsService {
       console.error('[QueuedDiscogsService] Album search failed:', error);
       throw new Error(
         'Failed to search Discogs albums: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
+      );
+    }
+  }
+
+  /**
+   * Search Discogs for artists by name
+   * Returns results in ArtistSearchResult format for correction UI
+   *
+   * Uses existing DISCOGS_SEARCH_ARTIST job type. Task 3 modified
+   * the handler to return searchResults array for correction use.
+   *
+   * NOTE: Unlike album search which calls getMaster for each result,
+   * artist search results contain enough data for display without
+   * additional API calls.
+   */
+  async searchArtists(
+    options: DiscogsArtistSearchOptions
+  ): Promise<DiscogsArtistSearchResponse> {
+    this.ensureInitialized();
+
+    const { artistName, limit = 10 } = options;
+
+    console.log(
+      chalk.cyan(
+        '[QueuedDiscogsService] Queuing artist search for "' + artistName + '"'
+      )
+    );
+
+    try {
+      // Use existing DISCOGS_SEARCH_ARTIST job type
+      // Task 3 modified handler to return searchResults array
+      const job = await this.queue.addJob(
+        JOB_TYPES.DISCOGS_SEARCH_ARTIST,
+        {
+          // Job requires artistId for logging - use dummy for admin search
+          artistId: 'admin-search-' + Date.now(),
+          artistName,
+          requestId: 'discogs-artist-search-' + Date.now(),
+        },
+        {
+          priority: PRIORITY_TIERS.ADMIN,
+          requestId: 'discogs-artist-search-' + artistName,
+        }
+      );
+
+      const result = (await this.waitForJobViaEvents(job.id!)) as {
+        searchResults?: Array<{ id: number; title: string; thumb?: string }>;
+        action?: string;
+        resultsCount?: number;
+      };
+
+      // Extract search results from job result (now returned by Task 3 modification)
+      const searchResults = result.searchResults || [];
+
+      // Map to ArtistSearchResult format
+      const mappedResults = searchResults
+        .slice(0, limit)
+        .map(r => mapDiscogsSearchResultToArtistSearchResult(r));
+
+      return {
+        action: 'search_complete',
+        resultsCount: mappedResults.length,
+        results: mappedResults,
+      };
+    } catch (error) {
+      console.error('[QueuedDiscogsService] Artist search failed:', error);
+      throw new Error(
+        'Failed to search Discogs artists: ' +
           (error instanceof Error ? error.message : 'Unknown error')
       );
     }
