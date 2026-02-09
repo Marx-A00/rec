@@ -8,6 +8,9 @@ import type { Artist } from '@prisma/client';
 // Re-export ChangeType from album preview types for consistency
 export { type ChangeType } from '../../preview/types';
 
+/** Source for correction data - determines which external service to query */
+export type CorrectionSource = 'musicbrainz' | 'discogs';
+
 // ============================================================================
 // MusicBrainz Artist Data Types
 // ============================================================================

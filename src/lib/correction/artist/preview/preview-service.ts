@@ -7,12 +7,17 @@
 
 import type { Artist, PrismaClient } from '@prisma/client';
 
+import { unifiedArtistService } from '@/lib/api/unified-artist-service';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { prisma as defaultPrisma } from '@/lib/prisma';
 import { PRIORITY_TIERS } from '@/lib/queue';
 
 import { ArtistDiffEngine } from './diff-engine';
-import type { ArtistCorrectionPreview, MBArtistData } from './types';
+import type {
+  ArtistCorrectionPreview,
+  CorrectionSource,
+  MBArtistData,
+} from './types';
 
 /**
  * Raw MusicBrainz API artist response structure.
@@ -69,13 +74,15 @@ export class ArtistCorrectionPreviewService {
    * Generate complete artist correction preview.
    *
    * @param artistId - Internal database ID of the artist to correct
-   * @param artistMbid - MusicBrainz artist ID to fetch data from
+   * @param sourceArtistId - MusicBrainz or Discogs artist ID to fetch data from
+   * @param source - Correction source ('musicbrainz' or 'discogs')
    * @returns Complete preview with all diffs and album count
    * @throws Error if artist not found in database
    */
   async generatePreview(
     artistId: string,
-    artistMbid: string
+    sourceArtistId: string,
+    source: CorrectionSource = 'musicbrainz'
   ): Promise<ArtistCorrectionPreview> {
     // Fetch current artist from database
     const currentArtist = await this.fetchCurrentArtist(artistId);
@@ -86,13 +93,25 @@ export class ArtistCorrectionPreviewService {
     // Count albums by this artist (for impact context)
     const albumCount = await this.countArtistAlbums(artistId);
 
-    // Fetch full MusicBrainz artist data (high priority - admin action)
-    const mbArtistData = await this.fetchMBArtistData(artistMbid);
+    // Fetch source data based on correction source
+    let mbArtistData: MBArtistData | null;
+    if (source === 'discogs') {
+      mbArtistData = await this.fetchDiscogsArtistData(sourceArtistId);
+    } else {
+      mbArtistData = await this.fetchMBArtistData(sourceArtistId);
+    }
+
+    if (!mbArtistData) {
+      throw new Error(
+        `Failed to fetch artist data from ${source}: ${sourceArtistId}`
+      );
+    }
 
     // Generate field diffs
     const fieldDiffs = this.diffEngine.generateFieldDiffs(
       currentArtist,
-      mbArtistData
+      mbArtistData,
+      source
     );
 
     // Generate summary statistics
@@ -204,6 +223,127 @@ export class ArtistCorrectionPreviewService {
         primary: alias.primary,
       })),
     };
+  }
+
+  /**
+   * Fetch Discogs artist data and transform to MBArtistData format.
+   * Uses UnifiedArtistService for API access (handles rate limiting).
+   */
+  private async fetchDiscogsArtistData(
+    discogsId: string
+  ): Promise<MBArtistData | null> {
+    try {
+      const discogsArtist = await unifiedArtistService.getArtistDetails(
+        discogsId,
+        { source: 'discogs', skipLocalCache: true }
+      );
+
+      return this.transformDiscogsArtist(discogsArtist, discogsId);
+    } catch (error) {
+      console.error('Failed to fetch Discogs artist data:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Transform UnifiedArtistDetails (from Discogs) to MBArtistData format.
+   * Builds biography from profile, realname, members, groups per CONTEXT.md.
+   */
+  private transformDiscogsArtist(
+    artist: {
+      name: string;
+      realName?: string;
+      profile?: string;
+      imageUrl?: string;
+      country?: string;
+      members?: Array<{ id?: string | number; name?: string; active?: boolean }>;
+      groups?: Array<{ id?: string | number; name?: string; active?: boolean }>;
+    },
+    discogsId: string
+  ): MBArtistData {
+    // Build biography from Discogs fields
+    const biography = this.buildDiscogsArtistBiography(artist);
+
+    return {
+      id: discogsId,
+      name: artist.name,
+      sortName: artist.name, // Discogs doesn't have sort name
+      disambiguation: biography, // Store combined biography in disambiguation
+      type: undefined, // Discogs doesn't categorize Person/Group/Other
+      country: undefined, // Discogs country not standardized
+      area: undefined, // Discogs doesn't have area
+      lifeSpan: undefined, // Discogs doesn't provide structured dates
+      gender: undefined, // Discogs doesn't provide gender
+      ipis: undefined,
+      isnis: undefined,
+      aliases: undefined,
+    };
+  }
+
+  /**
+   * Build artist biography from Discogs profile and related data.
+   * Combines profile text, realname, members, and groups into structured sections.
+   */
+  private buildDiscogsArtistBiography(artist: {
+    profile?: string;
+    realName?: string;
+    members?: Array<{ id?: string | number; name?: string; active?: boolean }>;
+    groups?: Array<{ id?: string | number; name?: string; active?: boolean }>;
+  }): string | undefined {
+    const parts: string[] = [];
+
+    // Strip BBCode from profile (Discogs uses [b], [i], [url=] etc.)
+    if (artist.profile) {
+      const cleanProfile = this.stripBBCode(artist.profile);
+      if (cleanProfile.trim()) {
+        parts.push(cleanProfile);
+      }
+    }
+
+    // Add realname if different from display name
+    if (artist.realName) {
+      parts.push(`Real name: ${artist.realName}`);
+    }
+
+    // Add members (for groups)
+    if (artist.members && artist.members.length > 0) {
+      const memberNames = artist.members
+        .map(m => m.name || String(m.id))
+        .filter(Boolean)
+        .join(', ');
+      if (memberNames) {
+        parts.push(`Members: ${memberNames}`);
+      }
+    }
+
+    // Add groups (for solo artists)
+    if (artist.groups && artist.groups.length > 0) {
+      const groupNames = artist.groups
+        .map(g => g.name || String(g.id))
+        .filter(Boolean)
+        .join(', ');
+      if (groupNames) {
+        parts.push(`Groups: ${groupNames}`);
+      }
+    }
+
+    return parts.length > 0 ? parts.join('\n\n') : undefined;
+  }
+
+  /**
+   * Strip BBCode formatting from Discogs text.
+   * Removes [b], [i], [u], [url=], [artist], [label] tags.
+   */
+  private stripBBCode(text: string): string {
+    return text
+      .replace(/\[b\](.*?)\[\/b\]/gi, '$1')
+      .replace(/\[i\](.*?)\[\/i\]/gi, '$1')
+      .replace(/\[u\](.*?)\[\/u\]/gi, '$1')
+      .replace(/\[url=(.*?)\](.*?)\[\/url\]/gi, '$2')
+      .replace(/\[url\](.*?)\[\/url\]/gi, '$1')
+      .replace(/\[a=?(.*?)\](.*?)\[\/a\]/gi, '$2') // [a=123]Name[/a] or [a]Name[/a]
+      .replace(/\[l=?(.*?)\](.*?)\[\/l\]/gi, '$2') // [l=123]Name[/l] or [l]Name[/l]
+      .replace(/\[[^\]]+\]/g, ''); // Remove any remaining tags
   }
 }
 

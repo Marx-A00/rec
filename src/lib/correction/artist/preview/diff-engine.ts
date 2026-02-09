@@ -13,6 +13,7 @@ import { TextNormalizer } from '../../preview/normalizers';
 import type {
   ArtistFieldDiff,
   ArtistPreviewSummary,
+  CorrectionSource,
   MBArtistData,
 } from './types';
 
@@ -57,23 +58,25 @@ export class ArtistDiffEngine {
    * Compares:
    * - name
    * - disambiguation
-   * - countryCode (from MB country)
-   * - artistType (from MB type)
-   * - area (from MB area.name)
+   * - countryCode (from MB country) - MusicBrainz only
+   * - artistType (from MB type) - MusicBrainz only
+   * - area (from MB area.name) - MusicBrainz only
    * - beginDate (from MB lifeSpan.begin)
    * - endDate (from MB lifeSpan.end)
    * - gender (only for Person type per RESEARCH.md)
-   * - musicbrainzId
+   * - musicbrainzId or discogsId (based on source)
    * - ipi (first IPI code)
    * - isni (first ISNI code)
    *
    * @param currentArtist - Current artist data from database
-   * @param mbData - MusicBrainz artist data
+   * @param mbData - MusicBrainz or Discogs artist data
+   * @param source - Correction source ('musicbrainz' or 'discogs')
    * @returns Array of field diffs
    */
   generateFieldDiffs(
     currentArtist: Artist,
-    mbData: MBArtistData
+    mbData: MBArtistData,
+    source: CorrectionSource = 'musicbrainz'
   ): ArtistFieldDiff[] {
     const diffs: ArtistFieldDiff[] = [];
 
@@ -91,32 +94,38 @@ export class ArtistDiffEngine {
       )
     );
 
-    // Country code
-    diffs.push(
-      this.createDiff(
-        'countryCode',
-        currentArtist.countryCode ?? null,
-        mbData?.country ?? null
-      )
-    );
+    // Country code (MusicBrainz only - Discogs country not standardized)
+    if (source === 'musicbrainz') {
+      diffs.push(
+        this.createDiff(
+          'countryCode',
+          currentArtist.countryCode ?? null,
+          mbData?.country ?? null
+        )
+      );
+    }
 
-    // Artist type
-    diffs.push(
-      this.createDiff(
-        'artistType',
-        currentArtist.artistType ?? null,
-        mbData?.type ?? null
-      )
-    );
+    // Artist type (MusicBrainz only - Discogs doesn't have this field)
+    if (source === 'musicbrainz') {
+      diffs.push(
+        this.createDiff(
+          'artistType',
+          currentArtist.artistType ?? null,
+          mbData?.type ?? null
+        )
+      );
+    }
 
-    // Area (from area.name)
-    diffs.push(
-      this.createDiff(
-        'area',
-        currentArtist.area ?? null,
-        mbData?.area?.name ?? null
-      )
-    );
+    // Area (MusicBrainz only - Discogs doesn't have this field)
+    if (source === 'musicbrainz') {
+      diffs.push(
+        this.createDiff(
+          'area',
+          currentArtist.area ?? null,
+          mbData?.area?.name ?? null
+        )
+      );
+    }
 
     // Begin date (partial date string preserved)
     diffs.push(
@@ -147,14 +156,24 @@ export class ArtistDiffEngine {
       );
     }
 
-    // MusicBrainz ID
-    diffs.push(
-      this.createDiff(
-        'musicbrainzId',
-        currentArtist.musicbrainzId ?? null,
-        mbData?.id ?? null
-      )
-    );
+    // External ID (conditional on source)
+    if (source === 'musicbrainz') {
+      diffs.push(
+        this.createDiff(
+          'musicbrainzId',
+          currentArtist.musicbrainzId ?? null,
+          mbData?.id ?? null
+        )
+      );
+    } else if (source === 'discogs') {
+      diffs.push(
+        this.createDiff(
+          'discogsId',
+          currentArtist.discogsId ?? null,
+          mbData?.id ?? null
+        )
+      );
+    }
 
     // IPI (first IPI code only - arrays are flattened per RESEARCH.md decision)
     const firstIPI = mbData?.ipis?.[0] ?? null;
