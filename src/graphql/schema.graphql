@@ -1622,9 +1622,13 @@ input CorrectionPreviewInput {
   """
   albumId: UUID!
   """
-  Selected release group MBID from search results
+  Selected release group MBID from search results (or Discogs master ID for Discogs source)
   """
   releaseGroupMbid: String!
+  """
+  Data source (default: MUSICBRAINZ)
+  """
+  source: CorrectionSource = MUSICBRAINZ
 }
 
 """

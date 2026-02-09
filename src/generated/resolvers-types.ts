@@ -739,8 +739,10 @@ export type CorrectionPreview = {
 export type CorrectionPreviewInput = {
   /** Album ID to preview corrections for */
   albumId: Scalars['UUID']['input'];
-  /** Selected release group MBID from search results */
+  /** Selected release group MBID from search results (or Discogs master ID for Discogs source) */
   releaseGroupMbid: Scalars['String']['input'];
+  /** Data source (default: MUSICBRAINZ) */
+  source?: InputMaybe<CorrectionSource>;
 };
 
 /** Scoring metadata for correction search response. */
