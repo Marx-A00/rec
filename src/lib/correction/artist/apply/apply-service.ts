@@ -9,6 +9,8 @@
  * - Optimistic locking via expectedUpdatedAt to prevent concurrent modifications
  * - Full audit logging with before/after field deltas
  * - Data quality updates (admin corrections = HIGH)
+ * - Source-conditional external ID storage (musicbrainzId vs discogsId)
+ * - Cloudflare image caching on imageUrl changes
  *
  * @example
  * ```typescript
@@ -35,8 +37,9 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import type { Artist } from '@prisma/client';
 
 import { prisma as defaultPrisma } from '@/lib/prisma';
+import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
 
-import type { ArtistCorrectionPreview, MBArtistData } from '../preview/types';
+import type { ArtistCorrectionPreview } from '../preview/types';
 
 import type {
   ArtistApplyErrorCode,
@@ -47,6 +50,13 @@ import type {
   ArtistFieldDelta,
   ArtistFieldSelections,
 } from './types';
+
+// ============================================================================
+// Source Type
+// ============================================================================
+
+/** Correction source type - lowercase for service layer */
+type CorrectionSource = 'musicbrainz' | 'discogs';
 
 // ============================================================================
 // Error Classes
@@ -106,8 +116,15 @@ export class ArtistCorrectionApplyService {
         );
       }
 
-      // 2. Build artist update data from preview and selections
-      const artistUpdateData = this.buildArtistUpdateData(preview, selections);
+      // 2. Determine source from preview
+      const source = this.determineSource(preview);
+
+      // 3. Build artist update data from preview and selections
+      const artistUpdateData = this.buildArtistUpdateData(
+        preview,
+        selections,
+        source
+      );
 
       // ================================================================
       // Transaction Phase: Apply all changes atomically
@@ -175,15 +192,25 @@ export class ArtistCorrectionApplyService {
         adminUserId,
         beforeArtist,
         afterArtist!,
-        selections
+        selections,
+        preview
       );
+
+      // Queue Cloudflare image caching if imageUrl changed
+      const imageChanged =
+        afterArtist?.imageUrl &&
+        beforeArtist.imageUrl !== afterArtist.imageUrl;
+      if (imageChanged) {
+        await this.queueImageUpload(artistId);
+      }
 
       // Build response
       const changes = this.buildAppliedChanges(
         beforeArtist,
         afterArtist!,
         result.affectedAlbumCount,
-        selections
+        selections,
+        source
       );
 
       return {
@@ -202,12 +229,28 @@ export class ArtistCorrectionApplyService {
   // ============================================================================
 
   /**
+   * Determines the correction source from preview data.
+   * Discogs IDs are numeric strings, MusicBrainz IDs are UUIDs.
+   */
+  private determineSource(preview: ArtistCorrectionPreview): CorrectionSource {
+    const id = preview.mbArtistData?.id;
+    if (!id) {
+      return 'musicbrainz'; // Default for backward compatibility
+    }
+
+    // Discogs IDs are purely numeric strings
+    const isDiscogs = /^\d+$/.test(id);
+    return isDiscogs ? 'discogs' : 'musicbrainz';
+  }
+
+  /**
    * Builds Prisma update data from preview and selections.
    * Only includes fields where selection is true.
    */
   private buildArtistUpdateData(
     preview: ArtistCorrectionPreview,
-    selections: ArtistFieldSelections
+    selections: ArtistFieldSelections,
+    source: CorrectionSource
   ): Prisma.ArtistUpdateInput {
     const updateData: Prisma.ArtistUpdateInput = {};
     const mbData = preview.mbArtistData;
@@ -223,16 +266,17 @@ export class ArtistCorrectionApplyService {
     if (selections.metadata.disambiguation) {
       updateData.biography = mbData.disambiguation ?? null;
     }
-    if (selections.metadata.countryCode) {
+    // Country, artistType, area, beginDate only from MusicBrainz (Discogs doesn't provide these)
+    if (selections.metadata.countryCode && source === 'musicbrainz') {
       updateData.countryCode = mbData.country ?? null;
     }
-    if (selections.metadata.artistType) {
+    if (selections.metadata.artistType && source === 'musicbrainz') {
       updateData.artistType = mbData.type ?? null;
     }
-    if (selections.metadata.area) {
+    if (selections.metadata.area && source === 'musicbrainz') {
       updateData.area = mbData.area?.name ?? null;
     }
-    if (selections.metadata.beginDate) {
+    if (selections.metadata.beginDate && source === 'musicbrainz') {
       // Store begin year as formedYear if available
       const beginYear = mbData.lifeSpan?.begin
         ? parseInt(mbData.lifeSpan.begin.substring(0, 4), 10)
@@ -244,10 +288,15 @@ export class ArtistCorrectionApplyService {
     // Note: endDate not stored in Artist model - could be added later
     // Note: gender not stored in Artist model - could be added later
 
-    // External ID fields
-    if (selections.externalIds.musicbrainzId && mbData.id) {
+    // External ID fields (source-conditional)
+    if (source === 'musicbrainz' && selections.externalIds.musicbrainzId && mbData.id) {
       updateData.musicbrainzId = mbData.id;
+      updateData.source = 'MUSICBRAINZ';
+    } else if (source === 'discogs' && selections.externalIds.discogsId && mbData.id) {
+      updateData.discogsId = mbData.id; // Already string (numeric)
+      updateData.source = 'DISCOGS';
     }
+
     // Note: IPI and ISNI not stored in Artist model - could be added later
 
     return updateData;
@@ -305,14 +354,19 @@ export class ArtistCorrectionApplyService {
     adminUserId: string,
     beforeArtist: Artist,
     afterArtist: Artist,
-    selections: ArtistFieldSelections
+    selections: ArtistFieldSelections,
+    preview: ArtistCorrectionPreview
   ): Promise<void> {
     try {
+      // Determine source from preview
+      const source = this.determineSource(preview);
+
       // Build audit payload with only changed fields
       const auditPayload = this.buildAuditPayload(
         beforeArtist,
         afterArtist,
-        selections
+        selections,
+        source
       );
 
       // Build list of changed field names
@@ -325,7 +379,7 @@ export class ArtistCorrectionApplyService {
           userId: adminUserId,
           operation: 'admin_correction',
           status: 'SUCCESS',
-          sources: ['musicbrainz'],
+          sources: [source], // Use actual source instead of hardcoded
           fieldsEnriched: changedFields,
           dataQualityBefore: beforeArtist.dataQuality,
           dataQualityAfter: 'HIGH',
@@ -343,12 +397,46 @@ export class ArtistCorrectionApplyService {
   }
 
   /**
+   * Queue Cloudflare image caching for the artist.
+   * Uses CACHE_ARTIST_IMAGE job via BullMQ.
+   */
+  private async queueImageUpload(artistId: string): Promise<void> {
+    try {
+      const queue = getMusicBrainzQueue();
+
+      await queue.addJob(
+        JOB_TYPES.CACHE_ARTIST_IMAGE,
+        {
+          artistId,
+          requestId: `artist-correction-${artistId}-${Date.now()}`,
+        },
+        {
+          priority: 6, // Medium priority for admin corrections
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 2000 },
+        }
+      );
+
+      console.log(
+        `[ArtistCorrectionApplyService] Queued image caching for artist ${artistId}`
+      );
+    } catch (error) {
+      // Log warning but don't fail the correction
+      console.warn(
+        '[ArtistCorrectionApplyService] Failed to queue image caching:',
+        error
+      );
+    }
+  }
+
+  /**
    * Builds audit log payload with before/after deltas.
    */
   private buildAuditPayload(
     beforeArtist: Artist,
     afterArtist: Artist,
-    selections: ArtistFieldSelections
+    selections: ArtistFieldSelections,
+    source: CorrectionSource = 'musicbrainz'
   ): ArtistAuditLogPayload {
     // Metadata field deltas
     const metadata: ArtistFieldDelta[] = [];
@@ -408,9 +496,11 @@ export class ArtistCorrectionApplyService {
       });
     }
 
-    // External ID deltas
+    // External ID deltas (source-conditional)
     const externalIds: ArtistFieldDelta[] = [];
+
     if (
+      source === 'musicbrainz' &&
       selections.externalIds.musicbrainzId &&
       beforeArtist.musicbrainzId !== afterArtist.musicbrainzId
     ) {
@@ -418,6 +508,16 @@ export class ArtistCorrectionApplyService {
         field: 'musicbrainzId',
         before: beforeArtist.musicbrainzId,
         after: afterArtist.musicbrainzId,
+      });
+    } else if (
+      source === 'discogs' &&
+      selections.externalIds.discogsId &&
+      beforeArtist.discogsId !== afterArtist.discogsId
+    ) {
+      externalIds.push({
+        field: 'discogsId',
+        before: beforeArtist.discogsId,
+        after: afterArtist.discogsId,
       });
     }
 
@@ -447,7 +547,8 @@ export class ArtistCorrectionApplyService {
     beforeArtist: Artist,
     afterArtist: Artist,
     affectedAlbumCount: number,
-    selections: ArtistFieldSelections
+    selections: ArtistFieldSelections,
+    source: CorrectionSource = 'musicbrainz'
   ): ArtistAppliedChanges {
     const metadata: string[] = [];
 
@@ -482,12 +583,21 @@ export class ArtistCorrectionApplyService {
       metadata.push('formedYear');
     }
 
+    // External IDs (source-conditional)
     const externalIds: string[] = [];
+
     if (
+      source === 'musicbrainz' &&
       selections.externalIds.musicbrainzId &&
       beforeArtist.musicbrainzId !== afterArtist.musicbrainzId
     ) {
       externalIds.push('musicbrainzId');
+    } else if (
+      source === 'discogs' &&
+      selections.externalIds.discogsId &&
+      beforeArtist.discogsId !== afterArtist.discogsId
+    ) {
+      externalIds.push('discogsId');
     }
 
     return {
