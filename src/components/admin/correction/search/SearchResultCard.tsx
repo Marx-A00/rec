@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import AlbumImage from '@/components/ui/AlbumImage';
 import { Badge } from '@/components/ui/badge';
 
@@ -17,6 +18,8 @@ export interface SearchResultDisplay {
   secondaryTypes?: string[] | null;
   coverArtUrl?: string | null;
   normalizedScore: number;
+  /** Source indicator: 'musicbrainz' or 'discogs' */
+  source: string;
 }
 
 export interface SearchResultCardProps<T extends SearchResultDisplay> {
@@ -26,7 +29,7 @@ export interface SearchResultCardProps<T extends SearchResultDisplay> {
 
 /**
  * A clickable search result card showing album metadata and match score.
- * Used in the correction modal to display MusicBrainz search results.
+ * Used in the correction modal to display search results from MusicBrainz or Discogs.
  */
 export function SearchResultCard<T extends SearchResultDisplay>({
   result,
@@ -35,6 +38,9 @@ export function SearchResultCard<T extends SearchResultDisplay>({
   const handleClick = () => {
     onClick(result);
   };
+
+  // Determine source for styling
+  const isDiscogs = result.source === 'discogs';
 
   // Extract year from firstReleaseDate (could be YYYY or YYYY-MM-DD)
   const year = result.firstReleaseDate?.split('-')[0];
@@ -52,11 +58,22 @@ export function SearchResultCard<T extends SearchResultDisplay>({
   // Format match score as percentage
   const matchScore = Math.round(result.normalizedScore * 100);
 
+  // Source badge label and styling
+  const sourceBadgeLabel = isDiscogs ? 'DG' : 'MB';
+  const sourceBadgeClasses = isDiscogs
+    ? 'text-orange-400/80 border-orange-800/50'
+    : 'text-zinc-500 border-zinc-700';
+
   return (
     <button
       type='button'
       onClick={handleClick}
-      className='w-full flex gap-3 p-3 text-left transition-colors duration-150 hover:bg-zinc-800/50 active:bg-zinc-800 rounded-md'
+      className={cn(
+        'w-full flex gap-3 p-3 text-left transition-colors duration-150 rounded-md',
+        isDiscogs
+          ? 'border border-orange-900/30 hover:bg-orange-950/20 active:bg-orange-950/30'
+          : 'hover:bg-zinc-800/50 active:bg-zinc-800'
+      )}
       aria-label={`Select ${result.title} by ${result.primaryArtistName}`}
     >
       {/* Album thumbnail */}
@@ -99,9 +116,9 @@ export function SearchResultCard<T extends SearchResultDisplay>({
           {metadataText && <span className='truncate'>{metadataText}</span>}
           <Badge
             variant='outline'
-            className='ml-auto text-zinc-500 border-zinc-700 text-[10px] px-1.5 py-0'
+            className={cn('ml-auto text-[10px] px-1.5 py-0', sourceBadgeClasses)}
           >
-            MB
+            {sourceBadgeLabel}
           </Badge>
         </div>
       </div>
