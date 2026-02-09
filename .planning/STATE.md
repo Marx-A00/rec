@@ -9,39 +9,43 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 ## Current Position
 
-Phase: 21 of 25 (Source Selection UI) — COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase complete, ready for Phase 22
-Last activity: 2026-02-08 — Phase 21 verified and complete
+Phase: 22 of 25 (Discogs Album Search)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-09 — Completed 22-01-PLAN.md
 
-Progress: [████░░░░░░░░░░░░░░░░] 1/5 phases complete
+Progress: [█████░░░░░░░░░░░░░░░] 4/18 plans complete (v1.3)
 
 ## Performance Metrics
 
 **Milestone v1.0 (Shipped 2026-02-03):**
+
 - Phases: 12
 - Plans: 37
 - Duration: 11 days
 - Requirements: 35/35
 
 **Milestone v1.1 (Shipped 2026-02-05):**
+
 - Phases: 2 (13-14)
 - Plans: 5
 - Duration: 1 day
 - Requirements: 30/30
 
 **Milestone v1.2 (Shipped 2026-02-07):**
+
 - Phases: 6 (15-20)
 - Plans: 15
 - Duration: 2 days
 - Requirements: 20/20
 
 **Milestone v1.3 (In Progress):**
+
 - Phases: 5 (21-25)
-- Plans: 3 complete (phase 21)
+- Plans: 4 complete (phase 21 + 22-01)
 - Requirements: 4/17 complete (UI-01 through UI-04)
 
-**Total shipped:** 21 phases, 60 plans
+**Total shipped:** 21 phases, 61 plans
 
 ## Accumulated Context
 
@@ -60,26 +64,30 @@ Progress: [████░░░░░░░░░░░░░░░░] 1/5 pha
 - [21-02] SourceToggle placed at top of search views
 - [21-02] Toggle disabled during loading to prevent mid-query source switch
 - [21-03] Source badge in preview header (not per-field)
+- [22-01] DISCOGS_SEARCH_ALBUM job type added
+- [22-01] Shared mapper mapMasterToCorrectionSearchResult in mappers.ts
+- [22-01] QueuedDiscogsService follows QueuedMusicBrainzService pattern
 
 ### v1.3 Context
 
 - Adding Discogs as second search source for corrections
 - Toggle UI to select source before searching — COMPLETE (Phase 21)
 - Reuse existing Discogs queue infrastructure (DISCOGS_SEARCH_ARTIST, DISCOGS_GET_ARTIST)
-- Need to add DISCOGS_SEARCH_ALBUM job type
+- DISCOGS_SEARCH_ALBUM job type — COMPLETE (22-01)
 - Both album and artist corrections supported
 - Same preview/apply pattern as MusicBrainz
 
 ### Existing Infrastructure
 
-- Discogs queue processors: `DISCOGS_SEARCH_ARTIST`, `DISCOGS_GET_ARTIST`
-- Discogs service layer: `src/lib/discogs/mappers.ts`
+- Discogs queue processors: `DISCOGS_SEARCH_ARTIST`, `DISCOGS_GET_ARTIST`, `DISCOGS_SEARCH_ALBUM`
+- Discogs service layer: `src/lib/discogs/mappers.ts`, `src/lib/discogs/queued-service.ts`
 - MusicBrainz correction services in `src/lib/correction/`
 - Zustand stores: `useCorrectionStore.ts`, `useArtistCorrectionStore.ts`
 - Toggle Group component: `src/components/ui/toggle-group.tsx`
 - SourceToggle component: `src/components/admin/correction/shared/SourceToggle.tsx`
 - correctionSource state in both stores with sessionStorage persistence
 - Source badges in PreviewView and ArtistPreviewView
+- QueuedDiscogsService for resolver integration
 
 ### Blockers/Concerns
 
@@ -87,8 +95,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-08
-Stopped at: Phase 21 complete
+Last session: 2026-02-09
+Stopped at: Completed 22-01-PLAN.md
 Resume file: N/A
 
-**Next action:** `/gsd:plan-phase 22` (Discogs Album Search)
+**Next action:** Execute 22-02-PLAN.md (GraphQL resolver integration)
