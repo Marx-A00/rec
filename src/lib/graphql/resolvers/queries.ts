@@ -21,6 +21,7 @@ import { isAdmin } from '@/lib/permissions';
 import { getCorrectionSearchService } from '@/lib/correction/search-service';
 import { getCorrectionPreviewService } from '@/lib/correction/preview';
 import { getQueuedDiscogsService } from '@/lib/discogs/queued-service';
+import { mapMasterToCorrectionSearchResult } from '@/lib/discogs/mappers';
 import type {
   ScoredSearchResult,
   ScoringStrategy as ServiceScoringStrategy,
@@ -2736,7 +2737,8 @@ export const queryResolvers: QueryResolvers = {
     }
 
     try {
-      const { albumId, releaseGroupMbid } = input;
+      const { albumId, releaseGroupMbid, source } = input;
+      const correctionSource = source?.toLowerCase() || 'musicbrainz';
 
       // Get album with tracks
       const album = await prisma.album.findUnique({
@@ -2758,27 +2760,50 @@ export const queryResolvers: QueryResolvers = {
         });
       }
 
-      // Fetch release group directly by MBID (no need to re-search)
-      const searchService = getCorrectionSearchService();
-      let scoredResult;
-      try {
-        scoredResult = await searchService.getByMbid(releaseGroupMbid);
-      } catch (error) {
-        throw new GraphQLError('Release group not found: ' + releaseGroupMbid, {
-          extensions: { code: 'NOT_FOUND' },
-        });
+      // Fetch source result based on correction source
+      let scoredResult: ScoredSearchResult;
+      if (correctionSource === 'discogs') {
+        // Discogs path: fetch master and map to search result format
+        const discogsService = getQueuedDiscogsService();
+        const master = await discogsService.getMaster(releaseGroupMbid);
+        const correctionResult = mapMasterToCorrectionSearchResult(master);
+
+        // Wrap as ScoredSearchResult with default scoring (Discogs has no scores)
+        scoredResult = {
+          ...correctionResult,
+          normalizedScore: 1.0,
+          displayScore: 100,
+          breakdown: {
+            titleScore: 1.0,
+            artistScore: 1.0,
+            yearScore: 1.0,
+            mbScore: 100,
+          },
+          isLowConfidence: false,
+          scoringStrategy: 'normalized' as const,
+        };
+      } else {
+        // MusicBrainz path: fetch release group by MBID
+        const searchService = getCorrectionSearchService();
+        try {
+          scoredResult = await searchService.getByMbid(releaseGroupMbid);
+        } catch (error) {
+          throw new GraphQLError('Release group not found: ' + releaseGroupMbid, {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
       }
 
-      // Use the release group MBID as the release MBID for preview
-      // Note: In a more complete implementation, we would look up specific releases within the group
+      // Use the ID as the release ID for preview
       const releaseMbid = releaseGroupMbid;
 
-      // Generate preview
+      // Generate preview with source parameter
       const previewService = getCorrectionPreviewService();
       const preview = await previewService.generatePreview(
         albumId,
         scoredResult,
-        releaseMbid
+        releaseMbid,
+        correctionSource as 'musicbrainz' | 'discogs'
       );
 
       // Transform to GraphQL format
