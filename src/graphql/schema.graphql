@@ -2369,11 +2369,15 @@ type Query {
   """
   correctionPreview(input: CorrectionPreviewInput!): CorrectionPreview!
   """
-  Search MusicBrainz for artist correction candidates
+  Search MusicBrainz or Discogs for artist correction candidates
   """
   artistCorrectionSearch(
     query: String!
     limit: Int
+    """
+    Data source to search (default: MUSICBRAINZ)
+    """
+    source: CorrectionSource = MUSICBRAINZ
   ): ArtistCorrectionSearchResponse!
   """
   Generate a preview of changes between artist and selected MusicBrainz artist
@@ -2720,6 +2724,10 @@ type ArtistCorrectionSearchResult {
   Top releases for disambiguation
   """
   topReleases: [ArtistTopRelease!]
+  """
+  Data source this result came from (musicbrainz or discogs)
+  """
+  source: String
 }
 
 """
