@@ -2634,9 +2634,19 @@ export const queryResolvers: QueryResolvers = {
           limit: limit ?? 10,
         });
 
+        // Debug: log the response structure
+        console.log('[correctionSearch] Discogs response:', {
+          hasResponse: !!discogsResponse,
+          hasResults: !!discogsResponse?.results,
+          resultsCount: discogsResponse?.resultsCount,
+          resultsLength: discogsResponse?.results?.length,
+        });
+
         // Transform Discogs results to GraphQL format
         // Discogs does not have scoring, so wrap each result as a single-item group
-        const transformedResults = discogsResponse.results.map(result => ({
+        // Handle case where results might be undefined (job serialization issue)
+        const discogsResults = discogsResponse?.results ?? [];
+        const transformedResults = discogsResults.map(result => ({
           releaseGroupMbid: result.releaseGroupMbid,
           primaryResult: {
             ...result,
@@ -2675,7 +2685,6 @@ export const queryResolvers: QueryResolvers = {
       }
 
       // MusicBrainz path (default)
-
 
       // Map GraphQL strategy enum to service strategy
       const serviceStrategy = mapGqlStrategyToService(strategy);
@@ -2788,9 +2797,12 @@ export const queryResolvers: QueryResolvers = {
         try {
           scoredResult = await searchService.getByMbid(releaseGroupMbid);
         } catch (error) {
-          throw new GraphQLError('Release group not found: ' + releaseGroupMbid, {
-            extensions: { code: 'NOT_FOUND' },
-          });
+          throw new GraphQLError(
+            'Release group not found: ' + releaseGroupMbid,
+            {
+              extensions: { code: 'NOT_FOUND' },
+            }
+          );
         }
       }
 
