@@ -270,7 +270,8 @@ export class ApplyCorrectionService {
         trackMatches,
         result.artistChanges,
         result.trackChanges,
-        selections
+        selections,
+        preview
       );
 
       // Build response
@@ -279,7 +280,8 @@ export class ApplyCorrectionService {
         result.afterAlbum,
         result.artistChanges,
         result.trackChanges,
-        selections
+        selections,
+        preview
       );
 
       return {
@@ -468,7 +470,8 @@ export class ApplyCorrectionService {
         case 'ORPHANED': {
           // DB track not in MB - potentially delete
           if (match.dbTrack) {
-            const positionKey = `${match.dbTrack.discNumber ?? 1}-${match.dbTrack.trackNumber}`;
+            const discNum = match.dbTrack.discNumber ?? 1;
+            const positionKey = discNum + '-' + match.dbTrack.trackNumber;
             const shouldDelete =
               selections.tracks.get(positionKey) === true ||
               selections.tracks.get(match.dbTrack.id) === true;
@@ -540,16 +543,21 @@ export class ApplyCorrectionService {
     trackMatches: TrackMatch[],
     artistChanges: { added: string[]; removed: string[] },
     _trackChanges: { added: number; modified: number; removed: number },
-    selections: FieldSelections
+    selections: FieldSelections,
+    preview: CorrectionPreview
   ): Promise<void> {
     try {
+      // Determine source from preview (default to musicbrainz for backward compatibility)
+      const source = preview.sourceResult.source || 'musicbrainz';
+
       // Build audit payload with only changed fields
       const auditPayload = this.buildAuditPayload(
         beforeAlbum,
         afterAlbum,
         trackMatches,
         artistChanges,
-        selections
+        selections,
+        preview
       );
 
       // Build list of changed field names
@@ -562,7 +570,7 @@ export class ApplyCorrectionService {
           userId: adminUserId,
           operation: 'admin_correction',
           status: 'SUCCESS',
-          sources: ['musicbrainz'],
+          sources: [source],
           fieldsEnriched: changedFields,
           dataQualityBefore: beforeAlbum.dataQuality,
           dataQualityAfter: 'HIGH',
@@ -584,8 +592,12 @@ export class ApplyCorrectionService {
     afterAlbum: AlbumWithRelations,
     trackMatches: TrackMatch[],
     artistChanges: { added: string[]; removed: string[] },
-    selections: FieldSelections
+    selections: FieldSelections,
+    preview: CorrectionPreview
   ): AuditLogPayload {
+    // Determine source from preview (default to musicbrainz for backward compatibility)
+    const source = preview.sourceResult.source || 'musicbrainz';
+
     // Metadata field deltas
     const metadata: FieldDelta[] = [];
 
@@ -640,17 +652,30 @@ export class ApplyCorrectionService {
       });
     }
 
-    // External ID deltas
+    // External ID deltas (source-conditional)
     const externalIds: FieldDelta[] = [];
-    if (
-      selections.externalIds.musicbrainzId &&
-      beforeAlbum.musicbrainzId !== afterAlbum.musicbrainzId
-    ) {
-      externalIds.push({
-        field: 'musicbrainzId',
-        before: beforeAlbum.musicbrainzId,
-        after: afterAlbum.musicbrainzId,
-      });
+    if (source === 'musicbrainz') {
+      if (
+        selections.externalIds.musicbrainzId &&
+        beforeAlbum.musicbrainzId !== afterAlbum.musicbrainzId
+      ) {
+        externalIds.push({
+          field: 'musicbrainzId',
+          before: beforeAlbum.musicbrainzId,
+          after: afterAlbum.musicbrainzId,
+        });
+      }
+    } else if (source === 'discogs') {
+      if (
+        selections.externalIds.discogsId &&
+        beforeAlbum.discogsId !== afterAlbum.discogsId
+      ) {
+        externalIds.push({
+          field: 'discogsId',
+          before: beforeAlbum.discogsId,
+          after: afterAlbum.discogsId,
+        });
+      }
     }
 
     // Track change logs - build explicitly to avoid type inference issues
@@ -763,8 +788,12 @@ export class ApplyCorrectionService {
     afterAlbum: AlbumWithRelations,
     artistChanges: { added: string[]; removed: string[] },
     trackChanges: { added: number; modified: number; removed: number },
-    selections: FieldSelections
+    selections: FieldSelections,
+    preview: CorrectionPreview
   ): AppliedChanges {
+    // Determine source from preview (default to musicbrainz for backward compatibility)
+    const source = preview.sourceResult.source || 'musicbrainz';
+
     const metadata: string[] = [];
 
     if (selections.metadata.title && beforeAlbum.title !== afterAlbum.title) {
@@ -796,12 +825,22 @@ export class ApplyCorrectionService {
       metadata.push('barcode');
     }
 
+    // External IDs (source-conditional)
     const externalIds: string[] = [];
-    if (
-      selections.externalIds.musicbrainzId &&
-      beforeAlbum.musicbrainzId !== afterAlbum.musicbrainzId
-    ) {
-      externalIds.push('musicbrainzId');
+    if (source === 'musicbrainz') {
+      if (
+        selections.externalIds.musicbrainzId &&
+        beforeAlbum.musicbrainzId !== afterAlbum.musicbrainzId
+      ) {
+        externalIds.push('musicbrainzId');
+      }
+    } else if (source === 'discogs') {
+      if (
+        selections.externalIds.discogsId &&
+        beforeAlbum.discogsId !== afterAlbum.discogsId
+      ) {
+        externalIds.push('discogsId');
+      }
     }
 
     const coverArtChanged =

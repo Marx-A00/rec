@@ -205,19 +205,21 @@ export function buildAlbumUpdateData(
   // }
 
   // =========================================
-  // External IDs
+  // External IDs (source-conditional)
   // =========================================
 
-  if (selections.externalIds.musicbrainzId) {
+  // Determine source from preview (default to musicbrainz for backward compatibility)
+  const source = preview.sourceResult.source || 'musicbrainz';
+
+  if (source === 'musicbrainz' && selections.externalIds.musicbrainzId) {
     // Use release GROUP MBID (not release MBID) for album identification
     data.musicbrainzId = preview.sourceResult.releaseGroupMbid;
     hasChanges = true;
+  } else if (source === 'discogs' && selections.externalIds.discogsId) {
+    // For Discogs, releaseGroupMbid contains the master ID
+    data.discogsId = preview.sourceResult.releaseGroupMbid;
+    hasChanges = true;
   }
-
-  // spotifyId and discogsId: Not updated from MusicBrainz
-  // MB doesn't have Spotify/Discogs IDs. These would come from other sources.
-  // if (selections.externalIds.spotifyId) { ... }
-  // if (selections.externalIds.discogsId) { ... }
 
   // =========================================
   // Cover Art
@@ -313,7 +315,8 @@ export function buildTrackUpdateData(
 ): Prisma.TrackUpdateInput | null {
   // Check if this specific track is selected for update
   // UI sends position keys like "1-3" (disc-position), try that first
-  const positionKey = `${existingTrack.discNumber ?? 1}-${existingTrack.trackNumber}`;
+  const discNum = existingTrack.discNumber ?? 1;
+  const positionKey = discNum + '-' + existingTrack.trackNumber;
   const isSelected =
     selections.tracks.get(positionKey) ??
     selections.tracks.get(existingTrack.id) ??
