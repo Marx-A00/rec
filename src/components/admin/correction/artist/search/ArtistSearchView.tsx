@@ -6,6 +6,7 @@ import { Search, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+  CorrectionSource,
   useSearchArtistCorrectionCandidatesQuery,
   type Artist,
   type ArtistCorrectionSearchResult,
@@ -30,7 +31,7 @@ export interface ArtistSearchViewProps {
  * - Search triggers on button click (not auto-search on mount)
  * - If returning from preview step with saved state, auto-triggers search
  * - Results persist when navigating back from preview
- * - Supports MusicBrainz/Discogs source toggle (Discogs coming in Phase 22+)
+ * - Supports MusicBrainz/Discogs source toggle
  */
 export function ArtistSearchView({ artist }: ArtistSearchViewProps) {
   // Get store for this artist
@@ -55,18 +56,22 @@ export function ArtistSearchView({ artist }: ArtistSearchViewProps) {
   // Get store actions
   const setCorrectionSource = store.getState().setCorrectionSource;
 
-  // GraphQL query - only enabled when search is triggered and MusicBrainz selected
+  // Map store source to GraphQL enum
+  const graphqlSource =
+    correctionSource === 'discogs'
+      ? CorrectionSource.Discogs
+      : CorrectionSource.Musicbrainz;
+
+  // GraphQL query - enabled for both MusicBrainz and Discogs sources
   const { data, isLoading, error, isFetching } =
     useSearchArtistCorrectionCandidatesQuery(
       {
         query: searchQuery ?? '',
         limit: 10,
+        source: graphqlSource,
       },
       {
-        enabled:
-          correctionSource === 'musicbrainz' &&
-          isSearchTriggered &&
-          !!searchQuery,
+        enabled: isSearchTriggered && !!searchQuery,
       }
     );
 
@@ -100,30 +105,29 @@ export function ArtistSearchView({ artist }: ArtistSearchViewProps) {
     }
   }, [searchQuery, isSearchTriggered]);
 
-  // Show skeleton during initial search (only for MusicBrainz)
-  const showSkeleton =
-    isLoading &&
-    isSearchTriggered &&
-    searchOffset === 0 &&
-    correctionSource === 'musicbrainz';
+  // Show skeleton during initial search
+  const showSkeleton = isLoading && isSearchTriggered && searchOffset === 0;
 
   // Loading more indicator (pagination)
   const isLoadingMore = isFetching && searchOffset > 0;
 
+  // Source-specific label for initial state
+  const sourceLabel = correctionSource === 'discogs' ? 'Discogs' : 'MusicBrainz';
+
   // Render search skeleton
   if (showSkeleton) {
     return (
-      <div className="space-y-4">
-        <div className="space-y-3">
-          <Skeleton className="h-9 w-full" />
-          <Skeleton className="h-9 w-32" />
+      <div className='space-y-4'>
+        <div className='space-y-3'>
+          <Skeleton className='h-9 w-full' />
+          <Skeleton className='h-9 w-32' />
         </div>
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex gap-3 p-3">
-            <Skeleton className="h-12 w-12 rounded-full flex-shrink-0" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-3 w-1/3" />
+          <div key={i} className='flex gap-3 p-3'>
+            <Skeleton className='h-12 w-12 rounded-full flex-shrink-0' />
+            <div className='flex-1 space-y-2'>
+              <Skeleton className='h-4 w-2/3' />
+              <Skeleton className='h-3 w-1/3' />
             </div>
           </div>
         ))}
@@ -132,7 +136,7 @@ export function ArtistSearchView({ artist }: ArtistSearchViewProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {/* Source toggle */}
       <SourceToggle
         value={correctionSource}
@@ -140,109 +144,90 @@ export function ArtistSearchView({ artist }: ArtistSearchViewProps) {
         disabled={isLoading}
       />
 
-      {/* Discogs placeholder (Phase 22+) */}
-      {correctionSource === 'discogs' && (
-        <div className="p-4 text-center text-zinc-500 border border-dashed border-zinc-700 rounded-lg">
-          <p className="text-sm">Discogs artist search coming soon</p>
-          <p className="text-xs text-zinc-600 mt-1">
-            Switch to MusicBrainz to search
+      {/* Search input */}
+      <div className='flex gap-2'>
+        <Input
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder='Artist name'
+          className='flex-1 bg-zinc-800 border-zinc-700 text-zinc-100'
+        />
+        <Button
+          onClick={handleSearch}
+          disabled={!inputValue.trim() || isLoading}
+          className='gap-2'
+        >
+          {isLoading ? (
+            <Loader2 className='h-4 w-4 animate-spin' />
+          ) : (
+            <Search className='h-4 w-4' />
+          )}
+          Search
+        </Button>
+      </div>
+
+      {/* Error state */}
+      {!!error && isSearchTriggered && (
+        <ErrorState
+          message={
+            error instanceof Error
+              ? error.message
+              : 'Search failed. Please try again.'
+          }
+          type={categorizeError(error)}
+          onRetry={handleSearch}
+          isRetrying={isFetching}
+        />
+      )}
+
+      {/* Initial state - before first search */}
+      {!isSearchTriggered && (
+        <div className='p-6 text-center text-zinc-400 border border-dashed border-zinc-700 rounded-lg'>
+          Search {sourceLabel} for the correct artist data
+        </div>
+      )}
+
+      {/* No results state */}
+      {isSearchTriggered && !isLoading && !error && results.length === 0 && (
+        <div className='flex flex-col items-center justify-center py-12 text-center'>
+          <AlertCircle className='h-12 w-12 text-zinc-600 mb-4' />
+          <h3 className='text-lg font-medium text-cosmic-latte mb-2'>
+            No results found
+          </h3>
+          <p className='text-sm text-zinc-400 max-w-sm'>
+            We couldn&apos;t find any matches. Try adjusting your search.
           </p>
         </div>
       )}
 
-      {/* MusicBrainz search content */}
-      {correctionSource === 'musicbrainz' && (
-        <>
-          {/* Search input */}
-          <div className="flex gap-2">
-            <Input
-              value={inputValue}
-              onChange={e => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Artist name"
-              className="flex-1 bg-zinc-800 border-zinc-700 text-zinc-100"
+      {/* Results */}
+      {isSearchTriggered && !isLoading && results.length > 0 && (
+        <div className='divide-y divide-zinc-800'>
+          {results.map(result => (
+            <ArtistSearchCard
+              key={result.artistMbid}
+              result={result}
+              onClick={handleResultClick}
             />
-            <Button
-              onClick={handleSearch}
-              disabled={!inputValue.trim() || isLoading}
-              className="gap-2"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="h-4 w-4" />
-              )}
-              Search
-            </Button>
-          </div>
+          ))}
 
-          {/* Error state */}
-          {!!error && isSearchTriggered && (
-            <ErrorState
-              message={
-                error instanceof Error
-                  ? error.message
-                  : 'Search failed. Please try again.'
-              }
-              type={categorizeError(error)}
-              onRetry={handleSearch}
-              isRetrying={isFetching}
-            />
-          )}
-
-          {/* Initial state - before first search */}
-          {!isSearchTriggered && (
-            <div className="p-6 text-center text-zinc-400 border border-dashed border-zinc-700 rounded-lg">
-              Search MusicBrainz for the correct artist data
+          {/* Load more button */}
+          {hasMore && (
+            <div className='pt-4 text-center'>
+              <Button
+                variant='outline'
+                onClick={() =>
+                  store.getState().setSearchOffset(searchOffset + 10)
+                }
+                disabled={isLoadingMore}
+                className='border-zinc-700'
+              >
+                {isLoadingMore ? 'Loading...' : 'Load More'}
+              </Button>
             </div>
           )}
-
-          {/* No results state */}
-          {isSearchTriggered &&
-            !isLoading &&
-            !error &&
-            results.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <AlertCircle className="h-12 w-12 text-zinc-600 mb-4" />
-                <h3 className="text-lg font-medium text-cosmic-latte mb-2">
-                  No results found
-                </h3>
-                <p className="text-sm text-zinc-400 max-w-sm">
-                  We couldn&apos;t find any matches in MusicBrainz. Try
-                  adjusting your search.
-                </p>
-              </div>
-            )}
-
-          {/* Results */}
-          {isSearchTriggered && !isLoading && results.length > 0 && (
-            <div className="divide-y divide-zinc-800">
-              {results.map(result => (
-                <ArtistSearchCard
-                  key={result.artistMbid}
-                  result={result}
-                  onClick={handleResultClick}
-                />
-              ))}
-
-              {/* Load more button */}
-              {hasMore && (
-                <div className="pt-4 text-center">
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      store.getState().setSearchOffset(searchOffset + 10)
-                    }
-                    disabled={isLoadingMore}
-                    className="border-zinc-700"
-                  >
-                    {isLoadingMore ? 'Loading...' : 'Load More'}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </>
+        </div>
       )}
     </div>
   );
