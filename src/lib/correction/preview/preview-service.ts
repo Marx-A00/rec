@@ -2,14 +2,16 @@
  * CorrectionPreviewService - Orchestrates complete correction preview generation.
  *
  * Main entry point for the correction preview system. Fetches current album,
- * fetches full MusicBrainz release data via queue, and generates all diffs.
+ * fetches full MusicBrainz or Discogs release data via queue, and generates all diffs.
  */
 
 import type { Album, Artist, Prisma, Track } from '@prisma/client';
 
+import { getQueuedDiscogsService } from '@/lib/discogs/queued-service';
 import { getQueuedMusicBrainzService } from '@/lib/musicbrainz/queue-service';
 import { prisma } from '@/lib/prisma';
 import { PRIORITY_TIERS } from '@/lib/queue';
+import type { DiscogsMaster } from '@/types/discogs/master';
 
 import type { CorrectionArtistCredit, ScoredSearchResult } from '../types';
 
@@ -17,6 +19,7 @@ import { DiffEngine } from './diff-engine';
 import type {
   ChangeType,
   CorrectionPreview,
+  CorrectionSource,
   FieldDiff,
   MBReleaseData,
 } from './types';
@@ -71,7 +74,7 @@ type AlbumWithRelations = Prisma.AlbumGetPayload<{
 
 /**
  * Service for generating correction previews.
- * Orchestrates fetching album data, MusicBrainz data, and diff generation.
+ * Orchestrates fetching album data, MusicBrainz/Discogs data, and diff generation.
  */
 export class CorrectionPreviewService {
   private diffEngine: DiffEngine;
@@ -85,14 +88,16 @@ export class CorrectionPreviewService {
    * Generate complete correction preview.
    *
    * @param albumId - Internal database ID of the album to correct
-   * @param searchResult - Selected MusicBrainz search result
-   * @param releaseMbid - Specific release MBID (different from release group)
+   * @param searchResult - Selected MusicBrainz/Discogs search result
+   * @param releaseMbid - Specific release MBID or Discogs master ID
+   * @param source - Data source ('musicbrainz' or 'discogs')
    * @returns Complete preview with all diffs and track comparisons
    */
   async generatePreview(
     albumId: string,
     searchResult: ScoredSearchResult,
-    releaseMbid: string
+    releaseMbid: string,
+    source: CorrectionSource = 'musicbrainz'
   ): Promise<CorrectionPreview> {
     // Fetch current album with tracks and artists
     const currentAlbumRaw = await this.fetchCurrentAlbum(albumId);
@@ -103,14 +108,21 @@ export class CorrectionPreviewService {
     // Convert to expected format with artistCredit
     const currentAlbum = this.transformAlbumWithArtistCredit(currentAlbumRaw);
 
-    // Fetch full MusicBrainz release data with tracks (high priority - admin action)
-    const mbReleaseData = await this.fetchMBReleaseData(releaseMbid);
+    // Fetch source data based on correction source
+    let mbReleaseData: MBReleaseData | null;
+    if (source === 'discogs') {
+      mbReleaseData = await this.fetchDiscogsReleaseData(releaseMbid);
+    } else {
+      // Fetch full MusicBrainz release data with tracks (high priority - admin action)
+      mbReleaseData = await this.fetchMBReleaseData(releaseMbid);
+    }
 
-    // Generate field diffs (pass release group MBID for musicbrainzId comparison)
+    // Generate field diffs (pass release group ID for external ID comparison)
     const fieldDiffs = this.generateFieldDiffs(
       currentAlbum,
       mbReleaseData,
-      searchResult.releaseGroupMbid
+      searchResult.releaseGroupMbid,
+      source
     );
 
     // Convert database artist relations to CorrectionArtistCredit format
@@ -293,6 +305,150 @@ export class CorrectionPreviewService {
   }
 
   /**
+   * Fetch Discogs master data and transform to MBReleaseData format.
+   * Uses QueuedDiscogsService for rate-limited API access.
+   */
+  private async fetchDiscogsReleaseData(
+    discogsMasterId: string
+  ): Promise<MBReleaseData | null> {
+    try {
+      const discogsService = getQueuedDiscogsService();
+      const master = await discogsService.getMaster(
+        discogsMasterId,
+        PRIORITY_TIERS.ADMIN
+      );
+
+      return this.transformDiscogsMaster(master);
+    } catch (error) {
+      console.error('Failed to fetch Discogs master data:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Transform Discogs master to MBReleaseData format for unified processing.
+   */
+  private transformDiscogsMaster(master: DiscogsMaster): MBReleaseData {
+    return {
+      id: master.id.toString(),
+      title: master.title,
+      // Year-only date with Jan 1 fallback per CONTEXT.md
+      date: master.year ? master.year.toString() + '-01-01' : undefined,
+      // Discogs masters don't have country or barcode
+      country: undefined,
+      barcode: undefined,
+      // Map tracklist to media format
+      media: this.mapDiscogsTracklist(master.tracklist || []),
+      // Map artist credits
+      artistCredit: (master.artists || []).map(a => ({
+        name: a.name,
+        joinphrase: a.join || '',
+        artist: {
+          id: a.id.toString(),
+          name: a.name,
+          sortName: undefined,
+          disambiguation: undefined,
+        },
+      })),
+    };
+  }
+
+  /**
+   * Map Discogs tracklist to MBMedium[] format.
+   * Handles Discogs position strings (1, 2, A1, B2, etc.)
+   */
+  private mapDiscogsTracklist(
+    tracklist: DiscogsMaster['tracklist']
+  ): MBReleaseData['media'] {
+    if (!tracklist || tracklist.length === 0) {
+      return [];
+    }
+
+    // Group tracks by disc (parse position strings)
+    const discMap = new Map<
+      number,
+      Array<{
+        position: string;
+        title: string;
+        duration: string;
+        trackNum: number;
+      }>
+    >();
+
+    tracklist.forEach((track, idx) => {
+      const disc = this.parseDiscNumber(track.position);
+      const trackNum = this.parseTrackNumber(track.position, idx);
+
+      if (!discMap.has(disc)) {
+        discMap.set(disc, []);
+      }
+      discMap.get(disc)!.push({
+        position: track.position,
+        title: track.title,
+        duration: track.duration || '',
+        trackNum,
+      });
+    });
+
+    // Convert to MBMedium format
+    return Array.from(discMap.entries()).map(([discNum, tracks]) => ({
+      position: discNum,
+      format: undefined,
+      trackCount: tracks.length,
+      tracks: tracks.map(track => ({
+        position: track.trackNum,
+        recording: {
+          id: '', // Discogs tracks don't have IDs
+          title: track.title,
+          length: this.parseDuration(track.duration),
+          position: track.trackNum,
+        },
+      })),
+    }));
+  }
+
+  /**
+   * Parse disc number from Discogs position string.
+   * "1" or "2" = disc 1, "A1" = disc 1, "B1" = disc 2, etc.
+   */
+  private parseDiscNumber(position: string): number {
+    if (!position) return 1;
+    const match = position.match(/^([A-Z])?(\d+)/i);
+    if (!match) return 1;
+
+    if (match[1]) {
+      // Letter prefix: A=1, B=2, C=3, etc.
+      return match[1].toUpperCase().charCodeAt(0) - 64;
+    }
+    return 1;
+  }
+
+  /**
+   * Parse track number from Discogs position string.
+   */
+  private parseTrackNumber(position: string, fallbackIdx: number): number {
+    if (!position) return fallbackIdx + 1;
+    const match = position.match(/(\d+)$/);
+    return match ? parseInt(match[1], 10) : fallbackIdx + 1;
+  }
+
+  /**
+   * Convert Discogs duration string (MM:SS) to milliseconds.
+   */
+  private parseDuration(duration: string): number | undefined {
+    if (!duration) return undefined;
+    const parts = duration.split(':');
+    if (parts.length === 2) {
+      const minutes = parseInt(parts[0], 10);
+      const seconds = parseInt(parts[1], 10);
+      if (!isNaN(minutes) && !isNaN(seconds)) {
+        return (minutes * 60 + seconds) * 1000;
+      }
+    }
+    return undefined;
+  }
+
+  /**
    * Transform raw MusicBrainz API response to MBReleaseData structure.
    */
   private transformMBRelease(
@@ -342,7 +498,8 @@ export class CorrectionPreviewService {
   private generateFieldDiffs(
     currentAlbum: Album,
     mbData: MBReleaseData | null,
-    releaseGroupMbid?: string
+    releaseGroupMbid?: string,
+    source: CorrectionSource = 'musicbrainz'
   ): FieldDiff[] {
     const diffs: FieldDiff[] = [];
 
@@ -363,32 +520,46 @@ export class CorrectionPreviewService {
       )
     );
 
-    // Country
-    diffs.push(
-      this.diffEngine.compareText(
-        'country',
-        currentAlbum.releaseCountry,
-        mbData?.country || null
-      )
-    );
+    // Country (only for MusicBrainz - Discogs masters don't have country)
+    if (source === 'musicbrainz') {
+      diffs.push(
+        this.diffEngine.compareText(
+          'country',
+          currentAlbum.releaseCountry,
+          mbData?.country || null
+        )
+      );
+    }
 
-    // Barcode
-    diffs.push(
-      this.diffEngine.compareText(
-        'barcode',
-        currentAlbum.barcode,
-        mbData?.barcode || null
-      )
-    );
+    // Barcode (only for MusicBrainz - Discogs masters don't have barcode)
+    if (source === 'musicbrainz') {
+      diffs.push(
+        this.diffEngine.compareText(
+          'barcode',
+          currentAlbum.barcode,
+          mbData?.barcode || null
+        )
+      );
+    }
 
-    // MusicBrainz ID (use release group MBID, not release MBID)
-    diffs.push(
-      this.diffEngine.compareExternalId(
-        'musicbrainzId',
-        currentAlbum.musicbrainzId,
-        releaseGroupMbid || null
-      )
-    );
+    // External ID (conditional on source)
+    if (source === 'musicbrainz') {
+      diffs.push(
+        this.diffEngine.compareExternalId(
+          'musicbrainzId',
+          currentAlbum.musicbrainzId,
+          releaseGroupMbid || null
+        )
+      );
+    } else if (source === 'discogs') {
+      diffs.push(
+        this.diffEngine.compareExternalId(
+          'discogsId',
+          currentAlbum.discogsId,
+          releaseGroupMbid || null
+        )
+      );
+    }
 
     return diffs;
   }

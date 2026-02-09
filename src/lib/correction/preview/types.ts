@@ -8,6 +8,13 @@ import type { Album, Track } from '@prisma/client';
 import type { CorrectionArtistCredit, ScoredSearchResult } from '../types';
 
 // ============================================================================
+// Source Types
+// ============================================================================
+
+/** Source for correction data - determines which external service to query */
+export type CorrectionSource = 'musicbrainz' | 'discogs';
+
+// ============================================================================
 // Change Classification
 // ============================================================================
 
