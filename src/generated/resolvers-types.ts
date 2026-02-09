@@ -673,6 +673,8 @@ export type CorrectionApplyInput = {
   releaseGroupMbid: Scalars['String']['input'];
   /** Field selections determining which changes to apply */
   selections: FieldSelectionsInput;
+  /** Source of correction data (defaults to MusicBrainz) */
+  source?: InputMaybe<CorrectionSource>;
 };
 
 /**

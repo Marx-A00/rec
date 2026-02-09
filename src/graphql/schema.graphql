@@ -1739,6 +1739,10 @@ input CorrectionApplyInput {
   Expected album updatedAt timestamp for optimistic locking
   """
   expectedUpdatedAt: DateTime!
+  """
+  Source of correction data (defaults to MusicBrainz)
+  """
+  source: CorrectionSource = MUSICBRAINZ
 }
 
 """
