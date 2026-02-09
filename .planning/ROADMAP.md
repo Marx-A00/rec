@@ -75,7 +75,13 @@ Plans:
 - `src/lib/queue/processors/discogs-processor.ts` (add album search)
 - `src/graphql/schema.graphql` (add Discogs album search mutation)
 
-**Plans:** TBD
+
+**Plans:** 3 plans
+
+Plans:
+- [ ] 22-01-PLAN.md — Backend infrastructure (queue job, processor, search service)
+- [ ] 22-02-PLAN.md — GraphQL layer (schema enum, resolver routing)
+- [ ] 22-03-PLAN.md — Frontend integration (SearchView source param, result styling)
 
 ---
 
