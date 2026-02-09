@@ -184,11 +184,11 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 25-01-PLAN.md — Preview service extension for Discogs
-- [ ] 25-02-PLAN.md — Apply service extension for Discogs
-- [ ] 25-03-PLAN.md — GraphQL layer for artist correction
+- [x] 25-01-PLAN.md — Preview service extension for Discogs
+- [x] 25-02-PLAN.md — Apply service extension for Discogs
+- [x] 25-03-PLAN.md — GraphQL layer for artist correction
 
-**Status:** Planned
+**Status:** Complete (2026-02-09)
 
 ---
 
@@ -249,4 +249,4 @@ Phase 21 (Source Selection UI)
 ---
 
 _Roadmap created: 2026-02-08_
-_Last updated: 2026-02-09 (Phase 24 complete)_
+_Last updated: 2026-02-09 (Phase 25 complete — Milestone v1.3 complete)_

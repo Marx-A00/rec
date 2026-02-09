@@ -27,14 +27,14 @@ Requirements for Discogs Correction Source milestone.
 - [x] **ART-01**: Admin can search Discogs for artists by query
 - [x] **ART-02**: Discogs artist search uses existing queue infrastructure
 - [x] **ART-03**: Discogs artist results display in same format as MusicBrainz
-- [ ] **ART-04**: Admin can preview Discogs artist data side-by-side
-- [ ] **ART-05**: Admin can apply artist correction from Discogs source
+- [x] **ART-04**: Admin can preview Discogs artist data side-by-side
+- [x] **ART-05**: Admin can apply artist correction from Discogs source
 
 ### Data Mapping
 
 - [x] **MAP-01**: Discogs album fields map to Album model
 - [x] **MAP-02**: Discogs artist fields map to Artist model
-- [ ] **MAP-03**: Discogs IDs stored as external IDs on apply
+- [x] **MAP-03**: Discogs IDs stored as external IDs on apply
 
 ## Future Requirements
 
@@ -75,11 +75,11 @@ Deferred to later milestones.
 | ART-01      | 24    | Complete |
 | ART-02      | 24    | Complete |
 | ART-03      | 24    | Complete |
-| ART-04      | 25    | Pending  |
-| ART-05      | 25    | Pending  |
+| ART-04      | 25    | Complete |
+| ART-05      | 25    | Complete |
 | MAP-01      | 22    | Complete |
 | MAP-02      | 24    | Complete |
-| MAP-03      | 25    | Pending  |
+| MAP-03      | 25    | Complete |
 
 **Coverage:**
 
@@ -90,4 +90,4 @@ Deferred to later milestones.
 ---
 
 _Requirements defined: 2026-02-08_
-_Last updated: 2026-02-09 — Phase 24 complete (ART-01, ART-02, ART-03, MAP-02)_
+_Last updated: 2026-02-09 — Phase 25 complete (ART-04, ART-05, MAP-03) — Milestone v1.3 complete (17/17)_
