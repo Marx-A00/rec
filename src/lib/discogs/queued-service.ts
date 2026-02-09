@@ -10,6 +10,7 @@ import chalk from 'chalk';
 import type { CorrectionSearchResult } from '@/lib/correction/types';
 import { getMusicBrainzQueue, JOB_TYPES, PRIORITY_TIERS } from '@/lib/queue';
 import { createRedisConnection } from '@/lib/queue/redis';
+import type { DiscogsMaster } from '@/types/discogs/master';
 
 // ============================================================================
 // Types
@@ -149,6 +150,46 @@ export class QueuedDiscogsService {
       console.error('[QueuedDiscogsService] Album search failed:', error);
       throw new Error(
         'Failed to search Discogs albums: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
+      );
+    }
+  }
+
+  /**
+   * Fetch a Discogs master by ID
+   * Returns full master data including tracklist and images
+   */
+  async getMaster(
+    masterId: string,
+    priority: number = PRIORITY_TIERS.ADMIN
+  ): Promise<DiscogsMaster> {
+    this.ensureInitialized();
+
+    console.log(
+      chalk.cyan(
+        '[QueuedDiscogsService] Queuing master fetch for ID ' + masterId
+      )
+    );
+
+    try {
+      const job = await this.queue.addJob(
+        JOB_TYPES.DISCOGS_GET_MASTER,
+        {
+          masterId,
+          requestId: 'discogs-master-' + masterId + '-' + Date.now(),
+        },
+        {
+          priority,
+          requestId: 'discogs-master-' + masterId,
+        }
+      );
+
+      const result = await this.waitForJobViaEvents(job.id!);
+      return result as DiscogsMaster;
+    } catch (error) {
+      console.error('[QueuedDiscogsService] Master fetch failed:', error);
+      throw new Error(
+        'Failed to fetch Discogs master: ' +
           (error instanceof Error ? error.message : 'Unknown error')
       );
     }
