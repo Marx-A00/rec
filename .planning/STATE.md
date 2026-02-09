@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 ## Current Position
 
-Phase: 25 of 25 (Discogs Artist Apply)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-09 — Completed 25-02-PLAN.md (apply service source support)
+Phase: 25 of 25 (Discogs Artist Apply) — COMPLETE
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-09 — Completed 25-03-PLAN.md (GraphQL layer source support)
 
-Progress: [██████████████░░░░░░] 14/18 plans complete (v1.3)
+Progress: [████████████████████] 15/15 plans complete (v1.3)
 
 ## Performance Metrics
 
@@ -39,19 +39,20 @@ Progress: [██████████████░░░░░░] 14/18 p
 - Duration: 2 days
 - Requirements: 20/20
 
-**Milestone v1.3 (In Progress):**
+**Milestone v1.3 (Complete):**
 
 - Phases: 5 (21-25)
-- Plans: 14 complete (phase 21 + phase 22 + phase 23 + phase 24 + 25-01, 25-02)
-- Requirements: 15/17 complete (UI-01 through UI-04, ALB-01 through ALB-05, ART-01 through ART-04, MAP-01, MAP-02)
+- Plans: 15 complete
+- Duration: 2 days
+- Requirements: 17/17 complete (UI-01 through UI-04, ALB-01 through ALB-05, ART-01 through ART-06)
 
-**Total shipped:** 21 phases, 64 plans
+**Total shipped:** 25 phases, 72 plans
 
 ## Accumulated Context
 
 ### Key Decisions (from v1.0 + v1.1 + v1.2 + v1.3)
 
-- MusicBrainz only for v1 (Discogs/Spotify deferred) — NOW ADDING DISCOGS
+- MusicBrainz only for v1 (Discogs/Spotify deferred) — DISCOGS COMPLETE
 - Session-only state (no DB persistence for correction queue)
 - Thin resolver pattern — all business logic in services
 - Separate Zustand stores for album and artist (different state shapes)
@@ -101,51 +102,40 @@ Progress: [██████████████░░░░░░] 14/18 p
 - [25-02] Source-conditional external ID storage (musicbrainzId vs discogsId)
 - [25-02] Artist.source field updated based on correction source
 - [25-02] Cloudflare image caching queued when imageUrl changes
+- [25-03] Renamed artistMbid to sourceArtistId (String!) for source flexibility
+- [25-03] Added discogsId to Artist GraphQL type and field selections
+- [25-03] Frontend uses CorrectionSource enum for type-safe source passing
 
-### v1.3 Context
+### v1.3 Complete
 
-- Adding Discogs as second search source for corrections
-- Toggle UI to select source before searching — COMPLETE (Phase 21)
-- Reuse existing Discogs queue infrastructure (DISCOGS_SEARCH_ARTIST, DISCOGS_GET_ARTIST)
-- DISCOGS_SEARCH_ALBUM job type — COMPLETE (22-01)
-- GraphQL resolver routing for album search — COMPLETE (22-02)
-- Frontend album search integration — COMPLETE (22-03)
-- DISCOGS_GET_MASTER job type — COMPLETE (23-01)
-- Preview/apply service source support — COMPLETE (23-02)
-- GraphQL resolver routing for album preview — COMPLETE (23-03)
-- Album apply source wiring — COMPLETE (23-04)
-- Artist search backend (searchArtists method) — COMPLETE (24-01)
-- Artist search GraphQL routing — COMPLETE (24-02)
-- Artist search frontend integration — COMPLETE (24-03)
-- Artist preview backend (generatePreview with Discogs) — COMPLETE (25-01)
-- Artist apply service source support — COMPLETE (25-02)
-- Both album and artist SEARCH/PREVIEW/APPLY now supported for Discogs (service layer)
-- Artist GraphQL resolver routing pending (Phase 25-03)
+All Discogs integration features implemented:
 
-### Existing Infrastructure
+**Phase 21: Source Selection UI** (3 plans)
+- Toggle UI to select source before searching
+- Atomic state clearing on source switch
+- Source badge in preview header
 
-- Discogs queue processors: `DISCOGS_SEARCH_ARTIST`, `DISCOGS_GET_ARTIST`, `DISCOGS_SEARCH_ALBUM`, `DISCOGS_GET_MASTER`
-- Discogs service layer: `src/lib/discogs/mappers.ts`, `src/lib/discogs/queued-service.ts`
-- MusicBrainz correction services in `src/lib/correction/`
-- Zustand stores: `useCorrectionStore.ts`, `useArtistCorrectionStore.ts`
-- Toggle Group component: `src/components/ui/toggle-group.tsx`
-- SourceToggle component: `src/components/admin/correction/shared/SourceToggle.tsx`
-- correctionSource state in both stores with sessionStorage persistence
-- Source badges in PreviewView and ArtistPreviewView
-- QueuedDiscogsService with searchAlbums(), getMaster(), searchArtists(), and getArtist() methods
-- CorrectionSource enum in GraphQL schema
-- CorrectionSource type in preview/types.ts
-- CorrectionPreviewInput.source field for preview source selection
-- SearchView passes source to GraphQL query
-- SearchResultCard with source-aware styling
-- CorrectionPreviewService.generatePreview() accepts source parameter
-- ApplyCorrectionService stores correct external ID based on source
-- correctionPreview resolver routes to Discogs when source is DISCOGS
-- artistCorrectionSearch resolver routes to Discogs when source is DISCOGS
-- ArtistSearchView passes source to GraphQL query
-- ArtistSearchCard with source-aware styling (orange for Discogs)
-- ArtistCorrectionPreviewService supports Discogs source
-- ArtistCorrectionApplyService supports Discogs source with image caching
+**Phase 22: Discogs Album Search** (3 plans)
+- DISCOGS_SEARCH_ALBUM job type
+- QueuedDiscogsService.searchAlbums()
+- GraphQL resolver routing for album search
+- Frontend integration with orange accent
+
+**Phase 23: Discogs Album Apply** (4 plans)
+- DISCOGS_GET_MASTER job type
+- Preview/apply service source support
+- GraphQL resolver routing for album preview
+- Album apply source wiring
+
+**Phase 24: Discogs Artist Search** (3 plans)
+- Artist search backend (searchArtists method)
+- Artist search GraphQL routing
+- Artist search frontend integration
+
+**Phase 25: Discogs Artist Apply** (3 plans)
+- Artist preview backend (generatePreview with Discogs)
+- Artist apply service source support
+- GraphQL layer for artist preview/apply
 
 ### Blockers/Concerns
 
@@ -154,7 +144,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed 25-02-PLAN.md (artist apply service source support)
+Stopped at: Completed 25-03-PLAN.md (GraphQL layer source support)
 Resume file: N/A
 
-**Next action:** Execute 25-03-PLAN.md (GraphQL resolver routing for artist preview/apply)
+**Milestone v1.3 Complete!** All Discogs correction features are implemented.
