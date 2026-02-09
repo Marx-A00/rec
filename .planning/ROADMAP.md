@@ -6,13 +6,13 @@
 
 ## Phase Overview
 
-| Phase | Name                    | Goal                                              | Requirements                      |
-| ----- | ----------------------- | ------------------------------------------------- | --------------------------------- |
-| 21    | Source Selection UI     | Admin can toggle between MusicBrainz and Discogs  | UI-01, UI-02, UI-03, UI-04        |
-| 22    | Discogs Album Search    | Admin can search Discogs for album corrections    | ALB-01, ALB-02, ALB-03, MAP-01    |
-| 23    | Discogs Album Apply     | Admin can preview and apply Discogs album data    | ALB-04, ALB-05                    |
-| 24    | Discogs Artist Search   | Admin can search Discogs for artist corrections   | ART-01, ART-02, ART-03, MAP-02    |
-| 25    | Discogs Artist Apply    | Admin can preview and apply Discogs artist data   | ART-04, ART-05, MAP-03            |
+| Phase | Name                  | Goal                                             | Requirements                   |
+| ----- | --------------------- | ------------------------------------------------ | ------------------------------ |
+| 21    | Source Selection UI   | Admin can toggle between MusicBrainz and Discogs | UI-01, UI-02, UI-03, UI-04     |
+| 22    | Discogs Album Search  | Admin can search Discogs for album corrections   | ALB-01, ALB-02, ALB-03, MAP-01 |
+| 23    | Discogs Album Apply   | Admin can preview and apply Discogs album data   | ALB-04, ALB-05                 |
+| 24    | Discogs Artist Search | Admin can search Discogs for artist corrections  | ART-01, ART-02, ART-03, MAP-02 |
+| 25    | Discogs Artist Apply  | Admin can preview and apply Discogs artist data  | ART-04, ART-05, MAP-03         |
 
 ---
 
@@ -43,6 +43,7 @@
 **Plans:** 3 plans
 
 Plans:
+
 - [x] 21-01-PLAN.md — State infrastructure (stores + toggle group component)
 - [x] 21-02-PLAN.md — SourceToggle component and search view integration
 - [x] 21-03-PLAN.md — Preview view source badges
@@ -75,13 +76,15 @@ Plans:
 - `src/lib/queue/processors/discogs-processor.ts` (add album search)
 - `src/graphql/schema.graphql` (add Discogs album search mutation)
 
-
 **Plans:** 3 plans
 
 Plans:
-- [ ] 22-01-PLAN.md — Backend infrastructure (queue job, processor, search service)
-- [ ] 22-02-PLAN.md — GraphQL layer (schema enum, resolver routing)
-- [ ] 22-03-PLAN.md — Frontend integration (SearchView source param, result styling)
+
+- [x] 22-01-PLAN.md — Backend infrastructure (queue job, processor, search service)
+- [x] 22-02-PLAN.md — GraphQL layer (schema enum, resolver routing)
+- [x] 22-03-PLAN.md — Frontend integration (SearchView source param, result styling)
+
+**Status:** Complete (2026-02-09)
 
 ---
 
@@ -186,40 +189,40 @@ Phase 21 (Source Selection UI)
 
 ## Risk Mitigation
 
-| Risk                                   | Mitigation                                           |
-| -------------------------------------- | ---------------------------------------------------- |
-| Discogs API rate limits stricter       | Already using BullMQ queue — same pattern            |
-| Album search not in existing processor | Add new job type, follow existing pattern            |
-| Different data shapes between sources  | Abstract behind common interface in services         |
-| UI complexity with source switching    | Keep toggle simple, clear results on switch          |
+| Risk                                   | Mitigation                                   |
+| -------------------------------------- | -------------------------------------------- |
+| Discogs API rate limits stricter       | Already using BullMQ queue — same pattern    |
+| Album search not in existing processor | Add new job type, follow existing pattern    |
+| Different data shapes between sources  | Abstract behind common interface in services |
+| UI complexity with source switching    | Keep toggle simple, clear results on switch  |
 
 ---
 
 ## Requirement Coverage
 
-| Requirement | Phase | Description                                      |
-| ----------- | ----- | ------------------------------------------------ |
-| UI-01       | 21    | Correction modal shows source toggle             |
-| UI-02       | 21    | Selected source persists in Zustand store        |
-| UI-03       | 21    | Search view adapts to selected source            |
-| UI-04       | 21    | Preview view shows source indicator              |
-| ALB-01      | 22    | Admin can search Discogs for albums              |
-| ALB-02      | 22    | Discogs album search uses queue infrastructure   |
-| ALB-03      | 22    | Discogs album results display like MusicBrainz   |
-| ALB-04      | 23    | Admin can preview Discogs album data side-by-side|
-| ALB-05      | 23    | Admin can apply album correction from Discogs    |
-| ART-01      | 24    | Admin can search Discogs for artists             |
-| ART-02      | 24    | Discogs artist search uses queue infrastructure  |
-| ART-03      | 24    | Discogs artist results display like MusicBrainz  |
-| ART-04      | 25    | Admin can preview Discogs artist data side-by-side|
-| ART-05      | 25    | Admin can apply artist correction from Discogs   |
-| MAP-01      | 22    | Discogs album fields map to Album model          |
-| MAP-02      | 24    | Discogs artist fields map to Artist model        |
-| MAP-03      | 25    | Discogs IDs stored as external IDs on apply      |
+| Requirement | Phase | Description                                        |
+| ----------- | ----- | -------------------------------------------------- |
+| UI-01       | 21    | Correction modal shows source toggle               |
+| UI-02       | 21    | Selected source persists in Zustand store          |
+| UI-03       | 21    | Search view adapts to selected source              |
+| UI-04       | 21    | Preview view shows source indicator                |
+| ALB-01      | 22    | Admin can search Discogs for albums                |
+| ALB-02      | 22    | Discogs album search uses queue infrastructure     |
+| ALB-03      | 22    | Discogs album results display like MusicBrainz     |
+| ALB-04      | 23    | Admin can preview Discogs album data side-by-side  |
+| ALB-05      | 23    | Admin can apply album correction from Discogs      |
+| ART-01      | 24    | Admin can search Discogs for artists               |
+| ART-02      | 24    | Discogs artist search uses queue infrastructure    |
+| ART-03      | 24    | Discogs artist results display like MusicBrainz    |
+| ART-04      | 25    | Admin can preview Discogs artist data side-by-side |
+| ART-05      | 25    | Admin can apply artist correction from Discogs     |
+| MAP-01      | 22    | Discogs album fields map to Album model            |
+| MAP-02      | 24    | Discogs artist fields map to Artist model          |
+| MAP-03      | 25    | Discogs IDs stored as external IDs on apply        |
 
 **Coverage:** 17/17 requirements mapped
 
 ---
 
 _Roadmap created: 2026-02-08_
-_Last updated: 2026-02-08_
+_Last updated: 2026-02-09_

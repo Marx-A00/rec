@@ -16,9 +16,9 @@ Requirements for Discogs Correction Source milestone.
 
 ### Album Corrections — Discogs
 
-- [ ] **ALB-01**: Admin can search Discogs for albums by query
-- [ ] **ALB-02**: Discogs album search uses existing queue infrastructure
-- [ ] **ALB-03**: Discogs album results display in same format as MusicBrainz
+- [x] **ALB-01**: Admin can search Discogs for albums by query
+- [x] **ALB-02**: Discogs album search uses existing queue infrastructure
+- [x] **ALB-03**: Discogs album results display in same format as MusicBrainz
 - [ ] **ALB-04**: Admin can preview Discogs album data side-by-side
 - [ ] **ALB-05**: Admin can apply album correction from Discogs source
 
@@ -32,7 +32,7 @@ Requirements for Discogs Correction Source milestone.
 
 ### Data Mapping
 
-- [ ] **MAP-01**: Discogs album fields map to Album model
+- [x] **MAP-01**: Discogs album fields map to Album model
 - [ ] **MAP-02**: Discogs artist fields map to Artist model
 - [ ] **MAP-03**: Discogs IDs stored as external IDs on apply
 
@@ -52,40 +52,42 @@ Deferred to later milestones.
 
 ## Out of Scope
 
-| Feature | Reason |
-|---------|--------|
-| Spotify integration | Defer to future milestone |
+| Feature                                | Reason                                 |
+| -------------------------------------- | -------------------------------------- |
+| Spotify integration                    | Defer to future milestone              |
 | Combined search (both sources at once) | Keep it simple — pick one, search that |
-| Auto-suggestion of best source | Manual selection for now |
-| Bulk corrections | One at a time for v1 |
+| Auto-suggestion of best source         | Manual selection for now               |
+| Bulk corrections                       | One at a time for v1                   |
 
 ## Traceability
 
-| Requirement | Phase | Status  |
-|-------------|-------|---------|
+| Requirement | Phase | Status   |
+| ----------- | ----- | -------- |
 | UI-01       | 21    | Complete |
 | UI-02       | 21    | Complete |
 | UI-03       | 21    | Complete |
 | UI-04       | 21    | Complete |
-| ALB-01      | 22    | Pending |
-| ALB-02      | 22    | Pending |
-| ALB-03      | 22    | Pending |
-| ALB-04      | 23    | Pending |
-| ALB-05      | 23    | Pending |
-| ART-01      | 24    | Pending |
-| ART-02      | 24    | Pending |
-| ART-03      | 24    | Pending |
-| ART-04      | 25    | Pending |
-| ART-05      | 25    | Pending |
-| MAP-01      | 22    | Pending |
-| MAP-02      | 24    | Pending |
-| MAP-03      | 25    | Pending |
+| ALB-01      | 22    | Complete |
+| ALB-02      | 22    | Complete |
+| ALB-03      | 22    | Complete |
+| ALB-04      | 23    | Pending  |
+| ALB-05      | 23    | Pending  |
+| ART-01      | 24    | Pending  |
+| ART-02      | 24    | Pending  |
+| ART-03      | 24    | Pending  |
+| ART-04      | 25    | Pending  |
+| ART-05      | 25    | Pending  |
+| MAP-01      | 22    | Complete |
+| MAP-02      | 24    | Pending  |
+| MAP-03      | 25    | Pending  |
 
 **Coverage:**
+
 - v1.3 requirements: 17 total
 - Mapped to phases: 17
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-02-08*
-*Last updated: 2026-02-08 — Phase 21 complete (UI-01 through UI-04)*
+
+_Requirements defined: 2026-02-08_
+_Last updated: 2026-02-09 — Phase 22 complete (ALB-01, ALB-02, ALB-03, MAP-01)_
