@@ -1,252 +1,361 @@
-# Roadmap: v1.3 Discogs Correction Source
+# Roadmap: v1.4 LlamaLog - Entity Provenance & Audit System
 
-**Created:** 2026-02-08
-**Phases:** 21-25 (continues from v1.2)
-**Requirements:** 17
+**Milestone:** v1.4
+**Created:** 2026-02-09
+**Status:** Planning
 
-## Phase Overview
+## Overview
 
-| Phase | Name                  | Goal                                             | Requirements                   |
-| ----- | --------------------- | ------------------------------------------------ | ------------------------------ |
-| 21    | Source Selection UI   | Admin can toggle between MusicBrainz and Discogs | UI-01, UI-02, UI-03, UI-04     |
-| 22    | Discogs Album Search  | Admin can search Discogs for album corrections   | ALB-01, ALB-02, ALB-03, MAP-01 |
-| 23    | Discogs Album Apply   | Admin can preview and apply Discogs album data   | ALB-04, ALB-05                 |
-| 24    | Discogs Artist Search | Admin can search Discogs for artist corrections  | ART-01, ART-02, ART-03, MAP-02 |
-| 25    | Discogs Artist Apply  | Admin can preview and apply Discogs artist data  | ART-04, ART-05, MAP-03         |
+Transform EnrichmentLog into LlamaLog - a complete entity provenance and audit system that tracks not just enrichment operations, but the entire lifecycle of entities from creation through all subsequent operations. The system answers: "How did this album get into the database, and what happened to it afterward?"
+
+**Core changes:** Rename EnrichmentLog → LlamaLog, add category classification (CREATED, ENRICHED, CORRECTED, CACHED, FAILED), track album/artist/track creation events across all entry points, maintain parent-child job relationships, and add llama branding throughout.
+
+## Phases
+
+**Phase 26: Schema Migration**
+- Goal: Rename database model and table, add category enum
+- Requirements: 5 (SCHEMA-01 through SCHEMA-05)
+- Success Criteria: 4
+
+**Phase 27: Code Rename**
+- Goal: Update all codebase references to new naming
+- Requirements: 7 (CODE-01 through CODE-07)
+- Success Criteria: 3
+
+**Phase 28: Album Creation Tracking**
+- Goal: Log album creation from all entry points
+- Requirements: 7 (CREATE-01 through CREATE-07)
+- Success Criteria: 4
+
+**Phase 29: Related Entity Tracking**
+- Goal: Log artist/track creation as children of album jobs
+- Requirements: 5 (RELATE-01 through RELATE-05)
+- Success Criteria: 3
+
+**Phase 30: Existing Logging Categories**
+- Goal: Apply category field to existing logging operations
+- Requirements: 4 (EXIST-01 through EXIST-04)
+- Success Criteria: 2
+
+**Phase 31: UI & Branding**
+- Goal: Add llama emoji and theming to console and admin UI
+- Requirements: 4 (UI-01 through UI-04)
+- Success Criteria: 3
+
+**Phase 32: Query & Provenance**
+- Goal: GraphQL query for entity provenance chains
+- Requirements: 3 (QUERY-01 through QUERY-03)
+- Success Criteria: 3
 
 ---
 
-## Phase 21: Source Selection UI
+## Phase 26: Schema Migration
 
-**Goal:** Admin can toggle between MusicBrainz and Discogs as the correction source before searching.
+**Goal:** Database model and table renamed with new category enum, preserving all existing data.
 
-**Depends on:** Phase 20 (v1.2 complete)
+**Dependencies:** None (foundation phase)
 
-**Requirements:** UI-01, UI-02, UI-03, UI-04
+**Requirements:**
+- SCHEMA-01: Prisma model renamed from `EnrichmentLog` to `LlamaLog`
+- SCHEMA-02: Database table renamed via migration preserving all data
+- SCHEMA-03: New `LlamaLogCategory` enum with values: CREATED, ENRICHED, CORRECTED, CACHED, FAILED
+- SCHEMA-04: New `category` field added to `LlamaLog` model (required)
+- SCHEMA-05: Migration backfills existing records with appropriate categories
 
 **Success Criteria:**
 
-1. Correction modal displays source toggle with MusicBrainz and Discogs options
-2. Selected source persists in Zustand store across modal interactions
-3. Search view header shows which source is active
-4. Preview view shows source indicator badge (MusicBrainz or Discogs)
-5. Switching sources clears previous search results
+1. **Database table renamed:** `EnrichmentLog` table renamed to `LlamaLog` with zero data loss
+2. **Category enum exists:** `LlamaLogCategory` enum created with all 5 values (CREATED, ENRICHED, CORRECTED, CACHED, FAILED)
+3. **All existing records categorized:** Migration successfully backfills category field based on operation patterns
+4. **Prisma schema valid:** `npx prisma validate` succeeds, `npx prisma generate` produces `LlamaLog` types
 
 **Key Files:**
+- `prisma/schema.prisma` - Model and enum definitions
+- `prisma/migrations/[timestamp]_rename_enrichment_log_to_llama_log/` - Migration SQL
+- Generated Prisma types
 
-- `src/stores/useCorrectionStore.ts`
-- `src/stores/useArtistCorrectionStore.ts`
-- `src/components/admin/correction/CorrectionModal.tsx`
-- `src/components/admin/correction/artist/ArtistCorrectionModal.tsx`
-- `src/components/admin/correction/search/SearchView.tsx`
-
-**Plans:** 4 plans
-
-Plans:
-
-- [x] 21-01-PLAN.md — State infrastructure (stores + toggle group component)
-- [x] 21-02-PLAN.md — SourceToggle component and search view integration
-- [x] 21-03-PLAN.md — Preview view source badges
-
-**Status:** Complete (2026-02-08)
+**Notes:**
+- Migration must be reversible (down migration included)
+- Backfill logic uses SQL CASE based on operation field patterns
+- Consider index on `(category, entityType)` for common queries
 
 ---
 
-## Phase 22: Discogs Album Search
+## Phase 27: Code Rename
 
-**Goal:** Admin can search Discogs for albums and see results in the same format as MusicBrainz.
+**Goal:** All codebase references updated from EnrichmentLog to LlamaLog.
 
-**Depends on:** Phase 21
+**Dependencies:** Phase 26 (schema must exist first)
 
-**Requirements:** ALB-01, ALB-02, ALB-03, MAP-01
+**Requirements:**
+- CODE-01: Logger class renamed from `EnrichmentLogger` to `LlamaLogger`
+- CODE-02: Logger file moved to `src/lib/logging/llama-logger.ts`
+- CODE-03: All `prisma.enrichmentLog` calls updated to `prisma.llamaLog`
+- CODE-04: All type imports updated (`EnrichmentLog` → `LlamaLog`)
+- CODE-05: GraphQL schema types updated
+- CODE-06: Generated GraphQL types regenerated via codegen
+- CODE-07: All resolver references updated
 
 **Success Criteria:**
 
-1. Admin can enter album query and search Discogs
-2. Search uses existing BullMQ queue infrastructure (rate-limited)
-3. Discogs album results display in same card format as MusicBrainz results
-4. Album data maps correctly to internal Album model fields
-5. Selecting a Discogs result transitions to preview step
+1. **No `EnrichmentLog` references remain:** Codebase search for `EnrichmentLog` (case-sensitive) returns zero results in non-migration files
+2. **Logger class functional:** `LlamaLogger` can be instantiated and log operations without errors
+3. **GraphQL types regenerated:** `pnpm codegen` succeeds, generated types include `LlamaLog` and `LlamaLogCategory`
 
 **Key Files:**
+- `src/lib/logging/llama-logger.ts` (renamed from enrichment-logger.ts)
+- `src/graphql/schema.graphql` - GraphQL type definitions
+- `src/lib/graphql/resolvers/*.ts` - All resolver files
+- `src/generated/graphql.ts` - Regenerated types
+- All files importing/using the logger
 
-- `src/lib/correction/search-service.ts` (extend for Discogs)
-- `src/lib/discogs/album-search-service.ts` (new)
-- `src/lib/discogs/album-mappers.ts` (new)
-- `src/lib/queue/processors/discogs-processor.ts` (add album search)
-- `src/graphql/schema.graphql` (add Discogs album search mutation)
-
-**Plans:** 4 plans
-
-Plans:
-
-- [x] 22-01-PLAN.md — Backend infrastructure (queue job, processor, search service)
-- [x] 22-02-PLAN.md — GraphQL layer (schema enum, resolver routing)
-- [x] 22-03-PLAN.md — Frontend integration (SearchView source param, result styling)
-
-**Status:** Complete (2026-02-09)
+**Notes:**
+- Use global find-replace with caution (avoid breaking migration file comments)
+- Verify no runtime errors after rename (check existing admin UI still works)
+- GraphQL subscriptions may have cached types - consider cache clear
 
 ---
 
-## Phase 23: Discogs Album Apply
+## Phase 28: Album Creation Tracking
 
-**Goal:** Admin can preview Discogs album data side-by-side and apply corrections.
+**Goal:** All album creation paths log CREATED category events with full context.
 
-**Depends on:** Phase 22
+**Dependencies:** Phase 27 (LlamaLogger must exist)
 
-**Requirements:** ALB-04, ALB-05
+**Requirements:**
+- CREATE-01: Album creation from `addAlbum` mutation logged with category: CREATED
+- CREATE-02: Album creation from `addAlbumToCollection` logged with category: CREATED
+- CREATE-03: Album creation from Spotify sync logged with category: CREATED
+- CREATE-04: Album creation from MusicBrainz sync logged with category: CREATED
+- CREATE-05: Album creation from search/save flow logged with category: CREATED
+- CREATE-06: Creation logs include userId when user-triggered
+- CREATE-07: Creation logs have isRootJob: true
 
 **Success Criteria:**
 
-1. Preview view shows current album data alongside Discogs data
-2. Field differences are highlighted (same diff UI as MusicBrainz)
-3. Admin can select which fields to apply
-4. Applying correction updates album in database
-5. Discogs ID stored in album external IDs on apply
+1. **Recommendation flow tracked:** Creating album via `addAlbum` mutation produces LlamaLog entry with category: CREATED, isRootJob: true, userId populated
+2. **Collection add tracked:** Adding new album via `addAlbumToCollection` produces CREATED log with userId
+3. **Sync operations tracked:** Both Spotify and MusicBrainz new releases sync produce CREATED logs for new albums (userId null, jobId present)
+4. **All paths verified:** Manual test of each creation path confirms LlamaLog entry appears in database with correct category
 
 **Key Files:**
+- `src/lib/graphql/resolvers/mutations.ts` - addAlbum, addAlbumToCollection
+- `src/lib/spotify/new-releases-service.ts` - Spotify sync
+- `src/lib/musicbrainz/new-releases-service.ts` - MusicBrainz sync
+- `src/workers/queue-worker.ts` - Job handlers
+- `src/lib/logging/llama-logger.ts` - Logger methods
 
-- `src/lib/correction/preview/preview-service.ts` (extend for Discogs)
-- `src/lib/correction/apply/apply-service.ts` (extend for Discogs)
-- `src/components/admin/correction/preview/PreviewView.tsx`
-- `src/components/admin/correction/apply/ApplyView.tsx`
-
-**Plans:** 4 plans
-
-Plans:
-
-- [x] 23-01-PLAN.md — Queue infrastructure (DISCOGS_GET_MASTER job, getMaster method)
-- [x] 23-02-PLAN.md — Preview and apply service extensions for Discogs
-- [x] 23-03-PLAN.md — GraphQL layer (source parameter in preview input)
-- [x] 23-04-PLAN.md — Gap closure (wire source param in frontend and apply resolver)
-
-**Status:** Complete (2026-02-09)
+**Notes:**
+- Creation logs should fire AFTER successful database insert (avoid logging failed attempts)
+- userId should be null for automated sync operations
+- jobId should always be populated (use crypto.randomUUID() if not from queue)
 
 ---
 
-## Phase 24: Discogs Artist Search
+## Phase 29: Related Entity Tracking
 
-**Goal:** Admin can search Discogs for artists and see results in the same format as MusicBrainz.
+**Goal:** Artist and track creation logged as children of album creation jobs.
 
-**Depends on:** Phase 21
+**Dependencies:** Phase 28 (album creation tracking must exist)
 
-**Requirements:** ART-01, ART-02, ART-03, MAP-02
+**Requirements:**
+- RELATE-01: Artist creation logged as child of album creation
+- RELATE-02: Artist creation has parentJobId pointing to album's jobId
+- RELATE-03: Track creation logged as child of album creation/enrichment
+- RELATE-04: Track creation has parentJobId pointing to root job
+- RELATE-05: Child creations have isRootJob: false
 
 **Success Criteria:**
 
-1. Admin can enter artist query and search Discogs
-2. Search uses existing BullMQ queue infrastructure (existing DISCOGS_SEARCH_ARTIST)
-3. Discogs artist results display in same card format as MusicBrainz results
-4. Artist data maps correctly to internal Artist model fields
-5. Selecting a Discogs result transitions to preview step
+1. **Artist creation linked:** When album creation triggers artist creation, LlamaLog shows artist entry with parentJobId = album's jobId, isRootJob: false
+2. **Track creation linked:** When album enrichment creates tracks, LlamaLog shows track entries with parentJobId = root album jobId
+3. **Timeline shows hierarchy:** Admin UI timeline for an album displays artist and track creation as children
 
 **Key Files:**
+- `src/workers/queue-worker.ts` - Artist/track creation handlers
+- `src/lib/musicbrainz/queue-service.ts` - MusicBrainz operations
+- `src/lib/logging/llama-logger.ts` - Logger methods
+- `src/lib/graphql/resolvers/queries.ts` - Timeline queries
 
-- `src/lib/correction/artist/search-service.ts` (extend for Discogs)
-- `src/lib/discogs/mappers.ts` (may need extension)
-- `src/graphql/schema.graphql` (add Discogs artist search mutation)
-
-**Plans:** 3 plans
-
-Plans:
-
-- [x] 24-01-PLAN.md — Backend infrastructure (QueuedDiscogsService.searchArtists, mapper)
-- [x] 24-02-PLAN.md — GraphQL layer (source param on artistCorrectionSearch)
-- [x] 24-03-PLAN.md — Frontend integration (ArtistSearchView source param, result styling)
-
-**Status:** Complete (2026-02-09)
+**Notes:**
+- parentJobId must propagate through job chains (e.g., album → artist → artist enrichment)
+- isRootJob = false for all child operations
+- Consider depth limits to prevent infinite recursion in timeline queries
 
 ---
 
-## Phase 25: Discogs Artist Apply
+## Phase 30: Existing Logging Categories
 
-**Goal:** Admin can preview Discogs artist data side-by-side and apply corrections.
+**Goal:** All existing logging operations use appropriate category values.
 
-**Depends on:** Phase 24
+**Dependencies:** Phase 27 (LlamaLogger must exist)
 
-**Requirements:** ART-04, ART-05, MAP-03
+**Requirements:**
+- EXIST-01: All enrichment operations use category: ENRICHED
+- EXIST-02: All correction operations use category: CORRECTED
+- EXIST-03: All cache operations use category: CACHED
+- EXIST-04: All failed operations use category: FAILED
 
 **Success Criteria:**
 
-1. Preview view shows current artist data alongside Discogs data
-2. Field differences are highlighted (same diff UI as MusicBrainz)
-3. Admin can select which fields to apply
-4. Applying correction updates artist in database
-5. Discogs ID stored in artist's external IDs on apply
+1. **Enrichment categorized:** Triggering album enrichment (MusicBrainz get-release job) produces LlamaLog with category: ENRICHED
+2. **Corrections categorized:** Applying Discogs/MusicBrainz correction produces LlamaLog with category: CORRECTED
 
 **Key Files:**
+- `src/workers/queue-worker.ts` - All job handlers
+- `src/lib/graphql/resolvers/mutations.ts` - Correction mutations
+- `src/lib/logging/llama-logger.ts` - Logger method signatures
 
-- `src/lib/correction/artist/preview/preview-service.ts` (extend for Discogs)
-- `src/lib/correction/artist/apply/apply-service.ts` (extend for Discogs)
-- `src/components/admin/correction/artist/preview/ArtistPreviewView.tsx`
-- `src/components/admin/correction/artist/apply/ArtistApplyView.tsx`
-
-**Plans:** 3 plans
-
-Plans:
-- [x] 25-01-PLAN.md — Preview service extension for Discogs
-- [x] 25-02-PLAN.md — Apply service extension for Discogs
-- [x] 25-03-PLAN.md — GraphQL layer for artist correction
-
-**Status:** Complete (2026-02-09)
+**Notes:**
+- Existing enrichment code already logs - just add category parameter
+- FAILED category should capture exceptions in enrichment/correction operations
+- CACHED category for album cover and artist image cache operations
 
 ---
 
-## Dependency Graph
+## Phase 31: UI & Branding
+
+**Goal:** Llama emoji and theming in console output and admin UI.
+
+**Dependencies:** Phase 27 (LlamaLogger must exist)
+
+**Requirements:**
+- UI-01: Console log output uses `[🦙 LlamaLog]` prefix
+- UI-02: Admin log table shows llama emoji in header
+- UI-03: Log detail view includes llama theming
+- UI-04: Category badges incorporate llama where appropriate
+
+**Success Criteria:**
+
+1. **Console logs branded:** Server logs show `[🦙 LlamaLog]` prefix for all logger output
+2. **Admin table header:** EnrichmentLogTable component header displays "🦙 LlamaLog" instead of "Enrichment Log"
+3. **Category badges themed:** Category badges in timeline/table show llama emoji for CREATED entries
+
+**Key Files:**
+- `src/lib/logging/llama-logger.ts` - Console output
+- `src/components/admin/enrichment/EnrichmentLogTable.tsx` - Table header
+- `src/components/admin/enrichment/EnrichmentLogTimeline.tsx` - Timeline display
+- `src/components/admin/enrichment/LogCategoryBadge.tsx` - Category rendering (if created)
+
+**Notes:**
+- Keep llama emoji optional in code comments (don't break syntax highlighting)
+- Emoji should enhance UX, not clutter - use sparingly
+- Consider accessibility (emoji should not be the only indicator)
+
+---
+
+## Phase 32: Query & Provenance
+
+**Goal:** GraphQL query returns complete entity provenance chain.
+
+**Dependencies:** Phase 28, 29 (creation tracking must exist)
+
+**Requirements:**
+- QUERY-01: GraphQL query `llamaLogChain(entityType, entityId)` returns root + all children
+- QUERY-02: Chain query returns logs ordered by createdAt
+- QUERY-03: Chain query can filter by category
+
+**Success Criteria:**
+
+1. **Chain query exists:** `llamaLogChain` query in GraphQL schema accepts entityType and entityId parameters
+2. **Root + children returned:** Querying for an album's chain returns the album CREATED log plus all related artist/track creation logs
+3. **Filtering works:** Passing category filter (e.g., `[CREATED, ENRICHED]`) returns only matching logs in the chain
+
+**Key Files:**
+- `src/graphql/schema.graphql` - Query definition
+- `src/lib/graphql/resolvers/queries.ts` - Resolver implementation
+- `src/graphql/queries/llamaLog.graphql` - Client query
+- `src/generated/graphql.ts` - Generated types (after codegen)
+
+**Notes:**
+- Query should be efficient (avoid N+1 queries, use Prisma include/select)
+- Consider pagination for entities with many child logs
+- Return type should match existing log queries for consistency
+
+---
+
+## Dependencies
+
+**Phase execution order:**
 
 ```
-Phase 21 (Source Selection UI)
-    ├──→ Phase 22 (Discogs Album Search)
-    │         ↓
-    │    Phase 23 (Discogs Album Apply)
-    │
-    └──→ Phase 24 (Discogs Artist Search)
-              ↓
-         Phase 25 (Discogs Artist Apply)
+26 (Schema Migration)
+  ↓
+27 (Code Rename)
+  ↓
+28 (Album Creation Tracking) ← 30 (Existing Logging Categories)
+  ↓                             ↓
+29 (Related Entity Tracking)    31 (UI & Branding)
+  ↓
+32 (Query & Provenance)
 ```
 
-**Critical Path:** 21 → 22 → 23 (for album corrections)
-
-**Parallelization:** After Phase 21, album (22-23) and artist (24-25) tracks can run in parallel.
+**Parallelization opportunities:**
+- Phase 30 (Existing Logging) can run in parallel with Phase 28
+- Phase 31 (UI & Branding) can run in parallel with Phase 28/29
+- Phase 32 depends on Phase 28 and 29 completing
 
 ---
 
-## Risk Mitigation
+## Progress Tracking
 
-| Risk                                   | Mitigation                                   |
-| -------------------------------------- | -------------------------------------------- |
-| Discogs API rate limits stricter       | Already using BullMQ queue — same pattern    |
-| Album search not in existing processor | Add new job type, follow existing pattern    |
-| Different data shapes between sources  | Abstract behind common interface in services |
-| UI complexity with source switching    | Keep toggle simple, clear results on switch  |
+| Phase | Name                          | Requirements | Status  | Completed |
+|-------|-------------------------------|--------------|---------|-----------|
+| 26    | Schema Migration              | 5            | Pending | -         |
+| 27    | Code Rename                   | 7            | Pending | -         |
+| 28    | Album Creation Tracking       | 7            | Pending | -         |
+| 29    | Related Entity Tracking       | 5            | Pending | -         |
+| 30    | Existing Logging Categories   | 4            | Pending | -         |
+| 31    | UI & Branding                 | 4            | Pending | -         |
+| 32    | Query & Provenance            | 3            | Pending | -         |
+
+**Total:** 7 phases, 34 requirements
 
 ---
 
 ## Requirement Coverage
 
-| Requirement | Phase | Description                                        |
-| ----------- | ----- | -------------------------------------------------- |
-| UI-01       | 21    | Correction modal shows source toggle               |
-| UI-02       | 21    | Selected source persists in Zustand store          |
-| UI-03       | 21    | Search view adapts to selected source              |
-| UI-04       | 21    | Preview view shows source indicator                |
-| ALB-01      | 22    | Admin can search Discogs for albums                |
-| ALB-02      | 22    | Discogs album search uses queue infrastructure     |
-| ALB-03      | 22    | Discogs album results display like MusicBrainz     |
-| ALB-04      | 23    | Admin can preview Discogs album data side-by-side  |
-| ALB-05      | 23    | Admin can apply album correction from Discogs      |
-| ART-01      | 24    | Admin can search Discogs for artists               |
-| ART-02      | 24    | Discogs artist search uses queue infrastructure    |
-| ART-03      | 24    | Discogs artist results display like MusicBrainz    |
-| ART-04      | 25    | Admin can preview Discogs artist data side-by-side |
-| ART-05      | 25    | Admin can apply artist correction from Discogs     |
-| MAP-01      | 22    | Discogs album fields map to Album model            |
-| MAP-02      | 24    | Discogs artist fields map to Artist model          |
-| MAP-03      | 25    | Discogs IDs stored as external IDs on apply        |
+| Requirement | Phase | Status  | Description                              |
+|-------------|-------|---------|------------------------------------------|
+| SCHEMA-01   | 26    | Pending | Rename Prisma model                      |
+| SCHEMA-02   | 26    | Pending | Rename database table                    |
+| SCHEMA-03   | 26    | Pending | Add category enum                        |
+| SCHEMA-04   | 26    | Pending | Add category field                       |
+| SCHEMA-05   | 26    | Pending | Backfill existing records                |
+| CODE-01     | 27    | Pending | Rename logger class                      |
+| CODE-02     | 27    | Pending | Move logger file                         |
+| CODE-03     | 27    | Pending | Update prisma calls                      |
+| CODE-04     | 27    | Pending | Update type imports                      |
+| CODE-05     | 27    | Pending | Update GraphQL schema                    |
+| CODE-06     | 27    | Pending | Regenerate GraphQL types                 |
+| CODE-07     | 27    | Pending | Update resolver references               |
+| CREATE-01   | 28    | Pending | Log addAlbum creation                    |
+| CREATE-02   | 28    | Pending | Log addAlbumToCollection creation        |
+| CREATE-03   | 28    | Pending | Log Spotify sync creation                |
+| CREATE-04   | 28    | Pending | Log MusicBrainz sync creation            |
+| CREATE-05   | 28    | Pending | Log search/save creation                 |
+| CREATE-06   | 28    | Pending | Include userId in creation logs          |
+| CREATE-07   | 28    | Pending | Set isRootJob true for creations         |
+| RELATE-01   | 29    | Pending | Log artist creation                      |
+| RELATE-02   | 29    | Pending | Set parentJobId for artists              |
+| RELATE-03   | 29    | Pending | Log track creation                       |
+| RELATE-04   | 29    | Pending | Set parentJobId for tracks               |
+| RELATE-05   | 29    | Pending | Set isRootJob false for children         |
+| EXIST-01    | 30    | Pending | Categorize enrichment operations         |
+| EXIST-02    | 30    | Pending | Categorize correction operations         |
+| EXIST-03    | 30    | Pending | Categorize cache operations              |
+| EXIST-04    | 30    | Pending | Categorize failed operations             |
+| UI-01       | 31    | Pending | Console log prefix                       |
+| UI-02       | 31    | Pending | Admin table header                       |
+| UI-03       | 31    | Pending | Log detail theming                       |
+| UI-04       | 31    | Pending | Category badge theming                   |
+| QUERY-01    | 32    | Pending | Create llamaLogChain query               |
+| QUERY-02    | 32    | Pending | Order chain by createdAt                 |
+| QUERY-03    | 32    | Pending | Filter chain by category                 |
 
-**Coverage:** 17/17 requirements mapped
+**Coverage:** 34/34 requirements mapped (100%)
 
 ---
 
-_Roadmap created: 2026-02-08_
-_Last updated: 2026-02-09 (Phase 25 complete — Milestone v1.3 complete)_
+_Roadmap created: 2026-02-09_
+_Last updated: 2026-02-09_

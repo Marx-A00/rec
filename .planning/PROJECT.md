@@ -10,30 +10,30 @@ Admins can fix a broken album (trackless, wrong metadata, missing IDs) in under 
 
 ## Current State
 
-**Shipped:** v1.2 Job History Timeline UI (2026-02-07)
+**Shipped:** v1.3 Discogs Correction Source (2026-02-09)
 
-The correction feature is complete with clean state management and enrichment timeline:
+The correction feature is complete with dual-source support and entity lifecycle tracking:
 
-- Album and artist correction modals use Zustand stores with sessionStorage persistence
-- All child components read state from stores (no prop drilling)
-- Atomic state transitions ensure consistent UI
-- Enrichment timelines show job parent-child relationships
-- 20 phases, 57 plans completed across v1.0, v1.1, and v1.2
+- Album and artist correction modals with MusicBrainz/Discogs toggle
+- Zustand stores with sessionStorage persistence
+- Enrichment timelines showing job parent-child relationships
+- 25 phases, 72 plans completed across v1.0, v1.1, v1.2, and v1.3
 
 **Tech stack:** Next.js 15, GraphQL (Apollo), Prisma, React Query, Zustand 5.0.8
 
-## Current Milestone: v1.3 Discogs Correction Source
+## Current Milestone: v1.4 LlamaLog - Entity Provenance & Audit System
 
-**Goal:** Add Discogs as a second search source for corrections, giving admins the choice of MusicBrainz or Discogs when fixing album/artist data.
+**Goal:** Rename EnrichmentLog → LlamaLog and expand from tracking enrichment operations to tracking the complete lifecycle of entities (Albums, Artists, Tracks). Answer the question: "How did this album get into the database, and what happened to it afterward?"
 
 **Target features:**
 
-- Source toggle (MusicBrainz / Discogs) in correction modals
-- Discogs search for albums via existing queue infrastructure
-- Discogs search for artists via existing queue infrastructure
-- Preview and apply corrections from Discogs data
-- Same field selection / atomic apply pattern as MusicBrainz
-- Works for both album and artist correction workflows
+- 🦙 Rename `EnrichmentLog` → `LlamaLog` throughout the codebase
+- 🦙 Add `category` field for broad operation classification (CREATED, ENRICHED, CORRECTED, CACHED, FAILED)
+- 🦙 Log entity creation events with full context (who, why, what triggered it)
+- 🦙 Track all creation paths: recommendations, collection adds, search/save, spotify sync, admin import
+- 🦙 Maintain parent-child job relationships to trace cascading entity creation
+- 🦙 Support Albums, Artists, and Tracks from the start
+- 🦙 Add llama emoji to code comments, logger output, and admin UI
 
 ## Requirements
 
@@ -69,51 +69,67 @@ The correction feature is complete with clean state management and enrichment ti
 - ✓ Child jobs hidden from main table, shown in parent's timeline — v1.2
 - ✓ Job History tab shows linked job timelines — v1.2
 - ✓ EnrichmentLogTable (album/artist panels) shows linked job timelines — v1.2
+- ✓ Correction modal has source toggle (MusicBrainz / Discogs) — v1.3
+- ✓ Admin can search Discogs for albums — v1.3
+- ✓ Admin can search Discogs for artists — v1.3
+- ✓ Discogs search results show in same format as MusicBrainz — v1.3
+- ✓ Admin can preview Discogs album data side-by-side — v1.3
+- ✓ Admin can preview Discogs artist data side-by-side — v1.3
+- ✓ Admin can apply corrections from Discogs source — v1.3
+- ✓ Discogs corrections use same atomic apply pattern — v1.3
 
 ### Active
 
-- [ ] Correction modal has source toggle (MusicBrainz / Discogs)
-- [ ] Admin can search Discogs for albums
-- [ ] Admin can search Discogs for artists
-- [ ] Discogs search results show in same format as MusicBrainz
-- [ ] Admin can preview Discogs album data side-by-side
-- [ ] Admin can preview Discogs artist data side-by-side
-- [ ] Admin can apply corrections from Discogs source
-- [ ] Discogs corrections use same atomic apply pattern
+- [ ] Prisma model renamed from `EnrichmentLog` to `LlamaLog`
+- [ ] Database table renamed via migration preserving all data
+- [ ] New `category` enum with values: CREATED, ENRICHED, CORRECTED, CACHED, FAILED
+- [ ] Migration backfills existing records with appropriate categories
+- [ ] Logger class renamed from `EnrichmentLogger` to `LlamaLogger`
+- [ ] All codebase references updated (prisma calls, types, GraphQL, imports)
+- [ ] Album creation from recommendations logged with category: CREATED
+- [ ] Album creation from collection adds logged with category: CREATED
+- [ ] Album creation from Spotify sync logged with category: CREATED
+- [ ] Album creation from MusicBrainz sync logged with category: CREATED
+- [ ] Album creation from search/save flow logged with category: CREATED
+- [ ] Artist creation logged as child of album creation
+- [ ] Track creation logged as child of album creation/enrichment
+- [ ] Existing enrichment logging updated with category field
+- [ ] Console log output uses `[🦙 LlamaLog]` prefix
+- [ ] Admin UI displays llama emoji in log views
+- [ ] GraphQL query for entity provenance chain
 
 ### Out of Scope
 
-- Spotify integration — defer to future milestone
-- Bulk correction queue — fix albums one at a time for now
-- Auto-suggestion of corrections — v1 is manual search only
-- Duplicate album merging — separate feature
-- User-submitted corrections — admin-only for now
-- Searching both sources simultaneously — pick one, search that
+- Retroactively determining creation provenance for pre-existing albums
+- Full visual tree UI for job chains (simple list is fine)
+- Tracking entity deletions — future enhancement
+- Tracking entity updates outside enrichment/correction flows
+- Custom llama ASCII art in console output (tempting, but no 🦙)
 
 ## Context
 
-The platform accumulated albums with data quality issues. The correction feature shipped in v1.0 with full functionality. v1.1 refactored state management. v1.2 added enrichment timeline visualization.
+The platform uses EnrichmentLog to track enrichment operations but doesn't track how entities (albums, artists, tracks) first entered the database. v1.4 expands the logging to cover the complete entity lifecycle — from creation through all subsequent operations.
 
 **Current codebase:**
 
-- 2 Zustand stores: `useCorrectionStore.ts`, `useArtistCorrectionStore.ts`
-- Existing Discogs infrastructure: `DISCOGS_SEARCH_ARTIST`, `DISCOGS_GET_ARTIST` processors
-- Discogs service layer already exists for artist enrichment
-- MusicBrainz correction services: `correction-service.ts`, `correction-preview.ts`, `apply-correction.ts`
+- `EnrichmentLog` model in Prisma schema with `parentJobId` for job linking
+- `EnrichmentLogger` class in `src/lib/enrichment/enrichment-logger.ts`
+- Multiple album creation paths: addAlbum, addAlbumToCollection, Spotify sync, MusicBrainz sync
+- Parent-child job relationships already supported via `parentJobId` and `isRootJob`
 
-**v1.3 context:**
+**v1.4 context:**
 
-- Discogs rate limits: 60 requests/minute (more generous than MusicBrainz)
-- Existing Discogs queue jobs can be reused/extended
-- Need to map Discogs fields to our album/artist models
-- Store needs `searchSource` state to track selected source
+- Migration must preserve all existing EnrichmentLog data
+- Category backfill can use SQL CASE based on operation patterns
+- Consider index on `(category, entityType)` for common queries
+- LlamaLogger should remain non-blocking (errors logged but not thrown)
 
 ## Constraints
 
-- **API Rate Limits**: Discogs allows 60 requests/minute — use existing BullMQ queue
 - **Tech Stack**: Next.js 15, GraphQL (Apollo), Prisma, React Query — follow existing patterns
-- **Auth**: Only ADMIN/OWNER roles can access correction features
-- **No `any` types**: Fully typed stores, actions, selectors
+- **Auth**: Only ADMIN/OWNER roles can access log views
+- **No `any` types**: Fully typed throughout
+- **Data Preservation**: Zero data loss during migration
 
 ## Key Decisions
 
@@ -128,9 +144,11 @@ The platform accumulated albums with data quality issues. The correction feature
 | Atomic actions for multi-field state | Prevents intermediate states and race conditions                   | ✓ Good    |
 | `parentJobId` over unified requestId | Preserves unique job IDs for debugging, adds explicit relationship | ✓ Good    |
 | shadcn-timeline for UI               | Consistent with shadcn/ui patterns, Framer Motion animations       | ✓ Good    |
-| Toggle for source selection          | Pick one source, search that — simpler than combined results       | — Pending |
-| Reuse existing Discogs queue         | Infrastructure already exists, maintains rate limiting             | — Pending |
+| Toggle for source selection          | Pick one source, search that — simpler than combined results       | ✓ Good    |
+| Reuse existing Discogs queue         | Infrastructure already exists, maintains rate limiting             | ✓ Good    |
+| Rename EnrichmentLog → LlamaLog      | Reflects broader purpose beyond just enrichment                    | — Pending |
+| Category enum over operation parsing | Cleaner filtering, backward-compatible with existing operation     | — Pending |
 
 ---
 
-_Last updated: 2026-02-08 after v1.3 milestone started_
+_Last updated: 2026-02-09 after v1.4 milestone started_

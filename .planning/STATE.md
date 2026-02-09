@@ -1,150 +1,164 @@
-# Project State
+# Project State: v1.4 LlamaLog
+
+**Last Updated:** 2026-02-09
+**Current Milestone:** v1.4 LlamaLog - Entity Provenance & Audit System
+**Status:** Planning
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-08)
+**Core Value:** Admins can fix a broken album (trackless, wrong metadata, missing IDs) in under a minute without touching the database.
 
-**Core value:** Admins can fix a broken album in under a minute without touching the database.
-**Current focus:** Milestone v1.3 — Discogs Correction Source
+**Extended Mission (v1.4):** Track the complete lifecycle of entities (Albums, Artists, Tracks) from creation through all subsequent operations. Answer: "How did this album get into the database, and what happened to it afterward?"
+
+**Current Focus:** Rename EnrichmentLog → LlamaLog and expand from enrichment-only tracking to full entity provenance system with creation event logging.
 
 ## Current Position
 
-Phase: 25 of 25 (Discogs Artist Apply) — COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-09 — Completed 25-03-PLAN.md (GraphQL layer source support)
+**Phase:** 26 - Schema Migration
+**Plan:** Not yet created
+**Status:** Pending
 
-Progress: [████████████████████] 15/15 plans complete (v1.3)
+**Progress:**
+```
+[26]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 0%
+ ^
+ Phases: 26 27 28 29 30 31 32
+```
+
+**Milestone Progress:** 0/34 requirements complete (0%)
 
 ## Performance Metrics
 
-**Milestone v1.0 (Shipped 2026-02-03):**
+**Milestone v1.4:**
+- Start date: 2026-02-09
+- Phases planned: 7 (26-32)
+- Requirements: 34
+- Completed: 0
+- Remaining: 34
+- Estimated completion: TBD (after first phase planning)
 
-- Phases: 12
-- Plans: 37
-- Duration: 11 days
-- Requirements: 35/35
-
-**Milestone v1.1 (Shipped 2026-02-05):**
-
-- Phases: 2 (13-14)
-- Plans: 5
-- Duration: 1 day
-- Requirements: 30/30
-
-**Milestone v1.2 (Shipped 2026-02-07):**
-
-- Phases: 6 (15-20)
-- Plans: 15
-- Duration: 2 days
-- Requirements: 20/20
-
-**Milestone v1.3 (Complete):**
-
-- Phases: 5 (21-25)
-- Plans: 15 complete
-- Duration: 2 days
-- Requirements: 17/17 complete (UI-01 through UI-04, ALB-01 through ALB-05, ART-01 through ART-06)
-
-**Total shipped:** 25 phases, 72 plans
+**Previous Milestone (v1.3):**
+- Completed: 2026-02-09
+- Phases: 9 (17-25)
+- Duration: ~14 days
+- Key achievement: Dual-source correction (MusicBrainz + Discogs)
 
 ## Accumulated Context
 
-### Key Decisions (from v1.0 + v1.1 + v1.2 + v1.3)
+### Key Decisions (v1.4)
 
-- MusicBrainz only for v1 (Discogs/Spotify deferred) — DISCOGS COMPLETE
-- Session-only state (no DB persistence for correction queue)
-- Thin resolver pattern — all business logic in services
-- Separate Zustand stores for album and artist (different state shapes)
-- Factory pattern with Map cache for per-entity store instances
-- Atomic actions for multi-field state updates
-- `parentJobId` for job linking (flat parent structure)
-- shadcn-timeline for enrichment visualization
-- [21-01] CorrectionSource type defined in album store, re-exported from artist store
-- [21-01] Atomic state clearing on source switch (prevents stale data)
-- [21-02] SourceToggle placed at top of search views
-- [21-02] Toggle disabled during loading to prevent mid-query source switch
-- [21-03] Source badge in preview header (not per-field)
-- [22-01] DISCOGS_SEARCH_ALBUM job type added
-- [22-01] Shared mapper mapMasterToCorrectionSearchResult in mappers.ts
-- [22-01] QueuedDiscogsService follows QueuedMusicBrainzService pattern
-- [22-02] CorrectionSource enum in GraphQL schema (MUSICBRAINZ, DISCOGS)
-- [22-02] Resolver routes to QueuedDiscogsService when source is DISCOGS
-- [22-03] Orange accent for Discogs cards (border + hover)
-- [22-03] Badge labels 'DG'/'MB' for source indication
-- [22-03] Unified search UI for both sources
-- [23-01] DISCOGS_GET_MASTER job type for master detail fetching
-- [23-01] getMaster() returns full DiscogsMaster (tracklist + images)
-- [23-01] ADMIN priority tier for getMaster (immediate feedback)
-- [23-02] CorrectionSource type in preview/types.ts for service layer
-- [23-02] Discogs tracklist parsing handles A1/B1 vinyl positions
-- [23-02] Year-only dates converted to YYYY-01-01 format
-- [23-02] Source-conditional field diffs (country/barcode only for MB)
-- [23-02] Source-conditional external ID storage (musicbrainzId vs discogsId)
-- [23-03] Source field on CorrectionPreviewInput with MUSICBRAINZ default
-- [23-03] Discogs results wrapped with default scoring (normalizedScore: 1.0)
-- [23-04] Source parameter threading pattern: UI (lowercase) → GraphQL (uppercase) → services (lowercase)
-- [23-04] CorrectionApplyInput.source field with MUSICBRAINZ default
-- [23-04] Conditional service routing in correctionApply resolver
-- [24-01] ArtistSearchResult type includes source field
-- [24-01] mapDiscogsSearchResultToArtistSearchResult mapper in mappers.ts
-- [24-01] DISCOGS_SEARCH_ARTIST handler returns searchResults array
-- [24-01] QueuedDiscogsService.searchArtists() uses existing job type
-- [24-02] source parameter on artistCorrectionSearch GraphQL query
-- [24-02] Resolver routes to QueuedDiscogsService.searchArtists() for DISCOGS
-- [24-02] source field on ArtistCorrectionSearchResult type
-- [24-03] ArtistSearchView passes graphqlSource to query
-- [24-03] ArtistSearchCard with orange accent for Discogs results
-- [25-01] Artist preview service supports Discogs via MBArtistData mapping
-- [25-01] Discogs artist data mapped to MBArtistData format for reuse
-- [25-01] Source detection via numeric ID check (Discogs IDs are numeric strings)
-- [25-02] discogsId and imageUrl added to artist field selection types
-- [25-02] Source-conditional external ID storage (musicbrainzId vs discogsId)
-- [25-02] Artist.source field updated based on correction source
-- [25-02] Cloudflare image caching queued when imageUrl changes
-- [25-03] Renamed artistMbid to sourceArtistId (String!) for source flexibility
-- [25-03] Added discogsId to Artist GraphQL type and field selections
-- [25-03] Frontend uses CorrectionSource enum for type-safe source passing
+**2026-02-09: Rename EnrichmentLog → LlamaLog**
+- Rationale: Broader purpose beyond just enrichment - now covers creation, correction, caching, failures
+- Impact: Schema migration, codebase-wide rename, GraphQL regeneration
+- Trade-off: One-time migration complexity for clearer naming going forward
 
-### v1.3 Complete
+**2026-02-09: Category enum over operation parsing**
+- Rationale: Cleaner filtering, easier queries, backward-compatible with existing operation field
+- Values: CREATED, ENRICHED, CORRECTED, CACHED, FAILED
+- Trade-off: Requires backfill migration but simplifies future queries
 
-All Discogs integration features implemented:
+**2026-02-09: Track all album creation paths**
+- Paths: addAlbum mutation, addAlbumToCollection, Spotify sync, MusicBrainz sync, search/save
+- Rationale: Complete provenance requires capturing every entry point
+- Trade-off: More logging calls to add, but essential for answering "how did this get here?"
 
-**Phase 21: Source Selection UI** (3 plans)
-- Toggle UI to select source before searching
-- Atomic state clearing on source switch
-- Source badge in preview header
+**2026-02-09: Parent-child for related entities**
+- Pattern: Album creation logs artist/track creation as children via parentJobId
+- Rationale: Maintain existing job linking pattern from v1.2
+- Trade-off: None - already supported in schema
 
-**Phase 22: Discogs Album Search** (3 plans)
-- DISCOGS_SEARCH_ALBUM job type
-- QueuedDiscogsService.searchAlbums()
-- GraphQL resolver routing for album search
-- Frontend integration with orange accent
+**2026-02-09: Llama branding throughout**
+- Where: Console logs, admin UI, code comments, category badges
+- Rationale: Fun, memorable, aligns with expanded "llama-sized" logging scope
+- Emoji: 🦙 used sparingly for accessibility
 
-**Phase 23: Discogs Album Apply** (4 plans)
-- DISCOGS_GET_MASTER job type
-- Preview/apply service source support
-- GraphQL resolver routing for album preview
-- Album apply source wiring
+### Technical Debt
 
-**Phase 24: Discogs Artist Search** (3 plans)
-- Artist search backend (searchArtists method)
-- Artist search GraphQL routing
-- Artist search frontend integration
+**From v1.3:**
+- None carried forward - v1.3 completed clean
 
-**Phase 25: Discogs Artist Apply** (3 plans)
-- Artist preview backend (generatePreview with Discogs)
-- Artist apply service source support
-- GraphQL layer for artist preview/apply
+**Potential in v1.4:**
+- Migration backfill logic complexity (category assignment based on operation patterns)
+- Global find-replace risk (must avoid breaking migration SQL comments)
+- GraphQL cache invalidation after type rename
 
-### Blockers/Concerns
+### Blockers
 
-None.
+**Current:** None
+
+**Resolved:**
+- None yet (milestone just started)
+
+### Active TODOs
+
+**Phase 26 (Schema Migration):**
+- [ ] Design migration SQL (rename table, add enum, add category field)
+- [ ] Write backfill logic (CASE statement for category assignment)
+- [ ] Update Prisma schema (model + enum)
+- [ ] Test migration on dev database
+- [ ] Verify zero data loss
+
+**Phase 27 (Code Rename):**
+- [ ] Plan global find-replace strategy
+- [ ] Identify all import statements
+- [ ] Update GraphQL schema
+- [ ] Regenerate types (pnpm codegen)
+- [ ] Verify existing admin UI still works
+
+**Phase 28-32:**
+- [ ] Pending phase 26 and 27 completion
 
 ## Session Continuity
 
-Last session: 2026-02-09
-Stopped at: Completed 25-03-PLAN.md (GraphQL layer source support)
-Resume file: N/A
+### What Just Happened
 
-**Milestone v1.3 Complete!** All Discogs correction features are implemented.
+**2026-02-09 - Milestone v1.4 Started:**
+- Roadmap created with 7 phases (26-32)
+- Requirements mapped: 34/34 (100% coverage)
+- Phase structure validated: Schema → Code → Creation → Relations → Categories → UI → Query
+- Dependency graph established with parallelization opportunities identified
+
+### What's Next
+
+**Immediate (Phase 26):**
+1. Review existing Prisma schema and migration patterns
+2. Draft migration SQL with backfill logic
+3. Update Prisma schema (model + enum)
+4. Test migration on local dev database
+5. Verify Prisma client generation succeeds
+
+**After Phase 26:**
+- Phase 27: Execute global codebase rename with verification
+- Phase 28: Add creation logging to all album entry points
+- Phase 29: Link artist/track creation to album jobs
+
+**Parallelization Strategy:**
+- Phase 30 (categorizing existing logs) can run parallel with Phase 28
+- Phase 31 (UI branding) can run parallel with Phase 28/29
+- Phase 32 (query) requires Phase 28+29 complete
+
+### Context for Next Session
+
+**If resuming Phase 26:**
+- Check: `/prisma/schema.prisma` for current EnrichmentLog model
+- Check: `/prisma/migrations/` for recent migration patterns
+- Check: `.env.example` for database connection setup
+- Goal: Complete schema migration with zero data loss
+
+**If resuming Phase 27:**
+- Verify: Phase 26 merged and deployed
+- Check: All files importing `EnrichmentLog` or `EnrichmentLogger`
+- Check: `src/graphql/schema.graphql` for type definitions
+- Goal: Clean codebase with no `EnrichmentLog` references remaining
+
+**Key Files to Track:**
+- `prisma/schema.prisma` - Model definitions (Phase 26)
+- `src/lib/logging/llama-logger.ts` - Logger class (Phase 27)
+- `src/graphql/schema.graphql` - GraphQL types (Phase 27)
+- `src/lib/graphql/resolvers/mutations.ts` - Creation logging (Phase 28)
+- `src/workers/queue-worker.ts` - Job handlers (Phase 28-30)
+
+---
+
+_State initialized: 2026-02-09_
+_Last session: 2026-02-09 (roadmap creation)_

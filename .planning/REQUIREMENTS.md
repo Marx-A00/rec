@@ -1,93 +1,140 @@
-# Requirements: Discogs Correction Source
+# Requirements: LlamaLog Entity Provenance & Audit System
 
-**Defined:** 2026-02-08
-**Core Value:** Admins can choose MusicBrainz or Discogs when correcting album/artist data, using whichever source has better data.
+**Defined:** 2026-02-09
+**Core Value:** Answer the question: "How did this album get into the database, and what happened to it afterward?"
 
-## v1.3 Requirements
+## v1.4 Requirements
 
-Requirements for Discogs Correction Source milestone.
+Requirements for LlamaLog milestone. 🦙
 
-### UI — Source Selection
+### Schema — Rename & Category
 
-- [x] **UI-01**: Correction modal shows source toggle (MusicBrainz / Discogs)
-- [x] **UI-02**: Selected source persists in Zustand store
-- [x] **UI-03**: Search view adapts to selected source
-- [x] **UI-04**: Preview view shows source indicator
+- [ ] **SCHEMA-01**: Prisma model renamed from `EnrichmentLog` to `LlamaLog`
+- [ ] **SCHEMA-02**: Database table renamed via migration preserving all data
+- [ ] **SCHEMA-03**: New `LlamaLogCategory` enum with values: CREATED, ENRICHED, CORRECTED, CACHED, FAILED
+- [ ] **SCHEMA-04**: New `category` field added to `LlamaLog` model (required)
+- [ ] **SCHEMA-05**: Migration backfills existing records with appropriate categories
 
-### Album Corrections — Discogs
+### Code — Rename References
 
-- [x] **ALB-01**: Admin can search Discogs for albums by query
-- [x] **ALB-02**: Discogs album search uses existing queue infrastructure
-- [x] **ALB-03**: Discogs album results display in same format as MusicBrainz
-- [x] **ALB-04**: Admin can preview Discogs album data side-by-side
-- [x] **ALB-05**: Admin can apply album correction from Discogs source
+- [ ] **CODE-01**: Logger class renamed from `EnrichmentLogger` to `LlamaLogger`
+- [ ] **CODE-02**: Logger file moved to `src/lib/logging/llama-logger.ts`
+- [ ] **CODE-03**: All `prisma.enrichmentLog` calls updated to `prisma.llamaLog`
+- [ ] **CODE-04**: All type imports updated (`EnrichmentLog` → `LlamaLog`)
+- [ ] **CODE-05**: GraphQL schema types updated
+- [ ] **CODE-06**: Generated GraphQL types regenerated via codegen
+- [ ] **CODE-07**: All resolver references updated
 
-### Artist Corrections — Discogs
+### Creation Tracking — Albums
 
-- [x] **ART-01**: Admin can search Discogs for artists by query
-- [x] **ART-02**: Discogs artist search uses existing queue infrastructure
-- [x] **ART-03**: Discogs artist results display in same format as MusicBrainz
-- [x] **ART-04**: Admin can preview Discogs artist data side-by-side
-- [x] **ART-05**: Admin can apply artist correction from Discogs source
+- [ ] **CREATE-01**: Album creation from `addAlbum` mutation logged with category: CREATED
+- [ ] **CREATE-02**: Album creation from `addAlbumToCollection` logged with category: CREATED
+- [ ] **CREATE-03**: Album creation from Spotify sync logged with category: CREATED
+- [ ] **CREATE-04**: Album creation from MusicBrainz sync logged with category: CREATED
+- [ ] **CREATE-05**: Album creation from search/save flow logged with category: CREATED
+- [ ] **CREATE-06**: Creation logs include userId when user-triggered
+- [ ] **CREATE-07**: Creation logs have isRootJob: true
 
-### Data Mapping
+### Creation Tracking — Related Entities
 
-- [x] **MAP-01**: Discogs album fields map to Album model
-- [x] **MAP-02**: Discogs artist fields map to Artist model
-- [x] **MAP-03**: Discogs IDs stored as external IDs on apply
+- [ ] **RELATE-01**: Artist creation logged as child of album creation
+- [ ] **RELATE-02**: Artist creation has parentJobId pointing to album's jobId
+- [ ] **RELATE-03**: Track creation logged as child of album creation/enrichment
+- [ ] **RELATE-04**: Track creation has parentJobId pointing to root job
+- [ ] **RELATE-05**: Child creations have isRootJob: false
+
+### Existing Logging — Category Updates
+
+- [ ] **EXIST-01**: All enrichment operations use category: ENRICHED
+- [ ] **EXIST-02**: All correction operations use category: CORRECTED
+- [ ] **EXIST-03**: All cache operations use category: CACHED
+- [ ] **EXIST-04**: All failed operations use category: FAILED
+
+### UI & Branding
+
+- [ ] **UI-01**: Console log output uses `[🦙 LlamaLog]` prefix
+- [ ] **UI-02**: Admin log table shows llama emoji in header
+- [ ] **UI-03**: Log detail view includes llama theming
+- [ ] **UI-04**: Category badges incorporate llama where appropriate
+
+### Query & Provenance
+
+- [ ] **QUERY-01**: GraphQL query `llamaLogChain(entityType, entityId)` returns root + all children
+- [ ] **QUERY-02**: Chain query returns logs ordered by createdAt
+- [ ] **QUERY-03**: Chain query can filter by category
 
 ## Future Requirements
 
 Deferred to later milestones.
 
-### Additional Sources
+### Extended Tracking
 
-- **SRC-01**: Spotify as correction source
-- **SRC-02**: Search multiple sources simultaneously
+- **TRACK-01**: Track entity deletions
+- **TRACK-02**: Track entity updates outside enrichment/correction
+- **TRACK-03**: Tree view UI for job chain visualization
 
-### Bulk Operations
+### Retroactive Provenance
 
-- **BULK-01**: Bulk re-enrichment for albums matching criteria
-- **BULK-02**: Progress tracking for bulk operations
+- **RETRO-01**: Attempt to determine creation source for pre-existing albums
+- **RETRO-02**: Mark albums with unknown provenance
 
 ## Out of Scope
 
-| Feature                                | Reason                                 |
-| -------------------------------------- | -------------------------------------- |
-| Spotify integration                    | Defer to future milestone              |
-| Combined search (both sources at once) | Keep it simple — pick one, search that |
-| Auto-suggestion of best source         | Manual selection for now               |
-| Bulk corrections                       | One at a time for v1                   |
+| Feature | Reason |
+|---------|--------|
+| Retroactive provenance for existing albums | Too complex, data not available |
+| Full visual tree UI for job chains | Simple list sufficient for v1.4 |
+| Entity deletion tracking | Future enhancement |
+| Updates outside enrichment/correction | Not needed yet |
+| Custom llama ASCII art | Tempting, but no 🦙 |
 
 ## Traceability
 
-| Requirement | Phase | Status   |
-| ----------- | ----- | -------- |
-| UI-01       | 21    | Complete |
-| UI-02       | 21    | Complete |
-| UI-03       | 21    | Complete |
-| UI-04       | 21    | Complete |
-| ALB-01      | 22    | Complete |
-| ALB-02      | 22    | Complete |
-| ALB-03      | 22    | Complete |
-| ALB-04      | 23    | Complete |
-| ALB-05      | 23    | Complete |
-| ART-01      | 24    | Complete |
-| ART-02      | 24    | Complete |
-| ART-03      | 24    | Complete |
-| ART-04      | 25    | Complete |
-| ART-05      | 25    | Complete |
-| MAP-01      | 22    | Complete |
-| MAP-02      | 24    | Complete |
-| MAP-03      | 25    | Complete |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| SCHEMA-01 | 26 | Pending |
+| SCHEMA-02 | 26 | Pending |
+| SCHEMA-03 | 26 | Pending |
+| SCHEMA-04 | 26 | Pending |
+| SCHEMA-05 | 26 | Pending |
+| CODE-01 | 27 | Pending |
+| CODE-02 | 27 | Pending |
+| CODE-03 | 27 | Pending |
+| CODE-04 | 27 | Pending |
+| CODE-05 | 27 | Pending |
+| CODE-06 | 27 | Pending |
+| CODE-07 | 27 | Pending |
+| CREATE-01 | 28 | Pending |
+| CREATE-02 | 28 | Pending |
+| CREATE-03 | 28 | Pending |
+| CREATE-04 | 28 | Pending |
+| CREATE-05 | 28 | Pending |
+| CREATE-06 | 28 | Pending |
+| CREATE-07 | 28 | Pending |
+| RELATE-01 | 29 | Pending |
+| RELATE-02 | 29 | Pending |
+| RELATE-03 | 29 | Pending |
+| RELATE-04 | 29 | Pending |
+| RELATE-05 | 29 | Pending |
+| EXIST-01 | 30 | Pending |
+| EXIST-02 | 30 | Pending |
+| EXIST-03 | 30 | Pending |
+| EXIST-04 | 30 | Pending |
+| UI-01 | 31 | Pending |
+| UI-02 | 31 | Pending |
+| UI-03 | 31 | Pending |
+| UI-04 | 31 | Pending |
+| QUERY-01 | 32 | Pending |
+| QUERY-02 | 32 | Pending |
+| QUERY-03 | 32 | Pending |
 
 **Coverage:**
 
-- v1.3 requirements: 17 total
-- Mapped to phases: 17
+- v1.4 requirements: 34 total
+- Mapped to phases: 34
 - Unmapped: 0
 
 ---
 
-_Requirements defined: 2026-02-08_
-_Last updated: 2026-02-09 — Phase 25 complete (ART-04, ART-05, MAP-03) — Milestone v1.3 complete (17/17)_
+_Requirements defined: 2026-02-09_
+_Last updated: 2026-02-09 after initial definition_

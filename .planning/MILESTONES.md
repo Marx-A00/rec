@@ -1,5 +1,40 @@
 # Milestones
 
+## v1.3 — Discogs Correction Source
+
+**Shipped:** 2026-02-09
+**Phases:** 21–25 (15 plans)
+**Branch:** `feat/admin-enrich-UI`
+
+**What shipped:**
+
+- Source toggle UI (MusicBrainz / Discogs) in correction modals
+- Discogs album search via BullMQ queue infrastructure
+- Discogs artist search via existing DISCOGS_SEARCH_ARTIST job
+- DISCOGS_GET_MASTER job for album detail fetching
+- Album preview/apply with Discogs as source
+- Artist preview/apply with Discogs as source
+- Orange accent styling for Discogs results
+- Source badge in preview headers
+
+**Key accomplishments:**
+
+- Same UI patterns for both sources (unified search, preview, apply)
+- Source parameter threading: UI → GraphQL → services
+- Discogs tracklist parsing handles vinyl positions (A1/B1)
+- Source-conditional field diffs and external ID storage
+- QueuedDiscogsService follows QueuedMusicBrainzService pattern
+
+**Stats:**
+
+- 5 phases, 15 plans
+- 2 days (2026-02-08 to 2026-02-09)
+- 17 requirements delivered
+
+**What's next:** v1.4 LlamaLog Entity Provenance & Audit System
+
+---
+
 ## v1.2 — Job History Timeline UI
 
 **Shipped:** 2026-02-07
@@ -29,8 +64,6 @@
 - 6 phases, 15 plans
 - 2 days (2026-02-06 to 2026-02-07)
 - 20 requirements delivered
-
-**What's next:** v1.3 Discogs Correction Source
 
 ---
 
