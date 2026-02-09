@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 ## Current Position
 
-Phase: 24 of 25 (Discogs Artist Search)
-Plan: 3 of 3 in current phase (COMPLETE)
-Status: Phase complete
-Last activity: 2026-02-09 — Completed 24-03-PLAN.md
+Phase: 24 of 25 (Discogs Artist Search) — COMPLETE
+Plan: 3 of 3 in current phase
+Status: Phase 24 complete
+Last activity: 2026-02-09 — Completed 24-03-PLAN.md (frontend integration)
 
 Progress: [█████████████░░░░░░░] 13/18 plans complete (v1.3)
 
@@ -43,9 +43,9 @@ Progress: [█████████████░░░░░░░] 13/18 p
 
 - Phases: 5 (21-25)
 - Plans: 13 complete (phase 21 + phase 22 + phase 23 + phase 24)
-- Requirements: 17/17 complete (UI-01 through UI-04, ALB-01 through ALB-07, ART-01 through ART-06)
+- Requirements: 14/17 complete (UI-01 through UI-04, ALB-01 through ALB-05, ART-01 through ART-03, MAP-01, MAP-02)
 
-**Total shipped:** 21 phases, 64 plans
+**Total shipped:** 21 phases, 63 plans
 
 ## Accumulated Context
 
@@ -85,15 +85,15 @@ Progress: [█████████████░░░░░░░] 13/18 p
 - [23-04] Source parameter threading pattern: UI (lowercase) → GraphQL (uppercase) → services (lowercase)
 - [23-04] CorrectionApplyInput.source field with MUSICBRAINZ default
 - [23-04] Conditional service routing in correctionApply resolver
-- [24-01] Reuse existing DISCOGS_SEARCH_ARTIST job for artist correction search
-- [24-01] Source field on ArtistSearchResult matches album pattern
+- [24-01] ArtistSearchResult type includes source field
 - [24-01] mapDiscogsSearchResultToArtistSearchResult mapper in mappers.ts
-- [24-02] artistCorrectionSearch accepts source parameter with MUSICBRAINZ default
+- [24-01] DISCOGS_SEARCH_ARTIST handler returns searchResults array
+- [24-01] QueuedDiscogsService.searchArtists() uses existing job type
+- [24-02] source parameter on artistCorrectionSearch GraphQL query
 - [24-02] Resolver routes to QueuedDiscogsService.searchArtists() for DISCOGS
-- [24-02] Source field in ArtistCorrectionSearchResult for frontend styling
-- [24-03] graphqlSource mapping pattern: lowercase store → uppercase enum
-- [24-03] Orange accent styling for Discogs artist cards matches album pattern
-- [24-03] cn() utility for conditional className composition
+- [24-02] source field on ArtistCorrectionSearchResult type
+- [24-03] ArtistSearchView passes graphqlSource to query
+- [24-03] ArtistSearchCard with orange accent for Discogs results
 
 ### v1.3 Context
 
@@ -105,13 +105,13 @@ Progress: [█████████████░░░░░░░] 13/18 p
 - Frontend album search integration — COMPLETE (22-03)
 - DISCOGS_GET_MASTER job type — COMPLETE (23-01)
 - Preview/apply service source support — COMPLETE (23-02)
-- GraphQL resolver routing for preview — COMPLETE (23-03)
-- GraphQL resolver routing for apply — COMPLETE (23-04)
-- QueuedDiscogsService.searchArtists() — COMPLETE (24-01)
-- GraphQL artistCorrectionSearch source routing — COMPLETE (24-02)
-- Frontend artist search integration — COMPLETE (24-03)
-- Both album and artist corrections supported
-- Same preview/apply pattern as MusicBrainz
+- GraphQL resolver routing for album preview — COMPLETE (23-03)
+- Album apply source wiring — COMPLETE (23-04)
+- Artist search backend (searchArtists method) — COMPLETE (24-01)
+- Artist search GraphQL routing — COMPLETE (24-02)
+- Artist search frontend integration — COMPLETE (24-03)
+- Both album and artist SEARCH now supported
+- Artist preview/apply pending (Phase 25)
 
 ### Existing Infrastructure
 
@@ -123,20 +123,18 @@ Progress: [█████████████░░░░░░░] 13/18 p
 - SourceToggle component: `src/components/admin/correction/shared/SourceToggle.tsx`
 - correctionSource state in both stores with sessionStorage persistence
 - Source badges in PreviewView and ArtistPreviewView
-- QueuedDiscogsService with searchAlbums(), searchArtists(), and getMaster() methods
+- QueuedDiscogsService with searchAlbums(), getMaster(), and searchArtists() methods
 - CorrectionSource enum in GraphQL schema
 - CorrectionSource type in preview/types.ts
 - CorrectionPreviewInput.source field for preview source selection
 - SearchView passes source to GraphQL query
 - SearchResultCard with source-aware styling
-- ArtistSearchView passes source to GraphQL query
-- ArtistSearchCard with source-aware styling
 - CorrectionPreviewService.generatePreview() accepts source parameter
 - ApplyCorrectionService stores correct external ID based on source
 - correctionPreview resolver routes to Discogs when source is DISCOGS
-- correctionApply resolver routes to Discogs when source is DISCOGS
-- mapDiscogsSearchResultToArtistSearchResult mapper for artist search
 - artistCorrectionSearch resolver routes to Discogs when source is DISCOGS
+- ArtistSearchView passes source to GraphQL query
+- ArtistSearchCard with source-aware styling (orange for Discogs)
 
 ### Blockers/Concerns
 
@@ -145,7 +143,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed 24-03-PLAN.md (Phase 24 complete)
+Stopped at: Completed Phase 24 (Discogs Artist Search)
 Resume file: N/A
 
-**Next action:** Begin Phase 25 (Discogs Artist Preview/Apply)
+**Next action:** Plan Phase 25 (Discogs Artist Apply)

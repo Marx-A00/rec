@@ -19,21 +19,21 @@ Requirements for Discogs Correction Source milestone.
 - [x] **ALB-01**: Admin can search Discogs for albums by query
 - [x] **ALB-02**: Discogs album search uses existing queue infrastructure
 - [x] **ALB-03**: Discogs album results display in same format as MusicBrainz
-- [ ] **ALB-04**: Admin can preview Discogs album data side-by-side
-- [ ] **ALB-05**: Admin can apply album correction from Discogs source
+- [x] **ALB-04**: Admin can preview Discogs album data side-by-side
+- [x] **ALB-05**: Admin can apply album correction from Discogs source
 
 ### Artist Corrections — Discogs
 
-- [ ] **ART-01**: Admin can search Discogs for artists by query
-- [ ] **ART-02**: Discogs artist search uses existing queue infrastructure
-- [ ] **ART-03**: Discogs artist results display in same format as MusicBrainz
+- [x] **ART-01**: Admin can search Discogs for artists by query
+- [x] **ART-02**: Discogs artist search uses existing queue infrastructure
+- [x] **ART-03**: Discogs artist results display in same format as MusicBrainz
 - [ ] **ART-04**: Admin can preview Discogs artist data side-by-side
 - [ ] **ART-05**: Admin can apply artist correction from Discogs source
 
 ### Data Mapping
 
 - [x] **MAP-01**: Discogs album fields map to Album model
-- [ ] **MAP-02**: Discogs artist fields map to Artist model
+- [x] **MAP-02**: Discogs artist fields map to Artist model
 - [ ] **MAP-03**: Discogs IDs stored as external IDs on apply
 
 ## Future Requirements
@@ -70,15 +70,15 @@ Deferred to later milestones.
 | ALB-01      | 22    | Complete |
 | ALB-02      | 22    | Complete |
 | ALB-03      | 22    | Complete |
-| ALB-04      | 23    | Pending  |
-| ALB-05      | 23    | Pending  |
-| ART-01      | 24    | Pending  |
-| ART-02      | 24    | Pending  |
-| ART-03      | 24    | Pending  |
+| ALB-04      | 23    | Complete |
+| ALB-05      | 23    | Complete |
+| ART-01      | 24    | Complete |
+| ART-02      | 24    | Complete |
+| ART-03      | 24    | Complete |
 | ART-04      | 25    | Pending  |
 | ART-05      | 25    | Pending  |
 | MAP-01      | 22    | Complete |
-| MAP-02      | 24    | Pending  |
+| MAP-02      | 24    | Complete |
 | MAP-03      | 25    | Pending  |
 
 **Coverage:**
@@ -90,4 +90,4 @@ Deferred to later milestones.
 ---
 
 _Requirements defined: 2026-02-08_
-_Last updated: 2026-02-09 — Phase 22 complete (ALB-01, ALB-02, ALB-03, MAP-01)_
+_Last updated: 2026-02-09 — Phase 24 complete (ART-01, ART-02, ART-03, MAP-02)_

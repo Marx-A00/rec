@@ -150,9 +150,11 @@ Plans:
 
 Plans:
 
-- [ ] 24-01-PLAN.md — Backend infrastructure (QueuedDiscogsService.searchArtists, mapper)
-- [ ] 24-02-PLAN.md — GraphQL layer (source param on artistCorrectionSearch)
-- [ ] 24-03-PLAN.md — Frontend integration (ArtistSearchView source param, result styling)
+- [x] 24-01-PLAN.md — Backend infrastructure (QueuedDiscogsService.searchArtists, mapper)
+- [x] 24-02-PLAN.md — GraphQL layer (source param on artistCorrectionSearch)
+- [x] 24-03-PLAN.md — Frontend integration (ArtistSearchView source param, result styling)
+
+**Status:** Complete (2026-02-09)
 
 ---
 
@@ -240,4 +242,4 @@ Phase 21 (Source Selection UI)
 ---
 
 _Roadmap created: 2026-02-08_
-_Last updated: 2026-02-09 (Phase 24 planned)_
+_Last updated: 2026-02-09 (Phase 24 complete)_
