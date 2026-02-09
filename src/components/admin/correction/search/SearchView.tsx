@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 
 import {
+  CorrectionSource,
   useSearchCorrectionCandidatesQuery,
   type SearchCorrectionCandidatesQuery,
 } from '@/generated/graphql';
@@ -31,7 +32,7 @@ export interface SearchViewProps {
  * Wires together:
  * - SourceToggle for MusicBrainz/Discogs selection
  * - SearchInputs for album/artist search fields
- * - GraphQL query for MusicBrainz search
+ * - GraphQL query for correction search (supports both sources)
  * - SearchResults for displaying results
  * - State persistence via Zustand store
  *
@@ -71,8 +72,13 @@ export function SearchView({ album }: SearchViewProps) {
     artistName: initialArtistName,
   };
 
-  // GraphQL query - only enabled when search is triggered and query has content
-  // Only enabled for MusicBrainz source (Discogs not implemented yet)
+  // Map store source to GraphQL enum
+  const graphqlSource =
+    correctionSource === 'discogs'
+      ? CorrectionSource.Discogs
+      : CorrectionSource.Musicbrainz;
+
+  // GraphQL query - enabled for both MusicBrainz and Discogs sources
   const { data, isLoading, error, isFetching } =
     useSearchCorrectionCandidatesQuery(
       {
@@ -82,11 +88,11 @@ export function SearchView({ album }: SearchViewProps) {
           artistName: currentQuery.artistName,
           limit: 10,
           offset: searchOffset,
+          source: graphqlSource,
         },
       },
       {
         enabled:
-          correctionSource === 'musicbrainz' &&
           isSearchTriggered &&
           !!(currentQuery.albumTitle || currentQuery.artistName),
       }
@@ -135,8 +141,8 @@ export function SearchView({ album }: SearchViewProps) {
     }
   };
 
-  // Error state (only for MusicBrainz)
-  if (error && isSearchTriggered && correctionSource === 'musicbrainz') {
+  // Error state
+  if (error && isSearchTriggered) {
     const errorType = categorizeError(error);
     const errorMessage =
       error instanceof Error
@@ -144,7 +150,7 @@ export function SearchView({ album }: SearchViewProps) {
         : 'Search failed. Please try again.';
 
     return (
-      <div className="space-y-4">
+      <div className='space-y-4'>
         {/* Source toggle */}
         <SourceToggle
           value={correctionSource}
@@ -169,12 +175,15 @@ export function SearchView({ album }: SearchViewProps) {
   }
 
   // Loading skeleton (full replacement per CONTEXT.md)
-  if (showSkeleton && correctionSource === 'musicbrainz') {
+  if (showSkeleton) {
     return <SearchSkeleton />;
   }
 
+  // Source-specific initial state message
+  const sourceLabel = correctionSource === 'discogs' ? 'Discogs' : 'MusicBrainz';
+
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {/* Source toggle */}
       <SourceToggle
         value={correctionSource}
@@ -182,45 +191,31 @@ export function SearchView({ album }: SearchViewProps) {
         disabled={isLoading}
       />
 
-      {/* Discogs placeholder (Phase 22+) */}
-      {correctionSource === 'discogs' && (
-        <div className="p-4 text-center text-zinc-500 border border-dashed border-zinc-700 rounded-lg">
-          <p className="text-sm">Discogs search coming soon</p>
-          <p className="text-xs text-zinc-600 mt-1">
-            Switch to MusicBrainz to search
-          </p>
+      {/* Search inputs - shared for both sources */}
+      <SearchInputs
+        initialAlbumTitle={currentQuery.albumTitle}
+        initialArtistName={currentQuery.artistName}
+        onSearch={handleSearch}
+        isLoading={isLoading}
+      />
+
+      {/* Initial state - before first search */}
+      {!isSearchTriggered && (
+        <div className='p-6 text-center text-zinc-400 border border-dashed border-zinc-700 rounded-lg'>
+          Search {sourceLabel} for the correct album data
         </div>
       )}
 
-      {/* MusicBrainz search content */}
-      {correctionSource === 'musicbrainz' && (
-        <>
-          <SearchInputs
-            initialAlbumTitle={currentQuery.albumTitle}
-            initialArtistName={currentQuery.artistName}
-            onSearch={handleSearch}
-            isLoading={isLoading}
-          />
-
-          {/* Initial state - before first search */}
-          {!isSearchTriggered && (
-            <div className="p-6 text-center text-zinc-400 border border-dashed border-zinc-700 rounded-lg">
-              Search MusicBrainz for the correct album data
-            </div>
-          )}
-
-          {/* Results - after search triggered and not loading */}
-          {isSearchTriggered && !isLoading && (
-            <SearchResults
-              results={results}
-              hasMore={hasMore}
-              isLoadingMore={isLoadingMore}
-              onResultClick={handleResultClick}
-              onLoadMore={handleLoadMore}
-              onManualEdit={enterManualEdit}
-            />
-          )}
-        </>
+      {/* Results - after search triggered and not loading */}
+      {isSearchTriggered && !isLoading && (
+        <SearchResults
+          results={results}
+          hasMore={hasMore}
+          isLoadingMore={isLoadingMore}
+          onResultClick={handleResultClick}
+          onLoadMore={handleLoadMore}
+          onManualEdit={enterManualEdit}
+        />
       )}
     </div>
   );
