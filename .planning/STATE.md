@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 ## Current Position
 
-Phase: 23 of 25 (Discogs Album Apply) — COMPLETE
-Plan: 4 of 4 in current phase (gap closure)
-Status: Phase 23 complete (all gaps closed)
-Last activity: 2026-02-09 — Completed 23-04-PLAN.md (gap closure)
+Phase: 24 of 25 (Discogs Artist Search)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-09 — Completed 24-01-PLAN.md
 
-Progress: [██████████░░░░░░░░░░] 10/18 plans complete (v1.3)
+Progress: [███████████░░░░░░░░░] 11/18 plans complete (v1.3)
 
 ## Performance Metrics
 
@@ -42,8 +42,8 @@ Progress: [██████████░░░░░░░░░░] 10/18 p
 **Milestone v1.3 (In Progress):**
 
 - Phases: 5 (21-25)
-- Plans: 10 complete (phase 21 + phase 22 + phase 23 including gap closure)
-- Requirements: 12/17 complete (UI-01 through UI-04, ALB-01 through ALB-07)
+- Plans: 11 complete (phase 21 + phase 22 + phase 23 + 24-01)
+- Requirements: 13/17 complete (UI-01 through UI-04, ALB-01 through ALB-07, ART-01)
 
 **Total shipped:** 21 phases, 63 plans
 
@@ -85,6 +85,9 @@ Progress: [██████████░░░░░░░░░░] 10/18 p
 - [23-04] Source parameter threading pattern: UI (lowercase) → GraphQL (uppercase) → services (lowercase)
 - [23-04] CorrectionApplyInput.source field with MUSICBRAINZ default
 - [23-04] Conditional service routing in correctionApply resolver
+- [24-01] Reuse existing DISCOGS_SEARCH_ARTIST job for artist correction search
+- [24-01] Source field on ArtistSearchResult matches album pattern
+- [24-01] mapDiscogsSearchResultToArtistSearchResult mapper in mappers.ts
 
 ### v1.3 Context
 
@@ -92,11 +95,12 @@ Progress: [██████████░░░░░░░░░░] 10/18 p
 - Toggle UI to select source before searching — COMPLETE (Phase 21)
 - Reuse existing Discogs queue infrastructure (DISCOGS_SEARCH_ARTIST, DISCOGS_GET_ARTIST)
 - DISCOGS_SEARCH_ALBUM job type — COMPLETE (22-01)
-- GraphQL resolver routing for search — COMPLETE (22-02)
-- Frontend search integration — COMPLETE (22-03)
+- GraphQL resolver routing for album search — COMPLETE (22-02)
+- Frontend album search integration — COMPLETE (22-03)
 - DISCOGS_GET_MASTER job type — COMPLETE (23-01)
 - Preview/apply service source support — COMPLETE (23-02)
 - GraphQL resolver routing for preview — COMPLETE (23-03)
+- QueuedDiscogsService.searchArtists() — COMPLETE (24-01)
 - Both album and artist corrections supported
 - Same preview/apply pattern as MusicBrainz
 
@@ -110,7 +114,7 @@ Progress: [██████████░░░░░░░░░░] 10/18 p
 - SourceToggle component: `src/components/admin/correction/shared/SourceToggle.tsx`
 - correctionSource state in both stores with sessionStorage persistence
 - Source badges in PreviewView and ArtistPreviewView
-- QueuedDiscogsService with searchAlbums() and getMaster() methods
+- QueuedDiscogsService with searchAlbums(), searchArtists(), and getMaster() methods
 - CorrectionSource enum in GraphQL schema
 - CorrectionSource type in preview/types.ts
 - CorrectionPreviewInput.source field for preview source selection
@@ -119,6 +123,7 @@ Progress: [██████████░░░░░░░░░░] 10/18 p
 - CorrectionPreviewService.generatePreview() accepts source parameter
 - ApplyCorrectionService stores correct external ID based on source
 - correctionPreview resolver routes to Discogs when source is DISCOGS
+- mapDiscogsSearchResultToArtistSearchResult mapper for artist search
 
 ### Blockers/Concerns
 
@@ -127,7 +132,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed Phase 23 including gap closure (23-04-PLAN.md)
+Stopped at: Completed 24-01-PLAN.md
 Resume file: N/A
 
-**Next action:** Execute Phase 24 (Discogs Artist Search)
+**Next action:** Execute Phase 24-02 (GraphQL resolver routing for artist search)
