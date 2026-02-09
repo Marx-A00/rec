@@ -102,7 +102,7 @@ Plans:
 2. Field differences are highlighted (same diff UI as MusicBrainz)
 3. Admin can select which fields to apply
 4. Applying correction updates album in database
-5. Discogs ID stored in album's external IDs on apply
+5. Discogs ID stored in album external IDs on apply
 
 **Key Files:**
 
@@ -111,7 +111,13 @@ Plans:
 - `src/components/admin/correction/preview/PreviewView.tsx`
 - `src/components/admin/correction/apply/ApplyView.tsx`
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+
+- [ ] 23-01-PLAN.md — Queue infrastructure (DISCOGS_GET_MASTER job, getMaster method)
+- [ ] 23-02-PLAN.md — Preview and apply service extensions for Discogs
+- [ ] 23-03-PLAN.md — GraphQL layer (source parameter in preview input)
 
 ---
 
