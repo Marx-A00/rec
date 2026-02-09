@@ -28,6 +28,7 @@ import {
   useManualCorrectionApplyMutation,
   useTriggerAlbumEnrichmentMutation,
   EnrichmentPriority,
+  CorrectionSource,
 } from '@/generated/graphql';
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import Toast, { useToast } from '@/components/ui/toast';
@@ -104,6 +105,7 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
   const showAppliedState = store(s => s.showAppliedState);
   const showUnsavedDialog = store(s => s.showUnsavedDialog);
   const pendingAction = store(s => s.pendingAction);
+  const correctionSource = store(s => s.correctionSource);
 
   // Use derived selectors - these are also hook calls
   const isFirstStep = store(isFirstStepSelector);
@@ -451,6 +453,7 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
         releaseGroupMbid: previewData.sourceResult.releaseGroupMbid,
         selections: graphqlSelections,
         expectedUpdatedAt,
+        source: correctionSource.toUpperCase() as CorrectionSource,
       },
     });
   };
@@ -755,7 +758,14 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
                       applyMutation.isPending
                     }
                   >
-                    Confirm & Apply
+                    {applyMutation.isPending ? (
+                      <>
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                        Applying...
+                      </>
+                    ) : (
+                      'Confirm & Apply'
+                    )}
                   </Button>
                 )}
               {/* Persistent mode-switch buttons (visible on all steps except apply/success) */}
