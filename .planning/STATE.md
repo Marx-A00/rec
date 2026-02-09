@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 25 of 25 (Discogs Artist Apply)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-09 — Completed 25-01-PLAN.md (artist preview service Discogs support)
+Last activity: 2026-02-09 — Completed 25-02-PLAN.md (apply service source support)
 
-Progress: [█████████████░░░░░░░] 14/18 plans complete (v1.3)
+Progress: [██████████████░░░░░░] 14/18 plans complete (v1.3)
 
 ## Performance Metrics
 
@@ -42,10 +42,10 @@ Progress: [█████████████░░░░░░░] 14/18 p
 **Milestone v1.3 (In Progress):**
 
 - Phases: 5 (21-25)
-- Plans: 14 complete (phase 21 + phase 22 + phase 23 + phase 24 + 25-01)
+- Plans: 14 complete (phase 21 + phase 22 + phase 23 + phase 24 + 25-01, 25-02)
 - Requirements: 15/17 complete (UI-01 through UI-04, ALB-01 through ALB-05, ART-01 through ART-04, MAP-01, MAP-02)
 
-**Total shipped:** 21 phases, 63 plans
+**Total shipped:** 21 phases, 64 plans
 
 ## Accumulated Context
 
@@ -94,13 +94,13 @@ Progress: [█████████████░░░░░░░] 14/18 p
 - [24-02] source field on ArtistCorrectionSearchResult type
 - [24-03] ArtistSearchView passes graphqlSource to query
 - [24-03] ArtistSearchCard with orange accent for Discogs results
-- [25-01] CorrectionSource type in artist preview/types.ts
-- [25-01] generatePreview() accepts source parameter with 'musicbrainz' default
-- [25-01] fetchDiscogsArtistData() uses UnifiedArtistService
-- [25-01] Biography built from profile + realname + members + groups
-- [25-01] BBCode stripping for Discogs profile text
-- [25-01] Source-conditional field diffs (artistType/area/countryCode only for MB)
-- [25-01] External ID uses musicbrainzId or discogsId based on source
+- [25-01] Artist preview service supports Discogs via MBArtistData mapping
+- [25-01] Discogs artist data mapped to MBArtistData format for reuse
+- [25-01] Source detection via numeric ID check (Discogs IDs are numeric strings)
+- [25-02] discogsId and imageUrl added to artist field selection types
+- [25-02] Source-conditional external ID storage (musicbrainzId vs discogsId)
+- [25-02] Artist.source field updated based on correction source
+- [25-02] Cloudflare image caching queued when imageUrl changes
 
 ### v1.3 Context
 
@@ -117,9 +117,10 @@ Progress: [█████████████░░░░░░░] 14/18 p
 - Artist search backend (searchArtists method) — COMPLETE (24-01)
 - Artist search GraphQL routing — COMPLETE (24-02)
 - Artist search frontend integration — COMPLETE (24-03)
-- Artist preview service Discogs support — COMPLETE (25-01)
-- Artist preview GraphQL routing pending (25-02)
-- Artist apply source wiring pending (25-03)
+- Artist preview backend (generatePreview with Discogs) — COMPLETE (25-01)
+- Artist apply service source support — COMPLETE (25-02)
+- Both album and artist SEARCH/PREVIEW/APPLY now supported for Discogs (service layer)
+- Artist GraphQL resolver routing pending (Phase 25-03)
 
 ### Existing Infrastructure
 
@@ -131,19 +132,20 @@ Progress: [█████████████░░░░░░░] 14/18 p
 - SourceToggle component: `src/components/admin/correction/shared/SourceToggle.tsx`
 - correctionSource state in both stores with sessionStorage persistence
 - Source badges in PreviewView and ArtistPreviewView
-- QueuedDiscogsService with searchAlbums(), getMaster(), and searchArtists() methods
+- QueuedDiscogsService with searchAlbums(), getMaster(), searchArtists(), and getArtist() methods
 - CorrectionSource enum in GraphQL schema
-- CorrectionSource type in preview/types.ts (album) and artist/preview/types.ts (artist)
+- CorrectionSource type in preview/types.ts
 - CorrectionPreviewInput.source field for preview source selection
 - SearchView passes source to GraphQL query
 - SearchResultCard with source-aware styling
 - CorrectionPreviewService.generatePreview() accepts source parameter
-- ArtistCorrectionPreviewService.generatePreview() accepts source parameter
 - ApplyCorrectionService stores correct external ID based on source
 - correctionPreview resolver routes to Discogs when source is DISCOGS
 - artistCorrectionSearch resolver routes to Discogs when source is DISCOGS
 - ArtistSearchView passes source to GraphQL query
 - ArtistSearchCard with source-aware styling (orange for Discogs)
+- ArtistCorrectionPreviewService supports Discogs source
+- ArtistCorrectionApplyService supports Discogs source with image caching
 
 ### Blockers/Concerns
 
@@ -152,7 +154,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed 25-01-PLAN.md
+Stopped at: Completed 25-02-PLAN.md (artist apply service source support)
 Resume file: N/A
 
-**Next action:** Execute 25-02-PLAN.md (GraphQL resolver routing for artist preview)
+**Next action:** Execute 25-03-PLAN.md (GraphQL resolver routing for artist preview/apply)
