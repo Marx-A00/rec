@@ -115,10 +115,12 @@ Plans:
 
 Plans:
 
-- [ ] 23-01-PLAN.md — Queue infrastructure (DISCOGS_GET_MASTER job, getMaster method)
-- [ ] 23-02-PLAN.md — Preview and apply service extensions for Discogs
-- [ ] 23-03-PLAN.md — GraphQL layer (source parameter in preview input)
-- [ ] 23-04-PLAN.md — Gap closure (wire source param in frontend and apply resolver)
+- [x] 23-01-PLAN.md — Queue infrastructure (DISCOGS_GET_MASTER job, getMaster method)
+- [x] 23-02-PLAN.md — Preview and apply service extensions for Discogs
+- [x] 23-03-PLAN.md — GraphQL layer (source parameter in preview input)
+- [x] 23-04-PLAN.md — Gap closure (wire source param in frontend and apply resolver)
+
+**Status:** Complete (2026-02-09)
 
 ---
 
@@ -232,4 +234,4 @@ Phase 21 (Source Selection UI)
 ---
 
 _Roadmap created: 2026-02-08_
-_Last updated: 2026-02-09_
+_Last updated: 2026-02-09 (Phase 23 complete)_
