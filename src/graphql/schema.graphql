@@ -734,6 +734,20 @@ enum ScoringStrategy {
 }
 
 """
+Source for correction data.
+"""
+enum CorrectionSource {
+  """
+  MusicBrainz database
+  """
+  MUSICBRAINZ
+  """
+  Discogs database
+  """
+  DISCOGS
+}
+
+"""
 Confidence tier for tiered scoring strategy.
 """
 enum ConfidenceTier {
@@ -1593,6 +1607,10 @@ input CorrectionSearchInput {
   Threshold below which results are flagged as low-confidence (0-1)
   """
   lowConfidenceThreshold: Float = 0.5
+  """
+  Data source to search (default: MUSICBRAINZ)
+  """
+  source: CorrectionSource = MUSICBRAINZ
 }
 
 """
