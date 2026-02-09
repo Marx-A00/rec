@@ -60,6 +60,8 @@ export interface ArtistSearchResult {
   mbScore: number;
   /** Top releases for disambiguation in UI */
   topReleases?: ArtistTopRelease[];
+  /** Data source this result came from (for visual distinction in UI) */
+  source?: 'musicbrainz' | 'discogs';
 }
 
 /**
