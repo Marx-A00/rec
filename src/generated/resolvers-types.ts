@@ -103,14 +103,14 @@ export type Album = {
   discogsId?: Maybe<Scalars['String']['output']>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
-  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   genres?: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
   label?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
-  latestEnrichmentLog?: Maybe<EnrichmentLog>;
+  latestLlamaLog?: Maybe<LlamaLog>;
+  llamaLogs: Array<LlamaLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   needsEnrichment: Scalars['Boolean']['output'];
   recommendationScore?: Maybe<Scalars['Float']['output']>;
@@ -123,7 +123,7 @@ export type Album = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
-export type AlbumEnrichmentLogsArgs = {
+export type AlbumLlamaLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -291,14 +291,14 @@ export type Artist = {
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
   discogsId?: Maybe<Scalars['String']['output']>;
-  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
-  latestEnrichmentLog?: Maybe<EnrichmentLog>;
+  latestLlamaLog?: Maybe<LlamaLog>;
   listeners?: Maybe<Scalars['Int']['output']>;
+  llamaLogs: Array<LlamaLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   name: Scalars['String']['output'];
   needsEnrichment: Scalars['Boolean']['output'];
@@ -308,7 +308,7 @@ export type Artist = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
-export type ArtistEnrichmentLogsArgs = {
+export type ArtistLlamaLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -934,42 +934,6 @@ export type EnrichmentFieldDiff = {
   source: Scalars['String']['output'];
 };
 
-export type EnrichmentLog = {
-  __typename?: 'EnrichmentLog';
-  apiCallCount: Scalars['Int']['output'];
-  children?: Maybe<Array<EnrichmentLog>>;
-  createdAt: Scalars['DateTime']['output'];
-  dataQualityAfter?: Maybe<DataQuality>;
-  dataQualityBefore?: Maybe<DataQuality>;
-  durationMs?: Maybe<Scalars['Int']['output']>;
-  entityId?: Maybe<Scalars['UUID']['output']>;
-  entityType?: Maybe<EnrichmentEntityType>;
-  errorCode?: Maybe<Scalars['String']['output']>;
-  errorMessage?: Maybe<Scalars['String']['output']>;
-  fieldsEnriched: Array<Scalars['String']['output']>;
-  id: Scalars['UUID']['output'];
-  jobId?: Maybe<Scalars['String']['output']>;
-  metadata?: Maybe<Scalars['JSON']['output']>;
-  operation: Scalars['String']['output'];
-  parentJobId?: Maybe<Scalars['String']['output']>;
-  previewData?: Maybe<Scalars['JSON']['output']>;
-  reason?: Maybe<Scalars['String']['output']>;
-  retryCount: Scalars['Int']['output'];
-  sources: Array<Scalars['String']['output']>;
-  status: EnrichmentLogStatus;
-  triggeredBy?: Maybe<Scalars['String']['output']>;
-  userId?: Maybe<Scalars['String']['output']>;
-};
-
-export enum EnrichmentLogStatus {
-  Failed = 'FAILED',
-  NoDataAvailable = 'NO_DATA_AVAILABLE',
-  PartialSuccess = 'PARTIAL_SUCCESS',
-  Preview = 'PREVIEW',
-  Skipped = 'SKIPPED',
-  Success = 'SUCCESS',
-}
-
 export enum EnrichmentPriority {
   High = 'HIGH',
   Low = 'LOW',
@@ -1120,6 +1084,51 @@ export type JobStatusUpdate = {
   timestamp: Scalars['DateTime']['output'];
   type: Scalars['String']['output'];
 };
+
+export type LlamaLog = {
+  __typename?: 'LlamaLog';
+  apiCallCount: Scalars['Int']['output'];
+  category: LlamaLogCategory;
+  children?: Maybe<Array<LlamaLog>>;
+  createdAt: Scalars['DateTime']['output'];
+  dataQualityAfter?: Maybe<DataQuality>;
+  dataQualityBefore?: Maybe<DataQuality>;
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  entityId?: Maybe<Scalars['UUID']['output']>;
+  entityType?: Maybe<EnrichmentEntityType>;
+  errorCode?: Maybe<Scalars['String']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  fieldsEnriched: Array<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  jobId?: Maybe<Scalars['String']['output']>;
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  operation: Scalars['String']['output'];
+  parentJobId?: Maybe<Scalars['String']['output']>;
+  previewData?: Maybe<Scalars['JSON']['output']>;
+  reason?: Maybe<Scalars['String']['output']>;
+  retryCount: Scalars['Int']['output'];
+  sources: Array<Scalars['String']['output']>;
+  status: LlamaLogStatus;
+  triggeredBy?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['String']['output']>;
+};
+
+export enum LlamaLogCategory {
+  Cached = 'CACHED',
+  Corrected = 'CORRECTED',
+  Created = 'CREATED',
+  Enriched = 'ENRICHED',
+  Failed = 'FAILED',
+}
+
+export enum LlamaLogStatus {
+  Failed = 'FAILED',
+  NoDataAvailable = 'NO_DATA_AVAILABLE',
+  PartialSuccess = 'PARTIAL_SUCCESS',
+  Preview = 'PREVIEW',
+  Skipped = 'SKIPPED',
+  Success = 'SUCCESS',
+}
 
 /** MusicBrainz artist data within artist credit. */
 export type MbArtist = {
@@ -1596,7 +1605,6 @@ export type Query = {
   /** Search MusicBrainz for correction candidates for an album */
   correctionSearch: CorrectionSearchResponse;
   databaseStats: DatabaseStats;
-  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
   followingActivity: Array<Recommendation>;
@@ -1604,6 +1612,7 @@ export type Query = {
   health: Scalars['String']['output'];
   isFollowing: Scalars['Boolean']['output'];
   jobHistory: Array<JobRecord>;
+  llamaLogs: Array<LlamaLog>;
   mutualConnections: Array<User>;
   myCollectionAlbums: Array<CollectionAlbum>;
   myCollections: Array<Collection>;
@@ -1706,18 +1715,6 @@ export type QueryCorrectionSearchArgs = {
   input: CorrectionSearchInput;
 };
 
-export type QueryEnrichmentLogsArgs = {
-  entityId?: InputMaybe<Scalars['UUID']['input']>;
-  entityType?: InputMaybe<EnrichmentEntityType>;
-  includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  parentJobId?: InputMaybe<Scalars['String']['input']>;
-  parentOnly?: InputMaybe<Scalars['Boolean']['input']>;
-  skip?: InputMaybe<Scalars['Int']['input']>;
-  sources?: InputMaybe<Array<Scalars['String']['input']>>;
-  status?: InputMaybe<EnrichmentLogStatus>;
-};
-
 export type QueryEnrichmentStatsArgs = {
   entityType?: InputMaybe<EnrichmentEntityType>;
   timeRange?: InputMaybe<TimeRangeInput>;
@@ -1746,6 +1743,18 @@ export type QueryIsFollowingArgs = {
 export type QueryJobHistoryArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   status?: InputMaybe<JobStatus>;
+};
+
+export type QueryLlamaLogsArgs = {
+  entityId?: InputMaybe<Scalars['UUID']['input']>;
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  parentJobId?: InputMaybe<Scalars['String']['input']>;
+  parentOnly?: InputMaybe<Scalars['Boolean']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sources?: InputMaybe<Array<Scalars['String']['input']>>;
+  status?: InputMaybe<LlamaLogStatus>;
 };
 
 export type QueryMutualConnectionsArgs = {
@@ -2367,11 +2376,11 @@ export type Track = {
   discogsId?: Maybe<Scalars['String']['output']>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
-  enrichmentLogs: Array<EnrichmentLog>;
   explicit: Scalars['Boolean']['output'];
   id: Scalars['UUID']['output'];
   isrc?: Maybe<Scalars['String']['output']>;
-  latestEnrichmentLog?: Maybe<EnrichmentLog>;
+  latestLlamaLog?: Maybe<LlamaLog>;
+  llamaLogs: Array<LlamaLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   popularity?: Maybe<Scalars['Float']['output']>;
   previewUrl?: Maybe<Scalars['String']['output']>;
@@ -2382,7 +2391,7 @@ export type Track = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
-export type TrackEnrichmentLogsArgs = {
+export type TrackLlamaLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -2809,8 +2818,6 @@ export type ResolversTypes = ResolversObject<{
   DeleteArtistPayload: ResolverTypeWrapper<DeleteArtistPayload>;
   EnrichmentEntityType: EnrichmentEntityType;
   EnrichmentFieldDiff: ResolverTypeWrapper<EnrichmentFieldDiff>;
-  EnrichmentLog: ResolverTypeWrapper<EnrichmentLog>;
-  EnrichmentLogStatus: EnrichmentLogStatus;
   EnrichmentPriority: EnrichmentPriority;
   EnrichmentResult: ResolverTypeWrapper<EnrichmentResult>;
   EnrichmentStats: ResolverTypeWrapper<EnrichmentStats>;
@@ -2831,6 +2838,9 @@ export type ResolversTypes = ResolversObject<{
   JobRecord: ResolverTypeWrapper<JobRecord>;
   JobStatus: JobStatus;
   JobStatusUpdate: ResolverTypeWrapper<JobStatusUpdate>;
+  LlamaLog: ResolverTypeWrapper<LlamaLog>;
+  LlamaLogCategory: LlamaLogCategory;
+  LlamaLogStatus: LlamaLogStatus;
   MBArtist: ResolverTypeWrapper<MbArtist>;
   MBArtistCredit: ResolverTypeWrapper<MbArtistCredit>;
   MBMedium: ResolverTypeWrapper<MbMedium>;
@@ -2986,7 +2996,6 @@ export type ResolversParentTypes = ResolversObject<{
   DeleteAlbumPayload: DeleteAlbumPayload;
   DeleteArtistPayload: DeleteArtistPayload;
   EnrichmentFieldDiff: EnrichmentFieldDiff;
-  EnrichmentLog: EnrichmentLog;
   EnrichmentResult: EnrichmentResult;
   EnrichmentStats: EnrichmentStats;
   ErrorMetric: ErrorMetric;
@@ -3002,6 +3011,7 @@ export type ResolversParentTypes = ResolversObject<{
   JSON: Scalars['JSON']['output'];
   JobRecord: JobRecord;
   JobStatusUpdate: JobStatusUpdate;
+  LlamaLog: LlamaLog;
   MBArtist: MbArtist;
   MBArtistCredit: MbArtistCredit;
   MBMedium: MbMedium;
@@ -3224,12 +3234,6 @@ export type AlbumResolvers<
   >;
   duration?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  enrichmentLogs?: Resolver<
-    Array<ResolversTypes['EnrichmentLog']>,
-    ParentType,
-    ContextType,
-    Partial<AlbumEnrichmentLogsArgs>
-  >;
   enrichmentStatus?: Resolver<
     Maybe<ResolversTypes['EnrichmentStatus']>,
     ParentType,
@@ -3248,10 +3252,16 @@ export type AlbumResolvers<
     ParentType,
     ContextType
   >;
-  latestEnrichmentLog?: Resolver<
-    Maybe<ResolversTypes['EnrichmentLog']>,
+  latestLlamaLog?: Resolver<
+    Maybe<ResolversTypes['LlamaLog']>,
     ParentType,
     ContextType
+  >;
+  llamaLogs?: Resolver<
+    Array<ResolversTypes['LlamaLog']>,
+    ParentType,
+    ContextType,
+    Partial<AlbumLlamaLogsArgs>
   >;
   musicbrainzId?: Resolver<
     Maybe<ResolversTypes['UUID']>,
@@ -3474,12 +3484,6 @@ export type ArtistResolvers<
     ParentType,
     ContextType
   >;
-  enrichmentLogs?: Resolver<
-    Array<ResolversTypes['EnrichmentLog']>,
-    ParentType,
-    ContextType,
-    Partial<ArtistEnrichmentLogsArgs>
-  >;
   enrichmentStatus?: Resolver<
     Maybe<ResolversTypes['EnrichmentStatus']>,
     ParentType,
@@ -3493,12 +3497,18 @@ export type ArtistResolvers<
     ParentType,
     ContextType
   >;
-  latestEnrichmentLog?: Resolver<
-    Maybe<ResolversTypes['EnrichmentLog']>,
+  latestLlamaLog?: Resolver<
+    Maybe<ResolversTypes['LlamaLog']>,
     ParentType,
     ContextType
   >;
   listeners?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  llamaLogs?: Resolver<
+    Array<ResolversTypes['LlamaLog']>,
+    ParentType,
+    ContextType,
+    Partial<ArtistLlamaLogsArgs>
+  >;
   musicbrainzId?: Resolver<
     Maybe<ResolversTypes['UUID']>,
     ParentType,
@@ -4244,81 +4254,6 @@ export type EnrichmentFieldDiffResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type EnrichmentLogResolvers<
-  ContextType = GraphQLContext,
-  ParentType extends
-    ResolversParentTypes['EnrichmentLog'] = ResolversParentTypes['EnrichmentLog'],
-> = ResolversObject<{
-  apiCallCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  children?: Resolver<
-    Maybe<Array<ResolversTypes['EnrichmentLog']>>,
-    ParentType,
-    ContextType
-  >;
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  dataQualityAfter?: Resolver<
-    Maybe<ResolversTypes['DataQuality']>,
-    ParentType,
-    ContextType
-  >;
-  dataQualityBefore?: Resolver<
-    Maybe<ResolversTypes['DataQuality']>,
-    ParentType,
-    ContextType
-  >;
-  durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  entityId?: Resolver<Maybe<ResolversTypes['UUID']>, ParentType, ContextType>;
-  entityType?: Resolver<
-    Maybe<ResolversTypes['EnrichmentEntityType']>,
-    ParentType,
-    ContextType
-  >;
-  errorCode?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  errorMessage?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  fieldsEnriched?: Resolver<
-    Array<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
-  jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  metadata?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
-  operation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  parentJobId?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  previewData?: Resolver<
-    Maybe<ResolversTypes['JSON']>,
-    ParentType,
-    ContextType
-  >;
-  reason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  retryCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  sources?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
-  status?: Resolver<
-    ResolversTypes['EnrichmentLogStatus'],
-    ParentType,
-    ContextType
-  >;
-  triggeredBy?: Resolver<
-    Maybe<ResolversTypes['String']>,
-    ParentType,
-    ContextType
-  >;
-  userId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
 export type EnrichmentResultResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -4483,6 +4418,82 @@ export type JobStatusUpdateResolvers<
   status?: Resolver<ResolversTypes['JobStatus'], ParentType, ContextType>;
   timestamp?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type LlamaLogResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['LlamaLog'] = ResolversParentTypes['LlamaLog'],
+> = ResolversObject<{
+  apiCallCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  category?: Resolver<
+    ResolversTypes['LlamaLogCategory'],
+    ParentType,
+    ContextType
+  >;
+  children?: Resolver<
+    Maybe<Array<ResolversTypes['LlamaLog']>>,
+    ParentType,
+    ContextType
+  >;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  dataQualityAfter?: Resolver<
+    Maybe<ResolversTypes['DataQuality']>,
+    ParentType,
+    ContextType
+  >;
+  dataQualityBefore?: Resolver<
+    Maybe<ResolversTypes['DataQuality']>,
+    ParentType,
+    ContextType
+  >;
+  durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  entityId?: Resolver<Maybe<ResolversTypes['UUID']>, ParentType, ContextType>;
+  entityType?: Resolver<
+    Maybe<ResolversTypes['EnrichmentEntityType']>,
+    ParentType,
+    ContextType
+  >;
+  errorCode?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  errorMessage?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  fieldsEnriched?: Resolver<
+    Array<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  metadata?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  operation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  parentJobId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  previewData?: Resolver<
+    Maybe<ResolversTypes['JSON']>,
+    ParentType,
+    ContextType
+  >;
+  reason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  retryCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  sources?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['LlamaLogStatus'], ParentType, ContextType>;
+  triggeredBy?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  userId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5087,12 +5098,6 @@ export type QueryResolvers<
     ParentType,
     ContextType
   >;
-  enrichmentLogs?: Resolver<
-    Array<ResolversTypes['EnrichmentLog']>,
-    ParentType,
-    ContextType,
-    Partial<QueryEnrichmentLogsArgs>
-  >;
   enrichmentStats?: Resolver<
     ResolversTypes['EnrichmentStats'],
     ParentType,
@@ -5129,6 +5134,12 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryJobHistoryArgs, 'limit'>
+  >;
+  llamaLogs?: Resolver<
+    Array<ResolversTypes['LlamaLog']>,
+    ParentType,
+    ContextType,
+    Partial<QueryLlamaLogsArgs>
   >;
   mutualConnections?: Resolver<
     Array<ResolversTypes['User']>,
@@ -6017,19 +6028,19 @@ export type TrackResolvers<
   >;
   duration?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   durationMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  enrichmentLogs?: Resolver<
-    Array<ResolversTypes['EnrichmentLog']>,
-    ParentType,
-    ContextType,
-    Partial<TrackEnrichmentLogsArgs>
-  >;
   explicit?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   isrc?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  latestEnrichmentLog?: Resolver<
-    Maybe<ResolversTypes['EnrichmentLog']>,
+  latestLlamaLog?: Resolver<
+    Maybe<ResolversTypes['LlamaLog']>,
     ParentType,
     ContextType
+  >;
+  llamaLogs?: Resolver<
+    Array<ResolversTypes['LlamaLog']>,
+    ParentType,
+    ContextType,
+    Partial<TrackLlamaLogsArgs>
   >;
   musicbrainzId?: Resolver<
     Maybe<ResolversTypes['UUID']>,
@@ -6491,7 +6502,6 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   DeleteAlbumPayload?: DeleteAlbumPayloadResolvers<ContextType>;
   DeleteArtistPayload?: DeleteArtistPayloadResolvers<ContextType>;
   EnrichmentFieldDiff?: EnrichmentFieldDiffResolvers<ContextType>;
-  EnrichmentLog?: EnrichmentLogResolvers<ContextType>;
   EnrichmentResult?: EnrichmentResultResolvers<ContextType>;
   EnrichmentStats?: EnrichmentStatsResolvers<ContextType>;
   ErrorMetric?: ErrorMetricResolvers<ContextType>;
@@ -6502,6 +6512,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   JSON?: GraphQLScalarType;
   JobRecord?: JobRecordResolvers<ContextType>;
   JobStatusUpdate?: JobStatusUpdateResolvers<ContextType>;
+  LlamaLog?: LlamaLogResolvers<ContextType>;
   MBArtist?: MbArtistResolvers<ContextType>;
   MBArtistCredit?: MbArtistCreditResolvers<ContextType>;
   MBMedium?: MbMediumResolvers<ContextType>;

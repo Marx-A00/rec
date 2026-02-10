@@ -129,14 +129,14 @@ export type Album = {
   discogsId?: Maybe<Scalars['String']['output']>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
-  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   genres?: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
   label?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
-  latestEnrichmentLog?: Maybe<EnrichmentLog>;
+  latestLlamaLog?: Maybe<LlamaLog>;
+  llamaLogs: Array<LlamaLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   needsEnrichment: Scalars['Boolean']['output'];
   recommendationScore?: Maybe<Scalars['Float']['output']>;
@@ -149,7 +149,7 @@ export type Album = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
-export type AlbumEnrichmentLogsArgs = {
+export type AlbumLlamaLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -317,14 +317,14 @@ export type Artist = {
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
   discogsId?: Maybe<Scalars['String']['output']>;
-  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
-  latestEnrichmentLog?: Maybe<EnrichmentLog>;
+  latestLlamaLog?: Maybe<LlamaLog>;
   listeners?: Maybe<Scalars['Int']['output']>;
+  llamaLogs: Array<LlamaLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   name: Scalars['String']['output'];
   needsEnrichment: Scalars['Boolean']['output'];
@@ -334,7 +334,7 @@ export type Artist = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
-export type ArtistEnrichmentLogsArgs = {
+export type ArtistLlamaLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -960,42 +960,6 @@ export type EnrichmentFieldDiff = {
   source: Scalars['String']['output'];
 };
 
-export type EnrichmentLog = {
-  __typename?: 'EnrichmentLog';
-  apiCallCount: Scalars['Int']['output'];
-  children?: Maybe<Array<EnrichmentLog>>;
-  createdAt: Scalars['DateTime']['output'];
-  dataQualityAfter?: Maybe<DataQuality>;
-  dataQualityBefore?: Maybe<DataQuality>;
-  durationMs?: Maybe<Scalars['Int']['output']>;
-  entityId?: Maybe<Scalars['UUID']['output']>;
-  entityType?: Maybe<EnrichmentEntityType>;
-  errorCode?: Maybe<Scalars['String']['output']>;
-  errorMessage?: Maybe<Scalars['String']['output']>;
-  fieldsEnriched: Array<Scalars['String']['output']>;
-  id: Scalars['UUID']['output'];
-  jobId?: Maybe<Scalars['String']['output']>;
-  metadata?: Maybe<Scalars['JSON']['output']>;
-  operation: Scalars['String']['output'];
-  parentJobId?: Maybe<Scalars['String']['output']>;
-  previewData?: Maybe<Scalars['JSON']['output']>;
-  reason?: Maybe<Scalars['String']['output']>;
-  retryCount: Scalars['Int']['output'];
-  sources: Array<Scalars['String']['output']>;
-  status: EnrichmentLogStatus;
-  triggeredBy?: Maybe<Scalars['String']['output']>;
-  userId?: Maybe<Scalars['String']['output']>;
-};
-
-export enum EnrichmentLogStatus {
-  Failed = 'FAILED',
-  NoDataAvailable = 'NO_DATA_AVAILABLE',
-  PartialSuccess = 'PARTIAL_SUCCESS',
-  Preview = 'PREVIEW',
-  Skipped = 'SKIPPED',
-  Success = 'SUCCESS',
-}
-
 export enum EnrichmentPriority {
   High = 'HIGH',
   Low = 'LOW',
@@ -1146,6 +1110,51 @@ export type JobStatusUpdate = {
   timestamp: Scalars['DateTime']['output'];
   type: Scalars['String']['output'];
 };
+
+export type LlamaLog = {
+  __typename?: 'LlamaLog';
+  apiCallCount: Scalars['Int']['output'];
+  category: LlamaLogCategory;
+  children?: Maybe<Array<LlamaLog>>;
+  createdAt: Scalars['DateTime']['output'];
+  dataQualityAfter?: Maybe<DataQuality>;
+  dataQualityBefore?: Maybe<DataQuality>;
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  entityId?: Maybe<Scalars['UUID']['output']>;
+  entityType?: Maybe<EnrichmentEntityType>;
+  errorCode?: Maybe<Scalars['String']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  fieldsEnriched: Array<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  jobId?: Maybe<Scalars['String']['output']>;
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  operation: Scalars['String']['output'];
+  parentJobId?: Maybe<Scalars['String']['output']>;
+  previewData?: Maybe<Scalars['JSON']['output']>;
+  reason?: Maybe<Scalars['String']['output']>;
+  retryCount: Scalars['Int']['output'];
+  sources: Array<Scalars['String']['output']>;
+  status: LlamaLogStatus;
+  triggeredBy?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['String']['output']>;
+};
+
+export enum LlamaLogCategory {
+  Cached = 'CACHED',
+  Corrected = 'CORRECTED',
+  Created = 'CREATED',
+  Enriched = 'ENRICHED',
+  Failed = 'FAILED',
+}
+
+export enum LlamaLogStatus {
+  Failed = 'FAILED',
+  NoDataAvailable = 'NO_DATA_AVAILABLE',
+  PartialSuccess = 'PARTIAL_SUCCESS',
+  Preview = 'PREVIEW',
+  Skipped = 'SKIPPED',
+  Success = 'SUCCESS',
+}
 
 /** MusicBrainz artist data within artist credit. */
 export type MbArtist = {
@@ -1622,7 +1631,6 @@ export type Query = {
   /** Search MusicBrainz for correction candidates for an album */
   correctionSearch: CorrectionSearchResponse;
   databaseStats: DatabaseStats;
-  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
   followingActivity: Array<Recommendation>;
@@ -1630,6 +1638,7 @@ export type Query = {
   health: Scalars['String']['output'];
   isFollowing: Scalars['Boolean']['output'];
   jobHistory: Array<JobRecord>;
+  llamaLogs: Array<LlamaLog>;
   mutualConnections: Array<User>;
   myCollectionAlbums: Array<CollectionAlbum>;
   myCollections: Array<Collection>;
@@ -1732,18 +1741,6 @@ export type QueryCorrectionSearchArgs = {
   input: CorrectionSearchInput;
 };
 
-export type QueryEnrichmentLogsArgs = {
-  entityId?: InputMaybe<Scalars['UUID']['input']>;
-  entityType?: InputMaybe<EnrichmentEntityType>;
-  includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  parentJobId?: InputMaybe<Scalars['String']['input']>;
-  parentOnly?: InputMaybe<Scalars['Boolean']['input']>;
-  skip?: InputMaybe<Scalars['Int']['input']>;
-  sources?: InputMaybe<Array<Scalars['String']['input']>>;
-  status?: InputMaybe<EnrichmentLogStatus>;
-};
-
 export type QueryEnrichmentStatsArgs = {
   entityType?: InputMaybe<EnrichmentEntityType>;
   timeRange?: InputMaybe<TimeRangeInput>;
@@ -1772,6 +1769,18 @@ export type QueryIsFollowingArgs = {
 export type QueryJobHistoryArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   status?: InputMaybe<JobStatus>;
+};
+
+export type QueryLlamaLogsArgs = {
+  entityId?: InputMaybe<Scalars['UUID']['input']>;
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  parentJobId?: InputMaybe<Scalars['String']['input']>;
+  parentOnly?: InputMaybe<Scalars['Boolean']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sources?: InputMaybe<Array<Scalars['String']['input']>>;
+  status?: InputMaybe<LlamaLogStatus>;
 };
 
 export type QueryMutualConnectionsArgs = {
@@ -2393,11 +2402,11 @@ export type Track = {
   discogsId?: Maybe<Scalars['String']['output']>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
-  enrichmentLogs: Array<EnrichmentLog>;
   explicit: Scalars['Boolean']['output'];
   id: Scalars['UUID']['output'];
   isrc?: Maybe<Scalars['String']['output']>;
-  latestEnrichmentLog?: Maybe<EnrichmentLog>;
+  latestLlamaLog?: Maybe<LlamaLog>;
+  llamaLogs: Array<LlamaLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   popularity?: Maybe<Scalars['Float']['output']>;
   previewUrl?: Maybe<Scalars['String']['output']>;
@@ -2408,7 +2417,7 @@ export type Track = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
-export type TrackEnrichmentLogsArgs = {
+export type TrackLlamaLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -3038,21 +3047,21 @@ export type GetAlbumDetailsAdminQuery = {
     averageRating?: number | null;
     inCollectionsCount: number;
     recommendationScore?: number | null;
-    latestEnrichmentLog?: {
-      __typename?: 'EnrichmentLog';
+    latestLlamaLog?: {
+      __typename?: 'LlamaLog';
       id: string;
-      status: EnrichmentLogStatus;
+      status: LlamaLogStatus;
       sources: Array<string>;
       fieldsEnriched: Array<string>;
       errorMessage?: string | null;
       createdAt: Date;
     } | null;
-    enrichmentLogs: Array<{
-      __typename?: 'EnrichmentLog';
+    llamaLogs: Array<{
+      __typename?: 'LlamaLog';
       id: string;
       operation: string;
       sources: Array<string>;
-      status: EnrichmentLogStatus;
+      status: LlamaLogStatus;
       fieldsEnriched: Array<string>;
       errorMessage?: string | null;
       durationMs?: number | null;
@@ -3743,10 +3752,10 @@ export type SearchCorrectionCandidatesQuery = {
   };
 };
 
-export type GetEnrichmentLogsQueryVariables = Exact<{
+export type GetLlamaLogsQueryVariables = Exact<{
   entityType?: InputMaybe<EnrichmentEntityType>;
   entityId?: InputMaybe<Scalars['UUID']['input']>;
-  status?: InputMaybe<EnrichmentLogStatus>;
+  status?: InputMaybe<LlamaLogStatus>;
   skip?: InputMaybe<Scalars['Int']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   parentOnly?: InputMaybe<Scalars['Boolean']['input']>;
@@ -3754,16 +3763,17 @@ export type GetEnrichmentLogsQueryVariables = Exact<{
   includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
-export type GetEnrichmentLogsQuery = {
+export type GetLlamaLogsQuery = {
   __typename?: 'Query';
-  enrichmentLogs: Array<{
-    __typename?: 'EnrichmentLog';
+  llamaLogs: Array<{
+    __typename?: 'LlamaLog';
     id: string;
     entityType?: EnrichmentEntityType | null;
     entityId?: string | null;
     operation: string;
     sources: Array<string>;
-    status: EnrichmentLogStatus;
+    status: LlamaLogStatus;
+    category: LlamaLogCategory;
     reason?: string | null;
     fieldsEnriched: Array<string>;
     dataQualityBefore?: DataQuality | null;
@@ -3779,24 +3789,25 @@ export type GetEnrichmentLogsQuery = {
   }>;
 };
 
-export type GetEnrichmentLogsWithChildrenQueryVariables = Exact<{
+export type GetLlamaLogsWithChildrenQueryVariables = Exact<{
   entityType?: InputMaybe<EnrichmentEntityType>;
   entityId?: InputMaybe<Scalars['UUID']['input']>;
-  status?: InputMaybe<EnrichmentLogStatus>;
+  status?: InputMaybe<LlamaLogStatus>;
   skip?: InputMaybe<Scalars['Int']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
-export type GetEnrichmentLogsWithChildrenQuery = {
+export type GetLlamaLogsWithChildrenQuery = {
   __typename?: 'Query';
-  enrichmentLogs: Array<{
-    __typename?: 'EnrichmentLog';
+  llamaLogs: Array<{
+    __typename?: 'LlamaLog';
     id: string;
     entityType?: EnrichmentEntityType | null;
     entityId?: string | null;
     operation: string;
     sources: Array<string>;
-    status: EnrichmentLogStatus;
+    status: LlamaLogStatus;
+    category: LlamaLogCategory;
     reason?: string | null;
     fieldsEnriched: Array<string>;
     dataQualityBefore?: DataQuality | null;
@@ -3810,13 +3821,14 @@ export type GetEnrichmentLogsWithChildrenQuery = {
     jobId?: string | null;
     parentJobId?: string | null;
     children?: Array<{
-      __typename?: 'EnrichmentLog';
+      __typename?: 'LlamaLog';
       id: string;
       entityType?: EnrichmentEntityType | null;
       entityId?: string | null;
       operation: string;
       sources: Array<string>;
-      status: EnrichmentLogStatus;
+      status: LlamaLogStatus;
+      category: LlamaLogCategory;
       reason?: string | null;
       fieldsEnriched: Array<string>;
       errorMessage?: string | null;
@@ -4024,21 +4036,21 @@ export type GetArtistDetailsQuery = {
     popularity?: number | null;
     needsEnrichment: boolean;
     listeners?: number | null;
-    latestEnrichmentLog?: {
-      __typename?: 'EnrichmentLog';
+    latestLlamaLog?: {
+      __typename?: 'LlamaLog';
       id: string;
-      status: EnrichmentLogStatus;
+      status: LlamaLogStatus;
       sources: Array<string>;
       fieldsEnriched: Array<string>;
       errorMessage?: string | null;
       createdAt: Date;
     } | null;
-    enrichmentLogs: Array<{
-      __typename?: 'EnrichmentLog';
+    llamaLogs: Array<{
+      __typename?: 'LlamaLog';
       id: string;
       operation: string;
       sources: Array<string>;
-      status: EnrichmentLogStatus;
+      status: LlamaLogStatus;
       fieldsEnriched: Array<string>;
       errorMessage?: string | null;
       durationMs?: number | null;
@@ -6200,7 +6212,7 @@ export const GetAlbumDetailsAdminDocument = `
     averageRating
     inCollectionsCount
     recommendationScore
-    latestEnrichmentLog {
+    latestLlamaLog {
       id
       status
       sources
@@ -6208,7 +6220,7 @@ export const GetAlbumDetailsAdminDocument = `
       errorMessage
       createdAt
     }
-    enrichmentLogs(limit: 5) {
+    llamaLogs(limit: 5) {
       id
       operation
       sources
@@ -7567,9 +7579,9 @@ useInfiniteSearchCorrectionCandidatesQuery.getKey = (
   variables: SearchCorrectionCandidatesQueryVariables
 ) => ['SearchCorrectionCandidates.infinite', variables];
 
-export const GetEnrichmentLogsDocument = `
-    query GetEnrichmentLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: EnrichmentLogStatus, $skip: Int, $limit: Int, $parentOnly: Boolean, $parentJobId: String, $includeChildren: Boolean) {
-  enrichmentLogs(
+export const GetLlamaLogsDocument = `
+    query GetLlamaLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: LlamaLogStatus, $skip: Int, $limit: Int, $parentOnly: Boolean, $parentJobId: String, $includeChildren: Boolean) {
+  llamaLogs(
     entityType: $entityType
     entityId: $entityId
     status: $status
@@ -7585,6 +7597,7 @@ export const GetEnrichmentLogsDocument = `
     operation
     sources
     status
+    category
     reason
     fieldsEnriched
     dataQualityBefore
@@ -7601,69 +7614,59 @@ export const GetEnrichmentLogsDocument = `
 }
     `;
 
-export const useGetEnrichmentLogsQuery = <
-  TData = GetEnrichmentLogsQuery,
+export const useGetLlamaLogsQuery = <
+  TData = GetLlamaLogsQuery,
   TError = unknown,
 >(
-  variables?: GetEnrichmentLogsQueryVariables,
+  variables?: GetLlamaLogsQueryVariables,
   options?: Omit<
-    UseQueryOptions<GetEnrichmentLogsQuery, TError, TData>,
+    UseQueryOptions<GetLlamaLogsQuery, TError, TData>,
     'queryKey'
   > & {
-    queryKey?: UseQueryOptions<
-      GetEnrichmentLogsQuery,
-      TError,
-      TData
-    >['queryKey'];
+    queryKey?: UseQueryOptions<GetLlamaLogsQuery, TError, TData>['queryKey'];
   }
 ) => {
-  return useQuery<GetEnrichmentLogsQuery, TError, TData>({
+  return useQuery<GetLlamaLogsQuery, TError, TData>({
     queryKey:
-      variables === undefined
-        ? ['GetEnrichmentLogs']
-        : ['GetEnrichmentLogs', variables],
-    queryFn: fetcher<GetEnrichmentLogsQuery, GetEnrichmentLogsQueryVariables>(
-      GetEnrichmentLogsDocument,
+      variables === undefined ? ['GetLlamaLogs'] : ['GetLlamaLogs', variables],
+    queryFn: fetcher<GetLlamaLogsQuery, GetLlamaLogsQueryVariables>(
+      GetLlamaLogsDocument,
       variables
     ),
     ...options,
   });
 };
 
-useGetEnrichmentLogsQuery.getKey = (
-  variables?: GetEnrichmentLogsQueryVariables
-) =>
-  variables === undefined
-    ? ['GetEnrichmentLogs']
-    : ['GetEnrichmentLogs', variables];
+useGetLlamaLogsQuery.getKey = (variables?: GetLlamaLogsQueryVariables) =>
+  variables === undefined ? ['GetLlamaLogs'] : ['GetLlamaLogs', variables];
 
-export const useInfiniteGetEnrichmentLogsQuery = <
-  TData = InfiniteData<GetEnrichmentLogsQuery>,
+export const useInfiniteGetLlamaLogsQuery = <
+  TData = InfiniteData<GetLlamaLogsQuery>,
   TError = unknown,
 >(
-  variables: GetEnrichmentLogsQueryVariables,
+  variables: GetLlamaLogsQueryVariables,
   options: Omit<
-    UseInfiniteQueryOptions<GetEnrichmentLogsQuery, TError, TData>,
+    UseInfiniteQueryOptions<GetLlamaLogsQuery, TError, TData>,
     'queryKey'
   > & {
     queryKey?: UseInfiniteQueryOptions<
-      GetEnrichmentLogsQuery,
+      GetLlamaLogsQuery,
       TError,
       TData
     >['queryKey'];
   }
 ) => {
-  return useInfiniteQuery<GetEnrichmentLogsQuery, TError, TData>(
+  return useInfiniteQuery<GetLlamaLogsQuery, TError, TData>(
     (() => {
       const { queryKey: optionsQueryKey, ...restOptions } = options;
       return {
         queryKey:
           (optionsQueryKey ?? variables === undefined)
-            ? ['GetEnrichmentLogs.infinite']
-            : ['GetEnrichmentLogs.infinite', variables],
+            ? ['GetLlamaLogs.infinite']
+            : ['GetLlamaLogs.infinite', variables],
         queryFn: metaData =>
-          fetcher<GetEnrichmentLogsQuery, GetEnrichmentLogsQueryVariables>(
-            GetEnrichmentLogsDocument,
+          fetcher<GetLlamaLogsQuery, GetLlamaLogsQueryVariables>(
+            GetLlamaLogsDocument,
             { ...variables, ...(metaData.pageParam ?? {}) }
           )(),
         ...restOptions,
@@ -7672,16 +7675,16 @@ export const useInfiniteGetEnrichmentLogsQuery = <
   );
 };
 
-useInfiniteGetEnrichmentLogsQuery.getKey = (
-  variables?: GetEnrichmentLogsQueryVariables
+useInfiniteGetLlamaLogsQuery.getKey = (
+  variables?: GetLlamaLogsQueryVariables
 ) =>
   variables === undefined
-    ? ['GetEnrichmentLogs.infinite']
-    : ['GetEnrichmentLogs.infinite', variables];
+    ? ['GetLlamaLogs.infinite']
+    : ['GetLlamaLogs.infinite', variables];
 
-export const GetEnrichmentLogsWithChildrenDocument = `
-    query GetEnrichmentLogsWithChildren($entityType: EnrichmentEntityType, $entityId: UUID, $status: EnrichmentLogStatus, $skip: Int, $limit: Int) {
-  enrichmentLogs(
+export const GetLlamaLogsWithChildrenDocument = `
+    query GetLlamaLogsWithChildren($entityType: EnrichmentEntityType, $entityId: UUID, $status: LlamaLogStatus, $skip: Int, $limit: Int) {
+  llamaLogs(
     entityType: $entityType
     entityId: $entityId
     status: $status
@@ -7695,6 +7698,7 @@ export const GetEnrichmentLogsWithChildrenDocument = `
     operation
     sources
     status
+    category
     reason
     fieldsEnriched
     dataQualityBefore
@@ -7714,6 +7718,7 @@ export const GetEnrichmentLogsWithChildrenDocument = `
       operation
       sources
       status
+      category
       reason
       fieldsEnriched
       errorMessage
@@ -7728,71 +7733,71 @@ export const GetEnrichmentLogsWithChildrenDocument = `
 }
     `;
 
-export const useGetEnrichmentLogsWithChildrenQuery = <
-  TData = GetEnrichmentLogsWithChildrenQuery,
+export const useGetLlamaLogsWithChildrenQuery = <
+  TData = GetLlamaLogsWithChildrenQuery,
   TError = unknown,
 >(
-  variables?: GetEnrichmentLogsWithChildrenQueryVariables,
+  variables?: GetLlamaLogsWithChildrenQueryVariables,
   options?: Omit<
-    UseQueryOptions<GetEnrichmentLogsWithChildrenQuery, TError, TData>,
+    UseQueryOptions<GetLlamaLogsWithChildrenQuery, TError, TData>,
     'queryKey'
   > & {
     queryKey?: UseQueryOptions<
-      GetEnrichmentLogsWithChildrenQuery,
+      GetLlamaLogsWithChildrenQuery,
       TError,
       TData
     >['queryKey'];
   }
 ) => {
-  return useQuery<GetEnrichmentLogsWithChildrenQuery, TError, TData>({
+  return useQuery<GetLlamaLogsWithChildrenQuery, TError, TData>({
     queryKey:
       variables === undefined
-        ? ['GetEnrichmentLogsWithChildren']
-        : ['GetEnrichmentLogsWithChildren', variables],
+        ? ['GetLlamaLogsWithChildren']
+        : ['GetLlamaLogsWithChildren', variables],
     queryFn: fetcher<
-      GetEnrichmentLogsWithChildrenQuery,
-      GetEnrichmentLogsWithChildrenQueryVariables
-    >(GetEnrichmentLogsWithChildrenDocument, variables),
+      GetLlamaLogsWithChildrenQuery,
+      GetLlamaLogsWithChildrenQueryVariables
+    >(GetLlamaLogsWithChildrenDocument, variables),
     ...options,
   });
 };
 
-useGetEnrichmentLogsWithChildrenQuery.getKey = (
-  variables?: GetEnrichmentLogsWithChildrenQueryVariables
+useGetLlamaLogsWithChildrenQuery.getKey = (
+  variables?: GetLlamaLogsWithChildrenQueryVariables
 ) =>
   variables === undefined
-    ? ['GetEnrichmentLogsWithChildren']
-    : ['GetEnrichmentLogsWithChildren', variables];
+    ? ['GetLlamaLogsWithChildren']
+    : ['GetLlamaLogsWithChildren', variables];
 
-export const useInfiniteGetEnrichmentLogsWithChildrenQuery = <
-  TData = InfiniteData<GetEnrichmentLogsWithChildrenQuery>,
+export const useInfiniteGetLlamaLogsWithChildrenQuery = <
+  TData = InfiniteData<GetLlamaLogsWithChildrenQuery>,
   TError = unknown,
 >(
-  variables: GetEnrichmentLogsWithChildrenQueryVariables,
+  variables: GetLlamaLogsWithChildrenQueryVariables,
   options: Omit<
-    UseInfiniteQueryOptions<GetEnrichmentLogsWithChildrenQuery, TError, TData>,
+    UseInfiniteQueryOptions<GetLlamaLogsWithChildrenQuery, TError, TData>,
     'queryKey'
   > & {
     queryKey?: UseInfiniteQueryOptions<
-      GetEnrichmentLogsWithChildrenQuery,
+      GetLlamaLogsWithChildrenQuery,
       TError,
       TData
     >['queryKey'];
   }
 ) => {
-  return useInfiniteQuery<GetEnrichmentLogsWithChildrenQuery, TError, TData>(
+  return useInfiniteQuery<GetLlamaLogsWithChildrenQuery, TError, TData>(
     (() => {
       const { queryKey: optionsQueryKey, ...restOptions } = options;
       return {
         queryKey:
           (optionsQueryKey ?? variables === undefined)
-            ? ['GetEnrichmentLogsWithChildren.infinite']
-            : ['GetEnrichmentLogsWithChildren.infinite', variables],
+            ? ['GetLlamaLogsWithChildren.infinite']
+            : ['GetLlamaLogsWithChildren.infinite', variables],
         queryFn: metaData =>
           fetcher<
-            GetEnrichmentLogsWithChildrenQuery,
-            GetEnrichmentLogsWithChildrenQueryVariables
-          >(GetEnrichmentLogsWithChildrenDocument, {
+            GetLlamaLogsWithChildrenQuery,
+            GetLlamaLogsWithChildrenQueryVariables
+          >(GetLlamaLogsWithChildrenDocument, {
             ...variables,
             ...(metaData.pageParam ?? {}),
           })(),
@@ -7802,12 +7807,12 @@ export const useInfiniteGetEnrichmentLogsWithChildrenQuery = <
   );
 };
 
-useInfiniteGetEnrichmentLogsWithChildrenQuery.getKey = (
-  variables?: GetEnrichmentLogsWithChildrenQueryVariables
+useInfiniteGetLlamaLogsWithChildrenQuery.getKey = (
+  variables?: GetLlamaLogsWithChildrenQueryVariables
 ) =>
   variables === undefined
-    ? ['GetEnrichmentLogsWithChildren.infinite']
-    : ['GetEnrichmentLogsWithChildren.infinite', variables];
+    ? ['GetLlamaLogsWithChildren.infinite']
+    : ['GetLlamaLogsWithChildren.infinite', variables];
 
 export const GetEnrichmentStatsDocument = `
     query GetEnrichmentStats($entityType: EnrichmentEntityType, $timeRange: TimeRangeInput) {
@@ -8253,7 +8258,7 @@ export const GetArtistDetailsDocument = `
     popularity
     needsEnrichment
     listeners
-    latestEnrichmentLog {
+    latestLlamaLog {
       id
       status
       sources
@@ -8261,7 +8266,7 @@ export const GetArtistDetailsDocument = `
       errorMessage
       createdAt
     }
-    enrichmentLogs(limit: 5) {
+    llamaLogs(limit: 5) {
       id
       operation
       sources
