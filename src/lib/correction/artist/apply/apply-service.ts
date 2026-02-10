@@ -372,7 +372,7 @@ export class ArtistCorrectionApplyService {
       // Build list of changed field names
       const changedFields = this.getChangedFieldNames(auditPayload);
 
-      await this.prisma.enrichmentLog.create({
+      await this.prisma.llamaLog.create({
         data: {
           entityType: 'ARTIST',
           artistId,
