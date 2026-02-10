@@ -820,7 +820,11 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
           const result = await processSpotifyTracks(
             spotifyTracks,
             album.id,
-            artistIdMap
+            artistIdMap,
+            {
+              parentJobId: job.id || null,
+              rootJobId: data.parentJobId || job.id || null,
+            }
           );
 
           if (result.tracksCreated > 0) {
@@ -2384,6 +2388,9 @@ async function processMusicBrainzTracksForAlbum(
                       },
                     });
 
+                    // Track if artist was newly created vs found existing
+                    const artistWasCreated = !dbArtist;
+
                     if (!dbArtist) {
                       dbArtist = await prisma.artist.create({
                         data: {
@@ -2395,6 +2402,53 @@ async function processMusicBrainzTracksForAlbum(
                         },
                       });
                       console.log(`🎤 Created new artist: "${artistName}"`);
+
+                      // Log artist creation to LlamaLog
+                      try {
+                        await llamaLogger.logEnrichment({
+                          entityType: 'ARTIST',
+                          entityId: dbArtist.id,
+                          operation: 'artist:created:track-child',
+                          category: 'CREATED',
+                          sources: ['MUSICBRAINZ'],
+                          status: 'SUCCESS',
+                          fieldsEnriched: ['name', 'musicbrainzId'],
+                          parentJobId: jobContext?.jobId || null,
+                          rootJobId: jobContext?.rootJobId || jobContext?.jobId || null,
+                          isRootJob: false,
+                          dataQualityAfter: 'MEDIUM',
+                          metadata: {
+                            trackId: newTrack.id,
+                            trackTitle: mbRecording.title,
+                            mbArtistId: mbArtist.artist?.id,
+                          },
+                        });
+                      } catch (err) {
+                        console.warn('[LlamaLog] Failed to log artist creation:', err);
+                      }
+                    } else if (!artistWasCreated) {
+                      // Log artist linking to LlamaLog (existing artist associated with track)
+                      try {
+                        await llamaLogger.logEnrichment({
+                          entityType: 'ARTIST',
+                          entityId: dbArtist.id,
+                          operation: 'artist:linked:track-association',
+                          category: 'LINKED',
+                          sources: ['MUSICBRAINZ'],
+                          status: 'SUCCESS',
+                          fieldsEnriched: [],
+                          parentJobId: jobContext?.jobId || null,
+                          rootJobId: jobContext?.rootJobId || jobContext?.jobId || null,
+                          isRootJob: false,
+                          metadata: {
+                            trackId: newTrack.id,
+                            trackTitle: mbRecording.title,
+                            existingEntity: true,
+                          },
+                        });
+                      } catch (err) {
+                        console.warn('[LlamaLog] Failed to log artist linking:', err);
+                      }
                     }
 
                     await prisma.trackArtist.create({

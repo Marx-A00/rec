@@ -657,7 +657,11 @@ export function transformSpotifyTrack(
  * Create track records in database from TrackCreationData
  */
 export async function createTrackRecord(
-  trackData: TrackCreationData
+  trackData: TrackCreationData,
+  jobContext?: {
+    parentJobId?: string | null;
+    rootJobId?: string | null;
+  }
 ): Promise<string> {
   // Create the track record
   const track = await prisma.track.create({
@@ -690,6 +694,33 @@ export async function createTrackRecord(
     });
   }
 
+  // Log track creation to LlamaLog
+  const llamaLogger = createLlamaLogger(prisma);
+  const trackJobId = `track-${track.id}`;
+  try {
+    await llamaLogger.logEnrichment({
+      entityType: 'TRACK',
+      entityId: track.id,
+      operation: 'track:created:spotify-sync',
+      category: 'CREATED',
+      sources: ['SPOTIFY'],
+      status: 'SUCCESS',
+      fieldsEnriched: ['title', 'trackNumber', 'discNumber', 'durationMs', 'spotifyId', 'explicit', 'previewUrl'],
+      jobId: trackJobId,
+      parentJobId: jobContext?.parentJobId || null,
+      rootJobId: jobContext?.rootJobId || null,
+      isRootJob: false,
+      dataQualityAfter: 'LOW',
+      metadata: {
+        albumId: trackData.albumId,
+        trackNumber: trackData.trackNumber,
+        spotifyId: trackData.spotifyId,
+      },
+    });
+  } catch (err) {
+    console.warn('[LlamaLog] Failed to log track creation:', err);
+  }
+
   return track.id;
 }
 
@@ -699,7 +730,11 @@ export async function createTrackRecord(
 export async function processSpotifyTracks(
   spotifyTracks: SpotifyTrackData[],
   albumId: string,
-  artistIdMap: Map<string, string>
+  artistIdMap: Map<string, string>,
+  jobContext?: {
+    parentJobId?: string | null;
+    rootJobId?: string | null;
+  }
 ): Promise<{
   tracksCreated: number;
   trackIds: string[];
@@ -722,7 +757,7 @@ export async function processSpotifyTracks(
       );
 
       // Create track record
-      const trackId = await createTrackRecord(trackData);
+      const trackId = await createTrackRecord(trackData, jobContext);
       trackIds.push(trackId);
 
       // Queue track enrichment job
