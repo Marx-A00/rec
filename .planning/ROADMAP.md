@@ -192,10 +192,10 @@ Plans:
 3. **Timeline shows hierarchy:** Admin UI timeline for an album displays artist and track creation as children
 
 Plans:
-- [ ] 29-01-PLAN.md — Schema migration: rootJobId column and LINKED category
-- [ ] 29-02-PLAN.md — LlamaLogger interface: add rootJobId support
-- [ ] 29-03-PLAN.md — Artist creation logging (8 paths)
-- [ ] 29-04-PLAN.md — Track creation logging (3 paths)
+- [x] 29-01-PLAN.md — Schema migration: rootJobId column and LINKED category
+- [x] 29-02-PLAN.md — LlamaLogger interface: add rootJobId support
+- [x] 29-03-PLAN.md — Artist creation logging (8 paths)
+- [x] 29-04-PLAN.md — Track creation logging (3 paths)
 
 **Key Files:**
 - `src/workers/queue-worker.ts` - Artist/track creation handlers
@@ -330,7 +330,7 @@ Plans:
 | 26    | Schema Migration              | 5            | Complete | 2026-02-09 |
 | 27    | Code Rename                   | 7            | Complete | 2026-02-09 |
 | 28    | Album Creation Tracking       | 7            | Complete | 2026-02-10 |
-| 29    | Related Entity Tracking       | 5            | Pending | -         |
+| 29    | Related Entity Tracking       | 5            | Complete | 2026-02-10 |
 | 30    | Existing Logging Categories   | 4            | Pending | -         |
 | 31    | UI & Branding                 | 4            | Pending | -         |
 | 32    | Query & Provenance            | 3            | Pending | -         |
@@ -362,11 +362,11 @@ Plans:
 | CREATE-05   | 28    | Complete | Log search/save creation                 |
 | CREATE-06   | 28    | Complete | Include userId in creation logs          |
 | CREATE-07   | 28    | Complete | Set isRootJob true for creations         |
-| RELATE-01   | 29    | Pending | Log artist creation                      |
-| RELATE-02   | 29    | Pending | Set parentJobId for artists              |
-| RELATE-03   | 29    | Pending | Log track creation                       |
-| RELATE-04   | 29    | Pending | Set parentJobId for tracks               |
-| RELATE-05   | 29    | Pending | Set isRootJob false for children         |
+| RELATE-01   | 29    | Complete | Log artist creation                      |
+| RELATE-02   | 29    | Complete | Set parentJobId for artists              |
+| RELATE-03   | 29    | Complete | Log track creation                       |
+| RELATE-04   | 29    | Complete | Set parentJobId for tracks               |
+| RELATE-05   | 29    | Complete | Set isRootJob false for children         |
 | EXIST-01    | 30    | Pending | Categorize enrichment operations         |
 | EXIST-02    | 30    | Pending | Categorize correction operations         |
 | EXIST-03    | 30    | Pending | Categorize cache operations              |
@@ -384,4 +384,4 @@ Plans:
 ---
 
 _Roadmap created: 2026-02-09_
-_Last updated: 2026-02-10 (Phase 28 complete)_
+_Last updated: 2026-02-10 (Phase 29 complete)_

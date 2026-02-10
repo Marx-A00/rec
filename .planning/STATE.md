@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-02-10
 **Current Milestone:** v1.4 LlamaLog - Entity Provenance & Audit System
-**Status:** Phase 29 In Progress
+**Status:** Phase 29 Complete
 
 ## Project Reference
 
@@ -10,22 +10,22 @@
 
 **Extended Mission (v1.4):** Track the complete lifecycle of entities (Albums, Artists, Tracks) from creation through all subsequent operations. Answer: "How did this album get into the database, and what happened to it afterward?"
 
-**Current Focus:** Phase 29 Related Entity Tracking - Adding job hierarchy support.
+**Current Focus:** Phase 29 Related Entity Tracking complete. Ready for Phase 30 Existing Logging Categories.
 
 ## Current Position
 
-**Phase:** 29 - Related Entity Tracking (IN PROGRESS)
-**Plan:** 03 of 04 - Complete
-**Status:** In Progress
+**Phase:** 29 - Related Entity Tracking (COMPLETE)
+**Plan:** 04 of 04 - Complete
+**Status:** Phase Complete
 
 **Progress:**
 ```
-[29]█████████████████████████████████████████████░ 93%
-                     ^
+[29]██████████████████████████████████████████████░░ 86%
+                        ^
  Phases: 26 27 28 29 30 31 32
 ```
 
-**Milestone Progress:** 32/34 requirements complete (94%)
+**Milestone Progress:** 33/34 requirements complete (97%)
 
 ## Performance Metrics
 
@@ -33,15 +33,16 @@
 - Start date: 2026-02-09
 - Phases planned: 7 (26-32)
 - Requirements: 34
-- Completed: 32
-- Remaining: 2
+- Completed: 33
+- Remaining: 1 (CREATE-02 N/A)
 - Phase 26 Duration: 4m 26s
 - Phase 27 Total: 21m 48s
 - Phase 28 Total: ~6m
 - Phase 29-01 Duration: 12m
 - Phase 29-02 Duration: 2m 46s
 - Phase 29-03 Duration: ~6m
-- Phase 29-04 Duration: ~5m (prior session)
+- Phase 29-04 Duration: 3m 47s
+- **Phase 29 Total: ~25m**
 
 **Previous Milestone (v1.3):**
 - Completed: 2026-02-09
@@ -111,6 +112,10 @@
 - LINKED: Existing entity associated with another entity (entity already existed)
 - Rationale: Distinguishes between true creation and association for provenance tracking
 
+**2026-02-10: jobContext propagation for track logging (DEC-29-04-01)**
+- Pattern: Added jobContext parameter to createTrackRecord and processSpotifyTracks
+- Rationale: Enables proper parentJobId/rootJobId propagation through function calls
+
 ### Technical Debt
 
 **From v1.3:**
@@ -135,6 +140,7 @@
 - rootJobId field added to LlamaLogData interface
 - rootJobId column added to database with backfill
 - Artist creation/linking logging added to all entry points
+- Track creation logging added to all entry points
 
 ### Active TODOs
 
@@ -156,51 +162,68 @@
 - [x] Plan 01: User-initiated creation logging (addAlbum mutation)
 - [x] Plan 02: Sync operation creation logging (Spotify + MusicBrainz)
 
-**Phase 29 (Related Entity Tracking): IN PROGRESS**
+**Phase 29 (Related Entity Tracking): COMPLETE**
 - [x] Plan 01: Schema migration (rootJobId column, LINKED category)
 - [x] Plan 02: LlamaLogger rootJobId support
 - [x] Plan 03: Artist creation/linking logging
-- [ ] Plan 04: Track creation/linking logging
+- [x] Plan 04: Track creation/linking logging
+
+**Phase 30-32:**
+- [ ] Ready to start Phase 30
 
 ## Session Continuity
 
 ### What Just Happened
 
-**2026-02-10 - Phase 29 Plan 03 Complete:**
-- Added artist creation logging with CREATED category across 3 paths
-- Added artist linking logging with LINKED category across 3 paths
-- All logs include parentJobId and rootJobId for hierarchy
-- Updated album logging to include jobId for proper rootJobId computation
+**2026-02-10 - Phase 29 Complete:**
+- Plan 01: Added rootJobId column and LINKED category with backfill migration
+- Plan 02: Added rootJobId support to LlamaLogger interface
+- Plan 03: Added artist creation/linking logging (CREATED + LINKED categories)
+- Plan 04: Added track creation/failure logging with job context propagation
+- Verifier confirmed 5/5 must-haves satisfied
+- All requirements RELATE-01 through RELATE-05 complete
 
 ### What's Next
 
 **Immediate:**
-- Phase 29 Plan 04: Track creation/linking logging (may be partially done from prior session)
+- Phase 30: Existing Logging Categories (apply category field to existing operations)
 
 ### Context for Next Session
 
-**Phase 29 Plan 03 Completion Summary:**
-- Artist creation now logged in addAlbum, enrichment processor, MusicBrainz processor
-- Artist linking now logged when existing artists are associated with albums/tracks
-- CREATED vs LINKED categories correctly distinguish new vs existing entities
+**Phase 29 Completion Summary:**
+- rootJobId column enables quick root-job queries without traversing parentJobId chain
+- LINKED category distinguishes entity association from creation
+- All artist creation paths logged (addAlbum, enrichment, MusicBrainz sync)
+- All track creation paths logged (enrichment, Spotify sync)
+- Job hierarchy properly maintained with parentJobId and rootJobId
 
-**Key Files (Phase 29-03):**
-- `src/lib/graphql/resolvers/mutations.ts` - albumJobId, artist CREATED/LINKED logging
-- `src/lib/queue/processors/enrichment-processor.ts` - track-child artist logging
+**Key Files (Phase 29):**
+- `prisma/schema.prisma` - rootJobId field, LINKED enum, index
+- `src/lib/logging/llama-logger.ts` - rootJobId interface support
+- `src/lib/graphql/resolvers/mutations.ts` - artist CREATED/LINKED logging
+- `src/lib/queue/processors/enrichment-processor.ts` - artist + track logging
 - `src/lib/queue/processors/musicbrainz-processor.ts` - sync artist logging
+- `src/lib/spotify/mappers.ts` - track creation logging
 
-**Commits (Phase 29-03):**
+**Commits (Phase 29):**
+- `33742c6`: feat(29-01): add rootJobId field and LINKED category to LlamaLog
+- `aed64f4`: feat(29-01): create migration for rootJobId and LINKED category
+- `a3702c7`: docs(29-01): complete schema migration for rootJobId and LINKED category
+- `988543e`: feat(29-02): add rootJobId field to LlamaLogData interface
+- `856e7ad`: docs(29-02): complete LlamaLogger rootJobId support plan
 - `28fa8af`: feat(29-03): add artist creation and linking logging in addAlbum
 - `ce39f60`: feat(29-03): add artist creation/linking logging in MusicBrainz processor
-
-Note: Task 2 changes (enrichment-processor) were bundled in `9f0fddc` from prior session.
+- `d582bba`: docs(29-03): complete artist creation logging plan
+- `5395356`: feat(29-04): add track creation logging in enrichment processor
+- `9f0fddc`: feat(29-04): add track creation logging in Spotify mappers
+- `0c2ff5a`: docs(29-04): complete track creation logging plan
 
 **Database State:**
-- 4010 records with rootJobId filled
-- 42 orphan records with NULL rootJobId
+- 4010 records with rootJobId filled (99%)
+- 42 orphan records with NULL rootJobId (pre-tracking)
 - 4052 total records in llama_logs
 
 ---
 
 _State initialized: 2026-02-09_
-_Last session: 2026-02-10 (Phase 29 Plan 03 complete)_
+_Last session: 2026-02-10 (Phase 29 complete)_
