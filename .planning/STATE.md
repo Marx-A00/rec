@@ -10,12 +10,12 @@
 
 **Extended Mission (v1.4):** Track the complete lifecycle of entities (Albums, Artists, Tracks) from creation through all subsequent operations. Answer: "How did this album get into the database, and what happened to it afterward?"
 
-**Current Focus:** Phase 28 Plan 02 complete. Adding creation logging to sync operations.
+**Current Focus:** Phase 28 Plans 01 and 02 complete. GraphQL mutation and sync logging implemented.
 
 ## Current Position
 
 **Phase:** 28 - Album Creation Tracking
-**Plan:** 02 of 05 - Complete
+**Plan:** 02 of 05 - Complete (01 also complete)
 **Status:** In Progress
 
 **Progress:**
@@ -37,7 +37,7 @@
 - Remaining: 10
 - Phase 26 Duration: 4m 26s
 - Phase 27 Total: 21m 48s
-- Phase 28-01 Duration: ~3m
+- Phase 28-01 Duration: 3m 27s
 - Phase 28-02 Duration: 2m 6s
 
 **Previous Milestone (v1.3):**
@@ -86,6 +86,11 @@
 - Components correctly use LlamaLog types internally
 - Minor future cleanup optional
 
+**2026-02-10: User ID tracking via LlamaLogData.userId (DEC-28-01-01)**
+- Added userId field to interface to enable user tracking
+- Writes to existing userId column on LlamaLog table
+- Enables queries like "show all albums created by user X"
+
 **2026-02-10: userId null for automated operations (DEC-28-02-01)**
 - Sync jobs are automated with no user context
 - Distinguishes automated vs user-initiated operations
@@ -110,7 +115,7 @@
 - Resolver and service files updated
 - Admin components updated to use LlamaLog types
 - enrichmentLogId renamed to llamaLogId
-- Phase 28-01: userId field added to LlamaLogData interface
+- Phase 28-01: userId field added to LlamaLogData interface, addAlbum mutation logging
 - Phase 28-02: Sync creation logging added
 
 ### Active TODOs
@@ -130,7 +135,7 @@
 - [x] Plan 05: Final verification
 
 **Phase 28 (Album Creation Tracking): IN PROGRESS**
-- [x] Plan 01: Add userId field to LlamaLogData interface
+- [x] Plan 01: Add userId field and addAlbum mutation logging
 - [x] Plan 02: Add sync creation logging (Spotify + MusicBrainz)
 - [ ] Plan 03: Add recommendation flow creation logging
 - [ ] Plan 04: Add search-and-add flow creation logging
@@ -143,14 +148,14 @@
 
 ### What Just Happened
 
-**2026-02-10 - Phase 28 Plan 02 Complete:**
-- Added createLlamaLogger import to mappers.ts
-- Added creation logging after Spotify album.create
-- Added createLlamaLogger import to musicbrainz-processor.ts
-- Added creation logging after MusicBrainz album.create
-- Both use category: CREATED, isRootJob: false, parentJobId for batch correlation
+**2026-02-10 - Phase 28 Plan 01 Complete:**
+- Added userId field to LlamaLogData interface
+- Updated logEnrichment() to write userId to database
+- Added createLlamaLogger import to mutations.ts
+- Added creation logging to addAlbum mutation
+- Logging uses category: CREATED, isRootJob: true, userId: user.id
 - TypeScript type-check passes
-- Plan 02 complete in 2m 6s
+- Plan 01 complete in 3m 27s
 
 ### What's Next
 
@@ -159,17 +164,17 @@
 
 ### Context for Next Session
 
-**Phase 28-02 Completion Summary:**
-- Spotify sync now logs album creation to LlamaLog
-- MusicBrainz sync now logs album creation to LlamaLog
-- Both use try-catch to prevent logging failures from breaking sync
-- Parent job hierarchy enables batch tracking
+**Phase 28-01 Completion Summary:**
+- LlamaLogData interface now has userId?: string | null
+- logEnrichment() writes userId to database
+- addAlbum mutation logs to LlamaLog with CREATED category
+- User-initiated creations marked with isRootJob: true and userId
 
-**Key Files (Phase 28-02):**
-- `src/lib/spotify/mappers.ts` - Spotify sync with creation logging
-- `src/lib/queue/processors/musicbrainz-processor.ts` - MusicBrainz sync with creation logging
+**Key Files (Phase 28-01):**
+- `src/lib/logging/llama-logger.ts` - userId field in interface and logEnrichment
+- `src/lib/graphql/resolvers/mutations.ts` - addAlbum mutation with creation logging
 
 ---
 
 _State initialized: 2026-02-09_
-_Last session: 2026-02-10 (Phase 28-02 complete)_
+_Last session: 2026-02-10 (Phase 28-01 complete)_
