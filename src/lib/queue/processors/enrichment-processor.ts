@@ -4,6 +4,7 @@
 import { Job } from 'bullmq';
 
 import { prisma } from '@/lib/prisma';
+import { createLlamaLogger } from '@/lib/logging/llama-logger';
 
 import { musicBrainzService } from '../../musicbrainz';
 import {
@@ -12,7 +13,6 @@ import {
   calculateEnrichmentPriority,
   mapSourceToUserAction,
 } from '../../musicbrainz/enrichment-logic';
-import { createLlamaLogger } from '@/lib/logging/llama-logger';
 import { searchSpotifyArtists } from '../../spotify/search';
 import type { MusicBrainzRecordingDetail } from '../../musicbrainz/schemas';
 import {
@@ -481,7 +481,12 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
                 fieldsEnriched.push('tracks');
                 await processMusicBrainzTracksForAlbum(
                   album.id,
-                  releaseWithTracks
+                  releaseWithTracks,
+                  {
+                    jobId: job.id || `enrich-album-${Date.now()}`,
+                    parentJobId: data.parentJobId || null,
+                    rootJobId: data.parentJobId || job.id || null,
+                  }
                 );
               }
             } catch (error) {
@@ -684,7 +689,12 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
                   fieldsEnriched.push('tracks');
                   await processMusicBrainzTracksForAlbum(
                     album.id,
-                    releaseWithTracks
+                    releaseWithTracks,
+                    {
+                      jobId: job.id || `enrich-album-${Date.now()}`,
+                      parentJobId: data.parentJobId || null,
+                      rootJobId: data.parentJobId || job.id || null,
+                    }
                   );
                 }
               } catch (error) {
@@ -752,7 +762,12 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
               fieldsEnriched.push('tracks');
               await processMusicBrainzTracksForAlbum(
                 album.id,
-                releaseWithTracks
+                releaseWithTracks,
+                {
+                  jobId: job.id || `enrich-album-${Date.now()}`,
+                  parentJobId: data.parentJobId || null,
+                  rootJobId: data.parentJobId || job.id || null,
+                }
               );
             }
           }
@@ -1003,10 +1018,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
   // Check if enrichment is needed (with logger for cooldown checks)
   // Skip this check if force=true (admin requested force re-enrichment)
   if (!data.force) {
-    const enrichmentDecision = await shouldEnrichArtist(
-      artist,
-      llamaLogger
-    );
+    const enrichmentDecision = await shouldEnrichArtist(artist, llamaLogger);
     if (!enrichmentDecision.shouldEnrich) {
       console.log(
         `⏭️ Artist ${data.artistId} does not need enrichment, skipping - ${enrichmentDecision.reason}`
@@ -2131,8 +2143,15 @@ interface MusicBrainzRelease {
  */
 async function processMusicBrainzTracksForAlbum(
   albumId: string,
-  mbRelease: MusicBrainzRelease
+  mbRelease: MusicBrainzRelease,
+  jobContext?: {
+    jobId: string;
+    parentJobId?: string | null;
+    rootJobId?: string | null;
+  }
 ) {
+  // Initialize logger for track creation logging
+  const llamaLogger = createLlamaLogger(prisma);
   console.log(
     `🎵 Processing tracks for album ${albumId} from MusicBrainz release`
   );
@@ -2316,6 +2335,35 @@ async function processMusicBrainzTracksForAlbum(
                 },
               });
 
+              // Log track creation to LlamaLog
+              const trackJobId = `track-${newTrack.id}`;
+              try {
+                await llamaLogger.logEnrichment({
+                  entityType: 'TRACK',
+                  entityId: newTrack.id,
+                  operation: 'track:created:enrichment',
+                  category: 'CREATED',
+                  sources: ['MUSICBRAINZ'],
+                  status: 'SUCCESS',
+                  fieldsEnriched: ['title', 'trackNumber', 'durationMs', 'musicbrainzId', 'isrc', 'youtubeUrl'].filter(
+                    f => (newTrack as Record<string, unknown>)[f] !== null && (newTrack as Record<string, unknown>)[f] !== undefined
+                  ),
+                  jobId: trackJobId,
+                  parentJobId: jobContext?.jobId || null,
+                  rootJobId: jobContext?.rootJobId || jobContext?.jobId || null,
+                  isRootJob: false,
+                  dataQualityAfter: 'HIGH',
+                  metadata: {
+                    albumId,
+                    trackNumber,
+                    discNumber,
+                    mbRecordingId: mbRecording.id,
+                  },
+                });
+              } catch (logErr) {
+                console.warn('[LlamaLog] Failed to log track creation:', logErr);
+              }
+
               // Create track-artist relationships
               if (mbRecording['artist-credit']) {
                 for (
@@ -2374,6 +2422,30 @@ async function processMusicBrainzTracksForAlbum(
                 `❌ Failed to create track "${mbRecording.title}":`,
                 trackError
               );
+
+              // Log track creation failure
+              try {
+                await llamaLogger.logEnrichment({
+                  entityType: 'TRACK',
+                  entityId: null,
+                  operation: 'track:failed:enrichment',
+                  category: 'FAILED',
+                  sources: ['MUSICBRAINZ'],
+                  status: 'FAILED',
+                  fieldsEnriched: [],
+                  parentJobId: jobContext?.jobId || null,
+                  rootJobId: jobContext?.rootJobId || jobContext?.jobId || null,
+                  isRootJob: false,
+                  errorMessage: trackError instanceof Error ? trackError.message : String(trackError),
+                  metadata: {
+                    albumId,
+                    attemptedTitle: mbRecording.title,
+                    attemptedTrackNumber: trackNumber,
+                  },
+                });
+              } catch (logErr) {
+                console.warn('[LlamaLog] Failed to log track failure:', logErr);
+              }
             }
           }
 
