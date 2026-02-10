@@ -64,17 +64,22 @@ export interface LlamaLogData {
   /** Whether this is a root job (true) or child job (false). Auto-computed from parentJobId if not provided. */
   isRootJob?: boolean;
   triggeredBy?: string | null;
+  /** User ID for tracking manual/user-initiated operations */
+  userId?: string | null;
 }
 
 /**
  * Infer category from operation and status
  */
-function inferCategory(operation: EnrichmentOperation, status: EnrichmentStatus): LlamaLogCategory {
+function inferCategory(
+  operation: EnrichmentOperation,
+  status: EnrichmentStatus
+): LlamaLogCategory {
   // Check for FAILED status first
   if (status === 'FAILED') {
     return 'FAILED';
   }
-  
+
   // Check operation patterns
   const opLower = operation.toLowerCase();
   if (opLower.startsWith('cache:') || opLower.includes('cache')) {
@@ -86,7 +91,7 @@ function inferCategory(operation: EnrichmentOperation, status: EnrichmentStatus)
   if (opLower.startsWith('enrichment:') || opLower.includes('enrich')) {
     return 'ENRICHED';
   }
-  
+
   // Default to CREATED for unknown operations
   return 'CREATED';
 }
@@ -132,7 +137,8 @@ export class LlamaLogger {
         data.isRootJob !== undefined ? data.isRootJob : !data.parentJobId;
 
       // Use provided category or infer from operation/status
-      const category = data.category ?? inferCategory(data.operation, data.status);
+      const category =
+        data.category ?? inferCategory(data.operation, data.status);
 
       await this.prisma.llamaLog.create({
         data: {
@@ -161,6 +167,7 @@ export class LlamaLogger {
           parentJobId: data.parentJobId ?? null,
           isRootJob,
           triggeredBy: data.triggeredBy ?? null,
+          userId: data.userId ?? null,
         },
       });
 
