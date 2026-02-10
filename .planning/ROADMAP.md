@@ -262,6 +262,12 @@ Plans:
 2. **Admin table header:** EnrichmentLogTable component header displays "🦙 LlamaLog" instead of "Enrichment Log"
 3. **Category badges themed:** Category badges in timeline/table show llama emoji for CREATED entries
 
+
+**Plans:** 1 plan
+
+Plans:
+- [ ] 31-01-PLAN.md — Console and admin UI llama branding
+
 **Key Files:**
 - `src/lib/logging/llama-logger.ts` - Console output
 - `src/components/admin/enrichment/EnrichmentLogTable.tsx` - Table header
