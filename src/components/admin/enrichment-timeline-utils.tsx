@@ -1,5 +1,5 @@
 /**
- * Utility functions for mapping EnrichmentLog data to timeline component props.
+ * Utility functions for mapping LlamaLog data to timeline component props.
  * Used by EnrichmentTimeline to convert database records to UI components.
  */
 
@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 import type { TimelineLayoutItem } from '@/components/ui/timeline';
-import { EnrichmentLogStatus, type EnrichmentLog } from '@/generated/graphql';
+import { LlamaLogStatus, type LlamaLog } from '@/generated/graphql';
 
 // ============================================================================
 // Type Definitions
@@ -43,22 +43,22 @@ export type TimelineIconColor =
 // ============================================================================
 
 /**
- * Maps EnrichmentLogStatus to timeline status.
+ * Maps LlamaLogStatus to timeline status.
  *
- * @param status - The EnrichmentLog status value
+ * @param status - The LlamaLog status value
  * @returns Timeline status for rendering
  */
 export function mapEnrichmentStatus(
-  status: EnrichmentLogStatus
+  status: LlamaLogStatus
 ): TimelineStatus {
   switch (status) {
-    case EnrichmentLogStatus.Success:
-    case EnrichmentLogStatus.PartialSuccess:
-    case EnrichmentLogStatus.Failed:
-    case EnrichmentLogStatus.NoDataAvailable:
-    case EnrichmentLogStatus.Skipped:
+    case LlamaLogStatus.Success:
+    case LlamaLogStatus.PartialSuccess:
+    case LlamaLogStatus.Failed:
+    case LlamaLogStatus.NoDataAvailable:
+    case LlamaLogStatus.Skipped:
       return 'completed';
-    case EnrichmentLogStatus.Preview:
+    case LlamaLogStatus.Preview:
       return 'pending';
     default:
       // Safeguard for unknown statuses
@@ -67,23 +67,23 @@ export function mapEnrichmentStatus(
 }
 
 /**
- * Maps EnrichmentLogStatus to timeline icon color.
+ * Maps LlamaLogStatus to timeline icon color.
  *
- * @param status - The EnrichmentLog status value
+ * @param status - The LlamaLog status value
  * @returns Color variant for the timeline icon
  */
-export function getStatusColor(status: EnrichmentLogStatus): TimelineIconColor {
+export function getStatusColor(status: LlamaLogStatus): TimelineIconColor {
   switch (status) {
-    case EnrichmentLogStatus.Success:
+    case LlamaLogStatus.Success:
       return 'success'; // green
-    case EnrichmentLogStatus.PartialSuccess:
+    case LlamaLogStatus.PartialSuccess:
       return 'warning'; // amber
-    case EnrichmentLogStatus.Failed:
+    case LlamaLogStatus.Failed:
       return 'error'; // red
-    case EnrichmentLogStatus.NoDataAvailable:
-    case EnrichmentLogStatus.Skipped:
+    case LlamaLogStatus.NoDataAvailable:
+    case LlamaLogStatus.Skipped:
       return 'muted'; // gray
-    case EnrichmentLogStatus.Preview:
+    case LlamaLogStatus.Preview:
       return 'accent'; // preview state
     default:
       return 'muted';
@@ -138,24 +138,24 @@ const OPERATION_ICONS: Record<string, LucideIcon> = {
 /**
  * Status-specific icons (override operation icons for certain statuses)
  */
-const STATUS_ICONS: Partial<Record<EnrichmentLogStatus, LucideIcon>> = {
-  [EnrichmentLogStatus.Success]: CheckCircle,
-  [EnrichmentLogStatus.Failed]: AlertCircle,
-  [EnrichmentLogStatus.Skipped]: SkipForward,
-  [EnrichmentLogStatus.Preview]: Eye,
-  [EnrichmentLogStatus.NoDataAvailable]: Clock,
+const STATUS_ICONS: Partial<Record<LlamaLogStatus, LucideIcon>> = {
+  [LlamaLogStatus.Success]: CheckCircle,
+  [LlamaLogStatus.Failed]: AlertCircle,
+  [LlamaLogStatus.Skipped]: SkipForward,
+  [LlamaLogStatus.Preview]: Eye,
+  [LlamaLogStatus.NoDataAvailable]: Clock,
 };
 
 /**
  * Gets the appropriate icon for an enrichment operation.
  *
- * @param operation - The operation string from EnrichmentLog
+ * @param operation - The operation string from LlamaLog
  * @param status - Optional status to determine status-specific icons
  * @returns The Lucide icon component
  */
 export function getOperationIcon(
   operation: string,
-  status?: EnrichmentLogStatus
+  status?: LlamaLogStatus
 ): LucideIcon {
   // For certain statuses, prefer status-specific icons
   if (status && STATUS_ICONS[status]) {
@@ -183,7 +183,7 @@ function formatAction(action: string): string {
 /**
  * Formats an operation string into a human-readable title.
  *
- * @param operation - The operation string from EnrichmentLog
+ * @param operation - The operation string from LlamaLog
  * @param _entityType - Optional entity type for context (currently unused)
  * @returns Formatted operation title
  */
@@ -278,11 +278,11 @@ export function truncateError(
 /**
  * Generates a description string for a timeline item.
  *
- * @param log - Partial EnrichmentLog with reason, fieldsEnriched, status
+ * @param log - Partial LlamaLog with reason, fieldsEnriched, status
  * @returns Description string
  */
 export function getItemDescription(
-  log: Pick<EnrichmentLog, 'reason' | 'fieldsEnriched' | 'status'>
+  log: Pick<LlamaLog, 'reason' | 'fieldsEnriched' | 'status'>
 ): string {
   // If there is an explicit reason, use it
   if (log.reason) {
@@ -290,12 +290,12 @@ export function getItemDescription(
   }
 
   // For skipped items
-  if (log.status === EnrichmentLogStatus.Skipped) {
+  if (log.status === LlamaLogStatus.Skipped) {
     return 'Skipped - no changes needed';
   }
 
   // For no data available
-  if (log.status === EnrichmentLogStatus.NoDataAvailable) {
+  if (log.status === LlamaLogStatus.NoDataAvailable) {
     return 'No data found from sources';
   }
 
@@ -308,13 +308,13 @@ export function getItemDescription(
 
   // Default fallback based on status
   switch (log.status) {
-    case EnrichmentLogStatus.Success:
+    case LlamaLogStatus.Success:
       return 'Completed successfully';
-    case EnrichmentLogStatus.PartialSuccess:
+    case LlamaLogStatus.PartialSuccess:
       return 'Partially completed';
-    case EnrichmentLogStatus.Failed:
+    case LlamaLogStatus.Failed:
       return 'Operation failed';
-    case EnrichmentLogStatus.Preview:
+    case LlamaLogStatus.Preview:
       return 'Preview pending application';
     default:
       return 'Processing';
@@ -326,12 +326,12 @@ export function getItemDescription(
 // ============================================================================
 
 /**
- * Maps an EnrichmentLog record to a TimelineLayoutItem.
+ * Maps a LlamaLog record to a TimelineLayoutItem.
  *
- * @param log - The EnrichmentLog record from GraphQL
+ * @param log - The LlamaLog record from GraphQL
  * @returns TimelineLayoutItem for use with TimelineLayout component
  */
-export function mapLogToTimelineItem(log: EnrichmentLog): TimelineLayoutItem {
+export function mapLogToTimelineItem(log: LlamaLog): TimelineLayoutItem {
   const Icon = getOperationIcon(log.operation, log.status);
 
   return {
@@ -343,7 +343,7 @@ export function mapLogToTimelineItem(log: EnrichmentLog): TimelineLayoutItem {
     iconColor: getStatusColor(log.status),
     status: mapEnrichmentStatus(log.status),
     loading: false,
-    error: log.status === EnrichmentLogStatus.Failed,
+    error: log.status === LlamaLogStatus.Failed,
     content: log.errorMessage ? truncateError(log.errorMessage) : undefined,
     children: log.children?.map(mapLogToTimelineItem),
   };

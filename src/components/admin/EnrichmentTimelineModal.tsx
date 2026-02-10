@@ -11,13 +11,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import type { EnrichmentLog } from '@/generated/graphql';
+import type { LlamaLog } from '@/generated/graphql';
 
 import { EnrichmentTimeline } from './EnrichmentTimeline';
 
 interface EnrichmentTimelineModalProps {
-  parentLog: EnrichmentLog;
-  childLogs: EnrichmentLog[];
+  parentLog: LlamaLog;
+  childLogs: LlamaLog[];
 }
 
 export function EnrichmentTimelineModal({

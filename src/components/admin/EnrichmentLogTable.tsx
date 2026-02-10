@@ -26,10 +26,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  useGetEnrichmentLogsQuery,
+  useGetLlamaLogsQuery,
   EnrichmentEntityType,
-  EnrichmentLogStatus,
-  type EnrichmentLog,
+  LlamaLogStatus,
+  type LlamaLog,
 } from '@/generated/graphql';
 
 import { EnrichmentTimeline } from './EnrichmentTimeline';
@@ -44,9 +44,9 @@ interface EnrichmentLogTableProps {
   onReset?: () => void;
 }
 
-function EnrichmentStatusBadge({ status }: { status: EnrichmentLogStatus }) {
+function EnrichmentStatusBadge({ status }: { status: LlamaLogStatus }) {
   const statusConfig: Record<
-    EnrichmentLogStatus,
+    LlamaLogStatus,
     { color: string; icon: React.ReactNode; label: string }
   > = {
     SUCCESS: {
@@ -134,7 +134,7 @@ function OperationIcon({
 }
 
 interface ExpandableLogRowProps {
-  log: EnrichmentLog;
+  log: LlamaLog;
   isExpanded: boolean;
   onToggle: () => void;
 }
@@ -150,7 +150,7 @@ function ExpandableLogRow({
     isLoading: loadingChildren,
     error: childrenError,
     refetch: refetchChildren,
-  } = useGetEnrichmentLogsQuery(
+  } = useGetLlamaLogsQuery(
     {
       parentJobId: log.jobId,
       limit: 100,
@@ -159,7 +159,7 @@ function ExpandableLogRow({
       enabled: isExpanded && !!log.jobId,
       refetchInterval: query => {
         if (!isExpanded) return false;
-        const children = query.state.data?.enrichmentLogs || [];
+        const children = query.state.data?.llamaLogs || [];
         if (children.length === 0) return false;
         const lastChild = children[children.length - 1];
         const age = Date.now() - new Date(lastChild.createdAt).getTime();
@@ -168,7 +168,7 @@ function ExpandableLogRow({
     }
   );
 
-  const children = childrenData?.enrichmentLogs || [];
+  const children = childrenData?.llamaLogs || [];
 
   return (
     <React.Fragment>
@@ -319,7 +319,7 @@ function ExpandableLogRow({
                   <EnrichmentTimeline
                     logs={
                       children.length > 0
-                        ? [log, ...(children as EnrichmentLog[])]
+                        ? [log, ...(children as LlamaLog[])]
                         : [log]
                     }
                     variant='compact'
@@ -327,7 +327,7 @@ function ExpandableLogRow({
                   />
                   <EnrichmentTimelineModal
                     parentLog={log}
-                    childLogs={children as EnrichmentLog[]}
+                    childLogs={children as LlamaLog[]}
                   />
                 </>
               )}
@@ -360,7 +360,7 @@ export function EnrichmentLogTable({
     });
   };
 
-  const { data, isLoading, error } = useGetEnrichmentLogsQuery(
+  const { data, isLoading, error } = useGetLlamaLogsQuery(
     { entityType, entityId, limit, parentOnly: true },
     {
       enabled: !!(entityType || entityId),
@@ -375,7 +375,7 @@ export function EnrichmentLogTable({
 
         // Also poll if the most recent log was created within the last 30 seconds
         // This catches the case where a background job just completed
-        const logs = query.state.data?.enrichmentLogs || [];
+        const logs = query.state.data?.llamaLogs || [];
         if (logs.length > 0) {
           const mostRecentLog = logs[0];
           const logAge =
@@ -390,7 +390,7 @@ export function EnrichmentLogTable({
     }
   );
 
-  const logs = data?.enrichmentLogs || [];
+  const logs = data?.llamaLogs || [];
 
   if (isLoading) {
     return (
@@ -483,7 +483,7 @@ export function EnrichmentLogTable({
               {logs.map(log => (
                 <ExpandableLogRow
                   key={log.id}
-                  log={log as EnrichmentLog}
+                  log={log as LlamaLog}
                   isExpanded={expandedRows.has(log.id)}
                   onToggle={() => toggleRow(log.id)}
                 />

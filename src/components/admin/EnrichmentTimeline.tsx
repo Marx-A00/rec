@@ -19,7 +19,7 @@ import {
   TimelineEmpty,
 } from '@/components/ui/timeline';
 import { cn } from '@/lib/utils';
-import { EnrichmentLogStatus, type EnrichmentLog } from '@/generated/graphql';
+import { LlamaLogStatus, type LlamaLog } from '@/generated/graphql';
 
 import { EnrichmentTree } from './EnrichmentTree';
 import {
@@ -66,7 +66,7 @@ type ViewMode = 'timeline' | 'tree';
 
 interface EnrichmentTimelineProps {
   /** Array of enrichment logs to display (parent logs with optional children) */
-  logs: EnrichmentLog[];
+  logs: LlamaLog[];
   /** Optional container class name */
   className?: string;
   /** Display variant - 'default' for full timeline, 'compact' for table rows */
@@ -78,7 +78,7 @@ interface EnrichmentTimelineProps {
 }
 
 interface TimelineLogItemProps {
-  log: EnrichmentLog;
+  log: LlamaLog;
   isExpanded: boolean;
   onToggleExpand: () => void;
   showAllChildren: boolean;
@@ -93,7 +93,7 @@ interface TimelineLogItemProps {
 // ============================================================================
 
 interface ExpandedDetailsProps {
-  log: EnrichmentLog;
+  log: LlamaLog;
 }
 
 function ExpandedDetails({ log }: ExpandedDetailsProps) {
@@ -178,7 +178,7 @@ function TimelineLogItem({
   const Icon = getOperationIcon(log.operation, log.status);
   const iconColor = getStatusColor(log.status);
   const status = mapEnrichmentStatus(log.status);
-  const hasError = log.status === EnrichmentLogStatus.Failed;
+  const hasError = log.status === LlamaLogStatus.Failed;
   const hasChildren = log.children && log.children.length > 0;
   const childCount = log.children?.length ?? 0;
   const displayedChildren = showAllChildren
@@ -359,11 +359,11 @@ function ViewSwitcher({ viewMode, onViewModeChange }: ViewSwitcherProps) {
  *
  * @example
  * ```tsx
- * const { data } = useGetEnrichmentLogsWithChildrenQuery({
+ * const { data } = useGetLlamaLogsWithChildrenQuery({
  *   entityId: albumId,
  *   includeChildren: true
  * });
- * <EnrichmentTimeline logs={data?.enrichmentLogs ?? []} />
+ * <EnrichmentTimeline logs={data?.llamaLogs ?? []} />
  * ```
  */
 export function EnrichmentTimeline({
