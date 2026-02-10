@@ -191,6 +191,12 @@ Plans:
 2. **Track creation linked:** When album enrichment creates tracks, LlamaLog shows track entries with parentJobId = root album jobId
 3. **Timeline shows hierarchy:** Admin UI timeline for an album displays artist and track creation as children
 
+Plans:
+- [ ] 29-01-PLAN.md — Schema migration: rootJobId column and LINKED category
+- [ ] 29-02-PLAN.md — LlamaLogger interface: add rootJobId support
+- [ ] 29-03-PLAN.md — Artist creation logging (8 paths)
+- [ ] 29-04-PLAN.md — Track creation logging (3 paths)
+
 **Key Files:**
 - `src/workers/queue-worker.ts` - Artist/track creation handlers
 - `src/lib/musicbrainz/queue-service.ts` - MusicBrainz operations
