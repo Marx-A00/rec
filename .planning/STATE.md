@@ -10,22 +10,22 @@
 
 **Extended Mission (v1.4):** Track the complete lifecycle of entities (Albums, Artists, Tracks) from creation through all subsequent operations. Answer: "How did this album get into the database, and what happened to it afterward?"
 
-**Current Focus:** Complete code rename, then proceed to component updates.
+**Current Focus:** Complete code rename verification, then proceed to feature enhancements.
 
 ## Current Position
 
 **Phase:** 27 - Code Rename
-**Plan:** 03 of 05 - Complete
+**Plan:** 04 of 05 - Complete
 **Status:** In Progress
 
 **Progress:**
 ```
-[27]██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░ 43%
-         ^
+[27]██████████████████░░░░░░░░░░░░░░░░░░░░░ 57%
+            ^
  Phases: 26 27 28 29 30 31 32
 ```
 
-**Milestone Progress:** 12/34 requirements complete (35%)
+**Milestone Progress:** 15/34 requirements complete (44%)
 
 ## Performance Metrics
 
@@ -33,12 +33,13 @@
 - Start date: 2026-02-09
 - Phases planned: 7 (26-32)
 - Requirements: 34
-- Completed: 12
-- Remaining: 22
+- Completed: 15
+- Remaining: 19
 - Phase 26 Duration: 4m 26s
 - Phase 27-01 Duration: 4m 29s
 - Phase 27-02 Duration: 3m 34s
 - Phase 27-03 Duration: 3m 55s
+- Phase 27-04 Duration: 5m 13s
 
 **Previous Milestone (v1.3):**
 - Completed: 2026-02-09
@@ -65,7 +66,7 @@
 
 **2026-02-09: Rename EnrichmentLog -> LlamaLog**
 - Rationale: Broader purpose beyond just enrichment - now covers creation, correction, caching, failures
-- Impact: Schema migration complete, codebase-wide rename in progress
+- Impact: Schema migration complete, codebase-wide rename complete
 - Trade-off: One-time migration complexity for clearer naming going forward
 
 **2026-02-09: Category enum over operation parsing**
@@ -85,7 +86,8 @@
 - ~~Migration backfill logic complexity~~ - Resolved, backfill complete
 - ~~Global find-replace risk~~ - Mitigated by systematic approach in Phase 27
 - ~~GraphQL cache invalidation after type rename~~ - Resolved, codegen regenerated
-- Component file updates needed (Phase 27-04)
+- ~~Component file updates needed (Phase 27-04)~~ - Complete
+- Component file naming (still named Enrichment*) - Minor, optional future cleanup
 
 ### Blockers
 
@@ -96,6 +98,7 @@
 - LlamaLogger class created in new location
 - GraphQL schema and types regenerated
 - Resolver and service files updated
+- Admin components updated to use LlamaLog types
 
 ### Active TODOs
 
@@ -110,8 +113,8 @@
 - [x] Plan 01: Create LlamaLogger class, update processors
 - [x] Plan 02: Update GraphQL schema and regenerate types
 - [x] Plan 03: Update resolvers and correction services
-- [ ] Plan 04: Update admin UI components
-- [ ] Plan 05: Verify admin UI still works
+- [x] Plan 04: Update admin UI components
+- [ ] Plan 05: Verify admin UI still works (manual testing)
 
 **Phase 28-32:**
 - [ ] Pending phase 27 completion
@@ -120,45 +123,41 @@
 
 ### What Just Happened
 
-**2026-02-10 - Phase 27 Plan 03 Complete:**
-- Updated src/lib/graphql/resolvers/:
-  - queries.ts: enrichmentLogs -> llamaLogs, prisma.enrichmentLog -> prisma.llamaLog
-  - mutations.ts: prisma.enrichmentLog -> prisma.llamaLog, tx.enrichmentLog -> tx.llamaLog
-  - index.ts: field resolvers renamed (llamaLogs, latestLlamaLog)
-- Updated src/lib/correction/:
-  - apply/apply-service.ts: prisma.llamaLog.create with category: 'CORRECTED'
-  - artist/apply/apply-service.ts: same updates
-- Updated src/lib/enrichment/:
-  - preview-enrichment.ts: prisma.llamaLog.create with category: 'ENRICHED'
-- Updated src/lib/logging/:
-  - activity-logger.ts: LlamaLogCategory import, deriveCategory() function, llamaLog.create
-- TypeScript type check: 0 errors in src/lib/* files
+**2026-02-10 - Phase 27 Plan 04 Complete:**
+- Updated src/components/admin/:
+  - EnrichmentLogTable.tsx: useGetLlamaLogsQuery, data.llamaLogs, LlamaLogStatus
+  - EnrichmentTimeline.tsx: LlamaLog type, LlamaLogStatus enum
+  - EnrichmentTimelineModal.tsx: LlamaLog props
+  - EnrichmentTree.tsx: LlamaLog type, LlamaLogStatus
+  - ExpandableJobRow.tsx: useGetLlamaLogsQuery, data.llamaLogs
+  - enrichment-timeline-utils.tsx: LlamaLogStatus throughout
+- Updated detail page admin actions:
+  - AlbumAdminActions.tsx: GetLlamaLogs query key
+  - ArtistAdminActions.tsx: GetLlamaLogs query key
+- Updated src/app/admin/music-database/page.tsx: 4 query key updates
+- TypeScript type check: 0 errors across entire codebase
 
 ### What's Next
 
-**Immediate (Phase 27-04):**
-1. Update src/components/admin/EnrichmentLogTable.tsx:
-   - Import useGetLlamaLogsQuery instead of useGetEnrichmentLogsQuery
-   - Import LlamaLogStatus instead of EnrichmentLogStatus
-   - Import LlamaLog instead of EnrichmentLog
-2. Update src/components/admin/EnrichmentTimeline.tsx - same import changes
-3. Update src/components/admin/EnrichmentTimelineModal.tsx - LlamaLog import
-4. Update src/components/admin/EnrichmentTree.tsx - same import changes
-5. Update src/components/admin/ExpandableJobRow.tsx - same import changes
-6. Update src/components/admin/enrichment-timeline-utils.tsx - same import changes
+**Immediate (Phase 27-05):**
+1. Manual verification that admin UI still works:
+   - Log table renders correctly
+   - Timeline displays log entries
+   - Enrichment trigger works
+   - Query invalidation refreshes data
 
-**After Phase 27-04:**
-- Phase 27-05: Verify admin UI still works (manual testing)
+**After Phase 27-05:**
+- Phase 28: Feature enhancements to the LlamaLog system
 
 ### Context for Next Session
 
-**If resuming Phase 27-04:**
-- Component files in src/components/admin/ need import updates
-- Key imports to change:
-  - useGetEnrichmentLogsQuery -> useGetLlamaLogsQuery
-  - EnrichmentLogStatus -> LlamaLogStatus (or verify if this exists)
-  - EnrichmentLog -> LlamaLog
-- May also need to rename component files (EnrichmentLogTable -> LlamaLogTable?)
+**If resuming Phase 27-05:**
+- All code changes complete
+- TypeScript passes
+- Need manual verification in dev environment
+- Start dev server: `pnpm dev`
+- Navigate to `/admin/music-database`
+- Test enrichment on an album
 
 **Key Files Completed:**
 - `src/lib/logging/llama-logger.ts` - LlamaLogger class (Plan 01)
@@ -169,8 +168,11 @@
 - `src/lib/correction/*/apply-service.ts` - Updated services (Plan 03)
 - `src/lib/enrichment/preview-enrichment.ts` - Updated (Plan 03)
 - `src/lib/logging/activity-logger.ts` - Updated with deriveCategory() (Plan 03)
+- `src/components/admin/*` - All admin components updated (Plan 04)
+- `src/components/*/AdminActions.tsx` - Query keys updated (Plan 04)
+- `src/app/admin/music-database/page.tsx` - Query keys updated (Plan 04)
 
 ---
 
 _State initialized: 2026-02-09_
-_Last session: 2026-02-10 (Phase 27 Plan 03 complete)_
+_Last session: 2026-02-10 (Phase 27 Plan 04 complete)_
