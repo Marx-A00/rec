@@ -69,6 +69,11 @@ Transform EnrichmentLog into LlamaLog - a complete entity provenance and audit s
 3. **All existing records categorized:** Migration successfully backfills category field based on operation patterns
 4. **Prisma schema valid:** `npx prisma validate` succeeds, `npx prisma generate` produces `LlamaLog` types
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 26-01-PLAN.md — Schema rename, enum creation, and backfill migration
+
 **Key Files:**
 - `prisma/schema.prisma` - Model and enum definitions
 - `prisma/migrations/[timestamp]_rename_enrichment_log_to_llama_log/` - Migration SQL
