@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-02-10
 **Current Milestone:** v1.4 LlamaLog - Entity Provenance & Audit System
-**Status:** Phase 29 Complete
+**Status:** Phase 30 In Progress
 
 ## Project Reference
 
@@ -10,18 +10,18 @@
 
 **Extended Mission (v1.4):** Track the complete lifecycle of entities (Albums, Artists, Tracks) from creation through all subsequent operations. Answer: "How did this album get into the database, and what happened to it afterward?"
 
-**Current Focus:** Phase 29 Related Entity Tracking complete. Ready for Phase 30 Existing Logging Categories.
+**Current Focus:** Phase 30 Existing Logging Categories - Plan 01 Complete.
 
 ## Current Position
 
-**Phase:** 29 - Related Entity Tracking (COMPLETE)
-**Plan:** 04 of 04 - Complete
-**Status:** Phase Complete
+**Phase:** 30 - Existing Logging Categories (IN PROGRESS)
+**Plan:** 01 of 01 - Complete
+**Status:** Plan 01 Complete
 
 **Progress:**
 ```
-[29]██████████████████████████████████████████████░░ 86%
-                        ^
+[30]██████████████████████████████████████████████░░ 89%
+                          ^
  Phases: 26 27 28 29 30 31 32
 ```
 
@@ -38,11 +38,8 @@
 - Phase 26 Duration: 4m 26s
 - Phase 27 Total: 21m 48s
 - Phase 28 Total: ~6m
-- Phase 29-01 Duration: 12m
-- Phase 29-02 Duration: 2m 46s
-- Phase 29-03 Duration: ~6m
-- Phase 29-04 Duration: 3m 47s
-- **Phase 29 Total: ~25m**
+- Phase 29 Total: ~25m
+- **Phase 30-01 Duration: 3m 22s**
 
 **Previous Milestone (v1.3):**
 - Completed: 2026-02-09
@@ -116,6 +113,10 @@
 - Pattern: Added jobContext parameter to createTrackRecord and processSpotifyTracks
 - Rationale: Enables proper parentJobId/rootJobId propagation through function calls
 
+**2026-02-10: Skipped operations use ENRICHED category (DEC-30-01-01)**
+- SKIPPED status still represents completed enrichment operation outcome
+- Rationale: Consistent categorization across all operation outcomes
+
 ### Technical Debt
 
 **From v1.3:**
@@ -141,6 +142,7 @@
 - rootJobId column added to database with backfill
 - Artist creation/linking logging added to all entry points
 - Track creation logging added to all entry points
+- Explicit category added to all queue processor logEnrichment calls
 
 ### Active TODOs
 
@@ -168,62 +170,47 @@
 - [x] Plan 03: Artist creation/linking logging
 - [x] Plan 04: Track creation/linking logging
 
-**Phase 30-32:**
-- [ ] Ready to start Phase 30
+**Phase 30 (Existing Logging Categories): IN PROGRESS**
+- [x] Plan 01: Add explicit category to queue processor logging
+
+**Phase 31-32:**
+- [ ] Ready to continue
 
 ## Session Continuity
 
 ### What Just Happened
 
-**2026-02-10 - Phase 29 Complete:**
-- Plan 01: Added rootJobId column and LINKED category with backfill migration
-- Plan 02: Added rootJobId support to LlamaLogger interface
-- Plan 03: Added artist creation/linking logging (CREATED + LINKED categories)
-- Plan 04: Added track creation/failure logging with job context propagation
-- Verifier confirmed 5/5 must-haves satisfied
-- All requirements RELATE-01 through RELATE-05 complete
+**2026-02-10 - Phase 30-01 Complete:**
+- Added explicit category to enrichment-processor.ts (9 new + 4 existing = 13 total)
+- Added explicit category to cache-processor.ts (12 new)
+- Added explicit category to discogs-processor.ts (7 new)
+- Total: 32 category values across 3 processor files
+- All type checks pass
+
+**Commits:**
+- 493ccc7: feat(30-01): add explicit category to enrichment-processor logEnrichment calls
+- 8c14f1d: feat(30-01): add explicit category to cache-processor logEnrichment calls
+- 942e157: feat(30-01): add explicit category to discogs-processor logEnrichment calls
 
 ### What's Next
 
 **Immediate:**
-- Phase 30: Existing Logging Categories (apply category field to existing operations)
+- Verify if Phase 30 has additional plans
+- Proceed to Phase 31 if Phase 30 complete
 
 ### Context for Next Session
 
-**Phase 29 Completion Summary:**
-- rootJobId column enables quick root-job queries without traversing parentJobId chain
-- LINKED category distinguishes entity association from creation
-- All artist creation paths logged (addAlbum, enrichment, MusicBrainz sync)
-- All track creation paths logged (enrichment, Spotify sync)
-- Job hierarchy properly maintained with parentJobId and rootJobId
+**Phase 30-01 Completion Summary:**
+- All logEnrichment() calls in queue processors now have explicit category
+- ENRICHED for success/skip outcomes, FAILED for error outcomes
+- Fulfills EXIST-01, EXIST-03, EXIST-04 requirements
 
-**Key Files (Phase 29):**
-- `prisma/schema.prisma` - rootJobId field, LINKED enum, index
-- `src/lib/logging/llama-logger.ts` - rootJobId interface support
-- `src/lib/graphql/resolvers/mutations.ts` - artist CREATED/LINKED logging
-- `src/lib/queue/processors/enrichment-processor.ts` - artist + track logging
-- `src/lib/queue/processors/musicbrainz-processor.ts` - sync artist logging
-- `src/lib/spotify/mappers.ts` - track creation logging
-
-**Commits (Phase 29):**
-- `33742c6`: feat(29-01): add rootJobId field and LINKED category to LlamaLog
-- `aed64f4`: feat(29-01): create migration for rootJobId and LINKED category
-- `a3702c7`: docs(29-01): complete schema migration for rootJobId and LINKED category
-- `988543e`: feat(29-02): add rootJobId field to LlamaLogData interface
-- `856e7ad`: docs(29-02): complete LlamaLogger rootJobId support plan
-- `28fa8af`: feat(29-03): add artist creation and linking logging in addAlbum
-- `ce39f60`: feat(29-03): add artist creation/linking logging in MusicBrainz processor
-- `d582bba`: docs(29-03): complete artist creation logging plan
-- `5395356`: feat(29-04): add track creation logging in enrichment processor
-- `9f0fddc`: feat(29-04): add track creation logging in Spotify mappers
-- `0c2ff5a`: docs(29-04): complete track creation logging plan
-
-**Database State:**
-- 4010 records with rootJobId filled (99%)
-- 42 orphan records with NULL rootJobId (pre-tracking)
-- 4052 total records in llama_logs
+**Key Files (Phase 30):**
+- `src/lib/queue/processors/enrichment-processor.ts` - 13 category values
+- `src/lib/queue/processors/cache-processor.ts` - 12 category values
+- `src/lib/queue/processors/discogs-processor.ts` - 7 category values
 
 ---
 
 _State initialized: 2026-02-09_
-_Last session: 2026-02-10 (Phase 29 complete)_
+_Last session: 2026-02-10 (Phase 30-01 complete)_
