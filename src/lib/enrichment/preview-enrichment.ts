@@ -26,14 +26,14 @@ export interface PreviewEnrichmentResult {
   matchedEntity: string | null;
   sources: string[];
   fieldsToUpdate: EnrichmentFieldDiff[];
-  enrichmentLogId: string;
+  llamaLogId: string;
   rawData: Record<string, unknown> | null;
 }
 
 /**
  * Preview album enrichment - fetches data from external sources
  * and shows what would be updated, without actually persisting changes.
- * Saves result to EnrichmentLog with PREVIEW status.
+ * Saves result to LlamaLog with PREVIEW status.
  */
 export async function previewAlbumEnrichment(
   albumId: string
@@ -238,8 +238,8 @@ export async function previewAlbumEnrichment(
           : `Match found but confidence too low (${((matchScore || 0) * 100).toFixed(1)}%). Manual review recommended.`;
     }
 
-    // Save to EnrichmentLog with PREVIEW status
-    const enrichmentLog = await prisma.llamaLog.create({
+    // Save to LlamaLog with PREVIEW status
+    const llamaLog = await prisma.llamaLog.create({
       data: {
         entityType: 'ALBUM',
         entityId: albumId,
@@ -277,7 +277,7 @@ export async function previewAlbumEnrichment(
       matchedEntity,
       sources: sourcesAttempted,
       fieldsToUpdate,
-      enrichmentLogId: enrichmentLog.id,
+      llamaLogId: llamaLog.id,
       rawData,
     };
   } catch (error) {
@@ -285,7 +285,7 @@ export async function previewAlbumEnrichment(
       error instanceof Error ? error.message : 'Unknown error';
 
     // Log the failed preview
-    const enrichmentLog = await prisma.llamaLog.create({
+    const llamaLog = await prisma.llamaLog.create({
       data: {
         entityType: 'ALBUM',
         entityId: albumId,
@@ -314,7 +314,7 @@ export async function previewAlbumEnrichment(
       matchedEntity: null,
       sources: sourcesAttempted,
       fieldsToUpdate: [],
-      enrichmentLogId: enrichmentLog.id,
+      llamaLogId: llamaLog.id,
       rawData: null,
     };
   }
@@ -514,8 +514,8 @@ export async function previewArtistEnrichment(
           : `Match found but confidence too low (${((matchScore || 0) * 100).toFixed(1)}%). Manual review recommended.`;
     }
 
-    // Save to EnrichmentLog with PREVIEW status
-    const enrichmentLog = await prisma.llamaLog.create({
+    // Save to LlamaLog with PREVIEW status
+    const llamaLog = await prisma.llamaLog.create({
       data: {
         entityType: 'ARTIST',
         entityId: artistId,
@@ -552,14 +552,14 @@ export async function previewArtistEnrichment(
       matchedEntity,
       sources: sourcesAttempted,
       fieldsToUpdate,
-      enrichmentLogId: enrichmentLog.id,
+      llamaLogId: llamaLog.id,
       rawData,
     };
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
 
-    const enrichmentLog = await prisma.llamaLog.create({
+    const llamaLog = await prisma.llamaLog.create({
       data: {
         entityType: 'ARTIST',
         entityId: artistId,
@@ -587,7 +587,7 @@ export async function previewArtistEnrichment(
       matchedEntity: null,
       sources: sourcesAttempted,
       fieldsToUpdate: [],
-      enrichmentLogId: enrichmentLog.id,
+      llamaLogId: llamaLog.id,
       rawData: null,
     };
   }

@@ -2091,7 +2091,7 @@ type PreviewEnrichmentResult {
   matchedEntity: String
   sources: [String!]!
   fieldsToUpdate: [EnrichmentFieldDiff!]!
-  enrichmentLogId: UUID!
+  llamaLogId: UUID!
   rawData: JSON
 }
 

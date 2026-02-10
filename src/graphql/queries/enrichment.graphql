@@ -163,7 +163,7 @@ mutation PreviewAlbumEnrichment($id: UUID!) {
       newValue
       source
     }
-    enrichmentLogId
+    llamaLogId
     rawData
   }
 }
@@ -181,7 +181,7 @@ mutation PreviewArtistEnrichment($id: UUID!) {
       newValue
       source
     }
-    enrichmentLogId
+    llamaLogId
     rawData
   }
 }

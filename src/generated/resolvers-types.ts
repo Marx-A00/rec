@@ -1556,8 +1556,8 @@ export type PaginationInfo = {
 
 export type PreviewEnrichmentResult = {
   __typename?: 'PreviewEnrichmentResult';
-  enrichmentLogId: Scalars['UUID']['output'];
   fieldsToUpdate: Array<EnrichmentFieldDiff>;
+  llamaLogId: Scalars['UUID']['output'];
   matchScore?: Maybe<Scalars['Float']['output']>;
   matchedEntity?: Maybe<Scalars['String']['output']>;
   message?: Maybe<Scalars['String']['output']>;
@@ -4952,12 +4952,12 @@ export type PreviewEnrichmentResultResolvers<
   ParentType extends
     ResolversParentTypes['PreviewEnrichmentResult'] = ResolversParentTypes['PreviewEnrichmentResult'],
 > = ResolversObject<{
-  enrichmentLogId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   fieldsToUpdate?: Resolver<
     Array<ResolversTypes['EnrichmentFieldDiff']>,
     ParentType,
     ContextType
   >;
+  llamaLogId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   matchScore?: Resolver<
     Maybe<ResolversTypes['Float']>,
     ParentType,

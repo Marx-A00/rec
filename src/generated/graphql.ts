@@ -1582,8 +1582,8 @@ export type PaginationInfo = {
 
 export type PreviewEnrichmentResult = {
   __typename?: 'PreviewEnrichmentResult';
-  enrichmentLogId: Scalars['UUID']['output'];
   fieldsToUpdate: Array<EnrichmentFieldDiff>;
+  llamaLogId: Scalars['UUID']['output'];
   matchScore?: Maybe<Scalars['Float']['output']>;
   matchedEntity?: Maybe<Scalars['String']['output']>;
   message?: Maybe<Scalars['String']['output']>;
@@ -3927,7 +3927,7 @@ export type PreviewAlbumEnrichmentMutation = {
     matchScore?: number | null;
     matchedEntity?: string | null;
     sources: Array<string>;
-    enrichmentLogId: string;
+    llamaLogId: string;
     rawData?: any | null;
     fieldsToUpdate: Array<{
       __typename?: 'EnrichmentFieldDiff';
@@ -3952,7 +3952,7 @@ export type PreviewArtistEnrichmentMutation = {
     matchScore?: number | null;
     matchedEntity?: string | null;
     sources: Array<string>;
-    enrichmentLogId: string;
+    llamaLogId: string;
     rawData?: any | null;
     fieldsToUpdate: Array<{
       __typename?: 'EnrichmentFieldDiff';
@@ -8041,7 +8041,7 @@ export const PreviewAlbumEnrichmentDocument = `
       newValue
       source
     }
-    enrichmentLogId
+    llamaLogId
     rawData
   }
 }
@@ -8090,7 +8090,7 @@ export const PreviewArtistEnrichmentDocument = `
       newValue
       source
     }
-    enrichmentLogId
+    llamaLogId
     rawData
   }
 }
