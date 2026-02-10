@@ -20,12 +20,12 @@
 
 **Progress:**
 ```
-[29]██████████████████████████████████████░░░░ 74%
+[29]████████████████████████████████████████░░ 85%
                      ^
  Phases: 26 27 28 29 30 31 32
 ```
 
-**Milestone Progress:** 29/34 requirements complete (85%)
+**Milestone Progress:** 31/34 requirements complete (91%)
 
 ## Performance Metrics
 
@@ -33,11 +33,12 @@
 - Start date: 2026-02-09
 - Phases planned: 7 (26-32)
 - Requirements: 34
-- Completed: 29
-- Remaining: 5
+- Completed: 31
+- Remaining: 3
 - Phase 26 Duration: 4m 26s
 - Phase 27 Total: 21m 48s
 - Phase 28 Total: ~6m
+- Phase 29-01 Duration: 12m
 - Phase 29-02 Duration: 2m 46s
 
 **Previous Milestone (v1.3):**
@@ -86,6 +87,15 @@
 - Components correctly use LlamaLog types internally
 - Minor future cleanup optional
 
+**2026-02-10: Recursive CTE with depth limit 10 for backfill (DEC-29-01-01)**
+- Pattern: Recursive CTE walks parent chain to find root job
+- Rationale: Prevents infinite loops, 10 levels sufficient for all expected chains
+
+**2026-02-10: NULL rootJobId indicates orphan data (DEC-29-01-02)**
+- 42 pre-tracking records have NULL rootJobId
+- Acceptable: Legacy data without job provenance
+- Future logs always have rootJobId set
+
 **2026-02-10: Auto-compute rootJobId for root jobs (DEC-29-02-01)**
 - Pattern: rootJobId = data.rootJobId ?? (isRootJob ? data.jobId : null)
 - Rationale: Root jobs should always have rootJobId equal to their own jobId for query consistency
@@ -116,6 +126,7 @@
 - enrichmentLogId renamed to llamaLogId
 - Album creation tracking added to all entry points
 - rootJobId field added to LlamaLogData interface
+- rootJobId column added to database with backfill
 
 ### Active TODOs
 
@@ -138,7 +149,7 @@
 - [x] Plan 02: Sync operation creation logging (Spotify + MusicBrainz)
 
 **Phase 29 (Related Entity Tracking): IN PROGRESS**
-- [ ] Plan 01: Schema migration (rootJobId column, LINKED category)
+- [x] Plan 01: Schema migration (rootJobId column, LINKED category)
 - [x] Plan 02: LlamaLogger rootJobId support
 - [ ] Plan 03: Artist creation/linking logging
 - [ ] Plan 04: Track creation/linking logging
@@ -147,50 +158,44 @@
 
 ### What Just Happened
 
-**2026-02-10 - Phase 29 Plan 02 Complete:**
-- Added rootJobId field to LlamaLogData interface with JSDoc
-- Updated parentJobId comment to clarify "immediate parent" vs "root job"
-- Added rootJobId computation: uses provided value or jobId for root jobs
-- Added rootJobId to prisma.llamaLog.create data object
-- Enhanced console log to show truncated rootJobId when present
-- Verified backward compatibility with all 7 files containing logEnrichment calls
+**2026-02-10 - Phase 29 Plan 01 Complete:**
+- Added LINKED to LlamaLogCategory enum
+- Added rootJobId field to LlamaLog model (VARCHAR(100), nullable)
+- Created index on rootJobId for query performance
+- Migration applied with recursive CTE backfill
+- 4010 records backfilled with rootJobId
+- 42 orphan records remain NULL (pre-tracking data)
 - TypeScript type-check passes
 
-### What\'s Next
+### What's Next
 
 **Immediate:**
-- Phase 29 Plan 01: Schema migration (rootJobId column must exist before runtime)
-- Phase 29 Plans 03-04: Instrument artist and track creation with rootJobId
+- Phase 29 Plan 03: Instrument artist creation with rootJobId
+- Phase 29 Plan 04: Instrument track creation with rootJobId
 
 ### Context for Next Session
 
-**Phase 29 Plan 02 Completion Summary:**
-- LlamaLogData interface now accepts rootJobId parameter
-- Root jobs automatically get rootJobId = jobId
-- Child jobs can pass explicit rootJobId for hierarchy tracking
-- All existing callers continue to work unchanged
+**Phase 29 Plan 01 Completion Summary:**
+- rootJobId column now exists in database
+- LINKED category available for entity linking operations
+- Backfill complete: root jobs have rootJobId = jobId
+- Child jobs traced via recursive CTE to their root
+- 42 orphan records (no job tracking) left as NULL
 
-**Key Files (Phase 29-02):**
-- `src/lib/logging/llama-logger.ts` - LlamaLogData interface with rootJobId field
+**Key Files (Phase 29-01):**
+- `prisma/schema.prisma` - rootJobId field, LINKED enum, index
+- `prisma/migrations/20260210103953_add_root_job_id_and_linked_category/migration.sql` - Backfill SQL
 
-**Commits (Phase 29-02):**
-- `988543e`: feat(29-02): add rootJobId field to LlamaLogData interface
+**Commits (Phase 29-01):**
+- `33742c6`: feat(29-01): add rootJobId field and LINKED category to LlamaLog
+- `aed64f4`: feat(29-01): create migration for rootJobId and LINKED category
 
-**Integration Pattern for Callers:**
-```typescript
-// For root jobs (isRootJob: true)
-// rootJobId is auto-computed to jobId
-
-// For child jobs
-await logger.logEnrichment({
-  parentJobId: immediateParentJobId,
-  rootJobId: originalAlbumJobId,  // Must be passed explicitly
-  isRootJob: false,
-  // ... other fields
-});
-```
+**Database State:**
+- 4010 records with rootJobId filled
+- 42 orphan records with NULL rootJobId
+- 4052 total records in llama_logs
 
 ---
 
 _State initialized: 2026-02-09_
-_Last session: 2026-02-10 (Phase 29 Plan 02 complete)_
+_Last session: 2026-02-10 (Phase 29 Plan 01 complete)_
