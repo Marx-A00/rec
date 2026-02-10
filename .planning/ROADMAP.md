@@ -107,6 +107,15 @@ Plans:
 2. **Logger class functional:** `LlamaLogger` can be instantiated and log operations without errors
 3. **GraphQL types regenerated:** `pnpm codegen` succeeds, generated types include `LlamaLog` and `LlamaLogCategory`
 
+**Plans:** 5 plans
+
+Plans:
+- [ ] 27-01-PLAN.md — Logger class rename and relocation
+- [ ] 27-02-PLAN.md — GraphQL schema and codegen update
+- [ ] 27-03-PLAN.md — Resolver and service updates
+- [ ] 27-04-PLAN.md — Component updates
+- [ ] 27-05-PLAN.md — Final verification
+
 **Key Files:**
 - `src/lib/logging/llama-logger.ts` (renamed from enrichment-logger.ts)
 - `src/graphql/schema.graphql` - GraphQL type definitions
