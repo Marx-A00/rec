@@ -110,11 +110,11 @@ Plans:
 **Plans:** 5 plans
 
 Plans:
-- [ ] 27-01-PLAN.md — Logger class rename and relocation
-- [ ] 27-02-PLAN.md — GraphQL schema and codegen update
-- [ ] 27-03-PLAN.md — Resolver and service updates
-- [ ] 27-04-PLAN.md — Component updates
-- [ ] 27-05-PLAN.md — Final verification
+- [x] 27-01-PLAN.md — Logger class rename and relocation
+- [x] 27-02-PLAN.md — GraphQL schema and codegen update
+- [x] 27-03-PLAN.md — Resolver and service updates
+- [x] 27-04-PLAN.md — Component updates
+- [x] 27-05-PLAN.md — Final verification
 
 **Key Files:**
 - `src/lib/logging/llama-logger.ts` (renamed from enrichment-logger.ts)
@@ -316,7 +316,7 @@ Plans:
 | Phase | Name                          | Requirements | Status  | Completed |
 |-------|-------------------------------|--------------|---------|-----------|
 | 26    | Schema Migration              | 5            | Complete | 2026-02-09 |
-| 27    | Code Rename                   | 7            | Pending | -         |
+| 27    | Code Rename                   | 7            | Complete | 2026-02-09 |
 | 28    | Album Creation Tracking       | 7            | Pending | -         |
 | 29    | Related Entity Tracking       | 5            | Pending | -         |
 | 30    | Existing Logging Categories   | 4            | Pending | -         |
@@ -336,13 +336,13 @@ Plans:
 | SCHEMA-03   | 26    | Complete | Add category enum                        |
 | SCHEMA-04   | 26    | Complete | Add category field                       |
 | SCHEMA-05   | 26    | Complete | Backfill existing records                |
-| CODE-01     | 27    | Pending | Rename logger class                      |
-| CODE-02     | 27    | Pending | Move logger file                         |
-| CODE-03     | 27    | Pending | Update prisma calls                      |
-| CODE-04     | 27    | Pending | Update type imports                      |
-| CODE-05     | 27    | Pending | Update GraphQL schema                    |
-| CODE-06     | 27    | Pending | Regenerate GraphQL types                 |
-| CODE-07     | 27    | Pending | Update resolver references               |
+| CODE-01     | 27    | Complete | Rename logger class                      |
+| CODE-02     | 27    | Complete | Move logger file                         |
+| CODE-03     | 27    | Complete | Update prisma calls                      |
+| CODE-04     | 27    | Complete | Update type imports                      |
+| CODE-05     | 27    | Complete | Update GraphQL schema                    |
+| CODE-06     | 27    | Complete | Regenerate GraphQL types                 |
+| CODE-07     | 27    | Complete | Update resolver references               |
 | CREATE-01   | 28    | Pending | Log addAlbum creation                    |
 | CREATE-02   | 28    | Pending | Log addAlbumToCollection creation        |
 | CREATE-03   | 28    | Pending | Log Spotify sync creation                |
@@ -372,4 +372,4 @@ Plans:
 ---
 
 _Roadmap created: 2026-02-09_
-_Last updated: 2026-02-09 (Phase 26 complete)_
+_Last updated: 2026-02-09 (Phase 27 complete)_
