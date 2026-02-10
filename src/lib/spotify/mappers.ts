@@ -8,6 +8,7 @@ import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { Prisma } from '@prisma/client';
 
 import { createSpotifySyncMetadata } from '@/types/album-metadata';
+import { createLlamaLogger } from '@/lib/logging/llama-logger';
 
 import { prisma } from '../prisma';
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
@@ -314,6 +315,40 @@ export async function processSpotifyAlbum(
   });
 
   console.log(`✅ Created album: "${album.title}" (${album.id})`);
+
+  // Log album creation to LlamaLog (after DB commit)
+  const logger = createLlamaLogger(prisma);
+  try {
+    await logger.logEnrichment({
+      entityType: 'ALBUM',
+      entityId: album.id,
+      operation: 'album:created:spotify-sync',
+      category: 'CREATED',
+      sources: ['SPOTIFY'],
+      status: 'SUCCESS',
+      fieldsEnriched: [
+        'title',
+        'releaseDate',
+        'releaseType',
+        'trackCount',
+        'coverArtUrl',
+        'spotifyId',
+        'spotifyUrl',
+      ],
+      dataQualityAfter: albumData.dataQuality,
+      jobId: metadataOptions?.jobId || `spotify-album-${album.id}`,
+      parentJobId: metadataOptions?.batchId || metadataOptions?.jobId,
+      isRootJob: false, // Child of sync batch
+      metadata: {
+        syncSource: source,
+        syncTimestamp: new Date().toISOString(),
+        query: metadataOptions?.query,
+        country: metadataOptions?.country,
+      },
+    });
+  } catch (logError) {
+    console.warn(`[LlamaLogger] Failed to log Spotify album creation for ${album.id}:`, logError);
+  }
 
   // 3. Tracks will be created later by MusicBrainz enrichment (not from Spotify)
   console.log(
