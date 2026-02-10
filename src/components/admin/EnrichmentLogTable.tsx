@@ -395,8 +395,8 @@ export function EnrichmentLogTable({
   if (isLoading) {
     return (
       <div className='p-8 text-center text-zinc-400'>
-        <Clock className='h-6 w-6 animate-spin mx-auto mb-2' />
-        <p className='text-sm'>Loading enrichment logs...</p>
+        <div className='text-3xl mb-2 animate-pulse'>🦙</div>
+        <p className='text-sm'>Llama is thinking...</p>
       </div>
     );
   }
@@ -406,8 +406,7 @@ export function EnrichmentLogTable({
       {/* Header with Reset button - always show */}
       <div className='flex items-center justify-between'>
         <h3 className='text-sm font-semibold text-white flex items-center gap-2'>
-          <Clock className='h-4 w-4' />
-          Enrichment History
+          🦙 LlamaLog
           <span className='text-xs text-zinc-500 font-normal'>
             ({logs.length} {logs.length === 1 ? 'job' : 'jobs'})
           </span>
@@ -439,9 +438,11 @@ export function EnrichmentLogTable({
 
       {/* Error state */}
       {error ? (
-        <div className='p-8 text-center text-red-400'>
-          <XCircle className='h-6 w-6 mx-auto mb-2' />
-          <p className='text-sm'>Failed to load enrichment logs</p>
+        <div className='p-8 text-center'>
+          <div className='text-3xl mb-2'>🦙</div>
+          <p className='text-sm text-red-400 font-medium'>
+            The llama couldn&apos;t fetch logs
+          </p>
           <p className='text-xs text-zinc-500 mt-1'>
             {error instanceof Error ? error.message : 'Unknown error'}
           </p>
@@ -451,10 +452,12 @@ export function EnrichmentLogTable({
       {/* Empty state */}
       {!error && logs.length === 0 ? (
         <div className='p-8 text-center text-zinc-500 border border-zinc-700 rounded-md bg-zinc-900/50'>
-          <AlertCircle className='h-6 w-6 mx-auto mb-2' />
-          <p className='text-sm'>No enrichment logs found</p>
+          <div className='text-4xl mb-3'>🦙</div>
+          <p className='text-sm font-medium text-zinc-400'>
+            The llama has nothing to report
+          </p>
           <p className='text-xs text-zinc-600 mt-1'>
-            This entity has not been enriched yet
+            This entity hasn&apos;t been enriched yet
           </p>
         </div>
       ) : null}
