@@ -4,8 +4,8 @@
 import { Job } from 'bullmq';
 
 import { prisma } from '@/lib/prisma';
-
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
+
 import type {
   DiscogsSearchArtistJobData,
   DiscogsGetArtistJobData,
@@ -58,6 +58,7 @@ export async function handleDiscogsSearchArtist(
         entityType: 'ARTIST',
         entityId: data.artistId,
         operation: JOB_TYPES.DISCOGS_SEARCH_ARTIST,
+        category: 'ENRICHED',
         sources: ['DISCOGS'],
         status: 'NO_DATA_AVAILABLE',
         reason: 'No Discogs results found for artist',
@@ -99,6 +100,7 @@ export async function handleDiscogsSearchArtist(
         entityType: 'ARTIST',
         entityId: data.artistId,
         operation: JOB_TYPES.DISCOGS_SEARCH_ARTIST,
+        category: 'ENRICHED',
         sources: ['DISCOGS'],
         status: 'NO_DATA_AVAILABLE',
         reason: 'No confident match found (confidence < 85%)',
@@ -162,6 +164,7 @@ export async function handleDiscogsSearchArtist(
       entityType: 'ARTIST',
       entityId: data.artistId,
       operation: JOB_TYPES.DISCOGS_SEARCH_ARTIST,
+      category: 'ENRICHED',
       sources: ['DISCOGS'],
       status: 'SUCCESS',
       reason: 'Found Discogs artist match and queued fetch job',
@@ -198,6 +201,7 @@ export async function handleDiscogsSearchArtist(
       entityType: 'ARTIST',
       entityId: data.artistId,
       operation: JOB_TYPES.DISCOGS_SEARCH_ARTIST,
+      category: 'FAILED',
       sources: ['DISCOGS'],
       status: 'FAILED',
       reason: 'Discogs API error',
@@ -251,6 +255,7 @@ export async function handleDiscogsGetArtist(
         entityType: 'ARTIST',
         entityId: data.artistId,
         operation: JOB_TYPES.DISCOGS_GET_ARTIST,
+        category: 'ENRICHED',
         sources: ['DISCOGS'],
         status: 'PARTIAL_SUCCESS',
         reason: 'Discogs artist found but no image available',
@@ -305,6 +310,7 @@ export async function handleDiscogsGetArtist(
       entityType: 'ARTIST',
       entityId: data.artistId,
       operation: JOB_TYPES.DISCOGS_GET_ARTIST,
+      category: 'ENRICHED',
       sources: ['DISCOGS'],
       status: 'SUCCESS',
       reason: 'Fetched Discogs artist details and queued image caching',
@@ -340,6 +346,7 @@ export async function handleDiscogsGetArtist(
       entityType: 'ARTIST',
       entityId: data.artistId,
       operation: JOB_TYPES.DISCOGS_GET_ARTIST,
+      category: 'FAILED',
       sources: ['DISCOGS'],
       status: 'FAILED',
       reason: 'Failed to fetch Discogs artist details',
