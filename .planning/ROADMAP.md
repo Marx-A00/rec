@@ -152,17 +152,23 @@ Plans:
 3. **Sync operations tracked:** Both Spotify and MusicBrainz new releases sync produce CREATED logs for new albums (userId null, jobId present)
 4. **All paths verified:** Manual test of each creation path confirms LlamaLog entry appears in database with correct category
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 28-01-PLAN.md — User-initiated creation logging (addAlbum mutation)
+- [ ] 28-02-PLAN.md — Sync operation creation logging (Spotify + MusicBrainz)
+
 **Key Files:**
 - `src/lib/graphql/resolvers/mutations.ts` - addAlbum, addAlbumToCollection
-- `src/lib/spotify/new-releases-service.ts` - Spotify sync
-- `src/lib/musicbrainz/new-releases-service.ts` - MusicBrainz sync
-- `src/workers/queue-worker.ts` - Job handlers
+- `src/lib/spotify/mappers.ts` - Spotify sync album creation
+- `src/lib/queue/processors/musicbrainz-processor.ts` - MusicBrainz sync
 - `src/lib/logging/llama-logger.ts` - Logger methods
 
 **Notes:**
-- Creation logs should fire AFTER successful database insert (avoid logging failed attempts)
-- userId should be null for automated sync operations
-- jobId should always be populated (use crypto.randomUUID() if not from queue)
+- CREATE-01, CREATE-02, CREATE-05 are all covered by addAlbum mutation (single entry point)
+- addAlbumToCollection requires existing albumId; new albums flow through addAlbum first
+- Creation logs should fire AFTER successful database insert
+- userId is null for automated sync operations
 
 ---
 
