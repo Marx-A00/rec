@@ -222,6 +222,9 @@ export async function handleMusicBrainzSyncNewReleases(
           where: { musicbrainzId: artist.id },
         });
 
+        // Track if artist was newly created vs found existing
+        const artistWasCreated = !dbArtist;
+
         if (!dbArtist) {
           dbArtist = await prisma.artist.create({
             data: {
@@ -231,6 +234,54 @@ export async function handleMusicBrainzSyncNewReleases(
           });
           artistsCreated++;
           console.log(`✨ Created artist: ${artist.name}`);
+
+          // Log artist creation to LlamaLog
+          const llamaLogger = createLlamaLogger(prisma);
+          try {
+            await llamaLogger.logEnrichment({
+              entityType: 'ARTIST',
+              entityId: dbArtist.id,
+              operation: 'artist:created:musicbrainz-sync',
+              category: 'CREATED',
+              sources: ['MUSICBRAINZ'],
+              status: 'SUCCESS',
+              fieldsEnriched: ['name', 'musicbrainzId'],
+              parentJobId: data.requestId || 'mb-sync-batch',
+              rootJobId: data.requestId || 'mb-sync-batch',
+              isRootJob: false,
+              dataQualityAfter: 'MEDIUM',
+              metadata: {
+                syncSource: 'musicbrainz_new_releases',
+                artistMbId: artist.id,
+              },
+            });
+          } catch (err) {
+            console.warn('[LlamaLog] Failed to log artist creation:', err);
+          }
+        } else if (!artistWasCreated) {
+          // Log artist linking to LlamaLog (existing artist will be associated with new album)
+          const llamaLogger = createLlamaLogger(prisma);
+          try {
+            await llamaLogger.logEnrichment({
+              entityType: 'ARTIST',
+              entityId: dbArtist.id,
+              operation: 'artist:linked:musicbrainz-sync',
+              category: 'LINKED',
+              sources: ['MUSICBRAINZ'],
+              status: 'SUCCESS',
+              fieldsEnriched: [],
+              parentJobId: data.requestId || 'mb-sync-batch',
+              rootJobId: data.requestId || 'mb-sync-batch',
+              isRootJob: false,
+              metadata: {
+                syncSource: 'musicbrainz_new_releases',
+                artistMbId: artist.id,
+                existingEntity: true,
+              },
+            });
+          } catch (err) {
+            console.warn('[LlamaLog] Failed to log artist linking:', err);
+          }
         }
 
         // Create album
