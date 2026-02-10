@@ -405,6 +405,7 @@ enum LlamaLogCategory {
   CORRECTED  // Entity was manually corrected by admin
   CACHED     // Cache operation (read/write)
   FAILED     // Operation failed
+  LINKED     // Entity was linked/associated with existing entity
 }
 
 model LlamaLog {
@@ -431,6 +432,7 @@ model LlamaLog {
   previewData        Json?                  @map("preview_data") // Stores raw API response and field diffs for preview enrichments
   jobId              String?                @map("job_id") @db.VarChar(100)
   parentJobId        String?                @map("parent_job_id") @db.VarChar(100)
+  rootJobId          String?                @map("root_job_id") @db.VarChar(100) // Root job ID for hierarchy queries
   isRootJob          Boolean                @default(false) @map("is_root_job")
   triggeredBy        String?                @map("triggered_by") @db.VarChar(50)
   userId             String?                @map("user_id") // Track which user made manual changes
@@ -449,6 +451,7 @@ model LlamaLog {
   @@index([sources])
   @@index([userId])
   @@index([parentJobId])
+  @@index([rootJobId])
   @@index([isRootJob, createdAt])
   @@index([category, createdAt])
   @@map("llama_logs")
