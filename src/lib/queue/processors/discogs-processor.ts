@@ -5,7 +5,7 @@ import { Job } from 'bullmq';
 
 import { prisma } from '@/lib/prisma';
 
-import { createEnrichmentLogger } from '../../enrichment/enrichment-logger';
+import { createLlamaLogger } from '@/lib/logging/llama-logger';
 import type {
   DiscogsSearchArtistJobData,
   DiscogsGetArtistJobData,
@@ -30,7 +30,7 @@ export async function handleDiscogsSearchArtist(
   const data = job.data;
   const rootJobId = data.parentJobId || job.id;
   const startTime = Date.now();
-  const enrichmentLogger = createEnrichmentLogger(prisma);
+  const llamaLogger = createLlamaLogger(prisma);
 
   console.log(`🔍 Searching Discogs for artist: "${data.artistName}"`);
 
@@ -54,7 +54,7 @@ export async function handleDiscogsSearchArtist(
     if (!searchResults.results || searchResults.results.length === 0) {
       console.log(`❌ No Discogs results found for "${data.artistName}"`);
 
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ARTIST',
         entityId: data.artistId,
         operation: JOB_TYPES.DISCOGS_SEARCH_ARTIST,
@@ -95,7 +95,7 @@ export async function handleDiscogsSearchArtist(
     if (!bestMatch) {
       console.log(`❌ No confident match found for "${data.artistName}"`);
 
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ARTIST',
         entityId: data.artistId,
         operation: JOB_TYPES.DISCOGS_SEARCH_ARTIST,
@@ -158,7 +158,7 @@ export async function handleDiscogsSearchArtist(
 
     console.log(`📤 Queued Discogs fetch for artist ${data.artistId}`);
 
-    await enrichmentLogger.logEnrichment({
+    await llamaLogger.logEnrichment({
       entityType: 'ARTIST',
       entityId: data.artistId,
       operation: JOB_TYPES.DISCOGS_SEARCH_ARTIST,
@@ -194,7 +194,7 @@ export async function handleDiscogsSearchArtist(
   } catch (error) {
     console.error(`❌ Discogs search failed for "${data.artistName}":`, error);
 
-    await enrichmentLogger.logEnrichment({
+    await llamaLogger.logEnrichment({
       entityType: 'ARTIST',
       entityId: data.artistId,
       operation: JOB_TYPES.DISCOGS_SEARCH_ARTIST,
@@ -230,7 +230,7 @@ export async function handleDiscogsGetArtist(
   const data = job.data;
   const rootJobId = data.parentJobId || job.id;
   const startTime = Date.now();
-  const enrichmentLogger = createEnrichmentLogger(prisma);
+  const llamaLogger = createLlamaLogger(prisma);
 
   console.log(`🎤 Fetching Discogs artist details for ID: ${data.discogsId}`);
 
@@ -247,7 +247,7 @@ export async function handleDiscogsGetArtist(
     if (!discogsArtist.imageUrl) {
       console.log(`⚠️ No image found for Discogs artist ${data.discogsId}`);
 
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ARTIST',
         entityId: data.artistId,
         operation: JOB_TYPES.DISCOGS_GET_ARTIST,
@@ -301,7 +301,7 @@ export async function handleDiscogsGetArtist(
 
     console.log(`📤 Queued Cloudflare caching for artist ${data.artistId}`);
 
-    await enrichmentLogger.logEnrichment({
+    await llamaLogger.logEnrichment({
       entityType: 'ARTIST',
       entityId: data.artistId,
       operation: JOB_TYPES.DISCOGS_GET_ARTIST,
@@ -336,7 +336,7 @@ export async function handleDiscogsGetArtist(
       error
     );
 
-    await enrichmentLogger.logEnrichment({
+    await llamaLogger.logEnrichment({
       entityType: 'ARTIST',
       entityId: data.artistId,
       operation: JOB_TYPES.DISCOGS_GET_ARTIST,

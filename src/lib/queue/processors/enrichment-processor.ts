@@ -12,7 +12,7 @@ import {
   calculateEnrichmentPriority,
   mapSourceToUserAction,
 } from '../../musicbrainz/enrichment-logic';
-import { createEnrichmentLogger } from '../../enrichment/enrichment-logger';
+import { createLlamaLogger } from '@/lib/logging/llama-logger';
 import { searchSpotifyArtists } from '../../spotify/search';
 import type { MusicBrainzRecordingDetail } from '../../musicbrainz/schemas';
 import {
@@ -342,7 +342,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
   console.log(`🎵 Starting album enrichment for album ${data.albumId}`);
 
   // Initialize enrichment logger
-  const enrichmentLogger = createEnrichmentLogger(prisma);
+  const llamaLogger = createLlamaLogger(prisma);
 
   // Track enrichment metrics
   const startTime = Date.now();
@@ -370,7 +370,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
   // Check if enrichment is needed (with logger for cooldown checks)
   // Skip this check if force=true (admin requested force re-enrichment)
   if (!data.force) {
-    const enrichmentDecision = await shouldEnrichAlbum(album, enrichmentLogger);
+    const enrichmentDecision = await shouldEnrichAlbum(album, llamaLogger);
     if (!enrichmentDecision.shouldEnrich) {
       console.log(
         `⏭️ Album ${data.albumId} does not need enrichment, skipping - ${enrichmentDecision.reason}`
@@ -385,7 +385,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
       }
 
       // Log the skip with the reason
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ALBUM',
         entityId: album.id,
         operation: JOB_TYPES.ENRICH_ALBUM,
@@ -823,7 +823,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
 
             // Log the Spotify fallback as a separate operation with same jobId
             // This links the two log entries together
-            await enrichmentLogger.logEnrichment({
+            await llamaLogger.logEnrichment({
               entityType: 'ALBUM',
               entityId: album.id,
               operation: 'SPOTIFY_TRACK_FALLBACK',
@@ -895,7 +895,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
     });
 
     // Log successful enrichment
-    await enrichmentLogger.logEnrichment({
+    await llamaLogger.logEnrichment({
       entityType: 'ALBUM',
       entityId: album.id,
       operation: JOB_TYPES.ENRICH_ALBUM,
@@ -941,7 +941,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
       error instanceof Error ? error.message : 'Unknown error';
     const errorCode = error instanceof Error ? error.name : 'UNKNOWN_ERROR';
 
-    await enrichmentLogger.logEnrichment({
+    await llamaLogger.logEnrichment({
       entityType: 'ALBUM',
       entityId: album.id,
       operation: JOB_TYPES.ENRICH_ALBUM,
@@ -980,7 +980,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
   console.log(`🎤 Starting artist enrichment for artist ${data.artistId}`);
 
   // Initialize enrichment logger
-  const enrichmentLogger = createEnrichmentLogger(prisma);
+  const llamaLogger = createLlamaLogger(prisma);
 
   // Track enrichment metrics
   const startTime = Date.now();
@@ -1005,7 +1005,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
   if (!data.force) {
     const enrichmentDecision = await shouldEnrichArtist(
       artist,
-      enrichmentLogger
+      llamaLogger
     );
     if (!enrichmentDecision.shouldEnrich) {
       console.log(
@@ -1021,7 +1021,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
       }
 
       // Log the skip with the reason
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ARTIST',
         entityId: artist.id,
         operation: JOB_TYPES.ENRICH_ARTIST,
@@ -1215,7 +1215,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
     });
 
     // Log successful enrichment
-    await enrichmentLogger.logEnrichment({
+    await llamaLogger.logEnrichment({
       entityType: 'ARTIST',
       entityId: artist.id,
       operation: JOB_TYPES.ENRICH_ARTIST,
@@ -1292,7 +1292,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
       error instanceof Error ? error.message : 'Unknown error';
     const errorCode = error instanceof Error ? error.name : 'UNKNOWN_ERROR';
 
-    await enrichmentLogger.logEnrichment({
+    await llamaLogger.logEnrichment({
       entityType: 'ARTIST',
       entityId: artist.id,
       operation: JOB_TYPES.ENRICH_ARTIST,
@@ -1328,7 +1328,7 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
   console.log(`🎵 Enriching track ${data.trackId}`);
 
   // Initialize enrichment logger
-  const enrichmentLogger = createEnrichmentLogger(prisma);
+  const llamaLogger = createLlamaLogger(prisma);
 
   // Track enrichment metrics
   const startTime = Date.now();
@@ -1482,7 +1482,7 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
     );
 
     // Log successful enrichment
-    await enrichmentLogger.logEnrichment({
+    await llamaLogger.logEnrichment({
       entityType: 'TRACK',
       entityId: track.id,
       operation: JOB_TYPES.ENRICH_TRACK,
@@ -1565,7 +1565,7 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
       error instanceof Error ? error.message : 'Unknown error';
     const errorCode = error instanceof Error ? error.name : 'UNKNOWN_ERROR';
 
-    await enrichmentLogger.logEnrichment({
+    await llamaLogger.logEnrichment({
       entityType: 'TRACK',
       entityId: data.trackId,
       operation: JOB_TYPES.ENRICH_TRACK,

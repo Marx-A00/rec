@@ -5,7 +5,7 @@ import { Job } from 'bullmq';
 
 import { prisma } from '@/lib/prisma';
 
-import { createEnrichmentLogger } from '../../enrichment/enrichment-logger';
+import { createLlamaLogger } from '@/lib/logging/llama-logger';
 import type {
   CacheAlbumCoverArtJobData,
   CacheArtistImageJobData,
@@ -22,7 +22,7 @@ export async function handleCacheAlbumCoverArt(
   const data = job.data;
   const { albumId } = data;
   const startTime = Date.now();
-  const enrichmentLogger = createEnrichmentLogger(prisma);
+  const llamaLogger = createLlamaLogger(prisma);
 
   try {
     // Fetch album from database
@@ -37,7 +37,7 @@ export async function handleCacheAlbumCoverArt(
     });
 
     if (!album) {
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ALBUM',
         entityId: albumId,
         operation: JOB_TYPES.CACHE_ALBUM_COVER_ART,
@@ -60,7 +60,7 @@ export async function handleCacheAlbumCoverArt(
 
     // Skip if already cached
     if (album.cloudflareImageId && album.cloudflareImageId !== 'none') {
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ALBUM',
         entityId: albumId,
         operation: JOB_TYPES.CACHE_ALBUM_COVER_ART,
@@ -96,7 +96,7 @@ export async function handleCacheAlbumCoverArt(
         data: { cloudflareImageId: 'none' },
       });
 
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ALBUM',
         entityId: albumId,
         operation: JOB_TYPES.CACHE_ALBUM_COVER_ART,
@@ -138,7 +138,7 @@ export async function handleCacheAlbumCoverArt(
         data: { cloudflareImageId: 'none' },
       });
 
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ALBUM',
         entityId: albumId,
         operation: JOB_TYPES.CACHE_ALBUM_COVER_ART,
@@ -177,7 +177,7 @@ export async function handleCacheAlbumCoverArt(
 
     console.log(`✅ Cached cover art for "${album.title}" (${albumId})`);
 
-    await enrichmentLogger.logEnrichment({
+    await llamaLogger.logEnrichment({
       entityType: 'ALBUM',
       entityId: albumId,
       operation: JOB_TYPES.CACHE_ALBUM_COVER_ART,
@@ -220,7 +220,7 @@ export async function handleCacheAlbumCoverArt(
 
     // Only log if we haven't already logged (album not found case)
     if (!errorMessage.includes('not found')) {
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ALBUM',
         entityId: albumId,
         operation: JOB_TYPES.CACHE_ALBUM_COVER_ART,
@@ -258,7 +258,7 @@ export async function handleCacheArtistImage(
   const data = job.data;
   const { artistId } = data;
   const startTime = Date.now();
-  const enrichmentLogger = createEnrichmentLogger(prisma);
+  const llamaLogger = createLlamaLogger(prisma);
 
   try {
     // Fetch artist from database
@@ -273,7 +273,7 @@ export async function handleCacheArtistImage(
     });
 
     if (!artist) {
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ARTIST',
         entityId: artistId,
         operation: JOB_TYPES.CACHE_ARTIST_IMAGE,
@@ -296,7 +296,7 @@ export async function handleCacheArtistImage(
 
     // Skip if already cached
     if (artist.cloudflareImageId && artist.cloudflareImageId !== 'none') {
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ARTIST',
         entityId: artistId,
         operation: JOB_TYPES.CACHE_ARTIST_IMAGE,
@@ -332,7 +332,7 @@ export async function handleCacheArtistImage(
         data: { cloudflareImageId: 'none' },
       });
 
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ARTIST',
         entityId: artistId,
         operation: JOB_TYPES.CACHE_ARTIST_IMAGE,
@@ -376,7 +376,7 @@ export async function handleCacheArtistImage(
         data: { cloudflareImageId: 'none' },
       });
 
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ARTIST',
         entityId: artistId,
         operation: JOB_TYPES.CACHE_ARTIST_IMAGE,
@@ -415,7 +415,7 @@ export async function handleCacheArtistImage(
 
     console.log(`✅ Cached image for "${artist.name}" (${artistId})`);
 
-    await enrichmentLogger.logEnrichment({
+    await llamaLogger.logEnrichment({
       entityType: 'ARTIST',
       entityId: artistId,
       operation: JOB_TYPES.CACHE_ARTIST_IMAGE,
@@ -458,7 +458,7 @@ export async function handleCacheArtistImage(
 
     // Only log if we haven't already logged (artist not found case)
     if (!errorMessage.includes('not found')) {
-      await enrichmentLogger.logEnrichment({
+      await llamaLogger.logEnrichment({
         entityType: 'ARTIST',
         entityId: artistId,
         operation: JOB_TYPES.CACHE_ARTIST_IMAGE,
