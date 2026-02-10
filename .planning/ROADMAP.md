@@ -237,6 +237,11 @@ Plans:
 - FAILED category should capture exceptions in enrichment/correction operations
 - CACHED category for album cover and artist image cache operations
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 30-01-PLAN.md — Add explicit category values to processor logEnrichment calls
+
 ---
 
 ## Phase 31: UI & Branding
