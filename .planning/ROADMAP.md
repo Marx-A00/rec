@@ -138,19 +138,18 @@ Plans:
 
 **Requirements:**
 - CREATE-01: Album creation from `addAlbum` mutation logged with category: CREATED
-- CREATE-02: Album creation from `addAlbumToCollection` logged with category: CREATED
+- CREATE-02: ~~Album creation from `addAlbumToCollection`~~ — N/A: `addAlbumToCollection` links existing albums to collections (uses `tx.collectionAlbum.create()` with existing albumId), does not create albums
 - CREATE-03: Album creation from Spotify sync logged with category: CREATED
 - CREATE-04: Album creation from MusicBrainz sync logged with category: CREATED
-- CREATE-05: Album creation from search/save flow logged with category: CREATED
+- CREATE-05: Album creation from search/save flow logged with category: CREATED (covered by addAlbum)
 - CREATE-06: Creation logs include userId when user-triggered
 - CREATE-07: Creation logs have isRootJob: true
 
 **Success Criteria:**
 
-1. **Recommendation flow tracked:** Creating album via `addAlbum` mutation produces LlamaLog entry with category: CREATED, isRootJob: true, userId populated
-2. **Collection add tracked:** Adding new album via `addAlbumToCollection` produces CREATED log with userId
-3. **Sync operations tracked:** Both Spotify and MusicBrainz new releases sync produce CREATED logs for new albums (userId null, jobId present)
-4. **All paths verified:** Manual test of each creation path confirms LlamaLog entry appears in database with correct category
+1. **User-initiated creation tracked:** Creating album via `addAlbum` mutation produces LlamaLog entry with category: CREATED, isRootJob: true, userId populated
+2. **Sync operations tracked:** Both Spotify and MusicBrainz new releases sync produce CREATED logs for new albums (userId null, jobId present)
+3. **All paths verified:** Manual test of each creation path confirms LlamaLog entry appears in database with correct category
 
 **Plans:** 2 plans
 
@@ -159,16 +158,17 @@ Plans:
 - [ ] 28-02-PLAN.md — Sync operation creation logging (Spotify + MusicBrainz)
 
 **Key Files:**
-- `src/lib/graphql/resolvers/mutations.ts` - addAlbum, addAlbumToCollection
+- `src/lib/graphql/resolvers/mutations.ts` - addAlbum mutation
 - `src/lib/spotify/mappers.ts` - Spotify sync album creation
 - `src/lib/queue/processors/musicbrainz-processor.ts` - MusicBrainz sync
 - `src/lib/logging/llama-logger.ts` - Logger methods
 
 **Notes:**
-- CREATE-01, CREATE-02, CREATE-05 are all covered by addAlbum mutation (single entry point)
-- addAlbumToCollection requires existing albumId; new albums flow through addAlbum first
+- CREATE-01 and CREATE-05 are both covered by addAlbum mutation (single entry point for user-initiated album creation)
+- CREATE-02 is NOT applicable: `addAlbumToCollection` requires an existing albumId and only creates a collectionAlbum link record
 - Creation logs should fire AFTER successful database insert
 - userId is null for automated sync operations
+
 
 ---
 
@@ -350,7 +350,7 @@ Plans:
 | CODE-06     | 27    | Complete | Regenerate GraphQL types                 |
 | CODE-07     | 27    | Complete | Update resolver references               |
 | CREATE-01   | 28    | Pending | Log addAlbum creation                    |
-| CREATE-02   | 28    | Pending | Log addAlbumToCollection creation        |
+| CREATE-02   | 28    | N/A     | addAlbumToCollection links, not creates  |
 | CREATE-03   | 28    | Pending | Log Spotify sync creation                |
 | CREATE-04   | 28    | Pending | Log MusicBrainz sync creation            |
 | CREATE-05   | 28    | Pending | Log search/save creation                 |
