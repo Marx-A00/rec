@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-02-10
 **Current Milestone:** v1.4 LlamaLog - Entity Provenance & Audit System
-**Status:** Phase 29 Complete
+**Status:** Phase 29 In Progress
 
 ## Project Reference
 
@@ -10,22 +10,22 @@
 
 **Extended Mission (v1.4):** Track the complete lifecycle of entities (Albums, Artists, Tracks) from creation through all subsequent operations. Answer: "How did this album get into the database, and what happened to it afterward?"
 
-**Current Focus:** Phase 29 Related Entity Tracking - Complete
+**Current Focus:** Phase 29 Related Entity Tracking - Adding job hierarchy support.
 
 ## Current Position
 
-**Phase:** 29 - Related Entity Tracking (COMPLETE)
-**Plan:** 04 of 04 - Complete
-**Status:** Phase Complete
+**Phase:** 29 - Related Entity Tracking (IN PROGRESS)
+**Plan:** 03 of 04 - Complete
+**Status:** In Progress
 
 **Progress:**
 ```
-[29]████████████████████████████████████████████ 100%
+[29]█████████████████████████████████████████████░ 93%
                      ^
  Phases: 26 27 28 29 30 31 32
 ```
 
-**Milestone Progress:** 34/34 requirements complete (100%)
+**Milestone Progress:** 32/34 requirements complete (94%)
 
 ## Performance Metrics
 
@@ -33,16 +33,15 @@
 - Start date: 2026-02-09
 - Phases planned: 7 (26-32)
 - Requirements: 34
-- Completed: 34
-- Remaining: 0
+- Completed: 32
+- Remaining: 2
 - Phase 26 Duration: 4m 26s
 - Phase 27 Total: 21m 48s
 - Phase 28 Total: ~6m
-- Phase 29 Total: ~20m
-  - Plan 01: 12m (schema migration)
-  - Plan 02: 2m 46s (LlamaLogger rootJobId)
-  - Plan 03: ~3m (artist logging)
-  - Plan 04: 3m 47s (track logging)
+- Phase 29-01 Duration: 12m
+- Phase 29-02 Duration: 2m 46s
+- Phase 29-03 Duration: ~6m
+- Phase 29-04 Duration: ~5m (prior session)
 
 **Previous Milestone (v1.3):**
 - Completed: 2026-02-09
@@ -107,9 +106,10 @@
 - Non-root jobs without explicit rootJobId get null
 - Rationale: Callers must pass rootJobId for child jobs; null indicates missing provenance (acceptable during incremental rollout)
 
-**2026-02-10: Granular per-track logging over summary counts (DEC-29-04-01)**
-- Pattern: Each track gets its own log entry
-- Rationale: Individual logs enable precise entity lineage queries
+**2026-02-10: CREATED vs LINKED category usage (DEC-29-03-01)**
+- CREATED: New entity created in database (entity didn't exist before)
+- LINKED: Existing entity associated with another entity (entity already existed)
+- Rationale: Distinguishes between true creation and association for provenance tracking
 
 ### Technical Debt
 
@@ -134,8 +134,7 @@
 - Album creation tracking added to all entry points
 - rootJobId field added to LlamaLogData interface
 - rootJobId column added to database with backfill
-- Artist creation logging complete
-- Track creation logging complete
+- Artist creation/linking logging added to all entry points
 
 ### Active TODOs
 
@@ -157,51 +156,51 @@
 - [x] Plan 01: User-initiated creation logging (addAlbum mutation)
 - [x] Plan 02: Sync operation creation logging (Spotify + MusicBrainz)
 
-**Phase 29 (Related Entity Tracking): COMPLETE**
+**Phase 29 (Related Entity Tracking): IN PROGRESS**
 - [x] Plan 01: Schema migration (rootJobId column, LINKED category)
 - [x] Plan 02: LlamaLogger rootJobId support
 - [x] Plan 03: Artist creation/linking logging
-- [x] Plan 04: Track creation/linking logging
+- [ ] Plan 04: Track creation/linking logging
 
 ## Session Continuity
 
 ### What Just Happened
 
-**2026-02-10 - Phase 29 Plan 04 Complete:**
-- Added track creation logging in enrichment processor (MusicBrainz source)
-- Added track creation logging in Spotify mappers
-- Added track creation failure logging
-- All paths pass parentJobId and rootJobId
-- Granular logging: one log per track
+**2026-02-10 - Phase 29 Plan 03 Complete:**
+- Added artist creation logging with CREATED category across 3 paths
+- Added artist linking logging with LINKED category across 3 paths
+- All logs include parentJobId and rootJobId for hierarchy
+- Updated album logging to include jobId for proper rootJobId computation
 
 ### What's Next
 
 **Immediate:**
-- Milestone v1.4 may be complete - verify with phase roadmap
-- If more phases (30-32) exist, continue to next phase
+- Phase 29 Plan 04: Track creation/linking logging (may be partially done from prior session)
 
 ### Context for Next Session
 
-**Phase 29 Complete Summary:**
-All entity creation paths now log to LlamaLog with proper job hierarchy:
-- Albums: Logged via addAlbum mutation and sync operations
-- Artists: Logged via createLocalArtist and creation during album add
-- Tracks: Logged via enrichment processor and Spotify mappers
+**Phase 29 Plan 03 Completion Summary:**
+- Artist creation now logged in addAlbum, enrichment processor, MusicBrainz processor
+- Artist linking now logged when existing artists are associated with albums/tracks
+- CREATED vs LINKED categories correctly distinguish new vs existing entities
 
-**Key Files (Phase 29-04):**
-- `src/lib/queue/processors/enrichment-processor.ts` - Track creation logging (MusicBrainz)
-- `src/lib/spotify/mappers.ts` - Track creation logging (Spotify)
+**Key Files (Phase 29-03):**
+- `src/lib/graphql/resolvers/mutations.ts` - albumJobId, artist CREATED/LINKED logging
+- `src/lib/queue/processors/enrichment-processor.ts` - track-child artist logging
+- `src/lib/queue/processors/musicbrainz-processor.ts` - sync artist logging
 
-**Commits (Phase 29-04):**
-- `5395356`: feat(29-04): add track creation logging in enrichment processor
-- `9f0fddc`: feat(29-04): add track creation logging in Spotify mappers
+**Commits (Phase 29-03):**
+- `28fa8af`: feat(29-03): add artist creation and linking logging in addAlbum
+- `ce39f60`: feat(29-03): add artist creation/linking logging in MusicBrainz processor
+
+Note: Task 2 changes (enrichment-processor) were bundled in `9f0fddc` from prior session.
 
 **Database State:**
-- 4010+ records with rootJobId filled
-- 42 orphan records with NULL rootJobId (legacy)
-- All new track creations log with hierarchy
+- 4010 records with rootJobId filled
+- 42 orphan records with NULL rootJobId
+- 4052 total records in llama_logs
 
 ---
 
 _State initialized: 2026-02-09_
-_Last session: 2026-02-10 (Phase 29 complete)_
+_Last session: 2026-02-10 (Phase 29 Plan 03 complete)_
