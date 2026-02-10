@@ -10,22 +10,22 @@
 
 **Extended Mission (v1.4):** Track the complete lifecycle of entities (Albums, Artists, Tracks) from creation through all subsequent operations. Answer: "How did this album get into the database, and what happened to it afterward?"
 
-**Current Focus:** Complete code rename, then proceed to remaining file updates.
+**Current Focus:** Complete code rename, then proceed to component updates.
 
 ## Current Position
 
 **Phase:** 27 - Code Rename
-**Plan:** 02 of 05 - Complete
+**Plan:** 03 of 05 - Complete
 **Status:** In Progress
 
 **Progress:**
 ```
-[27]██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 29%
-      ^
+[27]██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░ 43%
+         ^
  Phases: 26 27 28 29 30 31 32
 ```
 
-**Milestone Progress:** 9/34 requirements complete (26%)
+**Milestone Progress:** 12/34 requirements complete (35%)
 
 ## Performance Metrics
 
@@ -33,11 +33,12 @@
 - Start date: 2026-02-09
 - Phases planned: 7 (26-32)
 - Requirements: 34
-- Completed: 9
-- Remaining: 25
+- Completed: 12
+- Remaining: 22
 - Phase 26 Duration: 4m 26s
 - Phase 27-01 Duration: 4m 29s
 - Phase 27-02 Duration: 3m 34s
+- Phase 27-03 Duration: 3m 55s
 
 **Previous Milestone (v1.3):**
 - Completed: 2026-02-09
@@ -71,6 +72,10 @@
 - Rationale: Cleaner filtering, easier queries, backward-compatible with existing operation field
 - Trade-off: Requires backfill migration but simplifies future queries
 
+**2026-02-10: deriveCategory() function for activity-logger (DEC-27-03-01)**
+- Rationale: Automatic category inference from operation type reduces caller burden
+- Mapping: MANUAL_CREATE->CREATED, MUSICBRAINZ_FETCH->ENRICHED, MANUAL_UPDATE->CORRECTED, etc.
+
 ### Technical Debt
 
 **From v1.3:**
@@ -79,7 +84,8 @@
 **Potential in v1.4:**
 - ~~Migration backfill logic complexity~~ - Resolved, backfill complete
 - ~~Global find-replace risk~~ - Mitigated by systematic approach in Phase 27
-- GraphQL cache invalidation after type rename - Phase 27-03/04
+- ~~GraphQL cache invalidation after type rename~~ - Resolved, codegen regenerated
+- Component file updates needed (Phase 27-04)
 
 ### Blockers
 
@@ -89,6 +95,7 @@
 - Schema migration completed with zero data loss
 - LlamaLogger class created in new location
 - GraphQL schema and types regenerated
+- Resolver and service files updated
 
 ### Active TODOs
 
@@ -102,8 +109,8 @@
 **Phase 27 (Code Rename): IN PROGRESS**
 - [x] Plan 01: Create LlamaLogger class, update processors
 - [x] Plan 02: Update GraphQL schema and regenerate types
-- [ ] Plan 03: Update remaining code files (apply-service, preview-enrichment, activity-logger)
-- [ ] Plan 04: Update resolvers
+- [x] Plan 03: Update resolvers and correction services
+- [ ] Plan 04: Update admin UI components
 - [ ] Plan 05: Verify admin UI still works
 
 **Phase 28-32:**
@@ -113,50 +120,57 @@
 
 ### What Just Happened
 
-**2026-02-10 - Phase 27 Plan 02 Complete:**
-- Updated src/graphql/schema.graphql:
-  - Renamed type EnrichmentLog -> LlamaLog
-  - Renamed enum EnrichmentLogStatus -> LlamaLogStatus
-  - Added enum LlamaLogCategory
-  - Added category field to LlamaLog type
-  - Updated enrichmentLogs -> llamaLogs in Artist, Album, Track
-- Updated all GraphQL query files:
-  - enrichment.graphql: GetEnrichmentLogs -> GetLlamaLogs
-  - albums.graphql: llamaLogs field
-  - getArtistDetails.graphql: llamaLogs field
-- Ran pnpm codegen successfully
-- All generated types now use LlamaLog naming
+**2026-02-10 - Phase 27 Plan 03 Complete:**
+- Updated src/lib/graphql/resolvers/:
+  - queries.ts: enrichmentLogs -> llamaLogs, prisma.enrichmentLog -> prisma.llamaLog
+  - mutations.ts: prisma.enrichmentLog -> prisma.llamaLog, tx.enrichmentLog -> tx.llamaLog
+  - index.ts: field resolvers renamed (llamaLogs, latestLlamaLog)
+- Updated src/lib/correction/:
+  - apply/apply-service.ts: prisma.llamaLog.create with category: 'CORRECTED'
+  - artist/apply/apply-service.ts: same updates
+- Updated src/lib/enrichment/:
+  - preview-enrichment.ts: prisma.llamaLog.create with category: 'ENRICHED'
+- Updated src/lib/logging/:
+  - activity-logger.ts: LlamaLogCategory import, deriveCategory() function, llamaLog.create
+- TypeScript type check: 0 errors in src/lib/* files
 
 ### What's Next
 
-**Immediate (Phase 27-03):**
-1. Update src/lib/correction/apply/apply-service.ts - uses prisma.enrichmentLog
-2. Update src/lib/correction/artist/apply/apply-service.ts - uses prisma.enrichmentLog
-3. Update src/lib/enrichment/preview-enrichment.ts - uses prisma.enrichmentLog
-4. Update src/lib/logging/activity-logger.ts - uses prisma.enrichmentLog
+**Immediate (Phase 27-04):**
+1. Update src/components/admin/EnrichmentLogTable.tsx:
+   - Import useGetLlamaLogsQuery instead of useGetEnrichmentLogsQuery
+   - Import LlamaLogStatus instead of EnrichmentLogStatus
+   - Import LlamaLog instead of EnrichmentLog
+2. Update src/components/admin/EnrichmentTimeline.tsx - same import changes
+3. Update src/components/admin/EnrichmentTimelineModal.tsx - LlamaLog import
+4. Update src/components/admin/EnrichmentTree.tsx - same import changes
+5. Update src/components/admin/ExpandableJobRow.tsx - same import changes
+6. Update src/components/admin/enrichment-timeline-utils.tsx - same import changes
 
-**After Phase 27-03:**
-- Phase 27-04: Update resolvers (use new LlamaLog types)
-- Phase 27-05: Verify admin UI still works
+**After Phase 27-04:**
+- Phase 27-05: Verify admin UI still works (manual testing)
 
 ### Context for Next Session
 
-**If resuming Phase 27-03:**
-- Files with remaining prisma.enrichmentLog references need update to prisma.llamaLog
-- Check: src/lib/correction/apply/apply-service.ts
-- Check: src/lib/correction/artist/apply/apply-service.ts
-- Check: src/lib/enrichment/preview-enrichment.ts
-- Check: src/lib/logging/activity-logger.ts
+**If resuming Phase 27-04:**
+- Component files in src/components/admin/ need import updates
+- Key imports to change:
+  - useGetEnrichmentLogsQuery -> useGetLlamaLogsQuery
+  - EnrichmentLogStatus -> LlamaLogStatus (or verify if this exists)
+  - EnrichmentLog -> LlamaLog
+- May also need to rename component files (EnrichmentLogTable -> LlamaLogTable?)
 
 **Key Files Completed:**
-- `src/lib/logging/llama-logger.ts` - New logger class (CREATED)
-- `src/lib/enrichment/enrichment-logger.ts` - Old logger class (DELETED)
-- `src/graphql/schema.graphql` - Updated with LlamaLog types
-- `src/graphql/queries/*.graphql` - Updated with llamaLogs fields
-- `src/generated/graphql.ts` - Regenerated with new types
-- `src/generated/resolvers-types.ts` - Regenerated with new types
+- `src/lib/logging/llama-logger.ts` - LlamaLogger class (Plan 01)
+- `src/graphql/schema.graphql` - LlamaLog types (Plan 02)
+- `src/graphql/queries/*.graphql` - llamaLogs fields (Plan 02)
+- `src/generated/graphql.ts` - Regenerated types (Plan 02)
+- `src/lib/graphql/resolvers/*` - Updated resolvers (Plan 03)
+- `src/lib/correction/*/apply-service.ts` - Updated services (Plan 03)
+- `src/lib/enrichment/preview-enrichment.ts` - Updated (Plan 03)
+- `src/lib/logging/activity-logger.ts` - Updated with deriveCategory() (Plan 03)
 
 ---
 
 _State initialized: 2026-02-09_
-_Last session: 2026-02-10 (Phase 27 Plan 02 complete)_
+_Last session: 2026-02-10 (Phase 27 Plan 03 complete)_
