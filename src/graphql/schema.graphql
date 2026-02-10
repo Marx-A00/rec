@@ -45,8 +45,8 @@ type Artist {
   listeners: Int
 
   # Enrichment logs
-  enrichmentLogs(limit: Int): [EnrichmentLog!]!
-  latestEnrichmentLog: EnrichmentLog
+  llamaLogs(limit: Int): [LlamaLog!]!
+  latestLlamaLog: LlamaLog
 }
 
 type Album {
@@ -86,8 +86,8 @@ type Album {
   needsEnrichment: Boolean!
 
   # Enrichment logs
-  enrichmentLogs(limit: Int): [EnrichmentLog!]!
-  latestEnrichmentLog: EnrichmentLog
+  llamaLogs(limit: Int): [LlamaLog!]!
+  latestLlamaLog: LlamaLog
 }
 
 type Track {
@@ -120,8 +120,8 @@ type Track {
   searchArtistName: String
 
   # Enrichment logs
-  enrichmentLogs(limit: Int): [EnrichmentLog!]!
-  latestEnrichmentLog: EnrichmentLog
+  llamaLogs(limit: Int): [LlamaLog!]!
+  latestLlamaLog: LlamaLog
 }
 
 # =============================================
@@ -659,13 +659,21 @@ enum EnrichmentEntityType {
   TRACK
 }
 
-enum EnrichmentLogStatus {
+enum LlamaLogStatus {
   SUCCESS
   PARTIAL_SUCCESS
   FAILED
   NO_DATA_AVAILABLE
   SKIPPED
   PREVIEW
+}
+
+enum LlamaLogCategory {
+  CREATED
+  ENRICHED
+  CORRECTED
+  CACHED
+  FAILED
 }
 
 # =============================================
@@ -1790,16 +1798,17 @@ input ManualCorrectionApplyInput {
 }
 
 # =============================================
-# ENRICHMENT LOGGING TYPES
+# LLAMA LOGGING TYPES
 # =============================================
 
-type EnrichmentLog {
+type LlamaLog {
   id: UUID!
   entityType: EnrichmentEntityType
   entityId: UUID
   operation: String!
   sources: [String!]!
-  status: EnrichmentLogStatus!
+  status: LlamaLogStatus!
+  category: LlamaLogCategory!
   reason: String # Human-readable explanation of why this enrichment occurred/was skipped
   fieldsEnriched: [String!]!
   dataQualityBefore: DataQuality
@@ -1816,7 +1825,7 @@ type EnrichmentLog {
   triggeredBy: String
   userId: String # Track which user made manual changes
   createdAt: DateTime!
-  children: [EnrichmentLog!] # Populated when includeChildren=true
+  children: [LlamaLog!] # Populated when includeChildren=true
 }
 
 input TimeRangeInput {
@@ -2343,17 +2352,17 @@ type Query {
   ): [Artist!]!
 
   # Enrichment Logging queries
-  enrichmentLogs(
+  llamaLogs(
     entityType: EnrichmentEntityType
     entityId: UUID
-    status: EnrichmentLogStatus
+    status: LlamaLogStatus
     sources: [String!]
     skip: Int
     limit: Int
     parentOnly: Boolean # When true, returns only root logs (parentJobId is null)
     parentJobId: String # When provided, returns only children of this parent job
     includeChildren: Boolean # When true, returns root logs with nested children
-  ): [EnrichmentLog!]!
+  ): [LlamaLog!]!
 
   enrichmentStats(
     entityType: EnrichmentEntityType
