@@ -219,7 +219,7 @@ Plans:
 **Requirements:**
 - EXIST-01: All enrichment operations use category: ENRICHED
 - EXIST-02: All correction operations use category: CORRECTED
-- EXIST-03: All cache operations use category: CACHED
+- EXIST-03: All cache/image operations use category: ENRICHED (adds cloudflareImageId field)
 - EXIST-04: All failed operations use category: FAILED
 
 **Success Criteria:**
@@ -240,7 +240,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 30-01-PLAN.md — Add explicit category values to processor logEnrichment calls
+- [x] 30-01-PLAN.md — Add explicit category values to processor logEnrichment calls
 
 ---
 
@@ -336,7 +336,7 @@ Plans:
 | 27    | Code Rename                   | 7            | Complete | 2026-02-09 |
 | 28    | Album Creation Tracking       | 7            | Complete | 2026-02-10 |
 | 29    | Related Entity Tracking       | 5            | Complete | 2026-02-10 |
-| 30    | Existing Logging Categories   | 4            | Pending | -         |
+| 30    | Existing Logging Categories   | 4            | Complete | 2026-02-10 |
 | 31    | UI & Branding                 | 4            | Pending | -         |
 | 32    | Query & Provenance            | 3            | Pending | -         |
 
@@ -372,10 +372,10 @@ Plans:
 | RELATE-03   | 29    | Complete | Log track creation                       |
 | RELATE-04   | 29    | Complete | Set parentJobId for tracks               |
 | RELATE-05   | 29    | Complete | Set isRootJob false for children         |
-| EXIST-01    | 30    | Pending | Categorize enrichment operations         |
-| EXIST-02    | 30    | Pending | Categorize correction operations         |
-| EXIST-03    | 30    | Pending | Categorize cache operations              |
-| EXIST-04    | 30    | Pending | Categorize failed operations             |
+| EXIST-01    | 30    | Complete | Categorize enrichment operations         |
+| EXIST-02    | 30    | Complete | Categorize correction operations         |
+| EXIST-03    | 30    | Complete | Categorize cache/image ops as ENRICHED   |
+| EXIST-04    | 30    | Complete | Categorize failed operations             |
 | UI-01       | 31    | Pending | Console log prefix                       |
 | UI-02       | 31    | Pending | Admin table header                       |
 | UI-03       | 31    | Pending | Log detail theming                       |
@@ -389,4 +389,4 @@ Plans:
 ---
 
 _Roadmap created: 2026-02-09_
-_Last updated: 2026-02-10 (Phase 29 complete)_
+_Last updated: 2026-02-10 (Phase 30 complete)_
