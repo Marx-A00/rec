@@ -59,8 +59,10 @@ export interface LlamaLogData {
   apiCallCount?: number;
   metadata?: Record<string, unknown> | null;
   jobId?: string | null;
-  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  /** Parent job ID for immediate parent tracking in job chains */
   parentJobId?: string | null;
+  /** Root job ID for hierarchy queries (original album job). Auto-computed for root jobs. */
+  rootJobId?: string | null;
   /** Whether this is a root job (true) or child job (false). Auto-computed from parentJobId if not provided. */
   isRootJob?: boolean;
   triggeredBy?: string | null;
@@ -136,6 +138,9 @@ export class LlamaLogger {
       const isRootJob =
         data.isRootJob !== undefined ? data.isRootJob : !data.parentJobId;
 
+      // Compute rootJobId: use provided value, or set to jobId for root jobs
+      const rootJobId = data.rootJobId ?? (isRootJob ? data.jobId : null);
+
       // Use provided category or infer from operation/status
       const category =
         data.category ?? inferCategory(data.operation, data.status);
@@ -165,6 +170,7 @@ export class LlamaLogger {
             : Prisma.JsonNull,
           jobId: data.jobId ?? null,
           parentJobId: data.parentJobId ?? null,
+          rootJobId,
           isRootJob,
           triggeredBy: data.triggeredBy ?? null,
           userId: data.userId ?? null,
@@ -172,8 +178,9 @@ export class LlamaLogger {
       });
 
       const rootIndicator = isRootJob ? ' [ROOT]' : '';
+      const rootInfo = rootJobId ? ` root:${rootJobId.slice(0, 8)}` : '';
       console.log(
-        `[LlamaLogger] Logged ${data.operation} for ${data.entityType}:${data.entityId} - Status: ${data.status}${rootIndicator}`
+        `[LlamaLogger] Logged ${data.operation} for ${data.entityType}:${data.entityId} - Status: ${data.status}${rootIndicator}${rootInfo}`
       );
     } catch (error) {
       console.warn('[LlamaLogger] Failed to log enrichment:', error);
