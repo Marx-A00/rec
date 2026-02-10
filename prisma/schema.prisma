@@ -58,7 +58,7 @@ model User {
   settings             UserSettings?
   followers            UserFollow[]     @relation("UserFollowers")
   following            UserFollow[]     @relation("UserFollowing")
-  enrichmentLogs       EnrichmentLog[]
+  llamaLogs            LlamaLog[]
   activities           Activity[]       @relation("ActivityActor")
   targetedActivities   Activity[]       @relation("ActivityTarget")
 }
@@ -249,7 +249,7 @@ model Artist {
   updatedAt        DateTime                 @updatedAt @map("updated_at")
   albums           AlbumArtist[]
   tracks           TrackArtist[]
-  enrichmentLogs   EnrichmentLog[]
+  llamaLogs        LlamaLog[]
 
   @@index([name])
   @@index([musicbrainzId])
@@ -293,7 +293,7 @@ model Album {
   targetRecommendations Recommendation[]         @relation("RecommendedAlbum")
   artists               AlbumArtist[]
   tracks                Track[]
-  enrichmentLogs        EnrichmentLog[]
+  llamaLogs             LlamaLog[]
 
   @@index([title])
   @@index([releaseDate])
@@ -342,7 +342,7 @@ model Track {
   updatedAt        DateTime                 @updatedAt @map("updated_at")
   artists          TrackArtist[]
   album            Album                    @relation(fields: [albumId], references: [id], onDelete: Cascade)
-  enrichmentLogs   EnrichmentLog[]
+  llamaLogs        LlamaLog[]
 
   @@unique([albumId, musicbrainzId])
   @@index([albumId, discNumber, trackNumber])
@@ -395,7 +395,19 @@ model CacheData {
   @@map("cache_data")
 }
 
-model EnrichmentLog {
+// ============================================================================
+// LlamaLog - Entity Provenance & Audit System (renamed from EnrichmentLog)
+// ============================================================================
+
+enum LlamaLogCategory {
+  CREATED    // Entity was created (first appearance in database)
+  ENRICHED   // Entity was enriched with external API data
+  CORRECTED  // Entity was manually corrected by admin
+  CACHED     // Cache operation (read/write)
+  FAILED     // Operation failed
+}
+
+model LlamaLog {
   id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   entityType         EnrichmentEntityType?  @map("entity_type")
   entityId           String?                @map("entity_id") @db.Uuid
@@ -403,6 +415,7 @@ model EnrichmentLog {
   albumId            String?                @map("album_id") @db.Uuid
   trackId            String?                @map("track_id") @db.Uuid
   operation          String                 @db.VarChar(100)
+  category           LlamaLogCategory       // Categorizes the type of log entry
   sources            String[]
   status             EnrichmentStatus
   reason             String?                // Human-readable explanation of why this enrichment occurred/was skipped
@@ -437,7 +450,8 @@ model EnrichmentLog {
   @@index([userId])
   @@index([parentJobId])
   @@index([isRootJob, createdAt])
-  @@map("enrichment_logs")
+  @@index([category, createdAt])
+  @@map("llama_logs")
 }
 
 enum ContentSource {
