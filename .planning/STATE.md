@@ -1,6 +1,6 @@
 # Project State: v1.4 LlamaLog
 
-**Last Updated:** 2026-02-09
+**Last Updated:** 2026-02-10
 **Current Milestone:** v1.4 LlamaLog - Entity Provenance & Audit System
 **Status:** In Progress
 
@@ -15,17 +15,17 @@
 ## Current Position
 
 **Phase:** 27 - Code Rename
-**Plan:** 01 of 05 - Complete
+**Plan:** 02 of 05 - Complete
 **Status:** In Progress
 
 **Progress:**
 ```
-[27]█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 17%
-    ^
+[27]██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 29%
+      ^
  Phases: 26 27 28 29 30 31 32
 ```
 
-**Milestone Progress:** 6/34 requirements complete (18%)
+**Milestone Progress:** 9/34 requirements complete (26%)
 
 ## Performance Metrics
 
@@ -33,10 +33,11 @@
 - Start date: 2026-02-09
 - Phases planned: 7 (26-32)
 - Requirements: 34
-- Completed: 6
-- Remaining: 28
+- Completed: 9
+- Remaining: 25
 - Phase 26 Duration: 4m 26s
 - Phase 27-01 Duration: 4m 29s
+- Phase 27-02 Duration: 3m 34s
 
 **Previous Milestone (v1.3):**
 - Completed: 2026-02-09
@@ -78,7 +79,7 @@
 **Potential in v1.4:**
 - ~~Migration backfill logic complexity~~ - Resolved, backfill complete
 - ~~Global find-replace risk~~ - Mitigated by systematic approach in Phase 27
-- GraphQL cache invalidation after type rename - Phase 27-03
+- GraphQL cache invalidation after type rename - Phase 27-03/04
 
 ### Blockers
 
@@ -87,6 +88,7 @@
 **Resolved:**
 - Schema migration completed with zero data loss
 - LlamaLogger class created in new location
+- GraphQL schema and types regenerated
 
 ### Active TODOs
 
@@ -99,8 +101,8 @@
 
 **Phase 27 (Code Rename): IN PROGRESS**
 - [x] Plan 01: Create LlamaLogger class, update processors
-- [ ] Plan 02: Update remaining code files (apply-service, preview-enrichment, activity-logger)
-- [ ] Plan 03: Update GraphQL schema type definitions
+- [x] Plan 02: Update GraphQL schema and regenerate types
+- [ ] Plan 03: Update remaining code files (apply-service, preview-enrichment, activity-logger)
 - [ ] Plan 04: Update resolvers
 - [ ] Plan 05: Verify admin UI still works
 
@@ -111,29 +113,35 @@
 
 ### What Just Happened
 
-**2026-02-09 - Phase 27 Plan 01 Complete:**
-- Created src/lib/logging/llama-logger.ts with LlamaLogger class
-- Added category inference from operation/status patterns
-- Updated 4 processor files to use new import
-- Deleted old src/lib/enrichment/enrichment-logger.ts
-- All processor TypeScript imports resolve correctly
+**2026-02-10 - Phase 27 Plan 02 Complete:**
+- Updated src/graphql/schema.graphql:
+  - Renamed type EnrichmentLog -> LlamaLog
+  - Renamed enum EnrichmentLogStatus -> LlamaLogStatus
+  - Added enum LlamaLogCategory
+  - Added category field to LlamaLog type
+  - Updated enrichmentLogs -> llamaLogs in Artist, Album, Track
+- Updated all GraphQL query files:
+  - enrichment.graphql: GetEnrichmentLogs -> GetLlamaLogs
+  - albums.graphql: llamaLogs field
+  - getArtistDetails.graphql: llamaLogs field
+- Ran pnpm codegen successfully
+- All generated types now use LlamaLog naming
 
 ### What's Next
 
-**Immediate (Phase 27-02):**
+**Immediate (Phase 27-03):**
 1. Update src/lib/correction/apply/apply-service.ts - uses prisma.enrichmentLog
 2. Update src/lib/correction/artist/apply/apply-service.ts - uses prisma.enrichmentLog
 3. Update src/lib/enrichment/preview-enrichment.ts - uses prisma.enrichmentLog
 4. Update src/lib/logging/activity-logger.ts - uses prisma.enrichmentLog
 
-**After Phase 27-02:**
-- Phase 27-03: Update GraphQL schema type definitions
-- Phase 27-04: Update resolvers
+**After Phase 27-03:**
+- Phase 27-04: Update resolvers (use new LlamaLog types)
 - Phase 27-05: Verify admin UI still works
 
 ### Context for Next Session
 
-**If resuming Phase 27-02:**
+**If resuming Phase 27-03:**
 - Files with remaining prisma.enrichmentLog references need update to prisma.llamaLog
 - Check: src/lib/correction/apply/apply-service.ts
 - Check: src/lib/correction/artist/apply/apply-service.ts
@@ -143,9 +151,12 @@
 **Key Files Completed:**
 - `src/lib/logging/llama-logger.ts` - New logger class (CREATED)
 - `src/lib/enrichment/enrichment-logger.ts` - Old logger class (DELETED)
-- All processor files updated to use LlamaLogger
+- `src/graphql/schema.graphql` - Updated with LlamaLog types
+- `src/graphql/queries/*.graphql` - Updated with llamaLogs fields
+- `src/generated/graphql.ts` - Regenerated with new types
+- `src/generated/resolvers-types.ts` - Regenerated with new types
 
 ---
 
 _State initialized: 2026-02-09_
-_Last session: 2026-02-09 (Phase 27 Plan 01 complete)_
+_Last session: 2026-02-10 (Phase 27 Plan 02 complete)_
