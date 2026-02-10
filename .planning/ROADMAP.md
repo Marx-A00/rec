@@ -266,7 +266,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 31-01-PLAN.md — Console and admin UI llama branding
+- [x] 31-01-PLAN.md — Console and admin UI llama branding
 
 **Key Files:**
 - `src/lib/logging/llama-logger.ts` - Console output
@@ -343,7 +343,7 @@ Plans:
 | 28    | Album Creation Tracking       | 7            | Complete | 2026-02-10 |
 | 29    | Related Entity Tracking       | 5            | Complete | 2026-02-10 |
 | 30    | Existing Logging Categories   | 4            | Complete | 2026-02-10 |
-| 31    | UI & Branding                 | 4            | Pending | -         |
+| 31    | UI & Branding                 | 4            | Complete | 2026-02-10 |
 | 32    | Query & Provenance            | 3            | Pending | -         |
 
 **Total:** 7 phases, 34 requirements
@@ -382,10 +382,10 @@ Plans:
 | EXIST-02    | 30    | Complete | Categorize correction operations         |
 | EXIST-03    | 30    | Complete | Categorize cache/image ops as ENRICHED   |
 | EXIST-04    | 30    | Complete | Categorize failed operations             |
-| UI-01       | 31    | Pending | Console log prefix                       |
-| UI-02       | 31    | Pending | Admin table header                       |
-| UI-03       | 31    | Pending | Log detail theming                       |
-| UI-04       | 31    | Pending | Category badge theming                   |
+| UI-01       | 31    | Complete | Console log prefix                       |
+| UI-02       | 31    | Complete | Admin table header                       |
+| UI-03       | 31    | Complete | Log detail theming                       |
+| UI-04       | 31    | Complete | Category badge theming                   |
 | QUERY-01    | 32    | Pending | Create llamaLogChain query               |
 | QUERY-02    | 32    | Pending | Order chain by createdAt                 |
 | QUERY-03    | 32    | Pending | Filter chain by category                 |
@@ -395,4 +395,4 @@ Plans:
 ---
 
 _Roadmap created: 2026-02-09_
-_Last updated: 2026-02-10 (Phase 30 complete)_
+_Last updated: 2026-02-10 (Phase 31 complete)_
