@@ -1111,7 +1111,7 @@ export const mutationResolvers: MutationResolvers = {
         });
 
         // 3. Enrichment logs
-        await tx.enrichmentLog.deleteMany({
+        await tx.llamaLog.deleteMany({
           where: { artistId: id },
         });
 
@@ -2596,10 +2596,9 @@ export const mutationResolvers: MutationResolvers = {
         include: {
           _count: {
             select: {
-              collectionAlbum: true,
+              collectionAlbums: true,
               basisRecommendations: true,
               targetRecommendations: true,
-              listenLater: true,
               tracks: true,
             },
           },
@@ -2623,16 +2622,11 @@ export const mutationResolvers: MutationResolvers = {
         // 2. Recommendations (both as basis and target)
         await tx.recommendation.deleteMany({
           where: {
-            OR: [{ basisAlbumId: id }, { targetAlbumId: id }],
+            OR: [{ basisAlbumId: id }, { recommendedAlbumId: id }],
           },
         });
 
-        // 3. ListenLater entries
-        await tx.listenLater.deleteMany({
-          where: { albumId: id },
-        });
-
-        // 4. Track artists (via tracks)
+        // 3. Track artists (via tracks)
         const tracks = await tx.track.findMany({
           where: { albumId: id },
           select: { id: true },
@@ -2645,22 +2639,22 @@ export const mutationResolvers: MutationResolvers = {
           });
         }
 
-        // 5. Tracks
+        // 4. Tracks
         await tx.track.deleteMany({
           where: { albumId: id },
         });
 
-        // 6. ArtistCredit entries
-        await tx.artistCredit.deleteMany({
+        // 5. AlbumArtist entries
+        await tx.albumArtist.deleteMany({
           where: { albumId: id },
         });
 
-        // 7. EnrichmentLog entries
-        await tx.enrichmentLog.deleteMany({
+        // 6. LlamaLog entries
+        await tx.llamaLog.deleteMany({
           where: { albumId: id },
         });
 
-        // 8. Finally, delete the album itself
+        // 7. Finally, delete the album itself
         await tx.album.delete({
           where: { id },
         });
@@ -3105,7 +3099,7 @@ export const mutationResolvers: MutationResolvers = {
       });
 
       // Log enrichment with source: 'manual_correction'
-      await prisma.enrichmentLog.create({
+      await prisma.llamaLog.create({
         data: {
           entityType: 'ALBUM',
           entityId: input.albumId,

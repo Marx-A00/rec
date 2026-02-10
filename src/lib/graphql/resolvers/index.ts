@@ -1108,15 +1108,15 @@ export const resolvers: Resolvers = {
         parent.enrichmentStatus === 'FAILED'
       );
     },
-    enrichmentLogs: async (parent, args, { prisma }) => {
-      return prisma.enrichmentLog.findMany({
+    llamaLogs: async (parent, args, { prisma }) => {
+      return prisma.llamaLog.findMany({
         where: { artistId: parent.id },
         orderBy: { createdAt: 'desc' },
         take: args.limit || 10,
       });
     },
-    latestEnrichmentLog: async (parent, _, { prisma }) => {
-      return prisma.enrichmentLog.findFirst({
+    latestLlamaLog: async (parent, _, { prisma }) => {
+      return prisma.llamaLog.findFirst({
         where: { artistId: parent.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -1152,15 +1152,15 @@ export const resolvers: Resolvers = {
         parent.enrichmentStatus === 'FAILED'
       );
     },
-    enrichmentLogs: async (parent, args, { prisma }) => {
-      return prisma.enrichmentLog.findMany({
+    llamaLogs: async (parent, args, { prisma }) => {
+      return prisma.llamaLog.findMany({
         where: { albumId: parent.id },
         orderBy: { createdAt: 'desc' },
         take: args.limit || 10,
       });
     },
-    latestEnrichmentLog: async (parent, _, { prisma }) => {
-      return prisma.enrichmentLog.findFirst({
+    latestLlamaLog: async (parent, _, { prisma }) => {
+      return prisma.llamaLog.findFirst({
         where: { albumId: parent.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -1216,15 +1216,15 @@ export const resolvers: Resolvers = {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     },
     popularity: () => null, // Placeholder
-    enrichmentLogs: async (parent, args, { prisma }) => {
-      return prisma.enrichmentLog.findMany({
+    llamaLogs: async (parent, args, { prisma }) => {
+      return prisma.llamaLog.findMany({
         where: { trackId: parent.id },
         orderBy: { createdAt: 'desc' },
         take: args.limit || 10,
       });
     },
-    latestEnrichmentLog: async (parent, _, { prisma }) => {
-      return prisma.enrichmentLog.findFirst({
+    latestLlamaLog: async (parent, _, { prisma }) => {
+      return prisma.llamaLog.findFirst({
         where: { trackId: parent.id },
         orderBy: { createdAt: 'desc' },
       });

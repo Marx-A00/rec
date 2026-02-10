@@ -2015,7 +2015,7 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // Enrichment log queries
-  enrichmentLogs: async (_, args, { prisma }) => {
+  llamaLogs: async (_, args, { prisma }) => {
     try {
       const {
         includeChildren = false,
@@ -2069,7 +2069,7 @@ export const queryResolvers: QueryResolvers = {
           where.parentJobId = parentJobId;
         }
 
-        const logs = await prisma.enrichmentLog.findMany({
+        const logs = await prisma.llamaLog.findMany({
           where,
           orderBy: { createdAt: 'desc' },
           skip: filterArgs.skip || 0,
@@ -2079,7 +2079,7 @@ export const queryResolvers: QueryResolvers = {
       }
 
       // Tree fetch: get root logs only (parentJobId is null)
-      const parentLogs = await prisma.enrichmentLog.findMany({
+      const parentLogs = await prisma.llamaLog.findMany({
         where: {
           ...where,
           parentJobId: null,
@@ -2100,7 +2100,7 @@ export const queryResolvers: QueryResolvers = {
       }
 
       // Batch fetch all children in single query
-      const childLogs = await prisma.enrichmentLog.findMany({
+      const childLogs = await prisma.llamaLog.findMany({
         where: {
           parentJobId: { in: parentJobIds },
         },
@@ -2143,7 +2143,7 @@ export const queryResolvers: QueryResolvers = {
         };
       }
 
-      const logs = await prisma.enrichmentLog.findMany({ where });
+      const logs = await prisma.llamaLog.findMany({ where });
 
       // Calculate source statistics
       const sourceMap = new Map<string, { total: number; success: number }>();
