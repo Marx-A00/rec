@@ -4,7 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { EnrichmentLogStatus, type EnrichmentLog } from '@/generated/graphql';
+import { LlamaLogStatus, type LlamaLog } from '@/generated/graphql';
 
 import {
   formatOperationTitle,
@@ -17,7 +17,7 @@ import {
 
 interface EnrichmentTreeProps {
   /** Array of enrichment logs to display (may have children) */
-  logs: EnrichmentLog[];
+  logs: LlamaLog[];
   /** Optional container class name */
   className?: string;
 }
@@ -27,7 +27,7 @@ interface EnrichmentTreeProps {
 // ============================================================================
 
 function getStatusBadgeVariant(
-  status: EnrichmentLogStatus
+  status: LlamaLogStatus
 ): 'default' | 'secondary' | 'destructive' | 'outline' {
   const color = getStatusColor(status);
   switch (color) {
@@ -43,19 +43,19 @@ function getStatusBadgeVariant(
   }
 }
 
-function getStatusLabel(status: EnrichmentLogStatus): string {
+function getStatusLabel(status: LlamaLogStatus): string {
   switch (status) {
-    case EnrichmentLogStatus.Success:
+    case LlamaLogStatus.Success:
       return 'Success';
-    case EnrichmentLogStatus.PartialSuccess:
+    case LlamaLogStatus.PartialSuccess:
       return 'Partial';
-    case EnrichmentLogStatus.Failed:
+    case LlamaLogStatus.Failed:
       return 'Failed';
-    case EnrichmentLogStatus.NoDataAvailable:
+    case LlamaLogStatus.NoDataAvailable:
       return 'No Data';
-    case EnrichmentLogStatus.Skipped:
+    case LlamaLogStatus.Skipped:
       return 'Skipped';
-    case EnrichmentLogStatus.Preview:
+    case LlamaLogStatus.Preview:
       return 'Preview';
     default:
       return 'Unknown';
@@ -67,7 +67,7 @@ function getStatusLabel(status: EnrichmentLogStatus): string {
 // ============================================================================
 
 interface TreeItemProps {
-  log: EnrichmentLog;
+  log: LlamaLog;
   depth?: number;
 }
 
@@ -140,7 +140,7 @@ function TreeItem({ log, depth = 0 }: TreeItemProps) {
  *
  * @example
  * ```tsx
- * <EnrichmentTree logs={enrichmentLogs} />
+ * <EnrichmentTree logs={llamaLogs} />
  * ```
  */
 export function EnrichmentTree({ logs, className }: EnrichmentTreeProps) {

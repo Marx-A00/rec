@@ -13,8 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TableRow, TableCell } from '@/components/ui/table';
 import {
-  useGetEnrichmentLogsQuery,
-  type EnrichmentLog,
+  useGetLlamaLogsQuery,
+  type LlamaLog,
 } from '@/generated/graphql';
 
 import { EnrichmentTimeline } from './EnrichmentTimeline';
@@ -73,7 +73,7 @@ export function ExpandableJobRow({
     isLoading: loadingLogs,
     error: logsError,
     refetch: refetchLogs,
-  } = useGetEnrichmentLogsQuery(
+  } = useGetLlamaLogsQuery(
     {
       parentJobId: job.id,
       limit: 100,
@@ -82,7 +82,7 @@ export function ExpandableJobRow({
       enabled: isExpanded,
       refetchInterval: query => {
         if (!isExpanded) return false;
-        const logs = query.state.data?.enrichmentLogs || [];
+        const logs = query.state.data?.llamaLogs || [];
         if (logs.length === 0) return false;
         // Poll for 30 seconds after last log activity
         const lastLog = logs[logs.length - 1];
@@ -92,7 +92,7 @@ export function ExpandableJobRow({
     }
   );
 
-  const logs = logsData?.enrichmentLogs || [];
+  const logs = logsData?.llamaLogs || [];
   // Badge with count appears after data has been fetched (query was enabled at least once)
   const hasBeenFetched = logsData !== undefined;
 
@@ -225,14 +225,14 @@ export function ExpandableJobRow({
               ) : (
                 <>
                   <EnrichmentTimeline
-                    logs={logs as EnrichmentLog[]}
+                    logs={logs as LlamaLog[]}
                     variant='compact'
                     truncateChildren={5}
                   />
                   {logs.length > 0 && (
                     <EnrichmentTimelineModal
-                      parentLog={logs[0] as EnrichmentLog}
-                      childLogs={logs.slice(1) as EnrichmentLog[]}
+                      parentLog={logs[0] as LlamaLog}
+                      childLogs={logs.slice(1) as LlamaLog[]}
                     />
                   )}
                 </>
