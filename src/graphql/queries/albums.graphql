@@ -40,7 +40,7 @@ query GetAlbumDetailsAdmin($id: UUID!) {
     averageRating
     inCollectionsCount
     recommendationScore
-    latestEnrichmentLog {
+    latestLlamaLog {
       id
       status
       sources
@@ -48,7 +48,7 @@ query GetAlbumDetailsAdmin($id: UUID!) {
       errorMessage
       createdAt
     }
-    enrichmentLogs(limit: 5) {
+    llamaLogs(limit: 5) {
       id
       operation
       sources

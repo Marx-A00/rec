@@ -1,14 +1,14 @@
-query GetEnrichmentLogs(
+query GetLlamaLogs(
   $entityType: EnrichmentEntityType
   $entityId: UUID
-  $status: EnrichmentLogStatus
+  $status: LlamaLogStatus
   $skip: Int
   $limit: Int
   $parentOnly: Boolean
   $parentJobId: String
   $includeChildren: Boolean
 ) {
-  enrichmentLogs(
+  llamaLogs(
     entityType: $entityType
     entityId: $entityId
     status: $status
@@ -24,6 +24,7 @@ query GetEnrichmentLogs(
     operation
     sources
     status
+    category
     reason
     fieldsEnriched
     dataQualityBefore
@@ -39,14 +40,14 @@ query GetEnrichmentLogs(
   }
 }
 
-query GetEnrichmentLogsWithChildren(
+query GetLlamaLogsWithChildren(
   $entityType: EnrichmentEntityType
   $entityId: UUID
-  $status: EnrichmentLogStatus
+  $status: LlamaLogStatus
   $skip: Int
   $limit: Int
 ) {
-  enrichmentLogs(
+  llamaLogs(
     entityType: $entityType
     entityId: $entityId
     status: $status
@@ -60,6 +61,7 @@ query GetEnrichmentLogsWithChildren(
     operation
     sources
     status
+    category
     reason
     fieldsEnriched
     dataQualityBefore
@@ -79,6 +81,7 @@ query GetEnrichmentLogsWithChildren(
       operation
       sources
       status
+      category
       reason
       fieldsEnriched
       errorMessage

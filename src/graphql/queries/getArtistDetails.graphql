@@ -18,7 +18,7 @@ query GetArtistDetails($id: UUID!) {
     popularity
     needsEnrichment
     listeners
-    latestEnrichmentLog {
+    latestLlamaLog {
       id
       status
       sources
@@ -26,7 +26,7 @@ query GetArtistDetails($id: UUID!) {
       errorMessage
       createdAt
     }
-    enrichmentLogs(limit: 5) {
+    llamaLogs(limit: 5) {
       id
       operation
       sources
