@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-02-10
 **Current Milestone:** v1.4 LlamaLog - Entity Provenance & Audit System
-**Status:** Phase 27 Complete
+**Status:** Phase 28 In Progress
 
 ## Project Reference
 
@@ -10,22 +10,22 @@
 
 **Extended Mission (v1.4):** Track the complete lifecycle of entities (Albums, Artists, Tracks) from creation through all subsequent operations. Answer: "How did this album get into the database, and what happened to it afterward?"
 
-**Current Focus:** Phase 27 Code Rename complete. Ready for Phase 28 feature enhancements.
+**Current Focus:** Phase 28 Plan 02 complete. Adding creation logging to sync operations.
 
 ## Current Position
 
-**Phase:** 27 - Code Rename (COMPLETE)
-**Plan:** 05 of 05 - Complete
-**Status:** Phase Complete
+**Phase:** 28 - Album Creation Tracking
+**Plan:** 02 of 05 - Complete
+**Status:** In Progress
 
 **Progress:**
 ```
-[27]████████████████████████████████░░░░░░░ 64%
+[28]█████████████████████████████████████░░░ 68%
                ^
  Phases: 26 27 28 29 30 31 32
 ```
 
-**Milestone Progress:** 22/34 requirements complete (65%)
+**Milestone Progress:** 24/34 requirements complete (71%)
 
 ## Performance Metrics
 
@@ -33,15 +33,12 @@
 - Start date: 2026-02-09
 - Phases planned: 7 (26-32)
 - Requirements: 34
-- Completed: 22
-- Remaining: 12
+- Completed: 24
+- Remaining: 10
 - Phase 26 Duration: 4m 26s
-- Phase 27-01 Duration: 4m 29s
-- Phase 27-02 Duration: 3m 34s
-- Phase 27-03 Duration: 3m 55s
-- Phase 27-04 Duration: 5m 13s
-- Phase 27-05 Duration: 4m 37s
-- **Phase 27 Total: 21m 48s**
+- Phase 27 Total: 21m 48s
+- Phase 28-01 Duration: ~3m
+- Phase 28-02 Duration: 2m 6s
 
 **Previous Milestone (v1.3):**
 - Completed: 2026-02-09
@@ -89,13 +86,17 @@
 - Components correctly use LlamaLog types internally
 - Minor future cleanup optional
 
+**2026-02-10: userId null for automated operations (DEC-28-02-01)**
+- Sync jobs are automated with no user context
+- Distinguishes automated vs user-initiated operations
+
 ### Technical Debt
 
 **From v1.3:**
 - None carried forward - v1.3 completed clean
 
 **From v1.4:**
-- Pre-existing lint errors in codebase (import/order, prettier) - not Phase 27 related
+- Pre-existing lint errors in codebase (import/order, prettier) - not Phase 28 related
 - Component file naming (EnrichmentLogTable.tsx) - minor, optional future cleanup
 
 ### Blockers
@@ -109,6 +110,8 @@
 - Resolver and service files updated
 - Admin components updated to use LlamaLog types
 - enrichmentLogId renamed to llamaLogId
+- Phase 28-01: userId field added to LlamaLogData interface
+- Phase 28-02: Sync creation logging added
 
 ### Active TODOs
 
@@ -126,47 +129,47 @@
 - [x] Plan 04: Update admin UI components
 - [x] Plan 05: Final verification
 
-**Phase 28-32:**
-- [ ] Pending phase 27 completion -> Ready to start
+**Phase 28 (Album Creation Tracking): IN PROGRESS**
+- [x] Plan 01: Add userId field to LlamaLogData interface
+- [x] Plan 02: Add sync creation logging (Spotify + MusicBrainz)
+- [ ] Plan 03: Add recommendation flow creation logging
+- [ ] Plan 04: Add search-and-add flow creation logging
+- [ ] Plan 05: Final verification
+
+**Phase 29-32:**
+- [ ] Pending phase 28 completion
 
 ## Session Continuity
 
 ### What Just Happened
 
-**2026-02-10 - Phase 27 Plan 05 Complete:**
-- Found and fixed remaining `enrichmentLogId` references
-- Renamed to `llamaLogId` in GraphQL schema and queries
-- Updated preview-enrichment.ts variable names
-- Regenerated GraphQL types
-- Verified zero stale references
+**2026-02-10 - Phase 28 Plan 02 Complete:**
+- Added createLlamaLogger import to mappers.ts
+- Added creation logging after Spotify album.create
+- Added createLlamaLogger import to musicbrainz-processor.ts
+- Added creation logging after MusicBrainz album.create
+- Both use category: CREATED, isRootJob: false, parentJobId for batch correlation
 - TypeScript type-check passes
-- Phase 27 Code Rename is COMPLETE
+- Plan 02 complete in 2m 6s
 
 ### What's Next
 
 **Immediate:**
-- Phase 28: Feature enhancements to the LlamaLog system
+- Phase 28 Plan 03: Recommendation flow creation logging
 
 ### Context for Next Session
 
-**Phase 27 Completion Summary:**
-- All code changes complete
-- TypeScript type-check passes
-- Zero stale EnrichmentLog/enrichmentLog references
-- Admin UI uses LlamaLog types and hooks correctly
+**Phase 28-02 Completion Summary:**
+- Spotify sync now logs album creation to LlamaLog
+- MusicBrainz sync now logs album creation to LlamaLog
+- Both use try-catch to prevent logging failures from breaking sync
+- Parent job hierarchy enables batch tracking
 
-**Key Files (Phase 27):**
-- `src/lib/logging/llama-logger.ts` - LlamaLogger class
-- `src/graphql/schema.graphql` - LlamaLog types
-- `src/graphql/queries/*.graphql` - llamaLogs fields
-- `src/generated/graphql.ts` - Regenerated types
-- `src/lib/graphql/resolvers/*` - Updated resolvers
-- `src/lib/correction/*/apply-service.ts` - Updated services
-- `src/lib/enrichment/preview-enrichment.ts` - Updated with llamaLogId
-- `src/lib/logging/activity-logger.ts` - Updated with deriveCategory()
-- `src/components/admin/*` - All admin components updated
+**Key Files (Phase 28-02):**
+- `src/lib/spotify/mappers.ts` - Spotify sync with creation logging
+- `src/lib/queue/processors/musicbrainz-processor.ts` - MusicBrainz sync with creation logging
 
 ---
 
 _State initialized: 2026-02-09_
-_Last session: 2026-02-10 (Phase 27 complete)_
+_Last session: 2026-02-10 (Phase 28-02 complete)_
