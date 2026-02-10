@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-02-09
 **Current Milestone:** v1.4 LlamaLog - Entity Provenance & Audit System
-**Status:** Planning
+**Status:** In Progress
 
 ## Project Reference
 
@@ -10,22 +10,22 @@
 
 **Extended Mission (v1.4):** Track the complete lifecycle of entities (Albums, Artists, Tracks) from creation through all subsequent operations. Answer: "How did this album get into the database, and what happened to it afterward?"
 
-**Current Focus:** Rename EnrichmentLog → LlamaLog and expand from enrichment-only tracking to full entity provenance system with creation event logging.
+**Current Focus:** Complete schema migration, then proceed to codebase rename.
 
 ## Current Position
 
 **Phase:** 26 - Schema Migration
-**Plan:** Not yet created
-**Status:** Pending
+**Plan:** 01 of 01 - Complete
+**Status:** Phase Complete
 
 **Progress:**
 ```
-[26]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 0%
- ^
+[26]████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 14%
+   ^
  Phases: 26 27 28 29 30 31 32
 ```
 
-**Milestone Progress:** 0/34 requirements complete (0%)
+**Milestone Progress:** 5/34 requirements complete (15%)
 
 ## Performance Metrics
 
@@ -33,9 +33,9 @@
 - Start date: 2026-02-09
 - Phases planned: 7 (26-32)
 - Requirements: 34
-- Completed: 0
-- Remaining: 34
-- Estimated completion: TBD (after first phase planning)
+- Completed: 5
+- Remaining: 29
+- Phase 26 Duration: 4m 26s
 
 **Previous Milestone (v1.3):**
 - Completed: 2026-02-09
@@ -47,30 +47,27 @@
 
 ### Key Decisions (v1.4)
 
-**2026-02-09: Rename EnrichmentLog → LlamaLog**
+**2026-02-09: Safe table rename over drop/create (DEC-26-01-01)**
+- Rationale: Preserves all 4052 existing records without data loss
+- Impact: Manual migration SQL editing required
+- Result: Zero data loss confirmed
+
+**2026-02-09: Backfill categories by operation pattern (DEC-26-01-02)**
+- Pattern mapping: cache:* -> CACHED, admin_correction -> CORRECTED, enrichment:* -> ENRICHED, FAILED status -> FAILED, catch-all -> CREATED
+- Result: 3770 ENRICHED, 266 CREATED, 15 CORRECTED, 1 CACHED
+
+**2026-02-09: Category distribution strategy (DEC-26-01-03)**
+- Values: CREATED, ENRICHED, CORRECTED, CACHED, FAILED
+- Rationale: Covers all existing operation patterns and provides sensible defaults for future logging
+
+**2026-02-09: Rename EnrichmentLog -> LlamaLog**
 - Rationale: Broader purpose beyond just enrichment - now covers creation, correction, caching, failures
-- Impact: Schema migration, codebase-wide rename, GraphQL regeneration
+- Impact: Schema migration complete, codebase-wide rename next
 - Trade-off: One-time migration complexity for clearer naming going forward
 
 **2026-02-09: Category enum over operation parsing**
 - Rationale: Cleaner filtering, easier queries, backward-compatible with existing operation field
-- Values: CREATED, ENRICHED, CORRECTED, CACHED, FAILED
 - Trade-off: Requires backfill migration but simplifies future queries
-
-**2026-02-09: Track all album creation paths**
-- Paths: addAlbum mutation, addAlbumToCollection, Spotify sync, MusicBrainz sync, search/save
-- Rationale: Complete provenance requires capturing every entry point
-- Trade-off: More logging calls to add, but essential for answering "how did this get here?"
-
-**2026-02-09: Parent-child for related entities**
-- Pattern: Album creation logs artist/track creation as children via parentJobId
-- Rationale: Maintain existing job linking pattern from v1.2
-- Trade-off: None - already supported in schema
-
-**2026-02-09: Llama branding throughout**
-- Where: Console logs, admin UI, code comments, category badges
-- Rationale: Fun, memorable, aligns with expanded "llama-sized" logging scope
-- Emoji: 🦙 used sparingly for accessibility
 
 ### Technical Debt
 
@@ -78,27 +75,27 @@
 - None carried forward - v1.3 completed clean
 
 **Potential in v1.4:**
-- Migration backfill logic complexity (category assignment based on operation patterns)
-- Global find-replace risk (must avoid breaking migration SQL comments)
-- GraphQL cache invalidation after type rename
+- ~~Migration backfill logic complexity~~ - Resolved, backfill complete
+- Global find-replace risk (must avoid breaking migration SQL comments) - Phase 27
+- GraphQL cache invalidation after type rename - Phase 27
 
 ### Blockers
 
 **Current:** None
 
 **Resolved:**
-- None yet (milestone just started)
+- Schema migration completed with zero data loss
 
 ### Active TODOs
 
-**Phase 26 (Schema Migration):**
-- [ ] Design migration SQL (rename table, add enum, add category field)
-- [ ] Write backfill logic (CASE statement for category assignment)
-- [ ] Update Prisma schema (model + enum)
-- [ ] Test migration on dev database
-- [ ] Verify zero data loss
+**Phase 26 (Schema Migration): COMPLETE**
+- [x] Design migration SQL (rename table, add enum, add category field)
+- [x] Write backfill logic (pattern-based category assignment)
+- [x] Update Prisma schema (model + enum)
+- [x] Test migration on dev database
+- [x] Verify zero data loss (4052 records preserved)
 
-**Phase 27 (Code Rename):**
+**Phase 27 (Code Rename): NEXT**
 - [ ] Plan global find-replace strategy
 - [ ] Identify all import statements
 - [ ] Update GraphQL schema
@@ -106,54 +103,46 @@
 - [ ] Verify existing admin UI still works
 
 **Phase 28-32:**
-- [ ] Pending phase 26 and 27 completion
+- [ ] Pending phase 27 completion
 
 ## Session Continuity
 
 ### What Just Happened
 
-**2026-02-09 - Milestone v1.4 Started:**
-- Roadmap created with 7 phases (26-32)
-- Requirements mapped: 34/34 (100% coverage)
-- Phase structure validated: Schema → Code → Creation → Relations → Categories → UI → Query
-- Dependency graph established with parallelization opportunities identified
+**2026-02-09 - Phase 26 Plan 01 Complete:**
+- Schema migration executed successfully
+- Table renamed from enrichment_logs to llama_logs
+- LlamaLogCategory enum created with 5 values
+- All 4052 records backfilled with categories
+- Prisma client regenerated with LlamaLog types
+- Category index created for efficient filtering
+- Zero data loss confirmed via verification script
 
 ### What's Next
 
-**Immediate (Phase 26):**
-1. Review existing Prisma schema and migration patterns
-2. Draft migration SQL with backfill logic
-3. Update Prisma schema (model + enum)
-4. Test migration on local dev database
-5. Verify Prisma client generation succeeds
+**Immediate (Phase 27):**
+1. Update all TypeScript imports from EnrichmentLog to LlamaLog
+2. Update GraphQL schema type definitions
+3. Run pnpm codegen to regenerate types
+4. Update all usages in resolvers, services, components
+5. Verify admin UI still works with renamed types
 
-**After Phase 26:**
-- Phase 27: Execute global codebase rename with verification
+**After Phase 27:**
 - Phase 28: Add creation logging to all album entry points
 - Phase 29: Link artist/track creation to album jobs
-
-**Parallelization Strategy:**
-- Phase 30 (categorizing existing logs) can run parallel with Phase 28
-- Phase 31 (UI branding) can run parallel with Phase 28/29
-- Phase 32 (query) requires Phase 28+29 complete
+- Phase 30-32: Categorization, UI branding, query optimization
 
 ### Context for Next Session
 
-**If resuming Phase 26:**
-- Check: `/prisma/schema.prisma` for current EnrichmentLog model
-- Check: `/prisma/migrations/` for recent migration patterns
-- Check: `.env.example` for database connection setup
-- Goal: Complete schema migration with zero data loss
-
 **If resuming Phase 27:**
-- Verify: Phase 26 merged and deployed
 - Check: All files importing `EnrichmentLog` or `EnrichmentLogger`
 - Check: `src/graphql/schema.graphql` for type definitions
+- Check: `src/generated/graphql.ts` after codegen
 - Goal: Clean codebase with no `EnrichmentLog` references remaining
 
 **Key Files to Track:**
-- `prisma/schema.prisma` - Model definitions (Phase 26)
-- `src/lib/logging/llama-logger.ts` - Logger class (Phase 27)
+- `prisma/schema.prisma` - Model definitions (COMPLETE)
+- `src/lib/logging/enrichment-logger.ts` -> rename to `llama-logger.ts` (Phase 27)
 - `src/graphql/schema.graphql` - GraphQL types (Phase 27)
 - `src/lib/graphql/resolvers/mutations.ts` - Creation logging (Phase 28)
 - `src/workers/queue-worker.ts` - Job handlers (Phase 28-30)
@@ -161,4 +150,4 @@
 ---
 
 _State initialized: 2026-02-09_
-_Last session: 2026-02-09 (roadmap creation)_
+_Last session: 2026-02-09 (Phase 26 Plan 01 complete)_
