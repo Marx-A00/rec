@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-02-10
 **Current Milestone:** v1.4 LlamaLog - Entity Provenance & Audit System
-**Status:** Phase 28 In Progress
+**Status:** Phase 28 Complete
 
 ## Project Reference
 
@@ -10,22 +10,22 @@
 
 **Extended Mission (v1.4):** Track the complete lifecycle of entities (Albums, Artists, Tracks) from creation through all subsequent operations. Answer: "How did this album get into the database, and what happened to it afterward?"
 
-**Current Focus:** Phase 28 Plans 01 and 02 complete. GraphQL mutation and sync logging implemented.
+**Current Focus:** Phase 28 Album Creation Tracking complete. Ready for Phase 29 Related Entity Tracking.
 
 ## Current Position
 
-**Phase:** 28 - Album Creation Tracking
-**Plan:** 02 of 05 - Complete (01 also complete)
-**Status:** In Progress
+**Phase:** 28 - Album Creation Tracking (COMPLETE)
+**Plan:** 02 of 02 - Complete
+**Status:** Phase Complete
 
 **Progress:**
 ```
-[28]█████████████████████████████████████░░░ 68%
-               ^
+[28]██████████████████████████████████████░░ 71%
+                  ^
  Phases: 26 27 28 29 30 31 32
 ```
 
-**Milestone Progress:** 24/34 requirements complete (71%)
+**Milestone Progress:** 28/34 requirements complete (82%)
 
 ## Performance Metrics
 
@@ -33,12 +33,13 @@
 - Start date: 2026-02-09
 - Phases planned: 7 (26-32)
 - Requirements: 34
-- Completed: 24
-- Remaining: 10
+- Completed: 28
+- Remaining: 6
 - Phase 26 Duration: 4m 26s
 - Phase 27 Total: 21m 48s
 - Phase 28-01 Duration: 3m 27s
 - Phase 28-02 Duration: 2m 6s
+- **Phase 28 Total: ~6m**
 
 **Previous Milestone (v1.3):**
 - Completed: 2026-02-09
@@ -86,22 +87,13 @@
 - Components correctly use LlamaLog types internally
 - Minor future cleanup optional
 
-**2026-02-10: User ID tracking via LlamaLogData.userId (DEC-28-01-01)**
-- Added userId field to interface to enable user tracking
-- Writes to existing userId column on LlamaLog table
-- Enables queries like "show all albums created by user X"
-
-**2026-02-10: userId null for automated operations (DEC-28-02-01)**
-- Sync jobs are automated with no user context
-- Distinguishes automated vs user-initiated operations
-
 ### Technical Debt
 
 **From v1.3:**
 - None carried forward - v1.3 completed clean
 
 **From v1.4:**
-- Pre-existing lint errors in codebase (import/order, prettier) - not Phase 28 related
+- Pre-existing lint errors in codebase (import/order, prettier) - not Phase 27 related
 - Component file naming (EnrichmentLogTable.tsx) - minor, optional future cleanup
 
 ### Blockers
@@ -115,8 +107,7 @@
 - Resolver and service files updated
 - Admin components updated to use LlamaLog types
 - enrichmentLogId renamed to llamaLogId
-- Phase 28-01: userId field added to LlamaLogData interface, addAlbum mutation logging
-- Phase 28-02: Sync creation logging added
+- Album creation tracking added to all entry points
 
 ### Active TODOs
 
@@ -134,47 +125,54 @@
 - [x] Plan 04: Update admin UI components
 - [x] Plan 05: Final verification
 
-**Phase 28 (Album Creation Tracking): IN PROGRESS**
-- [x] Plan 01: Add userId field and addAlbum mutation logging
-- [x] Plan 02: Add sync creation logging (Spotify + MusicBrainz)
-- [ ] Plan 03: Add recommendation flow creation logging
-- [ ] Plan 04: Add search-and-add flow creation logging
-- [ ] Plan 05: Final verification
+**Phase 28 (Album Creation Tracking): COMPLETE**
+- [x] Plan 01: User-initiated creation logging (addAlbum mutation)
+- [x] Plan 02: Sync operation creation logging (Spotify + MusicBrainz)
 
 **Phase 29-32:**
-- [ ] Pending phase 28 completion
+- [ ] Ready to start Phase 29
 
 ## Session Continuity
 
 ### What Just Happened
 
-**2026-02-10 - Phase 28 Plan 01 Complete:**
+**2026-02-10 - Phase 28 Complete:**
 - Added userId field to LlamaLogData interface
-- Updated logEnrichment() to write userId to database
-- Added createLlamaLogger import to mutations.ts
-- Added creation logging to addAlbum mutation
-- Logging uses category: CREATED, isRootJob: true, userId: user.id
-- TypeScript type-check passes
-- Plan 01 complete in 3m 27s
+- Instrumented addAlbum mutation with creation logging (category: CREATED, isRootJob: true, userId)
+- Instrumented Spotify sync with creation logging (category: CREATED, isRootJob: false, parentJobId)
+- Instrumented MusicBrainz sync with creation logging (category: CREATED, isRootJob: false, parentJobId)
+- Verifier confirmed 9/9 must-haves satisfied
+- All requirements CREATE-01 through CREATE-07 complete (CREATE-02 N/A)
 
 ### What's Next
 
 **Immediate:**
-- Phase 28 Plan 03: Recommendation flow creation logging
+- Phase 29: Related Entity Tracking (artist/track creation as children of album jobs)
 
 ### Context for Next Session
 
-**Phase 28-01 Completion Summary:**
-- LlamaLogData interface now has userId?: string | null
-- logEnrichment() writes userId to database
-- addAlbum mutation logs to LlamaLog with CREATED category
-- User-initiated creations marked with isRootJob: true and userId
+**Phase 28 Completion Summary:**
+- All album creation paths now log to LlamaLog with category: CREATED
+- User-initiated: isRootJob: true, userId populated
+- Sync operations: isRootJob: false, parentJobId for batch correlation
+- TypeScript type-check passes
+- Verifier confirmed all must-haves
 
-**Key Files (Phase 28-01):**
-- `src/lib/logging/llama-logger.ts` - userId field in interface and logEnrichment
+**Key Files (Phase 28):**
+- `src/lib/logging/llama-logger.ts` - LlamaLogData interface with userId field
 - `src/lib/graphql/resolvers/mutations.ts` - addAlbum mutation with creation logging
+- `src/lib/spotify/mappers.ts` - Spotify sync with creation logging
+- `src/lib/queue/processors/musicbrainz-processor.ts` - MusicBrainz sync with creation logging
+
+**Commits (Phase 28):**
+- `79e63fa`: feat(28-01): add userId field to LlamaLogData interface
+- `0c82091`: feat(28-01): add creation logging to addAlbum mutation
+- `c9c7075`: docs(28-01): complete addAlbum creation logging plan
+- `81fe430`: feat(28-02): add creation logging to Spotify sync
+- `6ab6f5b`: feat(28-02): add creation logging to MusicBrainz sync
+- `0d50f1c`: docs(28-02): complete sync creation logging plan
 
 ---
 
 _State initialized: 2026-02-09_
-_Last session: 2026-02-10 (Phase 28-01 complete)_
+_Last session: 2026-02-10 (Phase 28 complete)_

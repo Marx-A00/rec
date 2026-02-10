@@ -154,8 +154,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 28-01-PLAN.md — User-initiated creation logging (addAlbum mutation)
-- [ ] 28-02-PLAN.md — Sync operation creation logging (Spotify + MusicBrainz)
+- [x] 28-01-PLAN.md — User-initiated creation logging (addAlbum mutation)
+- [x] 28-02-PLAN.md — Sync operation creation logging (Spotify + MusicBrainz)
 
 **Key Files:**
 - `src/lib/graphql/resolvers/mutations.ts` - addAlbum mutation
@@ -323,7 +323,7 @@ Plans:
 |-------|-------------------------------|--------------|---------|-----------|
 | 26    | Schema Migration              | 5            | Complete | 2026-02-09 |
 | 27    | Code Rename                   | 7            | Complete | 2026-02-09 |
-| 28    | Album Creation Tracking       | 7            | Pending | -         |
+| 28    | Album Creation Tracking       | 7            | Complete | 2026-02-10 |
 | 29    | Related Entity Tracking       | 5            | Pending | -         |
 | 30    | Existing Logging Categories   | 4            | Pending | -         |
 | 31    | UI & Branding                 | 4            | Pending | -         |
@@ -349,13 +349,13 @@ Plans:
 | CODE-05     | 27    | Complete | Update GraphQL schema                    |
 | CODE-06     | 27    | Complete | Regenerate GraphQL types                 |
 | CODE-07     | 27    | Complete | Update resolver references               |
-| CREATE-01   | 28    | Pending | Log addAlbum creation                    |
+| CREATE-01   | 28    | Complete | Log addAlbum creation                    |
 | CREATE-02   | 28    | N/A     | addAlbumToCollection links, not creates  |
-| CREATE-03   | 28    | Pending | Log Spotify sync creation                |
-| CREATE-04   | 28    | Pending | Log MusicBrainz sync creation            |
-| CREATE-05   | 28    | Pending | Log search/save creation                 |
-| CREATE-06   | 28    | Pending | Include userId in creation logs          |
-| CREATE-07   | 28    | Pending | Set isRootJob true for creations         |
+| CREATE-03   | 28    | Complete | Log Spotify sync creation                |
+| CREATE-04   | 28    | Complete | Log MusicBrainz sync creation            |
+| CREATE-05   | 28    | Complete | Log search/save creation                 |
+| CREATE-06   | 28    | Complete | Include userId in creation logs          |
+| CREATE-07   | 28    | Complete | Set isRootJob true for creations         |
 | RELATE-01   | 29    | Pending | Log artist creation                      |
 | RELATE-02   | 29    | Pending | Set parentJobId for artists              |
 | RELATE-03   | 29    | Pending | Log track creation                       |
@@ -378,4 +378,4 @@ Plans:
 ---
 
 _Roadmap created: 2026-02-09_
-_Last updated: 2026-02-09 (Phase 27 complete)_
+_Last updated: 2026-02-10 (Phase 28 complete)_
