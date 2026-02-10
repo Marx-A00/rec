@@ -180,10 +180,10 @@ export class LlamaLogger {
       const rootIndicator = isRootJob ? ' [ROOT]' : '';
       const rootInfo = rootJobId ? ` root:${rootJobId.slice(0, 8)}` : '';
       console.log(
-        `[LlamaLogger] Logged ${data.operation} for ${data.entityType}:${data.entityId} - Status: ${data.status}${rootIndicator}${rootInfo}`
+        `[🦙 LlamaLog] [${category}] ${data.operation} for ${data.entityType}:${data.entityId} - Status: ${data.status}${rootIndicator}${rootInfo}`
       );
     } catch (error) {
-      console.warn('[LlamaLogger] Failed to log enrichment:', error);
+      console.warn('[🦙 LlamaLog] Failed to log:', error);
       // Don't throw - logging shouldn't break the enrichment process
     }
   }
