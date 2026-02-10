@@ -569,6 +569,7 @@ export class ApplyCorrectionService {
           albumId,
           userId: adminUserId,
           operation: 'admin_correction',
+          category: 'CORRECTED',
           status: 'SUCCESS',
           sources: [source],
           fieldsEnriched: changedFields,

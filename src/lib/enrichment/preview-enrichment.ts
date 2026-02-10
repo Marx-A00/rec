@@ -239,12 +239,13 @@ export async function previewAlbumEnrichment(
     }
 
     // Save to EnrichmentLog with PREVIEW status
-    const enrichmentLog = await prisma.enrichmentLog.create({
+    const enrichmentLog = await prisma.llamaLog.create({
       data: {
         entityType: 'ALBUM',
         entityId: albumId,
         albumId: albumId,
         operation: 'PREVIEW_ENRICHMENT',
+        category: 'ENRICHED',
         sources: sourcesAttempted,
         status: EnrichmentStatus.PREVIEW,
         reason: message || 'Preview enrichment completed',
@@ -284,12 +285,13 @@ export async function previewAlbumEnrichment(
       error instanceof Error ? error.message : 'Unknown error';
 
     // Log the failed preview
-    const enrichmentLog = await prisma.enrichmentLog.create({
+    const enrichmentLog = await prisma.llamaLog.create({
       data: {
         entityType: 'ALBUM',
         entityId: albumId,
         albumId: albumId,
         operation: 'PREVIEW_ENRICHMENT',
+        category: 'ENRICHED',
         sources: sourcesAttempted,
         status: EnrichmentStatus.PREVIEW,
         reason: `Preview failed: ${errorMessage}`,
@@ -513,12 +515,13 @@ export async function previewArtistEnrichment(
     }
 
     // Save to EnrichmentLog with PREVIEW status
-    const enrichmentLog = await prisma.enrichmentLog.create({
+    const enrichmentLog = await prisma.llamaLog.create({
       data: {
         entityType: 'ARTIST',
         entityId: artistId,
         artistId: artistId,
         operation: 'PREVIEW_ENRICHMENT',
+        category: 'ENRICHED',
         sources: sourcesAttempted,
         status: EnrichmentStatus.PREVIEW,
         reason: message || 'Preview enrichment completed',
@@ -556,12 +559,13 @@ export async function previewArtistEnrichment(
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
 
-    const enrichmentLog = await prisma.enrichmentLog.create({
+    const enrichmentLog = await prisma.llamaLog.create({
       data: {
         entityType: 'ARTIST',
         entityId: artistId,
         artistId: artistId,
         operation: 'PREVIEW_ENRICHMENT',
+        category: 'ENRICHED',
         sources: sourcesAttempted,
         status: EnrichmentStatus.PREVIEW,
         reason: `Preview failed: ${errorMessage}`,

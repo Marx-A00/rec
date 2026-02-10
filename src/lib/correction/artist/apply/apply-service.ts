@@ -378,6 +378,7 @@ export class ArtistCorrectionApplyService {
           artistId,
           userId: adminUserId,
           operation: 'admin_correction',
+          category: 'CORRECTED',
           status: 'SUCCESS',
           sources: [source], // Use actual source instead of hardcoded
           fieldsEnriched: changedFields,
