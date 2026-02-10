@@ -27,6 +27,7 @@ import {
   OPERATIONS,
   SOURCES,
 } from '@/lib/logging/activity-logger';
+import { createLlamaLogger } from '@/lib/logging/llama-logger';
 import { isAdmin } from '@/lib/permissions';
 
 // Correction system imports
@@ -906,6 +907,27 @@ export const mutationResolvers: MutationResolvers = {
         dataQualityAfter: album.dataQuality,
       });
 
+
+      // Log album creation to LlamaLog (after DB commit)
+      const logger = createLlamaLogger(prisma);
+      try {
+        await logger.logEnrichment({
+          entityType: 'ALBUM',
+          entityId: album.id,
+          albumId: album.id,
+          operation: 'album:created',
+          category: 'CREATED',
+          sources: input.musicbrainzId ? ['MUSICBRAINZ'] : ['USER'],
+          status: 'SUCCESS',
+          fieldsEnriched: fieldsCreated,
+          dataQualityAfter: album.dataQuality,
+          isRootJob: true, // User-initiated creations are root jobs
+          userId: user.id, // Track which user created the album
+        });
+      } catch (logError) {
+        console.warn('[LlamaLogger] Failed to log album creation:', logError);
+        // Don't throw - album creation succeeded, logging is secondary
+      }
       // Return the album with its relationships
       return (await prisma.album.findUnique({
         where: { id: album.id },
