@@ -766,6 +766,10 @@ export const mutationResolvers: MutationResolvers = {
         },
       });
 
+      // Generate job ID for album creation (used as parent for child entity logging)
+      const albumJobId = `album-${album.id}`;
+      const llamaLogger = createLlamaLogger(prisma);
+
       // Handle artist associations (consistent with addToListenLater)
       for (const artistInput of input.artists) {
         let artistId: string | undefined;
@@ -789,6 +793,29 @@ export const mutationResolvers: MutationResolvers = {
             console.log(
               `🔄 Reusing existing artist: "${existingArtist.name}" (${existingArtist.id})`
             );
+
+            // Log artist linking to LlamaLog
+            try {
+              await llamaLogger.logEnrichment({
+                entityType: 'ARTIST',
+                entityId: existingArtist.id,
+                operation: 'artist:linked:album-association',
+                category: 'LINKED',
+                sources: ['ADMIN'],
+                status: 'SUCCESS',
+                fieldsEnriched: [],
+                parentJobId: albumJobId,
+                rootJobId: albumJobId,
+                isRootJob: false,
+                userId: user.id,
+                metadata: {
+                  albumId: album.id,
+                  existingEntity: true,
+                },
+              });
+            } catch (err) {
+              console.warn('[LlamaLog] Failed to log artist linking:', err);
+            }
           } else {
             // Create new artist only if none exists
             const newArtist = await prisma.artist.create({
@@ -814,6 +841,26 @@ export const mutationResolvers: MutationResolvers = {
               userId: user.id,
               dataQualityAfter: newArtist.dataQuality,
             });
+
+            // Log artist creation to LlamaLog
+            try {
+              await llamaLogger.logEnrichment({
+                entityType: 'ARTIST',
+                entityId: newArtist.id,
+                operation: 'artist:created:album-child',
+                category: 'CREATED',
+                sources: ['ADMIN', 'MUSICBRAINZ'],
+                status: 'SUCCESS',
+                fieldsEnriched: ['name'],
+                parentJobId: albumJobId,
+                rootJobId: albumJobId,
+                isRootJob: false,
+                userId: user.id,
+                dataQualityAfter: 'LOW',
+              });
+            } catch (err) {
+              console.warn('[LlamaLog] Failed to log artist creation:', err);
+            }
           }
 
           // Create or update the album-artist relationship (upsert to handle duplicates)
@@ -909,9 +956,8 @@ export const mutationResolvers: MutationResolvers = {
 
 
       // Log album creation to LlamaLog (after DB commit)
-      const logger = createLlamaLogger(prisma);
       try {
-        await logger.logEnrichment({
+        await llamaLogger.logEnrichment({
           entityType: 'ALBUM',
           entityId: album.id,
           albumId: album.id,
@@ -921,6 +967,7 @@ export const mutationResolvers: MutationResolvers = {
           status: 'SUCCESS',
           fieldsEnriched: fieldsCreated,
           dataQualityAfter: album.dataQuality,
+          jobId: albumJobId, // Job ID for root job tracking
           isRootJob: true, // User-initiated creations are root jobs
           userId: user.id, // Track which user created the album
         });
