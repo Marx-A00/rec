@@ -2,6 +2,7 @@
 // MusicBrainz API search and lookup handlers
 
 import { prisma } from '@/lib/prisma';
+import { createLlamaLogger } from '@/lib/logging/llama-logger';
 
 import { musicBrainzService, hasIdProperty } from '../../musicbrainz';
 import type {
@@ -254,6 +255,32 @@ export async function handleMusicBrainzSyncNewReleases(
         console.log(
           `✨ Created album: ${releaseGroup.title} by ${artist.name}`
         );
+
+        // Log album creation to LlamaLog (after DB commit)
+        const llamaLogger = createLlamaLogger(prisma);
+        try {
+          await llamaLogger.logEnrichment({
+            entityType: 'ALBUM',
+            entityId: album.id,
+            operation: 'album:created:musicbrainz-sync',
+            category: 'CREATED',
+            sources: ['MUSICBRAINZ'],
+            status: 'SUCCESS',
+            fieldsEnriched: ['title', 'musicbrainzId', 'releaseDate', 'artists'],
+            dataQualityAfter: 'MEDIUM', // MusicBrainz data is medium quality
+            parentJobId: data.requestId || 'mb-sync-batch',
+            isRootJob: false, // Child of sync batch
+            metadata: {
+              syncSource: 'musicbrainz_new_releases',
+              syncTimestamp: new Date().toISOString(),
+              query: data.query,
+              dateRange: data.dateRange,
+              genres: data.genres,
+            },
+          });
+        } catch (logError) {
+          console.warn(`[LlamaLogger] Failed to log MusicBrainz album creation for ${album.id}:`, logError);
+        }
 
         // Queue enrichment job for the new album
         const { getMusicBrainzQueue } = await import('../musicbrainz-queue');
