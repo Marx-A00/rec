@@ -598,7 +598,7 @@ export default function MusicDatabasePage() {
             queryClient.invalidateQueries({
               queryKey: ['GetAlbumDetailsAdmin'],
             }),
-            queryClient.invalidateQueries({ queryKey: ['GetEnrichmentLogs'] }),
+            queryClient.invalidateQueries({ queryKey: ['GetLlamaLogs'] }),
           ]);
         } else {
           throw new Error(
@@ -623,7 +623,7 @@ export default function MusicDatabasePage() {
           await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['SearchArtistsAdmin'] }),
             queryClient.invalidateQueries({ queryKey: ['GetArtistDetails'] }),
-            queryClient.invalidateQueries({ queryKey: ['GetEnrichmentLogs'] }),
+            queryClient.invalidateQueries({ queryKey: ['GetLlamaLogs'] }),
           ]);
         } else {
           throw new Error(
@@ -667,7 +667,7 @@ export default function MusicDatabasePage() {
 
         // Invalidate enrichment logs to show the new PREVIEW log entry
         await queryClient.invalidateQueries({
-          queryKey: ['GetEnrichmentLogs'],
+          queryKey: ['GetLlamaLogs'],
         });
       } else {
         const result = await previewArtistEnrichmentMutation.mutateAsync({
@@ -684,7 +684,7 @@ export default function MusicDatabasePage() {
 
         // Invalidate enrichment logs to show the new PREVIEW log entry
         await queryClient.invalidateQueries({
-          queryKey: ['GetEnrichmentLogs'],
+          queryKey: ['GetLlamaLogs'],
         });
       }
     } catch (error) {
