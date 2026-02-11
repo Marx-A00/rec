@@ -1110,7 +1110,12 @@ export const resolvers: Resolvers = {
     },
     llamaLogs: async (parent, args, { prisma }) => {
       return prisma.llamaLog.findMany({
-        where: { artistId: parent.id },
+        where: {
+          artistId: parent.id,
+          category: {
+            in: ['CREATED', 'ENRICHED', 'CACHED', 'CORRECTED', 'USER_ACTION'],
+          },
+        },
         orderBy: { createdAt: 'desc' },
         take: args.limit || 10,
       });

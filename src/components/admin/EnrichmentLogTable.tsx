@@ -29,6 +29,7 @@ import {
   useGetLlamaLogsQuery,
   EnrichmentEntityType,
   LlamaLogStatus,
+  LlamaLogCategory,
   type LlamaLog,
 } from '@/generated/graphql';
 
@@ -219,9 +220,9 @@ function ExpandableLogRow({
         <TableCell>
           {log.fieldsEnriched.length > 0 ? (
             <div className='flex flex-wrap gap-1 max-w-xs'>
-              {log.fieldsEnriched.map(field => (
+              {log.fieldsEnriched.map((field, idx) => (
                 <Badge
-                  key={field}
+                  key={`${log.id}-${field}-${idx}`}
                   variant='secondary'
                   className='text-xs bg-blue-500/10 text-blue-300 border-blue-500/20'
                 >
@@ -360,8 +361,27 @@ export function EnrichmentLogTable({
     });
   };
 
+  // For artists: filter out noisy LINKED category and don't use parentOnly
+  // (artist logs are children of user actions like collection-add)
+  const isArtist = entityType === EnrichmentEntityType.Artist;
+  const categoryFilter = isArtist
+    ? [
+        LlamaLogCategory.Created,
+        LlamaLogCategory.Enriched,
+        LlamaLogCategory.Cached,
+        LlamaLogCategory.Corrected,
+        LlamaLogCategory.UserAction,
+      ]
+    : undefined;
+
   const { data, isLoading, error } = useGetLlamaLogsQuery(
-    { entityType, entityId, limit, parentOnly: true },
+    {
+      entityType,
+      entityId,
+      limit,
+      parentOnly: !isArtist, // Artists logs have parents, so don't filter by parentOnly
+      category: categoryFilter,
+    },
     {
       enabled: !!(entityType || entityId),
       refetchInterval: query => {

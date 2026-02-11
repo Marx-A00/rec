@@ -2056,6 +2056,9 @@ export const queryResolvers: QueryResolvers = {
         }
       }
       if (filterArgs.status) where.status = filterArgs.status;
+      if (filterArgs.category && filterArgs.category.length > 0) {
+        where.category = { in: filterArgs.category };
+      }
       if (filterArgs.sources && filterArgs.sources.length > 0) {
         where.sources = { hasSome: filterArgs.sources };
       }
@@ -2156,12 +2159,17 @@ export const queryResolvers: QueryResolvers = {
     } = args;
 
     // 1. Validate entity exists
-    const entityTable = entityType.toLowerCase() as 'album' | 'artist' | 'track';
+    const entityTable = entityType.toLowerCase() as
+      | 'album'
+      | 'artist'
+      | 'track';
 
     // Album has 'title', Artist has 'name', Track has 'title'
     const nameField = entityTable === 'artist' ? 'name' : 'title';
 
-    const entity = await (prisma[entityTable] as typeof prisma.album).findUnique({
+    const entity = await (
+      prisma[entityTable] as typeof prisma.album
+    ).findUnique({
       where: { id: entityId },
       select: { id: true, [nameField]: true },
     });
@@ -2173,14 +2181,14 @@ export const queryResolvers: QueryResolvers = {
     }
 
     // 2. Build where clause using typed ID field for index usage
-    const typedIdField = `${entityTable}Id` as 'albumId' | 'artistId' | 'trackId';
+    const typedIdField = `${entityTable}Id` as
+      | 'albumId'
+      | 'artistId'
+      | 'trackId';
 
     // Use OR to match both typed ID field and generic entityId (for historical data)
     const baseWhere = {
-      OR: [
-        { [typedIdField]: entityId },
-        { entityId: entityId, entityType },
-      ],
+      OR: [{ [typedIdField]: entityId }, { entityId: entityId, entityType }],
     };
 
     // Build date filter (merge gte/lte if both provided)
@@ -2190,7 +2198,8 @@ export const queryResolvers: QueryResolvers = {
 
     const where = {
       ...baseWhere,
-      ...(categories && categories.length > 0 && { category: { in: categories } }),
+      ...(categories &&
+        categories.length > 0 && { category: { in: categories } }),
       ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
     };
 

@@ -2,6 +2,7 @@ query GetLlamaLogs(
   $entityType: EnrichmentEntityType
   $entityId: UUID
   $status: LlamaLogStatus
+  $category: [LlamaLogCategory!]
   $skip: Int
   $limit: Int
   $parentOnly: Boolean
@@ -12,6 +13,7 @@ query GetLlamaLogs(
     entityType: $entityType
     entityId: $entityId
     status: $status
+    category: $category
     skip: $skip
     limit: $limit
     parentOnly: $parentOnly

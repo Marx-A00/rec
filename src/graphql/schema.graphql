@@ -534,6 +534,64 @@ input CollectionAlbumInput {
   position: Int
 }
 
+"""
+Input for adding an album to a collection with optional album creation.
+Supports both existing albums (by ID) and creating new albums inline.
+"""
+input AddAlbumToCollectionWithCreateInput {
+  """
+  Collection ID to add the album to
+  """
+  collectionId: String!
+  """
+  Position in the collection (0 = beginning)
+  """
+  position: Int
+  """
+  Personal rating (1-10)
+  """
+  personalRating: Int
+  """
+  Personal notes about the album
+  """
+  personalNotes: String
+  """
+  Use existing album by ID (mutually exclusive with albumData)
+  """
+  albumId: UUID
+  """
+  Create new album with this data (mutually exclusive with albumId)
+  """
+  albumData: AlbumInput
+}
+
+"""
+Input for creating a recommendation with optional inline album creation.
+For each album, provide EITHER the ID (for existing) OR album data (to create).
+"""
+input CreateRecommendationWithAlbumsInput {
+  """
+  Existing basis album ID (mutually exclusive with basisAlbumData)
+  """
+  basisAlbumId: UUID
+  """
+  Create basis album with this data (mutually exclusive with basisAlbumId)
+  """
+  basisAlbumData: AlbumInput
+  """
+  Existing recommended album ID (mutually exclusive with recommendedAlbumData)
+  """
+  recommendedAlbumId: UUID
+  """
+  Create recommended album with this data (mutually exclusive with recommendedAlbumId)
+  """
+  recommendedAlbumData: AlbumInput
+  """
+  Recommendation score (1-10)
+  """
+  score: Int!
+}
+
 input AlbumInput {
   title: String!
   releaseDate: String # ISO date string
@@ -674,6 +732,8 @@ enum LlamaLogCategory {
   CORRECTED
   CACHED
   FAILED
+  LINKED
+  USER_ACTION
 }
 
 # =============================================
@@ -2363,6 +2423,7 @@ type Query {
     entityType: EnrichmentEntityType
     entityId: UUID
     status: LlamaLogStatus
+    category: [LlamaLogCategory!] # Filter by categories (e.g., CREATED, ENRICHED, LINKED)
     sources: [String!]
     skip: Int
     limit: Int
@@ -2478,6 +2539,14 @@ type Mutation {
     collectionId: String!
     input: CollectionAlbumInput!
   ): AddAlbumToCollectionPayload!
+  """
+  Add album to collection with optional inline album creation.
+  Use albumId for existing albums or albumData to create new album atomically.
+  Provides proper provenance chain for LlamaLog tracking.
+  """
+  addAlbumToCollectionWithCreate(
+    input: AddAlbumToCollectionWithCreateInput!
+  ): AddAlbumToCollectionPayload!
   removeAlbumFromCollection(collectionId: String!, albumId: UUID!): Boolean!
   updateCollectionAlbum(
     id: String!
@@ -2493,10 +2562,18 @@ type Mutation {
   removeFromListenLater(albumId: UUID!): Boolean!
 
   # Recommendation system
+  """
+  Create a recommendation. Supports two modes:
+  1. Legacy: Pass basisAlbumId + recommendedAlbumId (existing albums)
+  2. New: Pass input with optional inline album creation
+  """
   createRecommendation(
-    basisAlbumId: UUID!
-    recommendedAlbumId: UUID!
-    score: Int!
+    # Legacy params (for backwards compatibility)
+    basisAlbumId: UUID
+    recommendedAlbumId: UUID
+    score: Int
+    # New input (preferred - supports inline album creation)
+    input: CreateRecommendationWithAlbumsInput
   ): CreateRecommendationPayload!
   updateRecommendation(id: String!, score: Int!): UpdateRecommendationPayload!
   deleteRecommendation(id: String!): Boolean!

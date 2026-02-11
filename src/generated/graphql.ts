@@ -106,6 +106,25 @@ export type AddAlbumToCollectionPayload = {
   id: Scalars['String']['output'];
 };
 
+/**
+ * Input for adding an album to a collection with optional album creation.
+ * Supports both existing albums (by ID) and creating new albums inline.
+ */
+export type AddAlbumToCollectionWithCreateInput = {
+  /** Create new album with this data (mutually exclusive with albumId) */
+  albumData?: InputMaybe<AlbumInput>;
+  /** Use existing album by ID (mutually exclusive with albumData) */
+  albumId?: InputMaybe<Scalars['UUID']['input']>;
+  /** Collection ID to add the album to */
+  collectionId: Scalars['String']['input'];
+  /** Personal notes about the album */
+  personalNotes?: InputMaybe<Scalars['String']['input']>;
+  /** Personal rating (1-10) */
+  personalRating?: InputMaybe<Scalars['Int']['input']>;
+  /** Position in the collection (0 = beginning) */
+  position?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type AdminUpdateUserSettingsPayload = {
   __typename?: 'AdminUpdateUserSettingsPayload';
   message?: Maybe<Scalars['String']['output']>;
@@ -874,6 +893,23 @@ export type CreateRecommendationPayload = {
   id: Scalars['String']['output'];
 };
 
+/**
+ * Input for creating a recommendation with optional inline album creation.
+ * For each album, provide EITHER the ID (for existing) OR album data (to create).
+ */
+export type CreateRecommendationWithAlbumsInput = {
+  /** Create basis album with this data (mutually exclusive with basisAlbumId) */
+  basisAlbumData?: InputMaybe<AlbumInput>;
+  /** Existing basis album ID (mutually exclusive with basisAlbumData) */
+  basisAlbumId?: InputMaybe<Scalars['UUID']['input']>;
+  /** Create recommended album with this data (mutually exclusive with recommendedAlbumId) */
+  recommendedAlbumData?: InputMaybe<AlbumInput>;
+  /** Existing recommended album ID (mutually exclusive with recommendedAlbumData) */
+  recommendedAlbumId?: InputMaybe<Scalars['UUID']['input']>;
+  /** Recommendation score (1-10) */
+  score: Scalars['Int']['input'];
+};
+
 export enum DataQuality {
   High = 'HIGH',
   Low = 'LOW',
@@ -1146,6 +1182,8 @@ export enum LlamaLogCategory {
   Created = 'CREATED',
   Enriched = 'ENRICHED',
   Failed = 'FAILED',
+  Linked = 'LINKED',
+  UserAction = 'USER_ACTION',
 }
 
 export type LlamaLogChainResponse = {
@@ -1291,6 +1329,12 @@ export type Mutation = {
   __typename?: 'Mutation';
   addAlbum: Album;
   addAlbumToCollection: AddAlbumToCollectionPayload;
+  /**
+   * Add album to collection with optional inline album creation.
+   * Use albumId for existing albums or albumData to create new album atomically.
+   * Provides proper provenance chain for LlamaLog tracking.
+   */
+  addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   addArtist: Artist;
   addToListenLater: CollectionAlbum;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
@@ -1302,6 +1346,11 @@ export type Mutation = {
   /** Apply selected corrections from a preview to an album */
   correctionApply: CorrectionApplyResult;
   createCollection: CreateCollectionPayload;
+  /**
+   * Create a recommendation. Supports two modes:
+   * 1. Legacy: Pass basisAlbumId + recommendedAlbumId (existing albums)
+   * 2. New: Pass input with optional inline album creation
+   */
   createRecommendation: CreateRecommendationPayload;
   createTrack: Track;
   deleteAlbum: DeleteAlbumPayload;
@@ -1355,6 +1404,10 @@ export type MutationAddAlbumToCollectionArgs = {
   input: CollectionAlbumInput;
 };
 
+export type MutationAddAlbumToCollectionWithCreateArgs = {
+  input: AddAlbumToCollectionWithCreateInput;
+};
+
 export type MutationAddArtistArgs = {
   input: ArtistInput;
 };
@@ -1394,9 +1447,10 @@ export type MutationCreateCollectionArgs = {
 };
 
 export type MutationCreateRecommendationArgs = {
-  basisAlbumId: Scalars['UUID']['input'];
-  recommendedAlbumId: Scalars['UUID']['input'];
-  score: Scalars['Int']['input'];
+  basisAlbumId?: InputMaybe<Scalars['UUID']['input']>;
+  input?: InputMaybe<CreateRecommendationWithAlbumsInput>;
+  recommendedAlbumId?: InputMaybe<Scalars['UUID']['input']>;
+  score?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type MutationCreateTrackArgs = {
@@ -1792,6 +1846,7 @@ export type QueryLlamaLogChainArgs = {
 };
 
 export type QueryLlamaLogsArgs = {
+  category?: InputMaybe<Array<LlamaLogCategory>>;
   entityId?: InputMaybe<Scalars['UUID']['input']>;
   entityType?: InputMaybe<EnrichmentEntityType>;
   includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
@@ -3530,6 +3585,18 @@ export type DeleteArtistMutation = {
   };
 };
 
+export type AddAlbumToCollectionWithCreateMutationVariables = Exact<{
+  input: AddAlbumToCollectionWithCreateInput;
+}>;
+
+export type AddAlbumToCollectionWithCreateMutation = {
+  __typename?: 'Mutation';
+  addAlbumToCollectionWithCreate: {
+    __typename?: 'AddAlbumToCollectionPayload';
+    id: string;
+  };
+};
+
 export type GetCorrectionPreviewQueryVariables = Exact<{
   input: CorrectionPreviewInput;
 }>;
@@ -3776,6 +3843,7 @@ export type GetLlamaLogsQueryVariables = Exact<{
   entityType?: InputMaybe<EnrichmentEntityType>;
   entityId?: InputMaybe<Scalars['UUID']['input']>;
   status?: InputMaybe<LlamaLogStatus>;
+  category?: InputMaybe<Array<LlamaLogCategory> | LlamaLogCategory>;
   skip?: InputMaybe<Scalars['Int']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   parentOnly?: InputMaybe<Scalars['Boolean']['input']>;
@@ -4530,6 +4598,18 @@ export type CreateRecommendationMutationVariables = Exact<{
 }>;
 
 export type CreateRecommendationMutation = {
+  __typename?: 'Mutation';
+  createRecommendation: {
+    __typename?: 'CreateRecommendationPayload';
+    id: string;
+  };
+};
+
+export type CreateRecommendationWithAlbumsMutationVariables = Exact<{
+  input: CreateRecommendationWithAlbumsInput;
+}>;
+
+export type CreateRecommendationWithAlbumsMutation = {
   __typename?: 'Mutation';
   createRecommendation: {
     __typename?: 'CreateRecommendationPayload';
@@ -7293,6 +7373,45 @@ export const useDeleteArtistMutation = <TError = unknown, TContext = unknown>(
 
 useDeleteArtistMutation.getKey = () => ['DeleteArtist'];
 
+export const AddAlbumToCollectionWithCreateDocument = `
+    mutation AddAlbumToCollectionWithCreate($input: AddAlbumToCollectionWithCreateInput!) {
+  addAlbumToCollectionWithCreate(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useAddAlbumToCollectionWithCreateMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    AddAlbumToCollectionWithCreateMutation,
+    TError,
+    AddAlbumToCollectionWithCreateMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AddAlbumToCollectionWithCreateMutation,
+    TError,
+    AddAlbumToCollectionWithCreateMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AddAlbumToCollectionWithCreate'],
+    mutationFn: (variables?: AddAlbumToCollectionWithCreateMutationVariables) =>
+      fetcher<
+        AddAlbumToCollectionWithCreateMutation,
+        AddAlbumToCollectionWithCreateMutationVariables
+      >(AddAlbumToCollectionWithCreateDocument, variables)(),
+    ...options,
+  });
+};
+
+useAddAlbumToCollectionWithCreateMutation.getKey = () => [
+  'AddAlbumToCollectionWithCreate',
+];
+
 export const GetCorrectionPreviewDocument = `
     query GetCorrectionPreview($input: CorrectionPreviewInput!) {
   correctionPreview(input: $input) {
@@ -7643,11 +7762,12 @@ useInfiniteSearchCorrectionCandidatesQuery.getKey = (
 ) => ['SearchCorrectionCandidates.infinite', variables];
 
 export const GetLlamaLogsDocument = `
-    query GetLlamaLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: LlamaLogStatus, $skip: Int, $limit: Int, $parentOnly: Boolean, $parentJobId: String, $includeChildren: Boolean) {
+    query GetLlamaLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: LlamaLogStatus, $category: [LlamaLogCategory!], $skip: Int, $limit: Int, $parentOnly: Boolean, $parentJobId: String, $includeChildren: Boolean) {
   llamaLogs(
     entityType: $entityType
     entityId: $entityId
     status: $status
+    category: $category
     skip: $skip
     limit: $limit
     parentOnly: $parentOnly
@@ -9616,6 +9736,45 @@ export const useCreateRecommendationMutation = <
 };
 
 useCreateRecommendationMutation.getKey = () => ['CreateRecommendation'];
+
+export const CreateRecommendationWithAlbumsDocument = `
+    mutation CreateRecommendationWithAlbums($input: CreateRecommendationWithAlbumsInput!) {
+  createRecommendation(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useCreateRecommendationWithAlbumsMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    CreateRecommendationWithAlbumsMutation,
+    TError,
+    CreateRecommendationWithAlbumsMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    CreateRecommendationWithAlbumsMutation,
+    TError,
+    CreateRecommendationWithAlbumsMutationVariables,
+    TContext
+  >({
+    mutationKey: ['CreateRecommendationWithAlbums'],
+    mutationFn: (variables?: CreateRecommendationWithAlbumsMutationVariables) =>
+      fetcher<
+        CreateRecommendationWithAlbumsMutation,
+        CreateRecommendationWithAlbumsMutationVariables
+      >(CreateRecommendationWithAlbumsDocument, variables)(),
+    ...options,
+  });
+};
+
+useCreateRecommendationWithAlbumsMutation.getKey = () => [
+  'CreateRecommendationWithAlbums',
+];
 
 export const UpdateRecommendationDocument = `
     mutation UpdateRecommendation($id: String!, $score: Int!) {
