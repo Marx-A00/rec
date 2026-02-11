@@ -35,12 +35,14 @@ Source indicator badges show MusicBrainz/Discogs in preview headers using store-
 ## What Was Done
 
 ### Task 1: Album PreviewView Badge
+
 - Imported Badge component from UI library
 - Added `correctionSource` read from album correction store
 - Placed badge in header section next to album title
 - Badge displays "MusicBrainz" or "Discogs" based on store state
 
 ### Task 2: Artist ArtistPreviewView Badge
+
 - Imported Badge component from UI library
 - Added `correctionSource` read from artist correction store
 - Placed badge in header section next to artist name
@@ -50,11 +52,13 @@ Source indicator badges show MusicBrainz/Discogs in preview headers using store-
 ## Key Changes
 
 **PreviewView.tsx:**
+
 - Line 17: Import Badge component
 - Line 62: Read correctionSource from store
 - Lines 246-254: Badge in header with conditional text
 
 **ArtistPreviewView.tsx:**
+
 - Line 18: Import Badge component
 - Line 132: Read correctionSource from store
 - Lines 298-308: Badge in header with conditional text

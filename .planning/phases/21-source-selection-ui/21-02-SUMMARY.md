@@ -35,6 +35,7 @@ metrics:
 Created the `SourceToggle` component that allows admins to switch between MusicBrainz and Discogs as the correction source. The component uses Radix UI's Toggle Group for full accessibility support (keyboard navigation, ARIA attributes, focus management).
 
 Integrated the toggle into both search views:
+
 - **Album SearchView:** Toggle appears at top, controls which search backend is used
 - **Artist ArtistSearchView:** Same pattern, toggle at top with source-conditional content
 
@@ -49,12 +50,14 @@ When Discogs is selected, a placeholder message is shown indicating the feature 
 ## Key Implementation Details
 
 **SourceToggle Component:**
+
 - Uses `ToggleGroup` with `type="single"` for radio-like behavior
 - Guards against undefined on double-click (Radix behavior)
 - Accepts `disabled` prop to prevent changes during search
 - Clean label "Search Source" above toggle buttons
 
 **Search View Integration:**
+
 - Toggle appears at consistent position (top of step)
 - MusicBrainz search content wrapped in `correctionSource === 'musicbrainz'`
 - Discogs placeholder wrapped in `correctionSource === 'discogs'`
@@ -63,9 +66,11 @@ When Discogs is selected, a placeholder message is shown indicating the feature 
 ## Files Changed
 
 **Created:**
+
 - `src/components/admin/correction/shared/SourceToggle.tsx` - Reusable toggle component
 
 **Modified:**
+
 - `src/components/admin/correction/shared/index.ts` - Added SourceToggle and CorrectionSource exports
 - `src/components/admin/correction/search/SearchView.tsx` - Integrated toggle with conditional rendering
 - `src/components/admin/correction/artist/search/ArtistSearchView.tsx` - Integrated toggle with conditional rendering
@@ -77,6 +82,7 @@ None - plan executed exactly as written.
 ## Next Phase Readiness
 
 Phase 21-03 (if exists) or Phase 22 can now:
+
 - Implement Discogs search behind the `correctionSource === 'discogs'` condition
 - Remove the placeholder messages when Discogs search is functional
 - The toggle and state infrastructure is complete and ready

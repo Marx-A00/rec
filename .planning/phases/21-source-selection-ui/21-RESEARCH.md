@@ -9,6 +9,7 @@
 Phase 21 adds a source selection toggle to the correction modal, allowing admins to choose between MusicBrainz and Discogs before searching. The implementation follows established patterns in the codebase: Zustand stores for state persistence, Radix UI primitives for accessible components, and atomic state updates.
 
 The research confirms that:
+
 - Zustand's persist middleware with sessionStorage is the standard pattern (already used in correction stores)
 - Radix UI Toggle Group provides accessible, keyboard-navigable toggle buttons (Radix primitives already in use via shadcn/ui)
 - State should be cleared atomically when switching sources to avoid stale data
@@ -23,27 +24,27 @@ The established libraries/tools for this implementation:
 
 ### Core
 
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| Zustand | 4.x | State management | Already used for correction stores with persist middleware |
-| Radix UI | Latest | Accessible primitives | Codebase uses shadcn/ui which wraps Radix primitives |
-| React Query | v5 | GraphQL data fetching | Standard for all data fetching, hooks already generated |
+| Library     | Version | Purpose               | Why Standard                                               |
+| ----------- | ------- | --------------------- | ---------------------------------------------------------- |
+| Zustand     | 4.x     | State management      | Already used for correction stores with persist middleware |
+| Radix UI    | Latest  | Accessible primitives | Codebase uses shadcn/ui which wraps Radix primitives       |
+| React Query | v5      | GraphQL data fetching | Standard for all data fetching, hooks already generated    |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| zustand/middleware | 4.x | persist middleware | State persistence across navigation (already in use) |
-| @radix-ui/react-toggle-group | Latest | Toggle button group | Accessible source selector (shadcn/ui base) |
-| class-variance-authority | Latest | Badge variants | Source indicator styling (already in use for Badge component) |
+| Library                      | Version | Purpose             | When to Use                                                   |
+| ---------------------------- | ------- | ------------------- | ------------------------------------------------------------- |
+| zustand/middleware           | 4.x     | persist middleware  | State persistence across navigation (already in use)          |
+| @radix-ui/react-toggle-group | Latest  | Toggle button group | Accessible source selector (shadcn/ui base)                   |
+| class-variance-authority     | Latest  | Badge variants      | Source indicator styling (already in use for Badge component) |
 
 ### Alternatives Considered
 
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| Toggle Group | Radio Group | Radio groups are semantically for forms; toggles better for UI state switches |
-| Toggle Group | Tabs component | Tabs imply content sections; toggles better for binary state |
-| Zustand | URL search params | URL state doesn't persist across page loads; modal state should be session-scoped |
+| Instead of   | Could Use         | Tradeoff                                                                          |
+| ------------ | ----------------- | --------------------------------------------------------------------------------- |
+| Toggle Group | Radio Group       | Radio groups are semantically for forms; toggles better for UI state switches     |
+| Toggle Group | Tabs component    | Tabs imply content sections; toggles better for binary state                      |
+| Zustand      | URL search params | URL state doesn't persist across page loads; modal state should be session-scoped |
 
 **Installation:**
 No new packages needed - all dependencies already in codebase.
@@ -58,7 +59,7 @@ Add source field to existing Zustand stores (both album and artist):
 // Add to CorrectionState interface
 export interface CorrectionState {
   // ... existing fields
-  
+
   /** Selected correction source (MusicBrainz or Discogs) */
   correctionSource: 'musicbrainz' | 'discogs';
 }
@@ -70,7 +71,7 @@ partialize: state => ({
   correctionSource: state.correctionSource, // NEW
   searchQuery: state.searchQuery,
   // ... other persisted fields
-})
+});
 ```
 
 ### Pattern 1: Atomic Source Switching
@@ -80,6 +81,7 @@ partialize: state => ({
 **When to use:** In the `setCorrectionSource` action when user toggles between sources.
 
 **Example:**
+
 ```typescript
 // Source: Existing atomic pattern from useCorrectionStore.ts (selectResult, setPreviewLoaded)
 
@@ -93,7 +95,7 @@ setCorrectionSource: (source: 'musicbrainz' | 'discogs') => {
     previewData: null,
     applySelections: null,
   });
-}
+};
 ```
 
 ### Pattern 2: Reusable Source Toggle Component
@@ -103,6 +105,7 @@ setCorrectionSource: (source: 'musicbrainz' | 'discogs') => {
 **When to use:** At top of search view, shared between album and artist correction modals.
 
 **Example:**
+
 ```typescript
 // Source: shadcn/ui Tabs pattern (src/components/ui/tabs.tsx)
 // and FeedTabs custom implementation (src/components/feed/FeedTabs.tsx)
@@ -114,8 +117,8 @@ interface SourceToggleProps {
 
 export function SourceToggle({ value, onChange }: SourceToggleProps) {
   return (
-    <ToggleGroup 
-      type="single" 
+    <ToggleGroup
+      type="single"
       value={value}
       onValueChange={(v) => v && onChange(v as 'musicbrainz' | 'discogs')}
     >
@@ -133,6 +136,7 @@ export function SourceToggle({ value, onChange }: SourceToggleProps) {
 **When to use:** In preview step header to show which source the data came from.
 
 **Example:**
+
 ```typescript
 // Source: Existing Badge component (src/components/ui/badge.tsx)
 
@@ -151,6 +155,7 @@ export function SourceToggle({ value, onChange }: SourceToggleProps) {
 **When to use:** In SearchView component when fetching results.
 
 **Example:**
+
 ```typescript
 // Source: Existing pattern from SearchView.tsx (conditional query enabling)
 
@@ -180,12 +185,12 @@ const { data, isLoading, error } = isMusicBrainz ? mbQuery : discogsQuery;
 
 Problems that look simple but have existing solutions:
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Accessible toggle buttons | Custom styled buttons with onClick | Radix Toggle Group | Built-in keyboard navigation, ARIA attributes, focus management |
-| State persistence | Custom localStorage logic | Zustand persist middleware | Already configured, handles serialization, selective persistence |
-| Badge styling | Inline Tailwind classes | Badge component with variants | Consistent styling, reusable, supports themes |
-| Clearing search state | Manual field-by-field reset | Atomic set() with multiple fields | Prevents intermediate states, easier to maintain |
+| Problem                   | Don't Build                        | Use Instead                       | Why                                                              |
+| ------------------------- | ---------------------------------- | --------------------------------- | ---------------------------------------------------------------- |
+| Accessible toggle buttons | Custom styled buttons with onClick | Radix Toggle Group                | Built-in keyboard navigation, ARIA attributes, focus management  |
+| State persistence         | Custom localStorage logic          | Zustand persist middleware        | Already configured, handles serialization, selective persistence |
+| Badge styling             | Inline Tailwind classes            | Badge component with variants     | Consistent styling, reusable, supports themes                    |
+| Clearing search state     | Manual field-by-field reset        | Atomic set() with multiple fields | Prevents intermediate states, easier to maintain                 |
 
 **Key insight:** The correction stores already use all the patterns needed (persist middleware, atomic updates, factory pattern). This phase just adds one more field to existing infrastructure.
 
@@ -260,7 +265,7 @@ partialize: state => ({
   correctionSource: state.correctionSource, // NEW
   searchQuery: state.searchQuery,
   // ... other persisted fields
-})
+});
 
 // 4. Add action creator with atomic clearing
 export interface CorrectionActions {
@@ -272,7 +277,7 @@ export interface CorrectionActions {
 setCorrectionSource: (source: 'musicbrainz' | 'discogs') => {
   const current = get().correctionSource;
   if (current === source) return; // No-op if same
-  
+
   set({
     correctionSource: source,
     // Clear search state atomically
@@ -282,7 +287,7 @@ setCorrectionSource: (source: 'musicbrainz' | 'discogs') => {
     previewData: null,
     applySelections: null,
   });
-}
+};
 ```
 
 ### SourceToggle Component
@@ -351,7 +356,7 @@ export function SearchView({ album }: SearchViewProps) {
         value={correctionSource}
         onChange={setCorrectionSource}
       />
-      
+
       {/* Existing search inputs */}
       <SearchInputs
         initialAlbumTitle={currentQuery.albumTitle}
@@ -359,7 +364,7 @@ export function SearchView({ album }: SearchViewProps) {
         onSearch={handleSearch}
         isLoading={isLoading}
       />
-      
+
       {/* Results */}
       {isSearchTriggered && !isLoading && (
         <SearchResults ... />
@@ -380,20 +385,20 @@ import { Badge } from '@/components/ui/badge';
 export function PreviewView({ albumId }: PreviewViewProps) {
   const store = getCorrectionStore(albumId);
   const correctionSource = store(s => s.correctionSource);
-  
+
   return (
     <div className="space-y-6">
       {/* Header with source indicator */}
       <div className="flex items-center gap-3">
         <h3 className="text-lg font-semibold">Preview Changes</h3>
-        <Badge 
-          variant="outline" 
+        <Badge
+          variant="outline"
           className="capitalize text-xs"
         >
           {correctionSource === 'musicbrainz' ? 'MusicBrainz' : 'Discogs'}
         </Badge>
       </div>
-      
+
       {/* Existing preview content */}
       <CoverArtComparison ... />
       <FieldComparisonList ... />
@@ -404,14 +409,15 @@ export function PreviewView({ albumId }: PreviewViewProps) {
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|---------|
-| MusicBrainz only | Multi-source selection | v1.3 (2026-02) | Admins can use better source per entity |
-| Manual state clearing | Atomic state updates | v1.2 (Phase 11) | Prevents stale intermediate states |
-| Local component state | Zustand with persist | v1.0 (2025) | State survives navigation |
-| Custom toggles | Radix Toggle Group | Codebase standard | Better accessibility, keyboard nav |
+| Old Approach          | Current Approach       | When Changed      | Impact                                  |
+| --------------------- | ---------------------- | ----------------- | --------------------------------------- |
+| MusicBrainz only      | Multi-source selection | v1.3 (2026-02)    | Admins can use better source per entity |
+| Manual state clearing | Atomic state updates   | v1.2 (Phase 11)   | Prevents stale intermediate states      |
+| Local component state | Zustand with persist   | v1.0 (2025)       | State survives navigation               |
+| Custom toggles        | Radix Toggle Group     | Codebase standard | Better accessibility, keyboard nav      |
 
 **Deprecated/outdated:**
+
 - **Manual localStorage**: Use Zustand persist middleware instead (handles serialization, selective persistence)
 - **Inline button toggles**: Use Radix Toggle Group for accessibility and keyboard navigation
 - **Prop drilling for state**: Use Zustand stores with factory pattern per entity
@@ -445,6 +451,7 @@ None - implementation path is clear based on existing patterns.
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH - All libraries already in use, patterns proven in codebase
 - Architecture: HIGH - Zustand atomic actions, persist middleware, Radix primitives all established
 - Pitfalls: HIGH - Identified from similar patterns in existing correction stores (manual vs search mode switching)

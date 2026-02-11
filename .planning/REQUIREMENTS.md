@@ -47,7 +47,7 @@ Requirements for LlamaLog milestone. 🦙
 
 - [ ] **EXIST-01**: All enrichment operations use category: ENRICHED
 - [ ] **EXIST-02**: All correction operations use category: CORRECTED
-- [ ] **EXIST-03**: All cache operations use category: CACHED
+- [ ] **EXIST-03**: All cache/image operations use category: ENRICHED (adds cloudflareImageId field)
 - [ ] **EXIST-04**: All failed operations use category: FAILED
 
 ### UI & Branding

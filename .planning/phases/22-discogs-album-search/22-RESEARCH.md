@@ -69,6 +69,7 @@ src/
 **When to use:** All Discogs album searches from correction modal (triggered when source=discogs)
 
 **Example:**
+
 ```typescript
 // src/lib/queue/jobs.ts
 export const JOB_TYPES = {
@@ -77,12 +78,12 @@ export const JOB_TYPES = {
 } as const;
 
 export interface DiscogsSearchAlbumJobData {
-  albumId: string;          // For logging/tracking
-  albumTitle?: string;      // Album search query
-  artistName?: string;      // Artist filter (optional)
-  limit?: number;           // Results per page
-  requestId?: string;       // Request tracking
-  parentJobId?: string;     // Job chain tracking
+  albumId: string; // For logging/tracking
+  albumTitle?: string; // Album search query
+  artistName?: string; // Artist filter (optional)
+  limit?: number; // Results per page
+  requestId?: string; // Request tracking
+  parentJobId?: string; // Job chain tracking
 }
 
 // src/lib/queue/processors/discogs-processor.ts
@@ -90,7 +91,7 @@ export async function handleDiscogsSearchAlbum(
   job: Job<DiscogsSearchAlbumJobData>
 ): Promise<unknown> {
   const data = job.data;
-  
+
   // Initialize disconnect client (same pattern as artist search)
   const Discogs = await import('disconnect');
   const discogsClient = new Discogs.default.Client({
@@ -101,10 +102,10 @@ export async function handleDiscogsSearchAlbum(
 
   // Build search options
   const searchOptions: any = {
-    type: 'master',                    // Masters only (per CONTEXT.md)
+    type: 'master', // Masters only (per CONTEXT.md)
     per_page: data.limit || 10,
   };
-  
+
   if (data.albumTitle) {
     searchOptions.release_title = data.albumTitle;
   }
@@ -114,10 +115,10 @@ export async function handleDiscogsSearchAlbum(
 
   // Execute search
   const searchResults = await discogsClient.search(searchOptions);
-  
+
   // Map results to correction format
   const masters = await Promise.all(
-    searchResults.results.map(async (result) => {
+    searchResults.results.map(async result => {
       // Fetch full master details (search returns minimal data)
       const master = await discogsClient.getMaster(result.id);
       return mapDiscogsMasterToCorrectionResult(master);
@@ -132,6 +133,7 @@ export async function handleDiscogsSearchAlbum(
   };
 }
 ```
+
 **Source:** Existing pattern from handleDiscogsSearchArtist() in discogs-processor.ts
 
 ### Pattern 2: Two-Step Mapping (Search → Master → CorrectionResult)
@@ -141,6 +143,7 @@ export async function handleDiscogsSearchAlbum(
 **When to use:** Discogs album search (MusicBrainz doesn't need this - search results have all needed data)
 
 **Example:**
+
 ```typescript
 // src/lib/discogs/album-search-service.ts
 async searchAlbums(
@@ -152,23 +155,23 @@ async searchAlbums(
     type: 'master',
     per_page: limit,
   };
-  
+
   if (albumTitle) searchOptions.release_title = albumTitle;
   if (artistName) searchOptions.artist = artistName;
 
   const searchResults = await this.discogsClient.search(searchOptions);
-  
+
   // Two-step mapping: search result → full master → correction result
   const correctionResults = await Promise.all(
     searchResults.results.map(async (searchResult) => {
       // Step 1: Fetch full master data
       const master = await this.discogsClient.getMaster(searchResult.id);
-      
+
       // Step 2: Map to correction result format
       return this.mapMasterToCorrectionResult(master);
     })
   );
-  
+
   return correctionResults;
 }
 
@@ -178,16 +181,16 @@ private mapMasterToCorrectionResult(
   // Extract year from master.year (Discogs uses number, not date string)
   const year = master.year?.toString() || '';
   const firstReleaseDate = year; // Masters don't have exact dates
-  
+
   // Merge genres + styles per CONTEXT.md decision
   const genres = [
     ...(master.genres || []),
     ...(master.styles || [])
   ];
-  
+
   // Get primary image
   const coverImage = master.images?.[0];
-  
+
   return {
     releaseGroupMbid: master.id.toString(),  // Use Discogs ID as identifier
     title: master.title,
@@ -206,6 +209,7 @@ private mapMasterToCorrectionResult(
   };
 }
 ```
+
 **Source:** Pattern derived from existing mapDiscogsMasterToAlbum() in src/lib/discogs/mappers.ts
 
 ### Pattern 3: Conditional GraphQL Query Based on Source
@@ -215,31 +219,33 @@ private mapMasterToCorrectionResult(
 **When to use:** Search view needs to switch between MusicBrainz and Discogs queries
 
 **Example:**
+
 ```typescript
 // src/components/admin/correction/search/SearchView.tsx
 export function SearchView({ album }: SearchViewProps) {
   const store = getCorrectionStore(album.id);
   const correctionSource = store(s => s.correctionSource);
-  
+
   // MusicBrainz query (existing)
   const mbQuery = useSearchCorrectionCandidatesQuery(
     { input: { albumId: album.id, albumTitle, artistName, limit: 10 } },
     { enabled: correctionSource === 'musicbrainz' && isSearchTriggered }
   );
-  
+
   // Discogs query (new)
   const discogsQuery = useSearchDiscogsCorrectionCandidatesQuery(
     { input: { albumId: album.id, albumTitle, artistName, limit: 10 } },
     { enabled: correctionSource === 'discogs' && isSearchTriggered }
   );
-  
+
   // Use appropriate query based on source
-  const { data, isLoading, error } = 
+  const { data, isLoading, error } =
     correctionSource === 'musicbrainz' ? mbQuery : discogsQuery;
-  
+
   // Rest of component logic unchanged
 }
 ```
+
 **Source:** Existing pattern from SearchView.tsx with SourceToggle integration
 
 ### Anti-Patterns to Avoid
@@ -276,13 +282,15 @@ Job type routing | If/else chains | Extend processMusicBrainzJob() router | Cent
 
 **Why it happens:** CONTEXT.md specifies "year-only dates use January 1st fallback" but code might not implement this consistently.
 
-**How to avoid:** 
+**How to avoid:**
+
 ```typescript
 // In mapper:
-const firstReleaseDate = master.year 
-  ? `${master.year}-01-01`  // Fallback to Jan 1
+const firstReleaseDate = master.year
+  ? `${master.year}-01-01` // Fallback to Jan 1
   : '';
 ```
+
 Always convert year (number) to ISO string with Jan 1 fallback. Document this in mapper comments.
 
 **Warning signs:** Date parsing errors in preview step, year display shows "NaN", sorting by date breaks.
@@ -294,13 +302,12 @@ Always convert year (number) to ISO string with Jan 1 fallback. Document this in
 **Why it happens:** Album model has single genres array, but Discogs separates genres/styles. Easy to forget styles field exists.
 
 **How to avoid:**
+
 ```typescript
 // In mapper:
-const genres = [
-  ...(master.genres || []),
-  ...(master.styles || [])
-];
+const genres = [...(master.genres || []), ...(master.styles || [])];
 ```
+
 Always merge both arrays, genres first (per CONTEXT.md).
 
 **Warning signs:** Genre tags missing in preview (shows "Rock" but not "Post-Punk"), incomplete genre data for Discogs results.
@@ -332,10 +339,10 @@ const discogsClient = new Discogs.default.Client({
 
 // Search for masters by artist and release title
 const searchResults = await discogsClient.search({
-  type: 'master',               // Masters only
+  type: 'master', // Masters only
   release_title: 'OK Computer', // Album title
-  artist: 'Radiohead',         // Artist name (optional filter)
-  per_page: 10,                // Results limit
+  artist: 'Radiohead', // Artist name (optional filter)
+  per_page: 10, // Results limit
 });
 
 // searchResults.results = [{ id, title, thumb, year, genre, label, ... }]
@@ -348,7 +355,7 @@ const searchResults = await discogsClient.search({
 // Source: src/lib/api/albums.ts (getAlbumDetails pattern)
 const master = await discogsClient.getMaster(result.id);
 
-// master includes: id, title, artists[], genres[], styles[], 
+// master includes: id, title, artists[], genres[], styles[],
 //   tracklist[], images[], year, main_release, etc.
 // Full DiscogsMaster type defined in src/types/discogs/master.ts
 ```
@@ -365,29 +372,26 @@ function mapMasterToCorrectionResult(
     mbid: a.id.toString(),
     name: a.name,
   }));
-  
+
   // Merge genres + styles (CONTEXT.md requirement)
-  const mergedGenres = [
-    ...(master.genres || []),
-    ...(master.styles || [])
-  ];
-  
+  const mergedGenres = [...(master.genres || []), ...(master.styles || [])];
+
   // Get cover art (first image)
   const coverImage = master.images?.[0];
-  
+
   // Year-only date with Jan 1 fallback (CONTEXT.md requirement)
   const year = master.year?.toString() || '';
-  
+
   return {
     releaseGroupMbid: master.id.toString(),
     title: master.title,
-    disambiguation: undefined,  // Discogs doesn't have this
+    disambiguation: undefined, // Discogs doesn't have this
     artistCredits,
     primaryArtistName: master.artists.map(a => a.name).join(', '),
-    firstReleaseDate: year,     // Year only
-    primaryType: 'Album',       // Masters are albums
-    secondaryTypes: [],         // Discogs doesn't categorize
-    mbScore: 100,               // No search score
+    firstReleaseDate: year, // Year only
+    primaryType: 'Album', // Masters are albums
+    secondaryTypes: [], // Discogs doesn't categorize
+    mbScore: 100, // No search score
     coverArtUrl: coverImage?.uri || null,
     source: 'discogs' as const,
   };
@@ -409,7 +413,7 @@ input CorrectionSearchInput {
   yearFilter: Int
   limit: Int
   offset: Int
-  source: CorrectionSource  # NEW: 'musicbrainz' | 'discogs'
+  source: CorrectionSource # NEW: 'musicbrainz' | 'discogs'
 }
 
 """
@@ -434,7 +438,7 @@ export function SearchResultCard<T extends SearchResultDisplay>({
   // Determine source badge and accent color
   const isDiscogs = result.source === 'discogs';
   const badgeText = isDiscogs ? 'DG' : 'MB';
-  const accentColor = isDiscogs 
+  const accentColor = isDiscogs
     ? 'border-orange-900/50 hover:bg-orange-950/20'  // Discogs accent
     : 'hover:bg-zinc-800/50';                        // MusicBrainz default
 
@@ -460,6 +464,7 @@ Manual source switching | Atomic source clearing | Phase 21 (Feb 2026) | Prevent
 Separate queries per source | Unified CorrectionSearchResult type | Phase 22 (now) | Same result card component for all sources
 
 **Deprecated/outdated:**
+
 - Featured playlists (Spotify API restricted Nov 2024) - use `tag:new` search instead
 - Direct disconnect.search() without rate limiting - use BullMQ queue (queue pattern established Phase 16)
 

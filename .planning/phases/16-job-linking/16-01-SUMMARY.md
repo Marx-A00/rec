@@ -48,12 +48,14 @@ metrics:
 This plan establishes the schema foundation for job chain linking:
 
 **EnrichmentLog Schema:**
+
 - Added `isRootJob` Boolean field with default `false`
 - Added composite index `@@index([isRootJob, createdAt])` for efficient root queries
 - Enables table query: `WHERE isRootJob = true` to show only top-level entries
 
 **Job Data Interfaces:**
 Added `parentJobId?: string` field to 10 job data interfaces that participate in job chains:
+
 - CheckAlbumEnrichmentJobData
 - CheckArtistEnrichmentJobData
 - CheckTrackEnrichmentJobData
@@ -69,12 +71,14 @@ Added `parentJobId?: string` field to 10 job data interfaces that participate in
 
 **Flat Job Chain Structure:**
 Every child job points to the root job regardless of chain depth. For example:
+
 - ENRICH_ALBUM (root) → ENRICH_ARTIST → CACHE_IMAGE
 - All three have the same parentJobId (the ENRICH_ALBUM job ID)
 
 This enables single `WHERE parentJobId = rootJobId` queries to get all children without recursive traversal.
 
 **Root Job Identification:**
+
 - Jobs without a parent set `isRootJob: true`
 - Legacy logs (null parentJobId) can be distinguished from orphaned child logs
 - Table displays only `isRootJob = true` entries at top level
@@ -95,6 +99,7 @@ This enables single `WHERE parentJobId = rootJobId` queries to get all children 
 ## Deviations from Plan
 
 **1. [Rule 1 - Bug] Fixed any type in DiscogsSearchArtistJobData**
+
 - Found during: Task 3
 - Issue: musicbrainzData field used `any` type
 - Fix: Changed to `unknown` per TypeScript standards
@@ -104,6 +109,7 @@ This enables single `WHERE parentJobId = rootJobId` queries to get all children 
 ## Next Steps
 
 Processors can now be updated to:
+
 1. Set `isRootJob: true` when creating root job logs
 2. Propagate `parentJobId` through job chains
 3. Pass `parentJobId` when spawning child jobs

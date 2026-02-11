@@ -17,7 +17,8 @@ affects: [19-03-enrichmentlogtable-refactor]
 # Tech tracking
 tech-stack:
   added: []
-  patterns: [compact variant pattern, skeleton loading pattern, modal detail pattern]
+  patterns:
+    [compact variant pattern, skeleton loading pattern, modal detail pattern]
 
 key-files:
   created:
@@ -27,14 +28,14 @@ key-files:
     - src/components/admin/EnrichmentTimeline.tsx
 
 key-decisions:
-  - "Compact variant hides view switcher and descriptions for space efficiency"
-  - "Modal uses max-w-3xl and max-h-85vh for optimal viewing"
-  - "SkeletonTimeline matches timeline structure with 3 shimmer items"
+  - 'Compact variant hides view switcher and descriptions for space efficiency'
+  - 'Modal uses max-w-3xl and max-h-85vh for optimal viewing'
+  - 'SkeletonTimeline matches timeline structure with 3 shimmer items'
 
 patterns-established:
   - "variant prop pattern: 'default' | 'compact' for context-specific rendering"
-  - "Configurable truncation threshold via truncateChildren prop"
-  - "Modal trigger as link-styled button for subtle UI integration"
+  - 'Configurable truncation threshold via truncateChildren prop'
+  - 'Modal trigger as link-styled button for subtle UI integration'
 
 # Metrics
 duration: 4min
@@ -76,10 +77,12 @@ completed: 2026-02-06
 ## Files Created/Modified
 
 **Created:**
+
 - `src/components/admin/SkeletonTimeline.tsx` - Loading skeleton with 3 shimmer items, accessibility support
 - `src/components/admin/EnrichmentTimelineModal.tsx` - Dialog wrapper showing full timeline with parent + children
 
 **Modified:**
+
 - `src/components/admin/EnrichmentTimeline.tsx` - Added variant, maxHeight, truncateChildren props (completed in d1a68b2)
 
 ## Decisions Made
@@ -105,6 +108,7 @@ None - no external service configuration required.
 ## Next Phase Readiness
 
 **Ready for 19-03 (EnrichmentLogTable refactor):**
+
 - Compact timeline variant available for table rows
 - Skeleton loading state ready for async child fetching
 - Modal available for "View full timeline" links
@@ -113,5 +117,6 @@ None - no external service configuration required.
 **No blockers:** All timeline components ready for table integration.
 
 ---
-*Phase: 19-enrichmentlogtable-integration*
-*Completed: 2026-02-06*
+
+_Phase: 19-enrichmentlogtable-integration_
+_Completed: 2026-02-06_

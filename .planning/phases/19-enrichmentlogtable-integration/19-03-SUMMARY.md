@@ -13,26 +13,26 @@ affects: [20]
 tech-stack:
   added: []
   patterns:
-    - "Lazy data fetching per table row"
-    - "Modal dialog for detailed view"
-    - "Progressive disclosure UI pattern"
+    - 'Lazy data fetching per table row'
+    - 'Modal dialog for detailed view'
+    - 'Progressive disclosure UI pattern'
 key-files:
   created: []
   modified:
     - src/components/admin/EnrichmentLogTable.tsx
 decisions:
-  - name: "Direct child query approach"
-    rationale: "Use useGetEnrichmentLogsQuery({ parentJobId }) instead of useGetEnrichmentLogsWithChildrenQuery for simpler, more efficient per-row child fetching"
-    alternatives: "Tree assembly approach with includeChildren parameter"
-    impact: "Simpler code, one query per expanded row, avoids recursive tree assembly overhead"
-  - name: "Remove FieldChangesPanel"
-    rationale: "Timeline provides superior visualization of changes with full context and hierarchy"
-    alternatives: "Keep both visualizations"
-    impact: "Cleaner codebase, consistent UX across admin panels"
+  - name: 'Direct child query approach'
+    rationale: 'Use useGetEnrichmentLogsQuery({ parentJobId }) instead of useGetEnrichmentLogsWithChildrenQuery for simpler, more efficient per-row child fetching'
+    alternatives: 'Tree assembly approach with includeChildren parameter'
+    impact: 'Simpler code, one query per expanded row, avoids recursive tree assembly overhead'
+  - name: 'Remove FieldChangesPanel'
+    rationale: 'Timeline provides superior visualization of changes with full context and hierarchy'
+    alternatives: 'Keep both visualizations'
+    impact: 'Cleaner codebase, consistent UX across admin panels'
 metrics:
   tasks: 2
-  duration: "4.6 minutes"
-  completed: "2026-02-06"
+  duration: '4.6 minutes'
+  completed: '2026-02-06'
 ---
 
 # Phase 19 Plan 03: EnrichmentLogTable Timeline Integration Summary
@@ -42,12 +42,14 @@ metrics:
 ## What Changed
 
 **Before:**
+
 - Table showed all logs (parent + children) as flat rows
 - Only rows with field changes were expandable
 - Expanded rows showed FieldChangesPanel with before/after values
 - No visibility into job hierarchy or execution flow
 
 **After:**
+
 - Table shows only parent/root logs as rows (parentOnly: true filter)
 - All rows expandable with chevron icon
 - Expanded rows show compact EnrichmentTimeline with parent + children
@@ -80,6 +82,7 @@ metrics:
 ### Task 2: Verification and Cleanup
 
 **Verified:**
+
 - ✓ `pnpm type-check` passes
 - ✓ `pnpm lint` passes (no warnings for EnrichmentLogTable)
 - ✓ `pnpm build` succeeds
@@ -96,7 +99,12 @@ metrics:
 ### 1. Lazy Child Fetching
 
 ```typescript
-const { data: childrenData, isLoading, error, refetch } = useGetEnrichmentLogsQuery(
+const {
+  data: childrenData,
+  isLoading,
+  error,
+  refetch,
+} = useGetEnrichmentLogsQuery(
   { parentJobId: log.jobId, limit: 100 },
   { enabled: isExpanded && !!log.jobId }
 );
@@ -115,13 +123,14 @@ const { data: childrenData, isLoading, error, refetch } = useGetEnrichmentLogsQu
 ### 3. Conditional Polling
 
 ```typescript
-refetchInterval: (query) => {
+refetchInterval: query => {
   if (!isExpanded) return false;
   const children = query.state.data?.enrichmentLogs || [];
   if (children.length === 0) return false;
-  const age = Date.now() - new Date(children[children.length - 1].createdAt).getTime();
+  const age =
+    Date.now() - new Date(children[children.length - 1].createdAt).getTime();
   return age < 30000 ? 3000 : false;
-}
+};
 ```
 
 **Why:** Only poll expanded rows with recent activity, avoids unnecessary queries
@@ -131,8 +140,9 @@ refetchInterval: (query) => {
 **From:** EnrichmentLogTable
 **To:** useGetEnrichmentLogsQuery (GraphQL)
 **Via:** Two query patterns:
-  1. Main table: `{ entityType, entityId, parentOnly: true }`
-  2. Expanded row: `{ parentJobId: log.jobId }`
+
+1. Main table: `{ entityType, entityId, parentOnly: true }`
+2. Expanded row: `{ parentJobId: log.jobId }`
 
 **From:** EnrichmentLogTable
 **To:** EnrichmentTimeline
@@ -155,6 +165,7 @@ None. Plan executed exactly as written.
 **Decision:** Use `useGetEnrichmentLogsQuery({ parentJobId })` instead
 
 **Reasoning:**
+
 - Simpler: Single query, no tree assembly
 - Efficient: One indexed database query per expanded row
 - Scalable: No recursive fetch overhead
@@ -168,6 +179,7 @@ None. Plan executed exactly as written.
 **Decision:** Replace with timeline expansion
 
 **Reasoning:**
+
 - Timeline shows field changes PLUS full context (operation, status, sources)
 - Timeline shows job hierarchy (parent → children flow)
 - Timeline is visual (icons, colors, connector lines)
@@ -181,11 +193,13 @@ None. Plan executed exactly as written.
 **Phase 20 blockers:** None
 
 **What Phase 20 needs from this:**
+
 - EnrichmentLogTable shows parent-only rows ✓
 - Timeline expansion works for all rows ✓
 - Modal provides detailed inspection ✓
 
 **What Phase 20 will add:**
+
 - Real-time updates during enrichment
 - Inline retry/rerun actions
 - Job cancellation from timeline
@@ -193,6 +207,7 @@ None. Plan executed exactly as written.
 ## Verification Results
 
 **Success criteria:** 8/8 met
+
 - [x] TBL-01: Table fetches only parent logs (parentOnly: true)
 - [x] TBL-02: All rows show expand chevron
 - [x] TBL-03: Expanded row shows compact Timeline
@@ -209,17 +224,20 @@ None. Plan executed exactly as written.
 ## Impact
 
 **User experience:**
+
 - Admins see cleaner table (only parent jobs)
 - Inline timeline shows full enrichment flow
 - Progressive disclosure reduces cognitive load
 - "View full timeline" modal for deep investigation
 
 **Performance:**
+
 - Faster initial load (fewer rows)
 - Lazy child loading (only when needed)
 - Conditional polling (only active rows)
 
 **Maintainability:**
+
 - Removed 70+ lines of FieldChangesPanel code
 - Consistent pattern (timeline everywhere)
 - Single query hook (no special tree query)
@@ -227,16 +245,19 @@ None. Plan executed exactly as written.
 ## Lessons Learned
 
 **What went well:**
+
 - Direct child query approach simpler than expected
 - SkeletonTimeline loading state polish
 - Error handling with retry UX
 - All rows expandable (no special cases)
 
 **What to watch:**
+
 - Many expanded rows = many child queries (acceptable for admin use case)
 - Modal z-index with other dialogs (shadcn Dialog should handle)
 
 **Future improvements:**
+
 - Keyboard navigation (↑/↓ to navigate rows, → to expand, ← to collapse)
 - Bulk expand/collapse all rows
 - Persist expanded state in session storage

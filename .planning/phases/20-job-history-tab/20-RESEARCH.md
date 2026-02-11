@@ -20,32 +20,32 @@ The established libraries and patterns for this domain:
 
 ### Core
 
-| Library                     | Version      | Purpose                              | Why Standard                                                                             |
-| --------------------------- | ------------ | ------------------------------------ | ---------------------------------------------------------------------------------------- |
-| BullMQ Queue.getJobs()      | v5.67+       | Retrieve job history programmatically| Native BullMQ method for accessing completed/failed/active jobs with pagination          |
-| TanStack Query              | v5.79.0      | Enrichment log fetching + caching    | Already used throughout app, Phase 19 uses for lazy-loading children                     |
-| EnrichmentTimeline          | Internal     | Display job family timeline          | Phase 18 component, supports compact variant for table rows                              |
-| GraphQL enrichmentLogs      | Internal     | Query logs by parentJobId            | Phase 17 resolver supports filtering by parentJobId, returns parent-child relationships  |
-| Worker proxy route          | Internal     | Secure access to BullMQ job data     | /api/admin/worker/[...path] already authenticated and working                            |
+| Library                | Version  | Purpose                               | Why Standard                                                                            |
+| ---------------------- | -------- | ------------------------------------- | --------------------------------------------------------------------------------------- |
+| BullMQ Queue.getJobs() | v5.67+   | Retrieve job history programmatically | Native BullMQ method for accessing completed/failed/active jobs with pagination         |
+| TanStack Query         | v5.79.0  | Enrichment log fetching + caching     | Already used throughout app, Phase 19 uses for lazy-loading children                    |
+| EnrichmentTimeline     | Internal | Display job family timeline           | Phase 18 component, supports compact variant for table rows                             |
+| GraphQL enrichmentLogs | Internal | Query logs by parentJobId             | Phase 17 resolver supports filtering by parentJobId, returns parent-child relationships |
+| Worker proxy route     | Internal | Secure access to BullMQ job data      | /api/admin/worker/[...path] already authenticated and working                           |
 
 ### Supporting
 
-| Library                 | Version      | Purpose                               | When to Use                                                 |
-| ----------------------- | ------------ | ------------------------------------- | ----------------------------------------------------------- |
-| Badge component         | shadcn/ui    | Show enrichment count indicator       | Display "5 logs" badge on jobs with enrichment activity     |
-| ChevronDown/Right icons | Lucide React | Expandable row toggle                 | Standard pattern for table row expansion                    |
-| Dialog component        | Radix UI     | Optional full timeline modal          | If compact view needs "view full timeline" action           |
-| useState for expansion  | React 19     | Track expanded rows                   | Same pattern as Phase 19 EnrichmentLogTable                 |
+| Library                 | Version      | Purpose                         | When to Use                                             |
+| ----------------------- | ------------ | ------------------------------- | ------------------------------------------------------- |
+| Badge component         | shadcn/ui    | Show enrichment count indicator | Display "5 logs" badge on jobs with enrichment activity |
+| ChevronDown/Right icons | Lucide React | Expandable row toggle           | Standard pattern for table row expansion                |
+| Dialog component        | Radix UI     | Optional full timeline modal    | If compact view needs "view full timeline" action       |
+| useState for expansion  | React 19     | Track expanded rows             | Same pattern as Phase 19 EnrichmentLogTable             |
 
 ### Alternatives Considered
 
-| Instead of                         | Could Use                                  | Tradeoff                                                                                   |
-| ---------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| Worker API for jobs                | Direct Redis queries                       | Worker API already authenticated and abstracted, Redis requires connection management      |
-| Lazy-load logs on expand           | Pre-fetch all logs upfront                 | Lazy-load keeps initial page load fast, only fetches when user expands                    |
-| parentJobId filter query           | includeChildren tree query                 | parentJobId is simpler and faster for flat job families (all children point to root)      |
-| Compact timeline in row            | Link to separate timeline page             | Inline timeline provides immediate context without navigation                              |
-| EnrichmentTimeline component       | Custom job-specific timeline               | EnrichmentTimeline already handles job hierarchies, no need to rebuild                     |
+| Instead of                   | Could Use                      | Tradeoff                                                                              |
+| ---------------------------- | ------------------------------ | ------------------------------------------------------------------------------------- |
+| Worker API for jobs          | Direct Redis queries           | Worker API already authenticated and abstracted, Redis requires connection management |
+| Lazy-load logs on expand     | Pre-fetch all logs upfront     | Lazy-load keeps initial page load fast, only fetches when user expands                |
+| parentJobId filter query     | includeChildren tree query     | parentJobId is simpler and faster for flat job families (all children point to root)  |
+| Compact timeline in row      | Link to separate timeline page | Inline timeline provides immediate context without navigation                         |
+| EnrichmentTimeline component | Custom job-specific timeline   | EnrichmentTimeline already handles job hierarchies, no need to rebuild                |
 
 **Installation:**
 No new dependencies required - all components and libraries already installed.
@@ -161,14 +161,14 @@ function ExpandableJobRow({ job, isExpanded, onToggle }: ExpandableJobRowProps) 
         </TableCell>
         {/* Job details cells */}
       </TableRow>
-      
+
       {isExpanded && (
         <TableRow>
           <TableCell colSpan={7}>
             {isLoading ? (
               <SkeletonTimeline />
             ) : (
-              <EnrichmentTimeline 
+              <EnrichmentTimeline
                 logs={data?.enrichmentLogs ?? []}
                 variant="compact"
                 maxHeight="400px"
@@ -183,6 +183,7 @@ function ExpandableJobRow({ job, isExpanded, onToggle }: ExpandableJobRowProps) 
 ```
 
 **Key details:**
+
 - `enabled: isExpanded` prevents unnecessary queries for collapsed rows
 - `refetchInterval` function enables dynamic polling only while expanded and recently active
 - `parentJobId` filter returns entire job family (root + all children)
@@ -255,6 +256,7 @@ const allLogs = [
 ```
 
 **Design considerations:**
+
 - Maintain information hierarchy even in compact mode
 - Preserve expand/collapse functionality per item
 - Keep action buttons accessible (retry, view details)
@@ -281,7 +283,7 @@ function JobTimelineModal({ jobId, open, onClose }: JobTimelineModalProps) {
         <DialogHeader>
           <DialogTitle>Job Timeline: {jobId}</DialogTitle>
         </DialogHeader>
-        <EnrichmentTimeline 
+        <EnrichmentTimeline
           logs={data?.enrichmentLogs ?? []}
           variant="default" // Full-featured view
           className="overflow-y-auto"
@@ -292,8 +294,8 @@ function JobTimelineModal({ jobId, open, onClose }: JobTimelineModalProps) {
 }
 
 // Usage in expanded row
-<Button 
-  variant="outline" 
+<Button
+  variant="outline"
   size="sm"
   onClick={() => setShowModal(true)}
 >
@@ -306,14 +308,14 @@ function JobTimelineModal({ jobId, open, onClose }: JobTimelineModalProps) {
 
 Problems that look simple but have existing solutions:
 
-| Problem                               | Don't Build                                    | Use Instead                                | Why                                                                                    |
-| ------------------------------------- | ---------------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------- |
-| BullMQ job retrieval                  | Custom Redis queries for job data              | Queue.getJobs() or worker API              | BullMQ handles pagination, filtering, and state management                             |
-| Enrichment log queries                | Direct Prisma queries in components            | GraphQL useGetEnrichmentLogsQuery hook     | Already generated, supports caching, polling, and optimistic updates                   |
-| Timeline visualization                | Custom timeline component                      | EnrichmentTimeline (Phase 18)              | Already handles parent-child hierarchies, animations, compact variant                  |
-| Expandable table rows                 | Custom accordion or collapse logic             | Phase 19's expandable row pattern          | Proven pattern with lazy-loading, polling, and state management                        |
-| Job-to-log linking                    | Custom tracking system or correlation IDs      | EnrichmentLog.jobId + parentJobId fields   | Phase 15-16 established this, indexed and queryable                                    |
-| Enrichment count badges               | Client-side filtering and counting             | GraphQL aggregation query                  | Database-level counting is faster and more accurate                                    |
+| Problem                 | Don't Build                               | Use Instead                              | Why                                                                   |
+| ----------------------- | ----------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------- |
+| BullMQ job retrieval    | Custom Redis queries for job data         | Queue.getJobs() or worker API            | BullMQ handles pagination, filtering, and state management            |
+| Enrichment log queries  | Direct Prisma queries in components       | GraphQL useGetEnrichmentLogsQuery hook   | Already generated, supports caching, polling, and optimistic updates  |
+| Timeline visualization  | Custom timeline component                 | EnrichmentTimeline (Phase 18)            | Already handles parent-child hierarchies, animations, compact variant |
+| Expandable table rows   | Custom accordion or collapse logic        | Phase 19's expandable row pattern        | Proven pattern with lazy-loading, polling, and state management       |
+| Job-to-log linking      | Custom tracking system or correlation IDs | EnrichmentLog.jobId + parentJobId fields | Phase 15-16 established this, indexed and queryable                   |
+| Enrichment count badges | Client-side filtering and counting        | GraphQL aggregation query                | Database-level counting is faster and more accurate                   |
 
 **Key insight:** Phase 15-19 built all the primitives needed. Phase 20 is primarily wiring them together with the Job History page, not building new infrastructure.
 
@@ -333,7 +335,7 @@ Problems that look simple but have existing solutions:
 const { data } = useGetEnrichmentLogsQuery({ jobId: job.id });
 
 // ✅ GOOD: Gets entire job family (root + all children)
-const { data } = useGetEnrichmentLogsQuery({ 
+const { data } = useGetEnrichmentLogsQuery({
   parentJobId: job.id, // If this is root, gets all children
   // Also fetch own log separately if needed
 });
@@ -377,7 +379,7 @@ refetchInterval: query => {
   const lastLog = logs[logs.length - 1];
   const age = Date.now() - new Date(lastLog.createdAt).getTime();
   return age < 30000 ? 3000 : false; // Poll for 30s after last activity
-}
+};
 ```
 
 ### Pitfall 4: Mixing BullMQ Job Status with EnrichmentLog Status
@@ -414,7 +416,7 @@ refetchInterval: query => {
 
 ```typescript
 // Only show expand for enrichment-related jobs
-const hasEnrichmentLogs = job.name.includes('enrichment') || 
+const hasEnrichmentLogs = job.name.includes('enrichment') ||
                           job.name.includes('spotify:sync') ||
                           job.name.includes('musicbrainz:sync');
 
@@ -476,7 +478,7 @@ function ExpandableJobRow({ job }: JobRowProps) {
 
   return (
     <>
-      <TableRow 
+      <TableRow
         className="cursor-pointer hover:bg-zinc-800/50"
         onClick={() => setIsExpanded(!isExpanded)}
       >
@@ -602,13 +604,13 @@ const { data, isLoading } = useGetEnrichmentLogsQuery(
 
 ## State of the Art
 
-| Old Approach                         | Current Approach                                  | When Changed | Impact                                                                       |
-| ------------------------------------ | ------------------------------------------------- | ------------ | ---------------------------------------------------------------------------- |
-| Bull Board UI only                   | Custom Job History + EnrichmentLog timelines      | Phase 15-19  | Tighter integration with app's audit trail, domain-specific UX              |
-| No job linking                       | parentJobId field for job families                | Phase 15-16  | Can trace enrichment cascades across API calls and processors                |
-| Separate job and log views           | Expandable rows with inline timelines             | Phase 19-20  | Single page for job monitoring and enrichment audit trail                    |
-| Manual refresh for job updates       | TanStack Query dynamic polling                    | Phase 19     | Real-time updates while watching active jobs, auto-stops when inactive       |
-| Deep hierarchy (nested children)     | Flat parent structure (all point to root)         | Phase 16     | Simpler queries, faster lookups with single WHERE clause                     |
+| Old Approach                     | Current Approach                             | When Changed | Impact                                                                 |
+| -------------------------------- | -------------------------------------------- | ------------ | ---------------------------------------------------------------------- |
+| Bull Board UI only               | Custom Job History + EnrichmentLog timelines | Phase 15-19  | Tighter integration with app's audit trail, domain-specific UX         |
+| No job linking                   | parentJobId field for job families           | Phase 15-16  | Can trace enrichment cascades across API calls and processors          |
+| Separate job and log views       | Expandable rows with inline timelines        | Phase 19-20  | Single page for job monitoring and enrichment audit trail              |
+| Manual refresh for job updates   | TanStack Query dynamic polling               | Phase 19     | Real-time updates while watching active jobs, auto-stops when inactive |
+| Deep hierarchy (nested children) | Flat parent structure (all point to root)    | Phase 16     | Simpler queries, faster lookups with single WHERE clause               |
 
 **Deprecated/outdated:**
 
@@ -675,6 +677,7 @@ Things that couldn't be fully resolved:
 **Valid until:** ~30 days (stable domain - React patterns and BullMQ API rarely change)
 
 **Key validation points for planner:**
+
 - Phase 19's ExpandableLogRow component is the exact pattern to copy
 - EnrichmentTimeline compact variant already exists and works
 - GraphQL resolver already supports parentJobId filter

@@ -118,37 +118,39 @@ must_haves:
 
 ### Required Artifacts
 
-| Artifact | Expected | Status | Details |
-|----------|----------|--------|---------|
-| `prisma/schema.prisma` | isRootJob field | VERIFIED | Line 421: `isRootJob Boolean @default(false)` |
-| `prisma/migrations/.../migration.sql` | Migration file | VERIFIED | Adds is_root_job column and index |
-| `src/lib/queue/jobs.ts` | parentJobId on interfaces | VERIFIED | 10 interfaces have `parentJobId?: string` |
-| `src/lib/queue/processors/enrichment-processor.ts` | parentJobId propagation | VERIFIED | 2433 lines, 6 propagation points |
-| `src/lib/queue/processors/discogs-processor.ts` | EnrichmentLog with parentJobId | VERIFIED | 395 lines, 7 log entries |
-| `src/lib/queue/processors/cache-processor.ts` | EnrichmentLog with parentJobId | VERIFIED | 483 lines, 12 log entries |
-| `src/lib/queue/processors/index.ts` | Job<T> passed to handlers | VERIFIED | All handlers receive full Job objects |
+| Artifact                                           | Expected                       | Status   | Details                                       |
+| -------------------------------------------------- | ------------------------------ | -------- | --------------------------------------------- |
+| `prisma/schema.prisma`                             | isRootJob field                | VERIFIED | Line 421: `isRootJob Boolean @default(false)` |
+| `prisma/migrations/.../migration.sql`              | Migration file                 | VERIFIED | Adds is_root_job column and index             |
+| `src/lib/queue/jobs.ts`                            | parentJobId on interfaces      | VERIFIED | 10 interfaces have `parentJobId?: string`     |
+| `src/lib/queue/processors/enrichment-processor.ts` | parentJobId propagation        | VERIFIED | 2433 lines, 6 propagation points              |
+| `src/lib/queue/processors/discogs-processor.ts`    | EnrichmentLog with parentJobId | VERIFIED | 395 lines, 7 log entries                      |
+| `src/lib/queue/processors/cache-processor.ts`      | EnrichmentLog with parentJobId | VERIFIED | 483 lines, 12 log entries                     |
+| `src/lib/queue/processors/index.ts`                | Job<T> passed to handlers      | VERIFIED | All handlers receive full Job objects         |
 
 ### Key Link Verification
 
-| From | To | Via | Status | Details |
-|------|-------|-----|--------|---------|
-| processors/index.ts | handlers | Job<T> objects | WIRED | All handlers receive `job as Job<T>` |
-| CHECK_ALBUM_ENRICHMENT | ENRICH_ALBUM | parentJobId: rootJobId | WIRED | Line 117 |
-| CHECK_ALBUM_ENRICHMENT | CHECK_ARTIST_ENRICHMENT | parentJobId: rootJobId | WIRED | Line 134 |
-| CHECK_ARTIST_ENRICHMENT | ENRICH_ARTIST | parentJobId: rootJobId | WIRED | Line 207 |
-| ENRICH_ARTIST | DISCOGS_SEARCH_ARTIST | parentJobId: rootJobId | WIRED | Line 1162 |
-| ENRICH_ARTIST | CACHE_ARTIST_IMAGE | parentJobId: rootJobId | WIRED | Line 1249 |
-| discogs handlers | enrichmentLogger | parentJobId in data | WIRED | 7 calls |
-| cache handlers | enrichmentLogger | parentJobId in data | WIRED | 12 calls |
+| From                    | To                      | Via                    | Status | Details                              |
+| ----------------------- | ----------------------- | ---------------------- | ------ | ------------------------------------ |
+| processors/index.ts     | handlers                | Job<T> objects         | WIRED  | All handlers receive `job as Job<T>` |
+| CHECK_ALBUM_ENRICHMENT  | ENRICH_ALBUM            | parentJobId: rootJobId | WIRED  | Line 117                             |
+| CHECK_ALBUM_ENRICHMENT  | CHECK_ARTIST_ENRICHMENT | parentJobId: rootJobId | WIRED  | Line 134                             |
+| CHECK_ARTIST_ENRICHMENT | ENRICH_ARTIST           | parentJobId: rootJobId | WIRED  | Line 207                             |
+| ENRICH_ARTIST           | DISCOGS_SEARCH_ARTIST   | parentJobId: rootJobId | WIRED  | Line 1162                            |
+| ENRICH_ARTIST           | CACHE_ARTIST_IMAGE      | parentJobId: rootJobId | WIRED  | Line 1249                            |
+| discogs handlers        | enrichmentLogger        | parentJobId in data    | WIRED  | 7 calls                              |
+| cache handlers          | enrichmentLogger        | parentJobId in data    | WIRED  | 12 calls                             |
 
 ### Schema Verification
 
 **isRootJob Field:**
+
 ```prisma
 isRootJob          Boolean                @default(false) @map("is_root_job")
 ```
 
 **Indexes:**
+
 ```prisma
 @@index([parentJobId])
 @@index([isRootJob, createdAt])
@@ -189,6 +191,7 @@ isRootJob: !data.parentJobId,
 ```
 
 This ensures:
+
 - All children point directly to root job (flat, not nested)
 - Single WHERE query gets all children: `WHERE parentJobId = rootJobId`
 - Root jobs identified by `isRootJob = true`
@@ -196,20 +199,23 @@ This ensures:
 ### Job Chain Query Patterns (Verified in Database)
 
 **Find root jobs:**
+
 ```sql
-SELECT * FROM enrichment_logs 
-WHERE is_root_job = true 
+SELECT * FROM enrichment_logs
+WHERE is_root_job = true
 ORDER BY created_at DESC;
 ```
 
 **Find children of a job:**
+
 ```sql
-SELECT * FROM enrichment_logs 
-WHERE parent_job_id = 'root-job-id' 
+SELECT * FROM enrichment_logs
+WHERE parent_job_id = 'root-job-id'
 ORDER BY created_at ASC;
 ```
 
 **Find job family:**
+
 ```sql
 SELECT * FROM enrichment_logs
 WHERE job_id = 'root-job-id' OR parent_job_id = 'root-job-id'

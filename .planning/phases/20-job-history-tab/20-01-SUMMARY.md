@@ -22,13 +22,13 @@ file-tracking:
 
 decisions:
   - id: DEC-20-01
-    title: "Lazy badge pattern"
-    choice: "Badge appears after first expansion"
-    rationale: "TanStack Query caches data, so badge persists on collapse"
+    title: 'Lazy badge pattern'
+    choice: 'Badge appears after first expansion'
+    rationale: 'TanStack Query caches data, so badge persists on collapse'
   - id: DEC-20-02
-    title: "Direct parentJobId filter"
-    choice: "Use job.id as parentJobId filter"
-    rationale: "BullMQ job IDs are stored as parentJobId in EnrichmentLog"
+    title: 'Direct parentJobId filter'
+    choice: 'Use job.id as parentJobId filter'
+    rationale: 'BullMQ job IDs are stored as parentJobId in EnrichmentLog'
 
 metrics:
   duration: 5m
@@ -42,6 +42,7 @@ metrics:
 ## What Was Built
 
 ### ExpandableJobRow Component
+
 - **File:** `src/components/admin/ExpandableJobRow.tsx` (241 lines)
 - **Exports:** `ExpandableJobRow`, `JobHistoryItem`, `ExpandableJobRowProps`
 - **Features:**
@@ -55,6 +56,7 @@ metrics:
   - EnrichmentTimelineModal for full inspection
 
 ### Job History Page Integration
+
 - **File:** `src/app/admin/job-history/page.tsx`
 - **Changes:**
   - Added `expandedRows` state with `Set<string>`
@@ -76,6 +78,7 @@ metrics:
 ## Key Patterns
 
 ### Lazy Fetch with parentJobId Filter
+
 ```typescript
 const { data, isLoading } = useGetEnrichmentLogsQuery(
   { parentJobId: job.id, limit: 100 },
@@ -89,6 +92,7 @@ const { data, isLoading } = useGetEnrichmentLogsQuery(
 ```
 
 ### Lazy Badge Pattern
+
 ```typescript
 const hasBeenFetched = logsData !== undefined;
 // Badge appears after first expansion, persists due to cache
@@ -96,6 +100,7 @@ const hasBeenFetched = logsData !== undefined;
 ```
 
 ### Compact Timeline in Expanded Row
+
 ```typescript
 <EnrichmentTimeline logs={logs} variant='compact' truncateChildren={5} />
 ```

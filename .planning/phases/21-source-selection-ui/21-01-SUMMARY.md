@@ -7,7 +7,7 @@ requires: []
 provides: [toggle-group-component, correction-source-state, source-switching]
 affects: [21-02, 21-03, 22-xx]
 tech-stack:
-  added: ["@radix-ui/react-toggle-group"]
+  added: ['@radix-ui/react-toggle-group']
   patterns: [atomic-state-clearing, type-reexport]
 key-files:
   created:
@@ -19,17 +19,17 @@ key-files:
     - pnpm-lock.yaml
 decisions:
   - id: d21-01-01
-    decision: "Import CorrectionSource type from album store into artist store (single source of truth)"
-    reason: "Avoid duplicate type definitions, ensure consistency"
+    decision: 'Import CorrectionSource type from album store into artist store (single source of truth)'
+    reason: 'Avoid duplicate type definitions, ensure consistency'
   - id: d21-01-02
-    decision: "Re-export CorrectionSource from artist store for convenience"
+    decision: 'Re-export CorrectionSource from artist store for convenience'
     reason: "Components using artist store don't need to import from both stores"
   - id: d21-01-03
-    decision: "Use context pattern in ToggleGroup for variant inheritance"
-    reason: "Matches shadcn/ui pattern in tabs.tsx, enables clean API"
+    decision: 'Use context pattern in ToggleGroup for variant inheritance'
+    reason: 'Matches shadcn/ui pattern in tabs.tsx, enables clean API'
 metrics:
-  duration: "4m"
-  completed: "2026-02-08"
+  duration: '4m'
+  completed: '2026-02-08'
 ---
 
 # Phase 21 Plan 01: Source Selection State Summary
@@ -81,7 +81,7 @@ When correctionSource changes, all search-related state is cleared in a single `
 setCorrectionSource: (source: CorrectionSource) => {
   const current = get().correctionSource;
   if (current === source) return; // No-op if same source
-  
+
   set({
     correctionSource: source,
     searchQuery: undefined,
@@ -90,7 +90,7 @@ setCorrectionSource: (source: CorrectionSource) => {
     previewData: null,
     applySelections: null,
   });
-}
+};
 ```
 
 **State Persistence:**
@@ -114,7 +114,7 @@ None - plan executed exactly as written.
 ## Commits
 
 - `59b9947`: feat(21-01): add Toggle Group UI component
-- `7415225`: feat(21-01): add correctionSource to album store  
+- `7415225`: feat(21-01): add correctionSource to album store
 - `a4b9ce9`: feat(21-01): add correctionSource to artist store
 
 ## Next Phase Readiness

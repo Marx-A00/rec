@@ -16,18 +16,19 @@ score: 4/4 must-haves verified
 
 ### Observable Truths
 
-| # | Truth | Status | Evidence |
-|---|-------|--------|----------|
-| 1 | Admin can expand a job row to see its EnrichmentLog timeline | VERIFIED | ExpandableJobRow.tsx:185-237 renders expanded row with EnrichmentTimeline |
-| 2 | Admin can see which BullMQ jobs have enrichment activity (after expanding) | VERIFIED | ExpandableJobRow.tsx:122-131 shows badge with Activity icon and count after fetch |
-| 3 | Timeline shows all logs linked to that job (parent + children) | VERIFIED | Query uses parentJobId filter (line 78), resolver supports tree fetch |
-| 4 | Works for Spotify sync, MusicBrainz sync, and manual enrichment jobs | VERIFIED | filteredJobs.map uses ExpandableJobRow for all job types (line 742-755) |
+| #   | Truth                                                                      | Status   | Evidence                                                                          |
+| --- | -------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------- |
+| 1   | Admin can expand a job row to see its EnrichmentLog timeline               | VERIFIED | ExpandableJobRow.tsx:185-237 renders expanded row with EnrichmentTimeline         |
+| 2   | Admin can see which BullMQ jobs have enrichment activity (after expanding) | VERIFIED | ExpandableJobRow.tsx:122-131 shows badge with Activity icon and count after fetch |
+| 3   | Timeline shows all logs linked to that job (parent + children)             | VERIFIED | Query uses parentJobId filter (line 78), resolver supports tree fetch             |
+| 4   | Works for Spotify sync, MusicBrainz sync, and manual enrichment jobs       | VERIFIED | filteredJobs.map uses ExpandableJobRow for all job types (line 742-755)           |
 
 **Score:** 4/4 truths verified
 
 ### Required Artifacts
 
 **Artifact: src/components/admin/ExpandableJobRow.tsx**
+
 - Expected: Expandable row with lazy-loaded EnrichmentTimeline
 - Status: VERIFIED
 - Level 1 (Exists): YES (246 lines)
@@ -36,6 +37,7 @@ score: 4/4 must-haves verified
 - Exports: `ExpandableJobRow`, `JobHistoryItem`, `ExpandableJobRowProps`
 
 **Artifact: src/app/admin/job-history/page.tsx**
+
 - Expected: Job History page with timeline integration
 - Status: VERIFIED
 - Level 1 (Exists): YES (794 lines)
@@ -45,12 +47,14 @@ score: 4/4 must-haves verified
 ### Key Link Verification
 
 **Link 1: ExpandableJobRow -> useGetEnrichmentLogsQuery**
+
 - Via: parentJobId filter
 - Pattern: `parentJobId: job.id` (line 78)
 - Status: WIRED
 - Evidence: Query parameters correctly pass job.id as parentJobId
 
 **Link 2: ExpandableJobRow -> EnrichmentTimeline**
+
 - Via: compact variant in expanded area
 - Pattern: `variant='compact'` (line 229)
 - Status: WIRED
@@ -59,13 +63,15 @@ score: 4/4 must-haves verified
 ### Requirements Coverage
 
 **JOB-01: Job History tab shows jobs with enrichment activity indicator**
+
 - Status: SATISFIED
 - Evidence: Badge with Activity icon and log count appears after expansion (ExpandableJobRow.tsx:122-131)
 - Note: Badge uses lazy-load pattern - appears after first expansion, then cached by TanStack Query
 
 **JOB-02: Expanding a job row shows EnrichmentLog timeline for that jobId**
+
 - Status: SATISFIED
-- Evidence: 
+- Evidence:
   - Chevron toggle expands/collapses row (lines 97-103)
   - Expanded content shows SkeletonTimeline during load (line 190)
   - EnrichmentTimeline with compact variant displays logs (lines 228-231)
