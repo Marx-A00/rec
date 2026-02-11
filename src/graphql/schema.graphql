@@ -1822,10 +1822,17 @@ type LlamaLog {
   previewData: JSON # Stores raw API response and field diffs for preview enrichments
   jobId: String
   parentJobId: String # Links child job to parent job for tree display
+  rootJobId: String # Root job ID for provenance chain queries
   triggeredBy: String
   userId: String # Track which user made manual changes
   createdAt: DateTime!
   children: [LlamaLog!] # Populated when includeChildren=true
+}
+type LlamaLogChainResponse {
+  logs: [LlamaLog!]!
+  totalCount: Int!
+  cursor: String
+  hasMore: Boolean!
 }
 
 input TimeRangeInput {
@@ -2363,6 +2370,17 @@ type Query {
     parentJobId: String # When provided, returns only children of this parent job
     includeChildren: Boolean # When true, returns root logs with nested children
   ): [LlamaLog!]!
+
+  # Provenance chain for entity lifecycle tracking
+  llamaLogChain(
+    entityType: EnrichmentEntityType!
+    entityId: UUID!
+    categories: [LlamaLogCategory!]
+    startDate: DateTime
+    endDate: DateTime
+    limit: Int = 20
+    cursor: String
+  ): LlamaLogChainResponse!
 
   enrichmentStats(
     entityType: EnrichmentEntityType
