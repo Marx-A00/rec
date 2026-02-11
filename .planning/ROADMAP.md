@@ -309,6 +309,11 @@ Plans:
 - Consider pagination for entities with many child logs
 - Return type should match existing log queries for consistency
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 32-01-PLAN.md — Implement llamaLogChain query with pagination and filtering
+
 ---
 
 ## Dependencies
