@@ -163,6 +163,7 @@ export function SearchView({ album }: SearchViewProps) {
           initialArtistName={currentQuery.artistName}
           onSearch={handleSearch}
           isLoading={false}
+          source={correctionSource}
         />
         <ErrorState
           message={errorMessage}
@@ -180,7 +181,8 @@ export function SearchView({ album }: SearchViewProps) {
   }
 
   // Source-specific initial state message
-  const sourceLabel = correctionSource === 'discogs' ? 'Discogs' : 'MusicBrainz';
+  const sourceLabel =
+    correctionSource === 'discogs' ? 'Discogs' : 'MusicBrainz';
 
   return (
     <div className='space-y-4'>
@@ -197,14 +199,8 @@ export function SearchView({ album }: SearchViewProps) {
         initialArtistName={currentQuery.artistName}
         onSearch={handleSearch}
         isLoading={isLoading}
+        source={correctionSource}
       />
-
-      {/* Initial state - before first search */}
-      {!isSearchTriggered && (
-        <div className='p-6 text-center text-zinc-400 border border-dashed border-zinc-700 rounded-lg'>
-          Search {sourceLabel} for the correct album data
-        </div>
-      )}
 
       {/* Results - after search triggered and not loading */}
       {isSearchTriggered && !isLoading && (

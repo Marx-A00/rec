@@ -70,8 +70,8 @@ export async function handleCheckAlbumEnrichment(
   job: Job<CheckAlbumEnrichmentJobData>
 ) {
   const data = job.data;
-  // Don't pass parentJobId to ENRICH_ALBUM - let it be the root job
-  // CHECK_* jobs are just dispatchers, not meaningful enrichment operations
+  // Propagate parentJobId if present (for manual adds, this links back to album:created)
+  // CHECK_* jobs are dispatchers - they pass through the parent context
 
   console.log(
     `🔍 Checking if album ${data.albumId} needs enrichment (source: ${data.source}, force: ${data.force || false})`
@@ -115,7 +115,7 @@ export async function handleCheckAlbumEnrichment(
         force: data.force,
         userAction: mapSourceToUserAction(data.source),
         requestId: data.requestId,
-        // No parentJobId - ENRICH_ALBUM is the root job
+        parentJobId: data.parentJobId, // Propagate parent context for provenance chain
       },
       {
         priority: calculateEnrichmentPriority(data.source, data.priority),
@@ -132,7 +132,7 @@ export async function handleCheckAlbumEnrichment(
           source: data.source,
           priority: 'medium', // Artists get medium priority
           requestId: `${data.requestId}-artist-${albumArtist.artist.id}`,
-          // No parentJobId - ENRICH_ARTIST will be its own root job
+          parentJobId: data.parentJobId, // Propagate parent context for provenance chain
         },
         {
           priority: calculateEnrichmentPriority(data.source, 'medium'),
@@ -165,8 +165,8 @@ export async function handleCheckArtistEnrichment(
   job: Job<CheckArtistEnrichmentJobData>
 ) {
   const data = job.data;
-  // Don't pass parentJobId to ENRICH_ARTIST - let it be the root job
-  // CHECK_* jobs are just dispatchers, not meaningful enrichment operations
+  // Propagate parentJobId if present (for manual adds, this links back to album:created)
+  // CHECK_* jobs are dispatchers - they pass through the parent context
 
   console.log(
     `🔍 Checking if artist ${data.artistId} needs enrichment (source: ${data.source}, force: ${data.force || false})`
@@ -206,7 +206,7 @@ export async function handleCheckArtistEnrichment(
         force: data.force,
         userAction: mapSourceToUserAction(data.source),
         requestId: data.requestId,
-        // No parentJobId - ENRICH_ARTIST is the root job
+        parentJobId: data.parentJobId, // Propagate parent context for provenance chain
       },
       {
         priority: calculateEnrichmentPriority(data.source, data.priority),
@@ -237,8 +237,8 @@ export async function handleCheckTrackEnrichment(
   job: Job<CheckTrackEnrichmentJobData>
 ) {
   const data = job.data;
-  // Don't pass parentJobId to ENRICH_TRACK - let it be the root job
-  // CHECK_* jobs are just dispatchers, not meaningful enrichment operations
+  // Propagate parentJobId if present (for album enrichment, this links back to parent job)
+  // CHECK_* jobs are dispatchers - they pass through the parent context
 
   console.log(
     `🔍 Checking if track ${data.trackId} needs enrichment (source: ${data.source})`
@@ -303,7 +303,7 @@ export async function handleCheckTrackEnrichment(
     priority: data.priority || 'low',
     userAction: data.source === 'spotify_sync' ? 'browse' : data.source,
     requestId: data.requestId,
-    // No parentJobId - ENRICH_TRACK is the root job
+    parentJobId: data.parentJobId, // Propagate parent context for provenance chain
   };
 
   await queue.addJob(JOB_TYPES.ENRICH_TRACK, enrichmentJobData, {
@@ -2358,8 +2358,17 @@ async function processMusicBrainzTracksForAlbum(
                   category: 'CREATED',
                   sources: ['MUSICBRAINZ'],
                   status: 'SUCCESS',
-                  fieldsEnriched: ['title', 'trackNumber', 'durationMs', 'musicbrainzId', 'isrc', 'youtubeUrl'].filter(
-                    f => (newTrack as Record<string, unknown>)[f] !== null && (newTrack as Record<string, unknown>)[f] !== undefined
+                  fieldsEnriched: [
+                    'title',
+                    'trackNumber',
+                    'durationMs',
+                    'musicbrainzId',
+                    'isrc',
+                    'youtubeUrl',
+                  ].filter(
+                    f =>
+                      (newTrack as Record<string, unknown>)[f] !== null &&
+                      (newTrack as Record<string, unknown>)[f] !== undefined
                   ),
                   jobId: trackJobId,
                   parentJobId: jobContext?.jobId || null,
@@ -2374,7 +2383,10 @@ async function processMusicBrainzTracksForAlbum(
                   },
                 });
               } catch (logErr) {
-                console.warn('[LlamaLog] Failed to log track creation:', logErr);
+                console.warn(
+                  '[LlamaLog] Failed to log track creation:',
+                  logErr
+                );
               }
 
               // Create track-artist relationships
@@ -2423,7 +2435,8 @@ async function processMusicBrainzTracksForAlbum(
                           status: 'SUCCESS',
                           fieldsEnriched: ['name', 'musicbrainzId'],
                           parentJobId: jobContext?.jobId || null,
-                          rootJobId: jobContext?.rootJobId || jobContext?.jobId || null,
+                          rootJobId:
+                            jobContext?.rootJobId || jobContext?.jobId || null,
                           isRootJob: false,
                           dataQualityAfter: 'MEDIUM',
                           metadata: {
@@ -2433,7 +2446,10 @@ async function processMusicBrainzTracksForAlbum(
                           },
                         });
                       } catch (err) {
-                        console.warn('[LlamaLog] Failed to log artist creation:', err);
+                        console.warn(
+                          '[LlamaLog] Failed to log artist creation:',
+                          err
+                        );
                       }
                     } else if (!artistWasCreated) {
                       // Log artist linking to LlamaLog (existing artist associated with track)
@@ -2447,7 +2463,8 @@ async function processMusicBrainzTracksForAlbum(
                           status: 'SUCCESS',
                           fieldsEnriched: [],
                           parentJobId: jobContext?.jobId || null,
-                          rootJobId: jobContext?.rootJobId || jobContext?.jobId || null,
+                          rootJobId:
+                            jobContext?.rootJobId || jobContext?.jobId || null,
                           isRootJob: false,
                           metadata: {
                             trackId: newTrack.id,
@@ -2456,7 +2473,10 @@ async function processMusicBrainzTracksForAlbum(
                           },
                         });
                       } catch (err) {
-                        console.warn('[LlamaLog] Failed to log artist linking:', err);
+                        console.warn(
+                          '[LlamaLog] Failed to log artist linking:',
+                          err
+                        );
                       }
                     }
 
@@ -2499,7 +2519,10 @@ async function processMusicBrainzTracksForAlbum(
                   parentJobId: jobContext?.jobId || null,
                   rootJobId: jobContext?.rootJobId || jobContext?.jobId || null,
                   isRootJob: false,
-                  errorMessage: trackError instanceof Error ? trackError.message : String(trackError),
+                  errorMessage:
+                    trackError instanceof Error
+                      ? trackError.message
+                      : String(trackError),
                   metadata: {
                     albumId,
                     attemptedTitle: mbRecording.title,

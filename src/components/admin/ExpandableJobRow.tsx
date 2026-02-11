@@ -12,10 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TableRow, TableCell } from '@/components/ui/table';
-import {
-  useGetLlamaLogsQuery,
-  type LlamaLog,
-} from '@/generated/graphql';
+import { useGetLlamaLogsQuery, type LlamaLog } from '@/generated/graphql';
 
 import { EnrichmentTimeline } from './EnrichmentTimeline';
 import { SkeletonTimeline } from './SkeletonTimeline';

@@ -116,7 +116,10 @@ export function SearchResultCard<T extends SearchResultDisplay>({
           {metadataText && <span className='truncate'>{metadataText}</span>}
           <Badge
             variant='outline'
-            className={cn('ml-auto text-[10px] px-1.5 py-0', sourceBadgeClasses)}
+            className={cn(
+              'ml-auto text-[10px] px-1.5 py-0',
+              sourceBadgeClasses
+            )}
           >
             {sourceBadgeLabel}
           </Badge>

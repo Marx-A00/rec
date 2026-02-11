@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Do NOT use markdown tables in responses. Use bullet points or plain text lists instead.
 
+## Database Queries
+
+- **ALWAYS use Supabase MCP** (`mcp__supabase__execute_sql`) for database queries, NOT `npx prisma db execute`
+- Supabase MCP is faster and doesn't have connection issues
+
 ## 🔍 Search Components - IMPORTANT
 
 **ACTIVE Search Components (Use These):**

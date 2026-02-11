@@ -400,12 +400,13 @@ model CacheData {
 // ============================================================================
 
 enum LlamaLogCategory {
-  CREATED    // Entity was created (first appearance in database)
-  ENRICHED   // Entity was enriched with external API data
-  CORRECTED  // Entity was manually corrected by admin
-  CACHED     // Cache operation (read/write)
-  FAILED     // Operation failed
-  LINKED     // Entity was linked/associated with existing entity
+  CREATED      // Entity was created (first appearance in database)
+  ENRICHED     // Entity was enriched with external API data
+  CORRECTED    // Entity was manually corrected by admin
+  CACHED       // Cache operation (read/write)
+  FAILED       // Operation failed
+  LINKED       // Entity was linked/associated with existing entity
+  USER_ACTION  // User-initiated action (add to collection, create recommendation, etc.)
 }
 
 model LlamaLog {

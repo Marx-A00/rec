@@ -1,0 +1,13 @@
+# Collection mutation operations
+
+mutation AddAlbumToCollectionWithCreate(
+  $input: AddAlbumToCollectionWithCreateInput!
+) {
+  addAlbumToCollectionWithCreate(input: $input) {
+    id
+  }
+}
+
+mutation RemoveAlbumFromCollection($collectionId: String!, $albumId: UUID!) {
+  removeAlbumFromCollection(collectionId: $collectionId, albumId: $albumId)
+}

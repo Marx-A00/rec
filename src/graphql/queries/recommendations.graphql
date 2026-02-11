@@ -57,6 +57,7 @@ query GetMyRecommendations(
   }
 }
 
+# Legacy mutation (for backwards compatibility)
 mutation CreateRecommendation(
   $basisAlbumId: UUID!
   $recommendedAlbumId: UUID!
@@ -67,6 +68,15 @@ mutation CreateRecommendation(
     recommendedAlbumId: $recommendedAlbumId
     score: $score
   ) {
+    id
+  }
+}
+
+# New mutation with inline album creation support
+mutation CreateRecommendationWithAlbums(
+  $input: CreateRecommendationWithAlbumsInput!
+) {
+  createRecommendation(input: $input) {
     id
   }
 }

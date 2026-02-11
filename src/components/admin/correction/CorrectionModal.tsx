@@ -471,7 +471,7 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
 
   return (
     <Dialog open={true} onOpenChange={handleOpenChange}>
-      <DialogContent className='sm:!max-w-[1100px] max-h-[90vh] overflow-y-auto custom-scrollbar bg-zinc-900 border-zinc-800 [&>button]:text-zinc-500 [&>button]:hover:text-zinc-300'>
+      <DialogContent className='sm:!max-w-[1100px] max-h-[90vh] overflow-hidden flex flex-col gap-0 bg-zinc-900 border-zinc-800 [&>button]:text-zinc-500 [&>button]:hover:text-zinc-300'>
         <DialogHeader>
           <DialogTitle className='truncate pr-8 text-cosmic-latte'>
             {headerTitle}
@@ -485,7 +485,7 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
         />
 
         {/* Step content area */}
-        <div className='min-h-[300px] py-4'>
+        <div className='min-h-[300px] py-4 flex-1 overflow-y-auto custom-scrollbar'>
           {/* Loading state */}
           {isLoading && <ModalSkeleton variant='album' />}
 
@@ -704,16 +704,16 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
             )}
         </div>
 
-        <DialogFooter className='sticky bottom-0 bg-zinc-900 pt-4 border-t border-zinc-800'>
+        <DialogFooter className='bg-zinc-900 pt-4 border-t border-zinc-800 -mx-6 -mb-6 px-6 pb-4 flex-shrink-0'>
           <div className='flex w-full justify-between'>
             <Button variant='outline' onClick={handleClose}>
               Cancel
             </Button>
             <div className='flex gap-2'>
-              {/* Back button - show on steps 1+ but not on apply steps */}
+              {/* Back button - show on steps 1+ (except manual edit apply step) */}
               {!isFirstStep &&
                 !(isManualEditMode && step === 2) &&
-                !(!isManualEditMode && step === 3) && (
+                !showAppliedState && (
                   <Button
                     variant='outline'
                     onClick={() => store.getState().prevStep()}
@@ -738,7 +738,7 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
                 previewData &&
                 !showAppliedState && (
                   <Button variant='primary' onClick={handleApplyClick}>
-                    Apply This Match
+                    Review & Apply
                   </Button>
                 )}
               {!isManualEditMode &&
@@ -777,7 +777,10 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
                     className='bg-red-600 hover:bg-red-700 text-white'
                   >
                     <Search className='w-3.5 h-3.5 mr-1.5' />
-                    Go To Search
+                    Search{' '}
+                    {correctionSource === 'musicbrainz'
+                      ? 'MusicBrainz'
+                      : 'Discogs'}
                   </Button>
                   <Button
                     variant='outline'

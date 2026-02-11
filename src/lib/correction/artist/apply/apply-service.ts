@@ -198,8 +198,7 @@ export class ArtistCorrectionApplyService {
 
       // Queue Cloudflare image caching if imageUrl changed
       const imageChanged =
-        afterArtist?.imageUrl &&
-        beforeArtist.imageUrl !== afterArtist.imageUrl;
+        afterArtist?.imageUrl && beforeArtist.imageUrl !== afterArtist.imageUrl;
       if (imageChanged) {
         await this.queueImageUpload(artistId);
       }
@@ -289,10 +288,18 @@ export class ArtistCorrectionApplyService {
     // Note: gender not stored in Artist model - could be added later
 
     // External ID fields (source-conditional)
-    if (source === 'musicbrainz' && selections.externalIds.musicbrainzId && mbData.id) {
+    if (
+      source === 'musicbrainz' &&
+      selections.externalIds.musicbrainzId &&
+      mbData.id
+    ) {
       updateData.musicbrainzId = mbData.id;
       updateData.source = 'MUSICBRAINZ';
-    } else if (source === 'discogs' && selections.externalIds.discogsId && mbData.id) {
+    } else if (
+      source === 'discogs' &&
+      selections.externalIds.discogsId &&
+      mbData.id
+    ) {
       updateData.discogsId = mbData.id; // Already string (numeric)
       updateData.source = 'DISCOGS';
     }

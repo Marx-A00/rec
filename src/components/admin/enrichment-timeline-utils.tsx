@@ -48,9 +48,7 @@ export type TimelineIconColor =
  * @param status - The LlamaLog status value
  * @returns Timeline status for rendering
  */
-export function mapEnrichmentStatus(
-  status: LlamaLogStatus
-): TimelineStatus {
+export function mapEnrichmentStatus(status: LlamaLogStatus): TimelineStatus {
   switch (status) {
     case LlamaLogStatus.Success:
     case LlamaLogStatus.PartialSuccess:

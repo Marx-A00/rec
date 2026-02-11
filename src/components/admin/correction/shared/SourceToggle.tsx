@@ -33,11 +33,11 @@ export function SourceToggle({
 }: SourceToggleProps) {
   return (
     <div className={className}>
-      <label className="text-xs font-medium text-zinc-400 mb-1.5 block">
+      <label className='text-xs font-medium text-zinc-400 mb-1.5 block'>
         Search Source
       </label>
       <ToggleGroup
-        type="single"
+        type='single'
         value={value}
         onValueChange={v => {
           // Guard against undefined (double-click on same button)
@@ -46,19 +46,19 @@ export function SourceToggle({
           }
         }}
         disabled={disabled}
-        className="justify-start"
+        className='justify-start bg-zinc-800 border border-zinc-700'
       >
         <ToggleGroupItem
-          value="musicbrainz"
-          className="px-3 py-1.5 text-sm"
-          aria-label="Search MusicBrainz"
+          value='musicbrainz'
+          className='px-3 py-1.5 text-sm text-zinc-400 data-[state=on]:bg-emeraled-green data-[state=on]:text-white'
+          aria-label='Search MusicBrainz'
         >
           MusicBrainz
         </ToggleGroupItem>
         <ToggleGroupItem
-          value="discogs"
-          className="px-3 py-1.5 text-sm"
-          aria-label="Search Discogs"
+          value='discogs'
+          className='px-3 py-1.5 text-sm text-zinc-400 data-[state=on]:bg-emeraled-green data-[state=on]:text-white'
+          aria-label='Search Discogs'
         >
           Discogs
         </ToggleGroupItem>

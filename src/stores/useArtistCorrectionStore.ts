@@ -23,6 +23,7 @@ import {
   createDefaultArtistSelections,
   type UIArtistFieldSelections,
 } from '@/components/admin/correction/artist/apply/ArtistApplyView';
+
 import type { CorrectionSource } from './useCorrectionStore';
 
 // ============================================================================

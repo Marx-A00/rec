@@ -91,6 +91,20 @@ export class QueuedDiscogsService {
     if (!this.queueEvents) return;
 
     this.queueEvents.on('completed', ({ jobId, returnvalue }) => {
+      // Debug: log raw returnvalue
+      console.log(
+        chalk.yellow(
+          '[QueuedDiscogsService] Raw returnvalue type:',
+          typeof returnvalue
+        )
+      );
+      console.log(
+        chalk.yellow(
+          '[QueuedDiscogsService] Raw returnvalue:',
+          JSON.stringify(returnvalue)?.substring(0, 500)
+        )
+      );
+
       const result =
         typeof returnvalue === 'string' ? JSON.parse(returnvalue) : returnvalue;
 
@@ -99,7 +113,16 @@ export class QueuedDiscogsService {
         console.log(
           chalk.green('[QueuedDiscogsService] Job ' + jobId + ' completed')
         );
-        pending.resolve(result);
+        // Job results are wrapped in { success, data, metadata } structure
+        // Extract the actual data payload
+        const actualResult = result?.data ?? result;
+        console.log(
+          chalk.yellow(
+            '[QueuedDiscogsService] Extracted result keys:',
+            actualResult ? Object.keys(actualResult) : 'null'
+          )
+        );
+        pending.resolve(actualResult);
         this.pendingJobs.delete(jobId);
       }
     });

@@ -134,7 +134,14 @@ export function ArtistPreviewView({ artistId }: ArtistPreviewViewProps) {
 
   const { data, isLoading, error, refetch, isFetching } =
     useGetArtistCorrectionPreviewQuery(
-      { artistId, sourceArtistId: selectedArtistMbid!, source: correctionSource === 'discogs' ? CorrectionSource.Discogs : CorrectionSource.Musicbrainz },
+      {
+        artistId,
+        sourceArtistId: selectedArtistMbid!,
+        source:
+          correctionSource === 'discogs'
+            ? CorrectionSource.Discogs
+            : CorrectionSource.Musicbrainz,
+      },
       {
         enabled: Boolean(artistId && selectedArtistMbid),
         staleTime: 5 * 60 * 1000,

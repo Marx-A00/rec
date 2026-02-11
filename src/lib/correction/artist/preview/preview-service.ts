@@ -256,7 +256,11 @@ export class ArtistCorrectionPreviewService {
       profile?: string;
       imageUrl?: string;
       country?: string;
-      members?: Array<{ id?: string | number; name?: string; active?: boolean }>;
+      members?: Array<{
+        id?: string | number;
+        name?: string;
+        active?: boolean;
+      }>;
       groups?: Array<{ id?: string | number; name?: string; active?: boolean }>;
     },
     discogsId: string

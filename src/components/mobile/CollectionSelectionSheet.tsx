@@ -8,11 +8,12 @@ import Link from 'next/link';
 
 import { useAlbumState } from '@/hooks/useAlbumState';
 import { useCollectionToastContext } from '@/components/ui/CollectionToastProvider';
-import { graphqlClient } from '@/lib/graphql-client';
 import { cn } from '@/lib/utils';
 import {
   useGetMyCollectionsQuery,
   useRemoveAlbumFromCollectionMutation,
+  useAddAlbumToCollectionWithCreateMutation,
+  type AlbumInput,
 } from '@/generated/graphql';
 import type { Album } from '@/types/album';
 
@@ -25,50 +26,10 @@ import {
 } from './MobileBottomSheet';
 import { MobileButton } from './MobileButton';
 
-// GraphQL mutation strings
-const ADD_ALBUM_TO_COLLECTION = `
-  mutation AddAlbumToCollection($collectionId: String!, $albumId: UUID!, $position: Int) {
-    addAlbumToCollection(
-      collectionId: $collectionId,
-      input: {
-        albumId: $albumId,
-        position: $position
-      }
-    ) {
-      id
-    }
-  }
-`;
-
-const ADD_ALBUM = `
-  mutation AddAlbum($input: AlbumInput!) {
-    addAlbum(input: $input) {
-      id
-      title
-    }
-  }
-`;
-
 interface CollectionSelectionSheetProps {
   album: Album;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-interface AlbumInput {
-  title: string;
-  artists: { artistName: string }[];
-  musicbrainzId?: string;
-  releaseDate?: string;
-  totalTracks?: number;
-  coverImageUrl?: string;
-}
-
-interface AddAlbumResponse {
-  addAlbum: {
-    id: string;
-    title: string;
-  };
 }
 
 interface CollectionItem {
@@ -98,25 +59,20 @@ export default function CollectionSelectionSheet({
   const { data: collectionsData, isLoading: isLoadingCollections } =
     useGetMyCollectionsQuery({}, { enabled: !!session?.user && open });
 
-  // Remove from collection mutation
+  // Mutations
   const removeFromCollectionMutation = useRemoveAlbumFromCollectionMutation();
+  const addToCollectionMutation = useAddAlbumToCollectionWithCreateMutation();
 
   const collections = collectionsData?.myCollections || [];
 
-  // Helper function to ensure album exists in DB and return its ID
-  const ensureAlbumInDb = useCallback(async (): Promise<string> => {
-    // If album is already in DB, use that ID
-    if (albumState.existsInDb && albumState.dbId) {
-      return albumState.dbId;
-    }
-
-    // Otherwise, add it to the DB first
-    const artistInputs = (album.artists || []).map(a => ({
+  // Helper to build AlbumInput from album object
+  const buildAlbumInput = useCallback((albumData: Album): AlbumInput => {
+    const artistInputs = (albumData.artists || []).map(a => ({
       artistName: a.name,
     }));
 
     const input: AlbumInput = {
-      title: album.title || 'Unknown Album',
+      title: albumData.title || 'Unknown Album',
       artists:
         artistInputs.length > 0
           ? artistInputs
@@ -124,22 +80,19 @@ export default function CollectionSelectionSheet({
     };
 
     // Attach MusicBrainz ID if available
-    if (album.source === 'musicbrainz' && album.musicbrainzId) {
-      input.musicbrainzId = album.musicbrainzId;
+    if (albumData.source === 'musicbrainz' && albumData.musicbrainzId) {
+      input.musicbrainzId = albumData.musicbrainzId;
     }
 
     // Optional fields
-    if (album.releaseDate) input.releaseDate = album.releaseDate;
-    if (album.metadata?.numberOfTracks) {
-      input.totalTracks = album.metadata.numberOfTracks;
+    if (albumData.releaseDate) input.releaseDate = albumData.releaseDate;
+    if (albumData.metadata?.numberOfTracks) {
+      input.totalTracks = albumData.metadata.numberOfTracks;
     }
-    if (album.image?.url) input.coverImageUrl = album.image.url;
+    if (albumData.image?.url) input.coverImageUrl = albumData.image.url;
 
-    const created = await graphqlClient.request<AddAlbumResponse>(ADD_ALBUM, {
-      input,
-    });
-    return created.addAlbum.id;
-  }, [album, albumState.existsInDb, albumState.dbId]);
+    return input;
+  }, []);
 
   // Handle collection toggle
   const handleToggleCollection = useCallback(
@@ -173,12 +126,15 @@ export default function CollectionSelectionSheet({
             showCollectionToast(`Removed from ${collectionName}`, 'success');
           }
         } else {
-          // Add to collection
-          const albumId = await ensureAlbumInDb();
-          await graphqlClient.request(ADD_ALBUM_TO_COLLECTION, {
-            collectionId,
-            albumId,
-            position: 0,
+          // Add to collection using combined mutation
+          await addToCollectionMutation.mutateAsync({
+            input: {
+              collectionId,
+              position: 0,
+              ...(albumState.existsInDb && albumState.dbId
+                ? { albumId: albumState.dbId }
+                : { albumData: buildAlbumInput(album) }),
+            },
           });
           showCollectionToast(`Added to ${collectionName}`, 'success');
         }
@@ -209,8 +165,11 @@ export default function CollectionSelectionSheet({
     },
     [
       session?.user,
+      album,
+      albumState.existsInDb,
       albumState.dbId,
-      ensureAlbumInDb,
+      buildAlbumInput,
+      addToCollectionMutation,
       queryClient,
       removeFromCollectionMutation,
       showCollectionToast,

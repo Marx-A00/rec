@@ -5,6 +5,7 @@ import { Search } from 'lucide-react';
 
 import { ClearableInput } from '@/components/ui/ClearableInput';
 import { Button } from '@/components/ui/button';
+import type { CorrectionSource } from '@/stores/useCorrectionStore';
 
 export interface SearchInputsProps {
   /** Initial album title (pre-populated from current album) */
@@ -15,6 +16,8 @@ export interface SearchInputsProps {
   onSearch: (query: { albumTitle: string; artistName: string }) => void;
   /** Whether search is in progress (disables search button) */
   isLoading?: boolean;
+  /** Current correction source (musicbrainz or discogs) */
+  source?: CorrectionSource;
 }
 
 /**
@@ -31,6 +34,7 @@ export function SearchInputs({
   initialArtistName,
   onSearch,
   isLoading = false,
+  source = 'musicbrainz',
 }: SearchInputsProps) {
   const [albumTitle, setAlbumTitle] = useState(initialAlbumTitle);
   const [artistName, setArtistName] = useState(initialArtistName);
@@ -75,7 +79,7 @@ export function SearchInputs({
         disabled={isSearchDisabled}
       >
         <Search className='h-4 w-4 mr-2' />
-        Search MusicBrainz
+        Search {source === 'musicbrainz' ? 'MusicBrainz' : 'Discogs'}
       </Button>
     </form>
   );

@@ -112,7 +112,8 @@ export function ArtistSearchView({ artist }: ArtistSearchViewProps) {
   const isLoadingMore = isFetching && searchOffset > 0;
 
   // Source-specific label for initial state
-  const sourceLabel = correctionSource === 'discogs' ? 'Discogs' : 'MusicBrainz';
+  const sourceLabel =
+    correctionSource === 'discogs' ? 'Discogs' : 'MusicBrainz';
 
   // Render search skeleton
   if (showSkeleton) {

@@ -9,7 +9,6 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
 
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -58,19 +57,12 @@ export function ApplyView({ albumId, error = null }: ApplyViewProps) {
       <div className='flex items-center justify-between'>
         <div>
           <h2 className='text-xl font-semibold text-zinc-100'>
-            Apply Correction
+            Review & Apply
           </h2>
           <p className='mt-1 text-sm text-zinc-400'>
             Select fields to apply and review changes
           </p>
         </div>
-        <button
-          onClick={prevStep}
-          className='flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-zinc-300'
-        >
-          <ChevronLeft className='h-4 w-4' />
-          Back to compare
-        </button>
       </div>
 
       {/* Two-column layout (responsive) */}

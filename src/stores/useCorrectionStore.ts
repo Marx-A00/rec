@@ -508,12 +508,12 @@ export function maxStep(state: CorrectionState): number {
 
 // Pre-defined step label arrays to avoid creating new arrays on each selector call
 // (which would cause infinite re-renders with Zustand)
-const MANUAL_STEP_LABELS = ['Current Data', 'Edit', 'Apply'] as const;
+const MANUAL_STEP_LABELS = ['Current Data', 'Edit', 'Review & Apply'] as const;
 const SEARCH_STEP_LABELS = [
   'Current Data',
   'Search',
   'Compare',
-  'Apply',
+  'Review & Apply',
 ] as const;
 
 /**
