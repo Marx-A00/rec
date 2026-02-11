@@ -2131,6 +2131,95 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  // Provenance chain for entity lifecycle tracking
+  llamaLogChain: async (
+    _: unknown,
+    args: {
+      entityType: 'ALBUM' | 'ARTIST' | 'TRACK';
+      entityId: string;
+      categories?: string[];
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+      cursor?: string;
+    },
+    { prisma }: Context
+  ) => {
+    const {
+      entityType,
+      entityId,
+      categories,
+      startDate,
+      endDate,
+      limit = 20,
+      cursor,
+    } = args;
+
+    // 1. Validate entity exists
+    const entityTable = entityType.toLowerCase() as 'album' | 'artist' | 'track';
+
+    // Album has 'title', Artist has 'name', Track has 'title'
+    const nameField = entityTable === 'artist' ? 'name' : 'title';
+
+    const entity = await (prisma[entityTable] as typeof prisma.album).findUnique({
+      where: { id: entityId },
+      select: { id: true, [nameField]: true },
+    });
+
+    if (!entity) {
+      throw new GraphQLError(`${entityType} not found: ${entityId}`, {
+        extensions: { code: 'NOT_FOUND' },
+      });
+    }
+
+    // 2. Build where clause using typed ID field for index usage
+    const typedIdField = `${entityTable}Id` as 'albumId' | 'artistId' | 'trackId';
+
+    // Use OR to match both typed ID field and generic entityId (for historical data)
+    const baseWhere = {
+      OR: [
+        { [typedIdField]: entityId },
+        { entityId: entityId, entityType },
+      ],
+    };
+
+    // Build date filter (merge gte/lte if both provided)
+    const dateFilter: Record<string, Date> = {};
+    if (startDate) dateFilter.gte = startDate;
+    if (endDate) dateFilter.lte = endDate;
+
+    const where = {
+      ...baseWhere,
+      ...(categories && categories.length > 0 && { category: { in: categories } }),
+      ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
+    };
+
+    // 3. Fetch logs and count in parallel
+    const [logs, totalCount] = await Promise.all([
+      prisma.llamaLog.findMany({
+        take: limit + 1,
+        skip: cursor ? 1 : 0,
+        cursor: cursor ? { id: cursor } : undefined,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        where,
+      }),
+      prisma.llamaLog.count({ where }),
+    ]);
+
+    // 4. Compute pagination metadata
+    const hasMore = logs.length > limit;
+    const items = hasMore ? logs.slice(0, -1) : logs;
+    const nextCursor =
+      hasMore && items.length > 0 ? items[items.length - 1].id : null;
+
+    return {
+      logs: items.map(log => ({ ...log, children: null })),
+      totalCount,
+      cursor: nextCursor,
+      hasMore,
+    };
+  },
+
   enrichmentStats: async (_, args, { prisma }) => {
     try {
       const where: Record<string, unknown> = {};
