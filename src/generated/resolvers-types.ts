@@ -1107,6 +1107,7 @@ export type LlamaLog = {
   previewData?: Maybe<Scalars['JSON']['output']>;
   reason?: Maybe<Scalars['String']['output']>;
   retryCount: Scalars['Int']['output'];
+  rootJobId?: Maybe<Scalars['String']['output']>;
   sources: Array<Scalars['String']['output']>;
   status: LlamaLogStatus;
   triggeredBy?: Maybe<Scalars['String']['output']>;
@@ -1120,6 +1121,14 @@ export enum LlamaLogCategory {
   Enriched = 'ENRICHED',
   Failed = 'FAILED',
 }
+
+export type LlamaLogChainResponse = {
+  __typename?: 'LlamaLogChainResponse';
+  cursor?: Maybe<Scalars['String']['output']>;
+  hasMore: Scalars['Boolean']['output'];
+  logs: Array<LlamaLog>;
+  totalCount: Scalars['Int']['output'];
+};
 
 export enum LlamaLogStatus {
   Failed = 'FAILED',
@@ -1612,6 +1621,7 @@ export type Query = {
   health: Scalars['String']['output'];
   isFollowing: Scalars['Boolean']['output'];
   jobHistory: Array<JobRecord>;
+  llamaLogChain: LlamaLogChainResponse;
   llamaLogs: Array<LlamaLog>;
   mutualConnections: Array<User>;
   myCollectionAlbums: Array<CollectionAlbum>;
@@ -1743,6 +1753,16 @@ export type QueryIsFollowingArgs = {
 export type QueryJobHistoryArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   status?: InputMaybe<JobStatus>;
+};
+
+export type QueryLlamaLogChainArgs = {
+  categories?: InputMaybe<Array<LlamaLogCategory>>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  entityId: Scalars['UUID']['input'];
+  entityType: EnrichmentEntityType;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type QueryLlamaLogsArgs = {
@@ -2840,6 +2860,7 @@ export type ResolversTypes = ResolversObject<{
   JobStatusUpdate: ResolverTypeWrapper<JobStatusUpdate>;
   LlamaLog: ResolverTypeWrapper<LlamaLog>;
   LlamaLogCategory: LlamaLogCategory;
+  LlamaLogChainResponse: ResolverTypeWrapper<LlamaLogChainResponse>;
   LlamaLogStatus: LlamaLogStatus;
   MBArtist: ResolverTypeWrapper<MbArtist>;
   MBArtistCredit: ResolverTypeWrapper<MbArtistCredit>;
@@ -3012,6 +3033,7 @@ export type ResolversParentTypes = ResolversObject<{
   JobRecord: JobRecord;
   JobStatusUpdate: JobStatusUpdate;
   LlamaLog: LlamaLog;
+  LlamaLogChainResponse: LlamaLogChainResponse;
   MBArtist: MbArtist;
   MBArtistCredit: MbArtistCredit;
   MBMedium: MbMedium;
@@ -4486,6 +4508,11 @@ export type LlamaLogResolvers<
   >;
   reason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   retryCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  rootJobId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   sources?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['LlamaLogStatus'], ParentType, ContextType>;
   triggeredBy?: Resolver<
@@ -4494,6 +4521,18 @@ export type LlamaLogResolvers<
     ContextType
   >;
   userId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type LlamaLogChainResponseResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['LlamaLogChainResponse'] = ResolversParentTypes['LlamaLogChainResponse'],
+> = ResolversObject<{
+  cursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  logs?: Resolver<Array<ResolversTypes['LlamaLog']>, ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5134,6 +5173,12 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryJobHistoryArgs, 'limit'>
+  >;
+  llamaLogChain?: Resolver<
+    ResolversTypes['LlamaLogChainResponse'],
+    ParentType,
+    ContextType,
+    RequireFields<QueryLlamaLogChainArgs, 'entityId' | 'entityType' | 'limit'>
   >;
   llamaLogs?: Resolver<
     Array<ResolversTypes['LlamaLog']>,
@@ -6513,6 +6558,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   JobRecord?: JobRecordResolvers<ContextType>;
   JobStatusUpdate?: JobStatusUpdateResolvers<ContextType>;
   LlamaLog?: LlamaLogResolvers<ContextType>;
+  LlamaLogChainResponse?: LlamaLogChainResponseResolvers<ContextType>;
   MBArtist?: MbArtistResolvers<ContextType>;
   MBArtistCredit?: MbArtistCreditResolvers<ContextType>;
   MBMedium?: MbMediumResolvers<ContextType>;

@@ -1133,6 +1133,7 @@ export type LlamaLog = {
   previewData?: Maybe<Scalars['JSON']['output']>;
   reason?: Maybe<Scalars['String']['output']>;
   retryCount: Scalars['Int']['output'];
+  rootJobId?: Maybe<Scalars['String']['output']>;
   sources: Array<Scalars['String']['output']>;
   status: LlamaLogStatus;
   triggeredBy?: Maybe<Scalars['String']['output']>;
@@ -1146,6 +1147,14 @@ export enum LlamaLogCategory {
   Enriched = 'ENRICHED',
   Failed = 'FAILED',
 }
+
+export type LlamaLogChainResponse = {
+  __typename?: 'LlamaLogChainResponse';
+  cursor?: Maybe<Scalars['String']['output']>;
+  hasMore: Scalars['Boolean']['output'];
+  logs: Array<LlamaLog>;
+  totalCount: Scalars['Int']['output'];
+};
 
 export enum LlamaLogStatus {
   Failed = 'FAILED',
@@ -1638,6 +1647,7 @@ export type Query = {
   health: Scalars['String']['output'];
   isFollowing: Scalars['Boolean']['output'];
   jobHistory: Array<JobRecord>;
+  llamaLogChain: LlamaLogChainResponse;
   llamaLogs: Array<LlamaLog>;
   mutualConnections: Array<User>;
   myCollectionAlbums: Array<CollectionAlbum>;
@@ -1769,6 +1779,16 @@ export type QueryIsFollowingArgs = {
 export type QueryJobHistoryArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   status?: InputMaybe<JobStatus>;
+};
+
+export type QueryLlamaLogChainArgs = {
+  categories?: InputMaybe<Array<LlamaLogCategory>>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  entityId: Scalars['UUID']['input'];
+  entityType: EnrichmentEntityType;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type QueryLlamaLogsArgs = {
@@ -4300,6 +4320,49 @@ export type GetLatestReleasesQuery = {
       artist: { __typename?: 'Artist'; id: string; name: string };
     }>;
   }>;
+};
+
+export type GetLlamaLogChainQueryVariables = Exact<{
+  entityType: EnrichmentEntityType;
+  entityId: Scalars['UUID']['input'];
+  categories?: InputMaybe<Array<LlamaLogCategory> | LlamaLogCategory>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type GetLlamaLogChainQuery = {
+  __typename?: 'Query';
+  llamaLogChain: {
+    __typename?: 'LlamaLogChainResponse';
+    totalCount: number;
+    cursor?: string | null;
+    hasMore: boolean;
+    logs: Array<{
+      __typename?: 'LlamaLog';
+      id: string;
+      entityType?: EnrichmentEntityType | null;
+      entityId?: string | null;
+      operation: string;
+      sources: Array<string>;
+      status: LlamaLogStatus;
+      category: LlamaLogCategory;
+      reason?: string | null;
+      fieldsEnriched: Array<string>;
+      dataQualityBefore?: DataQuality | null;
+      dataQualityAfter?: DataQuality | null;
+      errorMessage?: string | null;
+      errorCode?: string | null;
+      durationMs?: number | null;
+      apiCallCount: number;
+      metadata?: any | null;
+      createdAt: Date;
+      jobId?: string | null;
+      parentJobId?: string | null;
+      rootJobId?: string | null;
+    }>;
+  };
 };
 
 export type GetMySettingsQueryVariables = Exact<{ [key: string]: never }>;
@@ -9126,6 +9189,112 @@ useInfiniteGetLatestReleasesQuery.getKey = (
   variables === undefined
     ? ['GetLatestReleases.infinite']
     : ['GetLatestReleases.infinite', variables];
+
+export const GetLlamaLogChainDocument = `
+    query GetLlamaLogChain($entityType: EnrichmentEntityType!, $entityId: UUID!, $categories: [LlamaLogCategory!], $startDate: DateTime, $endDate: DateTime, $limit: Int = 20, $cursor: String) {
+  llamaLogChain(
+    entityType: $entityType
+    entityId: $entityId
+    categories: $categories
+    startDate: $startDate
+    endDate: $endDate
+    limit: $limit
+    cursor: $cursor
+  ) {
+    logs {
+      id
+      entityType
+      entityId
+      operation
+      sources
+      status
+      category
+      reason
+      fieldsEnriched
+      dataQualityBefore
+      dataQualityAfter
+      errorMessage
+      errorCode
+      durationMs
+      apiCallCount
+      metadata
+      createdAt
+      jobId
+      parentJobId
+      rootJobId
+    }
+    totalCount
+    cursor
+    hasMore
+  }
+}
+    `;
+
+export const useGetLlamaLogChainQuery = <
+  TData = GetLlamaLogChainQuery,
+  TError = unknown,
+>(
+  variables: GetLlamaLogChainQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetLlamaLogChainQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetLlamaLogChainQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetLlamaLogChainQuery, TError, TData>({
+    queryKey: ['GetLlamaLogChain', variables],
+    queryFn: fetcher<GetLlamaLogChainQuery, GetLlamaLogChainQueryVariables>(
+      GetLlamaLogChainDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetLlamaLogChainQuery.getKey = (
+  variables: GetLlamaLogChainQueryVariables
+) => ['GetLlamaLogChain', variables];
+
+export const useInfiniteGetLlamaLogChainQuery = <
+  TData = InfiniteData<GetLlamaLogChainQuery>,
+  TError = unknown,
+>(
+  variables: GetLlamaLogChainQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetLlamaLogChainQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetLlamaLogChainQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetLlamaLogChainQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetLlamaLogChain.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetLlamaLogChainQuery, GetLlamaLogChainQueryVariables>(
+            GetLlamaLogChainDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetLlamaLogChainQuery.getKey = (
+  variables: GetLlamaLogChainQueryVariables
+) => ['GetLlamaLogChain.infinite', variables];
 
 export const GetMySettingsDocument = `
     query GetMySettings {
