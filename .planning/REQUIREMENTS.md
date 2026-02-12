@@ -1,140 +1,185 @@
-# Requirements: LlamaLog Entity Provenance & Audit System
+# Requirements: Daily Album Art Game
 
-**Defined:** 2026-02-09
-**Core Value:** Answer the question: "How did this album get into the database, and what happened to it afterward?"
+**Defined:** 2026-02-12
+**Core Value:** Keep users coming back daily through an engaging album guessing game that drives music discovery.
 
-## v1.4 Requirements
+## v1.5 Requirements
 
-Requirements for LlamaLog milestone. 🦙
+Requirements for the daily album art guessing game.
 
-### Schema — Rename & Category
+### Game Core
 
-- [ ] **SCHEMA-01**: Prisma model renamed from `EnrichmentLog` to `LlamaLog`
-- [ ] **SCHEMA-02**: Database table renamed via migration preserving all data
-- [ ] **SCHEMA-03**: New `LlamaLogCategory` enum with values: CREATED, ENRICHED, CORRECTED, CACHED, FAILED
-- [ ] **SCHEMA-04**: New `category` field added to `LlamaLog` model (required)
-- [ ] **SCHEMA-05**: Migration backfills existing records with appropriate categories
+- [ ] **GAME-01**: Player sees obscured album cover at game start
+- [ ] **GAME-02**: Player has 6 attempts to guess the album
+- [ ] **GAME-03**: Each wrong guess reveals more of the image
+- [ ] **GAME-04**: Player can skip a guess (counts as wrong guess)
+- [ ] **GAME-05**: Game detects win when correct album guessed
+- [ ] **GAME-06**: Game detects loss after 6 failed attempts
+- [ ] **GAME-07**: Full album cover revealed on game end (win or lose)
+- [ ] **GAME-08**: Player searches albums via autocomplete against local database
+- [ ] **GAME-09**: Search results show album name and artist
+- [ ] **GAME-10**: Player cannot guess the same album twice
 
-### Code — Rename References
+### Image Reveal
 
-- [ ] **CODE-01**: Logger class renamed from `EnrichmentLogger` to `LlamaLogger`
-- [ ] **CODE-02**: Logger file moved to `src/lib/logging/llama-logger.ts`
-- [ ] **CODE-03**: All `prisma.enrichmentLog` calls updated to `prisma.llamaLog`
-- [ ] **CODE-04**: All type imports updated (`EnrichmentLog` → `LlamaLog`)
-- [ ] **CODE-05**: GraphQL schema types updated
-- [ ] **CODE-06**: Generated GraphQL types regenerated via codegen
-- [ ] **CODE-07**: All resolver references updated
+- [ ] **REVEAL-01**: Pixelation reveal style implemented (starts blocky, tiles reveal)
+- [ ] **REVEAL-02**: Blur reveal style implemented (starts blurry, progressively clears)
+- [ ] **REVEAL-03**: Player can toggle between reveal styles
+- [ ] **REVEAL-04**: Reveal style preference persists across sessions
+- [ ] **REVEAL-05**: 6 reveal stages (one per guess attempt)
+- [ ] **REVEAL-06**: Image processing happens client-side (no server load)
 
-### Creation Tracking — Albums
+### Stats & Streaks
 
-- [ ] **CREATE-01**: Album creation from `addAlbum` mutation logged with category: CREATED
-- [ ] **CREATE-02**: Album creation from `addAlbumToCollection` logged with category: CREATED
-- [ ] **CREATE-03**: Album creation from Spotify sync logged with category: CREATED
-- [ ] **CREATE-04**: Album creation from MusicBrainz sync logged with category: CREATED
-- [ ] **CREATE-05**: Album creation from search/save flow logged with category: CREATED
-- [ ] **CREATE-06**: Creation logs include userId when user-triggered
-- [ ] **CREATE-07**: Creation logs have isRootJob: true
+- [ ] **STATS-01**: Track total games played per user
+- [ ] **STATS-02**: Track win count and calculate win rate
+- [ ] **STATS-03**: Track current streak (consecutive days won)
+- [ ] **STATS-04**: Track max streak (best ever)
+- [ ] **STATS-05**: Track guess distribution (1-guess wins, 2-guess wins, etc.)
+- [ ] **STATS-06**: Stats persisted in database (not localStorage)
+- [ ] **STATS-07**: Stats viewable after each game
+- [ ] **STATS-08**: Stats synced across devices for logged-in users
 
-### Creation Tracking — Related Entities
+### Daily Challenge
 
-- [ ] **RELATE-01**: Artist creation logged as child of album creation
-- [ ] **RELATE-02**: Artist creation has parentJobId pointing to album's jobId
-- [ ] **RELATE-03**: Track creation logged as child of album creation/enrichment
-- [ ] **RELATE-04**: Track creation has parentJobId pointing to root job
-- [ ] **RELATE-05**: Child creations have isRootJob: false
+- [ ] **DAILY-01**: One album selected per day (same for all players)
+- [ ] **DAILY-02**: Daily reset at UTC midnight
+- [ ] **DAILY-03**: Player cannot replay today's puzzle after completing
+- [ ] **DAILY-04**: Game state persists if player leaves mid-game
+- [ ] **DAILY-05**: Album selection is deterministic (reproducible for debugging)
 
-### Existing Logging — Category Updates
+### Archive Mode
 
-- [ ] **EXIST-01**: All enrichment operations use category: ENRICHED
-- [ ] **EXIST-02**: All correction operations use category: CORRECTED
-- [ ] **EXIST-03**: All cache/image operations use category: ENRICHED (adds cloudflareImageId field)
-- [ ] **EXIST-04**: All failed operations use category: FAILED
+- [ ] **ARCHIVE-01**: Player can access past daily puzzles
+- [ ] **ARCHIVE-02**: Archive shows which days were played/missed
+- [ ] **ARCHIVE-03**: Archive puzzles don't affect current streak
+- [ ] **ARCHIVE-04**: Archive puzzles still track win/loss stats
 
-### UI & Branding
+### Album Pool
 
-- [ ] **UI-01**: Console log output uses `[🦙 LlamaLog]` prefix
-- [ ] **UI-02**: Admin log table shows llama emoji in header
-- [ ] **UI-03**: Log detail view includes llama theming
-- [ ] **UI-04**: Category badges incorporate llama where appropriate
+- [ ] **POOL-01**: Curated pool of game-eligible albums
+- [ ] **POOL-02**: Eligibility criteria: has cover art (cloudflareImageId)
+- [ ] **POOL-03**: Eligibility criteria: recognizable/classic albums (manual curation or popularity threshold)
+- [ ] **POOL-04**: Admin can add/remove albums from game pool
+- [ ] **POOL-05**: Daily selection pulls only from curated pool
 
-### Query & Provenance
+### Music Discovery (Post-Game)
 
-- [ ] **QUERY-01**: GraphQL query `llamaLogChain(entityType, entityId)` returns root + all children
-- [ ] **QUERY-02**: Chain query returns logs ordered by createdAt
-- [ ] **QUERY-03**: Chain query can filter by category
+- [ ] **DISCOVER-01**: Post-game screen shows album details
+- [ ] **DISCOVER-02**: Link to full album page on rec-music.org
+- [ ] **DISCOVER-03**: One-click "Add to Collection" button
+- [ ] **DISCOVER-04**: Link to artist page
+
+### Authentication
+
+- [ ] **AUTH-01**: Login required to play the game
+- [ ] **AUTH-02**: Unauthenticated users see login prompt
+- [ ] **AUTH-03**: Game state tied to user account
+
+### UI/UX
+
+- [ ] **UI-01**: Desktop layout for game
+- [ ] **UI-02**: Mobile layout for game (responsive or /m/ route)
+- [ ] **UI-03**: Loading states for image processing
+- [ ] **UI-04**: Error states (network issues, etc.)
+- [ ] **UI-05**: Keyboard support for guess input
 
 ## Future Requirements
 
 Deferred to later milestones.
 
-### Extended Tracking
+### Sharing
 
-- **TRACK-01**: Track entity deletions
-- **TRACK-02**: Track entity updates outside enrichment/correction
-- **TRACK-03**: Tree view UI for job chain visualization
+- **SHARE-01**: Spoiler-free emoji share grid
+- **SHARE-02**: Copy results to clipboard
+- **SHARE-03**: Share shows reveal style used
 
-### Retroactive Provenance
+### Social
 
-- **RETRO-01**: Attempt to determine creation source for pre-existing albums
-- **RETRO-02**: Mark albums with unknown provenance
+- **SOCIAL-01**: See who else recommended the daily album
+- **SOCIAL-02**: Leaderboards (friends, global)
+- **SOCIAL-03**: Challenge friends to beat your score
+
+### Advanced
+
+- **ADV-01**: Anonymous play with localStorage stats
+- **ADV-02**: Merge anonymous stats on login
+- **ADV-03**: Difficulty modes (easy/hard albums)
+- **ADV-04**: Genre-specific game modes
+- **ADV-05**: Hints system (year, genre, artist initial)
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Retroactive provenance for existing albums | Too complex, data not available |
-| Full visual tree UI for job chains | Simple list sufficient for v1.4 |
-| Entity deletion tracking | Future enhancement |
-| Updates outside enrichment/correction | Not needed yet |
-| Custom llama ASCII art | Tempting, but no 🦙 |
+| Multiplayer/real-time | Complexity, not needed for daily game |
+| Custom puzzles | Admin overhead, focus on curated experience |
+| Paid hints/lives | Keep it free and simple |
+| Audio hints | Different feature entirely |
+| Timed mode | Adds stress, not fun for casual play |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SCHEMA-01 | 26 | Pending |
-| SCHEMA-02 | 26 | Pending |
-| SCHEMA-03 | 26 | Pending |
-| SCHEMA-04 | 26 | Pending |
-| SCHEMA-05 | 26 | Pending |
-| CODE-01 | 27 | Pending |
-| CODE-02 | 27 | Pending |
-| CODE-03 | 27 | Pending |
-| CODE-04 | 27 | Pending |
-| CODE-05 | 27 | Pending |
-| CODE-06 | 27 | Pending |
-| CODE-07 | 27 | Pending |
-| CREATE-01 | 28 | Pending |
-| CREATE-02 | 28 | Pending |
-| CREATE-03 | 28 | Pending |
-| CREATE-04 | 28 | Pending |
-| CREATE-05 | 28 | Pending |
-| CREATE-06 | 28 | Pending |
-| CREATE-07 | 28 | Pending |
-| RELATE-01 | 29 | Pending |
-| RELATE-02 | 29 | Pending |
-| RELATE-03 | 29 | Pending |
-| RELATE-04 | 29 | Pending |
-| RELATE-05 | 29 | Pending |
-| EXIST-01 | 30 | Pending |
-| EXIST-02 | 30 | Pending |
-| EXIST-03 | 30 | Pending |
-| EXIST-04 | 30 | Pending |
-| UI-01 | 31 | Pending |
-| UI-02 | 31 | Pending |
-| UI-03 | 31 | Pending |
-| UI-04 | 31 | Pending |
-| QUERY-01 | 32 | Pending |
-| QUERY-02 | 32 | Pending |
-| QUERY-03 | 32 | Pending |
+| GAME-01 | TBD | Pending |
+| GAME-02 | TBD | Pending |
+| GAME-03 | TBD | Pending |
+| GAME-04 | TBD | Pending |
+| GAME-05 | TBD | Pending |
+| GAME-06 | TBD | Pending |
+| GAME-07 | TBD | Pending |
+| GAME-08 | TBD | Pending |
+| GAME-09 | TBD | Pending |
+| GAME-10 | TBD | Pending |
+| REVEAL-01 | TBD | Pending |
+| REVEAL-02 | TBD | Pending |
+| REVEAL-03 | TBD | Pending |
+| REVEAL-04 | TBD | Pending |
+| REVEAL-05 | TBD | Pending |
+| REVEAL-06 | TBD | Pending |
+| STATS-01 | TBD | Pending |
+| STATS-02 | TBD | Pending |
+| STATS-03 | TBD | Pending |
+| STATS-04 | TBD | Pending |
+| STATS-05 | TBD | Pending |
+| STATS-06 | TBD | Pending |
+| STATS-07 | TBD | Pending |
+| STATS-08 | TBD | Pending |
+| DAILY-01 | TBD | Pending |
+| DAILY-02 | TBD | Pending |
+| DAILY-03 | TBD | Pending |
+| DAILY-04 | TBD | Pending |
+| DAILY-05 | TBD | Pending |
+| ARCHIVE-01 | TBD | Pending |
+| ARCHIVE-02 | TBD | Pending |
+| ARCHIVE-03 | TBD | Pending |
+| ARCHIVE-04 | TBD | Pending |
+| POOL-01 | TBD | Pending |
+| POOL-02 | TBD | Pending |
+| POOL-03 | TBD | Pending |
+| POOL-04 | TBD | Pending |
+| POOL-05 | TBD | Pending |
+| DISCOVER-01 | TBD | Pending |
+| DISCOVER-02 | TBD | Pending |
+| DISCOVER-03 | TBD | Pending |
+| DISCOVER-04 | TBD | Pending |
+| AUTH-01 | TBD | Pending |
+| AUTH-02 | TBD | Pending |
+| AUTH-03 | TBD | Pending |
+| UI-01 | TBD | Pending |
+| UI-02 | TBD | Pending |
+| UI-03 | TBD | Pending |
+| UI-04 | TBD | Pending |
+| UI-05 | TBD | Pending |
 
 **Coverage:**
 
-- v1.4 requirements: 34 total
-- Mapped to phases: 34
-- Unmapped: 0
+- v1.5 requirements: 47 total
+- Mapped to phases: 0 (pending roadmap)
+- Unmapped: 47
 
 ---
 
-_Requirements defined: 2026-02-09_
-_Last updated: 2026-02-09 after initial definition_
+*Requirements defined: 2026-02-12*
+*Last updated: 2026-02-12 after scoping session*
