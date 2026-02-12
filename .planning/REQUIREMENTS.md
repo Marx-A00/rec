@@ -120,66 +120,66 @@ Deferred to later milestones.
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| GAME-01 | TBD | Pending |
-| GAME-02 | TBD | Pending |
-| GAME-03 | TBD | Pending |
-| GAME-04 | TBD | Pending |
-| GAME-05 | TBD | Pending |
-| GAME-06 | TBD | Pending |
-| GAME-07 | TBD | Pending |
-| GAME-08 | TBD | Pending |
-| GAME-09 | TBD | Pending |
-| GAME-10 | TBD | Pending |
-| REVEAL-01 | TBD | Pending |
-| REVEAL-02 | TBD | Pending |
-| REVEAL-03 | TBD | Pending |
-| REVEAL-04 | TBD | Pending |
-| REVEAL-05 | TBD | Pending |
-| REVEAL-06 | TBD | Pending |
-| STATS-01 | TBD | Pending |
-| STATS-02 | TBD | Pending |
-| STATS-03 | TBD | Pending |
-| STATS-04 | TBD | Pending |
-| STATS-05 | TBD | Pending |
-| STATS-06 | TBD | Pending |
-| STATS-07 | TBD | Pending |
-| STATS-08 | TBD | Pending |
-| DAILY-01 | TBD | Pending |
-| DAILY-02 | TBD | Pending |
-| DAILY-03 | TBD | Pending |
-| DAILY-04 | TBD | Pending |
-| DAILY-05 | TBD | Pending |
-| ARCHIVE-01 | TBD | Pending |
-| ARCHIVE-02 | TBD | Pending |
-| ARCHIVE-03 | TBD | Pending |
-| ARCHIVE-04 | TBD | Pending |
-| POOL-01 | TBD | Pending |
-| POOL-02 | TBD | Pending |
-| POOL-03 | TBD | Pending |
-| POOL-04 | TBD | Pending |
-| POOL-05 | TBD | Pending |
-| DISCOVER-01 | TBD | Pending |
-| DISCOVER-02 | TBD | Pending |
-| DISCOVER-03 | TBD | Pending |
-| DISCOVER-04 | TBD | Pending |
-| AUTH-01 | TBD | Pending |
-| AUTH-02 | TBD | Pending |
-| AUTH-03 | TBD | Pending |
-| UI-01 | TBD | Pending |
-| UI-02 | TBD | Pending |
-| UI-03 | TBD | Pending |
-| UI-04 | TBD | Pending |
-| UI-05 | TBD | Pending |
+| Requirement | Phase | Status  |
+|-------------|-------|---------|
+| GAME-01     | 37    | Pending |
+| GAME-02     | 37    | Pending |
+| GAME-03     | 37    | Pending |
+| GAME-04     | 37    | Pending |
+| GAME-05     | 37    | Pending |
+| GAME-06     | 37    | Pending |
+| GAME-07     | 37    | Pending |
+| GAME-08     | 38    | Pending |
+| GAME-09     | 38    | Pending |
+| GAME-10     | 37    | Pending |
+| REVEAL-01   | 36    | Pending |
+| REVEAL-02   | 36    | Pending |
+| REVEAL-03   | 36    | Pending |
+| REVEAL-04   | 36    | Pending |
+| REVEAL-05   | 36    | Pending |
+| REVEAL-06   | 36    | Pending |
+| STATS-01    | 39    | Pending |
+| STATS-02    | 39    | Pending |
+| STATS-03    | 39    | Pending |
+| STATS-04    | 39    | Pending |
+| STATS-05    | 39    | Pending |
+| STATS-06    | 33    | Pending |
+| STATS-07    | 39    | Pending |
+| STATS-08    | 39    | Pending |
+| DAILY-01    | 35    | Pending |
+| DAILY-02    | 35    | Pending |
+| DAILY-03    | 37    | Pending |
+| DAILY-04    | 37    | Pending |
+| DAILY-05    | 35    | Pending |
+| ARCHIVE-01  | 40    | Pending |
+| ARCHIVE-02  | 40    | Pending |
+| ARCHIVE-03  | 40    | Pending |
+| ARCHIVE-04  | 40    | Pending |
+| POOL-01     | 34    | Pending |
+| POOL-02     | 34    | Pending |
+| POOL-03     | 34    | Pending |
+| POOL-04     | 34    | Pending |
+| POOL-05     | 34    | Pending |
+| DISCOVER-01 | 41    | Pending |
+| DISCOVER-02 | 41    | Pending |
+| DISCOVER-03 | 41    | Pending |
+| DISCOVER-04 | 41    | Pending |
+| AUTH-01     | 37    | Pending |
+| AUTH-02     | 38    | Pending |
+| AUTH-03     | 33    | Pending |
+| UI-01       | 38    | Pending |
+| UI-02       | 38    | Pending |
+| UI-03       | 38    | Pending |
+| UI-04       | 42    | Pending |
+| UI-05       | 38    | Pending |
 
 **Coverage:**
 
 - v1.5 requirements: 47 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 47
+- Mapped to phases: 47 (100%)
+- Unmapped: 0
 
 ---
 
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after scoping session*
+*Last updated: 2026-02-12 after roadmap creation*

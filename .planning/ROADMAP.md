@@ -1,318 +1,277 @@
-# Roadmap: v1.4 LlamaLog - Entity Provenance & Audit System
+# Roadmap: v1.5 Daily Album Art Game
 
-**Milestone:** v1.4
-**Created:** 2026-02-09
+**Milestone:** v1.5
+**Created:** 2026-02-12
 **Status:** Planning
 
 ## Overview
 
-Transform EnrichmentLog into LlamaLog - a complete entity provenance and audit system that tracks not just enrichment operations, but the entire lifecycle of entities from creation through all subsequent operations. The system answers: "How did this album get into the database, and what happened to it afterward?"
+Build a daily album art guessing game that drives repeat visits and music discovery. Players see an obscured album cover that progressively reveals with each guess (pixelation or blur style). Six attempts to guess correctly. Stats and streaks persist across sessions. Archive mode for past puzzles. Post-game discovery links.
 
-**Core changes:** Rename EnrichmentLog → LlamaLog, add category classification (CREATED, ENRICHED, CORRECTED, CACHED, FAILED), track album/artist/track creation events across all entry points, maintain parent-child job relationships, and add llama branding throughout.
+## Milestones
+
+- **v1.0-v1.3** - Core platform, admin corrections (Phases 1-25) - SHIPPED
+- **v1.4 LlamaLog** - Entity provenance & audit system (Phases 26-32) - SHIPPED 2026-02-10
+- **v1.5 Daily Album Art Game** - Phases 33-42 (current)
 
 ## Phases
 
-**Phase 26: Schema Migration**
-- Goal: Rename database model and table, add category enum
-- Requirements: 5 (SCHEMA-01 through SCHEMA-05)
-- Success Criteria: 4
+**Phase Numbering:**
+- Integer phases (33, 34, 35...): Planned milestone work
+- Decimal phases (33.1, 33.2): Urgent insertions (marked with INSERTED)
 
-**Phase 27: Code Rename**
-- Goal: Update all codebase references to new naming
-- Requirements: 7 (CODE-01 through CODE-07)
-- Success Criteria: 3
-
-**Phase 28: Album Creation Tracking**
-- Goal: Log album creation from all entry points
-- Requirements: 7 (CREATE-01 through CREATE-07)
-- Success Criteria: 4
-
-**Phase 29: Related Entity Tracking**
-- Goal: Log artist/track creation as children of album jobs
-- Requirements: 5 (RELATE-01 through RELATE-05)
-- Success Criteria: 3
-
-**Phase 30: Existing Logging Categories**
-- Goal: Apply category field to existing logging operations
-- Requirements: 4 (EXIST-01 through EXIST-04)
-- Success Criteria: 2
-
-**Phase 31: UI & Branding**
-- Goal: Add llama emoji and theming to console and admin UI
-- Requirements: 4 (UI-01 through UI-04)
-- Success Criteria: 3
-
-**Phase 32: Query & Provenance**
-- Goal: GraphQL query for entity provenance chains
-- Requirements: 3 (QUERY-01 through QUERY-03)
-- Success Criteria: 3
+- [ ] **Phase 33: Data Foundation** - Prisma models for game state
+- [ ] **Phase 34: Album Pool** - Curated game-eligible albums
+- [ ] **Phase 35: Daily Challenge System** - Album selection and scheduler
+- [ ] **Phase 36: Image Reveal Engine** - Canvas pixelation and CSS blur
+- [ ] **Phase 37: Game State & Logic** - Zustand store, guess validation
+- [ ] **Phase 38: Game UI** - Desktop and mobile layouts
+- [ ] **Phase 39: Stats & Streaks** - Tracking and persistence
+- [ ] **Phase 40: Archive Mode** - Past puzzles access
+- [ ] **Phase 41: Music Discovery** - Post-game integration
+- [ ] **Phase 42: Polish** - Error states, loading, keyboard support
 
 ---
 
-## Phase 26: Schema Migration
+## Phase 33: Data Foundation
 
-**Goal:** Database model and table renamed with new category enum, preserving all existing data.
+**Goal:** Database models exist for tracking game sessions, guesses, and player statistics.
 
-**Dependencies:** None (foundation phase)
+**Depends on:** Nothing (foundation phase)
 
 **Requirements:**
-- SCHEMA-01: Prisma model renamed from `EnrichmentLog` to `LlamaLog`
-- SCHEMA-02: Database table renamed via migration preserving all data
-- SCHEMA-03: New `LlamaLogCategory` enum with values: CREATED, ENRICHED, CORRECTED, CACHED, FAILED
-- SCHEMA-04: New `category` field added to `LlamaLog` model (required)
-- SCHEMA-05: Migration backfills existing records with appropriate categories
+- AUTH-03: Game state tied to user account
+- STATS-06: Stats persisted in database (not localStorage)
 
 **Success Criteria:**
 
-1. **Database table renamed:** `EnrichmentLog` table renamed to `LlamaLog` with zero data loss
-2. **Category enum exists:** `LlamaLogCategory` enum created with all 5 values (CREATED, ENRICHED, CORRECTED, CACHED, FAILED)
-3. **All existing records categorized:** Migration successfully backfills category field based on operation patterns
-4. **Prisma schema valid:** `npx prisma validate` succeeds, `npx prisma generate` produces `LlamaLog` types
+1. **Models exist:** `DailyChallenge`, `GameSession`, `GameGuess`, `PlayerGameStats` tables created via migration
+2. **Relations correct:** GameSession links to User and DailyChallenge, GameGuess links to GameSession
+3. **Prisma generates:** `pnpm prisma generate` succeeds with all game-related types
 
-**Plans:** 1 plan
-
-Plans:
-- [x] 26-01-PLAN.md — Schema rename, enum creation, and backfill migration
-
-**Key Files:**
-- `prisma/schema.prisma` - Model and enum definitions
-- `prisma/migrations/[timestamp]_rename_enrichment_log_to_llama_log/` - Migration SQL
-- Generated Prisma types
-
-**Notes:**
-- Migration must be reversible (down migration included)
-- Backfill logic uses SQL CASE based on operation field patterns
-- Consider index on `(category, entityType)` for common queries
+**Plans:** TBD
 
 ---
 
-## Phase 27: Code Rename
+## Phase 34: Album Pool
 
-**Goal:** All codebase references updated from EnrichmentLog to LlamaLog.
+**Goal:** Curated pool of game-eligible albums with admin management.
 
-**Dependencies:** Phase 26 (schema must exist first)
+**Depends on:** Phase 33
 
 **Requirements:**
-- CODE-01: Logger class renamed from `EnrichmentLogger` to `LlamaLogger`
-- CODE-02: Logger file moved to `src/lib/logging/llama-logger.ts`
-- CODE-03: All `prisma.enrichmentLog` calls updated to `prisma.llamaLog`
-- CODE-04: All type imports updated (`EnrichmentLog` → `LlamaLog`)
-- CODE-05: GraphQL schema types updated
-- CODE-06: Generated GraphQL types regenerated via codegen
-- CODE-07: All resolver references updated
+- POOL-01: Curated pool of game-eligible albums
+- POOL-02: Eligibility criteria: has cover art (cloudflareImageId)
+- POOL-03: Eligibility criteria: recognizable/classic albums (manual curation or popularity threshold)
+- POOL-04: Admin can add/remove albums from game pool
+- POOL-05: Daily selection pulls only from curated pool
 
 **Success Criteria:**
 
-1. **No `EnrichmentLog` references remain:** Codebase search for `EnrichmentLog` (case-sensitive) returns zero results in non-migration files
-2. **Logger class functional:** `LlamaLogger` can be instantiated and log operations without errors
-3. **GraphQL types regenerated:** `pnpm codegen` succeeds, generated types include `LlamaLog` and `LlamaLogCategory`
+1. **Pool field exists:** Album model has `gameEligible` boolean field
+2. **Admin can manage:** Admin UI allows toggling game eligibility for albums
+3. **Eligibility enforced:** Only albums with cloudflareImageId can be marked eligible
+4. **Query works:** GraphQL query returns all game-eligible albums
 
-**Plans:** 5 plans
-
-Plans:
-- [x] 27-01-PLAN.md — Logger class rename and relocation
-- [x] 27-02-PLAN.md — GraphQL schema and codegen update
-- [x] 27-03-PLAN.md — Resolver and service updates
-- [x] 27-04-PLAN.md — Component updates
-- [x] 27-05-PLAN.md — Final verification
-
-**Key Files:**
-- `src/lib/logging/llama-logger.ts` (renamed from enrichment-logger.ts)
-- `src/graphql/schema.graphql` - GraphQL type definitions
-- `src/lib/graphql/resolvers/*.ts` - All resolver files
-- `src/generated/graphql.ts` - Regenerated types
-- All files importing/using the logger
-
-**Notes:**
-- Use global find-replace with caution (avoid breaking migration file comments)
-- Verify no runtime errors after rename (check existing admin UI still works)
-- GraphQL subscriptions may have cached types - consider cache clear
+**Plans:** TBD
 
 ---
 
-## Phase 28: Album Creation Tracking
+## Phase 35: Daily Challenge System
 
-**Goal:** All album creation paths log CREATED category events with full context.
+**Goal:** One album selected per day, same for all players, with UTC midnight reset.
 
-**Dependencies:** Phase 27 (LlamaLogger must exist)
+**Depends on:** Phase 34 (album pool must exist)
 
 **Requirements:**
-- CREATE-01: Album creation from `addAlbum` mutation logged with category: CREATED
-- CREATE-02: ~~Album creation from `addAlbumToCollection`~~ — N/A: `addAlbumToCollection` links existing albums to collections (uses `tx.collectionAlbum.create()` with existing albumId), does not create albums
-- CREATE-03: Album creation from Spotify sync logged with category: CREATED
-- CREATE-04: Album creation from MusicBrainz sync logged with category: CREATED
-- CREATE-05: Album creation from search/save flow logged with category: CREATED (covered by addAlbum)
-- CREATE-06: Creation logs include userId when user-triggered
-- CREATE-07: Creation logs have isRootJob: true
+- DAILY-01: One album selected per day (same for all players)
+- DAILY-02: Daily reset at UTC midnight
+- DAILY-05: Album selection is deterministic (reproducible for debugging)
 
 **Success Criteria:**
 
-1. **User-initiated creation tracked:** Creating album via `addAlbum` mutation produces LlamaLog entry with category: CREATED, isRootJob: true, userId populated
-2. **Sync operations tracked:** Both Spotify and MusicBrainz new releases sync produce CREATED logs for new albums (userId null, jobId present)
-3. **All paths verified:** Manual test of each creation path confirms LlamaLog entry appears in database with correct category
+1. **Daily challenge exists:** For any given date, system returns the same album for all users
+2. **Deterministic selection:** Given the same date and pool, algorithm produces identical album choice
+3. **Reset works:** After UTC midnight, new album is selected
+4. **BullMQ scheduler:** Job runs daily to ensure challenge exists for upcoming day
 
-**Plans:** 2 plans
-
-Plans:
-- [x] 28-01-PLAN.md — User-initiated creation logging (addAlbum mutation)
-- [x] 28-02-PLAN.md — Sync operation creation logging (Spotify + MusicBrainz)
-
-**Key Files:**
-- `src/lib/graphql/resolvers/mutations.ts` - addAlbum mutation
-- `src/lib/spotify/mappers.ts` - Spotify sync album creation
-- `src/lib/queue/processors/musicbrainz-processor.ts` - MusicBrainz sync
-- `src/lib/logging/llama-logger.ts` - Logger methods
-
-**Notes:**
-- CREATE-01 and CREATE-05 are both covered by addAlbum mutation (single entry point for user-initiated album creation)
-- CREATE-02 is NOT applicable: `addAlbumToCollection` requires an existing albumId and only creates a collectionAlbum link record
-- Creation logs should fire AFTER successful database insert
-- userId is null for automated sync operations
-
+**Plans:** TBD
 
 ---
 
-## Phase 29: Related Entity Tracking
+## Phase 36: Image Reveal Engine
 
-**Goal:** Artist and track creation logged as children of album creation jobs.
+**Goal:** Client-side image processing with pixelation and blur reveal styles.
 
-**Dependencies:** Phase 28 (album creation tracking must exist)
+**Depends on:** Nothing (can parallelize with 34-35)
 
 **Requirements:**
-- RELATE-01: Artist creation logged as child of album creation
-- RELATE-02: Artist creation has parentJobId pointing to album's jobId
-- RELATE-03: Track creation logged as child of album creation/enrichment
-- RELATE-04: Track creation has parentJobId pointing to root job
-- RELATE-05: Child creations have isRootJob: false
+- REVEAL-01: Pixelation reveal style implemented (starts blocky, tiles reveal)
+- REVEAL-02: Blur reveal style implemented (starts blurry, progressively clears)
+- REVEAL-03: Player can toggle between reveal styles
+- REVEAL-04: Reveal style preference persists across sessions
+- REVEAL-05: 6 reveal stages (one per guess attempt)
+- REVEAL-06: Image processing happens client-side (no server load)
 
 **Success Criteria:**
 
-1. **Artist creation linked:** When album creation triggers artist creation, LlamaLog shows artist entry with parentJobId = album's jobId, isRootJob: false
-2. **Track creation linked:** When album enrichment creates tracks, LlamaLog shows track entries with parentJobId = root album jobId
-3. **Timeline shows hierarchy:** Admin UI timeline for an album displays artist and track creation as children
+1. **Pixelation works:** Image displays with configurable pixelation level (6 stages from heavily pixelated to clear)
+2. **Blur works:** Image displays with configurable blur level (6 stages from heavy blur to clear)
+3. **Toggle exists:** User can switch between pixelation and blur styles mid-game
+4. **Preference persists:** localStorage saves reveal style preference, loads on return
+5. **No server load:** All image processing via Canvas API and CSS filters (no API calls)
 
-Plans:
-- [x] 29-01-PLAN.md — Schema migration: rootJobId column and LINKED category
-- [x] 29-02-PLAN.md — LlamaLogger interface: add rootJobId support
-- [x] 29-03-PLAN.md — Artist creation logging (8 paths)
-- [x] 29-04-PLAN.md — Track creation logging (3 paths)
-
-**Key Files:**
-- `src/workers/queue-worker.ts` - Artist/track creation handlers
-- `src/lib/musicbrainz/queue-service.ts` - MusicBrainz operations
-- `src/lib/logging/llama-logger.ts` - Logger methods
-- `src/lib/graphql/resolvers/queries.ts` - Timeline queries
-
-**Notes:**
-- parentJobId must propagate through job chains (e.g., album → artist → artist enrichment)
-- isRootJob = false for all child operations
-- Consider depth limits to prevent infinite recursion in timeline queries
+**Plans:** TBD
 
 ---
 
-## Phase 30: Existing Logging Categories
+## Phase 37: Game State & Logic
 
-**Goal:** All existing logging operations use appropriate category values.
+**Goal:** Complete game logic with Zustand store and server-side validation.
 
-**Dependencies:** Phase 27 (LlamaLogger must exist)
+**Depends on:** Phase 33 (data models), Phase 35 (daily challenge), Phase 36 (reveal engine)
 
 **Requirements:**
-- EXIST-01: All enrichment operations use category: ENRICHED
-- EXIST-02: All correction operations use category: CORRECTED
-- EXIST-03: All cache/image operations use category: ENRICHED (adds cloudflareImageId field)
-- EXIST-04: All failed operations use category: FAILED
+- GAME-01: Player sees obscured album cover at game start
+- GAME-02: Player has 6 attempts to guess the album
+- GAME-03: Each wrong guess reveals more of the image
+- GAME-04: Player can skip a guess (counts as wrong guess)
+- GAME-05: Game detects win when correct album guessed
+- GAME-06: Game detects loss after 6 failed attempts
+- GAME-07: Full album cover revealed on game end (win or lose)
+- GAME-10: Player cannot guess the same album twice
+- DAILY-03: Player cannot replay today's puzzle after completing
+- DAILY-04: Game state persists if player leaves mid-game
+- AUTH-01: Login required to play the game
 
 **Success Criteria:**
 
-1. **Enrichment categorized:** Triggering album enrichment (MusicBrainz get-release job) produces LlamaLog with category: ENRICHED
-2. **Corrections categorized:** Applying Discogs/MusicBrainz correction produces LlamaLog with category: CORRECTED
+1. **Game playable:** Player can start game, make guesses, win or lose
+2. **State persists:** Refreshing page mid-game restores exact state (guess count, reveal level, previous guesses)
+3. **Replay blocked:** After completing daily challenge, player sees results not game
+4. **Server validation:** Guess correctness validated server-side (answer not exposed to client)
+5. **Skip works:** Skipping a guess advances reveal level without guessing
 
-**Key Files:**
-- `src/workers/queue-worker.ts` - All job handlers
-- `src/lib/graphql/resolvers/mutations.ts` - Correction mutations
-- `src/lib/logging/llama-logger.ts` - Logger method signatures
-
-**Notes:**
-- Existing enrichment code already logs - just add category parameter
-- FAILED category should capture exceptions in enrichment/correction operations
-- CACHED category for album cover and artist image cache operations
-
-**Plans:** 1 plan
-
-Plans:
-- [x] 30-01-PLAN.md — Add explicit category values to processor logEnrichment calls
+**Plans:** TBD
 
 ---
 
-## Phase 31: UI & Branding
+## Phase 38: Game UI
 
-**Goal:** Llama emoji and theming in console output and admin UI.
+**Goal:** Complete game interface for desktop and mobile with search integration.
 
-**Dependencies:** Phase 27 (LlamaLogger must exist)
+**Depends on:** Phase 37 (game logic must exist)
 
 **Requirements:**
-- UI-01: Console log output uses `[🦙 LlamaLog]` prefix
-- UI-02: Admin log table shows llama emoji in header
-- UI-03: Log detail view includes llama theming
-- UI-04: Category badges incorporate llama where appropriate
+- GAME-08: Player searches albums via autocomplete against local database
+- GAME-09: Search results show album name and artist
+- AUTH-02: Unauthenticated users see login prompt
+- UI-01: Desktop layout for game
+- UI-02: Mobile layout for game (responsive or /m/ route)
+- UI-03: Loading states for image processing
+- UI-05: Keyboard support for guess input
 
 **Success Criteria:**
 
-1. **Console logs branded:** Server logs show `[🦙 LlamaLog]` prefix for all logger output
-2. **Admin table header:** EnrichmentLogTable component header displays "🦙 LlamaLog" instead of "Enrichment Log"
-3. **Category badges themed:** Category badges in timeline/table show llama emoji for CREATED entries
+1. **Search works:** Typing in guess field shows autocomplete dropdown with album + artist
+2. **Responsive:** Game plays correctly on both desktop and mobile viewports
+3. **Auth gate:** Unauthenticated users cannot access game, see login CTA
+4. **Loading states:** Image processing shows skeleton/spinner during reveal transitions
+5. **Keyboard:** Enter submits guess, Tab navigates, Escape closes dropdown
 
-
-**Plans:** 1 plan
-
-Plans:
-- [x] 31-01-PLAN.md — Console and admin UI llama branding
-
-**Key Files:**
-- `src/lib/logging/llama-logger.ts` - Console output
-- `src/components/admin/enrichment/EnrichmentLogTable.tsx` - Table header
-- `src/components/admin/enrichment/EnrichmentLogTimeline.tsx` - Timeline display
-- `src/components/admin/enrichment/LogCategoryBadge.tsx` - Category rendering (if created)
-
-**Notes:**
-- Keep llama emoji optional in code comments (don't break syntax highlighting)
-- Emoji should enhance UX, not clutter - use sparingly
-- Consider accessibility (emoji should not be the only indicator)
+**Plans:** TBD
 
 ---
 
-## Phase 32: Query & Provenance
+## Phase 39: Stats & Streaks
 
-**Goal:** GraphQL query returns complete entity provenance chain.
+**Goal:** Complete statistics tracking with database persistence and display.
 
-**Dependencies:** Phase 28, 29 (creation tracking must exist)
+**Depends on:** Phase 37 (game logic triggers stats updates)
 
 **Requirements:**
-- QUERY-01: GraphQL query `llamaLogChain(entityType, entityId)` returns root + all children
-- QUERY-02: Chain query returns logs ordered by createdAt
-- QUERY-03: Chain query can filter by category
+- STATS-01: Track total games played per user
+- STATS-02: Track win count and calculate win rate
+- STATS-03: Track current streak (consecutive days won)
+- STATS-04: Track max streak (best ever)
+- STATS-05: Track guess distribution (1-guess wins, 2-guess wins, etc.)
+- STATS-07: Stats viewable after each game
+- STATS-08: Stats synced across devices for logged-in users
 
 **Success Criteria:**
 
-1. **Chain query exists:** `llamaLogChain` query in GraphQL schema accepts entityType and entityId parameters
-2. **Root + children returned:** Querying for an album's chain returns the album CREATED log plus all related artist/track creation logs
-3. **Filtering works:** Passing category filter (e.g., `[CREATED, ENRICHED]`) returns only matching logs in the chain
+1. **Stats calculated:** Win rate, current streak, max streak all correctly computed
+2. **Distribution tracked:** Histogram shows 1-6 guess win counts
+3. **Post-game display:** Stats modal appears after game completion
+4. **Cross-device sync:** Playing on phone updates stats visible on desktop
 
-**Key Files:**
-- `src/graphql/schema.graphql` - Query definition
-- `src/lib/graphql/resolvers/queries.ts` - Resolver implementation
-- `src/graphql/queries/llamaLog.graphql` - Client query
-- `src/generated/graphql.ts` - Generated types (after codegen)
+**Plans:** TBD
 
-**Notes:**
-- Query should be efficient (avoid N+1 queries, use Prisma include/select)
-- Consider pagination for entities with many child logs
-- Return type should match existing log queries for consistency
+---
 
-**Plans:** 1 plan
+## Phase 40: Archive Mode
 
-Plans:
-- [x] 32-01-PLAN.md — Implement llamaLogChain query with pagination and filtering
+**Goal:** Players can access and play past daily puzzles.
+
+**Depends on:** Phase 37 (game logic), Phase 39 (stats tracking)
+
+**Requirements:**
+- ARCHIVE-01: Player can access past daily puzzles
+- ARCHIVE-02: Archive shows which days were played/missed
+- ARCHIVE-03: Archive puzzles don't affect current streak
+- ARCHIVE-04: Archive puzzles still track win/loss stats
+
+**Success Criteria:**
+
+1. **Archive accessible:** Calendar/list view shows past challenges
+2. **Status visible:** Each past day shows played/missed/won/lost status
+3. **Streak protected:** Playing archive puzzle does not break or extend current streak
+4. **Stats update:** Archive wins/losses increment total games played and win rate
+
+**Plans:** TBD
+
+---
+
+## Phase 41: Music Discovery
+
+**Goal:** Post-game screen drives engagement with album and artist pages.
+
+**Depends on:** Phase 37 (game completion triggers post-game)
+
+**Requirements:**
+- DISCOVER-01: Post-game screen shows album details
+- DISCOVER-02: Link to full album page on rec-music.org
+- DISCOVER-03: One-click "Add to Collection" button
+- DISCOVER-04: Link to artist page
+
+**Success Criteria:**
+
+1. **Album revealed:** Post-game shows full album art, title, artist, year
+2. **Album link works:** Click navigates to album detail page
+3. **Collection add:** One click adds album to user's default collection
+4. **Artist link works:** Click navigates to artist page
+
+**Plans:** TBD
+
+---
+
+## Phase 42: Polish
+
+**Goal:** Error handling, edge cases, and final UX refinements.
+
+**Depends on:** All previous phases
+
+**Requirements:**
+- UI-04: Error states (network issues, etc.)
+
+**Success Criteria:**
+
+1. **Network errors handled:** Offline/failed requests show user-friendly message
+2. **Edge cases covered:** Empty album pool, missing cover art, concurrent sessions all handled gracefully
+3. **Performance:** Image reveal transitions are smooth (no jank)
+4. **Accessibility:** Game playable with keyboard only, screen reader announces key states
+
+**Plans:** TBD
 
 ---
 
@@ -321,37 +280,49 @@ Plans:
 **Phase execution order:**
 
 ```
-26 (Schema Migration)
+33 (Data Foundation)
   ↓
-27 (Code Rename)
+34 (Album Pool)
   ↓
-28 (Album Creation Tracking) ← 30 (Existing Logging Categories)
-  ↓                             ↓
-29 (Related Entity Tracking)    31 (UI & Branding)
+35 (Daily Challenge) ←─────────┐
+  ↓                            │
+36 (Image Reveal) ─────────────┤ (can parallelize with 34-35)
+  ↓                            │
+37 (Game State & Logic) ───────┘
   ↓
-32 (Query & Provenance)
+38 (Game UI)
+  ↓
+39 (Stats & Streaks)
+  ↓
+40 (Archive Mode)
+  ↓
+41 (Music Discovery)
+  ↓
+42 (Polish)
 ```
 
 **Parallelization opportunities:**
-- Phase 30 (Existing Logging) can run in parallel with Phase 28
-- Phase 31 (UI & Branding) can run in parallel with Phase 28/29
-- Phase 32 depends on Phase 28 and 29 completing
+- Phase 36 (Image Reveal) can run in parallel with Phases 34-35
+- Phases 40 and 41 could potentially parallelize after 39
 
 ---
 
 ## Progress Tracking
 
-| Phase | Name                          | Requirements | Status  | Completed |
-|-------|-------------------------------|--------------|---------|-----------|
-| 26    | Schema Migration              | 5            | Complete | 2026-02-09 |
-| 27    | Code Rename                   | 7            | Complete | 2026-02-09 |
-| 28    | Album Creation Tracking       | 7            | Complete | 2026-02-10 |
-| 29    | Related Entity Tracking       | 5            | Complete | 2026-02-10 |
-| 30    | Existing Logging Categories   | 4            | Complete | 2026-02-10 |
-| 31    | UI & Branding                 | 4            | Complete | 2026-02-10 |
-| 32    | Query & Provenance            | 3            | Complete | 2026-02-10 |
+| Phase | Name                      | Requirements | Status      | Completed |
+|-------|---------------------------|--------------|-------------|-----------|
+| 33    | Data Foundation           | 2            | Not started | -         |
+| 34    | Album Pool                | 5            | Not started | -         |
+| 35    | Daily Challenge System    | 3            | Not started | -         |
+| 36    | Image Reveal Engine       | 6            | Not started | -         |
+| 37    | Game State & Logic        | 11           | Not started | -         |
+| 38    | Game UI                   | 7            | Not started | -         |
+| 39    | Stats & Streaks           | 7            | Not started | -         |
+| 40    | Archive Mode              | 4            | Not started | -         |
+| 41    | Music Discovery           | 4            | Not started | -         |
+| 42    | Polish                    | 1            | Not started | -         |
 
-**Total:** 7 phases, 34 requirements
+**Total:** 10 phases, 47 requirements (100% coverage)
 
 ---
 
@@ -359,45 +330,60 @@ Plans:
 
 | Requirement | Phase | Status  | Description                              |
 |-------------|-------|---------|------------------------------------------|
-| SCHEMA-01   | 26    | Complete | Rename Prisma model                      |
-| SCHEMA-02   | 26    | Complete | Rename database table                    |
-| SCHEMA-03   | 26    | Complete | Add category enum                        |
-| SCHEMA-04   | 26    | Complete | Add category field                       |
-| SCHEMA-05   | 26    | Complete | Backfill existing records                |
-| CODE-01     | 27    | Complete | Rename logger class                      |
-| CODE-02     | 27    | Complete | Move logger file                         |
-| CODE-03     | 27    | Complete | Update prisma calls                      |
-| CODE-04     | 27    | Complete | Update type imports                      |
-| CODE-05     | 27    | Complete | Update GraphQL schema                    |
-| CODE-06     | 27    | Complete | Regenerate GraphQL types                 |
-| CODE-07     | 27    | Complete | Update resolver references               |
-| CREATE-01   | 28    | Complete | Log addAlbum creation                    |
-| CREATE-02   | 28    | N/A     | addAlbumToCollection links, not creates  |
-| CREATE-03   | 28    | Complete | Log Spotify sync creation                |
-| CREATE-04   | 28    | Complete | Log MusicBrainz sync creation            |
-| CREATE-05   | 28    | Complete | Log search/save creation                 |
-| CREATE-06   | 28    | Complete | Include userId in creation logs          |
-| CREATE-07   | 28    | Complete | Set isRootJob true for creations         |
-| RELATE-01   | 29    | Complete | Log artist creation                      |
-| RELATE-02   | 29    | Complete | Set parentJobId for artists              |
-| RELATE-03   | 29    | Complete | Log track creation                       |
-| RELATE-04   | 29    | Complete | Set parentJobId for tracks               |
-| RELATE-05   | 29    | Complete | Set isRootJob false for children         |
-| EXIST-01    | 30    | Complete | Categorize enrichment operations         |
-| EXIST-02    | 30    | Complete | Categorize correction operations         |
-| EXIST-03    | 30    | Complete | Categorize cache/image ops as ENRICHED   |
-| EXIST-04    | 30    | Complete | Categorize failed operations             |
-| UI-01       | 31    | Complete | Console log prefix                       |
-| UI-02       | 31    | Complete | Admin table header                       |
-| UI-03       | 31    | Complete | Log detail theming                       |
-| UI-04       | 31    | Complete | Category badge theming                   |
-| QUERY-01    | 32    | Complete | Create llamaLogChain query               |
-| QUERY-02    | 32    | Complete | Order chain by createdAt                 |
-| QUERY-03    | 32    | Complete | Filter chain by category                 |
+| GAME-01     | 37    | Pending | Player sees obscured album cover         |
+| GAME-02     | 37    | Pending | Player has 6 attempts                    |
+| GAME-03     | 37    | Pending | Each wrong guess reveals more            |
+| GAME-04     | 37    | Pending | Player can skip a guess                  |
+| GAME-05     | 37    | Pending | Game detects win                         |
+| GAME-06     | 37    | Pending | Game detects loss                        |
+| GAME-07     | 37    | Pending | Full cover revealed on end               |
+| GAME-08     | 38    | Pending | Album search via autocomplete            |
+| GAME-09     | 38    | Pending | Search shows album + artist              |
+| GAME-10     | 37    | Pending | Cannot guess same album twice            |
+| REVEAL-01   | 36    | Pending | Pixelation reveal style                  |
+| REVEAL-02   | 36    | Pending | Blur reveal style                        |
+| REVEAL-03   | 36    | Pending | Toggle between styles                    |
+| REVEAL-04   | 36    | Pending | Style preference persists                |
+| REVEAL-05   | 36    | Pending | 6 reveal stages                          |
+| REVEAL-06   | 36    | Pending | Client-side image processing             |
+| STATS-01    | 39    | Pending | Track total games played                 |
+| STATS-02    | 39    | Pending | Track win count/rate                     |
+| STATS-03    | 39    | Pending | Track current streak                     |
+| STATS-04    | 39    | Pending | Track max streak                         |
+| STATS-05    | 39    | Pending | Track guess distribution                 |
+| STATS-06    | 33    | Pending | Stats persisted in database              |
+| STATS-07    | 39    | Pending | Stats viewable after game                |
+| STATS-08    | 39    | Pending | Stats synced across devices              |
+| DAILY-01    | 35    | Pending | One album per day for all                |
+| DAILY-02    | 35    | Pending | UTC midnight reset                       |
+| DAILY-03    | 37    | Pending | Cannot replay today's puzzle             |
+| DAILY-04    | 37    | Pending | State persists mid-game                  |
+| DAILY-05    | 35    | Pending | Deterministic selection                  |
+| ARCHIVE-01  | 40    | Pending | Access past puzzles                      |
+| ARCHIVE-02  | 40    | Pending | Shows played/missed status               |
+| ARCHIVE-03  | 40    | Pending | No streak impact                         |
+| ARCHIVE-04  | 40    | Pending | Still tracks win/loss stats              |
+| POOL-01     | 34    | Pending | Curated pool of eligible albums          |
+| POOL-02     | 34    | Pending | Eligibility: has cover art               |
+| POOL-03     | 34    | Pending | Eligibility: recognizable albums         |
+| POOL-04     | 34    | Pending | Admin can manage pool                    |
+| POOL-05     | 34    | Pending | Daily selection from pool only           |
+| DISCOVER-01 | 41    | Pending | Post-game album details                  |
+| DISCOVER-02 | 41    | Pending | Link to album page                       |
+| DISCOVER-03 | 41    | Pending | Add to Collection button                 |
+| DISCOVER-04 | 41    | Pending | Link to artist page                      |
+| AUTH-01     | 37    | Pending | Login required to play                   |
+| AUTH-02     | 38    | Pending | Unauthenticated see login prompt         |
+| AUTH-03     | 33    | Pending | State tied to user account               |
+| UI-01       | 38    | Pending | Desktop layout                           |
+| UI-02       | 38    | Pending | Mobile layout                            |
+| UI-03       | 38    | Pending | Loading states                           |
+| UI-04       | 42    | Pending | Error states                             |
+| UI-05       | 38    | Pending | Keyboard support                         |
 
-**Coverage:** 34/34 requirements mapped (100%)
+**Coverage:** 47/47 requirements mapped (100%)
 
 ---
 
-_Roadmap created: 2026-02-09_
-_Last updated: 2026-02-10 (Phase 32 complete - MILESTONE COMPLETE)_
+_Roadmap created: 2026-02-12_
+_Last updated: 2026-02-12_
