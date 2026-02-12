@@ -1,191 +1,204 @@
 # Project Research Summary
 
-**Project:** Admin Data Correction UI
-**Domain:** Admin metadata correction tools for music applications
-**Researched:** 2026-01-23
+**Project:** Daily Album Art Game  
+**Domain:** Daily guessing game with progressive image reveal  
+**Researched:** 2026-02-12  
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This research covers building an admin data correction feature for a music database that allows administrators to fix problematic albums and artists by searching MusicBrainz, previewing data side-by-side, and applying selective corrections. The project already has excellent foundations — fuzzysort for fuzzy matching, Radix UI for modals, Zod for validation, BullMQ for rate-limited API calls, and an existing preview enrichment system that can be extended. The main gap is form handling for selective field updates, which React Hook Form fills perfectly.
+The daily album art guessing game is a well-understood genre with clear patterns from Wordle and its derivatives (Framed, Heardle, Gamedle). The research indicates that success depends on three pillars: **server-side answer security** (never expose the correct album to the client before completion), **consistent timezone handling** (UTC everywhere to prevent streak loss), and **native image manipulation** (Canvas API for pixelation, CSS filter for blur). The existing rec codebase already provides 80% of the needed infrastructure including Zustand state management, Cloudflare Images for CORS-safe image delivery, and a mature GraphQL/Prisma stack.
 
-The recommended approach follows a "search, preview, apply" workflow that mirrors established patterns from MusicBrainz Picard and professional data enrichment tools. The architecture should extend the existing enrichment preview system rather than building a parallel system, reusing the `PreviewEnrichmentResult` type, `EnrichmentFieldDiff` for field comparison, and the `EnrichmentLog` model for audit trails. All MusicBrainz API calls must continue going through the existing `QueuedMusicBrainzService` to respect rate limits.
+The recommended approach is to prototype two reveal styles (CSS blur and Canvas pixelation) early to determine which provides better gameplay feel, then build the full game state system. The Wordle-style share grid is non-negotiable for virality - 23.5M tweets in Wordle's first months came from the emoji share format. The unique differentiator for this platform is **music discovery integration**: after playing, users can discover the album, add it to collections, and explore recommendations - features that competitors like PopIdle and Albumle completely lack.
 
-The primary risks are MusicBrainz ID instability (IDs redirect after community merges), orphaned related records when corrections don't update the full entity graph, and no rollback path after applying corrections. These risks are mitigated through MBID verification on every API response, atomic transactions that update all related tables (Album, AlbumArtist, Track), and comprehensive audit logging that captures before-state for potential recovery.
+Key risks include CORS issues when manipulating external images (mitigated by using existing Cloudflare Images infrastructure), hydration mismatches with Next.js SSR (mitigated by Zustand's skipHydration pattern), and Safari's aggressive localStorage clearing (mitigated by server-side persistence for authenticated users). All identified pitfalls have documented prevention strategies and existing codebase patterns to follow.
 
 ## Key Findings
 
 ### Recommended Stack
 
-Most required functionality exists in the current codebase. Only two new dependencies are needed: react-hook-form for managing selective field updates with minimal re-renders, and @hookform/resolvers to integrate with the existing Zod validation.
+No new libraries required. The existing stack handles everything.
 
 **Core technologies:**
 
-- **react-hook-form ^7.71.1:** Selective field updates, form state management — isolated re-renders critical for forms with many selectable fields
-- **@hookform/resolvers ^3.9.1:** Zod resolver for RHF — bridges existing Zod validation with form handling
-- **fuzzysort ^3.1.0 (existing):** Fuzzy matching for search results — already installed, perfect for title matching
-- **allotment ^1.20.4 (existing):** Resizable split panels — already used in SplitMosaic.tsx, provides VS Code-style comparison view
-- **@radix-ui/react-dialog (existing):** Modal dialogs — foundation for correction workflow UI
-- **vaul (existing):** Bottom sheets for mobile — enables mobile admin experience
+- **Canvas API** (native): Pixelation via downscale/upscale with `imageSmoothingEnabled: false` - no library overhead
+- **CSS filter: blur()** (native): Hardware-accelerated blur reveal - trivial implementation, smooth transitions
+- **Zustand with persist** (existing): State management with localStorage persistence - already in use for multiple stores
+- **Cloudflare Images** (existing): CORS-safe image delivery via `cloudflareImageId` - avoids tainted canvas errors
+- **BullMQ** (existing): Daily challenge selection via scheduled job at UTC midnight
 
-**Avoid adding:**
+**Avoid:**
 
-- react-diff-viewer-continued: React 19 compatibility issues
-- Formik: Poor performance for selective field forms
-- New modal/drawer libraries: Project already has Dialog and vaul
+- Konva.js/fabric.js: 50KB+ overhead for two simple effects
+- Cloudflare blur transforms: URL parameters can be stripped by users, unsuitable for game mechanics
+- Server-side image processing: Adds latency and cost when client-side is instant
 
 ### Expected Features
 
 **Must have (table stakes):**
 
-- Search MusicBrainz by query with match scores displayed
-- Side-by-side preview comparison with changed fields highlighted
-- Field selection checkboxes before apply (granular control)
-- Confirmation step with summary of changes
-- Atomic database updates via Prisma transactions
-- Correction logging for audit trail
-- Manual field editing mode for quick typo fixes
+- Single daily puzzle, same for all players
+- 5-6 guess limit with progressive reveal
+- Autocomplete search against album database
+- Win/lose state with answer reveal
+- Streak tracking (current + max)
+- Guess distribution statistics
+- Spoiler-free emoji share grid
+- One-click copy to clipboard
 
 **Should have (competitive):**
 
-- Re-enrichment trigger after correction
-- Artist correction workflow (parallel to album)
-- External ID validation (UUID format check)
-- Keyboard shortcuts for power users
-- Recent corrections quick-access
+- "Discover this album" CTA after game (unique platform advantage)
+- Year arrow feedback on wrong guess (older/newer hint)
+- Genre/decade hints as progressive reveal
+- Archive mode for past puzzles
+- Streak freeze mechanism (earned reward)
 
 **Defer (v2+):**
 
-- Bulk correction queue — each album needs human verification
-- Multi-source merging (Discogs + MusicBrainz) — conflict resolution is complex
-- Auto-suggestion without user action — false positives damage trust
-- User-submitted corrections — requires moderation queue
+- Multiple game modes (hard mode, speed mode)
+- Friends leaderboard
+- Timer mode
+- Push notifications
+- Custom puzzle creator
 
 ### Architecture Approach
 
-The correction feature integrates as an extension of the existing enrichment system rather than a parallel path. It uses the same GraphQL API layer, same queue service for rate limiting, and same logging infrastructure. The new `CorrectionService` orchestrates the search/preview/apply workflow, delegates to existing `QueuedMusicBrainzService` for API calls, and extends the `previewAlbumEnrichment` pattern for generating diffs.
+The architecture follows a hybrid state model: client-side game state (Zustand + localStorage) for immediate UX with server-side persistence for authenticated users. The daily challenge is generated by a BullMQ scheduled job at UTC midnight, selecting from albums that have `cloudflareImageId` and `dataQuality >= MEDIUM`. The data model introduces four new Prisma models: `DailyChallenge` (one per day), `GameSession` (one per user per challenge), `GameGuess` (one per attempt), and `PlayerGameStats` (denormalized aggregates for fast lookup).
 
 **Major components:**
 
-1. **CorrectionService** (`/src/lib/correction/correction-service.ts`) — orchestrates search, preview, and apply workflow
-2. **CorrectionPreview** (`/src/lib/correction/correction-preview.ts`) — generates field-by-field diff, extends existing preview-enrichment pattern
-3. **ApplyCorrection** (`/src/lib/correction/apply-correction.ts`) — atomic database updates with transaction, creates audit log
-4. **Correction Resolvers** (`/src/lib/graphql/resolvers/correction-resolvers.ts`) — thin GraphQL resolvers delegating to service layer
-5. **CorrectionSearchModal** (`/src/components/admin/`) — UI for search and preview, extends EnrichmentPreviewResults
-
-**Key pattern:** Reuse the existing `PreviewEnrichmentResult` type which already contains `fieldsToUpdate: EnrichmentFieldDiff[]`, `matchScore`, and `rawData`. No need for new preview types.
+1. **Challenge Service** - Daily album selection, scheduling, admin queue management
+2. **Session Service** - Game state management, start/resume logic, optimistic locking via `playedAt`
+3. **Guess Service** - Validation, hint progression, server-side answer comparison
+4. **Stats Service** - Streak calculation, distribution updates, leaderboard queries
 
 ### Critical Pitfalls
 
-1. **MusicBrainz ID Instability** — MBIDs redirect after community merges. Always compare returned MBID against requested MBID after every API call. Build verification into the core search flow from Phase 1.
+1. **Answer exposed in frontend code** - NEVER send correct album to client before completion; use server-side validation only. Wordle was publicly exploited for this vulnerability.
 
-2. **Wrong Prisma Client in Transactions** — Using global `prisma` instead of `tx` parameter inside `$transaction` causes connection leaks. Establish convention: always use `tx` exclusively inside callbacks, never `prisma`.
+2. **Timezone desync causes streak loss** - Use UTC everywhere, reset at UTC midnight, allow 25-hour grace period between plays. Document reset time clearly for users.
 
-3. **Rate Limit Bursts from Admin Sessions** — Admin search sessions can queue dozens of jobs. Implement job priority levels (admin HIGH, background LOW), add UI debouncing (300ms), show queue position to admin.
+3. **Canvas tainted by CORS** - Only use Cloudflare Images (already have `cloudflareImageId` on albums) for game images. External URLs will break pixelation effects.
 
-4. **Orphaned Related Records** — Correcting album without updating AlbumArtist and Track tables creates data inconsistency. Define correction as complete entity replacement in a single transaction.
+4. **localStorage hydration mismatch** - Use Zustand's `skipHydration: true` and manual rehydrate in useEffect. Server renders default state, client hydrates with localStorage.
 
-5. **No Rollback Path** — Without audit logging, bad corrections cannot be undone. Store complete before-state in `EnrichmentLog` with `operation: 'MANUAL_CORRECTION'` before any apply action.
+5. **Safari clears localStorage aggressively** - Store authoritative state server-side for authenticated users; localStorage is cache only. Prevents streak loss for 15%+ of mobile users.
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-### Phase 1: Foundation and Queue Infrastructure
+### Phase 1: Foundation
 
-**Rationale:** Queue priority and MBID verification must exist before any UI work. These are foundational patterns that everything else depends on.
-**Delivers:** Queue priority system for admin requests, MBID verification utility, job idempotency via explicit jobIds
-**Addresses:** Search MusicBrainz by query, search result match scores
-**Avoids:** Rate limit bursts, MBID instability
+**Rationale:** Security and timezone decisions must be baked into architecture from day one. Changing these later requires full rewrites. Canvas CORS handling must be validated before building reveal mechanics.
+**Delivers:** Database schema, BullMQ challenge scheduler, Cloudflare image validation
+**Addresses:** Single daily puzzle (table stakes), consistent reset time
+**Avoids:** Answer exposure pitfall, timezone desync pitfall, CORS tainted canvas pitfall
+**Research flag:** SKIP - well-documented patterns from Wordle clones
 
-### Phase 2: Service Layer and Correction Logic
+### Phase 2: Image Reveal Prototype
 
-**Rationale:** Business logic must be complete before UI can be built. Transaction patterns and entity replacement logic are complex and need isolation.
-**Delivers:** CorrectionService, CorrectionPreview, ApplyCorrection with atomic transactions, audit logging
-**Uses:** react-hook-form, @hookform/resolvers, existing QueuedMusicBrainzService
-**Implements:** Complete entity replacement (Album + AlbumArtist + Track in one transaction)
-**Avoids:** Orphaned records, wrong Prisma client in transactions
+**Rationale:** The two reveal styles (pixelation vs blur) have different UX feels and performance characteristics. Must prototype both before committing to UI implementation. Blur performance varies wildly by browser (Firefox issue documented).
+**Delivers:** `ObscuredAlbumImage` component with both reveal modes, performance testing across browsers
+**Uses:** Canvas API, CSS filter, existing AlbumImage patterns
+**Implements:** Core visual mechanic
+**Avoids:** Blur performance pitfall, high-DPI blurriness pitfall, image not loaded pitfall
+**Research flag:** SKIP - MDN documentation is authoritative
 
-### Phase 3: GraphQL Integration
+### Phase 3: Game State Management
 
-**Rationale:** GraphQL schema and resolvers depend on service layer being complete. Codegen needs final types.
-**Delivers:** New GraphQL types (MusicBrainzSearchResult, ApplyCorrectionInput), mutations (searchMusicBrainzForCorrection, previewCorrection, applyCorrection)
-**Uses:** Generated hooks from codegen
-**Implements:** Thin resolvers delegating to CorrectionService
+**Rationale:** Depends on Phase 1 schema. State management patterns (Zustand persist, hydration) must be correct before building UI that depends on them.
+**Delivers:** `useDailyGameStore`, server/client sync for authenticated users, localStorage fallback for anonymous
+**Uses:** Zustand with persist middleware (existing pattern)
+**Implements:** Session tracking, guess history, hint progression
+**Avoids:** Hydration mismatch pitfall, Safari localStorage pitfall
+**Research flag:** SKIP - existing Zustand patterns in codebase
 
-### Phase 4: UI and Preview Components
+### Phase 4: Guess Input and Validation
 
-**Rationale:** UI is the final layer, depends on all backend work being complete. Uses generated GraphQL hooks.
-**Delivers:** CorrectionSearchModal, side-by-side comparison panel, field selection UI, confirmation dialog
-**Addresses:** Side-by-side preview, field highlighting, field selection, confirmation step, manual field editing
-**Avoids:** Incomplete comparison UI (must show ALL fields that will change)
+**Rationale:** Autocomplete search already exists in codebase (SimpleSearchBar, UniversalSearchBar). Server-side validation is critical path for security.
+**Delivers:** Album autocomplete integrated with game flow, server-side guess validation
+**Addresses:** Autocomplete search (table stakes)
+**Avoids:** Autocomplete reveals answer pitfall (randomize order, require 3+ chars)
+**Research flag:** SKIP - extending existing search components
 
-### Phase 5: Polish and Recovery
+### Phase 5: Streaks and Statistics
 
-**Rationale:** Rollback and recovery features can be added once core workflow is proven. Lower priority than MVP functionality.
-**Delivers:** Revert functionality from audit log, recent corrections view, keyboard shortcuts
-**Addresses:** Re-enrichment trigger, error feedback with specifics
+**Rationale:** Depends on completed game state system from Phase 3. Streak logic must handle timezone edge cases correctly.
+**Delivers:** `PlayerGameStats` updates, streak calculation, win distribution histogram
+**Addresses:** Streak tracking, guess distribution (table stakes)
+**Uses:** Prisma transactions for atomic stat updates
+**Research flag:** SKIP - straightforward database aggregations
+
+### Phase 6: Share and Discovery
+
+**Rationale:** Share grid is critical for virality but depends on completed game flow. Discovery integration is the unique differentiator.
+**Delivers:** Emoji share grid, clipboard copy, "Discover Album" CTA, collection integration
+**Addresses:** Spoiler-free share (table stakes), discovery integration (differentiator)
+**Research flag:** SKIP - standard clipboard API and existing album detail pages
 
 ### Phase Ordering Rationale
 
-- **Foundation first:** Queue priority and MBID verification are required by every subsequent phase. Building these first prevents rework.
-- **Service before UI:** The existing codebase follows thin-resolver pattern — all business logic in services. UI depends on generated hooks which depend on GraphQL which depends on services.
-- **Transaction patterns before mutations:** Establishing `tx` convention in Phase 2 prevents connection leak bugs that are hard to debug later.
-- **Audit logging before apply UI:** Recovery depends on before-state being captured. Building audit logging in Phase 2 ensures it exists when Phase 4 implements apply.
+- **Security first:** Phases 1 and 4 establish server-side validation before any UI exposes game flow
+- **Prototype early:** Phase 2 validates the core visual mechanic before heavy investment in UI
+- **Dependencies respected:** Phase 3 depends on Phase 1 schema; Phase 5 depends on Phase 3 state
+- **Differentiators last:** Phase 6 adds unique platform value once core game works
+- **Pitfall mapping:** Each phase explicitly addresses pitfalls from research
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
+**Phases needing deeper research during planning:** None - all patterns are well-documented or exist in codebase
 
-- **Phase 4 (UI):** Mobile comparison layout patterns — how to stack side-by-side on narrow screens. The app has mobile routes at /m/ that need accommodation.
+**Phases with standard patterns (skip /gsd:research-phase):**
 
-Phases with standard patterns (skip research-phase):
-
-- **Phase 1:** Queue priority is standard BullMQ pattern, well-documented
-- **Phase 2:** Prisma transactions are well-documented, existing codebase has examples
-- **Phase 3:** GraphQL patterns established in codebase, follow existing resolver patterns
-- **Phase 5:** Standard CRUD patterns for viewing/reverting from audit log
+- **Phase 1:** Wordle-style daily game architecture is extensively documented
+- **Phase 2:** Canvas API and CSS filter usage covered by MDN
+- **Phase 3:** Zustand persist patterns already implemented in this codebase
+- **Phase 4:** Search components already exist, just need integration
+- **Phase 5:** Standard database aggregations
+- **Phase 6:** Clipboard API and existing UI patterns
 
 ## Confidence Assessment
 
-| Area         | Confidence | Notes                                                                               |
-| ------------ | ---------- | ----------------------------------------------------------------------------------- |
-| Stack        | HIGH       | Verified via GitHub releases, React 19 compatibility confirmed, only 2 new deps     |
-| Features     | HIGH       | Based on MusicBrainz Picard patterns, admin UX literature, competitor analysis      |
-| Architecture | HIGH       | Extends existing codebase patterns, minimal new infrastructure                      |
-| Pitfalls     | HIGH       | Verified via MusicBrainz official docs, real-world MBID issue articles, Prisma docs |
+| Area | Confidence | Notes |
+|------|------------|-------|
+| Stack | HIGH | No new libraries needed; Canvas API and CSS filter well-documented by MDN |
+| Features | HIGH | Wordle/Framed/Heardle provide clear template; 10+ games researched |
+| Architecture | HIGH | Follows existing Prisma/GraphQL/Zustand patterns in codebase |
+| Pitfalls | HIGH | Verified with official security research, Mozilla bugs, game developer accounts |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Mobile admin experience:** Research covered mobile routes exist (/m/) but didn't deeply explore mobile-specific comparison UI patterns. Address during Phase 4 implementation.
-- **Multi-admin scenarios:** Research focused on single-admin usage. If multiple admins use correction feature simultaneously, queue contention may need per-user throttling (BullMQ Pro groups).
-- **Large album catalogs:** Performance at scale (100k+ albums) needs validation during implementation. Existing indexes on musicbrainzId should help, but monitoring needed.
+- **Album selection criteria:** Need to define filters for eligible challenge albums (data quality, cover art availability, genre diversity)
+- **Hint progression order:** Exact sequence of progressive hints (genre first? year? track count?) needs UX decision
+- **Share format:** Specific emoji grid design (what emoji represents each guess state) needs design input
+- **Anonymous play scope:** Decide if fully anonymous play is supported or if auth is required for stats
 
 ## Sources
 
 ### Primary (HIGH confidence)
 
-- [MusicBrainz API Documentation](https://musicbrainz.org/doc/MusicBrainz_API) — rate limiting, User-Agent requirements
-- [MusicBrainz Picard Quick Start](https://picard.musicbrainz.org/quick-start/) — workflow patterns, preview interface
-- [React Hook Form GitHub Releases](https://github.com/react-hook-form/react-hook-form/releases) — v7.71.1 Jan 2025, React 19 compatible
-- [Prisma Transaction Documentation](https://www.prisma.io/docs/orm/prisma-client/queries/transactions) — transaction patterns
-- [BullMQ Rate Limiting Documentation](https://docs.bullmq.io/guide/rate-limiting) — queue configuration
-- Existing codebase analysis — `/src/lib/musicbrainz/`, `/src/lib/enrichment/`, `/prisma/schema.prisma`
+- MDN: Canvas API, cross-origin images, CSS filter, devicePixelRatio, image-rendering
+- Zustand documentation: persist middleware, skipHydration pattern
+- Mozilla Bugzilla: CSS blur performance issues (Bug 925025, Bug 1498291)
+- SiliconANGLE: Wordle API vulnerability disclosure
 
 ### Secondary (MEDIUM confidence)
 
-- [LogRocket RHF vs React 19](https://blog.logrocket.com/react-hook-form-vs-react-19/) — form handling comparison Apr 2025
-- [MusicBrainz ID Instability Article](https://eve.gd/2025/10/09/using-a-public-api-or-the-instability-of-musicbrainz-ids/) — real-world MBID issues
-- [NN/g Comparison Tables](https://www.nngroup.com/articles/comparison-tables/) — side-by-side UX principles
-- [Basis Design System Bulk Editing](https://design.basis.com/patterns/bulk-editing) — admin UX patterns
+- Wordle Wikipedia: Core mechanics, viral statistics (23.5M tweets)
+- Framed, Heardle, Gamedle: Feature comparison, progressive reveal patterns
+- Josh Comeau: localStorage React patterns
+- Chess.com forums: Streak reset user complaints (timezone issues)
 
 ### Tertiary (LOW confidence)
 
-- [react-diff-viewer-continued React 19 Issue](https://github.com/Aeolun/react-diff-viewer-continued/issues/63) — compatibility issue, may be resolved by implementation time
+- The Daily Spell devlog: Safari localStorage clearing (single developer account, but validated by Apple ITP documentation)
+- Unity discussions: Daily game seed generation patterns
 
 ---
 
-_Research completed: 2026-01-23_
+_Research completed: 2026-02-12_  
 _Ready for roadmap: yes_

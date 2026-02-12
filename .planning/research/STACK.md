@@ -1,304 +1,283 @@
-# Stack Research: Admin Data Correction UI
+# Stack Research: Daily Album Art Game
 
-**Domain:** Admin data correction/enrichment UI for music database
-**Researched:** 2026-01-23
-**Overall Confidence:** HIGH
+**Project:** rec - Daily Album Art Guessing Game Feature
+**Researched:** 2026-02-12
+**Mode:** Ecosystem (stack additions for new feature)
 
 ## Executive Summary
 
-This research covers the optimal stack for building an admin data correction feature that allows fixing problematic albums/artists by searching MusicBrainz, previewing data side-by-side, and applying selective corrections. The project already has excellent foundations (fuzzysort, Radix UI, Zod, vaul drawer) that should be leveraged rather than replaced.
+The daily album art guessing game requires **client-side image manipulation** for pixelation/blur effects and **persistent game state** for daily challenges and streaks. The existing stack already provides most infrastructure needed. Only minimal additions are required.
 
-**Key finding:** Most required functionality can be achieved with existing dependencies plus minimal additions. The main gap is form handling for selective field updates, which React Hook Form fills perfectly.
-
----
-
-## Recommended Stack
-
-### Core Technologies (Already in Project)
-
-**Technology:** fuzzysort ^3.1.0
-
-- **Purpose:** Fuzzy string matching for album/artist search results ranking
-- **Why Recommended:** Already installed. Fastest fuzzy search library (13k files in <1ms). Perfect for matching user's local album titles against MusicBrainz results. Simpler API than Fuse.js with excellent scoring for file/title matching.
-- **Confidence:** HIGH (verified via GitHub, already in package.json)
-
-**Technology:** @radix-ui/react-dialog ^1.1.14
-
-- **Purpose:** Modal dialogs for correction workflows
-- **Why Recommended:** Already installed. Industry-standard accessibility, focus trapping, portal rendering. Foundation for the correction modal/panel UI.
-- **Confidence:** HIGH (already in project)
-
-**Technology:** vaul ^1.1.2
-
-- **Purpose:** Bottom sheet/drawer for mobile correction workflows
-- **Why Recommended:** Already installed. Smooth gesture-based drawers that work well for mobile admin interfaces. Can be used for correction panels that slide up from bottom.
-- **Confidence:** HIGH (already in project)
-
-**Technology:** zod ^3.25.67
-
-- **Purpose:** Schema validation for correction form data
-- **Why Recommended:** Already installed. Type-safe validation with excellent TypeScript inference. Integrates seamlessly with React Hook Form via @hookform/resolvers.
-- **Confidence:** HIGH (already in project)
-
-**Technology:** allotment ^1.20.4
-
-- **Purpose:** Resizable split panels for side-by-side comparison
-- **Why Recommended:** Already installed (used in SplitMosaic.tsx). VS Code-derived codebase, industry-standard look and feel. Perfect for showing current data vs MusicBrainz data side-by-side with resizable panels.
-- **Confidence:** HIGH (already in project, actively maintained)
-
-### New Dependencies Required
-
-**Library:** react-hook-form
-
-- **Version:** ^7.71.1
-- **Purpose:** Selective field updates, form state management
-- **Why Recommended:**
-  - Uncontrolled inputs with refs = minimal re-renders (critical for forms with many fields)
-  - Native `watch()` and `setValue()` for selective field updates
-  - `useFieldArray` for dynamic field management
-  - 8.6kb minified+gzipped, zero dependencies
-  - Seamless Zod integration via @hookform/resolvers
-  - Outperforms Formik significantly for partial updates (isolates re-renders to changed fields)
-- **When to Use:** All correction forms where admin selects which fields to update
-- **Confidence:** HIGH (verified GitHub releases, v7.71.1 released Jan 2025, React 19 compatible)
-
-**Library:** @hookform/resolvers
-
-- **Version:** ^3.9.1
-- **Purpose:** Zod resolver for React Hook Form validation
-- **Why Recommended:** Official resolver package from React Hook Form team. Bridges RHF and Zod for type-safe validation. Supports Zod v4.
-- **When to Use:** Any form using React Hook Form with Zod schemas
-- **Confidence:** HIGH (verified GitHub, actively maintained)
-
-### UI Components Pattern (No New Dependencies)
-
-**Pattern:** Custom side-by-side comparison component
-
-- **Purpose:** Visual diff of current vs MusicBrainz data
-- **Why Recommended:**
-  - Dedicated diff libraries (react-diff-viewer-continued) have React 19 compatibility issues (open GitHub issue #63)
-  - Project's use case is field-by-field comparison, not text diff
-  - Custom component using existing Tailwind + Radix primitives is simpler and more maintainable
-  - Full control over styling and behavior
-- **Implementation approach:**
-  - Use allotment for resizable split view
-  - Custom `ComparisonField` component showing old/new values with visual indicators
-  - Highlight changed fields with color coding (red=changed, green=new, gray=unchanged)
-- **Confidence:** HIGH (avoids dependency with known issues, leverages existing stack)
-
-### Panel/Modal Pattern (No New Dependencies)
-
-**Pattern:** Radix Dialog with Sheet-style variants
-
-- **Purpose:** Correction workflow modal/panel
-- **Why Recommended:**
-  - Existing @radix-ui/react-dialog supports overlay, focus trapping, portal rendering
-  - Can be styled as full-screen panel or slide-over sheet with Tailwind
-  - Existing vaul drawer handles mobile bottom-sheet pattern
-  - No need for additional dependencies
-- **Implementation approach:**
-  - Desktop: Large Radix Dialog (80% viewport) with split comparison view
-  - Mobile: Vaul drawer with stacked comparison (current → new)
-- **Confidence:** HIGH (uses existing dependencies)
+**Key Decision:** Use **native Canvas API + CSS filters** instead of adding a library like Konva. The pixelation and blur effects needed are simple enough that adding a 50KB+ library is unnecessary overhead.
 
 ---
 
-## Installation
+## Recommended Stack Additions
 
-```bash
-# New dependencies only
-pnpm add react-hook-form @hookform/resolvers
+### Image Manipulation: NO NEW LIBRARIES NEEDED
 
-# Everything else is already installed:
-# - fuzzysort (fuzzy matching)
-# - @radix-ui/react-dialog (modals)
-# - vaul (drawers)
-# - allotment (split panels)
-# - zod (validation)
-# - lucide-react (icons)
+**Recommendation:** Native Canvas API for pixelation, CSS `filter: blur()` for blur effects.
+
+**Rationale:**
+- The game needs only two effects: pixelation and blur
+- Canvas API handles pixelation natively via `drawImage()` with scaling + `imageSmoothingEnabled: false`
+- CSS `filter: blur(Xpx)` is hardware-accelerated and trivially simple
+- Konva.js (50KB+ gzipped) would be overkill for these two effects
+- No dependency maintenance, no version conflicts
+
+### Game State Persistence: USE EXISTING ZUSTAND
+
+**Recommendation:** Continue using Zustand with `persist` middleware (already in use).
+
+**Already in package.json:** `"zustand": "^5.0.8"`
+
+**Rationale:**
+- Project already uses Zustand persist pattern in multiple stores
+- localStorage persistence matches Wordle-style daily game pattern
+- Existing code patterns in `useSearchStore.ts`, `useTourStore.ts` provide templates
+- No new dependencies needed
+
+### Daily Challenge Seed: Date-Based Deterministic Selection
+
+**Recommendation:** Use `Date` + simple hash for daily album selection (no library needed).
+
+**Rationale:**
+- Daily games like Wordle use client-side date-based word selection
+- Simple formula: `albumIndex = hash(dateString) % totalAlbums`
+- Can use existing database album pool
+- No need for server-side scheduling for MVP
+
+---
+
+## Image Manipulation Approach
+
+### Approach A: CSS Blur (Recommended for Blur Style)
+
+**Implementation:**
+```tsx
+// Simple CSS filter approach
+<div 
+  className="transition-all duration-500"
+  style={{ filter: `blur(${20 - revealLevel * 4}px)` }}
+>
+  <AlbumImage src={album.coverUrl} cloudflareImageId={album.cloudflareImageId} />
+</div>
 ```
 
+**Pros:**
+- Hardware accelerated in modern browsers
+- Trivial implementation
+- Smooth CSS transitions built-in
+- Works directly with existing AlbumImage component
+
+**Cons:**
+- Not "pixelation" - different visual style
+- Heavy blur (20px+) on large images can cause performance issues on mobile
+- Users can inspect element and remove filter (not a real security concern for a game)
+
+### Approach B: Canvas Pixelation (Recommended for Pixelate Style)
+
+**Implementation:**
+```tsx
+// Canvas downscale + upscale for pixelation
+const pixelateImage = (img: HTMLImageElement, pixelSize: number): string => {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d')!;
+  
+  // Set final size
+  canvas.width = img.width;
+  canvas.height = img.height;
+  
+  // Disable smoothing for crisp pixels
+  ctx.imageSmoothingEnabled = false;
+  
+  // Draw at tiny size
+  const smallWidth = Math.max(1, Math.floor(img.width / pixelSize));
+  const smallHeight = Math.max(1, Math.floor(img.height / pixelSize));
+  ctx.drawImage(img, 0, 0, smallWidth, smallHeight);
+  
+  // Scale back up with no smoothing = pixelated
+  ctx.drawImage(canvas, 0, 0, smallWidth, smallHeight, 0, 0, img.width, img.height);
+  
+  return canvas.toDataURL();
+};
+```
+
+**Pros:**
+- True pixelation effect (matches classic guessing games)
+- Full control over pixel block size
+- One-time computation, result is static image
+
+**Cons:**
+- Requires CORS handling for external images
+- Slightly more complex implementation
+
+### CORS Considerations for Canvas
+
+**Critical:** Canvas `drawImage()` with external images requires CORS headers. If the image server doesn't send `Access-Control-Allow-Origin`, the canvas becomes "tainted" and `toDataURL()` throws a security error.
+
+**Cloudflare Images:** Already configured with proper CORS headers for this domain. Verify by checking network response headers for `Access-Control-Allow-Origin: *` or specific domain.
+
+**Fallback:** If CORS fails, use CSS blur approach which doesn't have this limitation.
+
+### Recommendation
+
+**Prototype both approaches:**
+1. **CSS Blur** for "blur-to-clear" reveal style - simpler, guaranteed to work
+2. **Canvas Pixelation** for "pixelate-to-tile-reveal" style - better visual effect
+
+The game design document mentions prototyping both. Start with CSS blur (easier), add Canvas pixelation if blur feels too easy to "see through."
+
 ---
 
-## Alternatives Considered
+## Integration Points
 
-**Recommended:** react-hook-form
+### Cloudflare Images
 
-- **Alternative:** Formik
-- **When to Use Alternative:** Large enterprise teams valuing explicit APIs over performance. Not recommended here because RHF's isolated re-renders are critical for a form with many selectable fields.
+**Current:** AlbumImage component already handles Cloudflare image URLs with `cloudflareImageId`.
 
-**Recommended:** fuzzysort (keep existing)
+**For Game:**
+- Cloudflare blur parameter (`?blur=250`) exists but is NOT recommended
+  - Users can modify URL to remove blur
+  - Maximum blur (250) may not be sufficient for game
+- Use client-side effects instead for game integrity
 
-- **Alternative:** Fuse.js
-- **When to Use Alternative:** Need weighted multi-field search with complex scoring. Not needed here - fuzzysort's simpler API and better performance for title matching is sufficient.
+**Cloudflare does NOT have pixelation parameter** - must be client-side.
 
-**Recommended:** Custom comparison component
+### AlbumImage Component
 
-- **Alternative:** react-diff-viewer-continued
-- **When to Use Alternative:** Need line-by-line text diff (like code review). Not suitable here because: (1) React 19 compatibility issues, (2) field-by-field comparison is the actual need, not text diff.
+**Current implementation path:** `src/components/ui/AlbumImage.tsx`
 
-**Recommended:** allotment (keep existing)
+**Integration approach:**
+- Create new `ObscuredAlbumImage` wrapper component
+- Accepts `revealLevel` (0-5) and `style` ('blur' | 'pixelate')
+- Wraps existing AlbumImage with effect layer
+- Preserves all AlbumImage props (cloudflareImageId, fallback, etc.)
 
-- **Alternative:** react-resizable-panels (also in project)
-- **When to Use Alternative:** Either works. allotment is already used in SplitMosaic.tsx, prefer consistency.
+### Zustand Persist Pattern
 
-**Recommended:** Radix Dialog + custom sheet styling
+**Existing pattern in codebase:**
+```typescript
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
-- **Alternative:** @radix-ui/react-sheet (shadcn pattern)
-- **When to Use Alternative:** Need official sheet component. However, Dialog + Tailwind animation achieves same result without new dependency.
+export const useDailyGameStore = create<GameState>()(
+  persist(
+    (set, get) => ({
+      // state and actions
+    }),
+    {
+      name: 'daily-album-game',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        // Only persist these fields
+        currentStreak: state.currentStreak,
+        maxStreak: state.maxStreak,
+        lastPlayedDate: state.lastPlayedDate,
+        todayGuesses: state.todayGuesses,
+        todayCompleted: state.todayCompleted,
+      }),
+    }
+  )
+);
+```
+
+**Key patterns from existing stores:**
+- Use `partialize` to exclude transient state from persistence
+- Use `sessionStorage` for ephemeral state, `localStorage` for persistent stats
+- Factory pattern (like correction stores) NOT needed - single global game state
 
 ---
 
-## What NOT to Use
+## Avoid Adding
 
-**Avoid:** react-diff-viewer or react-diff-viewer-continued
+### Konva.js / react-konva
+**Why not:** Adds 50KB+ for two simple effects. Canvas API is sufficient.
 
-- **Why:** React 19 peer dependency not yet supported (GitHub issue #63 open since Feb 2025). Overkill for field comparison - designed for text/code diff, not structured data comparison.
-- **Use Instead:** Custom `ComparisonField` component with Tailwind styling
+### fabric.js
+**Why not:** Even heavier than Konva. Designed for complex canvas editing, not simple filters.
 
-**Avoid:** Formik
+### Server-side image processing
+**Why not:** Adds latency, server cost, complexity. Client-side effects are instant.
 
-- **Why:** Re-renders entire form on any field change. Performance degrades with many fields. Larger bundle (44kb vs 8.6kb). Project already uses Zod which integrates better with RHF.
-- **Use Instead:** react-hook-form with @hookform/resolvers/zod
+### Cloudflare Image Transforms for blur
+**Why not:** URL parameters can be stripped by users. Not suitable for game mechanics.
 
-**Avoid:** Fuse.js (for this use case)
+### Additional state management
+**Why not:** Zustand already in use with persist middleware. No need for Redux, Jotai, etc.
 
-- **Why:** Already have fuzzysort installed. Fuse.js is slower and more complex for simple title matching. Its advantages (weighted fields, extended search) aren't needed here.
-- **Use Instead:** Keep using fuzzysort ^3.1.0
-
-**Avoid:** Adding new modal/drawer libraries
-
-- **Why:** Project already has @radix-ui/react-dialog and vaul. Adding another modal library creates inconsistency and bloat.
-- **Use Instead:** Existing Dialog/Drawer components with custom styling
-
-**Avoid:** React 19 native form actions (for this use case)
-
-- **Why:** Great for simple forms with server actions. Admin correction UI needs complex client-side state: selective field toggling, preview before submit, undo capability. RHF handles this better.
-- **Use Instead:** react-hook-form for complex client-side form state
+### next-lqip-images or similar
+**Why not:** These are for loading placeholders, not game mechanics. Different use case.
 
 ---
 
-## Stack Patterns by Feature
-
-### Fuzzy Search for MusicBrainz Results
+## Game State Schema (for reference)
 
 ```typescript
-import fuzzysort from 'fuzzysort';
-
-// Score MusicBrainz results against local album title
-const scoredResults = fuzzysort.go(localAlbum.title, musicBrainzResults, {
-  key: 'title',
-  threshold: 0.3, // Adjust based on testing
-  limit: 10,
-});
-
-// Results include score (0-1) and highlighted matches
-scoredResults.forEach(result => {
-  console.log(result.score, result.target, result.highlight());
-});
-```
-
-### Selective Field Updates Form
-
-```typescript
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-
-const correctionSchema = z.object({
-  title: z.object({
-    selected: z.boolean(),
-    value: z.string(),
-  }),
-  artist: z.object({
-    selected: z.boolean(),
-    value: z.string(),
-  }),
-  releaseDate: z.object({
-    selected: z.boolean(),
-    value: z.string().optional(),
-  }),
-  // ... other fields
-});
-
-type CorrectionForm = z.infer<typeof correctionSchema>;
-
-const { register, watch, setValue, handleSubmit } = useForm<CorrectionForm>({
-  resolver: zodResolver(correctionSchema),
-  defaultValues: {
-    title: { selected: false, value: musicBrainzData.title },
-    // ...
-  },
-});
-
-// Watch only selected fields for efficient re-renders
-const selectedFields = watch(['title.selected', 'artist.selected']);
-```
-
-### Side-by-Side Comparison Panel
-
-```typescript
-// Using allotment for resizable split view
-import { Allotment } from 'allotment';
-
-<Allotment>
-  <Allotment.Pane minSize={300}>
-    <CurrentDataPanel album={localAlbum} />
-  </Allotment.Pane>
-  <Allotment.Pane minSize={300}>
-    <MusicBrainzDataPanel
-      data={selectedMatch}
-      onFieldSelect={(field) => setValue(`${field}.selected`, true)}
-    />
-  </Allotment.Pane>
-</Allotment>
+interface DailyGameState {
+  // === Persisted to localStorage ===
+  
+  // Stats
+  currentStreak: number;
+  maxStreak: number;
+  gamesPlayed: number;
+  gamesWon: number;
+  guessDistribution: number[]; // [wins in 1 guess, wins in 2, ..., wins in 6]
+  
+  // Today's game
+  lastPlayedDate: string; // ISO date "2026-02-12"
+  todayGameIndex: number; // Which album from the pool
+  todayGuesses: string[]; // Album IDs guessed
+  todayCompleted: boolean;
+  todayWon: boolean;
+  
+  // === NOT persisted (computed/transient) ===
+  revealLevel: number; // 0-5, computed from todayGuesses.length
+  targetAlbum: Album | null; // Fetched based on todayGameIndex
+}
 ```
 
 ---
 
-## Version Compatibility Matrix
+## Confidence Assessment
 
-- react-hook-form@^7.71.1: Compatible with React 19, Zod 3.x
-- @hookform/resolvers@^3.9.1: Compatible with RHF 7.x, Zod 3.x and 4.x
-- fuzzysort@^3.1.0: No React dependency (pure JS)
-- allotment@^1.20.4: React 17-19 compatible (peer dependency)
-- @radix-ui/react-dialog@^1.1.14: React 18-19 compatible
-- vaul@^1.1.2: React 18-19 compatible
-- zod@^3.25.67: No React dependency
+| Area | Confidence | Notes |
+|------|------------|-------|
+| Canvas API for pixelation | HIGH | MDN docs, multiple verified tutorials |
+| CSS filter for blur | HIGH | MDN docs, hardware acceleration confirmed |
+| Zustand persist | HIGH | Already in use in this codebase |
+| Cloudflare CORS | MEDIUM | Assumed configured; verify in dev |
+| No library needed | HIGH | Effects are simple enough for native APIs |
 
 ---
 
 ## Sources
 
-**Fuzzy Matching:**
+**Canvas API & Pixelation:**
+- [MDN - Pixel manipulation with canvas](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Pixel_manipulation_with_canvas)
+- [IMG.LY - How to Pixelate an Image in JavaScript](https://img.ly/blog/how-to-pixelate-an-image-in-javascript/)
+- [Konva.js Pixelate Filter](https://konvajs.org/docs/filters/Pixelate.html) (reference, not recommended to use)
 
-- [fuzzysort GitHub](https://github.com/farzher/fuzzysort) - Version 3.1.0, performance characteristics
-- [npm-compare fuzzy libraries](https://npm-compare.com/fuse.js,fuzzy-search,fuzzysort) - Comparison analysis
+**CSS Blur:**
+- [MDN - blur() CSS function](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/filter-function/blur)
+- [MDN - CSS filter effects](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Filter_effects)
 
-**Form Handling:**
+**CORS & Canvas:**
+- [MDN - Use cross-origin images in a canvas](https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/CORS_enabled_image)
+- [Corsfix - Tainted Canvas](https://corsfix.com/blog/tainted-canvas)
 
-- [React Hook Form Releases](https://github.com/react-hook-form/react-hook-form/releases) - v7.71.1 (Jan 2025)
-- [React Hook Form Zod Integration](https://github.com/react-hook-form/resolvers) - @hookform/resolvers documentation
-- [LogRocket RHF vs React 19](https://blog.logrocket.com/react-hook-form-vs-react-19/) - Comparison and use cases (Apr 2025)
-- [Makers Den Form Handling 2025](https://makersden.io/blog/composable-form-handling-in-2025-react-hook-form-tanstack-form-and-beyond) - Current landscape
+**Cloudflare Images:**
+- [Cloudflare - Transform via URL](https://developers.cloudflare.com/images/transform-images/transform-via-url/)
+- [Cloudflare - Apply blur](https://developers.cloudflare.com/images/manage-images/blur-variants/)
 
-**Diff/Comparison:**
+**Zustand Persist:**
+- [Zustand - Persisting store data](https://zustand.docs.pmnd.rs/integrations/persisting-store-data)
+- [Zustand - persist middleware](https://zustand.docs.pmnd.rs/middlewares/persist)
 
-- [react-diff-viewer-continued React 19 Issue](https://github.com/Aeolun/react-diff-viewer-continued/issues/63) - Open issue since Feb 2025
-- [react-diff-viewer-continued GitHub](https://github.com/Aeolun/react-diff-viewer-continued) - v3.4.0, last update Jan 2024
+**Game State Patterns:**
+- [React Game Design: Recreating Wordle](https://www.rozmichelle.com/react-game-design-recreating-wordle/)
+- [Wordle in React: Picking Up Where We Left Off](https://cupofcode.blog/wordle-in-react-part-2/)
 
-**Panel/Modal Patterns:**
-
-- [Shadcn Sheet](https://www.shadcn.io/ui/sheet) - Sheet component patterns
-- [Radix UI Primitives](https://www.radix-ui.com/primitives) - Dialog documentation
-- [allotment GitHub](https://github.com/johnwalley/allotment) - v1.20.4, actively maintained
-
-**Project Dependencies:**
-
-- package.json analysis - Verified existing dependencies
-
----
-
-_Stack research for: Admin Data Correction UI_
-_Researched: 2026-01-23_
-_Next step: Use these recommendations in roadmap creation_
+**CSS image-rendering:**
+- [MDN - image-rendering](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/image-rendering)
+- [MDN - Crisp pixel art look](https://developer.mozilla.org/en-US/docs/Games/Techniques/Crisp_pixel_art_look)
