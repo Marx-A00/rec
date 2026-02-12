@@ -1,5 +1,39 @@
 # Milestones
 
+## v1.4 — LlamaLog Entity Provenance & Audit System
+
+**Shipped:** 2026-02-10
+**Phases:** 26–32 (7 phases, 11 plans)
+**Branch:** `feat/admin-enrich-UI`
+
+**What shipped:**
+
+- EnrichmentLog → LlamaLog rename with full schema migration
+- LlamaLogCategory enum (CREATED, ENRICHED, CORRECTED, CACHED, FAILED)
+- Album creation tracking from all entry points (addAlbum, Spotify sync, MusicBrainz sync)
+- Artist creation/linking logging as child jobs
+- Track creation logging as child jobs
+- rootJobId field for complete provenance chains
+- Llama branding in console (`[🦙 LlamaLog]`) and admin UI
+- llamaLogChain GraphQL query for entity provenance
+
+**Key accomplishments:**
+
+- Zero data loss during table rename migration
+- Category backfill via SQL CASE patterns (3770 ENRICHED, 266 CREATED, 15 CORRECTED, 1 CACHED)
+- Parent-child-root job hierarchy (parentJobId + rootJobId)
+- All entity creation paths now logged with full context
+
+**Stats:**
+
+- 7 phases, 11 plans
+- 2 days (2026-02-09 to 2026-02-10)
+- 34 requirements delivered
+
+**What's next:** v1.5 Daily Album Art Game
+
+---
+
 ## v1.3 — Discogs Correction Source
 
 **Shipped:** 2026-02-09
@@ -30,8 +64,6 @@
 - 5 phases, 15 plans
 - 2 days (2026-02-08 to 2026-02-09)
 - 17 requirements delivered
-
-**What's next:** v1.4 LlamaLog Entity Provenance & Audit System
 
 ---
 
