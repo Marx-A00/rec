@@ -777,10 +777,7 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
                     className='bg-red-600 hover:bg-red-700 text-white'
                   >
                     <Search className='w-3.5 h-3.5 mr-1.5' />
-                    Search{' '}
-                    {correctionSource === 'musicbrainz'
-                      ? 'MusicBrainz'
-                      : 'Discogs'}
+                    Search
                   </Button>
                   <Button
                     variant='outline'

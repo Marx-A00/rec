@@ -242,37 +242,38 @@ export function PreviewView({ albumId }: PreviewViewProps) {
         </button>
       </div>
 
+      {/* Comparison header - clarifies which album is which */}
+      <div className='text-sm text-zinc-400'>
+        Now comparing{' '}
+        <span className='text-zinc-100 font-medium'>{preview.albumTitle}</span>
+        <Badge
+          variant='outline'
+          className='ml-2 text-xs border-amber-600/50 text-amber-400'
+        >
+          REC Database
+        </Badge>
+        <span className='mx-2'>with</span>
+        <span className='text-zinc-100 font-medium'>{sourceResult?.title}</span>
+        {sourceResult?.disambiguation && (
+          <span className='text-zinc-500'>
+            {' '}
+            ({sourceResult.disambiguation})
+          </span>
+        )}
+        <Badge
+          variant='outline'
+          className='ml-2 text-xs border-zinc-600 text-zinc-300'
+        >
+          {correctionSource === 'musicbrainz' ? 'MusicBrainz' : 'Discogs'}
+        </Badge>
+      </div>
+
       {/* Header: Cover art comparison */}
       <CoverArtComparison
         currentUrl={coverArt?.currentUrl ?? null}
         sourceUrl={sourceResult?.coverArtUrl ?? coverArt?.sourceUrl ?? null}
         changeType={coverArt?.changeType ?? 'UNCHANGED'}
       />
-
-      {/* Album title + source info */}
-      <div className='border-b border-zinc-700 pb-4'>
-        <div className='flex items-center gap-2 mb-1'>
-          <h3 className='text-lg font-medium text-zinc-100'>
-            {preview.albumTitle}
-          </h3>
-          <Badge
-            variant='outline'
-            className='text-xs border-zinc-600 text-zinc-300'
-          >
-            {correctionSource === 'musicbrainz' ? 'MusicBrainz' : 'Discogs'}
-          </Badge>
-        </div>
-        <p className='text-sm text-zinc-400'>
-          Comparing with:{' '}
-          <span className='text-zinc-300'>{sourceResult?.title}</span>
-          {sourceResult?.disambiguation && (
-            <span className='text-zinc-500'>
-              {' '}
-              ({sourceResult.disambiguation})
-            </span>
-          )}
-        </p>
-      </div>
 
       {/* Accordion sections */}
       <Accordion

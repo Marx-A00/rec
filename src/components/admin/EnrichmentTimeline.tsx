@@ -129,9 +129,9 @@ function ExpandedDetails({ log }: ExpandedDetailsProps) {
           <div className='space-y-1'>
             <p className='font-medium text-zinc-300'>Fields Enriched:</p>
             <div className='flex flex-wrap gap-1'>
-              {log.fieldsEnriched.map(field => (
+              {log.fieldsEnriched.map((field, index) => (
                 <span
-                  key={field}
+                  key={`${field}-${index}`}
                   className='rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400'
                 >
                   {field}

@@ -227,13 +227,32 @@ export function transformSpotifyArtist(
 }
 
 /**
- * Find or create artist with deduplication logic (reuses existing pattern)
+ * Find or create artist with deduplication logic
+ *
+ * Search priority:
+ * 1. By spotifyId (most reliable - unique identifier from Spotify)
+ * 2. By name (case-insensitive fallback)
+ * 3. Create new if neither match
+ *
+ * This prevents duplicate artist records when Spotify returns slightly
+ * different names for the same artist (e.g., "Disney" vs "[Disney]")
  */
 export async function findOrCreateArtist(
   artistData: ArtistCreationData
 ): Promise<string> {
-  // Search for existing artist by name (case-insensitive)
-  const existingArtist = await prisma.artist.findFirst({
+  // 1. First, search by spotifyId if provided (most reliable match)
+  if (artistData.spotifyId) {
+    const existingBySpotifyId = await prisma.artist.findUnique({
+      where: { spotifyId: artistData.spotifyId },
+    });
+
+    if (existingBySpotifyId) {
+      return existingBySpotifyId.id;
+    }
+  }
+
+  // 2. Fallback: search by name (case-insensitive)
+  const existingByName = await prisma.artist.findFirst({
     where: {
       name: {
         equals: artistData.name,
@@ -242,26 +261,30 @@ export async function findOrCreateArtist(
     },
   });
 
-  if (existingArtist) {
-    console.log(
-      `🔄 Reusing existing artist: "${existingArtist.name}" (${existingArtist.id})`
-    );
-    return existingArtist.id;
+  if (existingByName) {
+    // Update spotifyId if we have one and the existing record doesn't
+    if (artistData.spotifyId && !existingByName.spotifyId) {
+      await prisma.artist.update({
+        where: { id: existingByName.id },
+        data: { spotifyId: artistData.spotifyId },
+      });
+    }
+
+    return existingByName.id;
   }
 
-  // Create new artist
+  // 3. Create new artist (no match found)
   const newArtist = await prisma.artist.create({
     data: {
       name: artistData.name,
-      spotifyId: artistData.spotifyId, // CRITICAL: Prevents duplicate artists
-      source: 'SPOTIFY', // CRITICAL: Mark source as Spotify, not MusicBrainz
+      spotifyId: artistData.spotifyId,
+      source: 'SPOTIFY',
       dataQuality: artistData.dataQuality,
       enrichmentStatus: artistData.enrichmentStatus,
       lastEnriched: artistData.lastEnriched,
     },
   });
 
-  console.log(`✨ Created new artist: "${newArtist.name}" (${newArtist.id})`);
   return newArtist.id;
 }
 
@@ -347,7 +370,10 @@ export async function processSpotifyAlbum(
       },
     });
   } catch (logError) {
-    console.warn(`[LlamaLogger] Failed to log Spotify album creation for ${album.id}:`, logError);
+    console.warn(
+      `[LlamaLogger] Failed to log Spotify album creation for ${album.id}:`,
+      logError
+    );
   }
 
   // 3. Tracks will be created later by MusicBrainz enrichment (not from Spotify)
@@ -705,7 +731,15 @@ export async function createTrackRecord(
       category: 'CREATED',
       sources: ['SPOTIFY'],
       status: 'SUCCESS',
-      fieldsEnriched: ['title', 'trackNumber', 'discNumber', 'durationMs', 'spotifyId', 'explicit', 'previewUrl'],
+      fieldsEnriched: [
+        'title',
+        'trackNumber',
+        'discNumber',
+        'durationMs',
+        'spotifyId',
+        'explicit',
+        'previewUrl',
+      ],
       jobId: trackJobId,
       parentJobId: jobContext?.parentJobId || null,
       rootJobId: jobContext?.rootJobId || null,

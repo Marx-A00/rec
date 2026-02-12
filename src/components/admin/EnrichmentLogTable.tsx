@@ -173,7 +173,10 @@ function ExpandableLogRow({
 
   return (
     <React.Fragment>
-      <TableRow className='border-zinc-800 cursor-pointer' onClick={onToggle}>
+      <TableRow
+        className='border-zinc-800 cursor-pointer hover:bg-transparent'
+        onClick={onToggle}
+      >
         <TableCell className='w-8 px-2'>
           {isExpanded ? (
             <ChevronDown className='h-4 w-4 text-zinc-400' />
@@ -295,43 +298,45 @@ function ExpandableLogRow({
       {isExpanded && (
         <TableRow className='border-zinc-800 bg-zinc-900/80 hover:bg-zinc-900/80'>
           <TableCell colSpan={10} className='p-0'>
-            <div className='p-4 max-h-96 overflow-y-auto custom-scrollbar'>
-              {loadingChildren ? (
-                <SkeletonTimeline itemCount={3} />
-              ) : childrenError ? (
-                <div className='py-4 text-center'>
-                  <p className='text-sm text-red-400'>
-                    Failed to load child jobs
-                  </p>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    onClick={e => {
-                      e.stopPropagation();
-                      refetchChildren();
-                    }}
-                    className='mt-2 text-xs'
-                  >
-                    Retry
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <EnrichmentTimeline
-                    logs={
-                      children.length > 0
-                        ? [log, ...(children as LlamaLog[])]
-                        : [log]
-                    }
-                    variant='compact'
-                    truncateChildren={5}
-                  />
-                  <EnrichmentTimelineModal
-                    parentLog={log}
-                    childLogs={children as LlamaLog[]}
-                  />
-                </>
-              )}
+            <div className='py-8 px-6 max-h-96 overflow-y-auto custom-scrollbar flex justify-center'>
+              <div className='max-w-3xl mx-auto'>
+                {loadingChildren ? (
+                  <SkeletonTimeline itemCount={3} />
+                ) : childrenError ? (
+                  <div className='py-4 text-center'>
+                    <p className='text-sm text-red-400'>
+                      Failed to load child jobs
+                    </p>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={e => {
+                        e.stopPropagation();
+                        refetchChildren();
+                      }}
+                      className='mt-2 text-xs'
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <EnrichmentTimeline
+                      logs={
+                        children.length > 0
+                          ? [log, ...(children as LlamaLog[])]
+                          : [log]
+                      }
+                      variant='compact'
+                      truncateChildren={5}
+                    />
+                    <EnrichmentTimelineModal
+                      parentLog={log}
+                      childLogs={children as LlamaLog[]}
+                    />
+                  </>
+                )}
+              </div>
             </div>
           </TableCell>
         </TableRow>

@@ -292,7 +292,9 @@ export class QueuedDiscogsService {
         }
       );
 
-      const result = await this.waitForJobViaEvents(job.id!);
+      // Use longer timeout for admin operations (2 minutes instead of 30s)
+      const timeoutMs = priority === PRIORITY_TIERS.ADMIN ? 120000 : 30000;
+      const result = await this.waitForJobViaEvents(job.id!, timeoutMs);
       return result as DiscogsMaster;
     } catch (error) {
       console.error('[QueuedDiscogsService] Master fetch failed:', error);

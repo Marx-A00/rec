@@ -2696,7 +2696,110 @@ export const queryResolvers: QueryResolvers = {
         strategy,
         lowConfidenceThreshold,
         source,
+        releaseGroupMbid,
+        discogsId,
       } = input;
+
+      // ================================================================
+      // Direct ID lookup (bypasses text search)
+      // ================================================================
+
+      // MusicBrainz direct ID lookup
+      if (releaseGroupMbid) {
+        const searchService = getCorrectionSearchService();
+        const result = await searchService.getByMbid(releaseGroupMbid);
+
+        const transformedResult = {
+          releaseGroupMbid: result.releaseGroupMbid,
+          primaryResult: {
+            ...result,
+            breakdown: {
+              titleScore: 1.0,
+              artistScore: 1.0,
+              yearScore: 1.0,
+              mbScore: 100,
+              confidenceTier: null,
+            },
+            scoringStrategy: GqlScoringStrategy.Normalized,
+          },
+          alternateVersions: [],
+          versionCount: 1,
+          bestScore: 1.0,
+        };
+
+        return {
+          results: [transformedResult],
+          totalGroups: 1,
+          hasMore: false,
+          query: {
+            albumTitle: result.title,
+            artistName: result.primaryArtistName,
+            yearFilter: null,
+          },
+          scoring: {
+            strategy: GqlScoringStrategy.Normalized,
+            threshold: 0.5,
+            lowConfidenceCount: 0,
+          },
+        };
+      }
+
+      // Discogs direct ID lookup
+      if (discogsId) {
+        const queuedDiscogsService = getQueuedDiscogsService();
+        const master = await queuedDiscogsService.getMaster(discogsId);
+
+        // Handle case where master lookup failed
+        if (!master || !master.id) {
+          throw new GraphQLError(
+            `Discogs master ID "${discogsId}" not found or invalid`,
+            { extensions: { code: 'NOT_FOUND' } }
+          );
+        }
+
+        const result = mapMasterToCorrectionSearchResult(master);
+
+        const transformedResult = {
+          releaseGroupMbid: result.releaseGroupMbid,
+          primaryResult: {
+            ...result,
+            normalizedScore: 1.0,
+            displayScore: 100,
+            breakdown: {
+              titleScore: 1.0,
+              artistScore: 1.0,
+              yearScore: 1.0,
+              mbScore: 100,
+              confidenceTier: null,
+            },
+            isLowConfidence: false,
+            scoringStrategy: GqlScoringStrategy.Normalized,
+          },
+          alternateVersions: [],
+          versionCount: 1,
+          bestScore: 1.0,
+        };
+
+        return {
+          results: [transformedResult],
+          totalGroups: 1,
+          hasMore: false,
+          query: {
+            albumTitle: result.title,
+            artistName: result.primaryArtistName,
+            yearFilter: null,
+          },
+          scoring: {
+            strategy: GqlScoringStrategy.Normalized,
+            threshold: 0.5,
+            lowConfidenceCount: 0,
+          },
+        };
+      }
+
+      // ================================================================
+      // Text-based search (existing logic)
+      // ================================================================
 
       // Get album data if title/artist not provided
       let searchAlbumTitle = albumTitle;

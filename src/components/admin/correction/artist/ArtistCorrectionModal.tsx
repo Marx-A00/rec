@@ -307,7 +307,7 @@ export function ArtistCorrectionModal({
                   className='flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800'
                 >
                   <Search className='w-4 h-4 mr-2' />
-                  Search MusicBrainz
+                  Search
                 </Button>
               </div>
             </div>

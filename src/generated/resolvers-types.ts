@@ -135,6 +135,7 @@ export type Album = {
   recommendationScore?: Maybe<Scalars['Float']['output']>;
   releaseDate?: Maybe<Scalars['DateTime']['output']>;
   releaseType?: Maybe<Scalars['String']['output']>;
+  spotifyId?: Maybe<Scalars['String']['output']>;
   targetRecommendations: Array<Recommendation>;
   title: Scalars['String']['output'];
   trackCount?: Maybe<Scalars['Int']['output']>;
@@ -322,6 +323,7 @@ export type Artist = {
   name: Scalars['String']['output'];
   needsEnrichment: Scalars['Boolean']['output'];
   popularity?: Maybe<Scalars['Float']['output']>;
+  spotifyId?: Maybe<Scalars['String']['output']>;
   trackCount: Scalars['Int']['output'];
   tracks: Array<Track>;
   updatedAt: Scalars['DateTime']['output'];
@@ -794,12 +796,16 @@ export type CorrectionSearchInput = {
   albumTitle?: InputMaybe<Scalars['String']['input']>;
   /** Override artist name for search */
   artistName?: InputMaybe<Scalars['String']['input']>;
+  /** Direct Discogs master ID lookup (bypasses text search) */
+  discogsId?: InputMaybe<Scalars['String']['input']>;
   /** Maximum results to return (default 10) */
   limit?: InputMaybe<Scalars['Int']['input']>;
   /** Threshold below which results are flagged as low-confidence (0-1) */
   lowConfidenceThreshold?: InputMaybe<Scalars['Float']['input']>;
   /** Offset for pagination */
   offset?: InputMaybe<Scalars['Int']['input']>;
+  /** Direct MusicBrainz release group ID lookup (bypasses text search) */
+  releaseGroupMbid?: InputMaybe<Scalars['String']['input']>;
   /** Data source to search (default: MUSICBRAINZ) */
   source?: InputMaybe<CorrectionSource>;
   /** Scoring strategy to use */
@@ -3369,6 +3375,11 @@ export type AlbumResolvers<
     ParentType,
     ContextType
   >;
+  spotifyId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   targetRecommendations?: Resolver<
     Array<ResolversTypes['Recommendation']>,
     ParentType,
@@ -3603,6 +3614,11 @@ export type ArtistResolvers<
   >;
   popularity?: Resolver<
     Maybe<ResolversTypes['Float']>,
+    ParentType,
+    ContextType
+  >;
+  spotifyId?: Resolver<
+    Maybe<ResolversTypes['String']>,
     ParentType,
     ContextType
   >;

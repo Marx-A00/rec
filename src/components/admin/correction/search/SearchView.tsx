@@ -70,6 +70,7 @@ export function SearchView({ album }: SearchViewProps) {
   const currentQuery = searchQuery ?? {
     albumTitle: initialAlbumTitle,
     artistName: initialArtistName,
+    directId: undefined,
   };
 
   // Map store source to GraphQL enum
@@ -78,23 +79,35 @@ export function SearchView({ album }: SearchViewProps) {
       ? CorrectionSource.Discogs
       : CorrectionSource.Musicbrainz;
 
+  // Build query input with source-specific ID field
+  const queryInput = {
+    albumId: album.id,
+    albumTitle: currentQuery.albumTitle,
+    artistName: currentQuery.artistName,
+    limit: 10,
+    offset: searchOffset,
+    source: graphqlSource,
+    // Pass directId to the correct field based on source
+    ...(currentQuery.directId && correctionSource === 'musicbrainz'
+      ? { releaseGroupMbid: currentQuery.directId }
+      : {}),
+    ...(currentQuery.directId && correctionSource === 'discogs'
+      ? { discogsId: currentQuery.directId }
+      : {}),
+  };
+
   // GraphQL query - enabled for both MusicBrainz and Discogs sources
   const { data, isLoading, error, isFetching } =
     useSearchCorrectionCandidatesQuery(
-      {
-        input: {
-          albumId: album.id,
-          albumTitle: currentQuery.albumTitle,
-          artistName: currentQuery.artistName,
-          limit: 10,
-          offset: searchOffset,
-          source: graphqlSource,
-        },
-      },
+      { input: queryInput },
       {
         enabled:
           isSearchTriggered &&
-          !!(currentQuery.albumTitle || currentQuery.artistName),
+          !!(
+            currentQuery.albumTitle ||
+            currentQuery.artistName ||
+            currentQuery.directId
+          ),
       }
     );
 
@@ -103,7 +116,11 @@ export function SearchView({ album }: SearchViewProps) {
   const hasMore = data?.correctionSearch?.hasMore ?? false;
 
   // Handle search submission
-  const handleSearch = (query: { albumTitle: string; artistName: string }) => {
+  const handleSearch = (query: {
+    albumTitle: string;
+    artistName: string;
+    directId?: string;
+  }) => {
     setSearchQuery(query);
     setSearchOffset(0);
     setIsSearchTriggered(true);

@@ -16,6 +16,7 @@ scalar JSON
 type Artist {
   id: UUID!
   musicbrainzId: UUID
+  spotifyId: String
   discogsId: String
   name: String!
   biography: String
@@ -52,7 +53,9 @@ type Artist {
 type Album {
   id: UUID!
   musicbrainzId: UUID
-  discogsId: String  title: String!
+  spotifyId: String
+  discogsId: String
+  title: String!
   releaseDate: DateTime
   releaseType: String
   genres: [String!]
@@ -1680,6 +1683,14 @@ input CorrectionSearchInput {
   Data source to search (default: MUSICBRAINZ)
   """
   source: CorrectionSource = MUSICBRAINZ
+  """
+  Direct MusicBrainz release group ID lookup (bypasses text search)
+  """
+  releaseGroupMbid: String
+  """
+  Direct Discogs master ID lookup (bypasses text search)
+  """
+  discogsId: String
 }
 
 """

@@ -19,6 +19,7 @@ query GetAlbumDetailsAdmin($id: UUID!) {
   album(id: $id) {
     id
     musicbrainzId
+    discogsId
     title
     releaseDate
     releaseType

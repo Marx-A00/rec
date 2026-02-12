@@ -155,6 +155,8 @@ export interface ApplyInput {
   expectedUpdatedAt: Date;
   /** ID of the admin user applying the correction */
   adminUserId: string;
+  /** Source of the correction data (musicbrainz or discogs) */
+  source?: 'musicbrainz' | 'discogs';
 }
 
 /**

@@ -40,6 +40,8 @@ export type CorrectionSource = 'musicbrainz' | 'discogs';
 export interface SearchQueryState {
   albumTitle: string;
   artistName: string;
+  /** Direct ID for lookup (MusicBrainz release group MBID or Discogs master ID) */
+  directId?: string;
 }
 
 /**

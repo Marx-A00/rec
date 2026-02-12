@@ -25,8 +25,11 @@ interface DiffSummaryProps {
 }
 
 export function DiffSummary({ preview, selections }: DiffSummaryProps) {
-  // Filter field diffs to only show selected fields
+  // Filter field diffs to only show selected fields that have actual changes
   const selectedFieldDiffs = preview.fieldDiffs.filter(diff => {
+    // Skip unchanged fields - they shouldn't appear in the summary
+    if (diff.changeType === 'UNCHANGED') return false;
+
     if (diff.field === 'title') return selections.metadata.title;
     if (diff.field === 'releaseDate') return selections.metadata.releaseDate;
     if (diff.field === 'releaseType') return selections.metadata.releaseType;
@@ -50,8 +53,11 @@ export function DiffSummary({ preview, selections }: DiffSummaryProps) {
     return false;
   });
 
-  // Count selected tracks
+  // Count selected tracks that actually have changes (not MATCH)
   const selectedTracksCount = preview.trackDiffs.filter(trackDiff => {
+    // Skip tracks that match - they don't need updating
+    if (trackDiff.changeType === 'MATCH') return false;
+
     const positionKey = `${trackDiff.discNumber}-${trackDiff.position}`;
     const isExcluded = selections.tracks.excludedPositions.has(positionKey);
     return selections.tracks.applyAll && !isExcluded;

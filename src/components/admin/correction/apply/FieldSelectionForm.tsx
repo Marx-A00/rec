@@ -135,7 +135,9 @@ export function FieldSelectionForm({
     const metadataCount = Object.values(selections.metadata).filter(
       Boolean
     ).length;
+    // Only count tracks that have actual changes (not MATCH)
     const trackCount = preview.trackDiffs.filter(diff => {
+      if (diff.changeType === 'MATCH') return false;
       const positionKey = `${diff.discNumber}-${diff.position}`;
       return !selections.tracks.excludedPositions.has(positionKey);
     }).length;

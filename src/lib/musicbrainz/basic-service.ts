@@ -5,7 +5,7 @@ import { MusicBrainzApi } from 'musicbrainz-api';
 const mbApi = new MusicBrainzApi({
   appName: 'RecApp',
   appVersion: '1.0.0',
-  appContactInfo: 'contact@rec-app.com', // Replace with your actual contact
+  appContactInfo: 'marcos.andrade.dev@gmail.com',
 });
 
 export interface ArtistSearchResult {

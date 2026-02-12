@@ -1,7 +1,7 @@
 /**
  * Main container for the apply workflow step.
  *
- * Combines field selection form with diff summary in a two-column layout.
+ * Combines field selection form with diff summary.
  * Provides step transition model where "Confirm & Apply" button initiates
  * the mutation (no separate confirmation dialog).
  */
@@ -37,7 +37,6 @@ export function ApplyView({ albumId, error = null }: ApplyViewProps) {
 
   const setApplySelections = store.getState().setApplySelections;
   const setShouldEnrich = store.getState().setShouldEnrich;
-  const prevStep = store.getState().prevStep;
 
   // Guard for null preview/selections (shouldn't happen in normal flow)
   if (!preview || !selections) {
@@ -65,72 +64,65 @@ export function ApplyView({ albumId, error = null }: ApplyViewProps) {
         </div>
       </div>
 
-      {/* Two-column layout (responsive) */}
-      <div className='grid gap-6 lg:grid-cols-2'>
-        {/* Left column: Field selection form */}
-        <div>
-          <FieldSelectionForm
-            preview={preview}
-            selections={selections}
-            onSelectionsChange={setApplySelections}
-          />
-        </div>
+      {/* Field selection form */}
+      <FieldSelectionForm
+        preview={preview}
+        selections={selections}
+        onSelectionsChange={setApplySelections}
+      />
 
-        {/* Right column: Summary and apply button */}
-        <div className='space-y-4'>
-          {/* Diff summary */}
-          <DiffSummary preview={preview} selections={selections} />
+      {/* Summary of changes - at bottom */}
+      <DiffSummary preview={preview} selections={selections} />
 
-          {/* Error display */}
-          {error && (
-            <div className='rounded-lg border border-red-800 bg-red-900/20 p-4'>
-              <div className='text-sm font-medium text-red-400'>
-                Failed to apply correction
-              </div>
-              <div className='mt-1 text-sm text-red-300'>{error.message}</div>
-              {error.stack && (
-                <div className='mt-2'>
-                  <button
-                    onClick={() => setShowErrorDetails(!showErrorDetails)}
-                    className='text-xs text-red-400 underline hover:text-red-300'
-                  >
-                    {showErrorDetails ? 'Hide' : 'Show'} details
-                  </button>
-                  {showErrorDetails && (
-                    <pre className='mt-2 overflow-x-auto rounded bg-red-950/50 p-2 text-xs text-red-300'>
-                      {error.stack}
-                    </pre>
-                  )}
-                </div>
-              )}
+      {/* Status messages */}
+      <div className='space-y-4'>
+        {/* Error display */}
+        {error && (
+          <div className='rounded-lg border border-red-800 bg-red-900/20 p-4'>
+            <div className='text-sm font-medium text-red-400'>
+              Failed to apply correction
             </div>
-          )}
-
-          {/* Empty selection warning */}
-          {!hasSelections && (
-            <div className='rounded-lg border border-amber-700 bg-amber-900/20 p-4'>
-              <div className='text-sm text-amber-400'>
-                Select at least one field to apply
+            <div className='mt-1 text-sm text-red-300'>{error.message}</div>
+            {error.stack && (
+              <div className='mt-2'>
+                <button
+                  onClick={() => setShowErrorDetails(!showErrorDetails)}
+                  className='text-xs text-red-400 underline hover:text-red-300'
+                >
+                  {showErrorDetails ? 'Hide' : 'Show'} details
+                </button>
+                {showErrorDetails && (
+                  <pre className='mt-2 overflow-x-auto rounded bg-red-950/50 p-2 text-xs text-red-300'>
+                    {error.stack}
+                  </pre>
+                )}
               </div>
-            </div>
-          )}
-
-          {/* Re-enrichment checkbox */}
-          <div className='flex items-center gap-2'>
-            <Checkbox
-              id='trigger-enrichment'
-              checked={shouldEnrich}
-              onCheckedChange={checked => setShouldEnrich(checked === true)}
-            />
-            <label
-              htmlFor='trigger-enrichment'
-              className='text-sm text-zinc-400 cursor-pointer'
-            >
-              Re-enrich from MusicBrainz after applying
-            </label>
+            )}
           </div>
+        )}
 
-          {/* Apply button moved to sticky footer */}
+        {/* Empty selection warning */}
+        {!hasSelections && (
+          <div className='rounded-lg border border-amber-700 bg-amber-900/20 p-4'>
+            <div className='text-sm text-amber-400'>
+              Select at least one field to apply
+            </div>
+          </div>
+        )}
+
+        {/* Re-enrichment checkbox */}
+        <div className='flex items-center gap-2'>
+          <Checkbox
+            id='trigger-enrichment'
+            checked={shouldEnrich}
+            onCheckedChange={checked => setShouldEnrich(checked === true)}
+          />
+          <label
+            htmlFor='trigger-enrichment'
+            className='text-sm text-zinc-400 cursor-pointer'
+          >
+            Re-enrich from MusicBrainz after applying
+          </label>
         </div>
       </div>
     </div>
@@ -159,8 +151,10 @@ export function calculateHasSelections(
     selections.metadata.barcode ||
     selections.metadata.label;
 
-  // Check tracks
+  // Check tracks - only count tracks that actually have changes (not MATCH)
   const selectedTracksCount = preview.trackDiffs.filter(trackDiff => {
+    if (trackDiff.changeType === 'MATCH') return false;
+
     const positionKey = `${trackDiff.discNumber}-${trackDiff.position}`;
     const isExcluded = selections.tracks.excludedPositions.has(positionKey);
     return selections.tracks.applyAll && !isExcluded;

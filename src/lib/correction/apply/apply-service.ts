@@ -114,8 +114,14 @@ export class ApplyCorrectionService {
    * @returns ApplyResult indicating success with changes or failure with error
    */
   async applyCorrection(input: ApplyInput): Promise<ApplyResult> {
-    const { albumId, preview, selections, expectedUpdatedAt, adminUserId } =
-      input;
+    const {
+      albumId,
+      preview,
+      selections,
+      expectedUpdatedAt,
+      adminUserId,
+      source = 'musicbrainz',
+    } = input;
 
     try {
       // ================================================================
@@ -209,7 +215,8 @@ export class ApplyCorrectionService {
             albumId,
             sourceArtists,
             beforeAlbum.artists,
-            selections
+            selections,
+            source
           );
 
           // 4. Update tracks
@@ -217,7 +224,8 @@ export class ApplyCorrectionService {
             tx,
             albumId,
             trackMatches,
-            selections
+            selections,
+            source
           );
 
           // 5. Update trackCount to match actual track count after changes
@@ -346,65 +354,201 @@ export class ApplyCorrectionService {
 
   /**
    * Updates artist associations for the album.
-   * Strategy: Delete all existing, upsert and link selected source artists.
+   * Strategy: Only modify what's necessary - keep existing correct associations,
+   * add missing ones, remove incorrect ones.
    */
   private async updateArtists(
     tx: Prisma.TransactionClient,
     albumId: string,
     sourceArtists: SourceArtist[],
     beforeArtists: Array<AlbumArtist & { artist: Artist }>,
-    selections: FieldSelections
+    selections: FieldSelections,
+    source: 'musicbrainz' | 'discogs' = 'musicbrainz'
   ): Promise<{ added: string[]; removed: string[] }> {
     // If no artists selected, don't change anything
     if (selections.artists.size === 0 || sourceArtists.length === 0) {
       return { added: [], removed: [] };
     }
 
-    // Track before state for audit
-    const beforeNames = beforeArtists.map(aa => aa.artist.name);
+    // Track changes for audit
+    const added: string[] = [];
+    const removed: string[] = [];
 
-    // Delete all existing artist associations
-    await tx.albumArtist.deleteMany({ where: { albumId } });
-
-    // Upsert each source artist and create association
-    const addedNames: string[] = [];
-    for (let i = 0; i < sourceArtists.length; i++) {
-      const artist = sourceArtists[i];
-
-      // Upsert artist by MusicBrainz ID
-      const upsertedArtist = await tx.artist.upsert({
-        where: { musicbrainzId: artist.mbid },
-        create: {
-          musicbrainzId: artist.mbid,
-          name: artist.name,
-          source: 'MUSICBRAINZ',
-          dataQuality: 'HIGH',
-          enrichmentStatus: 'COMPLETED',
-          lastEnriched: new Date(),
-        },
-        update: {
-          // Only update name if artist exists
-          name: artist.name,
-          lastEnriched: new Date(),
-        },
-      });
-
-      // Create album-artist association
-      await tx.albumArtist.create({
-        data: {
-          albumId,
-          artistId: upsertedArtist.id,
-          role: 'primary',
-          position: i,
-        },
-      });
-
-      addedNames.push(artist.name);
+    // Build a map of existing artist associations by name (case-insensitive)
+    const existingByName = new Map<string, AlbumArtist & { artist: Artist }>();
+    for (const aa of beforeArtists) {
+      existingByName.set(aa.artist.name.toLowerCase(), aa);
     }
 
-    // Calculate removed (in before but not in added)
-    const removed = beforeNames.filter(name => !addedNames.includes(name));
-    const added = addedNames.filter(name => !beforeNames.includes(name));
+    // Build a map of existing artist associations by external ID
+    const existingByExternalId = new Map<
+      string,
+      AlbumArtist & { artist: Artist }
+    >();
+    for (const aa of beforeArtists) {
+      if (source === 'discogs' && aa.artist.discogsId) {
+        existingByExternalId.set(aa.artist.discogsId, aa);
+      } else if (source === 'musicbrainz' && aa.artist.musicbrainzId) {
+        existingByExternalId.set(aa.artist.musicbrainzId, aa);
+      }
+    }
+
+    // Track which existing associations we want to keep (using composite key string)
+    const associationsToKeep = new Set<string>();
+
+    // Helper to create composite key string for AlbumArtist
+    const makeCompositeKey = (aa: AlbumArtist) =>
+      `${aa.albumId}:${aa.artistId}:${aa.role}`;
+
+    // Process each source artist
+    for (let i = 0; i < sourceArtists.length; i++) {
+      const sourceArtist = sourceArtists[i];
+
+      // Check if this artist is already associated with the album
+      const existingByExtId = sourceArtist.mbid
+        ? existingByExternalId.get(sourceArtist.mbid)
+        : null;
+      const existingByArtistName = existingByName.get(
+        sourceArtist.name.toLowerCase()
+      );
+      const existingAssociation = existingByExtId || existingByArtistName;
+
+      if (existingAssociation) {
+        // Artist already associated - keep it, but maybe update the Artist record
+        associationsToKeep.add(makeCompositeKey(existingAssociation));
+
+        // Update the artist record if needed (add/update external ID)
+        // Always update if we found by name but not by ID (ensures correct ID is set)
+        if (source === 'discogs' && sourceArtist.mbid) {
+          const needsUpdate =
+            !existingAssociation.artist.discogsId ||
+            (existingByArtistName && !existingByExtId); // Found by name, not by ID
+          if (needsUpdate) {
+            await tx.artist.update({
+              where: { id: existingAssociation.artist.id },
+              data: {
+                discogsId: sourceArtist.mbid,
+                lastEnriched: new Date(),
+              },
+            });
+          }
+        } else if (source === 'musicbrainz' && sourceArtist.mbid) {
+          const needsUpdate =
+            !existingAssociation.artist.musicbrainzId ||
+            (existingByArtistName && !existingByExtId); // Found by name, not by ID
+          if (needsUpdate) {
+            await tx.artist.update({
+              where: { id: existingAssociation.artist.id },
+              data: {
+                musicbrainzId: sourceArtist.mbid,
+                lastEnriched: new Date(),
+              },
+            });
+          }
+        }
+
+        // Update position if changed
+        if (existingAssociation.position !== i) {
+          await tx.albumArtist.update({
+            where: {
+              albumId_artistId_role: {
+                albumId: existingAssociation.albumId,
+                artistId: existingAssociation.artistId,
+                role: existingAssociation.role,
+              },
+            },
+            data: { position: i },
+          });
+        }
+      } else {
+        // Artist not associated - need to find/create and link
+        let artistRecord;
+
+        if (source === 'discogs') {
+          // For Discogs, find by discogsId, then by name, then create
+          const byDiscogsId = sourceArtist.mbid
+            ? await tx.artist.findFirst({
+                where: { discogsId: sourceArtist.mbid },
+              })
+            : null;
+
+          if (byDiscogsId) {
+            artistRecord = byDiscogsId;
+          } else {
+            const byName = await tx.artist.findFirst({
+              where: { name: sourceArtist.name },
+            });
+
+            if (byName) {
+              // Update existing artist with Discogs ID
+              artistRecord = await tx.artist.update({
+                where: { id: byName.id },
+                data: {
+                  discogsId: sourceArtist.mbid || undefined,
+                  lastEnriched: new Date(),
+                },
+              });
+            } else {
+              // Create new artist
+              artistRecord = await tx.artist.create({
+                data: {
+                  discogsId: sourceArtist.mbid || undefined,
+                  name: sourceArtist.name,
+                  source: 'DISCOGS',
+                  dataQuality: 'MEDIUM',
+                  enrichmentStatus: 'PENDING',
+                },
+              });
+            }
+          }
+        } else {
+          // MusicBrainz path - use musicbrainzId (UUID)
+          artistRecord = await tx.artist.upsert({
+            where: { musicbrainzId: sourceArtist.mbid },
+            create: {
+              musicbrainzId: sourceArtist.mbid,
+              name: sourceArtist.name,
+              source: 'MUSICBRAINZ',
+              dataQuality: 'HIGH',
+              enrichmentStatus: 'COMPLETED',
+              lastEnriched: new Date(),
+            },
+            update: {
+              name: sourceArtist.name,
+              lastEnriched: new Date(),
+            },
+          });
+        }
+
+        // Create new album-artist association
+        await tx.albumArtist.create({
+          data: {
+            albumId,
+            artistId: artistRecord.id,
+            role: 'primary',
+            position: i,
+          },
+        });
+
+        added.push(sourceArtist.name);
+      }
+    }
+
+    // Remove associations that are no longer needed
+    for (const existingAa of beforeArtists) {
+      if (!associationsToKeep.has(makeCompositeKey(existingAa))) {
+        await tx.albumArtist.delete({
+          where: {
+            albumId_artistId_role: {
+              albumId: existingAa.albumId,
+              artistId: existingAa.artistId,
+              role: existingAa.role,
+            },
+          },
+        });
+        removed.push(existingAa.artist.name);
+      }
+    }
 
     return { added, removed };
   }
@@ -416,7 +560,8 @@ export class ApplyCorrectionService {
     tx: Prisma.TransactionClient,
     albumId: string,
     trackMatches: TrackMatch[],
-    selections: FieldSelections
+    selections: FieldSelections,
+    source: 'musicbrainz' | 'discogs' = 'musicbrainz'
   ): Promise<{ added: number; modified: number; removed: number }> {
     let added = 0;
     let modified = 0;
@@ -458,7 +603,8 @@ export class ApplyCorrectionService {
               const createData = buildTrackCreateData(
                 match.mbTrack,
                 albumId,
-                match.discNumber
+                match.discNumber,
+                source
               );
               await tx.track.create({ data: createData });
               added++;

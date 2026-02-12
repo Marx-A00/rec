@@ -3673,6 +3673,7 @@ export const mutationResolvers: MutationResolvers = {
         selections: serviceSelections,
         expectedUpdatedAt: new Date(expectedUpdatedAt),
         adminUserId: user.id,
+        source: normalizedSource,
       });
 
       if (result.success) {

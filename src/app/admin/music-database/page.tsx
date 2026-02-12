@@ -123,6 +123,7 @@ interface AlbumSearchResult {
   releaseDate: string | null;
   coverArtUrl: string | null;
   musicbrainzId: string | null;
+  spotifyId: string | null;
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH';
   enrichmentStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
   lastEnriched: string | null;
@@ -142,6 +143,7 @@ interface ArtistSearchResult {
   id: string;
   name: string;
   musicbrainzId: string | null;
+  spotifyId: string | null;
   imageUrl: string | null;
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH';
   enrichmentStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
@@ -982,7 +984,7 @@ export default function MusicDatabasePage() {
     return (
       <div className='p-4 bg-zinc-800/50 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
         {/* Metadata Section */}
-        <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
+        <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
           <div>
             <div className='text-xs text-zinc-500 uppercase mb-1'>
               Database ID
@@ -997,6 +999,33 @@ export default function MusicDatabasePage() {
             </div>
             <div className='text-sm text-zinc-300 font-mono text-xs'>
               {albumDetails.musicbrainzId || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Spotify ID
+            </div>
+            <div className='text-sm text-zinc-300 font-mono text-xs'>
+              {album.spotifyId ? (
+                <a
+                  href={`https://open.spotify.com/album/${album.spotifyId}`}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-green-400 hover:text-green-300 hover:underline'
+                >
+                  {album.spotifyId}
+                </a>
+              ) : (
+                'N/A'
+              )}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Discogs ID
+            </div>
+            <div className='text-sm text-zinc-300 font-mono text-xs'>
+              {albumDetails.discogsId || 'N/A'}
             </div>
           </div>
           <div>
@@ -1224,7 +1253,7 @@ export default function MusicDatabasePage() {
     return (
       <div className='p-4 bg-zinc-800/50 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
         {/* Metadata Section */}
-        <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
+        <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
           <div>
             <div className='text-xs text-zinc-500 uppercase mb-1'>
               Database ID
@@ -1239,6 +1268,33 @@ export default function MusicDatabasePage() {
             </div>
             <div className='text-sm text-zinc-300 font-mono text-xs'>
               {artistDetails.musicbrainzId || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Spotify ID
+            </div>
+            <div className='text-sm text-zinc-300 font-mono text-xs'>
+              {artist.spotifyId ? (
+                <a
+                  href={`https://open.spotify.com/artist/${artist.spotifyId}`}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-green-400 hover:text-green-300 hover:underline'
+                >
+                  {artist.spotifyId}
+                </a>
+              ) : (
+                'N/A'
+              )}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Discogs ID
+            </div>
+            <div className='text-sm text-zinc-300 font-mono text-xs'>
+              {artistDetails.discogsId || 'N/A'}
             </div>
           </div>
           <div>
@@ -1746,7 +1802,7 @@ export default function MusicDatabasePage() {
                     <React.Fragment key={album.id}>
                       <TableRow
                         id={`row-${album.id}`}
-                        className='border-b border-zinc-800 hover:bg-zinc-800/10 cursor-pointer transition-colors'
+                        className='border-b border-zinc-800 cursor-pointer hover:bg-transparent'
                         onClick={e => {
                           // Don't toggle if clicking checkbox or action button
                           if (
@@ -2022,7 +2078,7 @@ export default function MusicDatabasePage() {
                     <React.Fragment key={artist.id}>
                       <TableRow
                         id={`row-${artist.id}`}
-                        className='border-b border-zinc-800 hover:bg-zinc-800/10 cursor-pointer transition-colors'
+                        className='border-b border-zinc-800 cursor-pointer hover:bg-transparent'
                         onClick={e => {
                           // Don't toggle if clicking checkbox or action button
                           if (
@@ -2213,7 +2269,7 @@ export default function MusicDatabasePage() {
                           key={`${artist.id}-expanded`}
                           className='hover:bg-transparent'
                         >
-                          <TableCell colSpan={8} className='p-0 border-none'>
+                          <TableCell colSpan={9} className='p-0 border-none'>
                             <ArtistExpandedContent artist={artist} />
                           </TableCell>
                         </TableRow>
@@ -2254,7 +2310,7 @@ export default function MusicDatabasePage() {
                   {displayTracks.map((track: any) => (
                     <TableRow
                       key={track.id}
-                      className='border-b border-zinc-800 hover:bg-zinc-800/50'
+                      className='border-b border-zinc-800 hover:bg-transparent'
                     >
                       <TableCell>
                         <div className='font-medium text-white'>

@@ -2,6 +2,7 @@ query GetArtistDetails($id: UUID!) {
   artist(id: $id) {
     id
     musicbrainzId
+    discogsId
     name
     biography
     formedYear

@@ -378,8 +378,12 @@ export function buildTrackUpdateData(
 export function buildTrackCreateData(
   mbRecording: MBRecording,
   albumId: string,
-  discNumber: number
+  discNumber: number,
+  source: 'musicbrainz' | 'discogs' = 'musicbrainz'
 ): Prisma.TrackCreateInput {
+  // Only set musicbrainzId if it's a valid non-empty string (Discogs tracks have empty IDs)
+  const hasMusicBrainzId = mbRecording.id && mbRecording.id.length > 0;
+
   return {
     // Connect to parent album
     album: { connect: { id: albumId } },
@@ -392,11 +396,11 @@ export function buildTrackCreateData(
     // Duration (MB uses 'length' not 'durationMs')
     durationMs: mbRecording.length ?? null,
 
-    // MusicBrainz ID
-    musicbrainzId: mbRecording.id,
+    // MusicBrainz ID - only set if valid (Discogs tracks don't have MBIDs)
+    musicbrainzId: hasMusicBrainzId ? mbRecording.id : null,
 
     // Source and quality markers
-    source: 'MUSICBRAINZ',
+    source: source === 'discogs' ? 'DISCOGS' : 'MUSICBRAINZ',
     // HIGH quality because it's admin-verified from correction flow
     dataQuality: 'HIGH',
     enrichmentStatus: 'COMPLETED',

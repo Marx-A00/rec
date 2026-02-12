@@ -142,6 +142,7 @@ query SearchAlbumsAdmin(
   ) {
     id
     musicbrainzId
+    spotifyId
     title
     releaseDate
     coverArtUrl
@@ -187,6 +188,7 @@ query SearchArtistsAdmin(
   ) {
     id
     musicbrainzId
+    spotifyId
     name
     imageUrl
     cloudflareImageId

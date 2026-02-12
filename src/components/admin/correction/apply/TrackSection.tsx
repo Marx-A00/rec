@@ -110,8 +110,11 @@ export function TrackSection({
     }
   };
 
-  if (trackDiffs.length === 0) {
-    return null; // Don't show section if no tracks
+  // Check if there are any actual track changes (not just matches)
+  const hasTrackChanges = trackDiffs.some(diff => diff.changeType !== 'MATCH');
+
+  if (trackDiffs.length === 0 || !hasTrackChanges) {
+    return null; // Don't show section if no tracks or all tracks match
   }
 
   return (
