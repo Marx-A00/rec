@@ -102,7 +102,7 @@ export default function SocialActivityFeed({
     {
       initialPageParam: { cursor: undefined } as { cursor: string | undefined },
       getNextPageParam: lastPage =>
-        lastPage.socialFeed.cursor
+        lastPage?.socialFeed?.cursor
           ? { cursor: lastPage.socialFeed.cursor }
           : undefined,
       staleTime: 5 * 60 * 1000, // 5 minutes
