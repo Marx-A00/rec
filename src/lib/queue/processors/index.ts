@@ -28,9 +28,11 @@ import {
   type CacheArtistImageJobData,
   type DiscogsSearchArtistJobData,
   type DiscogsGetArtistJobData,
+  type DiscogsSearchAlbumJobData,
+  type DiscogsGetMasterJobData,
 } from '../jobs';
 
-import { isRetryableError, getErrorCode } from './utils';
+import { toStructuredJobError } from './utils';
 import {
   handleSearchArtists,
   handleSearchReleases,
@@ -61,6 +63,8 @@ import {
 import {
   handleDiscogsSearchArtist,
   handleDiscogsGetArtist,
+  handleDiscogsSearchAlbum,
+  handleDiscogsGetMaster,
 } from './discogs-processor';
 
 // Re-export JOB_TYPES for convenience
@@ -166,36 +170,36 @@ export async function processMusicBrainzJob(
         );
         break;
 
-      // Enrichment check handlers
+      // Enrichment check handlers (pass full Job for parentJobId access)
       case JOB_TYPES.CHECK_ALBUM_ENRICHMENT:
         result = await handleCheckAlbumEnrichment(
-          job.data as CheckAlbumEnrichmentJobData
+          job as Job<CheckAlbumEnrichmentJobData>
         );
         break;
 
       case JOB_TYPES.CHECK_ARTIST_ENRICHMENT:
         result = await handleCheckArtistEnrichment(
-          job.data as CheckArtistEnrichmentJobData
+          job as Job<CheckArtistEnrichmentJobData>
         );
         break;
 
       case JOB_TYPES.CHECK_TRACK_ENRICHMENT:
         result = await handleCheckTrackEnrichment(
-          job.data as CheckTrackEnrichmentJobData
+          job as Job<CheckTrackEnrichmentJobData>
         );
         break;
 
-      // Enrichment handlers
+      // Enrichment handlers (pass full Job for parentJobId access)
       case JOB_TYPES.ENRICH_ALBUM:
-        result = await handleEnrichAlbum(job.data as EnrichAlbumJobData);
+        result = await handleEnrichAlbum(job as Job<EnrichAlbumJobData>);
         break;
 
       case JOB_TYPES.ENRICH_ARTIST:
-        result = await handleEnrichArtist(job.data as EnrichArtistJobData);
+        result = await handleEnrichArtist(job as Job<EnrichArtistJobData>);
         break;
 
       case JOB_TYPES.ENRICH_TRACK:
-        result = await handleEnrichTrack(job.data as EnrichTrackJobData);
+        result = await handleEnrichTrack(job as Job<EnrichTrackJobData>);
         break;
 
       // Spotify sync handlers
@@ -220,29 +224,41 @@ export async function processMusicBrainzJob(
         );
         break;
 
-      // Cache handlers
+      // Cache handlers (pass full Job for parentJobId access)
       case JOB_TYPES.CACHE_ALBUM_COVER_ART:
         result = await handleCacheAlbumCoverArt(
-          job.data as CacheAlbumCoverArtJobData
+          job as Job<CacheAlbumCoverArtJobData>
         );
         break;
 
       case JOB_TYPES.CACHE_ARTIST_IMAGE:
         result = await handleCacheArtistImage(
-          job.data as CacheArtistImageJobData
+          job as Job<CacheArtistImageJobData>
         );
         break;
 
-      // Discogs handlers
+      // Discogs handlers (pass full Job for parentJobId access)
       case JOB_TYPES.DISCOGS_SEARCH_ARTIST:
         result = await handleDiscogsSearchArtist(
-          job.data as DiscogsSearchArtistJobData
+          job as Job<DiscogsSearchArtistJobData>
         );
         break;
 
       case JOB_TYPES.DISCOGS_GET_ARTIST:
         result = await handleDiscogsGetArtist(
-          job.data as DiscogsGetArtistJobData
+          job as Job<DiscogsGetArtistJobData>
+        );
+        break;
+
+      case JOB_TYPES.DISCOGS_SEARCH_ALBUM:
+        result = await handleDiscogsSearchAlbum(
+          job as Job<DiscogsSearchAlbumJobData>
+        );
+        break;
+
+      case JOB_TYPES.DISCOGS_GET_MASTER:
+        result = await handleDiscogsGetMaster(
+          job as Job<DiscogsGetMasterJobData>
         );
         break;
 
@@ -274,6 +290,8 @@ export async function processMusicBrainzJob(
       queryInfo = entityName
         ? `"${entityName}" • MBID: ${mbid.substring(0, 8)}...`
         : `MBID: ${mbid.substring(0, 8)}...`;
+    } else if (jobData.masterId) {
+      queryInfo = `Master: ${jobData.masterId}`;
     } else if (jobData.albumId) {
       queryInfo = `Album: ${jobData.albumId}`;
     } else if (jobData.artistId) {
@@ -299,19 +317,41 @@ export async function processMusicBrainzJob(
     };
   } catch (error) {
     const duration = Date.now() - startTime;
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
 
-    // Determine if error is retryable
-    const isRetryable = isRetryableError(error);
+    // Convert to structured error format for consistent UI interpretation
+    // This provides error.code, error.retryable, and error.retryAfterMs
+    const structuredError = toStructuredJobError(error);
+
+    // Log error with structured info
+    const errorBorder = chalk.red('─'.repeat(60));
+    console.log(errorBorder);
+    console.log(
+      chalk.red('❌ Failed') +
+        ' ' +
+        chalk.yellow('[PROCESSOR LAYER]') +
+        ' ' +
+        chalk.white(job.name) +
+        ' ' +
+        chalk.gray('(ID: ' + job.id + ')') +
+        ' ' +
+        chalk.cyan('in ' + duration + 'ms')
+    );
+    console.log(
+      '   ' +
+        chalk.red('Code:') +
+        ' ' +
+        structuredError.code +
+        ' | ' +
+        chalk.red('Retryable:') +
+        ' ' +
+        structuredError.retryable
+    );
+    console.log('   ' + chalk.red('Message:') + ' ' + structuredError.message);
+    console.log(errorBorder + '\n');
 
     return {
       success: false,
-      error: {
-        message: errorMessage,
-        code: getErrorCode(error),
-        retryable: isRetryable,
-      },
+      error: structuredError,
       metadata: {
         duration,
         timestamp: new Date().toISOString(),

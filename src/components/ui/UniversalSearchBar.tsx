@@ -879,6 +879,15 @@ export default function UniversalSearchBar({
     [finalMinQueryLength, finalFilters, onSearch, searchMode]
   );
 
+  // Handle clear button click
+  const handleClear = useCallback(() => {
+    setQuery('');
+    setOpen(false);
+    setLocalError(null);
+    setShowExternalHint(false);
+    onSearch?.('', finalFilters);
+  }, [onSearch, finalFilters]);
+
   // Handle Enter key for external search
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -978,6 +987,7 @@ export default function UniversalSearchBar({
             value={query}
             onValueChange={handleValueChange}
             onKeyDown={handleKeyDown}
+            onClear={handleClear}
             className='h-9 text-white placeholder:text-zinc-400'
           />
         </div>

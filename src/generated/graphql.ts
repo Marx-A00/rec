@@ -106,6 +106,25 @@ export type AddAlbumToCollectionPayload = {
   id: Scalars['String']['output'];
 };
 
+/**
+ * Input for adding an album to a collection with optional album creation.
+ * Supports both existing albums (by ID) and creating new albums inline.
+ */
+export type AddAlbumToCollectionWithCreateInput = {
+  /** Create new album with this data (mutually exclusive with albumId) */
+  albumData?: InputMaybe<AlbumInput>;
+  /** Use existing album by ID (mutually exclusive with albumData) */
+  albumId?: InputMaybe<Scalars['UUID']['input']>;
+  /** Collection ID to add the album to */
+  collectionId: Scalars['String']['input'];
+  /** Personal notes about the album */
+  personalNotes?: InputMaybe<Scalars['String']['input']>;
+  /** Personal rating (1-10) */
+  personalRating?: InputMaybe<Scalars['Int']['input']>;
+  /** Position in the collection (0 = beginning) */
+  position?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type AdminUpdateUserSettingsPayload = {
   __typename?: 'AdminUpdateUserSettingsPayload';
   message?: Maybe<Scalars['String']['output']>;
@@ -126,20 +145,23 @@ export type Album = {
   coverArtUrl?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
+  discogsId?: Maybe<Scalars['String']['output']>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
-  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
+  genres?: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
   label?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
-  latestEnrichmentLog?: Maybe<EnrichmentLog>;
+  latestLlamaLog?: Maybe<LlamaLog>;
+  llamaLogs: Array<LlamaLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   needsEnrichment: Scalars['Boolean']['output'];
   recommendationScore?: Maybe<Scalars['Float']['output']>;
   releaseDate?: Maybe<Scalars['DateTime']['output']>;
   releaseType?: Maybe<Scalars['String']['output']>;
+  spotifyId?: Maybe<Scalars['String']['output']>;
   targetRecommendations: Array<Recommendation>;
   title: Scalars['String']['output'];
   trackCount?: Maybe<Scalars['Int']['output']>;
@@ -147,7 +169,7 @@ export type Album = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
-export type AlbumEnrichmentLogsArgs = {
+export type AlbumLlamaLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -231,6 +253,80 @@ export enum AlertType {
   WorkerFailure = 'WORKER_FAILURE',
 }
 
+/** Applied artist changes summary. */
+export type AppliedArtistChanges = {
+  __typename?: 'AppliedArtistChanges';
+  /** Names of artists added to album */
+  added: Array<Scalars['String']['output']>;
+  /** Names of artists removed from album */
+  removed: Array<Scalars['String']['output']>;
+};
+
+/** Summary of changes that were applied to the album. */
+export type AppliedChanges = {
+  __typename?: 'AppliedChanges';
+  /** Artist changes applied */
+  artists: AppliedArtistChanges;
+  /** Whether cover art was changed */
+  coverArt: Scalars['Boolean']['output'];
+  /** Data quality after correction */
+  dataQualityAfter: DataQuality;
+  /** Data quality before correction */
+  dataQualityBefore: DataQuality;
+  /** List of external ID field names that were updated */
+  externalIds: Array<Scalars['String']['output']>;
+  /** List of metadata field names that were updated */
+  metadata: Array<Scalars['String']['output']>;
+  /** Track changes applied */
+  tracks: AppliedTrackChanges;
+};
+
+/** Applied track changes summary. */
+export type AppliedTrackChanges = {
+  __typename?: 'AppliedTrackChanges';
+  /** Number of tracks added */
+  added: Scalars['Int']['output'];
+  /** Number of tracks modified */
+  modified: Scalars['Int']['output'];
+  /** Number of tracks removed */
+  removed: Scalars['Int']['output'];
+};
+
+/** Error codes for correction apply operation failures. */
+export enum ApplyErrorCode {
+  /** Album no longer exists */
+  AlbumNotFound = 'ALBUM_NOT_FOUND',
+  /** Invalid field selection provided */
+  InvalidSelection = 'INVALID_SELECTION',
+  /** Resource not found (release group, etc.) */
+  NotFound = 'NOT_FOUND',
+  /** Album was modified since preview was generated */
+  StaleData = 'STALE_DATA',
+  /** Database transaction error */
+  TransactionFailed = 'TRANSACTION_FAILED',
+  /** Data validation failed */
+  ValidationError = 'VALIDATION_ERROR',
+}
+
+/** Diff for array fields (genres, secondaryTypes, etc.) */
+export type ArrayDiff = {
+  __typename?: 'ArrayDiff';
+  /** Items added in source */
+  added: Array<Scalars['String']['output']>;
+  /** Overall change classification */
+  changeType: ChangeType;
+  /** Current array values */
+  currentItems: Array<Scalars['String']['output']>;
+  /** Field name (e.g., 'genres', 'secondaryTypes') */
+  field: Scalars['String']['output'];
+  /** Items removed (exist in current but not source) */
+  removed: Array<Scalars['String']['output']>;
+  /** Source array values */
+  sourceItems: Array<Scalars['String']['output']>;
+  /** Items unchanged (exist in both) */
+  unchanged: Array<Scalars['String']['output']>;
+};
+
 export type Artist = {
   __typename?: 'Artist';
   albumCount: Scalars['Int']['output'];
@@ -240,24 +336,26 @@ export type Artist = {
   countryCode?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   dataQuality?: Maybe<DataQuality>;
-  enrichmentLogs: Array<EnrichmentLog>;
+  discogsId?: Maybe<Scalars['String']['output']>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
-  latestEnrichmentLog?: Maybe<EnrichmentLog>;
+  latestLlamaLog?: Maybe<LlamaLog>;
   listeners?: Maybe<Scalars['Int']['output']>;
+  llamaLogs: Array<LlamaLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   name: Scalars['String']['output'];
   needsEnrichment: Scalars['Boolean']['output'];
   popularity?: Maybe<Scalars['Float']['output']>;
+  spotifyId?: Maybe<Scalars['String']['output']>;
   trackCount: Scalars['Int']['output'];
   tracks: Array<Track>;
   updatedAt: Scalars['DateTime']['output'];
 };
 
-export type ArtistEnrichmentLogsArgs = {
+export type ArtistLlamaLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -267,6 +365,112 @@ export type ArtistAlbumInput = {
   role?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Summary of changes applied to an artist. */
+export type ArtistAppliedChanges = {
+  __typename?: 'ArtistAppliedChanges';
+  /** Number of albums affected */
+  affectedAlbumCount: Scalars['Int']['output'];
+  /** Data quality after correction */
+  dataQualityAfter: DataQuality;
+  /** Data quality before correction */
+  dataQualityBefore: DataQuality;
+  /** List of external ID field names updated */
+  externalIds: Array<Scalars['String']['output']>;
+  /** List of metadata field names updated */
+  metadata: Array<Scalars['String']['output']>;
+};
+
+/** Input for applying an artist correction. */
+export type ArtistCorrectionApplyInput = {
+  /** Artist ID to apply correction to */
+  artistId: Scalars['UUID']['input'];
+  /** Expected artist updatedAt timestamp for optimistic locking */
+  expectedUpdatedAt: Scalars['DateTime']['input'];
+  /** Field selections determining which changes to apply */
+  selections: ArtistFieldSelectionsInput;
+  /** Source of correction data (default: MUSICBRAINZ) */
+  source?: InputMaybe<CorrectionSource>;
+  /** Source artist ID (MusicBrainz MBID or Discogs ID) */
+  sourceArtistId: Scalars['String']['input'];
+};
+
+/** Result of artist correction apply operation. */
+export type ArtistCorrectionApplyResult = {
+  __typename?: 'ArtistCorrectionApplyResult';
+  /** Number of affected albums (when success=true) */
+  affectedAlbumCount?: Maybe<Scalars['Int']['output']>;
+  /** Updated artist (when success=true) */
+  artist?: Maybe<Artist>;
+  /** Summary of changes applied (when success=true) */
+  changes?: Maybe<ArtistAppliedChanges>;
+  /** Error code (when success=false) */
+  code?: Maybe<ApplyErrorCode>;
+  /** Error message (when success=false) */
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+/** Complete preview of all changes between current artist and external source. */
+export type ArtistCorrectionPreview = {
+  __typename?: 'ArtistCorrectionPreview';
+  /** Number of albums by this artist */
+  albumCount: Scalars['Int']['output'];
+  /** Current artist data from database */
+  currentArtist: Artist;
+  /** Field-by-field diffs */
+  fieldDiffs: Array<ArtistFieldDiff>;
+  /** Full MusicBrainz artist data */
+  mbArtistData?: Maybe<Scalars['JSON']['output']>;
+  /** Data source used for this preview */
+  source: CorrectionSource;
+  /** Summary statistics */
+  summary: ArtistPreviewSummary;
+};
+
+/** Response from artist correction search operation. */
+export type ArtistCorrectionSearchResponse = {
+  __typename?: 'ArtistCorrectionSearchResponse';
+  /** Whether more results are available */
+  hasMore: Scalars['Boolean']['output'];
+  /** The query that was executed */
+  query: Scalars['String']['output'];
+  /** Search results */
+  results: Array<ArtistCorrectionSearchResult>;
+};
+
+/** Artist search result from MusicBrainz for correction. */
+export type ArtistCorrectionSearchResult = {
+  __typename?: 'ArtistCorrectionSearchResult';
+  /** Area name (city/region) */
+  area?: Maybe<Scalars['String']['output']>;
+  /** MusicBrainz artist ID */
+  artistMbid: Scalars['UUID']['output'];
+  /** Begin date (partial date string) */
+  beginDate?: Maybe<Scalars['String']['output']>;
+  /** Country code (ISO 3166-1 alpha-2) */
+  country?: Maybe<Scalars['String']['output']>;
+  /** Disambiguation comment (e.g., "British rock band") */
+  disambiguation?: Maybe<Scalars['String']['output']>;
+  /** End date (partial date string) */
+  endDate?: Maybe<Scalars['String']['output']>;
+  /** Whether the artist has ended */
+  ended?: Maybe<Scalars['Boolean']['output']>;
+  /** Gender (only meaningful for Person type) */
+  gender?: Maybe<Scalars['String']['output']>;
+  /** MusicBrainz search score (0-100) */
+  mbScore: Scalars['Int']['output'];
+  /** Artist name */
+  name: Scalars['String']['output'];
+  /** Sort name (e.g., "Beatles, The") */
+  sortName: Scalars['String']['output'];
+  /** Data source this result came from (musicbrainz or discogs) */
+  source?: Maybe<Scalars['String']['output']>;
+  /** Top releases for disambiguation */
+  topReleases?: Maybe<Array<ArtistTopRelease>>;
+  /** Artist type: Person, Group, Orchestra, Choir, Character, Other */
+  type?: Maybe<Scalars['String']['output']>;
+};
+
 export type ArtistCredit = {
   __typename?: 'ArtistCredit';
   artist: Artist;
@@ -274,11 +478,80 @@ export type ArtistCredit = {
   role: Scalars['String']['output'];
 };
 
+/** Diff for artist credits. */
+export type ArtistCreditDiff = {
+  __typename?: 'ArtistCreditDiff';
+  /** Change classification */
+  changeType: ChangeType;
+  /** Current artist credits */
+  current: Array<CorrectionArtistCredit>;
+  /** Formatted current artist string */
+  currentDisplay: Scalars['String']['output'];
+  /** Name diff parts if modified */
+  nameDiff?: Maybe<Array<TextDiffPart>>;
+  /** Source artist credits */
+  source: Array<CorrectionArtistCredit>;
+  /** Formatted source artist string */
+  sourceDisplay: Scalars['String']['output'];
+};
+
+/** Artist external ID field selections. */
+export type ArtistExternalIdSelectionsInput = {
+  discogsId?: InputMaybe<Scalars['Boolean']['input']>;
+  ipi?: InputMaybe<Scalars['Boolean']['input']>;
+  isni?: InputMaybe<Scalars['Boolean']['input']>;
+  musicbrainzId?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Diff for a single artist field. */
+export type ArtistFieldDiff = {
+  __typename?: 'ArtistFieldDiff';
+  /** Change classification */
+  changeType: ChangeType;
+  /** Current value in database */
+  current?: Maybe<Scalars['String']['output']>;
+  /** Field name */
+  field: Scalars['String']['output'];
+  /** Value from MusicBrainz source */
+  source?: Maybe<Scalars['String']['output']>;
+};
+
+/** Complete field selections for artist correction. */
+export type ArtistFieldSelectionsInput = {
+  externalIds: ArtistExternalIdSelectionsInput;
+  metadata: ArtistMetadataSelectionsInput;
+};
+
 export type ArtistInput = {
   countryCode?: InputMaybe<Scalars['String']['input']>;
   imageUrl?: InputMaybe<Scalars['String']['input']>;
   musicbrainzId?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
+};
+
+/** Artist metadata field selections. */
+export type ArtistMetadataSelectionsInput = {
+  area?: InputMaybe<Scalars['Boolean']['input']>;
+  artistType?: InputMaybe<Scalars['Boolean']['input']>;
+  beginDate?: InputMaybe<Scalars['Boolean']['input']>;
+  countryCode?: InputMaybe<Scalars['Boolean']['input']>;
+  disambiguation?: InputMaybe<Scalars['Boolean']['input']>;
+  endDate?: InputMaybe<Scalars['Boolean']['input']>;
+  gender?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Summary statistics for artist field changes. */
+export type ArtistPreviewSummary = {
+  __typename?: 'ArtistPreviewSummary';
+  /** Number of fields added */
+  addedFields: Scalars['Int']['output'];
+  /** Number of fields that changed */
+  changedFields: Scalars['Int']['output'];
+  /** Number of fields modified */
+  modifiedFields: Scalars['Int']['output'];
+  /** Total number of fields compared */
+  totalFields: Scalars['Int']['output'];
 };
 
 export type ArtistRecommendation = {
@@ -306,6 +579,17 @@ export type ArtistRecommendationsConnection = {
   hasMore: Scalars['Boolean']['output'];
   recommendations: Array<ArtistRecommendation>;
   totalCount: Scalars['Int']['output'];
+};
+
+/**
+ * A top release for artist disambiguation.
+ * Helps identify the right artist when multiple share the same name.
+ */
+export type ArtistTopRelease = {
+  __typename?: 'ArtistTopRelease';
+  title: Scalars['String']['output'];
+  type?: Maybe<Scalars['String']['output']>;
+  year?: Maybe<Scalars['String']['output']>;
 };
 
 export type ArtistTrackInput = {
@@ -348,6 +632,20 @@ export type CategorizedDiscography = {
   singles: Array<UnifiedRelease>;
   soundtracks: Array<UnifiedRelease>;
 };
+
+/** Five-state classification for field changes in correction previews. */
+export enum ChangeType {
+  /** Field exists in source but not in current (e.g., missing release date) */
+  Added = 'ADDED',
+  /** Both exist but differ significantly (manual review needed) */
+  Conflict = 'CONFLICT',
+  /** Both exist but differ (e.g., title changed) */
+  Modified = 'MODIFIED',
+  /** Field exists in current but not in source (rare for corrections) */
+  Removed = 'REMOVED',
+  /** Values are semantically identical */
+  Unchanged = 'UNCHANGED',
+}
 
 export type Collection = {
   __typename?: 'Collection';
@@ -401,6 +699,196 @@ export type ComponentHealth = {
   status: HealthStatus;
 };
 
+/** Confidence tier for tiered scoring strategy. */
+export enum ConfidenceTier {
+  High = 'HIGH',
+  Low = 'LOW',
+  Medium = 'MEDIUM',
+  None = 'NONE',
+}
+
+/** Failed correction apply result. */
+export type CorrectionApplyError = {
+  __typename?: 'CorrectionApplyError';
+  /** Error classification code */
+  code: ApplyErrorCode;
+  /** Additional context for debugging (as JSON) */
+  context?: Maybe<Scalars['JSON']['output']>;
+  /** Human-readable error message */
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
+/** Input for applying a correction. */
+export type CorrectionApplyInput = {
+  /** Album ID to apply correction to */
+  albumId: Scalars['UUID']['input'];
+  /** Expected album updatedAt timestamp for optimistic locking */
+  expectedUpdatedAt: Scalars['DateTime']['input'];
+  /** Selected release group MBID */
+  releaseGroupMbid: Scalars['String']['input'];
+  /** Field selections determining which changes to apply */
+  selections: FieldSelectionsInput;
+  /** Source of correction data (defaults to MusicBrainz) */
+  source?: InputMaybe<CorrectionSource>;
+};
+
+/**
+ * Apply operation result (union returned as interface for simplicity).
+ * Check 'success' field to determine which fields are populated.
+ */
+export type CorrectionApplyResult = {
+  __typename?: 'CorrectionApplyResult';
+  album?: Maybe<Album>;
+  changes?: Maybe<AppliedChanges>;
+  code?: Maybe<ApplyErrorCode>;
+  context?: Maybe<Scalars['JSON']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+/** Successful correction apply result. */
+export type CorrectionApplySuccess = {
+  __typename?: 'CorrectionApplySuccess';
+  /** Updated album record */
+  album: Album;
+  /** Summary of changes applied */
+  changes: AppliedChanges;
+  success: Scalars['Boolean']['output'];
+};
+
+/** Artist credit from MusicBrainz search result. */
+export type CorrectionArtistCredit = {
+  __typename?: 'CorrectionArtistCredit';
+  /** Artist MusicBrainz ID */
+  mbid: Scalars['String']['output'];
+  /** Artist name as credited */
+  name: Scalars['String']['output'];
+};
+
+/** Complete preview of all changes between current album and MusicBrainz source. */
+export type CorrectionPreview = {
+  __typename?: 'CorrectionPreview';
+  /** Album ID being corrected */
+  albumId: Scalars['String']['output'];
+  /** Album title for display */
+  albumTitle: Scalars['String']['output'];
+  /** Album updatedAt for optimistic locking */
+  albumUpdatedAt: Scalars['DateTime']['output'];
+  /** Artist credit comparison */
+  artistDiff: ArtistCreditDiff;
+  /** Cover art comparison */
+  coverArt: CoverArtDiff;
+  /** Field-by-field diffs (as JSON for complex union types) */
+  fieldDiffs: Scalars['JSON']['output'];
+  /** Full MusicBrainz release data (for tracks) */
+  mbReleaseData?: Maybe<MbReleaseData>;
+  /** Selected MusicBrainz search result */
+  sourceResult: ScoredSearchResult;
+  /** Summary of all changes */
+  summary: PreviewSummary;
+  /** Track listing comparison */
+  trackDiffs: Array<TrackDiff>;
+  /** Track summary statistics */
+  trackSummary: TrackListSummary;
+};
+
+/** Input for correction preview operation. */
+export type CorrectionPreviewInput = {
+  /** Album ID to preview corrections for */
+  albumId: Scalars['UUID']['input'];
+  /** Selected release group MBID from search results (or Discogs master ID for Discogs source) */
+  releaseGroupMbid: Scalars['String']['input'];
+  /** Data source (default: MUSICBRAINZ) */
+  source?: InputMaybe<CorrectionSource>;
+};
+
+/** Scoring metadata for correction search response. */
+export type CorrectionScoringInfo = {
+  __typename?: 'CorrectionScoringInfo';
+  /** Number of results below threshold */
+  lowConfidenceCount: Scalars['Int']['output'];
+  /** Strategy used for scoring */
+  strategy: ScoringStrategy;
+  /** Low-confidence threshold used */
+  threshold: Scalars['Float']['output'];
+};
+
+/** Input for correction search operation. */
+export type CorrectionSearchInput = {
+  /** Album ID to search corrections for */
+  albumId: Scalars['UUID']['input'];
+  /** Override album title for search */
+  albumTitle?: InputMaybe<Scalars['String']['input']>;
+  /** Override artist name for search */
+  artistName?: InputMaybe<Scalars['String']['input']>;
+  /** Direct Discogs master ID lookup (bypasses text search) */
+  discogsId?: InputMaybe<Scalars['String']['input']>;
+  /** Maximum results to return (default 10) */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  /** Threshold below which results are flagged as low-confidence (0-1) */
+  lowConfidenceThreshold?: InputMaybe<Scalars['Float']['input']>;
+  /** Offset for pagination */
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  /** Direct MusicBrainz release group ID lookup (bypasses text search) */
+  releaseGroupMbid?: InputMaybe<Scalars['String']['input']>;
+  /** Data source to search (default: MUSICBRAINZ) */
+  source?: InputMaybe<CorrectionSource>;
+  /** Scoring strategy to use */
+  strategy?: InputMaybe<ScoringStrategy>;
+  /** Optional year filter */
+  yearFilter?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** Query information for correction search. */
+export type CorrectionSearchQuery = {
+  __typename?: 'CorrectionSearchQuery';
+  albumTitle?: Maybe<Scalars['String']['output']>;
+  artistName?: Maybe<Scalars['String']['output']>;
+  yearFilter?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Response from correction search operation. */
+export type CorrectionSearchResponse = {
+  __typename?: 'CorrectionSearchResponse';
+  /** Whether more results are available */
+  hasMore: Scalars['Boolean']['output'];
+  /** The query that was executed */
+  query: CorrectionSearchQuery;
+  /** Grouped search results (deduplicated by release group) */
+  results: Array<GroupedSearchResult>;
+  /** Scoring metadata */
+  scoring: CorrectionScoringInfo;
+  /** Total number of unique release groups */
+  totalGroups: Scalars['Int']['output'];
+};
+
+/** Source for correction data. */
+export enum CorrectionSource {
+  /** Discogs database */
+  Discogs = 'DISCOGS',
+  /** MusicBrainz database */
+  Musicbrainz = 'MUSICBRAINZ',
+}
+
+/** Cover art handling options for correction application. */
+export enum CoverArtChoice {
+  /** Remove cover art entirely */
+  Clear = 'CLEAR',
+  /** Preserve existing cover art */
+  KeepCurrent = 'KEEP_CURRENT',
+  /** Replace current cover with source cover art */
+  UseSource = 'USE_SOURCE',
+}
+
+/** Cover art comparison data. */
+export type CoverArtDiff = {
+  __typename?: 'CoverArtDiff';
+  changeType: ChangeType;
+  currentUrl?: Maybe<Scalars['String']['output']>;
+  sourceUrl?: Maybe<Scalars['String']['output']>;
+};
+
 export type CreateCollectionPayload = {
   __typename?: 'CreateCollectionPayload';
   id: Scalars['String']['output'];
@@ -409,6 +897,23 @@ export type CreateCollectionPayload = {
 export type CreateRecommendationPayload = {
   __typename?: 'CreateRecommendationPayload';
   id: Scalars['String']['output'];
+};
+
+/**
+ * Input for creating a recommendation with optional inline album creation.
+ * For each album, provide EITHER the ID (for existing) OR album data (to create).
+ */
+export type CreateRecommendationWithAlbumsInput = {
+  /** Create basis album with this data (mutually exclusive with basisAlbumId) */
+  basisAlbumData?: InputMaybe<AlbumInput>;
+  /** Existing basis album ID (mutually exclusive with basisAlbumData) */
+  basisAlbumId?: InputMaybe<Scalars['UUID']['input']>;
+  /** Create recommended album with this data (mutually exclusive with recommendedAlbumId) */
+  recommendedAlbumData?: InputMaybe<AlbumInput>;
+  /** Existing recommended album ID (mutually exclusive with recommendedAlbumData) */
+  recommendedAlbumId?: InputMaybe<Scalars['UUID']['input']>;
+  /** Recommendation score (1-10) */
+  score: Scalars['Int']['input'];
 };
 
 export enum DataQuality {
@@ -433,6 +938,40 @@ export type DatabaseStats = {
   totalAlbums: Scalars['Int']['output'];
   totalArtists: Scalars['Int']['output'];
   totalTracks: Scalars['Int']['output'];
+};
+
+/** Per-component change classification for date diff. */
+export type DateComponentChanges = {
+  __typename?: 'DateComponentChanges';
+  day: ChangeType;
+  month: ChangeType;
+  year: ChangeType;
+};
+
+/**
+ * Date components for partial date comparison.
+ * Handles YYYY, YYYY-MM, and YYYY-MM-DD formats.
+ */
+export type DateComponents = {
+  __typename?: 'DateComponents';
+  day?: Maybe<Scalars['Int']['output']>;
+  month?: Maybe<Scalars['Int']['output']>;
+  year?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Diff for release date field with component-level granularity. */
+export type DateDiff = {
+  __typename?: 'DateDiff';
+  /** Overall change classification */
+  changeType: ChangeType;
+  /** Per-component change classification */
+  componentChanges: DateComponentChanges;
+  /** Current date components */
+  current?: Maybe<DateComponents>;
+  /** Always 'releaseDate' */
+  field: Scalars['String']['output'];
+  /** Source date components */
+  source?: Maybe<DateComponents>;
 };
 
 export type DeleteAlbumPayload = {
@@ -462,40 +1001,6 @@ export type EnrichmentFieldDiff = {
   newValue?: Maybe<Scalars['String']['output']>;
   source: Scalars['String']['output'];
 };
-
-export type EnrichmentLog = {
-  __typename?: 'EnrichmentLog';
-  apiCallCount: Scalars['Int']['output'];
-  createdAt: Scalars['DateTime']['output'];
-  dataQualityAfter?: Maybe<DataQuality>;
-  dataQualityBefore?: Maybe<DataQuality>;
-  durationMs?: Maybe<Scalars['Int']['output']>;
-  entityId?: Maybe<Scalars['UUID']['output']>;
-  entityType?: Maybe<EnrichmentEntityType>;
-  errorCode?: Maybe<Scalars['String']['output']>;
-  errorMessage?: Maybe<Scalars['String']['output']>;
-  fieldsEnriched: Array<Scalars['String']['output']>;
-  id: Scalars['UUID']['output'];
-  jobId?: Maybe<Scalars['String']['output']>;
-  metadata?: Maybe<Scalars['JSON']['output']>;
-  operation: Scalars['String']['output'];
-  previewData?: Maybe<Scalars['JSON']['output']>;
-  reason?: Maybe<Scalars['String']['output']>;
-  retryCount: Scalars['Int']['output'];
-  sources: Array<Scalars['String']['output']>;
-  status: EnrichmentLogStatus;
-  triggeredBy?: Maybe<Scalars['String']['output']>;
-  userId?: Maybe<Scalars['String']['output']>;
-};
-
-export enum EnrichmentLogStatus {
-  Failed = 'FAILED',
-  NoDataAvailable = 'NO_DATA_AVAILABLE',
-  PartialSuccess = 'PARTIAL_SUCCESS',
-  Preview = 'PREVIEW',
-  Skipped = 'SKIPPED',
-  Success = 'SUCCESS',
-}
 
 export enum EnrichmentPriority {
   High = 'HIGH',
@@ -540,12 +1045,54 @@ export type ErrorMetric = {
   lastOccurrence: Scalars['DateTime']['output'];
 };
 
+/** Selection state for external ID fields. */
+export type ExternalIdSelectionsInput = {
+  /** Discogs release ID */
+  discogsId?: InputMaybe<Scalars['Boolean']['input']>;
+  /** MusicBrainz release ID */
+  musicbrainzId?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Spotify album ID */
+  spotifyId?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Complete field selection state for correction application. */
+export type FieldSelectionsInput = {
+  /** Per-artist selection state (key: artist MBID) */
+  artists?: InputMaybe<Array<SelectionEntry>>;
+  /** Cover art handling choice */
+  coverArt?: InputMaybe<CoverArtChoice>;
+  /** External ID field selections */
+  externalIds?: InputMaybe<ExternalIdSelectionsInput>;
+  /** Core metadata field selections */
+  metadata?: InputMaybe<MetadataSelectionsInput>;
+  /** Per-track selection state (key: "disc-track", e.g., "1-3") */
+  tracks?: InputMaybe<Array<SelectionEntry>>;
+};
+
 export type FollowUserPayload = {
   __typename?: 'FollowUserPayload';
   createdAt: Scalars['DateTime']['output'];
   followedId: Scalars['String']['output'];
   followerId: Scalars['String']['output'];
   id: Scalars['String']['output'];
+};
+
+/**
+ * A group of related search results (same release group MBID).
+ * Groups releases like "OK Computer" regular vs deluxe editions.
+ */
+export type GroupedSearchResult = {
+  __typename?: 'GroupedSearchResult';
+  /** Alternate versions (deluxe, remaster, etc.) */
+  alternateVersions: Array<ScoredSearchResult>;
+  /** Highest score among all versions (for sorting groups) */
+  bestScore: Scalars['Float']['output'];
+  /** Primary result (best version to display) */
+  primaryResult: ScoredSearchResult;
+  /** The release group MBID (shared by all versions) */
+  releaseGroupMbid: Scalars['String']['output'];
+  /** Total number of versions in this group */
+  versionCount: Scalars['Int']['output'];
 };
 
 export type HealthComponents = {
@@ -606,17 +1153,210 @@ export type JobStatusUpdate = {
   type: Scalars['String']['output'];
 };
 
+export type LlamaLog = {
+  __typename?: 'LlamaLog';
+  apiCallCount: Scalars['Int']['output'];
+  category: LlamaLogCategory;
+  children?: Maybe<Array<LlamaLog>>;
+  createdAt: Scalars['DateTime']['output'];
+  dataQualityAfter?: Maybe<DataQuality>;
+  dataQualityBefore?: Maybe<DataQuality>;
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  entityId?: Maybe<Scalars['UUID']['output']>;
+  entityType?: Maybe<EnrichmentEntityType>;
+  errorCode?: Maybe<Scalars['String']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  fieldsEnriched: Array<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  jobId?: Maybe<Scalars['String']['output']>;
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  operation: Scalars['String']['output'];
+  parentJobId?: Maybe<Scalars['String']['output']>;
+  previewData?: Maybe<Scalars['JSON']['output']>;
+  reason?: Maybe<Scalars['String']['output']>;
+  retryCount: Scalars['Int']['output'];
+  rootJobId?: Maybe<Scalars['String']['output']>;
+  sources: Array<Scalars['String']['output']>;
+  status: LlamaLogStatus;
+  triggeredBy?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['String']['output']>;
+};
+
+export enum LlamaLogCategory {
+  Cached = 'CACHED',
+  Corrected = 'CORRECTED',
+  Created = 'CREATED',
+  Enriched = 'ENRICHED',
+  Failed = 'FAILED',
+  Linked = 'LINKED',
+  UserAction = 'USER_ACTION',
+}
+
+export type LlamaLogChainResponse = {
+  __typename?: 'LlamaLogChainResponse';
+  cursor?: Maybe<Scalars['String']['output']>;
+  hasMore: Scalars['Boolean']['output'];
+  logs: Array<LlamaLog>;
+  totalCount: Scalars['Int']['output'];
+};
+
+export enum LlamaLogStatus {
+  Failed = 'FAILED',
+  NoDataAvailable = 'NO_DATA_AVAILABLE',
+  PartialSuccess = 'PARTIAL_SUCCESS',
+  Preview = 'PREVIEW',
+  Skipped = 'SKIPPED',
+  Success = 'SUCCESS',
+}
+
+/** MusicBrainz artist data within artist credit. */
+export type MbArtist = {
+  __typename?: 'MBArtist';
+  /** Disambiguation */
+  disambiguation?: Maybe<Scalars['String']['output']>;
+  /** Artist MBID */
+  id: Scalars['String']['output'];
+  /** Artist name */
+  name: Scalars['String']['output'];
+  /** Sort name */
+  sortName?: Maybe<Scalars['String']['output']>;
+};
+
+/** MusicBrainz artist credit entry. */
+export type MbArtistCredit = {
+  __typename?: 'MBArtistCredit';
+  /** Artist data */
+  artist: MbArtist;
+  /** Join phrase (e.g., ' & ', ' feat. ') */
+  joinphrase?: Maybe<Scalars['String']['output']>;
+  /** Artist name as credited */
+  name: Scalars['String']['output'];
+};
+
+/** MusicBrainz medium (disc/vinyl/CD) data. */
+export type MbMedium = {
+  __typename?: 'MBMedium';
+  /** Format (CD, Vinyl, Digital, etc.) */
+  format?: Maybe<Scalars['String']['output']>;
+  /** Medium position (1-based) */
+  position: Scalars['Int']['output'];
+  /** Number of tracks on this medium */
+  trackCount: Scalars['Int']['output'];
+  /** Track listing */
+  tracks: Array<MbMediumTrack>;
+};
+
+/** MusicBrainz medium track wrapper. */
+export type MbMediumTrack = {
+  __typename?: 'MBMediumTrack';
+  /** Track position within medium */
+  position: Scalars['Int']['output'];
+  /** Recording data */
+  recording: MbRecording;
+};
+
+/** MusicBrainz recording (track) data. */
+export type MbRecording = {
+  __typename?: 'MBRecording';
+  /** Recording MBID */
+  id: Scalars['String']['output'];
+  /** Duration in milliseconds */
+  length?: Maybe<Scalars['Int']['output']>;
+  /** Track position within medium */
+  position: Scalars['Int']['output'];
+  /** Track title */
+  title: Scalars['String']['output'];
+};
+
+/**
+ * MusicBrainz release data (full release, not just release group).
+ * Fetched separately for track listing comparison.
+ */
+export type MbReleaseData = {
+  __typename?: 'MBReleaseData';
+  /** Artist credits */
+  artistCredit: Array<MbArtistCredit>;
+  /** Barcode */
+  barcode?: Maybe<Scalars['String']['output']>;
+  /** Country of release */
+  country?: Maybe<Scalars['String']['output']>;
+  /** Release date (YYYY, YYYY-MM, or YYYY-MM-DD) */
+  date?: Maybe<Scalars['String']['output']>;
+  /** Release MBID (not release group) */
+  id: Scalars['String']['output'];
+  /** Media (discs/vinyls/etc.) */
+  media: Array<MbMedium>;
+  /** Album title */
+  title: Scalars['String']['output'];
+};
+
+/**
+ * Input for applying a manual correction (no external MBID required).
+ * Admin directly edits album fields without selecting a MusicBrainz source.
+ */
+export type ManualCorrectionApplyInput = {
+  /** Album ID to apply correction to */
+  albumId: Scalars['UUID']['input'];
+  /** Artist names to set */
+  artists: Array<Scalars['String']['input']>;
+  /** Discogs master/release ID */
+  discogsId?: InputMaybe<Scalars['String']['input']>;
+  /** Expected album updatedAt timestamp for optimistic locking */
+  expectedUpdatedAt: Scalars['DateTime']['input'];
+  /** MusicBrainz release group UUID */
+  musicbrainzId?: InputMaybe<Scalars['String']['input']>;
+  /** Release date (YYYY, YYYY-MM, or YYYY-MM-DD format) */
+  releaseDate?: InputMaybe<Scalars['String']['input']>;
+  /** Release type (Album, EP, Single, etc.) */
+  releaseType?: InputMaybe<Scalars['String']['input']>;
+  /** Spotify album ID */
+  spotifyId?: InputMaybe<Scalars['String']['input']>;
+  /** Title to set (required) */
+  title: Scalars['String']['input'];
+};
+
+/** Selection state for metadata fields. */
+export type MetadataSelectionsInput = {
+  /** Barcode / UPC */
+  barcode?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Record label */
+  label?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Release country code */
+  releaseCountry?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Release date */
+  releaseDate?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Release type (Album, EP, Single, etc.) */
+  releaseType?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Album title */
+  title?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   addAlbum: Album;
   addAlbumToCollection: AddAlbumToCollectionPayload;
+  /**
+   * Add album to collection with optional inline album creation.
+   * Use albumId for existing albums or albumData to create new album atomically.
+   * Provides proper provenance chain for LlamaLog tracking.
+   */
+  addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   addArtist: Artist;
   addToListenLater: CollectionAlbum;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
+  /** Apply selected corrections from a preview to an artist */
+  artistCorrectionApply: ArtistCorrectionApplyResult;
   batchEnrichment: BatchEnrichmentResult;
   cleanQueue: Scalars['Boolean']['output'];
   clearFailedJobs: Scalars['Boolean']['output'];
+  /** Apply selected corrections from a preview to an album */
+  correctionApply: CorrectionApplyResult;
   createCollection: CreateCollectionPayload;
+  /**
+   * Create a recommendation. Supports two modes:
+   * 1. Legacy: Pass basisAlbumId + recommendedAlbumId (existing albums)
+   * 2. New: Pass input with optional inline album creation
+   */
   createRecommendation: CreateRecommendationPayload;
   createTrack: Track;
   deleteAlbum: DeleteAlbumPayload;
@@ -627,6 +1367,8 @@ export type Mutation = {
   dismissUserSuggestion: Scalars['Boolean']['output'];
   ensureListenLaterCollection: Collection;
   followUser: FollowUserPayload;
+  /** Apply manual corrections to an album (no external source) */
+  manualCorrectionApply: CorrectionApplyResult;
   pauseQueue: Scalars['Boolean']['output'];
   previewAlbumEnrichment: PreviewEnrichmentResult;
   previewArtistEnrichment: PreviewEnrichmentResult;
@@ -668,6 +1410,10 @@ export type MutationAddAlbumToCollectionArgs = {
   input: CollectionAlbumInput;
 };
 
+export type MutationAddAlbumToCollectionWithCreateArgs = {
+  input: AddAlbumToCollectionWithCreateInput;
+};
+
 export type MutationAddArtistArgs = {
   input: ArtistInput;
 };
@@ -682,6 +1428,10 @@ export type MutationAdminUpdateUserShowTourArgs = {
   userId: Scalars['String']['input'];
 };
 
+export type MutationArtistCorrectionApplyArgs = {
+  input: ArtistCorrectionApplyInput;
+};
+
 export type MutationBatchEnrichmentArgs = {
   ids: Array<Scalars['UUID']['input']>;
   priority?: InputMaybe<EnrichmentPriority>;
@@ -692,6 +1442,10 @@ export type MutationCleanQueueArgs = {
   olderThan?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type MutationCorrectionApplyArgs = {
+  input: CorrectionApplyInput;
+};
+
 export type MutationCreateCollectionArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   isPublic?: InputMaybe<Scalars['Boolean']['input']>;
@@ -699,9 +1453,10 @@ export type MutationCreateCollectionArgs = {
 };
 
 export type MutationCreateRecommendationArgs = {
-  basisAlbumId: Scalars['UUID']['input'];
-  recommendedAlbumId: Scalars['UUID']['input'];
-  score: Scalars['Int']['input'];
+  basisAlbumId?: InputMaybe<Scalars['UUID']['input']>;
+  input?: InputMaybe<CreateRecommendationWithAlbumsInput>;
+  recommendedAlbumId?: InputMaybe<Scalars['UUID']['input']>;
+  score?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type MutationCreateTrackArgs = {
@@ -734,6 +1489,10 @@ export type MutationDismissUserSuggestionArgs = {
 
 export type MutationFollowUserArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationManualCorrectionApplyArgs = {
+  input: ManualCorrectionApplyInput;
 };
 
 export type MutationPreviewAlbumEnrichmentArgs = {
@@ -892,14 +1651,31 @@ export type PaginationInfo = {
 
 export type PreviewEnrichmentResult = {
   __typename?: 'PreviewEnrichmentResult';
-  enrichmentLogId: Scalars['UUID']['output'];
   fieldsToUpdate: Array<EnrichmentFieldDiff>;
+  llamaLogId: Scalars['UUID']['output'];
   matchScore?: Maybe<Scalars['Float']['output']>;
   matchedEntity?: Maybe<Scalars['String']['output']>;
   message?: Maybe<Scalars['String']['output']>;
   rawData?: Maybe<Scalars['JSON']['output']>;
   sources: Array<Scalars['String']['output']>;
   success: Scalars['Boolean']['output'];
+};
+
+/** Summary of all changes in a preview. */
+export type PreviewSummary = {
+  __typename?: 'PreviewSummary';
+  /** Number of fields added */
+  addedFields: Scalars['Int']['output'];
+  /** Number of fields that changed */
+  changedFields: Scalars['Int']['output'];
+  /** Number of conflict fields */
+  conflictFields: Scalars['Int']['output'];
+  /** Whether track listing has changes */
+  hasTrackChanges: Scalars['Boolean']['output'];
+  /** Number of fields modified */
+  modifiedFields: Scalars['Int']['output'];
+  /** Total fields compared */
+  totalFields: Scalars['Int']['output'];
 };
 
 export type Query = {
@@ -912,11 +1688,18 @@ export type Query = {
   albumsByJobId: Array<Album>;
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
+  /** Generate a preview of changes between artist and selected MusicBrainz or Discogs artist */
+  artistCorrectionPreview: ArtistCorrectionPreview;
+  /** Search MusicBrainz or Discogs for artist correction candidates */
+  artistCorrectionSearch: ArtistCorrectionSearchResponse;
   artistDiscography: CategorizedDiscography;
   artistRecommendations: ArtistRecommendationsConnection;
   collection?: Maybe<Collection>;
+  /** Generate a preview of changes between album and selected MusicBrainz release */
+  correctionPreview: CorrectionPreview;
+  /** Search MusicBrainz for correction candidates for an album */
+  correctionSearch: CorrectionSearchResponse;
   databaseStats: DatabaseStats;
-  enrichmentLogs: Array<EnrichmentLog>;
   enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
   followingActivity: Array<Recommendation>;
@@ -924,6 +1707,8 @@ export type Query = {
   health: Scalars['String']['output'];
   isFollowing: Scalars['Boolean']['output'];
   jobHistory: Array<JobRecord>;
+  llamaLogChain: LlamaLogChainResponse;
+  llamaLogs: Array<LlamaLog>;
   mutualConnections: Array<User>;
   myCollectionAlbums: Array<CollectionAlbum>;
   myCollections: Array<Collection>;
@@ -989,6 +1774,18 @@ export type QueryArtistByMusicBrainzIdArgs = {
   musicbrainzId: Scalars['UUID']['input'];
 };
 
+export type QueryArtistCorrectionPreviewArgs = {
+  artistId: Scalars['UUID']['input'];
+  source?: InputMaybe<CorrectionSource>;
+  sourceArtistId: Scalars['String']['input'];
+};
+
+export type QueryArtistCorrectionSearchArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
+  source?: InputMaybe<CorrectionSource>;
+};
+
 export type QueryArtistDiscographyArgs = {
   id: Scalars['String']['input'];
   source: DataSource;
@@ -1006,13 +1803,12 @@ export type QueryCollectionArgs = {
   id: Scalars['String']['input'];
 };
 
-export type QueryEnrichmentLogsArgs = {
-  entityId?: InputMaybe<Scalars['UUID']['input']>;
-  entityType?: InputMaybe<EnrichmentEntityType>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  skip?: InputMaybe<Scalars['Int']['input']>;
-  sources?: InputMaybe<Array<Scalars['String']['input']>>;
-  status?: InputMaybe<EnrichmentLogStatus>;
+export type QueryCorrectionPreviewArgs = {
+  input: CorrectionPreviewInput;
+};
+
+export type QueryCorrectionSearchArgs = {
+  input: CorrectionSearchInput;
 };
 
 export type QueryEnrichmentStatsArgs = {
@@ -1043,6 +1839,29 @@ export type QueryIsFollowingArgs = {
 export type QueryJobHistoryArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   status?: InputMaybe<JobStatus>;
+};
+
+export type QueryLlamaLogChainArgs = {
+  categories?: InputMaybe<Array<LlamaLogCategory>>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  entityId: Scalars['UUID']['input'];
+  entityType: EnrichmentEntityType;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type QueryLlamaLogsArgs = {
+  category?: InputMaybe<Array<LlamaLogCategory>>;
+  entityId?: InputMaybe<Scalars['UUID']['input']>;
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  parentJobId?: InputMaybe<Scalars['String']['input']>;
+  parentOnly?: InputMaybe<Scalars['Boolean']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sources?: InputMaybe<Array<Scalars['String']['input']>>;
+  status?: InputMaybe<LlamaLogStatus>;
 };
 
 export type QueryMutualConnectionsArgs = {
@@ -1290,6 +2109,68 @@ export type RollbackSyncJobResult = {
   syncJobId: Scalars['UUID']['output'];
 };
 
+/** Score breakdown showing component scores for search result scoring. */
+export type ScoreBreakdown = {
+  __typename?: 'ScoreBreakdown';
+  /** Artist match score (strategy-specific range) */
+  artistScore: Scalars['Float']['output'];
+  /** For tiered strategy: confidence level */
+  confidenceTier?: Maybe<ConfidenceTier>;
+  /** MusicBrainz search score component */
+  mbScore?: Maybe<Scalars['Float']['output']>;
+  /** Title match score (strategy-specific range) */
+  titleScore: Scalars['Float']['output'];
+  /** Year/date score (strategy-specific range) */
+  yearScore: Scalars['Float']['output'];
+};
+
+/** A search result with scoring applied. */
+export type ScoredSearchResult = {
+  __typename?: 'ScoredSearchResult';
+  /** Primary artist credits */
+  artistCredits: Array<CorrectionArtistCredit>;
+  /** Component score breakdown */
+  breakdown: ScoreBreakdown;
+  /** Cover Art Archive thumbnail URL (250px) */
+  coverArtUrl?: Maybe<Scalars['String']['output']>;
+  /** Disambiguation (e.g., "deluxe edition") */
+  disambiguation?: Maybe<Scalars['String']['output']>;
+  /** Raw display score (0-1 or 0-100 depending on strategy) */
+  displayScore: Scalars['Float']['output'];
+  /** First release date (YYYY or YYYY-MM-DD) */
+  firstReleaseDate?: Maybe<Scalars['String']['output']>;
+  /** True if score is below low-confidence threshold */
+  isLowConfidence: Scalars['Boolean']['output'];
+  /** MusicBrainz search score (0-100) */
+  mbScore: Scalars['Int']['output'];
+  /** Normalized score 0-1 for sorting */
+  normalizedScore: Scalars['Float']['output'];
+  /** Formatted primary artist name for display */
+  primaryArtistName: Scalars['String']['output'];
+  /** Primary type (Album, EP, Single, etc.) */
+  primaryType?: Maybe<Scalars['String']['output']>;
+  /** Release group MusicBrainz ID */
+  releaseGroupMbid: Scalars['String']['output'];
+  /** Which strategy produced this score */
+  scoringStrategy: ScoringStrategy;
+  /** Secondary types (Compilation, Live, Remix, etc.) */
+  secondaryTypes?: Maybe<Array<Scalars['String']['output']>>;
+  /** Source indicator */
+  source: Scalars['String']['output'];
+  /** Album title */
+  title: Scalars['String']['output'];
+};
+
+/** Available scoring strategies for correction search results. */
+export enum ScoringStrategy {
+  /** 0-1 scale using string-similarity */
+  Normalized = 'NORMALIZED',
+  /** High/medium/low confidence levels */
+  Tiered = 'TIERED',
+  /** 0-100 with multiple signals */
+  Weighted = 'WEIGHTED',
+}
+
 export type SearchInput = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
@@ -1324,6 +2205,14 @@ export enum SearchType {
   Track = 'TRACK',
   User = 'USER',
 }
+
+/** Key-value pair for Map-like selections. */
+export type SelectionEntry = {
+  /** Unique key (artist MBID or track position like "1-3") */
+  key: Scalars['String']['input'];
+  /** Whether to apply this change */
+  selected: Scalars['Boolean']['input'];
+};
 
 export enum SortOrder {
   Asc = 'ASC',
@@ -1518,6 +2407,35 @@ export type SystemHealth = {
   uptime: Scalars['Float']['output'];
 };
 
+/** Diff for a text field (title, disambiguation, etc.) */
+export type TextDiff = {
+  __typename?: 'TextDiff';
+  /** Change classification */
+  changeType: ChangeType;
+  /** Current value in database */
+  currentValue?: Maybe<Scalars['String']['output']>;
+  /** Field name (e.g., 'title', 'disambiguation') */
+  field: Scalars['String']['output'];
+  /** Character-level diff parts (only for MODIFIED/CONFLICT) */
+  parts?: Maybe<Array<TextDiffPart>>;
+  /** Value from MusicBrainz source */
+  sourceValue?: Maybe<Scalars['String']['output']>;
+};
+
+/**
+ * Character-level diff part for text comparison.
+ * Used to highlight exact changes within text fields.
+ */
+export type TextDiffPart = {
+  __typename?: 'TextDiffPart';
+  /** True if this part was added in the source */
+  added?: Maybe<Scalars['Boolean']['output']>;
+  /** True if this part was removed (exists in current but not source) */
+  removed?: Maybe<Scalars['Boolean']['output']>;
+  /** The text content of this part */
+  value: Scalars['String']['output'];
+};
+
 export type ThroughputMetrics = {
   __typename?: 'ThroughputMetrics';
   jobsPerHour: Scalars['Float']['output'];
@@ -1562,13 +2480,14 @@ export type Track = {
   audioFeatures?: Maybe<AudioFeatures>;
   createdAt: Scalars['DateTime']['output'];
   discNumber: Scalars['Int']['output'];
+  discogsId?: Maybe<Scalars['String']['output']>;
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
-  enrichmentLogs: Array<EnrichmentLog>;
   explicit: Scalars['Boolean']['output'];
   id: Scalars['UUID']['output'];
   isrc?: Maybe<Scalars['String']['output']>;
-  latestEnrichmentLog?: Maybe<EnrichmentLog>;
+  latestLlamaLog?: Maybe<LlamaLog>;
+  llamaLogs: Array<LlamaLog>;
   musicbrainzId?: Maybe<Scalars['UUID']['output']>;
   popularity?: Maybe<Scalars['Float']['output']>;
   previewUrl?: Maybe<Scalars['String']['output']>;
@@ -1579,14 +2498,47 @@ export type Track = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
-export type TrackEnrichmentLogsArgs = {
+export type TrackLlamaLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** Current track data from database. */
+export type TrackData = {
+  __typename?: 'TrackData';
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  title: Scalars['String']['output'];
+  trackNumber: Scalars['Int']['output'];
+};
+
+/**
+ * Diff for a single track in the track listing.
+ * Position-based comparison (disc + track number).
+ */
+export type TrackDiff = {
+  __typename?: 'TrackDiff';
+  /** Track change classification */
+  changeType: Scalars['String']['output'];
+  /** Current track data (null if ADDED in source) */
+  current?: Maybe<TrackData>;
+  /** Disc number (1-based) */
+  discNumber: Scalars['Int']['output'];
+  /** Duration difference in milliseconds (absolute value) */
+  durationDelta?: Maybe<Scalars['Int']['output']>;
+  /** Track position (1-based) */
+  position: Scalars['Int']['output'];
+  /** Source track from MusicBrainz (null if REMOVED from current) */
+  source?: Maybe<TrackSourceData>;
+  /** Title diff parts (only for MODIFIED) */
+  titleDiff?: Maybe<Array<TextDiffPart>>;
+  /** Database track ID (for selection) */
+  trackId?: Maybe<Scalars['String']['output']>;
 };
 
 export type TrackInput = {
   albumId: Scalars['UUID']['input'];
   artists: Array<ArtistTrackInput>;
   discNumber?: InputMaybe<Scalars['Int']['input']>;
+  discogsId?: InputMaybe<Scalars['String']['input']>;
   durationMs?: InputMaybe<Scalars['Int']['input']>;
   explicit?: InputMaybe<Scalars['Boolean']['input']>;
   isrc?: InputMaybe<Scalars['String']['input']>;
@@ -1594,6 +2546,31 @@ export type TrackInput = {
   previewUrl?: InputMaybe<Scalars['String']['input']>;
   title: Scalars['String']['input'];
   trackNumber: Scalars['Int']['input'];
+};
+
+/** Summary statistics for track listing comparison. */
+export type TrackListSummary = {
+  __typename?: 'TrackListSummary';
+  /** Number of tracks added in source */
+  added: Scalars['Int']['output'];
+  /** Number of matching tracks (same position, same title) */
+  matching: Scalars['Int']['output'];
+  /** Number of modified tracks (same position, different title/duration) */
+  modified: Scalars['Int']['output'];
+  /** Number of tracks removed (exist in current but not source) */
+  removed: Scalars['Int']['output'];
+  /** Total tracks in current album */
+  totalCurrent: Scalars['Int']['output'];
+  /** Total tracks in source data */
+  totalSource: Scalars['Int']['output'];
+};
+
+/** Source track data from MusicBrainz. */
+export type TrackSourceData = {
+  __typename?: 'TrackSourceData';
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  mbid?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
 };
 
 export type UnifiedRelease = {
@@ -1635,6 +2612,7 @@ export type UpdateRecommendationPayload = {
 
 export type UpdateTrackInput = {
   discNumber?: InputMaybe<Scalars['Int']['input']>;
+  discogsId?: InputMaybe<Scalars['String']['input']>;
   durationMs?: InputMaybe<Scalars['Int']['input']>;
   explicit?: InputMaybe<Scalars['Boolean']['input']>;
   isrc?: InputMaybe<Scalars['String']['input']>;
@@ -1767,6 +2745,76 @@ export type AdminUpdateUserShowTourMutation = {
   };
 };
 
+export type ApplyCorrectionMutationVariables = Exact<{
+  input: CorrectionApplyInput;
+}>;
+
+export type ApplyCorrectionMutation = {
+  __typename?: 'Mutation';
+  correctionApply: {
+    __typename?: 'CorrectionApplyResult';
+    success: boolean;
+    code?: ApplyErrorCode | null;
+    message?: string | null;
+    context?: any | null;
+    album?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      releaseDate?: Date | null;
+      releaseType?: string | null;
+      barcode?: string | null;
+      label?: string | null;
+      musicbrainzId?: string | null;
+      coverArtUrl?: string | null;
+      cloudflareImageId?: string | null;
+      dataQuality?: DataQuality | null;
+      updatedAt: Date;
+      tracks: Array<{
+        __typename?: 'Track';
+        id: string;
+        title: string;
+        durationMs?: number | null;
+        trackNumber: number;
+        discNumber: number;
+        isrc?: string | null;
+        musicbrainzId?: string | null;
+      }>;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        role: string;
+        position: number;
+        artist: {
+          __typename?: 'Artist';
+          id: string;
+          name: string;
+          musicbrainzId?: string | null;
+          imageUrl?: string | null;
+        };
+      }>;
+    } | null;
+    changes?: {
+      __typename?: 'AppliedChanges';
+      metadata: Array<string>;
+      externalIds: Array<string>;
+      coverArt: boolean;
+      dataQualityBefore: DataQuality;
+      dataQualityAfter: DataQuality;
+      artists: {
+        __typename?: 'AppliedArtistChanges';
+        added: Array<string>;
+        removed: Array<string>;
+      };
+      tracks: {
+        __typename?: 'AppliedTrackChanges';
+        added: number;
+        modified: number;
+        removed: number;
+      };
+    } | null;
+  };
+};
+
 export type CreateCollectionMutationVariables = Exact<{
   name: Scalars['String']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
@@ -1855,6 +2903,34 @@ export type RemoveFromListenLaterMutationVariables = Exact<{
 export type RemoveFromListenLaterMutation = {
   __typename?: 'Mutation';
   removeFromListenLater: boolean;
+};
+
+export type ManualCorrectionApplyMutationVariables = Exact<{
+  input: ManualCorrectionApplyInput;
+}>;
+
+export type ManualCorrectionApplyMutation = {
+  __typename?: 'Mutation';
+  manualCorrectionApply: {
+    __typename?: 'CorrectionApplyResult';
+    success: boolean;
+    code?: ApplyErrorCode | null;
+    message?: string | null;
+    album?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      releaseDate?: Date | null;
+      releaseType?: string | null;
+      musicbrainzId?: string | null;
+      dataQuality?: DataQuality | null;
+      updatedAt: Date;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    } | null;
+  };
 };
 
 export type RemoveAlbumFromCollectionMutationVariables = Exact<{
@@ -2031,9 +3107,11 @@ export type GetAlbumDetailsAdminQuery = {
     __typename?: 'Album';
     id: string;
     musicbrainzId?: string | null;
+    discogsId?: string | null;
     title: string;
     releaseDate?: Date | null;
     releaseType?: string | null;
+    genres?: Array<string> | null;
     trackCount?: number | null;
     durationMs?: number | null;
     coverArtUrl?: string | null;
@@ -2051,21 +3129,21 @@ export type GetAlbumDetailsAdminQuery = {
     averageRating?: number | null;
     inCollectionsCount: number;
     recommendationScore?: number | null;
-    latestEnrichmentLog?: {
-      __typename?: 'EnrichmentLog';
+    latestLlamaLog?: {
+      __typename?: 'LlamaLog';
       id: string;
-      status: EnrichmentLogStatus;
+      status: LlamaLogStatus;
       sources: Array<string>;
       fieldsEnriched: Array<string>;
       errorMessage?: string | null;
       createdAt: Date;
     } | null;
-    enrichmentLogs: Array<{
-      __typename?: 'EnrichmentLog';
+    llamaLogs: Array<{
+      __typename?: 'LlamaLog';
       id: string;
       operation: string;
       sources: Array<string>;
-      status: EnrichmentLogStatus;
+      status: LlamaLogStatus;
       fieldsEnriched: Array<string>;
       errorMessage?: string | null;
       durationMs?: number | null;
@@ -2147,6 +3225,120 @@ export type GetArtistByMusicBrainzIdQuery = {
     lastEnriched?: Date | null;
     needsEnrichment: boolean;
   } | null;
+};
+
+export type SearchArtistCorrectionCandidatesQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  source?: InputMaybe<CorrectionSource>;
+}>;
+
+export type SearchArtistCorrectionCandidatesQuery = {
+  __typename?: 'Query';
+  artistCorrectionSearch: {
+    __typename?: 'ArtistCorrectionSearchResponse';
+    hasMore: boolean;
+    query: string;
+    results: Array<{
+      __typename?: 'ArtistCorrectionSearchResult';
+      artistMbid: string;
+      name: string;
+      sortName: string;
+      disambiguation?: string | null;
+      type?: string | null;
+      country?: string | null;
+      area?: string | null;
+      beginDate?: string | null;
+      endDate?: string | null;
+      ended?: boolean | null;
+      gender?: string | null;
+      mbScore: number;
+      source?: string | null;
+      topReleases?: Array<{
+        __typename?: 'ArtistTopRelease';
+        title: string;
+        year?: string | null;
+        type?: string | null;
+      }> | null;
+    }>;
+  };
+};
+
+export type GetArtistCorrectionPreviewQueryVariables = Exact<{
+  artistId: Scalars['UUID']['input'];
+  sourceArtistId: Scalars['String']['input'];
+  source?: InputMaybe<CorrectionSource>;
+}>;
+
+export type GetArtistCorrectionPreviewQuery = {
+  __typename?: 'Query';
+  artistCorrectionPreview: {
+    __typename?: 'ArtistCorrectionPreview';
+    mbArtistData?: any | null;
+    albumCount: number;
+    source: CorrectionSource;
+    currentArtist: {
+      __typename?: 'Artist';
+      id: string;
+      name: string;
+      musicbrainzId?: string | null;
+      discogsId?: string | null;
+      countryCode?: string | null;
+      formedYear?: number | null;
+      biography?: string | null;
+      dataQuality?: DataQuality | null;
+      updatedAt: Date;
+    };
+    fieldDiffs: Array<{
+      __typename?: 'ArtistFieldDiff';
+      field: string;
+      changeType: ChangeType;
+      current?: string | null;
+      source?: string | null;
+    }>;
+    summary: {
+      __typename?: 'ArtistPreviewSummary';
+      totalFields: number;
+      changedFields: number;
+      addedFields: number;
+      modifiedFields: number;
+    };
+  };
+};
+
+export type ApplyArtistCorrectionMutationVariables = Exact<{
+  input: ArtistCorrectionApplyInput;
+}>;
+
+export type ApplyArtistCorrectionMutation = {
+  __typename?: 'Mutation';
+  artistCorrectionApply: {
+    __typename?: 'ArtistCorrectionApplyResult';
+    success: boolean;
+    affectedAlbumCount?: number | null;
+    code?: ApplyErrorCode | null;
+    message?: string | null;
+    artist?: {
+      __typename?: 'Artist';
+      id: string;
+      name: string;
+      musicbrainzId?: string | null;
+      discogsId?: string | null;
+      countryCode?: string | null;
+      formedYear?: number | null;
+      dataQuality?: DataQuality | null;
+      enrichmentStatus?: EnrichmentStatus | null;
+      updatedAt: Date;
+    } | null;
+    changes?: {
+      __typename?: 'ArtistAppliedChanges';
+      metadata: Array<string>;
+      externalIds: Array<string>;
+      affectedAlbumCount: number;
+      dataQualityBefore: DataQuality;
+      dataQualityAfter: DataQuality;
+    } | null;
+  };
 };
 
 export type GetArtistDiscographyQueryVariables = Exact<{
@@ -2400,24 +3592,283 @@ export type DeleteArtistMutation = {
   };
 };
 
-export type GetEnrichmentLogsQueryVariables = Exact<{
-  entityType?: InputMaybe<EnrichmentEntityType>;
-  entityId?: InputMaybe<Scalars['UUID']['input']>;
-  status?: InputMaybe<EnrichmentLogStatus>;
-  skip?: InputMaybe<Scalars['Int']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+export type AddAlbumToCollectionWithCreateMutationVariables = Exact<{
+  input: AddAlbumToCollectionWithCreateInput;
 }>;
 
-export type GetEnrichmentLogsQuery = {
+export type AddAlbumToCollectionWithCreateMutation = {
+  __typename?: 'Mutation';
+  addAlbumToCollectionWithCreate: {
+    __typename?: 'AddAlbumToCollectionPayload';
+    id: string;
+  };
+};
+
+export type GetCorrectionPreviewQueryVariables = Exact<{
+  input: CorrectionPreviewInput;
+}>;
+
+export type GetCorrectionPreviewQuery = {
   __typename?: 'Query';
-  enrichmentLogs: Array<{
-    __typename?: 'EnrichmentLog';
+  correctionPreview: {
+    __typename?: 'CorrectionPreview';
+    albumId: string;
+    albumTitle: string;
+    albumUpdatedAt: Date;
+    fieldDiffs: any;
+    sourceResult: {
+      __typename?: 'ScoredSearchResult';
+      releaseGroupMbid: string;
+      title: string;
+      disambiguation?: string | null;
+      primaryArtistName: string;
+      firstReleaseDate?: string | null;
+      primaryType?: string | null;
+      secondaryTypes?: Array<string> | null;
+      mbScore: number;
+      coverArtUrl?: string | null;
+      source: string;
+      normalizedScore: number;
+      displayScore: number;
+      isLowConfidence: boolean;
+      artistCredits: Array<{
+        __typename?: 'CorrectionArtistCredit';
+        mbid: string;
+        name: string;
+      }>;
+      breakdown: {
+        __typename?: 'ScoreBreakdown';
+        titleScore: number;
+        artistScore: number;
+        yearScore: number;
+        mbScore?: number | null;
+        confidenceTier?: ConfidenceTier | null;
+      };
+    };
+    mbReleaseData?: {
+      __typename?: 'MBReleaseData';
+      id: string;
+      title: string;
+      date?: string | null;
+      country?: string | null;
+      barcode?: string | null;
+      media: Array<{
+        __typename?: 'MBMedium';
+        position: number;
+        format?: string | null;
+        trackCount: number;
+        tracks: Array<{
+          __typename?: 'MBMediumTrack';
+          position: number;
+          recording: {
+            __typename?: 'MBRecording';
+            id: string;
+            title: string;
+            length?: number | null;
+            position: number;
+          };
+        }>;
+      }>;
+      artistCredit: Array<{
+        __typename?: 'MBArtistCredit';
+        name: string;
+        joinphrase?: string | null;
+        artist: {
+          __typename?: 'MBArtist';
+          id: string;
+          name: string;
+          sortName?: string | null;
+          disambiguation?: string | null;
+        };
+      }>;
+    } | null;
+    artistDiff: {
+      __typename?: 'ArtistCreditDiff';
+      changeType: ChangeType;
+      currentDisplay: string;
+      sourceDisplay: string;
+      current: Array<{
+        __typename?: 'CorrectionArtistCredit';
+        mbid: string;
+        name: string;
+      }>;
+      source: Array<{
+        __typename?: 'CorrectionArtistCredit';
+        mbid: string;
+        name: string;
+      }>;
+      nameDiff?: Array<{
+        __typename?: 'TextDiffPart';
+        value: string;
+        added?: boolean | null;
+        removed?: boolean | null;
+      }> | null;
+    };
+    trackDiffs: Array<{
+      __typename?: 'TrackDiff';
+      position: number;
+      discNumber: number;
+      changeType: string;
+      durationDelta?: number | null;
+      trackId?: string | null;
+      current?: {
+        __typename?: 'TrackData';
+        title: string;
+        durationMs?: number | null;
+        trackNumber: number;
+      } | null;
+      source?: {
+        __typename?: 'TrackSourceData';
+        title: string;
+        durationMs?: number | null;
+        mbid?: string | null;
+      } | null;
+      titleDiff?: Array<{
+        __typename?: 'TextDiffPart';
+        value: string;
+        added?: boolean | null;
+        removed?: boolean | null;
+      }> | null;
+    }>;
+    trackSummary: {
+      __typename?: 'TrackListSummary';
+      totalCurrent: number;
+      totalSource: number;
+      matching: number;
+      modified: number;
+      added: number;
+      removed: number;
+    };
+    coverArt: {
+      __typename?: 'CoverArtDiff';
+      changeType: ChangeType;
+      currentUrl?: string | null;
+      sourceUrl?: string | null;
+    };
+    summary: {
+      __typename?: 'PreviewSummary';
+      totalFields: number;
+      changedFields: number;
+      addedFields: number;
+      modifiedFields: number;
+      conflictFields: number;
+      hasTrackChanges: boolean;
+    };
+  };
+};
+
+export type SearchCorrectionCandidatesQueryVariables = Exact<{
+  input: CorrectionSearchInput;
+}>;
+
+export type SearchCorrectionCandidatesQuery = {
+  __typename?: 'Query';
+  correctionSearch: {
+    __typename?: 'CorrectionSearchResponse';
+    totalGroups: number;
+    hasMore: boolean;
+    results: Array<{
+      __typename?: 'GroupedSearchResult';
+      releaseGroupMbid: string;
+      versionCount: number;
+      bestScore: number;
+      primaryResult: {
+        __typename?: 'ScoredSearchResult';
+        releaseGroupMbid: string;
+        title: string;
+        disambiguation?: string | null;
+        primaryArtistName: string;
+        firstReleaseDate?: string | null;
+        primaryType?: string | null;
+        secondaryTypes?: Array<string> | null;
+        mbScore: number;
+        coverArtUrl?: string | null;
+        source: string;
+        normalizedScore: number;
+        displayScore: number;
+        isLowConfidence: boolean;
+        artistCredits: Array<{
+          __typename?: 'CorrectionArtistCredit';
+          mbid: string;
+          name: string;
+        }>;
+        breakdown: {
+          __typename?: 'ScoreBreakdown';
+          titleScore: number;
+          artistScore: number;
+          yearScore: number;
+          mbScore?: number | null;
+          confidenceTier?: ConfidenceTier | null;
+        };
+      };
+      alternateVersions: Array<{
+        __typename?: 'ScoredSearchResult';
+        releaseGroupMbid: string;
+        title: string;
+        disambiguation?: string | null;
+        primaryArtistName: string;
+        firstReleaseDate?: string | null;
+        primaryType?: string | null;
+        secondaryTypes?: Array<string> | null;
+        mbScore: number;
+        coverArtUrl?: string | null;
+        source: string;
+        normalizedScore: number;
+        displayScore: number;
+        isLowConfidence: boolean;
+        artistCredits: Array<{
+          __typename?: 'CorrectionArtistCredit';
+          mbid: string;
+          name: string;
+        }>;
+        breakdown: {
+          __typename?: 'ScoreBreakdown';
+          titleScore: number;
+          artistScore: number;
+          yearScore: number;
+          mbScore?: number | null;
+          confidenceTier?: ConfidenceTier | null;
+        };
+      }>;
+    }>;
+    query: {
+      __typename?: 'CorrectionSearchQuery';
+      albumTitle?: string | null;
+      artistName?: string | null;
+      yearFilter?: number | null;
+    };
+    scoring: {
+      __typename?: 'CorrectionScoringInfo';
+      strategy: ScoringStrategy;
+      threshold: number;
+      lowConfidenceCount: number;
+    };
+  };
+};
+
+export type GetLlamaLogsQueryVariables = Exact<{
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  entityId?: InputMaybe<Scalars['UUID']['input']>;
+  status?: InputMaybe<LlamaLogStatus>;
+  category?: InputMaybe<Array<LlamaLogCategory> | LlamaLogCategory>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  parentOnly?: InputMaybe<Scalars['Boolean']['input']>;
+  parentJobId?: InputMaybe<Scalars['String']['input']>;
+  includeChildren?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+export type GetLlamaLogsQuery = {
+  __typename?: 'Query';
+  llamaLogs: Array<{
+    __typename?: 'LlamaLog';
     id: string;
     entityType?: EnrichmentEntityType | null;
     entityId?: string | null;
     operation: string;
     sources: Array<string>;
-    status: EnrichmentLogStatus;
+    status: LlamaLogStatus;
+    category: LlamaLogCategory;
     reason?: string | null;
     fieldsEnriched: Array<string>;
     dataQualityBefore?: DataQuality | null;
@@ -2428,6 +3879,61 @@ export type GetEnrichmentLogsQuery = {
     apiCallCount: number;
     metadata?: any | null;
     createdAt: Date;
+    jobId?: string | null;
+    parentJobId?: string | null;
+  }>;
+};
+
+export type GetLlamaLogsWithChildrenQueryVariables = Exact<{
+  entityType?: InputMaybe<EnrichmentEntityType>;
+  entityId?: InputMaybe<Scalars['UUID']['input']>;
+  status?: InputMaybe<LlamaLogStatus>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type GetLlamaLogsWithChildrenQuery = {
+  __typename?: 'Query';
+  llamaLogs: Array<{
+    __typename?: 'LlamaLog';
+    id: string;
+    entityType?: EnrichmentEntityType | null;
+    entityId?: string | null;
+    operation: string;
+    sources: Array<string>;
+    status: LlamaLogStatus;
+    category: LlamaLogCategory;
+    reason?: string | null;
+    fieldsEnriched: Array<string>;
+    dataQualityBefore?: DataQuality | null;
+    dataQualityAfter?: DataQuality | null;
+    errorMessage?: string | null;
+    errorCode?: string | null;
+    durationMs?: number | null;
+    apiCallCount: number;
+    metadata?: any | null;
+    createdAt: Date;
+    jobId?: string | null;
+    parentJobId?: string | null;
+    children?: Array<{
+      __typename?: 'LlamaLog';
+      id: string;
+      entityType?: EnrichmentEntityType | null;
+      entityId?: string | null;
+      operation: string;
+      sources: Array<string>;
+      status: LlamaLogStatus;
+      category: LlamaLogCategory;
+      reason?: string | null;
+      fieldsEnriched: Array<string>;
+      errorMessage?: string | null;
+      errorCode?: string | null;
+      durationMs?: number | null;
+      apiCallCount: number;
+      createdAt: Date;
+      jobId?: string | null;
+      parentJobId?: string | null;
+    }> | null;
   }>;
 };
 
@@ -2516,7 +4022,7 @@ export type PreviewAlbumEnrichmentMutation = {
     matchScore?: number | null;
     matchedEntity?: string | null;
     sources: Array<string>;
-    enrichmentLogId: string;
+    llamaLogId: string;
     rawData?: any | null;
     fieldsToUpdate: Array<{
       __typename?: 'EnrichmentFieldDiff';
@@ -2541,7 +4047,7 @@ export type PreviewArtistEnrichmentMutation = {
     matchScore?: number | null;
     matchedEntity?: string | null;
     sources: Array<string>;
-    enrichmentLogId: string;
+    llamaLogId: string;
     rawData?: any | null;
     fieldsToUpdate: Array<{
       __typename?: 'EnrichmentFieldDiff';
@@ -2609,6 +4115,7 @@ export type GetArtistDetailsQuery = {
     __typename?: 'Artist';
     id: string;
     musicbrainzId?: string | null;
+    discogsId?: string | null;
     name: string;
     biography?: string | null;
     formedYear?: number | null;
@@ -2625,21 +4132,21 @@ export type GetArtistDetailsQuery = {
     popularity?: number | null;
     needsEnrichment: boolean;
     listeners?: number | null;
-    latestEnrichmentLog?: {
-      __typename?: 'EnrichmentLog';
+    latestLlamaLog?: {
+      __typename?: 'LlamaLog';
       id: string;
-      status: EnrichmentLogStatus;
+      status: LlamaLogStatus;
       sources: Array<string>;
       fieldsEnriched: Array<string>;
       errorMessage?: string | null;
       createdAt: Date;
     } | null;
-    enrichmentLogs: Array<{
-      __typename?: 'EnrichmentLog';
+    llamaLogs: Array<{
+      __typename?: 'LlamaLog';
       id: string;
       operation: string;
       sources: Array<string>;
-      status: EnrichmentLogStatus;
+      status: LlamaLogStatus;
       fieldsEnriched: Array<string>;
       errorMessage?: string | null;
       durationMs?: number | null;
@@ -2891,6 +4398,49 @@ export type GetLatestReleasesQuery = {
   }>;
 };
 
+export type GetLlamaLogChainQueryVariables = Exact<{
+  entityType: EnrichmentEntityType;
+  entityId: Scalars['UUID']['input'];
+  categories?: InputMaybe<Array<LlamaLogCategory> | LlamaLogCategory>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type GetLlamaLogChainQuery = {
+  __typename?: 'Query';
+  llamaLogChain: {
+    __typename?: 'LlamaLogChainResponse';
+    totalCount: number;
+    cursor?: string | null;
+    hasMore: boolean;
+    logs: Array<{
+      __typename?: 'LlamaLog';
+      id: string;
+      entityType?: EnrichmentEntityType | null;
+      entityId?: string | null;
+      operation: string;
+      sources: Array<string>;
+      status: LlamaLogStatus;
+      category: LlamaLogCategory;
+      reason?: string | null;
+      fieldsEnriched: Array<string>;
+      dataQualityBefore?: DataQuality | null;
+      dataQualityAfter?: DataQuality | null;
+      errorMessage?: string | null;
+      errorCode?: string | null;
+      durationMs?: number | null;
+      apiCallCount: number;
+      metadata?: any | null;
+      createdAt: Date;
+      jobId?: string | null;
+      parentJobId?: string | null;
+      rootJobId?: string | null;
+    }>;
+  };
+};
+
 export type GetMySettingsQueryVariables = Exact<{ [key: string]: never }>;
 
 export type GetMySettingsQuery = {
@@ -3056,6 +4606,18 @@ export type CreateRecommendationMutationVariables = Exact<{
 }>;
 
 export type CreateRecommendationMutation = {
+  __typename?: 'Mutation';
+  createRecommendation: {
+    __typename?: 'CreateRecommendationPayload';
+    id: string;
+  };
+};
+
+export type CreateRecommendationWithAlbumsMutationVariables = Exact<{
+  input: CreateRecommendationWithAlbumsInput;
+}>;
+
+export type CreateRecommendationWithAlbumsMutation = {
   __typename?: 'Mutation';
   createRecommendation: {
     __typename?: 'CreateRecommendationPayload';
@@ -3315,6 +4877,7 @@ export type SearchAlbumsAdminQuery = {
     __typename?: 'Album';
     id: string;
     musicbrainzId?: string | null;
+    spotifyId?: string | null;
     title: string;
     releaseDate?: Date | null;
     coverArtUrl?: string | null;
@@ -3352,6 +4915,7 @@ export type SearchArtistsAdminQuery = {
     __typename?: 'Artist';
     id: string;
     musicbrainzId?: string | null;
+    spotifyId?: string | null;
     name: string;
     imageUrl?: string | null;
     cloudflareImageId?: string | null;
@@ -3890,6 +5454,94 @@ export const useAdminUpdateUserShowTourMutation = <
 
 useAdminUpdateUserShowTourMutation.getKey = () => ['AdminUpdateUserShowTour'];
 
+export const ApplyCorrectionDocument = `
+    mutation ApplyCorrection($input: CorrectionApplyInput!) {
+  correctionApply(input: $input) {
+    success
+    album {
+      id
+      title
+      releaseDate
+      releaseType
+      barcode
+      label
+      musicbrainzId
+      coverArtUrl
+      cloudflareImageId
+      dataQuality
+      updatedAt
+      tracks {
+        id
+        title
+        durationMs
+        trackNumber
+        discNumber
+        isrc
+        musicbrainzId
+      }
+      artists {
+        artist {
+          id
+          name
+          musicbrainzId
+          imageUrl
+        }
+        role
+        position
+      }
+    }
+    changes {
+      metadata
+      artists {
+        added
+        removed
+      }
+      tracks {
+        added
+        modified
+        removed
+      }
+      externalIds
+      coverArt
+      dataQualityBefore
+      dataQualityAfter
+    }
+    code
+    message
+    context
+  }
+}
+    `;
+
+export const useApplyCorrectionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ApplyCorrectionMutation,
+    TError,
+    ApplyCorrectionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ApplyCorrectionMutation,
+    TError,
+    ApplyCorrectionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ApplyCorrection'],
+    mutationFn: (variables?: ApplyCorrectionMutationVariables) =>
+      fetcher<ApplyCorrectionMutation, ApplyCorrectionMutationVariables>(
+        ApplyCorrectionDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useApplyCorrectionMutation.getKey = () => ['ApplyCorrection'];
+
 export const CreateCollectionDocument = `
     mutation CreateCollection($name: String!, $description: String, $isPublic: Boolean) {
   createCollection(name: $name, description: $description, isPublic: $isPublic) {
@@ -4216,6 +5868,60 @@ export const useRemoveFromListenLaterMutation = <
 };
 
 useRemoveFromListenLaterMutation.getKey = () => ['RemoveFromListenLater'];
+
+export const ManualCorrectionApplyDocument = `
+    mutation ManualCorrectionApply($input: ManualCorrectionApplyInput!) {
+  manualCorrectionApply(input: $input) {
+    success
+    album {
+      id
+      title
+      releaseDate
+      releaseType
+      musicbrainzId
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+      dataQuality
+      updatedAt
+    }
+    code
+    message
+  }
+}
+    `;
+
+export const useManualCorrectionApplyMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ManualCorrectionApplyMutation,
+    TError,
+    ManualCorrectionApplyMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ManualCorrectionApplyMutation,
+    TError,
+    ManualCorrectionApplyMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ManualCorrectionApply'],
+    mutationFn: (variables?: ManualCorrectionApplyMutationVariables) =>
+      fetcher<
+        ManualCorrectionApplyMutation,
+        ManualCorrectionApplyMutationVariables
+      >(ManualCorrectionApplyDocument, variables)(),
+    ...options,
+  });
+};
+
+useManualCorrectionApplyMutation.getKey = () => ['ManualCorrectionApply'];
 
 export const RemoveAlbumFromCollectionDocument = `
     mutation RemoveAlbumFromCollection($collectionId: String!, $albumId: UUID!) {
@@ -4638,9 +6344,11 @@ export const GetAlbumDetailsAdminDocument = `
   album(id: $id) {
     id
     musicbrainzId
+    discogsId
     title
     releaseDate
     releaseType
+    genres
     trackCount
     durationMs
     coverArtUrl
@@ -4658,7 +6366,7 @@ export const GetAlbumDetailsAdminDocument = `
     averageRating
     inCollectionsCount
     recommendationScore
-    latestEnrichmentLog {
+    latestLlamaLog {
       id
       status
       sources
@@ -4666,7 +6374,7 @@ export const GetAlbumDetailsAdminDocument = `
       errorMessage
       createdAt
     }
-    enrichmentLogs(limit: 5) {
+    llamaLogs(limit: 5) {
       id
       operation
       sources
@@ -4963,6 +6671,278 @@ export const useInfiniteGetArtistByMusicBrainzIdQuery = <
 useInfiniteGetArtistByMusicBrainzIdQuery.getKey = (
   variables: GetArtistByMusicBrainzIdQueryVariables
 ) => ['GetArtistByMusicBrainzId.infinite', variables];
+
+export const SearchArtistCorrectionCandidatesDocument = `
+    query SearchArtistCorrectionCandidates($query: String!, $limit: Int, $source: CorrectionSource) {
+  artistCorrectionSearch(query: $query, limit: $limit, source: $source) {
+    results {
+      artistMbid
+      name
+      sortName
+      disambiguation
+      type
+      country
+      area
+      beginDate
+      endDate
+      ended
+      gender
+      mbScore
+      topReleases {
+        title
+        year
+        type
+      }
+      source
+    }
+    hasMore
+    query
+  }
+}
+    `;
+
+export const useSearchArtistCorrectionCandidatesQuery = <
+  TData = SearchArtistCorrectionCandidatesQuery,
+  TError = unknown,
+>(
+  variables: SearchArtistCorrectionCandidatesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SearchArtistCorrectionCandidatesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      SearchArtistCorrectionCandidatesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<SearchArtistCorrectionCandidatesQuery, TError, TData>({
+    queryKey: ['SearchArtistCorrectionCandidates', variables],
+    queryFn: fetcher<
+      SearchArtistCorrectionCandidatesQuery,
+      SearchArtistCorrectionCandidatesQueryVariables
+    >(SearchArtistCorrectionCandidatesDocument, variables),
+    ...options,
+  });
+};
+
+useSearchArtistCorrectionCandidatesQuery.getKey = (
+  variables: SearchArtistCorrectionCandidatesQueryVariables
+) => ['SearchArtistCorrectionCandidates', variables];
+
+export const useInfiniteSearchArtistCorrectionCandidatesQuery = <
+  TData = InfiniteData<SearchArtistCorrectionCandidatesQuery>,
+  TError = unknown,
+>(
+  variables: SearchArtistCorrectionCandidatesQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<
+      SearchArtistCorrectionCandidatesQuery,
+      TError,
+      TData
+    >,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SearchArtistCorrectionCandidatesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SearchArtistCorrectionCandidatesQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'SearchArtistCorrectionCandidates.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            SearchArtistCorrectionCandidatesQuery,
+            SearchArtistCorrectionCandidatesQueryVariables
+          >(SearchArtistCorrectionCandidatesDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSearchArtistCorrectionCandidatesQuery.getKey = (
+  variables: SearchArtistCorrectionCandidatesQueryVariables
+) => ['SearchArtistCorrectionCandidates.infinite', variables];
+
+export const GetArtistCorrectionPreviewDocument = `
+    query GetArtistCorrectionPreview($artistId: UUID!, $sourceArtistId: String!, $source: CorrectionSource) {
+  artistCorrectionPreview(
+    artistId: $artistId
+    sourceArtistId: $sourceArtistId
+    source: $source
+  ) {
+    currentArtist {
+      id
+      name
+      musicbrainzId
+      discogsId
+      countryCode
+      formedYear
+      biography
+      dataQuality
+      updatedAt
+    }
+    mbArtistData
+    fieldDiffs {
+      field
+      changeType
+      current
+      source
+    }
+    albumCount
+    summary {
+      totalFields
+      changedFields
+      addedFields
+      modifiedFields
+    }
+    source
+  }
+}
+    `;
+
+export const useGetArtistCorrectionPreviewQuery = <
+  TData = GetArtistCorrectionPreviewQuery,
+  TError = unknown,
+>(
+  variables: GetArtistCorrectionPreviewQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetArtistCorrectionPreviewQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetArtistCorrectionPreviewQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetArtistCorrectionPreviewQuery, TError, TData>({
+    queryKey: ['GetArtistCorrectionPreview', variables],
+    queryFn: fetcher<
+      GetArtistCorrectionPreviewQuery,
+      GetArtistCorrectionPreviewQueryVariables
+    >(GetArtistCorrectionPreviewDocument, variables),
+    ...options,
+  });
+};
+
+useGetArtistCorrectionPreviewQuery.getKey = (
+  variables: GetArtistCorrectionPreviewQueryVariables
+) => ['GetArtistCorrectionPreview', variables];
+
+export const useInfiniteGetArtistCorrectionPreviewQuery = <
+  TData = InfiniteData<GetArtistCorrectionPreviewQuery>,
+  TError = unknown,
+>(
+  variables: GetArtistCorrectionPreviewQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetArtistCorrectionPreviewQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetArtistCorrectionPreviewQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetArtistCorrectionPreviewQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'GetArtistCorrectionPreview.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            GetArtistCorrectionPreviewQuery,
+            GetArtistCorrectionPreviewQueryVariables
+          >(GetArtistCorrectionPreviewDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetArtistCorrectionPreviewQuery.getKey = (
+  variables: GetArtistCorrectionPreviewQueryVariables
+) => ['GetArtistCorrectionPreview.infinite', variables];
+
+export const ApplyArtistCorrectionDocument = `
+    mutation ApplyArtistCorrection($input: ArtistCorrectionApplyInput!) {
+  artistCorrectionApply(input: $input) {
+    success
+    artist {
+      id
+      name
+      musicbrainzId
+      discogsId
+      countryCode
+      formedYear
+      dataQuality
+      enrichmentStatus
+      updatedAt
+    }
+    changes {
+      metadata
+      externalIds
+      affectedAlbumCount
+      dataQualityBefore
+      dataQualityAfter
+    }
+    affectedAlbumCount
+    code
+    message
+  }
+}
+    `;
+
+export const useApplyArtistCorrectionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ApplyArtistCorrectionMutation,
+    TError,
+    ApplyArtistCorrectionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ApplyArtistCorrectionMutation,
+    TError,
+    ApplyArtistCorrectionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ApplyArtistCorrection'],
+    mutationFn: (variables?: ApplyArtistCorrectionMutationVariables) =>
+      fetcher<
+        ApplyArtistCorrectionMutation,
+        ApplyArtistCorrectionMutationVariables
+      >(ApplyArtistCorrectionDocument, variables)(),
+    ...options,
+  });
+};
+
+useApplyArtistCorrectionMutation.getKey = () => ['ApplyArtistCorrection'];
 
 export const GetArtistDiscographyDocument = `
     query GetArtistDiscography($id: String!, $source: DataSource!) {
@@ -5404,14 +7384,406 @@ export const useDeleteArtistMutation = <TError = unknown, TContext = unknown>(
 
 useDeleteArtistMutation.getKey = () => ['DeleteArtist'];
 
-export const GetEnrichmentLogsDocument = `
-    query GetEnrichmentLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: EnrichmentLogStatus, $skip: Int, $limit: Int) {
-  enrichmentLogs(
+export const AddAlbumToCollectionWithCreateDocument = `
+    mutation AddAlbumToCollectionWithCreate($input: AddAlbumToCollectionWithCreateInput!) {
+  addAlbumToCollectionWithCreate(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useAddAlbumToCollectionWithCreateMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    AddAlbumToCollectionWithCreateMutation,
+    TError,
+    AddAlbumToCollectionWithCreateMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AddAlbumToCollectionWithCreateMutation,
+    TError,
+    AddAlbumToCollectionWithCreateMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AddAlbumToCollectionWithCreate'],
+    mutationFn: (variables?: AddAlbumToCollectionWithCreateMutationVariables) =>
+      fetcher<
+        AddAlbumToCollectionWithCreateMutation,
+        AddAlbumToCollectionWithCreateMutationVariables
+      >(AddAlbumToCollectionWithCreateDocument, variables)(),
+    ...options,
+  });
+};
+
+useAddAlbumToCollectionWithCreateMutation.getKey = () => [
+  'AddAlbumToCollectionWithCreate',
+];
+
+export const GetCorrectionPreviewDocument = `
+    query GetCorrectionPreview($input: CorrectionPreviewInput!) {
+  correctionPreview(input: $input) {
+    albumId
+    albumTitle
+    albumUpdatedAt
+    sourceResult {
+      releaseGroupMbid
+      title
+      disambiguation
+      artistCredits {
+        mbid
+        name
+      }
+      primaryArtistName
+      firstReleaseDate
+      primaryType
+      secondaryTypes
+      mbScore
+      coverArtUrl
+      source
+      normalizedScore
+      displayScore
+      breakdown {
+        titleScore
+        artistScore
+        yearScore
+        mbScore
+        confidenceTier
+      }
+      isLowConfidence
+    }
+    mbReleaseData {
+      id
+      title
+      date
+      country
+      barcode
+      media {
+        position
+        format
+        trackCount
+        tracks {
+          position
+          recording {
+            id
+            title
+            length
+            position
+          }
+        }
+      }
+      artistCredit {
+        name
+        joinphrase
+        artist {
+          id
+          name
+          sortName
+          disambiguation
+        }
+      }
+    }
+    fieldDiffs
+    artistDiff {
+      changeType
+      current {
+        mbid
+        name
+      }
+      source {
+        mbid
+        name
+      }
+      currentDisplay
+      sourceDisplay
+      nameDiff {
+        value
+        added
+        removed
+      }
+    }
+    trackDiffs {
+      position
+      discNumber
+      changeType
+      current {
+        title
+        durationMs
+        trackNumber
+      }
+      source {
+        title
+        durationMs
+        mbid
+      }
+      titleDiff {
+        value
+        added
+        removed
+      }
+      durationDelta
+      trackId
+    }
+    trackSummary {
+      totalCurrent
+      totalSource
+      matching
+      modified
+      added
+      removed
+    }
+    coverArt {
+      changeType
+      currentUrl
+      sourceUrl
+    }
+    summary {
+      totalFields
+      changedFields
+      addedFields
+      modifiedFields
+      conflictFields
+      hasTrackChanges
+    }
+  }
+}
+    `;
+
+export const useGetCorrectionPreviewQuery = <
+  TData = GetCorrectionPreviewQuery,
+  TError = unknown,
+>(
+  variables: GetCorrectionPreviewQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetCorrectionPreviewQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetCorrectionPreviewQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetCorrectionPreviewQuery, TError, TData>({
+    queryKey: ['GetCorrectionPreview', variables],
+    queryFn: fetcher<
+      GetCorrectionPreviewQuery,
+      GetCorrectionPreviewQueryVariables
+    >(GetCorrectionPreviewDocument, variables),
+    ...options,
+  });
+};
+
+useGetCorrectionPreviewQuery.getKey = (
+  variables: GetCorrectionPreviewQueryVariables
+) => ['GetCorrectionPreview', variables];
+
+export const useInfiniteGetCorrectionPreviewQuery = <
+  TData = InfiniteData<GetCorrectionPreviewQuery>,
+  TError = unknown,
+>(
+  variables: GetCorrectionPreviewQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetCorrectionPreviewQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetCorrectionPreviewQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetCorrectionPreviewQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'GetCorrectionPreview.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            GetCorrectionPreviewQuery,
+            GetCorrectionPreviewQueryVariables
+          >(GetCorrectionPreviewDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetCorrectionPreviewQuery.getKey = (
+  variables: GetCorrectionPreviewQueryVariables
+) => ['GetCorrectionPreview.infinite', variables];
+
+export const SearchCorrectionCandidatesDocument = `
+    query SearchCorrectionCandidates($input: CorrectionSearchInput!) {
+  correctionSearch(input: $input) {
+    results {
+      releaseGroupMbid
+      primaryResult {
+        releaseGroupMbid
+        title
+        disambiguation
+        artistCredits {
+          mbid
+          name
+        }
+        primaryArtistName
+        firstReleaseDate
+        primaryType
+        secondaryTypes
+        mbScore
+        coverArtUrl
+        source
+        normalizedScore
+        displayScore
+        breakdown {
+          titleScore
+          artistScore
+          yearScore
+          mbScore
+          confidenceTier
+        }
+        isLowConfidence
+      }
+      alternateVersions {
+        releaseGroupMbid
+        title
+        disambiguation
+        artistCredits {
+          mbid
+          name
+        }
+        primaryArtistName
+        firstReleaseDate
+        primaryType
+        secondaryTypes
+        mbScore
+        coverArtUrl
+        source
+        normalizedScore
+        displayScore
+        breakdown {
+          titleScore
+          artistScore
+          yearScore
+          mbScore
+          confidenceTier
+        }
+        isLowConfidence
+      }
+      versionCount
+      bestScore
+    }
+    totalGroups
+    hasMore
+    query {
+      albumTitle
+      artistName
+      yearFilter
+    }
+    scoring {
+      strategy
+      threshold
+      lowConfidenceCount
+    }
+  }
+}
+    `;
+
+export const useSearchCorrectionCandidatesQuery = <
+  TData = SearchCorrectionCandidatesQuery,
+  TError = unknown,
+>(
+  variables: SearchCorrectionCandidatesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SearchCorrectionCandidatesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      SearchCorrectionCandidatesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<SearchCorrectionCandidatesQuery, TError, TData>({
+    queryKey: ['SearchCorrectionCandidates', variables],
+    queryFn: fetcher<
+      SearchCorrectionCandidatesQuery,
+      SearchCorrectionCandidatesQueryVariables
+    >(SearchCorrectionCandidatesDocument, variables),
+    ...options,
+  });
+};
+
+useSearchCorrectionCandidatesQuery.getKey = (
+  variables: SearchCorrectionCandidatesQueryVariables
+) => ['SearchCorrectionCandidates', variables];
+
+export const useInfiniteSearchCorrectionCandidatesQuery = <
+  TData = InfiniteData<SearchCorrectionCandidatesQuery>,
+  TError = unknown,
+>(
+  variables: SearchCorrectionCandidatesQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SearchCorrectionCandidatesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SearchCorrectionCandidatesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SearchCorrectionCandidatesQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'SearchCorrectionCandidates.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            SearchCorrectionCandidatesQuery,
+            SearchCorrectionCandidatesQueryVariables
+          >(SearchCorrectionCandidatesDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSearchCorrectionCandidatesQuery.getKey = (
+  variables: SearchCorrectionCandidatesQueryVariables
+) => ['SearchCorrectionCandidates.infinite', variables];
+
+export const GetLlamaLogsDocument = `
+    query GetLlamaLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: LlamaLogStatus, $category: [LlamaLogCategory!], $skip: Int, $limit: Int, $parentOnly: Boolean, $parentJobId: String, $includeChildren: Boolean) {
+  llamaLogs(
     entityType: $entityType
     entityId: $entityId
     status: $status
+    category: $category
     skip: $skip
     limit: $limit
+    parentOnly: $parentOnly
+    parentJobId: $parentJobId
+    includeChildren: $includeChildren
   ) {
     id
     entityType
@@ -5419,6 +7791,7 @@ export const GetEnrichmentLogsDocument = `
     operation
     sources
     status
+    category
     reason
     fieldsEnriched
     dataQualityBefore
@@ -5429,73 +7802,65 @@ export const GetEnrichmentLogsDocument = `
     apiCallCount
     metadata
     createdAt
+    jobId
+    parentJobId
   }
 }
     `;
 
-export const useGetEnrichmentLogsQuery = <
-  TData = GetEnrichmentLogsQuery,
+export const useGetLlamaLogsQuery = <
+  TData = GetLlamaLogsQuery,
   TError = unknown,
 >(
-  variables?: GetEnrichmentLogsQueryVariables,
+  variables?: GetLlamaLogsQueryVariables,
   options?: Omit<
-    UseQueryOptions<GetEnrichmentLogsQuery, TError, TData>,
+    UseQueryOptions<GetLlamaLogsQuery, TError, TData>,
     'queryKey'
   > & {
-    queryKey?: UseQueryOptions<
-      GetEnrichmentLogsQuery,
-      TError,
-      TData
-    >['queryKey'];
+    queryKey?: UseQueryOptions<GetLlamaLogsQuery, TError, TData>['queryKey'];
   }
 ) => {
-  return useQuery<GetEnrichmentLogsQuery, TError, TData>({
+  return useQuery<GetLlamaLogsQuery, TError, TData>({
     queryKey:
-      variables === undefined
-        ? ['GetEnrichmentLogs']
-        : ['GetEnrichmentLogs', variables],
-    queryFn: fetcher<GetEnrichmentLogsQuery, GetEnrichmentLogsQueryVariables>(
-      GetEnrichmentLogsDocument,
+      variables === undefined ? ['GetLlamaLogs'] : ['GetLlamaLogs', variables],
+    queryFn: fetcher<GetLlamaLogsQuery, GetLlamaLogsQueryVariables>(
+      GetLlamaLogsDocument,
       variables
     ),
     ...options,
   });
 };
 
-useGetEnrichmentLogsQuery.getKey = (
-  variables?: GetEnrichmentLogsQueryVariables
-) =>
-  variables === undefined
-    ? ['GetEnrichmentLogs']
-    : ['GetEnrichmentLogs', variables];
+useGetLlamaLogsQuery.getKey = (variables?: GetLlamaLogsQueryVariables) =>
+  variables === undefined ? ['GetLlamaLogs'] : ['GetLlamaLogs', variables];
 
-export const useInfiniteGetEnrichmentLogsQuery = <
-  TData = InfiniteData<GetEnrichmentLogsQuery>,
+export const useInfiniteGetLlamaLogsQuery = <
+  TData = InfiniteData<GetLlamaLogsQuery>,
   TError = unknown,
 >(
-  variables: GetEnrichmentLogsQueryVariables,
+  variables: GetLlamaLogsQueryVariables,
   options: Omit<
-    UseInfiniteQueryOptions<GetEnrichmentLogsQuery, TError, TData>,
+    UseInfiniteQueryOptions<GetLlamaLogsQuery, TError, TData>,
     'queryKey'
   > & {
     queryKey?: UseInfiniteQueryOptions<
-      GetEnrichmentLogsQuery,
+      GetLlamaLogsQuery,
       TError,
       TData
     >['queryKey'];
   }
 ) => {
-  return useInfiniteQuery<GetEnrichmentLogsQuery, TError, TData>(
+  return useInfiniteQuery<GetLlamaLogsQuery, TError, TData>(
     (() => {
       const { queryKey: optionsQueryKey, ...restOptions } = options;
       return {
         queryKey:
           (optionsQueryKey ?? variables === undefined)
-            ? ['GetEnrichmentLogs.infinite']
-            : ['GetEnrichmentLogs.infinite', variables],
+            ? ['GetLlamaLogs.infinite']
+            : ['GetLlamaLogs.infinite', variables],
         queryFn: metaData =>
-          fetcher<GetEnrichmentLogsQuery, GetEnrichmentLogsQueryVariables>(
-            GetEnrichmentLogsDocument,
+          fetcher<GetLlamaLogsQuery, GetLlamaLogsQueryVariables>(
+            GetLlamaLogsDocument,
             { ...variables, ...(metaData.pageParam ?? {}) }
           )(),
         ...restOptions,
@@ -5504,12 +7869,144 @@ export const useInfiniteGetEnrichmentLogsQuery = <
   );
 };
 
-useInfiniteGetEnrichmentLogsQuery.getKey = (
-  variables?: GetEnrichmentLogsQueryVariables
+useInfiniteGetLlamaLogsQuery.getKey = (
+  variables?: GetLlamaLogsQueryVariables
 ) =>
   variables === undefined
-    ? ['GetEnrichmentLogs.infinite']
-    : ['GetEnrichmentLogs.infinite', variables];
+    ? ['GetLlamaLogs.infinite']
+    : ['GetLlamaLogs.infinite', variables];
+
+export const GetLlamaLogsWithChildrenDocument = `
+    query GetLlamaLogsWithChildren($entityType: EnrichmentEntityType, $entityId: UUID, $status: LlamaLogStatus, $skip: Int, $limit: Int) {
+  llamaLogs(
+    entityType: $entityType
+    entityId: $entityId
+    status: $status
+    skip: $skip
+    limit: $limit
+    includeChildren: true
+  ) {
+    id
+    entityType
+    entityId
+    operation
+    sources
+    status
+    category
+    reason
+    fieldsEnriched
+    dataQualityBefore
+    dataQualityAfter
+    errorMessage
+    errorCode
+    durationMs
+    apiCallCount
+    metadata
+    createdAt
+    jobId
+    parentJobId
+    children {
+      id
+      entityType
+      entityId
+      operation
+      sources
+      status
+      category
+      reason
+      fieldsEnriched
+      errorMessage
+      errorCode
+      durationMs
+      apiCallCount
+      createdAt
+      jobId
+      parentJobId
+    }
+  }
+}
+    `;
+
+export const useGetLlamaLogsWithChildrenQuery = <
+  TData = GetLlamaLogsWithChildrenQuery,
+  TError = unknown,
+>(
+  variables?: GetLlamaLogsWithChildrenQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetLlamaLogsWithChildrenQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetLlamaLogsWithChildrenQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetLlamaLogsWithChildrenQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GetLlamaLogsWithChildren']
+        : ['GetLlamaLogsWithChildren', variables],
+    queryFn: fetcher<
+      GetLlamaLogsWithChildrenQuery,
+      GetLlamaLogsWithChildrenQueryVariables
+    >(GetLlamaLogsWithChildrenDocument, variables),
+    ...options,
+  });
+};
+
+useGetLlamaLogsWithChildrenQuery.getKey = (
+  variables?: GetLlamaLogsWithChildrenQueryVariables
+) =>
+  variables === undefined
+    ? ['GetLlamaLogsWithChildren']
+    : ['GetLlamaLogsWithChildren', variables];
+
+export const useInfiniteGetLlamaLogsWithChildrenQuery = <
+  TData = InfiniteData<GetLlamaLogsWithChildrenQuery>,
+  TError = unknown,
+>(
+  variables: GetLlamaLogsWithChildrenQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetLlamaLogsWithChildrenQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetLlamaLogsWithChildrenQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetLlamaLogsWithChildrenQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GetLlamaLogsWithChildren.infinite']
+            : ['GetLlamaLogsWithChildren.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            GetLlamaLogsWithChildrenQuery,
+            GetLlamaLogsWithChildrenQueryVariables
+          >(GetLlamaLogsWithChildrenDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetLlamaLogsWithChildrenQuery.getKey = (
+  variables?: GetLlamaLogsWithChildrenQueryVariables
+) =>
+  variables === undefined
+    ? ['GetLlamaLogsWithChildren.infinite']
+    : ['GetLlamaLogsWithChildren.infinite', variables];
 
 export const GetEnrichmentStatsDocument = `
     query GetEnrichmentStats($entityType: EnrichmentEntityType, $timeRange: TimeRangeInput) {
@@ -5738,7 +8235,7 @@ export const PreviewAlbumEnrichmentDocument = `
       newValue
       source
     }
-    enrichmentLogId
+    llamaLogId
     rawData
   }
 }
@@ -5787,7 +8284,7 @@ export const PreviewArtistEnrichmentDocument = `
       newValue
       source
     }
-    enrichmentLogId
+    llamaLogId
     rawData
   }
 }
@@ -5939,6 +8436,7 @@ export const GetArtistDetailsDocument = `
   artist(id: $id) {
     id
     musicbrainzId
+    discogsId
     name
     biography
     formedYear
@@ -5955,7 +8453,7 @@ export const GetArtistDetailsDocument = `
     popularity
     needsEnrichment
     listeners
-    latestEnrichmentLog {
+    latestLlamaLog {
       id
       status
       sources
@@ -5963,7 +8461,7 @@ export const GetArtistDetailsDocument = `
       errorMessage
       createdAt
     }
-    enrichmentLogs(limit: 5) {
+    llamaLogs(limit: 5) {
       id
       operation
       sources
@@ -6824,6 +9322,112 @@ useInfiniteGetLatestReleasesQuery.getKey = (
     ? ['GetLatestReleases.infinite']
     : ['GetLatestReleases.infinite', variables];
 
+export const GetLlamaLogChainDocument = `
+    query GetLlamaLogChain($entityType: EnrichmentEntityType!, $entityId: UUID!, $categories: [LlamaLogCategory!], $startDate: DateTime, $endDate: DateTime, $limit: Int = 20, $cursor: String) {
+  llamaLogChain(
+    entityType: $entityType
+    entityId: $entityId
+    categories: $categories
+    startDate: $startDate
+    endDate: $endDate
+    limit: $limit
+    cursor: $cursor
+  ) {
+    logs {
+      id
+      entityType
+      entityId
+      operation
+      sources
+      status
+      category
+      reason
+      fieldsEnriched
+      dataQualityBefore
+      dataQualityAfter
+      errorMessage
+      errorCode
+      durationMs
+      apiCallCount
+      metadata
+      createdAt
+      jobId
+      parentJobId
+      rootJobId
+    }
+    totalCount
+    cursor
+    hasMore
+  }
+}
+    `;
+
+export const useGetLlamaLogChainQuery = <
+  TData = GetLlamaLogChainQuery,
+  TError = unknown,
+>(
+  variables: GetLlamaLogChainQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetLlamaLogChainQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      GetLlamaLogChainQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<GetLlamaLogChainQuery, TError, TData>({
+    queryKey: ['GetLlamaLogChain', variables],
+    queryFn: fetcher<GetLlamaLogChainQuery, GetLlamaLogChainQueryVariables>(
+      GetLlamaLogChainDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGetLlamaLogChainQuery.getKey = (
+  variables: GetLlamaLogChainQueryVariables
+) => ['GetLlamaLogChain', variables];
+
+export const useInfiniteGetLlamaLogChainQuery = <
+  TData = InfiniteData<GetLlamaLogChainQuery>,
+  TError = unknown,
+>(
+  variables: GetLlamaLogChainQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GetLlamaLogChainQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GetLlamaLogChainQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GetLlamaLogChainQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['GetLlamaLogChain.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GetLlamaLogChainQuery, GetLlamaLogChainQueryVariables>(
+            GetLlamaLogChainDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGetLlamaLogChainQuery.getKey = (
+  variables: GetLlamaLogChainQueryVariables
+) => ['GetLlamaLogChain.infinite', variables];
+
 export const GetMySettingsDocument = `
     query GetMySettings {
   mySettings {
@@ -7144,6 +9748,45 @@ export const useCreateRecommendationMutation = <
 };
 
 useCreateRecommendationMutation.getKey = () => ['CreateRecommendation'];
+
+export const CreateRecommendationWithAlbumsDocument = `
+    mutation CreateRecommendationWithAlbums($input: CreateRecommendationWithAlbumsInput!) {
+  createRecommendation(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useCreateRecommendationWithAlbumsMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    CreateRecommendationWithAlbumsMutation,
+    TError,
+    CreateRecommendationWithAlbumsMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    CreateRecommendationWithAlbumsMutation,
+    TError,
+    CreateRecommendationWithAlbumsMutationVariables,
+    TContext
+  >({
+    mutationKey: ['CreateRecommendationWithAlbums'],
+    mutationFn: (variables?: CreateRecommendationWithAlbumsMutationVariables) =>
+      fetcher<
+        CreateRecommendationWithAlbumsMutation,
+        CreateRecommendationWithAlbumsMutationVariables
+      >(CreateRecommendationWithAlbumsDocument, variables)(),
+    ...options,
+  });
+};
+
+useCreateRecommendationWithAlbumsMutation.getKey = () => [
+  'CreateRecommendationWithAlbums',
+];
 
 export const UpdateRecommendationDocument = `
     mutation UpdateRecommendation($id: String!, $score: Int!) {
@@ -7752,6 +10395,7 @@ export const SearchAlbumsAdminDocument = `
   ) {
     id
     musicbrainzId
+    spotifyId
     title
     releaseDate
     coverArtUrl
@@ -7867,6 +10511,7 @@ export const SearchArtistsAdminDocument = `
   ) {
     id
     musicbrainzId
+    spotifyId
     name
     imageUrl
     cloudflareImageId

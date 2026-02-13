@@ -15,10 +15,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAlbumState } from '@/hooks/useAlbumState';
 import { Album } from '@/types/album';
 import { useCollectionToastContext } from '@/components/ui/CollectionToastProvider';
-import { graphqlClient } from '@/lib/graphql-client';
 import {
   useGetMyCollectionsQuery,
   useRemoveAlbumFromCollectionMutation,
+  useAddAlbumToCollectionWithCreateMutation,
+  type AlbumInput,
 } from '@/generated/graphql';
 
 interface CollectionPopoverProps {
@@ -26,30 +27,6 @@ interface CollectionPopoverProps {
   variant?: 'default' | 'outline' | 'ghost' | 'primary' | 'secondary';
   size?: 'sm' | 'lg';
 }
-
-// GraphQL mutation strings
-const ADD_ALBUM_TO_COLLECTION = `
-  mutation AddAlbumToCollection($collectionId: String!, $albumId: UUID!, $position: Int) {
-    addAlbumToCollection(
-      collectionId: $collectionId,
-      input: {
-        albumId: $albumId,
-        position: $position
-      }
-    ) {
-      id
-    }
-  }
-`;
-
-const ADD_ALBUM = `
-  mutation AddAlbum($input: AlbumInput!) {
-    addAlbum(input: $input) {
-      id
-      title
-    }
-  }
-`;
 
 export default function CollectionPopover({
   album,
@@ -75,25 +52,20 @@ export default function CollectionPopover({
   const { data: collectionsData, isLoading: isLoadingCollections } =
     useGetMyCollectionsQuery({}, { enabled: !!session?.user });
 
-  // Remove from collection mutation
+  // Mutations
   const removeFromCollectionMutation = useRemoveAlbumFromCollectionMutation();
+  const addToCollectionMutation = useAddAlbumToCollectionWithCreateMutation();
 
   const collections = collectionsData?.myCollections || [];
 
-  // Helper function to ensure album exists in DB and return its ID
-  const ensureAlbumInDb = async (): Promise<string> => {
-    // If album is already in DB, use that ID
-    if (albumState.existsInDb && albumState.dbId) {
-      return albumState.dbId;
-    }
-
-    // Otherwise, add it to the DB first
-    const artistInputs = (album.artists || []).map(a => ({
+  // Helper to build AlbumInput from album object
+  const buildAlbumInput = (albumData: Album): AlbumInput => {
+    const artistInputs = (albumData.artists || []).map(a => ({
       artistName: a.name,
     }));
 
-    const input: any = {
-      title: album.title || 'Unknown Album',
+    const input: AlbumInput = {
+      title: albumData.title || 'Unknown Album',
       artists:
         artistInputs.length > 0
           ? artistInputs
@@ -101,18 +73,17 @@ export default function CollectionPopover({
     };
 
     // Attach MusicBrainz ID if available
-    if (album.source === 'musicbrainz' && album.musicbrainzId) {
-      input.musicbrainzId = album.musicbrainzId;
+    if (albumData.source === 'musicbrainz' && albumData.musicbrainzId) {
+      input.musicbrainzId = albumData.musicbrainzId;
     }
 
     // Optional fields
-    if (album.releaseDate) input.releaseDate = album.releaseDate;
-    if (album.metadata?.numberOfTracks)
-      input.totalTracks = album.metadata.numberOfTracks;
-    if (album.image?.url) input.coverImageUrl = album.image.url;
+    if (albumData.releaseDate) input.releaseDate = albumData.releaseDate;
+    if (albumData.metadata?.numberOfTracks)
+      input.totalTracks = albumData.metadata.numberOfTracks;
+    if (albumData.image?.url) input.coverImageUrl = albumData.image.url;
 
-    const created: any = await graphqlClient.request(ADD_ALBUM, { input });
-    return created.addAlbum.id as string;
+    return input;
   };
 
   // Handle checkbox toggle
@@ -146,12 +117,15 @@ export default function CollectionPopover({
           showCollectionToast(`Removed from ${collectionName}`, 'success');
         }
       } else {
-        // Add to collection
-        const albumId = await ensureAlbumInDb();
-        await graphqlClient.request(ADD_ALBUM_TO_COLLECTION, {
-          collectionId,
-          albumId,
-          position: 0,
+        // Add to collection using combined mutation
+        await addToCollectionMutation.mutateAsync({
+          input: {
+            collectionId,
+            position: 0,
+            ...(albumState.existsInDb && albumState.dbId
+              ? { albumId: albumState.dbId }
+              : { albumData: buildAlbumInput(album) }),
+          },
         });
         showCollectionToast(`Added to ${collectionName}`, 'success', {
           showNavigation: true,

@@ -39,7 +39,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ClearableInput } from '@/components/ui/ClearableInput';
 import {
   useGetAdminUsersQuery,
   useUpdateUserRoleMutation,
@@ -422,13 +422,17 @@ export default function AdminUsersPage() {
       {/* Search Bar */}
       <form onSubmit={handleSearch} className='flex gap-2'>
         <div className='relative flex-1'>
-          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-5 h-5' />
-          <Input
+          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-5 h-5 z-10' />
+          <ClearableInput
             type='text'
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
+            onClear={() => {
+              setSearchInput('');
+              setFilters(prev => ({ ...prev, search: '' }));
+            }}
             placeholder='Search users by name or email...'
-            className='w-full pl-10 pr-4 py-3 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-400'
+            className='w-full pl-10 pr-8 py-3 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-400'
           />
         </div>
         <Button

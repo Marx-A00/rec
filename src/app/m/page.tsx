@@ -3,10 +3,9 @@
 import { useEffect, useMemo } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useInView } from 'react-intersection-observer';
-
-import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { RefreshCw, Users } from 'lucide-react';
 
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import MobileRecommendationCard from '@/components/mobile/MobileRecommendationCard';
 import MobileCollectionCard from '@/components/mobile/MobileCollectionCard';
 import MobileFollowCard from '@/components/mobile/MobileFollowCard';

@@ -1,21 +1,28 @@
 // src/lib/queue/processors/cache-processor.ts
 // Cloudflare image caching handlers
 
+import { Job } from 'bullmq';
+
 import { prisma } from '@/lib/prisma';
+import { createLlamaLogger } from '@/lib/logging/llama-logger';
 
 import type {
   CacheAlbumCoverArtJobData,
   CacheArtistImageJobData,
 } from '../jobs';
+import { JOB_TYPES } from '../jobs';
 
 // ============================================================================
 // Cover Art Caching Handler
 // ============================================================================
 
 export async function handleCacheAlbumCoverArt(
-  data: CacheAlbumCoverArtJobData
-): Promise<any> {
+  job: Job<CacheAlbumCoverArtJobData>
+): Promise<unknown> {
+  const data = job.data;
   const { albumId } = data;
+  const startTime = Date.now();
+  const llamaLogger = createLlamaLogger(prisma);
 
   try {
     // Fetch album from database
@@ -30,12 +37,51 @@ export async function handleCacheAlbumCoverArt(
     });
 
     if (!album) {
-      // Non-retryable error: album doesn't exist
+      await llamaLogger.logEnrichment({
+        entityType: 'ALBUM',
+        entityId: albumId,
+        operation: JOB_TYPES.CACHE_ALBUM_COVER_ART,
+        category: 'FAILED',
+        sources: ['CLOUDFLARE'],
+        status: 'FAILED',
+        reason: 'Album not found in database',
+        fieldsEnriched: [],
+        errorMessage: 'Album not found',
+        errorCode: 'ALBUM_NOT_FOUND',
+        durationMs: Date.now() - startTime,
+        apiCallCount: 0,
+        metadata: { requestedAlbumId: albumId },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
       throw new Error(`Album ${albumId} not found`);
     }
 
     // Skip if already cached
     if (album.cloudflareImageId && album.cloudflareImageId !== 'none') {
+      await llamaLogger.logEnrichment({
+        entityType: 'ALBUM',
+        entityId: albumId,
+        operation: JOB_TYPES.CACHE_ALBUM_COVER_ART,
+        category: 'ENRICHED',
+        sources: ['CLOUDFLARE'],
+        status: 'SKIPPED',
+        reason: 'Album cover art already cached in Cloudflare',
+        fieldsEnriched: [],
+        durationMs: Date.now() - startTime,
+        apiCallCount: 0,
+        metadata: {
+          albumTitle: album.title,
+          existingCloudflareImageId: album.cloudflareImageId,
+        },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
+
       return {
         success: true,
         cached: true,
@@ -52,8 +98,26 @@ export async function handleCacheAlbumCoverArt(
         data: { cloudflareImageId: 'none' },
       });
 
+      await llamaLogger.logEnrichment({
+        entityType: 'ALBUM',
+        entityId: albumId,
+        operation: JOB_TYPES.CACHE_ALBUM_COVER_ART,
+        category: 'ENRICHED',
+        sources: ['CLOUDFLARE'],
+        status: 'SKIPPED',
+        reason: 'No source cover art URL available for album',
+        fieldsEnriched: [],
+        durationMs: Date.now() - startTime,
+        apiCallCount: 0,
+        metadata: { albumTitle: album.title },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
+
       return {
-        success: true, // Don't retry - this is expected
+        success: true,
         cached: false,
         albumId,
         cloudflareImageId: 'none',
@@ -72,15 +136,36 @@ export async function handleCacheAlbumCoverArt(
     );
 
     if (!result) {
-      // Check if it's a 404 (non-retryable) or transient error (retryable)
-      // For now, mark as 'none' and don't retry
       await prisma.album.update({
         where: { id: albumId },
         data: { cloudflareImageId: 'none' },
       });
 
+      await llamaLogger.logEnrichment({
+        entityType: 'ALBUM',
+        entityId: albumId,
+        operation: JOB_TYPES.CACHE_ALBUM_COVER_ART,
+        category: 'FAILED',
+        sources: ['CLOUDFLARE'],
+        status: 'FAILED',
+        reason: 'Failed to fetch cover art from source (404 or invalid URL)',
+        fieldsEnriched: [],
+        errorMessage: 'Cover art fetch failed',
+        errorCode: 'IMAGE_FETCH_FAILED',
+        durationMs: Date.now() - startTime,
+        apiCallCount: 1,
+        metadata: {
+          albumTitle: album.title,
+          sourceUrl: album.coverArtUrl,
+        },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
+
       return {
-        success: true, // Don't retry - mark as processed
+        success: true,
         cached: false,
         albumId,
         cloudflareImageId: 'none',
@@ -95,6 +180,32 @@ export async function handleCacheAlbumCoverArt(
     });
 
     console.log(`✅ Cached cover art for "${album.title}" (${albumId})`);
+
+    await llamaLogger.logEnrichment({
+      entityType: 'ALBUM',
+      entityId: albumId,
+      operation: JOB_TYPES.CACHE_ALBUM_COVER_ART,
+      category: 'ENRICHED',
+      sources: ['CLOUDFLARE'],
+      status: 'SUCCESS',
+      reason: 'Successfully cached album cover art to Cloudflare CDN',
+      fieldsEnriched: ['cloudflareImageId'],
+      dataQualityBefore: 'MEDIUM',
+      dataQualityAfter: 'HIGH',
+      durationMs: Date.now() - startTime,
+      apiCallCount: 1,
+      metadata: {
+        albumTitle: album.title,
+        beforeUrl: album.coverArtUrl,
+        afterUrl: result.url,
+        cloudflareImageId: result.id,
+        cacheLocation: 'cloudflare_images',
+      },
+      jobId: job.id,
+      parentJobId: data.parentJobId || null,
+      isRootJob: !data.parentJobId,
+      triggeredBy: 'system',
+    });
 
     return {
       success: true,
@@ -112,7 +223,29 @@ export async function handleCacheAlbumCoverArt(
       errorMessage
     );
 
-    // Throw to trigger BullMQ retry with exponential backoff
+    // Only log if we haven't already logged (album not found case)
+    if (!errorMessage.includes('not found')) {
+      await llamaLogger.logEnrichment({
+        entityType: 'ALBUM',
+        entityId: albumId,
+        operation: JOB_TYPES.CACHE_ALBUM_COVER_ART,
+        category: 'FAILED',
+        sources: ['CLOUDFLARE'],
+        status: 'FAILED',
+        reason: 'Unexpected error during caching operation',
+        fieldsEnriched: [],
+        errorMessage,
+        errorCode: 'CACHE_ERROR',
+        durationMs: Date.now() - startTime,
+        apiCallCount: 1,
+        metadata: { error: errorMessage },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
+    }
+
     throw new Error(`Failed to cache album ${albumId}: ${errorMessage}`);
   }
 }
@@ -126,9 +259,12 @@ export async function handleCacheAlbumCoverArt(
  * Caches artist images from external sources to Cloudflare Images CDN
  */
 export async function handleCacheArtistImage(
-  data: CacheArtistImageJobData
-): Promise<any> {
+  job: Job<CacheArtistImageJobData>
+): Promise<unknown> {
+  const data = job.data;
   const { artistId } = data;
+  const startTime = Date.now();
+  const llamaLogger = createLlamaLogger(prisma);
 
   try {
     // Fetch artist from database
@@ -143,12 +279,51 @@ export async function handleCacheArtistImage(
     });
 
     if (!artist) {
-      // Non-retryable error: artist doesn't exist
+      await llamaLogger.logEnrichment({
+        entityType: 'ARTIST',
+        entityId: artistId,
+        operation: JOB_TYPES.CACHE_ARTIST_IMAGE,
+        category: 'FAILED',
+        sources: ['CLOUDFLARE'],
+        status: 'FAILED',
+        reason: 'Artist not found in database',
+        fieldsEnriched: [],
+        errorMessage: 'Artist not found',
+        errorCode: 'ARTIST_NOT_FOUND',
+        durationMs: Date.now() - startTime,
+        apiCallCount: 0,
+        metadata: { requestedArtistId: artistId },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
       throw new Error(`Artist ${artistId} not found`);
     }
 
     // Skip if already cached
     if (artist.cloudflareImageId && artist.cloudflareImageId !== 'none') {
+      await llamaLogger.logEnrichment({
+        entityType: 'ARTIST',
+        entityId: artistId,
+        operation: JOB_TYPES.CACHE_ARTIST_IMAGE,
+        category: 'ENRICHED',
+        sources: ['CLOUDFLARE'],
+        status: 'SKIPPED',
+        reason: 'Artist image already cached in Cloudflare',
+        fieldsEnriched: [],
+        durationMs: Date.now() - startTime,
+        apiCallCount: 0,
+        metadata: {
+          artistName: artist.name,
+          existingCloudflareImageId: artist.cloudflareImageId,
+        },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
+
       return {
         success: true,
         cached: true,
@@ -165,8 +340,26 @@ export async function handleCacheArtistImage(
         data: { cloudflareImageId: 'none' },
       });
 
+      await llamaLogger.logEnrichment({
+        entityType: 'ARTIST',
+        entityId: artistId,
+        operation: JOB_TYPES.CACHE_ARTIST_IMAGE,
+        category: 'ENRICHED',
+        sources: ['CLOUDFLARE'],
+        status: 'SKIPPED',
+        reason: 'No source image URL available for artist',
+        fieldsEnriched: [],
+        durationMs: Date.now() - startTime,
+        apiCallCount: 0,
+        metadata: { artistName: artist.name },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
+
       return {
-        success: true, // Don't retry - this is expected
+        success: true,
         cached: false,
         artistId,
         cloudflareImageId: 'none',
@@ -175,25 +368,48 @@ export async function handleCacheArtistImage(
     }
 
     // Import cacheArtistImage lazily to avoid circular dependencies
-    const { cacheArtistImage } = await import('@/lib/cloudflare-images');
+    const { cacheArtistImage: cacheArtistImageFn } = await import(
+      '@/lib/cloudflare-images'
+    );
 
     // Upload to Cloudflare
-    const result = await cacheArtistImage(
+    const result = await cacheArtistImageFn(
       artist.imageUrl,
       artist.id,
       artist.name
     );
 
     if (!result) {
-      // Check if it's a 404 (non-retryable) or transient error (retryable)
-      // For now, mark as 'none' and don't retry
       await prisma.artist.update({
         where: { id: artistId },
         data: { cloudflareImageId: 'none' },
       });
 
+      await llamaLogger.logEnrichment({
+        entityType: 'ARTIST',
+        entityId: artistId,
+        operation: JOB_TYPES.CACHE_ARTIST_IMAGE,
+        category: 'FAILED',
+        sources: ['CLOUDFLARE'],
+        status: 'FAILED',
+        reason: 'Failed to fetch artist image from source (404 or invalid URL)',
+        fieldsEnriched: [],
+        errorMessage: 'Image fetch failed',
+        errorCode: 'IMAGE_FETCH_FAILED',
+        durationMs: Date.now() - startTime,
+        apiCallCount: 1,
+        metadata: {
+          artistName: artist.name,
+          sourceUrl: artist.imageUrl,
+        },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
+
       return {
-        success: true, // Don't retry - mark as processed
+        success: true,
         cached: false,
         artistId,
         cloudflareImageId: 'none',
@@ -208,6 +424,32 @@ export async function handleCacheArtistImage(
     });
 
     console.log(`✅ Cached image for "${artist.name}" (${artistId})`);
+
+    await llamaLogger.logEnrichment({
+      entityType: 'ARTIST',
+      entityId: artistId,
+      operation: JOB_TYPES.CACHE_ARTIST_IMAGE,
+      category: 'ENRICHED',
+      sources: ['CLOUDFLARE'],
+      status: 'SUCCESS',
+      reason: 'Successfully cached artist image to Cloudflare CDN',
+      fieldsEnriched: ['cloudflareImageId'],
+      dataQualityBefore: 'MEDIUM',
+      dataQualityAfter: 'HIGH',
+      durationMs: Date.now() - startTime,
+      apiCallCount: 1,
+      metadata: {
+        artistName: artist.name,
+        beforeUrl: artist.imageUrl,
+        afterUrl: result.url,
+        cloudflareImageId: result.id,
+        cacheLocation: 'cloudflare_images',
+      },
+      jobId: job.id,
+      parentJobId: data.parentJobId || null,
+      isRootJob: !data.parentJobId,
+      triggeredBy: 'system',
+    });
 
     return {
       success: true,
@@ -225,7 +467,29 @@ export async function handleCacheArtistImage(
       errorMessage
     );
 
-    // Throw to trigger BullMQ retry with exponential backoff
+    // Only log if we haven't already logged (artist not found case)
+    if (!errorMessage.includes('not found')) {
+      await llamaLogger.logEnrichment({
+        entityType: 'ARTIST',
+        entityId: artistId,
+        operation: JOB_TYPES.CACHE_ARTIST_IMAGE,
+        category: 'FAILED',
+        sources: ['CLOUDFLARE'],
+        status: 'FAILED',
+        reason: 'Unexpected error during caching operation',
+        fieldsEnriched: [],
+        errorMessage,
+        errorCode: 'CACHE_ERROR',
+        durationMs: Date.now() - startTime,
+        apiCallCount: 1,
+        metadata: { error: errorMessage },
+        jobId: job.id,
+        parentJobId: data.parentJobId || null,
+        isRootJob: !data.parentJobId,
+        triggeredBy: 'system',
+      });
+    }
+
     throw new Error(`Failed to cache artist ${artistId}: ${errorMessage}`);
   }
 }

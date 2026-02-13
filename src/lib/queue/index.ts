@@ -22,7 +22,9 @@ export {
 // Job types and interfaces
 export {
   JOB_TYPES,
+  PRIORITY_TIERS,
   type JobType,
+  type PriorityTier,
   type MusicBrainzJobData,
   type MusicBrainzJobOptions,
   type JobResult,

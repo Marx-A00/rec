@@ -16,6 +16,8 @@ scalar JSON
 type Artist {
   id: UUID!
   musicbrainzId: UUID
+  spotifyId: String
+  discogsId: String
   name: String!
   biography: String
   formedYear: Int
@@ -44,16 +46,19 @@ type Artist {
   listeners: Int
 
   # Enrichment logs
-  enrichmentLogs(limit: Int): [EnrichmentLog!]!
-  latestEnrichmentLog: EnrichmentLog
+  llamaLogs(limit: Int): [LlamaLog!]!
+  latestLlamaLog: LlamaLog
 }
 
 type Album {
   id: UUID!
   musicbrainzId: UUID
+  spotifyId: String
+  discogsId: String
   title: String!
   releaseDate: DateTime
   releaseType: String
+  genres: [String!]
   trackCount: Int
   durationMs: Int
   coverArtUrl: String
@@ -84,15 +89,15 @@ type Album {
   needsEnrichment: Boolean!
 
   # Enrichment logs
-  enrichmentLogs(limit: Int): [EnrichmentLog!]!
-  latestEnrichmentLog: EnrichmentLog
+  llamaLogs(limit: Int): [LlamaLog!]!
+  latestLlamaLog: LlamaLog
 }
 
 type Track {
   id: UUID!
   albumId: UUID
   musicbrainzId: UUID
-  isrc: String
+  discogsId: String  isrc: String
   title: String!
   trackNumber: Int!
   discNumber: Int!
@@ -118,8 +123,8 @@ type Track {
   searchArtistName: String
 
   # Enrichment logs
-  enrichmentLogs(limit: Int): [EnrichmentLog!]!
-  latestEnrichmentLog: EnrichmentLog
+  llamaLogs(limit: Int): [LlamaLog!]!
+  latestLlamaLog: LlamaLog
 }
 
 # =============================================
@@ -532,6 +537,64 @@ input CollectionAlbumInput {
   position: Int
 }
 
+"""
+Input for adding an album to a collection with optional album creation.
+Supports both existing albums (by ID) and creating new albums inline.
+"""
+input AddAlbumToCollectionWithCreateInput {
+  """
+  Collection ID to add the album to
+  """
+  collectionId: String!
+  """
+  Position in the collection (0 = beginning)
+  """
+  position: Int
+  """
+  Personal rating (1-10)
+  """
+  personalRating: Int
+  """
+  Personal notes about the album
+  """
+  personalNotes: String
+  """
+  Use existing album by ID (mutually exclusive with albumData)
+  """
+  albumId: UUID
+  """
+  Create new album with this data (mutually exclusive with albumId)
+  """
+  albumData: AlbumInput
+}
+
+"""
+Input for creating a recommendation with optional inline album creation.
+For each album, provide EITHER the ID (for existing) OR album data (to create).
+"""
+input CreateRecommendationWithAlbumsInput {
+  """
+  Existing basis album ID (mutually exclusive with basisAlbumData)
+  """
+  basisAlbumId: UUID
+  """
+  Create basis album with this data (mutually exclusive with basisAlbumId)
+  """
+  basisAlbumData: AlbumInput
+  """
+  Existing recommended album ID (mutually exclusive with recommendedAlbumData)
+  """
+  recommendedAlbumId: UUID
+  """
+  Create recommended album with this data (mutually exclusive with recommendedAlbumId)
+  """
+  recommendedAlbumData: AlbumInput
+  """
+  Recommendation score (1-10)
+  """
+  score: Int!
+}
+
 input AlbumInput {
   title: String!
   releaseDate: String # ISO date string
@@ -571,7 +634,7 @@ input TrackInput {
   previewUrl: String
   isrc: String
   musicbrainzId: UUID
-
+  discogsId: String
   # Artist associations
   artists: [ArtistTrackInput!]!
 }
@@ -591,7 +654,7 @@ input UpdateTrackInput {
   previewUrl: String
   isrc: String
   musicbrainzId: UUID
-}
+  discogsId: String}
 
 input AlertThresholdsInput {
   queueDepth: Int
@@ -657,7 +720,7 @@ enum EnrichmentEntityType {
   TRACK
 }
 
-enum EnrichmentLogStatus {
+enum LlamaLogStatus {
   SUCCESS
   PARTIAL_SUCCESS
   FAILED
@@ -666,17 +729,1157 @@ enum EnrichmentLogStatus {
   PREVIEW
 }
 
+enum LlamaLogCategory {
+  CREATED
+  ENRICHED
+  CORRECTED
+  CACHED
+  FAILED
+  LINKED
+  USER_ACTION
+}
+
 # =============================================
-# ENRICHMENT LOGGING TYPES
+# CORRECTION SYSTEM ENUMS
 # =============================================
 
-type EnrichmentLog {
+"""
+Five-state classification for field changes in correction previews.
+"""
+enum ChangeType {
+  """
+  Field exists in source but not in current (e.g., missing release date)
+  """
+  ADDED
+  """
+  Both exist but differ (e.g., title changed)
+  """
+  MODIFIED
+  """
+  Field exists in current but not in source (rare for corrections)
+  """
+  REMOVED
+  """
+  Both exist but differ significantly (manual review needed)
+  """
+  CONFLICT
+  """
+  Values are semantically identical
+  """
+  UNCHANGED
+}
+
+"""
+Cover art handling options for correction application.
+"""
+enum CoverArtChoice {
+  """
+  Replace current cover with source cover art
+  """
+  USE_SOURCE
+  """
+  Preserve existing cover art
+  """
+  KEEP_CURRENT
+  """
+  Remove cover art entirely
+  """
+  CLEAR
+}
+
+"""
+Available scoring strategies for correction search results.
+"""
+enum ScoringStrategy {
+  """
+  0-1 scale using string-similarity
+  """
+  NORMALIZED
+  """
+  High/medium/low confidence levels
+  """
+  TIERED
+  """
+  0-100 with multiple signals
+  """
+  WEIGHTED
+}
+
+"""
+Source for correction data.
+"""
+enum CorrectionSource {
+  """
+  MusicBrainz database
+  """
+  MUSICBRAINZ
+  """
+  Discogs database
+  """
+  DISCOGS
+}
+
+"""
+Confidence tier for tiered scoring strategy.
+"""
+enum ConfidenceTier {
+  HIGH
+  MEDIUM
+  LOW
+  NONE
+}
+
+"""
+Error codes for correction apply operation failures.
+"""
+enum ApplyErrorCode {
+  """
+  Album was modified since preview was generated
+  """
+  STALE_DATA
+  """
+  Album no longer exists
+  """
+  ALBUM_NOT_FOUND
+  """
+  Database transaction error
+  """
+  TRANSACTION_FAILED
+  """
+  Invalid field selection provided
+  """
+  INVALID_SELECTION
+  """
+  Data validation failed
+  """
+  VALIDATION_ERROR
+  """
+  Resource not found (release group, etc.)
+  """
+  NOT_FOUND
+}
+
+# =============================================
+# CORRECTION SYSTEM TYPES
+# =============================================
+
+# --- Search Types ---
+
+"""
+Artist credit from MusicBrainz search result.
+"""
+type CorrectionArtistCredit {
+  """
+  Artist MusicBrainz ID
+  """
+  mbid: String!
+  """
+  Artist name as credited
+  """
+  name: String!
+}
+
+"""
+Score breakdown showing component scores for search result scoring.
+"""
+type ScoreBreakdown {
+  """
+  Title match score (strategy-specific range)
+  """
+  titleScore: Float!
+  """
+  Artist match score (strategy-specific range)
+  """
+  artistScore: Float!
+  """
+  Year/date score (strategy-specific range)
+  """
+  yearScore: Float!
+  """
+  MusicBrainz search score component
+  """
+  mbScore: Float
+  """
+  For tiered strategy: confidence level
+  """
+  confidenceTier: ConfidenceTier
+}
+
+"""
+A search result with scoring applied.
+"""
+type ScoredSearchResult {
+  """
+  Release group MusicBrainz ID
+  """
+  releaseGroupMbid: String!
+  """
+  Album title
+  """
+  title: String!
+  """
+  Disambiguation (e.g., "deluxe edition")
+  """
+  disambiguation: String
+  """
+  Primary artist credits
+  """
+  artistCredits: [CorrectionArtistCredit!]!
+  """
+  Formatted primary artist name for display
+  """
+  primaryArtistName: String!
+  """
+  First release date (YYYY or YYYY-MM-DD)
+  """
+  firstReleaseDate: String
+  """
+  Primary type (Album, EP, Single, etc.)
+  """
+  primaryType: String
+  """
+  Secondary types (Compilation, Live, Remix, etc.)
+  """
+  secondaryTypes: [String!]
+  """
+  MusicBrainz search score (0-100)
+  """
+  mbScore: Int!
+  """
+  Cover Art Archive thumbnail URL (250px)
+  """
+  coverArtUrl: String
+  """
+  Source indicator
+  """
+  source: String!
+  """
+  Normalized score 0-1 for sorting
+  """
+  normalizedScore: Float!
+  """
+  Raw display score (0-1 or 0-100 depending on strategy)
+  """
+  displayScore: Float!
+  """
+  Component score breakdown
+  """
+  breakdown: ScoreBreakdown!
+  """
+  True if score is below low-confidence threshold
+  """
+  isLowConfidence: Boolean!
+  """
+  Which strategy produced this score
+  """
+  scoringStrategy: ScoringStrategy!
+}
+
+"""
+A group of related search results (same release group MBID).
+Groups releases like "OK Computer" regular vs deluxe editions.
+"""
+type GroupedSearchResult {
+  """
+  The release group MBID (shared by all versions)
+  """
+  releaseGroupMbid: String!
+  """
+  Primary result (best version to display)
+  """
+  primaryResult: ScoredSearchResult!
+  """
+  Alternate versions (deluxe, remaster, etc.)
+  """
+  alternateVersions: [ScoredSearchResult!]!
+  """
+  Total number of versions in this group
+  """
+  versionCount: Int!
+  """
+  Highest score among all versions (for sorting groups)
+  """
+  bestScore: Float!
+}
+
+"""
+Response from correction search operation.
+"""
+type CorrectionSearchResponse {
+  """
+  Grouped search results (deduplicated by release group)
+  """
+  results: [GroupedSearchResult!]!
+  """
+  Total number of unique release groups
+  """
+  totalGroups: Int!
+  """
+  Whether more results are available
+  """
+  hasMore: Boolean!
+  """
+  The query that was executed
+  """
+  query: CorrectionSearchQuery!
+  """
+  Scoring metadata
+  """
+  scoring: CorrectionScoringInfo!
+}
+
+"""
+Query information for correction search.
+"""
+type CorrectionSearchQuery {
+  albumTitle: String
+  artistName: String
+  yearFilter: Int
+}
+
+"""
+Scoring metadata for correction search response.
+"""
+type CorrectionScoringInfo {
+  """
+  Strategy used for scoring
+  """
+  strategy: ScoringStrategy!
+  """
+  Low-confidence threshold used
+  """
+  threshold: Float!
+  """
+  Number of results below threshold
+  """
+  lowConfidenceCount: Int!
+}
+
+# --- Preview/Diff Types ---
+
+"""
+Character-level diff part for text comparison.
+Used to highlight exact changes within text fields.
+"""
+type TextDiffPart {
+  """
+  The text content of this part
+  """
+  value: String!
+  """
+  True if this part was added in the source
+  """
+  added: Boolean
+  """
+  True if this part was removed (exists in current but not source)
+  """
+  removed: Boolean
+}
+
+"""
+Diff for a text field (title, disambiguation, etc.)
+"""
+type TextDiff {
+  """
+  Field name (e.g., 'title', 'disambiguation')
+  """
+  field: String!
+  """
+  Change classification
+  """
+  changeType: ChangeType!
+  """
+  Current value in database
+  """
+  currentValue: String
+  """
+  Value from MusicBrainz source
+  """
+  sourceValue: String
+  """
+  Character-level diff parts (only for MODIFIED/CONFLICT)
+  """
+  parts: [TextDiffPart!]
+}
+
+"""
+Date components for partial date comparison.
+Handles YYYY, YYYY-MM, and YYYY-MM-DD formats.
+"""
+type DateComponents {
+  year: Int
+  month: Int
+  day: Int
+}
+
+"""
+Diff for release date field with component-level granularity.
+"""
+type DateDiff {
+  """
+  Always 'releaseDate'
+  """
+  field: String!
+  """
+  Overall change classification
+  """
+  changeType: ChangeType!
+  """
+  Current date components
+  """
+  current: DateComponents
+  """
+  Source date components
+  """
+  source: DateComponents
+  """
+  Per-component change classification
+  """
+  componentChanges: DateComponentChanges!
+}
+
+"""
+Per-component change classification for date diff.
+"""
+type DateComponentChanges {
+  year: ChangeType!
+  month: ChangeType!
+  day: ChangeType!
+}
+
+"""
+Diff for array fields (genres, secondaryTypes, etc.)
+"""
+type ArrayDiff {
+  """
+  Field name (e.g., 'genres', 'secondaryTypes')
+  """
+  field: String!
+  """
+  Overall change classification
+  """
+  changeType: ChangeType!
+  """
+  Current array values
+  """
+  currentItems: [String!]!
+  """
+  Source array values
+  """
+  sourceItems: [String!]!
+  """
+  Items added in source
+  """
+  added: [String!]!
+  """
+  Items removed (exist in current but not source)
+  """
+  removed: [String!]!
+  """
+  Items unchanged (exist in both)
+  """
+  unchanged: [String!]!
+}
+
+"""
+Diff for a single track in the track listing.
+Position-based comparison (disc + track number).
+"""
+type TrackDiff {
+  """
+  Track position (1-based)
+  """
+  position: Int!
+  """
+  Disc number (1-based)
+  """
+  discNumber: Int!
+  """
+  Track change classification
+  """
+  changeType: String!
+  """
+  Current track data (null if ADDED in source)
+  """
+  current: TrackData
+  """
+  Source track from MusicBrainz (null if REMOVED from current)
+  """
+  source: TrackSourceData
+  """
+  Title diff parts (only for MODIFIED)
+  """
+  titleDiff: [TextDiffPart!]
+  """
+  Duration difference in milliseconds (absolute value)
+  """
+  durationDelta: Int
+  """
+  Database track ID (for selection)
+  """
+  trackId: String
+}
+
+"""
+Current track data from database.
+"""
+type TrackData {
+  title: String!
+  durationMs: Int
+  trackNumber: Int!
+}
+
+"""
+Source track data from MusicBrainz.
+"""
+type TrackSourceData {
+  title: String!
+  durationMs: Int
+  mbid: String
+}
+
+"""
+Summary statistics for track listing comparison.
+"""
+type TrackListSummary {
+  """
+  Total tracks in current album
+  """
+  totalCurrent: Int!
+  """
+  Total tracks in source data
+  """
+  totalSource: Int!
+  """
+  Number of matching tracks (same position, same title)
+  """
+  matching: Int!
+  """
+  Number of modified tracks (same position, different title/duration)
+  """
+  modified: Int!
+  """
+  Number of tracks added in source
+  """
+  added: Int!
+  """
+  Number of tracks removed (exist in current but not source)
+  """
+  removed: Int!
+}
+
+"""
+Diff for artist credits.
+"""
+type ArtistCreditDiff {
+  """
+  Change classification
+  """
+  changeType: ChangeType!
+  """
+  Current artist credits
+  """
+  current: [CorrectionArtistCredit!]!
+  """
+  Source artist credits
+  """
+  source: [CorrectionArtistCredit!]!
+  """
+  Formatted current artist string
+  """
+  currentDisplay: String!
+  """
+  Formatted source artist string
+  """
+  sourceDisplay: String!
+  """
+  Name diff parts if modified
+  """
+  nameDiff: [TextDiffPart!]
+}
+
+"""
+Cover art comparison data.
+"""
+type CoverArtDiff {
+  currentUrl: String
+  sourceUrl: String
+  changeType: ChangeType!
+}
+
+"""
+Summary of all changes in a preview.
+"""
+type PreviewSummary {
+  """
+  Total fields compared
+  """
+  totalFields: Int!
+  """
+  Number of fields that changed
+  """
+  changedFields: Int!
+  """
+  Number of fields added
+  """
+  addedFields: Int!
+  """
+  Number of fields modified
+  """
+  modifiedFields: Int!
+  """
+  Number of conflict fields
+  """
+  conflictFields: Int!
+  """
+  Whether track listing has changes
+  """
+  hasTrackChanges: Boolean!
+}
+
+# --- MusicBrainz Release Data Types ---
+
+"""
+MusicBrainz recording (track) data.
+"""
+type MBRecording {
+  """
+  Recording MBID
+  """
+  id: String!
+  """
+  Track title
+  """
+  title: String!
+  """
+  Duration in milliseconds
+  """
+  length: Int
+  """
+  Track position within medium
+  """
+  position: Int!
+}
+
+"""
+MusicBrainz medium track wrapper.
+"""
+type MBMediumTrack {
+  """
+  Track position within medium
+  """
+  position: Int!
+  """
+  Recording data
+  """
+  recording: MBRecording!
+}
+
+"""
+MusicBrainz medium (disc/vinyl/CD) data.
+"""
+type MBMedium {
+  """
+  Medium position (1-based)
+  """
+  position: Int!
+  """
+  Format (CD, Vinyl, Digital, etc.)
+  """
+  format: String
+  """
+  Number of tracks on this medium
+  """
+  trackCount: Int!
+  """
+  Track listing
+  """
+  tracks: [MBMediumTrack!]!
+}
+
+"""
+MusicBrainz artist data within artist credit.
+"""
+type MBArtist {
+  """
+  Artist MBID
+  """
+  id: String!
+  """
+  Artist name
+  """
+  name: String!
+  """
+  Sort name
+  """
+  sortName: String
+  """
+  Disambiguation
+  """
+  disambiguation: String
+}
+
+"""
+MusicBrainz artist credit entry.
+"""
+type MBArtistCredit {
+  """
+  Artist name as credited
+  """
+  name: String!
+  """
+  Join phrase (e.g., ' & ', ' feat. ')
+  """
+  joinphrase: String
+  """
+  Artist data
+  """
+  artist: MBArtist!
+}
+
+"""
+MusicBrainz release data (full release, not just release group).
+Fetched separately for track listing comparison.
+"""
+type MBReleaseData {
+  """
+  Release MBID (not release group)
+  """
+  id: String!
+  """
+  Album title
+  """
+  title: String!
+  """
+  Release date (YYYY, YYYY-MM, or YYYY-MM-DD)
+  """
+  date: String
+  """
+  Country of release
+  """
+  country: String
+  """
+  Barcode
+  """
+  barcode: String
+  """
+  Media (discs/vinyls/etc.)
+  """
+  media: [MBMedium!]!
+  """
+  Artist credits
+  """
+  artistCredit: [MBArtistCredit!]!
+}
+
+"""
+Complete preview of all changes between current album and MusicBrainz source.
+"""
+type CorrectionPreview {
+  """
+  Album ID being corrected
+  """
+  albumId: String!
+  """
+  Album title for display
+  """
+  albumTitle: String!
+  """
+  Album updatedAt for optimistic locking
+  """
+  albumUpdatedAt: DateTime!
+  """
+  Selected MusicBrainz search result
+  """
+  sourceResult: ScoredSearchResult!
+  """
+  Full MusicBrainz release data (for tracks)
+  """
+  mbReleaseData: MBReleaseData
+  """
+  Field-by-field diffs (as JSON for complex union types)
+  """
+  fieldDiffs: JSON!
+  """
+  Artist credit comparison
+  """
+  artistDiff: ArtistCreditDiff!
+  """
+  Track listing comparison
+  """
+  trackDiffs: [TrackDiff!]!
+  """
+  Track summary statistics
+  """
+  trackSummary: TrackListSummary!
+  """
+  Cover art comparison
+  """
+  coverArt: CoverArtDiff!
+  """
+  Summary of all changes
+  """
+  summary: PreviewSummary!
+}
+
+# --- Apply Types ---
+
+"""
+Applied artist changes summary.
+"""
+type AppliedArtistChanges {
+  """
+  Names of artists added to album
+  """
+  added: [String!]!
+  """
+  Names of artists removed from album
+  """
+  removed: [String!]!
+}
+
+"""
+Applied track changes summary.
+"""
+type AppliedTrackChanges {
+  """
+  Number of tracks added
+  """
+  added: Int!
+  """
+  Number of tracks modified
+  """
+  modified: Int!
+  """
+  Number of tracks removed
+  """
+  removed: Int!
+}
+
+"""
+Summary of changes that were applied to the album.
+"""
+type AppliedChanges {
+  """
+  List of metadata field names that were updated
+  """
+  metadata: [String!]!
+  """
+  Artist changes applied
+  """
+  artists: AppliedArtistChanges!
+  """
+  Track changes applied
+  """
+  tracks: AppliedTrackChanges!
+  """
+  List of external ID field names that were updated
+  """
+  externalIds: [String!]!
+  """
+  Whether cover art was changed
+  """
+  coverArt: Boolean!
+  """
+  Data quality before correction
+  """
+  dataQualityBefore: DataQuality!
+  """
+  Data quality after correction
+  """
+  dataQualityAfter: DataQuality!
+}
+
+"""
+Successful correction apply result.
+"""
+type CorrectionApplySuccess {
+  success: Boolean!
+  """
+  Updated album record
+  """
+  album: Album!
+  """
+  Summary of changes applied
+  """
+  changes: AppliedChanges!
+}
+
+"""
+Failed correction apply result.
+"""
+type CorrectionApplyError {
+  success: Boolean!
+  """
+  Error classification code
+  """
+  code: ApplyErrorCode!
+  """
+  Human-readable error message
+  """
+  message: String!
+  """
+  Additional context for debugging (as JSON)
+  """
+  context: JSON
+}
+
+"""
+Apply operation result (union returned as interface for simplicity).
+Check 'success' field to determine which fields are populated.
+"""
+type CorrectionApplyResult {
+  success: Boolean!
+  # Success fields (populated when success=true)
+  album: Album
+  changes: AppliedChanges
+  # Error fields (populated when success=false)
+  code: ApplyErrorCode
+  message: String
+  context: JSON
+}
+
+# =============================================
+# CORRECTION SYSTEM INPUT TYPES
+# =============================================
+
+"""
+Input for correction search operation.
+"""
+input CorrectionSearchInput {
+  """
+  Album ID to search corrections for
+  """
+  albumId: UUID!
+  """
+  Override album title for search
+  """
+  albumTitle: String
+  """
+  Override artist name for search
+  """
+  artistName: String
+  """
+  Optional year filter
+  """
+  yearFilter: Int
+  """
+  Maximum results to return (default 10)
+  """
+  limit: Int = 10
+  """
+  Offset for pagination
+  """
+  offset: Int = 0
+  """
+  Scoring strategy to use
+  """
+  strategy: ScoringStrategy = NORMALIZED
+  """
+  Threshold below which results are flagged as low-confidence (0-1)
+  """
+  lowConfidenceThreshold: Float = 0.5
+  """
+  Data source to search (default: MUSICBRAINZ)
+  """
+  source: CorrectionSource = MUSICBRAINZ
+  """
+  Direct MusicBrainz release group ID lookup (bypasses text search)
+  """
+  releaseGroupMbid: String
+  """
+  Direct Discogs master ID lookup (bypasses text search)
+  """
+  discogsId: String
+}
+
+"""
+Input for correction preview operation.
+"""
+input CorrectionPreviewInput {
+  """
+  Album ID to preview corrections for
+  """
+  albumId: UUID!
+  """
+  Selected release group MBID from search results (or Discogs master ID for Discogs source)
+  """
+  releaseGroupMbid: String!
+  """
+  Data source (default: MUSICBRAINZ)
+  """
+  source: CorrectionSource = MUSICBRAINZ
+}
+
+"""
+Selection state for metadata fields.
+"""
+input MetadataSelectionsInput {
+  """
+  Album title
+  """
+  title: Boolean = true
+  """
+  Release date
+  """
+  releaseDate: Boolean = true
+  """
+  Release type (Album, EP, Single, etc.)
+  """
+  releaseType: Boolean = true
+  """
+  Release country code
+  """
+  releaseCountry: Boolean = true
+  """
+  Barcode / UPC
+  """
+  barcode: Boolean = true
+  """
+  Record label
+  """
+  label: Boolean = true
+}
+
+"""
+Selection state for external ID fields.
+"""
+input ExternalIdSelectionsInput {
+  """
+  MusicBrainz release ID
+  """
+  musicbrainzId: Boolean = true
+  """
+  Spotify album ID
+  """
+  spotifyId: Boolean = false
+  """
+  Discogs release ID
+  """
+  discogsId: Boolean = false
+}
+
+"""
+Key-value pair for Map-like selections.
+"""
+input SelectionEntry {
+  """
+  Unique key (artist MBID or track position like "1-3")
+  """
+  key: String!
+  """
+  Whether to apply this change
+  """
+  selected: Boolean!
+}
+
+"""
+Complete field selection state for correction application.
+"""
+input FieldSelectionsInput {
+  """
+  Core metadata field selections
+  """
+  metadata: MetadataSelectionsInput
+  """
+  Per-artist selection state (key: artist MBID)
+  """
+  artists: [SelectionEntry!]
+  """
+  Per-track selection state (key: "disc-track", e.g., "1-3")
+  """
+  tracks: [SelectionEntry!]
+  """
+  External ID field selections
+  """
+  externalIds: ExternalIdSelectionsInput
+  """
+  Cover art handling choice
+  """
+  coverArt: CoverArtChoice = USE_SOURCE
+}
+
+"""
+Input for applying a correction.
+"""
+input CorrectionApplyInput {
+  """
+  Album ID to apply correction to
+  """
+  albumId: UUID!
+  """
+  Selected release group MBID
+  """
+  releaseGroupMbid: String!
+  """
+  Field selections determining which changes to apply
+  """
+  selections: FieldSelectionsInput!
+  """
+  Expected album updatedAt timestamp for optimistic locking
+  """
+  expectedUpdatedAt: DateTime!
+  """
+  Source of correction data (defaults to MusicBrainz)
+  """
+  source: CorrectionSource = MUSICBRAINZ
+}
+
+"""
+Input for applying a manual correction (no external MBID required).
+Admin directly edits album fields without selecting a MusicBrainz source.
+"""
+input ManualCorrectionApplyInput {
+  """
+  Album ID to apply correction to
+  """
+  albumId: UUID!
+  """
+  Title to set (required)
+  """
+  title: String!
+  """
+  Artist names to set
+  """
+  artists: [String!]!
+  """
+  Release date (YYYY, YYYY-MM, or YYYY-MM-DD format)
+  """
+  releaseDate: String
+  """
+  Release type (Album, EP, Single, etc.)
+  """
+  releaseType: String
+  """
+  MusicBrainz release group UUID
+  """
+  musicbrainzId: String
+  """
+  Spotify album ID
+  """
+  spotifyId: String
+  """
+  Discogs master/release ID
+  """
+  discogsId: String
+  """
+  Expected album updatedAt timestamp for optimistic locking
+  """
+  expectedUpdatedAt: DateTime!
+}
+
+# =============================================
+# LLAMA LOGGING TYPES
+# =============================================
+
+type LlamaLog {
   id: UUID!
   entityType: EnrichmentEntityType
   entityId: UUID
   operation: String!
   sources: [String!]!
-  status: EnrichmentLogStatus!
+  status: LlamaLogStatus!
+  category: LlamaLogCategory!
   reason: String # Human-readable explanation of why this enrichment occurred/was skipped
   fieldsEnriched: [String!]!
   dataQualityBefore: DataQuality
@@ -689,9 +1892,18 @@ type EnrichmentLog {
   metadata: JSON
   previewData: JSON # Stores raw API response and field diffs for preview enrichments
   jobId: String
+  parentJobId: String # Links child job to parent job for tree display
+  rootJobId: String # Root job ID for provenance chain queries
   triggeredBy: String
   userId: String # Track which user made manual changes
   createdAt: DateTime!
+  children: [LlamaLog!] # Populated when includeChildren=true
+}
+type LlamaLogChainResponse {
+  logs: [LlamaLog!]!
+  totalCount: Int!
+  cursor: String
+  hasMore: Boolean!
 }
 
 input TimeRangeInput {
@@ -957,7 +2169,7 @@ type PreviewEnrichmentResult {
   matchedEntity: String
   sources: [String!]!
   fieldsToUpdate: [EnrichmentFieldDiff!]!
-  enrichmentLogId: UUID!
+  llamaLogId: UUID!
   rawData: JSON
 }
 
@@ -1218,19 +2430,69 @@ type Query {
   ): [Artist!]!
 
   # Enrichment Logging queries
-  enrichmentLogs(
+  llamaLogs(
     entityType: EnrichmentEntityType
     entityId: UUID
-    status: EnrichmentLogStatus
+    status: LlamaLogStatus
+    category: [LlamaLogCategory!] # Filter by categories (e.g., CREATED, ENRICHED, LINKED)
     sources: [String!]
     skip: Int
     limit: Int
-  ): [EnrichmentLog!]!
+    parentOnly: Boolean # When true, returns only root logs (parentJobId is null)
+    parentJobId: String # When provided, returns only children of this parent job
+    includeChildren: Boolean # When true, returns root logs with nested children
+  ): [LlamaLog!]!
+
+  # Provenance chain for entity lifecycle tracking
+  llamaLogChain(
+    entityType: EnrichmentEntityType!
+    entityId: UUID!
+    categories: [LlamaLogCategory!]
+    startDate: DateTime
+    endDate: DateTime
+    limit: Int = 20
+    cursor: String
+  ): LlamaLogChainResponse!
 
   enrichmentStats(
     entityType: EnrichmentEntityType
     timeRange: TimeRangeInput
   ): EnrichmentStats!
+
+  # Correction System queries (Admin)
+  """
+  Search MusicBrainz for correction candidates for an album
+  """
+  correctionSearch(input: CorrectionSearchInput!): CorrectionSearchResponse!
+  """
+  Generate a preview of changes between album and selected MusicBrainz release
+  """
+  correctionPreview(input: CorrectionPreviewInput!): CorrectionPreview!
+  """
+  Search MusicBrainz or Discogs for artist correction candidates
+  """
+  artistCorrectionSearch(
+    query: String!
+    limit: Int
+    """
+    Data source to search (default: MUSICBRAINZ)
+    """
+    source: CorrectionSource = MUSICBRAINZ
+  ): ArtistCorrectionSearchResponse!
+  """
+  Generate a preview of changes between artist and selected MusicBrainz or Discogs artist
+  """
+  artistCorrectionPreview(
+    artistId: UUID!
+    """
+    Source artist ID (MusicBrainz MBID or Discogs ID)
+    """
+    sourceArtistId: String!
+    """
+    Data source (default: MUSICBRAINZ)
+    """
+    source: CorrectionSource = MUSICBRAINZ
+  ): ArtistCorrectionPreview!
 }
 
 # =============================================
@@ -1288,6 +2550,14 @@ type Mutation {
     collectionId: String!
     input: CollectionAlbumInput!
   ): AddAlbumToCollectionPayload!
+  """
+  Add album to collection with optional inline album creation.
+  Use albumId for existing albums or albumData to create new album atomically.
+  Provides proper provenance chain for LlamaLog tracking.
+  """
+  addAlbumToCollectionWithCreate(
+    input: AddAlbumToCollectionWithCreateInput!
+  ): AddAlbumToCollectionPayload!
   removeAlbumFromCollection(collectionId: String!, albumId: UUID!): Boolean!
   updateCollectionAlbum(
     id: String!
@@ -1303,10 +2573,18 @@ type Mutation {
   removeFromListenLater(albumId: UUID!): Boolean!
 
   # Recommendation system
+  """
+  Create a recommendation. Supports two modes:
+  1. Legacy: Pass basisAlbumId + recommendedAlbumId (existing albums)
+  2. New: Pass input with optional inline album creation
+  """
   createRecommendation(
-    basisAlbumId: UUID!
-    recommendedAlbumId: UUID!
-    score: Int!
+    # Legacy params (for backwards compatibility)
+    basisAlbumId: UUID
+    recommendedAlbumId: UUID
+    score: Int
+    # New input (preferred - supports inline album creation)
+    input: CreateRecommendationWithAlbumsInput
   ): CreateRecommendationPayload!
   updateRecommendation(id: String!, score: Int!): UpdateRecommendationPayload!
   deleteRecommendation(id: String!): Boolean!
@@ -1348,6 +2626,12 @@ type Mutation {
   previewAlbumEnrichment(id: UUID!): PreviewEnrichmentResult!
   previewArtistEnrichment(id: UUID!): PreviewEnrichmentResult!
 
+  """
+  Apply manual corrections to an album (no external source)
+  """
+  manualCorrectionApply(
+    input: ManualCorrectionApplyInput!
+  ): CorrectionApplyResult!
   batchEnrichment(
     ids: [UUID!]!
     type: EnrichmentType!
@@ -1365,6 +2649,18 @@ type Mutation {
     showOnboardingTour: Boolean!
   ): AdminUpdateUserSettingsPayload!
   deleteAlbum(id: UUID!): DeleteAlbumPayload!
+
+  # Correction System mutations (Admin)
+  """
+  Apply selected corrections from a preview to an album
+  """
+  correctionApply(input: CorrectionApplyInput!): CorrectionApplyResult!
+  """
+  Apply selected corrections from a preview to an artist
+  """
+  artistCorrectionApply(
+    input: ArtistCorrectionApplyInput!
+  ): ArtistCorrectionApplyResult!
 }
 
 type FollowUserPayload {
@@ -1479,4 +2775,287 @@ enum AlertType {
   RATE_LIMIT
   WORKER_FAILURE
   REDIS_CONNECTION
+}
+
+# =============================================
+# ARTIST CORRECTION TYPES
+# =============================================
+
+"""
+A top release for artist disambiguation.
+Helps identify the right artist when multiple share the same name.
+"""
+type ArtistTopRelease {
+  title: String!
+  year: String
+  type: String
+}
+
+"""
+Artist search result from MusicBrainz for correction.
+"""
+type ArtistCorrectionSearchResult {
+  """
+  MusicBrainz artist ID
+  """
+  artistMbid: UUID!
+  """
+  Artist name
+  """
+  name: String!
+  """
+  Sort name (e.g., "Beatles, The")
+  """
+  sortName: String!
+  """
+  Disambiguation comment (e.g., "British rock band")
+  """
+  disambiguation: String
+  """
+  Artist type: Person, Group, Orchestra, Choir, Character, Other
+  """
+  type: String
+  """
+  Country code (ISO 3166-1 alpha-2)
+  """
+  country: String
+  """
+  Area name (city/region)
+  """
+  area: String
+  """
+  Begin date (partial date string)
+  """
+  beginDate: String
+  """
+  End date (partial date string)
+  """
+  endDate: String
+  """
+  Whether the artist has ended
+  """
+  ended: Boolean
+  """
+  Gender (only meaningful for Person type)
+  """
+  gender: String
+  """
+  MusicBrainz search score (0-100)
+  """
+  mbScore: Int!
+  """
+  Top releases for disambiguation
+  """
+  topReleases: [ArtistTopRelease!]
+  """
+  Data source this result came from (musicbrainz or discogs)
+  """
+  source: String
+}
+
+"""
+Response from artist correction search operation.
+"""
+type ArtistCorrectionSearchResponse {
+  """
+  Search results
+  """
+  results: [ArtistCorrectionSearchResult!]!
+  """
+  Whether more results are available
+  """
+  hasMore: Boolean!
+  """
+  The query that was executed
+  """
+  query: String!
+}
+
+"""
+Diff for a single artist field.
+"""
+type ArtistFieldDiff {
+  """
+  Field name
+  """
+  field: String!
+  """
+  Change classification
+  """
+  changeType: ChangeType!
+  """
+  Current value in database
+  """
+  current: String
+  """
+  Value from MusicBrainz source
+  """
+  source: String
+}
+
+"""
+Summary statistics for artist field changes.
+"""
+type ArtistPreviewSummary {
+  """
+  Total number of fields compared
+  """
+  totalFields: Int!
+  """
+  Number of fields that changed
+  """
+  changedFields: Int!
+  """
+  Number of fields added
+  """
+  addedFields: Int!
+  """
+  Number of fields modified
+  """
+  modifiedFields: Int!
+}
+
+"""
+Complete preview of all changes between current artist and external source.
+"""
+type ArtistCorrectionPreview {
+  """
+  Current artist data from database
+  """
+  currentArtist: Artist!
+  """
+  Full MusicBrainz artist data
+  """
+  mbArtistData: JSON
+  """
+  Field-by-field diffs
+  """
+  fieldDiffs: [ArtistFieldDiff!]!
+  """
+  Number of albums by this artist
+  """
+  albumCount: Int!
+  """
+  Summary statistics
+  """
+  summary: ArtistPreviewSummary!
+  """
+  Data source used for this preview
+  """
+  source: CorrectionSource!
+}
+
+"""
+Summary of changes applied to an artist.
+"""
+type ArtistAppliedChanges {
+  """
+  List of metadata field names updated
+  """
+  metadata: [String!]!
+  """
+  List of external ID field names updated
+  """
+  externalIds: [String!]!
+  """
+  Number of albums affected
+  """
+  affectedAlbumCount: Int!
+  """
+  Data quality before correction
+  """
+  dataQualityBefore: DataQuality!
+  """
+  Data quality after correction
+  """
+  dataQualityAfter: DataQuality!
+}
+
+"""
+Result of artist correction apply operation.
+"""
+type ArtistCorrectionApplyResult {
+  success: Boolean!
+  """
+  Updated artist (when success=true)
+  """
+  artist: Artist
+  """
+  Summary of changes applied (when success=true)
+  """
+  changes: ArtistAppliedChanges
+  """
+  Number of affected albums (when success=true)
+  """
+  affectedAlbumCount: Int
+  """
+  Error code (when success=false)
+  """
+  code: ApplyErrorCode
+  """
+  Error message (when success=false)
+  """
+  message: String
+}
+
+# =============================================
+# ARTIST CORRECTION INPUT TYPES
+# =============================================
+
+"""
+Artist metadata field selections.
+"""
+input ArtistMetadataSelectionsInput {
+  name: Boolean
+  disambiguation: Boolean
+  countryCode: Boolean
+  artistType: Boolean
+  area: Boolean
+  beginDate: Boolean
+  endDate: Boolean
+  gender: Boolean
+}
+
+"""
+Artist external ID field selections.
+"""
+input ArtistExternalIdSelectionsInput {
+  musicbrainzId: Boolean
+  discogsId: Boolean
+  ipi: Boolean
+  isni: Boolean
+}
+
+"""
+Complete field selections for artist correction.
+"""
+input ArtistFieldSelectionsInput {
+  metadata: ArtistMetadataSelectionsInput!
+  externalIds: ArtistExternalIdSelectionsInput!
+}
+
+"""
+Input for applying an artist correction.
+"""
+input ArtistCorrectionApplyInput {
+  """
+  Artist ID to apply correction to
+  """
+  artistId: UUID!
+  """
+  Source artist ID (MusicBrainz MBID or Discogs ID)
+  """
+  sourceArtistId: String!
+  """
+  Field selections determining which changes to apply
+  """
+  selections: ArtistFieldSelectionsInput!
+  """
+  Expected artist updatedAt timestamp for optimistic locking
+  """
+  expectedUpdatedAt: DateTime!
+  """
+  Source of correction data (default: MUSICBRAINZ)
+  """
+  source: CorrectionSource = MUSICBRAINZ
 }

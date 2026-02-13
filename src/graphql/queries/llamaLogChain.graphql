@@ -1,0 +1,45 @@
+query GetLlamaLogChain(
+  $entityType: EnrichmentEntityType!
+  $entityId: UUID!
+  $categories: [LlamaLogCategory!]
+  $startDate: DateTime
+  $endDate: DateTime
+  $limit: Int = 20
+  $cursor: String
+) {
+  llamaLogChain(
+    entityType: $entityType
+    entityId: $entityId
+    categories: $categories
+    startDate: $startDate
+    endDate: $endDate
+    limit: $limit
+    cursor: $cursor
+  ) {
+    logs {
+      id
+      entityType
+      entityId
+      operation
+      sources
+      status
+      category
+      reason
+      fieldsEnriched
+      dataQualityBefore
+      dataQualityAfter
+      errorMessage
+      errorCode
+      durationMs
+      apiCallCount
+      metadata
+      createdAt
+      jobId
+      parentJobId
+      rootJobId
+    }
+    totalCount
+    cursor
+    hasMore
+  }
+}

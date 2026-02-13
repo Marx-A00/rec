@@ -1,9 +1,10 @@
-// src/lib/enrichment/enrichment-logger.ts
-// Centralized enrichment logging system for tracking data enrichment operations
+// src/lib/logging/llama-logger.ts
+// Centralized logging system for tracking entity lifecycle operations (creation, enrichment, correction, caching)
 
 import {
   PrismaClient,
-  EnrichmentLog,
+  LlamaLog,
+  LlamaLogCategory,
   EnrichmentEntityType,
   EnrichmentStatus,
   DataQuality,
@@ -37,13 +38,14 @@ export type EnrichmentSource =
   | 'LASTFM'
   | (string & {});
 
-export interface EnrichmentLogData {
+export interface LlamaLogData {
   entityType?: EnrichmentEntityType | null;
   entityId?: string | null;
   artistId?: string | null;
   albumId?: string | null;
   trackId?: string | null;
   operation: EnrichmentOperation;
+  category?: LlamaLogCategory;
   sources: EnrichmentSource[];
   status: EnrichmentStatus;
   reason?: string | null;
@@ -57,10 +59,46 @@ export interface EnrichmentLogData {
   apiCallCount?: number;
   metadata?: Record<string, unknown> | null;
   jobId?: string | null;
+  /** Parent job ID for immediate parent tracking in job chains */
+  parentJobId?: string | null;
+  /** Root job ID for hierarchy queries (original album job). Auto-computed for root jobs. */
+  rootJobId?: string | null;
+  /** Whether this is a root job (true) or child job (false). Auto-computed from parentJobId if not provided. */
+  isRootJob?: boolean;
   triggeredBy?: string | null;
+  /** User ID for tracking manual/user-initiated operations */
+  userId?: string | null;
 }
 
-export class EnrichmentLogger {
+/**
+ * Infer category from operation and status
+ */
+function inferCategory(
+  operation: EnrichmentOperation,
+  status: EnrichmentStatus
+): LlamaLogCategory {
+  // Check for FAILED status first
+  if (status === 'FAILED') {
+    return 'FAILED';
+  }
+
+  // Check operation patterns
+  const opLower = operation.toLowerCase();
+  if (opLower.startsWith('cache:') || opLower.includes('cache')) {
+    return 'CACHED';
+  }
+  if (opLower.includes('admin_correction') || opLower.includes('correction')) {
+    return 'CORRECTED';
+  }
+  if (opLower.startsWith('enrichment:') || opLower.includes('enrich')) {
+    return 'ENRICHED';
+  }
+
+  // Default to CREATED for unknown operations
+  return 'CREATED';
+}
+
+export class LlamaLogger {
   private prisma: PrismaClient;
 
   constructor(prisma: PrismaClient) {
@@ -71,12 +109,12 @@ export class EnrichmentLogger {
    * Log an enrichment operation
    * Non-blocking: errors are logged but not thrown
    */
-  async logEnrichment(data: EnrichmentLogData): Promise<void> {
+  async logEnrichment(data: LlamaLogData): Promise<void> {
     try {
       // Determine which ID field to use based on entity type
-      let artistId: string | undefined;
-      let albumId: string | undefined;
-      let trackId: string | undefined;
+      let artistId: string | null = null;
+      let albumId: string | null = null;
+      let trackId: string | null = null;
 
       if (data.entityType === 'ARTIST' && data.entityId) {
         artistId = data.entityId;
@@ -96,38 +134,56 @@ export class EnrichmentLogger {
         trackId = data.trackId;
       }
 
-      await this.prisma.enrichmentLog.create({
+      // Auto-compute isRootJob from parentJobId if not explicitly provided
+      const isRootJob =
+        data.isRootJob !== undefined ? data.isRootJob : !data.parentJobId;
+
+      // Compute rootJobId: use provided value, or set to jobId for root jobs
+      const rootJobId = data.rootJobId ?? (isRootJob ? data.jobId : null);
+
+      // Use provided category or infer from operation/status
+      const category =
+        data.category ?? inferCategory(data.operation, data.status);
+
+      await this.prisma.llamaLog.create({
         data: {
-          entityType: data.entityType ?? undefined,
-          entityId: data.entityId ?? undefined,
+          entityType: data.entityType ?? null,
+          entityId: data.entityId ?? null,
           artistId,
           albumId,
           trackId,
           operation: data.operation,
+          category,
           sources: data.sources,
           status: data.status,
-          reason: data.reason ?? undefined,
+          reason: data.reason ?? null,
           fieldsEnriched: data.fieldsEnriched,
-          dataQualityBefore: data.dataQualityBefore ?? undefined,
-          dataQualityAfter: data.dataQualityAfter ?? undefined,
-          errorMessage: data.errorMessage ?? undefined,
-          errorCode: data.errorCode ?? undefined,
+          dataQualityBefore: data.dataQualityBefore ?? null,
+          dataQualityAfter: data.dataQualityAfter ?? null,
+          errorMessage: data.errorMessage ?? null,
+          errorCode: data.errorCode ?? null,
           retryCount: data.retryCount ?? 0,
-          durationMs: data.durationMs ?? undefined,
+          durationMs: data.durationMs ?? null,
           apiCallCount: data.apiCallCount ?? 0,
           metadata: data.metadata
             ? (data.metadata as Prisma.InputJsonValue)
-            : undefined,
-          jobId: data.jobId ?? undefined,
-          triggeredBy: data.triggeredBy ?? undefined,
+            : Prisma.JsonNull,
+          jobId: data.jobId ?? null,
+          parentJobId: data.parentJobId ?? null,
+          rootJobId,
+          isRootJob,
+          triggeredBy: data.triggeredBy ?? null,
+          userId: data.userId ?? null,
         },
       });
 
+      const rootIndicator = isRootJob ? ' [ROOT]' : '';
+      const rootInfo = rootJobId ? ` root:${rootJobId.slice(0, 8)}` : '';
       console.log(
-        `[EnrichmentLogger] Logged ${data.operation} for ${data.entityType}:${data.entityId} - Status: ${data.status}`
+        `[🦙 LlamaLog] [${category}] ${data.operation} for ${data.entityType}:${data.entityId} - Status: ${data.status}${rootIndicator}${rootInfo}`
       );
     } catch (error) {
-      console.warn('[EnrichmentLogger] Failed to log enrichment:', error);
+      console.warn('[🦙 LlamaLog] Failed to log:', error);
       // Don't throw - logging shouldn't break the enrichment process
     }
   }
@@ -139,10 +195,10 @@ export class EnrichmentLogger {
     entityType: EnrichmentEntityType,
     entityId: string,
     limit: number = 50
-  ): Promise<EnrichmentLog[]> {
+  ): Promise<LlamaLog[]> {
     const whereClause = this.buildEntityWhereClause(entityType, entityId);
 
-    return await this.prisma.enrichmentLog.findMany({
+    return await this.prisma.llamaLog.findMany({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
       take: limit,
@@ -155,10 +211,10 @@ export class EnrichmentLogger {
   async getLatestAttempt(
     entityType: EnrichmentEntityType,
     entityId: string
-  ): Promise<EnrichmentLog | null> {
+  ): Promise<LlamaLog | null> {
     const whereClause = this.buildEntityWhereClause(entityType, entityId);
 
-    return await this.prisma.enrichmentLog.findFirst({
+    return await this.prisma.llamaLog.findFirst({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
     });
@@ -176,7 +232,7 @@ export class EnrichmentLogger {
     const whereClause = this.buildEntityWhereClause(entityType, entityId);
     const timeWindow = new Date(Date.now() - withinDays * 24 * 60 * 60 * 1000);
 
-    const recentNoData = await this.prisma.enrichmentLog.findFirst({
+    const recentNoData = await this.prisma.llamaLog.findFirst({
       where: {
         ...whereClause,
         status: 'NO_DATA_AVAILABLE',
@@ -199,7 +255,7 @@ export class EnrichmentLogger {
     const whereClause = this.buildEntityWhereClause(entityType, entityId);
     const timeWindow = new Date(Date.now() - withinDays * 24 * 60 * 60 * 1000);
 
-    const recentFailure = await this.prisma.enrichmentLog.findFirst({
+    const recentFailure = await this.prisma.llamaLog.findFirst({
       where: {
         ...whereClause,
         status: 'FAILED',
@@ -219,7 +275,7 @@ export class EnrichmentLogger {
   ): Promise<number> {
     const whereClause = this.buildEntityWhereClause(entityType, entityId);
 
-    const latestFailedAttempt = await this.prisma.enrichmentLog.findFirst({
+    const latestFailedAttempt = await this.prisma.llamaLog.findFirst({
       where: {
         ...whereClause,
         status: 'FAILED',
@@ -252,8 +308,8 @@ export class EnrichmentLogger {
 }
 
 /**
- * Factory function to create an EnrichmentLogger instance
+ * Factory function to create a LlamaLogger instance
  */
-export function createEnrichmentLogger(prisma: PrismaClient): EnrichmentLogger {
-  return new EnrichmentLogger(prisma);
+export function createLlamaLogger(prisma: PrismaClient): LlamaLogger {
+  return new LlamaLogger(prisma);
 }

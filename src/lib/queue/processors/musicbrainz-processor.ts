@@ -2,8 +2,9 @@
 // MusicBrainz API search and lookup handlers
 
 import { prisma } from '@/lib/prisma';
+import { createLlamaLogger } from '@/lib/logging/llama-logger';
 
-import { musicBrainzService } from '../../musicbrainz';
+import { musicBrainzService, hasIdProperty } from '../../musicbrainz';
 import type {
   MusicBrainzSearchArtistsJobData,
   MusicBrainzSearchReleasesJobData,
@@ -50,29 +51,63 @@ export async function handleSearchRecordings(
 }
 
 // ============================================================================
-// MusicBrainz Lookup Handlers
+// MusicBrainz Lookup Handlers (with MBID verification)
 // ============================================================================
 
 export async function handleLookupArtist(data: MusicBrainzLookupArtistJobData) {
-  return await musicBrainzService.getArtist(data.mbid, data.includes);
+  const result = await musicBrainzService.getArtist(data.mbid, data.includes);
+
+  // Log warning if MBID was redirected (but return raw data for consumers)
+  if (hasIdProperty(result) && result.id !== data.mbid) {
+    console.warn(`🔀 MBID redirect detected: ${data.mbid} -> ${result.id}`);
+  }
+
+  return result;
 }
 
 export async function handleLookupRelease(
   data: MusicBrainzLookupReleaseJobData
 ) {
-  return await musicBrainzService.getRelease(data.mbid, data.includes);
+  const result = await musicBrainzService.getRelease(data.mbid, data.includes);
+
+  // Log warning if MBID was redirected (but return raw data for consumers)
+  if (hasIdProperty(result) && result.id !== data.mbid) {
+    console.warn(`🔀 MBID redirect detected: ${data.mbid} -> ${result.id}`);
+  }
+
+  return result;
 }
 
 export async function handleLookupRecording(
   data: MusicBrainzLookupRecordingJobData
 ) {
-  return await musicBrainzService.getRecording(data.mbid, data.includes);
+  const result = await musicBrainzService.getRecording(
+    data.mbid,
+    data.includes
+  );
+
+  // Log warning if MBID was redirected (but return raw data for consumers)
+  if (hasIdProperty(result) && result.id !== data.mbid) {
+    console.warn(`🔀 MBID redirect detected: ${data.mbid} -> ${result.id}`);
+  }
+
+  return result;
 }
 
 export async function handleLookupReleaseGroup(
   data: MusicBrainzLookupReleaseGroupJobData
 ) {
-  return await musicBrainzService.getReleaseGroup(data.mbid, data.includes);
+  const result = await musicBrainzService.getReleaseGroup(
+    data.mbid,
+    data.includes
+  );
+
+  // Log warning if MBID was redirected (but return raw data for consumers)
+  if (hasIdProperty(result) && result.id !== data.mbid) {
+    console.warn(`🔀 MBID redirect detected: ${data.mbid} -> ${result.id}`);
+  }
+
+  return result;
 }
 
 export async function handleBrowseReleaseGroupsByArtist(data: {
@@ -80,6 +115,8 @@ export async function handleBrowseReleaseGroupsByArtist(data: {
   limit?: number;
   offset?: number;
 }) {
+  // Browse returns a list of release groups, not a single entity by MBID
+  // No verification needed here - the artist MBID is the query parameter
   return await musicBrainzService.getArtistReleaseGroups(
     data.artistMbid,
     data.limit || 100,
@@ -97,7 +134,7 @@ export async function handleBrowseReleaseGroupsByArtist(data: {
  */
 export async function handleMusicBrainzSyncNewReleases(
   data: MusicBrainzSyncNewReleasesJobData
-): Promise<any> {
+): Promise<unknown> {
   console.log(
     `🎵 Syncing MusicBrainz new releases (limit: ${data.limit || 50})`
   );
@@ -185,6 +222,9 @@ export async function handleMusicBrainzSyncNewReleases(
           where: { musicbrainzId: artist.id },
         });
 
+        // Track if artist was newly created vs found existing
+        const artistWasCreated = !dbArtist;
+
         if (!dbArtist) {
           dbArtist = await prisma.artist.create({
             data: {
@@ -194,6 +234,54 @@ export async function handleMusicBrainzSyncNewReleases(
           });
           artistsCreated++;
           console.log(`✨ Created artist: ${artist.name}`);
+
+          // Log artist creation to LlamaLog
+          const llamaLogger = createLlamaLogger(prisma);
+          try {
+            await llamaLogger.logEnrichment({
+              entityType: 'ARTIST',
+              entityId: dbArtist.id,
+              operation: 'artist:created:musicbrainz-sync',
+              category: 'CREATED',
+              sources: ['MUSICBRAINZ'],
+              status: 'SUCCESS',
+              fieldsEnriched: ['name', 'musicbrainzId'],
+              parentJobId: data.requestId || 'mb-sync-batch',
+              rootJobId: data.requestId || 'mb-sync-batch',
+              isRootJob: false,
+              dataQualityAfter: 'MEDIUM',
+              metadata: {
+                syncSource: 'musicbrainz_new_releases',
+                artistMbId: artist.id,
+              },
+            });
+          } catch (err) {
+            console.warn('[LlamaLog] Failed to log artist creation:', err);
+          }
+        } else if (!artistWasCreated) {
+          // Log artist linking to LlamaLog (existing artist will be associated with new album)
+          const llamaLogger = createLlamaLogger(prisma);
+          try {
+            await llamaLogger.logEnrichment({
+              entityType: 'ARTIST',
+              entityId: dbArtist.id,
+              operation: 'artist:linked:musicbrainz-sync',
+              category: 'LINKED',
+              sources: ['MUSICBRAINZ'],
+              status: 'SUCCESS',
+              fieldsEnriched: [],
+              parentJobId: data.requestId || 'mb-sync-batch',
+              rootJobId: data.requestId || 'mb-sync-batch',
+              isRootJob: false,
+              metadata: {
+                syncSource: 'musicbrainz_new_releases',
+                artistMbId: artist.id,
+                existingEntity: true,
+              },
+            });
+          } catch (err) {
+            console.warn('[LlamaLog] Failed to log artist linking:', err);
+          }
         }
 
         // Create album
@@ -218,6 +306,32 @@ export async function handleMusicBrainzSyncNewReleases(
         console.log(
           `✨ Created album: ${releaseGroup.title} by ${artist.name}`
         );
+
+        // Log album creation to LlamaLog (after DB commit)
+        const llamaLogger = createLlamaLogger(prisma);
+        try {
+          await llamaLogger.logEnrichment({
+            entityType: 'ALBUM',
+            entityId: album.id,
+            operation: 'album:created:musicbrainz-sync',
+            category: 'CREATED',
+            sources: ['MUSICBRAINZ'],
+            status: 'SUCCESS',
+            fieldsEnriched: ['title', 'musicbrainzId', 'releaseDate', 'artists'],
+            dataQualityAfter: 'MEDIUM', // MusicBrainz data is medium quality
+            parentJobId: data.requestId || 'mb-sync-batch',
+            isRootJob: false, // Child of sync batch
+            metadata: {
+              syncSource: 'musicbrainz_new_releases',
+              syncTimestamp: new Date().toISOString(),
+              query: data.query,
+              dateRange: data.dateRange,
+              genres: data.genres,
+            },
+          });
+        } catch (logError) {
+          console.warn(`[LlamaLogger] Failed to log MusicBrainz album creation for ${album.id}:`, logError);
+        }
 
         // Queue enrichment job for the new album
         const { getMusicBrainzQueue } = await import('../musicbrainz-queue');

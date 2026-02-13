@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Music, User, Building2 } from 'lucide-react';
+import { Music, User, Building2, Loader2 } from 'lucide-react';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import AnimatedLoader from '@/components/ui/AnimatedLoader';
@@ -27,6 +27,8 @@ function SearchResults() {
   const [searchMode, setSearchMode] =
     useState<SearchMode>('LOCAL_AND_EXTERNAL');
   const [currentLimit, setCurrentLimit] = useState(20);
+  // Track which result is currently being navigated to
+  const [navigatingId, setNavigatingId] = useState<string | null>(null);
 
   // Map filter to searchType
   const searchType = activeFilter;
@@ -212,9 +214,11 @@ function SearchResults() {
 
   const handleResultClick = async (result: UnifiedSearchResult) => {
     try {
+      setNavigatingId(result.id);
       await navigateToResult(result);
     } catch (error) {
       console.error('Navigation failed:', error);
+      setNavigatingId(null);
     }
   };
 
@@ -381,8 +385,14 @@ function SearchResults() {
                     <button
                       key={`album:${result.id}`}
                       onClick={() => handleResultClick(result)}
-                      className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
+                      disabled={navigatingId !== null}
+                      className='relative flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left disabled:cursor-wait'
                     >
+                      {navigatingId === result.id && (
+                        <div className='absolute inset-0 bg-zinc-900/80 rounded-lg flex items-center justify-center z-10'>
+                          <Loader2 className='h-6 w-6 text-white animate-spin' />
+                        </div>
+                      )}
                       <div className='flex-shrink-0 relative w-16 h-16'>
                         <AlbumImage
                           src={result.image?.url || result.cover_image}
@@ -436,8 +446,14 @@ function SearchResults() {
                     <button
                       key={`single:${result.id}`}
                       onClick={() => handleResultClick(result)}
-                      className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
+                      disabled={navigatingId !== null}
+                      className='relative flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left disabled:cursor-wait'
                     >
+                      {navigatingId === result.id && (
+                        <div className='absolute inset-0 bg-zinc-900/80 rounded-lg flex items-center justify-center z-10'>
+                          <Loader2 className='h-6 w-6 text-white animate-spin' />
+                        </div>
+                      )}
                       <div className='flex-shrink-0 relative w-16 h-16'>
                         <AlbumImage
                           src={result.image?.url || result.cover_image}
@@ -489,8 +505,14 @@ function SearchResults() {
                     <button
                       key={`ep:${result.id}`}
                       onClick={() => handleResultClick(result)}
-                      className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
+                      disabled={navigatingId !== null}
+                      className='relative flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left disabled:cursor-wait'
                     >
+                      {navigatingId === result.id && (
+                        <div className='absolute inset-0 bg-zinc-900/80 rounded-lg flex items-center justify-center z-10'>
+                          <Loader2 className='h-6 w-6 text-white animate-spin' />
+                        </div>
+                      )}
                       <div className='flex-shrink-0 relative w-16 h-16'>
                         <AlbumImage
                           src={result.image?.url || result.cover_image}
@@ -542,8 +564,14 @@ function SearchResults() {
                     <button
                       key={`mixtape:${result.id}`}
                       onClick={() => handleResultClick(result)}
-                      className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
+                      disabled={navigatingId !== null}
+                      className='relative flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left disabled:cursor-wait'
                     >
+                      {navigatingId === result.id && (
+                        <div className='absolute inset-0 bg-zinc-900/80 rounded-lg flex items-center justify-center z-10'>
+                          <Loader2 className='h-6 w-6 text-white animate-spin' />
+                        </div>
+                      )}
                       <div className='flex-shrink-0 relative w-16 h-16'>
                         <AlbumImage
                           src={result.image?.url || result.cover_image}
@@ -599,8 +627,14 @@ function SearchResults() {
                   <button
                     key={`artist:${result.id}`}
                     onClick={() => handleResultClick(result)}
-                    className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
+                    disabled={navigatingId !== null}
+                    className='relative flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left disabled:cursor-wait'
                   >
+                    {navigatingId === result.id && (
+                      <div className='absolute inset-0 bg-zinc-900/80 rounded-lg flex items-center justify-center z-10'>
+                        <Loader2 className='h-6 w-6 text-white animate-spin' />
+                      </div>
+                    )}
                     <div className='flex-shrink-0 relative w-16 h-16'>
                       <AlbumImage
                         src={result.image?.url || result.cover_image}
@@ -656,8 +690,14 @@ function SearchResults() {
                   <button
                     key={`track:${result.id}`}
                     onClick={() => handleResultClick(result)}
-                    className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
+                    disabled={navigatingId !== null}
+                    className='relative flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left disabled:cursor-wait'
                   >
+                    {navigatingId === result.id && (
+                      <div className='absolute inset-0 bg-zinc-900/80 rounded-lg flex items-center justify-center z-10'>
+                        <Loader2 className='h-6 w-6 text-white animate-spin' />
+                      </div>
+                    )}
                     <div className='flex-shrink-0 relative w-16 h-16'>
                       <AlbumImage
                         src={result.image?.url || result.cover_image}
@@ -711,8 +751,14 @@ function SearchResults() {
                   <button
                     key={`user:${result.id}`}
                     onClick={() => handleResultClick(result)}
-                    className='flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left'
+                    disabled={navigatingId !== null}
+                    className='relative flex items-start gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg transition-colors text-left disabled:cursor-wait'
                   >
+                    {navigatingId === result.id && (
+                      <div className='absolute inset-0 bg-zinc-900/80 rounded-lg flex items-center justify-center z-10'>
+                        <Loader2 className='h-6 w-6 text-white animate-spin' />
+                      </div>
+                    )}
                     <div className='flex-shrink-0 relative w-16 h-16'>
                       <AlbumImage
                         src={result.image?.url || result.cover_image}

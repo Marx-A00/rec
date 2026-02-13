@@ -1,16 +1,24 @@
-query GetEnrichmentLogs(
+query GetLlamaLogs(
   $entityType: EnrichmentEntityType
   $entityId: UUID
-  $status: EnrichmentLogStatus
+  $status: LlamaLogStatus
+  $category: [LlamaLogCategory!]
   $skip: Int
   $limit: Int
+  $parentOnly: Boolean
+  $parentJobId: String
+  $includeChildren: Boolean
 ) {
-  enrichmentLogs(
+  llamaLogs(
     entityType: $entityType
     entityId: $entityId
     status: $status
+    category: $category
     skip: $skip
     limit: $limit
+    parentOnly: $parentOnly
+    parentJobId: $parentJobId
+    includeChildren: $includeChildren
   ) {
     id
     entityType
@@ -18,6 +26,7 @@ query GetEnrichmentLogs(
     operation
     sources
     status
+    category
     reason
     fieldsEnriched
     dataQualityBefore
@@ -28,6 +37,63 @@ query GetEnrichmentLogs(
     apiCallCount
     metadata
     createdAt
+    jobId
+    parentJobId
+  }
+}
+
+query GetLlamaLogsWithChildren(
+  $entityType: EnrichmentEntityType
+  $entityId: UUID
+  $status: LlamaLogStatus
+  $skip: Int
+  $limit: Int
+) {
+  llamaLogs(
+    entityType: $entityType
+    entityId: $entityId
+    status: $status
+    skip: $skip
+    limit: $limit
+    includeChildren: true
+  ) {
+    id
+    entityType
+    entityId
+    operation
+    sources
+    status
+    category
+    reason
+    fieldsEnriched
+    dataQualityBefore
+    dataQualityAfter
+    errorMessage
+    errorCode
+    durationMs
+    apiCallCount
+    metadata
+    createdAt
+    jobId
+    parentJobId
+    children {
+      id
+      entityType
+      entityId
+      operation
+      sources
+      status
+      category
+      reason
+      fieldsEnriched
+      errorMessage
+      errorCode
+      durationMs
+      apiCallCount
+      createdAt
+      jobId
+      parentJobId
+    }
   }
 }
 
@@ -99,7 +165,7 @@ mutation PreviewAlbumEnrichment($id: UUID!) {
       newValue
       source
     }
-    enrichmentLogId
+    llamaLogId
     rawData
   }
 }
@@ -117,7 +183,7 @@ mutation PreviewArtistEnrichment($id: UUID!) {
       newValue
       source
     }
-    enrichmentLogId
+    llamaLogId
     rawData
   }
 }

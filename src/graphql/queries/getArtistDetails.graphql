@@ -2,6 +2,7 @@ query GetArtistDetails($id: UUID!) {
   artist(id: $id) {
     id
     musicbrainzId
+    discogsId
     name
     biography
     formedYear
@@ -18,7 +19,7 @@ query GetArtistDetails($id: UUID!) {
     popularity
     needsEnrichment
     listeners
-    latestEnrichmentLog {
+    latestLlamaLog {
       id
       status
       sources
@@ -26,7 +27,7 @@ query GetArtistDetails($id: UUID!) {
       errorMessage
       createdAt
     }
-    enrichmentLogs(limit: 5) {
+    llamaLogs(limit: 5) {
       id
       operation
       sources
