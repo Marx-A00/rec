@@ -2459,11 +2459,7 @@ export const mutationResolvers: MutationResolvers = {
           },
         });
 
-        // Increment the user's recommendations count
-        await tx.user.update({
-          where: { id: user.id },
-          data: { recommendationsCount: { increment: 1 } },
-        });
+        // Count update handled automatically by DB trigger (recommendations_count_trigger)
 
         return rec;
       });
@@ -2675,11 +2671,7 @@ export const mutationResolvers: MutationResolvers = {
           where: { id },
         });
 
-        // Decrement the user's recommendations count
-        await tx.user.update({
-          where: { id: user.id },
-          data: { recommendationsCount: { decrement: 1 } },
-        });
+        // Count update handled automatically by DB trigger (recommendations_count_trigger)
       });
 
       return true;
@@ -2721,17 +2713,7 @@ export const mutationResolvers: MutationResolvers = {
           },
         });
 
-        // Increment the followed user's followers count
-        await tx.user.update({
-          where: { id: userId },
-          data: { followersCount: { increment: 1 } },
-        });
-
-        // Increment the current user's following count
-        await tx.user.update({
-          where: { id: user.id },
-          data: { followingCount: { increment: 1 } },
-        });
+        // Count updates handled automatically by DB triggers (user_follow_count_trigger)
 
         return follow;
       });
@@ -2771,17 +2753,7 @@ export const mutationResolvers: MutationResolvers = {
             data: { deletedAt: new Date() },
           });
 
-          // Decrement the followed user's followers count
-          await tx.user.update({
-            where: { id: userId },
-            data: { followersCount: { decrement: 1 } },
-          });
-
-          // Decrement the current user's following count
-          await tx.user.update({
-            where: { id: user.id },
-            data: { followingCount: { decrement: 1 } },
-          });
+          // Count updates handled automatically by DB triggers (user_follow_count_trigger)
         }
       });
 
