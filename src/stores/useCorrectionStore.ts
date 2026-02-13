@@ -335,9 +335,29 @@ const createCorrectionStore = (albumId: string) =>
         // ========== Atomic Preview Loading ==========
 
         setPreviewLoaded: (preview: CorrectionPreview) => {
+          // Debug logging for correction workflow tracing
+          console.log('[Correction Store] Preview loaded:', {
+            fieldDiffs: preview.fieldDiffs.map(d => ({
+              field: d.field,
+              changeType: d.changeType,
+            })),
+            artistDiff: {
+              changeType: preview.artistDiff.changeType,
+              current: preview.artistDiff.currentDisplay,
+              source: preview.artistDiff.sourceDisplay,
+            },
+            trackSummary: preview.trackSummary,
+          });
+
+          const selections = createDefaultUISelections(preview);
+          console.log(
+            '[Correction Store] Default selections created:',
+            selections
+          );
+
           set({
             previewData: preview,
-            applySelections: createDefaultUISelections(preview),
+            applySelections: selections,
             shouldEnrich: false,
           });
         },

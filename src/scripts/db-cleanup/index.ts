@@ -314,10 +314,15 @@ const tasks: TaskConfig[] = [
   {
     id: 6,
     name: 'Enrich Artist Images',
-    description: 'Queue artist image enrichment jobs',
+    description:
+      'Queue artist image enrichment jobs (DEPRECATED - use apply-artist-images-standalone.ts instead)',
     dependencies: [],
     priority: 'high',
     run: async ctx => {
+      ctx.warn(
+        'DEPRECATED: Use apply-artist-images-standalone.ts instead for instant results without Redis'
+      );
+      ctx.warn('Run: npx tsx src/scripts/apply-artist-images-standalone.ts');
       ctx.log('Finding artists without images...');
 
       // Find artists with MBID but no image

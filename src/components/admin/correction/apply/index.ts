@@ -9,8 +9,10 @@
 
 export { FieldSelectionForm } from './FieldSelectionForm';
 export { MetadataSection } from './MetadataSection';
+export { ArtistSection } from './ArtistSection';
 export { TrackSection } from './TrackSection';
 export { ExternalIdSection } from './ExternalIdSection';
+export { CoverArtSection } from './CoverArtSection';
 export { DiffSummary } from './DiffSummary';
 export { ApplyView } from './ApplyView';
 export type { UIFieldSelections } from './types';

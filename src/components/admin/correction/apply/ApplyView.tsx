@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import type { CorrectionPreview } from '@/lib/correction/preview/types';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -37,6 +37,28 @@ export function ApplyView({ albumId, error = null }: ApplyViewProps) {
 
   const setApplySelections = store.getState().setApplySelections;
   const setShouldEnrich = store.getState().setShouldEnrich;
+
+  // Debug logging for correction workflow tracing
+  useEffect(() => {
+    if (preview && selections) {
+      console.log('[ApplyView] Rendering with:', {
+        preview: {
+          fieldDiffs: preview.fieldDiffs.map(d => ({
+            field: d.field,
+            changeType: d.changeType,
+            hasChange: d.changeType !== 'UNCHANGED',
+          })),
+          artistDiff: {
+            changeType: preview.artistDiff.changeType,
+            current: preview.artistDiff.currentDisplay,
+            source: preview.artistDiff.sourceDisplay,
+          },
+          trackSummary: preview.trackSummary,
+        },
+        selections,
+      });
+    }
+  }, [preview, selections]);
 
   // Guard for null preview/selections (shouldn't happen in normal flow)
   if (!preview || !selections) {

@@ -1,0 +1,836 @@
+[
+  {
+    "id": "9b5cf99d-6230-4485-8526-0eda1ce9a052",
+    "name": "CHUU",
+    "imageUrl": "https://i.discogs.com/o6YkHSwZWtwjYzmTHSqGVVwfsXAYlmmCd9I3QDPCXBA/rs:fit/g:sm/q:90/h:619/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTY1NzQ2/ODktMTYwODc2MDYx/OC0xMzc5LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-9b5cf99d-6230-4485-8526-0eda1ce9a052"
+  },
+  {
+    "id": "83939a5b-d63c-4c66-95d8-86cdf45765a8",
+    "name": "Coachwhips",
+    "imageUrl": "https://i.discogs.com/UKoWfjdvojyPxFBB9gfcwUe4_OicqNC1m07GCSzbnY8/rs:fit/g:sm/q:90/h:614/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQ3NjI4/NS0xNjcyODAxNTY4/LTM0NzMuanBlZw.jpeg",
+    "cloudflareImageId": "artist-83939a5b-d63c-4c66-95d8-86cdf45765a8"
+  },
+  {
+    "id": "a5de8206-c382-4ba6-939e-d4bb5b1b750a",
+    "name": "The Stooges",
+    "imageUrl": "https://i.discogs.com/hP6ARtZYSdKBjICvUYyPc9yHJG0zkkyrcJh_ddic4q8/rs:fit/g:sm/q:90/h:810/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM5Nzcw/LTE2Mjc4NDA4ODkt/ODA2MC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-a5de8206-c382-4ba6-939e-d4bb5b1b750a"
+  },
+  {
+    "id": "2958bd8e-c584-4f97-a695-9822d69b8ae9",
+    "name": "Stereolab",
+    "imageUrl": "https://i.discogs.com/6HEj-PP_PLM67IhfJwp-yAZ7UOSYTL401Dc_lU5sccY/rs:fit/g:sm/q:90/h:750/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM4OC0x/NzQ1OTU4MjE5LTk2/ODAuanBlZw.jpeg",
+    "cloudflareImageId": "artist-2958bd8e-c584-4f97-a695-9822d69b8ae9"
+  },
+  {
+    "id": "3ad6db3d-d70c-45f0-b3e2-98343d168b0f",
+    "name": "Mike Oldfield",
+    "imageUrl": "https://i.discogs.com/gkn9SGY0cN7A5RLfCXEalUDGjqrVvzbiOK1CKuaRphM/rs:fit/g:sm/q:90/h:893/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE4NjY2/LTE2ODgwNzcyNTIt/MTc0Ny5qcGVn.jpeg",
+    "cloudflareImageId": "artist-3ad6db3d-d70c-45f0-b3e2-98343d168b0f"
+  },
+  {
+    "id": "eb1dea72-f391-4ac4-aa04-c0922678fa51",
+    "name": "Tyler, The Creator",
+    "imageUrl": "https://i.scdn.co/image/ab6761610000e5ebdf2728294ff77dd11eeb18fb",
+    "cloudflareImageId": "artist-eb1dea72-f391-4ac4-aa04-c0922678fa51"
+  },
+  {
+    "id": "a64c08e1-ae8d-4205-9f40-81af11fac2ee",
+    "name": "Flying Lotus",
+    "imageUrl": "https://i.discogs.com/gVtPxx1ZHT4nvRF7QhON1eF983-aDqAFSe4gL4bNFpk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM2NTI0/OC0xMjUwMTQ3MzMx/LnBuZw.jpeg",
+    "cloudflareImageId": "artist-a64c08e1-ae8d-4205-9f40-81af11fac2ee"
+  },
+  {
+    "id": "e2445d9e-8c6e-4242-ada6-e409ec3415ac",
+    "name": "Enon",
+    "imageUrl": "https://i.discogs.com/pwj_GWCNuiAtKLv-2idlEiZvNxaDGgQrjHGI2s4HLlM/rs:fit/g:sm/q:90/h:674/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEzNzU2/OS0xNzAxMTIyMjE4/LTI1MTcuanBlZw.jpeg",
+    "cloudflareImageId": "artist-e2445d9e-8c6e-4242-ada6-e409ec3415ac"
+  },
+  {
+    "id": "83fe3765-6222-4033-9f95-01effdb1ff9d",
+    "name": "ゆらゆら帝国",
+    "imageUrl": "https://i.discogs.com/WUsI50-MU7NVI8rZCT4MiEH0B0QeTX49XtVOP4lF0ww/rs:fit/g:sm/q:90/h:398/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQxNTE3/Ni0xNTg2MDU1MDY2/LTQwMzUuanBlZw.jpeg",
+    "cloudflareImageId": "artist-83fe3765-6222-4033-9f95-01effdb1ff9d"
+  },
+  {
+    "id": "7ca22b6c-67c5-4319-99c5-b52886d72129",
+    "name": "Thes One",
+    "imageUrl": "https://i.discogs.com/Aw8UVtGegjMQoMMo9ssq0IyYjUBbsmomJ5LF306kmoo/rs:fit/g:sm/q:90/h:750/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEzODc4/OS0xNTU1MTY0OTkw/LTY2NTIuanBlZw.jpeg",
+    "cloudflareImageId": "artist-7ca22b6c-67c5-4319-99c5-b52886d72129"
+  },
+  {
+    "id": "d258758b-723a-4bdc-b9d0-2a978309042d",
+    "name": "Deftones",
+    "imageUrl": "https://i.discogs.com/LGWQUydu9TfQAOb7T5r6M8DUBQ5XgbuBkOKSu7ykYIo/rs:fit/g:sm/q:90/h:433/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEyMjEw/LTE1NDcxNTA5ODgt/OTQ4Mi5qcGVn.jpeg",
+    "cloudflareImageId": "artist-d258758b-723a-4bdc-b9d0-2a978309042d"
+  },
+  {
+    "id": "c595de7f-9bfe-46eb-9c6a-4d222fe1cf75",
+    "name": "Patsy Cline",
+    "imageUrl": "https://i.discogs.com/bhtG_7TPvGh_j6DDhK_KNu-Pz1ynzGsbT5mV1fe9ChU/rs:fit/g:sm/q:90/h:1154/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTIyNzg0/Mi0xNTQxNDczNDYw/LTE1NDMuanBlZw.jpeg",
+    "cloudflareImageId": "artist-c595de7f-9bfe-46eb-9c6a-4d222fe1cf75"
+  },
+  {
+    "id": "9660f53d-61bc-4c46-8133-274e115a60c8",
+    "name": "Portishead",
+    "imageUrl": "https://i.discogs.com/CaVODVDbB8nXa0m7baRsGnotTZQQMve4umUjPCmWhUw/rs:fit/g:sm/q:90/h:600/w:424/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI3NzQt/MTIwOTQ4NzU1MC5q/cGVn.jpeg",
+    "cloudflareImageId": "artist-9660f53d-61bc-4c46-8133-274e115a60c8"
+  },
+  {
+    "id": "8760da29-9702-4280-aae7-27461965d1c0",
+    "name": "Pet Shop Boys",
+    "imageUrl": "https://i.discogs.com/Df84JmTd5C1UEg9d_REPqRB_If05Myp8VbypCUzoOTk/rs:fit/g:sm/q:90/h:794/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTc1NTIt/MTcxODQ0Nzg2MS05/NTg1LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-8760da29-9702-4280-aae7-27461965d1c0"
+  },
+  {
+    "id": "338192ea-069c-4516-9dc4-a06777b1f633",
+    "name": "Leftover Salmon",
+    "imageUrl": "https://i.discogs.com/B3r-6YfBkKEHToRXDxqa0R8qr2cQ8Hqr87KDOLozyGE/rs:fit/g:sm/q:90/h:189/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEzNDk3/NzktMTI4MDgzNzU2/NC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-338192ea-069c-4516-9dc4-a06777b1f633"
+  },
+  {
+    "id": "83b81943-4138-4081-a228-c8ecc748fc7b",
+    "name": "Timi Yuro",
+    "imageUrl": "https://i.discogs.com/5ymWwbY8RURmaTlrEXUCq5HYAUVO7ZNOIijXf_MBOlk/rs:fit/g:sm/q:90/h:800/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI5NDMw/Mi0xNjQwODkyNjkw/LTQ1MTcuanBlZw.jpeg",
+    "cloudflareImageId": "artist-83b81943-4138-4081-a228-c8ecc748fc7b"
+  },
+  {
+    "id": "84075917-4473-423f-97af-e78c8139f14d",
+    "name": "Badfinger",
+    "imageUrl": "https://i.discogs.com/hkGPLUpHiKOChKKjzKStOpIyBD7QJjt0ni4fZHDq5zk/rs:fit/g:sm/q:90/h:858/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI4MjA2/NC0xNjYzOTM2NTAw/LTIxNjIuanBlZw.jpeg",
+    "cloudflareImageId": "artist-84075917-4473-423f-97af-e78c8139f14d"
+  },
+  {
+    "id": "d24165a3-d4c4-41ee-8aa7-01210672b5ef",
+    "name": "Souls of Mischief",
+    "imageUrl": "https://i.discogs.com/V5_mD6W3Z4CdM3GjjWw4mLWL8JZ7rlHd5G43orEH02M/rs:fit/g:sm/q:90/h:772/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI1Nzc1/LTE2ODEzNjk0NTQt/NzQ0Ny5qcGVn.jpeg",
+    "cloudflareImageId": "artist-d24165a3-d4c4-41ee-8aa7-01210672b5ef"
+  },
+  {
+    "id": "62781326-efc1-494f-bd4d-8cf8262ec7e4",
+    "name": "Koopsta Knicca",
+    "imageUrl": "https://i.discogs.com/_fVnB3-RJMogJukvnqOwCZXkCpf0YD8USAG3lr6lEGc/rs:fit/g:sm/q:90/h:809/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTIxOTgz/MS0xNDU0NzY3MTc4/LTM3OTYuanBlZw.jpeg",
+    "cloudflareImageId": "artist-62781326-efc1-494f-bd4d-8cf8262ec7e4"
+  },
+  {
+    "id": "9e15ee6c-706b-4d56-9612-826903f946cc",
+    "name": "Velvet Acid Christ",
+    "imageUrl": "https://i.discogs.com/VPsnYfUKih-ETTi4q5OZlTTSBL-j8G8vFwlvIT0yhF8/rs:fit/g:sm/q:90/h:896/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEwNjcy/LTE2MjAyNTEzMzUt/MTA0OC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-9e15ee6c-706b-4d56-9612-826903f946cc"
+  },
+  {
+    "id": "1e405687-30b5-412f-8879-ddd63a1ab679",
+    "name": "Frank Ocean",
+    "imageUrl": "https://i.discogs.com/0uUzclysDk4GZ6DgZ46DfASirgYW3IJ9ftnScPk8WFg/rs:fit/g:sm/q:90/h:748/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTIwMTM4/NjgtMTc0OTc2MTMz/NC02MTg5LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-1e405687-30b5-412f-8879-ddd63a1ab679"
+  },
+  {
+    "id": "cc85b57e-0313-4eb1-a337-b9c4ff0cf7a9",
+    "name": "Eddy Arnold",
+    "imageUrl": "https://i.discogs.com/Ri_BKQiWst8MBeAeTz5g3rG2nenzzjQOHYdZ1eS6Vko/rs:fit/g:sm/q:90/h:867/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTUyMDM2/Ni0xNTIyNzgxNDc3/LTE3MjguanBlZw.jpeg",
+    "cloudflareImageId": "artist-cc85b57e-0313-4eb1-a337-b9c4ff0cf7a9"
+  },
+  {
+    "id": "5634f064-e2de-423f-be67-b3d15ae4840e",
+    "name": "Cuco",
+    "imageUrl": "https://i.discogs.com/9rEL3kYTncYxPERz0-6p5DHxhTP3OIJ5rG8w0o_0L2w/rs:fit/g:sm/q:90/h:900/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTcyNzE0/NjEtMTU2MzQ1MDA1/Ny0zMDMzLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-5634f064-e2de-423f-be67-b3d15ae4840e"
+  },
+  {
+    "id": "2fdf82f7-4054-426f-b9a5-d06726b8d827",
+    "name": "Little Big Town",
+    "imageUrl": "https://i.discogs.com/TmVUcrH3bZrDaUWG8HA0obvQtqQve-OsQeKc319s-54/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEwMjQ2/MjQtMTY2MTQzNzYz/Ni03ODM1LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-2fdf82f7-4054-426f-b9a5-d06726b8d827"
+  },
+  {
+    "id": "68c379d3-6b2e-4b85-98a8-8c390f8c6354",
+    "name": "Dent May",
+    "imageUrl": "https://i.discogs.com/acZZGbd8NTGU-oKxY1KzwQX-CLeygRPUV2I7ZYRW-Xw/rs:fit/g:sm/q:90/h:383/w:576/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEzODE5/NTUtMTI1NDk3MzM3/OC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-68c379d3-6b2e-4b85-98a8-8c390f8c6354"
+  },
+  {
+    "id": "ddb83a62-fac8-4652-b2cf-791ae0a6445c",
+    "name": "Nile Rodgers",
+    "imageUrl": "https://i.discogs.com/jJ85avQ49cn3SGRkc9O1hVMM3SucvaTT-HxeDCWA-4Q/rs:fit/g:sm/q:90/h:844/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQ5NzU4/LTEzNzExMjQ0MDQt/NTI5Mi5qcGVn.jpeg",
+    "cloudflareImageId": "artist-ddb83a62-fac8-4652-b2cf-791ae0a6445c"
+  },
+  {
+    "id": "05eca6fd-7aa1-4cd6-9e43-0304019ea501",
+    "name": "Yasiin Bey",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Mos%20Def%20-%20Ilosaarirock%202012.jpg?width=600",
+    "cloudflareImageId": null
+  },
+  {
+    "id": "3c74e02c-b9f9-4f16-9b8a-e3ae6e3da5af",
+    "name": "DJ Snake",
+    "imageUrl": "https://i.discogs.com/KksJN3M-TyUgNTlxKZKsUKyQQZxq8jccKmm_gn4n4y8/rs:fit/g:sm/q:90/h:330/w:220/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE3MDI5/MjMtMTQwODQ1NjQ5/NS04MTExLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-3c74e02c-b9f9-4f16-9b8a-e3ae6e3da5af"
+  },
+  {
+    "id": "c022ee20-948e-4c49-ba67-027c917a4eaf",
+    "name": "The Beatles",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Beatles%20Trenter%201963.jpg?width=600",
+    "cloudflareImageId": "artist-c022ee20-948e-4c49-ba67-027c917a4eaf"
+  },
+  {
+    "id": "8f1790bc-ce87-4ab0-afd9-062b904d4de7",
+    "name": "Kygo",
+    "imageUrl": "https://i.discogs.com/HhcLcFDD2qtaJIXOserCYNXT6CUrfFEn3Na6ZpalBNU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM4OTI3/MDYtMTc0MTQyNzk3/NS00MTc0LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-8f1790bc-ce87-4ab0-afd9-062b904d4de7"
+  },
+  {
+    "id": "aa2f0f57-908a-4e82-b359-d3091bad8662",
+    "name": "Nas",
+    "imageUrl": "https://i.discogs.com/_ucnGxX6ELWTczaS0IVrBWNIS0RtG6sIjv375bCOJOI/rs:fit/g:sm/q:90/h:703/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE4MjU5/OC0xNTI5NDc0Mjk5/LTM5NTQuanBlZw.jpeg",
+    "cloudflareImageId": "artist-aa2f0f57-908a-4e82-b359-d3091bad8662"
+  },
+  {
+    "id": "c49a723d-9ce0-4c2a-9e9f-df434aa8f8a7",
+    "name": "Eyedress",
+    "imageUrl": "https://i.discogs.com/4tQJHAyAWvcFr73YHoQx8gUhO0cBrvHnXV9ahu_uNP0/rs:fit/g:sm/q:90/h:763/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI5NzUw/ODItMTY3MTc0MTQx/NC0yMTg0LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-c49a723d-9ce0-4c2a-9e9f-df434aa8f8a7"
+  },
+  {
+    "id": "5d4deba5-9ab2-45bb-b8c7-b5a5b3e89aa9",
+    "name": "Grimes",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Grimes%20Governors%20Ball%202014%2003%20(cropped).png?width=600",
+    "cloudflareImageId": "artist-5d4deba5-9ab2-45bb-b8c7-b5a5b3e89aa9"
+  },
+  {
+    "id": "b1caee06-a1be-4ece-b996-3b114093f0e2",
+    "name": "Julia Wolf",
+    "imageUrl": "https://i.scdn.co/image/ab6761610000e5eb738567b2e435de2e4df64e6c",
+    "cloudflareImageId": "artist-b1caee06-a1be-4ece-b996-3b114093f0e2"
+  },
+  {
+    "id": "eec0f756-29b3-4ceb-af24-4313b88ed01c",
+    "name": "The Alchemist",
+    "imageUrl": "https://i.scdn.co/image/8a0d2c9a5bb08a3fd8e6ad457014022cb232525b",
+    "cloudflareImageId": "artist-eec0f756-29b3-4ceb-af24-4313b88ed01c"
+  },
+  {
+    "id": "b75d4f5f-598c-4583-b7d1-b56297a018c6",
+    "name": "Slowdive",
+    "imageUrl": "https://i.discogs.com/Pb7-3Db8_EF4AnlL_2oeneC2irVWB-g1pojJTK7ZqCI/rs:fit/g:sm/q:90/h:728/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI2NDk0/LTE1NDQ1MDEwNzUt/MjMyOC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-b75d4f5f-598c-4583-b7d1-b56297a018c6"
+  },
+  {
+    "id": "4d29c266-099c-4e79-b4f1-eaeccf206c5a",
+    "name": "Magdalena Bay",
+    "imageUrl": "https://i.discogs.com/FKqijF9m27PPCJ0MWsk3KnEBF2oLl8J-Ots4QYpywiI/rs:fit/g:sm/q:90/h:900/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTU4MzUw/NjYtMTcyMDY1OTQ1/Ny04Mjg5LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-4d29c266-099c-4e79-b4f1-eaeccf206c5a"
+  },
+  {
+    "id": "698b6b4a-e24f-4fc1-8afe-a808e8dda87c",
+    "name": "Beach House",
+    "imageUrl": "https://i.discogs.com/Owi8t0CKyS1PyXYITKEvyxgDWrMkaIdhG9bxGNdYq6M/rs:fit/g:sm/q:90/h:831/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTU5MjMw/OC0xNjU1NTkwNzA0/LTE1MTguanBlZw.jpeg",
+    "cloudflareImageId": "artist-698b6b4a-e24f-4fc1-8afe-a808e8dda87c"
+  },
+  {
+    "id": "31d7c9dd-8ae2-4ca3-9900-9b19600f1a25",
+    "name": "New York Dolls",
+    "imageUrl": "https://i.discogs.com/W71gyQiOwU7QYLCiPeUGlVVMaW22rkyoeL7Wk92NO_o/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI0MjYx/My0xNzU3NzkwMTk2/LTk1NDMuanBlZw.jpeg",
+    "cloudflareImageId": "artist-31d7c9dd-8ae2-4ca3-9900-9b19600f1a25"
+  },
+  {
+    "id": "0f24e387-9cf8-4607-a496-296e29fea621",
+    "name": "Clairo",
+    "imageUrl": "https://i.discogs.com/rMUFF95BYVamEWuBiDirU8EAS3fHvUUvEu5yTmZHvnY/rs:fit/g:sm/q:90/h:337/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTU0NjU1/NzYtMTYwMzgzODU0/My02MjQ5LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-0f24e387-9cf8-4607-a496-296e29fea621"
+  },
+  {
+    "id": "832b43a8-a9a9-4395-8fd8-878970f612e7",
+    "name": "ARTMS",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/ARTMS%20-%2054462684746.jpg?width=600",
+    "cloudflareImageId": "artist-832b43a8-a9a9-4395-8fd8-878970f612e7"
+  },
+  {
+    "id": "130f9aa7-d5a1-42d1-a23b-7918f1af0481",
+    "name": "Kelly Lee Owens",
+    "imageUrl": "https://i.discogs.com/1HP9ZJg8joHIYS9FT1jw3v41aUjPy6Qh4DIXFUe1Oes/rs:fit/g:sm/q:90/h:808/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTMxNDM3/ODMtMTcyNTYxNjU2/OC0yOTMwLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-130f9aa7-d5a1-42d1-a23b-7918f1af0481"
+  },
+  {
+    "id": "8adbc4a1-1d00-4e87-9bf2-6ee70fecd4cc",
+    "name": "Manu Dibango",
+    "imageUrl": "https://i.discogs.com/IQLRc5_rv-jDyGMJn8tOT-KcQbhwV4-3_3gxfvoiBs8/rs:fit/g:sm/q:90/h:900/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTIwNTYw/LTE2MDI3MDMxMDkt/NzU3MC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-8adbc4a1-1d00-4e87-9bf2-6ee70fecd4cc"
+  },
+  {
+    "id": "0cff9900-b195-4e1a-955d-52c280aedca6",
+    "name": "Brian Eno",
+    "imageUrl": "https://i.discogs.com/T4oZiWHOUCi1OpnktaV839Bilc6ne7SI41MJ3_bycFY/rs:fit/g:sm/q:90/h:827/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTYzNC0x/NTMxMzQ5MTc1LTkx/NTIuanBlZw.jpeg",
+    "cloudflareImageId": "artist-0cff9900-b195-4e1a-955d-52c280aedca6"
+  },
+  {
+    "id": "b0f83a3d-a22c-4e3f-8bb8-cf8e1f8b0293",
+    "name": "The White Stripes",
+    "imageUrl": "https://i.discogs.com/MOBRQFOXCCAgtaZE1gN6EPrdnJ6XkQcHdYWGOlxa9YY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTExNjM0/NS0xMjQ5NTQ3MTM4/LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-b0f83a3d-a22c-4e3f-8bb8-cf8e1f8b0293"
+  },
+  {
+    "id": "3b4cb0b6-526f-43de-af1a-d325350b96ad",
+    "name": "Depeche Mode",
+    "imageUrl": "https://i.discogs.com/3eLSwIVDy_7o9sbvJcmixK_u7fWTcHdmKrWJIh1tqpg/rs:fit/g:sm/q:90/h:849/w:567/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI3MjUt/MTMxOTcyMzIyMi5q/cGVn.jpeg",
+    "cloudflareImageId": "artist-3b4cb0b6-526f-43de-af1a-d325350b96ad"
+  },
+  {
+    "id": "4bd3f876-b05c-4eab-a409-07c81c150fe7",
+    "name": "Einstürzende Neubauten",
+    "imageUrl": "https://i.discogs.com/sYKftzvAhNj6jAYqSk7J0tNIo9RARKVALOzr4LMYqVM/rs:fit/g:sm/q:90/h:659/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM4Nzk0/LTEzOTU1OTY2MDAt/Njg0MC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-4bd3f876-b05c-4eab-a409-07c81c150fe7"
+  },
+  {
+    "id": "37a5112f-631b-47aa-b174-78f4fd76670e",
+    "name": "Queens of the Stone Age",
+    "imageUrl": "https://i.discogs.com/x6HfeafXIIqztkFHvtMqoyXkRuKw5ey5-wMujGe0pUI/rs:fit/g:sm/q:90/h:800/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTU2MTY4/LTE2ODQyNDk5OTIt/OTIwMC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-37a5112f-631b-47aa-b174-78f4fd76670e"
+  },
+  {
+    "id": "39ed990f-4874-41cc-b059-d62dff6cdf6e",
+    "name": "Hannah Diamond",
+    "imageUrl": "https://i.discogs.com/3AMM1DeZYZKgzF86H6UUUnGFpDrysJot_U9xtVKaUJY/rs:fit/g:sm/q:90/h:840/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM4NTk3/NzUtMTUzMzg2OTM1/Mi03MzU4LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-39ed990f-4874-41cc-b059-d62dff6cdf6e"
+  },
+  {
+    "id": "be4d2700-2938-48ce-8b00-fd4f4811620d",
+    "name": "People Under the Stairs",
+    "imageUrl": "https://i.discogs.com/bAK6gCZ_fWNDp8xxiz6rIRG3VuN33FprJh-M9oDu56o/rs:fit/g:sm/q:90/h:900/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTU0OTEt/MTY3MjIwODA2MS04/MTEyLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-be4d2700-2938-48ce-8b00-fd4f4811620d"
+  },
+  {
+    "id": "e363cca6-c872-464f-89df-45c1b1a10564",
+    "name": "Digable Planets",
+    "imageUrl": "https://i.discogs.com/JxL7keb4UatHia7uzfO54pXdHscUPYNt2uAsEqPG0Uk/rs:fit/g:sm/q:90/h:718/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQ4Mzkz/LTExOTc4MDkyMDYu/anBlZw.jpeg",
+    "cloudflareImageId": "artist-e363cca6-c872-464f-89df-45c1b1a10564"
+  },
+  {
+    "id": "a8c4495b-9d02-479b-9e7c-e79e5fe23793",
+    "name": "Swedish House Mafia",
+    "imageUrl": "https://i.discogs.com/FFs-QLONsRBfQSL7rRoorCq9DZAyJCNxX4dKdgge6X0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE4MDE1/OTgtMTc0NDEzNjQ3/My05Nzc0LnBuZw.jpeg",
+    "cloudflareImageId": "artist-a8c4495b-9d02-479b-9e7c-e79e5fe23793"
+  },
+  {
+    "id": "2680c29f-f0e3-490b-a58a-36a5c81a918b",
+    "name": "The Death Set",
+    "imageUrl": "https://i.discogs.com/dWDRWFPX3jBFIdJ_cXBBoRw6EQoptWG9VDBX_wt8qDI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTg3NTEy/MC0xNTAzNDQ3MjUz/LTkwMjcuanBlZw.jpeg",
+    "cloudflareImageId": "artist-2680c29f-f0e3-490b-a58a-36a5c81a918b"
+  },
+  {
+    "id": "76cf489e-3f00-4604-a4e2-7b7a884259e8",
+    "name": "きゃりーぱみゅぱみゅ",
+    "imageUrl": "https://i.discogs.com/cZy6lxFJ5S4k4mR5XyDOkqNsMzuQqu5xdMxwbbK390M/rs:fit/g:sm/q:90/h:823/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI3MjIz/NTAtMTQ2NDAwNjQx/My05MzU0LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-76cf489e-3f00-4604-a4e2-7b7a884259e8"
+  },
+  {
+    "id": "d3da6101-c0f0-4d59-bd4e-36573defa1b4",
+    "name": "Pink Floyd",
+    "imageUrl": "https://i.discogs.com/bbN8-UEQTHnJsJmItrDWXoGqPHfcegqgY7id_0tZ4Ts/rs:fit/g:sm/q:90/h:870/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQ1NDY3/LTE2MzU2MDIwMzYt/ODExNC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-d3da6101-c0f0-4d59-bd4e-36573defa1b4"
+  },
+  {
+    "id": "01300c82-65d5-475f-bd83-6fbc82b0b577",
+    "name": "The Ruby Suns",
+    "imageUrl": "https://i.discogs.com/B8cuePi0sZZmcUeBbXccRh_lqI_OhOAASHTqJZk2Yew/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTExNTg2/MjEtMTI1MTU4MDg4/My5qcGVn.jpeg",
+    "cloudflareImageId": "artist-01300c82-65d5-475f-bd83-6fbc82b0b577"
+  },
+  {
+    "id": "0adc5391-2f8a-4a45-9f6b-83c5833c5273",
+    "name": "Fates Warning",
+    "imageUrl": "https://i.discogs.com/F8-8XZf0dnTVYp8_j8ywSrlFWovLuo0GrdQYFT79XR4/rs:fit/g:sm/q:90/h:876/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI1MjA2/Ni0xNTg2NTQxMTIx/LTcwMTYuanBlZw.jpeg",
+    "cloudflareImageId": "artist-0adc5391-2f8a-4a45-9f6b-83c5833c5273"
+  },
+  {
+    "id": "111ff2eb-936d-406f-9550-e66505c51568",
+    "name": "Cocteau Twins",
+    "imageUrl": "https://i.discogs.com/QIUjdn399Pdv1cIgWlmcMNQ2GIAK3ZaflNgIF14AxEI/rs:fit/g:sm/q:90/h:862/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEyMzcz/LTE3MzgxOTIxNDYt/ODU4OC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-111ff2eb-936d-406f-9550-e66505c51568"
+  },
+  {
+    "id": "a74e8f30-a679-4d49-9618-34d4801b946f",
+    "name": "Curren$y",
+    "imageUrl": "https://i.discogs.com/AlRqBLssyIEzRordAONvmq6LcisKZn77Sv9myXykod8/rs:fit/g:sm/q:90/h:657/w:591/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE0OTMy/MTQtMTUxMzc1MzY4/Ni0yNDAyLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-a74e8f30-a679-4d49-9618-34d4801b946f"
+  },
+  {
+    "id": "fdc1c057-fd4f-414e-9b47-59b77af98fdc",
+    "name": "Penny Penny",
+    "imageUrl": "https://i.discogs.com/TlIApElnlq0tO4r96z4_P6Zh2Z4dM-yVIIfKtIREWg0/rs:fit/g:sm/q:90/h:600/w:386/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTIyMjEx/OTEtMTQ2NTE0NDAz/NC0xOTQ4LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-fdc1c057-fd4f-414e-9b47-59b77af98fdc"
+  },
+  {
+    "id": "3f4283a9-d01d-48e5-830d-a95d7f772861",
+    "name": "Nosaj Thing",
+    "imageUrl": "https://i.discogs.com/2zjjAf4NM0ikvyFTSeNw_4vVNwar1iHOI8jDFF6JQ84/rs:fit/g:sm/q:90/h:800/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTExNjE4/NDEtMTYxMjUzOTU4/OS0yNjM3LndlYnA.jpeg",
+    "cloudflareImageId": "artist-3f4283a9-d01d-48e5-830d-a95d7f772861"
+  },
+  {
+    "id": "51b5ac07-4593-47da-8b7e-997aa8703568",
+    "name": "Rico Nasty",
+    "imageUrl": "https://i.discogs.com/nZOwqV2cXehe8woWC_RIQ7M18RXKu_tQvbw2Y4BLQEE/rs:fit/g:sm/q:90/h:678/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTU2OTAz/MjMtMTY1OTM1MDM5/NS0zMzIxLnBuZw.jpeg",
+    "cloudflareImageId": "artist-51b5ac07-4593-47da-8b7e-997aa8703568"
+  },
+  {
+    "id": "8c30bef4-bb34-4de8-8dec-50033c3d3bc6",
+    "name": "Chris Tomlin",
+    "imageUrl": "https://i.discogs.com/gOWBoBe33G0NMZ2RzROejRq6TRCH0PBw0NbkYnBsfQ0/rs:fit/g:sm/q:90/h:615/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQzMzM3/MC0xNTMwNTUxNzAz/LTkzMDMuanBlZw.jpeg",
+    "cloudflareImageId": "artist-8c30bef4-bb34-4de8-8dec-50033c3d3bc6"
+  },
+  {
+    "id": "6990be17-f988-4e00-8f95-beca37c1f693",
+    "name": "Pearl & The Oysters",
+    "imageUrl": "https://i.discogs.com/9lmBSgjjBBu_BMlmzKu_jCL8Wv1nFGMgaIEJmsCZx4c/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTU4NjQ1/NTktMTYxNzA2NDQ4/MS01OTE1LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-6990be17-f988-4e00-8f95-beca37c1f693"
+  },
+  {
+    "id": "207942ae-a15e-4f2b-b3dc-b5f42f4fb87a",
+    "name": "Tee Grizzley",
+    "imageUrl": "https://i.discogs.com/TXmjuGlCYmWFPhlwQuQxDjbImUCEavhUadYC0B1gwM0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTU3MjI3/NjUtMTUxNjg1NDk1/NC02ODEyLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-207942ae-a15e-4f2b-b3dc-b5f42f4fb87a"
+  },
+  {
+    "id": "c9d22f5b-e51c-4e13-8715-59857e731543",
+    "name": "Massive Attack",
+    "imageUrl": "https://i.discogs.com/VsWBwwEKnfKeA0HRjAShWCx3lTd3SrEp5QBD_kmz7VQ/rs:fit/g:sm/q:90/h:702/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQ0ODAt/MTU5Nzc3MDg2Ni05/NDY4LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-c9d22f5b-e51c-4e13-8715-59857e731543"
+  },
+  {
+    "id": "d2be660d-f3f9-4885-9b6c-730ac017e3ba",
+    "name": "The Pharcyde",
+    "imageUrl": "https://i.discogs.com/dnzjuDFz6okiUgnZkpAmU6SR-IR20KqFWWC0neSDdv0/rs:fit/g:sm/q:90/h:854/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEwNTc4/LTE3NTkyMTY1ODEt/MTQzNy5qcGVn.jpeg",
+    "cloudflareImageId": "artist-d2be660d-f3f9-4885-9b6c-730ac017e3ba"
+  },
+  {
+    "id": "78970290-b84c-4ad4-8342-6c7927006637",
+    "name": "Quasimoto",
+    "imageUrl": "https://i.discogs.com/QuqvKDzFSuUgTIDaPhMCMmAYOJ9PXTLgUzlpO6zYp5g/rs:fit/g:sm/q:90/h:1076/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI0MjA4/LTExODYwNzAxMDMu/Z2lm.jpeg",
+    "cloudflareImageId": "artist-78970290-b84c-4ad4-8342-6c7927006637"
+  },
+  {
+    "id": "a41b8745-47c1-4be5-baea-2e69bb10ca28",
+    "name": "Amy Winehouse",
+    "imageUrl": "https://i.discogs.com/aR9kEMPAz0sDT9OhE-h_S761Y9gB0wkfhzReZpWQjp0/rs:fit/g:sm/q:90/h:966/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE1MTIy/My0xMzkxODg1NTE5/LTk1NzYuanBlZw.jpeg",
+    "cloudflareImageId": "artist-a41b8745-47c1-4be5-baea-2e69bb10ca28"
+  },
+  {
+    "id": "ee79a515-42e9-4a5b-bc0c-4cb7659b57df",
+    "name": "Thelonious Monk",
+    "imageUrl": "https://i.discogs.com/ywMVgNp_QWmNOeobOLd1_LSderudOtylsn_AbP4Q26s/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE0NTI1/Ni0xNzM0NDIwODAy/LTM5MTAuanBlZw.jpeg",
+    "cloudflareImageId": "artist-ee79a515-42e9-4a5b-bc0c-4cb7659b57df"
+  },
+  {
+    "id": "b26cc537-c553-47ee-a82a-4001105ab54c",
+    "name": "Quicksilver Messenger Service",
+    "imageUrl": "https://i.discogs.com/dsRLQ7fWhohf5gH6eSMS_MK3oTHmJYgoH6BRA4B9R48/rs:fit/g:sm/q:90/h:808/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTMzNTgx/MS0xNjYyNTMxMzkz/LTEzMjUuanBlZw.jpeg",
+    "cloudflareImageId": "artist-b26cc537-c553-47ee-a82a-4001105ab54c"
+  },
+  {
+    "id": "5e60e2b4-a009-40a8-ae33-55b0f4b81154",
+    "name": "Kyuss",
+    "imageUrl": "https://i.discogs.com/Ov7bBowB7jBcS79GzCVSg9kF74Xen8in7HywoW665Ds/rs:fit/g:sm/q:90/h:566/w:532/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEwNTcz/Mi0xMjg5NTIwNzc5/LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-5e60e2b4-a009-40a8-ae33-55b0f4b81154"
+  },
+  {
+    "id": "f4aaa710-0a88-4176-89d5-0191981b151c",
+    "name": "Front 242",
+    "imageUrl": "https://i.discogs.com/pX6vQCgGyY8h6nukNzUu4JNhW5Gtb5JWXF7hESzfQGE/rs:fit/g:sm/q:90/h:850/w:567/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQ2NTUt/MTMxODE1NjUxNC5q/cGVn.jpeg",
+    "cloudflareImageId": "artist-f4aaa710-0a88-4176-89d5-0191981b151c"
+  },
+  {
+    "id": "2f89b229-0ccf-44ab-8ed0-8ae354186a34",
+    "name": "Jordan Davis",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jordan%20Davis%202019%20by%20Glenn%20Francis.jpg?width=600",
+    "cloudflareImageId": "artist-2f89b229-0ccf-44ab-8ed0-8ae354186a34"
+  },
+  {
+    "id": "d27f712f-b33c-4fcc-a135-39ad5ded26d2",
+    "name": "Olamide",
+    "imageUrl": "https://i.discogs.com/l-kACA7dfqgAq3Ql8DdKb7WFryLEcSUOjCvOhneX448/rs:fit/g:sm/q:90/h:749/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM2ODE2/NzAtMTcxMDMzMjQ5/Ni0zODY0LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-d27f712f-b33c-4fcc-a135-39ad5ded26d2"
+  },
+  {
+    "id": "b126d243-62c6-470f-8e38-dc43c2dd1df7",
+    "name": "The Atomic Bitchwax",
+    "imageUrl": "https://i.discogs.com/mGljiPWxi2ewtpOckN7d7VMWk4x6PNjrffSDdqA8i3k/rs:fit/g:sm/q:90/h:424/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTc1MjUz/NS0xNDM1MTg3MjIw/LTY3MzAuanBlZw.jpeg",
+    "cloudflareImageId": "artist-b126d243-62c6-470f-8e38-dc43c2dd1df7"
+  },
+  {
+    "id": "3e318fd5-797b-40d9-8750-128b1fb818d0",
+    "name": "DāM‐FunK",
+    "imageUrl": "https://i.discogs.com/tLczwH35bn3zm3uhQuyTP2LbqVgAGrm30B__SHHmtbI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTg4ODI1/MC0xNzA1MjQ5MzUy/LTc0MzguanBlZw.jpeg",
+    "cloudflareImageId": "artist-3e318fd5-797b-40d9-8750-128b1fb818d0"
+  },
+  {
+    "id": "eb320faf-729e-43f5-bdfc-25f88a122a68",
+    "name": "The Lumineers",
+    "imageUrl": "https://i.discogs.com/JcmWZor7KJQLIrZuNXDyLCywAWB6ZXQuEp6bejGDeN4/rs:fit/g:sm/q:90/h:400/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI3MzQw/MzctMTU1NDQ3NjY2/Mi0zMzIwLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-eb320faf-729e-43f5-bdfc-25f88a122a68"
+  },
+  {
+    "id": "48a38129-ffbd-4524-81c1-e897aa093a3b",
+    "name": "Loossemble",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Loossemble%20at%20Incheon%20Airport%20on%20140923%20(1).png?width=600",
+    "cloudflareImageId": "artist-48a38129-ffbd-4524-81c1-e897aa093a3b"
+  },
+  {
+    "id": "e62b845d-6854-448b-9b5a-e095929a740a",
+    "name": "Wild Nothing",
+    "imageUrl": "https://i.discogs.com/ss1g0Q5DtzTOSSGNS-W1aMADzb66MxuIaU-N2WhuF2E/rs:fit/g:sm/q:90/h:618/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE3NzE2/MTEtMTI3MDQzNTIy/NS5qcGVn.jpeg",
+    "cloudflareImageId": "artist-e62b845d-6854-448b-9b5a-e095929a740a"
+  },
+  {
+    "id": "d9806c22-c3dd-477d-a2d7-4da16f3d4927",
+    "name": "Madlib",
+    "imageUrl": "https://i.discogs.com/a-Aq1FLzFMMy4MDe5xNpPJMZv3mEX2_e0EFQfaZJNE8/rs:fit/g:sm/q:90/h:900/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE2NTA4/LTE0NjkxNzI1NTct/NTcyMC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-d9806c22-c3dd-477d-a2d7-4da16f3d4927"
+  },
+  {
+    "id": "220b5feb-e2e8-4a3e-9435-7de3bf89984e",
+    "name": "Florence + the Machine",
+    "imageUrl": "https://i.discogs.com/5MbC_6zZIY_7YzkLjcWGMVuTQb-baiTuVdTQtG1kSqg/rs:fit/g:sm/q:90/h:777/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTk5NDgz/NS0xMjY2MTU4MjU4/LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-220b5feb-e2e8-4a3e-9435-7de3bf89984e"
+  },
+  {
+    "id": "c6961b1f-1091-4be4-9594-7f8e10d527a0",
+    "name": "Charles Mingus",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Charles%20Mingus%201976.jpg?width=600",
+    "cloudflareImageId": "artist-c6961b1f-1091-4be4-9594-7f8e10d527a0"
+  },
+  {
+    "id": "843c8827-42a8-458d-9953-7c0bbda9cf12",
+    "name": "John Maus",
+    "imageUrl": "https://i.discogs.com/kTWnadXoccgbWZmr74Zh8JDKvRwzRwvjKZ-ZZh57f0k/rs:fit/g:sm/q:90/h:785/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTU0MDgy/OC0xNTE3Mjc0NDUx/LTM0ODQuanBlZw.jpeg",
+    "cloudflareImageId": "artist-843c8827-42a8-458d-9953-7c0bbda9cf12"
+  },
+  {
+    "id": "7ea55a6a-7d86-4cb4-9e2e-f35a67e90231",
+    "name": "ScHoolboy Q",
+    "imageUrl": "https://i.discogs.com/GorFowRK6HeT0Fmg9lSc9LbDL_OueRQUdo6pt2ZtwOA/rs:fit/g:sm/q:90/h:741/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTIzNTM1/NDUtMTUxODI4MzM4/OS03Mzc0LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-7ea55a6a-7d86-4cb4-9e2e-f35a67e90231"
+  },
+  {
+    "id": "301bf8ab-cc7c-4dce-8480-063a6d9176cc",
+    "name": "NewJeans",
+    "imageUrl": "https://i.discogs.com/ygWedHN-y5iGKjFdzXIbt34D0Tjah-PdqylekOMvag0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTExNTk0/MjczLTE3MTg5NDc2/MTktMjIyNi5qcGVn.jpeg",
+    "cloudflareImageId": "artist-301bf8ab-cc7c-4dce-8480-063a6d9176cc"
+  },
+  {
+    "id": "faecd93e-f1a8-4c6d-a4d3-f45713867d25",
+    "name": "Eric B. & Rakim",
+    "imageUrl": "https://i.discogs.com/gpdzXVUmPf-yEwVtk9MNgWndubguSHstjAZswSrZnXE/rs:fit/g:sm/q:90/h:800/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQwMzMt/MTE1MjEyMjczOC5q/cGVn.jpeg",
+    "cloudflareImageId": "artist-faecd93e-f1a8-4c6d-a4d3-f45713867d25"
+  },
+  {
+    "id": "b53cf481-e213-4252-a44f-eb6bb307d29c",
+    "name": "Strapping Young Lad",
+    "imageUrl": "https://i.discogs.com/wcRUnKKlk-8IpAbCv1JNXNji7At8jJyqLC12LrFHUGY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTUzOTMx/LTE1MDI1NTI3MjQt/NDQ4OS5wbmc.jpeg",
+    "cloudflareImageId": "artist-b53cf481-e213-4252-a44f-eb6bb307d29c"
+  },
+  {
+    "id": "22028983-fd2e-462b-beee-f809454ccf0a",
+    "name": "Gravediggaz",
+    "imageUrl": "https://i.discogs.com/phaNkLUm6Yj0wY6l90SkRuEh3PGv-Qnc0r86voz77Gc/rs:fit/g:sm/q:90/h:750/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTgyNjM0/LTE1MjQzNzY4MzYt/ODU5NS5qcGVn.jpeg",
+    "cloudflareImageId": "artist-22028983-fd2e-462b-beee-f809454ccf0a"
+  },
+  {
+    "id": "6db164b4-11e0-402d-9957-c74797a4ffd2",
+    "name": "Throwing Muses",
+    "imageUrl": "https://i.discogs.com/mXBlrz2GAVnOP3-oMc8HSG1cUvV_uNDYzfCAifRFzhI/rs:fit/g:sm/q:90/h:495/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTgxNDc1/LTExNTY4NTEzNzQu/anBlZw.jpeg",
+    "cloudflareImageId": "artist-6db164b4-11e0-402d-9957-c74797a4ffd2"
+  },
+  {
+    "id": "2a53b532-4d21-42ad-9adc-07251166cfa0",
+    "name": "Anne Wilson",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Anne%20Wilson%20at%20the%20Prudential%20Center%20in%20New%20Jersey%20in%202022.png?width=600",
+    "cloudflareImageId": "artist-2a53b532-4d21-42ad-9adc-07251166cfa0"
+  },
+  {
+    "id": "74dd33ad-1fb4-4ea7-9b9b-4787bd3fe3dd",
+    "name": "Honey Dijon",
+    "imageUrl": "https://i.discogs.com/Q13sz_xOCq1hEt4-nfeRjTq0pA9lvgLOuz5stYUkE98/rs:fit/g:sm/q:90/h:889/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTYwMTQx/LTE2NzUwOTAzOTUt/MjY5NC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-74dd33ad-1fb4-4ea7-9b9b-4787bd3fe3dd"
+  },
+  {
+    "id": "5b94bd4a-d005-444f-b2e7-1828baa5238c",
+    "name": "Jim Croce",
+    "imageUrl": "https://i.discogs.com/CjU6AjNd21Q25puU1EQqGAItmzIn4GCAOYHGV_Uyrf0/rs:fit/g:sm/q:90/h:768/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI5MTMz/Ny0xNjY2MTM2MDM2/LTg3NTEuanBlZw.jpeg",
+    "cloudflareImageId": "artist-5b94bd4a-d005-444f-b2e7-1828baa5238c"
+  },
+  {
+    "id": "8891aa61-ec8c-4c63-bec7-08878c184939",
+    "name": "BABYMETAL",
+    "imageUrl": "https://i.discogs.com/71Y6XpWFYMii7y6jc2QOx7_xJX9-9lKdTBeDmcFuYpI/rs:fit/g:sm/q:90/h:832/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTMzOTMz/NDgtMTQ2ODIzNTkz/OS0yMDIyLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-8891aa61-ec8c-4c63-bec7-08878c184939"
+  },
+  {
+    "id": "a43101cc-75cd-4797-b688-676f936835dc",
+    "name": "Modjo",
+    "imageUrl": "https://i.discogs.com/zMujihRtmepfXH12GNfmqYVpr55-BC_u227iVRNm484/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTkzODMt/MTczODIwOTM3NC0x/NjI3LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-a43101cc-75cd-4797-b688-676f936835dc"
+  },
+  {
+    "id": "06b236be-5d14-4996-907c-0b47e7244dc9",
+    "name": "Stars of the Lid",
+    "imageUrl": "https://i.scdn.co/image/ab6761610000e5eb4cd47defce818236e875e8df",
+    "cloudflareImageId": "artist-06b236be-5d14-4996-907c-0b47e7244dc9"
+  },
+  {
+    "id": "3d826fd4-ce71-42f9-8326-99f286bcb619",
+    "name": "Saint Etienne",
+    "imageUrl": "https://i.discogs.com/mbYoasuFMaUhXCR5NMQYNud7IBJiGZU0jqsOGlOFTiQ/rs:fit/g:sm/q:90/h:463/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI4MDct/MTIyMjQyMDE2My5q/cGVn.jpeg",
+    "cloudflareImageId": "artist-3d826fd4-ce71-42f9-8326-99f286bcb619"
+  },
+  {
+    "id": "049866cd-9bb8-495b-9e40-61f52fce7e2b",
+    "name": "Larry June",
+    "imageUrl": "https://i.discogs.com/attv4avWUfV3LGHsOGis-CI7xZPC8dc2h9DZ-A3dN68/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQ0OTg0/NTYtMTY2MDk0MTk3/MS05MzMwLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-049866cd-9bb8-495b-9e40-61f52fce7e2b"
+  },
+  {
+    "id": "d2edb6e1-240d-4b5c-8903-1d389fa611d1",
+    "name": "Post Malone",
+    "imageUrl": "https://i.discogs.com/Z_h2AqMF8urQAm042_VTB3GrTZav5_Ul3fTMIDetfIY/rs:fit/g:sm/q:90/h:900/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQwMTY0/MzQtMTcwMjk0MjQx/NC00OTA5LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-d2edb6e1-240d-4b5c-8903-1d389fa611d1"
+  },
+  {
+    "id": "3f960c5b-95da-4b71-b772-9f09fae359ca",
+    "name": "Rauw Alejandro",
+    "imageUrl": "https://i.discogs.com/oeesOuugfxiZj62c6yl8dgjDliRjCbeW7NUTToKZ-1g/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTExMTg2/NDQ0LTE2NzIyODE1/MjUtODYzMi5qcGVn.jpeg",
+    "cloudflareImageId": "artist-3f960c5b-95da-4b71-b772-9f09fae359ca"
+  },
+  {
+    "id": "46f506ea-457f-4125-8acc-9b02d97a0ba9",
+    "name": "Cigarettes After Sex",
+    "imageUrl": "https://i.discogs.com/JNv4cxxSkW8cj1qFgs6doY4i0aZrQ9eMNwiDDc3wNAQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM0MjYz/MjgtMTQ5NDgzNDYx/My05OTc0LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-46f506ea-457f-4125-8acc-9b02d97a0ba9"
+  },
+  {
+    "id": "5dfa0599-388d-4bc4-90b5-46afc0a74e28",
+    "name": "Machinedrum",
+    "imageUrl": "https://i.discogs.com/EDNqnE3DmMxj19pyPX-L9MDUzhbCFe-37qXUHIrB03Q/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE2Nzcz/NC0xNzI1NTY1MjE2/LTI5MzIuanBlZw.jpeg",
+    "cloudflareImageId": "artist-5dfa0599-388d-4bc4-90b5-46afc0a74e28"
+  },
+  {
+    "id": "ad84ba46-1be2-4969-90f4-c54f29d87e70",
+    "name": "Nine Inch Nails",
+    "imageUrl": "https://i.discogs.com/bqyw_sP8e5Mj8oAITkAKAmhj0blPBbcG5AIg_EIorIs/rs:fit/g:sm/q:90/h:764/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM4NTct/MTUyNjEyODM2My02/MzU0LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-ad84ba46-1be2-4969-90f4-c54f29d87e70"
+  },
+  {
+    "id": "e2dbe58d-a602-456e-85a3-1e1fe42fd38c",
+    "name": "Marty Robbins",
+    "imageUrl": "https://i.discogs.com/YwbBUHndimC5BczSgLyeeVS6Qz1Dg6-IL99OHWh-q-E/rs:fit/g:sm/q:90/h:899/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTMxMDM1/NS0xNTYzOTU4NDM0/LTUxNjIuanBlZw.jpeg",
+    "cloudflareImageId": "artist-e2dbe58d-a602-456e-85a3-1e1fe42fd38c"
+  },
+  {
+    "id": "ac419b48-ade0-4f1d-8f41-bebc8b412667",
+    "name": "Fontaines D.C.",
+    "imageUrl": "https://i.discogs.com/yqM3twZRhOLjjpk-FH7kblClGAD30yWPLvtLQWQoJqQ/rs:fit/g:sm/q:90/h:897/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTYzMjI4/ODAtMTcyNDM3NjM3/My04NTUwLnBuZw.jpeg",
+    "cloudflareImageId": "artist-ac419b48-ade0-4f1d-8f41-bebc8b412667"
+  },
+  {
+    "id": "e81e8d08-c20c-4e5f-bd54-3a436d446db1",
+    "name": "HOMESHAKE",
+    "imageUrl": "https://i.discogs.com/C3yhTx77VYbgxpXLThv2NYVu534lXwKZa-k2GGsX3I8/rs:fit/g:sm/q:90/h:387/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTMxMzY2/MzItMTQxMjIxOTQ2/Ni0yMDA0LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-e81e8d08-c20c-4e5f-bd54-3a436d446db1"
+  },
+  {
+    "id": "202cf25f-2a73-4630-b978-80dd4c65024e",
+    "name": "Alec Empire",
+    "imageUrl": "https://i.discogs.com/OSveQLM1kbzpYjdJeHFWuiq-iQ_5c7bFlutE6_yec0k/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTQ5ODIt/MTU3MjEyOTkyMi02/NTExLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-202cf25f-2a73-4630-b978-80dd4c65024e"
+  },
+  {
+    "id": "5aa61405-0b6f-48c4-a8a4-5dbab534a43c",
+    "name": "DJ Premier",
+    "imageUrl": "https://i.discogs.com/jsbe98R11R2meEatlnfzWc1PCHsoc8xAYzOFxEcmna8/rs:fit/g:sm/q:90/h:729/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTIxMTUx/LTE0MDcyMjA0MTgt/NjIzNC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-5aa61405-0b6f-48c4-a8a4-5dbab534a43c"
+  },
+  {
+    "id": "fe4fb5c4-c192-437f-a1f2-e79ccd539f8a",
+    "name": "Carly Rae Jepsen",
+    "imageUrl": "https://i.discogs.com/SaN0Gkn7OShxP3yLKkxsFKD_eFU-j4oPYW0IOndfbME/rs:fit/g:sm/q:90/h:900/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI3MTA3/NzYtMTY2MDU5NjU3/OS00MDA3LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-fe4fb5c4-c192-437f-a1f2-e79ccd539f8a"
+  },
+  {
+    "id": "d3badb1e-5d00-4d23-9f3e-f6a41a5fb3b8",
+    "name": "Rabbit Junk",
+    "imageUrl": "https://i.discogs.com/428-kK-U4XVlAW5VToX8O_hLP0lkeZqcjDzOkZYZKZw/rs:fit/g:sm/q:90/h:801/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI0OTc5/Mi0xNTM0OTcyNTM4/LTMwNjkuanBlZw.jpeg",
+    "cloudflareImageId": "artist-d3badb1e-5d00-4d23-9f3e-f6a41a5fb3b8"
+  },
+  {
+    "id": "72cdc671-1b87-43cc-8e05-04b7cf888d09",
+    "name": "Death Grips",
+    "imageUrl": "https://i.discogs.com/FPC89bl5tLOUPzLpNHTYhM7te0UOzu4kDzcxHpjkTVY/rs:fit/g:sm/q:90/h:800/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTIyMjU3/NTYtMTY2MTEyMjc1/NC0xNTgyLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-72cdc671-1b87-43cc-8e05-04b7cf888d09"
+  },
+  {
+    "id": "a6628b89-9ff4-4734-8b6d-2a228313e521",
+    "name": "μ‐Ziq",
+    "imageUrl": "https://i.discogs.com/VvBRx-BDmBLTnYoQSfFgcGqNVHlfrZF0RAkm93QTga0/rs:fit/g:sm/q:90/h:651/w:526/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEwNzUt/MTUxNjQ0NzYxNi0x/NzA4LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-a6628b89-9ff4-4734-8b6d-2a228313e521"
+  },
+  {
+    "id": "b09927d0-d5f9-4a08-9ab1-d1b908a271da",
+    "name": "CKay",
+    "imageUrl": "https://i.discogs.com/u28ednX4nBzwCJDhLAdnOuu7VUbytBdKGbVc0tmvDBw/rs:fit/g:sm/q:90/h:635/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEwMTg4/MzUtMTY0MDYzNjI0/OS04NjYzLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-b09927d0-d5f9-4a08-9ab1-d1b908a271da"
+  },
+  {
+    "id": "2ad91ea4-d035-4b68-8175-33b53fe3b3d4",
+    "name": "Lainey Wilson",
+    "imageUrl": "https://i.discogs.com/noXNHmMKF7ovW5l6EtSiXAsnBzmCgx_JaR8h4reuSFI/rs:fit/g:sm/q:90/h:900/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTc2MjY3/NTItMTY4NDg3OTU1/Mi03NTU2LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-2ad91ea4-d035-4b68-8175-33b53fe3b3d4"
+  },
+  {
+    "id": "cb29840d-0682-4de0-a009-8420e985e27d",
+    "name": "Led Zeppelin",
+    "imageUrl": "https://i.discogs.com/lQZx9m-f2oHUkh8_TL2-M78kEUAbOC_CW0Fg3fEbw-E/rs:fit/g:sm/q:90/h:742/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM0Mjc4/LTE3MTUxNzgxNzIt/NzUxMy5qcGVn.jpeg",
+    "cloudflareImageId": "artist-cb29840d-0682-4de0-a009-8420e985e27d"
+  },
+  {
+    "id": "951cfcc8-56e5-43ac-bbbb-55bd7984d8d5",
+    "name": "Jamie xx",
+    "imageUrl": "https://i.discogs.com/zSD2m1PuG3bJL8jtifnTNP-i1y0aIqEVRPgXZvIGzBU/rs:fit/g:sm/q:90/h:400/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE1NDU1/NzYtMTQ5NTYzOTEx/NC0xNDQzLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-951cfcc8-56e5-43ac-bbbb-55bd7984d8d5"
+  },
+  {
+    "id": "14ba31f1-601f-4695-9688-d2f36cfd53a3",
+    "name": "Jaco Pastorius",
+    "imageUrl": "https://i.discogs.com/o44JFqdz-iW6QDt8OytNJqdkn_Er3O_oOINGaGGiqXI/rs:fit/g:sm/q:90/h:954/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTEwNjE2/LTE0NTM4NDA3MjMt/MTg0My5qcGVn.jpeg",
+    "cloudflareImageId": "artist-14ba31f1-601f-4695-9688-d2f36cfd53a3"
+  },
+  {
+    "id": "cb3b829d-c880-4fc6-855b-3349a4301f2f",
+    "name": "Hozier",
+    "imageUrl": "https://i.discogs.com/cUmpv0Tdfg1GU_cfaDujbpBC5iA-vgBFOh7Z3wKGEg4/rs:fit/g:sm/q:90/h:899/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM4NTMx/NzgtMTY4NzUyNzMw/OC04OTA4LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-cb3b829d-c880-4fc6-855b-3349a4301f2f"
+  },
+  {
+    "id": "76cdcf50-22c3-4da8-95ea-60f6df2076e4",
+    "name": "Freddie Gibbs",
+    "imageUrl": "https://i.scdn.co/image/ab6761610000e5eb499def7bd0369aa26a22273c",
+    "cloudflareImageId": "artist-76cdcf50-22c3-4da8-95ea-60f6df2076e4"
+  },
+  {
+    "id": "5bed68d7-2a4a-45e2-8b51-512e0e5652c8",
+    "name": "Grateful Dead",
+    "imageUrl": "https://i.discogs.com/qKw_ivy9wDZr46dLos4iTMitM_eh3dAJNu0pSEPouy8/rs:fit/g:sm/q:90/h:1299/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI0NjY1/MC0xNzM2MTE4ODM0/LTc0NjYucG5n.jpeg",
+    "cloudflareImageId": "artist-5bed68d7-2a4a-45e2-8b51-512e0e5652c8"
+  },
+  {
+    "id": "06d2fcda-9ff6-4bbe-9d19-d61f090b6ac5",
+    "name": "Laura Nyro",
+    "imageUrl": "https://i.discogs.com/TEXkeKshGbTEeeEuZ_qnXRk4UuSLWM-xOlSVvBnYGok/rs:fit/g:sm/q:90/h:869/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM3MDUw/MC0xNzMzMjQ1Nzc0/LTcyMTMuanBlZw.jpeg",
+    "cloudflareImageId": "artist-06d2fcda-9ff6-4bbe-9d19-d61f090b6ac5"
+  },
+  {
+    "id": "86608f2d-4454-4d50-a2a0-aab9f2d7c314",
+    "name": "Kvelertak",
+    "imageUrl": "https://i.discogs.com/Gi2kqFErrX9cM090MBv4N5CGPKLHFFaIuY3gc-YiiZw/rs:fit/g:sm/q:90/h:400/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE4Njgy/NzctMTczMDU5MTI4/Ni0zNjA5LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-86608f2d-4454-4d50-a2a0-aab9f2d7c314"
+  },
+  {
+    "id": "356974ff-8a9e-4afa-8a9a-2d594479e0ec",
+    "name": "Nick Cave & the Bad Seeds",
+    "imageUrl": "https://i.discogs.com/_7yc_DLu-lA7Vm5jXIGUNJfig7Bn8LMAgL7rEKsvA1g/rs:fit/g:sm/q:90/h:515/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTM2NjY1/LTE1MDc5ODc2MDYt/MzYyMC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-356974ff-8a9e-4afa-8a9a-2d594479e0ec"
+  },
+  {
+    "id": "b40f3b31-e99a-460d-a77c-967343bae0d3",
+    "name": "Nightmares on Wax",
+    "imageUrl": "https://i.discogs.com/lxjvhg0xWQNyNLBmnCGwvemPvpys6Xhz89E4ePEccHk/rs:fit/g:sm/q:90/h:352/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTc1OS0x/NjkzODM2ODUwLTE1/NjQucG5n.jpeg",
+    "cloudflareImageId": "artist-b40f3b31-e99a-460d-a77c-967343bae0d3"
+  },
+  {
+    "id": "0849a593-d761-4125-9472-d9b968a1c161",
+    "name": "Peso Pluma",
+    "imageUrl": "https://i.scdn.co/image/ab6761610000e5ebe5283f5b671cf618b82a2696",
+    "cloudflareImageId": "artist-0849a593-d761-4125-9472-d9b968a1c161"
+  },
+  {
+    "id": "219e0a28-a9a4-469c-944e-b5142a3e8038",
+    "name": "The Smiths",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/The%20Smiths%20(1984%20Sire%20publicity%20photo)%20002.jpg?width=600",
+    "cloudflareImageId": null
+  },
+  {
+    "id": "e0386cfd-c107-4c87-b5d0-926991d9f760",
+    "name": "Crowbar",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Crowbar%20Full%20Force%202019%2004.jpg?width=600",
+    "cloudflareImageId": null
+  },
+  {
+    "id": "a8fe4fea-9afe-4c8e-96fe-08e6e8ef515f",
+    "name": "Kero Kero Bonito",
+    "imageUrl": "https://i.discogs.com/EAQtbQFEY3XG3E-S_cGqBxczN2mtyhDWK4sJ8qB1TDU/rs:fit/g:sm/q:90/h:904/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTMyNzAy/MzEtMTY1MDIxODQ2/My0yOTk2LmpwZWc.jpeg",
+    "cloudflareImageId": "artist-a8fe4fea-9afe-4c8e-96fe-08e6e8ef515f"
+  },
+  {
+    "id": "75389549-3bc0-42fc-b6e6-909d20ebf316",
+    "name": "“Weird Al” Yankovic",
+    "imageUrl": "https://i.scdn.co/image/ab6772690000c46c8262addd2ddf144690e5ec9c",
+    "cloudflareImageId": "artist-75389549-3bc0-42fc-b6e6-909d20ebf316"
+  },
+  {
+    "id": "0ddc193c-684c-4afd-b938-a65f2ff777ee",
+    "name": "Burial",
+    "imageUrl": "https://i.discogs.com/9uhTswXyoKi46OJmlnbzYkmQR2cdFA0PJ8KC0ElWB7g/rs:fit/g:sm/q:90/h:139/w:168/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE5NzU0/ODYtMTMwMDg1Mzg4/NC5qcGVn.jpeg",
+    "cloudflareImageId": "artist-0ddc193c-684c-4afd-b938-a65f2ff777ee"
+  },
+  {
+    "id": "2f11dbef-9709-434f-9f35-bb3d3273b5c8",
+    "name": "MF DOOM",
+    "imageUrl": "https://i.discogs.com/V5oLLoHcscQ8XN5mtY3rTn2tfmRcW1xwAEGGINc75_U/rs:fit/g:sm/q:90/h:835/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI1MDU4/LTE2OTg3ODM3NDYt/NjMxNy5qcGVn.jpeg",
+    "cloudflareImageId": "artist-2f11dbef-9709-434f-9f35-bb3d3273b5c8"
+  },
+  {
+    "id": "127da96b-52aa-4266-9fe2-59b83c40adc2",
+    "name": "SZA",
+    "imageUrl": "https://i.scdn.co/image/ab6761610000e5ebfd0a9fb6c252a3ba44079acf",
+    "cloudflareImageId": "artist-127da96b-52aa-4266-9fe2-59b83c40adc2"
+  },
+  {
+    "id": "60ada309-a1db-4c99-9ad6-999baac35605",
+    "name": "Playboi Carti",
+    "imageUrl": "https://i.scdn.co/image/ab6761610000e5ebba50ca67ffc3097f6ea1710a",
+    "cloudflareImageId": "artist-60ada309-a1db-4c99-9ad6-999baac35605"
+  },
+  {
+    "id": "139d1505-fa08-4959-a261-1bc0f5a434b8",
+    "name": "A$AP Rocky",
+    "imageUrl": "https://i.discogs.com/KiVYl__IlGWEzU8ymLpMIF1F--vBU3HAM0ZkL2lAp6M/rs:fit/g:sm/q:90/h:742/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI0MDk3/NzEtMTUyMjQxNTg2/OS02MDgzLmpwZWc.jpeg",
+    "cloudflareImageId": "artist-139d1505-fa08-4959-a261-1bc0f5a434b8"
+  },
+  {
+    "id": "897ac751-cd05-44c1-ab0e-3743c4595a5a",
+    "name": "Nicky Jam",
+    "imageUrl": "https://i.scdn.co/image/ab6761610000e5eb6705b864a7254d1572039b3d",
+    "cloudflareImageId": "artist-897ac751-cd05-44c1-ab0e-3743c4595a5a"
+  },
+  {
+    "id": "73309cdc-566c-42d0-bc93-4dc90a27e42a",
+    "name": "Arctic Monkeys",
+    "imageUrl": "https://i.scdn.co/image/ab6761610000e5eb7da39dea0a72f581535fb11f",
+    "cloudflareImageId": "artist-73309cdc-566c-42d0-bc93-4dc90a27e42a"
+  },
+  {
+    "id": "c9c310ae-a022-4fd2-b079-5a1981feaa41",
+    "name": "Charli xcx",
+    "imageUrl": "https://i.scdn.co/image/ab6761610000e5ebdaa727dd396963ba92dd6377",
+    "cloudflareImageId": "artist-c9c310ae-a022-4fd2-b079-5a1981feaa41"
+  },
+  {
+    "id": "33cb0b7b-2464-41ff-83e9-34910a26c8eb",
+    "name": "Skrillex",
+    "imageUrl": "https://i.scdn.co/image/ab6761610000e5eb077a808cd0b0ffd30213eb3f",
+    "cloudflareImageId": "artist-33cb0b7b-2464-41ff-83e9-34910a26c8eb"
+  },
+  {
+    "id": "99329a77-eac6-46a5-8b1e-d55b355ccdf4",
+    "name": "Poppy",
+    "imageUrl": "https://i.scdn.co/image/ab6761610000e5eb9602d4f4d6faad23dcdf1b99",
+    "cloudflareImageId": "artist-99329a77-eac6-46a5-8b1e-d55b355ccdf4"
+  }
+]

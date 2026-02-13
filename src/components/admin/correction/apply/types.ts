@@ -153,11 +153,27 @@ export function toGraphQLSelections(
     clear: 'CLEAR' as CoverArtChoice,
   }[ui.coverArt];
 
-  return {
+  const result = {
     metadata,
     artists,
     tracks,
     externalIds,
     coverArt,
   };
+
+  // Debug logging for correction workflow tracing
+  console.log('[toGraphQLSelections] Payload:', {
+    input: {
+      uiSelections: ui,
+      previewSummary: preview.summary,
+      artistDiff: {
+        changeType: preview.artistDiff.changeType,
+        current: preview.artistDiff.currentDisplay,
+        source: preview.artistDiff.sourceDisplay,
+      },
+    },
+    output: result,
+  });
+
+  return result;
 }

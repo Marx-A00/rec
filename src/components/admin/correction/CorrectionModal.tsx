@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -437,6 +438,15 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
     // Convert UI selections to GraphQL format
     const graphqlSelections = toGraphQLSelections(selections, previewData);
 
+    // Debug logging for correction workflow tracing
+    console.log('[CorrectionModal] Applying correction:', {
+      albumId,
+      selectedMbid: previewData.sourceResult.releaseGroupMbid,
+      correctionSource,
+      shouldEnrich: triggerEnrichment ?? false,
+      selections: graphqlSelections,
+    });
+
     // Extract expectedUpdatedAt from preview data for optimistic locking
     // albumUpdatedAt is a GraphQL-level field added by the resolver (not in the service CorrectionPreview type)
     const albumUpdatedAtStr = (
@@ -476,6 +486,11 @@ export function CorrectionModal({ albumId, onClose }: CorrectionModalProps) {
           <DialogTitle className='truncate pr-8 text-cosmic-latte'>
             {headerTitle}
           </DialogTitle>
+          <DialogDescription className='sr-only'>
+            Wizard to correct album metadata. Use the step indicator to navigate
+            between viewing current data, searching for matches, previewing
+            changes, and applying corrections.
+          </DialogDescription>
         </DialogHeader>
 
         <StepIndicator

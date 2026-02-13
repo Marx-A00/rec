@@ -152,7 +152,7 @@ export class CorrectionPreviewService {
     // Generate summary statistics
     const summary = this.generateSummary(fieldDiffs, artistDiff, trackSummary);
 
-    return {
+    const preview = {
       currentAlbum,
       sourceResult: searchResult,
       mbReleaseData,
@@ -163,6 +163,24 @@ export class CorrectionPreviewService {
       coverArt,
       summary,
     };
+
+    // Debug logging for correction workflow tracing
+    console.log('[Correction Preview] Generated:', {
+      albumId,
+      fieldDiffs: fieldDiffs.map(d => ({
+        field: d.field,
+        changeType: d.changeType,
+      })),
+      artistDiff: {
+        changeType: artistDiff.changeType,
+        current: artistDiff.currentDisplay,
+        source: artistDiff.sourceDisplay,
+      },
+      trackSummary,
+      summary,
+    });
+
+    return preview;
   }
 
   /**

@@ -1,0 +1,338 @@
+[
+  {
+    "albumId": "e2ce6968-07c8-404f-a7f6-480a41943403",
+    "albumTitle": "Center of Attention",
+    "firstArtistName": "Pete Rock",
+    "changes": [
+      {
+        "field": "musicbrainzId",
+        "prodValue": null,
+        "devValue": "a9c6ae63-b585-35e7-8178-6c9b97078374"
+      },
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 16
+      }
+    ]
+  },
+  {
+    "albumId": "f6652135-2d54-4ec1-aa14-828aa15902ec",
+    "albumTitle": "KPop Demon Hunters (Soundtrack from the Netflix Film)",
+    "firstArtistName": "Various Artists",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 12
+      }
+    ]
+  },
+  {
+    "albumId": "b4d36cdb-d5cf-4220-af31-119fcce179be",
+    "albumTitle": "三屍 (Sanshi)",
+    "firstArtistName": "Ripped to Shreds",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 10
+      }
+    ]
+  },
+  {
+    "albumId": "63361d47-9cd8-4ca9-a363-fb87c00529c4",
+    "albumTitle": "Alfredo",
+    "firstArtistName": "Freddie Gibbs",
+    "changes": [
+      {
+        "field": "musicbrainzId",
+        "prodValue": null,
+        "devValue": "13615d5f-c913-4f48-afc7-6f56c8313fd5"
+      },
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 10
+      },
+      {
+        "field": "artists",
+        "prodValue": 0,
+        "devValue": 1
+      }
+    ]
+  },
+  {
+    "albumId": "386cc7b0-5073-44b2-9226-c332410b3a5d",
+    "albumTitle": "Live.Love.A$AP",
+    "firstArtistName": "A$AP Rocky",
+    "changes": [
+      {
+        "field": "musicbrainzId",
+        "prodValue": null,
+        "devValue": "1b4d965f-4827-488b-9bd8-2d724e3cf282"
+      },
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 16
+      }
+    ]
+  },
+  {
+    "albumId": "a39105a6-6458-44bd-bd39-bc15cb6b9fa4",
+    "albumTitle": "Hissing Prigs in Static Couture",
+    "firstArtistName": "3RA1N1AC",
+    "changes": [
+      {
+        "field": "musicbrainzId",
+        "prodValue": null,
+        "devValue": "6795842c-6f3a-3c90-b2f5-6f4b43191a3e"
+      },
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 13
+      }
+    ]
+  },
+  {
+    "albumId": "7bb5bdcb-9c57-4778-95d9-2da0193ef989",
+    "albumTitle": "S.Maharba",
+    "firstArtistName": "S.Maharba",
+    "changes": [
+      {
+        "field": "musicbrainzId",
+        "prodValue": null,
+        "devValue": "3dbe87dc-a226-470c-8412-a0d4cb0a3814"
+      },
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 10
+      }
+    ]
+  },
+  {
+    "albumId": "a60aa26b-037c-4833-bb4c-13e463ac4d18",
+    "albumTitle": "Wasteland, Baby! (Special Edition)",
+    "firstArtistName": "Hozier",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 19
+      }
+    ]
+  },
+  {
+    "albumId": "6ec4e212-8c40-4398-a673-cbb765ce25ac",
+    "albumTitle": "For Life (feat. Nile Rodgers)",
+    "firstArtistName": "Kygo",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 1
+      }
+    ]
+  },
+  {
+    "albumId": "cb594ca2-8a40-40f0-9bcf-588dbd230973",
+    "albumTitle": "Half Life",
+    "firstArtistName": "Wyatt Flores",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 8
+      }
+    ]
+  },
+  {
+    "albumId": "d3b31877-ba90-4d96-8020-7225ca88be35",
+    "albumTitle": "WAHALA (FEAT. OLAMIDE)",
+    "firstArtistName": "CKay",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 1
+      }
+    ]
+  },
+  {
+    "albumId": "08aa2212-1716-4bd3-9559-6bd51691f272",
+    "albumTitle": "Black Panther: The Album (Music From and Inspired By)",
+    "firstArtistName": "Kendrick Lamar",
+    "changes": [
+      {
+        "field": "musicbrainzId",
+        "prodValue": null,
+        "devValue": "4e317e28-e6b2-46d7-81f7-306e349b3dd4"
+      },
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 14
+      }
+    ]
+  },
+  {
+    "albumId": "cca27b6b-d7d4-44de-a481-b1a27e66135c",
+    "albumTitle": "Modjo",
+    "firstArtistName": "Modjo",
+    "changes": [
+      {
+        "field": "musicbrainzId",
+        "prodValue": null,
+        "devValue": "7151886c-53d9-3075-9c58-3417f8d09510"
+      },
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 12
+      }
+    ]
+  },
+  {
+    "albumId": "4ecaa521-c176-4a5c-b7c9-17d9a39519d8",
+    "albumTitle": "Teka (with Peso Pluma)",
+    "firstArtistName": "DJ Snake",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 1
+      }
+    ]
+  },
+  {
+    "albumId": "bdbecbfd-6b1f-435a-a8e4-3bf8db46e4b0",
+    "albumTitle": "Broken Sword, Rotten Shield",
+    "firstArtistName": "Full of Hell",
+    "changes": [
+      {
+        "field": "musicbrainzId",
+        "prodValue": null,
+        "devValue": "085e4570-f988-4d2a-bcab-1d2dc3fef962"
+      },
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 7
+      }
+    ]
+  },
+  {
+    "albumId": "55afc365-60b5-4df7-b0d2-53fa1760bde5",
+    "albumTitle": "Mystic Stylez",
+    "firstArtistName": "Three 6 Mafia",
+    "changes": [
+      {
+        "field": "musicbrainzId",
+        "prodValue": null,
+        "devValue": "ac6859cf-3bc7-31da-9255-b7d6a08cc6a9"
+      },
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 16
+      }
+    ]
+  },
+  {
+    "albumId": "fc0c8bd5-9011-442f-854d-04df104e68b6",
+    "albumTitle": "Delete Yourself",
+    "firstArtistName": "Atari Teenage Riot",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 12
+      }
+    ]
+  },
+  {
+    "albumId": "1262c721-42dd-4967-a77b-6735dd99d40e",
+    "albumTitle": "Haus Der Luege",
+    "firstArtistName": "Einstürzende Neubauten",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 7
+      }
+    ]
+  },
+  {
+    "albumId": "4a2e1c29-4606-4621-9bdd-d5769547af68",
+    "albumTitle": "Mama's Big Ones: Her Greatest Hits",
+    "firstArtistName": "Cass Elliot",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 12
+      }
+    ]
+  },
+  {
+    "albumId": "4f7055c7-db7e-4a33-9408-abf9b77ea527",
+    "albumTitle": "アダンの風 (Adan No Kaze)",
+    "firstArtistName": "Aoba Ichiko",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 14
+      }
+    ]
+  },
+  {
+    "albumId": "7f23b028-557e-44eb-96f4-ecf08cd28dbf",
+    "albumTitle": "ミーのカー",
+    "firstArtistName": "ゆらゆら帝国",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 12
+      }
+    ]
+  },
+  {
+    "albumId": "e4fb0341-4e12-4294-a3db-f27ca0727d7f",
+    "albumTitle": "MM..FOOD",
+    "firstArtistName": "MF DOOM",
+    "changes": [
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 15
+      },
+      {
+        "field": "artists",
+        "prodValue": 0,
+        "devValue": 1
+      }
+    ]
+  },
+  {
+    "albumId": "082186e0-1440-48f5-a427-dfcab5c033a5",
+    "albumTitle": "And Their Refinement of the Decline",
+    "firstArtistName": "Stars of the Lid",
+    "changes": [
+      {
+        "field": "musicbrainzId",
+        "prodValue": null,
+        "devValue": "dd0cae7b-5bf2-3db1-b028-87472215400a"
+      },
+      {
+        "field": "tracks",
+        "prodValue": 0,
+        "devValue": 18
+      }
+    ]
+  }
+]
