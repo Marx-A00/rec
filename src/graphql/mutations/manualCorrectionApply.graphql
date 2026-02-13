@@ -1,0 +1,22 @@
+mutation ManualCorrectionApply($input: ManualCorrectionApplyInput!) {
+  manualCorrectionApply(input: $input) {
+    success
+    album {
+      id
+      title
+      releaseDate
+      releaseType
+      musicbrainzId
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+      dataQuality
+      updatedAt
+    }
+    code
+    message
+  }
+}

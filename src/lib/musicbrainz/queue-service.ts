@@ -11,6 +11,8 @@ import {
   getMusicBrainzQueue,
   processMusicBrainzJob,
   JOB_TYPES,
+  PRIORITY_TIERS,
+  type PriorityTier,
 } from '../queue';
 import { createRedisConnection } from '../queue/redis';
 
@@ -21,6 +23,27 @@ import type {
 } from './basic-service';
 
 /**
+ * Queue position information for a specific job
+ * Used to show "Your request is #3 in queue" in UI
+ */
+export interface QueuePositionInfo {
+  position: number;
+  waitingCount: number;
+  activeCount: number;
+  estimatedWaitMs: number;
+}
+
+/**
+ * Queue summary broken down by priority tier
+ * Used for admin dashboard monitoring
+ */
+export interface QueueSummary {
+  byPriority: Record<number, number>;
+  total: number;
+  oldestJobAge: number | null;
+}
+
+/**
  * MusicBrainz service with automatic job queue integration
  * All API calls are routed through the queue to ensure 1 req/sec rate limiting
  */
@@ -29,7 +52,7 @@ export class QueuedMusicBrainzService {
   private worker: Worker | null = null;
   private isWorkerRunning = false;
 
-  // 🎯 THE MISSING PIECE: QueueEvents listener!
+  // QueueEvents listener for job completion tracking
   private queueEvents: QueueEvents | null = null;
   private pendingJobs = new Map<
     string,
@@ -58,7 +81,7 @@ export class QueuedMusicBrainzService {
   }
 
   // ============================================================================
-  // Event Listener Setup (The Missing Piece!)
+  // Event Listener Setup
   // ============================================================================
 
   /**
@@ -66,7 +89,7 @@ export class QueuedMusicBrainzService {
    * This is what connects the queue results back to our service
    */
   private setupEventListeners(): void {
-    console.log('🔗 Setting up QueueEvents listeners...');
+    console.log('Setting up QueueEvents listeners...');
 
     if (!this.queueEvents) return;
     this.queueEvents.on('completed', ({ jobId, returnvalue }) => {
@@ -94,38 +117,46 @@ export class QueuedMusicBrainzService {
         if (preview) {
           resultPreview =
             result.data.length > 1
-              ? `"${preview}" + ${result.data.length - 1} more`
-              : `"${preview}"`;
+              ? '"' + preview + '" + ' + (result.data.length - 1) + ' more'
+              : '"' + preview + '"';
         }
       } else if (result?.data && !Array.isArray(result.data)) {
         const preview = result.data.name || result.data.title || '';
-        if (preview) resultPreview = `"${preview}"`;
+        if (preview) resultPreview = '"' + preview + '"';
       }
 
       // Green borders for job completion events
-      const border = chalk.green('─'.repeat(60));
+      const border = chalk.green('-'.repeat(60));
       console.log('\n' + border);
       console.log(
-        `${chalk.bold.green('✅ JOB COMPLETED')} ${chalk.green('[QUEUE EVENTS LAYER]')}`
+        chalk.bold.green('JOB COMPLETED') +
+          ' ' +
+          chalk.green('[QUEUE EVENTS LAYER]')
       );
       console.log(border);
-      console.log(`  ${chalk.green('Job ID:')}     ${chalk.white(jobId)}`);
+      console.log('  ' + chalk.green('Job ID:') + '     ' + chalk.white(jobId));
       console.log(
-        `  ${chalk.green('Success:')}    ${success ? chalk.green('Yes') : chalk.red('No')}`
+        '  ' +
+          chalk.green('Success:') +
+          '    ' +
+          (success ? chalk.green('Yes') : chalk.red('No'))
       );
       console.log(
-        `  ${chalk.green('Results:')}    ${chalk.white(resultCount)}`
+        '  ' +
+          chalk.green('Results:') +
+          '    ' +
+          chalk.white(String(resultCount))
       );
       if (resultPreview) {
         console.log(
-          `  ${chalk.green('Preview:')}    ${chalk.cyan(resultPreview)}`
+          '  ' + chalk.green('Preview:') + '    ' + chalk.cyan(resultPreview)
         );
       }
       console.log(border + '\n');
 
       const pending = this.pendingJobs.get(jobId);
       if (pending) {
-        console.log(chalk.green(`✅ Resolving pending job ${jobId}`));
+        console.log(chalk.green('Resolving pending job ' + jobId));
         pending.resolve(result);
         this.pendingJobs.delete(jobId);
       }
@@ -135,30 +166,32 @@ export class QueuedMusicBrainzService {
 
     this.queueEvents.on('failed', ({ jobId, failedReason }) => {
       // Red borders for job failure events
-      const border = chalk.red('─'.repeat(60));
+      const border = chalk.red('-'.repeat(60));
       console.log('\n' + border);
       console.log(
-        `${chalk.bold.red('❌ JOB FAILED')} ${chalk.red('[QUEUE EVENTS LAYER]')}`
+        chalk.bold.red('JOB FAILED') + ' ' + chalk.red('[QUEUE EVENTS LAYER]')
       );
       console.log(border);
-      console.log(`  ${chalk.red('Job ID:')} ${chalk.white(jobId)}`);
-      console.log(`  ${chalk.red('Reason:')} ${chalk.white(failedReason)}`);
+      console.log('  ' + chalk.red('Job ID:') + ' ' + chalk.white(jobId));
+      console.log(
+        '  ' + chalk.red('Reason:') + ' ' + chalk.white(failedReason)
+      );
       console.log(border + '\n');
 
       const pending = this.pendingJobs.get(jobId);
       if (pending) {
-        console.log(chalk.red(`❌ Rejecting pending job ${jobId}`));
+        console.log(chalk.red('Rejecting pending job ' + jobId));
         pending.reject(new Error(failedReason));
         this.pendingJobs.delete(jobId);
       } else {
         console.log(
-          chalk.yellow(`⚠️ No pending promise found for failed job ${jobId}`)
+          chalk.yellow('No pending promise found for failed job ' + jobId)
         );
       }
     });
 
     this.queueEvents.on('error', error => {
-      console.error('❌ QueueEvents error:', error);
+      console.error('QueueEvents error:', error);
     });
   }
 
@@ -169,11 +202,13 @@ export class QueuedMusicBrainzService {
   /**
    * Search for artists by name
    * Uses job queue to respect rate limits
+   * @param priorityTier - Optional priority tier (defaults to USER)
    */
   async searchArtists(
     query: string,
     limit = 25,
-    offset = 0
+    offset = 0,
+    priorityTier: PriorityTier = PRIORITY_TIERS.USER
   ): Promise<ArtistSearchResult[]> {
     this.ensureInitialized();
     await this.ensureWorkerRunning();
@@ -183,8 +218,8 @@ export class QueuedMusicBrainzService {
         JOB_TYPES.MUSICBRAINZ_SEARCH_ARTISTS,
         { query, limit, offset },
         {
-          priority: 1, // Higher priority for direct user requests
-          requestId: `search-artists-${Date.now()}`,
+          priority: priorityTier,
+          requestId: 'search-artists-' + Date.now(),
         }
       );
 
@@ -195,22 +230,25 @@ export class QueuedMusicBrainzService {
         throw new Error(result.error?.message || 'Search failed');
       }
 
-      return result.data || [];
+      return (result.data as ArtistSearchResult[]) || [];
     } catch (error) {
       console.error('Queued MusicBrainz artist search error:', error);
       throw new Error(
-        `Failed to search artists: ${error instanceof Error ? error.message : 'Unknown error'}`
+        'Failed to search artists: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
       );
     }
   }
 
   /**
    * Search for release groups (albums) by name
+   * @param priorityTier - Optional priority tier (defaults to USER)
    */
   async searchReleaseGroups(
     query: string,
     limit = 25,
-    offset = 0
+    offset = 0,
+    priorityTier: PriorityTier = PRIORITY_TIERS.USER
   ): Promise<ReleaseGroupSearchResult[]> {
     this.ensureInitialized();
     await this.ensureWorkerRunning();
@@ -220,8 +258,8 @@ export class QueuedMusicBrainzService {
         JOB_TYPES.MUSICBRAINZ_SEARCH_RELEASES,
         { query, limit, offset },
         {
-          priority: 1,
-          requestId: `search-releases-${Date.now()}`,
+          priority: priorityTier,
+          requestId: 'search-releases-' + Date.now(),
         }
       );
 
@@ -231,22 +269,25 @@ export class QueuedMusicBrainzService {
         throw new Error(result.error?.message || 'Search failed');
       }
 
-      return result.data || [];
+      return (result.data as ReleaseGroupSearchResult[]) || [];
     } catch (error) {
       console.error('Queued MusicBrainz release search error:', error);
       throw new Error(
-        `Failed to search releases: ${error instanceof Error ? error.message : 'Unknown error'}`
+        'Failed to search releases: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
       );
     }
   }
 
   /**
    * Search for recordings by name
+   * @param priorityTier - Optional priority tier (defaults to USER)
    */
   async searchRecordings(
     query: string,
     limit = 25,
-    offset = 0
+    offset = 0,
+    priorityTier: PriorityTier = PRIORITY_TIERS.USER
   ): Promise<RecordingSearchResult[]> {
     this.ensureInitialized();
     await this.ensureWorkerRunning();
@@ -256,8 +297,8 @@ export class QueuedMusicBrainzService {
         JOB_TYPES.MUSICBRAINZ_SEARCH_RECORDINGS,
         { query, limit, offset },
         {
-          priority: 1,
-          requestId: `search-recordings-${Date.now()}`,
+          priority: priorityTier,
+          requestId: 'search-recordings-' + Date.now(),
         }
       );
 
@@ -271,7 +312,7 @@ export class QueuedMusicBrainzService {
         return []; // Return empty array instead of throwing - allow search to continue
       }
 
-      return result.data || [];
+      return (result.data as RecordingSearchResult[]) || [];
     } catch (error) {
       console.error('Queued MusicBrainz recording search error:', error);
       // Return empty array instead of throwing - allow search to continue with other sources
@@ -281,8 +322,13 @@ export class QueuedMusicBrainzService {
 
   /**
    * Get artist by MBID
+   * @param priorityTier - Optional priority tier (defaults to USER)
    */
-  async getArtist(mbid: string, includes?: string[]): Promise<any> {
+  async getArtist(
+    mbid: string,
+    includes?: string[],
+    priorityTier: PriorityTier = PRIORITY_TIERS.USER
+  ): Promise<any> {
     this.ensureInitialized();
     await this.ensureWorkerRunning();
 
@@ -291,8 +337,8 @@ export class QueuedMusicBrainzService {
         JOB_TYPES.MUSICBRAINZ_LOOKUP_ARTIST,
         { mbid, includes },
         {
-          priority: 1,
-          requestId: `lookup-artist-${Date.now()}`,
+          priority: priorityTier,
+          requestId: 'lookup-artist-' + Date.now(),
         }
       );
 
@@ -306,15 +352,21 @@ export class QueuedMusicBrainzService {
     } catch (error) {
       console.error('Queued MusicBrainz artist lookup error:', error);
       throw new Error(
-        `Failed to lookup artist: ${error instanceof Error ? error.message : 'Unknown error'}`
+        'Failed to lookup artist: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
       );
     }
   }
 
   /**
    * Get release by MBID
+   * @param priorityTier - Optional priority tier (defaults to USER)
    */
-  async getRelease(mbid: string, includes?: string[]): Promise<any> {
+  async getRelease(
+    mbid: string,
+    includes?: string[],
+    priorityTier: PriorityTier = PRIORITY_TIERS.USER
+  ): Promise<any> {
     this.ensureInitialized();
     await this.ensureWorkerRunning();
 
@@ -323,8 +375,8 @@ export class QueuedMusicBrainzService {
         JOB_TYPES.MUSICBRAINZ_LOOKUP_RELEASE,
         { mbid, includes },
         {
-          priority: 1,
-          requestId: `lookup-release-${Date.now()}`,
+          priority: priorityTier,
+          requestId: 'lookup-release-' + Date.now(),
         }
       );
 
@@ -338,15 +390,21 @@ export class QueuedMusicBrainzService {
     } catch (error) {
       console.error('Queued MusicBrainz release lookup error:', error);
       throw new Error(
-        `Failed to lookup release: ${error instanceof Error ? error.message : 'Unknown error'}`
+        'Failed to lookup release: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
       );
     }
   }
 
   /**
    * Get release group by MBID
+   * @param priorityTier - Optional priority tier (defaults to USER)
    */
-  async getReleaseGroup(mbid: string, includes?: string[]): Promise<any> {
+  async getReleaseGroup(
+    mbid: string,
+    includes?: string[],
+    priorityTier: PriorityTier = PRIORITY_TIERS.USER
+  ): Promise<any> {
     this.ensureInitialized();
     await this.ensureWorkerRunning();
 
@@ -355,8 +413,8 @@ export class QueuedMusicBrainzService {
         JOB_TYPES.MUSICBRAINZ_LOOKUP_RELEASE_GROUP,
         { mbid, includes },
         {
-          priority: 1,
-          requestId: `lookup-release-group-${Date.now()}`,
+          priority: priorityTier,
+          requestId: 'lookup-release-group-' + Date.now(),
         }
       );
 
@@ -370,18 +428,21 @@ export class QueuedMusicBrainzService {
     } catch (error) {
       console.error('Queued MusicBrainz release group lookup error:', error);
       throw new Error(
-        `Failed to lookup release group: ${error instanceof Error ? error.message : 'Unknown error'}`
+        'Failed to lookup release group: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
       );
     }
   }
 
   /**
    * Browse release groups by artist MBID
+   * @param priorityTier - Optional priority tier (defaults to USER)
    */
   async browseReleaseGroupsByArtist(
     artistMbid: string,
     limit = 100,
-    offset = 0
+    offset = 0,
+    priorityTier: PriorityTier = PRIORITY_TIERS.USER
   ): Promise<any> {
     this.ensureInitialized();
     await this.ensureWorkerRunning();
@@ -391,8 +452,8 @@ export class QueuedMusicBrainzService {
         JOB_TYPES.MUSICBRAINZ_BROWSE_RELEASE_GROUPS_BY_ARTIST,
         { artistMbid, limit, offset },
         {
-          priority: 1,
-          requestId: `browse-rg-by-artist-${Date.now()}`,
+          priority: priorityTier,
+          requestId: 'browse-rg-by-artist-' + Date.now(),
         }
       );
 
@@ -401,11 +462,15 @@ export class QueuedMusicBrainzService {
         throw new Error(result.error?.message || 'Browse failed');
       }
       try {
-        const count = Array.isArray(result.data?.['release-groups'])
-          ? result.data['release-groups'].length
-          : (result.data?.count ?? 'unknown');
-        console.log(`🎶 MB browse RG by artist ${artistMbid}: got ${count}`);
-      } catch {}
+        const data = result.data as Record<string, unknown> | undefined;
+        const releaseGroups = data?.['release-groups'];
+        const count = Array.isArray(releaseGroups)
+          ? releaseGroups.length
+          : (data?.count ?? 'unknown');
+        console.log('MB browse RG by artist ' + artistMbid + ': got ' + count);
+      } catch {
+        // Ignore logging errors
+      }
       return result.data;
     } catch (error) {
       console.error(
@@ -413,15 +478,21 @@ export class QueuedMusicBrainzService {
         error
       );
       throw new Error(
-        `Failed to browse release groups: ${error instanceof Error ? error.message : 'Unknown error'}`
+        'Failed to browse release groups: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
       );
     }
   }
 
   /**
    * Get recording by MBID
+   * @param priorityTier - Optional priority tier (defaults to USER)
    */
-  async getRecording(mbid: string, includes?: string[]): Promise<any> {
+  async getRecording(
+    mbid: string,
+    includes?: string[],
+    priorityTier: PriorityTier = PRIORITY_TIERS.USER
+  ): Promise<any> {
     this.ensureInitialized();
     await this.ensureWorkerRunning();
 
@@ -430,8 +501,8 @@ export class QueuedMusicBrainzService {
         JOB_TYPES.MUSICBRAINZ_LOOKUP_RECORDING,
         { mbid, includes },
         {
-          priority: 1,
-          requestId: `lookup-recording-${Date.now()}`,
+          priority: priorityTier,
+          requestId: 'lookup-recording-' + Date.now(),
         }
       );
 
@@ -445,7 +516,8 @@ export class QueuedMusicBrainzService {
     } catch (error) {
       console.error('Queued MusicBrainz recording lookup error:', error);
       throw new Error(
-        `Failed to lookup recording: ${error instanceof Error ? error.message : 'Unknown error'}`
+        'Failed to lookup recording: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
       );
     }
   }
@@ -466,6 +538,82 @@ export class QueuedMusicBrainzService {
    */
   async getQueueMetrics() {
     return await this.queue.getMetrics();
+  }
+
+  /**
+   * Get current queue position for a specific job
+   * Useful for showing "Your request is #3 in queue" in UI
+   * @param jobId - The BullMQ job ID to look up
+   * @returns Position info or null if job not found in queue
+   */
+  async getQueuePosition(jobId: string): Promise<QueuePositionInfo | null> {
+    try {
+      const waiting = await this.queue.getQueue().getWaiting();
+      const active = await this.queue.getQueue().getActive();
+
+      const position = waiting.findIndex(job => job.id === jobId);
+
+      if (position === -1) {
+        // Job not in waiting queue - might be active or completed
+        const isActive = active.some(job => job.id === jobId);
+        if (isActive) {
+          return {
+            position: 0, // Currently processing
+            waitingCount: waiting.length,
+            activeCount: active.length,
+            estimatedWaitMs: 0,
+          };
+        }
+        return null; // Job not found
+      }
+
+      // Position is 1-indexed for user display
+      // Estimated wait = position * 1000ms (1 req/sec rate limit)
+      return {
+        position: position + 1,
+        waitingCount: waiting.length,
+        activeCount: active.length,
+        estimatedWaitMs: (position + 1) * 1000,
+      };
+    } catch (error) {
+      console.error('Failed to get queue position:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get summary of queue state by priority tier
+   * Useful for admin dashboard monitoring and debugging slow responses
+   *
+   * Priority tiers reference (from 01-01):
+   * - ADMIN=1: Highest priority, admin corrections
+   * - USER=5: Normal user requests
+   * - ENRICHMENT=8: Background enrichment
+   * - BACKGROUND=10: Lowest priority background tasks
+   */
+  async getQueueSummary(): Promise<QueueSummary> {
+    const waiting = await this.queue.getQueue().getWaiting();
+
+    const byPriority: Record<number, number> = {};
+    let oldestTimestamp: number | null = null;
+
+    for (const job of waiting) {
+      const priority = job.opts?.priority ?? 0;
+      byPriority[priority] = (byPriority[priority] || 0) + 1;
+
+      if (
+        job.timestamp &&
+        (!oldestTimestamp || job.timestamp < oldestTimestamp)
+      ) {
+        oldestTimestamp = job.timestamp;
+      }
+    }
+
+    return {
+      byPriority,
+      total: waiting.length,
+      oldestJobAge: oldestTimestamp ? Date.now() - oldestTimestamp : null,
+    };
   }
 
   /**
@@ -503,19 +651,17 @@ export class QueuedMusicBrainzService {
 
     // Don't start worker in web process - only in dedicated worker service
     if (process.env.DISABLE_EMBEDDED_WORKER === 'true') {
-      console.log(
-        '⏭️  Embedded worker disabled, using separate worker service'
-      );
+      console.log('Embedded worker disabled, using separate worker service');
       return;
     }
 
     try {
-      console.log('🔧 Starting MusicBrainz queue worker...');
+      console.log('Starting MusicBrainz queue worker...');
       this.worker = this.queue.createWorker(processMusicBrainzJob);
       this.isWorkerRunning = true;
-      console.log('✅ MusicBrainz queue worker started');
+      console.log('MusicBrainz queue worker started');
     } catch (error) {
-      console.error('❌ Failed to start MusicBrainz worker:', error);
+      console.error('Failed to start MusicBrainz worker:', error);
       throw error;
     }
   }
@@ -528,7 +674,7 @@ export class QueuedMusicBrainzService {
       await this.queue.destroyWorker();
       this.worker = null;
       this.isWorkerRunning = false;
-      console.log('✅ MusicBrainz worker stopped');
+      console.log('MusicBrainz worker stopped');
     }
   }
 
@@ -551,29 +697,40 @@ export class QueuedMusicBrainzService {
   private async waitForJobViaEvents(
     jobId: string,
     timeoutMs = 30000
-  ): Promise<any> {
+  ): Promise<{
+    success: boolean;
+    data?: unknown;
+    error?: { message: string };
+  }> {
     return new Promise((resolve, reject) => {
       // Store the promise resolvers so QueueEvents can call them
-      this.pendingJobs.set(jobId, { resolve, reject });
+      this.pendingJobs.set(jobId, {
+        resolve: resolve as (value: unknown) => void,
+        reject,
+      });
 
       // Cleanup after timeout
-      const timeout = setTimeout(() => {
+      setTimeout(() => {
         if (this.pendingJobs.has(jobId)) {
           this.pendingJobs.delete(jobId);
-          reject(new Error(`Job ${jobId} timed out after ${timeoutMs}ms`));
+          reject(
+            new Error('Job ' + jobId + ' timed out after ' + timeoutMs + 'ms')
+          );
         }
       }, timeoutMs);
 
       // Yellow borders for waiting events
-      const border = chalk.yellow('─'.repeat(60));
+      const border = chalk.yellow('-'.repeat(60));
       console.log('\n' + border);
       console.log(
-        `${chalk.bold.yellow('⏳ WAITING FOR JOB')} ${chalk.yellow('[QUEUE EVENTS LAYER]')}`
+        chalk.bold.yellow('WAITING FOR JOB') +
+          ' ' +
+          chalk.yellow('[QUEUE EVENTS LAYER]')
       );
       console.log(border);
-      console.log(`  ${chalk.yellow('Job ID:')} ${chalk.white(jobId)}`);
+      console.log('  ' + chalk.yellow('Job ID:') + ' ' + chalk.white(jobId));
       console.log(
-        `  ${chalk.yellow('Timeout:')} ${chalk.white(timeoutMs + 'ms')}`
+        '  ' + chalk.yellow('Timeout:') + ' ' + chalk.white(timeoutMs + 'ms')
       );
       console.log(border + '\n');
     });
@@ -597,10 +754,10 @@ export class QueuedMusicBrainzService {
    * Graceful shutdown
    */
   async shutdown(): Promise<void> {
-    console.log('🛑 Shutting down MusicBrainz service...');
+    console.log('Shutting down MusicBrainz service...');
 
     // Reject any pending jobs
-    this.pendingJobs.forEach(({ reject }, jobId) => {
+    this.pendingJobs.forEach(({ reject }) => {
       reject(new Error('Service shutting down'));
     });
     this.pendingJobs.clear();
@@ -610,11 +767,11 @@ export class QueuedMusicBrainzService {
       await this.queueEvents.close();
       this.queueEvents = null;
     }
-    console.log('✅ QueueEvents closed');
+    console.log('QueueEvents closed');
 
     await this.stopWorker();
     await this.queue.close();
-    console.log('✅ MusicBrainz service shutdown complete');
+    console.log('MusicBrainz service shutdown complete');
   }
 }
 

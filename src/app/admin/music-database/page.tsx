@@ -1,7 +1,7 @@
 // src/app/admin/music-database/page.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
@@ -32,6 +32,7 @@ import {
   Loader2,
   Eye,
   ExternalLink,
+  Wrench,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -43,7 +44,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ClearableInput } from '@/components/ui/ClearableInput';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -100,8 +101,21 @@ import {
   EnrichmentPriority,
   DataQuality,
 } from '@/generated/graphql';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { CorrectionModal } from '@/components/admin/correction/CorrectionModal';
+import { ArtistCorrectionModal } from '@/components/admin/correction/artist/ArtistCorrectionModal';
 import { EnrichmentLogTable } from '@/components/admin/EnrichmentLogTable';
 import { EnrichmentPreviewResults } from '@/components/admin/EnrichmentPreviewResults';
+import { MusicDatabaseTableSkeleton } from '@/components/admin/MusicDatabaseTableSkeleton';
+import {
+  AlbumExpandedSkeleton,
+  ArtistExpandedSkeleton,
+} from '@/components/admin/MusicDatabaseExpandedSkeleton';
 
 interface AlbumSearchResult {
   id: string;
@@ -109,6 +123,7 @@ interface AlbumSearchResult {
   releaseDate: string | null;
   coverArtUrl: string | null;
   musicbrainzId: string | null;
+  spotifyId: string | null;
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH';
   enrichmentStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
   lastEnriched: string | null;
@@ -128,6 +143,7 @@ interface ArtistSearchResult {
   id: string;
   name: string;
   musicbrainzId: string | null;
+  spotifyId: string | null;
   imageUrl: string | null;
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH';
   enrichmentStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
@@ -216,14 +232,25 @@ export default function MusicDatabasePage() {
     Map<string, PreviewEnrichmentResult>
   >(new Map());
 
+  // Correction modal state
+  const [correctionAlbum, setCorrectionAlbum] =
+    useState<AlbumSearchResult | null>(null);
+
+  // Artist correction modal state
+  const [correctionArtist, setCorrectionArtist] =
+    useState<ArtistSearchResult | null>(null);
+
+  // Ref to track if we've processed the URL target (prevents re-render cascade)
+  const hasProcessedTargetId = useRef(false);
+
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-  // Auto-search and expand target row from URL parameter
+  // Auto-search target row from URL parameter (INITIAL LOAD ONLY)
+  // This only runs on initial page load from a deep link, not during in-session browsing
   useEffect(() => {
-    if (targetId) {
-      // Set the ID search to find this specific album/artist
-      setIdSearch(targetId);
-    }
+    if (!targetId || hasProcessedTargetId.current) return;
+    // Don't set hasProcessedTargetId here - let the auto-expand effect do it after data loads
+    setIdSearch(targetId);
   }, [targetId]);
 
   // Calculate skip for pagination
@@ -419,28 +446,29 @@ export default function MusicDatabasePage() {
     return displayTracks;
   };
 
-  // Auto-expand and scroll to target row ONLY after data is loaded
+  // Auto-expand and scroll to target row ONLY after data is loaded (runs once)
   useEffect(() => {
-    if (!targetId) return;
+    // Skip if no target or already processed (prevents re-render cascade from URL updates)
+    if (!targetId || hasProcessedTargetId.current) return;
 
     // Check if the target ID is in the loaded data
     const allItems = [...albums, ...artists];
     const targetExists = allItems.some((item: any) => item.id === targetId);
 
     // Only proceed if data is loaded and target exists
-    if (
-      targetExists &&
-      !expandedRows.has(targetId) &&
-      !albumsLoading &&
-      !artistsLoading
-    ) {
+    if (targetExists && !albumsLoading && !artistsLoading) {
+      // Mark as processed BEFORE making changes to prevent re-triggers
+      hasProcessedTargetId.current = true;
+
       console.log(
         'Target found in data, expanding and scrolling to:',
         targetId
       );
 
-      // Expand the target row
-      setExpandedRows(prev => new Set(prev).add(targetId));
+      // Only expand if not already expanded
+      if (!expandedRows.has(targetId)) {
+        setExpandedRows(prev => new Set(prev).add(targetId));
+      }
 
       // Use requestAnimationFrame for better timing with DOM updates
       requestAnimationFrame(() => {
@@ -572,7 +600,7 @@ export default function MusicDatabasePage() {
             queryClient.invalidateQueries({
               queryKey: ['GetAlbumDetailsAdmin'],
             }),
-            queryClient.invalidateQueries({ queryKey: ['GetEnrichmentLogs'] }),
+            queryClient.invalidateQueries({ queryKey: ['GetLlamaLogs'] }),
           ]);
         } else {
           throw new Error(
@@ -597,7 +625,7 @@ export default function MusicDatabasePage() {
           await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['SearchArtistsAdmin'] }),
             queryClient.invalidateQueries({ queryKey: ['GetArtistDetails'] }),
-            queryClient.invalidateQueries({ queryKey: ['GetEnrichmentLogs'] }),
+            queryClient.invalidateQueries({ queryKey: ['GetLlamaLogs'] }),
           ]);
         } else {
           throw new Error(
@@ -641,7 +669,7 @@ export default function MusicDatabasePage() {
 
         // Invalidate enrichment logs to show the new PREVIEW log entry
         await queryClient.invalidateQueries({
-          queryKey: ['GetEnrichmentLogs'],
+          queryKey: ['GetLlamaLogs'],
         });
       } else {
         const result = await previewArtistEnrichmentMutation.mutateAsync({
@@ -658,7 +686,7 @@ export default function MusicDatabasePage() {
 
         // Invalidate enrichment logs to show the new PREVIEW log entry
         await queryClient.invalidateQueries({
-          queryKey: ['GetEnrichmentLogs'],
+          queryKey: ['GetLlamaLogs'],
         });
       }
     } catch (error) {
@@ -856,20 +884,10 @@ export default function MusicDatabasePage() {
   const toggleExpanded = (id: string) => {
     setExpandedRows(prev => {
       const newSet = new Set(prev);
-      const isExpanding = !newSet.has(id);
-
       if (newSet.has(id)) {
         newSet.delete(id);
-        // Remove URL params when collapsing
-        window.history.replaceState({}, '', '/admin/music-database');
       } else {
         newSet.add(id);
-        // Update URL params when expanding
-        window.history.replaceState(
-          {},
-          '',
-          `/admin/music-database?id=${id}&type=${activeTab}`
-        );
       }
       return newSet;
     });
@@ -952,12 +970,7 @@ export default function MusicDatabasePage() {
     const albumDetails = data?.album;
 
     if (isLoading) {
-      return (
-        <div className='p-4 text-center text-zinc-400'>
-          <RefreshCcw className='h-5 w-5 animate-spin mx-auto mb-2' />
-          Loading details...
-        </div>
-      );
+      return <AlbumExpandedSkeleton />;
     }
 
     if (error || !albumDetails) {
@@ -971,7 +984,7 @@ export default function MusicDatabasePage() {
     return (
       <div className='p-4 bg-zinc-800/50 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
         {/* Metadata Section */}
-        <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
+        <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
           <div>
             <div className='text-xs text-zinc-500 uppercase mb-1'>
               Database ID
@@ -990,6 +1003,33 @@ export default function MusicDatabasePage() {
           </div>
           <div>
             <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Spotify ID
+            </div>
+            <div className='text-sm text-zinc-300 font-mono text-xs'>
+              {album.spotifyId ? (
+                <a
+                  href={`https://open.spotify.com/album/${album.spotifyId}`}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-green-400 hover:text-green-300 hover:underline'
+                >
+                  {album.spotifyId}
+                </a>
+              ) : (
+                'N/A'
+              )}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Discogs ID
+            </div>
+            <div className='text-sm text-zinc-300 font-mono text-xs'>
+              {albumDetails.discogsId || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
               Release Date
             </div>
             <div className='text-sm text-zinc-300'>
@@ -1002,6 +1042,26 @@ export default function MusicDatabasePage() {
             <div className='text-xs text-zinc-500 uppercase mb-1'>Label</div>
             <div className='text-sm text-zinc-300'>
               {albumDetails.label || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>Genres</div>
+            <div className='text-sm text-zinc-300'>
+              {albumDetails.genres && albumDetails.genres.length > 0 ? (
+                <div className='flex flex-wrap gap-1'>
+                  {albumDetails.genres.map((genre: string) => (
+                    <Badge
+                      key={genre}
+                      variant='secondary'
+                      className='text-xs bg-zinc-700 text-zinc-300'
+                    >
+                      {genre}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                'N/A'
+              )}
             </div>
           </div>
           <div>
@@ -1179,12 +1239,7 @@ export default function MusicDatabasePage() {
     const artistDetails = data?.artist;
 
     if (isLoading) {
-      return (
-        <div className='p-4 text-center text-zinc-400'>
-          <RefreshCcw className='h-5 w-5 animate-spin mx-auto mb-2' />
-          Loading details...
-        </div>
-      );
+      return <ArtistExpandedSkeleton />;
     }
 
     if (error || !artistDetails) {
@@ -1198,7 +1253,7 @@ export default function MusicDatabasePage() {
     return (
       <div className='p-4 bg-zinc-800/50 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
         {/* Metadata Section */}
-        <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
+        <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
           <div>
             <div className='text-xs text-zinc-500 uppercase mb-1'>
               Database ID
@@ -1213,6 +1268,33 @@ export default function MusicDatabasePage() {
             </div>
             <div className='text-sm text-zinc-300 font-mono text-xs'>
               {artistDetails.musicbrainzId || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Spotify ID
+            </div>
+            <div className='text-sm text-zinc-300 font-mono text-xs'>
+              {artist.spotifyId ? (
+                <a
+                  href={`https://open.spotify.com/artist/${artist.spotifyId}`}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-green-400 hover:text-green-300 hover:underline'
+                >
+                  {artist.spotifyId}
+                </a>
+              ) : (
+                'N/A'
+              )}
+            </div>
+          </div>
+          <div>
+            <div className='text-xs text-zinc-500 uppercase mb-1'>
+              Discogs ID
+            </div>
+            <div className='text-sm text-zinc-300 font-mono text-xs'>
+              {artistDetails.discogsId || 'N/A'}
             </div>
           </div>
           <div>
@@ -1477,17 +1559,18 @@ export default function MusicDatabasePage() {
           <div className='space-y-4'>
             <div className='flex gap-2'>
               <div className='relative flex-1'>
-                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 h-4 w-4' />
-                <Input
+                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 h-4 w-4 z-10' />
+                <ClearableInput
                   placeholder={`Search ${activeTab}...`}
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
+                  onClear={() => setSearchQuery('')}
                   className='pl-10 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500'
                 />
               </div>
               <div className='relative flex-1'>
-                <Hash className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 h-4 w-4' />
-                <Input
+                <Hash className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 h-4 w-4 z-10' />
+                <ClearableInput
                   placeholder='Or search by ID...'
                   value={idSearch}
                   onChange={e => {
@@ -1498,6 +1581,7 @@ export default function MusicDatabasePage() {
                       setSearchQuery('');
                     }
                   }}
+                  onClear={() => setIdSearch('')}
                   className='pl-10 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500 font-mono text-sm'
                 />
               </div>
@@ -1718,7 +1802,7 @@ export default function MusicDatabasePage() {
                     <React.Fragment key={album.id}>
                       <TableRow
                         id={`row-${album.id}`}
-                        className='border-b border-zinc-800 hover:bg-zinc-800/10 cursor-pointer transition-colors'
+                        className='border-b border-zinc-800 cursor-pointer hover:bg-transparent'
                         onClick={e => {
                           // Don't toggle if clicking checkbox or action button
                           if (
@@ -1823,87 +1907,116 @@ export default function MusicDatabasePage() {
                           </div>
                         </TableCell>
                         <TableCell onClick={e => e.stopPropagation()}>
-                          {enrichingItems.has(album.id) ? (
-                            <Button
-                              size='sm'
-                              variant='outline'
-                              disabled
-                              className='text-white border-zinc-700 disabled:opacity-70'
-                            >
-                              <Loader2 className='h-3 w-3 mr-1 animate-spin' />
-                              Enriching...
-                            </Button>
-                          ) : (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  size='sm'
-                                  variant='outline'
-                                  disabled={
-                                    album.enrichmentStatus === 'IN_PROGRESS'
-                                  }
-                                  className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
-                                >
-                                  <RefreshCcw className='h-3 w-3 mr-1' />
-                                  Enrich
-                                  <ChevronDown className='h-3 w-3 ml-1' />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent className='bg-zinc-800 border-zinc-700'>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleEnrichItem(album.id, 'album')
-                                  }
-                                  disabled={!album.needsEnrichment}
-                                  className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  <RefreshCcw className='h-3 w-3 mr-2' />
-                                  Enrich
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleEnrichItem(
-                                      album.id,
-                                      'album',
-                                      EnrichmentPriority.High,
-                                      true
-                                    )
-                                  }
-                                  className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  <Zap className='h-3 w-3 mr-2' />
-                                  Force Re-Enrich
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    // Expand the row if not already expanded
-                                    if (!expandedRows.has(album.id)) {
-                                      toggleExpanded(album.id);
+                          <div className='flex items-center gap-2'>
+                            {/* Fix Data button */}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size='icon'
+                                    variant='ghost'
+                                    className={
+                                      album.dataQuality === 'LOW'
+                                        ? 'text-dark-pastel-red hover:text-dark-pastel-red hover:bg-dark-pastel-red/10'
+                                        : 'text-zinc-400 hover:text-zinc-200'
                                     }
-                                    handlePreviewEnrichment(album.id, 'album');
-                                  }}
-                                  disabled={previewingItems.has(album.id)}
-                                  className='text-purple-400 hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  {previewingItems.has(album.id) ? (
-                                    <Loader2 className='h-3 w-3 mr-2 animate-spin' />
-                                  ) : (
-                                    <Eye className='h-3 w-3 mr-2' />
-                                  )}
-                                  Preview Enrichment
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    window.open(`/albums/${album.id}`, '_blank')
-                                  }
-                                  className='text-blue-400 hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  <ExternalLink className='h-3 w-3 mr-2' />
-                                  View Album Page
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                                    onClick={() => setCorrectionAlbum(album)}
+                                  >
+                                    <Wrench className='h-4 w-4' />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Fix album data</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            {/* Enrich dropdown */}
+                            {enrichingItems.has(album.id) ? (
+                              <Button
+                                size='sm'
+                                variant='outline'
+                                disabled
+                                className='text-white border-zinc-700 disabled:opacity-70'
+                              >
+                                <Loader2 className='h-3 w-3 mr-1 animate-spin' />
+                                Enriching...
+                              </Button>
+                            ) : (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    size='sm'
+                                    variant='outline'
+                                    disabled={
+                                      album.enrichmentStatus === 'IN_PROGRESS'
+                                    }
+                                    className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
+                                  >
+                                    <RefreshCcw className='h-3 w-3 mr-1' />
+                                    Enrich
+                                    <ChevronDown className='h-3 w-3 ml-1' />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className='bg-zinc-800 border-zinc-700'>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleEnrichItem(album.id, 'album')
+                                    }
+                                    disabled={!album.needsEnrichment}
+                                    className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    <RefreshCcw className='h-3 w-3 mr-2' />
+                                    Enrich
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleEnrichItem(
+                                        album.id,
+                                        'album',
+                                        EnrichmentPriority.High,
+                                        true
+                                      )
+                                    }
+                                    className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    <Zap className='h-3 w-3 mr-2' />
+                                    Force Re-Enrich
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      // Expand the row if not already expanded
+                                      if (!expandedRows.has(album.id)) {
+                                        toggleExpanded(album.id);
+                                      }
+                                      handlePreviewEnrichment(
+                                        album.id,
+                                        'album'
+                                      );
+                                    }}
+                                    disabled={previewingItems.has(album.id)}
+                                    className='text-purple-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    {previewingItems.has(album.id) ? (
+                                      <Loader2 className='h-3 w-3 mr-2 animate-spin' />
+                                    ) : (
+                                      <Eye className='h-3 w-3 mr-2' />
+                                    )}
+                                    Preview Enrichment
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      window.open(
+                                        `/albums/${album.id}`,
+                                        '_blank'
+                                      )
+                                    }
+                                    className='text-blue-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    <ExternalLink className='h-3 w-3 mr-2' />
+                                    View Album Page
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                       {expandedRows.has(album.id) && (
@@ -1920,9 +2033,12 @@ export default function MusicDatabasePage() {
                   ))}
                 </TableBody>
               </Table>
-              {displayAlbums.length === 0 && !loading && (
+              {albumsLoading && (
+                <MusicDatabaseTableSkeleton type='albums' rows={10} />
+              )}
+              {displayAlbums.length === 0 && !albumsLoading && (
                 <div className='text-center py-8 text-zinc-500'>
-                  {searchQuery ? 'No albums found' : 'Loading albums...'}
+                  No albums found
                 </div>
               )}
             </CardContent>
@@ -1962,7 +2078,7 @@ export default function MusicDatabasePage() {
                     <React.Fragment key={artist.id}>
                       <TableRow
                         id={`row-${artist.id}`}
-                        className='border-b border-zinc-800 hover:bg-zinc-800/10 cursor-pointer transition-colors'
+                        className='border-b border-zinc-800 cursor-pointer hover:bg-transparent'
                         onClick={e => {
                           // Don't toggle if clicking checkbox or action button
                           if (
@@ -2037,93 +2153,115 @@ export default function MusicDatabasePage() {
                           </div>
                         </TableCell>
                         <TableCell onClick={e => e.stopPropagation()}>
-                          {enrichingItems.has(artist.id) ? (
-                            <Button
-                              size='sm'
-                              variant='outline'
-                              disabled
-                              className='text-white border-zinc-700 disabled:opacity-70'
-                            >
-                              <Loader2 className='h-3 w-3 mr-1 animate-spin' />
-                              Enriching...
-                            </Button>
-                          ) : (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  size='sm'
-                                  variant='outline'
-                                  disabled={
-                                    artist.enrichmentStatus === 'IN_PROGRESS'
-                                  }
-                                  className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
-                                >
-                                  <RefreshCcw className='h-3 w-3 mr-1' />
-                                  Enrich
-                                  <ChevronDown className='h-3 w-3 ml-1' />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent className='bg-zinc-800 border-zinc-700'>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleEnrichItem(artist.id, 'artist')
-                                  }
-                                  disabled={!artist.needsEnrichment}
-                                  className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  <RefreshCcw className='h-3 w-3 mr-2' />
-                                  Enrich
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleEnrichItem(
-                                      artist.id,
-                                      'artist',
-                                      EnrichmentPriority.High,
-                                      true
-                                    )
-                                  }
-                                  className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  <Zap className='h-3 w-3 mr-2' />
-                                  Force Re-Enrich
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    // Expand the row if not already expanded
-                                    if (!expandedRows.has(artist.id)) {
-                                      toggleExpanded(artist.id);
+                          <div className='flex items-center gap-1'>
+                            {/* Fix Data button */}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size='icon'
+                                    variant='ghost'
+                                    className={
+                                      artist.dataQuality === 'LOW'
+                                        ? 'text-dark-pastel-red hover:text-dark-pastel-red hover:bg-dark-pastel-red/10'
+                                        : 'text-zinc-400 hover:text-zinc-200'
                                     }
-                                    handlePreviewEnrichment(
-                                      artist.id,
-                                      'artist'
-                                    );
-                                  }}
-                                  disabled={previewingItems.has(artist.id)}
-                                  className='text-purple-400 hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  {previewingItems.has(artist.id) ? (
-                                    <Loader2 className='h-3 w-3 mr-2 animate-spin' />
-                                  ) : (
-                                    <Eye className='h-3 w-3 mr-2' />
-                                  )}
-                                  Preview Enrichment
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    window.open(
-                                      `/artists/${artist.id}`,
-                                      '_blank'
-                                    )
-                                  }
-                                  className='text-blue-400 hover:bg-zinc-700 focus:bg-zinc-700'
-                                >
-                                  <ExternalLink className='h-3 w-3 mr-2' />
-                                  View Artist Page
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                                    onClick={() => setCorrectionArtist(artist)}
+                                  >
+                                    <Wrench className='h-4 w-4' />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Fix artist data</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            {enrichingItems.has(artist.id) ? (
+                              <Button
+                                size='sm'
+                                variant='outline'
+                                disabled
+                                className='text-white border-zinc-700 disabled:opacity-70'
+                              >
+                                <Loader2 className='h-3 w-3 mr-1 animate-spin' />
+                                Enriching...
+                              </Button>
+                            ) : (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    size='sm'
+                                    variant='outline'
+                                    disabled={
+                                      artist.enrichmentStatus === 'IN_PROGRESS'
+                                    }
+                                    className='text-white border-zinc-700 hover:bg-zinc-700 disabled:opacity-50'
+                                  >
+                                    <RefreshCcw className='h-3 w-3 mr-1' />
+                                    Enrich
+                                    <ChevronDown className='h-3 w-3 ml-1' />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className='bg-zinc-800 border-zinc-700'>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleEnrichItem(artist.id, 'artist')
+                                    }
+                                    disabled={!artist.needsEnrichment}
+                                    className='text-white hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    <RefreshCcw className='h-3 w-3 mr-2' />
+                                    Enrich
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleEnrichItem(
+                                        artist.id,
+                                        'artist',
+                                        EnrichmentPriority.High,
+                                        true
+                                      )
+                                    }
+                                    className='text-orange-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    <Zap className='h-3 w-3 mr-2' />
+                                    Force Re-Enrich
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      // Expand the row if not already expanded
+                                      if (!expandedRows.has(artist.id)) {
+                                        toggleExpanded(artist.id);
+                                      }
+                                      handlePreviewEnrichment(
+                                        artist.id,
+                                        'artist'
+                                      );
+                                    }}
+                                    disabled={previewingItems.has(artist.id)}
+                                    className='text-purple-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    {previewingItems.has(artist.id) ? (
+                                      <Loader2 className='h-3 w-3 mr-2 animate-spin' />
+                                    ) : (
+                                      <Eye className='h-3 w-3 mr-2' />
+                                    )}
+                                    Preview Enrichment
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      window.open(
+                                        `/artists/${artist.id}`,
+                                        '_blank'
+                                      )
+                                    }
+                                    className='text-blue-400 hover:bg-zinc-700 focus:bg-zinc-700'
+                                  >
+                                    <ExternalLink className='h-3 w-3 mr-2' />
+                                    View Artist Page
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                       {expandedRows.has(artist.id) && (
@@ -2131,7 +2269,7 @@ export default function MusicDatabasePage() {
                           key={`${artist.id}-expanded`}
                           className='hover:bg-transparent'
                         >
-                          <TableCell colSpan={8} className='p-0 border-none'>
+                          <TableCell colSpan={9} className='p-0 border-none'>
                             <ArtistExpandedContent artist={artist} />
                           </TableCell>
                         </TableRow>
@@ -2140,9 +2278,12 @@ export default function MusicDatabasePage() {
                   ))}
                 </TableBody>
               </Table>
-              {displayArtists.length === 0 && !loading && (
+              {artistsLoading && (
+                <MusicDatabaseTableSkeleton type='artists' rows={10} />
+              )}
+              {displayArtists.length === 0 && !artistsLoading && (
                 <div className='text-center py-8 text-zinc-500'>
-                  {searchQuery ? 'No artists found' : 'Loading artists...'}
+                  No artists found
                 </div>
               )}
             </CardContent>
@@ -2169,7 +2310,7 @@ export default function MusicDatabasePage() {
                   {displayTracks.map((track: any) => (
                     <TableRow
                       key={track.id}
-                      className='border-b border-zinc-800 hover:bg-zinc-800/50'
+                      className='border-b border-zinc-800 hover:bg-transparent'
                     >
                       <TableCell>
                         <div className='font-medium text-white'>
@@ -2212,9 +2353,12 @@ export default function MusicDatabasePage() {
                   ))}
                 </TableBody>
               </Table>
-              {displayTracks.length === 0 && !loading && (
+              {tracksLoading && (
+                <MusicDatabaseTableSkeleton type='tracks' rows={10} />
+              )}
+              {displayTracks.length === 0 && !tracksLoading && (
                 <div className='text-center py-8 text-zinc-500'>
-                  {searchQuery ? 'No tracks found' : 'Loading tracks...'}
+                  No tracks found
                 </div>
               )}
             </CardContent>
@@ -2442,6 +2586,26 @@ export default function MusicDatabasePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Correction Modal - only render when correctionAlbum exists */}
+      {correctionAlbum && (
+        <CorrectionModal
+          albumId={correctionAlbum.id}
+          onClose={() => setCorrectionAlbum(null)}
+        />
+      )}
+
+      {/* Artist Correction Modal - only render when correctionArtist exists */}
+      {correctionArtist && (
+        <ArtistCorrectionModal
+          artist={correctionArtist}
+          onClose={() => setCorrectionArtist(null)}
+          onSuccess={() => {
+            refetchArtists();
+            setCorrectionArtist(null);
+          }}
+        />
+      )}
     </div>
   );
 }

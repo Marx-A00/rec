@@ -1,0 +1,126 @@
+query GetCorrectionPreview($input: CorrectionPreviewInput!) {
+  correctionPreview(input: $input) {
+    albumId
+    albumTitle
+    albumUpdatedAt
+    sourceResult {
+      releaseGroupMbid
+      title
+      disambiguation
+      artistCredits {
+        mbid
+        name
+      }
+      primaryArtistName
+      firstReleaseDate
+      primaryType
+      secondaryTypes
+      mbScore
+      coverArtUrl
+      source
+      normalizedScore
+      displayScore
+      breakdown {
+        titleScore
+        artistScore
+        yearScore
+        mbScore
+        confidenceTier
+      }
+      isLowConfidence
+    }
+    mbReleaseData {
+      id
+      title
+      date
+      country
+      barcode
+      media {
+        position
+        format
+        trackCount
+        tracks {
+          position
+          recording {
+            id
+            title
+            length
+            position
+          }
+        }
+      }
+      artistCredit {
+        name
+        joinphrase
+        artist {
+          id
+          name
+          sortName
+          disambiguation
+        }
+      }
+    }
+    fieldDiffs
+    artistDiff {
+      changeType
+      current {
+        mbid
+        name
+      }
+      source {
+        mbid
+        name
+      }
+      currentDisplay
+      sourceDisplay
+      nameDiff {
+        value
+        added
+        removed
+      }
+    }
+    trackDiffs {
+      position
+      discNumber
+      changeType
+      current {
+        title
+        durationMs
+        trackNumber
+      }
+      source {
+        title
+        durationMs
+        mbid
+      }
+      titleDiff {
+        value
+        added
+        removed
+      }
+      durationDelta
+      trackId
+    }
+    trackSummary {
+      totalCurrent
+      totalSource
+      matching
+      modified
+      added
+      removed
+    }
+    coverArt {
+      changeType
+      currentUrl
+      sourceUrl
+    }
+    summary {
+      totalFields
+      changedFields
+      addedFields
+      modifiedFields
+      conflictFields
+      hasTrackChanges
+    }
+  }
+}

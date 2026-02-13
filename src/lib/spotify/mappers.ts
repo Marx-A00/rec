@@ -8,6 +8,7 @@ import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { Prisma } from '@prisma/client';
 
 import { createSpotifySyncMetadata } from '@/types/album-metadata';
+import { createLlamaLogger } from '@/lib/logging/llama-logger';
 
 import { prisma } from '../prisma';
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
@@ -226,13 +227,32 @@ export function transformSpotifyArtist(
 }
 
 /**
- * Find or create artist with deduplication logic (reuses existing pattern)
+ * Find or create artist with deduplication logic
+ *
+ * Search priority:
+ * 1. By spotifyId (most reliable - unique identifier from Spotify)
+ * 2. By name (case-insensitive fallback)
+ * 3. Create new if neither match
+ *
+ * This prevents duplicate artist records when Spotify returns slightly
+ * different names for the same artist (e.g., "Disney" vs "[Disney]")
  */
 export async function findOrCreateArtist(
   artistData: ArtistCreationData
 ): Promise<string> {
-  // Search for existing artist by name (case-insensitive)
-  const existingArtist = await prisma.artist.findFirst({
+  // 1. First, search by spotifyId if provided (most reliable match)
+  if (artistData.spotifyId) {
+    const existingBySpotifyId = await prisma.artist.findUnique({
+      where: { spotifyId: artistData.spotifyId },
+    });
+
+    if (existingBySpotifyId) {
+      return existingBySpotifyId.id;
+    }
+  }
+
+  // 2. Fallback: search by name (case-insensitive)
+  const existingByName = await prisma.artist.findFirst({
     where: {
       name: {
         equals: artistData.name,
@@ -241,26 +261,30 @@ export async function findOrCreateArtist(
     },
   });
 
-  if (existingArtist) {
-    console.log(
-      `🔄 Reusing existing artist: "${existingArtist.name}" (${existingArtist.id})`
-    );
-    return existingArtist.id;
+  if (existingByName) {
+    // Update spotifyId if we have one and the existing record doesn't
+    if (artistData.spotifyId && !existingByName.spotifyId) {
+      await prisma.artist.update({
+        where: { id: existingByName.id },
+        data: { spotifyId: artistData.spotifyId },
+      });
+    }
+
+    return existingByName.id;
   }
 
-  // Create new artist
+  // 3. Create new artist (no match found)
   const newArtist = await prisma.artist.create({
     data: {
       name: artistData.name,
-      spotifyId: artistData.spotifyId, // CRITICAL: Prevents duplicate artists
-      source: 'SPOTIFY', // CRITICAL: Mark source as Spotify, not MusicBrainz
+      spotifyId: artistData.spotifyId,
+      source: 'SPOTIFY',
       dataQuality: artistData.dataQuality,
       enrichmentStatus: artistData.enrichmentStatus,
       lastEnriched: artistData.lastEnriched,
     },
   });
 
-  console.log(`✨ Created new artist: "${newArtist.name}" (${newArtist.id})`);
   return newArtist.id;
 }
 
@@ -314,6 +338,43 @@ export async function processSpotifyAlbum(
   });
 
   console.log(`✅ Created album: "${album.title}" (${album.id})`);
+
+  // Log album creation to LlamaLog (after DB commit)
+  const logger = createLlamaLogger(prisma);
+  try {
+    await logger.logEnrichment({
+      entityType: 'ALBUM',
+      entityId: album.id,
+      operation: 'album:created:spotify-sync',
+      category: 'CREATED',
+      sources: ['SPOTIFY'],
+      status: 'SUCCESS',
+      fieldsEnriched: [
+        'title',
+        'releaseDate',
+        'releaseType',
+        'trackCount',
+        'coverArtUrl',
+        'spotifyId',
+        'spotifyUrl',
+      ],
+      dataQualityAfter: albumData.dataQuality,
+      jobId: metadataOptions?.jobId || `spotify-album-${album.id}`,
+      parentJobId: metadataOptions?.batchId || metadataOptions?.jobId,
+      isRootJob: false, // Child of sync batch
+      metadata: {
+        syncSource: source,
+        syncTimestamp: new Date().toISOString(),
+        query: metadataOptions?.query,
+        country: metadataOptions?.country,
+      },
+    });
+  } catch (logError) {
+    console.warn(
+      `[LlamaLogger] Failed to log Spotify album creation for ${album.id}:`,
+      logError
+    );
+  }
 
   // 3. Tracks will be created later by MusicBrainz enrichment (not from Spotify)
   console.log(
@@ -530,8 +591,9 @@ export async function processCachedSpotifyData(
 
 /**
  * Fetch tracks for a Spotify album using the Spotify API
+ * Used as fallback when MusicBrainz enrichment fails to find tracks
  */
-async function fetchSpotifyAlbumTracks(
+export async function fetchSpotifyAlbumTracks(
   albumId: string
 ): Promise<SpotifyTrackData[]> {
   try {
@@ -621,7 +683,11 @@ export function transformSpotifyTrack(
  * Create track records in database from TrackCreationData
  */
 export async function createTrackRecord(
-  trackData: TrackCreationData
+  trackData: TrackCreationData,
+  jobContext?: {
+    parentJobId?: string | null;
+    rootJobId?: string | null;
+  }
 ): Promise<string> {
   // Create the track record
   const track = await prisma.track.create({
@@ -654,6 +720,41 @@ export async function createTrackRecord(
     });
   }
 
+  // Log track creation to LlamaLog
+  const llamaLogger = createLlamaLogger(prisma);
+  const trackJobId = `track-${track.id}`;
+  try {
+    await llamaLogger.logEnrichment({
+      entityType: 'TRACK',
+      entityId: track.id,
+      operation: 'track:created:spotify-sync',
+      category: 'CREATED',
+      sources: ['SPOTIFY'],
+      status: 'SUCCESS',
+      fieldsEnriched: [
+        'title',
+        'trackNumber',
+        'discNumber',
+        'durationMs',
+        'spotifyId',
+        'explicit',
+        'previewUrl',
+      ],
+      jobId: trackJobId,
+      parentJobId: jobContext?.parentJobId || null,
+      rootJobId: jobContext?.rootJobId || null,
+      isRootJob: false,
+      dataQualityAfter: 'LOW',
+      metadata: {
+        albumId: trackData.albumId,
+        trackNumber: trackData.trackNumber,
+        spotifyId: trackData.spotifyId,
+      },
+    });
+  } catch (err) {
+    console.warn('[LlamaLog] Failed to log track creation:', err);
+  }
+
   return track.id;
 }
 
@@ -663,7 +764,11 @@ export async function createTrackRecord(
 export async function processSpotifyTracks(
   spotifyTracks: SpotifyTrackData[],
   albumId: string,
-  artistIdMap: Map<string, string>
+  artistIdMap: Map<string, string>,
+  jobContext?: {
+    parentJobId?: string | null;
+    rootJobId?: string | null;
+  }
 ): Promise<{
   tracksCreated: number;
   trackIds: string[];
@@ -686,7 +791,7 @@ export async function processSpotifyTracks(
       );
 
       // Create track record
-      const trackId = await createTrackRecord(trackData);
+      const trackId = await createTrackRecord(trackData, jobContext);
       trackIds.push(trackId);
 
       // Queue track enrichment job

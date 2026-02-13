@@ -5,7 +5,7 @@ import { MusicBrainzApi } from 'musicbrainz-api';
 const mbApi = new MusicBrainzApi({
   appName: 'RecApp',
   appVersion: '1.0.0',
-  appContactInfo: 'contact@rec-app.com', // Replace with your actual contact
+  appContactInfo: 'marcos.andrade.dev@gmail.com',
 });
 
 export interface ArtistSearchResult {
@@ -58,6 +58,58 @@ export interface RecordingSearchResult {
   }>;
   isrcs?: string[];
   score: number;
+}
+
+export interface ReleaseSearchResult {
+  id: string;
+  title: string;
+  disambiguation?: string;
+  status?: string;
+  packaging?: string;
+  date?: string;
+  country?: string;
+  barcode?: string;
+  trackCount?: number;
+  releaseGroup?: {
+    id: string;
+    title: string;
+    primaryType?: string;
+  };
+  artistCredit?: Array<{
+    name: string;
+    artist: {
+      id: string;
+      name: string;
+    };
+  }>;
+  media?: Array<{
+    format?: string;
+    trackCount: number;
+  }>;
+  score: number;
+}
+
+export interface ReleaseBrowseResult {
+  id: string;
+  title: string;
+  disambiguation?: string;
+  status?: string;
+  date?: string;
+  country?: string;
+  barcode?: string;
+  trackCount?: number;
+  media?: Array<{
+    format?: string;
+    position: number;
+    trackCount: number;
+    tracks?: Array<{
+      id: string;
+      number: string;
+      title: string;
+      length?: number;
+      position: number;
+    }>;
+  }>;
 }
 
 export class MusicBrainzService {
@@ -345,6 +397,116 @@ export class MusicBrainzService {
       console.error('MusicBrainz recording search error:', error);
       throw new Error(
         `Failed to search recordings: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Search for releases (specific editions/versions of albums)
+   * Unlike release-groups which are abstract album concepts, releases are
+   * specific editions like "Deluxe Edition", "10th Anniversary Edition", etc.
+   */
+  async searchReleases(
+    query: string,
+    limit = 25,
+    offset = 0
+  ): Promise<ReleaseSearchResult[]> {
+    try {
+      const response = await this.api.search('release', {
+        query,
+        limit,
+        offset,
+        inc: ['artist-credits', 'release-groups', 'media'] as any,
+      });
+
+      return (
+        response.releases?.map(release => ({
+          id: release.id,
+          title: release.title,
+          disambiguation: release.disambiguation,
+          status: release.status,
+          packaging: release.packaging,
+          date: release.date,
+          country: release.country,
+          barcode: release.barcode,
+          trackCount: release['track-count'],
+          releaseGroup: release['release-group']
+            ? {
+                id: release['release-group'].id,
+                title: release['release-group'].title,
+                primaryType: release['release-group']['primary-type'],
+              }
+            : undefined,
+          artistCredit: release['artist-credit']?.map(ac => ({
+            name: ac.name,
+            artist: {
+              id: ac.artist.id,
+              name: ac.artist.name,
+            },
+          })),
+          media: release.media?.map(m => ({
+            format: m.format,
+            trackCount: m['track-count'],
+          })),
+          score: release.score || 0,
+        })) || []
+      );
+    } catch (error) {
+      console.error('MusicBrainz release search error:', error);
+      throw new Error(
+        `Failed to search releases: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Browse all releases under a release-group
+   * Useful for finding all editions of an album (standard, deluxe, anniversary, etc.)
+   */
+  async getReleaseGroupReleases(
+    releaseGroupId: string,
+    limit = 50,
+    offset = 0
+  ): Promise<ReleaseBrowseResult[]> {
+    try {
+      const response = await (this.api as any).browse('release', {
+        'release-group': releaseGroupId,
+        limit,
+        offset,
+        inc: ['recordings', 'media'],
+      });
+
+      return (
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        response.releases?.map((release: any) => ({
+          id: release.id,
+          title: release.title,
+          disambiguation: release.disambiguation,
+          status: release.status,
+          date: release.date,
+          country: release.country,
+          barcode: release.barcode,
+          trackCount: release['track-count'],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          media: release.media?.map((m: any) => ({
+            format: m.format,
+            position: m.position,
+            trackCount: m['track-count'],
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            tracks: m.tracks?.map((t: any) => ({
+              id: t.id,
+              number: t.number,
+              title: t.title,
+              length: t.length,
+              position: t.position,
+            })),
+          })),
+        })) || []
+      );
+    } catch (error) {
+      console.error('MusicBrainz browse release-group releases error:', error);
+      throw new Error(
+        `Failed to browse release-group releases: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }

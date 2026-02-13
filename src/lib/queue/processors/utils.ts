@@ -4,9 +4,50 @@
  */
 
 import { calculateStringSimilarity as fuzzyMatch } from '../../utils/string-similarity';
+import {
+  MusicBrainzApiError,
+  isMusicBrainzApiError,
+  toMusicBrainzApiError,
+  type MusicBrainzErrorCode,
+} from '../../musicbrainz/errors';
 
 // Re-export for use in processors
 export const calculateStringSimilarity = fuzzyMatch;
+// Re-export structured error utilities for processors
+export {
+  MusicBrainzApiError,
+  isMusicBrainzApiError,
+  toMusicBrainzApiError,
+  type MusicBrainzErrorCode,
+};
+
+/**
+ * Structured error result for job processing
+ * Provides consistent error format for UI interpretation
+ */
+export interface StructuredJobError {
+  message: string;
+  code: MusicBrainzErrorCode;
+  retryable: boolean;
+  retryAfterMs?: number;
+}
+
+/**
+ * Convert any error to a structured job error
+ * This ensures all job results have consistent error structure
+ * that the UI can interpret for admin correction workflow
+ */
+export function toStructuredJobError(error: unknown): StructuredJobError {
+  // Convert to MusicBrainzApiError to get structured properties
+  const apiError = toMusicBrainzApiError(error);
+
+  return {
+    message: apiError.message,
+    code: apiError.code,
+    retryable: apiError.retryable,
+    retryAfterMs: apiError.retryAfterMs,
+  };
+}
 
 // ============================================================================
 // Album Matching Utilities
@@ -264,6 +305,98 @@ export function findMatchingTrack(
   }
 
   return bestMatch;
+}
+
+// ============================================================================
+// Release Matching Utilities (for edition/version albums)
+// ============================================================================
+
+import type { ReleaseBrowseResult } from '../../musicbrainz/basic-service';
+
+/**
+ * Find the best matching release from a release-group's releases
+ * Used when searching for edition/version albums (e.g., "Deluxe Edition")
+ *
+ * @param releases - Array of releases from getReleaseGroupReleases()
+ * @param targetTitle - The album title we're trying to match (with edition suffix)
+ * @returns The best matching release or null if no good match found
+ */
+export function findBestReleaseMatch(
+  releases: ReleaseBrowseResult[],
+  targetTitle: string
+): { release: ReleaseBrowseResult; score: number } | null {
+  if (!releases || releases.length === 0) return null;
+
+  const normalizedTarget = targetTitle.toLowerCase().trim();
+  let bestMatch: { release: ReleaseBrowseResult; score: number } | null = null;
+  let bestScore = 0;
+
+  for (const release of releases) {
+    const normalizedRelease = release.title.toLowerCase().trim();
+
+    // Calculate title similarity
+    const titleSimilarity = calculateStringSimilarity(
+      normalizedTarget,
+      normalizedRelease
+    );
+
+    // Exact match gets highest score
+    if (normalizedTarget === normalizedRelease) {
+      return { release, score: 1.0 };
+    }
+
+    // Check if target title contains or is contained by release title
+    let containmentBonus = 0;
+    if (
+      normalizedTarget.includes(normalizedRelease) ||
+      normalizedRelease.includes(normalizedTarget)
+    ) {
+      containmentBonus = 0.1;
+    }
+
+    // Prefer official releases
+    let statusBonus = 0;
+    if (release.status?.toLowerCase() === 'official') {
+      statusBonus = 0.05;
+    }
+
+    // Prefer releases with tracks (have media with track data)
+    let trackDataBonus = 0;
+    if (release.media?.some(m => m.tracks && m.tracks.length > 0)) {
+      trackDataBonus = 0.1;
+    }
+
+    const combinedScore =
+      titleSimilarity + containmentBonus + statusBonus + trackDataBonus;
+
+    if (combinedScore > bestScore) {
+      bestScore = combinedScore;
+      bestMatch = { release, score: combinedScore };
+    }
+  }
+
+  // Only return matches with reasonable confidence (70%+)
+  return bestMatch && bestMatch.score >= 0.7 ? bestMatch : null;
+}
+
+/**
+ * Build a search query for release search (not release-group)
+ * Used for finding specific editions/versions
+ */
+export function buildReleaseSearchQuery(
+  title: string,
+  artistName?: string
+): string {
+  let query = `release:"${title}"`;
+
+  if (artistName) {
+    query += ` AND artist:"${artistName}"`;
+  }
+
+  // Only include official releases
+  query += ` AND status:official`;
+
+  return query;
 }
 
 // ============================================================================

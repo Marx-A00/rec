@@ -1,8 +1,17 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Search, X, Clock, Music, User, Building2, Trash2 } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import {
+  Search,
+  X,
+  Clock,
+  Music,
+  User,
+  Building2,
+  Trash2,
+  Loader2,
+} from 'lucide-react';
 import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -65,6 +74,7 @@ interface RecentSearch {
 
 export default function MobileSearchPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const urlQuery = searchParams.get('q') || '';
   const urlType = searchParams.get('type') || 'albums';
 
@@ -72,6 +82,8 @@ export default function MobileSearchPage() {
   const [searchMode, setSearchMode] = useState<SearchMode>(
     urlQuery ? 'LOCAL_AND_EXTERNAL' : 'LOCAL_ONLY'
   );
+  // Track which result is currently being navigated to
+  const [navigatingId, setNavigatingId] = useState<string | null>(null);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -139,6 +151,16 @@ export default function MobileSearchPage() {
       return updated;
     });
   }, []);
+
+  // Handle result click with loading state
+  const handleResultClick = useCallback(
+    (result: UnifiedSearchResult) => {
+      setNavigatingId(result.id);
+      saveRecentSearch(urlQuery);
+      router.push(getResultPath(result));
+    },
+    [router, saveRecentSearch, urlQuery]
+  );
 
   // Map URL type to entity types for search
   const getEntityTypes = () => {
@@ -294,12 +316,17 @@ export default function MobileSearchPage() {
             </h2>
             <div className='space-y-2'>
               {results.map(result => (
-                <Link
+                <button
                   key={`${result.type}-${result.id}`}
-                  href={getResultPath(result)}
-                  onClick={() => saveRecentSearch(urlQuery)}
-                  className='flex items-center gap-3 p-3 bg-zinc-900 rounded-lg border border-zinc-800 active:scale-[0.98] transition-transform'
+                  onClick={() => handleResultClick(result)}
+                  disabled={navigatingId !== null}
+                  className='relative w-full flex items-center gap-3 p-3 bg-zinc-900 rounded-lg border border-zinc-800 active:scale-[0.98] transition-transform text-left disabled:cursor-wait'
                 >
+                  {navigatingId === result.id && (
+                    <div className='absolute inset-0 bg-zinc-900/80 rounded-lg flex items-center justify-center z-10'>
+                      <Loader2 className='h-5 w-5 text-white animate-spin' />
+                    </div>
+                  )}
                   {/* Image */}
                   <div className='w-12 h-12 flex-shrink-0 rounded-md overflow-hidden'>
                     <AlbumImage
@@ -337,7 +364,7 @@ export default function MobileSearchPage() {
                   >
                     {result.type}
                   </span>
-                </Link>
+                </button>
               ))}
             </div>
           </section>

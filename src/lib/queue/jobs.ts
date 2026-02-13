@@ -39,9 +39,33 @@ export const JOB_TYPES = {
   // Discogs Jobs
   DISCOGS_SEARCH_ARTIST: 'discogs:search-artist',
   DISCOGS_GET_ARTIST: 'discogs:get-artist',
+  DISCOGS_SEARCH_ALBUM: 'discogs:search-album',
+  DISCOGS_GET_MASTER: 'discogs:get-master',
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
+
+// ============================================================================
+// Priority Tiers
+// ============================================================================
+
+/**
+ * Semantic priority tiers for job scheduling
+ * Lower number = higher priority (BullMQ convention)
+ *
+ * ADMIN: Admin UI corrections - highest priority (immediate feedback)
+ * USER: User-initiated searches (recommendations, collections)
+ * ENRICHMENT: Background enrichment jobs (album/artist data)
+ * BACKGROUND: Scheduled syncs, bulk operations
+ */
+export const PRIORITY_TIERS = {
+  ADMIN: 1,
+  USER: 5,
+  ENRICHMENT: 8,
+  BACKGROUND: 10,
+} as const;
+
+export type PriorityTier = (typeof PRIORITY_TIERS)[keyof typeof PRIORITY_TIERS];
 
 // ============================================================================
 // Job Data Interfaces
@@ -113,6 +137,8 @@ export interface CheckAlbumEnrichmentJobData {
   priority?: 'low' | 'medium' | 'high';
   force?: boolean;
   requestId?: string;
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string;
 }
 
 export interface CheckArtistEnrichmentJobData {
@@ -128,6 +154,8 @@ export interface CheckArtistEnrichmentJobData {
   priority?: 'low' | 'medium' | 'high';
   force?: boolean;
   requestId?: string;
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string;
 }
 
 export interface CheckTrackEnrichmentJobData {
@@ -141,6 +169,8 @@ export interface CheckTrackEnrichmentJobData {
     | 'spotify_sync';
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string;
 }
 
 export interface EnrichAlbumJobData {
@@ -156,6 +186,8 @@ export interface EnrichAlbumJobData {
     | 'spotify_sync'
     | 'admin_manual';
   requestId?: string;
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string;
 }
 
 export interface EnrichArtistJobData {
@@ -171,6 +203,8 @@ export interface EnrichArtistJobData {
     | 'spotify_sync'
     | 'admin_manual';
   requestId?: string;
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string;
 }
 
 export interface EnrichTrackJobData {
@@ -184,6 +218,8 @@ export interface EnrichTrackJobData {
     | 'manual'
     | 'spotify_sync';
   requestId?: string;
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string;
 }
 
 // ============================================================================
@@ -263,12 +299,16 @@ export interface CacheAlbumCoverArtJobData {
   albumId: string;
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string;
 }
 
 export interface CacheArtistImageJobData {
   artistId: string;
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string;
 }
 
 // ============================================================================
@@ -278,14 +318,37 @@ export interface CacheArtistImageJobData {
 export interface DiscogsSearchArtistJobData {
   artistId: string; // Local database artist ID
   artistName: string; // Name to search for
-  musicbrainzData?: any; // Optional MB data for better matching
+  musicbrainzData?: unknown; // Optional MB data for better matching
   requestId?: string;
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string;
 }
 
 export interface DiscogsGetArtistJobData {
   artistId: string; // Local database artist ID
   discogsId: string; // Discogs artist ID to fetch
   requestId?: string;
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string;
+}
+
+export interface DiscogsSearchAlbumJobData {
+  albumId: string; // Local database album ID (for logging)
+  albumTitle?: string; // Album title to search
+  artistName?: string; // Artist name filter (optional)
+  limit?: number; // Results per page (default 10)
+  requestId?: string; // Request tracking
+  /** Parent job ID for job chain tracking (root job ID in flat structure) */
+  parentJobId?: string;
+}
+
+export interface DiscogsGetMasterJobData {
+  /** Discogs master ID to fetch */
+  masterId: string;
+  /** Request ID for tracking */
+  requestId?: string;
+  /** Parent job ID for job linking */
+  parentJobId?: string;
 }
 
 // ============================================================================
@@ -314,13 +377,15 @@ export type MusicBrainzJobData =
   | CacheAlbumCoverArtJobData
   | CacheArtistImageJobData
   | DiscogsSearchArtistJobData
-  | DiscogsGetArtistJobData;
+  | DiscogsGetArtistJobData
+  | DiscogsSearchAlbumJobData
+  | DiscogsGetMasterJobData;
 
 // ============================================================================
 // Job Result Interfaces
 // ============================================================================
 
-export interface JobResult<T = any> {
+export interface JobResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: {

@@ -4,7 +4,7 @@
  * Determines when MusicBrainz enrichment is needed based on data quality and recency
  */
 
-import { EnrichmentLogger } from '@/lib/enrichment/enrichment-logger';
+import { LlamaLogger } from '@/lib/logging/llama-logger';
 
 export interface EnrichmentDecision {
   shouldEnrich: boolean;
@@ -66,20 +66,20 @@ export interface ArtistEnrichmentData {
 /**
  * Determine if an album needs MusicBrainz enrichment
  * @param album Album data with enrichment metadata
- * @param enrichmentLogger Optional logger to check enrichment history and cooldowns
+ * @param llamaLogger Optional logger to check enrichment history and cooldowns
  * @returns EnrichmentDecision with shouldEnrich boolean and reason (or Promise<EnrichmentDecision> if logger is provided)
  */
 export function shouldEnrichAlbum(
   album: AlbumEnrichmentData,
-  enrichmentLogger?: EnrichmentLogger
+  llamaLogger?: LlamaLogger
 ): EnrichmentDecision | Promise<EnrichmentDecision> {
   // If no logger provided, use synchronous logic (backward compatible)
-  if (!enrichmentLogger) {
+  if (!llamaLogger) {
     return shouldEnrichAlbumSync(album);
   }
 
   // Async logic with enrichment history checks
-  return shouldEnrichAlbumAsync(album, enrichmentLogger);
+  return shouldEnrichAlbumAsync(album, llamaLogger);
 }
 
 /**
@@ -161,10 +161,10 @@ function shouldEnrichAlbumSync(album: AlbumEnrichmentData): EnrichmentDecision {
  */
 async function shouldEnrichAlbumAsync(
   album: AlbumEnrichmentData,
-  enrichmentLogger: EnrichmentLogger
+  llamaLogger: LlamaLogger
 ): Promise<EnrichmentDecision> {
   // Check enrichment history for cooldown periods FIRST
-  const hasNoData = await enrichmentLogger.hasRecentNoDataStatus(
+  const hasNoData = await llamaLogger.hasRecentNoDataStatus(
     'ALBUM',
     album.id,
     90
@@ -180,7 +180,7 @@ async function shouldEnrichAlbumAsync(
     };
   }
 
-  const hasRecentFailure = await enrichmentLogger.hasRecentFailure(
+  const hasRecentFailure = await llamaLogger.hasRecentFailure(
     'ALBUM',
     album.id,
     7
@@ -203,20 +203,20 @@ async function shouldEnrichAlbumAsync(
 /**
  * Determine if an artist needs MusicBrainz enrichment
  * @param artist Artist data with enrichment metadata
- * @param enrichmentLogger Optional logger to check enrichment history and cooldowns
+ * @param llamaLogger Optional logger to check enrichment history and cooldowns
  * @returns EnrichmentDecision with shouldEnrich boolean and reason (or Promise<EnrichmentDecision> if logger is provided)
  */
 export function shouldEnrichArtist(
   artist: ArtistEnrichmentData,
-  enrichmentLogger?: EnrichmentLogger
+  llamaLogger?: LlamaLogger
 ): EnrichmentDecision | Promise<EnrichmentDecision> {
   // If no logger provided, use synchronous logic (backward compatible)
-  if (!enrichmentLogger) {
+  if (!llamaLogger) {
     return shouldEnrichArtistSync(artist);
   }
 
   // Async logic with enrichment history checks
-  return shouldEnrichArtistAsync(artist, enrichmentLogger);
+  return shouldEnrichArtistAsync(artist, llamaLogger);
 }
 
 /**
@@ -287,10 +287,10 @@ function shouldEnrichArtistSync(
  */
 async function shouldEnrichArtistAsync(
   artist: ArtistEnrichmentData,
-  enrichmentLogger: EnrichmentLogger
+  llamaLogger: LlamaLogger
 ): Promise<EnrichmentDecision> {
   // Check enrichment history for cooldown periods FIRST
-  const hasNoData = await enrichmentLogger.hasRecentNoDataStatus(
+  const hasNoData = await llamaLogger.hasRecentNoDataStatus(
     'ARTIST',
     artist.id,
     90
@@ -306,7 +306,7 @@ async function shouldEnrichArtistAsync(
     };
   }
 
-  const hasRecentFailure = await enrichmentLogger.hasRecentFailure(
+  const hasRecentFailure = await llamaLogger.hasRecentFailure(
     'ARTIST',
     artist.id,
     7

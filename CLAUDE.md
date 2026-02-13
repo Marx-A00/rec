@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Do NOT use markdown tables in responses. Use bullet points or plain text lists instead.
 
+## Database Queries
+
+- **ALWAYS use Supabase MCP** (`mcp__supabase__execute_sql`) for database queries, NOT `npx prisma db execute`
+- Supabase MCP is faster and doesn't have connection issues
+
 ## 🔍 Search Components - IMPORTANT
 
 **ACTIVE Search Components (Use These):**
@@ -228,14 +233,16 @@ src/
 The app has a dedicated mobile experience at `/m/*` routes, separate from the desktop routes in `/(main)/*`.
 
 **Mobile Routes (`src/app/m/`):**
+
 - `/m` - Mobile home/feed
 - `/m/search` - Mobile search
 - `/m/albums/[id]` - Mobile album detail
-- `/m/artists/[id]` - Mobile artist detail  
+- `/m/artists/[id]` - Mobile artist detail
 - `/m/profile/[userId]` - Mobile user profile
 - `/m/settings` - Mobile settings
 
 **Mobile Components (`src/components/mobile/`):**
+
 - `MobileHeader.tsx` - Sticky header with back navigation
 - `MobileButton.tsx` - Touch-friendly button component
 - `MobileDiscography.tsx` - Artist discography grid
@@ -245,6 +252,7 @@ The app has a dedicated mobile experience at `/m/*` routes, separate from the de
 - `CollectionSelectionSheet.tsx` - Bottom sheet for adding to collections
 
 **Mobile Design Patterns:**
+
 - **Touch targets**: Minimum 44px height for tappable elements
 - **Server Components**: Pages fetch data server-side, pass to client components
 - **Client Components**: Named `*Client.tsx`, handle interactivity
@@ -252,6 +260,7 @@ The app has a dedicated mobile experience at `/m/*` routes, separate from the de
 - **Gesture support**: `active:scale-[0.95]` for tap feedback
 
 **Data Fetching Pattern:**
+
 ```typescript
 // Page (Server Component) - src/app/m/albums/[id]/page.tsx
 export default async function MobileAlbumPage({ params }) {
@@ -259,7 +268,7 @@ export default async function MobileAlbumPage({ params }) {
   return <MobileAlbumClient album={album} />;
 }
 
-// Client Component - src/app/m/albums/[id]/MobileAlbumClient.tsx  
+// Client Component - src/app/m/albums/[id]/MobileAlbumClient.tsx
 'use client';
 export default function MobileAlbumClient({ album }: { album: Album }) {
   // Interactive UI here
@@ -267,6 +276,7 @@ export default function MobileAlbumClient({ album }: { album: Album }) {
 ```
 
 **Cloudflare Images:**
+
 - Albums in local database have `cloudflareImageId` for optimized image delivery
 - Always pass `cloudflareImageId` to `AlbumImage` component when available
 - Only local database albums have this - external API results (MusicBrainz, Discogs) won't have it

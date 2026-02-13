@@ -1,0 +1,96 @@
+query SearchArtistCorrectionCandidates(
+  $query: String!
+  $limit: Int
+  $source: CorrectionSource
+) {
+  artistCorrectionSearch(query: $query, limit: $limit, source: $source) {
+    results {
+      artistMbid
+      name
+      sortName
+      disambiguation
+      type
+      country
+      area
+      beginDate
+      endDate
+      ended
+      gender
+      mbScore
+      topReleases {
+        title
+        year
+        type
+      }
+      source
+    }
+    hasMore
+    query
+  }
+}
+
+query GetArtistCorrectionPreview(
+  $artistId: UUID!
+  $sourceArtistId: String!
+  $source: CorrectionSource
+) {
+  artistCorrectionPreview(
+    artistId: $artistId
+    sourceArtistId: $sourceArtistId
+    source: $source
+  ) {
+    currentArtist {
+      id
+      name
+      musicbrainzId
+      discogsId
+      countryCode
+      formedYear
+      biography
+      dataQuality
+      updatedAt
+    }
+    mbArtistData
+    fieldDiffs {
+      field
+      changeType
+      current
+      source
+    }
+    albumCount
+    summary {
+      totalFields
+      changedFields
+      addedFields
+      modifiedFields
+    }
+    source
+  }
+}
+
+mutation ApplyArtistCorrection($input: ArtistCorrectionApplyInput!) {
+  artistCorrectionApply(input: $input) {
+    success
+    artist {
+      id
+      name
+      musicbrainzId
+      discogsId
+      countryCode
+      formedYear
+      dataQuality
+      enrichmentStatus
+      updatedAt
+    }
+    changes {
+      metadata
+      externalIds
+      affectedAlbumCount
+      dataQualityBefore
+      dataQualityAfter
+    }
+    affectedAlbumCount
+    code
+    message
+  }
+}

@@ -85,3 +85,10 @@ export type {
 
 // Re-export the main MusicBrainzApi for advanced usage
 export { MusicBrainzApi } from 'musicbrainz-api';
+
+// MBID verification utilities
+export {
+  verifyMbid,
+  hasIdProperty,
+  type MbidVerificationResult,
+} from './mbid-verifier';

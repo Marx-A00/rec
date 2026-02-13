@@ -16,7 +16,200 @@ import {
 import type { ResolversTypes } from '@/generated/resolvers-types';
 import { JobStatus as GqlJobStatus } from '@/generated/resolvers-types';
 
+// Correction system imports
+import { isAdmin } from '@/lib/permissions';
+import { getCorrectionSearchService } from '@/lib/correction/search-service';
+import { getCorrectionPreviewService } from '@/lib/correction/preview';
+import { getQueuedDiscogsService } from '@/lib/discogs/queued-service';
+import { mapMasterToCorrectionSearchResult } from '@/lib/discogs/mappers';
+import type {
+  ScoredSearchResult,
+  ScoringStrategy as ServiceScoringStrategy,
+} from '@/lib/correction/scoring/types';
+import type { GroupedSearchResult } from '@/lib/correction/types';
+import {
+  ScoringStrategy as GqlScoringStrategy,
+  ConfidenceTier as GqlConfidenceTier,
+  CorrectionSource as GqlCorrectionSource,
+} from '@/generated/resolvers-types';
+
 import { getSearchService } from '../search';
+
+// ============================================================================
+// Correction System Helper Functions
+// ============================================================================
+
+/**
+ * Map GraphQL ScoringStrategy enum to service strategy type
+ */
+function mapGqlStrategyToService(
+  strategy: GqlScoringStrategy | null | undefined
+): ServiceScoringStrategy {
+  if (!strategy) return 'normalized';
+  switch (strategy) {
+    case GqlScoringStrategy.Normalized:
+      return 'normalized';
+    case GqlScoringStrategy.Tiered:
+      return 'tiered';
+    case GqlScoringStrategy.Weighted:
+      return 'weighted';
+    default:
+      return 'normalized';
+  }
+}
+
+/**
+ * Map service strategy type to GraphQL ScoringStrategy enum
+ */
+function mapServiceStrategyToGql(
+  strategy: ServiceScoringStrategy
+): GqlScoringStrategy {
+  switch (strategy) {
+    case 'normalized':
+      return GqlScoringStrategy.Normalized;
+    case 'tiered':
+      return GqlScoringStrategy.Tiered;
+    case 'weighted':
+      return GqlScoringStrategy.Weighted;
+    default:
+      return GqlScoringStrategy.Normalized;
+  }
+}
+
+/**
+ * Map service confidence tier to GraphQL enum
+ */
+function mapConfidenceTierToGql(
+  tier: string | undefined
+): GqlConfidenceTier | null {
+  if (!tier) return null;
+  switch (tier.toLowerCase()) {
+    case 'high':
+      return GqlConfidenceTier.High;
+    case 'medium':
+      return GqlConfidenceTier.Medium;
+    case 'low':
+      return GqlConfidenceTier.Low;
+    case 'none':
+      return GqlConfidenceTier.None;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Transform a scored search result to GraphQL format
+ */
+function transformScoredResult(result: ScoredSearchResult) {
+  return {
+    releaseGroupMbid: result.releaseGroupMbid,
+    title: result.title,
+    disambiguation: result.disambiguation ?? null,
+    artistCredits: result.artistCredits.map(ac => ({
+      mbid: ac.mbid,
+      name: ac.name,
+    })),
+    primaryArtistName: result.primaryArtistName,
+    firstReleaseDate: result.firstReleaseDate ?? null,
+    primaryType: result.primaryType ?? null,
+    secondaryTypes: result.secondaryTypes ?? [],
+    mbScore: result.mbScore,
+    coverArtUrl: result.coverArtUrl,
+    source: result.source,
+    normalizedScore: result.normalizedScore,
+    displayScore:
+      typeof result.displayScore === 'number' ? result.displayScore : 0,
+    breakdown: {
+      titleScore: result.breakdown.titleScore,
+      artistScore: result.breakdown.artistScore,
+      yearScore: result.breakdown.yearScore,
+      mbScore: result.breakdown.mbScore ?? null,
+      confidenceTier: mapConfidenceTierToGql(result.breakdown.confidenceTier),
+    },
+    isLowConfidence: result.isLowConfidence,
+    scoringStrategy: mapServiceStrategyToGql(result.scoringStrategy),
+  };
+}
+
+/**
+ * Transform a grouped search result to GraphQL format
+ */
+function transformGroupedResult(group: GroupedSearchResult) {
+  return {
+    releaseGroupMbid: group.releaseGroupMbid,
+    primaryResult: transformScoredResult(group.primaryResult),
+    alternateVersions: group.alternateVersions.map(transformScoredResult),
+    versionCount: group.versionCount,
+    bestScore: group.bestScore,
+  };
+}
+
+/**
+ * Transform MusicBrainz release data to GraphQL format
+ */
+function transformMBReleaseData(mbData: {
+  id: string;
+  title: string;
+  date?: string;
+  country?: string;
+  barcode?: string;
+  media: Array<{
+    position: number;
+    format?: string;
+    trackCount: number;
+    tracks: Array<{
+      position: number;
+      recording: {
+        id: string;
+        title: string;
+        length?: number;
+        position?: number;
+      };
+    }>;
+  }>;
+  artistCredit: Array<{
+    name: string;
+    joinphrase?: string;
+    artist: {
+      id: string;
+      name: string;
+      sortName?: string;
+      disambiguation?: string;
+    };
+  }>;
+}) {
+  return {
+    id: mbData.id,
+    title: mbData.title,
+    date: mbData.date ?? null,
+    country: mbData.country ?? null,
+    barcode: mbData.barcode ?? null,
+    media: mbData.media.map(medium => ({
+      position: medium.position,
+      format: medium.format ?? null,
+      trackCount: medium.trackCount,
+      tracks: medium.tracks.map(track => ({
+        position: track.position,
+        recording: {
+          id: track.recording.id,
+          title: track.recording.title,
+          length: track.recording.length ?? null,
+          position: track.position, // Use track position for recording position
+        },
+      })),
+    })),
+    artistCredit: mbData.artistCredit.map(ac => ({
+      name: ac.name,
+      joinphrase: ac.joinphrase ?? null,
+      artist: {
+        id: ac.artist.id,
+        name: ac.artist.name,
+        sortName: ac.artist.sortName ?? null,
+        disambiguation: ac.artist.disambiguation ?? null,
+      },
+    })),
+  };
+}
 
 // TODO: Fix GraphQL resolver return types to match generated types
 // Prisma returns partial objects; field resolvers populate computed/relational fields
@@ -360,7 +553,9 @@ export const queryResolvers: QueryResolvers = {
 
       const album = await prisma.album.findUnique({ where: { id } });
       if (!album) return null;
-      return { id: album.id } as ResolversTypes['Album'];
+      // Return full album object - field resolvers will handle relationships (artists, tracks)
+      // but scalar fields (title, genres, etc.) come directly from this object
+      return album as ResolversTypes['Album'];
     } catch (error) {
       throw new GraphQLError(`Failed to fetch album: ${error}`);
     }
@@ -1820,28 +2015,218 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // Enrichment log queries
-  enrichmentLogs: async (_, args, { prisma }) => {
+  llamaLogs: async (_, args, { prisma }) => {
     try {
-      const where: Record<string, unknown> = {};
+      const {
+        includeChildren = false,
+        parentOnly = false,
+        parentJobId,
+        ...filterArgs
+      } = args;
 
-      if (args.entityType) where.entityType = args.entityType;
-      if (args.entityId) where.entityId = args.entityId;
-      if (args.status) where.status = args.status;
-      if (args.sources && args.sources.length > 0) {
-        where.sources = { hasSome: args.sources };
+      // Build where clause for filters
+      const where: Record<string, unknown> = {};
+      if (filterArgs.entityType) where.entityType = filterArgs.entityType;
+      if (filterArgs.entityId) {
+        // Query by both entityId and typed ID fields (albumId/artistId/trackId)
+        // This ensures we find logs regardless of which field was populated
+        if (filterArgs.entityType === 'ALBUM') {
+          where.OR = [
+            { entityId: filterArgs.entityId },
+            { albumId: filterArgs.entityId },
+          ];
+        } else if (filterArgs.entityType === 'ARTIST') {
+          where.OR = [
+            { entityId: filterArgs.entityId },
+            { artistId: filterArgs.entityId },
+          ];
+        } else if (filterArgs.entityType === 'TRACK') {
+          where.OR = [
+            { entityId: filterArgs.entityId },
+            { trackId: filterArgs.entityId },
+          ];
+        } else {
+          // Fallback: query all ID fields
+          where.OR = [
+            { entityId: filterArgs.entityId },
+            { albumId: filterArgs.entityId },
+            { artistId: filterArgs.entityId },
+            { trackId: filterArgs.entityId },
+          ];
+        }
+      }
+      if (filterArgs.status) where.status = filterArgs.status;
+      if (filterArgs.category && filterArgs.category.length > 0) {
+        where.category = { in: filterArgs.category };
+      }
+      if (filterArgs.sources && filterArgs.sources.length > 0) {
+        where.sources = { hasSome: filterArgs.sources };
       }
 
-      const logs = await prisma.enrichmentLog.findMany({
-        where,
+      // Simple flat fetch (default behavior)
+      if (!includeChildren) {
+        // Add parentJobId filtering
+        if (parentOnly) {
+          where.parentJobId = null;
+        } else if (parentJobId) {
+          where.parentJobId = parentJobId;
+        }
+
+        const logs = await prisma.llamaLog.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: filterArgs.skip || 0,
+          take: filterArgs.limit || 50,
+        });
+        return logs.map(log => ({ ...log, children: null }));
+      }
+
+      // Tree fetch: get root logs only (parentJobId is null)
+      const parentLogs = await prisma.llamaLog.findMany({
+        where: {
+          ...where,
+          parentJobId: null,
+        },
         orderBy: { createdAt: 'desc' },
-        skip: args.skip || 0,
-        take: args.limit || 50,
+        skip: filterArgs.skip || 0,
+        take: filterArgs.limit || 50,
       });
 
-      return logs;
+      // Collect all parent jobIds for batch child fetch
+      const parentJobIds = parentLogs
+        .map(log => log.jobId)
+        .filter((id): id is string => Boolean(id));
+
+      // If no parents have jobIds, return with empty children
+      if (parentJobIds.length === 0) {
+        return parentLogs.map(log => ({ ...log, children: [] }));
+      }
+
+      // Batch fetch all children in single query
+      const childLogs = await prisma.llamaLog.findMany({
+        where: {
+          parentJobId: { in: parentJobIds },
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      // Build children map for O(n) lookup
+      const childrenMap = new Map<string, typeof childLogs>();
+      for (const child of childLogs) {
+        if (!child.parentJobId) continue;
+        const siblings = childrenMap.get(child.parentJobId) || [];
+        siblings.push(child);
+        childrenMap.set(child.parentJobId, siblings);
+      }
+
+      // Attach children to parents
+      return parentLogs.map(parent => ({
+        ...parent,
+        children: parent.jobId
+          ? (childrenMap.get(parent.jobId) || []).map(child => ({
+              ...child,
+              children: null, // Leaf nodes have no children (one level only)
+            }))
+          : [],
+      }));
     } catch (error) {
       throw new GraphQLError(`Failed to fetch enrichment logs: ${error}`);
     }
+  },
+
+  // Provenance chain for entity lifecycle tracking
+  llamaLogChain: async (
+    _: unknown,
+    args: {
+      entityType: 'ALBUM' | 'ARTIST' | 'TRACK';
+      entityId: string;
+      categories?: string[];
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+      cursor?: string;
+    },
+    { prisma }: Context
+  ) => {
+    const {
+      entityType,
+      entityId,
+      categories,
+      startDate,
+      endDate,
+      limit = 20,
+      cursor,
+    } = args;
+
+    // 1. Validate entity exists
+    const entityTable = entityType.toLowerCase() as
+      | 'album'
+      | 'artist'
+      | 'track';
+
+    // Album has 'title', Artist has 'name', Track has 'title'
+    const nameField = entityTable === 'artist' ? 'name' : 'title';
+
+    const entity = await (
+      prisma[entityTable] as typeof prisma.album
+    ).findUnique({
+      where: { id: entityId },
+      select: { id: true, [nameField]: true },
+    });
+
+    if (!entity) {
+      throw new GraphQLError(`${entityType} not found: ${entityId}`, {
+        extensions: { code: 'NOT_FOUND' },
+      });
+    }
+
+    // 2. Build where clause using typed ID field for index usage
+    const typedIdField = `${entityTable}Id` as
+      | 'albumId'
+      | 'artistId'
+      | 'trackId';
+
+    // Use OR to match both typed ID field and generic entityId (for historical data)
+    const baseWhere = {
+      OR: [{ [typedIdField]: entityId }, { entityId: entityId, entityType }],
+    };
+
+    // Build date filter (merge gte/lte if both provided)
+    const dateFilter: Record<string, Date> = {};
+    if (startDate) dateFilter.gte = startDate;
+    if (endDate) dateFilter.lte = endDate;
+
+    const where = {
+      ...baseWhere,
+      ...(categories &&
+        categories.length > 0 && { category: { in: categories } }),
+      ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
+    };
+
+    // 3. Fetch logs and count in parallel
+    const [logs, totalCount] = await Promise.all([
+      prisma.llamaLog.findMany({
+        take: limit + 1,
+        skip: cursor ? 1 : 0,
+        cursor: cursor ? { id: cursor } : undefined,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        where,
+      }),
+      prisma.llamaLog.count({ where }),
+    ]);
+
+    // 4. Compute pagination metadata
+    const hasMore = logs.length > limit;
+    const items = hasMore ? logs.slice(0, -1) : logs;
+    const nextCursor =
+      hasMore && items.length > 0 ? items[items.length - 1].id : null;
+
+    return {
+      logs: items.map(log => ({ ...log, children: null })),
+      totalCount,
+      cursor: nextCursor,
+      hasMore,
+    };
   },
 
   enrichmentStats: async (_, args, { prisma }) => {
@@ -1856,7 +2241,7 @@ export const queryResolvers: QueryResolvers = {
         };
       }
 
-      const logs = await prisma.enrichmentLog.findMany({ where });
+      const logs = await prisma.llamaLog.findMany({ where });
 
       // Calculate source statistics
       const sourceMap = new Map<string, { total: number; success: number }>();
@@ -2281,5 +2666,569 @@ export const queryResolvers: QueryResolvers = {
       );
     }
   },
+  // ============================================================================
+  // Correction System Queries (Admin Only)
+  // ============================================================================
+
+  correctionSearch: async (_, { input }, { user, prisma }) => {
+    // Authentication check
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Authorization check - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const {
+        albumId,
+        albumTitle,
+        artistName,
+        yearFilter,
+        limit,
+        offset,
+        strategy,
+        lowConfidenceThreshold,
+        source,
+        releaseGroupMbid,
+        discogsId,
+      } = input;
+
+      // ================================================================
+      // Direct ID lookup (bypasses text search)
+      // ================================================================
+
+      // MusicBrainz direct ID lookup
+      if (releaseGroupMbid) {
+        const searchService = getCorrectionSearchService();
+        const result = await searchService.getByMbid(releaseGroupMbid);
+
+        const transformedResult = {
+          releaseGroupMbid: result.releaseGroupMbid,
+          primaryResult: {
+            ...result,
+            breakdown: {
+              titleScore: 1.0,
+              artistScore: 1.0,
+              yearScore: 1.0,
+              mbScore: 100,
+              confidenceTier: null,
+            },
+            scoringStrategy: GqlScoringStrategy.Normalized,
+          },
+          alternateVersions: [],
+          versionCount: 1,
+          bestScore: 1.0,
+        };
+
+        return {
+          results: [transformedResult],
+          totalGroups: 1,
+          hasMore: false,
+          query: {
+            albumTitle: result.title,
+            artistName: result.primaryArtistName,
+            yearFilter: null,
+          },
+          scoring: {
+            strategy: GqlScoringStrategy.Normalized,
+            threshold: 0.5,
+            lowConfidenceCount: 0,
+          },
+        };
+      }
+
+      // Discogs direct ID lookup
+      if (discogsId) {
+        const queuedDiscogsService = getQueuedDiscogsService();
+        const master = await queuedDiscogsService.getMaster(discogsId);
+
+        // Handle case where master lookup failed
+        if (!master || !master.id) {
+          throw new GraphQLError(
+            `Discogs master ID "${discogsId}" not found or invalid`,
+            { extensions: { code: 'NOT_FOUND' } }
+          );
+        }
+
+        const result = mapMasterToCorrectionSearchResult(master);
+
+        const transformedResult = {
+          releaseGroupMbid: result.releaseGroupMbid,
+          primaryResult: {
+            ...result,
+            normalizedScore: 1.0,
+            displayScore: 100,
+            breakdown: {
+              titleScore: 1.0,
+              artistScore: 1.0,
+              yearScore: 1.0,
+              mbScore: 100,
+              confidenceTier: null,
+            },
+            isLowConfidence: false,
+            scoringStrategy: GqlScoringStrategy.Normalized,
+          },
+          alternateVersions: [],
+          versionCount: 1,
+          bestScore: 1.0,
+        };
+
+        return {
+          results: [transformedResult],
+          totalGroups: 1,
+          hasMore: false,
+          query: {
+            albumTitle: result.title,
+            artistName: result.primaryArtistName,
+            yearFilter: null,
+          },
+          scoring: {
+            strategy: GqlScoringStrategy.Normalized,
+            threshold: 0.5,
+            lowConfidenceCount: 0,
+          },
+        };
+      }
+
+      // ================================================================
+      // Text-based search (existing logic)
+      // ================================================================
+
+      // Get album data if title/artist not provided
+      let searchAlbumTitle = albumTitle;
+      let searchArtistName = artistName;
+
+      if (!searchAlbumTitle || !searchArtistName) {
+        const album = await prisma.album.findUnique({
+          where: { id: albumId },
+          include: {
+            artists: {
+              include: { artist: true },
+              orderBy: { position: 'asc' },
+            },
+          },
+        });
+
+        if (!album) {
+          throw new GraphQLError('Album not found: ' + albumId, {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        searchAlbumTitle = searchAlbumTitle ?? album.title;
+        searchArtistName = searchArtistName ?? album.artists[0]?.artist?.name;
+      }
+      // Route to Discogs via queue if source is DISCOGS
+      if (source === GqlCorrectionSource.Discogs) {
+        const queuedDiscogsService = getQueuedDiscogsService();
+        const discogsResponse = await queuedDiscogsService.searchAlbums({
+          albumId,
+          albumTitle: searchAlbumTitle,
+          artistName: searchArtistName,
+          limit: limit ?? 10,
+        });
+
+        // Debug: log the response structure
+        console.log('[correctionSearch] Discogs response:', {
+          hasResponse: !!discogsResponse,
+          hasResults: !!discogsResponse?.results,
+          resultsCount: discogsResponse?.resultsCount,
+          resultsLength: discogsResponse?.results?.length,
+        });
+
+        // Transform Discogs results to GraphQL format
+        // Discogs does not have scoring, so wrap each result as a single-item group
+        // Handle case where results might be undefined (job serialization issue)
+        const discogsResults = discogsResponse?.results ?? [];
+        const transformedResults = discogsResults.map(result => ({
+          releaseGroupMbid: result.releaseGroupMbid,
+          primaryResult: {
+            ...result,
+            normalizedScore: 1.0,
+            displayScore: 100,
+            breakdown: {
+              titleScore: 1.0,
+              artistScore: 1.0,
+              yearScore: 1.0,
+              mbScore: 100,
+              confidenceTier: null,
+            },
+            isLowConfidence: false,
+            scoringStrategy: GqlScoringStrategy.Normalized,
+          },
+          alternateVersions: [],
+          versionCount: 1,
+          bestScore: 1.0,
+        }));
+
+        return {
+          results: transformedResults,
+          totalGroups: transformedResults.length,
+          hasMore: false, // Discogs search does not paginate in this implementation
+          query: {
+            albumTitle: searchAlbumTitle ?? null,
+            artistName: searchArtistName ?? null,
+            yearFilter: null,
+          },
+          scoring: {
+            strategy: GqlScoringStrategy.Normalized,
+            threshold: 0.5,
+            lowConfidenceCount: 0,
+          },
+        };
+      }
+
+      // MusicBrainz path (default)
+
+      // Map GraphQL strategy enum to service strategy
+      const serviceStrategy = mapGqlStrategyToService(strategy);
+
+      // Execute search with scoring
+      const searchService = getCorrectionSearchService();
+      const response = await searchService.searchWithScoring({
+        albumTitle: searchAlbumTitle,
+        artistName: searchArtistName,
+        yearFilter: yearFilter ?? undefined,
+        limit: limit ?? 10,
+        offset: offset ?? 0,
+        strategy: serviceStrategy,
+        lowConfidenceThreshold: lowConfidenceThreshold ?? 0.5,
+      });
+
+      // Transform to GraphQL format
+      const transformedResults = response.results.map(transformGroupedResult);
+
+      return {
+        results: transformedResults,
+        totalGroups: response.totalGroups,
+        hasMore: response.hasMore,
+        query: {
+          albumTitle: response.query.albumTitle ?? null,
+          artistName: response.query.artistName ?? null,
+          yearFilter: response.query.yearFilter ?? null,
+        },
+        scoring: {
+          strategy: mapServiceStrategyToGql(response.scoring.strategy),
+          threshold: response.scoring.threshold,
+          lowConfidenceCount: response.scoring.lowConfidenceCount,
+        },
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error in correctionSearch:', error);
+      throw new GraphQLError(
+        'Correction search failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+        { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
+      );
+    }
+  },
+
+  correctionPreview: async (_, { input }, { user, prisma }) => {
+    // Authentication check
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Authorization check - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const { albumId, releaseGroupMbid, source } = input;
+      const correctionSource = source?.toLowerCase() || 'musicbrainz';
+
+      // Get album with tracks
+      const album = await prisma.album.findUnique({
+        where: { id: albumId },
+        include: {
+          tracks: {
+            orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }],
+          },
+          artists: {
+            include: { artist: true },
+            orderBy: { position: 'asc' },
+          },
+        },
+      });
+
+      if (!album) {
+        throw new GraphQLError('Album not found: ' + albumId, {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Fetch source result based on correction source
+      let scoredResult: ScoredSearchResult;
+      if (correctionSource === 'discogs') {
+        // Discogs path: fetch master and map to search result format
+        const discogsService = getQueuedDiscogsService();
+        const master = await discogsService.getMaster(releaseGroupMbid);
+        const correctionResult = mapMasterToCorrectionSearchResult(master);
+
+        // Wrap as ScoredSearchResult with default scoring (Discogs has no scores)
+        scoredResult = {
+          ...correctionResult,
+          normalizedScore: 1.0,
+          displayScore: 100,
+          breakdown: {
+            titleScore: 1.0,
+            artistScore: 1.0,
+            yearScore: 1.0,
+            mbScore: 100,
+          },
+          isLowConfidence: false,
+          scoringStrategy: 'normalized' as const,
+        };
+      } else {
+        // MusicBrainz path: fetch release group by MBID
+        const searchService = getCorrectionSearchService();
+        try {
+          scoredResult = await searchService.getByMbid(releaseGroupMbid);
+        } catch (error) {
+          throw new GraphQLError(
+            'Release group not found: ' + releaseGroupMbid,
+            {
+              extensions: { code: 'NOT_FOUND' },
+            }
+          );
+        }
+      }
+
+      // Use the ID as the release ID for preview
+      const releaseMbid = releaseGroupMbid;
+
+      // Generate preview with source parameter
+      const previewService = getCorrectionPreviewService();
+      const preview = await previewService.generatePreview(
+        albumId,
+        scoredResult,
+        releaseMbid,
+        correctionSource as 'musicbrainz' | 'discogs'
+      );
+
+      // Transform to GraphQL format
+      return {
+        albumId: albumId,
+        albumTitle: album.title,
+        albumUpdatedAt: album.updatedAt,
+        sourceResult: transformScoredResult(scoredResult),
+        mbReleaseData: preview.mbReleaseData
+          ? transformMBReleaseData(preview.mbReleaseData)
+          : null,
+        fieldDiffs: preview.fieldDiffs, // Passed as JSON
+        artistDiff: {
+          changeType: preview.artistDiff.changeType,
+          current: preview.artistDiff.current || [],
+          source: preview.artistDiff.source || [],
+          currentDisplay:
+            (preview.artistDiff.current || []).map(ac => ac.name).join(', ') ||
+            'Unknown Artist',
+          sourceDisplay:
+            (preview.artistDiff.source || []).map(ac => ac.name).join(', ') ||
+            'Unknown Artist',
+        },
+        trackDiffs: preview.trackDiffs || [],
+        trackSummary: {
+          totalCurrent: preview.trackSummary?.totalCurrent ?? 0,
+          totalSource: preview.trackSummary?.totalSource ?? 0,
+          matching: preview.trackSummary?.matching ?? 0,
+          modified: preview.trackSummary?.modified ?? 0,
+          added: preview.trackSummary?.added ?? 0,
+          removed: preview.trackSummary?.removed ?? 0,
+        },
+        coverArt: {
+          currentUrl: preview.coverArt.currentUrl,
+          sourceUrl: preview.coverArt.sourceUrl,
+          changeType: preview.coverArt.changeType,
+        },
+        summary: {
+          totalFields: preview.summary.totalFields,
+          changedFields: preview.summary.changedFields,
+          addedFields: preview.summary.addedFields,
+          modifiedFields: preview.summary.modifiedFields,
+          conflictFields: preview.summary.conflictFields,
+          hasTrackChanges: preview.summary.hasTrackChanges,
+        },
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error in correctionPreview:', error);
+      throw new GraphQLError(
+        'Correction preview failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+        { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
+      );
+    }
+  },
+
+  // ============================================================================
+  // Artist Correction System Queries (Admin Only)
+  // ============================================================================
+
+  artistCorrectionSearch: async (_, { query, limit, source }, { user }) => {
+    // Authentication check
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Authorization check - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      // Route to Discogs if source is DISCOGS
+      if (source === GqlCorrectionSource.Discogs) {
+        const queuedDiscogsService = getQueuedDiscogsService();
+        const response = await queuedDiscogsService.searchArtists({
+          artistName: query,
+          limit: limit ?? 10,
+        });
+
+        return {
+          results: response.results.map(result => ({
+            artistMbid: result.artistMbid,
+            name: result.name,
+            sortName: result.sortName,
+            disambiguation: result.disambiguation ?? null,
+            type: result.type ?? null,
+            country: result.country ?? null,
+            area: result.area ?? null,
+            beginDate: result.beginDate ?? null,
+            endDate: result.endDate ?? null,
+            ended: result.ended ?? null,
+            gender: result.gender ?? null,
+            mbScore: result.mbScore,
+            topReleases: result.topReleases ?? null,
+            source: result.source ?? 'discogs',
+          })),
+          hasMore: false, // Discogs search doesn't support pagination
+          query,
+        };
+      }
+
+      // MusicBrainz search (default)
+      const { getArtistCorrectionSearchService } = await import(
+        '@/lib/correction/artist/search-service'
+      );
+      const searchService = getArtistCorrectionSearchService();
+
+      const response = await searchService.search({
+        query,
+        limit: limit ?? 10,
+      });
+
+      return {
+        results: response.results.map(result => ({
+          artistMbid: result.artistMbid,
+          name: result.name,
+          sortName: result.sortName,
+          disambiguation: result.disambiguation ?? null,
+          type: result.type ?? null,
+          country: result.country ?? null,
+          area: result.area ?? null,
+          beginDate: result.beginDate ?? null,
+          endDate: result.endDate ?? null,
+          ended: result.ended ?? null,
+          gender: result.gender ?? null,
+          mbScore: result.mbScore,
+          topReleases: result.topReleases ?? null,
+          source: 'musicbrainz',
+        })),
+        hasMore: response.hasMore,
+        query: response.query,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error in artistCorrectionSearch:', error);
+      throw new GraphQLError(
+        'Artist correction search failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+        { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
+      );
+    }
+  },
+
+  artistCorrectionPreview: async (
+    _,
+    { artistId, sourceArtistId, source },
+    { user }
+  ) => {
+    // Authentication check
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Authorization check - admin only
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
+
+    try {
+      const { getArtistCorrectionPreviewService } = await import(
+        '@/lib/correction/artist/preview/preview-service'
+      );
+      const previewService = getArtistCorrectionPreviewService();
+
+      // Convert GraphQL enum to lowercase string for service layer
+      const sourceStr =
+        source === GqlCorrectionSource.Discogs ? 'discogs' : 'musicbrainz';
+
+      const preview = await previewService.generatePreview(
+        artistId,
+        sourceArtistId,
+        sourceStr
+      );
+
+      return {
+        currentArtist: preview.currentArtist,
+        mbArtistData: preview.mbArtistData,
+        fieldDiffs: preview.fieldDiffs.map(diff => ({
+          field: diff.field,
+          changeType: diff.changeType,
+          current: diff.current,
+          source: diff.source,
+        })),
+        albumCount: preview.albumCount,
+        summary: {
+          totalFields: preview.summary.totalFields,
+          changedFields: preview.summary.changedFields,
+          addedFields: preview.summary.addedFields,
+          modifiedFields: preview.summary.modifiedFields,
+        },
+        source: source ?? GqlCorrectionSource.Musicbrainz,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error in artistCorrectionPreview:', error);
+      throw new GraphQLError(
+        'Artist correction preview failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+        { extensions: { code: 'INTERNAL_SERVER_ERROR' } }
+      );
+    }
+  },
+
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects
 };

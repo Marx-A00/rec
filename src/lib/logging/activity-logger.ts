@@ -6,6 +6,7 @@ import {
   EnrichmentEntityType,
   EnrichmentStatus,
   DataQuality,
+  LlamaLogCategory,
 } from '@prisma/client';
 
 // Operation types - extend this as needed
@@ -52,6 +53,7 @@ interface LogActivityParams {
   operation: OperationType | string;
   sources: DataSource[] | string[];
   fieldsChanged: string[];
+  category?: LlamaLogCategory;
   status?: EnrichmentStatus;
   userId?: string | null;
   dataQualityBefore?: DataQuality | null;
@@ -62,6 +64,51 @@ interface LogActivityParams {
   metadata?: Record<string, unknown> | null;
   jobId?: string | null;
   triggeredBy?: string | null;
+}
+
+/**
+ * Derive category from operation if not explicitly provided.
+ * Maps operations to their appropriate LlamaLogCategory.
+ */
+function deriveCategory(
+  operation: OperationType | string,
+  status: EnrichmentStatus
+): LlamaLogCategory {
+  // If the operation failed, category is FAILED
+  if (status === 'FAILED') {
+    return 'FAILED';
+  }
+
+  // Map operations to categories
+  switch (operation) {
+    // Creation operations
+    case OPERATIONS.MANUAL_CREATE:
+    case OPERATIONS.MANUAL_ADD:
+    case OPERATIONS.BULK_IMPORT:
+      return 'CREATED';
+
+    // Enrichment operations (external API data)
+    case OPERATIONS.MUSICBRAINZ_FETCH:
+    case OPERATIONS.SPOTIFY_SYNC:
+    case OPERATIONS.LASTFM_FETCH:
+    case OPERATIONS.SCHEDULED_REFRESH:
+      return 'ENRICHED';
+
+    // Correction operations (admin fixes)
+    case OPERATIONS.MANUAL_UPDATE:
+    case OPERATIONS.MANUAL_DATA_QUALITY_UPDATE:
+    case OPERATIONS.AUTO_MERGE:
+    case OPERATIONS.AUTO_DEDUPE:
+      return 'CORRECTED';
+
+    // Cache operations
+    case OPERATIONS.CACHE_COVER_ART:
+      return 'CACHED';
+
+    // Default to ENRICHED for unknown operations
+    default:
+      return 'ENRICHED';
+  }
 }
 
 /**
@@ -100,6 +147,7 @@ export async function logActivity({
   operation,
   sources,
   fieldsChanged,
+  category,
   status = 'SUCCESS',
   userId = null,
   dataQualityBefore = null,
@@ -112,11 +160,15 @@ export async function logActivity({
   triggeredBy = null,
 }: LogActivityParams): Promise<void> {
   try {
+    // Derive category from operation if not explicitly provided
+    const resolvedCategory = category ?? deriveCategory(operation, status);
+
     // Build the data object with proper relation syntax
-    const data: any = {
+    const data: Record<string, unknown> = {
       entityType,
       entityId,
       operation,
+      category: resolvedCategory,
       sources,
       status,
       fieldsEnriched: fieldsChanged,
@@ -149,7 +201,7 @@ export async function logActivity({
       data.user = { connect: { id: userId } };
     }
 
-    await prisma.enrichmentLog.create({ data });
+    await prisma.llamaLog.create({ data: data as never });
   } catch (error) {
     // Log the error but don't throw - we don't want logging failures to break the main operation
     console.error('Failed to log activity:', error);

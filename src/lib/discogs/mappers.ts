@@ -165,3 +165,101 @@ export function mapDiscogsReleaseToAlbum(
     master_id: discogsRelease.master_id,
   } as Album & { _discogs?: DiscogsMetadata; master_id?: number | null };
 }
+
+// ============================================================================
+// Correction Search Mapper
+// ============================================================================
+
+import type {
+  CorrectionSearchResult,
+  CorrectionArtistCredit,
+} from '@/lib/correction/types';
+
+/**
+ * Map a Discogs Master to CorrectionSearchResult format
+ * Used by queue handler and QueuedDiscogsService for correction search results
+ */
+export function mapMasterToCorrectionSearchResult(
+  master: DiscogsMaster
+): CorrectionSearchResult {
+  // Map artist credits
+  const artistCredits: CorrectionArtistCredit[] = master.artists.map(a => ({
+    mbid: a.id.toString(),
+    name: a.name,
+  }));
+
+  // Build primary artist name from all artists
+  const primaryArtistName =
+    master.artists.map(a => a.name).join(', ') || 'Unknown Artist';
+
+  // Merge genres + styles per CONTEXT.md
+  const genres = [...(master.genres || []), ...(master.styles || [])];
+
+  // Get cover art (first image)
+  const coverImage = master.images?.[0];
+
+  return {
+    releaseGroupMbid: master.id.toString(),
+    title: master.title,
+    disambiguation: undefined,
+    artistCredits,
+    primaryArtistName,
+    firstReleaseDate: master.year?.toString(),
+    primaryType: 'Album',
+    secondaryTypes: genres.length > 0 ? genres : [],
+    mbScore: 100, // Discogs has no relevance score
+    coverArtUrl: coverImage?.uri || null,
+    source: 'discogs',
+  };
+}
+
+// ============================================================================
+// Artist Correction Search Mapper
+// ============================================================================
+
+import type { ArtistSearchResult } from '@/lib/correction/artist/types';
+
+/**
+ * Discogs search result structure (from disconnect library)
+ * Search returns minimal data: id, title (name), thumb, resource_url
+ */
+interface DiscogsArtistSearchResult {
+  id: number;
+  title: string;
+  thumb?: string;
+  resource_url?: string;
+  type?: string;
+}
+
+/**
+ * Map Discogs artist search result to ArtistSearchResult format
+ * Used by QueuedDiscogsService for correction search results
+ *
+ * NOTE: Discogs search results are minimal (id, title, thumb)
+ * Many fields like country, area, beginDate don't exist in search results
+ */
+export function mapDiscogsSearchResultToArtistSearchResult(
+  searchResult: DiscogsArtistSearchResult,
+  score?: number
+): ArtistSearchResult {
+  // Discogs title may include disambiguation in parentheses: "Artist Name (2)"
+  // We preserve it as-is for now; disambiguation field is separate in UI
+  const name = searchResult.title;
+
+  return {
+    artistMbid: searchResult.id.toString(), // Use Discogs ID as identifier
+    name: name,
+    sortName: name, // Discogs doesn't have sort names
+    disambiguation: undefined, // Discogs doesn't have disambiguation in search
+    type: undefined, // Discogs doesn't categorize Person/Group in search
+    country: undefined, // Not in search results
+    area: undefined, // Not in search results
+    beginDate: undefined, // Not in search results
+    endDate: undefined, // Not in search results
+    ended: undefined, // Not in search results
+    gender: undefined, // Not in search results
+    mbScore: score !== undefined ? Math.round(score * 100) : 100, // Convert 0-1 to 0-100
+    topReleases: undefined, // Don't fetch releases for search results (too slow)
+    source: 'discogs',
+  };
+}

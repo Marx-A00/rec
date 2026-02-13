@@ -68,7 +68,7 @@ export default function ArtistAdminActions({
         });
         // Invalidate enrichment logs to refresh admin panel
         queryClient.invalidateQueries({
-          queryKey: ['GetEnrichmentLogs'],
+          queryKey: ['GetLlamaLogs'],
         });
       } else {
         throw new Error(

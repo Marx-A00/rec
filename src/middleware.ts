@@ -396,6 +396,10 @@ function getRateLimitKey(request: NextRequest, userID?: string): string {
  * Determine rate limit configuration based on route
  */
 function getRateLimitConfig(pathname: string) {
+  // Session reads are high-frequency and not security-sensitive — use general API limits
+  if (pathname === '/api/auth/session') {
+    return RATE_LIMIT_CONFIG.api;
+  }
   if (pathname.startsWith('/api/auth/')) {
     return RATE_LIMIT_CONFIG.auth;
   }

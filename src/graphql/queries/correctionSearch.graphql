@@ -1,0 +1,73 @@
+query SearchCorrectionCandidates($input: CorrectionSearchInput!) {
+  correctionSearch(input: $input) {
+    results {
+      releaseGroupMbid
+      primaryResult {
+        releaseGroupMbid
+        title
+        disambiguation
+        artistCredits {
+          mbid
+          name
+        }
+        primaryArtistName
+        firstReleaseDate
+        primaryType
+        secondaryTypes
+        mbScore
+        coverArtUrl
+        source
+        normalizedScore
+        displayScore
+        breakdown {
+          titleScore
+          artistScore
+          yearScore
+          mbScore
+          confidenceTier
+        }
+        isLowConfidence
+      }
+      alternateVersions {
+        releaseGroupMbid
+        title
+        disambiguation
+        artistCredits {
+          mbid
+          name
+        }
+        primaryArtistName
+        firstReleaseDate
+        primaryType
+        secondaryTypes
+        mbScore
+        coverArtUrl
+        source
+        normalizedScore
+        displayScore
+        breakdown {
+          titleScore
+          artistScore
+          yearScore
+          mbScore
+          confidenceTier
+        }
+        isLowConfidence
+      }
+      versionCount
+      bestScore
+    }
+    totalGroups
+    hasMore
+    query {
+      albumTitle
+      artistName
+      yearFilter
+    }
+    scoring {
+      strategy
+      threshold
+      lowConfidenceCount
+    }
+  }
+}

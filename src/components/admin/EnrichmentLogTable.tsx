@@ -13,7 +13,6 @@ import {
   Edit,
   ChevronDown,
   ChevronRight,
-  ArrowRight,
 } from 'lucide-react';
 
 import {
@@ -27,87 +26,16 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  useGetEnrichmentLogsQuery,
+  useGetLlamaLogsQuery,
   EnrichmentEntityType,
-  EnrichmentLogStatus,
+  LlamaLogStatus,
+  LlamaLogCategory,
+  type LlamaLog,
 } from '@/generated/graphql';
 
-interface FieldChangeDisplay {
-  field: string;
-  before: string | null;
-  after: string | null;
-}
-
-function extractFieldChanges(
-  metadata: Record<string, unknown> | null | undefined
-): FieldChangeDisplay[] {
-  if (!metadata) return [];
-  const fieldChanges = metadata.fieldChanges;
-  if (!Array.isArray(fieldChanges)) return [];
-  return fieldChanges.filter(
-    (fc): fc is FieldChangeDisplay =>
-      typeof fc === 'object' &&
-      fc !== null &&
-      'field' in fc &&
-      typeof fc.field === 'string'
-  );
-}
-
-function FieldChangesPanel({
-  fieldChanges,
-}: {
-  fieldChanges: FieldChangeDisplay[];
-}) {
-  if (fieldChanges.length === 0) {
-    return (
-      <div className='px-4 py-3 text-sm text-zinc-500 italic'>
-        No field change details recorded for this enrichment.
-      </div>
-    );
-  }
-
-  return (
-    <div className='px-4 py-3 space-y-2'>
-      <div className='text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2'>
-        Field Changes
-      </div>
-      <div className='grid gap-2'>
-        {fieldChanges.map((change, idx) => (
-          <div
-            key={`${change.field}-${idx}`}
-            className='flex items-start gap-3 p-2 rounded bg-zinc-800/50 border border-zinc-700/50'
-          >
-            <Badge
-              variant='outline'
-              className='text-xs bg-blue-500/10 text-blue-300 border-blue-500/20 shrink-0'
-            >
-              {change.field}
-            </Badge>
-            <div className='flex items-center gap-2 flex-1 min-w-0 text-xs'>
-              <span
-                className='text-zinc-400 truncate max-w-[200px]'
-                title={change.before || 'null'}
-              >
-                {change.before || (
-                  <span className='italic text-zinc-600'>null</span>
-                )}
-              </span>
-              <ArrowRight className='h-3 w-3 text-zinc-500 shrink-0' />
-              <span
-                className='text-green-400 truncate max-w-[200px]'
-                title={change.after || 'null'}
-              >
-                {change.after || (
-                  <span className='italic text-zinc-600'>null</span>
-                )}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+import { EnrichmentTimeline } from './EnrichmentTimeline';
+import { SkeletonTimeline } from './SkeletonTimeline';
+import { EnrichmentTimelineModal } from './EnrichmentTimelineModal';
 
 interface EnrichmentLogTableProps {
   entityType?: EnrichmentEntityType;
@@ -117,9 +45,9 @@ interface EnrichmentLogTableProps {
   onReset?: () => void;
 }
 
-function EnrichmentStatusBadge({ status }: { status: EnrichmentLogStatus }) {
+function EnrichmentStatusBadge({ status }: { status: LlamaLogStatus }) {
   const statusConfig: Record<
-    EnrichmentLogStatus,
+    LlamaLogStatus,
     { color: string; icon: React.ReactNode; label: string }
   > = {
     SUCCESS: {
@@ -206,6 +134,217 @@ function OperationIcon({
   );
 }
 
+interface ExpandableLogRowProps {
+  log: LlamaLog;
+  isExpanded: boolean;
+  onToggle: () => void;
+}
+
+function ExpandableLogRow({
+  log,
+  isExpanded,
+  onToggle,
+}: ExpandableLogRowProps) {
+  // Lazy fetch children directly via parentJobId filter
+  const {
+    data: childrenData,
+    isLoading: loadingChildren,
+    error: childrenError,
+    refetch: refetchChildren,
+  } = useGetLlamaLogsQuery(
+    {
+      parentJobId: log.jobId,
+      limit: 100,
+    },
+    {
+      enabled: isExpanded && !!log.jobId,
+      refetchInterval: query => {
+        if (!isExpanded) return false;
+        const children = query.state.data?.llamaLogs || [];
+        if (children.length === 0) return false;
+        const lastChild = children[children.length - 1];
+        const age = Date.now() - new Date(lastChild.createdAt).getTime();
+        return age < 30000 ? 3000 : false;
+      },
+    }
+  );
+
+  const children = childrenData?.llamaLogs || [];
+
+  return (
+    <React.Fragment>
+      <TableRow
+        className='border-zinc-800 cursor-pointer hover:bg-transparent'
+        onClick={onToggle}
+      >
+        <TableCell className='w-8 px-2'>
+          {isExpanded ? (
+            <ChevronDown className='h-4 w-4 text-zinc-400' />
+          ) : (
+            <ChevronRight className='h-4 w-4 text-zinc-400' />
+          )}
+        </TableCell>
+        <TableCell className='text-xs text-zinc-400'>
+          {formatDistanceToNow(new Date(log.createdAt), {
+            addSuffix: true,
+          })}
+        </TableCell>
+        <TableCell className='text-xs text-zinc-300 font-mono'>
+          <div className='flex items-center gap-1.5'>
+            <OperationIcon operation={log.operation} sources={log.sources} />
+            {log.operation}
+          </div>
+        </TableCell>
+        <TableCell>
+          <div className='flex flex-wrap gap-1'>
+            {log.sources.map(source => (
+              <Badge
+                key={source}
+                variant='outline'
+                className='text-xs bg-zinc-800 text-zinc-300 border-zinc-700'
+              >
+                {source}
+              </Badge>
+            ))}
+          </div>
+        </TableCell>
+        <TableCell>
+          <EnrichmentStatusBadge status={log.status} />
+        </TableCell>
+        <TableCell className='max-w-md'>
+          {log.reason ? (
+            <div className='text-xs text-zinc-300 whitespace-pre-wrap break-words'>
+              {log.reason}
+            </div>
+          ) : (
+            <span className='text-xs text-zinc-600'>-</span>
+          )}
+        </TableCell>
+        <TableCell>
+          {log.fieldsEnriched.length > 0 ? (
+            <div className='flex flex-wrap gap-1 max-w-xs'>
+              {log.fieldsEnriched.map((field, idx) => (
+                <Badge
+                  key={`${log.id}-${field}-${idx}`}
+                  variant='secondary'
+                  className='text-xs bg-blue-500/10 text-blue-300 border-blue-500/20'
+                >
+                  {field}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <span className='text-xs text-zinc-500'>None</span>
+          )}
+        </TableCell>
+        <TableCell className='text-xs'>
+          {log.dataQualityBefore && log.dataQualityAfter ? (
+            log.dataQualityBefore === log.dataQualityAfter ? (
+              <Badge
+                className={
+                  log.dataQualityAfter === 'HIGH'
+                    ? 'bg-green-500/10 text-green-300 border-green-500/20'
+                    : log.dataQualityAfter === 'MEDIUM'
+                      ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
+                      : 'bg-red-500/10 text-red-300 border-red-500/20'
+                }
+              >
+                {log.dataQualityAfter}
+              </Badge>
+            ) : (
+              <div className='flex items-center gap-1.5'>
+                <Badge
+                  className={
+                    log.dataQualityBefore === 'HIGH'
+                      ? 'bg-green-500/10 text-green-300 border-green-500/20'
+                      : log.dataQualityBefore === 'MEDIUM'
+                        ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
+                        : 'bg-red-500/10 text-red-300 border-red-500/20'
+                  }
+                >
+                  {log.dataQualityBefore}
+                </Badge>
+                <span className='text-zinc-500'>→</span>
+                <Badge
+                  className={
+                    log.dataQualityAfter === 'HIGH'
+                      ? 'bg-green-500/10 text-green-300 border-green-500/20'
+                      : log.dataQualityAfter === 'MEDIUM'
+                        ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
+                        : 'bg-red-500/10 text-red-300 border-red-500/20'
+                  }
+                >
+                  {log.dataQualityAfter}
+                </Badge>
+              </div>
+            )
+          ) : (
+            <span className='text-zinc-500'>-</span>
+          )}
+        </TableCell>
+        <TableCell className='text-xs text-zinc-400 text-right'>
+          {log.durationMs ? `${log.durationMs}ms` : '-'}
+        </TableCell>
+        <TableCell className='max-w-md'>
+          {log.errorMessage ? (
+            <div className='text-xs text-red-400 whitespace-pre-wrap break-words'>
+              {log.errorMessage}
+            </div>
+          ) : (
+            <span className='text-xs text-zinc-600'>-</span>
+          )}
+        </TableCell>
+      </TableRow>
+      {isExpanded && (
+        <TableRow className='border-zinc-800 bg-zinc-900/80 hover:bg-zinc-900/80'>
+          <TableCell colSpan={10} className='p-0'>
+            <div className='py-8 px-6 max-h-96 overflow-y-auto custom-scrollbar flex justify-center'>
+              <div className='max-w-3xl mx-auto'>
+                {loadingChildren ? (
+                  <SkeletonTimeline itemCount={3} />
+                ) : childrenError ? (
+                  <div className='py-4 text-center'>
+                    <p className='text-sm text-red-400'>
+                      Failed to load child jobs
+                    </p>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={e => {
+                        e.stopPropagation();
+                        refetchChildren();
+                      }}
+                      className='mt-2 text-xs'
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <EnrichmentTimeline
+                      logs={
+                        children.length > 0
+                          ? [log, ...(children as LlamaLog[])]
+                          : [log]
+                      }
+                      variant='compact'
+                      truncateChildren={5}
+                    />
+                    <EnrichmentTimelineModal
+                      parentLog={log}
+                      childLogs={children as LlamaLog[]}
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+          </TableCell>
+        </TableRow>
+      )}
+    </React.Fragment>
+  );
+}
+
 export function EnrichmentLogTable({
   entityType,
   entityId,
@@ -227,8 +366,27 @@ export function EnrichmentLogTable({
     });
   };
 
-  const { data, isLoading, error } = useGetEnrichmentLogsQuery(
-    { entityType, entityId, limit },
+  // For artists: filter out noisy LINKED category and don't use parentOnly
+  // (artist logs are children of user actions like collection-add)
+  const isArtist = entityType === EnrichmentEntityType.Artist;
+  const categoryFilter = isArtist
+    ? [
+        LlamaLogCategory.Created,
+        LlamaLogCategory.Enriched,
+        LlamaLogCategory.Cached,
+        LlamaLogCategory.Corrected,
+        LlamaLogCategory.UserAction,
+      ]
+    : undefined;
+
+  const { data, isLoading, error } = useGetLlamaLogsQuery(
+    {
+      entityType,
+      entityId,
+      limit,
+      parentOnly: !isArtist, // Artists logs have parents, so don't filter by parentOnly
+      category: categoryFilter,
+    },
     {
       enabled: !!(entityType || entityId),
       refetchInterval: query => {
@@ -242,7 +400,7 @@ export function EnrichmentLogTable({
 
         // Also poll if the most recent log was created within the last 30 seconds
         // This catches the case where a background job just completed
-        const logs = query.state.data?.enrichmentLogs || [];
+        const logs = query.state.data?.llamaLogs || [];
         if (logs.length > 0) {
           const mostRecentLog = logs[0];
           const logAge =
@@ -257,13 +415,13 @@ export function EnrichmentLogTable({
     }
   );
 
-  const logs = data?.enrichmentLogs || [];
+  const logs = data?.llamaLogs || [];
 
   if (isLoading) {
     return (
       <div className='p-8 text-center text-zinc-400'>
-        <Clock className='h-6 w-6 animate-spin mx-auto mb-2' />
-        <p className='text-sm'>Loading enrichment logs...</p>
+        <div className='text-3xl mb-2 animate-pulse'>🦙</div>
+        <p className='text-sm'>Llama is thinking...</p>
       </div>
     );
   }
@@ -273,10 +431,9 @@ export function EnrichmentLogTable({
       {/* Header with Reset button - always show */}
       <div className='flex items-center justify-between'>
         <h3 className='text-sm font-semibold text-white flex items-center gap-2'>
-          <Clock className='h-4 w-4' />
-          Enrichment History
+          🦙 LlamaLog
           <span className='text-xs text-zinc-500 font-normal'>
-            ({logs.length} {logs.length === 1 ? 'log' : 'logs'})
+            ({logs.length} {logs.length === 1 ? 'job' : 'jobs'})
           </span>
         </h3>
         {onReset && enrichmentStatus ? (
@@ -306,9 +463,11 @@ export function EnrichmentLogTable({
 
       {/* Error state */}
       {error ? (
-        <div className='p-8 text-center text-red-400'>
-          <XCircle className='h-6 w-6 mx-auto mb-2' />
-          <p className='text-sm'>Failed to load enrichment logs</p>
+        <div className='p-8 text-center'>
+          <div className='text-3xl mb-2'>🦙</div>
+          <p className='text-sm text-red-400 font-medium'>
+            The llama couldn&apos;t fetch logs
+          </p>
           <p className='text-xs text-zinc-500 mt-1'>
             {error instanceof Error ? error.message : 'Unknown error'}
           </p>
@@ -318,10 +477,12 @@ export function EnrichmentLogTable({
       {/* Empty state */}
       {!error && logs.length === 0 ? (
         <div className='p-8 text-center text-zinc-500 border border-zinc-700 rounded-md bg-zinc-900/50'>
-          <AlertCircle className='h-6 w-6 mx-auto mb-2' />
-          <p className='text-sm'>No enrichment logs found</p>
+          <div className='text-4xl mb-3'>🦙</div>
+          <p className='text-sm font-medium text-zinc-400'>
+            The llama has nothing to report
+          </p>
           <p className='text-xs text-zinc-600 mt-1'>
-            This entity has not been enriched yet
+            This entity hasn&apos;t been enriched yet
           </p>
         </div>
       ) : null}
@@ -347,154 +508,14 @@ export function EnrichmentLogTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {logs.map(log => {
-                const fieldChanges = extractFieldChanges(
-                  log.metadata as Record<string, unknown> | null
-                );
-                const isExpanded = expandedRows.has(log.id);
-                const hasFieldChanges = fieldChanges.length > 0;
-
-                return (
-                  <React.Fragment key={log.id}>
-                    <TableRow
-                      className={`border-zinc-800 hover:bg-zinc-800/50 ${hasFieldChanges ? 'cursor-pointer' : ''}`}
-                      onClick={() => hasFieldChanges && toggleRow(log.id)}
-                    >
-                      <TableCell className='w-8 px-2'>
-                        {hasFieldChanges ? (
-                          isExpanded ? (
-                            <ChevronDown className='h-4 w-4 text-zinc-400' />
-                          ) : (
-                            <ChevronRight className='h-4 w-4 text-zinc-400' />
-                          )
-                        ) : (
-                          <span className='w-4 h-4 inline-block' />
-                        )}
-                      </TableCell>
-                      <TableCell className='text-xs text-zinc-400'>
-                        {formatDistanceToNow(new Date(log.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </TableCell>
-                      <TableCell className='text-xs text-zinc-300 font-mono'>
-                        <div className='flex items-center gap-1.5'>
-                          <OperationIcon
-                            operation={log.operation}
-                            sources={log.sources}
-                          />
-                          {log.operation}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className='flex flex-wrap gap-1'>
-                          {log.sources.map(source => (
-                            <Badge
-                              key={source}
-                              variant='outline'
-                              className='text-xs bg-zinc-800 text-zinc-300 border-zinc-700'
-                            >
-                              {source}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <EnrichmentStatusBadge status={log.status} />
-                      </TableCell>
-                      <TableCell className='max-w-md'>
-                        {log.reason ? (
-                          <div className='text-xs text-zinc-300 whitespace-pre-wrap break-words'>
-                            {log.reason}
-                          </div>
-                        ) : (
-                          <span className='text-xs text-zinc-600'>-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {log.fieldsEnriched.length > 0 ? (
-                          <div className='flex flex-wrap gap-1 max-w-xs'>
-                            {log.fieldsEnriched.map(field => (
-                              <Badge
-                                key={field}
-                                variant='secondary'
-                                className='text-xs bg-blue-500/10 text-blue-300 border-blue-500/20'
-                              >
-                                {field}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className='text-xs text-zinc-500'>None</span>
-                        )}
-                      </TableCell>
-                      <TableCell className='text-xs'>
-                        {log.dataQualityBefore && log.dataQualityAfter ? (
-                          log.dataQualityBefore === log.dataQualityAfter ? (
-                            <Badge
-                              className={
-                                log.dataQualityAfter === 'HIGH'
-                                  ? 'bg-green-500/10 text-green-300 border-green-500/20'
-                                  : log.dataQualityAfter === 'MEDIUM'
-                                    ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
-                                    : 'bg-red-500/10 text-red-300 border-red-500/20'
-                              }
-                            >
-                              {log.dataQualityAfter}
-                            </Badge>
-                          ) : (
-                            <div className='flex items-center gap-1.5'>
-                              <Badge
-                                className={
-                                  log.dataQualityBefore === 'HIGH'
-                                    ? 'bg-green-500/10 text-green-300 border-green-500/20'
-                                    : log.dataQualityBefore === 'MEDIUM'
-                                      ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
-                                      : 'bg-red-500/10 text-red-300 border-red-500/20'
-                                }
-                              >
-                                {log.dataQualityBefore}
-                              </Badge>
-                              <span className='text-zinc-500'>→</span>
-                              <Badge
-                                className={
-                                  log.dataQualityAfter === 'HIGH'
-                                    ? 'bg-green-500/10 text-green-300 border-green-500/20'
-                                    : log.dataQualityAfter === 'MEDIUM'
-                                      ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
-                                      : 'bg-red-500/10 text-red-300 border-red-500/20'
-                                }
-                              >
-                                {log.dataQualityAfter}
-                              </Badge>
-                            </div>
-                          )
-                        ) : (
-                          <span className='text-zinc-500'>-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className='text-xs text-zinc-400 text-right'>
-                        {log.durationMs ? `${log.durationMs}ms` : '-'}
-                      </TableCell>
-                      <TableCell className='max-w-md'>
-                        {log.errorMessage ? (
-                          <div className='text-xs text-red-400 whitespace-pre-wrap break-words'>
-                            {log.errorMessage}
-                          </div>
-                        ) : (
-                          <span className='text-xs text-zinc-600'>-</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                    {isExpanded && (
-                      <TableRow className='border-zinc-800 bg-zinc-900/80'>
-                        <TableCell colSpan={10} className='p-0'>
-                          <FieldChangesPanel fieldChanges={fieldChanges} />
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </React.Fragment>
-                );
-              })}
+              {logs.map(log => (
+                <ExpandableLogRow
+                  key={log.id}
+                  log={log as LlamaLog}
+                  isExpanded={expandedRows.has(log.id)}
+                  onToggle={() => toggleRow(log.id)}
+                />
+              ))}
             </TableBody>
           </Table>
         </div>

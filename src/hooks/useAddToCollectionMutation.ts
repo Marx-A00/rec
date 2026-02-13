@@ -3,16 +3,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { graphqlClient } from '@/lib/graphql-client';
 import { queryKeys } from '@/lib/queries';
 import { Album } from '@/types/album';
+import type { AlbumInput } from '@/generated/graphql';
 
-const ADD_ALBUM_TO_COLLECTION = `
-  mutation AddAlbumToCollection($collectionId: String!, $albumId: UUID!, $position: Int) {
-    addAlbumToCollection(
-      collectionId: $collectionId,
-      input: {
-        albumId: $albumId,
-        position: $position
-      }
-    ) {
+const ADD_ALBUM_TO_COLLECTION_WITH_CREATE = `
+  mutation AddAlbumToCollectionWithCreate($input: AddAlbumToCollectionWithCreateInput!) {
+    addAlbumToCollectionWithCreate(input: $input) {
       id
     }
   }
@@ -24,29 +19,11 @@ const GET_ALBUM = `
   }
 `;
 
-const ADD_ALBUM = `
-  mutation AddAlbum($input: AlbumInput!) {
-    addAlbum(input: $input) { id title }
-  }
-`;
-
-async function ensureLocalAlbumId(album: Album): Promise<string> {
-  // 1) If a local DB album with this ID exists, use it (local source path)
-  try {
-    const existing: any = await graphqlClient.request(GET_ALBUM, {
-      id: album.id,
-    });
-    if (existing?.album?.id) {
-      return existing.album.id as string;
-    }
-  } catch (_) {
-    // ignore and fallback to create path
-  }
-
-  // 2) Create the album using explicit source identifiers (no inference)
+// Build AlbumInput from Album object
+function buildAlbumInput(album: Album): AlbumInput {
   const artistInputs = (album.artists || []).map(a => ({ artistName: a.name }));
 
-  const input: any = {
+  const input: AlbumInput = {
     title: album.title || 'Unknown Album',
     artists:
       artistInputs.length > 0
@@ -65,8 +42,20 @@ async function ensureLocalAlbumId(album: Album): Promise<string> {
     input.totalTracks = album.metadata.numberOfTracks;
   if (album.image?.url) input.coverImageUrl = album.image.url;
 
-  const created: any = await graphqlClient.request(ADD_ALBUM, { input });
-  return created.addAlbum.id as string;
+  return input;
+}
+
+// Check if album exists in local DB
+async function checkLocalAlbumExists(albumId: string): Promise<string | null> {
+  try {
+    const existing: { album?: { id: string } } = await graphqlClient.request(
+      GET_ALBUM,
+      { id: albumId }
+    );
+    return existing?.album?.id || null;
+  } catch {
+    return null;
+  }
 }
 
 const addToCollection = async (album: Album): Promise<string> => {
@@ -82,7 +71,8 @@ const addToCollection = async (album: Album): Promise<string> => {
       }
     `;
 
-    const collectionsData: any = await graphqlClient.request(collectionsQuery);
+    const collectionsData: { myCollections?: { id: string; name: string }[] } =
+      await graphqlClient.request(collectionsQuery);
     let collectionId: string;
 
     if (
@@ -97,30 +87,43 @@ const addToCollection = async (album: Album): Promise<string> => {
           }
         }
       `;
-      const newCollection: any = await graphqlClient.request(createMutation);
+      const newCollection: { createCollection: { id: string } } =
+        await graphqlClient.request(createMutation);
       collectionId = newCollection.createCollection.id;
     } else {
       // Use the first collection or find "My Collection"
       const defaultCollection =
-        collectionsData.myCollections.find(
-          (c: any) => c.name === 'My Collection'
-        ) || collectionsData.myCollections[0];
+        collectionsData.myCollections.find(c => c.name === 'My Collection') ||
+        collectionsData.myCollections[0];
       collectionId = defaultCollection.id;
     }
 
-    // Ensure we have a local album ID (create from MBID/metadata if needed)
-    const localAlbumId = await ensureLocalAlbumId(album);
+    // Check if album exists in local DB
+    const existingAlbumId = await checkLocalAlbumExists(album.id);
 
-    // Now add the album to the collection using the local DB album ID
-    await graphqlClient.request(ADD_ALBUM_TO_COLLECTION, {
-      collectionId,
-      albumId: localAlbumId,
-      position: 0, // Add at the beginning
+    // Use combined mutation - pass albumId if exists, otherwise albumData
+    await graphqlClient.request(ADD_ALBUM_TO_COLLECTION_WITH_CREATE, {
+      input: {
+        collectionId,
+        position: 0, // Add at the beginning
+        ...(existingAlbumId
+          ? { albumId: existingAlbumId }
+          : { albumData: buildAlbumInput(album) }),
+      },
     });
 
     return `Added "${album.title}" to collection`;
-  } catch (error: any) {
-    if (error.response?.errors?.[0]) {
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      error.response &&
+      typeof error.response === 'object' &&
+      'errors' in error.response &&
+      Array.isArray(error.response.errors) &&
+      error.response.errors[0]
+    ) {
       throw new Error(error.response.errors[0].message);
     }
     throw new Error('Failed to add to collection');
