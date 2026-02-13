@@ -719,8 +719,12 @@ export async function middleware(request: NextRequest) {
       return handlePreflight(request);
     }
 
+    // Skip CORS origin check for NextAuth routes — these are same-origin
+    // browser requests and NextAuth already handles CSRF protection
+    const isNextAuthRoute = pathname.startsWith('/api/auth/');
+
     // For actual requests, check origin and set CORS headers
-    if (origin && !isOriginAllowed(origin)) {
+    if (origin && !isNextAuthRoute && !isOriginAllowed(origin)) {
       console.warn(
         `CORS: Rejected request from origin: ${origin} to ${pathname}`
       );
