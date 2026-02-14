@@ -49,7 +49,10 @@ Build a daily album art guessing game that drives repeat visits and music discov
 2. **Relations correct:** GameSession links to User and DailyChallenge, GameGuess links to GameSession
 3. **Prisma generates:** `pnpm prisma generate` succeeds with all game-related types
 
-**Plans:** TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 33-01-PLAN.md - Add Prisma models and run migration
 
 ---
 
