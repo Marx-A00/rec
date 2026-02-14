@@ -1,4 +1,5 @@
 // src/lib/musicbrainz/integration.ts
+import chalk from 'chalk';
 import { PrismaClient } from '@prisma/client';
 import type { Artist, Album } from '@prisma/client';
 
@@ -43,9 +44,60 @@ export class MusicBrainzIntegrationService {
       // Create new artist with validated and mapped data
       const artistData = mapArtistSearchToCanonical(validatedArtist);
 
-      return await this.prisma.artist.create({
+      const newArtist = await this.prisma.artist.create({
         data: artistData,
       });
+
+      // Try to fetch artist image from Spotify (background context, latency OK)
+      try {
+        const { tryFetchSpotifyArtistImage } = await import(
+          '../spotify/artist-image-helper'
+        );
+        const imageResult = await tryFetchSpotifyArtistImage(newArtist.name);
+        if (imageResult) {
+          const updated = await this.prisma.artist.update({
+            where: { id: newArtist.id },
+            data: {
+              imageUrl: imageResult.imageUrl,
+              spotifyId: newArtist.spotifyId || imageResult.spotifyId,
+            },
+          });
+
+          // Queue Cloudflare caching for the image
+          try {
+            const { getMusicBrainzQueue } = await import(
+              '../queue/musicbrainz-queue'
+            );
+            const { JOB_TYPES } = await import('../queue/jobs');
+            const queue = getMusicBrainzQueue();
+            await queue.addJob(
+              JOB_TYPES.CACHE_ARTIST_IMAGE,
+              { artistId: newArtist.id },
+              {
+                priority: 5,
+                attempts: 3,
+                backoff: { type: 'exponential', delay: 2000 },
+              }
+            );
+          } catch {
+            // Queue not available — image still saved, just not cached to CDN
+          }
+
+          console.log(
+            chalk.magenta(
+              `[TIER-2] Set image for artist "${newArtist.name}" from Spotify (integration-service)`
+            )
+          );
+          return updated;
+        }
+      } catch (imgErr) {
+        console.warn(
+          `[Artist Image] Failed to fetch image for "${newArtist.name}":`,
+          imgErr
+        );
+      }
+
+      return newArtist;
     } catch (error) {
       console.error('Failed to process MusicBrainz artist data:', error);
       throw new Error(

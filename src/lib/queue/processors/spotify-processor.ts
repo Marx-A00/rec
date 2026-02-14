@@ -16,10 +16,8 @@ import type {
  *
  * Task 11: Supports pagination and artist follower filtering
  */
-export async function searchSpotifyNewReleases(
-  data: SpotifySyncNewReleasesJobData
-): Promise<
-  Array<{
+export interface SpotifyNewReleasesResult {
+  albums: Array<{
     id: string;
     name: string;
     artists: string;
@@ -29,8 +27,14 @@ export async function searchSpotifyNewReleases(
     spotifyUrl: string;
     type: string;
     totalTracks: number;
-  }>
-> {
+  }>;
+  /** Map of Spotify artist ID → image URL, built from getArtistsByIds() */
+  artistImageMap: Map<string, string>;
+}
+
+export async function searchSpotifyNewReleases(
+  data: SpotifySyncNewReleasesJobData
+): Promise<SpotifyNewReleasesResult> {
   const { SpotifyApi } = await import('@spotify/web-api-ts-sdk');
 
   const spotifyClient = SpotifyApi.withClientCredentials(
@@ -138,13 +142,21 @@ export async function searchSpotifyNewReleases(
       `   👥 Fetching follower counts for ${uniqueArtistIds.length} artists...`
     );
 
-    // Fetch artist details with follower counts
+    // Fetch artist details with follower counts (also includes images)
     const artistDetails = await getArtistsByIds(uniqueArtistIds);
 
     // Create a map of artist ID -> follower count
     const artistFollowerMap = new Map(
       artistDetails.map(artist => [artist.id, artist.followers])
     );
+
+    // Build artist image map from the same API response (no extra calls)
+    const artistImageMap = new Map<string, string>();
+    for (const artist of artistDetails) {
+      if (artist.imageUrl) {
+        artistImageMap.set(artist.id, artist.imageUrl);
+      }
+    }
 
     // Filter albums by primary artist follower count
     const beforeFilterCount = allAlbums.length;
@@ -159,10 +171,29 @@ export async function searchSpotifyNewReleases(
       `✅ Filtered ${beforeFilterCount} → ${filteredAlbums.length} albums (removed ${removedCount} from artists with <${minFollowers} followers)`
     );
 
-    return filteredAlbums;
+    return { albums: filteredAlbums, artistImageMap };
   }
 
-  return allAlbums;
+  // No follower filtering — still fetch artist details for images
+  const { getArtistsByIds } = await import('../../spotify/search');
+
+  const uniqueArtistIds = [
+    ...new Set(allAlbums.flatMap(album => album.artistIds.slice(0, 1))),
+  ];
+
+  console.log(
+    `🖼️  Fetching artist images for ${uniqueArtistIds.length} artists...`
+  );
+
+  const artistDetails = await getArtistsByIds(uniqueArtistIds);
+  const artistImageMap = new Map<string, string>();
+  for (const artist of artistDetails) {
+    if (artist.imageUrl) {
+      artistImageMap.set(artist.id, artist.imageUrl);
+    }
+  }
+
+  return { albums: allAlbums, artistImageMap };
 }
 
 // ============================================================================
@@ -225,7 +256,7 @@ export async function handleSpotifySyncNewReleases(
     );
 
     // Fetch new releases using search API with tag:new filter
-    const spotifyAlbums = await withSpotifyMetrics(
+    const { albums: spotifyAlbums, artistImageMap } = await withSpotifyMetrics(
       () =>
         withSpotifyRetry(
           async () => await searchSpotifyNewReleases(data),
@@ -235,6 +266,7 @@ export async function handleSpotifySyncNewReleases(
     );
 
     console.log(`📀 Fetched ${spotifyAlbums.length} new releases from Spotify`);
+    console.log(`🖼️  Artist image map: ${artistImageMap.size} images cached`);
 
     // Process through our mappers (creates DB records + queues enrichment)
     const result = await processSpotifyAlbums(
@@ -246,7 +278,8 @@ export async function handleSpotifySyncNewReleases(
         country: data.country,
         genreTags: data.genreTags,
         year: year,
-      }
+      },
+      artistImageMap
     );
 
     console.log(`✅ Spotify new releases sync complete:`, result.stats);

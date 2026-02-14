@@ -191,6 +191,7 @@ export async function getArtistsByIds(artistIds: string[]): Promise<
     followers: number;
     popularity: number;
     genres: string[];
+    imageUrl?: string;
   }>
 > {
   if (artistIds.length === 0) return [];
@@ -208,6 +209,7 @@ export async function getArtistsByIds(artistIds: string[]): Promise<
       followers: number;
       popularity: number;
       genres: string[];
+      imageUrl?: string;
     }> = [];
 
     // Process in batches of 50
@@ -249,6 +251,7 @@ export async function getArtistsByIds(artistIds: string[]): Promise<
             followers: artist.followers?.total || 0,
             popularity: artist.popularity || 0,
             genres: artist.genres || [],
+            imageUrl: extractBestImage(artist.images),
           });
         }
       }

@@ -1,6 +1,8 @@
 // src/lib/queue/processors/musicbrainz-processor.ts
 // MusicBrainz API search and lookup handlers
 
+import chalk from 'chalk';
+
 import { prisma } from '@/lib/prisma';
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
 
@@ -258,6 +260,52 @@ export async function handleMusicBrainzSyncNewReleases(
           } catch (err) {
             console.warn('[LlamaLog] Failed to log artist creation:', err);
           }
+
+          // Try to fetch artist image from Spotify (background worker, latency OK)
+          try {
+            const { tryFetchSpotifyArtistImage } = await import(
+              '../../spotify/artist-image-helper'
+            );
+            const imageResult = await tryFetchSpotifyArtistImage(artist.name);
+            if (imageResult) {
+              await prisma.artist.update({
+                where: { id: dbArtist.id },
+                data: {
+                  imageUrl: imageResult.imageUrl,
+                  spotifyId: dbArtist.spotifyId || imageResult.spotifyId,
+                },
+              });
+              console.log(
+                chalk.magenta(
+                  `[TIER-2] Set image for artist "${artist.name}" from Spotify (musicbrainz-processor)`
+                )
+              );
+
+              // Queue Cloudflare caching for the image
+              const { getMusicBrainzQueue } = await import(
+                '../musicbrainz-queue'
+              );
+              const { JOB_TYPES } = await import('../jobs');
+              const queue = getMusicBrainzQueue();
+              await queue.addJob(
+                JOB_TYPES.CACHE_ARTIST_IMAGE,
+                {
+                  artistId: dbArtist.id,
+                  parentJobId: data.requestId || 'mb-sync-batch',
+                },
+                {
+                  priority: 5,
+                  attempts: 3,
+                  backoff: { type: 'exponential', delay: 2000 },
+                }
+              );
+            }
+          } catch (imgErr) {
+            console.warn(
+              `[Artist Image] Failed to fetch image for "${artist.name}":`,
+              imgErr
+            );
+          }
         } else if (!artistWasCreated) {
           // Log artist linking to LlamaLog (existing artist will be associated with new album)
           const llamaLogger = createLlamaLogger(prisma);
@@ -317,7 +365,12 @@ export async function handleMusicBrainzSyncNewReleases(
             category: 'CREATED',
             sources: ['MUSICBRAINZ'],
             status: 'SUCCESS',
-            fieldsEnriched: ['title', 'musicbrainzId', 'releaseDate', 'artists'],
+            fieldsEnriched: [
+              'title',
+              'musicbrainzId',
+              'releaseDate',
+              'artists',
+            ],
             dataQualityAfter: 'MEDIUM', // MusicBrainz data is medium quality
             parentJobId: data.requestId || 'mb-sync-batch',
             isRootJob: false, // Child of sync batch
@@ -330,7 +383,10 @@ export async function handleMusicBrainzSyncNewReleases(
             },
           });
         } catch (logError) {
-          console.warn(`[LlamaLogger] Failed to log MusicBrainz album creation for ${album.id}:`, logError);
+          console.warn(
+            `[LlamaLogger] Failed to log MusicBrainz album creation for ${album.id}:`,
+            logError
+          );
         }
 
         // Queue enrichment job for the new album

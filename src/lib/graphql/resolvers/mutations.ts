@@ -2,6 +2,7 @@
 // src/lib/graphql/resolvers/mutations.ts
 // Mutation resolvers for GraphQL API
 
+import chalk from 'chalk';
 import { GraphQLError } from 'graphql';
 
 import {
@@ -533,6 +534,41 @@ export const mutationResolvers: MutationResolvers = {
             console.log(
               `✨ Created new artist: "${newArtist.name}" (${newArtist.id})`
             );
+
+            // Queue artist enrichment directly with high priority
+            setImmediate(async () => {
+              try {
+                const queue = getMusicBrainzQueue();
+                const jobOptions = await priorityManager.getJobOptions(
+                  'manual',
+                  newArtist.id,
+                  'artist',
+                  user?.id,
+                  sessionId
+                );
+                const checkData: CheckArtistEnrichmentJobData = {
+                  artistId: newArtist.id,
+                  source: 'manual',
+                  priority: 'high',
+                  requestId: `track-artist-${newArtist.id}`,
+                };
+                await queue.addJob(
+                  JOB_TYPES.CHECK_ARTIST_ENRICHMENT,
+                  checkData,
+                  { ...jobOptions, priority: 3 }
+                );
+                console.log(
+                  chalk.magenta(
+                    `[TIER-3] Queued CHECK_ARTIST_ENRICHMENT for "${newArtist.name}" from createTrack mutation`
+                  )
+                );
+              } catch (queueError) {
+                console.warn(
+                  'Failed to queue artist enrichment for new track artist:',
+                  queueError
+                );
+              }
+            });
           }
         }
 
@@ -825,9 +861,41 @@ export const mutationResolvers: MutationResolvers = {
             console.log(
               `✨ Created new artist: "${newArtist.name}" (${newArtist.id})`
             );
-            // NOTE: Artist creation logging removed - it's an implementation detail.
-            // Artist enrichment will be triggered via CHECK_ARTIST_ENRICHMENT job
-            // which will log with proper parentJobId from the calling mutation.
+
+            // Queue artist enrichment directly with high priority
+            setImmediate(async () => {
+              try {
+                const queue = getMusicBrainzQueue();
+                const jobOptions = await priorityManager.getJobOptions(
+                  'manual',
+                  newArtist.id,
+                  'artist',
+                  user?.id,
+                  sessionId
+                );
+                const checkData: CheckArtistEnrichmentJobData = {
+                  artistId: newArtist.id,
+                  source: 'manual',
+                  priority: 'high',
+                  requestId: `album-artist-${newArtist.id}`,
+                };
+                await queue.addJob(
+                  JOB_TYPES.CHECK_ARTIST_ENRICHMENT,
+                  checkData,
+                  { ...jobOptions, priority: 3 }
+                );
+                console.log(
+                  chalk.magenta(
+                    `[TIER-3] Queued CHECK_ARTIST_ENRICHMENT for "${newArtist.name}" from addAlbum mutation`
+                  )
+                );
+              } catch (queueError) {
+                console.warn(
+                  'Failed to queue artist enrichment for new album artist:',
+                  queueError
+                );
+              }
+            });
           }
 
           // Create or update the album-artist relationship (upsert to handle duplicates)
@@ -1726,6 +1794,11 @@ export const mutationResolvers: MutationResolvers = {
               attempts: 3,
             }
           );
+          console.log(
+            chalk.magenta(
+              `[TIER-3] Queued CHECK_ARTIST_ENRICHMENT for "${artist.name}" from addAlbumToCollectionWithCreate mutation`
+            )
+          );
         }
       } catch (queueError) {
         console.warn('Failed to queue enrichment jobs:', queueError);
@@ -1942,6 +2015,34 @@ export const mutationResolvers: MutationResolvers = {
                       err
                     );
                   }
+
+                  // Queue artist enrichment directly with high priority
+                  setImmediate(async () => {
+                    try {
+                      const queue = getMusicBrainzQueue();
+                      const checkData: CheckArtistEnrichmentJobData = {
+                        artistId: newArtist.id,
+                        source: 'collection_add',
+                        priority: 'high',
+                        requestId: `listen-later-artist-${newArtist.id}`,
+                      };
+                      await queue.addJob(
+                        JOB_TYPES.CHECK_ARTIST_ENRICHMENT,
+                        checkData,
+                        { priority: 3, attempts: 3 }
+                      );
+                      console.log(
+                        chalk.magenta(
+                          `[TIER-3] Queued CHECK_ARTIST_ENRICHMENT for "${newArtist.name}" from addToListenLater mutation`
+                        )
+                      );
+                    } catch (queueError) {
+                      console.warn(
+                        'Failed to queue artist enrichment for listen later artist:',
+                        queueError
+                      );
+                    }
+                  });
                 }
 
                 // Create or update the album-artist relationship (upsert to handle duplicates)
@@ -2578,6 +2679,11 @@ export const mutationResolvers: MutationResolvers = {
                 priority: 10,
                 attempts: 3,
               }
+            );
+            console.log(
+              chalk.magenta(
+                `[TIER-3] Queued CHECK_ARTIST_ENRICHMENT for "${artist.name}" from createRecommendation mutation`
+              )
             );
           }
         } catch (queueError) {

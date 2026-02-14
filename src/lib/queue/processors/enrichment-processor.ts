@@ -1,6 +1,7 @@
 // src/lib/queue/processors/enrichment-processor.ts
 // Album, artist, and track enrichment handlers
 
+import chalk from 'chalk';
 import { Job } from 'bullmq';
 
 import { prisma } from '@/lib/prisma';
@@ -2449,6 +2450,53 @@ async function processMusicBrainzTracksForAlbum(
                         console.warn(
                           '[LlamaLog] Failed to log artist creation:',
                           err
+                        );
+                      }
+
+                      // Try to fetch artist image from Spotify (background worker, latency OK)
+                      try {
+                        const { tryFetchSpotifyArtistImage } = await import(
+                          '../../spotify/artist-image-helper'
+                        );
+                        const imageResult =
+                          await tryFetchSpotifyArtistImage(artistName);
+                        if (imageResult) {
+                          await prisma.artist.update({
+                            where: { id: dbArtist.id },
+                            data: {
+                              imageUrl: imageResult.imageUrl,
+                              spotifyId:
+                                dbArtist.spotifyId || imageResult.spotifyId,
+                            },
+                          });
+                          console.log(
+                            chalk.magenta(
+                              `[TIER-2] Set image for artist "${artistName}" from Spotify (enrichment-processor)`
+                            )
+                          );
+
+                          // Queue Cloudflare caching for the image
+                          const queue = (
+                            await import('../musicbrainz-queue')
+                          ).getMusicBrainzQueue();
+                          const { JOB_TYPES } = await import('../jobs');
+                          await queue.addJob(
+                            JOB_TYPES.CACHE_ARTIST_IMAGE,
+                            {
+                              artistId: dbArtist.id,
+                              parentJobId: jobContext?.jobId || undefined,
+                            },
+                            {
+                              priority: 5,
+                              attempts: 3,
+                              backoff: { type: 'exponential', delay: 2000 },
+                            }
+                          );
+                        }
+                      } catch (imgErr) {
+                        console.warn(
+                          `[Artist Image] Failed to fetch image for "${artistName}":`,
+                          imgErr
                         );
                       }
                     } else if (!artistWasCreated) {

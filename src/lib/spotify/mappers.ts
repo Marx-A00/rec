@@ -4,6 +4,7 @@
  * Follows "Add First → Enrich Later" pattern for immediate user feedback
  */
 
+import chalk from 'chalk';
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { Prisma } from '@prisma/client';
 
@@ -214,11 +215,13 @@ export function transformSpotifyAlbum(
  */
 export function transformSpotifyArtist(
   artistName: string,
-  spotifyId?: string
+  spotifyId?: string,
+  imageUrl?: string
 ): ArtistCreationData {
   return {
     name: artistName.trim(),
     spotifyId: spotifyId,
+    imageUrl: imageUrl,
     // Initial enrichment state
     dataQuality: 'LOW',
     enrichmentStatus: 'PENDING',
@@ -278,12 +281,21 @@ export async function findOrCreateArtist(
     data: {
       name: artistData.name,
       spotifyId: artistData.spotifyId,
+      imageUrl: artistData.imageUrl,
       source: 'SPOTIFY',
       dataQuality: artistData.dataQuality,
       enrichmentStatus: artistData.enrichmentStatus,
       lastEnriched: artistData.lastEnriched,
     },
   });
+
+  if (artistData.imageUrl) {
+    console.log(
+      chalk.magenta(
+        `[TIER-1] Artist "${artistData.name}" created WITH image at creation time (imageUrl from artistImageMap)`
+      )
+    );
+  }
 
   return newArtist.id;
 }
@@ -305,7 +317,8 @@ export async function processSpotifyAlbum(
     country?: string;
     genreTags?: string[];
     year?: number;
-  }
+  },
+  artistImageMap?: Map<string, string>
 ): Promise<{ albumId: string; artistIds: string[]; tracksCreated?: number }> {
   console.log(`🎵 Processing Spotify album: "${spotifyAlbum.name}"`);
 
@@ -389,8 +402,15 @@ export async function processSpotifyAlbum(
     const artistName = artistNames[i];
     const spotifyArtistId = spotifyAlbum.artistIds?.[i]; // May not exist
 
-    // Find or create artist
-    const artistData = transformSpotifyArtist(artistName, spotifyArtistId);
+    // Find or create artist (with image from Spotify if available)
+    const imageUrl = spotifyArtistId
+      ? artistImageMap?.get(spotifyArtistId)
+      : undefined;
+    const artistData = transformSpotifyArtist(
+      artistName,
+      spotifyArtistId,
+      imageUrl
+    );
     const artistId = await findOrCreateArtist(artistData);
     artistIds.push(artistId);
 
@@ -469,7 +489,8 @@ export async function processSpotifyAlbums(
     country?: string;
     genreTags?: string[];
     year?: number;
-  }
+  },
+  artistImageMap?: Map<string, string>
 ): Promise<SpotifyProcessingResult> {
   console.log(`🚀 Processing ${spotifyAlbums.length} Spotify albums...`);
 
@@ -531,7 +552,8 @@ export async function processSpotifyAlbums(
       const result = await processSpotifyAlbum(
         spotifyAlbum,
         source,
-        metadataOptions
+        metadataOptions,
+        artistImageMap
       );
       results.push(result);
     } catch (error) {
