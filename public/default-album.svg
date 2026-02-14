@@ -1,0 +1,33 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="400" fill="#18181b"/>
+
+  <!-- Vinyl record -->
+  <circle cx="200" cy="200" r="150" fill="#27272a" stroke="#3f3f46" stroke-width="2"/>
+  <circle cx="200" cy="200" r="120" fill="#18181b" stroke="#3f3f46" stroke-width="1" opacity="0.5"/>
+  <circle cx="200" cy="200" r="90" fill="#27272a" stroke="#3f3f46" stroke-width="1" opacity="0.4"/>
+  <circle cx="200" cy="200" r="60" fill="#18181b" stroke="#3f3f46" stroke-width="1" opacity="0.3"/>
+
+  <!-- Center label -->
+  <circle cx="200" cy="200" r="40" fill="#3f3f46"/>
+
+  <!-- Music note icon -->
+  <g transform="translate(200, 200)">
+    <path d="M -8 -12 L -8 8 Q -8 12 -12 12 Q -16 12 -16 8 Q -16 4 -12 4 Q -10 4 -8 5 L -8 -12 L 8 -16 L 8 4 Q 8 8 4 8 Q 0 8 0 4 Q 0 0 4 0 Q 6 0 8 1 L 8 -16 L -8 -12 Z"
+          fill="#71717a"
+          stroke="#52525b"
+          stroke-width="0.5"/>
+  </g>
+
+  <!-- Highlight for depth -->
+  <circle cx="200" cy="200" r="148" fill="none" stroke="url(#highlight)" stroke-width="1" opacity="0.3"/>
+
+  <!-- Gradient definition -->
+  <defs>
+    <linearGradient id="highlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#71717a;stop-opacity:0" />
+      <stop offset="50%" style="stop-color:#a1a1aa;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#71717a;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+</svg>

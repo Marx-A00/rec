@@ -18,6 +18,9 @@ test-output/
 /public/*
 !/public/demo-albums/
 !/public/landing/
+!/public/*.svg
+!/public/*.ico
+!/public/*.png
 
 
 # next.js
