@@ -149,6 +149,7 @@ export interface CheckArtistEnrichmentJobData {
     | 'search'
     | 'browse'
     | 'manual'
+    | 'manual_add'
     | 'spotify_sync'
     | 'admin_manual';
   priority?: 'low' | 'medium' | 'high';
