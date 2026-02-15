@@ -36,7 +36,7 @@ Requirements for the daily album art guessing game.
 - [ ] **STATS-03**: Track current streak (consecutive days won)
 - [ ] **STATS-04**: Track max streak (best ever)
 - [ ] **STATS-05**: Track guess distribution (1-guess wins, 2-guess wins, etc.)
-- [ ] **STATS-06**: Stats persisted in database (not localStorage)
+- [x] **STATS-06**: Stats persisted in database (not localStorage)
 - [ ] **STATS-07**: Stats viewable after each game
 - [ ] **STATS-08**: Stats synced across devices for logged-in users
 
@@ -74,7 +74,7 @@ Requirements for the daily album art guessing game.
 
 - [ ] **AUTH-01**: Login required to play the game
 - [ ] **AUTH-02**: Unauthenticated users see login prompt
-- [ ] **AUTH-03**: Game state tied to user account
+- [x] **AUTH-03**: Game state tied to user account
 
 ### UI/UX
 
@@ -143,7 +143,7 @@ Deferred to later milestones.
 | STATS-03    | 39    | Pending |
 | STATS-04    | 39    | Pending |
 | STATS-05    | 39    | Pending |
-| STATS-06    | 33    | Pending |
+| STATS-06    | 33    | Complete |
 | STATS-07    | 39    | Pending |
 | STATS-08    | 39    | Pending |
 | DAILY-01    | 35    | Pending |
@@ -166,7 +166,7 @@ Deferred to later milestones.
 | DISCOVER-04 | 41    | Pending |
 | AUTH-01     | 37    | Pending |
 | AUTH-02     | 38    | Pending |
-| AUTH-03     | 33    | Pending |
+| AUTH-03     | 33    | Complete |
 | UI-01       | 38    | Pending |
 | UI-02       | 38    | Pending |
 | UI-03       | 38    | Pending |
@@ -182,4 +182,4 @@ Deferred to later milestones.
 ---
 
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after roadmap creation*
+*Last updated: 2026-02-15 after Phase 33 completion*
