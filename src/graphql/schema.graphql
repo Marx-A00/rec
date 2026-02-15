@@ -31,9 +31,6 @@ type Artist {
   dataQuality: DataQuality
   enrichmentStatus: EnrichmentStatus
   lastEnriched: DateTime
-  # Game pool status
-  gameStatus: AlbumGameStatus!
-
 
   # Relationships
   albums: [Album!]!
@@ -76,6 +73,9 @@ type Album {
   dataQuality: DataQuality
   enrichmentStatus: EnrichmentStatus
   lastEnriched: DateTime
+
+  # Game pool status
+  gameStatus: AlbumGameStatus!
 
   # Relationships
   artists: [ArtistCredit!]!

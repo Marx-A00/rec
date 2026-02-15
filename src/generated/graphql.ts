@@ -149,6 +149,7 @@ export type Album = {
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
+  gameStatus: AlbumGameStatus;
   genres?: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
@@ -345,7 +346,6 @@ export type Artist = {
   discogsId?: Maybe<Scalars['String']['output']>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
-  gameStatus: AlbumGameStatus;
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
@@ -4102,6 +4102,80 @@ export type PreviewArtistEnrichmentMutation = {
       newValue?: string | null;
       source: string;
     }>;
+  };
+};
+
+export type GamePoolStatsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type GamePoolStatsQuery = {
+  __typename?: 'Query';
+  gamePoolStats: {
+    __typename?: 'GamePoolStats';
+    eligibleCount: number;
+    excludedCount: number;
+    neutralCount: number;
+    totalWithCoverArt: number;
+  };
+};
+
+export type AlbumsByGameStatusQueryVariables = Exact<{
+  status: AlbumGameStatus;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type AlbumsByGameStatusQuery = {
+  __typename?: 'Query';
+  albumsByGameStatus: Array<{
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    releaseDate?: Date | null;
+    cloudflareImageId?: string | null;
+    gameStatus: AlbumGameStatus;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  }>;
+};
+
+export type SuggestedGameAlbumsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type SuggestedGameAlbumsQuery = {
+  __typename?: 'Query';
+  suggestedGameAlbums: Array<{
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    releaseDate?: Date | null;
+    cloudflareImageId?: string | null;
+    gameStatus: AlbumGameStatus;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  }>;
+};
+
+export type UpdateAlbumGameStatusMutationVariables = Exact<{
+  input: UpdateAlbumGameStatusInput;
+}>;
+
+export type UpdateAlbumGameStatusMutation = {
+  __typename?: 'Mutation';
+  updateAlbumGameStatus: {
+    __typename?: 'UpdateAlbumGameStatusResult';
+    success: boolean;
+    error?: string | null;
+    album?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      gameStatus: AlbumGameStatus;
+    } | null;
   };
 };
 
@@ -8364,6 +8438,310 @@ export const usePreviewArtistEnrichmentMutation = <
 };
 
 usePreviewArtistEnrichmentMutation.getKey = () => ['PreviewArtistEnrichment'];
+
+export const GamePoolStatsDocument = `
+    query GamePoolStats {
+  gamePoolStats {
+    eligibleCount
+    excludedCount
+    neutralCount
+    totalWithCoverArt
+  }
+}
+    `;
+
+export const useGamePoolStatsQuery = <
+  TData = GamePoolStatsQuery,
+  TError = unknown,
+>(
+  variables?: GamePoolStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GamePoolStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<GamePoolStatsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<GamePoolStatsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GamePoolStats']
+        : ['GamePoolStats', variables],
+    queryFn: fetcher<GamePoolStatsQuery, GamePoolStatsQueryVariables>(
+      GamePoolStatsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGamePoolStatsQuery.getKey = (variables?: GamePoolStatsQueryVariables) =>
+  variables === undefined ? ['GamePoolStats'] : ['GamePoolStats', variables];
+
+export const useInfiniteGamePoolStatsQuery = <
+  TData = InfiniteData<GamePoolStatsQuery>,
+  TError = unknown,
+>(
+  variables: GamePoolStatsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GamePoolStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GamePoolStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GamePoolStatsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GamePoolStats.infinite']
+            : ['GamePoolStats.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GamePoolStatsQuery, GamePoolStatsQueryVariables>(
+            GamePoolStatsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGamePoolStatsQuery.getKey = (
+  variables?: GamePoolStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['GamePoolStats.infinite']
+    : ['GamePoolStats.infinite', variables];
+
+export const AlbumsByGameStatusDocument = `
+    query AlbumsByGameStatus($status: AlbumGameStatus!, $limit: Int, $offset: Int) {
+  albumsByGameStatus(status: $status, limit: $limit, offset: $offset) {
+    id
+    title
+    releaseDate
+    cloudflareImageId
+    gameStatus
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+
+export const useAlbumsByGameStatusQuery = <
+  TData = AlbumsByGameStatusQuery,
+  TError = unknown,
+>(
+  variables: AlbumsByGameStatusQueryVariables,
+  options?: Omit<
+    UseQueryOptions<AlbumsByGameStatusQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      AlbumsByGameStatusQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<AlbumsByGameStatusQuery, TError, TData>({
+    queryKey: ['AlbumsByGameStatus', variables],
+    queryFn: fetcher<AlbumsByGameStatusQuery, AlbumsByGameStatusQueryVariables>(
+      AlbumsByGameStatusDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useAlbumsByGameStatusQuery.getKey = (
+  variables: AlbumsByGameStatusQueryVariables
+) => ['AlbumsByGameStatus', variables];
+
+export const useInfiniteAlbumsByGameStatusQuery = <
+  TData = InfiniteData<AlbumsByGameStatusQuery>,
+  TError = unknown,
+>(
+  variables: AlbumsByGameStatusQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<AlbumsByGameStatusQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      AlbumsByGameStatusQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<AlbumsByGameStatusQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['AlbumsByGameStatus.infinite', variables],
+        queryFn: metaData =>
+          fetcher<AlbumsByGameStatusQuery, AlbumsByGameStatusQueryVariables>(
+            AlbumsByGameStatusDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteAlbumsByGameStatusQuery.getKey = (
+  variables: AlbumsByGameStatusQueryVariables
+) => ['AlbumsByGameStatus.infinite', variables];
+
+export const SuggestedGameAlbumsDocument = `
+    query SuggestedGameAlbums($limit: Int) {
+  suggestedGameAlbums(limit: $limit) {
+    id
+    title
+    releaseDate
+    cloudflareImageId
+    gameStatus
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+
+export const useSuggestedGameAlbumsQuery = <
+  TData = SuggestedGameAlbumsQuery,
+  TError = unknown,
+>(
+  variables?: SuggestedGameAlbumsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SuggestedGameAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      SuggestedGameAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<SuggestedGameAlbumsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['SuggestedGameAlbums']
+        : ['SuggestedGameAlbums', variables],
+    queryFn: fetcher<
+      SuggestedGameAlbumsQuery,
+      SuggestedGameAlbumsQueryVariables
+    >(SuggestedGameAlbumsDocument, variables),
+    ...options,
+  });
+};
+
+useSuggestedGameAlbumsQuery.getKey = (
+  variables?: SuggestedGameAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['SuggestedGameAlbums']
+    : ['SuggestedGameAlbums', variables];
+
+export const useInfiniteSuggestedGameAlbumsQuery = <
+  TData = InfiniteData<SuggestedGameAlbumsQuery>,
+  TError = unknown,
+>(
+  variables: SuggestedGameAlbumsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SuggestedGameAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SuggestedGameAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SuggestedGameAlbumsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['SuggestedGameAlbums.infinite']
+            : ['SuggestedGameAlbums.infinite', variables],
+        queryFn: metaData =>
+          fetcher<SuggestedGameAlbumsQuery, SuggestedGameAlbumsQueryVariables>(
+            SuggestedGameAlbumsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSuggestedGameAlbumsQuery.getKey = (
+  variables?: SuggestedGameAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['SuggestedGameAlbums.infinite']
+    : ['SuggestedGameAlbums.infinite', variables];
+
+export const UpdateAlbumGameStatusDocument = `
+    mutation UpdateAlbumGameStatus($input: UpdateAlbumGameStatusInput!) {
+  updateAlbumGameStatus(input: $input) {
+    success
+    error
+    album {
+      id
+      title
+      gameStatus
+    }
+  }
+}
+    `;
+
+export const useUpdateAlbumGameStatusMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateAlbumGameStatusMutation,
+    TError,
+    UpdateAlbumGameStatusMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateAlbumGameStatusMutation,
+    TError,
+    UpdateAlbumGameStatusMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateAlbumGameStatus'],
+    mutationFn: (variables?: UpdateAlbumGameStatusMutationVariables) =>
+      fetcher<
+        UpdateAlbumGameStatusMutation,
+        UpdateAlbumGameStatusMutationVariables
+      >(UpdateAlbumGameStatusDocument, variables)(),
+    ...options,
+  });
+};
+
+useUpdateAlbumGameStatusMutation.getKey = () => ['UpdateAlbumGameStatus'];
 
 export const GetAlbumRecommendationsDocument = `
     query GetAlbumRecommendations($albumId: UUID!, $filter: String, $sort: String, $skip: Int, $limit: Int) {

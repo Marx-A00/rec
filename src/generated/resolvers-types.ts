@@ -123,6 +123,7 @@ export type Album = {
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
+  gameStatus: AlbumGameStatus;
   genres?: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
@@ -319,7 +320,6 @@ export type Artist = {
   discogsId?: Maybe<Scalars['String']['output']>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
-  gameStatus: AlbumGameStatus;
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
@@ -3379,6 +3379,11 @@ export type AlbumResolvers<
     ParentType,
     ContextType
   >;
+  gameStatus?: Resolver<
+    ResolversTypes['AlbumGameStatus'],
+    ParentType,
+    ContextType
+  >;
   genres?: Resolver<
     Maybe<Array<ResolversTypes['String']>>,
     ParentType,
@@ -3635,11 +3640,6 @@ export type ArtistResolvers<
     ContextType
   >;
   formedYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  gameStatus?: Resolver<
-    ResolversTypes['AlbumGameStatus'],
-    ParentType,
-    ContextType
-  >;
   id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   lastEnriched?: Resolver<
