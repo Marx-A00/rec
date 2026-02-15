@@ -88,6 +88,16 @@ export default function AdminLayout({
               <span>Music Database</span>
             </Link>
             <Link
+              href='/admin/game-pool'
+              className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
+                pathname === '/admin/game-pool'
+                  ? 'text-white bg-zinc-800'
+                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+              }`}
+            >
+              <span>Game Pool</span>
+            </Link>
+            <Link
               href='/admin/job-history'
               className={`flex items-center px-4 py-2 mb-1 rounded-lg transition-colors ${
                 pathname === '/admin/job-history'
