@@ -4131,6 +4131,7 @@ export type AlbumsByGameStatusQuery = {
     id: string;
     title: string;
     releaseDate?: Date | null;
+    coverArtUrl?: string | null;
     cloudflareImageId?: string | null;
     gameStatus: AlbumGameStatus;
     artists: Array<{
@@ -4151,6 +4152,7 @@ export type SuggestedGameAlbumsQuery = {
     id: string;
     title: string;
     releaseDate?: Date | null;
+    coverArtUrl?: string | null;
     cloudflareImageId?: string | null;
     gameStatus: AlbumGameStatus;
     artists: Array<{
@@ -8526,6 +8528,7 @@ export const AlbumsByGameStatusDocument = `
     id
     title
     releaseDate
+    coverArtUrl
     cloudflareImageId
     gameStatus
     artists {
@@ -8610,6 +8613,7 @@ export const SuggestedGameAlbumsDocument = `
     id
     title
     releaseDate
+    coverArtUrl
     cloudflareImageId
     gameStatus
     artists {
