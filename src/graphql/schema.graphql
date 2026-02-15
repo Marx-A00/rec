@@ -31,6 +31,9 @@ type Artist {
   dataQuality: DataQuality
   enrichmentStatus: EnrichmentStatus
   lastEnriched: DateTime
+  # Game pool status
+  gameStatus: AlbumGameStatus!
+
 
   # Relationships
   albums: [Album!]!
@@ -737,6 +740,12 @@ enum LlamaLogCategory {
   FAILED
   LINKED
   USER_ACTION
+}
+
+enum AlbumGameStatus {
+  ELIGIBLE
+  EXCLUDED
+  NONE
 }
 
 # =============================================
@@ -2493,9 +2502,38 @@ type Query {
     """
     source: CorrectionSource = MUSICBRAINZ
   ): ArtistCorrectionPreview!
+
+  # Game Pool queries
+  albumsByGameStatus(status: AlbumGameStatus!, limit: Int = 50, offset: Int = 0): [Album!]!
+  gamePoolStats: GamePoolStats!
+  suggestedGameAlbums(limit: Int = 50): [Album!]!
 }
 
 # =============================================
+
+# =============================================
+# GAME POOL TYPES
+# =============================================
+
+type GamePoolStats {
+  eligibleCount: Int!
+  excludedCount: Int!
+  neutralCount: Int!
+  totalWithCoverArt: Int!
+}
+
+input UpdateAlbumGameStatusInput {
+  albumId: UUID!
+  gameStatus: AlbumGameStatus!
+  reason: String
+}
+
+type UpdateAlbumGameStatusResult {
+  success: Boolean!
+  album: Album
+  error: String
+}
+
 # MUTATIONS (Placeholder for future implementation)
 # =============================================
 
@@ -2523,6 +2561,7 @@ type Mutation {
   # Album management
   addAlbum(input: AlbumInput!): Album!
   updateAlbum(id: UUID!, input: AlbumInput!): Album!
+  updateAlbumGameStatus(input: UpdateAlbumGameStatusInput!): UpdateAlbumGameStatusResult!
 
   # Artist management
   addArtist(input: ArtistInput!): Artist!

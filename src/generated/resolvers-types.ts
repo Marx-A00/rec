@@ -147,6 +147,12 @@ export type AlbumLlamaLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export enum AlbumGameStatus {
+  Eligible = 'ELIGIBLE',
+  Excluded = 'EXCLUDED',
+  None = 'NONE',
+}
+
 export type AlbumInput = {
   albumType?: InputMaybe<Scalars['String']['input']>;
   appleMusicId?: InputMaybe<Scalars['String']['input']>;
@@ -313,6 +319,7 @@ export type Artist = {
   discogsId?: Maybe<Scalars['String']['output']>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
+  gameStatus: AlbumGameStatus;
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
@@ -1051,6 +1058,14 @@ export type FollowUserPayload = {
   id: Scalars['String']['output'];
 };
 
+export type GamePoolStats = {
+  __typename?: 'GamePoolStats';
+  eligibleCount: Scalars['Int']['output'];
+  excludedCount: Scalars['Int']['output'];
+  neutralCount: Scalars['Int']['output'];
+  totalWithCoverArt: Scalars['Int']['output'];
+};
+
 /**
  * A group of related search results (same release group MBID).
  * Groups releases like "OK Computer" regular vs deluxe editions.
@@ -1362,6 +1377,7 @@ export type Mutation = {
   unfollowUser: Scalars['Boolean']['output'];
   updateAlbum: Album;
   updateAlbumDataQuality: Album;
+  updateAlbumGameStatus: UpdateAlbumGameStatusResult;
   updateAlertThresholds: AlertThresholds;
   updateArtistDataQuality: Artist;
   updateCollection: UpdateCollectionPayload;
@@ -1538,6 +1554,10 @@ export type MutationUpdateAlbumDataQualityArgs = {
   id: Scalars['UUID']['input'];
 };
 
+export type MutationUpdateAlbumGameStatusArgs = {
+  input: UpdateAlbumGameStatusInput;
+};
+
 export type MutationUpdateAlertThresholdsArgs = {
   input: AlertThresholdsInput;
 };
@@ -1659,6 +1679,7 @@ export type Query = {
   albumByMusicBrainzId?: Maybe<Album>;
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
+  albumsByGameStatus: Array<Album>;
   albumsByJobId: Array<Album>;
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
@@ -1677,6 +1698,7 @@ export type Query = {
   enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
   followingActivity: Array<Recommendation>;
+  gamePoolStats: GamePoolStats;
   getAlbumRecommendations: AlbumRecommendationsResponse;
   health: Scalars['String']['output'];
   isFollowing: Scalars['Boolean']['output'];
@@ -1700,6 +1722,7 @@ export type Query = {
   searchTracks: Array<Track>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
+  suggestedGameAlbums: Array<Album>;
   syncJob?: Maybe<SyncJob>;
   syncJobByJobId?: Maybe<SyncJob>;
   syncJobs: SyncJobsConnection;
@@ -1734,6 +1757,12 @@ export type QueryAlbumRecommendationsArgs = {
 
 export type QueryAlbumTracksArgs = {
   albumId: Scalars['UUID']['input'];
+};
+
+export type QueryAlbumsByGameStatusArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  status: AlbumGameStatus;
 };
 
 export type QueryAlbumsByJobIdArgs = {
@@ -1905,6 +1934,10 @@ export type QuerySocialFeedArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   type?: InputMaybe<ActivityType>;
+};
+
+export type QuerySuggestedGameAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QuerySyncJobArgs = {
@@ -2562,6 +2595,19 @@ export type UnifiedRelease = {
   year?: Maybe<Scalars['Int']['output']>;
 };
 
+export type UpdateAlbumGameStatusInput = {
+  albumId: Scalars['UUID']['input'];
+  gameStatus: AlbumGameStatus;
+  reason?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateAlbumGameStatusResult = {
+  __typename?: 'UpdateAlbumGameStatusResult';
+  album?: Maybe<Album>;
+  error?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export type UpdateCollectionAlbumPayload = {
   __typename?: 'UpdateCollectionAlbumPayload';
   id: Scalars['String']['output'];
@@ -2827,6 +2873,7 @@ export type ResolversTypes = ResolversObject<{
   AddAlbumToCollectionWithCreateInput: AddAlbumToCollectionWithCreateInput;
   AdminUpdateUserSettingsPayload: ResolverTypeWrapper<AdminUpdateUserSettingsPayload>;
   Album: ResolverTypeWrapper<Album>;
+  AlbumGameStatus: AlbumGameStatus;
   AlbumInput: AlbumInput;
   AlbumRecommendation: ResolverTypeWrapper<AlbumRecommendation>;
   AlbumRecommendationsResponse: ResolverTypeWrapper<AlbumRecommendationsResponse>;
@@ -2911,6 +2958,7 @@ export type ResolversTypes = ResolversObject<{
   FieldSelectionsInput: FieldSelectionsInput;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   FollowUserPayload: ResolverTypeWrapper<FollowUserPayload>;
+  GamePoolStats: ResolverTypeWrapper<GamePoolStats>;
   GroupedSearchResult: ResolverTypeWrapper<GroupedSearchResult>;
   HealthComponents: ResolverTypeWrapper<HealthComponents>;
   HealthMetrics: ResolverTypeWrapper<HealthMetrics>;
@@ -2996,6 +3044,8 @@ export type ResolversTypes = ResolversObject<{
   TrackSourceData: ResolverTypeWrapper<TrackSourceData>;
   UUID: ResolverTypeWrapper<Scalars['UUID']['output']>;
   UnifiedRelease: ResolverTypeWrapper<UnifiedRelease>;
+  UpdateAlbumGameStatusInput: UpdateAlbumGameStatusInput;
+  UpdateAlbumGameStatusResult: ResolverTypeWrapper<UpdateAlbumGameStatusResult>;
   UpdateCollectionAlbumPayload: ResolverTypeWrapper<UpdateCollectionAlbumPayload>;
   UpdateCollectionPayload: ResolverTypeWrapper<UpdateCollectionPayload>;
   UpdateProfilePayload: ResolverTypeWrapper<UpdateProfilePayload>;
@@ -3089,6 +3139,7 @@ export type ResolversParentTypes = ResolversObject<{
   FieldSelectionsInput: FieldSelectionsInput;
   Float: Scalars['Float']['output'];
   FollowUserPayload: FollowUserPayload;
+  GamePoolStats: GamePoolStats;
   GroupedSearchResult: GroupedSearchResult;
   HealthComponents: HealthComponents;
   HealthMetrics: HealthMetrics;
@@ -3159,6 +3210,8 @@ export type ResolversParentTypes = ResolversObject<{
   TrackSourceData: TrackSourceData;
   UUID: Scalars['UUID']['output'];
   UnifiedRelease: UnifiedRelease;
+  UpdateAlbumGameStatusInput: UpdateAlbumGameStatusInput;
+  UpdateAlbumGameStatusResult: UpdateAlbumGameStatusResult;
   UpdateCollectionAlbumPayload: UpdateCollectionAlbumPayload;
   UpdateCollectionPayload: UpdateCollectionPayload;
   UpdateProfilePayload: UpdateProfilePayload;
@@ -3582,6 +3635,11 @@ export type ArtistResolvers<
     ContextType
   >;
   formedYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  gameStatus?: Resolver<
+    ResolversTypes['AlbumGameStatus'],
+    ParentType,
+    ContextType
+  >;
   id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
   imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   lastEnriched?: Resolver<
@@ -4412,6 +4470,18 @@ export type FollowUserPayloadResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type GamePoolStatsResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['GamePoolStats'] = ResolversParentTypes['GamePoolStats'],
+> = ResolversObject<{
+  eligibleCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  excludedCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  neutralCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalWithCoverArt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type GroupedSearchResultResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -4947,6 +5017,12 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationUpdateAlbumDataQualityArgs, 'dataQuality' | 'id'>
   >;
+  updateAlbumGameStatus?: Resolver<
+    ResolversTypes['UpdateAlbumGameStatusResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationUpdateAlbumGameStatusArgs, 'input'>
+  >;
   updateAlertThresholds?: Resolver<
     ResolversTypes['AlertThresholds'],
     ParentType,
@@ -5144,6 +5220,12 @@ export type QueryResolvers<
     ContextType,
     RequireFields<QueryAlbumTracksArgs, 'albumId'>
   >;
+  albumsByGameStatus?: Resolver<
+    Array<ResolversTypes['Album']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryAlbumsByGameStatusArgs, 'limit' | 'offset' | 'status'>
+  >;
   albumsByJobId?: Resolver<
     Array<ResolversTypes['Album']>,
     ParentType,
@@ -5232,6 +5314,11 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryFollowingActivityArgs, 'limit'>
+  >;
+  gamePoolStats?: Resolver<
+    ResolversTypes['GamePoolStats'],
+    ParentType,
+    ContextType
   >;
   getAlbumRecommendations?: Resolver<
     ResolversTypes['AlbumRecommendationsResponse'],
@@ -5359,6 +5446,12 @@ export type QueryResolvers<
     ResolversTypes['SpotifyTrendingData'],
     ParentType,
     ContextType
+  >;
+  suggestedGameAlbums?: Resolver<
+    Array<ResolversTypes['Album']>,
+    ParentType,
+    ContextType,
+    RequireFields<QuerySuggestedGameAlbumsArgs, 'limit'>
   >;
   syncJob?: Resolver<
     Maybe<ResolversTypes['SyncJob']>,
@@ -6308,6 +6401,17 @@ export type UnifiedReleaseResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type UpdateAlbumGameStatusResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UpdateAlbumGameStatusResult'] = ResolversParentTypes['UpdateAlbumGameStatusResult'],
+> = ResolversObject<{
+  album?: Resolver<Maybe<ResolversTypes['Album']>, ParentType, ContextType>;
+  error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type UpdateCollectionAlbumPayloadResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -6629,6 +6733,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   EnrichmentStats?: EnrichmentStatsResolvers<ContextType>;
   ErrorMetric?: ErrorMetricResolvers<ContextType>;
   FollowUserPayload?: FollowUserPayloadResolvers<ContextType>;
+  GamePoolStats?: GamePoolStatsResolvers<ContextType>;
   GroupedSearchResult?: GroupedSearchResultResolvers<ContextType>;
   HealthComponents?: HealthComponentsResolvers<ContextType>;
   HealthMetrics?: HealthMetricsResolvers<ContextType>;
@@ -6688,6 +6793,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   TrackSourceData?: TrackSourceDataResolvers<ContextType>;
   UUID?: GraphQLScalarType;
   UnifiedRelease?: UnifiedReleaseResolvers<ContextType>;
+  UpdateAlbumGameStatusResult?: UpdateAlbumGameStatusResultResolvers<ContextType>;
   UpdateCollectionAlbumPayload?: UpdateCollectionAlbumPayloadResolvers<ContextType>;
   UpdateCollectionPayload?: UpdateCollectionPayloadResolvers<ContextType>;
   UpdateProfilePayload?: UpdateProfilePayloadResolvers<ContextType>;

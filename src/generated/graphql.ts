@@ -173,6 +173,12 @@ export type AlbumLlamaLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export enum AlbumGameStatus {
+  Eligible = 'ELIGIBLE',
+  Excluded = 'EXCLUDED',
+  None = 'NONE',
+}
+
 export type AlbumInput = {
   albumType?: InputMaybe<Scalars['String']['input']>;
   appleMusicId?: InputMaybe<Scalars['String']['input']>;
@@ -339,6 +345,7 @@ export type Artist = {
   discogsId?: Maybe<Scalars['String']['output']>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
   formedYear?: Maybe<Scalars['Int']['output']>;
+  gameStatus: AlbumGameStatus;
   id: Scalars['UUID']['output'];
   imageUrl?: Maybe<Scalars['String']['output']>;
   lastEnriched?: Maybe<Scalars['DateTime']['output']>;
@@ -1077,6 +1084,14 @@ export type FollowUserPayload = {
   id: Scalars['String']['output'];
 };
 
+export type GamePoolStats = {
+  __typename?: 'GamePoolStats';
+  eligibleCount: Scalars['Int']['output'];
+  excludedCount: Scalars['Int']['output'];
+  neutralCount: Scalars['Int']['output'];
+  totalWithCoverArt: Scalars['Int']['output'];
+};
+
 /**
  * A group of related search results (same release group MBID).
  * Groups releases like "OK Computer" regular vs deluxe editions.
@@ -1388,6 +1403,7 @@ export type Mutation = {
   unfollowUser: Scalars['Boolean']['output'];
   updateAlbum: Album;
   updateAlbumDataQuality: Album;
+  updateAlbumGameStatus: UpdateAlbumGameStatusResult;
   updateAlertThresholds: AlertThresholds;
   updateArtistDataQuality: Artist;
   updateCollection: UpdateCollectionPayload;
@@ -1564,6 +1580,10 @@ export type MutationUpdateAlbumDataQualityArgs = {
   id: Scalars['UUID']['input'];
 };
 
+export type MutationUpdateAlbumGameStatusArgs = {
+  input: UpdateAlbumGameStatusInput;
+};
+
 export type MutationUpdateAlertThresholdsArgs = {
   input: AlertThresholdsInput;
 };
@@ -1685,6 +1705,7 @@ export type Query = {
   albumByMusicBrainzId?: Maybe<Album>;
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
+  albumsByGameStatus: Array<Album>;
   albumsByJobId: Array<Album>;
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
@@ -1703,6 +1724,7 @@ export type Query = {
   enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
   followingActivity: Array<Recommendation>;
+  gamePoolStats: GamePoolStats;
   getAlbumRecommendations: AlbumRecommendationsResponse;
   health: Scalars['String']['output'];
   isFollowing: Scalars['Boolean']['output'];
@@ -1726,6 +1748,7 @@ export type Query = {
   searchTracks: Array<Track>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
+  suggestedGameAlbums: Array<Album>;
   syncJob?: Maybe<SyncJob>;
   syncJobByJobId?: Maybe<SyncJob>;
   syncJobs: SyncJobsConnection;
@@ -1760,6 +1783,12 @@ export type QueryAlbumRecommendationsArgs = {
 
 export type QueryAlbumTracksArgs = {
   albumId: Scalars['UUID']['input'];
+};
+
+export type QueryAlbumsByGameStatusArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  status: AlbumGameStatus;
 };
 
 export type QueryAlbumsByJobIdArgs = {
@@ -1931,6 +1960,10 @@ export type QuerySocialFeedArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   type?: InputMaybe<ActivityType>;
+};
+
+export type QuerySuggestedGameAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QuerySyncJobArgs = {
@@ -2586,6 +2619,19 @@ export type UnifiedRelease = {
   title: Scalars['String']['output'];
   trackCount?: Maybe<Scalars['Int']['output']>;
   year?: Maybe<Scalars['Int']['output']>;
+};
+
+export type UpdateAlbumGameStatusInput = {
+  albumId: Scalars['UUID']['input'];
+  gameStatus: AlbumGameStatus;
+  reason?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateAlbumGameStatusResult = {
+  __typename?: 'UpdateAlbumGameStatusResult';
+  album?: Maybe<Album>;
+  error?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
 };
 
 export type UpdateCollectionAlbumPayload = {
