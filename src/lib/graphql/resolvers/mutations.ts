@@ -4115,4 +4115,106 @@ export const mutationResolvers: MutationResolvers = {
       );
     }
   },
+  // Game Pool Management
+  updateAlbumGameStatus: async (
+    _,
+    { input },
+    { prisma, session }
+  ) => {
+    try {
+      // Check admin permission
+      if (!session?.user) {
+        return {
+          success: false,
+          album: null,
+          error: 'Authentication required',
+        };
+      }
+
+      const { UserRole } = await import('@prisma/client');
+      if (!isAdmin(session.user.role as UserRole)) {
+        return {
+          success: false,
+          album: null,
+          error: 'Admin permission required',
+        };
+      }
+
+      // Fetch album with artist count
+      const album = await prisma.album.findUnique({
+        where: { id: input.albumId },
+        include: {
+          _count: {
+            select: { artists: true },
+          },
+        },
+      });
+
+      if (!album) {
+        return {
+          success: false,
+          album: null,
+          error: 'Album not found',
+        };
+      }
+
+      // Validate eligibility if status is ELIGIBLE
+      if (input.gameStatus === 'ELIGIBLE') {
+        const { validateEligibility } = await import(
+          '@/lib/game-pool/eligibility'
+        );
+        const eligibility = validateEligibility(
+          album,
+          album._count.artists > 0
+        );
+
+        if (!eligibility.eligible) {
+          return {
+            success: false,
+            album: null,
+            error: eligibility.reason || 'Album not eligible',
+          };
+        }
+      }
+
+      // Update status
+      const updatedAlbum = await prisma.album.update({
+        where: { id: input.albumId },
+        data: {
+          gameStatus: input.gameStatus,
+        },
+      });
+
+      // Log to LlamaLog with USER_ACTION category
+      const llamaLogger = createLlamaLogger(prisma);
+      await llamaLogger.logEnrichment({
+        entityType: 'ALBUM',
+        entityId: updatedAlbum.id,
+        albumId: updatedAlbum.id,
+        operation: 'game-pool:status-update',
+        category: 'USER_ACTION',
+        sources: ['ADMIN'],
+        status: 'SUCCESS',
+        reason: input.reason || `Status changed to ${input.gameStatus}`,
+        fieldsEnriched: ['gameStatus'],
+        userId: session.user.id,
+      });
+
+      return {
+        success: true,
+        album: updatedAlbum,
+        error: null,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to update album game status:', {
+        error,
+        input,
+      });
+      return {
+        success: false,
+        album: null,
+        error: `Failed to update game status: ${error}`,
+      };
+    }
+  },
 };

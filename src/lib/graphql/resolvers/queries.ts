@@ -3230,5 +3230,105 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  // Game Pool queries
+  albumsByGameStatus: async (
+    _,
+    { status, limit = 50, offset = 0 },
+    { prisma }
+  ) => {
+    try {
+      const albums = await prisma.album.findMany({
+        where: {
+          gameStatus: status,
+        },
+        include: {
+          artists: {
+            include: {
+              artist: true,
+            },
+          },
+        },
+        orderBy: {
+          title: 'asc',
+        },
+        take: limit,
+        skip: offset,
+      });
+
+      return albums as ResolversTypes['Album'][];
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch albums by game status:', {
+        error,
+        status,
+      });
+      throw new GraphQLError(
+        `Failed to fetch albums by game status: ${error}`
+      );
+    }
+  },
+
+  gamePoolStats: async (_, __, { prisma }) => {
+    try {
+      const [eligible, excluded, neutral, totalWithCoverArt] =
+        await Promise.all([
+          prisma.album.count({
+            where: { gameStatus: 'ELIGIBLE' },
+          }),
+          prisma.album.count({
+            where: { gameStatus: 'EXCLUDED' },
+          }),
+          prisma.album.count({
+            where: { gameStatus: 'NONE' },
+          }),
+          prisma.album.count({
+            where: {
+              cloudflareImageId: { not: null },
+            },
+          }),
+        ]);
+
+      return {
+        eligibleCount: eligible,
+        excludedCount: excluded,
+        neutralCount: neutral,
+        totalWithCoverArt,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch game pool stats:', { error });
+      throw new GraphQLError(`Failed to fetch game pool stats: ${error}`);
+    }
+  },
+
+  suggestedGameAlbums: async (_, { limit = 50 }, { prisma }) => {
+    try {
+      const albums = await prisma.album.findMany({
+        where: {
+          gameStatus: 'NONE',
+          cloudflareImageId: { not: null },
+          releaseDate: { not: null },
+          artists: {
+            some: {},
+          },
+        },
+        include: {
+          artists: {
+            include: {
+              artist: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: limit,
+      });
+
+      return albums as ResolversTypes['Album'][];
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch suggested game albums:', { error });
+      throw new GraphQLError(`Failed to fetch suggested game albums: ${error}`);
+    }
+  },
+
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects
 };
