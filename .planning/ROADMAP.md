@@ -21,7 +21,7 @@ Build a daily album art guessing game that drives repeat visits and music discov
 - Decimal phases (33.1, 33.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 33: Data Foundation** - Prisma models for game state ✓
-- [ ] **Phase 34: Album Pool** - Curated game-eligible albums
+- [x] **Phase 34: Album Pool** - Curated game-eligible albums ✓
 - [ ] **Phase 35: Daily Challenge System** - Album selection and scheduler
 - [ ] **Phase 36: Image Reveal Engine** - Canvas pixelation and CSS blur
 - [ ] **Phase 37: Game State & Logic** - Zustand store, guess validation
@@ -79,9 +79,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 34-01-PLAN.md — Add gameStatus enum to Album model
-- [ ] 34-02-PLAN.md — GraphQL API for game pool management
-- [ ] 34-03-PLAN.md — Admin UI for game pool
+- [x] 34-01-PLAN.md — Add gameStatus enum to Album model ✓
+- [x] 34-02-PLAN.md — GraphQL API for game pool management ✓
+- [x] 34-03-PLAN.md — Admin UI for game pool ✓
 
 ---
 
@@ -320,7 +320,7 @@ Plans:
 | Phase | Name                      | Requirements | Status      | Completed |
 |-------|---------------------------|--------------|-------------|-----------|
 | 33    | Data Foundation           | 2            | Complete    | 2026-02-15 |
-| 34    | Album Pool                | 5            | Not started | -         |
+| 34    | Album Pool                | 5            | Complete    | 2026-02-15 |
 | 35    | Daily Challenge System    | 3            | Not started | -         |
 | 36    | Image Reveal Engine       | 6            | Not started | -         |
 | 37    | Game State & Logic        | 11           | Not started | -         |
@@ -371,11 +371,11 @@ Plans:
 | ARCHIVE-02  | 40    | Pending | Shows played/missed status               |
 | ARCHIVE-03  | 40    | Pending | No streak impact                         |
 | ARCHIVE-04  | 40    | Pending | Still tracks win/loss stats              |
-| POOL-01     | 34    | Pending | Curated pool of eligible albums          |
-| POOL-02     | 34    | Pending | Eligibility: has cover art               |
-| POOL-03     | 34    | Pending | Eligibility: recognizable albums         |
-| POOL-04     | 34    | Pending | Admin can manage pool                    |
-| POOL-05     | 34    | Pending | Daily selection from pool only           |
+| POOL-01     | 34    | Complete | Curated pool of eligible albums          |
+| POOL-02     | 34    | Complete | Eligibility: has cover art               |
+| POOL-03     | 34    | Complete | Eligibility: recognizable albums         |
+| POOL-04     | 34    | Complete | Admin can manage pool                    |
+| POOL-05     | 34    | Complete | Daily selection from pool only           |
 | DISCOVER-01 | 41    | Pending | Post-game album details                  |
 | DISCOVER-02 | 41    | Pending | Link to album page                       |
 | DISCOVER-03 | 41    | Pending | Add to Collection button                 |
