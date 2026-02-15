@@ -38,6 +38,7 @@ import { applyCorrectionService, StaleDataError } from '@/lib/correction/apply';
 import { getQueuedDiscogsService } from '@/lib/discogs/queued-service';
 import { mapMasterToCorrectionSearchResult } from '@/lib/discogs/mappers';
 import { PRIORITY_TIERS } from '@/lib/queue/jobs';
+import { getInitialQuality } from '@/lib/db';
 import type {
   FieldSelections,
   MetadataSelections,
@@ -513,7 +514,7 @@ export const mutationResolvers: MutationResolvers = {
             identity: { name: artistInput.artistName },
             fields: {
               source: 'USER_SUBMITTED' as const,
-              dataQuality: 'LOW',
+              ...getInitialQuality(),
             },
             enrichment: 'queue-check',
             queueCheckOptions: {
@@ -749,10 +750,7 @@ export const mutationResolvers: MutationResolvers = {
           coverArtUrl: input.coverImageUrl,
           musicbrainzId: input.musicbrainzId,
           // Note: Spotify/Apple/Discogs IDs would need schema updates to store
-          // Set initial enrichment data - always PENDING so tracks get fetched
-          dataQuality: input.musicbrainzId ? 'MEDIUM' : 'LOW',
-          enrichmentStatus: 'PENDING',
-          lastEnriched: null,
+          ...getInitialQuality({ musicbrainzId: input.musicbrainzId }),
         },
       });
 
@@ -767,7 +765,7 @@ export const mutationResolvers: MutationResolvers = {
           identity: { name: artistInput.artistName },
           fields: {
             source: 'USER_SUBMITTED' as const,
-            dataQuality: 'LOW',
+            ...getInitialQuality(),
           },
           enrichment: 'queue-check',
           queueCheckOptions: {
@@ -892,7 +890,7 @@ export const mutationResolvers: MutationResolvers = {
           imageUrl: input.imageUrl,
           countryCode: input.countryCode,
           source: 'USER_SUBMITTED' as const,
-          dataQuality: input.musicbrainzId ? 'MEDIUM' : 'LOW',
+          ...getInitialQuality({ musicbrainzId: input.musicbrainzId }),
         },
         enrichment: 'queue-check',
         queueCheckOptions: {
@@ -1358,9 +1356,9 @@ export const mutationResolvers: MutationResolvers = {
                 trackCount: albumData.totalTracks,
                 coverArtUrl: albumData.coverImageUrl,
                 musicbrainzId: albumData.musicbrainzId,
-                dataQuality: albumData.musicbrainzId ? 'MEDIUM' : 'LOW',
-                enrichmentStatus: 'PENDING',
-                lastEnriched: null,
+                ...getInitialQuality({
+                  musicbrainzId: albumData.musicbrainzId,
+                }),
               },
             });
             finalAlbumId = newAlbum.id;
@@ -1377,7 +1375,7 @@ export const mutationResolvers: MutationResolvers = {
                 identity: { name: artistInput.artistName },
                 fields: {
                   source: 'USER_SUBMITTED' as const,
-                  dataQuality: 'LOW',
+                  ...getInitialQuality(),
                 },
                 enrichment: 'none',
                 insideTransaction: true,
@@ -1841,9 +1839,7 @@ export const mutationResolvers: MutationResolvers = {
               trackCount: albumData.totalTracks,
               coverArtUrl: albumData.coverImageUrl,
               musicbrainzId: albumData.musicbrainzId,
-              dataQuality: albumData.musicbrainzId ? 'MEDIUM' : 'LOW',
-              enrichmentStatus: 'PENDING',
-              lastEnriched: null,
+              ...getInitialQuality({ musicbrainzId: albumData.musicbrainzId }),
             },
           });
           console.log(
@@ -1859,7 +1855,7 @@ export const mutationResolvers: MutationResolvers = {
               identity: { name: artistInput.artistName },
               fields: {
                 source: 'USER_SUBMITTED' as const,
-                dataQuality: 'LOW',
+                ...getInitialQuality(),
               },
               enrichment: 'none',
               insideTransaction: true,
@@ -3311,7 +3307,7 @@ export const mutationResolvers: MutationResolvers = {
             identity: { name: artistName },
             fields: {
               source: 'USER_SUBMITTED' as const, // Fix: was 'MANUAL' (invalid enum)
-              dataQuality: 'LOW',
+              ...getInitialQuality(),
             },
             enrichment: 'none',
             insideTransaction: true,
