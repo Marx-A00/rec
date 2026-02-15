@@ -48,20 +48,6 @@ function albumToGraphQLInput(album: Album): AlbumInput {
   };
 }
 
-/**
- * Check if an album already exists in the local database
- * (has a valid UUID format and source indicates it's from our DB)
- */
-function isLocalDatabaseAlbum(album: Album): boolean {
-  // Check if the ID is a valid UUID format (local DB albums have UUIDs)
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return (
-    uuidRegex.test(album.id) &&
-    (album.source === 'local' || album.source === undefined)
-  );
-}
-
 // ========================================
 // Wrapper Hook
 // ========================================
@@ -90,8 +76,8 @@ export function useCreateRecommendationMutation(
       onSuccess?.();
 
       // Build the input object based on whether albums exist in DB
-      const basisIsLocal = isLocalDatabaseAlbum(input.basisAlbum);
-      const recommendedIsLocal = isLocalDatabaseAlbum(input.recommendedAlbum);
+      const basisIsLocal = input.basisAlbum.source === 'local';
+      const recommendedIsLocal = input.recommendedAlbum.source === 'local';
 
       // Use the combined mutation with inline album creation
       const recommendation = await createRecommendationMutation.mutateAsync({
