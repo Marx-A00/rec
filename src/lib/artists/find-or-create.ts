@@ -184,6 +184,16 @@ export async function findOrCreateArtist(
  *   - LlamaLog creation logging
  *
  * Errors are caught and logged as warnings — they never throw.
+ *
+ * WHY THIS EXISTS:
+ * Prisma doesn't support `onCommit` callbacks for interactive transactions.
+ * If we queued BullMQ jobs or called external APIs inside a $transaction,
+ * a rollback would leave orphaned jobs for non-existent artists. So
+ * transactional callers set `enrichment: 'none'` + `insideTransaction: true`,
+ * collect newly created artists, and call this function after commit.
+ *
+ * If Prisma ever adds native onCommit support, this could be inlined.
+ * See: https://github.com/prisma/prisma/issues/11920
  */
 export async function runPostCreateSideEffects(
   artist: Artist,

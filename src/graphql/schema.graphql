@@ -2567,10 +2567,6 @@ type Mutation {
     collectionId: String!
     albumIds: [UUID!]!
   ): ReorderCollectionAlbumsPayload!
-  # Listen Later convenience without schema change
-  ensureListenLaterCollection: Collection!
-  addToListenLater(albumId: UUID!, albumData: AlbumInput): CollectionAlbum!
-  removeFromListenLater(albumId: UUID!): Boolean!
 
   # Recommendation system
   """

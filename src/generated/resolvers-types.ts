@@ -1316,7 +1316,6 @@ export type Mutation = {
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   addArtist: Artist;
-  addToListenLater: CollectionAlbum;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
   artistCorrectionApply: ArtistCorrectionApplyResult;
@@ -1339,7 +1338,6 @@ export type Mutation = {
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
   dismissUserSuggestion: Scalars['Boolean']['output'];
-  ensureListenLaterCollection: Collection;
   followUser: FollowUserPayload;
   /** Apply manual corrections to an album (no external source) */
   manualCorrectionApply: CorrectionApplyResult;
@@ -1347,7 +1345,6 @@ export type Mutation = {
   previewAlbumEnrichment: PreviewEnrichmentResult;
   previewArtistEnrichment: PreviewEnrichmentResult;
   removeAlbumFromCollection: Scalars['Boolean']['output'];
-  removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
   resetAlbumEnrichment: Album;
   resetArtistEnrichment: Artist;
@@ -1390,11 +1387,6 @@ export type MutationAddAlbumToCollectionWithCreateArgs = {
 
 export type MutationAddArtistArgs = {
   input: ArtistInput;
-};
-
-export type MutationAddToListenLaterArgs = {
-  albumData?: InputMaybe<AlbumInput>;
-  albumId: Scalars['UUID']['input'];
 };
 
 export type MutationAdminUpdateUserShowTourArgs = {
@@ -1480,10 +1472,6 @@ export type MutationPreviewArtistEnrichmentArgs = {
 export type MutationRemoveAlbumFromCollectionArgs = {
   albumId: Scalars['UUID']['input'];
   collectionId: Scalars['String']['input'];
-};
-
-export type MutationRemoveFromListenLaterArgs = {
-  albumId: Scalars['UUID']['input'];
 };
 
 export type MutationReorderCollectionAlbumsArgs = {
@@ -4728,12 +4716,6 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationAddArtistArgs, 'input'>
   >;
-  addToListenLater?: Resolver<
-    ResolversTypes['CollectionAlbum'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationAddToListenLaterArgs, 'albumId'>
-  >;
   adminUpdateUserShowTour?: Resolver<
     ResolversTypes['AdminUpdateUserSettingsPayload'],
     ParentType,
@@ -4826,11 +4808,6 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationDismissUserSuggestionArgs, 'userId'>
   >;
-  ensureListenLaterCollection?: Resolver<
-    ResolversTypes['Collection'],
-    ParentType,
-    ContextType
-  >;
   followUser?: Resolver<
     ResolversTypes['FollowUserPayload'],
     ParentType,
@@ -4864,12 +4841,6 @@ export type MutationResolvers<
       MutationRemoveAlbumFromCollectionArgs,
       'albumId' | 'collectionId'
     >
-  >;
-  removeFromListenLater?: Resolver<
-    ResolversTypes['Boolean'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationRemoveFromListenLaterArgs, 'albumId'>
   >;
   reorderCollectionAlbums?: Resolver<
     ResolversTypes['ReorderCollectionAlbumsPayload'],
