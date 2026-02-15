@@ -27,7 +27,7 @@ import {
 type SearchUIState = 'idle' | 'searching' | 'results';
 
 /**
- * Props for the AlbumSearchBackwardCompatible component.
+ * Props for the DualAlbumSearch component.
  *
  * @param onAlbumSelect - Callback when an album is selected from search results
  * @param placeholder - Placeholder for single-input mode (backward compat)
@@ -152,6 +152,9 @@ const DualAlbumSearch = forwardRef<AlbumSearchRef, AlbumSearchProps>(
         ],
         year: result.releaseDate ? parseInt(result.releaseDate) : undefined,
         image: result.image,
+        source: result.source as Album['source'],
+        // For MusicBrainz results, the search id IS the MusicBrainz UUID
+        musicbrainzId: result.source === 'musicbrainz' ? result.id : undefined,
       };
     }, []);
 
