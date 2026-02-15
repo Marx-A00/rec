@@ -1269,9 +1269,7 @@ export const mutationResolvers: MutationResolvers = {
 
       // Track created artists for post-commit side effects
       const createdArtists: Array<{ id: string; name: string }> = [];
-      const { findOrCreateArtist, runPostCreateSideEffects } = await import(
-        '@/lib/artists'
-      );
+      const { findOrCreateAlbum } = await import('@/lib/albums');
 
       const collectionAlbum = await prisma.$transaction(async tx => {
         // Verify collection ownership
@@ -1298,110 +1296,55 @@ export const mutationResolvers: MutationResolvers = {
           }
           finalAlbumId = albumId;
         } else if (albumData) {
-          // Create album with find-or-create artist logic
+          // Use shared find-or-create helper (inside transaction, side effects deferred)
+          const primaryArtistName = albumData.artists?.[0]?.artistName;
+          const releaseDate = albumData.releaseDate
+            ? new Date(albumData.releaseDate)
+            : null;
 
-          // First check if album already exists by MusicBrainz ID
-          if (albumData.musicbrainzId) {
-            const existingByMbid = await tx.album.findFirst({
-              where: { musicbrainzId: albumData.musicbrainzId },
+          const { album, created } = await findOrCreateAlbum({
+            db: tx,
+            identity: {
+              title: albumData.title,
+              musicbrainzId: albumData.musicbrainzId ?? undefined,
+              primaryArtistName: primaryArtistName ?? undefined,
+              releaseYear: releaseDate?.getFullYear() ?? undefined,
+            },
+            fields: {
+              releaseDate,
+              releaseType: albumData.albumType || 'ALBUM',
+              trackCount: albumData.totalTracks ?? undefined,
+              coverArtUrl: albumData.coverImageUrl ?? undefined,
+            },
+            artists: (albumData.artists || [])
+              .filter(a => a.artistName)
+              .map((a, i) => ({
+                name: a.artistName!,
+                role: (a.role as 'PRIMARY' | 'FEATURED') || 'PRIMARY',
+                position: i,
+              })),
+            enrichment: 'none',
+            insideTransaction: true,
+            caller: 'addAlbumToCollectionWithCreate',
+          });
+
+          finalAlbumId = album.id;
+
+          // Track which artists were created (for post-transaction enrichment)
+          if (created) {
+            // Re-fetch artist associations to find newly created artists
+            const albumArtists = await tx.albumArtist.findMany({
+              where: { albumId: album.id },
+              include: { artist: true },
             });
-            if (existingByMbid) {
-              console.log(
-                `🔄 Album already exists by MBID: "${existingByMbid.title}" (${existingByMbid.id})`
-              );
-              finalAlbumId = existingByMbid.id;
-            }
-          }
-
-          // Check by title + primary artist if no MBID match
-          if (!finalAlbumId!) {
-            const primaryArtistName = albumData.artists?.[0]?.artistName;
-            if (primaryArtistName) {
-              const existingByTitleArtist = await tx.album.findFirst({
-                where: {
-                  title: { equals: albumData.title, mode: 'insensitive' },
-                  artists: {
-                    some: {
-                      role: 'PRIMARY',
-                      artist: {
-                        name: {
-                          equals: primaryArtistName,
-                          mode: 'insensitive',
-                        },
-                      },
-                    },
-                  },
-                },
-              });
-              if (existingByTitleArtist) {
-                console.log(
-                  `🔄 Album already exists by title+artist: "${existingByTitleArtist.title}" (${existingByTitleArtist.id})`
-                );
-                finalAlbumId = existingByTitleArtist.id;
+            for (const aa of albumArtists) {
+              // Artists with LOW quality and no enrichment are likely newly created
+              if (
+                aa.artist.dataQuality === 'LOW' &&
+                aa.artist.enrichmentStatus === 'PENDING'
+              ) {
+                createdArtists.push({ id: aa.artist.id, name: aa.artist.name });
               }
-            }
-          }
-
-          // Create album if not found
-          if (!finalAlbumId!) {
-            const releaseDate = albumData.releaseDate
-              ? new Date(albumData.releaseDate)
-              : null;
-
-            const newAlbum = await tx.album.create({
-              data: {
-                title: albumData.title,
-                releaseDate,
-                releaseType: albumData.albumType || 'ALBUM',
-                trackCount: albumData.totalTracks,
-                coverArtUrl: albumData.coverImageUrl,
-                musicbrainzId: albumData.musicbrainzId,
-                ...getInitialQuality({
-                  musicbrainzId: albumData.musicbrainzId,
-                }),
-              },
-            });
-            finalAlbumId = newAlbum.id;
-            console.log(
-              `✨ Created new album: "${newAlbum.title}" (${newAlbum.id})`
-            );
-
-            // Handle artist associations using shared helper (inside transaction)
-            for (const artistInput of albumData.artists || []) {
-              if (!artistInput.artistName) continue;
-
-              const { artist, created } = await findOrCreateArtist({
-                db: tx,
-                identity: { name: artistInput.artistName },
-                fields: {
-                  source: 'USER_SUBMITTED' as const,
-                  ...getInitialQuality(),
-                },
-                enrichment: 'none',
-                insideTransaction: true,
-                caller: 'addAlbumToCollectionWithCreate',
-              });
-
-              if (created) {
-                createdArtists.push({ id: artist.id, name: artist.name });
-              }
-
-              const role = artistInput.role || 'PRIMARY';
-              await tx.albumArtist.upsert({
-                where: {
-                  albumId_artistId_role: {
-                    albumId: finalAlbumId,
-                    artistId: artist.id,
-                    role: role,
-                  },
-                },
-                update: {},
-                create: {
-                  albumId: finalAlbumId,
-                  artistId: artist.id,
-                  role: role,
-                },
-              });
             }
           }
         }
@@ -1734,8 +1677,8 @@ export const mutationResolvers: MutationResolvers = {
 
     // Track created artists for post-commit side effects
     const createdArtists: Array<{ id: string; name: string }> = [];
-    const { findOrCreateArtist: findOrCreateArtistHelper } = await import(
-      '@/lib/artists'
+    const { findOrCreateAlbum: findOrCreateAlbumHelper } = await import(
+      '@/lib/albums'
     );
 
     // Generate root job ID for provenance chain
@@ -1776,8 +1719,8 @@ export const mutationResolvers: MutationResolvers = {
 
     try {
       const recommendation = await prisma.$transaction(async tx => {
-        // Helper function to find or create album from AlbumInput
-        const findOrCreateAlbum = async (albumData: {
+        // Helper to resolve album data through shared find-or-create
+        const resolveAlbumData = async (albumData: {
           title: string;
           releaseDate?: string | null;
           albumType?: string | null;
@@ -1790,101 +1733,54 @@ export const mutationResolvers: MutationResolvers = {
             role?: string | null;
           }> | null;
         }): Promise<string> => {
-          // Check if album exists by MusicBrainz ID
-          if (albumData.musicbrainzId) {
-            const existingByMbid = await tx.album.findFirst({
-              where: { musicbrainzId: albumData.musicbrainzId },
-            });
-            if (existingByMbid) {
-              console.log(
-                `🔄 Album already exists by MBID: "${existingByMbid.title}" (${existingByMbid.id})`
-              );
-              return existingByMbid.id;
-            }
-          }
-
-          // Check by title + primary artist
           const primaryArtistName = albumData.artists?.[0]?.artistName;
-          if (primaryArtistName) {
-            const existingByTitleArtist = await tx.album.findFirst({
-              where: {
-                title: { equals: albumData.title, mode: 'insensitive' },
-                artists: {
-                  some: {
-                    role: 'PRIMARY',
-                    artist: {
-                      name: { equals: primaryArtistName, mode: 'insensitive' },
-                    },
-                  },
-                },
-              },
-            });
-            if (existingByTitleArtist) {
-              console.log(
-                `🔄 Album already exists by title+artist: "${existingByTitleArtist.title}" (${existingByTitleArtist.id})`
-              );
-              return existingByTitleArtist.id;
-            }
-          }
-
-          // Create new album
           const releaseDate = albumData.releaseDate
             ? new Date(albumData.releaseDate)
             : null;
-          const newAlbum = await tx.album.create({
-            data: {
+
+          const { album, created } = await findOrCreateAlbumHelper({
+            db: tx,
+            identity: {
               title: albumData.title,
+              musicbrainzId: albumData.musicbrainzId ?? undefined,
+              primaryArtistName: primaryArtistName ?? undefined,
+              releaseYear: releaseDate?.getFullYear() ?? undefined,
+            },
+            fields: {
               releaseDate,
               releaseType: albumData.albumType || 'ALBUM',
-              trackCount: albumData.totalTracks,
-              coverArtUrl: albumData.coverImageUrl,
-              musicbrainzId: albumData.musicbrainzId,
-              ...getInitialQuality({ musicbrainzId: albumData.musicbrainzId }),
+              trackCount: albumData.totalTracks ?? undefined,
+              coverArtUrl: albumData.coverImageUrl ?? undefined,
             },
+            artists: (albumData.artists || [])
+              .filter(a => a.artistName)
+              .map((a, i) => ({
+                name: a.artistName!,
+                role: (a.role as 'PRIMARY' | 'FEATURED') || 'PRIMARY',
+                position: i,
+              })),
+            enrichment: 'none',
+            insideTransaction: true,
+            caller: 'createRecommendation',
           });
-          console.log(
-            `✨ Created new album: "${newAlbum.title}" (${newAlbum.id})`
-          );
 
-          // Handle artist associations using shared helper (inside transaction)
-          for (const artistInput of albumData.artists || []) {
-            if (!artistInput.artistName) continue;
-
-            const { artist, created } = await findOrCreateArtistHelper({
-              db: tx,
-              identity: { name: artistInput.artistName },
-              fields: {
-                source: 'USER_SUBMITTED' as const,
-                ...getInitialQuality(),
-              },
-              enrichment: 'none',
-              insideTransaction: true,
-              caller: 'createRecommendation',
+          // Track created artists for post-transaction enrichment
+          if (created) {
+            const albumArtists = await tx.albumArtist.findMany({
+              where: { albumId: album.id },
+              include: { artist: true },
             });
-
-            if (created) {
-              createdArtists.push({ id: artist.id, name: artist.name });
+            for (const aa of albumArtists) {
+              if (
+                aa.artist.dataQuality === 'LOW' &&
+                aa.artist.enrichmentStatus === 'PENDING'
+              ) {
+                createdArtists.push({ id: aa.artist.id, name: aa.artist.name });
+              }
             }
-
-            const role = artistInput.role || 'PRIMARY';
-            await tx.albumArtist.upsert({
-              where: {
-                albumId_artistId_role: {
-                  albumId: newAlbum.id,
-                  artistId: artist.id,
-                  role: role,
-                },
-              },
-              update: {},
-              create: {
-                albumId: newAlbum.id,
-                artistId: artist.id,
-                role: role,
-              },
-            });
           }
 
-          return newAlbum.id;
+          return album.id;
         };
 
         // Resolve album IDs (find or create as needed)
@@ -1892,13 +1788,13 @@ export const mutationResolvers: MutationResolvers = {
           if (input.basisAlbumId) {
             finalBasisAlbumId = input.basisAlbumId;
           } else if (input.basisAlbumData) {
-            finalBasisAlbumId = await findOrCreateAlbum(input.basisAlbumData);
+            finalBasisAlbumId = await resolveAlbumData(input.basisAlbumData);
           }
 
           if (input.recommendedAlbumId) {
             finalRecommendedAlbumId = input.recommendedAlbumId;
           } else if (input.recommendedAlbumData) {
-            finalRecommendedAlbumId = await findOrCreateAlbum(
+            finalRecommendedAlbumId = await resolveAlbumData(
               input.recommendedAlbumData
             );
           }
