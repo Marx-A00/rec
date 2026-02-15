@@ -3,8 +3,6 @@
 // Used by all album/artist/track creation sites to standardize
 // the dataQuality / enrichmentStatus / lastEnriched triple.
 
-import type { DataQuality, EnrichmentStatus } from '@prisma/client';
-
 export interface QualityIdentifiers {
   musicbrainzId?: string | null;
   spotifyId?: string | null;
@@ -12,8 +10,8 @@ export interface QualityIdentifiers {
 }
 
 export interface InitialQualityFields {
-  dataQuality: DataQuality;
-  enrichmentStatus: EnrichmentStatus;
+  dataQuality: 'LOW' | 'MEDIUM';
+  enrichmentStatus: 'PENDING';
   lastEnriched: null;
 }
 
@@ -29,7 +27,9 @@ export interface InitialQualityFields {
 export function getInitialQuality(
   identifiers: QualityIdentifiers = {}
 ): InitialQualityFields {
-  const dataQuality: DataQuality = identifiers.musicbrainzId ? 'MEDIUM' : 'LOW';
+  const dataQuality: 'LOW' | 'MEDIUM' = identifiers.musicbrainzId
+    ? 'MEDIUM'
+    : 'LOW';
 
   return {
     dataQuality,

@@ -34,6 +34,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import type { Album, AlbumArtist, Artist, Track } from '@prisma/client';
 
 import { prisma as defaultPrisma } from '@/lib/prisma';
+import { getInitialQuality } from '@/lib/db';
 
 import type { CorrectionPreview, MBRecording } from '../preview/types';
 
@@ -475,7 +476,7 @@ export class ApplyCorrectionService {
             },
             fields: {
               source: 'DISCOGS' as const,
-              dataQuality: 'MEDIUM',
+              ...getInitialQuality({ discogsId: sourceArtist.mbid }),
             },
             enrichment: 'none',
             insideTransaction: true,

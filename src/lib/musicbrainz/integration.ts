@@ -1,6 +1,7 @@
 // src/lib/musicbrainz/integration.ts
 import { PrismaClient } from '@prisma/client';
 import type { Artist, Album } from '@prisma/client';
+import { getInitialQuality } from '@/lib/db';
 
 import {
   validateArtistSearchResult,
@@ -40,7 +41,7 @@ export class MusicBrainzIntegrationService {
         },
         fields: {
           source: 'MUSICBRAINZ' as const,
-          dataQuality: 'MEDIUM',
+          ...getInitialQuality({ musicbrainzId: artistData.musicbrainzId }),
           formedYear: artistData.formedYear,
           countryCode: artistData.countryCode,
           biography: artistData.biography,
@@ -165,7 +166,7 @@ export class MusicBrainzIntegrationService {
             },
             fields: {
               source: 'MUSICBRAINZ' as const,
-              dataQuality: 'MEDIUM',
+              ...getInitialQuality({ musicbrainzId: credit.artistId }),
             },
             enrichment: 'none',
             insideTransaction: true,

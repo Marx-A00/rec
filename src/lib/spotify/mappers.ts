@@ -6,6 +6,7 @@
 
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { Prisma } from '@prisma/client';
+import { getInitialQuality } from '@/lib/db';
 
 import { createSpotifySyncMetadata } from '@/types/album-metadata';
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
@@ -202,10 +203,7 @@ export function transformSpotifyAlbum(
     // MusicBrainz-aligned metadata for better matching
     secondaryTypes: secondaryTypes,
     inferredStatus: 'official', // Spotify releases are typically official
-    // Initial enrichment state
-    dataQuality: 'LOW',
-    enrichmentStatus: 'PENDING',
-    lastEnriched: null,
+    ...getInitialQuality({ spotifyId: spotifyAlbum.id }),
   };
 }
 
@@ -221,10 +219,7 @@ export function transformSpotifyArtist(
     name: artistName.trim(),
     spotifyId: spotifyId,
     imageUrl: imageUrl,
-    // Initial enrichment state
-    dataQuality: 'LOW',
-    enrichmentStatus: 'PENDING',
-    lastEnriched: null,
+    ...getInitialQuality({ spotifyId }),
   };
 }
 
@@ -245,8 +240,7 @@ export async function findOrCreateArtist(
     fields: {
       imageUrl: artistData.imageUrl,
       source: 'SPOTIFY' as const,
-      dataQuality: artistData.dataQuality as 'LOW' | 'MEDIUM' | 'HIGH',
-      enrichmentStatus: artistData.enrichmentStatus as 'PENDING' | 'COMPLETED',
+      ...getInitialQuality({ spotifyId: artistData.spotifyId }),
     },
     enrichment: 'none', // Spotify sync handles its own enrichment
     caller: 'spotify-mapper',
@@ -649,10 +643,7 @@ export function transformSpotifyTrack(
     youtubeUrl: undefined, // Will be populated during MusicBrainz enrichment
     albumId: albumId,
     artists: trackArtists,
-    // Start with low quality, will be enriched later
-    dataQuality: 'LOW',
-    enrichmentStatus: 'PENDING',
-    lastEnriched: null,
+    ...getInitialQuality({ spotifyId: spotifyTrack.id }),
   };
 }
 

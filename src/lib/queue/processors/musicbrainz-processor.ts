@@ -15,6 +15,7 @@ import type {
   MusicBrainzLookupReleaseGroupJobData,
   MusicBrainzSyncNewReleasesJobData,
 } from '../jobs';
+import { getInitialQuality } from '@/lib/db';
 
 // ============================================================================
 // MusicBrainz Search Handlers
@@ -228,7 +229,7 @@ export async function handleMusicBrainzSyncNewReleases(
             },
             fields: {
               source: 'MUSICBRAINZ' as const,
-              dataQuality: 'MEDIUM',
+              ...getInitialQuality({ musicbrainzId: artist.id }),
             },
             enrichment: 'inline-fetch',
             inlineFetchOptions: {

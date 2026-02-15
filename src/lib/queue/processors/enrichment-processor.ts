@@ -26,6 +26,7 @@ import {
   type CacheArtistImageJobData,
 } from '../jobs';
 import { analyzeTitle } from '../../musicbrainz/title-utils';
+import { getInitialQuality } from '@/lib/db';
 
 import {
   calculateStringSimilarity,
@@ -2411,7 +2412,9 @@ async function processMusicBrainzTracksForAlbum(
                       },
                       fields: {
                         source: 'MUSICBRAINZ' as const,
-                        dataQuality: 'MEDIUM',
+                        ...getInitialQuality({
+                          musicbrainzId: mbArtist.artist?.id,
+                        }),
                       },
                       enrichment: 'inline-fetch',
                       inlineFetchOptions: {
