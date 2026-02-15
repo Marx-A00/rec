@@ -288,6 +288,7 @@ model Album {
   enrichmentStatus      EnrichmentStatus?        @default(PENDING) @map("enrichment_status")
   lastEnriched          DateTime?                @map("last_enriched")
   metadata              Json?                    // Sync tracking - see src/types/album-metadata.ts for structure
+  gameStatus            AlbumGameStatus       @default(NONE) @map("game_status")
   createdAt             DateTime                 @default(now()) @map("created_at")
   updatedAt             DateTime                 @updatedAt @map("updated_at")
   collectionAlbums      CollectionAlbum[]
@@ -494,6 +495,12 @@ enum EnrichmentEntityType {
   ARTIST
   ALBUM
   TRACK
+}
+
+enum AlbumGameStatus {
+  ELIGIBLE   // Approved for game pool
+  EXCLUDED   // Explicitly blocked from pool
+  NONE       // Neutral, not yet reviewed (default)
 }
 
 enum UserRole {
