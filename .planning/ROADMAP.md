@@ -71,12 +71,17 @@ Plans:
 
 **Success Criteria:**
 
-1. **Pool field exists:** Album model has `gameEligible` boolean field
-2. **Admin can manage:** Admin UI allows toggling game eligibility for albums
+1. **Pool field exists:** Album model has `gameStatus` enum field (ELIGIBLE/EXCLUDED/NONE)
+2. **Admin can manage:** Admin UI allows managing game eligibility for albums
 3. **Eligibility enforced:** Only albums with cloudflareImageId can be marked eligible
 4. **Query works:** GraphQL query returns all game-eligible albums
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 34-01-PLAN.md — Add gameStatus enum to Album model
+- [ ] 34-02-PLAN.md — GraphQL API for game pool management
+- [ ] 34-03-PLAN.md — Admin UI for game pool
 
 ---
 
