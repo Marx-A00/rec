@@ -6,13 +6,11 @@ import type {
   PrismaClient,
   ContentSource,
   DataQuality,
+  LlamaLogCategory,
 } from '@prisma/client';
 import type { ITXClientDenyList } from '@prisma/client/runtime/library';
-import type {
-  CheckArtistEnrichmentJobData,
-  PriorityTier,
-} from '@/lib/queue/jobs';
-import type { LlamaLogCategory } from '@prisma/client';
+
+import type { CheckArtistEnrichmentJobData } from '@/lib/queue/jobs';
 import type { EnrichmentSource } from '@/lib/logging/llama-logger';
 
 // ============================================================================

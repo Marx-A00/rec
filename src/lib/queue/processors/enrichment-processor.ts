@@ -1,7 +1,6 @@
 // src/lib/queue/processors/enrichment-processor.ts
 // Album, artist, and track enrichment handlers
 
-import chalk from 'chalk';
 import { Job } from 'bullmq';
 
 import { prisma } from '@/lib/prisma';
@@ -2401,132 +2400,42 @@ async function processMusicBrainzTracksForAlbum(
                   const artistName = mbArtist.name || mbArtist.artist?.name;
 
                   if (artistName) {
-                    let dbArtist = await prisma.artist.findFirst({
-                      where: {
-                        OR: [
-                          { musicbrainzId: mbArtist.artist?.id },
-                          { name: { equals: artistName, mode: 'insensitive' } },
-                        ],
+                    const { findOrCreateArtist } = await import(
+                      '@/lib/artists'
+                    );
+                    const { artist: dbArtist } = await findOrCreateArtist({
+                      db: prisma,
+                      identity: {
+                        name: artistName,
+                        musicbrainzId: mbArtist.artist?.id,
                       },
-                    });
-
-                    // Track if artist was newly created vs found existing
-                    const artistWasCreated = !dbArtist;
-
-                    if (!dbArtist) {
-                      dbArtist = await prisma.artist.create({
-                        data: {
-                          name: artistName,
-                          musicbrainzId: mbArtist.artist?.id || null,
-                          dataQuality: 'MEDIUM',
-                          enrichmentStatus: 'PENDING',
-                          lastEnriched: null,
+                      fields: {
+                        source: 'MUSICBRAINZ' as const,
+                        dataQuality: 'MEDIUM',
+                      },
+                      enrichment: 'inline-fetch',
+                      inlineFetchOptions: {
+                        parentJobId: jobContext?.jobId || undefined,
+                        rootJobId:
+                          jobContext?.rootJobId ||
+                          jobContext?.jobId ||
+                          undefined,
+                        requestId: jobContext?.jobId || undefined,
+                      },
+                      logging: {
+                        operation: 'artist:created:track-child',
+                        sources: ['MUSICBRAINZ'],
+                        parentJobId: jobContext?.jobId || null,
+                        rootJobId:
+                          jobContext?.rootJobId || jobContext?.jobId || null,
+                        metadata: {
+                          trackId: newTrack.id,
+                          trackTitle: mbRecording.title,
+                          mbArtistId: mbArtist.artist?.id,
                         },
-                      });
-                      console.log(`🎤 Created new artist: "${artistName}"`);
-
-                      // Log artist creation to LlamaLog
-                      try {
-                        await llamaLogger.logEnrichment({
-                          entityType: 'ARTIST',
-                          entityId: dbArtist.id,
-                          operation: 'artist:created:track-child',
-                          category: 'CREATED',
-                          sources: ['MUSICBRAINZ'],
-                          status: 'SUCCESS',
-                          fieldsEnriched: ['name', 'musicbrainzId'],
-                          parentJobId: jobContext?.jobId || null,
-                          rootJobId:
-                            jobContext?.rootJobId || jobContext?.jobId || null,
-                          isRootJob: false,
-                          dataQualityAfter: 'MEDIUM',
-                          metadata: {
-                            trackId: newTrack.id,
-                            trackTitle: mbRecording.title,
-                            mbArtistId: mbArtist.artist?.id,
-                          },
-                        });
-                      } catch (err) {
-                        console.warn(
-                          '[LlamaLog] Failed to log artist creation:',
-                          err
-                        );
-                      }
-
-                      // Try to fetch artist image from Spotify (background worker, latency OK)
-                      try {
-                        const { tryFetchSpotifyArtistImage } = await import(
-                          '../../spotify/artist-image-helper'
-                        );
-                        const imageResult =
-                          await tryFetchSpotifyArtistImage(artistName);
-                        if (imageResult) {
-                          await prisma.artist.update({
-                            where: { id: dbArtist.id },
-                            data: {
-                              imageUrl: imageResult.imageUrl,
-                              spotifyId:
-                                dbArtist.spotifyId || imageResult.spotifyId,
-                            },
-                          });
-                          console.log(
-                            chalk.magenta(
-                              `[TIER-2] Set image for artist "${artistName}" from Spotify (enrichment-processor)`
-                            )
-                          );
-
-                          // Queue Cloudflare caching for the image
-                          const queue = (
-                            await import('../musicbrainz-queue')
-                          ).getMusicBrainzQueue();
-                          const { JOB_TYPES } = await import('../jobs');
-                          await queue.addJob(
-                            JOB_TYPES.CACHE_ARTIST_IMAGE,
-                            {
-                              artistId: dbArtist.id,
-                              parentJobId: jobContext?.jobId || undefined,
-                            },
-                            {
-                              priority: 5,
-                              attempts: 3,
-                              backoff: { type: 'exponential', delay: 2000 },
-                            }
-                          );
-                        }
-                      } catch (imgErr) {
-                        console.warn(
-                          `[Artist Image] Failed to fetch image for "${artistName}":`,
-                          imgErr
-                        );
-                      }
-                    } else if (!artistWasCreated) {
-                      // Log artist linking to LlamaLog (existing artist associated with track)
-                      try {
-                        await llamaLogger.logEnrichment({
-                          entityType: 'ARTIST',
-                          entityId: dbArtist.id,
-                          operation: 'artist:linked:track-association',
-                          category: 'LINKED',
-                          sources: ['MUSICBRAINZ'],
-                          status: 'SUCCESS',
-                          fieldsEnriched: [],
-                          parentJobId: jobContext?.jobId || null,
-                          rootJobId:
-                            jobContext?.rootJobId || jobContext?.jobId || null,
-                          isRootJob: false,
-                          metadata: {
-                            trackId: newTrack.id,
-                            trackTitle: mbRecording.title,
-                            existingEntity: true,
-                          },
-                        });
-                      } catch (err) {
-                        console.warn(
-                          '[LlamaLog] Failed to log artist linking:',
-                          err
-                        );
-                      }
-                    }
+                      },
+                      caller: 'enrichment-processor',
+                    });
 
                     await prisma.trackArtist.create({
                       data: {

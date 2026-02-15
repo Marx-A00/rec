@@ -2,7 +2,6 @@
 // Unified artist find-or-create helper used by all 13 creation sites
 
 import chalk from 'chalk';
-
 import type { Artist } from '@prisma/client';
 
 import { JOB_TYPES, PRIORITY_TIERS } from '@/lib/queue/jobs';

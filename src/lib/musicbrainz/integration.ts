@@ -1,18 +1,14 @@
 // src/lib/musicbrainz/integration.ts
-import chalk from 'chalk';
 import { PrismaClient } from '@prisma/client';
 import type { Artist, Album } from '@prisma/client';
 
 import {
   validateArtistSearchResult,
   validateReleaseGroupSearchResult,
-  type ValidatedArtistSearchResult,
-  type ValidatedReleaseGroupSearchResult,
 } from './schemas';
 import {
   mapArtistSearchToCanonical,
   mapReleaseGroupSearchToCanonical,
-  mapArtistCreditToCanonical,
   extractArtistCreditsFromReleaseGroup,
 } from './mappers';
 
@@ -31,73 +27,29 @@ export class MusicBrainzIntegrationService {
     try {
       // Validate the raw data structure
       const validatedArtist = validateArtistSearchResult(rawMbArtist);
-
-      // Check if artist already exists by MusicBrainz ID
-      const existingArtist = await this.prisma.artist.findUnique({
-        where: { musicbrainzId: validatedArtist.id },
-      });
-
-      if (existingArtist) {
-        return existingArtist;
-      }
-
-      // Create new artist with validated and mapped data
       const artistData = mapArtistSearchToCanonical(validatedArtist);
 
-      const newArtist = await this.prisma.artist.create({
-        data: artistData,
+      const { findOrCreateArtist: sharedFindOrCreate } = await import(
+        '../artists'
+      );
+      const { artist } = await sharedFindOrCreate({
+        db: this.prisma,
+        identity: {
+          name: artistData.name,
+          musicbrainzId: artistData.musicbrainzId ?? undefined,
+        },
+        fields: {
+          source: 'MUSICBRAINZ' as const,
+          dataQuality: 'MEDIUM',
+          formedYear: artistData.formedYear,
+          countryCode: artistData.countryCode,
+          biography: artistData.biography,
+        },
+        enrichment: 'inline-fetch',
+        caller: 'integration-service',
       });
 
-      // Try to fetch artist image from Spotify (background context, latency OK)
-      try {
-        const { tryFetchSpotifyArtistImage } = await import(
-          '../spotify/artist-image-helper'
-        );
-        const imageResult = await tryFetchSpotifyArtistImage(newArtist.name);
-        if (imageResult) {
-          const updated = await this.prisma.artist.update({
-            where: { id: newArtist.id },
-            data: {
-              imageUrl: imageResult.imageUrl,
-              spotifyId: newArtist.spotifyId || imageResult.spotifyId,
-            },
-          });
-
-          // Queue Cloudflare caching for the image
-          try {
-            const { getMusicBrainzQueue } = await import(
-              '../queue/musicbrainz-queue'
-            );
-            const { JOB_TYPES } = await import('../queue/jobs');
-            const queue = getMusicBrainzQueue();
-            await queue.addJob(
-              JOB_TYPES.CACHE_ARTIST_IMAGE,
-              { artistId: newArtist.id },
-              {
-                priority: 5,
-                attempts: 3,
-                backoff: { type: 'exponential', delay: 2000 },
-              }
-            );
-          } catch {
-            // Queue not available — image still saved, just not cached to CDN
-          }
-
-          console.log(
-            chalk.magenta(
-              `[TIER-2] Set image for artist "${newArtist.name}" from Spotify (integration-service)`
-            )
-          );
-          return updated;
-        }
-      } catch (imgErr) {
-        console.warn(
-          `[Artist Image] Failed to fetch image for "${newArtist.name}":`,
-          imgErr
-        );
-      }
-
-      return newArtist;
+      return artist;
     } catch (error) {
       console.error('Failed to process MusicBrainz artist data:', error);
       throw new Error(
@@ -200,20 +152,25 @@ export class MusicBrainzIntegrationService {
           validatedReleaseGroup
         );
 
+        const { findOrCreateArtist: sharedFindOrCreate } = await import(
+          '../artists'
+        );
+
         for (const credit of artistCredits) {
-          // Find or create the artist
-          let artist = await tx.artist.findUnique({
-            where: { musicbrainzId: credit.artistId },
+          const { artist } = await sharedFindOrCreate({
+            db: tx,
+            identity: {
+              name: credit.name,
+              musicbrainzId: credit.artistId,
+            },
+            fields: {
+              source: 'MUSICBRAINZ' as const,
+              dataQuality: 'MEDIUM',
+            },
+            enrichment: 'none',
+            insideTransaction: true,
+            caller: 'integration-service:albumWithArtists',
           });
-
-          if (!artist) {
-            // Create artist from credit info (minimal data)
-            const artistData = mapArtistCreditToCanonical({
-              artist: { id: credit.artistId, name: credit.name },
-            });
-
-            artist = await tx.artist.create({ data: artistData });
-          }
 
           // Create the album-artist relationship
           await tx.albumArtist.create({

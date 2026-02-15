@@ -4,7 +4,6 @@
  * Follows "Add First → Enrich Later" pattern for immediate user feedback
  */
 
-import chalk from 'chalk';
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { Prisma } from '@prisma/client';
 
@@ -230,74 +229,30 @@ export function transformSpotifyArtist(
 }
 
 /**
- * Find or create artist with deduplication logic
- *
- * Search priority:
- * 1. By spotifyId (most reliable - unique identifier from Spotify)
- * 2. By name (case-insensitive fallback)
- * 3. Create new if neither match
- *
- * This prevents duplicate artist records when Spotify returns slightly
- * different names for the same artist (e.g., "Disney" vs "[Disney]")
+ * Find or create artist with deduplication logic.
+ * Delegates to shared helper for consistent 4-level dedup + backfilling.
  */
 export async function findOrCreateArtist(
   artistData: ArtistCreationData
 ): Promise<string> {
-  // 1. First, search by spotifyId if provided (most reliable match)
-  if (artistData.spotifyId) {
-    const existingBySpotifyId = await prisma.artist.findUnique({
-      where: { spotifyId: artistData.spotifyId },
-    });
-
-    if (existingBySpotifyId) {
-      return existingBySpotifyId.id;
-    }
-  }
-
-  // 2. Fallback: search by name (case-insensitive)
-  const existingByName = await prisma.artist.findFirst({
-    where: {
-      name: {
-        equals: artistData.name,
-        mode: 'insensitive',
-      },
-    },
-  });
-
-  if (existingByName) {
-    // Update spotifyId if we have one and the existing record doesn't
-    if (artistData.spotifyId && !existingByName.spotifyId) {
-      await prisma.artist.update({
-        where: { id: existingByName.id },
-        data: { spotifyId: artistData.spotifyId },
-      });
-    }
-
-    return existingByName.id;
-  }
-
-  // 3. Create new artist (no match found)
-  const newArtist = await prisma.artist.create({
-    data: {
+  const { findOrCreateArtist: sharedFindOrCreate } = await import('../artists');
+  const { artist } = await sharedFindOrCreate({
+    db: prisma,
+    identity: {
       name: artistData.name,
       spotifyId: artistData.spotifyId,
-      imageUrl: artistData.imageUrl,
-      source: 'SPOTIFY',
-      dataQuality: artistData.dataQuality,
-      enrichmentStatus: artistData.enrichmentStatus,
-      lastEnriched: artistData.lastEnriched,
     },
+    fields: {
+      imageUrl: artistData.imageUrl,
+      source: 'SPOTIFY' as const,
+      dataQuality: artistData.dataQuality as 'LOW' | 'MEDIUM' | 'HIGH',
+      enrichmentStatus: artistData.enrichmentStatus as 'PENDING' | 'COMPLETED',
+    },
+    enrichment: 'none', // Spotify sync handles its own enrichment
+    caller: 'spotify-mapper',
   });
 
-  if (artistData.imageUrl) {
-    console.log(
-      chalk.magenta(
-        `[TIER-1] Artist "${artistData.name}" created WITH image at creation time (imageUrl from artistImageMap)`
-      )
-    );
-  }
-
-  return newArtist.id;
+  return artist.id;
 }
 
 // ============================================================================
