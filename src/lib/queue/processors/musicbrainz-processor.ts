@@ -2,7 +2,6 @@
 // MusicBrainz API search and lookup handlers
 
 import { prisma } from '@/lib/prisma';
-import { createLlamaLogger } from '@/lib/logging/llama-logger';
 
 import { musicBrainzService, hasIdProperty } from '../../musicbrainz';
 import type {
@@ -15,7 +14,6 @@ import type {
   MusicBrainzLookupReleaseGroupJobData,
   MusicBrainzSyncNewReleasesJobData,
 } from '../jobs';
-import { getInitialQuality } from '@/lib/db';
 
 // ============================================================================
 // MusicBrainz Search Handlers
@@ -218,83 +216,47 @@ export async function handleMusicBrainzSyncNewReleases(
     // Process each album
     for (const { releaseGroup, artist } of albumsToProcess) {
       try {
-        // Create or get artist using shared helper
-        const { findOrCreateArtist } = await import('@/lib/artists');
-        const { artist: dbArtist, created: artistWasCreated } =
-          await findOrCreateArtist({
-            db: prisma,
-            identity: {
-              name: artist.name,
-              musicbrainzId: artist.id,
-            },
-            fields: {
-              source: 'MUSICBRAINZ' as const,
-              ...getInitialQuality({ musicbrainzId: artist.id }),
-            },
-            enrichment: 'inline-fetch',
-            inlineFetchOptions: {
-              parentJobId: data.requestId || 'mb-sync-batch',
-              requestId: data.requestId,
-            },
-            logging: {
-              operation: 'artist:created:musicbrainz-sync',
-              sources: ['MUSICBRAINZ'],
-              parentJobId: data.requestId || 'mb-sync-batch',
-              rootJobId: data.requestId || 'mb-sync-batch',
-              metadata: {
-                syncSource: 'musicbrainz_new_releases',
-                artistMbId: artist.id,
-              },
-            },
-            caller: 'musicbrainz-processor',
-          });
+        // Use shared find-or-create helper (handles dedup, artist associations, enrichment, logging)
+        const { findOrCreateAlbum } = await import('@/lib/albums');
+        const releaseYear = releaseGroup.firstReleaseDate
+          ? parseInt(releaseGroup.firstReleaseDate.split('-')[0])
+          : undefined;
 
-        if (artistWasCreated) {
-          artistsCreated++;
-        }
-
-        // Create album
-        const album = await prisma.album.create({
-          data: {
+        const { album, created: albumWasCreated } = await findOrCreateAlbum({
+          db: prisma,
+          identity: {
             title: releaseGroup.title,
             musicbrainzId: releaseGroup.id,
+            primaryArtistName: artist.name,
+            releaseYear,
+          },
+          fields: {
             releaseDate: releaseGroup.firstReleaseDate
               ? new Date(releaseGroup.firstReleaseDate)
-              : null,
-            artists: {
-              create: {
-                artistId: dbArtist.id,
-                role: 'primary',
-                position: 0,
-              },
-            },
+              : undefined,
+            source: 'MUSICBRAINZ',
           },
-        });
-
-        albumsCreated++;
-        console.log(
-          `✨ Created album: ${releaseGroup.title} by ${artist.name}`
-        );
-
-        // Log album creation to LlamaLog (after DB commit)
-        const llamaLogger = createLlamaLogger(prisma);
-        try {
-          await llamaLogger.logEnrichment({
-            entityType: 'ALBUM',
-            entityId: album.id,
-            operation: 'album:created:musicbrainz-sync',
-            category: 'CREATED',
-            sources: ['MUSICBRAINZ'],
-            status: 'SUCCESS',
-            fieldsEnriched: [
-              'title',
-              'musicbrainzId',
-              'releaseDate',
-              'artists',
-            ],
-            dataQualityAfter: 'MEDIUM', // MusicBrainz data is medium quality
+          artists: [
+            {
+              name: artist.name,
+              musicbrainzId: artist.id,
+              role: 'PRIMARY',
+              position: 0,
+            },
+          ],
+          enrichment: 'queue-check',
+          queueCheckOptions: {
+            source: 'browse',
+            priority: 'low',
+            requestId: `mb_new_release_enrichment_${releaseGroup.id}`,
             parentJobId: data.requestId || 'mb-sync-batch',
-            isRootJob: false, // Child of sync batch
+          },
+          logging: {
+            operation: 'album:created:musicbrainz-sync',
+            sources: ['MUSICBRAINZ'],
+            parentJobId: data.requestId || 'mb-sync-batch',
+            rootJobId: data.requestId || 'mb-sync-batch',
+            isRootJob: false,
             metadata: {
               syncSource: 'musicbrainz_new_releases',
               syncTimestamp: new Date().toISOString(),
@@ -302,33 +264,20 @@ export async function handleMusicBrainzSyncNewReleases(
               dateRange: data.dateRange,
               genres: data.genres,
             },
-          });
-        } catch (logError) {
-          console.warn(
-            `[LlamaLogger] Failed to log MusicBrainz album creation for ${album.id}:`,
-            logError
+          },
+          caller: 'musicbrainz-processor',
+        });
+
+        if (albumWasCreated) {
+          albumsCreated++;
+          console.log(
+            `✨ Created album: ${releaseGroup.title} by ${artist.name}`
+          );
+        } else {
+          console.log(
+            `⏭️  Album already existed: "${album.title}" (${album.id})`
           );
         }
-
-        // Queue enrichment job for the new album
-        const { getMusicBrainzQueue } = await import('../musicbrainz-queue');
-        const { JOB_TYPES } = await import('../jobs');
-        const queue = getMusicBrainzQueue();
-
-        await queue.addJob(
-          JOB_TYPES.CHECK_ALBUM_ENRICHMENT,
-          {
-            albumId: album.id,
-            source: 'spotify_sync',
-            priority: 'low',
-            requestId: `mb_new_release_enrichment_${album.id}`,
-          },
-          {
-            priority: 5, // Low priority
-            attempts: 3,
-            backoff: { type: 'exponential', delay: 5000 },
-          }
-        );
       } catch (error) {
         const errorMsg = `Failed to process ${releaseGroup.title}: ${error}`;
         console.error(`❌ ${errorMsg}`);

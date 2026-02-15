@@ -5,7 +5,6 @@
  */
 
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
-import { Prisma } from '@prisma/client';
 import { getInitialQuality } from '@/lib/db';
 
 import { createSpotifySyncMetadata } from '@/types/album-metadata';
@@ -13,11 +12,7 @@ import { createLlamaLogger } from '@/lib/logging/llama-logger';
 
 import { prisma } from '../prisma';
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
-import type {
-  CheckAlbumEnrichmentJobData,
-  CheckArtistEnrichmentJobData,
-  CheckTrackEnrichmentJobData,
-} from '../queue/jobs';
+import type { CheckTrackEnrichmentJobData } from '../queue/jobs';
 
 import type {
   SpotifyAlbumData,
@@ -274,154 +269,85 @@ export async function processSpotifyAlbum(
   // 1. Transform album data
   const albumData = transformSpotifyAlbum(spotifyAlbum);
 
-  // 2. Create album record immediately
-  const album = await prisma.album.create({
-    data: {
+  // 2. Parse artist names and build artist inputs for the shared helper
+  const artistNames = parseArtistNames(spotifyAlbum.artists);
+  const artistInputs = artistNames.map((artistName, i) => {
+    const spotifyArtistId = spotifyAlbum.artistIds?.[i];
+    const imageUrl = spotifyArtistId
+      ? artistImageMap?.get(spotifyArtistId)
+      : undefined;
+    return {
+      name: artistName,
+      spotifyId: spotifyArtistId ?? undefined,
+      role: (i === 0 ? 'PRIMARY' : 'FEATURED') as 'PRIMARY' | 'FEATURED',
+      position: i,
+      // Note: imageUrl is passed via artist findOrCreateArtist internally
+    };
+  });
+
+  // 3. Use shared find-or-create helper (adds dedup + handles artists + enrichment)
+  const { findOrCreateAlbum } = await import('@/lib/albums');
+  const { album, created } = await findOrCreateAlbum({
+    db: prisma,
+    identity: {
       title: albumData.title,
+      spotifyId: albumData.spotifyId ?? undefined,
+      primaryArtistName: artistNames[0] ?? undefined,
+      releaseYear: albumData.releaseDate?.getFullYear() ?? undefined,
+    },
+    fields: {
       releaseDate: albumData.releaseDate,
       releaseType: albumData.releaseType,
-      releaseStatus: albumData.inferredStatus, // Official releases from Spotify
       trackCount: albumData.trackCount,
       coverArtUrl: albumData.coverArtUrl,
-      spotifyId: albumData.spotifyId,
-      spotifyUrl: albumData.spotifyUrl,
-      source: 'SPOTIFY', // CRITICAL: Mark source as Spotify, not MusicBrainz
-      sourceUrl: albumData.spotifyUrl, // Audit trail for data origin
-      secondaryTypes: albumData.secondaryTypes, // Improves MusicBrainz matching
-      dataQuality: albumData.dataQuality,
-      enrichmentStatus: albumData.enrichmentStatus,
-      lastEnriched: albumData.lastEnriched,
-      // Track sync metadata for job auditing and "New This Week" features
+      source: 'SPOTIFY',
+      sourceUrl: albumData.spotifyUrl ?? undefined,
+      spotifyUrl: albumData.spotifyUrl ?? undefined,
+      secondaryTypes: albumData.secondaryTypes,
       metadata: createSpotifySyncMetadata(
         source === 'spotify_playlists' ? 'spotify_playlists' : 'spotify_search',
         metadataOptions
-      ) as unknown as Prisma.InputJsonValue,
+      ) as Record<string, unknown>,
     },
-  });
-
-  console.log(`✅ Created album: "${album.title}" (${album.id})`);
-
-  // Log album creation to LlamaLog (after DB commit)
-  const logger = createLlamaLogger(prisma);
-  try {
-    await logger.logEnrichment({
-      entityType: 'ALBUM',
-      entityId: album.id,
-      operation: 'album:created:spotify-sync',
-      category: 'CREATED',
-      sources: ['SPOTIFY'],
-      status: 'SUCCESS',
-      fieldsEnriched: [
-        'title',
-        'releaseDate',
-        'releaseType',
-        'trackCount',
-        'coverArtUrl',
-        'spotifyId',
-        'spotifyUrl',
-      ],
-      dataQualityAfter: albumData.dataQuality,
-      jobId: metadataOptions?.jobId || `spotify-album-${album.id}`,
+    artists: artistInputs,
+    enrichment: 'queue-check',
+    queueCheckOptions: {
+      source: 'spotify_sync',
+      priority: 'medium',
+      requestId: `spotify_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       parentJobId: metadataOptions?.batchId || metadataOptions?.jobId,
-      isRootJob: false, // Child of sync batch
+    },
+    logging: {
+      operation: 'album:created:spotify-sync',
+      sources: ['SPOTIFY'],
+      parentJobId: metadataOptions?.batchId || metadataOptions?.jobId,
+      rootJobId: metadataOptions?.jobId,
+      isRootJob: false,
       metadata: {
         syncSource: source,
         syncTimestamp: new Date().toISOString(),
         query: metadataOptions?.query,
         country: metadataOptions?.country,
       },
-    });
-  } catch (logError) {
-    console.warn(
-      `[LlamaLogger] Failed to log Spotify album creation for ${album.id}:`,
-      logError
-    );
-  }
-
-  // 3. Tracks will be created later by MusicBrainz enrichment (not from Spotify)
-  console.log(
-    `🎵 Tracks will be created by MusicBrainz enrichment, not from Spotify`
-  );
-
-  // 4. Process artists
-  const artistNames = parseArtistNames(spotifyAlbum.artists);
-  const artistIds: string[] = [];
-
-  for (let i = 0; i < artistNames.length; i++) {
-    const artistName = artistNames[i];
-    const spotifyArtistId = spotifyAlbum.artistIds?.[i]; // May not exist
-
-    // Find or create artist (with image from Spotify if available)
-    const imageUrl = spotifyArtistId
-      ? artistImageMap?.get(spotifyArtistId)
-      : undefined;
-    const artistData = transformSpotifyArtist(
-      artistName,
-      spotifyArtistId,
-      imageUrl
-    );
-    const artistId = await findOrCreateArtist(artistData);
-    artistIds.push(artistId);
-
-    // Create album-artist relationship
-    await prisma.albumArtist.create({
-      data: {
-        albumId: album.id,
-        artistId: artistId,
-        role: i === 0 ? 'primary' : 'featured', // First artist is primary
-        position: i,
-      },
-    });
-
-    console.log(`🔗 Linked artist "${artistName}" to album (position ${i})`);
-  }
-
-  // 4. Queue enrichment jobs (non-blocking)
-  const queue = getMusicBrainzQueue();
-
-  // Queue album enrichment
-  const albumJobData: CheckAlbumEnrichmentJobData = {
-    albumId: album.id,
-    source: 'spotify_sync', // Automated Spotify background sync
-    priority: 'medium', // Spotify sync is medium priority
-    requestId: `spotify_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-  };
-
-  await queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, albumJobData, {
-    priority: 5, // Medium priority in BullMQ (1=highest, 10=lowest)
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 2000 },
+    },
+    caller: 'processSpotifyAlbum',
   });
 
-  // Queue artist enrichment jobs
-  for (const artistId of artistIds) {
-    const artistJobData: CheckArtistEnrichmentJobData = {
-      artistId: artistId,
-      source: 'spotify_sync', // Automated Spotify background sync
-      priority: 'low', // Artist enrichment is lower priority than albums
-      requestId: `spotify_artist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    };
-
-    await queue.addJob(JOB_TYPES.CHECK_ARTIST_ENRICHMENT, artistJobData, {
-      priority: 7, // Lower priority for artists
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 2000 },
-    });
+  if (!created) {
+    console.log(`⏭️  Album already existed: "${album.title}" (${album.id})`);
   }
 
-  console.log(
-    `⚡ Queued enrichment jobs for album and ${artistIds.length} artists`
-  );
-
-  // 5. No track processing - MusicBrainz enrichment will handle tracks
-  console.log(
-    `📋 Album "${album.title}" ready for MusicBrainz enrichment to add tracks`
-  );
+  // Fetch artist IDs for return value
+  const albumArtists = await prisma.albumArtist.findMany({
+    where: { albumId: album.id },
+    orderBy: { position: 'asc' },
+  });
+  const artistIds = albumArtists.map(aa => aa.artistId);
 
   return {
     albumId: album.id,
     artistIds,
-    tracksCreated: 0, // No tracks created from Spotify
+    tracksCreated: 0, // No tracks created from Spotify - MusicBrainz enrichment handles tracks
   };
 }
 
