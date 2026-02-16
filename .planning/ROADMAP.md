@@ -134,7 +134,12 @@ Plans:
 4. **Preference persists:** localStorage saves reveal style preference, loads on return
 5. **No server load:** All image processing via Canvas API and CSS filters (no API calls)
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 36-01-PLAN.md — Foundation: seedrandom, reveal patterns, Zustand store
+- [ ] 36-02-PLAN.md — Canvas pixelation renderer with tile-based reveal
+- [ ] 36-03-PLAN.md — Blur renderer and RevealImage orchestrator with toggle
 
 ---
 
