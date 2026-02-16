@@ -6,10 +6,41 @@ import { ArrowLeft } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
+import { useDailyChallengeQuery } from '@/generated/graphql';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
 import { AttemptDots } from '@/components/uncover/AttemptDots';
+
+/**
+ * Mobile teaser image component for unauthenticated users.
+ * Shows stage 1 obscured image to create curiosity.
+ */
+function MobileTeaserImage() {
+  const { data, isLoading } = useDailyChallengeQuery();
+
+  if (isLoading) {
+    return (
+      <div className='aspect-square w-full overflow-hidden rounded-lg bg-zinc-900 animate-pulse' />
+    );
+  }
+
+  if (!data?.dailyChallenge?.imageUrl || !data?.dailyChallenge?.id) {
+    return null;
+  }
+
+  return (
+    <div className='w-full'>
+      <RevealImage
+        imageUrl={data.dailyChallenge.imageUrl}
+        challengeId={data.dailyChallenge.id}
+        stage={1}
+        showToggle={false}
+        className='aspect-square w-full overflow-hidden rounded-lg'
+      />
+    </div>
+  );
+}
 
 /**
  * Mobile game client component for Uncover daily challenge.
@@ -73,7 +104,7 @@ export function MobileGameClient() {
     isInitializing,
   ]);
 
-  // AUTH-01: Show login prompt for unauthenticated users
+  // AUTH-01: Show login prompt for unauthenticated users with teaser
   if (!game.isAuthenticated) {
     if (game.isAuthLoading) {
       return (
@@ -107,19 +138,25 @@ export function MobileGameClient() {
             <span>Back</span>
           </button>
         </div>
-        <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 text-center'>
-          <div>
-            <h2 className='mb-2 text-2xl font-bold text-white'>Login Required</h2>
-            <p className='text-zinc-400'>
-              Please sign in to play the daily Uncover challenge.
-            </p>
+        <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-8'>
+          {/* Mobile teaser image - stage 1 obscured */}
+          <MobileTeaserImage />
+          
+          {/* Login CTA overlay */}
+          <div className='relative -mt-8 flex w-full flex-col items-center gap-4 rounded-lg bg-zinc-900/95 p-6 shadow-lg backdrop-blur-sm'>
+            <div className='text-center'>
+              <h2 className='mb-2 text-2xl font-bold text-white'>Daily Album Uncover</h2>
+              <p className='text-zinc-400 mb-4 text-sm'>
+                Guess the album from its cover art. 6 attempts. New puzzle daily.
+              </p>
+            </div>
+            <button
+              onClick={() => signIn(undefined, { callbackUrl: '/m/game' })}
+              className='min-h-[48px] w-full max-w-xs rounded-full bg-emeraled-green px-6 py-3 font-medium text-black transition-transform active:scale-[0.98]'
+            >
+              Sign In to Play
+            </button>
           </div>
-          <button
-            onClick={() => signIn()}
-            className='min-h-[44px] rounded-full bg-emeraled-green px-6 py-3 font-medium text-black'
-          >
-            Sign In to Play
-          </button>
         </div>
       </div>
     );
