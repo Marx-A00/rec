@@ -19,17 +19,20 @@ export interface InitialQualityFields {
  * Derive the initial quality fields for a newly-created entity.
  *
  * Rules:
- *   - musicbrainzId present → MEDIUM (authoritative source)
- *   - otherwise → LOW (needs enrichment)
+ *   - Any authoritative ID present (musicbrainzId, discogsId, spotifyId) → MEDIUM
+ *   - No authoritative IDs → LOW (needs enrichment)
  *   - enrichmentStatus always starts PENDING
  *   - lastEnriched always starts null
  */
 export function getInitialQuality(
   identifiers: QualityIdentifiers = {}
 ): InitialQualityFields {
-  const dataQuality: 'LOW' | 'MEDIUM' = identifiers.musicbrainzId
-    ? 'MEDIUM'
-    : 'LOW';
+  const hasAuthoritativeId =
+    identifiers.musicbrainzId ||
+    identifiers.discogsId ||
+    identifiers.spotifyId;
+
+  const dataQuality: 'LOW' | 'MEDIUM' = hasAuthoritativeId ? 'MEDIUM' : 'LOW';
 
   return {
     dataQuality,
