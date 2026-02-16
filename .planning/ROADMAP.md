@@ -279,7 +279,14 @@ Plans:
 3. **Streak protected:** Playing archive puzzle does not break or extend current streak
 4. **Stats update:** Archive wins/losses increment total games played and win rate
 
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+
+- [ ] 40-01-PLAN.md — Database model and service layer for archive stats
+- [ ] 40-02-PLAN.md — GraphQL API for archive history and stats
+- [ ] 40-03-PLAN.md — Calendar component and archive routes
+- [ ] 40-04-PLAN.md — Archive game component and stats integration
 
 ---
 
