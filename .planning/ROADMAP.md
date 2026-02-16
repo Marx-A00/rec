@@ -203,7 +203,13 @@ Plans:
 4. **Loading states:** Image processing shows skeleton/spinner during reveal transitions
 5. **Keyboard:** Enter submits guess, Tab navigates, Escape closes dropdown
 
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 38-01-PLAN.md — Desktop game route with search autocomplete
+- [ ] 38-02-PLAN.md — Mobile game route (/m/game)
+- [ ] 38-03-PLAN.md — Auth gate teaser for unauthenticated users
+- [ ] 38-04-PLAN.md — Loading states and keyboard support
 
 ---
 
