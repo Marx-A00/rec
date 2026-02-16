@@ -1,6 +1,7 @@
 'use client';
 
 import { CheckCircle, XCircle, Circle, Image } from 'lucide-react';
+
 import {
   Card,
   CardContent,
@@ -45,22 +46,22 @@ export function GamePoolStats() {
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {stats.map((stat) => {
+    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+      {stats.map(stat => {
         const Icon = stat.icon;
         return (
           <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+              <CardTitle className='text-sm font-medium'>
                 {stat.title}
               </CardTitle>
               <Icon className={`h-4 w-4 ${stat.color}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className='text-2xl font-bold'>
                 {isLoading ? '...' : stat.value.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className='text-xs text-muted-foreground'>
                 {stat.description}
               </p>
             </CardContent>

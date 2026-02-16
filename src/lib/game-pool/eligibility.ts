@@ -10,12 +10,12 @@ export interface EligibilityResult {
 
 /**
  * Validate whether an album can be marked as ELIGIBLE for the game pool.
- * 
+ *
  * Requirements for eligibility:
  * - Must have cover art (cloudflareImageId)
  * - Must have release date
  * - Must have at least one artist
- * 
+ *
  * @param album - Album with required fields (cloudflareImageId, releaseDate, title)
  * @param hasArtists - Whether the album has at least one associated artist
  * @returns EligibilityResult with eligible flag and optional reason
@@ -52,7 +52,7 @@ export function validateEligibility(
  * Validate whether a status transition is allowed.
  * Currently all transitions are allowed, but this function provides
  * a hook for future business logic (e.g., requiring approval for certain transitions).
- * 
+ *
  * @param _from - Current status
  * @param _to - Desired status
  * @returns true if transition is allowed

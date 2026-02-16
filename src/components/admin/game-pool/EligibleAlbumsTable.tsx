@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+
 import AlbumImage from '@/components/ui/AlbumImage';
 import {
   Table,
@@ -71,33 +72,35 @@ export function EligibleAlbumsTable() {
   const albums = data?.albumsByGameStatus || [];
 
   if (isLoading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading...</div>;
+    return (
+      <div className='text-center py-8 text-muted-foreground'>Loading...</div>
+    );
   }
 
   if (albums.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className='text-center py-8 text-muted-foreground'>
         No eligible albums found
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border border-zinc-800">
+    <div className='rounded-md border border-zinc-800'>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-16">Cover</TableHead>
+            <TableHead className='w-16'>Cover</TableHead>
             <TableHead>Album</TableHead>
             <TableHead>Artist</TableHead>
-            <TableHead className="w-24">Year</TableHead>
-            <TableHead className="w-40">Status</TableHead>
+            <TableHead className='w-24'>Year</TableHead>
+            <TableHead className='w-40'>Status</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {albums.map((album) => {
+          {albums.map(album => {
             const artistNames = album.artists
-              .map((a) => a.artist.name)
+              .map(a => a.artist.name)
               .join(', ');
             const year = album.releaseDate
               ? format(new Date(album.releaseDate), 'yyyy')
@@ -112,22 +115,20 @@ export function EligibleAlbumsTable() {
                     alt={album.title}
                     width={40}
                     height={40}
-                    className="rounded"
+                    className='rounded'
                   />
                 </TableCell>
-                <TableCell className="font-medium">{album.title}</TableCell>
-                <TableCell className="text-muted-foreground">
+                <TableCell className='font-medium'>{album.title}</TableCell>
+                <TableCell className='text-muted-foreground'>
                   {artistNames}
                 </TableCell>
                 <TableCell>{year}</TableCell>
                 <TableCell>
                   <Select
                     value={album.gameStatus}
-                    onValueChange={(value) =>
-                      handleStatusChange(album.id, value)
-                    }
+                    onValueChange={value => handleStatusChange(album.id, value)}
                   >
-                    <SelectTrigger className="w-36">
+                    <SelectTrigger className='w-36'>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

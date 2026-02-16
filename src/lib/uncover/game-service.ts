@@ -1,18 +1,24 @@
 /**
  * Game Service
- * 
+ *
  * Server-side business logic for Uncover game.
  * Enforces all game rules and validation.
  */
 
-import type { PrismaClient, UncoverSession, UncoverGuess } from '@prisma/client';
+import type {
+  PrismaClient,
+  UncoverSession,
+  UncoverGuess,
+} from '@prisma/client';
 import { GraphQLError } from 'graphql';
+
+import { getOrCreateDailyChallenge } from '@/lib/daily-challenge/challenge-service';
+
 import {
   validateGuess,
   validateSkip,
   calculateGameResult,
 } from './game-validation';
-import { getOrCreateDailyChallenge } from '@/lib/daily-challenge/challenge-service';
 
 // ----- Types -----
 
@@ -276,7 +282,7 @@ export async function submitGuess(
       const newTotalWins = currentChallenge.totalWins + 1;
       const currentAvg = currentChallenge.avgAttempts || 0;
       const currentWins = currentChallenge.totalWins;
-      
+
       // Calculate new average: (oldAvg * oldCount + newAttempts) / newCount
       const newAvgAttempts =
         currentWins === 0

@@ -35,7 +35,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   };
 
   return (
-    <Badge variant="outline" className={getStatusColor(status)}>
+    <Badge variant='outline' className={getStatusColor(status)}>
       {getStatusLabel(status)}
     </Badge>
   );

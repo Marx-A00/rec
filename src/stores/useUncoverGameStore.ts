@@ -35,14 +35,14 @@ const createSessionSlice = (set: any): SessionSlice => ({
   attemptCount: 0,
   won: false,
 
-  setSession: (session) =>
+  setSession: session =>
     set({
       sessionId: session.id,
       challengeId: session.challengeId,
       status: 'IN_PROGRESS' as const,
     }),
-  updateAttemptCount: (count) => set({ attemptCount: count }),
-  endSession: (won) =>
+  updateAttemptCount: count => set({ attemptCount: count }),
+  endSession: won =>
     set({
       status: (won ? 'WON' : 'LOST') as SessionStatus,
       won,
@@ -70,11 +70,11 @@ interface GuessesSlice {
 const createGuessesSlice = (set: any): GuessesSlice => ({
   guesses: [],
 
-  addGuess: (guess) =>
+  addGuess: guess =>
     set((state: any) => ({
       guesses: [...state.guesses, guess],
     })),
-  setGuesses: (guesses) => set({ guesses }),
+  setGuesses: guesses => set({ guesses }),
   clearGuesses: () => set({ guesses: [] }),
 });
 
@@ -93,8 +93,8 @@ const createUISlice = (set: any): UISlice => ({
   isSubmitting: false,
   error: null,
 
-  setSubmitting: (submitting) => set({ isSubmitting: submitting }),
-  setError: (error) => set({ error }),
+  setSubmitting: submitting => set({ isSubmitting: submitting }),
+  setError: error => set({ error }),
   clearError: () => set({ error: null }),
 });
 
@@ -113,7 +113,7 @@ export const useUncoverGameStore = create<UncoverGameStore>()(
       name: 'uncover-game-state',
       storage: createJSONStorage(() => localStorage),
       // Only persist session and guesses, NOT UI state
-      partialize: (state) => ({
+      partialize: state => ({
         sessionId: state.sessionId,
         challengeId: state.challengeId,
         status: state.status,

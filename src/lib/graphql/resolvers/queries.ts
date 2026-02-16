@@ -3261,9 +3261,7 @@ export const queryResolvers: QueryResolvers = {
         error,
         status,
       });
-      throw new GraphQLError(
-        `Failed to fetch albums by game status: ${error}`
-      );
+      throw new GraphQLError(`Failed to fetch albums by game status: ${error}`);
     }
   },
 
@@ -3337,16 +3335,20 @@ export const queryResolvers: QueryResolvers = {
     { prisma, user }
   ) => {
     try {
-      const { toUTCMidnight } = await import('@/lib/daily-challenge/date-utils');
-      const { getOrCreateDailyChallenge } = await import('@/lib/daily-challenge/challenge-service');
-      
-      const targetDate = date 
+      const { toUTCMidnight } = await import(
+        '@/lib/daily-challenge/date-utils'
+      );
+      const { getOrCreateDailyChallenge } = await import(
+        '@/lib/daily-challenge/challenge-service'
+      );
+
+      const targetDate = date
         ? toUTCMidnight(new Date(date))
         : toUTCMidnight(new Date());
-      
+
       // Get or create the challenge (this is safe - doesn't expose answer)
       const challenge = await getOrCreateDailyChallenge(targetDate);
-      
+
       // Fetch user's session if authenticated
       let mySession = null;
       if (user?.id) {
@@ -3358,7 +3360,7 @@ export const queryResolvers: QueryResolvers = {
             },
           },
         });
-        
+
         if (session) {
           mySession = {
             id: session.id,
@@ -3370,7 +3372,7 @@ export const queryResolvers: QueryResolvers = {
           };
         }
       }
-      
+
       // Return challenge info WITHOUT the album (that's the answer!)
       return {
         id: challenge.id,
@@ -3397,10 +3399,10 @@ export const queryResolvers: QueryResolvers = {
       if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
         throw new GraphQLError('Admin access required');
       }
-      
+
       const limitValue = limit ?? 50;
       const offsetValue = offset ?? 0;
-      
+
       return prisma.curatedChallenge.findMany({
         take: limitValue,
         skip: offsetValue,
@@ -3421,17 +3423,13 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-  curatedChallengeCount: async (
-    _,
-    __,
-    { prisma, user }
-  ) => {
+  curatedChallengeCount: async (_, __, { prisma, user }) => {
     try {
       // Admin check
       if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
         throw new GraphQLError('Admin access required');
       }
-      
+
       return prisma.curatedChallenge.count();
     } catch (error) {
       graphqlLogger.error('Failed to count curated challenges:', { error });
@@ -3449,19 +3447,23 @@ export const queryResolvers: QueryResolvers = {
       if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
         throw new GraphQLError('Admin access required');
       }
-      
-      const { toUTCMidnight } = await import('@/lib/daily-challenge/date-utils');
-      const { getSelectionInfo } = await import('@/lib/daily-challenge/selection-service');
-      
+
+      const { toUTCMidnight } = await import(
+        '@/lib/daily-challenge/date-utils'
+      );
+      const { getSelectionInfo } = await import(
+        '@/lib/daily-challenge/selection-service'
+      );
+
       const results = [];
       const today = toUTCMidnight(new Date());
-      
+
       for (let i = 0; i < days; i++) {
         const date = new Date(today);
         date.setUTCDate(date.getUTCDate() + i);
-        
+
         const info = await getSelectionInfo(date);
-        
+
         let album = null;
         if (info.albumId) {
           album = await prisma.album.findUnique({
@@ -3473,7 +3475,7 @@ export const queryResolvers: QueryResolvers = {
             },
           });
         }
-        
+
         results.push({
           date: info.date,
           daysSinceEpoch: info.daysSinceEpoch,
@@ -3482,14 +3484,16 @@ export const queryResolvers: QueryResolvers = {
           album,
         });
       }
-      
+
       return results;
     } catch (error) {
-      graphqlLogger.error('Failed to fetch upcoming challenges:', { error, days });
+      graphqlLogger.error('Failed to fetch upcoming challenges:', {
+        error,
+        days,
+      });
       throw new GraphQLError(`Failed to fetch upcoming challenges: ${error}`);
     }
   },
-
 
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects
 };

@@ -1,14 +1,20 @@
 /**
  * Daily Challenge Service
- * 
+ *
  * Manages UncoverChallenge records. Creates challenges on-demand
  * when first requested for a date, handling race conditions gracefully.
  */
 
-import { prisma } from '@/lib/prisma';
 import { UncoverChallenge, Prisma } from '@prisma/client';
+
+import { prisma } from '@/lib/prisma';
+
 import { toUTCMidnight, getToday, formatDateUTC } from './date-utils';
-import { selectAlbumForDate, NoCuratedAlbumsError, AlbumNotFoundError } from './selection-service';
+import {
+  selectAlbumForDate,
+  NoCuratedAlbumsError,
+  AlbumNotFoundError,
+} from './selection-service';
 
 // Type for challenge info (safe for public API - does NOT include answer)
 export type DailyChallengeInfo = {
@@ -38,15 +44,15 @@ export type DailyChallengeWithAlbum = UncoverChallenge & {
 
 /**
  * Get or create the challenge for a specific date.
- * 
+ *
  * This is the main entry point for retrieving daily challenges.
  * If the challenge doesn not exist, it will be created on-demand
  * using deterministic album selection.
- * 
+ *
  * Race condition handling: Uses database unique constraint on date.
  * If two requests try to create simultaneously, one will fail with
  * P2002 error and fall back to reading the created record.
- * 
+ *
  * @param date - The date to get/create challenge for (defaults to today)
  * @returns The challenge record with album details (for internal use)
  * @throws NoCuratedAlbumsError if no curated albums exist
@@ -55,7 +61,7 @@ export async function getOrCreateDailyChallenge(
   date: Date = new Date()
 ): Promise<DailyChallengeWithAlbum> {
   const normalizedDate = toUTCMidnight(date);
-  
+
   // Try to find existing challenge
   const existing = await prisma.uncoverChallenge.findUnique({
     where: { date: normalizedDate },
@@ -79,14 +85,14 @@ export async function getOrCreateDailyChallenge(
       },
     },
   });
-  
+
   if (existing) {
     return existing as DailyChallengeWithAlbum;
   }
-  
+
   // Select album deterministically
   const albumId = await selectAlbumForDate(normalizedDate);
-  
+
   // Try to create new challenge
   try {
     const created = await prisma.uncoverChallenge.create({
@@ -115,11 +121,10 @@ export async function getOrCreateDailyChallenge(
         },
       },
     });
-    
+
     const dateStr = formatDateUTC(normalizedDate);
     console.log('[DailyChallenge] Created challenge for ' + dateStr);
     return created as DailyChallengeWithAlbum;
-    
   } catch (error) {
     // Handle race condition: another request created it first
     if (
@@ -127,8 +132,10 @@ export async function getOrCreateDailyChallenge(
       error.code === 'P2002'
     ) {
       const dateStr = formatDateUTC(normalizedDate);
-      console.log('[DailyChallenge] Race condition on ' + dateStr + ', fetching existing');
-      
+      console.log(
+        '[DailyChallenge] Race condition on ' + dateStr + ', fetching existing'
+      );
+
       const raceResolved = await prisma.uncoverChallenge.findUnique({
         where: { date: normalizedDate },
         include: {
@@ -151,14 +158,16 @@ export async function getOrCreateDailyChallenge(
           },
         },
       });
-      
+
       if (!raceResolved) {
-        throw new Error('Challenge creation race condition unresolved for ' + dateStr);
+        throw new Error(
+          'Challenge creation race condition unresolved for ' + dateStr
+        );
       }
-      
+
       return raceResolved as DailyChallengeWithAlbum;
     }
-    
+
     throw error;
   }
 }
@@ -178,7 +187,7 @@ export async function getDailyChallengeInfo(
   date: Date = new Date()
 ): Promise<DailyChallengeInfo> {
   const challenge = await getOrCreateDailyChallenge(date);
-  
+
   return {
     id: challenge.id,
     date: challenge.date,
