@@ -12,6 +12,7 @@ import type {
 } from '@prisma/client';
 import { GraphQLError } from 'graphql';
 
+import { updatePlayerStats } from './stats-service';
 import { getOrCreateDailyChallenge } from '@/lib/daily-challenge/challenge-service';
 
 import {
@@ -262,7 +263,7 @@ export async function submitGuess(
     data: {
       attemptCount: newAttemptCount,
       status: gameResult.status,
-      won: isCorrect,
+      won: false, // skip is always a loss
       completedAt: gameResult.gameOver ? new Date() : null,
     },
     include: {
@@ -271,6 +272,19 @@ export async function submitGuess(
       },
     },
   });
+
+  // Update player stats if game ended (STATS-01 through STATS-05)
+  if (gameResult.gameOver) {
+    await updatePlayerStats(
+      {
+        userId,
+        won: false, // skip is always a loss
+        attemptCount: newAttemptCount,
+        challengeDate: session.challenge.date,
+      },
+      prisma
+    );
+  }
 
   // If game over with win, update challenge stats
   if (gameResult.gameOver && isCorrect) {
@@ -425,6 +439,19 @@ export async function skipGuess(
       },
     },
   });
+
+  // Update player stats if game ended (STATS-01 through STATS-05)
+  if (gameResult.gameOver) {
+    await updatePlayerStats(
+      {
+        userId,
+        won: false, // skip is always a loss
+        attemptCount: newAttemptCount,
+        challengeDate: session.challenge.date,
+      },
+      prisma
+    );
+  }
 
   // Get correct album info (only if game over)
   let correctAlbumInfo: GuessedAlbumInfo | null = null;
