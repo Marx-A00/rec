@@ -27,7 +27,7 @@ Build a daily album art guessing game that drives repeat visits and music discov
 - [x] **Phase 36: Image Reveal Engine** - Canvas pixelation and CSS blur ✓
 - [x] **Phase 37: Game State & Logic** - Zustand store, guess validation ✓
 - [x] **Phase 38: Game UI** - Desktop and mobile layouts ✓
-- [ ] **Phase 39: Stats & Streaks** - Tracking and persistence
+- [ ] **Phase 39: Stats & Streaks** - Tracking, persistence, and display
 - [ ] **Phase 40: Archive Mode** - Past puzzles access
 - [ ] **Phase 41: Music Discovery** - Post-game integration
 - [ ] **Phase 42: Polish** - Error states, loading, keyboard support
@@ -249,7 +249,13 @@ Plans:
 3. **Post-game display:** Stats modal appears after game completion
 4. **Cross-device sync:** Playing on phone updates stats visible on desktop
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+
+- [ ] 39-01-PLAN.md — Stats service and game integration
+- [ ] 39-02-PLAN.md — GraphQL API for stats query
+- [ ] 39-03-PLAN.md — Stats modal UI with distribution chart
 
 ---
 
