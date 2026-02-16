@@ -101,9 +101,14 @@ Plans:
 1. **Daily challenge exists:** For any given date, system returns the same album for all users
 2. **Deterministic selection:** Given the same date and pool, algorithm produces identical album choice
 3. **Reset works:** After UTC midnight, new album is selected
-4. **BullMQ scheduler:** Job runs daily to ensure challenge exists for upcoming day
+4. **On-demand creation:** Challenge row created when first requested (no scheduler needed)
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 35-01-PLAN.md — Add CuratedChallenge Prisma model for ordered album list
+- [ ] 35-02-PLAN.md — Selection and challenge services (deterministic date-to-album mapping)
+- [ ] 35-03-PLAN.md — GraphQL API for daily challenge and admin curation
 
 ---
 
