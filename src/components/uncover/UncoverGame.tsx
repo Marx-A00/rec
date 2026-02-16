@@ -224,6 +224,7 @@ export function UncoverGame() {
             imageUrl={challengeImageUrl}
             challengeId={game.challengeId}
             stage={game.revealStage}
+            isSubmitting={game.isSubmitting}
             className='aspect-square w-full overflow-hidden rounded-lg'
           />
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
-import { Grid3X3, Droplets } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Grid3X3, Droplets, Loader2 } from 'lucide-react';
 
 import { useRevealStore, type RevealStyle } from '@/stores/useRevealStore';
 
@@ -18,6 +19,8 @@ interface RevealImageProps {
   className?: string;
   /** Whether to show the style toggle button (default: true) */
   showToggle?: boolean;
+  /** Show loading overlay (for submission state) */
+  isSubmitting?: boolean;
   /** Called when the image finishes loading */
   onLoad?: () => void;
   /** Called if the image fails to load */
@@ -45,13 +48,30 @@ export function RevealImage({
   stage,
   className,
   showToggle = true,
+  isSubmitting = false,
   onLoad,
   onError,
 }: RevealImageProps) {
   const { preferredStyle, setPreferredStyle } = useRevealStore();
+  const [isImageLoading, setIsImageLoading] = useState(true);
+
+  // Reset loading state when imageUrl changes
+  useEffect(() => {
+    setIsImageLoading(true);
+  }, [imageUrl]);
 
   const toggleStyle = () => {
     setPreferredStyle(preferredStyle === 'pixelation' ? 'blur' : 'pixelation');
+  };
+
+  const handleImageLoad = () => {
+    setIsImageLoading(false);
+    onLoad?.();
+  };
+
+  const handleImageError = () => {
+    setIsImageLoading(false);
+    onError?.();
   };
 
   const Icon = STYLE_ICONS[preferredStyle];
@@ -60,16 +80,23 @@ export function RevealImage({
     imageUrl,
     challengeId,
     stage,
-    onLoad,
-    onError,
+    onLoad: handleImageLoad,
+    onError: handleImageError,
   };
 
   return (
-    <div className={`relative ${className ?? ''}`}>
+    <div className={'relative ' + (className ?? '')}>
       {preferredStyle === 'pixelation' ? (
         <RevealCanvas {...sharedProps} />
       ) : (
         <RevealBlur {...sharedProps} />
+      )}
+
+      {/* Loading overlay during image load or submission */}
+      {(isImageLoading || isSubmitting) && (
+        <div className='absolute inset-0 flex items-center justify-center rounded-lg bg-black/30 backdrop-blur-sm transition-opacity'>
+          <Loader2 className='h-8 w-8 animate-spin text-white/80' />
+        </div>
       )}
 
       {showToggle && (
@@ -78,7 +105,7 @@ export function RevealImage({
           onClick={toggleStyle}
           aria-label={STYLE_LABELS[preferredStyle]}
           title={STYLE_LABELS[preferredStyle]}
-          className='absolute bottom-2 right-2 rounded-md bg-black/50 p-1.5 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white'
+          className='absolute bottom-2 right-2 rounded-md bg-black/50 p-1.5 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black'
         >
           <Icon className='h-4 w-4' />
         </button>
