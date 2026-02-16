@@ -911,8 +911,11 @@ export type CuratedChallengeEntry = {
 export type DailyChallengeInfo = {
   __typename?: 'DailyChallengeInfo';
   avgAttempts?: Maybe<Scalars['Float']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
   date: Scalars['DateTime']['output'];
   id: Scalars['UUID']['output'];
+  /** Challenge album cover image URL (safe to expose - doesn't reveal the answer) */
+  imageUrl?: Maybe<Scalars['String']['output']>;
   maxAttempts: Scalars['Int']['output'];
   /** User's session for this challenge (null if not started or not authenticated) */
   mySession?: Maybe<UncoverSessionInfo>;
@@ -4519,8 +4522,14 @@ export type DailyChallengeInfoResolvers<
     ParentType,
     ContextType
   >;
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   date?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   maxAttempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   mySession?: Resolver<
     Maybe<ResolversTypes['UncoverSessionInfo']>,

@@ -937,8 +937,11 @@ export type CuratedChallengeEntry = {
 export type DailyChallengeInfo = {
   __typename?: 'DailyChallengeInfo';
   avgAttempts?: Maybe<Scalars['Float']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
   date: Scalars['DateTime']['output'];
   id: Scalars['UUID']['output'];
+  /** Challenge album cover image URL (safe to expose - doesn't reveal the answer) */
+  imageUrl?: Maybe<Scalars['String']['output']>;
   maxAttempts: Scalars['Int']['output'];
   /** User's session for this challenge (null if not started or not authenticated) */
   mySession?: Maybe<UncoverSessionInfo>;
@@ -4090,6 +4093,8 @@ export type DailyChallengeQuery = {
     totalPlays: number;
     totalWins: number;
     avgAttempts?: number | null;
+    imageUrl?: string | null;
+    cloudflareImageId?: string | null;
     mySession?: {
       __typename?: 'UncoverSessionInfo';
       id: string;
@@ -8468,6 +8473,8 @@ export const DailyChallengeDocument = `
     totalPlays
     totalWins
     avgAttempts
+    imageUrl
+    cloudflareImageId
     mySession {
       id
       status

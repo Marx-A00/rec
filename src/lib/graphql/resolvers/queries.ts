@@ -3382,6 +3382,13 @@ export const queryResolvers: QueryResolvers = {
         totalWins: challenge.totalWins,
         avgAttempts: challenge.avgAttempts,
         mySession,
+        imageUrl: challenge.album.cloudflareImageId
+          ? (() => {
+              const { getImageUrl } = require('@/lib/cloudflare-images');
+              return getImageUrl(challenge.album.cloudflareImageId);
+            })()
+          : null,
+        cloudflareImageId: challenge.album.cloudflareImageId,
       };
     } catch (error) {
       graphqlLogger.error('Failed to fetch daily challenge:', { error, date });

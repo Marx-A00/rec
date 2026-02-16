@@ -4,10 +4,41 @@ import { useEffect, useState } from 'react';
 import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
+import { useDailyChallengeQuery } from '@/generated/graphql';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
 import { AttemptDots } from '@/components/uncover/AttemptDots';
+
+/**
+ * Teaser image component for unauthenticated users.
+ * Shows stage 1 obscured image to create curiosity.
+ */
+function TeaserImage() {
+  const { data, isLoading } = useDailyChallengeQuery();
+
+  if (isLoading) {
+    return (
+      <div className='aspect-square w-full max-w-md overflow-hidden rounded-lg bg-muted animate-pulse' />
+    );
+  }
+
+  if (!data?.dailyChallenge?.imageUrl || !data?.dailyChallenge?.id) {
+    return null;
+  }
+
+  return (
+    <div className='w-full max-w-md'>
+      <RevealImage
+        imageUrl={data.dailyChallenge.imageUrl}
+        challengeId={data.dailyChallenge.id}
+        stage={1}
+        showToggle={false}
+        className='aspect-square w-full overflow-hidden rounded-lg'
+      />
+    </div>
+  );
+}
 
 /**
  * Main game container component for Uncover daily challenge.
@@ -69,7 +100,7 @@ export function UncoverGame() {
     isInitializing,
   ]);
 
-  // AUTH-01: Show login prompt for unauthenticated users
+  // AUTH-01: Show login prompt for unauthenticated users with teaser
   if (!game.isAuthenticated) {
     if (game.isAuthLoading) {
       return (
@@ -81,18 +112,24 @@ export function UncoverGame() {
 
     return (
       <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8'>
-        <div className='text-center'>
-          <h2 className='mb-2 text-2xl font-bold'>Login Required</h2>
-          <p className='text-muted-foreground'>
-            Please sign in to play the daily Uncover challenge.
-          </p>
+        {/* Teaser image - stage 1 obscured */}
+        <TeaserImage />
+        
+        {/* Login CTA overlay */}
+        <div className='relative -mt-12 flex flex-col items-center gap-4 rounded-lg bg-background/95 p-6 shadow-lg backdrop-blur-sm'>
+          <div className='text-center'>
+            <h2 className='mb-2 text-2xl font-bold'>Daily Album Uncover</h2>
+            <p className='text-muted-foreground mb-4'>
+              Guess the album from its cover art. 6 attempts. New puzzle daily.
+            </p>
+          </div>
+          <button
+            onClick={() => signIn(undefined, { callbackUrl: '/game' })}
+            className='rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors'
+          >
+            Sign In to Play
+          </button>
         </div>
-        <button
-          onClick={() => signIn()}
-          className='rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90'
-        >
-          Sign In to Play
-        </button>
       </div>
     );
   }

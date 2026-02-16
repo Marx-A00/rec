@@ -8,6 +8,8 @@ query DailyChallenge($date: DateTime) {
     totalPlays
     totalWins
     avgAttempts
+    imageUrl
+    cloudflareImageId
     mySession {
       id
       status
