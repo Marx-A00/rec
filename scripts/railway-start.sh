@@ -6,8 +6,8 @@ echo "🗄️  Running database migrations..."
 pnpm prisma migrate deploy
 
 if [ "$SERVICE_TYPE" = "worker" ]; then
-  echo "🔧 Starting worker service with dashboard..."
-  pnpm queue:dev
+  echo "🔧 Starting worker service..."
+  pnpm worker
 else
   echo "🌐 Starting web service..."
   pnpm start

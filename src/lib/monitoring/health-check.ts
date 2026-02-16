@@ -1,8 +1,7 @@
 // src/lib/monitoring/health-check.ts
 import { getMusicBrainzQueue } from '@/lib/queue';
-import { redis } from '@/lib/queue/redis';
+import { createRedisConnection, redis } from '@/lib/queue/redis';
 import { spotifyMetrics } from '@/lib/spotify/error-handling';
-import { spotifyScheduler } from '@/lib/spotify/scheduler';
 
 import { metricsCollector } from './metrics-collector';
 
@@ -314,11 +313,20 @@ export class HealthChecker {
       const metrics = spotifyMetrics.getMetrics();
       const successRate = spotifyMetrics.getSuccessRate();
 
-      // Check for registered repeatable jobs (the actual schedules) instead of recent executions
-      // Repeatable jobs persist in Redis and represent the scheduler configuration
+      // Check if scheduler was intentionally disabled via admin toggle
+      let manuallyDisabled = false;
+      try {
+        const checkRedis = createRedisConnection();
+        const redisValue = await checkRedis.get('scheduler:spotify:enabled');
+        checkRedis.disconnect();
+        manuallyDisabled = redisValue === 'false';
+      } catch {
+        // Redis check failed, assume not manually disabled
+      }
+
+      // Check for registered repeatable jobs (the actual schedules)
       const queue = getMusicBrainzQueue();
       const repeatableJobs = await queue.getQueue().getRepeatableJobs();
-      // Filter by job key which contains the full job identifier
       const spotifySchedules = repeatableJobs.filter(
         job =>
           job.key.includes('spotify-new-releases-schedule') ||
@@ -329,12 +337,16 @@ export class HealthChecker {
       let status: HealthStatus;
       let message: string;
 
-      if (!schedulerConfigured) {
+      if (!schedulerConfigured && manuallyDisabled) {
+        // Intentionally stopped via admin UI — not a problem
+        status = HealthStatus.HEALTHY;
+        message = 'Spotify sync paused (stopped via admin)';
+      } else if (!schedulerConfigured) {
+        // No jobs and not intentionally disabled — likely misconfigured
         status = HealthStatus.DEGRADED;
         message =
           'Spotify scheduler not configured (no scheduled jobs registered)';
       } else if (successRate < 80 && (metrics as any).totalRequests > 10) {
-        // Only flag low success rate if we have enough data points
         status = HealthStatus.DEGRADED;
         message = `Low Spotify API success rate: ${successRate.toFixed(2)}%`;
       } else if ((metrics as any).errors?.total > 100) {
@@ -342,9 +354,7 @@ export class HealthChecker {
         message = `High Spotify error count: ${(metrics as any).errors?.total}`;
       } else {
         status = HealthStatus.HEALTHY;
-        message = schedulerConfigured
-          ? `Spotify integration healthy (${spotifySchedules.length} schedule(s) active)`
-          : 'Spotify integration healthy';
+        message = `Spotify sync active (${spotifySchedules.length} schedule(s))`;
       }
 
       return {
@@ -354,6 +364,7 @@ export class HealthChecker {
           ...metrics,
           successRate,
           schedulerConfigured,
+          manuallyDisabled,
           activeSchedules: spotifySchedules.map(job => job.id),
         },
         lastCheck: new Date(),

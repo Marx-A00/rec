@@ -60,8 +60,7 @@
     "test:musicbrainz": "tsx src/scripts/test-musicbrainz.ts",
     "test:spotify-scheduler": "tsx src/scripts/test-spotify-scheduler.ts",
     "worker": "tsx src/workers/queue-worker.ts",
-    "dashboard": "tsx src/scripts/bull-board-server.ts",
-    "queue:dev": "FORCE_COLOR=1 concurrently \"pnpm dashboard\" \"pnpm worker\" --names \"dashboard,worker\" --prefix-colors \"cyan,yellow\" --color"
+    "queue:dev": "tsx src/workers/queue-worker.ts"
   },
   "dependencies": {
     "@apollo/server": "^5.0.0",

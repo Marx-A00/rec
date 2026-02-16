@@ -6,6 +6,9 @@
 
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
 import type { MusicBrainzSyncNewReleasesJobData } from '../queue/jobs';
+import { createRedisConnection } from '../queue/redis';
+
+const REDIS_KEY_MUSICBRAINZ_ENABLED = 'scheduler:musicbrainz:enabled';
 
 export interface MusicBrainzScheduleConfig {
   newReleases: {
@@ -58,6 +61,9 @@ class MusicBrainzScheduler {
     console.log('🚀 Starting MusicBrainz automated scheduler...');
     this.isRunning = true;
 
+    // Persist enabled state to Redis (survives worker restarts)
+    await this.persistEnabledState(true);
+
     // Remove any existing schedules to prevent duplicates
     await this.removeExistingSchedules();
 
@@ -80,6 +86,9 @@ class MusicBrainzScheduler {
     }
 
     console.log('🛑 Stopping MusicBrainz automated scheduler...');
+
+    // Persist disabled state to Redis (survives worker restarts)
+    await this.persistEnabledState(false);
 
     // Remove repeatable jobs from BullMQ
     await this.removeExistingSchedules();
@@ -260,6 +269,26 @@ class MusicBrainzScheduler {
   }
 
   /**
+   * Persist scheduler enabled/disabled state to Redis
+   * This allows the toggle to survive worker restarts
+   */
+  private async persistEnabledState(enabled: boolean) {
+    try {
+      const redis = createRedisConnection();
+      await redis.set(
+        REDIS_KEY_MUSICBRAINZ_ENABLED,
+        enabled ? 'true' : 'false'
+      );
+      redis.disconnect();
+    } catch (error) {
+      console.warn(
+        '⚠️  Failed to persist MusicBrainz scheduler state to Redis:',
+        error
+      );
+    }
+  }
+
+  /**
    * Log current schedule information
    */
   private logScheduleInfo() {
@@ -297,6 +326,31 @@ export const musicBrainzScheduler = new MusicBrainzScheduler();
  * Initialize MusicBrainz scheduler with environment-based configuration
  */
 export async function initializeMusicBrainzScheduler() {
+  // Check Redis for persisted toggle state (admin UI override)
+  let enabledByRedis: boolean | null = null;
+  try {
+    const redis = createRedisConnection();
+    const redisValue = await redis.get(REDIS_KEY_MUSICBRAINZ_ENABLED);
+    redis.disconnect();
+    if (redisValue !== null) {
+      enabledByRedis = redisValue === 'true';
+      console.log(
+        `📡 MusicBrainz scheduler Redis state: ${enabledByRedis ? 'enabled' : 'disabled'}`
+      );
+    }
+  } catch (error) {
+    console.warn(
+      '⚠️  Failed to read MusicBrainz scheduler state from Redis:',
+      error
+    );
+  }
+
+  // If Redis says disabled, don't start the scheduler
+  if (enabledByRedis === false) {
+    console.log('⏸️  MusicBrainz scheduler disabled via admin toggle (Redis)');
+    return false;
+  }
+
   // Load configuration from environment variables
   const config: MusicBrainzScheduleConfig = {
     newReleases: {
