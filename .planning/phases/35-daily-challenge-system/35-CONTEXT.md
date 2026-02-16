@@ -6,58 +6,57 @@
 <domain>
 ## Phase Boundary
 
-One album selected per day, same for all players, with UTC midnight reset. Includes the selection algorithm, BullMQ scheduling, and a public GraphQL query for the daily challenge. Game state, UI, and player interactions are separate phases.
+One album selected per day, same for all players, with UTC midnight reset. Includes the selection algorithm and a public GraphQL query for the daily challenge. Game state, UI, and player interactions are separate phases.
 
 </domain>
 
 <decisions>
 ## Implementation Decisions
 
+### Overall Approach
+- Keep it simple — focus on getting the game working, not on scheduling infrastructure
+- Admin pre-curates a large ordered list of albums for daily challenges upfront
+- No BullMQ scheduler needed for now — deterministic selection from the curated list
+- Challenge row created on-demand (first request of the day) if it doesn't exist yet
+
 ### Selection Algorithm
-- Weighted random selection balancing freshness (time since last used) and popularity equally
-- Deterministic via seeded PRNG — same date + same pool state = same result (for debugging)
+- Deterministic mapping from date → album in the curated list (e.g., day index into the ordered list)
 - Admin override — admin can pin a specific album to a specific day
-- Pinned albums still go on cooldown like any algorithmically selected album
-
-### Scheduling & Creation
-- Pre-generated via BullMQ repeatable job (runs before UTC midnight)
-- On-demand fallback — if no challenge exists when a player loads the game, create it on the fly
-- Buffer of 3-7 days of future challenges pre-generated for resilience
-- Admin can view and modify upcoming pre-generated challenges
-
-### Challenge Lifecycle
-- If pool is too small to fill buffer, generate what's possible and warn admin
-- Minimum healthy pool size: 30 albums (below this triggers admin warning)
-- If an album is removed from the pool after being assigned to a future challenge, automatically replace it with a new selection
-- Expose a `dailyChallenge(date)` GraphQL query that returns challenge info but NOT the answer
+- Pinned albums still count as "used" in the sequence
 
 ### Repeat Policy
-- Cycle through the entire pool before any album can repeat
+- Cycle through the entire curated list before any album repeats
 - Same-artist spacing: minimum 14 days between albums by the same artist
 - Decade diversity: soft rule — avoid same decade two days in a row, but allow it if pool is limited
+- These rules apply when building/ordering the curated list, not at selection time (selection is just "next in list")
+
+### Challenge Query
+- Expose a `dailyChallenge(date)` GraphQL query that returns challenge info but NOT the answer
+- Admin can view and modify upcoming challenges (reorder the curated list)
 
 ### Claude's Discretion
-- Exact weighting formula for freshness vs popularity balance
-- PRNG seed implementation details
-- BullMQ job scheduling time (how far before midnight)
-- Admin warning mechanism (email, in-app notification, dashboard indicator)
-- How the on-demand fallback integrates with the deterministic algorithm
+- Exact deterministic mapping implementation (date offset, modular index, etc.)
+- How on-demand creation handles edge cases (race conditions, etc.)
+- Admin UI for managing the curated challenge order
 
 </decisions>
 
 <specifics>
 ## Specific Ideas
 
-- Selection should feel like Wordle's approach — deterministic and reproducible, but with smarter weighting instead of pure sequence
-- Admin override is for special occasions (e.g., featuring an album on its anniversary)
-- The system should be robust enough to survive worker crashes without players noticing
+- Pre-curate a big batch of albums so the system is good for a while without maintenance
+- Think Wordle — dead simple daily selection, no fancy algorithms needed
+- The game experience matters more than the selection infrastructure right now
 
 </specifics>
 
 <deferred>
 ## Deferred Ideas
 
-None — discussion stayed within phase scope
+- BullMQ scheduler for pre-generating challenges — add when scale warrants it
+- Admin pool health warnings (minimum pool size alerts) — not needed with pre-curated list
+- Weighted random selection (freshness + popularity balancing) — overkill for now
+- Pre-generation buffer (3-7 days ahead) — unnecessary with deterministic list approach
 
 </deferred>
 
