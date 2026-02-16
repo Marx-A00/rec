@@ -6,8 +6,11 @@
 
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
 import type { SpotifySyncNewReleasesJobData } from '../queue/jobs';
+import { createRedisConnection } from '../queue/redis';
 
 import { spotifyMetrics } from './error-handling';
+
+const REDIS_KEY_SPOTIFY_ENABLED = 'scheduler:spotify:enabled';
 
 export interface SpotifyScheduleConfig {
   newReleases: {
@@ -55,6 +58,9 @@ class SpotifyScheduler {
     console.log('🚀 Starting Spotify automated scheduler...');
     this.isRunning = true;
 
+    // Persist enabled state to Redis (survives worker restarts)
+    await this.persistEnabledState(true);
+
     // Remove any existing schedules to prevent duplicates
     await this.removeExistingSchedules();
 
@@ -77,6 +83,9 @@ class SpotifyScheduler {
     }
 
     console.log('🛑 Stopping Spotify automated scheduler...');
+
+    // Persist disabled state to Redis (survives worker restarts)
+    await this.persistEnabledState(false);
 
     // Remove repeatable jobs from BullMQ
     await this.removeExistingSchedules();
@@ -196,6 +205,23 @@ class SpotifyScheduler {
   }
 
   /**
+   * Persist scheduler enabled/disabled state to Redis
+   * This allows the toggle to survive worker restarts
+   */
+  private async persistEnabledState(enabled: boolean) {
+    try {
+      const redis = createRedisConnection();
+      await redis.set(REDIS_KEY_SPOTIFY_ENABLED, enabled ? 'true' : 'false');
+      redis.disconnect();
+    } catch (error) {
+      console.warn(
+        '⚠️  Failed to persist Spotify scheduler state to Redis:',
+        error
+      );
+    }
+  }
+
+  /**
    * Queue a new releases sync job (for manual triggering)
    */
   private async queueNewReleasesSync() {
@@ -271,8 +297,40 @@ export const spotifyScheduler = new SpotifyScheduler();
  */
 export async function initializeSpotifyScheduler() {
   // Check if we have Spotify credentials
-  if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
+  // Fall back to AUTH_SPOTIFY_* vars (used by NextAuth) if SPOTIFY_CLIENT_* not set
+  const spotifyClientId =
+    process.env.SPOTIFY_CLIENT_ID || process.env.AUTH_SPOTIFY_ID;
+  const spotifyClientSecret =
+    process.env.SPOTIFY_CLIENT_SECRET || process.env.AUTH_SPOTIFY_SECRET;
+
+  if (!spotifyClientId || !spotifyClientSecret) {
     console.log('⚠️  Spotify credentials not found, scheduler will not start');
+    return false;
+  }
+
+  // Check Redis for persisted toggle state (admin UI override)
+  // If Redis key exists, it takes priority over env vars
+  let enabledByRedis: boolean | null = null;
+  try {
+    const redis = createRedisConnection();
+    const redisValue = await redis.get(REDIS_KEY_SPOTIFY_ENABLED);
+    redis.disconnect();
+    if (redisValue !== null) {
+      enabledByRedis = redisValue === 'true';
+      console.log(
+        `📡 Spotify scheduler Redis state: ${enabledByRedis ? 'enabled' : 'disabled'}`
+      );
+    }
+  } catch (error) {
+    console.warn(
+      '⚠️  Failed to read Spotify scheduler state from Redis:',
+      error
+    );
+  }
+
+  // If Redis says disabled, don't start the scheduler
+  if (enabledByRedis === false) {
+    console.log('⏸️  Spotify scheduler disabled via admin toggle (Redis)');
     return false;
   }
 

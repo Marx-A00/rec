@@ -263,7 +263,7 @@ export async function processSpotifyAlbum(
     year?: number;
   },
   artistImageMap?: Map<string, string>
-): Promise<{ albumId: string; artistIds: string[]; tracksCreated?: number }> {
+): Promise<{ albumId: string; artistIds: string[]; artistsCreated: number; tracksCreated?: number }> {
   console.log(`🎵 Processing Spotify album: "${spotifyAlbum.name}"`);
 
   // 1. Transform album data
@@ -287,7 +287,7 @@ export async function processSpotifyAlbum(
 
   // 3. Use shared find-or-create helper (adds dedup + handles artists + enrichment)
   const { findOrCreateAlbum } = await import('@/lib/albums');
-  const { album, created } = await findOrCreateAlbum({
+  const { album, created, artistsCreated } = await findOrCreateAlbum({
     db: prisma,
     identity: {
       title: albumData.title,
@@ -347,6 +347,7 @@ export async function processSpotifyAlbum(
   return {
     albumId: album.id,
     artistIds,
+    artistsCreated,
     tracksCreated: 0, // No tracks created from Spotify - MusicBrainz enrichment handles tracks
   };
 }
@@ -369,7 +370,7 @@ export async function processSpotifyAlbums(
 ): Promise<SpotifyProcessingResult> {
   console.log(`🚀 Processing ${spotifyAlbums.length} Spotify albums...`);
 
-  const results: { albumId: string; artistIds: string[] }[] = [];
+  const results: { albumId: string; artistIds: string[]; artistsCreated: number }[] = [];
   const errors: string[] = [];
   let duplicatesSkipped = 0;
 
@@ -440,7 +441,7 @@ export async function processSpotifyAlbums(
 
   const stats = {
     albumsProcessed: results.length,
-    artistsProcessed: results.reduce((sum, r) => sum + r.artistIds.length, 0),
+    artistsProcessed: results.reduce((sum, r) => sum + r.artistsCreated, 0),
     duplicatesSkipped,
     errors,
   };

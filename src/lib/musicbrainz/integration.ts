@@ -97,6 +97,8 @@ export class MusicBrainzIntegrationService {
         fields: {
           releaseDate: albumData.releaseDate ?? undefined,
           releaseType: albumData.releaseType ?? undefined,
+
+          // TODO: maybe we should add this to enum, to standardize??
           source: 'MUSICBRAINZ',
         },
         artists: artistCredits.map(credit => ({
@@ -108,6 +110,7 @@ export class MusicBrainzIntegrationService {
         enrichment: 'none',
         insideTransaction: false,
         caller: 'integration-service:albumWithArtists',
+        // TODO: maybe we should add this to enum, to standardize??
       });
 
       return album;

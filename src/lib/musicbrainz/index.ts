@@ -59,7 +59,6 @@ export {
   analyzeAlbumEnrichmentNeed,
   analyzeArtistEnrichmentNeed,
   calculateEnrichmentPriority,
-  mapSourceToUserAction,
 } from './enrichment-logic';
 
 // Type exports

@@ -222,7 +222,11 @@ export async function handleMusicBrainzSyncNewReleases(
           ? parseInt(releaseGroup.firstReleaseDate.split('-')[0])
           : undefined;
 
-        const { album, created: albumWasCreated } = await findOrCreateAlbum({
+        const {
+          album,
+          created: albumWasCreated,
+          artistsCreated: newArtistsCreated,
+        } = await findOrCreateAlbum({
           db: prisma,
           identity: {
             title: releaseGroup.title,
@@ -270,8 +274,9 @@ export async function handleMusicBrainzSyncNewReleases(
 
         if (albumWasCreated) {
           albumsCreated++;
+          artistsCreated += newArtistsCreated;
           console.log(
-            `✨ Created album: ${releaseGroup.title} by ${artist.name}`
+            `✨ Created album: ${releaseGroup.title} by ${artist.name} (${newArtistsCreated} new artist(s))`
           );
         } else {
           console.log(

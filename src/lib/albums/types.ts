@@ -120,4 +120,6 @@ export interface FindOrCreateAlbumResult {
   album: Album;
   created: boolean;
   dedupMethod: AlbumDedupMethod;
+  /** Number of artists created during this operation (0 if album already existed) */
+  artistsCreated: number;
 }

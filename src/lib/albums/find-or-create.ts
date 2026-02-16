@@ -165,7 +165,7 @@ export async function findOrCreateAlbum(
         `[ALBUM-HELPER] FOUND "${album.title}" via ${caller} (dedup: ${dedupMethod})`
       )
     );
-    return { album, created: false, dedupMethod };
+    return { album, created: false, dedupMethod, artistsCreated: 0 };
   }
 
   // ------------------------------------------------------------------
@@ -202,29 +202,35 @@ export async function findOrCreateAlbum(
   // ------------------------------------------------------------------
   // 6. Create artist associations
   // ------------------------------------------------------------------
+  let artistsCreatedCount = 0;
   if (artists.length > 0) {
     const { findOrCreateArtist } = await import('@/lib/artists');
 
     for (let i = 0; i < artists.length; i++) {
       const artistInput = artists[i];
-      const { artist: dbArtist } = await findOrCreateArtist({
-        db,
-        identity: {
-          name: artistInput.name,
-          musicbrainzId: artistInput.musicbrainzId ?? undefined,
-          spotifyId: artistInput.spotifyId ?? undefined,
-          discogsId: artistInput.discogsId ?? undefined,
-        },
-        fields: {
-          source: fields.source ?? ('USER_SUBMITTED' as const),
-          ...getInitialQuality({
-            musicbrainzId: artistInput.musicbrainzId,
-          }),
-        },
-        enrichment: 'none', // Artist enrichment handled separately
-        insideTransaction,
-        caller: `${caller}:album-artist`,
-      });
+      const { artist: dbArtist, created: artistWasCreated } =
+        await findOrCreateArtist({
+          db,
+          identity: {
+            name: artistInput.name,
+            musicbrainzId: artistInput.musicbrainzId ?? undefined,
+            spotifyId: artistInput.spotifyId ?? undefined,
+            discogsId: artistInput.discogsId ?? undefined,
+          },
+          fields: {
+            source: fields.source ?? ('USER_SUBMITTED' as const),
+            ...getInitialQuality({
+              musicbrainzId: artistInput.musicbrainzId,
+            }),
+          },
+          enrichment: 'none', // Artist enrichment handled separately
+          insideTransaction,
+          caller: `${caller}:album-artist`,
+        });
+
+      if (artistWasCreated) {
+        artistsCreatedCount++;
+      }
 
       // Upsert to handle potential duplicates
       const role = artistInput.role ?? 'PRIMARY';
@@ -261,7 +267,7 @@ export async function findOrCreateAlbum(
     );
   }
 
-  return { album, created: true, dedupMethod: null };
+  return { album, created: true, dedupMethod: null, artistsCreated: artistsCreatedCount };
 }
 
 // ============================================================================

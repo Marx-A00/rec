@@ -14,6 +14,9 @@ import {
   Music,
   Trash2,
   ArrowRight,
+  Play,
+  Square,
+  RefreshCw,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
@@ -67,6 +70,23 @@ interface HealthData {
   alerts: string[];
 }
 
+interface SchedulerStatusData {
+  spotify: {
+    enabled: boolean;
+    nextRunAt: string | null;
+    lastRunAt: string | null;
+    intervalMinutes: number;
+    jobKey: string | null;
+  };
+  musicbrainz: {
+    enabled: boolean;
+    nextRunAt: string | null;
+    lastRunAt: string | null;
+    intervalMinutes: number;
+    jobKey: string | null;
+  };
+}
+
 // In dev, call worker directly for speed; in prod, use the authenticated proxy
 const MONITORING_API =
   process.env.NODE_ENV === 'development'
@@ -83,6 +103,11 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [syncingSpotify, setSyncingSpotify] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [schedulerStatus, setSchedulerStatus] =
+    useState<SchedulerStatusData | null>(null);
+  const [togglingScheduler, setTogglingScheduler] = useState<string | null>(
+    null
+  ); // 'spotify-start' | 'spotify-stop' | 'musicbrainz-start' | etc.
 
   const fetchData = async () => {
     try {
@@ -107,6 +132,59 @@ export default function AdminDashboard() {
       setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSchedulerStatus = async () => {
+    try {
+      const res = await fetch('/api/admin/scheduler/status');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setSchedulerStatus(data.status);
+        }
+      }
+    } catch {
+      // Silently fail — scheduler status is supplementary info
+    }
+  };
+
+  const toggleScheduler = async (
+    scheduler: 'spotify' | 'musicbrainz',
+    action: 'start' | 'stop' | 'sync'
+  ) => {
+    const key = `${scheduler}-${action}`;
+    setTogglingScheduler(key);
+    setSyncMessage(null);
+
+    try {
+      const res = await fetch(`${MONITORING_API}/${scheduler}/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        const label = scheduler === 'spotify' ? 'Spotify' : 'MusicBrainz';
+        const actionLabel =
+          action === 'start'
+            ? 'started'
+            : action === 'stop'
+              ? 'stopped'
+              : 'sync triggered';
+        setSyncMessage(`${label} scheduler ${actionLabel}`);
+        // Refresh scheduler status after toggle
+        setTimeout(fetchSchedulerStatus, 1000);
+      } else {
+        setSyncMessage(`Failed: ${data.message || data.error}`);
+      }
+    } catch (err) {
+      setSyncMessage(
+        `Error: ${err instanceof Error ? err.message : 'Request failed'}`
+      );
+    } finally {
+      setTogglingScheduler(null);
+      setTimeout(() => setSyncMessage(null), 5000);
     }
   };
 
@@ -165,8 +243,13 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
+    fetchSchedulerStatus();
     const interval = setInterval(fetchData, 5000); // Refresh every 5 seconds
-    return () => clearInterval(interval);
+    const schedulerInterval = setInterval(fetchSchedulerStatus, 10000); // Refresh scheduler every 10s
+    return () => {
+      clearInterval(interval);
+      clearInterval(schedulerInterval);
+    };
   }, []);
 
   const getHealthBadge = (status: string) => {
@@ -443,55 +526,152 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Quick Actions */}
+          {/* Scheduler Controls */}
           <Card className='bg-zinc-900 border-zinc-800'>
             <CardHeader>
-              <CardTitle className='text-white'>Quick Actions</CardTitle>
+              <CardTitle className='text-white'>Scheduler Controls</CardTitle>
               <CardDescription className='text-zinc-400'>
-                Common administrative tasks
+                Manage automated sync schedulers
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className='space-y-4'>
-                {/* Spotify Sync Section */}
+                {syncMessage && (
+                  <div
+                    className={`text-sm px-3 py-2 rounded ${
+                      syncMessage.startsWith('Failed') ||
+                      syncMessage.startsWith('Error')
+                        ? 'bg-red-950/50 text-red-400'
+                        : 'bg-green-950/50 text-green-400'
+                    }`}
+                  >
+                    {syncMessage}
+                  </div>
+                )}
+
+                {/* Spotify Scheduler */}
                 <div className='border border-zinc-800 rounded-lg p-4 bg-zinc-800/50'>
-                  <h4 className='text-sm font-medium mb-3 text-white'>
-                    Spotify Data Sync
-                  </h4>
+                  <div className='flex items-center justify-between mb-3'>
+                    <div className='flex items-center gap-2'>
+                      <Music className='h-4 w-4 text-green-500' />
+                      <h4 className='text-sm font-medium text-white'>
+                        Spotify New Releases
+                      </h4>
+                    </div>
+                    <Badge
+                      className={
+                        schedulerStatus?.spotify.enabled
+                          ? 'bg-green-600'
+                          : 'bg-zinc-600'
+                      }
+                    >
+                      {schedulerStatus?.spotify.enabled ? 'Running' : 'Stopped'}
+                    </Badge>
+                  </div>
+
+                  {schedulerStatus?.spotify && (
+                    <div className='text-xs text-zinc-400 space-y-1 mb-3'>
+                      {schedulerStatus.spotify.intervalMinutes > 0 && (
+                        <p>
+                          Interval:{' '}
+                          {Math.round(
+                            schedulerStatus.spotify.intervalMinutes / 1440
+                          )}{' '}
+                          days (
+                          {schedulerStatus.spotify.intervalMinutes.toLocaleString()}{' '}
+                          min)
+                        </p>
+                      )}
+                      {schedulerStatus.spotify.nextRunAt && (
+                        <p>
+                          Next run:{' '}
+                          {new Date(
+                            schedulerStatus.spotify.nextRunAt
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                      {schedulerStatus.spotify.lastRunAt && (
+                        <p>
+                          Last run:{' '}
+                          {new Date(
+                            schedulerStatus.spotify.lastRunAt
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <div className='flex flex-wrap gap-2'>
+                    {schedulerStatus?.spotify.enabled ? (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='text-red-400 border-red-900 hover:bg-red-950'
+                        onClick={() => toggleScheduler('spotify', 'stop')}
+                        disabled={togglingScheduler !== null}
+                      >
+                        {togglingScheduler === 'spotify-stop' ? (
+                          <Activity className='mr-2 h-3 w-3 animate-spin' />
+                        ) : (
+                          <Square className='mr-2 h-3 w-3' />
+                        )}
+                        Stop Scheduler
+                      </Button>
+                    ) : (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='text-green-400 border-green-900 hover:bg-green-950'
+                        onClick={() => toggleScheduler('spotify', 'start')}
+                        disabled={togglingScheduler !== null}
+                      >
+                        {togglingScheduler === 'spotify-start' ? (
+                          <Activity className='mr-2 h-3 w-3 animate-spin' />
+                        ) : (
+                          <Play className='mr-2 h-3 w-3' />
+                        )}
+                        Start Scheduler
+                      </Button>
+                    )}
                     <Button
                       variant='outline'
                       size='sm'
                       className='text-white border-zinc-700 hover:bg-zinc-700'
-                      onClick={() => triggerSpotifySync()}
-                      disabled={syncingSpotify}
+                      onClick={() => toggleScheduler('spotify', 'sync')}
+                      disabled={togglingScheduler !== null}
                     >
-                      {syncingSpotify ? (
-                        <>
-                          <Activity className='mr-2 h-3 w-3 animate-spin' />
-                          Syncing...
-                        </>
+                      {togglingScheduler === 'spotify-sync' ? (
+                        <Activity className='mr-2 h-3 w-3 animate-spin' />
                       ) : (
-                        <>
-                          <Album className='mr-2 h-3 w-3' />
-                          Sync New Releases
-                        </>
+                        <RefreshCw className='mr-2 h-3 w-3' />
                       )}
+                      Sync Now
                     </Button>
                   </div>
-                  {syncMessage && (
-                    <div
-                      className={`mt-3 text-xs ${syncMessage.startsWith('✅') ? 'text-green-500' : 'text-red-500'}`}
-                    >
-                      {syncMessage}
-                    </div>
-                  )}
                 </div>
 
-                {/* Other Actions */}
+                {/* MusicBrainz Scheduler (not currently in use) */}
+                <div className='border border-zinc-800 rounded-lg p-4 bg-zinc-800/50 opacity-40 pointer-events-none'>
+                  <div className='flex items-center justify-between mb-3'>
+                    <div className='flex items-center gap-2'>
+                      <Database className='h-4 w-4 text-zinc-500' />
+                      <h4 className='text-sm font-medium text-zinc-400'>
+                        MusicBrainz New Releases
+                      </h4>
+                    </div>
+                    <Badge className='bg-zinc-700 text-zinc-400'>
+                      Not in use
+                    </Badge>
+                  </div>
+                  <p className='text-xs text-zinc-500'>
+                    MusicBrainz sync is currently disabled.
+                  </p>
+                </div>
+
+                {/* Quick Links */}
                 <div className='border border-zinc-800 rounded-lg p-4 bg-zinc-800/50'>
                   <h4 className='text-sm font-medium mb-3 text-white'>
-                    System Management
+                    Quick Links
                   </h4>
                   <div className='flex flex-wrap gap-2'>
                     <Button
@@ -500,35 +680,23 @@ export default function AdminDashboard() {
                       className='text-white border-zinc-700 hover:bg-zinc-700'
                       asChild
                     >
-                      <a href='/admin/queue'>Open Queue Dashboard</a>
+                      <a href='/admin/queue'>Queue Dashboard</a>
                     </Button>
                     <Button
                       variant='outline'
                       size='sm'
                       className='text-white border-zinc-700 hover:bg-zinc-700'
+                      asChild
                     >
-                      View Logs
+                      <a href='/admin/weekly-sync'>Sync History</a>
                     </Button>
                     <Button
                       variant='outline'
                       size='sm'
                       className='text-white border-zinc-700 hover:bg-zinc-700'
+                      asChild
                     >
-                      Clear Failed Jobs
-                    </Button>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      className='text-white border-zinc-700 hover:bg-zinc-700'
-                    >
-                      Restart Workers
-                    </Button>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      className='text-white border-zinc-700 hover:bg-zinc-700'
-                    >
-                      Export Metrics
+                      <a href='/admin/job-history'>Job History</a>
                     </Button>
                   </div>
                 </div>
