@@ -89,10 +89,7 @@ export async function updatePlayerStats(
   });
 
   // Prevent duplicate updates for same-day games (idempotent)
-  if (
-    existingStats &&
-    isSameDay(existingStats.lastPlayedDate, challengeDate)
-  ) {
+  if (existingStats && isSameDay(existingStats.lastPlayedDate, challengeDate)) {
     return; // Already updated for this challenge date
   }
 
@@ -118,7 +115,7 @@ export async function updatePlayerStats(
     : currentStreak;
 
   // Update win distribution if won and attemptCount is valid (1-6)
-  let winDistribution = existingStats
+  const winDistribution = existingStats
     ? [...existingStats.winDistribution]
     : [0, 0, 0, 0, 0, 0];
 
@@ -188,7 +185,8 @@ export async function getPlayerStats(
   }
 
   // Calculate win rate
-  const winRate = stats.gamesPlayed > 0 ? stats.gamesWon / stats.gamesPlayed : 0;
+  const winRate =
+    stats.gamesPlayed > 0 ? stats.gamesWon / stats.gamesPlayed : 0;
 
   return {
     gamesPlayed: stats.gamesPlayed,

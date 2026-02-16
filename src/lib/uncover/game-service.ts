@@ -12,9 +12,9 @@ import type {
 } from '@prisma/client';
 import { GraphQLError } from 'graphql';
 
-import { updatePlayerStats } from './stats-service';
 import { getOrCreateDailyChallenge } from '@/lib/daily-challenge/challenge-service';
 
+import { updatePlayerStats } from './stats-service';
 import {
   validateGuess,
   validateSkip,
