@@ -31,14 +31,14 @@ Requirements for the daily album art guessing game.
 
 ### Stats & Streaks
 
-- [ ] **STATS-01**: Track total games played per user
-- [ ] **STATS-02**: Track win count and calculate win rate
-- [ ] **STATS-03**: Track current streak (consecutive days won)
-- [ ] **STATS-04**: Track max streak (best ever)
-- [ ] **STATS-05**: Track guess distribution (1-guess wins, 2-guess wins, etc.)
+- [x] **STATS-01**: Track total games played per user
+- [x] **STATS-02**: Track win count and calculate win rate
+- [x] **STATS-03**: Track current streak (consecutive days won)
+- [x] **STATS-04**: Track max streak (best ever)
+- [x] **STATS-05**: Track guess distribution (1-guess wins, 2-guess wins, etc.)
 - [x] **STATS-06**: Stats persisted in database (not localStorage)
-- [ ] **STATS-07**: Stats viewable after each game
-- [ ] **STATS-08**: Stats synced across devices for logged-in users
+- [x] **STATS-07**: Stats viewable after each game
+- [x] **STATS-08**: Stats synced across devices for logged-in users
 
 ### Daily Challenge
 
@@ -138,14 +138,14 @@ Deferred to later milestones.
 | REVEAL-04   | 36    | Complete |
 | REVEAL-05   | 36    | Complete |
 | REVEAL-06   | 36    | Complete |
-| STATS-01    | 39    | Pending  |
-| STATS-02    | 39    | Pending  |
-| STATS-03    | 39    | Pending  |
-| STATS-04    | 39    | Pending  |
-| STATS-05    | 39    | Pending  |
+| STATS-01    | 39    | Complete |
+| STATS-02    | 39    | Complete |
+| STATS-03    | 39    | Complete |
+| STATS-04    | 39    | Complete |
+| STATS-05    | 39    | Complete |
 | STATS-06    | 33    | Complete |
-| STATS-07    | 39    | Pending  |
-| STATS-08    | 39    | Pending  |
+| STATS-07    | 39    | Complete |
+| STATS-08    | 39    | Complete |
 | DAILY-01    | 35    | Complete |
 | DAILY-02    | 35    | Complete |
 | DAILY-03    | 37    | Complete |
@@ -182,4 +182,4 @@ Deferred to later milestones.
 ---
 
 _Requirements defined: 2026-02-12_
-_Last updated: 2026-02-16 after Phase 38 completion_
+_Last updated: 2026-02-16 after Phase 39 completion_

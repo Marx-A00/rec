@@ -27,7 +27,7 @@ Build a daily album art guessing game that drives repeat visits and music discov
 - [x] **Phase 36: Image Reveal Engine** - Canvas pixelation and CSS blur ✓
 - [x] **Phase 37: Game State & Logic** - Zustand store, guess validation ✓
 - [x] **Phase 38: Game UI** - Desktop and mobile layouts ✓
-- [ ] **Phase 39: Stats & Streaks** - Tracking, persistence, and display
+- [x] **Phase 39: Stats & Streaks** - Tracking, persistence, and display ✓
 - [ ] **Phase 40: Archive Mode** - Past puzzles access
 - [ ] **Phase 41: Music Discovery** - Post-game integration
 - [ ] **Phase 42: Polish** - Error states, loading, keyboard support
@@ -253,9 +253,9 @@ Plans:
 
 Plans:
 
-- [ ] 39-01-PLAN.md — Stats service and game integration
-- [ ] 39-02-PLAN.md — GraphQL API for stats query
-- [ ] 39-03-PLAN.md — Stats modal UI with distribution chart
+- [x] 39-01-PLAN.md — Stats service and game integration ✓
+- [x] 39-02-PLAN.md — GraphQL API for stats query ✓
+- [x] 39-03-PLAN.md — Stats modal UI with distribution chart ✓
 
 ---
 
@@ -371,7 +371,7 @@ Plans:
 | 36    | Image Reveal Engine    | 6            | Complete    | 2026-02-15 |
 | 37    | Game State & Logic     | 11           | Complete    | 2026-02-15 |
 | 38    | Game UI                | 7            | Complete    | 2026-02-16 |
-| 39    | Stats & Streaks        | 7            | Not started | -          |
+| 39    | Stats & Streaks        | 7            | Complete    | 2026-02-16 |
 | 40    | Archive Mode           | 4            | Not started | -          |
 | 41    | Music Discovery        | 4            | Not started | -          |
 | 42    | Polish                 | 1            | Not started | -          |
@@ -400,14 +400,14 @@ Plans:
 | REVEAL-04   | 36    | Complete | Style preference persists        |
 | REVEAL-05   | 36    | Complete | 6 reveal stages                  |
 | REVEAL-06   | 36    | Complete | Client-side image processing     |
-| STATS-01    | 39    | Pending  | Track total games played         |
-| STATS-02    | 39    | Pending  | Track win count/rate             |
-| STATS-03    | 39    | Pending  | Track current streak             |
-| STATS-04    | 39    | Pending  | Track max streak                 |
-| STATS-05    | 39    | Pending  | Track guess distribution         |
+| STATS-01    | 39    | Complete | Track total games played         |
+| STATS-02    | 39    | Complete | Track win count/rate             |
+| STATS-03    | 39    | Complete | Track current streak             |
+| STATS-04    | 39    | Complete | Track max streak                 |
+| STATS-05    | 39    | Complete | Track guess distribution         |
 | STATS-06    | 33    | Complete | Stats persisted in database      |
-| STATS-07    | 39    | Pending  | Stats viewable after game        |
-| STATS-08    | 39    | Pending  | Stats synced across devices      |
+| STATS-07    | 39    | Complete | Stats viewable after game        |
+| STATS-08    | 39    | Complete | Stats synced across devices      |
 | DAILY-01    | 35    | Complete | One album per day for all        |
 | DAILY-02    | 35    | Complete | UTC midnight reset               |
 | DAILY-03    | 37    | Complete | Cannot replay today's puzzle     |
@@ -440,4 +440,4 @@ Plans:
 ---
 
 _Roadmap created: 2026-02-12_
-_Last updated: 2026-02-16_
+_Last updated: 2026-02-16 (Phase 39 complete)_
