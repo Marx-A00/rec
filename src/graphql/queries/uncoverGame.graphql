@@ -1,0 +1,81 @@
+# Uncover Game Operations
+# Client-side queries and mutations for the daily album guessing game
+
+# ============================================
+# FRAGMENTS
+# ============================================
+
+fragment UncoverGuessAlbumFields on UncoverGuessAlbumInfo {
+  id
+  title
+  cloudflareImageId
+  artistName
+}
+
+fragment UncoverGuessFields on UncoverGuessInfo {
+  id
+  guessNumber
+  guessedAlbum {
+    ...UncoverGuessAlbumFields
+  }
+  isSkipped
+  isCorrect
+  guessedAt
+}
+
+fragment UncoverSessionFields on UncoverSessionInfo {
+  id
+  status
+  attemptCount
+  won
+  startedAt
+  completedAt
+  guesses {
+    ...UncoverGuessFields
+  }
+}
+
+# ============================================
+# MUTATIONS
+# ============================================
+
+mutation StartUncoverSession {
+  startUncoverSession {
+    session {
+      ...UncoverSessionFields
+    }
+    challengeId
+    imageUrl
+    cloudflareImageId
+  }
+}
+
+mutation SubmitGuess($sessionId: UUID!, $albumId: UUID!) {
+  submitGuess(sessionId: $sessionId, albumId: $albumId) {
+    guess {
+      ...UncoverGuessFields
+    }
+    session {
+      ...UncoverSessionFields
+    }
+    gameOver
+    correctAlbum {
+      ...UncoverGuessAlbumFields
+    }
+  }
+}
+
+mutation SkipGuess($sessionId: UUID!) {
+  skipGuess(sessionId: $sessionId) {
+    guess {
+      ...UncoverGuessFields
+    }
+    session {
+      ...UncoverSessionFields
+    }
+    gameOver
+    correctAlbum {
+      ...UncoverGuessAlbumFields
+    }
+  }
+}
