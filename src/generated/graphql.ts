@@ -923,6 +923,29 @@ export type CreateRecommendationWithAlbumsInput = {
   score: Scalars['Int']['input'];
 };
 
+/** Curated challenge entry for admin management */
+export type CuratedChallengeEntry = {
+  __typename?: 'CuratedChallengeEntry';
+  album: Album;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  pinnedDate?: Maybe<Scalars['DateTime']['output']>;
+  sequence: Scalars['Int']['output'];
+};
+
+/** Daily challenge info - does NOT include the answer album */
+export type DailyChallengeInfo = {
+  __typename?: 'DailyChallengeInfo';
+  avgAttempts?: Maybe<Scalars['Float']['output']>;
+  date: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  maxAttempts: Scalars['Int']['output'];
+  /** User's session for this challenge (null if not started or not authenticated) */
+  mySession?: Maybe<UncoverSessionInfo>;
+  totalPlays: Scalars['Int']['output'];
+  totalWins: Scalars['Int']['output'];
+};
+
 export enum DataQuality {
   High = 'HIGH',
   Low = 'LOW',
@@ -1160,12 +1183,38 @@ export enum JobStatus {
 
 export type JobStatusUpdate = {
   __typename?: 'JobStatusUpdate';
+  /** Admin: Add an album to the curated challenge list */
+  addCuratedChallenge: CuratedChallengeEntry;
   jobId: Scalars['String']['output'];
   message?: Maybe<Scalars['String']['output']>;
+  /** Admin: Pin a curated challenge to a specific date */
+  pinCuratedChallenge: CuratedChallengeEntry;
   progress?: Maybe<Scalars['Float']['output']>;
+  /** Admin: Remove an album from the curated challenge list */
+  removeCuratedChallenge: Scalars['Boolean']['output'];
   status: JobStatus;
   timestamp: Scalars['DateTime']['output'];
   type: Scalars['String']['output'];
+  /** Admin: Unpin a curated challenge (remove date override) */
+  unpinCuratedChallenge: CuratedChallengeEntry;
+};
+
+export type JobStatusUpdateAddCuratedChallengeArgs = {
+  albumId: Scalars['UUID']['input'];
+  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type JobStatusUpdatePinCuratedChallengeArgs = {
+  date: Scalars['DateTime']['input'];
+  id: Scalars['UUID']['input'];
+};
+
+export type JobStatusUpdateRemoveCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type JobStatusUpdateUnpinCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
 };
 
 export type LlamaLog = {
@@ -1720,6 +1769,15 @@ export type Query = {
   correctionPreview: CorrectionPreview;
   /** Search MusicBrainz for correction candidates for an album */
   correctionSearch: CorrectionSearchResponse;
+  /** Admin: Get count of curated challenges */
+  curatedChallengeCount: Scalars['Int']['output'];
+  /** Admin: Get curated challenge list (ordered) */
+  curatedChallenges: Array<CuratedChallengeEntry>;
+  /**
+   * Get the daily challenge for a date (defaults to today).
+   * Does NOT expose the answer album - that would spoil the game!
+   */
+  dailyChallenge: DailyChallengeInfo;
   databaseStats: DatabaseStats;
   enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
@@ -1759,6 +1817,8 @@ export type Query = {
   trackRecommendations: Array<Track>;
   trendingAlbums: Array<Album>;
   trendingArtists: Array<Artist>;
+  /** Admin: Preview upcoming challenges for the next N days */
+  upcomingChallenges: Array<UpcomingChallenge>;
   user?: Maybe<User>;
   userCollections: Array<Collection>;
   userFollowers: Array<User>;
@@ -1838,6 +1898,15 @@ export type QueryCorrectionPreviewArgs = {
 
 export type QueryCorrectionSearchArgs = {
   input: CorrectionSearchInput;
+};
+
+export type QueryCuratedChallengesArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryDailyChallengeArgs = {
+  date?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type QueryEnrichmentStatsArgs = {
@@ -2001,6 +2070,10 @@ export type QueryTrendingAlbumsArgs = {
 
 export type QueryTrendingArtistsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryUpcomingChallengesArgs = {
+  days: Scalars['Int']['input'];
 };
 
 export type QueryUserArgs = {
@@ -2606,6 +2679,23 @@ export type TrackSourceData = {
   title: Scalars['String']['output'];
 };
 
+/** User's session info for a daily challenge */
+export type UncoverSessionInfo = {
+  __typename?: 'UncoverSessionInfo';
+  attemptCount: Scalars['Int']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['UUID']['output'];
+  startedAt: Scalars['DateTime']['output'];
+  status: UncoverSessionStatus;
+  won: Scalars['Boolean']['output'];
+};
+
+export enum UncoverSessionStatus {
+  InProgress = 'IN_PROGRESS',
+  Lost = 'LOST',
+  Won = 'WON',
+}
+
 export type UnifiedRelease = {
   __typename?: 'UnifiedRelease';
   artistCredits?: Maybe<Array<ArtistCredit>>;
@@ -2619,6 +2709,16 @@ export type UnifiedRelease = {
   title: Scalars['String']['output'];
   trackCount?: Maybe<Scalars['Int']['output']>;
   year?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Upcoming challenge preview for admin */
+export type UpcomingChallenge = {
+  __typename?: 'UpcomingChallenge';
+  album?: Maybe<Album>;
+  date: Scalars['DateTime']['output'];
+  daysSinceEpoch: Scalars['Int']['output'];
+  isPinned: Scalars['Boolean']['output'];
+  sequence: Scalars['Int']['output'];
 };
 
 export type UpdateAlbumGameStatusInput = {

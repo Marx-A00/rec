@@ -897,6 +897,29 @@ export type CreateRecommendationWithAlbumsInput = {
   score: Scalars['Int']['input'];
 };
 
+/** Curated challenge entry for admin management */
+export type CuratedChallengeEntry = {
+  __typename?: 'CuratedChallengeEntry';
+  album: Album;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  pinnedDate?: Maybe<Scalars['DateTime']['output']>;
+  sequence: Scalars['Int']['output'];
+};
+
+/** Daily challenge info - does NOT include the answer album */
+export type DailyChallengeInfo = {
+  __typename?: 'DailyChallengeInfo';
+  avgAttempts?: Maybe<Scalars['Float']['output']>;
+  date: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  maxAttempts: Scalars['Int']['output'];
+  /** User's session for this challenge (null if not started or not authenticated) */
+  mySession?: Maybe<UncoverSessionInfo>;
+  totalPlays: Scalars['Int']['output'];
+  totalWins: Scalars['Int']['output'];
+};
+
 export enum DataQuality {
   High = 'HIGH',
   Low = 'LOW',
@@ -1134,12 +1157,38 @@ export enum JobStatus {
 
 export type JobStatusUpdate = {
   __typename?: 'JobStatusUpdate';
+  /** Admin: Add an album to the curated challenge list */
+  addCuratedChallenge: CuratedChallengeEntry;
   jobId: Scalars['String']['output'];
   message?: Maybe<Scalars['String']['output']>;
+  /** Admin: Pin a curated challenge to a specific date */
+  pinCuratedChallenge: CuratedChallengeEntry;
   progress?: Maybe<Scalars['Float']['output']>;
+  /** Admin: Remove an album from the curated challenge list */
+  removeCuratedChallenge: Scalars['Boolean']['output'];
   status: JobStatus;
   timestamp: Scalars['DateTime']['output'];
   type: Scalars['String']['output'];
+  /** Admin: Unpin a curated challenge (remove date override) */
+  unpinCuratedChallenge: CuratedChallengeEntry;
+};
+
+export type JobStatusUpdateAddCuratedChallengeArgs = {
+  albumId: Scalars['UUID']['input'];
+  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type JobStatusUpdatePinCuratedChallengeArgs = {
+  date: Scalars['DateTime']['input'];
+  id: Scalars['UUID']['input'];
+};
+
+export type JobStatusUpdateRemoveCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type JobStatusUpdateUnpinCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
 };
 
 export type LlamaLog = {
@@ -1694,6 +1743,15 @@ export type Query = {
   correctionPreview: CorrectionPreview;
   /** Search MusicBrainz for correction candidates for an album */
   correctionSearch: CorrectionSearchResponse;
+  /** Admin: Get count of curated challenges */
+  curatedChallengeCount: Scalars['Int']['output'];
+  /** Admin: Get curated challenge list (ordered) */
+  curatedChallenges: Array<CuratedChallengeEntry>;
+  /**
+   * Get the daily challenge for a date (defaults to today).
+   * Does NOT expose the answer album - that would spoil the game!
+   */
+  dailyChallenge: DailyChallengeInfo;
   databaseStats: DatabaseStats;
   enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
@@ -1733,6 +1791,8 @@ export type Query = {
   trackRecommendations: Array<Track>;
   trendingAlbums: Array<Album>;
   trendingArtists: Array<Artist>;
+  /** Admin: Preview upcoming challenges for the next N days */
+  upcomingChallenges: Array<UpcomingChallenge>;
   user?: Maybe<User>;
   userCollections: Array<Collection>;
   userFollowers: Array<User>;
@@ -1812,6 +1872,15 @@ export type QueryCorrectionPreviewArgs = {
 
 export type QueryCorrectionSearchArgs = {
   input: CorrectionSearchInput;
+};
+
+export type QueryCuratedChallengesArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryDailyChallengeArgs = {
+  date?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type QueryEnrichmentStatsArgs = {
@@ -1975,6 +2044,10 @@ export type QueryTrendingAlbumsArgs = {
 
 export type QueryTrendingArtistsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryUpcomingChallengesArgs = {
+  days: Scalars['Int']['input'];
 };
 
 export type QueryUserArgs = {
@@ -2580,6 +2653,23 @@ export type TrackSourceData = {
   title: Scalars['String']['output'];
 };
 
+/** User's session info for a daily challenge */
+export type UncoverSessionInfo = {
+  __typename?: 'UncoverSessionInfo';
+  attemptCount: Scalars['Int']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['UUID']['output'];
+  startedAt: Scalars['DateTime']['output'];
+  status: UncoverSessionStatus;
+  won: Scalars['Boolean']['output'];
+};
+
+export enum UncoverSessionStatus {
+  InProgress = 'IN_PROGRESS',
+  Lost = 'LOST',
+  Won = 'WON',
+}
+
 export type UnifiedRelease = {
   __typename?: 'UnifiedRelease';
   artistCredits?: Maybe<Array<ArtistCredit>>;
@@ -2593,6 +2683,16 @@ export type UnifiedRelease = {
   title: Scalars['String']['output'];
   trackCount?: Maybe<Scalars['Int']['output']>;
   year?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Upcoming challenge preview for admin */
+export type UpcomingChallenge = {
+  __typename?: 'UpcomingChallenge';
+  album?: Maybe<Album>;
+  date: Scalars['DateTime']['output'];
+  daysSinceEpoch: Scalars['Int']['output'];
+  isPinned: Scalars['Boolean']['output'];
+  sequence: Scalars['Int']['output'];
 };
 
 export type UpdateAlbumGameStatusInput = {
@@ -2937,6 +3037,8 @@ export type ResolversTypes = ResolversObject<{
   CreateCollectionPayload: ResolverTypeWrapper<CreateCollectionPayload>;
   CreateRecommendationPayload: ResolverTypeWrapper<CreateRecommendationPayload>;
   CreateRecommendationWithAlbumsInput: CreateRecommendationWithAlbumsInput;
+  CuratedChallengeEntry: ResolverTypeWrapper<CuratedChallengeEntry>;
+  DailyChallengeInfo: ResolverTypeWrapper<DailyChallengeInfo>;
   DataQuality: DataQuality;
   DataSource: DataSource;
   DatabaseStats: ResolverTypeWrapper<DatabaseStats>;
@@ -3043,7 +3145,10 @@ export type ResolversTypes = ResolversObject<{
   TrackListSummary: ResolverTypeWrapper<TrackListSummary>;
   TrackSourceData: ResolverTypeWrapper<TrackSourceData>;
   UUID: ResolverTypeWrapper<Scalars['UUID']['output']>;
+  UncoverSessionInfo: ResolverTypeWrapper<UncoverSessionInfo>;
+  UncoverSessionStatus: UncoverSessionStatus;
   UnifiedRelease: ResolverTypeWrapper<UnifiedRelease>;
+  UpcomingChallenge: ResolverTypeWrapper<UpcomingChallenge>;
   UpdateAlbumGameStatusInput: UpdateAlbumGameStatusInput;
   UpdateAlbumGameStatusResult: ResolverTypeWrapper<UpdateAlbumGameStatusResult>;
   UpdateCollectionAlbumPayload: ResolverTypeWrapper<UpdateCollectionAlbumPayload>;
@@ -3124,6 +3229,8 @@ export type ResolversParentTypes = ResolversObject<{
   CreateCollectionPayload: CreateCollectionPayload;
   CreateRecommendationPayload: CreateRecommendationPayload;
   CreateRecommendationWithAlbumsInput: CreateRecommendationWithAlbumsInput;
+  CuratedChallengeEntry: CuratedChallengeEntry;
+  DailyChallengeInfo: DailyChallengeInfo;
   DatabaseStats: DatabaseStats;
   DateComponentChanges: DateComponentChanges;
   DateComponents: DateComponents;
@@ -3209,7 +3316,9 @@ export type ResolversParentTypes = ResolversObject<{
   TrackListSummary: TrackListSummary;
   TrackSourceData: TrackSourceData;
   UUID: Scalars['UUID']['output'];
+  UncoverSessionInfo: UncoverSessionInfo;
   UnifiedRelease: UnifiedRelease;
+  UpcomingChallenge: UpcomingChallenge;
   UpdateAlbumGameStatusInput: UpdateAlbumGameStatusInput;
   UpdateAlbumGameStatusResult: UpdateAlbumGameStatusResult;
   UpdateCollectionAlbumPayload: UpdateCollectionAlbumPayload;
@@ -4291,6 +4400,46 @@ export type CreateRecommendationPayloadResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type CuratedChallengeEntryResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['CuratedChallengeEntry'] = ResolversParentTypes['CuratedChallengeEntry'],
+> = ResolversObject<{
+  album?: Resolver<ResolversTypes['Album'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  pinnedDate?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  sequence?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type DailyChallengeInfoResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['DailyChallengeInfo'] = ResolversParentTypes['DailyChallengeInfo'],
+> = ResolversObject<{
+  avgAttempts?: Resolver<
+    Maybe<ResolversTypes['Float']>,
+    ParentType,
+    ContextType
+  >;
+  date?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  maxAttempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  mySession?: Resolver<
+    Maybe<ResolversTypes['UncoverSessionInfo']>,
+    ParentType,
+    ContextType
+  >;
+  totalPlays?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalWins?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type DatabaseStatsResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -4579,12 +4728,36 @@ export type JobStatusUpdateResolvers<
   ParentType extends
     ResolversParentTypes['JobStatusUpdate'] = ResolversParentTypes['JobStatusUpdate'],
 > = ResolversObject<{
+  addCuratedChallenge?: Resolver<
+    ResolversTypes['CuratedChallengeEntry'],
+    ParentType,
+    ContextType,
+    RequireFields<JobStatusUpdateAddCuratedChallengeArgs, 'albumId'>
+  >;
   jobId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  pinCuratedChallenge?: Resolver<
+    ResolversTypes['CuratedChallengeEntry'],
+    ParentType,
+    ContextType,
+    RequireFields<JobStatusUpdatePinCuratedChallengeArgs, 'date' | 'id'>
+  >;
   progress?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  removeCuratedChallenge?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType,
+    RequireFields<JobStatusUpdateRemoveCuratedChallengeArgs, 'id'>
+  >;
   status?: Resolver<ResolversTypes['JobStatus'], ParentType, ContextType>;
   timestamp?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  unpinCuratedChallenge?: Resolver<
+    ResolversTypes['CuratedChallengeEntry'],
+    ParentType,
+    ContextType,
+    RequireFields<JobStatusUpdateUnpinCuratedChallengeArgs, 'id'>
+  >;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5292,6 +5465,23 @@ export type QueryResolvers<
     ContextType,
     RequireFields<QueryCorrectionSearchArgs, 'input'>
   >;
+  curatedChallengeCount?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  curatedChallenges?: Resolver<
+    Array<ResolversTypes['CuratedChallengeEntry']>,
+    ParentType,
+    ContextType,
+    Partial<QueryCuratedChallengesArgs>
+  >;
+  dailyChallenge?: Resolver<
+    ResolversTypes['DailyChallengeInfo'],
+    ParentType,
+    ContextType,
+    Partial<QueryDailyChallengeArgs>
+  >;
   databaseStats?: Resolver<
     ResolversTypes['DatabaseStats'],
     ParentType,
@@ -5511,6 +5701,12 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryTrendingArtistsArgs, 'limit'>
+  >;
+  upcomingChallenges?: Resolver<
+    Array<ResolversTypes['UpcomingChallenge']>,
+    ParentType,
+    ContextType,
+    RequireFields<QueryUpcomingChallengesArgs, 'days'>
   >;
   user?: Resolver<
     Maybe<ResolversTypes['User']>,
@@ -6362,6 +6558,28 @@ export interface UuidScalarConfig
   name: 'UUID';
 }
 
+export type UncoverSessionInfoResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UncoverSessionInfo'] = ResolversParentTypes['UncoverSessionInfo'],
+> = ResolversObject<{
+  attemptCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  completedAt?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  startedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  status?: Resolver<
+    ResolversTypes['UncoverSessionStatus'],
+    ParentType,
+    ContextType
+  >;
+  won?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type UnifiedReleaseResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -6398,6 +6616,19 @@ export type UnifiedReleaseResolvers<
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   trackCount?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   year?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type UpcomingChallengeResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UpcomingChallenge'] = ResolversParentTypes['UpcomingChallenge'],
+> = ResolversObject<{
+  album?: Resolver<Maybe<ResolversTypes['Album']>, ParentType, ContextType>;
+  date?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  daysSinceEpoch?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  isPinned?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  sequence?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -6721,6 +6952,8 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   CoverArtDiff?: CoverArtDiffResolvers<ContextType>;
   CreateCollectionPayload?: CreateCollectionPayloadResolvers<ContextType>;
   CreateRecommendationPayload?: CreateRecommendationPayloadResolvers<ContextType>;
+  CuratedChallengeEntry?: CuratedChallengeEntryResolvers<ContextType>;
+  DailyChallengeInfo?: DailyChallengeInfoResolvers<ContextType>;
   DatabaseStats?: DatabaseStatsResolvers<ContextType>;
   DateComponentChanges?: DateComponentChangesResolvers<ContextType>;
   DateComponents?: DateComponentsResolvers<ContextType>;
@@ -6792,7 +7025,9 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   TrackListSummary?: TrackListSummaryResolvers<ContextType>;
   TrackSourceData?: TrackSourceDataResolvers<ContextType>;
   UUID?: GraphQLScalarType;
+  UncoverSessionInfo?: UncoverSessionInfoResolvers<ContextType>;
   UnifiedRelease?: UnifiedReleaseResolvers<ContextType>;
+  UpcomingChallenge?: UpcomingChallengeResolvers<ContextType>;
   UpdateAlbumGameStatusResult?: UpdateAlbumGameStatusResultResolvers<ContextType>;
   UpdateCollectionAlbumPayload?: UpdateCollectionAlbumPayloadResolvers<ContextType>;
   UpdateCollectionPayload?: UpdateCollectionPayloadResolvers<ContextType>;
