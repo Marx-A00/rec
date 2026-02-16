@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 
 /**
  * Desktop game route for Uncover daily challenge.
- * 
+ *
  * Server component that renders the UncoverGame client component.
  */
 export default function GamePage() {
   return (
-    <div className="container mx-auto max-w-4xl py-8">
+    <div className='container mx-auto max-w-4xl py-8'>
       <UncoverGame />
     </div>
   );
