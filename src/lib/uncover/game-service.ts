@@ -263,7 +263,7 @@ export async function submitGuess(
     data: {
       attemptCount: newAttemptCount,
       status: gameResult.status,
-      won: false, // skip is always a loss
+      won: isCorrect,
       completedAt: gameResult.gameOver ? new Date() : null,
     },
     include: {
@@ -278,7 +278,7 @@ export async function submitGuess(
     await updatePlayerStats(
       {
         userId,
-        won: false, // skip is always a loss
+        won: isCorrect,
         attemptCount: newAttemptCount,
         challengeDate: session.challenge.date,
       },
