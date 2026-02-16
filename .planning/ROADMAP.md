@@ -170,7 +170,13 @@ Plans:
 4. **Server validation:** Guess correctness validated server-side (answer not exposed to client)
 5. **Skip works:** Skipping a guess advances reveal level without guessing
 
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 37-01-PLAN.md — Zustand game store and validation utilities
+- [ ] 37-02-PLAN.md — GraphQL schema and client operations for game mutations
+- [ ] 37-03-PLAN.md — Game service and mutation resolvers
+- [ ] 37-04-PLAN.md — Game coordination hook and container component
 
 ---
 
