@@ -1,15 +1,16 @@
 import chalk from 'chalk';
 import { GraphQLError } from 'graphql';
 
-import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
-import { createLlamaLogger } from '@/lib/logging/llama-logger';
 import { createCollectionAddActivity } from '@/lib/activities';
 import { findOrCreateAlbum } from '@/lib/albums';
+import { createLlamaLogger } from '@/lib/logging/llama-logger';
+import { getMusicBrainzQueue, JOB_TYPES } from '@/lib/queue';
 import type {
+  CacheAlbumCoverArtJobData,
   CheckAlbumEnrichmentJobData,
   CheckArtistEnrichmentJobData,
-  CacheAlbumCoverArtJobData,
 } from '@/lib/queue/jobs';
+
 import type {
   AddAlbumToCollectionOptions,
   AddAlbumToCollectionResult,

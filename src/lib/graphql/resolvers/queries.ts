@@ -796,44 +796,36 @@ export const queryResolvers: QueryResolvers = {
   // Feed & trending
   recommendationFeed: async (_, { cursor, limit = 20 }, { prisma }) => {
     try {
-      // Fetch recent recommendations from all users
+      const { buildCursorPagination, extractCursorPage } = await import(
+        '@/lib/db'
+      );
+
       const recommendations = await prisma.recommendation.findMany({
-        take: limit + 1, // Fetch one extra to check if there's more
-        skip: cursor ? 1 : 0, // Skip 1 to exclude the cursor itself
-        cursor: cursor ? { id: cursor } : undefined,
+        ...buildCursorPagination(cursor, limit),
         orderBy: { createdAt: 'desc' },
         include: {
           user: true,
           basisAlbum: {
             include: {
-              artists: {
-                include: {
-                  artist: true,
-                },
-              },
+              artists: { include: { artist: true } },
             },
           },
           recommendedAlbum: {
             include: {
-              artists: {
-                include: {
-                  artist: true,
-                },
-              },
+              artists: { include: { artist: true } },
             },
           },
         },
       });
 
-      const hasMore = recommendations.length > limit;
-      const items = hasMore ? recommendations.slice(0, limit) : recommendations;
-      const nextCursor =
-        hasMore && items.length > 0 ? items[items.length - 1].id : null;
+      const { items, nextCursor, hasMore } = extractCursorPage(
+        recommendations,
+        limit
+      );
 
-      // Map to include computed fields that GraphQL expects
       const mappedItems = items.map(item => ({
         ...item,
-        normalizedScore: item.score / 100, // GraphQL expects this field
+        normalizedScore: item.score / 100,
       }));
 
       return {
@@ -1208,45 +1200,32 @@ export const queryResolvers: QueryResolvers = {
             ? { score: 'asc' as const }
             : { createdAt: 'desc' as const };
 
+      const { buildCursorPagination, extractCursorPage } = await import(
+        '@/lib/db'
+      );
+
       const recommendations = await prisma.recommendation.findMany({
         where: { userId: user.id },
-        take: limit + 1, // Fetch one extra to determine if there are more pages
-        skip: cursor ? 1 : 0, // Skip 1 to exclude the cursor itself
-        cursor: cursor ? { id: cursor } : undefined,
-        orderBy: [
-          orderBy,
-          { id: 'desc' }, // Secondary sort by ID for stable pagination
-        ],
+        ...buildCursorPagination(cursor, limit),
+        orderBy: [orderBy, { id: 'desc' }],
         include: {
           user: true,
           basisAlbum: {
             include: {
-              artists: {
-                include: {
-                  artist: true,
-                },
-              },
+              artists: { include: { artist: true } },
             },
           },
           recommendedAlbum: {
             include: {
-              artists: {
-                include: {
-                  artist: true,
-                },
-              },
+              artists: { include: { artist: true } },
             },
           },
         },
       });
 
-      // Check if there are more items
-      const hasMore = recommendations.length > limit;
-      const items = hasMore ? recommendations.slice(0, limit) : recommendations;
-      const nextCursor = hasMore ? items[items.length - 1].id : null;
-
-      console.log(
-        `Found ${items.length} recommendations for user ${user.id}, hasMore: ${hasMore}`
+      const { items, nextCursor, hasMore } = extractCursorPage(
+        recommendations,
+        limit
       );
 
       return {
@@ -2204,22 +2183,20 @@ export const queryResolvers: QueryResolvers = {
     };
 
     // 3. Fetch logs and count in parallel
+    const { buildCursorPagination, extractCursorPage } = await import(
+      '@/lib/db'
+    );
+
     const [logs, totalCount] = await Promise.all([
       prisma.llamaLog.findMany({
-        take: limit + 1,
-        skip: cursor ? 1 : 0,
-        cursor: cursor ? { id: cursor } : undefined,
+        ...buildCursorPagination(cursor, limit),
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         where,
       }),
       prisma.llamaLog.count({ where }),
     ]);
 
-    // 4. Compute pagination metadata
-    const hasMore = logs.length > limit;
-    const items = hasMore ? logs.slice(0, -1) : logs;
-    const nextCursor =
-      hasMore && items.length > 0 ? items[items.length - 1].id : null;
+    const { items, nextCursor, hasMore } = extractCursorPage(logs, limit);
 
     return {
       logs: items.map(log => ({ ...log, children: null })),
