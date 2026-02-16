@@ -9,6 +9,7 @@ import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
 import { AttemptDots } from '@/components/uncover/AttemptDots';
+import { StatsModal } from '@/components/uncover/StatsModal';
 
 /**
  * Teaser image component for unauthenticated users.
@@ -57,6 +58,7 @@ export function UncoverGame() {
     null
   );
   const [isInitializing, setIsInitializing] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   /**
    * Auto-start session on mount if authenticated and no active session.
@@ -100,6 +102,15 @@ export function UncoverGame() {
     isInitializing,
   ]);
 
+  // Auto-show stats modal when game ends
+  useEffect(() => {
+    if (game.isGameOver && !showStats) {
+      // Delay slightly for game-over animation to complete
+      const timer = setTimeout(() => setShowStats(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [game.isGameOver, showStats]);
+
   // AUTH-01: Show login prompt for unauthenticated users with teaser
   if (!game.isAuthenticated) {
     if (game.isAuthLoading) {
@@ -114,7 +125,7 @@ export function UncoverGame() {
       <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8'>
         {/* Teaser image - stage 1 obscured */}
         <TeaserImage />
-        
+
         {/* Login CTA overlay */}
         <div className='relative -mt-12 flex flex-col items-center gap-4 rounded-lg bg-background/95 p-6 shadow-lg backdrop-blur-sm'>
           <div className='text-center'>
@@ -199,9 +210,27 @@ export function UncoverGame() {
           </div>
         )}
 
-        <div className='text-center text-sm text-muted-foreground'>
-          Come back tomorrow for a new challenge!
+        <div className='space-y-4 text-center'>
+          <div className='text-sm text-muted-foreground'>
+            Come back tomorrow for a new challenge!
+          </div>
+          
+          {/* View Stats button */}
+          <button
+            onClick={() => setShowStats(true)}
+            className='rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90'
+          >
+            View Stats
+          </button>
         </div>
+
+        {/* Stats Modal */}
+        <StatsModal
+          open={showStats}
+          onClose={() => setShowStats(false)}
+          won={game.won}
+          attemptCount={game.attemptCount}
+        />
       </div>
     );
   }
