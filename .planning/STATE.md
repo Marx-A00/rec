@@ -14,9 +14,9 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 35 of 42 (Daily Challenge System)
-Plan: 2 of TBD in current phase
+Plan: 3 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-16 — Completed 35-02-PLAN.md
+Last activity: 2026-02-16 — Completed 35-03-PLAN.md
 
 Progress: [██░░░░░░░░] 21%
 
@@ -55,7 +55,10 @@ Recent decisions affecting current work:
 - Use unique sequence integers for deterministic daily challenge date-to-album mapping (35-01)
 - Game epoch: 2026-01-01 launch date (35-02)
 - Modulo arithmetic for deterministic album cycling (35-02)
-- On-demand challenge creation with P2002 race handling (35-02)
+- On-demand challenge creation with P2002 race handling (35-02)- Use dynamic imports for challenge services in resolvers (35-03)
+- Admin operations check user.role for ADMIN or OWNER (35-03)
+- dailyChallenge query does NOT expose answer album (security) (35-03)
+
 
 ### Pending Todos
 
@@ -68,19 +71,19 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 35-02-PLAN.md
+Stopped at: Completed 35-03-PLAN.md
 Resume file: None
 
 ### What's Next
 
 **Immediate:**
-- Continue Phase 35 with plan 03 (Admin UI for curated album management)
+- Continue Phase 35 (next plan TBD)
 
 ### v1.5 Phase Summary
 
 - Phase 33: Data Foundation — 2 reqs — Complete 2026-02-15
 - Phase 34: Album Pool — 5 reqs — Complete 2026-02-15
-- Phase 35: Daily Challenge System — 3 reqs — In progress (2/TBD complete)
+- Phase 35: Daily Challenge System — 3 reqs — In progress (3/TBD complete)
 - Phase 36: Image Reveal Engine — 6 reqs — Not started
 - Phase 37: Game State & Logic — 11 reqs — Not started
 - Phase 38: Game UI — 7 reqs — Not started
