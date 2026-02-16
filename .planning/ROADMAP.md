@@ -23,8 +23,8 @@ Build a daily album art guessing game that drives repeat visits and music discov
 - [x] **Phase 33: Data Foundation** - Prisma models for game state ✓
 - [x] **Phase 34: Album Pool** - Curated game-eligible albums ✓
 - [x] **Phase 35: Daily Challenge System** - Album selection and scheduler ✓
-- [ ] **Phase 36: Image Reveal Engine** - Canvas pixelation and CSS blur
-- [ ] **Phase 37: Game State & Logic** - Zustand store, guess validation
+- [x] **Phase 36: Image Reveal Engine** - Canvas pixelation and CSS blur ✓
+- [x] **Phase 37: Game State & Logic** - Zustand store, guess validation ✓
 - [ ] **Phase 38: Game UI** - Desktop and mobile layouts
 - [ ] **Phase 39: Stats & Streaks** - Tracking and persistence
 - [ ] **Phase 40: Archive Mode** - Past puzzles access
@@ -137,9 +137,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 36-01-PLAN.md — Foundation: seedrandom, reveal patterns, Zustand store
-- [ ] 36-02-PLAN.md — Canvas pixelation renderer with tile-based reveal
-- [ ] 36-03-PLAN.md — Blur renderer and RevealImage orchestrator with toggle
+- [x] 36-01-PLAN.md — Foundation: seedrandom, reveal patterns, Zustand store ✓
+- [x] 36-02-PLAN.md — Canvas pixelation renderer with tile-based reveal ✓
+- [x] 36-03-PLAN.md — Blur renderer and RevealImage orchestrator with toggle ✓
 
 ---
 
@@ -173,10 +173,10 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 37-01-PLAN.md — Zustand game store and validation utilities
-- [ ] 37-02-PLAN.md — GraphQL schema and client operations for game mutations
-- [ ] 37-03-PLAN.md — Game service and mutation resolvers
-- [ ] 37-04-PLAN.md — Game coordination hook and container component
+- [x] 37-01-PLAN.md — Zustand game store and validation utilities ✓
+- [x] 37-02-PLAN.md — GraphQL schema and client operations for game mutations ✓
+- [x] 37-03-PLAN.md — Game service and mutation resolvers ✓
+- [x] 37-04-PLAN.md — Game coordination hook and container component ✓
 
 ---
 
@@ -338,8 +338,8 @@ Plans:
 | 33    | Data Foundation           | 2            | Complete    | 2026-02-15 |
 | 34    | Album Pool                | 5            | Complete    | 2026-02-15 |
 | 35    | Daily Challenge System    | 3            | Complete    | 2026-02-16 |
-| 36    | Image Reveal Engine       | 6            | Not started | -         |
-| 37    | Game State & Logic        | 11           | Not started | -         |
+| 36    | Image Reveal Engine       | 6            | Complete    | 2026-02-15 |
+| 37    | Game State & Logic        | 11           | Complete    | 2026-02-15 |
 | 38    | Game UI                   | 7            | Not started | -         |
 | 39    | Stats & Streaks           | 7            | Not started | -         |
 | 40    | Archive Mode              | 4            | Not started | -         |
@@ -354,22 +354,22 @@ Plans:
 
 | Requirement | Phase | Status  | Description                              |
 |-------------|-------|---------|------------------------------------------|
-| GAME-01     | 37    | Pending | Player sees obscured album cover         |
-| GAME-02     | 37    | Pending | Player has 6 attempts                    |
-| GAME-03     | 37    | Pending | Each wrong guess reveals more            |
-| GAME-04     | 37    | Pending | Player can skip a guess                  |
-| GAME-05     | 37    | Pending | Game detects win                         |
-| GAME-06     | 37    | Pending | Game detects loss                        |
-| GAME-07     | 37    | Pending | Full cover revealed on end               |
+| GAME-01     | 37    | Complete | Player sees obscured album cover         |
+| GAME-02     | 37    | Complete | Player has 6 attempts                    |
+| GAME-03     | 37    | Complete | Each wrong guess reveals more            |
+| GAME-04     | 37    | Complete | Player can skip a guess                  |
+| GAME-05     | 37    | Complete | Game detects win                         |
+| GAME-06     | 37    | Complete | Game detects loss                        |
+| GAME-07     | 37    | Complete | Full cover revealed on end               |
 | GAME-08     | 38    | Pending | Album search via autocomplete            |
 | GAME-09     | 38    | Pending | Search shows album + artist              |
-| GAME-10     | 37    | Pending | Cannot guess same album twice            |
-| REVEAL-01   | 36    | Pending | Pixelation reveal style                  |
-| REVEAL-02   | 36    | Pending | Blur reveal style                        |
-| REVEAL-03   | 36    | Pending | Toggle between styles                    |
-| REVEAL-04   | 36    | Pending | Style preference persists                |
-| REVEAL-05   | 36    | Pending | 6 reveal stages                          |
-| REVEAL-06   | 36    | Pending | Client-side image processing             |
+| GAME-10     | 37    | Complete | Cannot guess same album twice            |
+| REVEAL-01   | 36    | Complete | Pixelation reveal style                  |
+| REVEAL-02   | 36    | Complete | Blur reveal style                        |
+| REVEAL-03   | 36    | Complete | Toggle between styles                    |
+| REVEAL-04   | 36    | Complete | Style preference persists                |
+| REVEAL-05   | 36    | Complete | 6 reveal stages                          |
+| REVEAL-06   | 36    | Complete | Client-side image processing             |
 | STATS-01    | 39    | Pending | Track total games played                 |
 | STATS-02    | 39    | Pending | Track win count/rate                     |
 | STATS-03    | 39    | Pending | Track current streak                     |
@@ -380,8 +380,8 @@ Plans:
 | STATS-08    | 39    | Pending | Stats synced across devices              |
 | DAILY-01    | 35    | Complete | One album per day for all                |
 | DAILY-02    | 35    | Complete | UTC midnight reset                       |
-| DAILY-03    | 37    | Pending | Cannot replay today's puzzle             |
-| DAILY-04    | 37    | Pending | State persists mid-game                  |
+| DAILY-03    | 37    | Complete | Cannot replay today's puzzle             |
+| DAILY-04    | 37    | Complete | State persists mid-game                  |
 | DAILY-05    | 35    | Complete | Deterministic selection                  |
 | ARCHIVE-01  | 40    | Pending | Access past puzzles                      |
 | ARCHIVE-02  | 40    | Pending | Shows played/missed status               |
@@ -396,7 +396,7 @@ Plans:
 | DISCOVER-02 | 41    | Pending | Link to album page                       |
 | DISCOVER-03 | 41    | Pending | Add to Collection button                 |
 | DISCOVER-04 | 41    | Pending | Link to artist page                      |
-| AUTH-01     | 37    | Pending | Login required to play                   |
+| AUTH-01     | 37    | Complete | Login required to play                   |
 | AUTH-02     | 38    | Pending | Unauthenticated see login prompt         |
 | AUTH-03     | 33    | Complete | State tied to user account               |
 | UI-01       | 38    | Pending | Desktop layout                           |
@@ -410,4 +410,4 @@ Plans:
 ---
 
 _Roadmap created: 2026-02-12_
-_Last updated: 2026-02-16_
+_Last updated: 2026-02-15_
