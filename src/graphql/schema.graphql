@@ -2589,12 +2589,58 @@ type UncoverSessionInfo {
   won: Boolean!
   startedAt: DateTime!
   completedAt: DateTime
+  guesses: [UncoverGuessInfo!]!
 }
 
 enum UncoverSessionStatus {
   IN_PROGRESS
   WON
   LOST
+}
+
+"""
+Album info for guess display (minimal, safe to expose)
+"""
+type UncoverGuessAlbumInfo {
+  id: UUID!
+  title: String!
+  cloudflareImageId: String
+  artistName: String!
+}
+
+"""
+Individual guess within a session
+"""
+type UncoverGuessInfo {
+  id: UUID!
+  guessNumber: Int!
+  guessedAlbum: UncoverGuessAlbumInfo
+  isSkipped: Boolean!
+  isCorrect: Boolean!
+  guessedAt: DateTime!
+}
+
+"""
+Result of starting a new session
+"""
+type StartSessionResult {
+  session: UncoverSessionInfo!
+  challengeId: UUID!
+  imageUrl: String!
+  cloudflareImageId: String
+}
+
+"""
+Result of submitting a guess or skipping
+"""
+type GuessResult {
+  guess: UncoverGuessInfo!
+  session: UncoverSessionInfo!
+  gameOver: Boolean!
+  """
+  Only populated when gameOver is true - the correct answer
+  """
+  correctAlbum: UncoverGuessAlbumInfo
 }
 
 """
@@ -2891,6 +2937,23 @@ type Mutation {
   Admin: Unpin a curated challenge (remove date override)
   """
   unpinCuratedChallenge(id: UUID!): CuratedChallengeEntry!
+
+  # Uncover Game mutations
+  """
+  Start a new session for today's challenge (requires auth).
+  Returns existing session if already started.
+  """
+  startUncoverSession: StartSessionResult!
+  
+  """
+  Submit a guess for the current session (requires auth).
+  """
+  submitGuess(sessionId: UUID!, albumId: UUID!): GuessResult!
+  
+  """
+  Skip current guess - counts as wrong guess (requires auth).
+  """
+  skipGuess(sessionId: UUID!): GuessResult!
 
 }
 
