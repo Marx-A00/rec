@@ -3502,5 +3502,45 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+
+  myUncoverStats: async (_parent, _args, context) => {
+    // Require authentication
+    if (!context.user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    try {
+      // Dynamic import to avoid circular dependencies (follows existing pattern)
+      const { getPlayerStats } = await import('@/lib/uncover/stats-service');
+
+      const stats = await getPlayerStats(context.user.id, context.prisma);
+
+      // Note: getPlayerStats already returns totalAttempts in PlayerStats type
+      // Fetch lastPlayedDate from database
+      const dbStats = await context.prisma.uncoverPlayerStats.findUnique({
+        where: { userId: context.user.id },
+      });
+
+      return {
+        id: context.user.id,
+        gamesPlayed: stats.gamesPlayed,
+        gamesWon: stats.gamesWon,
+        totalAttempts: stats.totalAttempts,
+        currentStreak: stats.currentStreak,
+        maxStreak: stats.maxStreak,
+        lastPlayedDate: dbStats?.lastPlayedDate ?? null,
+        winDistribution: stats.winDistribution,
+        winRate: stats.winRate,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch player stats:', {
+        error,
+        userId: context.user.id,
+      });
+      throw new GraphQLError(`Failed to fetch player stats: ${error}`);
+    }
+  },
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects
 };
