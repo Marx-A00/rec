@@ -34,6 +34,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import type { Album, AlbumArtist, Artist, Track } from '@prisma/client';
 
 import { prisma as defaultPrisma } from '@/lib/prisma';
+import { getInitialQuality } from '@/lib/db';
 
 import type { CorrectionPreview, MBRecording } from '../preview/types';
 
@@ -465,42 +466,23 @@ export class ApplyCorrectionService {
         let artistRecord;
 
         if (source === 'discogs') {
-          // For Discogs, find by discogsId, then by name, then create
-          const byDiscogsId = sourceArtist.mbid
-            ? await tx.artist.findFirst({
-                where: { discogsId: sourceArtist.mbid },
-              })
-            : null;
-
-          if (byDiscogsId) {
-            artistRecord = byDiscogsId;
-          } else {
-            const byName = await tx.artist.findFirst({
-              where: { name: sourceArtist.name },
-            });
-
-            if (byName) {
-              // Update existing artist with Discogs ID
-              artistRecord = await tx.artist.update({
-                where: { id: byName.id },
-                data: {
-                  discogsId: sourceArtist.mbid || undefined,
-                  lastEnriched: new Date(),
-                },
-              });
-            } else {
-              // Create new artist
-              artistRecord = await tx.artist.create({
-                data: {
-                  discogsId: sourceArtist.mbid || undefined,
-                  name: sourceArtist.name,
-                  source: 'DISCOGS',
-                  dataQuality: 'MEDIUM',
-                  enrichmentStatus: 'PENDING',
-                },
-              });
-            }
-          }
+          // For Discogs, use shared helper for consistent dedup + backfilling
+          const { findOrCreateArtist } = await import('@/lib/artists');
+          const { artist } = await findOrCreateArtist({
+            db: tx,
+            identity: {
+              name: sourceArtist.name,
+              discogsId: sourceArtist.mbid || undefined,
+            },
+            fields: {
+              source: 'DISCOGS' as const,
+              ...getInitialQuality({ discogsId: sourceArtist.mbid }),
+            },
+            enrichment: 'none',
+            insideTransaction: true,
+            caller: 'correction-apply-service:discogs',
+          });
+          artistRecord = artist;
         } else {
           // MusicBrainz path - use musicbrainzId (UUID)
           artistRecord = await tx.artist.upsert({

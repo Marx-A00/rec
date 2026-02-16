@@ -2,6 +2,7 @@
 // src/lib/graphql/resolvers/mutations.ts
 // Mutation resolvers for GraphQL API
 
+import chalk from 'chalk';
 import { GraphQLError } from 'graphql';
 
 import {
@@ -19,7 +20,6 @@ import type {
   CheckTrackEnrichmentJobData,
   SpotifySyncNewReleasesJobData,
   SpotifySyncFeaturedPlaylistsJobData,
-  CacheAlbumCoverArtJobData,
 } from '@/lib/queue/jobs';
 import { alertManager } from '@/lib/monitoring';
 import {
@@ -37,6 +37,7 @@ import { applyCorrectionService, StaleDataError } from '@/lib/correction/apply';
 import { getQueuedDiscogsService } from '@/lib/discogs/queued-service';
 import { mapMasterToCorrectionSearchResult } from '@/lib/discogs/mappers';
 import { PRIORITY_TIERS } from '@/lib/queue/jobs';
+import { getInitialQuality } from '@/lib/db';
 import type {
   FieldSelections,
   MetadataSelections,
@@ -501,39 +502,28 @@ export const mutationResolvers: MutationResolvers = {
       });
 
       // Handle artist associations
+      const { findOrCreateArtist } = await import('@/lib/artists');
+
       for (const artistInput of input.artists) {
         let artistId = artistInput.artistId;
 
-        // If no artistId provided, try to find existing artist by name first
         if (!artistId && artistInput.artistName) {
-          const existingArtist = await prisma.artist.findFirst({
-            where: {
-              name: {
-                equals: artistInput.artistName,
-                mode: 'insensitive',
-              },
+          const { artist } = await findOrCreateArtist({
+            db: prisma,
+            identity: { name: artistInput.artistName },
+            fields: {
+              source: 'USER_SUBMITTED' as const,
+              ...getInitialQuality(),
             },
+            enrichment: 'queue-check',
+            queueCheckOptions: {
+              source: 'manual',
+              priority: 'high',
+              requestId: `track-artist-${artistInput.artistName}`,
+            },
+            caller: 'createTrack',
           });
-
-          if (existingArtist) {
-            artistId = existingArtist.id;
-            console.log(
-              `🔄 Reusing existing artist: "${existingArtist.name}" (${existingArtist.id})`
-            );
-          } else {
-            // Create new artist
-            const newArtist = await prisma.artist.create({
-              data: {
-                name: artistInput.artistName,
-                dataQuality: 'LOW',
-                enrichmentStatus: 'PENDING',
-              },
-            });
-            artistId = newArtist.id;
-            console.log(
-              `✨ Created new artist: "${newArtist.name}" (${newArtist.id})`
-            );
-          }
+          artistId = artist.id;
         }
 
         if (artistId) {
@@ -759,95 +749,49 @@ export const mutationResolvers: MutationResolvers = {
           coverArtUrl: input.coverImageUrl,
           musicbrainzId: input.musicbrainzId,
           // Note: Spotify/Apple/Discogs IDs would need schema updates to store
-          // Set initial enrichment data - always PENDING so tracks get fetched
-          dataQuality: input.musicbrainzId ? 'MEDIUM' : 'LOW',
-          enrichmentStatus: 'PENDING',
-          lastEnriched: null,
+          ...getInitialQuality({ musicbrainzId: input.musicbrainzId }),
         },
       });
 
-      // Handle artist associations (consistent with addToListenLater)
+      // Handle artist associations using shared helper
+      const { findOrCreateArtist } = await import('@/lib/artists');
+
       for (const artistInput of input.artists) {
-        let artistId: string | undefined;
+        if (!artistInput.artistName) continue;
 
-        // Always search/create by name (don't trust artistId from external sources)
-        // artistInput.artistId may be a MusicBrainz ID or empty string for external albums
-        if (artistInput.artistName) {
-          // Search for existing artist by name (case-insensitive)
-          const existingArtist = await prisma.artist.findFirst({
-            where: {
-              name: {
-                equals: artistInput.artistName,
-                mode: 'insensitive',
-              },
-            },
-          });
+        const { artist } = await findOrCreateArtist({
+          db: prisma,
+          identity: { name: artistInput.artistName },
+          fields: {
+            source: 'USER_SUBMITTED' as const,
+            ...getInitialQuality(),
+          },
+          enrichment: 'queue-check',
+          queueCheckOptions: {
+            source: 'manual',
+            priority: 'high',
+            requestId: `album-artist-${artistInput.artistName}`,
+          },
+          caller: 'addAlbum',
+        });
 
-          if (existingArtist) {
-            // Use existing artist
-            artistId = existingArtist.id;
-            console.log(
-              `🔄 Reusing existing artist: "${existingArtist.name}" (${existingArtist.id})`
-            );
-
-            // Log artist linking to LlamaLog
-            try {
-              await llamaLogger.logEnrichment({
-                entityType: 'ARTIST',
-                entityId: existingArtist.id,
-                operation: 'artist:linked:album-association',
-                category: 'LINKED',
-                sources: ['ADMIN'],
-                status: 'SUCCESS',
-                fieldsEnriched: [],
-                parentJobId: albumJobId,
-                rootJobId: albumJobId,
-                isRootJob: false,
-                userId: user.id,
-                metadata: {
-                  albumId: album.id,
-                  existingEntity: true,
-                },
-              });
-            } catch (err) {
-              console.warn('[LlamaLog] Failed to log artist linking:', err);
-            }
-          } else {
-            // Create new artist only if none exists
-            const newArtist = await prisma.artist.create({
-              data: {
-                name: artistInput.artistName,
-                dataQuality: 'LOW',
-                enrichmentStatus: 'PENDING',
-              },
-            });
-            artistId = newArtist.id;
-            console.log(
-              `✨ Created new artist: "${newArtist.name}" (${newArtist.id})`
-            );
-            // NOTE: Artist creation logging removed - it's an implementation detail.
-            // Artist enrichment will be triggered via CHECK_ARTIST_ENRICHMENT job
-            // which will log with proper parentJobId from the calling mutation.
-          }
-
-          // Create or update the album-artist relationship (upsert to handle duplicates)
-          const role = artistInput.role || 'PRIMARY';
-          await prisma.albumArtist.upsert({
-            where: {
-              albumId_artistId_role: {
-                albumId: album.id,
-                artistId: artistId,
-                role: role,
-              },
-            },
-            update: {}, // No update needed, just ensure it exists
-            create: {
+        // Create or update the album-artist relationship (upsert to handle duplicates)
+        const role = artistInput.role || 'PRIMARY';
+        await prisma.albumArtist.upsert({
+          where: {
+            albumId_artistId_role: {
               albumId: album.id,
-              artistId: artistId,
+              artistId: artist.id,
               role: role,
             },
-          });
-        }
+          },
+          update: {},
+          create: {
+            albumId: album.id,
+            artistId: artist.id,
+            role: role,
+          },
+        });
       }
 
       // Queue enrichment check in background (non-blocking for faster response)
@@ -872,7 +816,6 @@ export const mutationResolvers: MutationResolvers = {
             source: 'manual',
             priority: 'high', // Manual additions get high priority
             requestId: requestId,
-            parentJobId: albumJobId, // Link to root album:created job for provenance chain
           };
 
           await queue.addJob(
@@ -902,20 +845,6 @@ export const mutationResolvers: MutationResolvers = {
         }
       });
 
-      // Log the manual album creation
-      const fieldsCreated = ['title'];
-      if (input.releaseDate) fieldsCreated.push('releaseDate');
-      if (input.albumType) fieldsCreated.push('releaseType');
-      if (input.totalTracks) fieldsCreated.push('trackCount');
-      if (input.coverImageUrl) fieldsCreated.push('coverArtUrl');
-      if (input.musicbrainzId) fieldsCreated.push('musicbrainzId');
-      if (input.artists?.length) fieldsCreated.push('artists');
-
-      // NOTE: We intentionally DO NOT log album creation here.
-      // Album creation is an implementation detail, not a user action.
-      // The actual user action (add to collection, create recommendation, etc.)
-      // is logged by the calling mutation as the root job.
-      // Enrichment jobs will be queued with parentJobId linking to that root.
       // Return the album with its relationships
       return (await prisma.album.findUnique({
         where: { id: album.id },
@@ -946,145 +875,56 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      // Check if artist already exists by MusicBrainz ID
-      if (input.musicbrainzId) {
-        const existing = await prisma.artist.findFirst({
-          where: { musicbrainzId: input.musicbrainzId },
-        });
+      const { findOrCreateArtist } = await import('@/lib/artists');
 
-        if (existing) {
-          console.log(
-            `🔄 Artist already exists: "${existing.name}" (${existing.id})`
-          );
-          return existing as any;
-        }
-      }
+      const artistJobId = `artist-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
-      // Check if artist already exists by name (case-insensitive)
-      const existingByName = await prisma.artist.findFirst({
-        where: {
-          name: {
-            equals: input.name,
-            mode: 'insensitive',
-          },
-        },
-      });
-
-      if (existingByName) {
-        console.log(
-          `🔄 Artist already exists by name: "${existingByName.name}" (${existingByName.id})`
-        );
-        return existingByName as any;
-      }
-
-      // Create the artist
-      const artist = await prisma.artist.create({
-        data: {
+      const { artist, created } = await findOrCreateArtist({
+        db: prisma,
+        identity: {
           name: input.name,
           musicbrainzId: input.musicbrainzId,
+        },
+        fields: {
           imageUrl: input.imageUrl,
           countryCode: input.countryCode,
-          dataQuality: input.musicbrainzId ? 'MEDIUM' : 'LOW',
-          enrichmentStatus: 'PENDING',
-          lastEnriched: null,
+          source: 'USER_SUBMITTED' as const,
+          ...getInitialQuality({ musicbrainzId: input.musicbrainzId }),
         },
-      });
-
-      console.log(`✨ Created new artist: "${artist.name}" (${artist.id})`);
-
-      // Generate job ID for artist creation (used as parent for enrichment jobs)
-      const artistJobId = `artist-${artist.id}`;
-      const llamaLogger = createLlamaLogger(prisma);
-
-      // Queue enrichment check in background (non-blocking for faster response)
-      setImmediate(async () => {
-        try {
-          const queue = getMusicBrainzQueue();
-
-          // Track manual artist creation for priority management
-          await activityTracker.recordEntityInteraction(
-            'add_artist',
-            'artist',
-            artist.id,
-            'mutation',
-            { source: 'manual_add' }
-          );
-
-          // Get smart job options based on user activity
-          const jobOptions = await priorityManager.getJobOptions(
-            'manual',
-            artist.id,
-            'artist',
-            requestId
-          );
-
-          // Queue artist enrichment check
-          const checkData: CheckArtistEnrichmentJobData = {
-            artistId: artist.id,
-            source: 'manual_add',
-            priority: 'high',
-            requestId: `manual-artist-add-${artist.id}`,
-            parentJobId: artistJobId, // Link to root artist:created job for provenance chain
-          };
-
-          await queue.addJob(
-            JOB_TYPES.CHECK_ARTIST_ENRICHMENT,
-            checkData,
-            jobOptions
-          );
-
-          // Log priority decision for debugging
-          priorityManager.logPriorityDecision(
-            'manual',
-            artist.id,
-            jobOptions.priority / 10, // Convert back to 1-10 scale
-            {
-              actionImportance: 8,
-              userActivity: 0,
-              entityRelevance: 0,
-              systemLoad: 0,
-            },
-            jobOptions.delay
-          );
-        } catch (queueError) {
-          console.warn(
-            'Failed to queue enrichment check for new artist:',
-            queueError
-          );
-        }
-      });
-
-      // Build fields list for logging
-      const fieldsCreated = ['name'];
-      if (input.musicbrainzId) fieldsCreated.push('musicbrainzId');
-      if (input.imageUrl) fieldsCreated.push('imageUrl');
-      if (input.countryCode) fieldsCreated.push('countryCode');
-
-      // Log artist creation to LlamaLog (root job for provenance chain)
-      // NOTE: Old logActivity() call removed - LlamaLog is the single source of truth
-      try {
-        await llamaLogger.logEnrichment({
-          entityType: 'ARTIST',
-          entityId: artist.id,
-          artistId: artist.id,
+        enrichment: 'queue-check',
+        queueCheckOptions: {
+          source: 'manual_add',
+          priority: 'high',
+          requestId: `manual-artist-add-${input.name}`,
+          parentJobId: artistJobId,
+        },
+        logging: {
           operation: 'artist:created',
-          category: 'CREATED',
           sources: input.musicbrainzId ? ['MUSICBRAINZ'] : ['USER'],
-          status: 'SUCCESS',
-          fieldsEnriched: fieldsCreated,
-          dataQualityAfter: artist.dataQuality,
-          jobId: artistJobId,
           isRootJob: true,
           userId: user.id,
+        },
+        caller: 'addArtist',
+      });
+
+      // Track activity for priority management (only on creation)
+      if (created) {
+        setImmediate(async () => {
+          try {
+            await activityTracker.recordEntityInteraction(
+              'add_artist',
+              'artist',
+              artist.id,
+              'mutation',
+              { source: 'manual_add' }
+            );
+          } catch (err) {
+            console.warn('Failed to track artist activity:', err);
+          }
         });
-      } catch (logError) {
-        console.warn('[LlamaLogger] Failed to log artist creation:', logError);
       }
 
-      // Return the artist
-      return (await prisma.artist.findUnique({
-        where: { id: artist.id },
-      })) as any;
+      return artist as any;
     } catch (error) {
       console.error('Error creating artist:', error);
       throw new GraphQLError('Failed to create artist', {
@@ -1264,130 +1104,22 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      // Create collection album and activity in a transaction
-      const collectionAlbum = await prisma.$transaction(async tx => {
-        // Verify collection ownership
-        const collection = await tx.collection.findFirst({
-          where: {
-            id: collectionId,
-            userId: user.id,
-          },
-        });
-
-        if (!collection) {
-          throw new GraphQLError('Collection not found or access denied');
-        }
-
-        // Create collection album with album data for activity metadata
-        const ca = await tx.collectionAlbum.create({
-          data: {
-            collectionId,
-            albumId: input.albumId,
-            personalRating: input.personalRating ?? undefined,
-            personalNotes: input.personalNotes,
-            position: input.position || 0,
-          },
-          include: {
-            album: {
-              include: { artists: { include: { artist: true } } },
-            },
-          },
-        });
-
-        // Create Activity record with denormalized data
-        await tx.activity.create({
-          data: {
-            id: `act-col-${ca.id}`,
-            userId: user.id,
-            type: 'collection_add',
-            collectionAlbumId: ca.id,
-            metadata: {
-              collectionId: collection.id,
-              collectionName: collection.name,
-              isPublicCollection: collection.isPublic,
-              albumId: ca.albumId,
-              albumTitle: ca.album.title,
-              albumCoverUrl: ca.album.coverArtUrl,
-              albumArtist: ca.album.artists?.[0]?.artist?.name || null,
-              personalRating: ca.personalRating,
-            },
-            createdAt: ca.addedAt,
-          },
-        });
-
-        return ca;
+      const { addAlbumToCollection: addAlbumToCollectionHelper } = await import(
+        '@/lib/collections'
+      );
+      const result = await addAlbumToCollectionHelper({
+        db: prisma,
+        userId: user.id,
+        collectionId,
+        album: { type: 'existing', albumId: input.albumId },
+        personalRating: input.personalRating,
+        personalNotes: input.personalNotes,
+        position: input.position || 0,
+        caller: 'addAlbumToCollection',
       });
-
-      // Generate job ID for collection add (used as parent for enrichment jobs)
-      const collectionAddJobId = `collection-add-${collectionAlbum.id}`;
-      const llamaLogger = createLlamaLogger(prisma);
-
-      // Log collection add to LlamaLog (root job for provenance chain)
-      try {
-        await llamaLogger.logEnrichment({
-          entityType: 'ALBUM',
-          entityId: input.albumId,
-          albumId: input.albumId,
-          operation: 'collection:album-added',
-          category: 'USER_ACTION',
-          sources: ['USER'],
-          status: 'SUCCESS',
-          fieldsEnriched: [],
-          jobId: collectionAddJobId,
-          isRootJob: true,
-          userId: user.id,
-          metadata: {
-            collectionId,
-            collectionAlbumId: collectionAlbum.id,
-          },
-        });
-      } catch (logError) {
-        console.warn('[LlamaLogger] Failed to log collection add:', logError);
-      }
-
-      // Queue lightweight enrichment check (non-blocking)
-      try {
-        const queue = getMusicBrainzQueue();
-
-        // Queue album enrichment check
-        const albumCheckData: CheckAlbumEnrichmentJobData = {
-          albumId: input.albumId,
-          source: 'collection_add',
-          priority: 'high',
-          requestId: `collection-add-${collectionAlbum.id}`,
-          parentJobId: collectionAddJobId, // Link to root collection:album-added job
-        };
-
-        await queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, albumCheckData, {
-          priority: 10, // High priority for user actions
-          attempts: 3,
-        });
-
-        // Queue cover art caching (non-blocking)
-        const cacheData: CacheAlbumCoverArtJobData = {
-          albumId: input.albumId,
-          requestId: `cache-cover-${collectionAlbum.id}`,
-          parentJobId: collectionAddJobId, // Link to root collection:album-added job
-        };
-
-        await queue.addJob(JOB_TYPES.CACHE_ALBUM_COVER_ART, cacheData, {
-          priority: 5, // Medium priority
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 2000,
-          },
-        });
-      } catch (queueError) {
-        // Log queue errors but don't fail the user operation
-        console.warn(
-          'Failed to queue enrichment check for album collection add:',
-          queueError
-        );
-      }
-
-      return collectionAlbum;
+      return result.collectionAlbum;
     } catch (error) {
+      if (error instanceof GraphQLError) throw error;
       throw new GraphQLError(`Failed to add album to collection: ${error}`);
     }
   },
@@ -1422,316 +1154,22 @@ export const mutationResolvers: MutationResolvers = {
     }
 
     try {
-      // Generate root job ID for provenance chain (used by all child jobs)
-      const rootJobId = `collection-add-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-      const llamaLogger = createLlamaLogger(prisma);
-
-      // Track created artists for logging
-      const createdArtists: Array<{ id: string; name: string }> = [];
-
-      const collectionAlbum = await prisma.$transaction(async tx => {
-        // Verify collection ownership
-        const collection = await tx.collection.findFirst({
-          where: {
-            id: collectionId,
-            userId: user.id,
-          },
-        });
-
-        if (!collection) {
-          throw new GraphQLError('Collection not found or access denied');
-        }
-
-        let finalAlbumId: string;
-
-        if (albumId) {
-          // Use existing album - verify it exists
-          const existingAlbum = await tx.album.findUnique({
-            where: { id: albumId },
-          });
-          if (!existingAlbum) {
-            throw new GraphQLError('Album not found');
-          }
-          finalAlbumId = albumId;
-        } else if (albumData) {
-          // Create album with find-or-create artist logic
-
-          // First check if album already exists by MusicBrainz ID
-          if (albumData.musicbrainzId) {
-            const existingByMbid = await tx.album.findFirst({
-              where: { musicbrainzId: albumData.musicbrainzId },
-            });
-            if (existingByMbid) {
-              console.log(
-                `🔄 Album already exists by MBID: "${existingByMbid.title}" (${existingByMbid.id})`
-              );
-              finalAlbumId = existingByMbid.id;
-            }
-          }
-
-          // Check by title + primary artist if no MBID match
-          if (!finalAlbumId!) {
-            const primaryArtistName = albumData.artists?.[0]?.artistName;
-            if (primaryArtistName) {
-              const existingByTitleArtist = await tx.album.findFirst({
-                where: {
-                  title: { equals: albumData.title, mode: 'insensitive' },
-                  artists: {
-                    some: {
-                      role: 'PRIMARY',
-                      artist: {
-                        name: {
-                          equals: primaryArtistName,
-                          mode: 'insensitive',
-                        },
-                      },
-                    },
-                  },
-                },
-              });
-              if (existingByTitleArtist) {
-                console.log(
-                  `🔄 Album already exists by title+artist: "${existingByTitleArtist.title}" (${existingByTitleArtist.id})`
-                );
-                finalAlbumId = existingByTitleArtist.id;
-              }
-            }
-          }
-
-          // Create album if not found
-          if (!finalAlbumId!) {
-            const releaseDate = albumData.releaseDate
-              ? new Date(albumData.releaseDate)
-              : null;
-
-            const newAlbum = await tx.album.create({
-              data: {
-                title: albumData.title,
-                releaseDate,
-                releaseType: albumData.albumType || 'ALBUM',
-                trackCount: albumData.totalTracks,
-                coverArtUrl: albumData.coverImageUrl,
-                musicbrainzId: albumData.musicbrainzId,
-                dataQuality: albumData.musicbrainzId ? 'MEDIUM' : 'LOW',
-                enrichmentStatus: 'PENDING',
-                lastEnriched: null,
-              },
-            });
-            finalAlbumId = newAlbum.id;
-            console.log(
-              `✨ Created new album: "${newAlbum.title}" (${newAlbum.id})`
-            );
-
-            // Handle artist associations
-            for (const artistInput of albumData.artists || []) {
-              if (!artistInput.artistName) continue;
-
-              // Find existing artist by name (case-insensitive)
-              let artist = await tx.artist.findFirst({
-                where: {
-                  name: { equals: artistInput.artistName, mode: 'insensitive' },
-                },
-              });
-
-              if (artist) {
-                console.log(
-                  `🔄 Reusing existing artist: "${artist.name}" (${artist.id})`
-                );
-              } else {
-                // Create new artist
-                artist = await tx.artist.create({
-                  data: {
-                    name: artistInput.artistName,
-                    dataQuality: 'LOW',
-                    enrichmentStatus: 'PENDING',
-                  },
-                });
-                console.log(
-                  `✨ Created new artist: "${artist.name}" (${artist.id})`
-                );
-                createdArtists.push({ id: artist.id, name: artist.name });
-              }
-
-              // Create album-artist association
-              const role = artistInput.role || 'PRIMARY';
-              await tx.albumArtist.upsert({
-                where: {
-                  albumId_artistId_role: {
-                    albumId: finalAlbumId,
-                    artistId: artist.id,
-                    role: role,
-                  },
-                },
-                update: {},
-                create: {
-                  albumId: finalAlbumId,
-                  artistId: artist.id,
-                  role: role,
-                },
-              });
-            }
-          }
-        }
-
-        // Check if album already in collection
-        const existingEntry = await tx.collectionAlbum.findFirst({
-          where: { collectionId, albumId: finalAlbumId! },
-        });
-        if (existingEntry) {
-          // Return existing entry instead of error
-          return existingEntry;
-        }
-
-        // Create collection album
-        const ca = await tx.collectionAlbum.create({
-          data: {
-            collectionId,
-            albumId: finalAlbumId!,
-            personalRating: personalRating ?? undefined,
-            personalNotes: personalNotes,
-            position: position || 0,
-          },
-          include: {
-            album: {
-              include: { artists: { include: { artist: true } } },
-            },
-          },
-        });
-
-        // Create Activity record
-        await tx.activity.create({
-          data: {
-            id: `act-col-${ca.id}`,
-            userId: user.id,
-            type: 'collection_add',
-            collectionAlbumId: ca.id,
-            metadata: {
-              collectionId: collection.id,
-              collectionName: collection.name,
-              isPublicCollection: collection.isPublic,
-              albumId: ca.albumId,
-              albumTitle: ca.album.title,
-              albumCoverUrl: ca.album.coverArtUrl,
-              albumArtist: ca.album.artists?.[0]?.artist?.name || null,
-              personalRating: ca.personalRating,
-            },
-            createdAt: ca.addedAt,
-          },
-        });
-
-        return ca;
+      const { addAlbumToCollection: addAlbumToCollectionHelper } = await import(
+        '@/lib/collections'
+      );
+      const result = await addAlbumToCollectionHelper({
+        db: prisma,
+        userId: user.id,
+        collectionId,
+        album: albumData
+          ? { type: 'create', albumData }
+          : { type: 'existing', albumId: albumId! },
+        personalRating,
+        personalNotes,
+        position: position || 0,
+        caller: 'addAlbumToCollectionWithCreate',
       });
-
-      // Log provenance chain entries after transaction commits
-      const finalAlbumId = collectionAlbum.albumId;
-
-      // Log root job: collection:album-added (USER_ACTION)
-      try {
-        await llamaLogger.logEnrichment({
-          entityType: 'ALBUM',
-          entityId: finalAlbumId,
-          albumId: finalAlbumId,
-          operation: 'collection:album-added',
-          category: 'USER_ACTION',
-          sources: ['USER'],
-          status: 'SUCCESS',
-          fieldsEnriched: [],
-          jobId: rootJobId,
-          isRootJob: true,
-          userId: user.id,
-          metadata: {
-            collectionId,
-            collectionAlbumId: collectionAlbum.id,
-            albumCreated: !!albumData,
-            artistsCreated: createdArtists.length,
-          },
-        });
-      } catch (logError) {
-        console.warn('[LlamaLogger] Failed to log collection add:', logError);
-      }
-
-      // Log artist:created for each new artist (child of root job)
-      for (const artist of createdArtists) {
-        try {
-          await llamaLogger.logEnrichment({
-            entityType: 'ARTIST',
-            entityId: artist.id,
-            artistId: artist.id,
-            operation: 'artist:created',
-            category: 'CREATED',
-            sources: ['USER'],
-            status: 'SUCCESS',
-            fieldsEnriched: ['name'],
-            jobId: `artist-created-${artist.id}`,
-            parentJobId: rootJobId,
-            rootJobId: rootJobId,
-            isRootJob: false,
-            userId: user.id,
-            dataQualityAfter: 'LOW',
-          });
-        } catch (logError) {
-          console.warn(
-            '[LlamaLogger] Failed to log artist creation:',
-            logError
-          );
-        }
-      }
-
-      // Queue enrichment jobs with proper parentJobId
-      try {
-        const queue = getMusicBrainzQueue();
-
-        // Queue album enrichment check
-        const albumCheckData: CheckAlbumEnrichmentJobData = {
-          albumId: finalAlbumId,
-          source: 'collection_add',
-          priority: 'high',
-          requestId: `collection-add-${collectionAlbum.id}`,
-          parentJobId: rootJobId,
-        };
-
-        await queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, albumCheckData, {
-          priority: 10,
-          attempts: 3,
-        });
-
-        // Queue cover art caching
-        const cacheData: CacheAlbumCoverArtJobData = {
-          albumId: finalAlbumId,
-          requestId: `cache-cover-${collectionAlbum.id}`,
-          parentJobId: rootJobId,
-        };
-
-        await queue.addJob(JOB_TYPES.CACHE_ALBUM_COVER_ART, cacheData, {
-          priority: 5,
-          attempts: 3,
-          backoff: { type: 'exponential', delay: 2000 },
-        });
-
-        // Queue artist enrichment for each created artist
-        for (const artist of createdArtists) {
-          const artistCheckData: CheckArtistEnrichmentJobData = {
-            artistId: artist.id,
-            source: 'collection_add',
-            priority: 'high',
-            requestId: `collection-add-artist-${artist.id}`,
-            parentJobId: rootJobId,
-          };
-
-          await queue.addJob(
-            JOB_TYPES.CHECK_ARTIST_ENRICHMENT,
-            artistCheckData,
-            {
-              priority: 10,
-              attempts: 3,
-            }
-          );
-        }
-      } catch (queueError) {
-        console.warn('Failed to queue enrichment jobs:', queueError);
-      }
-
-      return collectionAlbum;
+      return result.collectionAlbum;
     } catch (error) {
       if (error instanceof GraphQLError) throw error;
       throw new GraphQLError(`Failed to add album to collection: ${error}`);
@@ -1790,350 +1228,6 @@ export const mutationResolvers: MutationResolvers = {
         `Failed to remove album from collection: ${error}`
       );
     }
-  },
-
-  // Listen Later (name-based, no schema change)
-  ensureListenLaterCollection: async (_, __, { user, prisma }) => {
-    if (!user) throw new GraphQLError('Authentication required');
-    const name = 'Listen Later';
-    const existing = await prisma.collection.findFirst({
-      where: { userId: user.id, name },
-    });
-    if (existing) return existing as any;
-    const created = await prisma.collection.create({
-      data: { userId: user.id, name, isPublic: false },
-    });
-    return created as any;
-  },
-
-  addToListenLater: async (_, { albumId, albumData }, { user, prisma }) => {
-    if (!user) throw new GraphQLError('Authentication required');
-
-    let dbAlbumId: string;
-
-    // First try to find by internal ID
-    let album = await prisma.album.findUnique({
-      where: { id: albumId },
-      include: {
-        artists: {
-          include: { artist: true },
-        },
-      },
-    });
-
-    if (album) {
-      // Album exists by internal ID
-      dbAlbumId = album.id;
-    } else {
-      // Try to find by MusicBrainz ID
-      album = await prisma.album.findFirst({
-        where: { musicbrainzId: albumId },
-        include: {
-          artists: {
-            include: { artist: true },
-          },
-        },
-      });
-
-      if (album) {
-        // Album exists by MusicBrainz ID
-        dbAlbumId = album.id;
-      } else {
-        // Album doesn't exist - create it with full data if provided
-        if (albumData) {
-          // Parse release date if provided
-          const releaseDate = albumData.releaseDate
-            ? new Date(albumData.releaseDate)
-            : null;
-
-          // Create the album with full data
-          album = await prisma.album.create({
-            data: {
-              title: albumData.title,
-              releaseDate,
-              releaseType: albumData.albumType || 'ALBUM',
-              trackCount: albumData.totalTracks,
-              coverArtUrl: albumData.coverImageUrl,
-              musicbrainzId: albumData.musicbrainzId || albumId,
-              dataQuality: albumData.musicbrainzId ? 'MEDIUM' : 'LOW',
-              enrichmentStatus: 'PENDING',
-              lastEnriched: null,
-            },
-          });
-
-          // Generate job ID for album creation (used as parent for child entity logging)
-          const albumJobId = `album-${album.id}`;
-          const llamaLogger = createLlamaLogger(prisma);
-
-          // Handle artist associations
-          if (albumData.artists && albumData.artists.length > 0) {
-            for (const artistInput of albumData.artists) {
-              let artistId: string | undefined;
-
-              // Always try to find/create artist by name (required field)
-              if (artistInput.artistName) {
-                const existingArtist = await prisma.artist.findFirst({
-                  where: {
-                    name: {
-                      equals: artistInput.artistName,
-                      mode: 'insensitive',
-                    },
-                  },
-                });
-
-                if (existingArtist) {
-                  artistId = existingArtist.id;
-
-                  // Log artist linking to LlamaLog
-                  try {
-                    await llamaLogger.logEnrichment({
-                      entityType: 'ARTIST',
-                      entityId: existingArtist.id,
-                      operation: 'artist:linked:album-association',
-                      category: 'LINKED',
-                      sources: ['USER'],
-                      status: 'SUCCESS',
-                      fieldsEnriched: [],
-                      parentJobId: albumJobId,
-                      rootJobId: albumJobId,
-                      isRootJob: false,
-                      userId: user.id,
-                      metadata: {
-                        albumId: album.id,
-                        existingEntity: true,
-                      },
-                    });
-                  } catch (err) {
-                    console.warn(
-                      '[LlamaLog] Failed to log artist linking:',
-                      err
-                    );
-                  }
-                } else {
-                  // Create new artist
-                  const newArtist = await prisma.artist.create({
-                    data: {
-                      name: artistInput.artistName,
-                      dataQuality: 'LOW',
-                      enrichmentStatus: 'PENDING',
-                    },
-                  });
-                  artistId = newArtist.id;
-
-                  // Log artist creation to LlamaLog
-                  try {
-                    await llamaLogger.logEnrichment({
-                      entityType: 'ARTIST',
-                      entityId: newArtist.id,
-                      operation: 'artist:created:album-child',
-                      category: 'CREATED',
-                      sources: ['USER'],
-                      status: 'SUCCESS',
-                      fieldsEnriched: ['name'],
-                      parentJobId: albumJobId,
-                      rootJobId: albumJobId,
-                      isRootJob: false,
-                      userId: user.id,
-                      dataQualityAfter: 'LOW',
-                    });
-                  } catch (err) {
-                    console.warn(
-                      '[LlamaLog] Failed to log artist creation:',
-                      err
-                    );
-                  }
-                }
-
-                // Create or update the album-artist relationship (upsert to handle duplicates)
-                const role = artistInput.role || 'PRIMARY';
-                await prisma.albumArtist.upsert({
-                  where: {
-                    albumId_artistId_role: {
-                      albumId: album.id,
-                      artistId: artistId,
-                      role: role,
-                    },
-                  },
-                  update: {}, // No update needed, just ensure it exists
-                  create: {
-                    albumId: album.id,
-                    artistId: artistId,
-                    role: role,
-                  },
-                });
-              }
-            }
-          }
-
-          // Log album creation to LlamaLog (root job for provenance chain)
-          try {
-            await llamaLogger.logEnrichment({
-              entityType: 'ALBUM',
-              entityId: album.id,
-              albumId: album.id,
-              operation: 'album:created',
-              category: 'CREATED',
-              sources: albumData.musicbrainzId ? ['MUSICBRAINZ'] : ['USER'],
-              status: 'SUCCESS',
-              fieldsEnriched: [
-                'title',
-                'releaseDate',
-                'releaseType',
-                'trackCount',
-                'coverArtUrl',
-                'musicbrainzId',
-              ].filter(f => albumData[f as keyof typeof albumData]),
-              dataQualityAfter: albumData.musicbrainzId ? 'MEDIUM' : 'LOW',
-              jobId: albumJobId,
-              isRootJob: true,
-              userId: user.id,
-            });
-          } catch (logError) {
-            console.warn(
-              '[LlamaLogger] Failed to log album creation:',
-              logError
-            );
-          }
-        } else {
-          // No album data provided - create stub album (fallback behavior)
-          album = await prisma.album.create({
-            data: {
-              musicbrainzId: albumId,
-              title: 'Loading...',
-              enrichmentStatus: 'PENDING',
-            },
-          });
-        }
-        dbAlbumId = album.id;
-      }
-    }
-
-    const name = 'Listen Later';
-    let collection = await prisma.collection.findFirst({
-      where: { userId: user.id, name },
-    });
-    if (!collection) {
-      collection = await prisma.collection.create({
-        data: { userId: user.id, name, isPublic: false },
-      });
-    }
-
-    // Upsert-like behavior: ignore if already exists
-    try {
-      const ca = await prisma.collectionAlbum.create({
-        data: { collectionId: collection.id, albumId: dbAlbumId },
-        include: {
-          album: {
-            include: { artists: { include: { artist: true } } },
-          },
-        },
-      });
-
-      // Create Activity record for Listen Later add
-      await prisma.activity.create({
-        data: {
-          id: `act-col-${ca.id}`,
-          userId: user.id,
-          type: 'collection_add',
-          collectionAlbumId: ca.id,
-          metadata: {
-            collectionId: collection.id,
-            collectionName: collection.name,
-            isPublicCollection: collection.isPublic,
-            albumId: ca.albumId,
-            albumTitle: ca.album.title,
-            albumCoverUrl: ca.album.coverArtUrl,
-            albumArtist: ca.album.artists?.[0]?.artist?.name || null,
-            personalRating: ca.personalRating,
-          },
-          createdAt: ca.addedAt,
-        },
-      });
-
-      // Generate job ID for listen later add (used as parent for enrichment jobs)
-      const listenLaterJobId = `listen-later-${ca.id}`;
-      const llamaLogger = createLlamaLogger(prisma);
-
-      // Log listen later add to LlamaLog (root job for provenance chain)
-      try {
-        await llamaLogger.logEnrichment({
-          entityType: 'ALBUM',
-          entityId: dbAlbumId,
-          albumId: dbAlbumId,
-          operation: 'listen-later:album-added',
-          category: 'USER_ACTION',
-          sources: ['USER'],
-          status: 'SUCCESS',
-          fieldsEnriched: [],
-          jobId: listenLaterJobId,
-          isRootJob: true,
-          userId: user.id,
-          metadata: {
-            collectionId: collection.id,
-            collectionAlbumId: ca.id,
-          },
-        });
-      } catch (logError) {
-        console.warn('[LlamaLogger] Failed to log listen later add:', logError);
-      }
-
-      // Queue enrichment for the newly added album
-      try {
-        const queue = getMusicBrainzQueue();
-        const albumCheckData: CheckAlbumEnrichmentJobData = {
-          albumId: dbAlbumId,
-          source: 'collection_add',
-          priority: 'high',
-          requestId: `listen-later-${ca.id}`,
-          parentJobId: listenLaterJobId, // Link to root listen-later:album-added job
-        };
-        await queue.addJob(JOB_TYPES.CHECK_ALBUM_ENRICHMENT, albumCheckData, {
-          priority: 10,
-          attempts: 3,
-        });
-      } catch (queueError) {
-        console.warn(
-          'Failed to queue enrichment for Listen Later album:',
-          queueError
-        );
-      }
-
-      return ca as any;
-    } catch (e: any) {
-      // Unique violation => already in list, fetch and return
-      const existing = await prisma.collectionAlbum.findFirst({
-        where: { collectionId: collection.id, albumId: dbAlbumId },
-      });
-      if (existing) return existing as any;
-      throw new GraphQLError('Failed to add to Listen Later');
-    }
-  },
-
-  removeFromListenLater: async (_, { albumId }, { user, prisma }) => {
-    if (!user) throw new GraphQLError('Authentication required');
-    const name = 'Listen Later';
-    const collection = await prisma.collection.findFirst({
-      where: { userId: user.id, name },
-    });
-    if (!collection) return true;
-
-    // Find the collection album to soft-delete activity, then delete
-    const collectionAlbum = await prisma.collectionAlbum.findFirst({
-      where: { collectionId: collection.id, albumId },
-    });
-
-    if (collectionAlbum) {
-      // Soft-delete the Activity
-      await prisma.activity.updateMany({
-        where: { collectionAlbumId: collectionAlbum.id, deletedAt: null },
-        data: { deletedAt: new Date() },
-      });
-    }
-
-    await prisma.collectionAlbum.deleteMany({
-      where: { collectionId: collection.id, albumId },
-    });
-    return true;
   },
 
   updateCollectionAlbum: async (_, { id, input }, { user, prisma }) => {
@@ -2238,8 +1332,13 @@ export const mutationResolvers: MutationResolvers = {
     let finalRecommendedAlbumId: string;
     let finalScore: number;
 
-    // Track created artists for logging
+    // Track created entities for conditional post-commit enrichment
     const createdArtists: Array<{ id: string; name: string }> = [];
+    let basisAlbumCreated = false;
+    let recommendedAlbumCreated = false;
+    const { findOrCreateAlbum: findOrCreateAlbumHelper } = await import(
+      '@/lib/albums'
+    );
 
     // Generate root job ID for provenance chain
     const rootJobId = `recommendation-${Date.now()}-${Math.random().toString(36).substring(7)}`;
@@ -2279,8 +1378,8 @@ export const mutationResolvers: MutationResolvers = {
 
     try {
       const recommendation = await prisma.$transaction(async tx => {
-        // Helper function to find or create album from AlbumInput
-        const findOrCreateAlbum = async (albumData: {
+        // Helper to resolve album data through shared find-or-create
+        const resolveAlbumData = async (albumData: {
           title: string;
           releaseDate?: string | null;
           albumType?: string | null;
@@ -2292,112 +1391,55 @@ export const mutationResolvers: MutationResolvers = {
             artistName?: string | null;
             role?: string | null;
           }> | null;
-        }): Promise<string> => {
-          // Check if album exists by MusicBrainz ID
-          if (albumData.musicbrainzId) {
-            const existingByMbid = await tx.album.findFirst({
-              where: { musicbrainzId: albumData.musicbrainzId },
-            });
-            if (existingByMbid) {
-              console.log(
-                `🔄 Album already exists by MBID: "${existingByMbid.title}" (${existingByMbid.id})`
-              );
-              return existingByMbid.id;
-            }
-          }
-
-          // Check by title + primary artist
+        }): Promise<{ albumId: string; created: boolean }> => {
           const primaryArtistName = albumData.artists?.[0]?.artistName;
-          if (primaryArtistName) {
-            const existingByTitleArtist = await tx.album.findFirst({
-              where: {
-                title: { equals: albumData.title, mode: 'insensitive' },
-                artists: {
-                  some: {
-                    role: 'PRIMARY',
-                    artist: {
-                      name: { equals: primaryArtistName, mode: 'insensitive' },
-                    },
-                  },
-                },
-              },
-            });
-            if (existingByTitleArtist) {
-              console.log(
-                `🔄 Album already exists by title+artist: "${existingByTitleArtist.title}" (${existingByTitleArtist.id})`
-              );
-              return existingByTitleArtist.id;
-            }
-          }
-
-          // Create new album
           const releaseDate = albumData.releaseDate
             ? new Date(albumData.releaseDate)
             : null;
-          const newAlbum = await tx.album.create({
-            data: {
+
+          const { album, created } = await findOrCreateAlbumHelper({
+            db: tx,
+            identity: {
               title: albumData.title,
+              musicbrainzId: albumData.musicbrainzId ?? undefined,
+              primaryArtistName: primaryArtistName ?? undefined,
+              releaseYear: releaseDate?.getFullYear() ?? undefined,
+            },
+            fields: {
               releaseDate,
               releaseType: albumData.albumType || 'ALBUM',
-              trackCount: albumData.totalTracks,
-              coverArtUrl: albumData.coverImageUrl,
-              musicbrainzId: albumData.musicbrainzId,
-              dataQuality: albumData.musicbrainzId ? 'MEDIUM' : 'LOW',
-              enrichmentStatus: 'PENDING',
-              lastEnriched: null,
+              trackCount: albumData.totalTracks ?? undefined,
+              coverArtUrl: albumData.coverImageUrl ?? undefined,
             },
+            artists: (albumData.artists || [])
+              .filter(a => a.artistName)
+              .map((a, i) => ({
+                name: a.artistName!,
+                role: (a.role as 'PRIMARY' | 'FEATURED') || 'PRIMARY',
+                position: i,
+              })),
+            enrichment: 'none',
+            insideTransaction: true,
+            caller: 'createRecommendation',
           });
-          console.log(
-            `✨ Created new album: "${newAlbum.title}" (${newAlbum.id})`
-          );
 
-          // Handle artist associations
-          for (const artistInput of albumData.artists || []) {
-            if (!artistInput.artistName) continue;
-
-            let artist = await tx.artist.findFirst({
-              where: {
-                name: { equals: artistInput.artistName, mode: 'insensitive' },
-              },
+          // Track created artists for post-transaction enrichment
+          if (created) {
+            const albumArtists = await tx.albumArtist.findMany({
+              where: { albumId: album.id },
+              include: { artist: true },
             });
-
-            if (artist) {
-              console.log(
-                `🔄 Reusing existing artist: "${artist.name}" (${artist.id})`
-              );
-            } else {
-              artist = await tx.artist.create({
-                data: {
-                  name: artistInput.artistName,
-                  dataQuality: 'LOW',
-                  enrichmentStatus: 'PENDING',
-                },
-              });
-              console.log(
-                `✨ Created new artist: "${artist.name}" (${artist.id})`
-              );
-              createdArtists.push({ id: artist.id, name: artist.name });
+            for (const aa of albumArtists) {
+              if (
+                aa.artist.dataQuality === 'LOW' &&
+                aa.artist.enrichmentStatus === 'PENDING'
+              ) {
+                createdArtists.push({ id: aa.artist.id, name: aa.artist.name });
+              }
             }
-
-            const role = artistInput.role || 'PRIMARY';
-            await tx.albumArtist.upsert({
-              where: {
-                albumId_artistId_role: {
-                  albumId: newAlbum.id,
-                  artistId: artist.id,
-                  role: role,
-                },
-              },
-              update: {},
-              create: {
-                albumId: newAlbum.id,
-                artistId: artist.id,
-                role: role,
-              },
-            });
           }
 
-          return newAlbum.id;
+          return { albumId: album.id, created };
         };
 
         // Resolve album IDs (find or create as needed)
@@ -2405,15 +1447,17 @@ export const mutationResolvers: MutationResolvers = {
           if (input.basisAlbumId) {
             finalBasisAlbumId = input.basisAlbumId;
           } else if (input.basisAlbumData) {
-            finalBasisAlbumId = await findOrCreateAlbum(input.basisAlbumData);
+            const result = await resolveAlbumData(input.basisAlbumData);
+            finalBasisAlbumId = result.albumId;
+            basisAlbumCreated = result.created;
           }
 
           if (input.recommendedAlbumId) {
             finalRecommendedAlbumId = input.recommendedAlbumId;
           } else if (input.recommendedAlbumData) {
-            finalRecommendedAlbumId = await findOrCreateAlbum(
-              input.recommendedAlbumData
-            );
+            const result = await resolveAlbumData(input.recommendedAlbumData);
+            finalRecommendedAlbumId = result.albumId;
+            recommendedAlbumCreated = result.created;
           }
         }
 
@@ -2435,28 +1479,14 @@ export const mutationResolvers: MutationResolvers = {
           },
         });
 
-        // Create Activity record with denormalized album data
-        await tx.activity.create({
-          data: {
-            id: `act-rec-${rec.id}`,
-            userId: user.id,
-            type: 'recommendation',
-            recommendationId: rec.id,
-            metadata: {
-              score: rec.score,
-              basisAlbumId: rec.basisAlbumId,
-              basisAlbumTitle: rec.basisAlbum.title,
-              basisAlbumCoverUrl: rec.basisAlbum.coverArtUrl,
-              basisAlbumArtist:
-                rec.basisAlbum.artists?.[0]?.artist?.name || null,
-              recommendedAlbumId: rec.recommendedAlbumId,
-              recommendedAlbumTitle: rec.recommendedAlbum.title,
-              recommendedAlbumCoverUrl: rec.recommendedAlbum.coverArtUrl,
-              recommendedAlbumArtist:
-                rec.recommendedAlbum.artists?.[0]?.artist?.name || null,
-            },
-            createdAt: rec.createdAt,
-          },
+        // Create Activity record
+        const { createRecommendationActivity } = await import(
+          '@/lib/activities'
+        );
+        await createRecommendationActivity({
+          db: tx,
+          userId: user.id,
+          recommendation: rec,
         });
 
         // Count update handled automatically by DB trigger (recommendations_count_trigger)
@@ -2525,41 +1555,44 @@ export const mutationResolvers: MutationResolvers = {
         try {
           const queue = getMusicBrainzQueue();
 
-          // Queue enrichment checks for both albums
-          const basisAlbumCheckData: CheckAlbumEnrichmentJobData = {
-            albumId: finalBasisAlbumId!,
-            source: 'recommendation_create',
-            priority: 'high',
-            requestId: `recommendation-basis-${recommendation.id}`,
-            parentJobId: rootJobId,
-          };
+          // Only queue enrichment for newly created albums (existing albums are already enriched)
+          const albumEnrichmentJobs: Promise<unknown>[] = [];
 
-          const recommendedAlbumCheckData: CheckAlbumEnrichmentJobData = {
-            albumId: finalRecommendedAlbumId!,
-            source: 'recommendation_create',
-            priority: 'high',
-            requestId: `recommendation-target-${recommendation.id}`,
-            parentJobId: rootJobId,
-          };
+          if (basisAlbumCreated) {
+            albumEnrichmentJobs.push(
+              queue.addJob(
+                JOB_TYPES.CHECK_ALBUM_ENRICHMENT,
+                {
+                  albumId: finalBasisAlbumId!,
+                  source: 'recommendation_create',
+                  priority: 'high',
+                  requestId: `recommendation-basis-${recommendation.id}`,
+                  parentJobId: rootJobId,
+                } satisfies CheckAlbumEnrichmentJobData,
+                { priority: 8, attempts: 3 }
+              )
+            );
+          }
 
-          await Promise.all([
-            queue.addJob(
-              JOB_TYPES.CHECK_ALBUM_ENRICHMENT,
-              basisAlbumCheckData,
-              {
-                priority: 8,
-                attempts: 3,
-              }
-            ),
-            queue.addJob(
-              JOB_TYPES.CHECK_ALBUM_ENRICHMENT,
-              recommendedAlbumCheckData,
-              {
-                priority: 8,
-                attempts: 3,
-              }
-            ),
-          ]);
+          if (recommendedAlbumCreated) {
+            albumEnrichmentJobs.push(
+              queue.addJob(
+                JOB_TYPES.CHECK_ALBUM_ENRICHMENT,
+                {
+                  albumId: finalRecommendedAlbumId!,
+                  source: 'recommendation_create',
+                  priority: 'high',
+                  requestId: `recommendation-target-${recommendation.id}`,
+                  parentJobId: rootJobId,
+                } satisfies CheckAlbumEnrichmentJobData,
+                { priority: 8, attempts: 3 }
+              )
+            );
+          }
+
+          if (albumEnrichmentJobs.length > 0) {
+            await Promise.all(albumEnrichmentJobs);
+          }
 
           // Queue artist enrichment for each created artist
           for (const artist of createdArtists) {
@@ -2578,6 +1611,11 @@ export const mutationResolvers: MutationResolvers = {
                 priority: 10,
                 attempts: 3,
               }
+            );
+            console.log(
+              chalk.magenta(
+                `[TIER-3] Queued CHECK_ARTIST_ENRICHMENT for "${artist.name}" from createRecommendation mutation`
+              )
             );
           }
         } catch (queueError) {
@@ -2702,15 +1740,12 @@ export const mutationResolvers: MutationResolvers = {
         });
 
         // Create Activity record for the follow
-        await tx.activity.create({
-          data: {
-            id: `act-follow-${user.id}-${userId}-${Date.now()}`,
-            userId: user.id,
-            type: 'follow',
-            targetUserId: userId,
-            metadata: {},
-            createdAt: follow.createdAt,
-          },
+        const { createFollowActivity } = await import('@/lib/activities');
+        await createFollowActivity({
+          db: tx,
+          userId: user.id,
+          targetUserId: userId,
+          followCreatedAt: follow.createdAt,
         });
 
         // Count updates handled automatically by DB triggers (user_follow_count_trigger)
@@ -3801,26 +2836,29 @@ export const mutationResolvers: MutationResolvers = {
           where: { albumId: input.albumId },
         });
 
-        // Upsert each artist and create association
+        // Upsert each artist and create association using shared helper
+        const { findOrCreateArtist: findOrCreateArtistFn } = await import(
+          '@/lib/artists'
+        );
+        const newlyCreatedArtistIds: string[] = [];
+
         for (let i = 0; i < input.artists.length; i++) {
           const artistName = input.artists[i];
 
-          // Find existing artist by name, or create new one
-          // Use findFirst since name is not unique - prefer existing artist
-          let artist = await tx.artist.findFirst({
-            where: { name: artistName },
+          const { artist, created } = await findOrCreateArtistFn({
+            db: tx,
+            identity: { name: artistName },
+            fields: {
+              source: 'USER_SUBMITTED' as const, // Fix: was 'MANUAL' (invalid enum)
+              ...getInitialQuality(),
+            },
+            enrichment: 'none',
+            insideTransaction: true,
+            caller: 'manualCorrectionApply',
           });
 
-          if (!artist) {
-            // Create new artist if not found
-            artist = await tx.artist.create({
-              data: {
-                name: artistName,
-                source: 'MANUAL',
-                dataQuality: 'LOW', // Manual entry without external ID
-                enrichmentStatus: 'PENDING',
-              },
-            });
+          if (created) {
+            newlyCreatedArtistIds.push(artist.id);
           }
 
           // Create album-artist association
@@ -3871,6 +2909,37 @@ export const mutationResolvers: MutationResolvers = {
           triggeredBy: 'admin_manual_edit',
         },
       });
+
+      // Fix: Queue enrichment for newly created artists (was missing entirely)
+      if (newlyCreatedArtistIds.length > 0) {
+        setImmediate(async () => {
+          try {
+            const queue = getMusicBrainzQueue();
+            for (const artistId of newlyCreatedArtistIds) {
+              const checkData: CheckArtistEnrichmentJobData = {
+                artistId,
+                source: 'manual',
+                priority: 'medium',
+                requestId: `correction-artist-${artistId}`,
+              };
+              await queue.addJob(JOB_TYPES.CHECK_ARTIST_ENRICHMENT, checkData, {
+                priority: PRIORITY_TIERS.ENRICHMENT,
+                attempts: 3,
+              });
+            }
+            console.log(
+              chalk.magenta(
+                `[ARTIST-HELPER] Queued enrichment for ${newlyCreatedArtistIds.length} new artist(s) from manualCorrectionApply`
+              )
+            );
+          } catch (err) {
+            console.warn(
+              'Failed to queue artist enrichment after manual correction:',
+              err
+            );
+          }
+        });
+      }
 
       return {
         success: true,

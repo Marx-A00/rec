@@ -270,6 +270,7 @@ export interface ArtistCreationData {
   name: string;
   spotifyId?: string;
   spotifyUrl?: string;
+  imageUrl?: string;
   // Enrichment fields (start empty)
   dataQuality: 'LOW' | 'MEDIUM' | 'HIGH';
   enrichmentStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';

@@ -1,17 +1,15 @@
 // src/lib/musicbrainz/integration.ts
 import { PrismaClient } from '@prisma/client';
 import type { Artist, Album } from '@prisma/client';
+import { getInitialQuality } from '@/lib/db';
 
 import {
   validateArtistSearchResult,
   validateReleaseGroupSearchResult,
-  type ValidatedArtistSearchResult,
-  type ValidatedReleaseGroupSearchResult,
 } from './schemas';
 import {
   mapArtistSearchToCanonical,
   mapReleaseGroupSearchToCanonical,
-  mapArtistCreditToCanonical,
   extractArtistCreditsFromReleaseGroup,
 } from './mappers';
 
@@ -30,22 +28,29 @@ export class MusicBrainzIntegrationService {
     try {
       // Validate the raw data structure
       const validatedArtist = validateArtistSearchResult(rawMbArtist);
-
-      // Check if artist already exists by MusicBrainz ID
-      const existingArtist = await this.prisma.artist.findUnique({
-        where: { musicbrainzId: validatedArtist.id },
-      });
-
-      if (existingArtist) {
-        return existingArtist;
-      }
-
-      // Create new artist with validated and mapped data
       const artistData = mapArtistSearchToCanonical(validatedArtist);
 
-      return await this.prisma.artist.create({
-        data: artistData,
+      const { findOrCreateArtist: sharedFindOrCreate } = await import(
+        '../artists'
+      );
+      const { artist } = await sharedFindOrCreate({
+        db: this.prisma,
+        identity: {
+          name: artistData.name,
+          musicbrainzId: artistData.musicbrainzId ?? undefined,
+        },
+        fields: {
+          source: 'MUSICBRAINZ' as const,
+          ...getInitialQuality({ musicbrainzId: artistData.musicbrainzId }),
+          formedYear: artistData.formedYear,
+          countryCode: artistData.countryCode,
+          biography: artistData.biography,
+        },
+        enrichment: 'inline-fetch',
+        caller: 'integration-service',
       });
+
+      return artist;
     } catch (error) {
       console.error('Failed to process MusicBrainz artist data:', error);
       throw new Error(
@@ -55,12 +60,11 @@ export class MusicBrainzIntegrationService {
   }
 
   /**
-   * Find or create an album from MusicBrainz release group data
-   * Also creates/links associated artists and handles relationships
+   * Find or create an album from MusicBrainz release group data.
+   * Delegates dedup, creation, and artist associations to the shared helper.
    *
-   * Duplicate detection:
-   * 1. Check by MusicBrainz ID (exact match)
-   * 2. Check by title + artist + year (fuzzy match to catch cross-source duplicates)
+   * NOTE: Uses insideTransaction + enrichment: 'none' — callers are responsible
+   * for running post-create side effects after any outer transaction commits.
    */
   async findOrCreateAlbumWithArtists(
     rawMbReleaseGroup: unknown
@@ -70,112 +74,43 @@ export class MusicBrainzIntegrationService {
       const validatedReleaseGroup =
         validateReleaseGroupSearchResult(rawMbReleaseGroup);
 
-      // Check 1: Album already exists by MusicBrainz ID (fast, exact)
-      const existingByMbId = await this.prisma.album.findUnique({
-        where: { musicbrainzId: validatedReleaseGroup.id },
-        include: { artists: { include: { artist: true } } },
-      });
-
-      if (existingByMbId) {
-        return existingByMbId;
-      }
-
-      // Check 2: Album exists by title + artist + year (catches cross-source duplicates)
-      // This prevents duplicates when an album was already added from Spotify/Discogs
+      // Extract MusicBrainz-specific data
+      const albumData = mapReleaseGroupSearchToCanonical(validatedReleaseGroup);
       const artistCredits = extractArtistCreditsFromReleaseGroup(
         validatedReleaseGroup
       );
       const primaryArtistName = artistCredits[0]?.name;
       const releaseYear = validatedReleaseGroup.firstReleaseDate
         ? parseInt(validatedReleaseGroup.firstReleaseDate.split('-')[0])
-        : null;
+        : undefined;
 
-      if (primaryArtistName && releaseYear) {
-        // Calculate year range for matching (same year or +/- 1 year for edge cases)
-        const yearStart = new Date(releaseYear - 1, 0, 1);
-        const yearEnd = new Date(releaseYear + 2, 0, 1); // +2 because end is exclusive
-
-        const existingByTitleArtistYear = await this.prisma.album.findFirst({
-          where: {
-            title: {
-              equals: validatedReleaseGroup.title,
-              mode: 'insensitive',
-            },
-            artists: {
-              some: {
-                artist: {
-                  name: {
-                    equals: primaryArtistName,
-                    mode: 'insensitive',
-                  },
-                },
-              },
-            },
-            releaseDate: {
-              gte: yearStart,
-              lt: yearEnd,
-            },
-          },
-          include: { artists: { include: { artist: true } } },
-        });
-
-        if (existingByTitleArtistYear) {
-          // Update the existing album with MusicBrainz ID if it doesn't have one
-          if (!existingByTitleArtistYear.musicbrainzId) {
-            await this.prisma.album.update({
-              where: { id: existingByTitleArtistYear.id },
-              data: { musicbrainzId: validatedReleaseGroup.id },
-            });
-          }
-
-          return existingByTitleArtistYear;
-        }
-      }
-
-      // No duplicate found - create album and handle artist relationships in a transaction
-      return await this.prisma.$transaction(async tx => {
-        // Create the album first
-        const albumData = mapReleaseGroupSearchToCanonical(
-          validatedReleaseGroup
-        );
-        const album = await tx.album.create({
-          data: albumData,
-          include: { artists: { include: { artist: true } } },
-        });
-
-        // Handle artist credits (create artists and relationships)
-        const artistCredits = extractArtistCreditsFromReleaseGroup(
-          validatedReleaseGroup
-        );
-
-        for (const credit of artistCredits) {
-          // Find or create the artist
-          let artist = await tx.artist.findUnique({
-            where: { musicbrainzId: credit.artistId },
-          });
-
-          if (!artist) {
-            // Create artist from credit info (minimal data)
-            const artistData = mapArtistCreditToCanonical({
-              artist: { id: credit.artistId, name: credit.name },
-            });
-
-            artist = await tx.artist.create({ data: artistData });
-          }
-
-          // Create the album-artist relationship
-          await tx.albumArtist.create({
-            data: {
-              albumId: album.id,
-              artistId: artist.id,
-              role: 'primary',
-              position: credit.position,
-            },
-          });
-        }
-
-        return album;
+      // Delegate to shared find-or-create helper
+      const { findOrCreateAlbum } = await import('../albums');
+      const { album } = await findOrCreateAlbum({
+        db: this.prisma,
+        identity: {
+          title: validatedReleaseGroup.title,
+          musicbrainzId: validatedReleaseGroup.id,
+          primaryArtistName: primaryArtistName ?? undefined,
+          releaseYear,
+        },
+        fields: {
+          releaseDate: albumData.releaseDate ?? undefined,
+          releaseType: albumData.releaseType ?? undefined,
+          source: 'MUSICBRAINZ',
+        },
+        artists: artistCredits.map(credit => ({
+          name: credit.name,
+          musicbrainzId: credit.artistId,
+          role: 'PRIMARY' as const,
+          position: credit.position,
+        })),
+        enrichment: 'none',
+        insideTransaction: false,
+        caller: 'integration-service:albumWithArtists',
       });
+
+      return album;
     } catch (error) {
       console.error('Failed to process MusicBrainz release group data:', error);
       throw new Error(

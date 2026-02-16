@@ -1342,7 +1342,6 @@ export type Mutation = {
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   addArtist: Artist;
-  addToListenLater: CollectionAlbum;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
   artistCorrectionApply: ArtistCorrectionApplyResult;
@@ -1365,7 +1364,6 @@ export type Mutation = {
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
   dismissUserSuggestion: Scalars['Boolean']['output'];
-  ensureListenLaterCollection: Collection;
   followUser: FollowUserPayload;
   /** Apply manual corrections to an album (no external source) */
   manualCorrectionApply: CorrectionApplyResult;
@@ -1373,7 +1371,6 @@ export type Mutation = {
   previewAlbumEnrichment: PreviewEnrichmentResult;
   previewArtistEnrichment: PreviewEnrichmentResult;
   removeAlbumFromCollection: Scalars['Boolean']['output'];
-  removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
   resetAlbumEnrichment: Album;
   resetArtistEnrichment: Artist;
@@ -1416,11 +1413,6 @@ export type MutationAddAlbumToCollectionWithCreateArgs = {
 
 export type MutationAddArtistArgs = {
   input: ArtistInput;
-};
-
-export type MutationAddToListenLaterArgs = {
-  albumData?: InputMaybe<AlbumInput>;
-  albumId: Scalars['UUID']['input'];
 };
 
 export type MutationAdminUpdateUserShowTourArgs = {
@@ -1506,10 +1498,6 @@ export type MutationPreviewArtistEnrichmentArgs = {
 export type MutationRemoveAlbumFromCollectionArgs = {
   albumId: Scalars['UUID']['input'];
   collectionId: Scalars['String']['input'];
-};
-
-export type MutationRemoveFromListenLaterArgs = {
-  albumId: Scalars['UUID']['input'];
 };
 
 export type MutationReorderCollectionAlbumsArgs = {
@@ -2870,39 +2858,6 @@ export type CheckFollowStatusQuery = {
     id: string;
     isFollowing?: boolean | null;
   } | null;
-};
-
-export type EnsureListenLaterMutationVariables = Exact<{
-  [key: string]: never;
-}>;
-
-export type EnsureListenLaterMutation = {
-  __typename?: 'Mutation';
-  ensureListenLaterCollection: {
-    __typename?: 'Collection';
-    id: string;
-    name: string;
-    isPublic: boolean;
-  };
-};
-
-export type AddToListenLaterMutationVariables = Exact<{
-  albumId: Scalars['UUID']['input'];
-  albumData?: InputMaybe<AlbumInput>;
-}>;
-
-export type AddToListenLaterMutation = {
-  __typename?: 'Mutation';
-  addToListenLater: { __typename?: 'CollectionAlbum'; id: string };
-};
-
-export type RemoveFromListenLaterMutationVariables = Exact<{
-  albumId: Scalars['UUID']['input'];
-}>;
-
-export type RemoveFromListenLaterMutation = {
-  __typename?: 'Mutation';
-  removeFromListenLater: boolean;
 };
 
 export type ManualCorrectionApplyMutationVariables = Exact<{
@@ -5757,117 +5712,6 @@ export const useInfiniteCheckFollowStatusQuery = <
 useInfiniteCheckFollowStatusQuery.getKey = (
   variables: CheckFollowStatusQueryVariables
 ) => ['CheckFollowStatus.infinite', variables];
-
-export const EnsureListenLaterDocument = `
-    mutation EnsureListenLater {
-  ensureListenLaterCollection {
-    id
-    name
-    isPublic
-  }
-}
-    `;
-
-export const useEnsureListenLaterMutation = <
-  TError = unknown,
-  TContext = unknown,
->(
-  options?: UseMutationOptions<
-    EnsureListenLaterMutation,
-    TError,
-    EnsureListenLaterMutationVariables,
-    TContext
-  >
-) => {
-  return useMutation<
-    EnsureListenLaterMutation,
-    TError,
-    EnsureListenLaterMutationVariables,
-    TContext
-  >({
-    mutationKey: ['EnsureListenLater'],
-    mutationFn: (variables?: EnsureListenLaterMutationVariables) =>
-      fetcher<EnsureListenLaterMutation, EnsureListenLaterMutationVariables>(
-        EnsureListenLaterDocument,
-        variables
-      )(),
-    ...options,
-  });
-};
-
-useEnsureListenLaterMutation.getKey = () => ['EnsureListenLater'];
-
-export const AddToListenLaterDocument = `
-    mutation AddToListenLater($albumId: UUID!, $albumData: AlbumInput) {
-  addToListenLater(albumId: $albumId, albumData: $albumData) {
-    id
-  }
-}
-    `;
-
-export const useAddToListenLaterMutation = <
-  TError = unknown,
-  TContext = unknown,
->(
-  options?: UseMutationOptions<
-    AddToListenLaterMutation,
-    TError,
-    AddToListenLaterMutationVariables,
-    TContext
-  >
-) => {
-  return useMutation<
-    AddToListenLaterMutation,
-    TError,
-    AddToListenLaterMutationVariables,
-    TContext
-  >({
-    mutationKey: ['AddToListenLater'],
-    mutationFn: (variables?: AddToListenLaterMutationVariables) =>
-      fetcher<AddToListenLaterMutation, AddToListenLaterMutationVariables>(
-        AddToListenLaterDocument,
-        variables
-      )(),
-    ...options,
-  });
-};
-
-useAddToListenLaterMutation.getKey = () => ['AddToListenLater'];
-
-export const RemoveFromListenLaterDocument = `
-    mutation RemoveFromListenLater($albumId: UUID!) {
-  removeFromListenLater(albumId: $albumId)
-}
-    `;
-
-export const useRemoveFromListenLaterMutation = <
-  TError = unknown,
-  TContext = unknown,
->(
-  options?: UseMutationOptions<
-    RemoveFromListenLaterMutation,
-    TError,
-    RemoveFromListenLaterMutationVariables,
-    TContext
-  >
-) => {
-  return useMutation<
-    RemoveFromListenLaterMutation,
-    TError,
-    RemoveFromListenLaterMutationVariables,
-    TContext
-  >({
-    mutationKey: ['RemoveFromListenLater'],
-    mutationFn: (variables?: RemoveFromListenLaterMutationVariables) =>
-      fetcher<
-        RemoveFromListenLaterMutation,
-        RemoveFromListenLaterMutationVariables
-      >(RemoveFromListenLaterDocument, variables)(),
-    ...options,
-  });
-};
-
-useRemoveFromListenLaterMutation.getKey = () => ['RemoveFromListenLater'];
 
 export const ManualCorrectionApplyDocument = `
     mutation ManualCorrectionApply($input: ManualCorrectionApplyInput!) {
