@@ -1332,8 +1332,10 @@ export const mutationResolvers: MutationResolvers = {
     let finalRecommendedAlbumId: string;
     let finalScore: number;
 
-    // Track created artists for post-commit side effects
+    // Track created entities for conditional post-commit enrichment
     const createdArtists: Array<{ id: string; name: string }> = [];
+    let basisAlbumCreated = false;
+    let recommendedAlbumCreated = false;
     const { findOrCreateAlbum: findOrCreateAlbumHelper } = await import(
       '@/lib/albums'
     );
@@ -1389,7 +1391,7 @@ export const mutationResolvers: MutationResolvers = {
             artistName?: string | null;
             role?: string | null;
           }> | null;
-        }): Promise<string> => {
+        }): Promise<{ albumId: string; created: boolean }> => {
           const primaryArtistName = albumData.artists?.[0]?.artistName;
           const releaseDate = albumData.releaseDate
             ? new Date(albumData.releaseDate)
@@ -1437,7 +1439,7 @@ export const mutationResolvers: MutationResolvers = {
             }
           }
 
-          return album.id;
+          return { albumId: album.id, created };
         };
 
         // Resolve album IDs (find or create as needed)
@@ -1445,15 +1447,17 @@ export const mutationResolvers: MutationResolvers = {
           if (input.basisAlbumId) {
             finalBasisAlbumId = input.basisAlbumId;
           } else if (input.basisAlbumData) {
-            finalBasisAlbumId = await resolveAlbumData(input.basisAlbumData);
+            const result = await resolveAlbumData(input.basisAlbumData);
+            finalBasisAlbumId = result.albumId;
+            basisAlbumCreated = result.created;
           }
 
           if (input.recommendedAlbumId) {
             finalRecommendedAlbumId = input.recommendedAlbumId;
           } else if (input.recommendedAlbumData) {
-            finalRecommendedAlbumId = await resolveAlbumData(
-              input.recommendedAlbumData
-            );
+            const result = await resolveAlbumData(input.recommendedAlbumData);
+            finalRecommendedAlbumId = result.albumId;
+            recommendedAlbumCreated = result.created;
           }
         }
 
@@ -1551,41 +1555,44 @@ export const mutationResolvers: MutationResolvers = {
         try {
           const queue = getMusicBrainzQueue();
 
-          // Queue enrichment checks for both albums
-          const basisAlbumCheckData: CheckAlbumEnrichmentJobData = {
-            albumId: finalBasisAlbumId!,
-            source: 'recommendation_create',
-            priority: 'high',
-            requestId: `recommendation-basis-${recommendation.id}`,
-            parentJobId: rootJobId,
-          };
+          // Only queue enrichment for newly created albums (existing albums are already enriched)
+          const albumEnrichmentJobs: Promise<unknown>[] = [];
 
-          const recommendedAlbumCheckData: CheckAlbumEnrichmentJobData = {
-            albumId: finalRecommendedAlbumId!,
-            source: 'recommendation_create',
-            priority: 'high',
-            requestId: `recommendation-target-${recommendation.id}`,
-            parentJobId: rootJobId,
-          };
+          if (basisAlbumCreated) {
+            albumEnrichmentJobs.push(
+              queue.addJob(
+                JOB_TYPES.CHECK_ALBUM_ENRICHMENT,
+                {
+                  albumId: finalBasisAlbumId!,
+                  source: 'recommendation_create',
+                  priority: 'high',
+                  requestId: `recommendation-basis-${recommendation.id}`,
+                  parentJobId: rootJobId,
+                } satisfies CheckAlbumEnrichmentJobData,
+                { priority: 8, attempts: 3 }
+              )
+            );
+          }
 
-          await Promise.all([
-            queue.addJob(
-              JOB_TYPES.CHECK_ALBUM_ENRICHMENT,
-              basisAlbumCheckData,
-              {
-                priority: 8,
-                attempts: 3,
-              }
-            ),
-            queue.addJob(
-              JOB_TYPES.CHECK_ALBUM_ENRICHMENT,
-              recommendedAlbumCheckData,
-              {
-                priority: 8,
-                attempts: 3,
-              }
-            ),
-          ]);
+          if (recommendedAlbumCreated) {
+            albumEnrichmentJobs.push(
+              queue.addJob(
+                JOB_TYPES.CHECK_ALBUM_ENRICHMENT,
+                {
+                  albumId: finalRecommendedAlbumId!,
+                  source: 'recommendation_create',
+                  priority: 'high',
+                  requestId: `recommendation-target-${recommendation.id}`,
+                  parentJobId: rootJobId,
+                } satisfies CheckAlbumEnrichmentJobData,
+                { priority: 8, attempts: 3 }
+              )
+            );
+          }
+
+          if (albumEnrichmentJobs.length > 0) {
+            await Promise.all(albumEnrichmentJobs);
+          }
 
           // Queue artist enrichment for each created artist
           for (const artist of createdArtists) {
