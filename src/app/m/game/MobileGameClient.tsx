@@ -141,13 +141,16 @@ export function MobileGameClient() {
         <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-8'>
           {/* Mobile teaser image - stage 1 obscured */}
           <MobileTeaserImage />
-          
+
           {/* Login CTA overlay */}
           <div className='relative -mt-8 flex w-full flex-col items-center gap-4 rounded-lg bg-zinc-900/95 p-6 shadow-lg backdrop-blur-sm'>
             <div className='text-center'>
-              <h2 className='mb-2 text-2xl font-bold text-white'>Daily Album Uncover</h2>
+              <h2 className='mb-2 text-2xl font-bold text-white'>
+                Daily Album Uncover
+              </h2>
               <p className='text-zinc-400 mb-4 text-sm'>
-                Guess the album from its cover art. 6 attempts. New puzzle daily.
+                Guess the album from its cover art. 6 attempts. New puzzle
+                daily.
               </p>
             </div>
             <button

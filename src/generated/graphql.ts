@@ -1851,6 +1851,8 @@ export type Query = {
   myCollections: Array<Collection>;
   myRecommendations: RecommendationFeed;
   mySettings?: Maybe<UserSettings>;
+  /** Get current user's Uncover game stats (requires auth) */
+  myUncoverStats?: Maybe<UncoverPlayerStats>;
   onboardingStatus: OnboardingStatus;
   publicCollections: Array<Collection>;
   queueMetrics: QueueMetrics;
@@ -2763,6 +2765,25 @@ export type UncoverGuessInfo = {
   id: Scalars['UUID']['output'];
   isCorrect: Scalars['Boolean']['output'];
   isSkipped: Scalars['Boolean']['output'];
+};
+
+/**
+ * Player statistics for Uncover daily challenge game.
+ * Tracks games played, win rate, streaks, and guess distribution.
+ */
+export type UncoverPlayerStats = {
+  __typename?: 'UncoverPlayerStats';
+  currentStreak: Scalars['Int']['output'];
+  gamesPlayed: Scalars['Int']['output'];
+  gamesWon: Scalars['Int']['output'];
+  id: Scalars['UUID']['output'];
+  lastPlayedDate?: Maybe<Scalars['DateTime']['output']>;
+  maxStreak: Scalars['Int']['output'];
+  totalAttempts: Scalars['Int']['output'];
+  /** Win count by attempt number (index 0 = 1-guess wins, etc.) */
+  winDistribution: Array<Scalars['Int']['output']>;
+  /** Computed: gamesWon / gamesPlayed (0 if no games) */
+  winRate: Scalars['Float']['output'];
 };
 
 /** User's session info for a daily challenge */
@@ -5928,6 +5949,24 @@ export type SkipGuessMutation = {
       artistName: string;
     } | null;
   };
+};
+
+export type MyUncoverStatsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type MyUncoverStatsQuery = {
+  __typename?: 'Query';
+  myUncoverStats?: {
+    __typename?: 'UncoverPlayerStats';
+    id: string;
+    gamesPlayed: number;
+    gamesWon: number;
+    totalAttempts: number;
+    currentStreak: number;
+    maxStreak: number;
+    lastPlayedDate?: Date | null;
+    winDistribution: Array<number>;
+    winRate: number;
+  } | null;
 };
 
 export type UpdateAlbumDataQualityMutationVariables = Exact<{
@@ -13056,6 +13095,92 @@ export const useSkipGuessMutation = <TError = unknown, TContext = unknown>(
 };
 
 useSkipGuessMutation.getKey = () => ['SkipGuess'];
+
+export const MyUncoverStatsDocument = `
+    query MyUncoverStats {
+  myUncoverStats {
+    id
+    gamesPlayed
+    gamesWon
+    totalAttempts
+    currentStreak
+    maxStreak
+    lastPlayedDate
+    winDistribution
+    winRate
+  }
+}
+    `;
+
+export const useMyUncoverStatsQuery = <
+  TData = MyUncoverStatsQuery,
+  TError = unknown,
+>(
+  variables?: MyUncoverStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<MyUncoverStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<MyUncoverStatsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<MyUncoverStatsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['MyUncoverStats']
+        : ['MyUncoverStats', variables],
+    queryFn: fetcher<MyUncoverStatsQuery, MyUncoverStatsQueryVariables>(
+      MyUncoverStatsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useMyUncoverStatsQuery.getKey = (variables?: MyUncoverStatsQueryVariables) =>
+  variables === undefined ? ['MyUncoverStats'] : ['MyUncoverStats', variables];
+
+export const useInfiniteMyUncoverStatsQuery = <
+  TData = InfiniteData<MyUncoverStatsQuery>,
+  TError = unknown,
+>(
+  variables: MyUncoverStatsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<MyUncoverStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      MyUncoverStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<MyUncoverStatsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['MyUncoverStats.infinite']
+            : ['MyUncoverStats.infinite', variables],
+        queryFn: metaData =>
+          fetcher<MyUncoverStatsQuery, MyUncoverStatsQueryVariables>(
+            MyUncoverStatsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteMyUncoverStatsQuery.getKey = (
+  variables?: MyUncoverStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['MyUncoverStats.infinite']
+    : ['MyUncoverStats.infinite', variables];
 
 export const UpdateAlbumDataQualityDocument = `
     mutation UpdateAlbumDataQuality($id: UUID!, $dataQuality: DataQuality!) {

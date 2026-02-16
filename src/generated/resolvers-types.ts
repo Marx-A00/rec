@@ -1825,6 +1825,8 @@ export type Query = {
   myCollections: Array<Collection>;
   myRecommendations: RecommendationFeed;
   mySettings?: Maybe<UserSettings>;
+  /** Get current user's Uncover game stats (requires auth) */
+  myUncoverStats?: Maybe<UncoverPlayerStats>;
   onboardingStatus: OnboardingStatus;
   publicCollections: Array<Collection>;
   queueMetrics: QueueMetrics;
@@ -2739,6 +2741,25 @@ export type UncoverGuessInfo = {
   isSkipped: Scalars['Boolean']['output'];
 };
 
+/**
+ * Player statistics for Uncover daily challenge game.
+ * Tracks games played, win rate, streaks, and guess distribution.
+ */
+export type UncoverPlayerStats = {
+  __typename?: 'UncoverPlayerStats';
+  currentStreak: Scalars['Int']['output'];
+  gamesPlayed: Scalars['Int']['output'];
+  gamesWon: Scalars['Int']['output'];
+  id: Scalars['UUID']['output'];
+  lastPlayedDate?: Maybe<Scalars['DateTime']['output']>;
+  maxStreak: Scalars['Int']['output'];
+  totalAttempts: Scalars['Int']['output'];
+  /** Win count by attempt number (index 0 = 1-guess wins, etc.) */
+  winDistribution: Array<Scalars['Int']['output']>;
+  /** Computed: gamesWon / gamesPlayed (0 if no games) */
+  winRate: Scalars['Float']['output'];
+};
+
 /** User's session info for a daily challenge */
 export type UncoverSessionInfo = {
   __typename?: 'UncoverSessionInfo';
@@ -3236,6 +3257,7 @@ export type ResolversTypes = ResolversObject<{
   UUID: ResolverTypeWrapper<Scalars['UUID']['output']>;
   UncoverGuessAlbumInfo: ResolverTypeWrapper<UncoverGuessAlbumInfo>;
   UncoverGuessInfo: ResolverTypeWrapper<UncoverGuessInfo>;
+  UncoverPlayerStats: ResolverTypeWrapper<UncoverPlayerStats>;
   UncoverSessionInfo: ResolverTypeWrapper<UncoverSessionInfo>;
   UncoverSessionStatus: UncoverSessionStatus;
   UnifiedRelease: ResolverTypeWrapper<UnifiedRelease>;
@@ -3411,6 +3433,7 @@ export type ResolversParentTypes = ResolversObject<{
   UUID: Scalars['UUID']['output'];
   UncoverGuessAlbumInfo: UncoverGuessAlbumInfo;
   UncoverGuessInfo: UncoverGuessInfo;
+  UncoverPlayerStats: UncoverPlayerStats;
   UncoverSessionInfo: UncoverSessionInfo;
   UnifiedRelease: UnifiedRelease;
   UpcomingChallenge: UpcomingChallenge;
@@ -5730,6 +5753,11 @@ export type QueryResolvers<
     ParentType,
     ContextType
   >;
+  myUncoverStats?: Resolver<
+    Maybe<ResolversTypes['UncoverPlayerStats']>,
+    ParentType,
+    ContextType
+  >;
   onboardingStatus?: Resolver<
     ResolversTypes['OnboardingStatus'],
     ParentType,
@@ -6774,6 +6802,31 @@ export type UncoverGuessInfoResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type UncoverPlayerStatsResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UncoverPlayerStats'] = ResolversParentTypes['UncoverPlayerStats'],
+> = ResolversObject<{
+  currentStreak?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  gamesPlayed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  gamesWon?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  lastPlayedDate?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  maxStreak?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalAttempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  winDistribution?: Resolver<
+    Array<ResolversTypes['Int']>,
+    ParentType,
+    ContextType
+  >;
+  winRate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type UncoverSessionInfoResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -7250,6 +7303,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   UUID?: GraphQLScalarType;
   UncoverGuessAlbumInfo?: UncoverGuessAlbumInfoResolvers<ContextType>;
   UncoverGuessInfo?: UncoverGuessInfoResolvers<ContextType>;
+  UncoverPlayerStats?: UncoverPlayerStatsResolvers<ContextType>;
   UncoverSessionInfo?: UncoverSessionInfoResolvers<ContextType>;
   UnifiedRelease?: UnifiedReleaseResolvers<ContextType>;
   UpcomingChallenge?: UpcomingChallengeResolvers<ContextType>;
