@@ -42,6 +42,9 @@ Progress: [████░░░░░░] 41%
 
 **Recent Trend:** Steady progress
 
+- Phase 37: 1 plan, in progress
+
+
 ## Accumulated Context
 
 ### Decisions
@@ -65,9 +68,9 @@ Recent decisions affecting current work:
 - seedrandom for deterministic tile ordering across all players (36-01)
 - CSS blur (GPU-accelerated) instead of Canvas blur (36-03)
 - Blur radii: 40/32/24/16/8/0px for stages 1-6 (36-03)
-- Use Zustand slices pattern for game state (37-01)
-- Persist only session and guesses, not UI state (37-01)
-- Server-side validation for all game actions (37-01)
+- Minimal album info types for guesses (UncoverGuessAlbumInfo) reduce payload (37-02)
+- GuessResult returns correctAlbum only when gameOver (prevent leakage) (37-02)
+- Session includes guesses array in UncoverSessionInfo (avoid separate query) (37-02)
 
 ### Pending Todos
 
