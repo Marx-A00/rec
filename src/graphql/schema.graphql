@@ -2521,6 +2521,9 @@ type Query {
   """
   dailyChallenge(date: DateTime): DailyChallengeInfo!
 
+  "Get current user's Uncover game stats (requires auth)"
+  myUncoverStats: UncoverPlayerStats
+
   """
   Admin: Get curated challenge list (ordered)
   """
@@ -2650,6 +2653,25 @@ type GuessResult {
   Only populated when gameOver is true - the correct answer
   """
   correctAlbum: UncoverGuessAlbumInfo
+}
+
+"""
+Player statistics for Uncover daily challenge game.
+Tracks games played, win rate, streaks, and guess distribution.
+"""
+type UncoverPlayerStats {
+  id: UUID!
+  gamesPlayed: Int!
+  gamesWon: Int!
+  totalAttempts: Int!
+  currentStreak: Int!
+  maxStreak: Int!
+  lastPlayedDate: DateTime
+  "Win count by attempt number (index 0 = 1-guess wins, etc.)"
+  winDistribution: [Int!]!
+  
+  "Computed: gamesWon / gamesPlayed (0 if no games)"
+  winRate: Float!
 }
 
 """
