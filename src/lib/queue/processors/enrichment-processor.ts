@@ -11,7 +11,6 @@ import {
   shouldEnrichAlbum,
   shouldEnrichArtist,
   calculateEnrichmentPriority,
-  mapSourceToUserAction,
 } from '../../musicbrainz/enrichment-logic';
 import { searchSpotifyArtists } from '../../spotify/search';
 import type { MusicBrainzRecordingDetail } from '../../musicbrainz/schemas';
@@ -114,7 +113,7 @@ export async function handleCheckAlbumEnrichment(
         albumId: data.albumId,
         priority: data.priority || 'medium',
         force: data.force,
-        userAction: mapSourceToUserAction(data.source),
+        source: data.source,
         requestId: data.requestId,
         parentJobId: data.parentJobId, // Propagate parent context for provenance chain
       },
@@ -205,7 +204,7 @@ export async function handleCheckArtistEnrichment(
         artistId: data.artistId,
         priority: data.priority || 'medium',
         force: data.force,
-        userAction: mapSourceToUserAction(data.source),
+        source: data.source,
         requestId: data.requestId,
         parentJobId: data.parentJobId, // Propagate parent context for provenance chain
       },
@@ -302,7 +301,7 @@ export async function handleCheckTrackEnrichment(
   const enrichmentJobData: EnrichTrackJobData = {
     trackId: track.id,
     priority: data.priority || 'low',
-    userAction: data.source === 'spotify_sync' ? 'browse' : data.source,
+    source: data.source,
     requestId: data.requestId,
     parentJobId: data.parentJobId, // Propagate parent context for provenance chain
   };
@@ -407,7 +406,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
         jobId: job.id,
         parentJobId: data.parentJobId || null,
         isRootJob: !data.parentJobId,
-        triggeredBy: data.userAction || 'manual',
+        triggeredBy: data.source || 'manual',
       });
 
       return {
@@ -488,6 +487,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
                     jobId: job.id || `enrich-album-${Date.now()}`,
                     parentJobId: data.parentJobId || null,
                     rootJobId: data.parentJobId || job.id || null,
+                    source: data.source,
                   }
                 );
               }
@@ -696,6 +696,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
                       jobId: job.id || `enrich-album-${Date.now()}`,
                       parentJobId: data.parentJobId || null,
                       rootJobId: data.parentJobId || job.id || null,
+                      source: data.source,
                     }
                   );
                 }
@@ -769,6 +770,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
                   jobId: job.id || `enrich-album-${Date.now()}`,
                   parentJobId: data.parentJobId || null,
                   rootJobId: data.parentJobId || job.id || null,
+                  source: data.source,
                 }
               );
             }
@@ -868,7 +870,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
               jobId: job.id,
               parentJobId: data.parentJobId || null,
               isRootJob: false, // Fallback is always child of album enrichment
-              triggeredBy: data.userAction || 'manual',
+              triggeredBy: data.source || 'manual',
             });
           } else {
             console.warn(
@@ -942,7 +944,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
       jobId: job.id,
       parentJobId: data.parentJobId || null,
       isRootJob: !data.parentJobId,
-      triggeredBy: data.userAction || 'manual',
+      triggeredBy: data.source || 'manual',
     });
 
     return {
@@ -986,7 +988,7 @@ export async function handleEnrichAlbum(job: Job<EnrichAlbumJobData>) {
       jobId: job.id,
       parentJobId: data.parentJobId || null,
       isRootJob: !data.parentJobId,
-      triggeredBy: data.userAction || 'manual',
+      triggeredBy: data.source || 'manual',
     });
 
     throw error;
@@ -1062,7 +1064,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
         jobId: job.id,
         parentJobId: data.parentJobId || null,
         isRootJob: !data.parentJobId,
-        triggeredBy: data.userAction || 'manual',
+        triggeredBy: data.source || 'manual',
       });
 
       return {
@@ -1261,7 +1263,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
       jobId: job.id,
       parentJobId: data.parentJobId || null,
       isRootJob: !data.parentJobId,
-      triggeredBy: data.userAction || 'manual',
+      triggeredBy: data.source || 'manual',
     });
 
     // Queue artist image caching to Cloudflare (non-blocking)
@@ -1336,7 +1338,7 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
       jobId: job.id,
       parentJobId: data.parentJobId || null,
       isRootJob: !data.parentJobId,
-      triggeredBy: data.userAction || 'manual',
+      triggeredBy: data.source || 'manual',
     });
 
     throw error;
@@ -1526,7 +1528,7 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
       jobId: job.id,
       parentJobId: data.parentJobId || null,
       isRootJob: !data.parentJobId,
-      triggeredBy: data.userAction || 'manual',
+      triggeredBy: data.source || 'manual',
     });
 
     return {
@@ -1612,7 +1614,7 @@ export async function handleEnrichTrack(job: Job<EnrichTrackJobData>) {
       jobId: job.id,
       parentJobId: data.parentJobId || null,
       isRootJob: !data.parentJobId,
-      triggeredBy: data.userAction || 'manual',
+      triggeredBy: data.source || 'manual',
     });
 
     return {
@@ -2162,6 +2164,7 @@ async function processMusicBrainzTracksForAlbum(
     jobId: string;
     parentJobId?: string | null;
     rootJobId?: string | null;
+    source?: CheckArtistEnrichmentJobData['source'];
   }
 ) {
   // Initialize logger for track creation logging
@@ -2416,13 +2419,11 @@ async function processMusicBrainzTracksForAlbum(
                           musicbrainzId: mbArtist.artist?.id,
                         }),
                       },
-                      enrichment: 'inline-fetch',
-                      inlineFetchOptions: {
+                      enrichment: 'queue-check',
+                      queueCheckOptions: {
+                        source: jobContext?.source || 'browse',
+                        priority: 'low',
                         parentJobId: jobContext?.jobId || undefined,
-                        rootJobId:
-                          jobContext?.rootJobId ||
-                          jobContext?.jobId ||
-                          undefined,
                         requestId: jobContext?.jobId || undefined,
                       },
                       logging: {

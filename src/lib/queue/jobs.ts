@@ -124,16 +124,20 @@ export interface MusicBrainzBrowseReleaseGroupsByArtistJobData {
   requestId?: string;
 }
 
+/** Source that triggered an enrichment job — propagated through the full job chain */
+export type EnrichmentSource =
+  | 'collection_add'
+  | 'recommendation_create'
+  | 'search'
+  | 'browse'
+  | 'manual'
+  | 'manual_add'
+  | 'spotify_sync'
+  | 'admin_manual';
+
 export interface CheckAlbumEnrichmentJobData {
   albumId: string;
-  source:
-    | 'collection_add'
-    | 'recommendation_create'
-    | 'search'
-    | 'browse'
-    | 'manual'
-    | 'spotify_sync'
-    | 'admin_manual';
+  source: EnrichmentSource;
   priority?: 'low' | 'medium' | 'high';
   force?: boolean;
   requestId?: string;
@@ -143,15 +147,7 @@ export interface CheckAlbumEnrichmentJobData {
 
 export interface CheckArtistEnrichmentJobData {
   artistId: string;
-  source:
-    | 'collection_add'
-    | 'recommendation_create'
-    | 'search'
-    | 'browse'
-    | 'manual'
-    | 'manual_add'
-    | 'spotify_sync'
-    | 'admin_manual';
+  source: EnrichmentSource;
   priority?: 'low' | 'medium' | 'high';
   force?: boolean;
   requestId?: string;
@@ -161,13 +157,7 @@ export interface CheckArtistEnrichmentJobData {
 
 export interface CheckTrackEnrichmentJobData {
   trackId: string;
-  source:
-    | 'collection_add'
-    | 'recommendation_create'
-    | 'search'
-    | 'browse'
-    | 'manual'
-    | 'spotify_sync';
+  source: EnrichmentSource;
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
   /** Parent job ID for job chain tracking (root job ID in flat structure) */
@@ -178,14 +168,7 @@ export interface EnrichAlbumJobData {
   albumId: string;
   priority?: 'low' | 'medium' | 'high';
   force?: boolean;
-  userAction?:
-    | 'collection_add'
-    | 'recommendation_create'
-    | 'search'
-    | 'browse'
-    | 'manual'
-    | 'spotify_sync'
-    | 'admin_manual';
+  source?: EnrichmentSource;
   requestId?: string;
   /** Parent job ID for job chain tracking (root job ID in flat structure) */
   parentJobId?: string;
@@ -195,14 +178,7 @@ export interface EnrichArtistJobData {
   artistId: string;
   priority?: 'low' | 'medium' | 'high';
   force?: boolean;
-  userAction?:
-    | 'collection_add'
-    | 'recommendation_create'
-    | 'search'
-    | 'browse'
-    | 'manual'
-    | 'spotify_sync'
-    | 'admin_manual';
+  source?: EnrichmentSource;
   requestId?: string;
   /** Parent job ID for job chain tracking (root job ID in flat structure) */
   parentJobId?: string;
@@ -211,13 +187,7 @@ export interface EnrichArtistJobData {
 export interface EnrichTrackJobData {
   trackId: string;
   priority?: 'low' | 'medium' | 'high';
-  userAction?:
-    | 'collection_add'
-    | 'recommendation_create'
-    | 'search'
-    | 'browse'
-    | 'manual'
-    | 'spotify_sync';
+  source?: EnrichmentSource;
   requestId?: string;
   /** Parent job ID for job chain tracking (root job ID in flat structure) */
   parentJobId?: string;

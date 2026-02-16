@@ -498,27 +498,3 @@ export function calculateEnrichmentPriority(
       return basePriority; // No boost for passive actions
   }
 }
-
-/**
- * Map enrichment source to user action for job data
- * @param source Source of the enrichment request
- * @returns Valid user action for job data
- */
-export function mapSourceToUserAction(
-  source: string
-): 'collection_add' | 'recommendation_create' | 'search' | 'browse' {
-  switch (source) {
-    case 'collection_add':
-      return 'collection_add';
-    case 'recommendation_create':
-      return 'recommendation_create';
-    case 'search':
-      return 'search';
-    case 'browse':
-      return 'browse';
-    case 'manual':
-      return 'browse'; // Map manual to browse
-    default:
-      return 'browse'; // Default fallback
-  }
-}

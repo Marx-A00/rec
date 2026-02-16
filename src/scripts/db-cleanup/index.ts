@@ -373,7 +373,7 @@ const tasks: TaskConfig[] = [
           {
             artistId: artist.id,
             priority: 'medium',
-            userAction: 'admin_manual',
+            source: 'admin_manual',
             requestId: `cli-task6-${artist.id}`,
           },
           {
@@ -695,7 +695,7 @@ const tasks: TaskConfig[] = [
             albumId: album.id,
             priority: 'medium',
             force: true, // Force re-enrichment even if already enriched
-            userAction: 'admin_manual',
+            source: 'admin_manual',
             requestId: `cli-task12-${album.id}`,
           },
           {
