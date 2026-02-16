@@ -1107,6 +1107,16 @@ export type GroupedSearchResult = {
   versionCount: Scalars['Int']['output'];
 };
 
+/** Result of submitting a guess or skipping */
+export type GuessResult = {
+  __typename?: 'GuessResult';
+  /** Only populated when gameOver is true - the correct answer */
+  correctAlbum?: Maybe<UncoverGuessAlbumInfo>;
+  gameOver: Scalars['Boolean']['output'];
+  guess: UncoverGuessInfo;
+  session: UncoverSessionInfo;
+};
+
 export type HealthComponents = {
   __typename?: 'HealthComponents';
   memory: ComponentHealth;
@@ -1426,6 +1436,15 @@ export type Mutation = {
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
   rollbackSyncJob: RollbackSyncJobResult;
+  /** Skip current guess - counts as wrong guess (requires auth). */
+  skipGuess: GuessResult;
+  /**
+   * Start a new session for today's challenge (requires auth).
+   * Returns existing session if already started.
+   */
+  startUncoverSession: StartSessionResult;
+  /** Submit a guess for the current session (requires auth). */
+  submitGuess: GuessResult;
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
   triggerSpotifySync: SpotifySyncResult;
@@ -1593,6 +1612,15 @@ export type MutationRetryJobArgs = {
 export type MutationRollbackSyncJobArgs = {
   dryRun?: InputMaybe<Scalars['Boolean']['input']>;
   syncJobId: Scalars['UUID']['input'];
+};
+
+export type MutationSkipGuessArgs = {
+  sessionId: Scalars['UUID']['input'];
+};
+
+export type MutationSubmitGuessArgs = {
+  albumId: Scalars['UUID']['input'];
+  sessionId: Scalars['UUID']['input'];
 };
 
 export type MutationTriggerAlbumEnrichmentArgs = {
@@ -2426,6 +2454,15 @@ export type SpotifyTrendingData = {
   topCharts: Array<SpotifyTopChart>;
 };
 
+/** Result of starting a new session */
+export type StartSessionResult = {
+  __typename?: 'StartSessionResult';
+  challengeId: Scalars['UUID']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  imageUrl: Scalars['String']['output'];
+  session: UncoverSessionInfo;
+};
+
 export type Subscription = {
   __typename?: 'Subscription';
   alertStream: Alert;
@@ -2679,11 +2716,32 @@ export type TrackSourceData = {
   title: Scalars['String']['output'];
 };
 
+/** Album info for guess display (minimal, safe to expose) */
+export type UncoverGuessAlbumInfo = {
+  __typename?: 'UncoverGuessAlbumInfo';
+  artistName: Scalars['String']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  title: Scalars['String']['output'];
+};
+
+/** Individual guess within a session */
+export type UncoverGuessInfo = {
+  __typename?: 'UncoverGuessInfo';
+  guessNumber: Scalars['Int']['output'];
+  guessedAlbum?: Maybe<UncoverGuessAlbumInfo>;
+  guessedAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  isCorrect: Scalars['Boolean']['output'];
+  isSkipped: Scalars['Boolean']['output'];
+};
+
 /** User's session info for a daily challenge */
 export type UncoverSessionInfo = {
   __typename?: 'UncoverSessionInfo';
   attemptCount: Scalars['Int']['output'];
   completedAt?: Maybe<Scalars['DateTime']['output']>;
+  guesses: Array<UncoverGuessInfo>;
   id: Scalars['UUID']['output'];
   startedAt: Scalars['DateTime']['output'];
   status: UncoverSessionStatus;
@@ -3088,6 +3146,7 @@ export type ResolversTypes = ResolversObject<{
   FollowUserPayload: ResolverTypeWrapper<FollowUserPayload>;
   GamePoolStats: ResolverTypeWrapper<GamePoolStats>;
   GroupedSearchResult: ResolverTypeWrapper<GroupedSearchResult>;
+  GuessResult: ResolverTypeWrapper<GuessResult>;
   HealthComponents: ResolverTypeWrapper<HealthComponents>;
   HealthMetrics: ResolverTypeWrapper<HealthMetrics>;
   HealthStatus: HealthStatus;
@@ -3149,6 +3208,7 @@ export type ResolversTypes = ResolversObject<{
   SpotifyTopChart: ResolverTypeWrapper<SpotifyTopChart>;
   SpotifyTrack: ResolverTypeWrapper<SpotifyTrack>;
   SpotifyTrendingData: ResolverTypeWrapper<SpotifyTrendingData>;
+  StartSessionResult: ResolverTypeWrapper<StartSessionResult>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Subscription: ResolverTypeWrapper<{}>;
   SyncJob: ResolverTypeWrapper<SyncJob>;
@@ -3171,6 +3231,8 @@ export type ResolversTypes = ResolversObject<{
   TrackListSummary: ResolverTypeWrapper<TrackListSummary>;
   TrackSourceData: ResolverTypeWrapper<TrackSourceData>;
   UUID: ResolverTypeWrapper<Scalars['UUID']['output']>;
+  UncoverGuessAlbumInfo: ResolverTypeWrapper<UncoverGuessAlbumInfo>;
+  UncoverGuessInfo: ResolverTypeWrapper<UncoverGuessInfo>;
   UncoverSessionInfo: ResolverTypeWrapper<UncoverSessionInfo>;
   UncoverSessionStatus: UncoverSessionStatus;
   UnifiedRelease: ResolverTypeWrapper<UnifiedRelease>;
@@ -3274,6 +3336,7 @@ export type ResolversParentTypes = ResolversObject<{
   FollowUserPayload: FollowUserPayload;
   GamePoolStats: GamePoolStats;
   GroupedSearchResult: GroupedSearchResult;
+  GuessResult: GuessResult;
   HealthComponents: HealthComponents;
   HealthMetrics: HealthMetrics;
   ID: Scalars['ID']['output'];
@@ -3323,6 +3386,7 @@ export type ResolversParentTypes = ResolversObject<{
   SpotifyTopChart: SpotifyTopChart;
   SpotifyTrack: SpotifyTrack;
   SpotifyTrendingData: SpotifyTrendingData;
+  StartSessionResult: StartSessionResult;
   String: Scalars['String']['output'];
   Subscription: {};
   SyncJob: SyncJob;
@@ -3342,6 +3406,8 @@ export type ResolversParentTypes = ResolversObject<{
   TrackListSummary: TrackListSummary;
   TrackSourceData: TrackSourceData;
   UUID: Scalars['UUID']['output'];
+  UncoverGuessAlbumInfo: UncoverGuessAlbumInfo;
+  UncoverGuessInfo: UncoverGuessInfo;
   UncoverSessionInfo: UncoverSessionInfo;
   UnifiedRelease: UnifiedRelease;
   UpcomingChallenge: UpcomingChallenge;
@@ -4682,6 +4748,26 @@ export type GroupedSearchResultResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type GuessResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['GuessResult'] = ResolversParentTypes['GuessResult'],
+> = ResolversObject<{
+  correctAlbum?: Resolver<
+    Maybe<ResolversTypes['UncoverGuessAlbumInfo']>,
+    ParentType,
+    ContextType
+  >;
+  gameOver?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  guess?: Resolver<ResolversTypes['UncoverGuessInfo'], ParentType, ContextType>;
+  session?: Resolver<
+    ResolversTypes['UncoverSessionInfo'],
+    ParentType,
+    ContextType
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type HealthComponentsResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -5197,6 +5283,23 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationRollbackSyncJobArgs, 'dryRun' | 'syncJobId'>
+  >;
+  skipGuess?: Resolver<
+    ResolversTypes['GuessResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationSkipGuessArgs, 'sessionId'>
+  >;
+  startUncoverSession?: Resolver<
+    ResolversTypes['StartSessionResult'],
+    ParentType,
+    ContextType
+  >;
+  submitGuess?: Resolver<
+    ResolversTypes['GuessResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationSubmitGuessArgs, 'albumId' | 'sessionId'>
   >;
   triggerAlbumEnrichment?: Resolver<
     ResolversTypes['EnrichmentResult'],
@@ -6260,6 +6363,26 @@ export type SpotifyTrendingDataResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type StartSessionResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['StartSessionResult'] = ResolversParentTypes['StartSessionResult'],
+> = ResolversObject<{
+  challengeId?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  imageUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  session?: Resolver<
+    ResolversTypes['UncoverSessionInfo'],
+    ParentType,
+    ContextType
+  >;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type SubscriptionResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -6608,6 +6731,40 @@ export interface UuidScalarConfig
   name: 'UUID';
 }
 
+export type UncoverGuessAlbumInfoResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UncoverGuessAlbumInfo'] = ResolversParentTypes['UncoverGuessAlbumInfo'],
+> = ResolversObject<{
+  artistName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  cloudflareImageId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type UncoverGuessInfoResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UncoverGuessInfo'] = ResolversParentTypes['UncoverGuessInfo'],
+> = ResolversObject<{
+  guessNumber?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  guessedAlbum?: Resolver<
+    Maybe<ResolversTypes['UncoverGuessAlbumInfo']>,
+    ParentType,
+    ContextType
+  >;
+  guessedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  isCorrect?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  isSkipped?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type UncoverSessionInfoResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -6616,6 +6773,11 @@ export type UncoverSessionInfoResolvers<
   attemptCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   completedAt?: Resolver<
     Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  guesses?: Resolver<
+    Array<ResolversTypes['UncoverGuessInfo']>,
     ParentType,
     ContextType
   >;
@@ -7018,6 +7180,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   FollowUserPayload?: FollowUserPayloadResolvers<ContextType>;
   GamePoolStats?: GamePoolStatsResolvers<ContextType>;
   GroupedSearchResult?: GroupedSearchResultResolvers<ContextType>;
+  GuessResult?: GuessResultResolvers<ContextType>;
   HealthComponents?: HealthComponentsResolvers<ContextType>;
   HealthMetrics?: HealthMetricsResolvers<ContextType>;
   JSON?: GraphQLScalarType;
@@ -7060,6 +7223,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   SpotifyTopChart?: SpotifyTopChartResolvers<ContextType>;
   SpotifyTrack?: SpotifyTrackResolvers<ContextType>;
   SpotifyTrendingData?: SpotifyTrendingDataResolvers<ContextType>;
+  StartSessionResult?: StartSessionResultResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
   SyncJob?: SyncJobResolvers<ContextType>;
   SyncJobsConnection?: SyncJobsConnectionResolvers<ContextType>;
@@ -7075,6 +7239,8 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   TrackListSummary?: TrackListSummaryResolvers<ContextType>;
   TrackSourceData?: TrackSourceDataResolvers<ContextType>;
   UUID?: GraphQLScalarType;
+  UncoverGuessAlbumInfo?: UncoverGuessAlbumInfoResolvers<ContextType>;
+  UncoverGuessInfo?: UncoverGuessInfoResolvers<ContextType>;
   UncoverSessionInfo?: UncoverSessionInfoResolvers<ContextType>;
   UnifiedRelease?: UnifiedReleaseResolvers<ContextType>;
   UpcomingChallenge?: UpcomingChallengeResolvers<ContextType>;

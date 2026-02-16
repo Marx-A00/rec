@@ -1133,6 +1133,16 @@ export type GroupedSearchResult = {
   versionCount: Scalars['Int']['output'];
 };
 
+/** Result of submitting a guess or skipping */
+export type GuessResult = {
+  __typename?: 'GuessResult';
+  /** Only populated when gameOver is true - the correct answer */
+  correctAlbum?: Maybe<UncoverGuessAlbumInfo>;
+  gameOver: Scalars['Boolean']['output'];
+  guess: UncoverGuessInfo;
+  session: UncoverSessionInfo;
+};
+
 export type HealthComponents = {
   __typename?: 'HealthComponents';
   memory: ComponentHealth;
@@ -1452,6 +1462,15 @@ export type Mutation = {
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
   rollbackSyncJob: RollbackSyncJobResult;
+  /** Skip current guess - counts as wrong guess (requires auth). */
+  skipGuess: GuessResult;
+  /**
+   * Start a new session for today's challenge (requires auth).
+   * Returns existing session if already started.
+   */
+  startUncoverSession: StartSessionResult;
+  /** Submit a guess for the current session (requires auth). */
+  submitGuess: GuessResult;
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
   triggerSpotifySync: SpotifySyncResult;
@@ -1619,6 +1638,15 @@ export type MutationRetryJobArgs = {
 export type MutationRollbackSyncJobArgs = {
   dryRun?: InputMaybe<Scalars['Boolean']['input']>;
   syncJobId: Scalars['UUID']['input'];
+};
+
+export type MutationSkipGuessArgs = {
+  sessionId: Scalars['UUID']['input'];
+};
+
+export type MutationSubmitGuessArgs = {
+  albumId: Scalars['UUID']['input'];
+  sessionId: Scalars['UUID']['input'];
 };
 
 export type MutationTriggerAlbumEnrichmentArgs = {
@@ -2452,6 +2480,15 @@ export type SpotifyTrendingData = {
   topCharts: Array<SpotifyTopChart>;
 };
 
+/** Result of starting a new session */
+export type StartSessionResult = {
+  __typename?: 'StartSessionResult';
+  challengeId: Scalars['UUID']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  imageUrl: Scalars['String']['output'];
+  session: UncoverSessionInfo;
+};
+
 export type Subscription = {
   __typename?: 'Subscription';
   alertStream: Alert;
@@ -2705,11 +2742,32 @@ export type TrackSourceData = {
   title: Scalars['String']['output'];
 };
 
+/** Album info for guess display (minimal, safe to expose) */
+export type UncoverGuessAlbumInfo = {
+  __typename?: 'UncoverGuessAlbumInfo';
+  artistName: Scalars['String']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  title: Scalars['String']['output'];
+};
+
+/** Individual guess within a session */
+export type UncoverGuessInfo = {
+  __typename?: 'UncoverGuessInfo';
+  guessNumber: Scalars['Int']['output'];
+  guessedAlbum?: Maybe<UncoverGuessAlbumInfo>;
+  guessedAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  isCorrect: Scalars['Boolean']['output'];
+  isSkipped: Scalars['Boolean']['output'];
+};
+
 /** User's session info for a daily challenge */
 export type UncoverSessionInfo = {
   __typename?: 'UncoverSessionInfo';
   attemptCount: Scalars['Int']['output'];
   completedAt?: Maybe<Scalars['DateTime']['output']>;
+  guesses: Array<UncoverGuessInfo>;
   id: Scalars['UUID']['output'];
   startedAt: Scalars['DateTime']['output'];
   status: UncoverSessionStatus;
@@ -5663,6 +5721,210 @@ export type GetTopRecommendedArtistsQuery = {
   }>;
 };
 
+export type UncoverGuessAlbumFieldsFragment = {
+  __typename?: 'UncoverGuessAlbumInfo';
+  id: string;
+  title: string;
+  cloudflareImageId?: string | null;
+  artistName: string;
+};
+
+export type UncoverGuessFieldsFragment = {
+  __typename?: 'UncoverGuessInfo';
+  id: string;
+  guessNumber: number;
+  isSkipped: boolean;
+  isCorrect: boolean;
+  guessedAt: Date;
+  guessedAlbum?: {
+    __typename?: 'UncoverGuessAlbumInfo';
+    id: string;
+    title: string;
+    cloudflareImageId?: string | null;
+    artistName: string;
+  } | null;
+};
+
+export type UncoverSessionFieldsFragment = {
+  __typename?: 'UncoverSessionInfo';
+  id: string;
+  status: UncoverSessionStatus;
+  attemptCount: number;
+  won: boolean;
+  startedAt: Date;
+  completedAt?: Date | null;
+  guesses: Array<{
+    __typename?: 'UncoverGuessInfo';
+    id: string;
+    guessNumber: number;
+    isSkipped: boolean;
+    isCorrect: boolean;
+    guessedAt: Date;
+    guessedAlbum?: {
+      __typename?: 'UncoverGuessAlbumInfo';
+      id: string;
+      title: string;
+      cloudflareImageId?: string | null;
+      artistName: string;
+    } | null;
+  }>;
+};
+
+export type StartUncoverSessionMutationVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type StartUncoverSessionMutation = {
+  __typename?: 'Mutation';
+  startUncoverSession: {
+    __typename?: 'StartSessionResult';
+    challengeId: string;
+    imageUrl: string;
+    cloudflareImageId?: string | null;
+    session: {
+      __typename?: 'UncoverSessionInfo';
+      id: string;
+      status: UncoverSessionStatus;
+      attemptCount: number;
+      won: boolean;
+      startedAt: Date;
+      completedAt?: Date | null;
+      guesses: Array<{
+        __typename?: 'UncoverGuessInfo';
+        id: string;
+        guessNumber: number;
+        isSkipped: boolean;
+        isCorrect: boolean;
+        guessedAt: Date;
+        guessedAlbum?: {
+          __typename?: 'UncoverGuessAlbumInfo';
+          id: string;
+          title: string;
+          cloudflareImageId?: string | null;
+          artistName: string;
+        } | null;
+      }>;
+    };
+  };
+};
+
+export type SubmitGuessMutationVariables = Exact<{
+  sessionId: Scalars['UUID']['input'];
+  albumId: Scalars['UUID']['input'];
+}>;
+
+export type SubmitGuessMutation = {
+  __typename?: 'Mutation';
+  submitGuess: {
+    __typename?: 'GuessResult';
+    gameOver: boolean;
+    guess: {
+      __typename?: 'UncoverGuessInfo';
+      id: string;
+      guessNumber: number;
+      isSkipped: boolean;
+      isCorrect: boolean;
+      guessedAt: Date;
+      guessedAlbum?: {
+        __typename?: 'UncoverGuessAlbumInfo';
+        id: string;
+        title: string;
+        cloudflareImageId?: string | null;
+        artistName: string;
+      } | null;
+    };
+    session: {
+      __typename?: 'UncoverSessionInfo';
+      id: string;
+      status: UncoverSessionStatus;
+      attemptCount: number;
+      won: boolean;
+      startedAt: Date;
+      completedAt?: Date | null;
+      guesses: Array<{
+        __typename?: 'UncoverGuessInfo';
+        id: string;
+        guessNumber: number;
+        isSkipped: boolean;
+        isCorrect: boolean;
+        guessedAt: Date;
+        guessedAlbum?: {
+          __typename?: 'UncoverGuessAlbumInfo';
+          id: string;
+          title: string;
+          cloudflareImageId?: string | null;
+          artistName: string;
+        } | null;
+      }>;
+    };
+    correctAlbum?: {
+      __typename?: 'UncoverGuessAlbumInfo';
+      id: string;
+      title: string;
+      cloudflareImageId?: string | null;
+      artistName: string;
+    } | null;
+  };
+};
+
+export type SkipGuessMutationVariables = Exact<{
+  sessionId: Scalars['UUID']['input'];
+}>;
+
+export type SkipGuessMutation = {
+  __typename?: 'Mutation';
+  skipGuess: {
+    __typename?: 'GuessResult';
+    gameOver: boolean;
+    guess: {
+      __typename?: 'UncoverGuessInfo';
+      id: string;
+      guessNumber: number;
+      isSkipped: boolean;
+      isCorrect: boolean;
+      guessedAt: Date;
+      guessedAlbum?: {
+        __typename?: 'UncoverGuessAlbumInfo';
+        id: string;
+        title: string;
+        cloudflareImageId?: string | null;
+        artistName: string;
+      } | null;
+    };
+    session: {
+      __typename?: 'UncoverSessionInfo';
+      id: string;
+      status: UncoverSessionStatus;
+      attemptCount: number;
+      won: boolean;
+      startedAt: Date;
+      completedAt?: Date | null;
+      guesses: Array<{
+        __typename?: 'UncoverGuessInfo';
+        id: string;
+        guessNumber: number;
+        isSkipped: boolean;
+        isCorrect: boolean;
+        guessedAt: Date;
+        guessedAlbum?: {
+          __typename?: 'UncoverGuessAlbumInfo';
+          id: string;
+          title: string;
+          cloudflareImageId?: string | null;
+          artistName: string;
+        } | null;
+      }>;
+    };
+    correctAlbum?: {
+      __typename?: 'UncoverGuessAlbumInfo';
+      id: string;
+      title: string;
+      cloudflareImageId?: string | null;
+      artistName: string;
+    } | null;
+  };
+};
+
 export type UpdateAlbumDataQualityMutationVariables = Exact<{
   id: Scalars['UUID']['input'];
   dataQuality: DataQuality;
@@ -5803,6 +6065,39 @@ export const ActivityFieldsFragmentDoc = `
   }
 }
     `;
+export const UncoverGuessAlbumFieldsFragmentDoc = `
+    fragment UncoverGuessAlbumFields on UncoverGuessAlbumInfo {
+  id
+  title
+  cloudflareImageId
+  artistName
+}
+    `;
+export const UncoverGuessFieldsFragmentDoc = `
+    fragment UncoverGuessFields on UncoverGuessInfo {
+  id
+  guessNumber
+  guessedAlbum {
+    ...UncoverGuessAlbumFields
+  }
+  isSkipped
+  isCorrect
+  guessedAt
+}
+    ${UncoverGuessAlbumFieldsFragmentDoc}`;
+export const UncoverSessionFieldsFragmentDoc = `
+    fragment UncoverSessionFields on UncoverSessionInfo {
+  id
+  status
+  attemptCount
+  won
+  startedAt
+  completedAt
+  guesses {
+    ...UncoverGuessFields
+  }
+}
+    ${UncoverGuessFieldsFragmentDoc}`;
 export const AdminUpdateUserShowTourDocument = `
     mutation AdminUpdateUserShowTour($userId: String!, $showOnboardingTour: Boolean!) {
   adminUpdateUserShowTour(
@@ -12622,6 +12917,138 @@ useInfiniteGetTopRecommendedArtistsQuery.getKey = (
   variables === undefined
     ? ['GetTopRecommendedArtists.infinite']
     : ['GetTopRecommendedArtists.infinite', variables];
+
+export const StartUncoverSessionDocument = `
+    mutation StartUncoverSession {
+  startUncoverSession {
+    session {
+      ...UncoverSessionFields
+    }
+    challengeId
+    imageUrl
+    cloudflareImageId
+  }
+}
+    ${UncoverSessionFieldsFragmentDoc}`;
+
+export const useStartUncoverSessionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    StartUncoverSessionMutation,
+    TError,
+    StartUncoverSessionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    StartUncoverSessionMutation,
+    TError,
+    StartUncoverSessionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['StartUncoverSession'],
+    mutationFn: (variables?: StartUncoverSessionMutationVariables) =>
+      fetcher<
+        StartUncoverSessionMutation,
+        StartUncoverSessionMutationVariables
+      >(StartUncoverSessionDocument, variables)(),
+    ...options,
+  });
+};
+
+useStartUncoverSessionMutation.getKey = () => ['StartUncoverSession'];
+
+export const SubmitGuessDocument = `
+    mutation SubmitGuess($sessionId: UUID!, $albumId: UUID!) {
+  submitGuess(sessionId: $sessionId, albumId: $albumId) {
+    guess {
+      ...UncoverGuessFields
+    }
+    session {
+      ...UncoverSessionFields
+    }
+    gameOver
+    correctAlbum {
+      ...UncoverGuessAlbumFields
+    }
+  }
+}
+    ${UncoverGuessFieldsFragmentDoc}
+${UncoverSessionFieldsFragmentDoc}
+${UncoverGuessAlbumFieldsFragmentDoc}`;
+
+export const useSubmitGuessMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    SubmitGuessMutation,
+    TError,
+    SubmitGuessMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    SubmitGuessMutation,
+    TError,
+    SubmitGuessMutationVariables,
+    TContext
+  >({
+    mutationKey: ['SubmitGuess'],
+    mutationFn: (variables?: SubmitGuessMutationVariables) =>
+      fetcher<SubmitGuessMutation, SubmitGuessMutationVariables>(
+        SubmitGuessDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useSubmitGuessMutation.getKey = () => ['SubmitGuess'];
+
+export const SkipGuessDocument = `
+    mutation SkipGuess($sessionId: UUID!) {
+  skipGuess(sessionId: $sessionId) {
+    guess {
+      ...UncoverGuessFields
+    }
+    session {
+      ...UncoverSessionFields
+    }
+    gameOver
+    correctAlbum {
+      ...UncoverGuessAlbumFields
+    }
+  }
+}
+    ${UncoverGuessFieldsFragmentDoc}
+${UncoverSessionFieldsFragmentDoc}
+${UncoverGuessAlbumFieldsFragmentDoc}`;
+
+export const useSkipGuessMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    SkipGuessMutation,
+    TError,
+    SkipGuessMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    SkipGuessMutation,
+    TError,
+    SkipGuessMutationVariables,
+    TContext
+  >({
+    mutationKey: ['SkipGuess'],
+    mutationFn: (variables?: SkipGuessMutationVariables) =>
+      fetcher<SkipGuessMutation, SkipGuessMutationVariables>(
+        SkipGuessDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useSkipGuessMutation.getKey = () => ['SkipGuess'];
 
 export const UpdateAlbumDataQualityDocument = `
     mutation UpdateAlbumDataQuality($id: UUID!, $dataQuality: DataQuality!) {
