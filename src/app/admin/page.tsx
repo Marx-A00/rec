@@ -67,8 +67,11 @@ interface HealthData {
   alerts: string[];
 }
 
+// In dev, call worker directly for speed; in prod, use the authenticated proxy
 const MONITORING_API =
-  process.env.NEXT_PUBLIC_MONITORING_API_URL || 'http://localhost:3001';
+  process.env.NODE_ENV === 'development'
+    ? process.env.NEXT_PUBLIC_MONITORING_API_URL || 'http://localhost:3001'
+    : '/api/admin/worker';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'testing'>(
@@ -83,29 +86,22 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      // Only fetch monitoring data in development
-      if (process.env.NODE_ENV === 'development') {
-        const [dashboardRes, healthRes] = await Promise.all([
-          fetch(`${MONITORING_API}/dashboard`),
-          fetch(`${MONITORING_API}/health`),
-        ]);
+      const [dashboardRes, healthRes] = await Promise.all([
+        fetch(`${MONITORING_API}/dashboard`),
+        fetch(`${MONITORING_API}/health`),
+      ]);
 
-        if (!dashboardRes.ok || !healthRes.ok) {
-          throw new Error('Failed to fetch monitoring data');
-        }
-
-        const [dashboardData, healthData] = await Promise.all([
-          dashboardRes.json(),
-          healthRes.json(),
-        ]);
-
-        setDashboard(dashboardData);
-        setHealth(healthData);
-      } else {
-        // In production, show simplified view without monitoring dashboard
-        setDashboard(null);
-        setHealth(null);
+      if (!dashboardRes.ok || !healthRes.ok) {
+        throw new Error('Failed to fetch monitoring data');
       }
+
+      const [dashboardData, healthData] = await Promise.all([
+        dashboardRes.json(),
+        healthRes.json(),
+      ]);
+
+      setDashboard(dashboardData);
+      setHealth(healthData);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -261,8 +257,8 @@ export default function AdminDashboard() {
       {/* Dashboard Tab Content */}
       {activeTab === 'dashboard' && (
         <>
-          {/* Overall Health Status - Only in Development */}
-          {process.env.NODE_ENV === 'development' && health && (
+          {/* Overall Health Status */}
+          {health && (
             <div className='mb-6'>
               <Card className='bg-zinc-900 border-zinc-800'>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
@@ -286,8 +282,8 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Stats Grid - Only in Development */}
-          {process.env.NODE_ENV === 'development' && dashboard && (
+          {/* Stats Grid */}
+          {dashboard && (
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
               <Card className='bg-zinc-900 border-zinc-800'>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
@@ -361,8 +357,8 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Component Health - Only in Development */}
-          {process.env.NODE_ENV === 'development' && dashboard && (
+          {/* Component Health */}
+          {dashboard && (
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8'>
               <Card className='bg-zinc-900 border-zinc-800'>
                 <CardHeader>
@@ -502,14 +498,9 @@ export default function AdminDashboard() {
                       variant='outline'
                       size='sm'
                       className='text-white border-zinc-700 hover:bg-zinc-700'
+                      asChild
                     >
-                      <a
-                        href='http://localhost:3001/admin/queues'
-                        target='_blank'
-                        rel='noopener noreferrer'
-                      >
-                        Open Bull Board
-                      </a>
+                      <a href='/admin/queue'>Open Queue Dashboard</a>
                     </Button>
                     <Button
                       variant='outline'

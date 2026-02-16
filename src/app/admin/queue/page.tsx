@@ -648,7 +648,7 @@ export default function QueueManagementPage() {
         <CardContent>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <a
-              href='http://localhost:3001/admin/queues'
+              href={`${MONITORING_API}/admin/queues`}
               target='_blank'
               rel='noopener noreferrer'
               className='block'
@@ -662,7 +662,7 @@ export default function QueueManagementPage() {
             </a>
 
             <a
-              href='http://localhost:3001/metrics'
+              href={`${MONITORING_API}/metrics`}
               target='_blank'
               rel='noopener noreferrer'
               className='block'
