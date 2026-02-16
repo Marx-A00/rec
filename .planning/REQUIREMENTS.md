@@ -42,11 +42,11 @@ Requirements for the daily album art guessing game.
 
 ### Daily Challenge
 
-- [ ] **DAILY-01**: One album selected per day (same for all players)
-- [ ] **DAILY-02**: Daily reset at UTC midnight
+- [x] **DAILY-01**: One album selected per day (same for all players)
+- [x] **DAILY-02**: Daily reset at UTC midnight
 - [ ] **DAILY-03**: Player cannot replay today's puzzle after completing
 - [ ] **DAILY-04**: Game state persists if player leaves mid-game
-- [ ] **DAILY-05**: Album selection is deterministic (reproducible for debugging)
+- [x] **DAILY-05**: Album selection is deterministic (reproducible for debugging)
 
 ### Archive Mode
 
@@ -146,11 +146,11 @@ Deferred to later milestones.
 | STATS-06    | 33    | Complete |
 | STATS-07    | 39    | Pending |
 | STATS-08    | 39    | Pending |
-| DAILY-01    | 35    | Pending |
-| DAILY-02    | 35    | Pending |
+| DAILY-01    | 35    | Complete |
+| DAILY-02    | 35    | Complete |
 | DAILY-03    | 37    | Pending |
 | DAILY-04    | 37    | Pending |
-| DAILY-05    | 35    | Pending |
+| DAILY-05    | 35    | Complete |
 | ARCHIVE-01  | 40    | Pending |
 | ARCHIVE-02  | 40    | Pending |
 | ARCHIVE-03  | 40    | Pending |
@@ -182,4 +182,4 @@ Deferred to later milestones.
 ---
 
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-15 after Phase 33 completion*
+*Last updated: 2026-02-16 after Phase 35 completion*

@@ -22,7 +22,7 @@ Build a daily album art guessing game that drives repeat visits and music discov
 
 - [x] **Phase 33: Data Foundation** - Prisma models for game state ✓
 - [x] **Phase 34: Album Pool** - Curated game-eligible albums ✓
-- [ ] **Phase 35: Daily Challenge System** - Album selection and scheduler
+- [x] **Phase 35: Daily Challenge System** - Album selection and scheduler ✓
 - [ ] **Phase 36: Image Reveal Engine** - Canvas pixelation and CSS blur
 - [ ] **Phase 37: Game State & Logic** - Zustand store, guess validation
 - [ ] **Phase 38: Game UI** - Desktop and mobile layouts
@@ -106,9 +106,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 35-01-PLAN.md — Add CuratedChallenge Prisma model for ordered album list
-- [ ] 35-02-PLAN.md — Selection and challenge services (deterministic date-to-album mapping)
-- [ ] 35-03-PLAN.md — GraphQL API for daily challenge and admin curation
+- [x] 35-01-PLAN.md — Add CuratedChallenge Prisma model for ordered album list ✓
+- [x] 35-02-PLAN.md — Selection and challenge services (deterministic date-to-album mapping) ✓
+- [x] 35-03-PLAN.md — GraphQL API for daily challenge and admin curation ✓
 
 ---
 
@@ -326,7 +326,7 @@ Plans:
 |-------|---------------------------|--------------|-------------|-----------|
 | 33    | Data Foundation           | 2            | Complete    | 2026-02-15 |
 | 34    | Album Pool                | 5            | Complete    | 2026-02-15 |
-| 35    | Daily Challenge System    | 3            | Not started | -         |
+| 35    | Daily Challenge System    | 3            | Complete    | 2026-02-16 |
 | 36    | Image Reveal Engine       | 6            | Not started | -         |
 | 37    | Game State & Logic        | 11           | Not started | -         |
 | 38    | Game UI                   | 7            | Not started | -         |
@@ -367,11 +367,11 @@ Plans:
 | STATS-06    | 33    | Complete | Stats persisted in database              |
 | STATS-07    | 39    | Pending | Stats viewable after game                |
 | STATS-08    | 39    | Pending | Stats synced across devices              |
-| DAILY-01    | 35    | Pending | One album per day for all                |
-| DAILY-02    | 35    | Pending | UTC midnight reset                       |
+| DAILY-01    | 35    | Complete | One album per day for all                |
+| DAILY-02    | 35    | Complete | UTC midnight reset                       |
 | DAILY-03    | 37    | Pending | Cannot replay today's puzzle             |
 | DAILY-04    | 37    | Pending | State persists mid-game                  |
-| DAILY-05    | 35    | Pending | Deterministic selection                  |
+| DAILY-05    | 35    | Complete | Deterministic selection                  |
 | ARCHIVE-01  | 40    | Pending | Access past puzzles                      |
 | ARCHIVE-02  | 40    | Pending | Shows played/missed status               |
 | ARCHIVE-03  | 40    | Pending | No streak impact                         |
@@ -399,4 +399,4 @@ Plans:
 ---
 
 _Roadmap created: 2026-02-12_
-_Last updated: 2026-02-15_
+_Last updated: 2026-02-16_
