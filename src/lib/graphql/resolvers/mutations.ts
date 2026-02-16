@@ -130,6 +130,84 @@ function transformSelectionsInput(input: {
 
 // @ts-ignore - Temporarily suppress complex GraphQL resolver type issues
 // TODO: Fix GraphQL resolver return types to match generated types
+
+// ============================================================================
+// Uncover Game Helper Functions
+// ============================================================================
+
+/**
+ * Format guess result for GraphQL response.
+ * Shared between submitGuess and skipGuess resolvers.
+ */
+interface GuessServiceResult {
+  guess: {
+    id: string;
+    guessNumber: number;
+    isCorrect: boolean;
+    guessedAt: Date;
+    guessedAlbumId: string | null;
+    guessedAlbum: {
+      id: string;
+      title: string;
+      cloudflareImageId: string | null;
+      artistName: string;
+    } | null;
+  };
+  session: {
+    id: string;
+    status: string;
+    attemptCount: number;
+    won: boolean;
+    startedAt: Date;
+    completedAt: Date | null;
+    guesses: Array<{
+      id: string;
+      guessNumber: number;
+      isCorrect: boolean;
+      guessedAt: Date;
+      guessedAlbumId: string | null;
+    }>;
+  };
+  gameOver: boolean;
+  correctAlbum: {
+    id: string;
+    title: string;
+    cloudflareImageId: string | null;
+    artistName: string;
+  } | null;
+}
+
+function formatGuessResult(result: GuessServiceResult) {
+  return {
+    guess: {
+      id: result.guess.id,
+      guessNumber: result.guess.guessNumber,
+      isSkipped: result.guess.guessedAlbumId === null,
+      isCorrect: result.guess.isCorrect,
+      guessedAt: result.guess.guessedAt,
+      guessedAlbum: result.guess.guessedAlbum,
+    },
+    session: {
+      id: result.session.id,
+      status: result.session.status,
+      attemptCount: result.session.attemptCount,
+      won: result.session.won,
+      startedAt: result.session.startedAt,
+      completedAt: result.session.completedAt,
+      guesses: result.session.guesses.map(guess => ({
+        id: guess.id,
+        guessNumber: guess.guessNumber,
+        isSkipped: guess.guessedAlbumId === null,
+        isCorrect: guess.isCorrect,
+        guessedAt: guess.guessedAt,
+        guessedAlbum: null, // Will be populated by field resolver
+      })),
+    },
+    gameOver: result.gameOver,
+    correctAlbum: result.correctAlbum,
+  };
+}
+
 export const mutationResolvers: MutationResolvers = {
   // Queue Management mutations
   pauseQueue: async () => {
@@ -4116,11 +4194,7 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
   // Game Pool Management
-  updateAlbumGameStatus: async (
-    _,
-    { input },
-    { prisma, session }
-  ) => {
+  updateAlbumGameStatus: async (_, { input }, { prisma, session }) => {
     try {
       // Check admin permission
       if (!session?.user) {
@@ -4228,47 +4302,55 @@ export const mutationResolvers: MutationResolvers = {
       if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
         throw new GraphQLError('Admin access required');
       }
-      
-      const { toUTCMidnight } = await import('@/lib/daily-challenge/date-utils');
-      
+
+      const { toUTCMidnight } = await import(
+        '@/lib/daily-challenge/date-utils'
+      );
+
       // Verify album exists and is eligible
       const album = await prisma.album.findUnique({
         where: { id: albumId },
         select: { id: true, gameStatus: true, cloudflareImageId: true },
       });
-      
+
       if (!album) {
         throw new GraphQLError('Album not found');
       }
-      
+
       if (album.gameStatus !== 'ELIGIBLE') {
-        throw new GraphQLError('Album must be marked as ELIGIBLE for game pool before adding to curated list');
+        throw new GraphQLError(
+          'Album must be marked as ELIGIBLE for game pool before adding to curated list'
+        );
       }
-      
+
       if (!album.cloudflareImageId) {
-        throw new GraphQLError('Album must have cover art (cloudflareImageId) to be added to curated list');
+        throw new GraphQLError(
+          'Album must have cover art (cloudflareImageId) to be added to curated list'
+        );
       }
-      
+
       // Check if album already in curated list
       const existing = await prisma.curatedChallenge.findFirst({
         where: { albumId },
       });
-      
+
       if (existing) {
-        throw new GraphQLError('Album is already in the curated challenge list');
+        throw new GraphQLError(
+          'Album is already in the curated challenge list'
+        );
       }
-      
+
       // Get next sequence number
       const maxSeq = await prisma.curatedChallenge.aggregate({
         _max: { sequence: true },
       });
       const nextSequence = (maxSeq._max.sequence ?? -1) + 1;
-      
+
       // Create curated challenge entry
-      const pinnedDateValue = pinnedDate 
+      const pinnedDateValue = pinnedDate
         ? toUTCMidnight(new Date(pinnedDate))
         : null;
-      
+
       const entry = await prisma.curatedChallenge.create({
         data: {
           albumId,
@@ -4285,11 +4367,17 @@ export const mutationResolvers: MutationResolvers = {
           },
         },
       });
-      
-      graphqlLogger.info('Added album to curated challenge list:', { albumId, sequence: nextSequence });
+
+      graphqlLogger.info('Added album to curated challenge list:', {
+        albumId,
+        sequence: nextSequence,
+      });
       return entry;
     } catch (error) {
-      graphqlLogger.error('Failed to add curated challenge:', { error, albumId });
+      graphqlLogger.error('Failed to add curated challenge:', {
+        error,
+        albumId,
+      });
       throw new GraphQLError(`Failed to add curated challenge: ${error}`);
     }
   },
@@ -4304,26 +4392,26 @@ export const mutationResolvers: MutationResolvers = {
       if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
         throw new GraphQLError('Admin access required');
       }
-      
+
       const entry = await prisma.curatedChallenge.findUnique({
         where: { id },
       });
-      
+
       if (!entry) {
         throw new GraphQLError('Curated challenge entry not found');
       }
-      
+
       // Delete the entry
       await prisma.curatedChallenge.delete({
         where: { id },
       });
-      
+
       // Resequence remaining entries to maintain contiguous sequence
       const remaining = await prisma.curatedChallenge.findMany({
         orderBy: { sequence: 'asc' },
         select: { id: true },
       });
-      
+
       // Update sequences to be contiguous (0, 1, 2, ...)
       for (let i = 0; i < remaining.length; i++) {
         await prisma.curatedChallenge.update({
@@ -4331,7 +4419,7 @@ export const mutationResolvers: MutationResolvers = {
           data: { sequence: i },
         });
       }
-      
+
       graphqlLogger.info('Removed album from curated challenge list:', { id });
       return true;
     } catch (error) {
@@ -4350,22 +4438,24 @@ export const mutationResolvers: MutationResolvers = {
       if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
         throw new GraphQLError('Admin access required');
       }
-      
-      const { toUTCMidnight } = await import('@/lib/daily-challenge/date-utils');
+
+      const { toUTCMidnight } = await import(
+        '@/lib/daily-challenge/date-utils'
+      );
       const pinnedDate = toUTCMidnight(new Date(date));
-      
+
       // Check if another entry is pinned to this date
       const existingPin = await prisma.curatedChallenge.findFirst({
-        where: { 
+        where: {
           pinnedDate,
           id: { not: id },
         },
       });
-      
+
       if (existingPin) {
         throw new GraphQLError('Another album is already pinned to this date');
       }
-      
+
       const entry = await prisma.curatedChallenge.update({
         where: { id },
         data: { pinnedDate },
@@ -4379,11 +4469,18 @@ export const mutationResolvers: MutationResolvers = {
           },
         },
       });
-      
-      graphqlLogger.info('Pinned curated challenge to date:', { id, date: pinnedDate });
+
+      graphqlLogger.info('Pinned curated challenge to date:', {
+        id,
+        date: pinnedDate,
+      });
       return entry;
     } catch (error) {
-      graphqlLogger.error('Failed to pin curated challenge:', { error, id, date });
+      graphqlLogger.error('Failed to pin curated challenge:', {
+        error,
+        id,
+        date,
+      });
       throw new GraphQLError(`Failed to pin curated challenge: ${error}`);
     }
   },
@@ -4398,7 +4495,7 @@ export const mutationResolvers: MutationResolvers = {
       if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
         throw new GraphQLError('Admin access required');
       }
-      
+
       const entry = await prisma.curatedChallenge.update({
         where: { id },
         data: { pinnedDate: null },
@@ -4412,7 +4509,7 @@ export const mutationResolvers: MutationResolvers = {
           },
         },
       });
-      
+
       graphqlLogger.info('Unpinned curated challenge:', { id });
       return entry;
     } catch (error) {
@@ -4421,5 +4518,132 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
+  // ========================================================================
+  // Uncover Game Mutations
+  // ========================================================================
 
+  /**
+   * Start a new session for today's challenge.
+   * Returns existing session if already started (no replay).
+   */
+  startUncoverSession: async (_, {}, { prisma, user }) => {
+    try {
+      // AUTH-01: Authentication required
+      if (!user?.id) {
+        throw new GraphQLError('Authentication required to play');
+      }
+
+      // Dynamic import to avoid circular dependencies
+      const { startSession } = await import('@/lib/uncover/game-service');
+
+      const result = await startSession(user.id, prisma);
+
+      graphqlLogger.info('Started/retrieved uncover session:', {
+        sessionId: result.session.id,
+        challengeId: result.challenge.id,
+        isNew: result.isNew,
+      });
+
+      return {
+        session: {
+          id: result.session.id,
+          status: result.session.status,
+          attemptCount: result.session.attemptCount,
+          won: result.session.won,
+          startedAt: result.session.startedAt,
+          completedAt: result.session.completedAt,
+          guesses: result.session.guesses.map(guess => ({
+            id: guess.id,
+            guessNumber: guess.guessNumber,
+            isSkipped: guess.guessedAlbumId === null,
+            isCorrect: guess.isCorrect,
+            guessedAt: guess.guessedAt,
+            guessedAlbum: null, // Will be populated by field resolver
+          })),
+        },
+        challengeId: result.challenge.id,
+        imageUrl: result.challenge.album.cloudflareImageId
+          ? `https://imagedelivery.net/${process.env.CLOUDFLARE_ACCOUNT_HASH}/${result.challenge.album.cloudflareImageId}/public`
+          : '/album-placeholder.png',
+        cloudflareImageId: result.challenge.album.cloudflareImageId,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to start uncover session:', { error });
+      throw error instanceof GraphQLError
+        ? error
+        : new GraphQLError(`Failed to start session: ${error}`);
+    }
+  },
+
+  /**
+   * Submit a guess for the current session.
+   */
+  submitGuess: async (
+    _,
+    { sessionId, albumId }: { sessionId: string; albumId: string },
+    { prisma, user }
+  ) => {
+    try {
+      // AUTH-01: Authentication required
+      if (!user?.id) {
+        throw new GraphQLError('Authentication required to submit guess');
+      }
+
+      // Dynamic import to avoid circular dependencies
+      const { submitGuess } = await import('@/lib/uncover/game-service');
+
+      const result = await submitGuess(sessionId, albumId, user.id, prisma);
+
+      graphqlLogger.info('Submitted guess:', {
+        sessionId,
+        albumId,
+        isCorrect: result.guess.isCorrect,
+        gameOver: result.gameOver,
+      });
+
+      return formatGuessResult(result);
+    } catch (error) {
+      graphqlLogger.error('Failed to submit guess:', {
+        error,
+        sessionId,
+        albumId,
+      });
+      throw error instanceof GraphQLError
+        ? error
+        : new GraphQLError(`Failed to submit guess: ${error}`);
+    }
+  },
+
+  /**
+   * Skip current guess (counts as wrong).
+   */
+  skipGuess: async (
+    _,
+    { sessionId }: { sessionId: string },
+    { prisma, user }
+  ) => {
+    try {
+      // AUTH-01: Authentication required
+      if (!user?.id) {
+        throw new GraphQLError('Authentication required to skip guess');
+      }
+
+      // Dynamic import to avoid circular dependencies
+      const { skipGuess } = await import('@/lib/uncover/game-service');
+
+      const result = await skipGuess(sessionId, user.id, prisma);
+
+      graphqlLogger.info('Skipped guess:', {
+        sessionId,
+        gameOver: result.gameOver,
+      });
+
+      return formatGuessResult(result);
+    } catch (error) {
+      graphqlLogger.error('Failed to skip guess:', { error, sessionId });
+      throw error instanceof GraphQLError
+        ? error
+        : new GraphQLError(`Failed to skip guess: ${error}`);
+    }
+  },
 };
