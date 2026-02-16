@@ -1,0 +1,108 @@
+# Daily Challenge Queries and Mutations
+
+query DailyChallenge($date: DateTime) {
+  dailyChallenge(date: $date) {
+    id
+    date
+    maxAttempts
+    totalPlays
+    totalWins
+    avgAttempts
+    mySession {
+      id
+      status
+      attemptCount
+      won
+      startedAt
+      completedAt
+    }
+  }
+}
+
+# Admin queries
+query CuratedChallenges($limit: Int, $offset: Int) {
+  curatedChallenges(limit: $limit, offset: $offset) {
+    id
+    sequence
+    pinnedDate
+    createdAt
+    album {
+      id
+      title
+      cloudflareImageId
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+query CuratedChallengeCount {
+  curatedChallengeCount
+}
+
+query UpcomingChallenges($days: Int!) {
+  upcomingChallenges(days: $days) {
+    date
+    daysSinceEpoch
+    sequence
+    isPinned
+    album {
+      id
+      title
+      cloudflareImageId
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+# Admin mutations
+mutation AddCuratedChallenge($albumId: UUID!, $pinnedDate: DateTime) {
+  addCuratedChallenge(albumId: $albumId, pinnedDate: $pinnedDate) {
+    id
+    sequence
+    pinnedDate
+    album {
+      id
+      title
+    }
+  }
+}
+
+mutation RemoveCuratedChallenge($id: UUID!) {
+  removeCuratedChallenge(id: $id)
+}
+
+mutation PinCuratedChallenge($id: UUID!, $date: DateTime!) {
+  pinCuratedChallenge(id: $id, date: $date) {
+    id
+    sequence
+    pinnedDate
+    album {
+      id
+      title
+    }
+  }
+}
+
+mutation UnpinCuratedChallenge($id: UUID!) {
+  unpinCuratedChallenge(id: $id) {
+    id
+    sequence
+    pinnedDate
+    album {
+      id
+      title
+    }
+  }
+}

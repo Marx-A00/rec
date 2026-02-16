@@ -1406,6 +1406,8 @@ export type Mutation = {
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   addArtist: Artist;
+  /** Admin: Add an album to the curated challenge list */
+  addCuratedChallenge: CuratedChallengeEntry;
   addToListenLater: CollectionAlbum;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
@@ -1434,9 +1436,13 @@ export type Mutation = {
   /** Apply manual corrections to an album (no external source) */
   manualCorrectionApply: CorrectionApplyResult;
   pauseQueue: Scalars['Boolean']['output'];
+  /** Admin: Pin a curated challenge to a specific date */
+  pinCuratedChallenge: CuratedChallengeEntry;
   previewAlbumEnrichment: PreviewEnrichmentResult;
   previewArtistEnrichment: PreviewEnrichmentResult;
   removeAlbumFromCollection: Scalars['Boolean']['output'];
+  /** Admin: Remove an album from the curated challenge list */
+  removeCuratedChallenge: Scalars['Boolean']['output'];
   removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
   resetAlbumEnrichment: Album;
@@ -1450,6 +1456,8 @@ export type Mutation = {
   triggerArtistEnrichment: EnrichmentResult;
   triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
+  /** Admin: Unpin a curated challenge (remove date override) */
+  unpinCuratedChallenge: CuratedChallengeEntry;
   updateAlbum: Album;
   updateAlbumDataQuality: Album;
   updateAlbumGameStatus: UpdateAlbumGameStatusResult;
@@ -1481,6 +1489,11 @@ export type MutationAddAlbumToCollectionWithCreateArgs = {
 
 export type MutationAddArtistArgs = {
   input: ArtistInput;
+};
+
+export type MutationAddCuratedChallengeArgs = {
+  albumId: Scalars['UUID']['input'];
+  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type MutationAddToListenLaterArgs = {
@@ -1560,6 +1573,11 @@ export type MutationManualCorrectionApplyArgs = {
   input: ManualCorrectionApplyInput;
 };
 
+export type MutationPinCuratedChallengeArgs = {
+  date: Scalars['DateTime']['input'];
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationPreviewAlbumEnrichmentArgs = {
   id: Scalars['UUID']['input'];
 };
@@ -1571,6 +1589,10 @@ export type MutationPreviewArtistEnrichmentArgs = {
 export type MutationRemoveAlbumFromCollectionArgs = {
   albumId: Scalars['UUID']['input'];
   collectionId: Scalars['String']['input'];
+};
+
+export type MutationRemoveCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
 };
 
 export type MutationRemoveFromListenLaterArgs = {
@@ -1617,6 +1639,10 @@ export type MutationTriggerSpotifySyncArgs = {
 
 export type MutationUnfollowUserArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationUnpinCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
 };
 
 export type MutationUpdateAlbumArgs = {
@@ -3989,6 +4015,150 @@ export type SearchCorrectionCandidatesQuery = {
       threshold: number;
       lowConfidenceCount: number;
     };
+  };
+};
+
+export type DailyChallengeQueryVariables = Exact<{
+  date?: InputMaybe<Scalars['DateTime']['input']>;
+}>;
+
+export type DailyChallengeQuery = {
+  __typename?: 'Query';
+  dailyChallenge: {
+    __typename?: 'DailyChallengeInfo';
+    id: string;
+    date: Date;
+    maxAttempts: number;
+    totalPlays: number;
+    totalWins: number;
+    avgAttempts?: number | null;
+    mySession?: {
+      __typename?: 'UncoverSessionInfo';
+      id: string;
+      status: UncoverSessionStatus;
+      attemptCount: number;
+      won: boolean;
+      startedAt: Date;
+      completedAt?: Date | null;
+    } | null;
+  };
+};
+
+export type CuratedChallengesQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type CuratedChallengesQuery = {
+  __typename?: 'Query';
+  curatedChallenges: Array<{
+    __typename?: 'CuratedChallengeEntry';
+    id: string;
+    sequence: number;
+    pinnedDate?: Date | null;
+    createdAt: Date;
+    album: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      cloudflareImageId?: string | null;
+      releaseDate?: Date | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+  }>;
+};
+
+export type CuratedChallengeCountQueryVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type CuratedChallengeCountQuery = {
+  __typename?: 'Query';
+  curatedChallengeCount: number;
+};
+
+export type UpcomingChallengesQueryVariables = Exact<{
+  days: Scalars['Int']['input'];
+}>;
+
+export type UpcomingChallengesQuery = {
+  __typename?: 'Query';
+  upcomingChallenges: Array<{
+    __typename?: 'UpcomingChallenge';
+    date: Date;
+    daysSinceEpoch: number;
+    sequence: number;
+    isPinned: boolean;
+    album?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      cloudflareImageId?: string | null;
+      releaseDate?: Date | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    } | null;
+  }>;
+};
+
+export type AddCuratedChallengeMutationVariables = Exact<{
+  albumId: Scalars['UUID']['input'];
+  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
+}>;
+
+export type AddCuratedChallengeMutation = {
+  __typename?: 'Mutation';
+  addCuratedChallenge: {
+    __typename?: 'CuratedChallengeEntry';
+    id: string;
+    sequence: number;
+    pinnedDate?: Date | null;
+    album: { __typename?: 'Album'; id: string; title: string };
+  };
+};
+
+export type RemoveCuratedChallengeMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type RemoveCuratedChallengeMutation = {
+  __typename?: 'Mutation';
+  removeCuratedChallenge: boolean;
+};
+
+export type PinCuratedChallengeMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+  date: Scalars['DateTime']['input'];
+}>;
+
+export type PinCuratedChallengeMutation = {
+  __typename?: 'Mutation';
+  pinCuratedChallenge: {
+    __typename?: 'CuratedChallengeEntry';
+    id: string;
+    sequence: number;
+    pinnedDate?: Date | null;
+    album: { __typename?: 'Album'; id: string; title: string };
+  };
+};
+
+export type UnpinCuratedChallengeMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type UnpinCuratedChallengeMutation = {
+  __typename?: 'Mutation';
+  unpinCuratedChallenge: {
+    __typename?: 'CuratedChallengeEntry';
+    id: string;
+    sequence: number;
+    pinnedDate?: Date | null;
+    album: { __typename?: 'Album'; id: string; title: string };
   };
 };
 
@@ -7993,6 +8163,538 @@ export const useInfiniteSearchCorrectionCandidatesQuery = <
 useInfiniteSearchCorrectionCandidatesQuery.getKey = (
   variables: SearchCorrectionCandidatesQueryVariables
 ) => ['SearchCorrectionCandidates.infinite', variables];
+
+export const DailyChallengeDocument = `
+    query DailyChallenge($date: DateTime) {
+  dailyChallenge(date: $date) {
+    id
+    date
+    maxAttempts
+    totalPlays
+    totalWins
+    avgAttempts
+    mySession {
+      id
+      status
+      attemptCount
+      won
+      startedAt
+      completedAt
+    }
+  }
+}
+    `;
+
+export const useDailyChallengeQuery = <
+  TData = DailyChallengeQuery,
+  TError = unknown,
+>(
+  variables?: DailyChallengeQueryVariables,
+  options?: Omit<
+    UseQueryOptions<DailyChallengeQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<DailyChallengeQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<DailyChallengeQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['DailyChallenge']
+        : ['DailyChallenge', variables],
+    queryFn: fetcher<DailyChallengeQuery, DailyChallengeQueryVariables>(
+      DailyChallengeDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useDailyChallengeQuery.getKey = (variables?: DailyChallengeQueryVariables) =>
+  variables === undefined ? ['DailyChallenge'] : ['DailyChallenge', variables];
+
+export const useInfiniteDailyChallengeQuery = <
+  TData = InfiniteData<DailyChallengeQuery>,
+  TError = unknown,
+>(
+  variables: DailyChallengeQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<DailyChallengeQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      DailyChallengeQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<DailyChallengeQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['DailyChallenge.infinite']
+            : ['DailyChallenge.infinite', variables],
+        queryFn: metaData =>
+          fetcher<DailyChallengeQuery, DailyChallengeQueryVariables>(
+            DailyChallengeDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteDailyChallengeQuery.getKey = (
+  variables?: DailyChallengeQueryVariables
+) =>
+  variables === undefined
+    ? ['DailyChallenge.infinite']
+    : ['DailyChallenge.infinite', variables];
+
+export const CuratedChallengesDocument = `
+    query CuratedChallenges($limit: Int, $offset: Int) {
+  curatedChallenges(limit: $limit, offset: $offset) {
+    id
+    sequence
+    pinnedDate
+    createdAt
+    album {
+      id
+      title
+      cloudflareImageId
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useCuratedChallengesQuery = <
+  TData = CuratedChallengesQuery,
+  TError = unknown,
+>(
+  variables?: CuratedChallengesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<CuratedChallengesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      CuratedChallengesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<CuratedChallengesQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['CuratedChallenges']
+        : ['CuratedChallenges', variables],
+    queryFn: fetcher<CuratedChallengesQuery, CuratedChallengesQueryVariables>(
+      CuratedChallengesDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useCuratedChallengesQuery.getKey = (
+  variables?: CuratedChallengesQueryVariables
+) =>
+  variables === undefined
+    ? ['CuratedChallenges']
+    : ['CuratedChallenges', variables];
+
+export const useInfiniteCuratedChallengesQuery = <
+  TData = InfiniteData<CuratedChallengesQuery>,
+  TError = unknown,
+>(
+  variables: CuratedChallengesQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<CuratedChallengesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      CuratedChallengesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<CuratedChallengesQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['CuratedChallenges.infinite']
+            : ['CuratedChallenges.infinite', variables],
+        queryFn: metaData =>
+          fetcher<CuratedChallengesQuery, CuratedChallengesQueryVariables>(
+            CuratedChallengesDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteCuratedChallengesQuery.getKey = (
+  variables?: CuratedChallengesQueryVariables
+) =>
+  variables === undefined
+    ? ['CuratedChallenges.infinite']
+    : ['CuratedChallenges.infinite', variables];
+
+export const CuratedChallengeCountDocument = `
+    query CuratedChallengeCount {
+  curatedChallengeCount
+}
+    `;
+
+export const useCuratedChallengeCountQuery = <
+  TData = CuratedChallengeCountQuery,
+  TError = unknown,
+>(
+  variables?: CuratedChallengeCountQueryVariables,
+  options?: Omit<
+    UseQueryOptions<CuratedChallengeCountQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      CuratedChallengeCountQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<CuratedChallengeCountQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['CuratedChallengeCount']
+        : ['CuratedChallengeCount', variables],
+    queryFn: fetcher<
+      CuratedChallengeCountQuery,
+      CuratedChallengeCountQueryVariables
+    >(CuratedChallengeCountDocument, variables),
+    ...options,
+  });
+};
+
+useCuratedChallengeCountQuery.getKey = (
+  variables?: CuratedChallengeCountQueryVariables
+) =>
+  variables === undefined
+    ? ['CuratedChallengeCount']
+    : ['CuratedChallengeCount', variables];
+
+export const useInfiniteCuratedChallengeCountQuery = <
+  TData = InfiniteData<CuratedChallengeCountQuery>,
+  TError = unknown,
+>(
+  variables: CuratedChallengeCountQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<CuratedChallengeCountQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      CuratedChallengeCountQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<CuratedChallengeCountQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['CuratedChallengeCount.infinite']
+            : ['CuratedChallengeCount.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            CuratedChallengeCountQuery,
+            CuratedChallengeCountQueryVariables
+          >(CuratedChallengeCountDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteCuratedChallengeCountQuery.getKey = (
+  variables?: CuratedChallengeCountQueryVariables
+) =>
+  variables === undefined
+    ? ['CuratedChallengeCount.infinite']
+    : ['CuratedChallengeCount.infinite', variables];
+
+export const UpcomingChallengesDocument = `
+    query UpcomingChallenges($days: Int!) {
+  upcomingChallenges(days: $days) {
+    date
+    daysSinceEpoch
+    sequence
+    isPinned
+    album {
+      id
+      title
+      cloudflareImageId
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useUpcomingChallengesQuery = <
+  TData = UpcomingChallengesQuery,
+  TError = unknown,
+>(
+  variables: UpcomingChallengesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<UpcomingChallengesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      UpcomingChallengesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<UpcomingChallengesQuery, TError, TData>({
+    queryKey: ['UpcomingChallenges', variables],
+    queryFn: fetcher<UpcomingChallengesQuery, UpcomingChallengesQueryVariables>(
+      UpcomingChallengesDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useUpcomingChallengesQuery.getKey = (
+  variables: UpcomingChallengesQueryVariables
+) => ['UpcomingChallenges', variables];
+
+export const useInfiniteUpcomingChallengesQuery = <
+  TData = InfiniteData<UpcomingChallengesQuery>,
+  TError = unknown,
+>(
+  variables: UpcomingChallengesQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<UpcomingChallengesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      UpcomingChallengesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<UpcomingChallengesQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['UpcomingChallenges.infinite', variables],
+        queryFn: metaData =>
+          fetcher<UpcomingChallengesQuery, UpcomingChallengesQueryVariables>(
+            UpcomingChallengesDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteUpcomingChallengesQuery.getKey = (
+  variables: UpcomingChallengesQueryVariables
+) => ['UpcomingChallenges.infinite', variables];
+
+export const AddCuratedChallengeDocument = `
+    mutation AddCuratedChallenge($albumId: UUID!, $pinnedDate: DateTime) {
+  addCuratedChallenge(albumId: $albumId, pinnedDate: $pinnedDate) {
+    id
+    sequence
+    pinnedDate
+    album {
+      id
+      title
+    }
+  }
+}
+    `;
+
+export const useAddCuratedChallengeMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    AddCuratedChallengeMutation,
+    TError,
+    AddCuratedChallengeMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AddCuratedChallengeMutation,
+    TError,
+    AddCuratedChallengeMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AddCuratedChallenge'],
+    mutationFn: (variables?: AddCuratedChallengeMutationVariables) =>
+      fetcher<
+        AddCuratedChallengeMutation,
+        AddCuratedChallengeMutationVariables
+      >(AddCuratedChallengeDocument, variables)(),
+    ...options,
+  });
+};
+
+useAddCuratedChallengeMutation.getKey = () => ['AddCuratedChallenge'];
+
+export const RemoveCuratedChallengeDocument = `
+    mutation RemoveCuratedChallenge($id: UUID!) {
+  removeCuratedChallenge(id: $id)
+}
+    `;
+
+export const useRemoveCuratedChallengeMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    RemoveCuratedChallengeMutation,
+    TError,
+    RemoveCuratedChallengeMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    RemoveCuratedChallengeMutation,
+    TError,
+    RemoveCuratedChallengeMutationVariables,
+    TContext
+  >({
+    mutationKey: ['RemoveCuratedChallenge'],
+    mutationFn: (variables?: RemoveCuratedChallengeMutationVariables) =>
+      fetcher<
+        RemoveCuratedChallengeMutation,
+        RemoveCuratedChallengeMutationVariables
+      >(RemoveCuratedChallengeDocument, variables)(),
+    ...options,
+  });
+};
+
+useRemoveCuratedChallengeMutation.getKey = () => ['RemoveCuratedChallenge'];
+
+export const PinCuratedChallengeDocument = `
+    mutation PinCuratedChallenge($id: UUID!, $date: DateTime!) {
+  pinCuratedChallenge(id: $id, date: $date) {
+    id
+    sequence
+    pinnedDate
+    album {
+      id
+      title
+    }
+  }
+}
+    `;
+
+export const usePinCuratedChallengeMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    PinCuratedChallengeMutation,
+    TError,
+    PinCuratedChallengeMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    PinCuratedChallengeMutation,
+    TError,
+    PinCuratedChallengeMutationVariables,
+    TContext
+  >({
+    mutationKey: ['PinCuratedChallenge'],
+    mutationFn: (variables?: PinCuratedChallengeMutationVariables) =>
+      fetcher<
+        PinCuratedChallengeMutation,
+        PinCuratedChallengeMutationVariables
+      >(PinCuratedChallengeDocument, variables)(),
+    ...options,
+  });
+};
+
+usePinCuratedChallengeMutation.getKey = () => ['PinCuratedChallenge'];
+
+export const UnpinCuratedChallengeDocument = `
+    mutation UnpinCuratedChallenge($id: UUID!) {
+  unpinCuratedChallenge(id: $id) {
+    id
+    sequence
+    pinnedDate
+    album {
+      id
+      title
+    }
+  }
+}
+    `;
+
+export const useUnpinCuratedChallengeMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UnpinCuratedChallengeMutation,
+    TError,
+    UnpinCuratedChallengeMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UnpinCuratedChallengeMutation,
+    TError,
+    UnpinCuratedChallengeMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UnpinCuratedChallenge'],
+    mutationFn: (variables?: UnpinCuratedChallengeMutationVariables) =>
+      fetcher<
+        UnpinCuratedChallengeMutation,
+        UnpinCuratedChallengeMutationVariables
+      >(UnpinCuratedChallengeDocument, variables)(),
+    ...options,
+  });
+};
+
+useUnpinCuratedChallengeMutation.getKey = () => ['UnpinCuratedChallenge'];
 
 export const GetLlamaLogsDocument = `
     query GetLlamaLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: LlamaLogStatus, $category: [LlamaLogCategory!], $skip: Int, $limit: Int, $parentOnly: Boolean, $parentJobId: String, $includeChildren: Boolean) {

@@ -1380,6 +1380,8 @@ export type Mutation = {
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   addArtist: Artist;
+  /** Admin: Add an album to the curated challenge list */
+  addCuratedChallenge: CuratedChallengeEntry;
   addToListenLater: CollectionAlbum;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
@@ -1408,9 +1410,13 @@ export type Mutation = {
   /** Apply manual corrections to an album (no external source) */
   manualCorrectionApply: CorrectionApplyResult;
   pauseQueue: Scalars['Boolean']['output'];
+  /** Admin: Pin a curated challenge to a specific date */
+  pinCuratedChallenge: CuratedChallengeEntry;
   previewAlbumEnrichment: PreviewEnrichmentResult;
   previewArtistEnrichment: PreviewEnrichmentResult;
   removeAlbumFromCollection: Scalars['Boolean']['output'];
+  /** Admin: Remove an album from the curated challenge list */
+  removeCuratedChallenge: Scalars['Boolean']['output'];
   removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
   resetAlbumEnrichment: Album;
@@ -1424,6 +1430,8 @@ export type Mutation = {
   triggerArtistEnrichment: EnrichmentResult;
   triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
+  /** Admin: Unpin a curated challenge (remove date override) */
+  unpinCuratedChallenge: CuratedChallengeEntry;
   updateAlbum: Album;
   updateAlbumDataQuality: Album;
   updateAlbumGameStatus: UpdateAlbumGameStatusResult;
@@ -1455,6 +1463,11 @@ export type MutationAddAlbumToCollectionWithCreateArgs = {
 
 export type MutationAddArtistArgs = {
   input: ArtistInput;
+};
+
+export type MutationAddCuratedChallengeArgs = {
+  albumId: Scalars['UUID']['input'];
+  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type MutationAddToListenLaterArgs = {
@@ -1534,6 +1547,11 @@ export type MutationManualCorrectionApplyArgs = {
   input: ManualCorrectionApplyInput;
 };
 
+export type MutationPinCuratedChallengeArgs = {
+  date: Scalars['DateTime']['input'];
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationPreviewAlbumEnrichmentArgs = {
   id: Scalars['UUID']['input'];
 };
@@ -1545,6 +1563,10 @@ export type MutationPreviewArtistEnrichmentArgs = {
 export type MutationRemoveAlbumFromCollectionArgs = {
   albumId: Scalars['UUID']['input'];
   collectionId: Scalars['String']['input'];
+};
+
+export type MutationRemoveCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
 };
 
 export type MutationRemoveFromListenLaterArgs = {
@@ -1591,6 +1613,10 @@ export type MutationTriggerSpotifySyncArgs = {
 
 export type MutationUnfollowUserArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationUnpinCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
 };
 
 export type MutationUpdateAlbumArgs = {
@@ -4971,6 +4997,12 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationAddArtistArgs, 'input'>
   >;
+  addCuratedChallenge?: Resolver<
+    ResolversTypes['CuratedChallengeEntry'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationAddCuratedChallengeArgs, 'albumId'>
+  >;
   addToListenLater?: Resolver<
     ResolversTypes['CollectionAlbum'],
     ParentType,
@@ -5087,6 +5119,12 @@ export type MutationResolvers<
     RequireFields<MutationManualCorrectionApplyArgs, 'input'>
   >;
   pauseQueue?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  pinCuratedChallenge?: Resolver<
+    ResolversTypes['CuratedChallengeEntry'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationPinCuratedChallengeArgs, 'date' | 'id'>
+  >;
   previewAlbumEnrichment?: Resolver<
     ResolversTypes['PreviewEnrichmentResult'],
     ParentType,
@@ -5107,6 +5145,12 @@ export type MutationResolvers<
       MutationRemoveAlbumFromCollectionArgs,
       'albumId' | 'collectionId'
     >
+  >;
+  removeCuratedChallenge?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationRemoveCuratedChallengeArgs, 'id'>
   >;
   removeFromListenLater?: Resolver<
     ResolversTypes['Boolean'],
@@ -5177,6 +5221,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationUnfollowUserArgs, 'userId'>
+  >;
+  unpinCuratedChallenge?: Resolver<
+    ResolversTypes['CuratedChallengeEntry'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationUnpinCuratedChallengeArgs, 'id'>
   >;
   updateAlbum?: Resolver<
     ResolversTypes['Album'],

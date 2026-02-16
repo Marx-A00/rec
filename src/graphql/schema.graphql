@@ -2530,9 +2530,94 @@ type Query {
   """
   upcomingChallenges(days: Int!): [UpcomingChallenge!]!
 
+
+  # Daily Challenge queries
+  """
+  Get the daily challenge for a date (defaults to today).
+  Does NOT expose the answer album - that would spoil the game!
+  """
+  dailyChallenge(date: DateTime): DailyChallengeInfo!
+  
+  """
+  Admin: Get curated challenge list (ordered)
+  """
+  curatedChallenges(limit: Int, offset: Int): [CuratedChallengeEntry!]!
+  
+  """
+  Admin: Get count of curated challenges
+  """
+  curatedChallengeCount: Int!
+  
+  """
+  Admin: Preview upcoming challenges for the next N days
+  """
+  upcomingChallenges(days: Int!): [UpcomingChallenge!]!
+
 }
 
 # =============================================
+
+
+# =============================================
+# DAILY CHALLENGE TYPES
+# =============================================
+
+"""
+Daily challenge info - does NOT include the answer album
+"""
+type DailyChallengeInfo {
+  id: UUID!
+  date: DateTime!
+  maxAttempts: Int!
+  totalPlays: Int!
+  totalWins: Int!
+  avgAttempts: Float
+  
+  """
+  User's session for this challenge (null if not started or not authenticated)
+  """
+  mySession: UncoverSessionInfo
+}
+
+"""
+User's session info for a daily challenge
+"""
+type UncoverSessionInfo {
+  id: UUID!
+  status: UncoverSessionStatus!
+  attemptCount: Int!
+  won: Boolean!
+  startedAt: DateTime!
+  completedAt: DateTime
+}
+
+enum UncoverSessionStatus {
+  IN_PROGRESS
+  WON
+  LOST
+}
+
+"""
+Curated challenge entry for admin management
+"""
+type CuratedChallengeEntry {
+  id: UUID!
+  sequence: Int!
+  pinnedDate: DateTime
+  album: Album!
+  createdAt: DateTime!
+}
+
+"""
+Upcoming challenge preview for admin
+"""
+type UpcomingChallenge {
+  date: DateTime!
+  daysSinceEpoch: Int!
+  sequence: Int!
+  isPinned: Boolean!
+  album: Album
+}
 
 # =============================================
 # GAME POOL TYPES
@@ -2785,6 +2870,28 @@ type Mutation {
   artistCorrectionApply(
     input: ArtistCorrectionApplyInput!
   ): ArtistCorrectionApplyResult!
+
+  # Daily Challenge mutations (Admin)
+  """
+  Admin: Add an album to the curated challenge list
+  """
+  addCuratedChallenge(albumId: UUID!, pinnedDate: DateTime): CuratedChallengeEntry!
+  
+  """
+  Admin: Remove an album from the curated challenge list
+  """
+  removeCuratedChallenge(id: UUID!): Boolean!
+  
+  """
+  Admin: Pin a curated challenge to a specific date
+  """
+  pinCuratedChallenge(id: UUID!, date: DateTime!): CuratedChallengeEntry!
+  
+  """
+  Admin: Unpin a curated challenge (remove date override)
+  """
+  unpinCuratedChallenge(id: UUID!): CuratedChallengeEntry!
+
 }
 
 type FollowUserPayload {
