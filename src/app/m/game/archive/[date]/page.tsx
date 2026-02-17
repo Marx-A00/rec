@@ -1,19 +1,22 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { parseISO, isBefore, isAfter, isSameDay, format } from 'date-fns';
+
 import { GAME_EPOCH, toUTCMidnight } from '@/lib/daily-challenge/date-utils';
 
 interface PageProps {
   params: Promise<{ date: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { date } = await params;
-  
+
   try {
     const parsedDate = parseISO(date);
     const formattedDate = format(parsedDate, 'MMMM d, yyyy');
-    
+
     return {
       title: `Archive - ${formattedDate} | Uncover`,
       description: `Play the daily album art challenge from ${formattedDate}`,
@@ -44,21 +47,25 @@ export default async function MobileArchiveGamePage({ params }: PageProps) {
   const today = toUTCMidnight(new Date());
 
   // Validate date range: must be >= GAME_EPOCH and < today (strictly less than)
-  if (isBefore(normalizedDate, GAME_EPOCH) || isAfter(normalizedDate, today) || isSameDay(normalizedDate, today)) {
+  if (
+    isBefore(normalizedDate, GAME_EPOCH) ||
+    isAfter(normalizedDate, today) ||
+    isSameDay(normalizedDate, today)
+  ) {
     notFound();
   }
 
   // Placeholder for game component (will be added in Plan 04)
   return (
-    <div className="px-4 py-6">
-      <div className="rounded-lg border border-zinc-700 bg-zinc-900 p-6 text-center">
-        <h1 className="text-xl font-bold text-cosmic-latte mb-3">
+    <div className='px-4 py-6'>
+      <div className='rounded-lg border border-zinc-700 bg-zinc-900 p-6 text-center'>
+        <h1 className='text-xl font-bold text-cosmic-latte mb-3'>
           Archive Game
         </h1>
-        <p className="text-sm text-zinc-400 mb-2">
+        <p className='text-sm text-zinc-400 mb-2'>
           {format(normalizedDate, 'MMMM d, yyyy')}
         </p>
-        <p className="text-zinc-400">
+        <p className='text-zinc-400'>
           Game component will be added in the next plan.
         </p>
       </div>

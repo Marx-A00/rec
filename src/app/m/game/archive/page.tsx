@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+
 import { ArchiveCalendar } from '@/components/uncover/ArchiveCalendar';
 
 export const metadata: Metadata = {
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function MobileArchivePage() {
   return (
-    <div className="px-4 py-6">
+    <div className='px-4 py-6'>
       <ArchiveCalendar mobile />
     </div>
   );

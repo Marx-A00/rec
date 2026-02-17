@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+
 import { ArchiveCalendar } from '@/components/uncover/ArchiveCalendar';
 
 export const metadata: Metadata = {
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function ArchivePage() {
   return (
-    <div className="mx-auto max-w-lg px-4 py-8">
+    <div className='mx-auto max-w-lg px-4 py-8'>
       <ArchiveCalendar />
     </div>
   );
