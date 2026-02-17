@@ -143,13 +143,6 @@ export default function RevealCanvas({
             tileH
           );
         }
-
-        // Debug: draw grid lines
-        ctx.strokeStyle = revealedSet.has(index)
-          ? 'rgba(255, 0, 0, 0.5)'
-          : 'rgba(0, 255, 0, 0.4)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x * tileW, y * tileH, tileW, tileH);
       }
     }
   }, [image, revealedTiles, gridSize]);
