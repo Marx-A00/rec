@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { parseISO, isBefore, isAfter, isSameDay, format } from 'date-fns';
 
 import { GAME_EPOCH, toUTCMidnight } from '@/lib/daily-challenge/date-utils';
+import { ArchiveGame } from '@/components/uncover/ArchiveGame';
 
 interface PageProps {
   params: Promise<{ date: string }>;
@@ -55,17 +56,9 @@ export default async function ArchiveGamePage({ params }: PageProps) {
     notFound();
   }
 
-  // Placeholder for game component (will be added in Plan 04)
   return (
     <div className='mx-auto max-w-4xl px-4 py-8'>
-      <div className='rounded-lg border border-zinc-700 bg-zinc-900 p-8 text-center'>
-        <h1 className='text-2xl font-bold text-cosmic-latte mb-4'>
-          Archive Game - {format(normalizedDate, 'MMMM d, yyyy')}
-        </h1>
-        <p className='text-zinc-400'>
-          Game component will be added in the next plan.
-        </p>
-      </div>
+      <ArchiveGame challengeDate={normalizedDate} mobile={false} />
     </div>
   );
 }
