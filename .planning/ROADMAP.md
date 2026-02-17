@@ -28,7 +28,7 @@ Build a daily album art guessing game that drives repeat visits and music discov
 - [x] **Phase 37: Game State & Logic** - Zustand store, guess validation ✓
 - [x] **Phase 38: Game UI** - Desktop and mobile layouts ✓
 - [x] **Phase 39: Stats & Streaks** - Tracking, persistence, and display ✓
-- [ ] **Phase 40: Archive Mode** - Past puzzles access
+- [x] **Phase 40: Archive Mode** - Past puzzles access ✓
 - [ ] **Phase 41: Music Discovery** - Post-game integration
 - [ ] **Phase 42: Polish** - Error states, loading, keyboard support
 
@@ -283,10 +283,10 @@ Plans:
 
 Plans:
 
-- [ ] 40-01-PLAN.md — Database model and service layer for archive stats
-- [ ] 40-02-PLAN.md — GraphQL API for archive history and stats
-- [ ] 40-03-PLAN.md — Calendar component and archive routes
-- [ ] 40-04-PLAN.md — Archive game component and stats integration
+- [x] 40-01-PLAN.md — Database model and service layer for archive stats ✓
+- [x] 40-02-PLAN.md — GraphQL API for archive history and stats ✓
+- [x] 40-03-PLAN.md — Calendar component and archive routes ✓
+- [x] 40-04-PLAN.md — Archive game component and stats integration ✓
 
 ---
 
@@ -379,7 +379,7 @@ Plans:
 | 37    | Game State & Logic     | 11           | Complete    | 2026-02-15 |
 | 38    | Game UI                | 7            | Complete    | 2026-02-16 |
 | 39    | Stats & Streaks        | 7            | Complete    | 2026-02-16 |
-| 40    | Archive Mode           | 4            | Not started | -          |
+| 40    | Archive Mode           | 4            | Complete    | 2026-02-17 |
 | 41    | Music Discovery        | 4            | Not started | -          |
 | 42    | Polish                 | 1            | Not started | -          |
 
@@ -420,10 +420,10 @@ Plans:
 | DAILY-03    | 37    | Complete | Cannot replay today's puzzle     |
 | DAILY-04    | 37    | Complete | State persists mid-game          |
 | DAILY-05    | 35    | Complete | Deterministic selection          |
-| ARCHIVE-01  | 40    | Pending  | Access past puzzles              |
-| ARCHIVE-02  | 40    | Pending  | Shows played/missed status       |
-| ARCHIVE-03  | 40    | Pending  | No streak impact                 |
-| ARCHIVE-04  | 40    | Pending  | Still tracks win/loss stats      |
+| ARCHIVE-01  | 40    | Complete | Access past puzzles              |
+| ARCHIVE-02  | 40    | Complete | Shows played/missed status       |
+| ARCHIVE-03  | 40    | Complete | No streak impact                 |
+| ARCHIVE-04  | 40    | Complete | Still tracks win/loss stats      |
 | POOL-01     | 34    | Complete | Curated pool of eligible albums  |
 | POOL-02     | 34    | Complete | Eligibility: has cover art       |
 | POOL-03     | 34    | Complete | Eligibility: recognizable albums |
@@ -447,4 +447,4 @@ Plans:
 ---
 
 _Roadmap created: 2026-02-12_
-_Last updated: 2026-02-16 (Phase 39 complete)_
+_Last updated: 2026-02-17 (Phase 40 complete)_
