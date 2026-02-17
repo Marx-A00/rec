@@ -70,6 +70,16 @@ interface HealthData {
   alerts: string[];
 }
 
+interface SpotifyConfigData {
+  limit: number;
+  pages: number;
+  country: string;
+  minFollowers: number;
+  genreTags: string[];
+  year: number;
+  maxAlbums: number;
+}
+
 interface SchedulerStatusData {
   spotify: {
     enabled: boolean;
@@ -77,6 +87,7 @@ interface SchedulerStatusData {
     lastRunAt: string | null;
     intervalMinutes: number;
     jobKey: string | null;
+    config?: SpotifyConfigData;
   };
   musicbrainz: {
     enabled: boolean;
@@ -173,8 +184,23 @@ export default function AdminDashboard() {
               ? 'stopped'
               : 'sync triggered';
         setSyncMessage(`${label} scheduler ${actionLabel}`);
-        // Refresh scheduler status after toggle
-        setTimeout(fetchSchedulerStatus, 1000);
+
+        // Optimistically update the UI so the button flips immediately
+        if (action === 'start' || action === 'stop') {
+          setSchedulerStatus(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              [scheduler]: {
+                ...prev[scheduler],
+                enabled: action === 'start',
+              },
+            };
+          });
+        }
+
+        // Also refresh from server to get full updated state
+        setTimeout(fetchSchedulerStatus, 1500);
       } else {
         setSyncMessage(`Failed: ${data.message || data.error}`);
       }
@@ -598,6 +624,64 @@ export default function AdminDashboard() {
                           ).toLocaleString()}
                         </p>
                       )}
+                    </div>
+                  )}
+
+                  {/* Spotify sync config */}
+                  {schedulerStatus?.spotify.config && (
+                    <div className='border border-zinc-700/50 rounded bg-zinc-900/50 p-2.5 mb-3'>
+                      <p className='text-[11px] font-medium text-zinc-500 uppercase tracking-wide mb-1.5'>
+                        Sync Config
+                      </p>
+                      <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-xs'>
+                        <div className='flex justify-between'>
+                          <span className='text-zinc-500'>Limit</span>
+                          <span className='text-zinc-300'>
+                            {schedulerStatus.spotify.config.limit}/page
+                          </span>
+                        </div>
+                        <div className='flex justify-between'>
+                          <span className='text-zinc-500'>Pages</span>
+                          <span className='text-zinc-300'>
+                            {schedulerStatus.spotify.config.pages}
+                          </span>
+                        </div>
+                        <div className='flex justify-between'>
+                          <span className='text-zinc-500'>Max albums</span>
+                          <span className='text-zinc-300'>
+                            {schedulerStatus.spotify.config.maxAlbums}
+                          </span>
+                        </div>
+                        <div className='flex justify-between'>
+                          <span className='text-zinc-500'>Country</span>
+                          <span className='text-zinc-300'>
+                            {schedulerStatus.spotify.config.country}
+                          </span>
+                        </div>
+                        <div className='flex justify-between'>
+                          <span className='text-zinc-500'>Min followers</span>
+                          <span className='text-zinc-300'>
+                            {schedulerStatus.spotify.config.minFollowers.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className='flex justify-between'>
+                          <span className='text-zinc-500'>Year</span>
+                          <span className='text-zinc-300'>
+                            {schedulerStatus.spotify.config.year}
+                          </span>
+                        </div>
+                        {schedulerStatus.spotify.config.genreTags.length >
+                          0 && (
+                          <div className='col-span-2 flex justify-between'>
+                            <span className='text-zinc-500'>Genres</span>
+                            <span className='text-zinc-300'>
+                              {schedulerStatus.spotify.config.genreTags.join(
+                                ', '
+                              )}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
