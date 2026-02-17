@@ -14,19 +14,19 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 40 of 42 (Archive Mode)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-16 — Completed 40-02-PLAN.md
+Last activity: 2026-02-17 — Completed 40-03-PLAN.md
 
-Progress: [███████░░░] 72%
+Progress: [███████░░░] 73%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 22 (v1.5)
-- Average duration: 3.2 minutes
-- Total execution time: ~72 minutes
+- Total plans completed: 23 (v1.5)
+- Average duration: 3.3 minutes
+- Total execution time: ~76 minutes
 
 **Previous Milestone (v1.4 LlamaLog):**
 
@@ -43,7 +43,7 @@ Progress: [███████░░░] 72%
 - Phase 37: 4 plans, complete 2026-02-15
 - Phase 38: 4 plans, complete 2026-02-16
 - Phase 39: 3 plans, complete 2026-02-16
-- Phase 40: 2 plans, in progress 2026-02-16
+- Phase 40: 3 plans, in progress 2026-02-17
 
 **Recent Trend:** Steady progress, maintaining velocity
 
@@ -92,6 +92,10 @@ Recent decisions affecting current work:
 - Auto-show stats modal 800ms after game end (allows reveal animation) (39-03)
 - Archive stats in separate table (UncoverArchiveStats, no streak fields) (40-01)
 - Mode parameter pattern for daily vs archive stats routing (40-01)
+- Restore custom button variants after shadcn updates (40-03)
+- Use react-day-picker modifiers for calendar status visualization (40-03)
+- Month-based query filtering for archive calendar (40-03)
+- Today redirects to main game, not archive (40-03)
 
 ### Pending Todos
 
@@ -103,15 +107,16 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-16 19:11:21 UTC
-Stopped at: Completed 40-01-PLAN.md
+Last session: 2026-02-17 00:33:24 UTC
+Stopped at: Completed 40-03-PLAN.md
 Resume file: None
 
 ### What's Next
 
 **Immediate:**
-- Execute remaining plans in Phase 40 (40-02 through 40-04)
+- Execute 40-04 (final plan in Phase 40)
 - Complete Archive Mode feature
+- Begin Phase 41 (Music Discovery)
 
 ### v1.5 Phase Summary
 
@@ -122,11 +127,11 @@ Resume file: None
 - Phase 37: Game State & Logic — 11 reqs — Complete 2026-02-15
 - Phase 38: Game UI — 7 reqs — Complete 2026-02-16
 - Phase 39: Stats & Streaks — 7 reqs — Complete 2026-02-16
-- Phase 40: Archive Mode — 4 reqs — 1 of 4 plans complete
+- Phase 40: Archive Mode — 4 reqs — 3 of 4 plans complete
 - Phase 41: Music Discovery — 4 reqs — Not started
 - Phase 42: Polish — 1 req — Not started
 
 ---
 
 *State initialized: 2026-02-12*
-*Last updated: 2026-02-16*
+*Last updated: 2026-02-17*
