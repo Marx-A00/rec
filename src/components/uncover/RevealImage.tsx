@@ -5,6 +5,8 @@ import { Grid3X3, Droplets, Loader2 } from 'lucide-react';
 
 import { useRevealStore, type RevealStyle } from '@/stores/useRevealStore';
 
+import type { RevealMode } from '@/hooks/useRevealImage';
+
 import RevealCanvas from './RevealCanvas';
 import RevealBlur from './RevealBlur';
 
@@ -15,6 +17,8 @@ interface RevealImageProps {
   challengeId: string;
   /** Current reveal stage (1-6) */
   stage: number;
+  /** Reveal pattern mode (default: 'scattered') */
+  revealMode?: RevealMode;
   /** Optional CSS class for container sizing */
   className?: string;
   /** Whether to show the style toggle button (default: true) */
@@ -46,6 +50,7 @@ export function RevealImage({
   imageUrl,
   challengeId,
   stage,
+  revealMode,
   className,
   showToggle = true,
   isSubmitting = false,
@@ -87,7 +92,7 @@ export function RevealImage({
   return (
     <div className={'relative ' + (className ?? '')}>
       {preferredStyle === 'pixelation' ? (
-        <RevealCanvas {...sharedProps} />
+        <RevealCanvas {...sharedProps} revealMode={revealMode} />
       ) : (
         <RevealBlur {...sharedProps} />
       )}

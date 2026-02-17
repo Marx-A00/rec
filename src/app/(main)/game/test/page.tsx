@@ -13,6 +13,7 @@ import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
 import { AttemptDots } from '@/components/uncover/AttemptDots';
+import type { RevealMode } from '@/hooks/useRevealImage';
 
 const MAX_ATTEMPTS = 6;
 
@@ -48,6 +49,9 @@ export default function GameTestPage() {
 
   // Stage override from slider (null = auto from attemptCount)
   const [stageOverride, setStageOverride] = useState<number | null>(null);
+
+  // Reveal mode toggle
+  const [revealMode, setRevealMode] = useState<RevealMode>('regions');
 
   // Local game state
   const [attemptCount, setAttemptCount] = useState(0);
@@ -177,6 +181,7 @@ export default function GameTestPage() {
                   imageUrl={selectedImageUrl}
                   challengeId={selectedAlbumId}
                   stage={revealStage}
+                  revealMode={revealMode}
                   showToggle={false}
                   className='h-full w-full overflow-hidden rounded-lg'
                 />
@@ -220,6 +225,28 @@ export default function GameTestPage() {
 
         {/* Sidebar — album picker + stage slider + reset */}
         <div className='flex h-full w-72 shrink-0 flex-col border-l border-zinc-700 bg-zinc-900/95'>
+          {/* Reveal mode toggle */}
+          <div className='border-b border-zinc-800 px-4 py-3'>
+            <label className='mb-2 block text-xs font-medium text-zinc-400'>
+              Reveal Mode
+            </label>
+            <div className='flex gap-1'>
+              {(['scattered', 'regions'] as const).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setRevealMode(mode)}
+                  className={`flex-1 rounded px-2 py-1.5 text-xs font-medium transition-colors ${
+                    revealMode === mode
+                      ? 'bg-emerald-700 text-white'
+                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                  }`}
+                >
+                  {mode === 'scattered' ? 'Scattered' : 'Regions'}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Stage slider */}
           <div className='border-b border-zinc-800 px-4 py-3'>
             <div className='mb-2 flex items-center justify-between'>

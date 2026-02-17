@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react';
 
-import { useRevealImage } from '@/hooks/useRevealImage';
+import { useRevealImage, type RevealMode } from '@/hooks/useRevealImage';
 
 interface RevealCanvasProps {
   /** Album art image URL */
@@ -11,6 +11,8 @@ interface RevealCanvasProps {
   challengeId: string;
   /** Current reveal stage (1-6) */
   stage: number;
+  /** Reveal pattern mode (default: 'scattered') */
+  revealMode?: RevealMode;
   /** Optional CSS class for sizing */
   className?: string;
   /** Called when the image finishes loading */
@@ -28,6 +30,7 @@ export default function RevealCanvas({
   imageUrl,
   challengeId,
   stage,
+  revealMode,
   className,
   onLoad,
   onError,
@@ -37,7 +40,11 @@ export default function RevealCanvas({
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { revealedTiles } = useRevealImage({ challengeId, stage });
+  const { revealedTiles, gridSize } = useRevealImage({
+    challengeId,
+    stage,
+    mode: revealMode,
+  });
 
   // Load the image via native Image constructor (not Next.js Image)
   useEffect(() => {
@@ -84,7 +91,6 @@ export default function RevealCanvas({
 
     ctx.scale(dpr, dpr);
 
-    const gridSize = 16;
     const tileW = displayWidth / gridSize;
     const tileH = displayHeight / gridSize;
 
@@ -92,21 +98,22 @@ export default function RevealCanvas({
     const revealedSet = new Set(revealedTiles.map(t => t.index));
 
     // Step 1: Draw pixelated base (entire image at low resolution, stretched)
+    // Use an offscreen canvas to avoid DPR scaling issues with self-copy
+    const offscreen = document.createElement('canvas');
+    offscreen.width = gridSize;
+    offscreen.height = gridSize;
+    const offCtx = offscreen.getContext('2d');
+    if (offCtx) {
+      offCtx.imageSmoothingEnabled = false;
+      offCtx.drawImage(image, 0, 0, gridSize, gridSize);
+    }
     ctx.imageSmoothingEnabled = false;
-    const pixelSize = gridSize; // 16x16 blocks for unrevealed
     ctx.drawImage(
-      image,
+      offscreen,
       0,
       0,
-      displayWidth / pixelSize,
-      displayHeight / pixelSize
-    );
-    ctx.drawImage(
-      canvas,
-      0,
-      0,
-      displayWidth / pixelSize,
-      displayHeight / pixelSize,
+      gridSize,
+      gridSize,
       0,
       0,
       displayWidth,
@@ -136,9 +143,16 @@ export default function RevealCanvas({
             tileH
           );
         }
+
+        // Debug: draw grid lines
+        ctx.strokeStyle = revealedSet.has(index)
+          ? 'rgba(255, 0, 0, 0.5)'
+          : 'rgba(0, 255, 0, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x * tileW, y * tileH, tileW, tileH);
       }
     }
-  }, [image, revealedTiles]);
+  }, [image, revealedTiles, gridSize]);
 
   // Redraw when image or revealed tiles change
   useEffect(() => {
