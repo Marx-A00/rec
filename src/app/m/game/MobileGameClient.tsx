@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { signIn } from 'next-auth/react';
+import Link from 'next/link';
+import { CalendarDays } from 'lucide-react';import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
 import { useDailyChallengeQuery } from '@/generated/graphql';
@@ -293,7 +294,13 @@ export function MobileGameClient() {
         <div className='text-center'>
           <h2 className='mb-1 text-2xl font-bold text-white'>Daily Uncover</h2>
           <p className='text-sm text-zinc-400'>
-            Guess the album from the cover art
+          <Link
+            href="/m/game/archive"
+            className="mt-2 inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
+          >
+            <CalendarDays className="h-3.5 w-3.5" />
+            Archive
+          </Link>            Guess the album from the cover art
           </p>
         </div>
 

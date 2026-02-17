@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { CalendarDays } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
@@ -214,7 +216,7 @@ export function UncoverGame() {
           <div className='text-sm text-muted-foreground'>
             Come back tomorrow for a new challenge!
           </div>
-          
+
           {/* View Stats button */}
           <button
             onClick={() => setShowStats(true)}
@@ -244,6 +246,13 @@ export function UncoverGame() {
         <p className='text-sm text-muted-foreground'>
           Guess the album from the cover art
         </p>
+        <Link 
+          href='/game/archive'
+          className='mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-cosmic-latte transition-colors'
+        >
+          <CalendarDays className='h-3.5 w-3.5' />
+          Archive
+        </Link>
       </div>
 
       {/* Reveal image - large and dominant */}
