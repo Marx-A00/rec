@@ -2550,28 +2550,6 @@ type Query {
   Admin: Preview upcoming challenges for the next N days
   """
   upcomingChallenges(days: Int!): [UpcomingChallenge!]!
-
-  # Daily Challenge queries
-  """
-  Get the daily challenge for a date (defaults to today).
-  Does NOT expose the answer album - that would spoil the game!
-  """
-  dailyChallenge(date: DateTime): DailyChallengeInfo!
-
-  """
-  Admin: Get curated challenge list (ordered)
-  """
-  curatedChallenges(limit: Int, offset: Int): [CuratedChallengeEntry!]!
-
-  """
-  Admin: Get count of curated challenges
-  """
-  curatedChallengeCount: Int!
-
-  """
-  Admin: Preview upcoming challenges for the next N days
-  """
-  upcomingChallenges(days: Int!): [UpcomingChallenge!]!
 }
 
 # =============================================

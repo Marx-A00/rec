@@ -134,11 +134,11 @@ export function SuggestedAlbumsTable() {
                     className='rounded'
                   />
                 </TableCell>
-                <TableCell className='font-medium'>{album.title}</TableCell>
-                <TableCell className='text-muted-foreground'>
-                  {artistNames}
+                <TableCell className='font-medium text-white'>
+                  {album.title}
                 </TableCell>
-                <TableCell>{year}</TableCell>
+                <TableCell className='text-zinc-400'>{artistNames}</TableCell>
+                <TableCell className='text-zinc-300'>{year}</TableCell>
                 <TableCell>
                   <div className='flex gap-2'>
                     <Button

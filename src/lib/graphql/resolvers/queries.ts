@@ -2452,7 +2452,7 @@ export const queryResolvers: QueryResolvers = {
   artistRecommendations: async (
     _,
     { artistId, filter, sort = 'NEWEST', limit = 12, offset = 0 },
-    { prisma, session }
+    { prisma, user }
   ) => {
     try {
       // 1. Get all albums by this artist from AlbumArtist junction table
@@ -2559,7 +2559,7 @@ export const queryResolvers: QueryResolvers = {
             basisAlbum: rec.basisAlbum,
             recommendedAlbum: rec.recommendedAlbum,
             user: rec.user,
-            isOwnRecommendation: session?.user?.id === rec.userId,
+            isOwnRecommendation: user?.id === rec.userId,
           };
         }
       );

@@ -71,17 +71,17 @@ export function UncoverGame() {
       return;
     }
 
-    // Already have session - don't start again
-    if (game.sessionId) {
-      return;
-    }
-
     // Already initializing - prevent duplicate calls
     if (isInitializing) {
       return;
     }
 
-    // Start new session
+    // Already have image - don't refetch
+    if (challengeImageUrl) {
+      return;
+    }
+
+    // Start or resume session (backend returns existing session if already started)
     const initializeGame = async () => {
       setIsInitializing(true);
       try {
@@ -99,7 +99,7 @@ export function UncoverGame() {
   }, [
     game.isAuthenticated,
     game.isAuthLoading,
-    game.sessionId,
+    challengeImageUrl,
     game,
     isInitializing,
   ]);
@@ -118,7 +118,7 @@ export function UncoverGame() {
     if (game.isAuthLoading) {
       return (
         <div className='flex min-h-[400px] items-center justify-center'>
-          <div className='text-muted-foreground'>Loading...</div>
+          <div className='text-zinc-400'>Loading...</div>
         </div>
       );
     }
@@ -131,8 +131,10 @@ export function UncoverGame() {
         {/* Login CTA overlay */}
         <div className='relative -mt-12 flex flex-col items-center gap-4 rounded-lg bg-background/95 p-6 shadow-lg backdrop-blur-sm'>
           <div className='text-center'>
-            <h2 className='mb-2 text-2xl font-bold'>Daily Album Uncover</h2>
-            <p className='text-muted-foreground mb-4'>
+            <h2 className='mb-2 text-2xl font-bold text-white'>
+              Daily Album Uncover
+            </h2>
+            <p className='text-zinc-400 mb-4'>
               Guess the album from its cover art. 6 attempts. New puzzle daily.
             </p>
           </div>
@@ -151,7 +153,7 @@ export function UncoverGame() {
   if (isInitializing || (game.isAuthenticated && !game.sessionId)) {
     return (
       <div className='flex min-h-[400px] items-center justify-center'>
-        <div className='text-muted-foreground'>Starting game...</div>
+        <div className='text-zinc-400'>Starting game...</div>
       </div>
     );
   }
@@ -161,8 +163,8 @@ export function UncoverGame() {
     return (
       <div className='flex min-h-[400px] flex-col items-center justify-center gap-4 p-8'>
         <div className='text-center'>
-          <h2 className='mb-2 text-xl font-bold text-red-600'>Error</h2>
-          <p className='text-muted-foreground'>{game.error}</p>
+          <h2 className='mb-2 text-xl font-bold text-red-400'>Error</h2>
+          <p className='text-zinc-400'>{game.error}</p>
         </div>
         <button
           onClick={() => {
@@ -182,10 +184,10 @@ export function UncoverGame() {
     return (
       <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8'>
         <div className='text-center'>
-          <h2 className='mb-2 text-3xl font-bold'>
+          <h2 className='mb-2 text-3xl font-bold text-white'>
             {game.won ? '🎉 You Won!' : '😔 Game Over'}
           </h2>
-          <p className='text-muted-foreground'>
+          <p className='text-zinc-400'>
             {game.won
               ? `You guessed correctly in ${game.attemptCount} ${game.attemptCount === 1 ? 'attempt' : 'attempts'}!`
               : `You used all ${game.attemptCount} attempts.`}
@@ -213,7 +215,7 @@ export function UncoverGame() {
         )}
 
         <div className='space-y-4 text-center'>
-          <div className='text-sm text-muted-foreground'>
+          <div className='text-sm text-zinc-400'>
             Come back tomorrow for a new challenge!
           </div>
 
@@ -242,13 +244,15 @@ export function UncoverGame() {
     <div className='flex min-h-[400px] flex-col items-center gap-6 p-4 md:p-8'>
       {/* Header */}
       <div className='text-center'>
-        <h2 className='mb-1 text-xl font-bold md:text-2xl'>Daily Uncover</h2>
-        <p className='text-sm text-muted-foreground'>
+        <h2 className='mb-1 text-xl font-bold text-white md:text-2xl'>
+          Daily Uncover
+        </h2>
+        <p className='text-sm text-zinc-400'>
           Guess the album from the cover art
         </p>
-        <Link 
+        <Link
           href='/game/archive'
-          className='mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-cosmic-latte transition-colors'
+          className='mt-2 inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-cosmic-latte transition-colors'
         >
           <CalendarDays className='h-3.5 w-3.5' />
           Archive

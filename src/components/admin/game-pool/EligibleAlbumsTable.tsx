@@ -21,9 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import {
   useAlbumsByGameStatusQuery,
   useUpdateAlbumGameStatusMutation,
+  useAddCuratedChallengeMutation,
+  useCuratedChallengesQuery,
   AlbumGameStatus,
 } from '@/generated/graphql';
 
@@ -38,6 +41,15 @@ export function EligibleAlbumsTable() {
     offset,
   });
 
+  const { data: curatedData } = useCuratedChallengesQuery({
+    limit: 500,
+    offset: 0,
+  });
+
+  const curatedAlbumIds = new Set(
+    (curatedData?.curatedChallenges || []).map(c => c.album.id)
+  );
+
   const { mutateAsync: updateStatus } = useUpdateAlbumGameStatusMutation({
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -48,6 +60,15 @@ export function EligibleAlbumsTable() {
       });
     },
   });
+
+  const { mutateAsync: addCurated, isPending: isAddingCurated } =
+    useAddCuratedChallengeMutation({
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: ['CuratedChallenges'],
+        });
+      },
+    });
 
   const handleStatusChange = async (albumId: string, newStatus: string) => {
     try {
@@ -66,6 +87,16 @@ export function EligibleAlbumsTable() {
     } catch (error) {
       toast.error('Failed to update album status');
       console.error('Status update error:', error);
+    }
+  };
+
+  const handleAddToCurated = async (albumId: string, albumTitle: string) => {
+    try {
+      await addCurated({ albumId });
+      toast.success(`Added "${albumTitle}" to curated list`);
+    } catch (error) {
+      toast.error('Failed to add to curated list');
+      console.error('Add curated error:', error);
     }
   };
 
@@ -95,6 +126,7 @@ export function EligibleAlbumsTable() {
             <TableHead>Artist</TableHead>
             <TableHead className='w-24'>Year</TableHead>
             <TableHead className='w-40'>Status</TableHead>
+            <TableHead className='w-40'>Curated</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -118,11 +150,11 @@ export function EligibleAlbumsTable() {
                     className='rounded'
                   />
                 </TableCell>
-                <TableCell className='font-medium'>{album.title}</TableCell>
-                <TableCell className='text-muted-foreground'>
-                  {artistNames}
+                <TableCell className='font-medium text-white'>
+                  {album.title}
                 </TableCell>
-                <TableCell>{year}</TableCell>
+                <TableCell className='text-zinc-400'>{artistNames}</TableCell>
+                <TableCell className='text-zinc-300'>{year}</TableCell>
                 <TableCell>
                   <Select
                     value={album.gameStatus}
@@ -143,6 +175,22 @@ export function EligibleAlbumsTable() {
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                </TableCell>
+                <TableCell>
+                  {curatedAlbumIds.has(album.id) ? (
+                    <span className='text-sm text-emerald-400'>
+                      In rotation
+                    </span>
+                  ) : (
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      disabled={isAddingCurated}
+                      onClick={() => handleAddToCurated(album.id, album.title)}
+                    >
+                      Add to curated
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             );

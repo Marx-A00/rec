@@ -4,6 +4,7 @@
 
 import chalk from 'chalk';
 import { GraphQLError } from 'graphql';
+import { graphqlLogger } from '@/lib/logger';
 
 import {
   MutationResolvers,
@@ -3641,11 +3642,7 @@ export const mutationResolvers: MutationResolvers = {
   },
 
   // Update data quality mutations
-  updateAlbumDataQuality: async (
-    _,
-    { id, dataQuality },
-    { prisma, session }
-  ) => {
+  updateAlbumDataQuality: async (_, { id, dataQuality }, { prisma, user }) => {
     try {
       // Get the old data quality before updating
       const oldAlbum = await prisma.album.findUnique({
@@ -3668,7 +3665,7 @@ export const mutationResolvers: MutationResolvers = {
         operation: OPERATIONS.MANUAL_DATA_QUALITY_UPDATE,
         sources: [SOURCES.USER],
         fieldsChanged: ['dataQuality'],
-        userId: session?.user?.id,
+        userId: user?.id,
         dataQualityBefore: oldAlbum?.dataQuality ?? null,
         dataQualityAfter: dataQuality,
       });
@@ -3679,11 +3676,7 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  updateArtistDataQuality: async (
-    _,
-    { id, dataQuality },
-    { prisma, session }
-  ) => {
+  updateArtistDataQuality: async (_, { id, dataQuality }, { prisma, user }) => {
     try {
       // Get the old data quality before updating
       const oldArtist = await prisma.artist.findUnique({
@@ -3706,7 +3699,7 @@ export const mutationResolvers: MutationResolvers = {
         operation: OPERATIONS.MANUAL_DATA_QUALITY_UPDATE,
         sources: [SOURCES.USER],
         fieldsChanged: ['dataQuality'],
-        userId: session?.user?.id,
+        userId: user?.id,
         dataQualityBefore: oldArtist?.dataQuality ?? null,
         dataQualityAfter: dataQuality,
       });
@@ -4194,10 +4187,10 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
   // Game Pool Management
-  updateAlbumGameStatus: async (_, { input }, { prisma, session }) => {
+  updateAlbumGameStatus: async (_, { input }, { prisma, user }) => {
     try {
       // Check admin permission
-      if (!session?.user) {
+      if (!user?.id) {
         return {
           success: false,
           album: null,
@@ -4206,7 +4199,7 @@ export const mutationResolvers: MutationResolvers = {
       }
 
       const { UserRole } = await import('@prisma/client');
-      if (!isAdmin(session.user.role as UserRole)) {
+      if (!isAdmin(user.role as UserRole)) {
         return {
           success: false,
           album: null,
@@ -4271,7 +4264,7 @@ export const mutationResolvers: MutationResolvers = {
         status: 'SUCCESS',
         reason: input.reason || `Status changed to ${input.gameStatus}`,
         fieldsEnriched: ['gameStatus'],
-        userId: session.user.id,
+        userId: user?.id,
       });
 
       return {
@@ -4563,15 +4556,28 @@ export const mutationResolvers: MutationResolvers = {
         },
         challengeId: result.challenge.id,
         imageUrl: result.challenge.album.cloudflareImageId
-          ? `https://imagedelivery.net/${process.env.CLOUDFLARE_ACCOUNT_HASH}/${result.challenge.album.cloudflareImageId}/public`
+          ? `https://imagedelivery.net/${process.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH}/${result.challenge.album.cloudflareImageId}/public`
           : '/album-placeholder.png',
         cloudflareImageId: result.challenge.album.cloudflareImageId,
       };
     } catch (error) {
       graphqlLogger.error('Failed to start uncover session:', { error });
-      throw error instanceof GraphQLError
-        ? error
-        : new GraphQLError(`Failed to start session: ${error}`);
+      if (error instanceof GraphQLError) throw error;
+
+      // Friendly user-facing message for no curated albums, but log the real error above
+      if (error instanceof Error && error.name === 'NoCuratedAlbumsError') {
+        throw new GraphQLError(
+          "Today's challenge isn't ready yet. Check back soon!",
+          {
+            extensions: {
+              code: 'NO_CHALLENGE_AVAILABLE',
+              reason: error.message,
+            },
+          }
+        );
+      }
+
+      throw new GraphQLError(`Failed to start session: ${error}`);
     }
   },
 
@@ -4726,9 +4732,9 @@ export const mutationResolvers: MutationResolvers = {
         },
         challengeId: result.challenge.id,
         imageUrl: result.challenge.album.cloudflareImageId
-          ? process.env.CLOUDFLARE_ACCOUNT_HASH
+          ? process.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH
             ? 'https://imagedelivery.net/' +
-              process.env.CLOUDFLARE_ACCOUNT_HASH +
+              process.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH +
               '/' +
               result.challenge.album.cloudflareImageId +
               '/public'

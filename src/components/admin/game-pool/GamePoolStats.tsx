@@ -52,18 +52,16 @@ export function GamePoolStats() {
         return (
           <Card key={stat.title}>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>
+              <CardTitle className='text-sm font-medium text-zinc-100'>
                 {stat.title}
               </CardTitle>
               <Icon className={`h-4 w-4 ${stat.color}`} />
             </CardHeader>
             <CardContent>
-              <div className='text-2xl font-bold'>
+              <div className='text-2xl font-bold text-white'>
                 {isLoading ? '...' : stat.value.toLocaleString()}
               </div>
-              <p className='text-xs text-muted-foreground'>
-                {stat.description}
-              </p>
+              <p className='text-xs text-zinc-400'>{stat.description}</p>
             </CardContent>
           </Card>
         );
