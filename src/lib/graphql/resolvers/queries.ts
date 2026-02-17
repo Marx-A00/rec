@@ -1821,6 +1821,7 @@ export const queryResolvers: QueryResolvers = {
       else if (sortBy === 'releaseDate') orderBy.releaseDate = sortOrder;
       else if (sortBy === 'lastEnriched') orderBy.lastEnriched = sortOrder;
       else if (sortBy === 'dataQuality') orderBy.dataQuality = sortOrder;
+      else if (sortBy === 'createdAt') orderBy.createdAt = sortOrder;
 
       const albums = await prisma.album.findMany({
         where,
