@@ -63,6 +63,7 @@ model User {
   targetedActivities   Activity[]       @relation("ActivityTarget")
   uncoverSessions    UncoverSession[]
   uncoverStats       UncoverPlayerStats?
+  uncoverArchiveStats UncoverArchiveStats?
 }
 
 model UserSettings {
@@ -670,6 +671,27 @@ model UncoverPlayerStats {
   @@index([userId])
   @@index([currentStreak(sort: Desc)])
   @@map("uncover_player_stats")
+}
+
+/// Archive game statistics tracking (separate from daily stats)
+/// Tracks archive game wins/losses without affecting daily streaks
+model UncoverArchiveStats {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String    @unique @map("user_id")
+  
+  gamesPlayed     Int       @default(0) @map("games_played")
+  gamesWon        Int       @default(0) @map("games_won")
+  totalAttempts   Int       @default(0) @map("total_attempts")
+  
+  winDistribution Int[]     @default([0,0,0,0,0,0]) @map("win_distribution")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("uncover_archive_stats")
 }
 
 /// Curated album for daily challenge selection
