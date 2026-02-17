@@ -4580,7 +4580,11 @@ export const mutationResolvers: MutationResolvers = {
    */
   submitGuess: async (
     _,
-    { sessionId, albumId }: { sessionId: string; albumId: string },
+    {
+      sessionId,
+      albumId,
+      mode,
+    }: { sessionId: string; albumId: string; mode?: string },
     { prisma, user }
   ) => {
     try {
@@ -4592,7 +4596,13 @@ export const mutationResolvers: MutationResolvers = {
       // Dynamic import to avoid circular dependencies
       const { submitGuess } = await import('@/lib/uncover/game-service');
 
-      const result = await submitGuess(sessionId, albumId, user.id, prisma);
+      const result = await submitGuess(
+        sessionId,
+        albumId,
+        user.id,
+        prisma,
+        mode || 'daily'
+      );
 
       graphqlLogger.info('Submitted guess:', {
         sessionId,
@@ -4619,7 +4629,7 @@ export const mutationResolvers: MutationResolvers = {
    */
   skipGuess: async (
     _,
-    { sessionId }: { sessionId: string },
+    { sessionId, mode }: { sessionId: string; mode?: string },
     { prisma, user }
   ) => {
     try {
@@ -4631,7 +4641,12 @@ export const mutationResolvers: MutationResolvers = {
       // Dynamic import to avoid circular dependencies
       const { skipGuess } = await import('@/lib/uncover/game-service');
 
-      const result = await skipGuess(sessionId, user.id, prisma);
+      const result = await skipGuess(
+        sessionId,
+        user.id,
+        prisma,
+        mode || 'daily'
+      );
 
       graphqlLogger.info('Skipped guess:', {
         sessionId,
@@ -4644,6 +4659,91 @@ export const mutationResolvers: MutationResolvers = {
       throw error instanceof GraphQLError
         ? error
         : new GraphQLError(`Failed to skip guess: ${error}`);
+    }
+  },
+
+  /**
+   * Start an archive session for a specific date (not today).
+   */
+  startArchiveSession: async (
+    _,
+    { date }: { date: Date | string },
+    { prisma, user }
+  ) => {
+    try {
+      // AUTH-01: Authentication required
+      if (!user?.id) {
+        throw new GraphQLError('Authentication required to play archive');
+      }
+
+      // Dynamic imports
+      const { startArchiveSession } = await import(
+        '@/lib/uncover/game-service'
+      );
+      const { toUTCMidnight, GAME_EPOCH } = await import(
+        '@/lib/daily-challenge/date-utils'
+      );
+
+      // Parse and normalize date
+      const targetDate = toUTCMidnight(new Date(date));
+      const today = toUTCMidnight(new Date());
+
+      // Validate date range: must be >= GAME_EPOCH and < today
+      if (targetDate < GAME_EPOCH) {
+        throw new GraphQLError('Archive date must be on or after game epoch');
+      }
+      if (targetDate >= today) {
+        throw new GraphQLError(
+          'Archive date must be in the past (not today or future)'
+        );
+      }
+
+      const result = await startArchiveSession(user.id, targetDate, prisma);
+
+      graphqlLogger.info('Started/retrieved archive session:', {
+        sessionId: result.session.id,
+        challengeId: result.challenge.id,
+        challengeDate: targetDate.toISOString(),
+        isNew: result.isNew,
+      });
+
+      return {
+        session: {
+          id: result.session.id,
+          status: result.session.status,
+          attemptCount: result.session.attemptCount,
+          won: result.session.won,
+          startedAt: result.session.startedAt,
+          completedAt: result.session.completedAt,
+          guesses: result.session.guesses.map(guess => ({
+            id: guess.id,
+            guessNumber: guess.guessNumber,
+            isSkipped: guess.guessedAlbumId === null,
+            isCorrect: guess.isCorrect,
+            guessedAt: guess.guessedAt,
+            guessedAlbum: null, // Will be populated by field resolver
+          })),
+        },
+        challengeId: result.challenge.id,
+        imageUrl: result.challenge.album.cloudflareImageId
+          ? process.env.CLOUDFLARE_ACCOUNT_HASH
+            ? 'https://imagedelivery.net/' +
+              process.env.CLOUDFLARE_ACCOUNT_HASH +
+              '/' +
+              result.challenge.album.cloudflareImageId +
+              '/public'
+            : '/album-placeholder.png'
+          : '/album-placeholder.png',
+        cloudflareImageId: result.challenge.album.cloudflareImageId,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to start archive session:', {
+        error,
+        date,
+      });
+      throw error instanceof GraphQLError
+        ? error
+        : new GraphQLError('Failed to start archive session: ' + String(error));
     }
   },
 };

@@ -3502,7 +3502,6 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-
   myUncoverStats: async (_parent, _args, context) => {
     // Require authentication
     if (!context.user) {
@@ -3540,6 +3539,104 @@ export const queryResolvers: QueryResolvers = {
         userId: context.user.id,
       });
       throw new GraphQLError(`Failed to fetch player stats: ${error}`);
+    }
+  },
+  myArchiveStats: async (_parent, _args, context) => {
+    // Require authentication
+    if (!context.user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    try {
+      // Dynamic import to avoid circular dependencies
+      const { getArchiveStats } = await import(
+        '@/lib/uncover/archive-stats-service'
+      );
+
+      const stats = await getArchiveStats(context.user.id, context.prisma);
+
+      // Return null if no games played
+      if (stats.gamesPlayed === 0) {
+        return null;
+      }
+
+      return {
+        id: context.user.id,
+        gamesPlayed: stats.gamesPlayed,
+        gamesWon: stats.gamesWon,
+        totalAttempts: stats.totalAttempts,
+        winDistribution: stats.winDistribution,
+        winRate: stats.winRate,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch archive stats:', {
+        error,
+        userId: context.user.id,
+      });
+      throw new GraphQLError(`Failed to fetch archive stats: ${error}`);
+    }
+  },
+
+  myUncoverSessions: async (
+    _parent,
+    { fromDate, toDate }: { fromDate?: Date; toDate?: Date },
+    context
+  ) => {
+    // Require authentication
+    if (!context.user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    try {
+      // Query sessions with optional date filters
+      const where: any = {
+        userId: context.user.id,
+        completedAt: { not: null }, // Only completed sessions
+      };
+
+      // Apply date filters if provided
+      if (fromDate || toDate) {
+        where.challenge = {
+          challengeDate: {
+            ...(fromDate && { gte: new Date(fromDate) }),
+            ...(toDate && { lte: new Date(toDate) }),
+          },
+        };
+      }
+
+      const sessions = await context.prisma.uncoverSession.findMany({
+        where,
+        include: {
+          challenge: {
+            select: {
+              challengeDate: true,
+            },
+          },
+        },
+        orderBy: {
+          challenge: {
+            challengeDate: 'desc',
+          },
+        },
+      });
+
+      return sessions.map(session => ({
+        id: session.id,
+        challengeDate: session.challenge.challengeDate,
+        won: session.won,
+        attemptCount: session.attemptCount,
+        completedAt: session.completedAt,
+      }));
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch session history:', {
+        error,
+        userId: context.user.id,
+      });
+      throw new GraphQLError(`Failed to fetch session history: ${error}`);
     }
   },
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects
