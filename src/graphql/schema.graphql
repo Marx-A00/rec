@@ -2525,6 +2525,18 @@ type Query {
   myUncoverStats: UncoverPlayerStats
 
   """
+  Get user's archive stats (separate from daily stats).
+  Returns null if no archive games played.
+  """
+  myArchiveStats: UncoverArchiveStats
+
+  """
+  Get user's session history for calendar display (ARCHIVE-02).
+  Optional date filters for efficient month-by-month loading.
+  """
+  myUncoverSessions(fromDate: DateTime, toDate: DateTime): [UncoverSessionHistory!]!
+
+  """
   Admin: Get curated challenge list (ordered)
   """
   curatedChallenges(limit: Int, offset: Int): [CuratedChallengeEntry!]!
@@ -2673,6 +2685,35 @@ type UncoverPlayerStats {
   "Computed: gamesWon / gamesPlayed (0 if no games)"
   winRate: Float!
 }
+
+
+"""
+Archive game statistics (separate from daily stats).
+Archive games don't affect streaks.
+"""
+type UncoverArchiveStats {
+  id: UUID!
+  gamesPlayed: Int!
+  gamesWon: Int!
+  totalAttempts: Int!
+  "Win count by attempt number (index 0 = 1-guess wins, etc.)"
+  winDistribution: [Int!]!
+  "Computed: gamesWon / gamesPlayed (0 if no games)"
+  winRate: Float!
+}
+
+"""
+Session history entry for calendar display.
+Shows which days were played and won/lost.
+"""
+type UncoverSessionHistory {
+  id: UUID!
+  challengeDate: DateTime!
+  won: Boolean!
+  attemptCount: Int!
+  completedAt: DateTime
+}
+
 
 """
 Curated challenge entry for admin management
@@ -2989,12 +3030,18 @@ type Mutation {
   """
   Submit a guess for the current session (requires auth).
   """
-  submitGuess(sessionId: UUID!, albumId: UUID!): GuessResult!
+  submitGuess(sessionId: UUID!, albumId: UUID!, mode: String): GuessResult!
 
   """
   Skip current guess - counts as wrong guess (requires auth).
   """
-  skipGuess(sessionId: UUID!): GuessResult!
+  skipGuess(sessionId: UUID!, mode: String): GuessResult!
+
+  """
+  Start an archive session for a specific date (not today).
+  Used for playing past puzzles.
+  """
+  startArchiveSession(date: DateTime!): StartSessionResult!
 }
 
 type FollowUserPayload {

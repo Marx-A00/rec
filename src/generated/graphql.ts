@@ -1468,6 +1468,11 @@ export type Mutation = {
   /** Skip current guess - counts as wrong guess (requires auth). */
   skipGuess: GuessResult;
   /**
+   * Start an archive session for a specific date (not today).
+   * Used for playing past puzzles.
+   */
+  startArchiveSession: StartSessionResult;
+  /**
    * Start a new session for today's challenge (requires auth).
    * Returns existing session if already started.
    */
@@ -1644,11 +1649,17 @@ export type MutationRollbackSyncJobArgs = {
 };
 
 export type MutationSkipGuessArgs = {
+  mode?: InputMaybe<Scalars['String']['input']>;
   sessionId: Scalars['UUID']['input'];
+};
+
+export type MutationStartArchiveSessionArgs = {
+  date: Scalars['DateTime']['input'];
 };
 
 export type MutationSubmitGuessArgs = {
   albumId: Scalars['UUID']['input'];
+  mode?: InputMaybe<Scalars['String']['input']>;
   sessionId: Scalars['UUID']['input'];
 };
 
@@ -1847,10 +1858,20 @@ export type Query = {
   llamaLogChain: LlamaLogChainResponse;
   llamaLogs: Array<LlamaLog>;
   mutualConnections: Array<User>;
+  /**
+   * Get user's archive stats (separate from daily stats).
+   * Returns null if no archive games played.
+   */
+  myArchiveStats?: Maybe<UncoverArchiveStats>;
   myCollectionAlbums: Array<CollectionAlbum>;
   myCollections: Array<Collection>;
   myRecommendations: RecommendationFeed;
   mySettings?: Maybe<UserSettings>;
+  /**
+   * Get user's session history for calendar display (ARCHIVE-02).
+   * Optional date filters for efficient month-by-month loading.
+   */
+  myUncoverSessions: Array<UncoverSessionHistory>;
   /** Get current user's Uncover game stats (requires auth) */
   myUncoverStats?: Maybe<UncoverPlayerStats>;
   onboardingStatus: OnboardingStatus;
@@ -2029,6 +2050,11 @@ export type QueryMyRecommendationsArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<RecommendationSort>;
+};
+
+export type QueryMyUncoverSessionsArgs = {
+  fromDate?: InputMaybe<Scalars['DateTime']['input']>;
+  toDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type QueryPublicCollectionsArgs = {
@@ -2747,6 +2773,22 @@ export type TrackSourceData = {
   title: Scalars['String']['output'];
 };
 
+/**
+ * Archive game statistics (separate from daily stats).
+ * Archive games don't affect streaks.
+ */
+export type UncoverArchiveStats = {
+  __typename?: 'UncoverArchiveStats';
+  gamesPlayed: Scalars['Int']['output'];
+  gamesWon: Scalars['Int']['output'];
+  id: Scalars['UUID']['output'];
+  totalAttempts: Scalars['Int']['output'];
+  /** Win count by attempt number (index 0 = 1-guess wins, etc.) */
+  winDistribution: Array<Scalars['Int']['output']>;
+  /** Computed: gamesWon / gamesPlayed (0 if no games) */
+  winRate: Scalars['Float']['output'];
+};
+
 /** Album info for guess display (minimal, safe to expose) */
 export type UncoverGuessAlbumInfo = {
   __typename?: 'UncoverGuessAlbumInfo';
@@ -2784,6 +2826,19 @@ export type UncoverPlayerStats = {
   winDistribution: Array<Scalars['Int']['output']>;
   /** Computed: gamesWon / gamesPlayed (0 if no games) */
   winRate: Scalars['Float']['output'];
+};
+
+/**
+ * Session history entry for calendar display.
+ * Shows which days were played and won/lost.
+ */
+export type UncoverSessionHistory = {
+  __typename?: 'UncoverSessionHistory';
+  attemptCount: Scalars['Int']['output'];
+  challengeDate: Scalars['DateTime']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['UUID']['output'];
+  won: Scalars['Boolean']['output'];
 };
 
 /** User's session info for a daily challenge */

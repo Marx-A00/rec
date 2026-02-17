@@ -1442,6 +1442,11 @@ export type Mutation = {
   /** Skip current guess - counts as wrong guess (requires auth). */
   skipGuess: GuessResult;
   /**
+   * Start an archive session for a specific date (not today).
+   * Used for playing past puzzles.
+   */
+  startArchiveSession: StartSessionResult;
+  /**
    * Start a new session for today's challenge (requires auth).
    * Returns existing session if already started.
    */
@@ -1618,11 +1623,17 @@ export type MutationRollbackSyncJobArgs = {
 };
 
 export type MutationSkipGuessArgs = {
+  mode?: InputMaybe<Scalars['String']['input']>;
   sessionId: Scalars['UUID']['input'];
+};
+
+export type MutationStartArchiveSessionArgs = {
+  date: Scalars['DateTime']['input'];
 };
 
 export type MutationSubmitGuessArgs = {
   albumId: Scalars['UUID']['input'];
+  mode?: InputMaybe<Scalars['String']['input']>;
   sessionId: Scalars['UUID']['input'];
 };
 
@@ -1821,10 +1832,20 @@ export type Query = {
   llamaLogChain: LlamaLogChainResponse;
   llamaLogs: Array<LlamaLog>;
   mutualConnections: Array<User>;
+  /**
+   * Get user's archive stats (separate from daily stats).
+   * Returns null if no archive games played.
+   */
+  myArchiveStats?: Maybe<UncoverArchiveStats>;
   myCollectionAlbums: Array<CollectionAlbum>;
   myCollections: Array<Collection>;
   myRecommendations: RecommendationFeed;
   mySettings?: Maybe<UserSettings>;
+  /**
+   * Get user's session history for calendar display (ARCHIVE-02).
+   * Optional date filters for efficient month-by-month loading.
+   */
+  myUncoverSessions: Array<UncoverSessionHistory>;
   /** Get current user's Uncover game stats (requires auth) */
   myUncoverStats?: Maybe<UncoverPlayerStats>;
   onboardingStatus: OnboardingStatus;
@@ -2003,6 +2024,11 @@ export type QueryMyRecommendationsArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<RecommendationSort>;
+};
+
+export type QueryMyUncoverSessionsArgs = {
+  fromDate?: InputMaybe<Scalars['DateTime']['input']>;
+  toDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type QueryPublicCollectionsArgs = {
@@ -2721,6 +2747,22 @@ export type TrackSourceData = {
   title: Scalars['String']['output'];
 };
 
+/**
+ * Archive game statistics (separate from daily stats).
+ * Archive games don't affect streaks.
+ */
+export type UncoverArchiveStats = {
+  __typename?: 'UncoverArchiveStats';
+  gamesPlayed: Scalars['Int']['output'];
+  gamesWon: Scalars['Int']['output'];
+  id: Scalars['UUID']['output'];
+  totalAttempts: Scalars['Int']['output'];
+  /** Win count by attempt number (index 0 = 1-guess wins, etc.) */
+  winDistribution: Array<Scalars['Int']['output']>;
+  /** Computed: gamesWon / gamesPlayed (0 if no games) */
+  winRate: Scalars['Float']['output'];
+};
+
 /** Album info for guess display (minimal, safe to expose) */
 export type UncoverGuessAlbumInfo = {
   __typename?: 'UncoverGuessAlbumInfo';
@@ -2758,6 +2800,19 @@ export type UncoverPlayerStats = {
   winDistribution: Array<Scalars['Int']['output']>;
   /** Computed: gamesWon / gamesPlayed (0 if no games) */
   winRate: Scalars['Float']['output'];
+};
+
+/**
+ * Session history entry for calendar display.
+ * Shows which days were played and won/lost.
+ */
+export type UncoverSessionHistory = {
+  __typename?: 'UncoverSessionHistory';
+  attemptCount: Scalars['Int']['output'];
+  challengeDate: Scalars['DateTime']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['UUID']['output'];
+  won: Scalars['Boolean']['output'];
 };
 
 /** User's session info for a daily challenge */
@@ -3255,9 +3310,11 @@ export type ResolversTypes = ResolversObject<{
   TrackListSummary: ResolverTypeWrapper<TrackListSummary>;
   TrackSourceData: ResolverTypeWrapper<TrackSourceData>;
   UUID: ResolverTypeWrapper<Scalars['UUID']['output']>;
+  UncoverArchiveStats: ResolverTypeWrapper<UncoverArchiveStats>;
   UncoverGuessAlbumInfo: ResolverTypeWrapper<UncoverGuessAlbumInfo>;
   UncoverGuessInfo: ResolverTypeWrapper<UncoverGuessInfo>;
   UncoverPlayerStats: ResolverTypeWrapper<UncoverPlayerStats>;
+  UncoverSessionHistory: ResolverTypeWrapper<UncoverSessionHistory>;
   UncoverSessionInfo: ResolverTypeWrapper<UncoverSessionInfo>;
   UncoverSessionStatus: UncoverSessionStatus;
   UnifiedRelease: ResolverTypeWrapper<UnifiedRelease>;
@@ -3431,9 +3488,11 @@ export type ResolversParentTypes = ResolversObject<{
   TrackListSummary: TrackListSummary;
   TrackSourceData: TrackSourceData;
   UUID: Scalars['UUID']['output'];
+  UncoverArchiveStats: UncoverArchiveStats;
   UncoverGuessAlbumInfo: UncoverGuessAlbumInfo;
   UncoverGuessInfo: UncoverGuessInfo;
   UncoverPlayerStats: UncoverPlayerStats;
+  UncoverSessionHistory: UncoverSessionHistory;
   UncoverSessionInfo: UncoverSessionInfo;
   UnifiedRelease: UnifiedRelease;
   UpcomingChallenge: UpcomingChallenge;
@@ -5322,6 +5381,12 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationSkipGuessArgs, 'sessionId'>
   >;
+  startArchiveSession?: Resolver<
+    ResolversTypes['StartSessionResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationStartArchiveSessionArgs, 'date'>
+  >;
   startUncoverSession?: Resolver<
     ResolversTypes['StartSessionResult'],
     ParentType,
@@ -5732,6 +5797,11 @@ export type QueryResolvers<
     ContextType,
     RequireFields<QueryMutualConnectionsArgs, 'userId'>
   >;
+  myArchiveStats?: Resolver<
+    Maybe<ResolversTypes['UncoverArchiveStats']>,
+    ParentType,
+    ContextType
+  >;
   myCollectionAlbums?: Resolver<
     Array<ResolversTypes['CollectionAlbum']>,
     ParentType,
@@ -5752,6 +5822,12 @@ export type QueryResolvers<
     Maybe<ResolversTypes['UserSettings']>,
     ParentType,
     ContextType
+  >;
+  myUncoverSessions?: Resolver<
+    Array<ResolversTypes['UncoverSessionHistory']>,
+    ParentType,
+    ContextType,
+    Partial<QueryMyUncoverSessionsArgs>
   >;
   myUncoverStats?: Resolver<
     Maybe<ResolversTypes['UncoverPlayerStats']>,
@@ -6768,6 +6844,24 @@ export interface UuidScalarConfig
   name: 'UUID';
 }
 
+export type UncoverArchiveStatsResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UncoverArchiveStats'] = ResolversParentTypes['UncoverArchiveStats'],
+> = ResolversObject<{
+  gamesPlayed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  gamesWon?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  totalAttempts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  winDistribution?: Resolver<
+    Array<ResolversTypes['Int']>,
+    ParentType,
+    ContextType
+  >;
+  winRate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type UncoverGuessAlbumInfoResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -6824,6 +6918,23 @@ export type UncoverPlayerStatsResolvers<
     ContextType
   >;
   winRate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type UncoverSessionHistoryResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['UncoverSessionHistory'] = ResolversParentTypes['UncoverSessionHistory'],
+> = ResolversObject<{
+  attemptCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  challengeDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  completedAt?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  won?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -7301,9 +7412,11 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   TrackListSummary?: TrackListSummaryResolvers<ContextType>;
   TrackSourceData?: TrackSourceDataResolvers<ContextType>;
   UUID?: GraphQLScalarType;
+  UncoverArchiveStats?: UncoverArchiveStatsResolvers<ContextType>;
   UncoverGuessAlbumInfo?: UncoverGuessAlbumInfoResolvers<ContextType>;
   UncoverGuessInfo?: UncoverGuessInfoResolvers<ContextType>;
   UncoverPlayerStats?: UncoverPlayerStatsResolvers<ContextType>;
+  UncoverSessionHistory?: UncoverSessionHistoryResolvers<ContextType>;
   UncoverSessionInfo?: UncoverSessionInfoResolvers<ContextType>;
   UnifiedRelease?: UnifiedReleaseResolvers<ContextType>;
   UpcomingChallenge?: UpcomingChallengeResolvers<ContextType>;
