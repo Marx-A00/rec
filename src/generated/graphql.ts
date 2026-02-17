@@ -3517,6 +3517,76 @@ export type AlbumByMusicBrainzIdQuery = {
   } | null;
 };
 
+export type MyArchiveStatsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type MyArchiveStatsQuery = {
+  __typename?: 'Query';
+  myArchiveStats?: {
+    __typename?: 'UncoverArchiveStats';
+    id: string;
+    gamesPlayed: number;
+    gamesWon: number;
+    totalAttempts: number;
+    winDistribution: Array<number>;
+    winRate: number;
+  } | null;
+};
+
+export type MyUncoverSessionsQueryVariables = Exact<{
+  fromDate?: InputMaybe<Scalars['DateTime']['input']>;
+  toDate?: InputMaybe<Scalars['DateTime']['input']>;
+}>;
+
+export type MyUncoverSessionsQuery = {
+  __typename?: 'Query';
+  myUncoverSessions: Array<{
+    __typename?: 'UncoverSessionHistory';
+    id: string;
+    challengeDate: Date;
+    won: boolean;
+    attemptCount: number;
+    completedAt?: Date | null;
+  }>;
+};
+
+export type StartArchiveSessionMutationVariables = Exact<{
+  date: Scalars['DateTime']['input'];
+}>;
+
+export type StartArchiveSessionMutation = {
+  __typename?: 'Mutation';
+  startArchiveSession: {
+    __typename?: 'StartSessionResult';
+    challengeId: string;
+    imageUrl: string;
+    cloudflareImageId?: string | null;
+    session: {
+      __typename?: 'UncoverSessionInfo';
+      id: string;
+      status: UncoverSessionStatus;
+      attemptCount: number;
+      won: boolean;
+      startedAt: Date;
+      completedAt?: Date | null;
+      guesses: Array<{
+        __typename?: 'UncoverGuessInfo';
+        id: string;
+        guessNumber: number;
+        isSkipped: boolean;
+        isCorrect: boolean;
+        guessedAt: Date;
+        guessedAlbum?: {
+          __typename?: 'UncoverGuessAlbumInfo';
+          id: string;
+          title: string;
+          cloudflareImageId?: string | null;
+          artistName: string;
+        } | null;
+      }>;
+    };
+  };
+};
+
 export type GetArtistByMusicBrainzIdQueryVariables = Exact<{
   musicbrainzId: Scalars['UUID']['input'];
 }>;
@@ -7370,6 +7440,239 @@ export const useInfiniteAlbumByMusicBrainzIdQuery = <
 useInfiniteAlbumByMusicBrainzIdQuery.getKey = (
   variables: AlbumByMusicBrainzIdQueryVariables
 ) => ['AlbumByMusicBrainzId.infinite', variables];
+
+export const MyArchiveStatsDocument = `
+    query MyArchiveStats {
+  myArchiveStats {
+    id
+    gamesPlayed
+    gamesWon
+    totalAttempts
+    winDistribution
+    winRate
+  }
+}
+    `;
+
+export const useMyArchiveStatsQuery = <
+  TData = MyArchiveStatsQuery,
+  TError = unknown,
+>(
+  variables?: MyArchiveStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<MyArchiveStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<MyArchiveStatsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<MyArchiveStatsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['MyArchiveStats']
+        : ['MyArchiveStats', variables],
+    queryFn: fetcher<MyArchiveStatsQuery, MyArchiveStatsQueryVariables>(
+      MyArchiveStatsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useMyArchiveStatsQuery.getKey = (variables?: MyArchiveStatsQueryVariables) =>
+  variables === undefined ? ['MyArchiveStats'] : ['MyArchiveStats', variables];
+
+export const useInfiniteMyArchiveStatsQuery = <
+  TData = InfiniteData<MyArchiveStatsQuery>,
+  TError = unknown,
+>(
+  variables: MyArchiveStatsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<MyArchiveStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      MyArchiveStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<MyArchiveStatsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['MyArchiveStats.infinite']
+            : ['MyArchiveStats.infinite', variables],
+        queryFn: metaData =>
+          fetcher<MyArchiveStatsQuery, MyArchiveStatsQueryVariables>(
+            MyArchiveStatsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteMyArchiveStatsQuery.getKey = (
+  variables?: MyArchiveStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['MyArchiveStats.infinite']
+    : ['MyArchiveStats.infinite', variables];
+
+export const MyUncoverSessionsDocument = `
+    query MyUncoverSessions($fromDate: DateTime, $toDate: DateTime) {
+  myUncoverSessions(fromDate: $fromDate, toDate: $toDate) {
+    id
+    challengeDate
+    won
+    attemptCount
+    completedAt
+  }
+}
+    `;
+
+export const useMyUncoverSessionsQuery = <
+  TData = MyUncoverSessionsQuery,
+  TError = unknown,
+>(
+  variables?: MyUncoverSessionsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<MyUncoverSessionsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      MyUncoverSessionsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<MyUncoverSessionsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['MyUncoverSessions']
+        : ['MyUncoverSessions', variables],
+    queryFn: fetcher<MyUncoverSessionsQuery, MyUncoverSessionsQueryVariables>(
+      MyUncoverSessionsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useMyUncoverSessionsQuery.getKey = (
+  variables?: MyUncoverSessionsQueryVariables
+) =>
+  variables === undefined
+    ? ['MyUncoverSessions']
+    : ['MyUncoverSessions', variables];
+
+export const useInfiniteMyUncoverSessionsQuery = <
+  TData = InfiniteData<MyUncoverSessionsQuery>,
+  TError = unknown,
+>(
+  variables: MyUncoverSessionsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<MyUncoverSessionsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      MyUncoverSessionsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<MyUncoverSessionsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['MyUncoverSessions.infinite']
+            : ['MyUncoverSessions.infinite', variables],
+        queryFn: metaData =>
+          fetcher<MyUncoverSessionsQuery, MyUncoverSessionsQueryVariables>(
+            MyUncoverSessionsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteMyUncoverSessionsQuery.getKey = (
+  variables?: MyUncoverSessionsQueryVariables
+) =>
+  variables === undefined
+    ? ['MyUncoverSessions.infinite']
+    : ['MyUncoverSessions.infinite', variables];
+
+export const StartArchiveSessionDocument = `
+    mutation StartArchiveSession($date: DateTime!) {
+  startArchiveSession(date: $date) {
+    session {
+      id
+      status
+      attemptCount
+      won
+      startedAt
+      completedAt
+      guesses {
+        id
+        guessNumber
+        guessedAlbum {
+          id
+          title
+          cloudflareImageId
+          artistName
+        }
+        isSkipped
+        isCorrect
+        guessedAt
+      }
+    }
+    challengeId
+    imageUrl
+    cloudflareImageId
+  }
+}
+    `;
+
+export const useStartArchiveSessionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    StartArchiveSessionMutation,
+    TError,
+    StartArchiveSessionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    StartArchiveSessionMutation,
+    TError,
+    StartArchiveSessionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['StartArchiveSession'],
+    mutationFn: (variables?: StartArchiveSessionMutationVariables) =>
+      fetcher<
+        StartArchiveSessionMutation,
+        StartArchiveSessionMutationVariables
+      >(StartArchiveSessionDocument, variables)(),
+    ...options,
+  });
+};
+
+useStartArchiveSessionMutation.getKey = () => ['StartArchiveSession'];
 
 export const GetArtistByMusicBrainzIdDocument = `
     query GetArtistByMusicBrainzId($musicbrainzId: UUID!) {

@@ -1,0 +1,49 @@
+query MyArchiveStats {
+  myArchiveStats {
+    id
+    gamesPlayed
+    gamesWon
+    totalAttempts
+    winDistribution
+    winRate
+  }
+}
+
+query MyUncoverSessions($fromDate: DateTime, $toDate: DateTime) {
+  myUncoverSessions(fromDate: $fromDate, toDate: $toDate) {
+    id
+    challengeDate
+    won
+    attemptCount
+    completedAt
+  }
+}
+
+mutation StartArchiveSession($date: DateTime!) {
+  startArchiveSession(date: $date) {
+    session {
+      id
+      status
+      attemptCount
+      won
+      startedAt
+      completedAt
+      guesses {
+        id
+        guessNumber
+        guessedAlbum {
+          id
+          title
+          cloudflareImageId
+          artistName
+        }
+        isSkipped
+        isCorrect
+        guessedAt
+      }
+    }
+    challengeId
+    imageUrl
+    cloudflareImageId
+  }
+}
