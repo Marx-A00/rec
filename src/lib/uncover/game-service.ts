@@ -15,6 +15,7 @@ import { GraphQLError } from 'graphql';
 import { getOrCreateDailyChallenge } from '@/lib/daily-challenge/challenge-service';
 
 import { updatePlayerStats } from './stats-service';
+import { updateArchiveStats } from './archive-stats-service';
 import {
   validateGuess,
   validateSkip,
@@ -152,6 +153,72 @@ export async function startSession(
 }
 
 /**
+ * Start a session for an archive challenge (specific date).
+ * Returns existing session if already started for this date.
+ */
+export async function startArchiveSession(
+  userId: string,
+  challengeDate: Date,
+  prisma: PrismaClient
+): Promise<StartSessionResult> {
+  // Get challenge for specific date (creates if doesn't exist)
+  const challenge = await getOrCreateDailyChallenge(challengeDate);
+
+  // Check for existing session
+  const existingSession = await prisma.uncoverSession.findUnique({
+    where: {
+      challengeId_userId: {
+        challengeId: challenge.id,
+        userId,
+      },
+    },
+    include: {
+      guesses: {
+        orderBy: { guessNumber: 'asc' },
+      },
+    },
+  });
+
+  if (existingSession) {
+    return {
+      session: existingSession,
+      challenge: challenge as ChallengeWithAlbum,
+      isNew: false,
+    };
+  }
+
+  // Create new session
+  const newSession = await prisma.uncoverSession.create({
+    data: {
+      userId,
+      challengeId: challenge.id,
+      status: 'IN_PROGRESS',
+      attemptCount: 0,
+      won: false,
+    },
+    include: {
+      guesses: {
+        orderBy: { guessNumber: 'asc' },
+      },
+    },
+  });
+
+  // Increment challenge totalPlays
+  await prisma.uncoverChallenge.update({
+    where: { id: challenge.id },
+    data: {
+      totalPlays: { increment: 1 },
+    },
+  });
+
+  return {
+    session: newSession,
+    challenge: challenge as ChallengeWithAlbum,
+    isNew: true,
+  };
+}
+
+/**
  * Submit a guess for a session.
  * Validates ownership, game rules, and updates state.
  */
@@ -159,7 +226,8 @@ export async function submitGuess(
   sessionId: string,
   albumId: string,
   userId: string,
-  prisma: PrismaClient
+  prisma: PrismaClient,
+  mode: 'daily' | 'archive' = 'daily'
 ): Promise<SubmitGuessResult> {
   // Fetch session with challenge and guesses
   const session = await prisma.uncoverSession.findUnique({
@@ -273,17 +341,31 @@ export async function submitGuess(
     },
   });
 
-  // Update player stats if game ended (STATS-01 through STATS-05)
+  // Update player stats if game ended
+  // Route to daily or archive stats based on mode
   if (gameResult.gameOver) {
-    await updatePlayerStats(
-      {
-        userId,
-        won: isCorrect,
-        attemptCount: newAttemptCount,
-        challengeDate: session.challenge.date,
-      },
-      prisma
-    );
+    if (mode === 'daily') {
+      // Daily mode: updates streaks (STATS-01 through STATS-05)
+      await updatePlayerStats(
+        {
+          userId,
+          won: isCorrect,
+          attemptCount: newAttemptCount,
+          challengeDate: session.challenge.date,
+        },
+        prisma
+      );
+    } else {
+      // Archive mode: no streaks, separate stats (ARCHIVE-03, ARCHIVE-04)
+      await updateArchiveStats(
+        {
+          userId,
+          won: isCorrect,
+          attemptCount: newAttemptCount,
+        },
+        prisma
+      );
+    }
   }
 
   // If game over with win, update challenge stats
@@ -355,7 +437,8 @@ export async function submitGuess(
 export async function skipGuess(
   sessionId: string,
   userId: string,
-  prisma: PrismaClient
+  prisma: PrismaClient,
+  mode: 'daily' | 'archive' = 'daily'
 ): Promise<SkipGuessResult> {
   // Fetch session with challenge and guesses
   const session = await prisma.uncoverSession.findUnique({
@@ -440,17 +523,31 @@ export async function skipGuess(
     },
   });
 
-  // Update player stats if game ended (STATS-01 through STATS-05)
+  // Update player stats if game ended
+  // Route to daily or archive stats based on mode
   if (gameResult.gameOver) {
-    await updatePlayerStats(
-      {
-        userId,
-        won: false, // skip is always a loss
-        attemptCount: newAttemptCount,
-        challengeDate: session.challenge.date,
-      },
-      prisma
-    );
+    if (mode === 'daily') {
+      // Daily mode: updates streaks (STATS-01 through STATS-05)
+      await updatePlayerStats(
+        {
+          userId,
+          won: false, // skip is always a loss
+          attemptCount: newAttemptCount,
+          challengeDate: session.challenge.date,
+        },
+        prisma
+      );
+    } else {
+      // Archive mode: no streaks, separate stats (ARCHIVE-03, ARCHIVE-04)
+      await updateArchiveStats(
+        {
+          userId,
+          won: false, // skip is always a loss
+          attemptCount: newAttemptCount,
+        },
+        prisma
+      );
+    }
   }
 
   // Get correct album info (only if game over)
