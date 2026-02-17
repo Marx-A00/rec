@@ -267,7 +267,12 @@ export async function findOrCreateAlbum(
     );
   }
 
-  return { album, created: true, dedupMethod: null, artistsCreated: artistsCreatedCount };
+  return {
+    album,
+    created: true,
+    dedupMethod: null,
+    artistsCreated: artistsCreatedCount,
+  };
 }
 
 // ============================================================================
@@ -381,6 +386,7 @@ export async function runPostCreateSideEffects(
           .filter(([, v]) => v != null)
           .map(([k]) => k),
         dataQualityAfter: album.dataQuality,
+        jobId: logging.jobId ?? undefined,
         parentJobId: logging.parentJobId ?? null,
         rootJobId: logging.rootJobId ?? null,
         isRootJob: logging.isRootJob ?? !logging.parentJobId,

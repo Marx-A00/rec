@@ -4,6 +4,16 @@ import { Queue } from 'bullmq';
 
 import { createRedisConnection } from '@/lib/queue/redis';
 
+interface SpotifyConfig {
+  limit: number;
+  pages: number;
+  country: string;
+  minFollowers: number;
+  genreTags: string[];
+  year: number;
+  maxAlbums: number; // limit * pages
+}
+
 interface SchedulerStatus {
   spotify: {
     enabled: boolean;
@@ -11,6 +21,7 @@ interface SchedulerStatus {
     lastRunAt: string | null;
     intervalMinutes: number;
     jobKey: string | null;
+    config: SpotifyConfig;
   };
   musicbrainz: {
     enabled: boolean;
@@ -44,6 +55,17 @@ export async function GET() {
     const musicbrainzJob = repeatableJobs.find(job =>
       job.key.includes('musicbrainz-new-releases')
     );
+
+    // Check Redis toggle keys for admin-controlled state
+    // These are more reliable than repeatable job presence since
+    // the worker may not have cleaned up jobs yet
+    const spotifyRedisState = await redisConnection.get(
+      'scheduler:spotify:enabled'
+    );
+    const spotifyEnabled =
+      spotifyRedisState !== null
+        ? spotifyRedisState === 'true' // Redis toggle takes priority
+        : !!spotifyJob; // Fall back to checking repeatable jobs
 
     // Get delayed jobs to find next scheduled runs
     const delayedJobs = await queue.getDelayed();
@@ -127,15 +149,41 @@ export async function GET() {
       return 0;
     };
 
+    // Read Spotify config from env vars (same source as scheduler)
+    const limit = parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '50');
+    const pages = parseInt(process.env.SPOTIFY_NEW_RELEASES_PAGES || '3');
+    const country = process.env.SPOTIFY_COUNTRY || 'US';
+    const minFollowers = parseInt(
+      process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS || '100000'
+    );
+    const genreTagsRaw = process.env.SPOTIFY_NEW_RELEASES_GENRE_TAGS || '';
+    const genreTags = genreTagsRaw
+      ? genreTagsRaw.split(',').map(t => t.trim())
+      : [];
+    const year = parseInt(
+      process.env.SPOTIFY_NEW_RELEASES_YEAR || String(new Date().getFullYear())
+    );
+
+    const spotifyConfig: SpotifyConfig = {
+      limit,
+      pages,
+      country,
+      minFollowers,
+      genreTags,
+      year,
+      maxAlbums: limit * pages,
+    };
+
     const status: SchedulerStatus = {
       spotify: {
-        enabled: !!spotifyJob,
+        enabled: spotifyEnabled,
         nextRunAt: getNextRunTime(spotifyJob, nextSpotifyJob),
         lastRunAt: lastSpotifySync?.finishedOn
           ? new Date(lastSpotifySync.finishedOn).toISOString()
           : null,
         intervalMinutes: getIntervalMinutes(spotifyJob),
         jobKey: spotifyJob?.key || null,
+        config: spotifyConfig,
       },
       musicbrainz: {
         enabled: !!musicbrainzJob,

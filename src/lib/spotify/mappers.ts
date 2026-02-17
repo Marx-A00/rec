@@ -263,7 +263,12 @@ export async function processSpotifyAlbum(
     year?: number;
   },
   artistImageMap?: Map<string, string>
-): Promise<{ albumId: string; artistIds: string[]; artistsCreated: number; tracksCreated?: number }> {
+): Promise<{
+  albumId: string;
+  artistIds: string[];
+  artistsCreated: number;
+  tracksCreated?: number;
+}> {
   console.log(`🎵 Processing Spotify album: "${spotifyAlbum.name}"`);
 
   // 1. Transform album data
@@ -286,6 +291,11 @@ export async function processSpotifyAlbum(
   });
 
   // 3. Use shared find-or-create helper (adds dedup + handles artists + enrichment)
+  // Generate a unique per-album job ID so this album's creation log is the root
+  // and all enrichment logs chain off it (parentOnly filter in UI works correctly)
+  const albumRootJobId = `spotify-sync-album-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const syncJobId = metadataOptions?.batchId || metadataOptions?.jobId;
+
   const { findOrCreateAlbum } = await import('@/lib/albums');
   const { album, created, artistsCreated } = await findOrCreateAlbum({
     db: prisma,
@@ -315,17 +325,19 @@ export async function processSpotifyAlbum(
       source: 'spotify_sync',
       priority: 'medium',
       requestId: `spotify_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      parentJobId: metadataOptions?.batchId || metadataOptions?.jobId,
+      parentJobId: albumRootJobId, // Chain enrichment off this album's root log
     },
     logging: {
       operation: 'album:created:spotify-sync',
       sources: ['SPOTIFY'],
-      parentJobId: metadataOptions?.batchId || metadataOptions?.jobId,
-      rootJobId: metadataOptions?.jobId,
-      isRootJob: false,
+      jobId: albumRootJobId, // This is the root log for this album
+      parentJobId: undefined, // No parent — this IS the root
+      rootJobId: syncJobId, // Trace back to the sync job
+      isRootJob: true,
       metadata: {
         syncSource: source,
         syncTimestamp: new Date().toISOString(),
+        syncJobId, // Keep reference to the sync for traceability
         query: metadataOptions?.query,
         country: metadataOptions?.country,
       },
@@ -370,7 +382,11 @@ export async function processSpotifyAlbums(
 ): Promise<SpotifyProcessingResult> {
   console.log(`🚀 Processing ${spotifyAlbums.length} Spotify albums...`);
 
-  const results: { albumId: string; artistIds: string[]; artistsCreated: number }[] = [];
+  const results: {
+    albumId: string;
+    artistIds: string[];
+    artistsCreated: number;
+  }[] = [];
   const errors: string[] = [];
   let duplicatesSkipped = 0;
 

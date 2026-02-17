@@ -234,6 +234,10 @@ class SpotifyScheduler {
         priority: 'medium',
         source: 'manual',
         requestId: `manual_new_releases_${Date.now()}`,
+        genreTags: this.config.newReleases.genreTags,
+        year: this.config.newReleases.year || new Date().getFullYear(),
+        pages: this.config.newReleases.pages,
+        minFollowers: this.config.newReleases.minFollowers,
       };
 
       const job = await queue.addJob(
@@ -280,10 +284,39 @@ class SpotifyScheduler {
   }
 
   /**
-   * Manually trigger a new releases sync
+   * Manually trigger a new releases sync.
+   * Re-reads env config to ensure manual triggers respect current settings
+   * even if the scheduler hasn't been started.
    */
   async triggerSync() {
     console.log('🔄 Manually triggering new releases sync...');
+
+    // Re-read env config so "Sync Now" always uses current .env values
+    // even if initializeSpotifyScheduler() was never called
+    this.config = {
+      newReleases: {
+        enabled: process.env.SPOTIFY_SYNC_NEW_RELEASES !== 'false',
+        intervalMinutes: parseInt(
+          process.env.SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES || '10080'
+        ),
+        limit: parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '50'),
+        country: process.env.SPOTIFY_COUNTRY || 'US',
+        genreTags: process.env.SPOTIFY_NEW_RELEASES_GENRE_TAGS
+          ? process.env.SPOTIFY_NEW_RELEASES_GENRE_TAGS.split(',').map(t =>
+              t.trim()
+            )
+          : undefined,
+        year: parseInt(
+          process.env.SPOTIFY_NEW_RELEASES_YEAR ||
+            String(new Date().getFullYear())
+        ),
+        pages: parseInt(process.env.SPOTIFY_NEW_RELEASES_PAGES || '3'),
+        minFollowers: parseInt(
+          process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS || '100000'
+        ),
+      },
+    };
+
     await this.queueNewReleasesSync();
     console.log('✅ Manual sync triggered successfully');
   }

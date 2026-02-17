@@ -82,6 +82,7 @@ export interface AlbumLoggingOptions {
   category?: string;
   sources?: string[];
   userId?: string | null;
+  jobId?: string | null; // Unique ID for this log entry (used as parent for child logs)
   parentJobId?: string | null;
   rootJobId?: string | null;
   isRootJob?: boolean;

@@ -384,7 +384,7 @@ export function EnrichmentLogTable({
       entityType,
       entityId,
       limit,
-      parentOnly: !isArtist, // Artists logs have parents, so don't filter by parentOnly
+      parentOnly: !isArtist, // Show root-level logs; children load via timeline expansion
       category: categoryFilter,
     },
     {
