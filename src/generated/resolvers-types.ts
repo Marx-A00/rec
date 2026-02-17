@@ -1434,6 +1434,11 @@ export type Mutation = {
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
   resetAlbumEnrichment: Album;
   resetArtistEnrichment: Artist;
+  /**
+   * Reset today's daily session (admin only).
+   * Deletes the session and its guesses so the admin can replay.
+   */
+  resetDailySession: Scalars['Boolean']['output'];
   resetOnboardingStatus: OnboardingStatus;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
@@ -2792,7 +2797,7 @@ export type UncoverPlayerStats = {
   currentStreak: Scalars['Int']['output'];
   gamesPlayed: Scalars['Int']['output'];
   gamesWon: Scalars['Int']['output'];
-  id: Scalars['UUID']['output'];
+  id: Scalars['ID']['output'];
   lastPlayedDate?: Maybe<Scalars['DateTime']['output']>;
   maxStreak: Scalars['Int']['output'];
   totalAttempts: Scalars['Int']['output'];
@@ -5356,6 +5361,11 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationResetArtistEnrichmentArgs, 'id'>
   >;
+  resetDailySession?: Resolver<
+    ResolversTypes['Boolean'],
+    ParentType,
+    ContextType
+  >;
   resetOnboardingStatus?: Resolver<
     ResolversTypes['OnboardingStatus'],
     ParentType,
@@ -6904,7 +6914,7 @@ export type UncoverPlayerStatsResolvers<
   currentStreak?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   gamesPlayed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   gamesWon?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['UUID'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   lastPlayedDate?: Resolver<
     Maybe<ResolversTypes['DateTime']>,
     ParentType,

@@ -79,3 +79,7 @@ mutation SkipGuess($sessionId: UUID!) {
     }
   }
 }
+
+mutation ResetDailySession {
+  resetDailySession
+}

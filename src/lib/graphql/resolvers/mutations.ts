@@ -4752,4 +4752,81 @@ export const mutationResolvers: MutationResolvers = {
         : new GraphQLError('Failed to start archive session: ' + String(error));
     }
   },
+
+  /**
+   * Reset today's daily session (admin only).
+   * Deletes session + cascaded guesses so admin can replay.
+   */
+  resetDailySession: async (_, {}, { prisma, user }) => {
+    try {
+      if (!user?.id) {
+        throw new GraphQLError('Authentication required');
+      }
+
+      if (!user.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+        throw new GraphQLError('Admin access required');
+      }
+
+      const { getOrCreateDailyChallenge } = await import(
+        '@/lib/daily-challenge/challenge-service'
+      );
+
+      const challenge = await getOrCreateDailyChallenge();
+
+      const existing = await prisma.uncoverSession.findUnique({
+        where: {
+          challengeId_userId: {
+            challengeId: challenge.id,
+            userId: user.id,
+          },
+        },
+      });
+
+      if (!existing) {
+        return true; // Nothing to reset
+      }
+
+      // Delete guesses first (cascade may not be set up in Prisma)
+      await prisma.uncoverGuess.deleteMany({
+        where: { sessionId: existing.id },
+      });
+
+      // Delete session
+      await prisma.uncoverSession.delete({
+        where: { id: existing.id },
+      });
+
+      // Roll back challenge counters if session was completed
+      if (existing.status === 'WON' || existing.status === 'LOST') {
+        const decrements: Record<string, { decrement: number }> = {
+          totalPlays: { decrement: 1 },
+        };
+        if (existing.won) {
+          decrements.totalWins = { decrement: 1 };
+        }
+        await prisma.uncoverChallenge.update({
+          where: { id: challenge.id },
+          data: decrements,
+        });
+      }
+
+      // Nuke player stats row — it'll rebuild on next completed game
+      await prisma.uncoverPlayerStats.deleteMany({
+        where: { userId: user.id },
+      });
+
+      graphqlLogger.info('Admin reset daily session:', {
+        userId: user.id,
+        challengeId: challenge.id,
+        sessionId: existing.id,
+      });
+
+      return true;
+    } catch (error) {
+      graphqlLogger.error('Failed to reset daily session:', { error });
+      throw error instanceof GraphQLError
+        ? error
+        : new GraphQLError('Failed to reset daily session: ' + String(error));
+    }
+  },
 };

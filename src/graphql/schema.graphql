@@ -2650,7 +2650,7 @@ Player statistics for Uncover daily challenge game.
 Tracks games played, win rate, streaks, and guess distribution.
 """
 type UncoverPlayerStats {
-  id: UUID!
+  id: ID!
   gamesPlayed: Int!
   gamesWon: Int!
   totalAttempts: Int!
@@ -3020,6 +3020,12 @@ type Mutation {
   Used for playing past puzzles.
   """
   startArchiveSession(date: DateTime!): StartSessionResult!
+
+  """
+  Reset today's daily session (admin only).
+  Deletes the session and its guesses so the admin can replay.
+  """
+  resetDailySession: Boolean!
 }
 
 type FollowUserPayload {

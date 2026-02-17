@@ -1460,6 +1460,11 @@ export type Mutation = {
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
   resetAlbumEnrichment: Album;
   resetArtistEnrichment: Artist;
+  /**
+   * Reset today's daily session (admin only).
+   * Deletes the session and its guesses so the admin can replay.
+   */
+  resetDailySession: Scalars['Boolean']['output'];
   resetOnboardingStatus: OnboardingStatus;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
@@ -2818,7 +2823,7 @@ export type UncoverPlayerStats = {
   currentStreak: Scalars['Int']['output'];
   gamesPlayed: Scalars['Int']['output'];
   gamesWon: Scalars['Int']['output'];
-  id: Scalars['UUID']['output'];
+  id: Scalars['ID']['output'];
   lastPlayedDate?: Maybe<Scalars['DateTime']['output']>;
   maxStreak: Scalars['Int']['output'];
   totalAttempts: Scalars['Int']['output'];
@@ -6076,6 +6081,15 @@ export type SkipGuessMutation = {
   };
 };
 
+export type ResetDailySessionMutationVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type ResetDailySessionMutation = {
+  __typename?: 'Mutation';
+  resetDailySession: boolean;
+};
+
 export type MyUncoverStatsQueryVariables = Exact<{ [key: string]: never }>;
 
 export type MyUncoverStatsQuery = {
@@ -6253,7 +6267,7 @@ export const UncoverGuessFieldsFragmentDoc = `
   isCorrect
   guessedAt
 }
-    ${UncoverGuessAlbumFieldsFragmentDoc}`;
+    `;
 export const UncoverSessionFieldsFragmentDoc = `
     fragment UncoverSessionFields on UncoverSessionInfo {
   id
@@ -6266,7 +6280,7 @@ export const UncoverSessionFieldsFragmentDoc = `
     ...UncoverGuessFields
   }
 }
-    ${UncoverGuessFieldsFragmentDoc}`;
+    `;
 export const AdminUpdateUserShowTourDocument = `
     mutation AdminUpdateUserShowTour($userId: String!, $showOnboardingTour: Boolean!) {
   adminUpdateUserShowTour(
@@ -13333,7 +13347,9 @@ export const StartUncoverSessionDocument = `
     cloudflareImageId
   }
 }
-    ${UncoverSessionFieldsFragmentDoc}`;
+    ${UncoverSessionFieldsFragmentDoc}
+${UncoverGuessFieldsFragmentDoc}
+${UncoverGuessAlbumFieldsFragmentDoc}`;
 
 export const useStartUncoverSessionMutation = <
   TError = unknown,
@@ -13380,8 +13396,8 @@ export const SubmitGuessDocument = `
   }
 }
     ${UncoverGuessFieldsFragmentDoc}
-${UncoverSessionFieldsFragmentDoc}
-${UncoverGuessAlbumFieldsFragmentDoc}`;
+${UncoverGuessAlbumFieldsFragmentDoc}
+${UncoverSessionFieldsFragmentDoc}`;
 
 export const useSubmitGuessMutation = <TError = unknown, TContext = unknown>(
   options?: UseMutationOptions<
@@ -13425,8 +13441,8 @@ export const SkipGuessDocument = `
   }
 }
     ${UncoverGuessFieldsFragmentDoc}
-${UncoverSessionFieldsFragmentDoc}
-${UncoverGuessAlbumFieldsFragmentDoc}`;
+${UncoverGuessAlbumFieldsFragmentDoc}
+${UncoverSessionFieldsFragmentDoc}`;
 
 export const useSkipGuessMutation = <TError = unknown, TContext = unknown>(
   options?: UseMutationOptions<
@@ -13453,6 +13469,41 @@ export const useSkipGuessMutation = <TError = unknown, TContext = unknown>(
 };
 
 useSkipGuessMutation.getKey = () => ['SkipGuess'];
+
+export const ResetDailySessionDocument = `
+    mutation ResetDailySession {
+  resetDailySession
+}
+    `;
+
+export const useResetDailySessionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ResetDailySessionMutation,
+    TError,
+    ResetDailySessionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ResetDailySessionMutation,
+    TError,
+    ResetDailySessionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ResetDailySession'],
+    mutationFn: (variables?: ResetDailySessionMutationVariables) =>
+      fetcher<ResetDailySessionMutation, ResetDailySessionMutationVariables>(
+        ResetDailySessionDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useResetDailySessionMutation.getKey = () => ['ResetDailySession'];
 
 export const MyUncoverStatsDocument = `
     query MyUncoverStats {
