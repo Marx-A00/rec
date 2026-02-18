@@ -35,9 +35,12 @@ export interface SpotifySearchResult {
 
 let cachedAccessToken: string | null = null;
 let tokenExpiry: number = 0;
+let pendingTokenRequest: Promise<string> | null = null;
 
 /**
- * Get Spotify access token using Client Credentials flow
+ * Get Spotify access token using Client Credentials flow.
+ * Uses a promise lock to prevent concurrent token requests — if a fetch
+ * is already in-flight, subsequent callers await the same promise.
  */
 async function getAccessToken(): Promise<string> {
   // Return cached token if still valid (with 5 min buffer)
@@ -45,6 +48,21 @@ async function getAccessToken(): Promise<string> {
     return cachedAccessToken;
   }
 
+  // If another request is already fetching a token, wait for it
+  if (pendingTokenRequest) {
+    return pendingTokenRequest;
+  }
+
+  pendingTokenRequest = fetchNewToken();
+
+  try {
+    return await pendingTokenRequest;
+  } finally {
+    pendingTokenRequest = null;
+  }
+}
+
+async function fetchNewToken(): Promise<string> {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
@@ -62,6 +80,15 @@ async function getAccessToken(): Promise<string> {
   });
 
   if (!response.ok) {
+    let body = '';
+    try {
+      body = await response.text();
+    } catch {
+      // ignore read errors
+    }
+    console.error(
+      `❌ [Spotify] Auth failed: ${response.status} ${response.statusText} — body: ${body}`
+    );
     throw new Error(
       `Spotify auth failed: ${response.status} ${response.statusText}`
     );
