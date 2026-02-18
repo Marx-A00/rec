@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -11,37 +11,36 @@ import {
 
 export default function FollowButton({
   userId,
-  initialFollowing = false,
+  isFollowing = false,
   onFollowChange,
   className,
 }: {
   userId: string;
-  initialFollowing?: boolean;
+  isFollowing?: boolean;
   onFollowChange?: (
     isFollowing: boolean,
     newCounts?: { followersCount: number; followingCount: number }
   ) => void;
   className?: string;
 }) {
-  const [isFollowing, setIsFollowing] = useState(initialFollowing);
+  // Only used during the mutation to show optimistic state
+  const [optimisticOverride, setOptimisticOverride] = useState<boolean | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(false);
-  const previousFollowingRef = useRef(initialFollowing);
+  const previousFollowingRef = useRef(isFollowing);
   const followMutation = useFollowUserMutation();
   const unfollowMutation = useUnfollowUserMutation();
 
-  // Sync with initialFollowing prop when it changes (e.g., after query refetch)
-  useEffect(() => {
-    setIsFollowing(initialFollowing);
-  }, [initialFollowing]);
+  // Prop is the source of truth; optimistic override wins while mutation is in-flight
+  const displayFollowing = optimisticOverride ?? isFollowing;
 
   const handleToggle = async () => {
-    // Store previous state for rollback
-    const wasFollowing = isFollowing;
+    const wasFollowing = displayFollowing;
     previousFollowingRef.current = wasFollowing;
 
-    // Optimistic UI update
     const newFollowingState = !wasFollowing;
-    setIsFollowing(newFollowingState);
+    setOptimisticOverride(newFollowingState);
     setIsLoading(true);
 
     // Notify parent immediately for optimistic count update
@@ -53,9 +52,11 @@ export default function FollowButton({
       } else {
         await followMutation.mutateAsync({ userId });
       }
+      // Mutation succeeded — clear override, let the prop (from refetched query) take over
+      setOptimisticOverride(null);
     } catch {
-      // Rollback on error
-      setIsFollowing(wasFollowing);
+      // Rollback — clear override and notify parent
+      setOptimisticOverride(null);
       onFollowChange?.(wasFollowing);
     } finally {
       setIsLoading(false);
@@ -66,12 +67,12 @@ export default function FollowButton({
     <Button
       onClick={handleToggle}
       disabled={isLoading}
-      variant={isFollowing ? 'outline' : 'destructive'}
+      variant={displayFollowing ? 'outline' : 'destructive'}
       className={className}
     >
       {isLoading ? (
         <Loader2 className='h-4 w-4 animate-spin' />
-      ) : isFollowing ? (
+      ) : displayFollowing ? (
         'Following'
       ) : (
         'Follow'

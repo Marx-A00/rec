@@ -378,7 +378,7 @@ export default function ProfileClient({
                     user.id && (
                       <FollowButton
                         userId={user.id}
-                        initialFollowing={isFollowingUser}
+                        isFollowing={user.isFollowing ?? isFollowingUser}
                         onFollowChange={handleFollowChange}
                       />
                     )
