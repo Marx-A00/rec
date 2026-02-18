@@ -12,9 +12,10 @@
  *   --album=ID   Only process a specific album
  */
 
-import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { PrismaClient } from '@prisma/client';
 
 interface TrackData {
   id: string;

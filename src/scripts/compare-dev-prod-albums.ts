@@ -7,8 +7,9 @@
  * 3. Outputs a correction manifest that can be applied to prod
  */
 
-import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
+
+import { PrismaClient } from '@prisma/client';
 
 // Dev DB - uses DATABASE_URL from .env
 const devPrisma = new PrismaClient();

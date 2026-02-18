@@ -74,6 +74,9 @@ type Album {
   enrichmentStatus: EnrichmentStatus
   lastEnriched: DateTime
 
+  # Game pool status
+  gameStatus: AlbumGameStatus!
+
   # Relationships
   artists: [ArtistCredit!]!
   tracks: [Track!]!
@@ -97,7 +100,8 @@ type Track {
   id: UUID!
   albumId: UUID
   musicbrainzId: UUID
-  discogsId: String  isrc: String
+  discogsId: String
+  isrc: String
   title: String!
   trackNumber: Int!
   discNumber: Int!
@@ -654,7 +658,8 @@ input UpdateTrackInput {
   previewUrl: String
   isrc: String
   musicbrainzId: UUID
-  discogsId: String}
+  discogsId: String
+}
 
 input AlertThresholdsInput {
   queueDepth: Int
@@ -737,6 +742,12 @@ enum LlamaLogCategory {
   FAILED
   LINKED
   USER_ACTION
+}
+
+enum AlbumGameStatus {
+  ELIGIBLE
+  EXCLUDED
+  NONE
 }
 
 # =============================================
@@ -2493,9 +2504,307 @@ type Query {
     """
     source: CorrectionSource = MUSICBRAINZ
   ): ArtistCorrectionPreview!
+
+  # Game Pool queries
+  albumsByGameStatus(
+    status: AlbumGameStatus!
+    limit: Int = 50
+    offset: Int = 0
+  ): [Album!]!
+  gamePoolStats: GamePoolStats!
+  suggestedGameAlbums(limit: Int = 50): [Album!]!
+
+  # Daily Challenge queries
+  """
+  Get the daily challenge for a date (defaults to today).
+  Does NOT expose the answer album - that would spoil the game!
+  """
+  dailyChallenge(date: DateTime): DailyChallengeInfo!
+
+  "Get current user's Uncover game stats (requires auth)"
+  myUncoverStats: UncoverPlayerStats
+
+  """
+  Get user's archive stats (separate from daily stats).
+  Returns null if no archive games played.
+  """
+  myArchiveStats: UncoverArchiveStats
+
+  """
+  Get user's session history for calendar display (ARCHIVE-02).
+  Optional date filters for efficient month-by-month loading.
+  """
+  myUncoverSessions(fromDate: DateTime, toDate: DateTime): [UncoverSessionHistory!]!
+
+  """
+  Admin: Get curated challenge list (ordered)
+  """
+  curatedChallenges(limit: Int, offset: Int): [CuratedChallengeEntry!]!
+
+  """
+  Admin: Get count of curated challenges
+  """
+  curatedChallengeCount: Int!
+
+  """
+  Admin: Preview upcoming challenges for the next N days
+  """
+  upcomingChallenges(days: Int!): [UpcomingChallenge!]!
 }
 
 # =============================================
+
+# =============================================
+# DAILY CHALLENGE TYPES
+# =============================================
+
+"""
+Daily challenge info - does NOT include the answer album
+"""
+type DailyChallengeInfo {
+  id: UUID!
+  date: DateTime!
+  maxAttempts: Int!
+  totalPlays: Int!
+  totalWins: Int!
+  avgAttempts: Float
+
+  """
+  Challenge album cover image URL (safe to expose - doesn't reveal the answer)
+  """
+  imageUrl: String
+  cloudflareImageId: String
+
+  """
+  User's session for this challenge (null if not started or not authenticated)
+  """
+  mySession: UncoverSessionInfo
+}
+
+"""
+User's session info for a daily challenge
+"""
+type UncoverSessionInfo {
+  id: UUID!
+  status: UncoverSessionStatus!
+  attemptCount: Int!
+  won: Boolean!
+  startedAt: DateTime!
+  completedAt: DateTime
+  guesses: [UncoverGuessInfo!]!
+}
+
+enum UncoverSessionStatus {
+  IN_PROGRESS
+  WON
+  LOST
+}
+
+"""
+Album info for guess display (minimal, safe to expose)
+"""
+type UncoverGuessAlbumInfo {
+  id: UUID!
+  title: String!
+  cloudflareImageId: String
+  artistName: String!
+}
+
+"""
+Individual guess within a session
+"""
+type UncoverGuessInfo {
+  id: UUID!
+  guessNumber: Int!
+  guessedAlbum: UncoverGuessAlbumInfo
+  isSkipped: Boolean!
+  isCorrect: Boolean!
+  guessedAt: DateTime!
+}
+
+"""
+Result of starting a new session
+"""
+type StartSessionResult {
+  session: UncoverSessionInfo!
+  challengeId: UUID!
+  imageUrl: String!
+  cloudflareImageId: String
+}
+
+"""
+Result of submitting a guess or skipping
+"""
+type GuessResult {
+  guess: UncoverGuessInfo!
+  session: UncoverSessionInfo!
+  gameOver: Boolean!
+  """
+  Only populated when gameOver is true - the correct answer
+  """
+  correctAlbum: UncoverGuessAlbumInfo
+}
+
+"""
+Player statistics for Uncover daily challenge game.
+Tracks games played, win rate, streaks, and guess distribution.
+"""
+type UncoverPlayerStats {
+  id: ID!
+  gamesPlayed: Int!
+  gamesWon: Int!
+  totalAttempts: Int!
+  currentStreak: Int!
+  maxStreak: Int!
+  lastPlayedDate: DateTime
+  "Win count by attempt number (index 0 = 1-guess wins, etc.)"
+  winDistribution: [Int!]!
+  
+  "Computed: gamesWon / gamesPlayed (0 if no games)"
+  winRate: Float!
+}
+
+
+"""
+Archive game statistics (separate from daily stats).
+Archive games don't affect streaks.
+"""
+type UncoverArchiveStats {
+  id: UUID!
+  gamesPlayed: Int!
+  gamesWon: Int!
+  totalAttempts: Int!
+  "Win count by attempt number (index 0 = 1-guess wins, etc.)"
+  winDistribution: [Int!]!
+  "Computed: gamesWon / gamesPlayed (0 if no games)"
+  winRate: Float!
+}
+
+"""
+Session history entry for calendar display.
+Shows which days were played and won/lost.
+"""
+type UncoverSessionHistory {
+  id: UUID!
+  challengeDate: DateTime!
+  won: Boolean!
+  attemptCount: Int!
+  completedAt: DateTime
+}
+
+
+"""
+Curated challenge entry for admin management
+"""
+type CuratedChallengeEntry {
+  id: UUID!
+  sequence: Int!
+  pinnedDate: DateTime
+  album: Album!
+  createdAt: DateTime!
+}
+
+"""
+Upcoming challenge preview for admin
+"""
+type UpcomingChallenge {
+  date: DateTime!
+  daysSinceEpoch: Int!
+  sequence: Int!
+  isPinned: Boolean!
+  album: Album
+}
+
+# =============================================
+# GAME POOL TYPES
+# =============================================
+
+type GamePoolStats {
+  eligibleCount: Int!
+  excludedCount: Int!
+  neutralCount: Int!
+  totalWithCoverArt: Int!
+}
+
+input UpdateAlbumGameStatusInput {
+  albumId: UUID!
+  gameStatus: AlbumGameStatus!
+  reason: String
+}
+
+type UpdateAlbumGameStatusResult {
+  success: Boolean!
+  album: Album
+  error: String
+}
+
+# =============================================
+# DAILY CHALLENGE TYPES
+# =============================================
+
+"""
+Daily challenge info - does NOT include the answer album
+"""
+type DailyChallengeInfo {
+  id: UUID!
+  date: DateTime!
+  maxAttempts: Int!
+  totalPlays: Int!
+  totalWins: Int!
+  avgAttempts: Float
+
+  """
+  Challenge album cover image URL (safe to expose - doesn't reveal the answer)
+  """
+  imageUrl: String
+  cloudflareImageId: String
+
+  """
+  User's session for this challenge (null if not started or not authenticated)
+  """
+  mySession: UncoverSessionInfo
+}
+
+"""
+User's session info for a daily challenge
+"""
+type UncoverSessionInfo {
+  id: UUID!
+  status: UncoverSessionStatus!
+  attemptCount: Int!
+  won: Boolean!
+  startedAt: DateTime!
+  completedAt: DateTime
+}
+
+enum UncoverSessionStatus {
+  IN_PROGRESS
+  WON
+  LOST
+}
+
+"""
+Curated challenge entry for admin management
+"""
+type CuratedChallengeEntry {
+  id: UUID!
+  sequence: Int!
+  pinnedDate: DateTime
+  album: Album!
+  createdAt: DateTime!
+}
+
+"""
+Upcoming challenge preview for admin
+"""
+type UpcomingChallenge {
+  date: DateTime!
+  daysSinceEpoch: Int!
+  sequence: Int!
+  isPinned: Boolean!
+  album: Album
+}
+
 # MUTATIONS (Placeholder for future implementation)
 # =============================================
 
@@ -2523,6 +2832,9 @@ type Mutation {
   # Album management
   addAlbum(input: AlbumInput!): Album!
   updateAlbum(id: UUID!, input: AlbumInput!): Album!
+  updateAlbumGameStatus(
+    input: UpdateAlbumGameStatusInput!
+  ): UpdateAlbumGameStatusResult!
 
   # Artist management
   addArtist(input: ArtistInput!): Artist!
@@ -2657,6 +2969,59 @@ type Mutation {
   artistCorrectionApply(
     input: ArtistCorrectionApplyInput!
   ): ArtistCorrectionApplyResult!
+
+  # Daily Challenge mutations (Admin)
+  """
+  Admin: Add an album to the curated challenge list
+  """
+  addCuratedChallenge(
+    albumId: UUID!
+    pinnedDate: DateTime
+  ): CuratedChallengeEntry!
+
+  """
+  Admin: Remove an album from the curated challenge list
+  """
+  removeCuratedChallenge(id: UUID!): Boolean!
+
+  """
+  Admin: Pin a curated challenge to a specific date
+  """
+  pinCuratedChallenge(id: UUID!, date: DateTime!): CuratedChallengeEntry!
+
+  """
+  Admin: Unpin a curated challenge (remove date override)
+  """
+  unpinCuratedChallenge(id: UUID!): CuratedChallengeEntry!
+
+  # Uncover Game mutations
+  """
+  Start a new session for today's challenge (requires auth).
+  Returns existing session if already started.
+  """
+  startUncoverSession: StartSessionResult!
+
+  """
+  Submit a guess for the current session (requires auth).
+  """
+  submitGuess(sessionId: UUID!, albumId: UUID!, mode: String): GuessResult!
+
+  """
+  Skip current guess - counts as wrong guess (requires auth).
+  """
+  skipGuess(sessionId: UUID!, mode: String): GuessResult!
+
+  """
+  Start an archive session for a specific date (not today).
+  Used for playing past puzzles.
+  """
+  startArchiveSession(date: DateTime!): StartSessionResult!
+
+  """
+  Reset today's daily session (admin only).
+  Deletes the session and its guesses so the admin can replay.
+  """
+  resetDailySession: Boolean!
 }
 
 type FollowUserPayload {
@@ -2744,6 +3109,31 @@ type JobStatusUpdate {
   status: JobStatus!
   progress: Float
   message: String
+
+  # Daily Challenge mutations (Admin)
+  """
+  Admin: Add an album to the curated challenge list
+  """
+  addCuratedChallenge(
+    albumId: UUID!
+    pinnedDate: DateTime
+  ): CuratedChallengeEntry!
+
+  """
+  Admin: Remove an album from the curated challenge list
+  """
+  removeCuratedChallenge(id: UUID!): Boolean!
+
+  """
+  Admin: Pin a curated challenge to a specific date
+  """
+  pinCuratedChallenge(id: UUID!, date: DateTime!): CuratedChallengeEntry!
+
+  """
+  Admin: Unpin a curated challenge (remove date override)
+  """
+  unpinCuratedChallenge(id: UUID!): CuratedChallengeEntry!
+
   timestamp: DateTime!
 }
 

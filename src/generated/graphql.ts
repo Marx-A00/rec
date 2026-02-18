@@ -149,6 +149,7 @@ export type Album = {
   duration?: Maybe<Scalars['String']['output']>;
   durationMs?: Maybe<Scalars['Int']['output']>;
   enrichmentStatus?: Maybe<EnrichmentStatus>;
+  gameStatus: AlbumGameStatus;
   genres?: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['UUID']['output'];
   inCollectionsCount: Scalars['Int']['output'];
@@ -172,6 +173,12 @@ export type Album = {
 export type AlbumLlamaLogsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
+
+export enum AlbumGameStatus {
+  Eligible = 'ELIGIBLE',
+  Excluded = 'EXCLUDED',
+  None = 'NONE',
+}
 
 export type AlbumInput = {
   albumType?: InputMaybe<Scalars['String']['input']>;
@@ -916,6 +923,32 @@ export type CreateRecommendationWithAlbumsInput = {
   score: Scalars['Int']['input'];
 };
 
+/** Curated challenge entry for admin management */
+export type CuratedChallengeEntry = {
+  __typename?: 'CuratedChallengeEntry';
+  album: Album;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  pinnedDate?: Maybe<Scalars['DateTime']['output']>;
+  sequence: Scalars['Int']['output'];
+};
+
+/** Daily challenge info - does NOT include the answer album */
+export type DailyChallengeInfo = {
+  __typename?: 'DailyChallengeInfo';
+  avgAttempts?: Maybe<Scalars['Float']['output']>;
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  date: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  /** Challenge album cover image URL (safe to expose - doesn't reveal the answer) */
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  maxAttempts: Scalars['Int']['output'];
+  /** User's session for this challenge (null if not started or not authenticated) */
+  mySession?: Maybe<UncoverSessionInfo>;
+  totalPlays: Scalars['Int']['output'];
+  totalWins: Scalars['Int']['output'];
+};
+
 export enum DataQuality {
   High = 'HIGH',
   Low = 'LOW',
@@ -1077,6 +1110,14 @@ export type FollowUserPayload = {
   id: Scalars['String']['output'];
 };
 
+export type GamePoolStats = {
+  __typename?: 'GamePoolStats';
+  eligibleCount: Scalars['Int']['output'];
+  excludedCount: Scalars['Int']['output'];
+  neutralCount: Scalars['Int']['output'];
+  totalWithCoverArt: Scalars['Int']['output'];
+};
+
 /**
  * A group of related search results (same release group MBID).
  * Groups releases like "OK Computer" regular vs deluxe editions.
@@ -1093,6 +1134,16 @@ export type GroupedSearchResult = {
   releaseGroupMbid: Scalars['String']['output'];
   /** Total number of versions in this group */
   versionCount: Scalars['Int']['output'];
+};
+
+/** Result of submitting a guess or skipping */
+export type GuessResult = {
+  __typename?: 'GuessResult';
+  /** Only populated when gameOver is true - the correct answer */
+  correctAlbum?: Maybe<UncoverGuessAlbumInfo>;
+  gameOver: Scalars['Boolean']['output'];
+  guess: UncoverGuessInfo;
+  session: UncoverSessionInfo;
 };
 
 export type HealthComponents = {
@@ -1145,12 +1196,38 @@ export enum JobStatus {
 
 export type JobStatusUpdate = {
   __typename?: 'JobStatusUpdate';
+  /** Admin: Add an album to the curated challenge list */
+  addCuratedChallenge: CuratedChallengeEntry;
   jobId: Scalars['String']['output'];
   message?: Maybe<Scalars['String']['output']>;
+  /** Admin: Pin a curated challenge to a specific date */
+  pinCuratedChallenge: CuratedChallengeEntry;
   progress?: Maybe<Scalars['Float']['output']>;
+  /** Admin: Remove an album from the curated challenge list */
+  removeCuratedChallenge: Scalars['Boolean']['output'];
   status: JobStatus;
   timestamp: Scalars['DateTime']['output'];
   type: Scalars['String']['output'];
+  /** Admin: Unpin a curated challenge (remove date override) */
+  unpinCuratedChallenge: CuratedChallengeEntry;
+};
+
+export type JobStatusUpdateAddCuratedChallengeArgs = {
+  albumId: Scalars['UUID']['input'];
+  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type JobStatusUpdatePinCuratedChallengeArgs = {
+  date: Scalars['DateTime']['input'];
+  id: Scalars['UUID']['input'];
+};
+
+export type JobStatusUpdateRemoveCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type JobStatusUpdateUnpinCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
 };
 
 export type LlamaLog = {
@@ -1342,6 +1419,9 @@ export type Mutation = {
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
   addArtist: Artist;
+  /** Admin: Add an album to the curated challenge list */
+  addCuratedChallenge: CuratedChallengeEntry;
+  addToListenLater: CollectionAlbum;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
   artistCorrectionApply: ArtistCorrectionApplyResult;
@@ -1364,27 +1444,55 @@ export type Mutation = {
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
   dismissUserSuggestion: Scalars['Boolean']['output'];
+  ensureListenLaterCollection: Collection;
   followUser: FollowUserPayload;
   /** Apply manual corrections to an album (no external source) */
   manualCorrectionApply: CorrectionApplyResult;
   pauseQueue: Scalars['Boolean']['output'];
+  /** Admin: Pin a curated challenge to a specific date */
+  pinCuratedChallenge: CuratedChallengeEntry;
   previewAlbumEnrichment: PreviewEnrichmentResult;
   previewArtistEnrichment: PreviewEnrichmentResult;
   removeAlbumFromCollection: Scalars['Boolean']['output'];
+  /** Admin: Remove an album from the curated challenge list */
+  removeCuratedChallenge: Scalars['Boolean']['output'];
+  removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
   resetAlbumEnrichment: Album;
   resetArtistEnrichment: Artist;
+  /**
+   * Reset today's daily session (admin only).
+   * Deletes the session and its guesses so the admin can replay.
+   */
+  resetDailySession: Scalars['Boolean']['output'];
   resetOnboardingStatus: OnboardingStatus;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
   rollbackSyncJob: RollbackSyncJobResult;
+  /** Skip current guess - counts as wrong guess (requires auth). */
+  skipGuess: GuessResult;
+  /**
+   * Start an archive session for a specific date (not today).
+   * Used for playing past puzzles.
+   */
+  startArchiveSession: StartSessionResult;
+  /**
+   * Start a new session for today's challenge (requires auth).
+   * Returns existing session if already started.
+   */
+  startUncoverSession: StartSessionResult;
+  /** Submit a guess for the current session (requires auth). */
+  submitGuess: GuessResult;
   triggerAlbumEnrichment: EnrichmentResult;
   triggerArtistEnrichment: EnrichmentResult;
   triggerSpotifySync: SpotifySyncResult;
   unfollowUser: Scalars['Boolean']['output'];
+  /** Admin: Unpin a curated challenge (remove date override) */
+  unpinCuratedChallenge: CuratedChallengeEntry;
   updateAlbum: Album;
   updateAlbumDataQuality: Album;
+  updateAlbumGameStatus: UpdateAlbumGameStatusResult;
   updateAlertThresholds: AlertThresholds;
   updateArtistDataQuality: Artist;
   updateCollection: UpdateCollectionPayload;
@@ -1413,6 +1521,16 @@ export type MutationAddAlbumToCollectionWithCreateArgs = {
 
 export type MutationAddArtistArgs = {
   input: ArtistInput;
+};
+
+export type MutationAddCuratedChallengeArgs = {
+  albumId: Scalars['UUID']['input'];
+  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type MutationAddToListenLaterArgs = {
+  albumData?: InputMaybe<AlbumInput>;
+  albumId: Scalars['UUID']['input'];
 };
 
 export type MutationAdminUpdateUserShowTourArgs = {
@@ -1487,6 +1605,11 @@ export type MutationManualCorrectionApplyArgs = {
   input: ManualCorrectionApplyInput;
 };
 
+export type MutationPinCuratedChallengeArgs = {
+  date: Scalars['DateTime']['input'];
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationPreviewAlbumEnrichmentArgs = {
   id: Scalars['UUID']['input'];
 };
@@ -1498,6 +1621,14 @@ export type MutationPreviewArtistEnrichmentArgs = {
 export type MutationRemoveAlbumFromCollectionArgs = {
   albumId: Scalars['UUID']['input'];
   collectionId: Scalars['String']['input'];
+};
+
+export type MutationRemoveCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+export type MutationRemoveFromListenLaterArgs = {
+  albumId: Scalars['UUID']['input'];
 };
 
 export type MutationReorderCollectionAlbumsArgs = {
@@ -1522,6 +1653,21 @@ export type MutationRollbackSyncJobArgs = {
   syncJobId: Scalars['UUID']['input'];
 };
 
+export type MutationSkipGuessArgs = {
+  mode?: InputMaybe<Scalars['String']['input']>;
+  sessionId: Scalars['UUID']['input'];
+};
+
+export type MutationStartArchiveSessionArgs = {
+  date: Scalars['DateTime']['input'];
+};
+
+export type MutationSubmitGuessArgs = {
+  albumId: Scalars['UUID']['input'];
+  mode?: InputMaybe<Scalars['String']['input']>;
+  sessionId: Scalars['UUID']['input'];
+};
+
 export type MutationTriggerAlbumEnrichmentArgs = {
   force?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['UUID']['input'];
@@ -1542,6 +1688,10 @@ export type MutationUnfollowUserArgs = {
   userId: Scalars['String']['input'];
 };
 
+export type MutationUnpinCuratedChallengeArgs = {
+  id: Scalars['UUID']['input'];
+};
+
 export type MutationUpdateAlbumArgs = {
   id: Scalars['UUID']['input'];
   input: AlbumInput;
@@ -1550,6 +1700,10 @@ export type MutationUpdateAlbumArgs = {
 export type MutationUpdateAlbumDataQualityArgs = {
   dataQuality: DataQuality;
   id: Scalars['UUID']['input'];
+};
+
+export type MutationUpdateAlbumGameStatusArgs = {
+  input: UpdateAlbumGameStatusInput;
 };
 
 export type MutationUpdateAlertThresholdsArgs = {
@@ -1673,6 +1827,7 @@ export type Query = {
   albumByMusicBrainzId?: Maybe<Album>;
   albumRecommendations: Array<Album>;
   albumTracks: Array<Track>;
+  albumsByGameStatus: Array<Album>;
   albumsByJobId: Array<Album>;
   artist?: Maybe<Artist>;
   artistByMusicBrainzId?: Maybe<Artist>;
@@ -1687,10 +1842,20 @@ export type Query = {
   correctionPreview: CorrectionPreview;
   /** Search MusicBrainz for correction candidates for an album */
   correctionSearch: CorrectionSearchResponse;
+  /** Admin: Get count of curated challenges */
+  curatedChallengeCount: Scalars['Int']['output'];
+  /** Admin: Get curated challenge list (ordered) */
+  curatedChallenges: Array<CuratedChallengeEntry>;
+  /**
+   * Get the daily challenge for a date (defaults to today).
+   * Does NOT expose the answer album - that would spoil the game!
+   */
+  dailyChallenge: DailyChallengeInfo;
   databaseStats: DatabaseStats;
   enrichmentStats: EnrichmentStats;
   failedJobs: Array<JobRecord>;
   followingActivity: Array<Recommendation>;
+  gamePoolStats: GamePoolStats;
   getAlbumRecommendations: AlbumRecommendationsResponse;
   health: Scalars['String']['output'];
   isFollowing: Scalars['Boolean']['output'];
@@ -1698,10 +1863,22 @@ export type Query = {
   llamaLogChain: LlamaLogChainResponse;
   llamaLogs: Array<LlamaLog>;
   mutualConnections: Array<User>;
+  /**
+   * Get user's archive stats (separate from daily stats).
+   * Returns null if no archive games played.
+   */
+  myArchiveStats?: Maybe<UncoverArchiveStats>;
   myCollectionAlbums: Array<CollectionAlbum>;
   myCollections: Array<Collection>;
   myRecommendations: RecommendationFeed;
   mySettings?: Maybe<UserSettings>;
+  /**
+   * Get user's session history for calendar display (ARCHIVE-02).
+   * Optional date filters for efficient month-by-month loading.
+   */
+  myUncoverSessions: Array<UncoverSessionHistory>;
+  /** Get current user's Uncover game stats (requires auth) */
+  myUncoverStats?: Maybe<UncoverPlayerStats>;
   onboardingStatus: OnboardingStatus;
   publicCollections: Array<Collection>;
   queueMetrics: QueueMetrics;
@@ -1714,6 +1891,7 @@ export type Query = {
   searchTracks: Array<Track>;
   socialFeed: ActivityFeed;
   spotifyTrending: SpotifyTrendingData;
+  suggestedGameAlbums: Array<Album>;
   syncJob?: Maybe<SyncJob>;
   syncJobByJobId?: Maybe<SyncJob>;
   syncJobs: SyncJobsConnection;
@@ -1724,6 +1902,8 @@ export type Query = {
   trackRecommendations: Array<Track>;
   trendingAlbums: Array<Album>;
   trendingArtists: Array<Artist>;
+  /** Admin: Preview upcoming challenges for the next N days */
+  upcomingChallenges: Array<UpcomingChallenge>;
   user?: Maybe<User>;
   userCollections: Array<Collection>;
   userFollowers: Array<User>;
@@ -1748,6 +1928,12 @@ export type QueryAlbumRecommendationsArgs = {
 
 export type QueryAlbumTracksArgs = {
   albumId: Scalars['UUID']['input'];
+};
+
+export type QueryAlbumsByGameStatusArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  status: AlbumGameStatus;
 };
 
 export type QueryAlbumsByJobIdArgs = {
@@ -1797,6 +1983,15 @@ export type QueryCorrectionPreviewArgs = {
 
 export type QueryCorrectionSearchArgs = {
   input: CorrectionSearchInput;
+};
+
+export type QueryCuratedChallengesArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryDailyChallengeArgs = {
+  date?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type QueryEnrichmentStatsArgs = {
@@ -1862,6 +2057,11 @@ export type QueryMyRecommendationsArgs = {
   sort?: InputMaybe<RecommendationSort>;
 };
 
+export type QueryMyUncoverSessionsArgs = {
+  fromDate?: InputMaybe<Scalars['DateTime']['input']>;
+  toDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
 export type QueryPublicCollectionsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
@@ -1921,6 +2121,10 @@ export type QuerySocialFeedArgs = {
   type?: InputMaybe<ActivityType>;
 };
 
+export type QuerySuggestedGameAlbumsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type QuerySyncJobArgs = {
   id: Scalars['UUID']['input'];
 };
@@ -1956,6 +2160,10 @@ export type QueryTrendingAlbumsArgs = {
 
 export type QueryTrendingArtistsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type QueryUpcomingChallengesArgs = {
+  days: Scalars['Int']['input'];
 };
 
 export type QueryUserArgs = {
@@ -2308,6 +2516,15 @@ export type SpotifyTrendingData = {
   topCharts: Array<SpotifyTopChart>;
 };
 
+/** Result of starting a new session */
+export type StartSessionResult = {
+  __typename?: 'StartSessionResult';
+  challengeId: Scalars['UUID']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  imageUrl: Scalars['String']['output'];
+  session: UncoverSessionInfo;
+};
+
 export type Subscription = {
   __typename?: 'Subscription';
   alertStream: Alert;
@@ -2561,6 +2778,92 @@ export type TrackSourceData = {
   title: Scalars['String']['output'];
 };
 
+/**
+ * Archive game statistics (separate from daily stats).
+ * Archive games don't affect streaks.
+ */
+export type UncoverArchiveStats = {
+  __typename?: 'UncoverArchiveStats';
+  gamesPlayed: Scalars['Int']['output'];
+  gamesWon: Scalars['Int']['output'];
+  id: Scalars['UUID']['output'];
+  totalAttempts: Scalars['Int']['output'];
+  /** Win count by attempt number (index 0 = 1-guess wins, etc.) */
+  winDistribution: Array<Scalars['Int']['output']>;
+  /** Computed: gamesWon / gamesPlayed (0 if no games) */
+  winRate: Scalars['Float']['output'];
+};
+
+/** Album info for guess display (minimal, safe to expose) */
+export type UncoverGuessAlbumInfo = {
+  __typename?: 'UncoverGuessAlbumInfo';
+  artistName: Scalars['String']['output'];
+  cloudflareImageId?: Maybe<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  title: Scalars['String']['output'];
+};
+
+/** Individual guess within a session */
+export type UncoverGuessInfo = {
+  __typename?: 'UncoverGuessInfo';
+  guessNumber: Scalars['Int']['output'];
+  guessedAlbum?: Maybe<UncoverGuessAlbumInfo>;
+  guessedAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  isCorrect: Scalars['Boolean']['output'];
+  isSkipped: Scalars['Boolean']['output'];
+};
+
+/**
+ * Player statistics for Uncover daily challenge game.
+ * Tracks games played, win rate, streaks, and guess distribution.
+ */
+export type UncoverPlayerStats = {
+  __typename?: 'UncoverPlayerStats';
+  currentStreak: Scalars['Int']['output'];
+  gamesPlayed: Scalars['Int']['output'];
+  gamesWon: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  lastPlayedDate?: Maybe<Scalars['DateTime']['output']>;
+  maxStreak: Scalars['Int']['output'];
+  totalAttempts: Scalars['Int']['output'];
+  /** Win count by attempt number (index 0 = 1-guess wins, etc.) */
+  winDistribution: Array<Scalars['Int']['output']>;
+  /** Computed: gamesWon / gamesPlayed (0 if no games) */
+  winRate: Scalars['Float']['output'];
+};
+
+/**
+ * Session history entry for calendar display.
+ * Shows which days were played and won/lost.
+ */
+export type UncoverSessionHistory = {
+  __typename?: 'UncoverSessionHistory';
+  attemptCount: Scalars['Int']['output'];
+  challengeDate: Scalars['DateTime']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['UUID']['output'];
+  won: Scalars['Boolean']['output'];
+};
+
+/** User's session info for a daily challenge */
+export type UncoverSessionInfo = {
+  __typename?: 'UncoverSessionInfo';
+  attemptCount: Scalars['Int']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  guesses: Array<UncoverGuessInfo>;
+  id: Scalars['UUID']['output'];
+  startedAt: Scalars['DateTime']['output'];
+  status: UncoverSessionStatus;
+  won: Scalars['Boolean']['output'];
+};
+
+export enum UncoverSessionStatus {
+  InProgress = 'IN_PROGRESS',
+  Lost = 'LOST',
+  Won = 'WON',
+}
+
 export type UnifiedRelease = {
   __typename?: 'UnifiedRelease';
   artistCredits?: Maybe<Array<ArtistCredit>>;
@@ -2574,6 +2877,29 @@ export type UnifiedRelease = {
   title: Scalars['String']['output'];
   trackCount?: Maybe<Scalars['Int']['output']>;
   year?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Upcoming challenge preview for admin */
+export type UpcomingChallenge = {
+  __typename?: 'UpcomingChallenge';
+  album?: Maybe<Album>;
+  date: Scalars['DateTime']['output'];
+  daysSinceEpoch: Scalars['Int']['output'];
+  isPinned: Scalars['Boolean']['output'];
+  sequence: Scalars['Int']['output'];
+};
+
+export type UpdateAlbumGameStatusInput = {
+  albumId: Scalars['UUID']['input'];
+  gameStatus: AlbumGameStatus;
+  reason?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateAlbumGameStatusResult = {
+  __typename?: 'UpdateAlbumGameStatusResult';
+  album?: Maybe<Album>;
+  error?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
 };
 
 export type UpdateCollectionAlbumPayload = {
@@ -2858,6 +3184,39 @@ export type CheckFollowStatusQuery = {
     id: string;
     isFollowing?: boolean | null;
   } | null;
+};
+
+export type EnsureListenLaterMutationVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type EnsureListenLaterMutation = {
+  __typename?: 'Mutation';
+  ensureListenLaterCollection: {
+    __typename?: 'Collection';
+    id: string;
+    name: string;
+    isPublic: boolean;
+  };
+};
+
+export type AddToListenLaterMutationVariables = Exact<{
+  albumId: Scalars['UUID']['input'];
+  albumData?: InputMaybe<AlbumInput>;
+}>;
+
+export type AddToListenLaterMutation = {
+  __typename?: 'Mutation';
+  addToListenLater: { __typename?: 'CollectionAlbum'; id: string };
+};
+
+export type RemoveFromListenLaterMutationVariables = Exact<{
+  albumId: Scalars['UUID']['input'];
+}>;
+
+export type RemoveFromListenLaterMutation = {
+  __typename?: 'Mutation';
+  removeFromListenLater: boolean;
 };
 
 export type ManualCorrectionApplyMutationVariables = Exact<{
@@ -3161,6 +3520,76 @@ export type AlbumByMusicBrainzIdQuery = {
       artist: { __typename?: 'Artist'; id: string; name: string };
     }>;
   } | null;
+};
+
+export type MyArchiveStatsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type MyArchiveStatsQuery = {
+  __typename?: 'Query';
+  myArchiveStats?: {
+    __typename?: 'UncoverArchiveStats';
+    id: string;
+    gamesPlayed: number;
+    gamesWon: number;
+    totalAttempts: number;
+    winDistribution: Array<number>;
+    winRate: number;
+  } | null;
+};
+
+export type MyUncoverSessionsQueryVariables = Exact<{
+  fromDate?: InputMaybe<Scalars['DateTime']['input']>;
+  toDate?: InputMaybe<Scalars['DateTime']['input']>;
+}>;
+
+export type MyUncoverSessionsQuery = {
+  __typename?: 'Query';
+  myUncoverSessions: Array<{
+    __typename?: 'UncoverSessionHistory';
+    id: string;
+    challengeDate: Date;
+    won: boolean;
+    attemptCount: number;
+    completedAt?: Date | null;
+  }>;
+};
+
+export type StartArchiveSessionMutationVariables = Exact<{
+  date: Scalars['DateTime']['input'];
+}>;
+
+export type StartArchiveSessionMutation = {
+  __typename?: 'Mutation';
+  startArchiveSession: {
+    __typename?: 'StartSessionResult';
+    challengeId: string;
+    imageUrl: string;
+    cloudflareImageId?: string | null;
+    session: {
+      __typename?: 'UncoverSessionInfo';
+      id: string;
+      status: UncoverSessionStatus;
+      attemptCount: number;
+      won: boolean;
+      startedAt: Date;
+      completedAt?: Date | null;
+      guesses: Array<{
+        __typename?: 'UncoverGuessInfo';
+        id: string;
+        guessNumber: number;
+        isSkipped: boolean;
+        isCorrect: boolean;
+        guessedAt: Date;
+        guessedAlbum?: {
+          __typename?: 'UncoverGuessAlbumInfo';
+          id: string;
+          title: string;
+          cloudflareImageId?: string | null;
+          artistName: string;
+        } | null;
+      }>;
+    };
+  };
 };
 
 export type GetArtistByMusicBrainzIdQueryVariables = Exact<{
@@ -3801,6 +4230,152 @@ export type SearchCorrectionCandidatesQuery = {
   };
 };
 
+export type DailyChallengeQueryVariables = Exact<{
+  date?: InputMaybe<Scalars['DateTime']['input']>;
+}>;
+
+export type DailyChallengeQuery = {
+  __typename?: 'Query';
+  dailyChallenge: {
+    __typename?: 'DailyChallengeInfo';
+    id: string;
+    date: Date;
+    maxAttempts: number;
+    totalPlays: number;
+    totalWins: number;
+    avgAttempts?: number | null;
+    imageUrl?: string | null;
+    cloudflareImageId?: string | null;
+    mySession?: {
+      __typename?: 'UncoverSessionInfo';
+      id: string;
+      status: UncoverSessionStatus;
+      attemptCount: number;
+      won: boolean;
+      startedAt: Date;
+      completedAt?: Date | null;
+    } | null;
+  };
+};
+
+export type CuratedChallengesQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type CuratedChallengesQuery = {
+  __typename?: 'Query';
+  curatedChallenges: Array<{
+    __typename?: 'CuratedChallengeEntry';
+    id: string;
+    sequence: number;
+    pinnedDate?: Date | null;
+    createdAt: Date;
+    album: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      cloudflareImageId?: string | null;
+      releaseDate?: Date | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    };
+  }>;
+};
+
+export type CuratedChallengeCountQueryVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type CuratedChallengeCountQuery = {
+  __typename?: 'Query';
+  curatedChallengeCount: number;
+};
+
+export type UpcomingChallengesQueryVariables = Exact<{
+  days: Scalars['Int']['input'];
+}>;
+
+export type UpcomingChallengesQuery = {
+  __typename?: 'Query';
+  upcomingChallenges: Array<{
+    __typename?: 'UpcomingChallenge';
+    date: Date;
+    daysSinceEpoch: number;
+    sequence: number;
+    isPinned: boolean;
+    album?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      cloudflareImageId?: string | null;
+      releaseDate?: Date | null;
+      artists: Array<{
+        __typename?: 'ArtistCredit';
+        artist: { __typename?: 'Artist'; id: string; name: string };
+      }>;
+    } | null;
+  }>;
+};
+
+export type AddCuratedChallengeMutationVariables = Exact<{
+  albumId: Scalars['UUID']['input'];
+  pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
+}>;
+
+export type AddCuratedChallengeMutation = {
+  __typename?: 'Mutation';
+  addCuratedChallenge: {
+    __typename?: 'CuratedChallengeEntry';
+    id: string;
+    sequence: number;
+    pinnedDate?: Date | null;
+    album: { __typename?: 'Album'; id: string; title: string };
+  };
+};
+
+export type RemoveCuratedChallengeMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type RemoveCuratedChallengeMutation = {
+  __typename?: 'Mutation';
+  removeCuratedChallenge: boolean;
+};
+
+export type PinCuratedChallengeMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+  date: Scalars['DateTime']['input'];
+}>;
+
+export type PinCuratedChallengeMutation = {
+  __typename?: 'Mutation';
+  pinCuratedChallenge: {
+    __typename?: 'CuratedChallengeEntry';
+    id: string;
+    sequence: number;
+    pinnedDate?: Date | null;
+    album: { __typename?: 'Album'; id: string; title: string };
+  };
+};
+
+export type UnpinCuratedChallengeMutationVariables = Exact<{
+  id: Scalars['UUID']['input'];
+}>;
+
+export type UnpinCuratedChallengeMutation = {
+  __typename?: 'Mutation';
+  unpinCuratedChallenge: {
+    __typename?: 'CuratedChallengeEntry';
+    id: string;
+    sequence: number;
+    pinnedDate?: Date | null;
+    album: { __typename?: 'Album'; id: string; title: string };
+  };
+};
+
 export type GetLlamaLogsQueryVariables = Exact<{
   entityType?: InputMaybe<EnrichmentEntityType>;
   entityId?: InputMaybe<Scalars['UUID']['input']>;
@@ -4011,6 +4586,82 @@ export type PreviewArtistEnrichmentMutation = {
       newValue?: string | null;
       source: string;
     }>;
+  };
+};
+
+export type GamePoolStatsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type GamePoolStatsQuery = {
+  __typename?: 'Query';
+  gamePoolStats: {
+    __typename?: 'GamePoolStats';
+    eligibleCount: number;
+    excludedCount: number;
+    neutralCount: number;
+    totalWithCoverArt: number;
+  };
+};
+
+export type AlbumsByGameStatusQueryVariables = Exact<{
+  status: AlbumGameStatus;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type AlbumsByGameStatusQuery = {
+  __typename?: 'Query';
+  albumsByGameStatus: Array<{
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    releaseDate?: Date | null;
+    coverArtUrl?: string | null;
+    cloudflareImageId?: string | null;
+    gameStatus: AlbumGameStatus;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  }>;
+};
+
+export type SuggestedGameAlbumsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type SuggestedGameAlbumsQuery = {
+  __typename?: 'Query';
+  suggestedGameAlbums: Array<{
+    __typename?: 'Album';
+    id: string;
+    title: string;
+    releaseDate?: Date | null;
+    coverArtUrl?: string | null;
+    cloudflareImageId?: string | null;
+    gameStatus: AlbumGameStatus;
+    artists: Array<{
+      __typename?: 'ArtistCredit';
+      artist: { __typename?: 'Artist'; id: string; name: string };
+    }>;
+  }>;
+};
+
+export type UpdateAlbumGameStatusMutationVariables = Exact<{
+  input: UpdateAlbumGameStatusInput;
+}>;
+
+export type UpdateAlbumGameStatusMutation = {
+  __typename?: 'Mutation';
+  updateAlbumGameStatus: {
+    __typename?: 'UpdateAlbumGameStatusResult';
+    success: boolean;
+    error?: string | null;
+    album?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      gameStatus: AlbumGameStatus;
+    } | null;
   };
 };
 
@@ -4298,7 +4949,6 @@ export type GetUserProfileQuery = {
     email?: string | null;
     image?: string | null;
     bio?: string | null;
-    role: UserRole;
     followersCount: number;
     followingCount: number;
     recommendationsCount: number;
@@ -5227,6 +5877,237 @@ export type GetTopRecommendedArtistsQuery = {
   }>;
 };
 
+export type UncoverGuessAlbumFieldsFragment = {
+  __typename?: 'UncoverGuessAlbumInfo';
+  id: string;
+  title: string;
+  cloudflareImageId?: string | null;
+  artistName: string;
+};
+
+export type UncoverGuessFieldsFragment = {
+  __typename?: 'UncoverGuessInfo';
+  id: string;
+  guessNumber: number;
+  isSkipped: boolean;
+  isCorrect: boolean;
+  guessedAt: Date;
+  guessedAlbum?: {
+    __typename?: 'UncoverGuessAlbumInfo';
+    id: string;
+    title: string;
+    cloudflareImageId?: string | null;
+    artistName: string;
+  } | null;
+};
+
+export type UncoverSessionFieldsFragment = {
+  __typename?: 'UncoverSessionInfo';
+  id: string;
+  status: UncoverSessionStatus;
+  attemptCount: number;
+  won: boolean;
+  startedAt: Date;
+  completedAt?: Date | null;
+  guesses: Array<{
+    __typename?: 'UncoverGuessInfo';
+    id: string;
+    guessNumber: number;
+    isSkipped: boolean;
+    isCorrect: boolean;
+    guessedAt: Date;
+    guessedAlbum?: {
+      __typename?: 'UncoverGuessAlbumInfo';
+      id: string;
+      title: string;
+      cloudflareImageId?: string | null;
+      artistName: string;
+    } | null;
+  }>;
+};
+
+export type StartUncoverSessionMutationVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type StartUncoverSessionMutation = {
+  __typename?: 'Mutation';
+  startUncoverSession: {
+    __typename?: 'StartSessionResult';
+    challengeId: string;
+    imageUrl: string;
+    cloudflareImageId?: string | null;
+    session: {
+      __typename?: 'UncoverSessionInfo';
+      id: string;
+      status: UncoverSessionStatus;
+      attemptCount: number;
+      won: boolean;
+      startedAt: Date;
+      completedAt?: Date | null;
+      guesses: Array<{
+        __typename?: 'UncoverGuessInfo';
+        id: string;
+        guessNumber: number;
+        isSkipped: boolean;
+        isCorrect: boolean;
+        guessedAt: Date;
+        guessedAlbum?: {
+          __typename?: 'UncoverGuessAlbumInfo';
+          id: string;
+          title: string;
+          cloudflareImageId?: string | null;
+          artistName: string;
+        } | null;
+      }>;
+    };
+  };
+};
+
+export type SubmitGuessMutationVariables = Exact<{
+  sessionId: Scalars['UUID']['input'];
+  albumId: Scalars['UUID']['input'];
+}>;
+
+export type SubmitGuessMutation = {
+  __typename?: 'Mutation';
+  submitGuess: {
+    __typename?: 'GuessResult';
+    gameOver: boolean;
+    guess: {
+      __typename?: 'UncoverGuessInfo';
+      id: string;
+      guessNumber: number;
+      isSkipped: boolean;
+      isCorrect: boolean;
+      guessedAt: Date;
+      guessedAlbum?: {
+        __typename?: 'UncoverGuessAlbumInfo';
+        id: string;
+        title: string;
+        cloudflareImageId?: string | null;
+        artistName: string;
+      } | null;
+    };
+    session: {
+      __typename?: 'UncoverSessionInfo';
+      id: string;
+      status: UncoverSessionStatus;
+      attemptCount: number;
+      won: boolean;
+      startedAt: Date;
+      completedAt?: Date | null;
+      guesses: Array<{
+        __typename?: 'UncoverGuessInfo';
+        id: string;
+        guessNumber: number;
+        isSkipped: boolean;
+        isCorrect: boolean;
+        guessedAt: Date;
+        guessedAlbum?: {
+          __typename?: 'UncoverGuessAlbumInfo';
+          id: string;
+          title: string;
+          cloudflareImageId?: string | null;
+          artistName: string;
+        } | null;
+      }>;
+    };
+    correctAlbum?: {
+      __typename?: 'UncoverGuessAlbumInfo';
+      id: string;
+      title: string;
+      cloudflareImageId?: string | null;
+      artistName: string;
+    } | null;
+  };
+};
+
+export type SkipGuessMutationVariables = Exact<{
+  sessionId: Scalars['UUID']['input'];
+}>;
+
+export type SkipGuessMutation = {
+  __typename?: 'Mutation';
+  skipGuess: {
+    __typename?: 'GuessResult';
+    gameOver: boolean;
+    guess: {
+      __typename?: 'UncoverGuessInfo';
+      id: string;
+      guessNumber: number;
+      isSkipped: boolean;
+      isCorrect: boolean;
+      guessedAt: Date;
+      guessedAlbum?: {
+        __typename?: 'UncoverGuessAlbumInfo';
+        id: string;
+        title: string;
+        cloudflareImageId?: string | null;
+        artistName: string;
+      } | null;
+    };
+    session: {
+      __typename?: 'UncoverSessionInfo';
+      id: string;
+      status: UncoverSessionStatus;
+      attemptCount: number;
+      won: boolean;
+      startedAt: Date;
+      completedAt?: Date | null;
+      guesses: Array<{
+        __typename?: 'UncoverGuessInfo';
+        id: string;
+        guessNumber: number;
+        isSkipped: boolean;
+        isCorrect: boolean;
+        guessedAt: Date;
+        guessedAlbum?: {
+          __typename?: 'UncoverGuessAlbumInfo';
+          id: string;
+          title: string;
+          cloudflareImageId?: string | null;
+          artistName: string;
+        } | null;
+      }>;
+    };
+    correctAlbum?: {
+      __typename?: 'UncoverGuessAlbumInfo';
+      id: string;
+      title: string;
+      cloudflareImageId?: string | null;
+      artistName: string;
+    } | null;
+  };
+};
+
+export type ResetDailySessionMutationVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type ResetDailySessionMutation = {
+  __typename?: 'Mutation';
+  resetDailySession: boolean;
+};
+
+export type MyUncoverStatsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type MyUncoverStatsQuery = {
+  __typename?: 'Query';
+  myUncoverStats?: {
+    __typename?: 'UncoverPlayerStats';
+    id: string;
+    gamesPlayed: number;
+    gamesWon: number;
+    totalAttempts: number;
+    currentStreak: number;
+    maxStreak: number;
+    lastPlayedDate?: Date | null;
+    winDistribution: Array<number>;
+    winRate: number;
+  } | null;
+};
+
 export type UpdateAlbumDataQualityMutationVariables = Exact<{
   id: Scalars['UUID']['input'];
   dataQuality: DataQuality;
@@ -5364,6 +6245,39 @@ export const ActivityFieldsFragmentDoc = `
     collectionName
     personalRating
     position
+  }
+}
+    `;
+export const UncoverGuessAlbumFieldsFragmentDoc = `
+    fragment UncoverGuessAlbumFields on UncoverGuessAlbumInfo {
+  id
+  title
+  cloudflareImageId
+  artistName
+}
+    `;
+export const UncoverGuessFieldsFragmentDoc = `
+    fragment UncoverGuessFields on UncoverGuessInfo {
+  id
+  guessNumber
+  guessedAlbum {
+    ...UncoverGuessAlbumFields
+  }
+  isSkipped
+  isCorrect
+  guessedAt
+}
+    `;
+export const UncoverSessionFieldsFragmentDoc = `
+    fragment UncoverSessionFields on UncoverSessionInfo {
+  id
+  status
+  attemptCount
+  won
+  startedAt
+  completedAt
+  guesses {
+    ...UncoverGuessFields
   }
 }
     `;
@@ -5713,6 +6627,117 @@ export const useInfiniteCheckFollowStatusQuery = <
 useInfiniteCheckFollowStatusQuery.getKey = (
   variables: CheckFollowStatusQueryVariables
 ) => ['CheckFollowStatus.infinite', variables];
+
+export const EnsureListenLaterDocument = `
+    mutation EnsureListenLater {
+  ensureListenLaterCollection {
+    id
+    name
+    isPublic
+  }
+}
+    `;
+
+export const useEnsureListenLaterMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    EnsureListenLaterMutation,
+    TError,
+    EnsureListenLaterMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    EnsureListenLaterMutation,
+    TError,
+    EnsureListenLaterMutationVariables,
+    TContext
+  >({
+    mutationKey: ['EnsureListenLater'],
+    mutationFn: (variables?: EnsureListenLaterMutationVariables) =>
+      fetcher<EnsureListenLaterMutation, EnsureListenLaterMutationVariables>(
+        EnsureListenLaterDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useEnsureListenLaterMutation.getKey = () => ['EnsureListenLater'];
+
+export const AddToListenLaterDocument = `
+    mutation AddToListenLater($albumId: UUID!, $albumData: AlbumInput) {
+  addToListenLater(albumId: $albumId, albumData: $albumData) {
+    id
+  }
+}
+    `;
+
+export const useAddToListenLaterMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    AddToListenLaterMutation,
+    TError,
+    AddToListenLaterMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AddToListenLaterMutation,
+    TError,
+    AddToListenLaterMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AddToListenLater'],
+    mutationFn: (variables?: AddToListenLaterMutationVariables) =>
+      fetcher<AddToListenLaterMutation, AddToListenLaterMutationVariables>(
+        AddToListenLaterDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useAddToListenLaterMutation.getKey = () => ['AddToListenLater'];
+
+export const RemoveFromListenLaterDocument = `
+    mutation RemoveFromListenLater($albumId: UUID!) {
+  removeFromListenLater(albumId: $albumId)
+}
+    `;
+
+export const useRemoveFromListenLaterMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    RemoveFromListenLaterMutation,
+    TError,
+    RemoveFromListenLaterMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    RemoveFromListenLaterMutation,
+    TError,
+    RemoveFromListenLaterMutationVariables,
+    TContext
+  >({
+    mutationKey: ['RemoveFromListenLater'],
+    mutationFn: (variables?: RemoveFromListenLaterMutationVariables) =>
+      fetcher<
+        RemoveFromListenLaterMutation,
+        RemoveFromListenLaterMutationVariables
+      >(RemoveFromListenLaterDocument, variables)(),
+    ...options,
+  });
+};
+
+useRemoveFromListenLaterMutation.getKey = () => ['RemoveFromListenLater'];
 
 export const ManualCorrectionApplyDocument = `
     mutation ManualCorrectionApply($input: ManualCorrectionApplyInput!) {
@@ -6429,6 +7454,239 @@ export const useInfiniteAlbumByMusicBrainzIdQuery = <
 useInfiniteAlbumByMusicBrainzIdQuery.getKey = (
   variables: AlbumByMusicBrainzIdQueryVariables
 ) => ['AlbumByMusicBrainzId.infinite', variables];
+
+export const MyArchiveStatsDocument = `
+    query MyArchiveStats {
+  myArchiveStats {
+    id
+    gamesPlayed
+    gamesWon
+    totalAttempts
+    winDistribution
+    winRate
+  }
+}
+    `;
+
+export const useMyArchiveStatsQuery = <
+  TData = MyArchiveStatsQuery,
+  TError = unknown,
+>(
+  variables?: MyArchiveStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<MyArchiveStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<MyArchiveStatsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<MyArchiveStatsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['MyArchiveStats']
+        : ['MyArchiveStats', variables],
+    queryFn: fetcher<MyArchiveStatsQuery, MyArchiveStatsQueryVariables>(
+      MyArchiveStatsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useMyArchiveStatsQuery.getKey = (variables?: MyArchiveStatsQueryVariables) =>
+  variables === undefined ? ['MyArchiveStats'] : ['MyArchiveStats', variables];
+
+export const useInfiniteMyArchiveStatsQuery = <
+  TData = InfiniteData<MyArchiveStatsQuery>,
+  TError = unknown,
+>(
+  variables: MyArchiveStatsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<MyArchiveStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      MyArchiveStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<MyArchiveStatsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['MyArchiveStats.infinite']
+            : ['MyArchiveStats.infinite', variables],
+        queryFn: metaData =>
+          fetcher<MyArchiveStatsQuery, MyArchiveStatsQueryVariables>(
+            MyArchiveStatsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteMyArchiveStatsQuery.getKey = (
+  variables?: MyArchiveStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['MyArchiveStats.infinite']
+    : ['MyArchiveStats.infinite', variables];
+
+export const MyUncoverSessionsDocument = `
+    query MyUncoverSessions($fromDate: DateTime, $toDate: DateTime) {
+  myUncoverSessions(fromDate: $fromDate, toDate: $toDate) {
+    id
+    challengeDate
+    won
+    attemptCount
+    completedAt
+  }
+}
+    `;
+
+export const useMyUncoverSessionsQuery = <
+  TData = MyUncoverSessionsQuery,
+  TError = unknown,
+>(
+  variables?: MyUncoverSessionsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<MyUncoverSessionsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      MyUncoverSessionsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<MyUncoverSessionsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['MyUncoverSessions']
+        : ['MyUncoverSessions', variables],
+    queryFn: fetcher<MyUncoverSessionsQuery, MyUncoverSessionsQueryVariables>(
+      MyUncoverSessionsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useMyUncoverSessionsQuery.getKey = (
+  variables?: MyUncoverSessionsQueryVariables
+) =>
+  variables === undefined
+    ? ['MyUncoverSessions']
+    : ['MyUncoverSessions', variables];
+
+export const useInfiniteMyUncoverSessionsQuery = <
+  TData = InfiniteData<MyUncoverSessionsQuery>,
+  TError = unknown,
+>(
+  variables: MyUncoverSessionsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<MyUncoverSessionsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      MyUncoverSessionsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<MyUncoverSessionsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['MyUncoverSessions.infinite']
+            : ['MyUncoverSessions.infinite', variables],
+        queryFn: metaData =>
+          fetcher<MyUncoverSessionsQuery, MyUncoverSessionsQueryVariables>(
+            MyUncoverSessionsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteMyUncoverSessionsQuery.getKey = (
+  variables?: MyUncoverSessionsQueryVariables
+) =>
+  variables === undefined
+    ? ['MyUncoverSessions.infinite']
+    : ['MyUncoverSessions.infinite', variables];
+
+export const StartArchiveSessionDocument = `
+    mutation StartArchiveSession($date: DateTime!) {
+  startArchiveSession(date: $date) {
+    session {
+      id
+      status
+      attemptCount
+      won
+      startedAt
+      completedAt
+      guesses {
+        id
+        guessNumber
+        guessedAlbum {
+          id
+          title
+          cloudflareImageId
+          artistName
+        }
+        isSkipped
+        isCorrect
+        guessedAt
+      }
+    }
+    challengeId
+    imageUrl
+    cloudflareImageId
+  }
+}
+    `;
+
+export const useStartArchiveSessionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    StartArchiveSessionMutation,
+    TError,
+    StartArchiveSessionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    StartArchiveSessionMutation,
+    TError,
+    StartArchiveSessionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['StartArchiveSession'],
+    mutationFn: (variables?: StartArchiveSessionMutationVariables) =>
+      fetcher<
+        StartArchiveSessionMutation,
+        StartArchiveSessionMutationVariables
+      >(StartArchiveSessionDocument, variables)(),
+    ...options,
+  });
+};
+
+useStartArchiveSessionMutation.getKey = () => ['StartArchiveSession'];
 
 export const GetArtistByMusicBrainzIdDocument = `
     query GetArtistByMusicBrainzId($musicbrainzId: UUID!) {
@@ -7617,6 +8875,540 @@ useInfiniteSearchCorrectionCandidatesQuery.getKey = (
   variables: SearchCorrectionCandidatesQueryVariables
 ) => ['SearchCorrectionCandidates.infinite', variables];
 
+export const DailyChallengeDocument = `
+    query DailyChallenge($date: DateTime) {
+  dailyChallenge(date: $date) {
+    id
+    date
+    maxAttempts
+    totalPlays
+    totalWins
+    avgAttempts
+    imageUrl
+    cloudflareImageId
+    mySession {
+      id
+      status
+      attemptCount
+      won
+      startedAt
+      completedAt
+    }
+  }
+}
+    `;
+
+export const useDailyChallengeQuery = <
+  TData = DailyChallengeQuery,
+  TError = unknown,
+>(
+  variables?: DailyChallengeQueryVariables,
+  options?: Omit<
+    UseQueryOptions<DailyChallengeQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<DailyChallengeQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<DailyChallengeQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['DailyChallenge']
+        : ['DailyChallenge', variables],
+    queryFn: fetcher<DailyChallengeQuery, DailyChallengeQueryVariables>(
+      DailyChallengeDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useDailyChallengeQuery.getKey = (variables?: DailyChallengeQueryVariables) =>
+  variables === undefined ? ['DailyChallenge'] : ['DailyChallenge', variables];
+
+export const useInfiniteDailyChallengeQuery = <
+  TData = InfiniteData<DailyChallengeQuery>,
+  TError = unknown,
+>(
+  variables: DailyChallengeQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<DailyChallengeQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      DailyChallengeQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<DailyChallengeQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['DailyChallenge.infinite']
+            : ['DailyChallenge.infinite', variables],
+        queryFn: metaData =>
+          fetcher<DailyChallengeQuery, DailyChallengeQueryVariables>(
+            DailyChallengeDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteDailyChallengeQuery.getKey = (
+  variables?: DailyChallengeQueryVariables
+) =>
+  variables === undefined
+    ? ['DailyChallenge.infinite']
+    : ['DailyChallenge.infinite', variables];
+
+export const CuratedChallengesDocument = `
+    query CuratedChallenges($limit: Int, $offset: Int) {
+  curatedChallenges(limit: $limit, offset: $offset) {
+    id
+    sequence
+    pinnedDate
+    createdAt
+    album {
+      id
+      title
+      cloudflareImageId
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useCuratedChallengesQuery = <
+  TData = CuratedChallengesQuery,
+  TError = unknown,
+>(
+  variables?: CuratedChallengesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<CuratedChallengesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      CuratedChallengesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<CuratedChallengesQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['CuratedChallenges']
+        : ['CuratedChallenges', variables],
+    queryFn: fetcher<CuratedChallengesQuery, CuratedChallengesQueryVariables>(
+      CuratedChallengesDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useCuratedChallengesQuery.getKey = (
+  variables?: CuratedChallengesQueryVariables
+) =>
+  variables === undefined
+    ? ['CuratedChallenges']
+    : ['CuratedChallenges', variables];
+
+export const useInfiniteCuratedChallengesQuery = <
+  TData = InfiniteData<CuratedChallengesQuery>,
+  TError = unknown,
+>(
+  variables: CuratedChallengesQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<CuratedChallengesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      CuratedChallengesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<CuratedChallengesQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['CuratedChallenges.infinite']
+            : ['CuratedChallenges.infinite', variables],
+        queryFn: metaData =>
+          fetcher<CuratedChallengesQuery, CuratedChallengesQueryVariables>(
+            CuratedChallengesDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteCuratedChallengesQuery.getKey = (
+  variables?: CuratedChallengesQueryVariables
+) =>
+  variables === undefined
+    ? ['CuratedChallenges.infinite']
+    : ['CuratedChallenges.infinite', variables];
+
+export const CuratedChallengeCountDocument = `
+    query CuratedChallengeCount {
+  curatedChallengeCount
+}
+    `;
+
+export const useCuratedChallengeCountQuery = <
+  TData = CuratedChallengeCountQuery,
+  TError = unknown,
+>(
+  variables?: CuratedChallengeCountQueryVariables,
+  options?: Omit<
+    UseQueryOptions<CuratedChallengeCountQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      CuratedChallengeCountQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<CuratedChallengeCountQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['CuratedChallengeCount']
+        : ['CuratedChallengeCount', variables],
+    queryFn: fetcher<
+      CuratedChallengeCountQuery,
+      CuratedChallengeCountQueryVariables
+    >(CuratedChallengeCountDocument, variables),
+    ...options,
+  });
+};
+
+useCuratedChallengeCountQuery.getKey = (
+  variables?: CuratedChallengeCountQueryVariables
+) =>
+  variables === undefined
+    ? ['CuratedChallengeCount']
+    : ['CuratedChallengeCount', variables];
+
+export const useInfiniteCuratedChallengeCountQuery = <
+  TData = InfiniteData<CuratedChallengeCountQuery>,
+  TError = unknown,
+>(
+  variables: CuratedChallengeCountQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<CuratedChallengeCountQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      CuratedChallengeCountQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<CuratedChallengeCountQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['CuratedChallengeCount.infinite']
+            : ['CuratedChallengeCount.infinite', variables],
+        queryFn: metaData =>
+          fetcher<
+            CuratedChallengeCountQuery,
+            CuratedChallengeCountQueryVariables
+          >(CuratedChallengeCountDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteCuratedChallengeCountQuery.getKey = (
+  variables?: CuratedChallengeCountQueryVariables
+) =>
+  variables === undefined
+    ? ['CuratedChallengeCount.infinite']
+    : ['CuratedChallengeCount.infinite', variables];
+
+export const UpcomingChallengesDocument = `
+    query UpcomingChallenges($days: Int!) {
+  upcomingChallenges(days: $days) {
+    date
+    daysSinceEpoch
+    sequence
+    isPinned
+    album {
+      id
+      title
+      cloudflareImageId
+      releaseDate
+      artists {
+        artist {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useUpcomingChallengesQuery = <
+  TData = UpcomingChallengesQuery,
+  TError = unknown,
+>(
+  variables: UpcomingChallengesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<UpcomingChallengesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      UpcomingChallengesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<UpcomingChallengesQuery, TError, TData>({
+    queryKey: ['UpcomingChallenges', variables],
+    queryFn: fetcher<UpcomingChallengesQuery, UpcomingChallengesQueryVariables>(
+      UpcomingChallengesDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useUpcomingChallengesQuery.getKey = (
+  variables: UpcomingChallengesQueryVariables
+) => ['UpcomingChallenges', variables];
+
+export const useInfiniteUpcomingChallengesQuery = <
+  TData = InfiniteData<UpcomingChallengesQuery>,
+  TError = unknown,
+>(
+  variables: UpcomingChallengesQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<UpcomingChallengesQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      UpcomingChallengesQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<UpcomingChallengesQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['UpcomingChallenges.infinite', variables],
+        queryFn: metaData =>
+          fetcher<UpcomingChallengesQuery, UpcomingChallengesQueryVariables>(
+            UpcomingChallengesDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteUpcomingChallengesQuery.getKey = (
+  variables: UpcomingChallengesQueryVariables
+) => ['UpcomingChallenges.infinite', variables];
+
+export const AddCuratedChallengeDocument = `
+    mutation AddCuratedChallenge($albumId: UUID!, $pinnedDate: DateTime) {
+  addCuratedChallenge(albumId: $albumId, pinnedDate: $pinnedDate) {
+    id
+    sequence
+    pinnedDate
+    album {
+      id
+      title
+    }
+  }
+}
+    `;
+
+export const useAddCuratedChallengeMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    AddCuratedChallengeMutation,
+    TError,
+    AddCuratedChallengeMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AddCuratedChallengeMutation,
+    TError,
+    AddCuratedChallengeMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AddCuratedChallenge'],
+    mutationFn: (variables?: AddCuratedChallengeMutationVariables) =>
+      fetcher<
+        AddCuratedChallengeMutation,
+        AddCuratedChallengeMutationVariables
+      >(AddCuratedChallengeDocument, variables)(),
+    ...options,
+  });
+};
+
+useAddCuratedChallengeMutation.getKey = () => ['AddCuratedChallenge'];
+
+export const RemoveCuratedChallengeDocument = `
+    mutation RemoveCuratedChallenge($id: UUID!) {
+  removeCuratedChallenge(id: $id)
+}
+    `;
+
+export const useRemoveCuratedChallengeMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    RemoveCuratedChallengeMutation,
+    TError,
+    RemoveCuratedChallengeMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    RemoveCuratedChallengeMutation,
+    TError,
+    RemoveCuratedChallengeMutationVariables,
+    TContext
+  >({
+    mutationKey: ['RemoveCuratedChallenge'],
+    mutationFn: (variables?: RemoveCuratedChallengeMutationVariables) =>
+      fetcher<
+        RemoveCuratedChallengeMutation,
+        RemoveCuratedChallengeMutationVariables
+      >(RemoveCuratedChallengeDocument, variables)(),
+    ...options,
+  });
+};
+
+useRemoveCuratedChallengeMutation.getKey = () => ['RemoveCuratedChallenge'];
+
+export const PinCuratedChallengeDocument = `
+    mutation PinCuratedChallenge($id: UUID!, $date: DateTime!) {
+  pinCuratedChallenge(id: $id, date: $date) {
+    id
+    sequence
+    pinnedDate
+    album {
+      id
+      title
+    }
+  }
+}
+    `;
+
+export const usePinCuratedChallengeMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    PinCuratedChallengeMutation,
+    TError,
+    PinCuratedChallengeMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    PinCuratedChallengeMutation,
+    TError,
+    PinCuratedChallengeMutationVariables,
+    TContext
+  >({
+    mutationKey: ['PinCuratedChallenge'],
+    mutationFn: (variables?: PinCuratedChallengeMutationVariables) =>
+      fetcher<
+        PinCuratedChallengeMutation,
+        PinCuratedChallengeMutationVariables
+      >(PinCuratedChallengeDocument, variables)(),
+    ...options,
+  });
+};
+
+usePinCuratedChallengeMutation.getKey = () => ['PinCuratedChallenge'];
+
+export const UnpinCuratedChallengeDocument = `
+    mutation UnpinCuratedChallenge($id: UUID!) {
+  unpinCuratedChallenge(id: $id) {
+    id
+    sequence
+    pinnedDate
+    album {
+      id
+      title
+    }
+  }
+}
+    `;
+
+export const useUnpinCuratedChallengeMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UnpinCuratedChallengeMutation,
+    TError,
+    UnpinCuratedChallengeMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UnpinCuratedChallengeMutation,
+    TError,
+    UnpinCuratedChallengeMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UnpinCuratedChallenge'],
+    mutationFn: (variables?: UnpinCuratedChallengeMutationVariables) =>
+      fetcher<
+        UnpinCuratedChallengeMutation,
+        UnpinCuratedChallengeMutationVariables
+      >(UnpinCuratedChallengeDocument, variables)(),
+    ...options,
+  });
+};
+
+useUnpinCuratedChallengeMutation.getKey = () => ['UnpinCuratedChallenge'];
+
 export const GetLlamaLogsDocument = `
     query GetLlamaLogs($entityType: EnrichmentEntityType, $entityId: UUID, $status: LlamaLogStatus, $category: [LlamaLogCategory!], $skip: Int, $limit: Int, $parentOnly: Boolean, $parentJobId: String, $includeChildren: Boolean) {
   llamaLogs(
@@ -8163,6 +9955,312 @@ export const usePreviewArtistEnrichmentMutation = <
 };
 
 usePreviewArtistEnrichmentMutation.getKey = () => ['PreviewArtistEnrichment'];
+
+export const GamePoolStatsDocument = `
+    query GamePoolStats {
+  gamePoolStats {
+    eligibleCount
+    excludedCount
+    neutralCount
+    totalWithCoverArt
+  }
+}
+    `;
+
+export const useGamePoolStatsQuery = <
+  TData = GamePoolStatsQuery,
+  TError = unknown,
+>(
+  variables?: GamePoolStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GamePoolStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<GamePoolStatsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<GamePoolStatsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['GamePoolStats']
+        : ['GamePoolStats', variables],
+    queryFn: fetcher<GamePoolStatsQuery, GamePoolStatsQueryVariables>(
+      GamePoolStatsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useGamePoolStatsQuery.getKey = (variables?: GamePoolStatsQueryVariables) =>
+  variables === undefined ? ['GamePoolStats'] : ['GamePoolStats', variables];
+
+export const useInfiniteGamePoolStatsQuery = <
+  TData = InfiniteData<GamePoolStatsQuery>,
+  TError = unknown,
+>(
+  variables: GamePoolStatsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<GamePoolStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      GamePoolStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<GamePoolStatsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['GamePoolStats.infinite']
+            : ['GamePoolStats.infinite', variables],
+        queryFn: metaData =>
+          fetcher<GamePoolStatsQuery, GamePoolStatsQueryVariables>(
+            GamePoolStatsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteGamePoolStatsQuery.getKey = (
+  variables?: GamePoolStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['GamePoolStats.infinite']
+    : ['GamePoolStats.infinite', variables];
+
+export const AlbumsByGameStatusDocument = `
+    query AlbumsByGameStatus($status: AlbumGameStatus!, $limit: Int, $offset: Int) {
+  albumsByGameStatus(status: $status, limit: $limit, offset: $offset) {
+    id
+    title
+    releaseDate
+    coverArtUrl
+    cloudflareImageId
+    gameStatus
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+
+export const useAlbumsByGameStatusQuery = <
+  TData = AlbumsByGameStatusQuery,
+  TError = unknown,
+>(
+  variables: AlbumsByGameStatusQueryVariables,
+  options?: Omit<
+    UseQueryOptions<AlbumsByGameStatusQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      AlbumsByGameStatusQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<AlbumsByGameStatusQuery, TError, TData>({
+    queryKey: ['AlbumsByGameStatus', variables],
+    queryFn: fetcher<AlbumsByGameStatusQuery, AlbumsByGameStatusQueryVariables>(
+      AlbumsByGameStatusDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useAlbumsByGameStatusQuery.getKey = (
+  variables: AlbumsByGameStatusQueryVariables
+) => ['AlbumsByGameStatus', variables];
+
+export const useInfiniteAlbumsByGameStatusQuery = <
+  TData = InfiniteData<AlbumsByGameStatusQuery>,
+  TError = unknown,
+>(
+  variables: AlbumsByGameStatusQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<AlbumsByGameStatusQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      AlbumsByGameStatusQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<AlbumsByGameStatusQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? ['AlbumsByGameStatus.infinite', variables],
+        queryFn: metaData =>
+          fetcher<AlbumsByGameStatusQuery, AlbumsByGameStatusQueryVariables>(
+            AlbumsByGameStatusDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteAlbumsByGameStatusQuery.getKey = (
+  variables: AlbumsByGameStatusQueryVariables
+) => ['AlbumsByGameStatus.infinite', variables];
+
+export const SuggestedGameAlbumsDocument = `
+    query SuggestedGameAlbums($limit: Int) {
+  suggestedGameAlbums(limit: $limit) {
+    id
+    title
+    releaseDate
+    coverArtUrl
+    cloudflareImageId
+    gameStatus
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+
+export const useSuggestedGameAlbumsQuery = <
+  TData = SuggestedGameAlbumsQuery,
+  TError = unknown,
+>(
+  variables?: SuggestedGameAlbumsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<SuggestedGameAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      SuggestedGameAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<SuggestedGameAlbumsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['SuggestedGameAlbums']
+        : ['SuggestedGameAlbums', variables],
+    queryFn: fetcher<
+      SuggestedGameAlbumsQuery,
+      SuggestedGameAlbumsQueryVariables
+    >(SuggestedGameAlbumsDocument, variables),
+    ...options,
+  });
+};
+
+useSuggestedGameAlbumsQuery.getKey = (
+  variables?: SuggestedGameAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['SuggestedGameAlbums']
+    : ['SuggestedGameAlbums', variables];
+
+export const useInfiniteSuggestedGameAlbumsQuery = <
+  TData = InfiniteData<SuggestedGameAlbumsQuery>,
+  TError = unknown,
+>(
+  variables: SuggestedGameAlbumsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<SuggestedGameAlbumsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      SuggestedGameAlbumsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<SuggestedGameAlbumsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['SuggestedGameAlbums.infinite']
+            : ['SuggestedGameAlbums.infinite', variables],
+        queryFn: metaData =>
+          fetcher<SuggestedGameAlbumsQuery, SuggestedGameAlbumsQueryVariables>(
+            SuggestedGameAlbumsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteSuggestedGameAlbumsQuery.getKey = (
+  variables?: SuggestedGameAlbumsQueryVariables
+) =>
+  variables === undefined
+    ? ['SuggestedGameAlbums.infinite']
+    : ['SuggestedGameAlbums.infinite', variables];
+
+export const UpdateAlbumGameStatusDocument = `
+    mutation UpdateAlbumGameStatus($input: UpdateAlbumGameStatusInput!) {
+  updateAlbumGameStatus(input: $input) {
+    success
+    error
+    album {
+      id
+      title
+      gameStatus
+    }
+  }
+}
+    `;
+
+export const useUpdateAlbumGameStatusMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateAlbumGameStatusMutation,
+    TError,
+    UpdateAlbumGameStatusMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    UpdateAlbumGameStatusMutation,
+    TError,
+    UpdateAlbumGameStatusMutationVariables,
+    TContext
+  >({
+    mutationKey: ['UpdateAlbumGameStatus'],
+    mutationFn: (variables?: UpdateAlbumGameStatusMutationVariables) =>
+      fetcher<
+        UpdateAlbumGameStatusMutation,
+        UpdateAlbumGameStatusMutationVariables
+      >(UpdateAlbumGameStatusDocument, variables)(),
+    ...options,
+  });
+};
+
+useUpdateAlbumGameStatusMutation.getKey = () => ['UpdateAlbumGameStatus'];
 
 export const GetAlbumRecommendationsDocument = `
     query GetAlbumRecommendations($albumId: UUID!, $filter: String, $sort: String, $skip: Int, $limit: Int) {
@@ -8910,7 +11008,6 @@ export const GetUserProfileDocument = `
     email
     image
     bio
-    role
     followersCount
     followingCount
     recommendationsCount
@@ -11238,6 +13335,261 @@ useInfiniteGetTopRecommendedArtistsQuery.getKey = (
   variables === undefined
     ? ['GetTopRecommendedArtists.infinite']
     : ['GetTopRecommendedArtists.infinite', variables];
+
+export const StartUncoverSessionDocument = `
+    mutation StartUncoverSession {
+  startUncoverSession {
+    session {
+      ...UncoverSessionFields
+    }
+    challengeId
+    imageUrl
+    cloudflareImageId
+  }
+}
+    ${UncoverSessionFieldsFragmentDoc}
+${UncoverGuessFieldsFragmentDoc}
+${UncoverGuessAlbumFieldsFragmentDoc}`;
+
+export const useStartUncoverSessionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    StartUncoverSessionMutation,
+    TError,
+    StartUncoverSessionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    StartUncoverSessionMutation,
+    TError,
+    StartUncoverSessionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['StartUncoverSession'],
+    mutationFn: (variables?: StartUncoverSessionMutationVariables) =>
+      fetcher<
+        StartUncoverSessionMutation,
+        StartUncoverSessionMutationVariables
+      >(StartUncoverSessionDocument, variables)(),
+    ...options,
+  });
+};
+
+useStartUncoverSessionMutation.getKey = () => ['StartUncoverSession'];
+
+export const SubmitGuessDocument = `
+    mutation SubmitGuess($sessionId: UUID!, $albumId: UUID!) {
+  submitGuess(sessionId: $sessionId, albumId: $albumId) {
+    guess {
+      ...UncoverGuessFields
+    }
+    session {
+      ...UncoverSessionFields
+    }
+    gameOver
+    correctAlbum {
+      ...UncoverGuessAlbumFields
+    }
+  }
+}
+    ${UncoverGuessFieldsFragmentDoc}
+${UncoverGuessAlbumFieldsFragmentDoc}
+${UncoverSessionFieldsFragmentDoc}`;
+
+export const useSubmitGuessMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    SubmitGuessMutation,
+    TError,
+    SubmitGuessMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    SubmitGuessMutation,
+    TError,
+    SubmitGuessMutationVariables,
+    TContext
+  >({
+    mutationKey: ['SubmitGuess'],
+    mutationFn: (variables?: SubmitGuessMutationVariables) =>
+      fetcher<SubmitGuessMutation, SubmitGuessMutationVariables>(
+        SubmitGuessDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useSubmitGuessMutation.getKey = () => ['SubmitGuess'];
+
+export const SkipGuessDocument = `
+    mutation SkipGuess($sessionId: UUID!) {
+  skipGuess(sessionId: $sessionId) {
+    guess {
+      ...UncoverGuessFields
+    }
+    session {
+      ...UncoverSessionFields
+    }
+    gameOver
+    correctAlbum {
+      ...UncoverGuessAlbumFields
+    }
+  }
+}
+    ${UncoverGuessFieldsFragmentDoc}
+${UncoverGuessAlbumFieldsFragmentDoc}
+${UncoverSessionFieldsFragmentDoc}`;
+
+export const useSkipGuessMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    SkipGuessMutation,
+    TError,
+    SkipGuessMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    SkipGuessMutation,
+    TError,
+    SkipGuessMutationVariables,
+    TContext
+  >({
+    mutationKey: ['SkipGuess'],
+    mutationFn: (variables?: SkipGuessMutationVariables) =>
+      fetcher<SkipGuessMutation, SkipGuessMutationVariables>(
+        SkipGuessDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useSkipGuessMutation.getKey = () => ['SkipGuess'];
+
+export const ResetDailySessionDocument = `
+    mutation ResetDailySession {
+  resetDailySession
+}
+    `;
+
+export const useResetDailySessionMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ResetDailySessionMutation,
+    TError,
+    ResetDailySessionMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ResetDailySessionMutation,
+    TError,
+    ResetDailySessionMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ResetDailySession'],
+    mutationFn: (variables?: ResetDailySessionMutationVariables) =>
+      fetcher<ResetDailySessionMutation, ResetDailySessionMutationVariables>(
+        ResetDailySessionDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useResetDailySessionMutation.getKey = () => ['ResetDailySession'];
+
+export const MyUncoverStatsDocument = `
+    query MyUncoverStats {
+  myUncoverStats {
+    id
+    gamesPlayed
+    gamesWon
+    totalAttempts
+    currentStreak
+    maxStreak
+    lastPlayedDate
+    winDistribution
+    winRate
+  }
+}
+    `;
+
+export const useMyUncoverStatsQuery = <
+  TData = MyUncoverStatsQuery,
+  TError = unknown,
+>(
+  variables?: MyUncoverStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<MyUncoverStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<MyUncoverStatsQuery, TError, TData>['queryKey'];
+  }
+) => {
+  return useQuery<MyUncoverStatsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ['MyUncoverStats']
+        : ['MyUncoverStats', variables],
+    queryFn: fetcher<MyUncoverStatsQuery, MyUncoverStatsQueryVariables>(
+      MyUncoverStatsDocument,
+      variables
+    ),
+    ...options,
+  });
+};
+
+useMyUncoverStatsQuery.getKey = (variables?: MyUncoverStatsQueryVariables) =>
+  variables === undefined ? ['MyUncoverStats'] : ['MyUncoverStats', variables];
+
+export const useInfiniteMyUncoverStatsQuery = <
+  TData = InfiniteData<MyUncoverStatsQuery>,
+  TError = unknown,
+>(
+  variables: MyUncoverStatsQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<MyUncoverStatsQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      MyUncoverStatsQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<MyUncoverStatsQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey:
+          (optionsQueryKey ?? variables === undefined)
+            ? ['MyUncoverStats.infinite']
+            : ['MyUncoverStats.infinite', variables],
+        queryFn: metaData =>
+          fetcher<MyUncoverStatsQuery, MyUncoverStatsQueryVariables>(
+            MyUncoverStatsDocument,
+            { ...variables, ...(metaData.pageParam ?? {}) }
+          )(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfiniteMyUncoverStatsQuery.getKey = (
+  variables?: MyUncoverStatsQueryVariables
+) =>
+  variables === undefined
+    ? ['MyUncoverStats.infinite']
+    : ['MyUncoverStats.infinite', variables];
 
 export const UpdateAlbumDataQualityDocument = `
     mutation UpdateAlbumDataQuality($id: UUID!, $dataQuality: DataQuality!) {
