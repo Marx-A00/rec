@@ -5,6 +5,7 @@ query GetUserProfile($userId: String!) {
     email
     image
     bio
+    role
     followersCount
     followingCount
     recommendationsCount

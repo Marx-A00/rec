@@ -1813,7 +1813,7 @@ export const mutationResolvers: MutationResolvers = {
   },
 
   // Profile management mutations (placeholders)
-  updateProfile: async (_, { name, bio }, { user, prisma }) => {
+  updateProfile: async (_, { username, bio }, { user, prisma }) => {
     if (!user) {
       throw new GraphQLError('Authentication required');
     }
@@ -1822,7 +1822,7 @@ export const mutationResolvers: MutationResolvers = {
       const updatedUser = await prisma.user.update({
         where: { id: user.id },
         data: {
-          name,
+          username,
           bio,
           profileUpdatedAt: new Date(),
         },

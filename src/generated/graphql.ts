@@ -4298,6 +4298,7 @@ export type GetUserProfileQuery = {
     email?: string | null;
     image?: string | null;
     bio?: string | null;
+    role: UserRole;
     followersCount: number;
     followingCount: number;
     recommendationsCount: number;
@@ -8909,6 +8910,7 @@ export const GetUserProfileDocument = `
     email
     image
     bio
+    role
     followersCount
     followingCount
     recommendationsCount
