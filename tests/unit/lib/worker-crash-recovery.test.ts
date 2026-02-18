@@ -127,3 +127,115 @@ describe('Worker crash recovery', () => {
     });
   });
 });
+
+describe('Worker crash recovery — concurrency guard', () => {
+  /**
+   * This tests the isRestarting guard from MusicBrainzWorkerService.handleWorkerCrash.
+   *
+   * We can't easily import MusicBrainzWorkerService directly because it pulls in
+   * Prisma, Express, Bull Board, schedulers, monitoring, etc. Instead we replicate
+   * the exact handleWorkerCrash logic here and prove the guard works.
+   *
+   * The real code (queue-worker.ts:880-913):
+   *   if (this.isRestarting) return;
+   *   this.isRestarting = true;
+   *   try { ...destroy, wait, recreate... }
+   *   finally { this.isRestarting = false; }
+   */
+
+  // Minimal replica of the crash handler with the same guard logic
+  class CrashRecoveryHarness {
+    isRestarting = false;
+    restartAttempts = 0;
+    maxRestartAttempts = 5;
+    crashHandlerCalls = 0;
+    destroyWorkerCalls = 0;
+    createWorkerCalls = 0;
+
+    async handleWorkerCrash(_error: Error) {
+      this.crashHandlerCalls++;
+
+      if (this.isRestarting) {
+        return;
+      }
+      this.isRestarting = true;
+
+      try {
+        this.restartAttempts++;
+
+        if (this.restartAttempts > this.maxRestartAttempts) {
+          throw new Error('Max restart attempts exceeded');
+        }
+
+        // Simulate destroyWorker
+        this.destroyWorkerCalls++;
+
+        // Simulate restartDelay (shortened for test)
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Simulate createWorker
+        this.createWorkerCalls++;
+      } finally {
+        this.isRestarting = false;
+      }
+    }
+  }
+
+  let harness: CrashRecoveryHarness;
+
+  beforeEach(() => {
+    harness = new CrashRecoveryHarness();
+  });
+
+  it('should only run one crash recovery when multiple errors fire simultaneously', async () => {
+    const error = new Error('read ECONNRESET');
+
+    // Simulate a Redis storm — 5 error events fire at the same time
+    const concurrent = Promise.all([
+      harness.handleWorkerCrash(error),
+      harness.handleWorkerCrash(error),
+      harness.handleWorkerCrash(error),
+      harness.handleWorkerCrash(error),
+      harness.handleWorkerCrash(error),
+    ]);
+
+    await concurrent;
+
+    // All 5 calls entered the method
+    expect(harness.crashHandlerCalls).toBe(5);
+
+    // But only 1 actually ran the recovery logic
+    expect(harness.destroyWorkerCalls).toBe(1);
+    expect(harness.createWorkerCalls).toBe(1);
+    expect(harness.restartAttempts).toBe(1);
+  });
+
+  it('should allow a new crash recovery after the previous one completes', async () => {
+    const error = new Error('read ECONNRESET');
+
+    // First crash — recovers
+    await harness.handleWorkerCrash(error);
+    expect(harness.restartAttempts).toBe(1);
+    expect(harness.isRestarting).toBe(false);
+
+    // Second crash — should also recover (guard is cleared)
+    await harness.handleWorkerCrash(error);
+    expect(harness.restartAttempts).toBe(2);
+    expect(harness.destroyWorkerCalls).toBe(2);
+    expect(harness.createWorkerCalls).toBe(2);
+  });
+
+  it('should clear the guard even if recovery fails', async () => {
+    // Set attempts to max so recovery throws
+    harness.restartAttempts = 5;
+
+    const error = new Error('read ECONNRESET');
+
+    await expect(harness.handleWorkerCrash(error)).rejects.toThrow(
+      'Max restart attempts exceeded'
+    );
+
+    // Guard must be cleared despite the failure
+    expect(harness.isRestarting).toBe(false);
+  });
+});

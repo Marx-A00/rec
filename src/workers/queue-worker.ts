@@ -55,6 +55,7 @@ class MusicBrainzWorkerService {
   private worker: any;
   private server: Server | null = null;
   private isShuttingDown = false;
+  private isRestarting = false;
   private restartAttempts = 0;
   private readonly maxRestartAttempts = 5;
   private readonly restartDelay = 2000; // 2 seconds
@@ -877,29 +878,39 @@ class MusicBrainzWorkerService {
   }
 
   private async handleWorkerCrash(error: Error) {
-    this.restartAttempts++;
-
-    if (this.restartAttempts > this.maxRestartAttempts) {
-      console.error(
-        `💀 Worker failed ${this.maxRestartAttempts} times. Giving up.`
-      );
-      process.exit(1);
+    // Prevent concurrent crash recovery — multiple error events fire during Redis storms
+    if (this.isRestarting) {
+      return;
     }
+    this.isRestarting = true;
 
-    console.warn(
-      `🔄 Restarting worker (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`
-    );
+    try {
+      this.restartAttempts++;
 
-    // Clean up current worker — destroyWorker handles close + null internally
-    const queue = getMusicBrainzQueue();
-    await queue.destroyWorker();
-    this.worker = null;
+      if (this.restartAttempts > this.maxRestartAttempts) {
+        console.error(
+          `💀 Worker failed ${this.maxRestartAttempts} times. Giving up.`
+        );
+        process.exit(1);
+      }
 
-    // Wait before restart
-    await new Promise(resolve => setTimeout(resolve, this.restartDelay));
+      console.warn(
+        `🔄 Restarting worker (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`
+      );
 
-    // Recreate worker
-    await this.createWorker();
+      // Clean up current worker — destroyWorker handles close + null internally
+      const queue = getMusicBrainzQueue();
+      await queue.destroyWorker();
+      this.worker = null;
+
+      // Wait before restart
+      await new Promise(resolve => setTimeout(resolve, this.restartDelay));
+
+      // Recreate worker
+      await this.createWorker();
+    } finally {
+      this.isRestarting = false;
+    }
   }
 
   private setupGracefulShutdown() {
