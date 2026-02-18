@@ -1461,6 +1461,13 @@ export const mutationResolvers: MutationResolvers = {
           }
         }
 
+        // Prevent recommending the same album to itself
+        if (finalBasisAlbumId === finalRecommendedAlbumId) {
+          throw new GraphQLError(
+            'Cannot recommend an album to itself. Please choose a different album.'
+          );
+        }
+
         // Create the recommendation
         const rec = await tx.recommendation.create({
           data: {
