@@ -237,40 +237,47 @@ export async function GET() {
       console.error('Failed to search for artists:', error);
     }
 
-    // Save to cache
+    // Save to cache and clean up expired entries in one transaction
     const expiresAt = new Date(Date.now() + CACHE_DURATION);
-    await prisma.cacheData.upsert({
-      where: { key: 'spotify_trending' },
-      create: {
-        key: 'spotify_trending',
-        data: data as unknown as Prisma.JsonObject,
-        expires: expiresAt,
-        metadata: {
-          version: 1,
-          source: 'spotify_api',
-          itemCount: {
-            newReleases: data.newReleases.length,
-            featuredPlaylists: data.featuredPlaylists.length,
-            topCharts: data.topCharts.length,
-            popularArtists: data.popularArtists.length,
+    await prisma.$transaction([
+      // Delete all expired cache entries
+      prisma.cacheData.deleteMany({
+        where: { expires: { lt: new Date() } },
+      }),
+      // Upsert the new cache data
+      prisma.cacheData.upsert({
+        where: { key: 'spotify_trending' },
+        create: {
+          key: 'spotify_trending',
+          data: data as unknown as Prisma.JsonObject,
+          expires: expiresAt,
+          metadata: {
+            version: 1,
+            source: 'spotify_api',
+            itemCount: {
+              newReleases: data.newReleases.length,
+              featuredPlaylists: data.featuredPlaylists.length,
+              topCharts: data.topCharts.length,
+              popularArtists: data.popularArtists.length,
+            },
           },
         },
-      },
-      update: {
-        data: data as unknown as Prisma.JsonObject,
-        expires: expiresAt,
-        metadata: {
-          version: 1,
-          source: 'spotify_api',
-          itemCount: {
-            newReleases: data.newReleases.length,
-            featuredPlaylists: data.featuredPlaylists.length,
-            topCharts: data.topCharts.length,
-            popularArtists: data.popularArtists.length,
+        update: {
+          data: data as unknown as Prisma.JsonObject,
+          expires: expiresAt,
+          metadata: {
+            version: 1,
+            source: 'spotify_api',
+            itemCount: {
+              newReleases: data.newReleases.length,
+              featuredPlaylists: data.featuredPlaylists.length,
+              topCharts: data.topCharts.length,
+              popularArtists: data.popularArtists.length,
+            },
           },
         },
-      },
-    });
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,

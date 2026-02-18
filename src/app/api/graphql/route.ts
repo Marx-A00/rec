@@ -58,6 +58,51 @@ export async function POST(request: NextRequest) {
   const correlationId =
     request.headers.get('x-correlation-id') || generateCorrelationId();
 
+  // DEBUG: Log raw request body to find empty/malformed GraphQL requests
+  const clonedRequest = request.clone();
+  const rawBody = await clonedRequest.text();
+  if (!rawBody || rawBody.trim() === '') {
+    console.error('[GraphQL DEBUG] Empty request body received!', {
+      url: request.url,
+      method: request.method,
+      contentType: request.headers.get('content-type'),
+      referer: request.headers.get('referer'),
+      userAgent: request.headers.get('user-agent'),
+    });
+    return new Response(
+      JSON.stringify({ errors: [{ message: 'Empty request body' }] }),
+      {
+        status: 400,
+        headers: {
+          'content-type': 'application/json',
+          'x-correlation-id': correlationId,
+        },
+      }
+    );
+  } else {
+    try {
+      JSON.parse(rawBody);
+    } catch {
+      console.error('[GraphQL DEBUG] Malformed JSON body:', {
+        bodyPreview: rawBody.slice(0, 500),
+        bodyLength: rawBody.length,
+        referer: request.headers.get('referer'),
+      });
+      return new Response(
+        JSON.stringify({
+          errors: [{ message: 'Malformed JSON in request body' }],
+        }),
+        {
+          status: 400,
+          headers: {
+            'content-type': 'application/json',
+            'x-correlation-id': correlationId,
+          },
+        }
+      );
+    }
+  }
+
   const response = await runWithCorrelationId(
     correlationId,
     { requestPath: request.nextUrl.pathname },

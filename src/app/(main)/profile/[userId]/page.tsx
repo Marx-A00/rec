@@ -262,29 +262,9 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     getUserRecommendations(userId),
   ]);
 
-  // Create user object for Profile component
-  const user = {
-    id: userData.id,
-    name: userData.username || 'User',
-    email: userData.email || null,
-    image: userData.image || '/placeholder.svg',
-    username: userData.username
-      ? `@${userData.username}`
-      : userData.email
-        ? `@${userData.email.split('@')[0]}`
-        : '@user',
-    bio:
-      userData.bio ||
-      'Music enthusiast | Sharing vibes and discovering new sounds',
-    followersCount: userData._count.followers,
-    followingCount: userData._count.following,
-    recommendationsCount: userData._count.recommendations,
-    role: userData.role,
-  };
-
   return (
     <Profile
-      user={user}
+      userId={userId}
       collection={collection}
       listenLater={listenLater}
       recommendations={recommendations}

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 
+import { useUpdateProfileMutation } from '@/generated/graphql';
 import { validateNameForProfile } from '@/lib/validations';
 
 import AvatarUpload from './AvatarUpload';
@@ -14,22 +15,29 @@ interface ProfileEditFormProps {
     bio: string | null;
     image?: string | null;
   };
-  onCancel: () => void;
-  onSave: (updatedUser: { username: string; bio: string }) => void;
+  onClose: () => void;
 }
 
 export default function ProfileEditForm({
   user,
-  onCancel,
-  onSave,
+  onClose,
 }: ProfileEditFormProps) {
   const [username, setUsername] = useState(user.username || '');
   const [bio, setBio] = useState(user.bio || '');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
 
-  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const {
+    mutate: updateProfile,
+    isPending,
+    error,
+  } = useUpdateProfileMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['GetUserProfile'] });
+      onClose();
+    },
+  });
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -40,48 +48,20 @@ export default function ProfileEditForm({
     setNameError(validation.isValid ? null : validation.message || null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
 
     // Validate before submitting
     const usernameValidation = validateNameForProfile(username);
     if (!usernameValidation.isValid) {
       setNameError(usernameValidation.message || 'Invalid username');
-      setIsLoading(false);
       return;
     }
 
-    try {
-      const response = await fetch(`/api/users/${user.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: username.trim(),
-          bio: bio.trim(),
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update profile');
-      }
-
-      const result = await response.json();
-      const updatedUser = result.data?.user || result;
-      onSave({
-        username: updatedUser.username || '',
-        bio: updatedUser.bio || '',
-      });
-      router.refresh(); // Refresh to show updated data
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsLoading(false);
-    }
+    updateProfile({
+      username: username.trim(),
+      bio: bio.trim(),
+    });
   };
 
   return (
@@ -91,9 +71,11 @@ export default function ProfileEditForm({
           Edit Profile
         </h2>
 
-        {error && (
+        {error != null && (
           <div className='mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm'>
-            {error}
+            {error instanceof Error
+              ? error.message
+              : 'Failed to update profile'}
           </div>
         )}
 
@@ -102,9 +84,10 @@ export default function ProfileEditForm({
           <div className='flex justify-center mb-6'>
             <AvatarUpload
               currentImage={user.image}
-              onUploadSuccess={url => {
-                // Avatar is automatically saved to the database by the upload endpoint
-                console.log('Avatar updated:', url);
+              onUploadSuccess={() => {
+                queryClient.invalidateQueries({
+                  queryKey: ['GetUserProfile'],
+                });
               }}
             />
           </div>
@@ -168,16 +151,16 @@ export default function ProfileEditForm({
             <button
               type='submit'
               disabled={
-                isLoading || !!nameError || username.trim().length === 0
+                isPending || !!nameError || username.trim().length === 0
               }
               className='flex-1 bg-emeraled-green text-black py-2 px-4 rounded-lg font-medium hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
             >
-              {isLoading ? 'Saving...' : 'Save Changes'}
+              {isPending ? 'Saving...' : 'Save Changes'}
             </button>
             <button
               type='button'
-              onClick={onCancel}
-              disabled={isLoading}
+              onClick={onClose}
+              disabled={isPending}
               className='flex-1 bg-zinc-700 text-white py-2 px-4 rounded-lg font-medium hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
             >
               Cancel

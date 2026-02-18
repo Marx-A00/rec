@@ -215,7 +215,7 @@ export default function MobileProfileClient({
           <div className='flex gap-3'>
             <FollowButton
               userId={user.id}
-              initialFollowing={isFollowingUser}
+              isFollowing={isFollowingUser}
               onFollowChange={handleFollowChange}
               className='px-6'
             />

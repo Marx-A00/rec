@@ -1461,6 +1461,13 @@ export const mutationResolvers: MutationResolvers = {
           }
         }
 
+        // Prevent recommending the same album to itself
+        if (finalBasisAlbumId === finalRecommendedAlbumId) {
+          throw new GraphQLError(
+            'Cannot recommend an album to itself. Please choose a different album.'
+          );
+        }
+
         // Create the recommendation
         const rec = await tx.recommendation.create({
           data: {
@@ -1813,7 +1820,7 @@ export const mutationResolvers: MutationResolvers = {
   },
 
   // Profile management mutations (placeholders)
-  updateProfile: async (_, { name, bio }, { user, prisma }) => {
+  updateProfile: async (_, { username, bio }, { user, prisma }) => {
     if (!user) {
       throw new GraphQLError('Authentication required');
     }
@@ -1822,7 +1829,7 @@ export const mutationResolvers: MutationResolvers = {
       const updatedUser = await prisma.user.update({
         where: { id: user.id },
         data: {
-          name,
+          username,
           bio,
           profileUpdatedAt: new Date(),
         },

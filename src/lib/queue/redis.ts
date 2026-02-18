@@ -11,6 +11,7 @@ export interface RedisConfig {
   retryDelayOnFailover?: number;
   enableReadyCheck?: boolean;
   lazyConnect?: boolean;
+  keepAlive?: number;
 }
 
 /**
@@ -30,6 +31,7 @@ function getRedisConfig(): RedisConfig {
       retryDelayOnFailover: 100,
       enableReadyCheck: false,
       lazyConnect: true,
+      keepAlive: 10000,
     };
   }
 
@@ -43,6 +45,7 @@ function getRedisConfig(): RedisConfig {
     retryDelayOnFailover: 100,
     enableReadyCheck: false,
     lazyConnect: true,
+    keepAlive: 10000,
   };
 }
 

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Pencil, Settings, UserCog } from 'lucide-react';
-import { UserRole } from '@prisma/client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -15,24 +14,17 @@ import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
 import AdminBadge from '@/components/ui/AdminBadge';
 import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
-import { RecommendationFieldsFragment } from '@/generated/graphql';
+import { useQueryClient } from '@tanstack/react-query';
+
+import {
+  RecommendationFieldsFragment,
+  useGetUserProfileQuery,
+} from '@/generated/graphql';
 
 // TODO: fix the whole client and server components shit
 
-interface User {
-  id: string;
-  username: string;
-  email: string | null;
-  image: string;
-  bio: string;
-  followersCount: number;
-  followingCount: number;
-  recommendationsCount: number;
-  role: UserRole;
-}
-
 interface ProfileClientProps {
-  user: User;
+  userId: string;
   collection: CollectionAlbum[];
   listenLater: CollectionAlbum[];
   recommendations: RecommendationFieldsFragment[];
@@ -42,7 +34,7 @@ interface ProfileClientProps {
 }
 
 export default function ProfileClient({
-  user,
+  userId,
   collection,
   listenLater,
   recommendations,
@@ -50,6 +42,12 @@ export default function ProfileClient({
   showCollections = true,
   isFollowingUser = false,
 }: ProfileClientProps) {
+  // Fetch user profile data via React Query
+  const { data: profileData, isLoading: isProfileLoading } =
+    useGetUserProfileQuery({ userId }, { enabled: !!userId });
+
+  const user = profileData?.user;
+
   // Feature flag check for collection editor
   const isCollectionEditorEnabled =
     process.env.NEXT_PUBLIC_ENABLE_COLLECTION_EDITOR === 'true';
@@ -71,10 +69,9 @@ export default function ProfileClient({
 
   // Add state for profile editing
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [currentUser, setCurrentUser] = useState(user);
 
   // State for optimistic follow count updates
-  const [followersCount, setFollowersCount] = useState(user.followersCount);
+  const [followersCountDelta, setFollowersCountDelta] = useState(0);
 
   // Settings dropdown state
   const [showSettings, setShowSettings] = useState(false);
@@ -198,17 +195,7 @@ export default function ProfileClient({
     setIsEditingProfile(false);
   };
 
-  const handleSaveProfile = (updatedUser: {
-    username: string;
-    bio: string;
-  }) => {
-    setCurrentUser((prev: User) => ({
-      ...prev,
-      username: updatedUser.username,
-      bio: updatedUser.bio,
-    }));
-    setIsEditingProfile(false);
-  };
+  const queryClient = useQueryClient();
 
   // Handle follow status changes with optimistic updates
   const handleFollowChange = (
@@ -216,8 +203,12 @@ export default function ProfileClient({
     newCounts?: { followersCount: number; followingCount: number }
   ) => {
     if (newCounts) {
-      setFollowersCount((prev: number) => prev + newCounts.followersCount);
+      setFollowersCountDelta(prev => prev + newCounts.followersCount);
     }
+    // Invalidate the user profile cache so follow state + counts refresh
+    queryClient.invalidateQueries({
+      queryKey: useGetUserProfileQuery.getKey({ userId }),
+    });
   };
 
   // Close settings menu when clicking outside
@@ -261,6 +252,21 @@ export default function ProfileClient({
     };
   }, [selectedAlbum, isEditingProfile, showSettings]);
 
+  // Loading state while profile query loads
+  if (isProfileLoading || !user) {
+    return (
+      <div className='min-h-screen bg-black text-white flex items-center justify-center'>
+        <div className='text-zinc-400'>Loading profile...</div>
+      </div>
+    );
+  }
+
+  const displayUsername = user.username || 'User';
+  const displayImage = user.image || '/placeholder.svg';
+  const displayBio =
+    user.bio || 'Music enthusiast | Sharing vibes and discovering new sounds';
+  const followersCount = (user.followersCount ?? 0) + followersCountDelta;
+
   return (
     <div className='min-h-screen bg-black text-white'>
       {/* Album Modal using the dedicated AlbumModal component */}
@@ -287,9 +293,9 @@ export default function ProfileClient({
         <div className='max-w-4xl mx-auto'>
           <div className='flex flex-col md:flex-row items-center md:items-start gap-8 mb-12'>
             <Avatar className='w-32 h-32 border-2 border-zinc-800'>
-              <AvatarImage src={currentUser.image} alt={currentUser.username} />
+              <AvatarImage src={displayImage} alt={displayUsername} />
               <AvatarFallback className='bg-zinc-800 text-cosmic-latte text-2xl'>
-                {currentUser.username.charAt(0)}
+                {displayUsername.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div className='text-center md:text-left flex-1'>
@@ -300,9 +306,9 @@ export default function ProfileClient({
                       data-tour-step='profile-header'
                       className='text-4xl font-bold text-cosmic-latte'
                     >
-                      {currentUser.username}
+                      {displayUsername}
                     </h1>
-                    <AdminBadge role={currentUser.role} />
+                    <AdminBadge role={user.role} />
                   </div>
                 </div>
                 <div className='flex-shrink-0 flex gap-3'>
@@ -369,10 +375,10 @@ export default function ProfileClient({
                       )}
                     </div>
                   ) : (
-                    currentUser.id && (
+                    user.id && (
                       <FollowButton
-                        userId={currentUser.id}
-                        initialFollowing={isFollowingUser}
+                        userId={user.id}
+                        isFollowing={user.isFollowing ?? isFollowingUser}
                         onFollowChange={handleFollowChange}
                       />
                     )
@@ -380,12 +386,10 @@ export default function ProfileClient({
                 </div>
               </div>
 
-              <p className='mb-6 max-w-md text-zinc-300'>
-                {currentUser.bio || 'No bio yet.'}
-              </p>
+              <p className='mb-6 max-w-md text-zinc-300'>{displayBio}</p>
               <div className='flex justify-center md:justify-start gap-6 text-sm'>
                 <Link
-                  href={`/profile/${currentUser.id}/followers`}
+                  href={`/profile/${user.id}/followers`}
                   className='text-zinc-300 hover:text-cosmic-latte transition-colors cursor-pointer'
                 >
                   <strong className='text-cosmic-latte'>
@@ -394,7 +398,7 @@ export default function ProfileClient({
                   Followers
                 </Link>
                 <Link
-                  href={`/profile/${currentUser.id}/following`}
+                  href={`/profile/${user.id}/following`}
                   className='text-zinc-300 hover:text-cosmic-latte transition-colors cursor-pointer'
                 >
                   <strong className='text-cosmic-latte'>
@@ -621,16 +625,15 @@ export default function ProfileClient({
       </div>
 
       {/* Profile Edit Modal */}
-      {isEditingProfile && currentUser.id && (
+      {isEditingProfile && user.id && (
         <ProfileEditForm
           user={{
-            id: currentUser.id,
-            username: currentUser.username,
-            bio: currentUser.bio,
-            image: currentUser.image,
+            id: user.id,
+            username: user.username ?? null,
+            bio: user.bio ?? null,
+            image: user.image ?? null,
           }}
-          onCancel={handleCancelEdit}
-          onSave={handleSaveProfile}
+          onClose={() => setIsEditingProfile(false)}
         />
       )}
     </div>

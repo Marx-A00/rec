@@ -264,7 +264,7 @@ export default function MobileFollowingPage({
                   {session?.user?.id && session.user.id !== followedUser.id && (
                     <FollowButton
                       userId={followedUser.id}
-                      initialFollowing={followedUser.isFollowing}
+                      isFollowing={followedUser.isFollowing}
                       onFollowChange={() => refetch()}
                       className='text-sm px-3 py-1.5'
                     />

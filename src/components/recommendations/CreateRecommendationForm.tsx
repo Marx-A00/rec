@@ -226,6 +226,14 @@ export default function CreateRecommendationForm({
       return;
     }
 
+    if (isSameAlbum) {
+      showCollectionToast(
+        'Cannot recommend an album to itself — pick a different album',
+        'error'
+      );
+      return;
+    }
+
     // Pass full album objects - mutation will handle adding them to DB first
     createMutation.mutate({
       basisAlbum,
@@ -234,8 +242,15 @@ export default function CreateRecommendationForm({
     });
   };
 
+  const isSameAlbum =
+    !!basisAlbum && !!recommendedAlbum && basisAlbum.id === recommendedAlbum.id;
+
   const isDisabled =
-    !basisAlbum || !recommendedAlbum || createMutation.isPending || isTourMode;
+    !basisAlbum ||
+    !recommendedAlbum ||
+    isSameAlbum ||
+    createMutation.isPending ||
+    isTourMode;
 
   return (
     <div className='relative'>

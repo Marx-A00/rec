@@ -209,8 +209,8 @@ export default function MusicDatabasePage() {
     enrichmentStatus: 'all',
     needsEnrichment: false,
   });
-  const [sortBy, setSortBy] = useState('title');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const itemsPerPage = 50;
@@ -1663,6 +1663,7 @@ export default function MusicDatabasePage() {
                     <SelectValue placeholder='Sort By' />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value='createdAt'>Date Added</SelectItem>
                     <SelectItem value='title'>Title/Name</SelectItem>
                     <SelectItem value='releaseDate'>Release Date</SelectItem>
                     <SelectItem value='lastEnriched'>Last Enriched</SelectItem>
