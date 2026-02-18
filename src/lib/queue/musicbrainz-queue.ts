@@ -312,7 +312,11 @@ export class MusicBrainzQueue {
    */
   async destroyWorker(): Promise<void> {
     if (this.worker) {
-      await this.worker.close();
+      try {
+        await this.worker.close();
+      } catch {
+        // Worker may already be dead from connection loss — that's fine
+      }
       this.worker = null;
       console.log('✅ MusicBrainz worker destroyed');
     }
