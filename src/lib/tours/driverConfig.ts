@@ -46,7 +46,7 @@ export const tourSteps: DriveStep[] = [
     popover: {
       title: 'Share Your Music Taste',
       description:
-        'Click this button to create your first recommendation! Share albums that you think others might love based on specific album.',
+        'Click this button to create your first recommendation! Share albums that you think others might love based on a specific album.',
       side: 'right',
       align: 'center',
       popoverClass: 'driver-popover-large',
@@ -81,7 +81,7 @@ export const tourSteps: DriveStep[] = [
     popover: {
       title: 'Understanding the Recommendation System',
       description:
-        "<span style='color: #ef4444; font-weight: 600;'>LEFT TURNTABLE (SOURCE)</span><br>Load an album you already know and love - this is your starting point<br><br><span style='color: #f59e0b; font-weight: 600;'>MIDDLE DIAL (SIMILARITY)</span><br>Rate how similar the albums are from 1-10. Higher scores mean more similar sound, vibe, or style<br><br><span style='color: #22c55e; font-weight: 600;'>RIGHT TURNTABLE (RECOMMENDED)</span><br>Load the album you want to recommend to others who love the source album<br><br>Think of it like saying: \"If you love THIS album (left), you should check out THAT album (right) - there's an x/10 chance you'll love it!\" Let's try it with a demo!",
+        "<span style='color: #ef4444; font-weight: 600;'>LEFT TURNTABLE (SOURCE)</span><br>Load an album you already know and love - this is your starting point<br><br><span style='color: #f59e0b; font-weight: 600;'>MIDDLE DIAL</span><br>Rate how similar the albums are from 1-10. Higher scores mean more similar sound, vibe, or style. The score doesn't have to be similarity though, sometimes people need to take a chance!<br><br><span style='color: #22c55e; font-weight: 600;'>RIGHT TURNTABLE (RECOMMENDED)</span><br>Load the album you want to recommend to others who love the source album<br><br>Think of it like saying: \"If you love THIS album (left), you should check out THAT album (right) - there's an x/10 chance you'll love it!\" Let's try it with a demo!",
       side: 'top',
       align: 'start',
     },
@@ -89,7 +89,7 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="recommendation-search"]',
     popover: {
-      title: '🎯 Album Selection',
+      title: 'Album Selection',
       description:
         "Notice the two albums are already filled in! When you create your own recommendations, you'll use this search bar to find albums. For now, let's see how the similarity rating works!",
       side: 'top',
@@ -99,9 +99,9 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="similarity-dial"]',
     popover: {
-      title: '⭐ Rate the Similarity',
+      title: 'Rate the Similarity',
       description:
-        'Use the rating dial to score how likely you think someone will love the recommended album, based on the source album. Drag the dial or click to set a rating from 1-10. This helps other users understand your recommendation.',
+        'Use the rating dial to score how likely you think someone will love the recommended album, based on the source album. Drag the dial or click on the dots to set a rating from 1-10. This helps other users understand your recommendation.',
       side: 'left',
       align: 'center',
     },
@@ -118,7 +118,7 @@ export const tourSteps: DriveStep[] = [
   },
   {
     popover: {
-      title: '✨ Great Job!',
+      title: 'Great Job!',
       description:
         "You've learned how to create recommendations! Now let's explore the Browse page where you can discover music from other users and dive into artist pages. Click Next to continue to the Browse page!",
       side: 'over',
@@ -133,7 +133,7 @@ export const tourSteps: DriveStep[] = [
         ?.querySelector('button[aria-label="Close"]') as HTMLElement;
       if (closeButton) {
         closeButton.click();
-        console.log('✅ Closed recommendation drawer for tour transition');
+        console.log('Closed recommendation drawer for tour transition');
       }
 
       // Add dimmed overlay for this step
@@ -211,7 +211,7 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="artist-discography"]',
     popover: {
-      title: '💿 Explore Albums',
+      title: 'Explore Albums',
       description:
         "Now let's explore Daft Punk's legendary discography! I'll show you how to interact with albums. Click Next and I'll demonstrate by opening the iconic \"Random Access Memories\" album details.",
       side: 'bottom',
@@ -221,9 +221,9 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="album-header"]',
     popover: {
-      title: '🎵 Album Details & Interactions',
+      title: 'Album Details & Interactions',
       description:
-        'Perfect! This is a dedicated album page where you can explore everything about this album. Here you can see detailed information, track listings, reviews, add to your collection, and discover what others are saying about it. These interactions are the heart of music discovery!',
+        'Perfect! This is a dedicated album page where you can explore everything about this album. Here you can see detailed information, track listings, add to your collection, and discover what others are saying about it. These interactions are the heart of music discovery!',
       side: 'bottom',
       align: 'start',
     },
@@ -231,7 +231,7 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="album-interactions"]',
     popover: {
-      title: '🎶 Quick Actions',
+      title: 'Quick Actions',
       description:
         'From here you can make a rec based on this album, add it to your collection, or share it with friends! These are the core ways to interact with any album you discover.',
       side: 'bottom',
@@ -248,7 +248,7 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="album-recs-tab"]',
     popover: {
-      title: '📋 Album Recs',
+      title: 'Album Recs',
       description:
         "This tab shows all the recs for this album across the entire site - whether it's been recommended as a source or as a recommendation. It's a great way to discover what other users think pairs well with this album!",
       side: 'bottom',
@@ -284,9 +284,9 @@ export const tourSteps: DriveStep[] = [
           recsTab.dispatchEvent(mouseDown);
           recsTab.dispatchEvent(mouseUp);
           recsTab.dispatchEvent(click);
-          console.log('✅ Switched to Recs tab for tour');
+          console.log('Switched to Recs tab for tour');
         } else {
-          console.error('❌ Could not find Recs tab element');
+          console.error('Could not find Recs tab element');
         }
       }, 150);
       // Ensure no overlay/darkening for this step
@@ -299,7 +299,7 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="profile-nav"]',
     popover: {
-      title: '👤 Explore Your Profile',
+      title: 'Explore Your Profile',
       description:
         "Now let's explore your personal music profile! This is where you can showcase your music taste, connect with other music lovers, and track your listening journey. Click Next and I'll take you to your profile page.",
       side: 'bottom',
@@ -308,7 +308,7 @@ export const tourSteps: DriveStep[] = [
   },
   {
     popover: {
-      title: '✨ Welcome to Your Profile!',
+      title: 'Welcome to Your Profile!',
       description:
         'Amazing! This is your personal music profile page. Here you can see your recommendations, followers, music stats, create collages, manage your collections, and showcase your unique music taste to the community. This is your musical identity hub!',
       side: 'over',
@@ -333,7 +333,7 @@ export const tourSteps: DriveStep[] = [
   {
     element: '[data-tour-step="profile-settings"]',
     popover: {
-      title: '⚙️ Profile & Account Settings',
+      title: 'Profile & Account Settings',
       description:
         'Click here to edit your profile info like your name and bio. For more options, head to Account Settings where you can manage your account preferences and restart this tour anytime!',
       side: 'bottom',
@@ -362,7 +362,7 @@ export const tourSteps: DriveStep[] = [
           settingsBtn.dispatchEvent(mouseDown);
           settingsBtn.dispatchEvent(mouseUp);
           settingsBtn.dispatchEvent(click);
-          console.log('✅ Opened settings dropdown for tour');
+          console.log('Opened settings dropdown for tour');
         }
       }, 200);
     },
@@ -377,16 +377,16 @@ export const tourSteps: DriveStep[] = [
         ) as HTMLElement;
         if (settingsBtn) {
           settingsBtn.click();
-          console.log('✅ Closed settings dropdown');
+          console.log('Closed settings dropdown');
         }
       }
     },
   },
   {
     popover: {
-      title: '🎉 Tour Complete!',
+      title: 'Tour Complete!',
       description:
-        "Congratulations! You've completed the Rec Music tour. You now know how to:<br><br>✅ Create and share music recommendations<br>✅ Discover new music through the browse page<br>✅ Explore artist pages and albums<br>✅ Manage your profile and music taste<br><br>Now it's time to start building your music community! Click Finish to start exploring on your own.",
+        "Congratulations! You've completed the Rec Music tour. You now know how to:<br><br>- Create and share music recommendations<br>- Discover new music through the browse page<br>- Explore artist pages and albums<br>- Manage your profile and music taste<br><br>Now it's time to start building your music community! Click Finish to start exploring on your own.",
       side: 'over',
       align: 'center',
       popoverClass: 'driver-popover-large',
@@ -414,7 +414,7 @@ export const driverConfig: Config = {
   progressText: 'Step {{current}} of {{total}}',
   nextBtnText: 'Next →',
   prevBtnText: '← Back',
-  doneBtnText: 'Finish Tour 🎉',
+  doneBtnText: 'Finish Tour',
 
   // Smooth animations
   animate: true,
@@ -440,7 +440,7 @@ export const driverConfig: Config = {
 
     // Step 5: Auto-fill demo albums when showing search/album selection step
     if (stepIndex === 4) {
-      console.log('🎬 Auto-filling demo recommendation for tour');
+      console.log('Auto-filling demo recommendation for tour');
 
       // Create properly structured Album objects matching Album type from /src/types/album.ts
       const sourceAlbum = {
@@ -496,7 +496,7 @@ export const driverConfig: Config = {
         },
       });
       window.dispatchEvent(demoEvent);
-      console.log('✅ Demo recommendation filled with proper Album objects');
+      console.log('Demo recommendation filled with proper Album objects');
     }
 
     // Step 2: Add click listener to the "Create Recommendation" button
@@ -508,7 +508,7 @@ export const driverConfig: Config = {
       if (button instanceof HTMLElement) {
         // Create a one-time click handler
         const clickHandler = (e: Event) => {
-          console.log('✅ User clicked recommendation button - advancing tour');
+          console.log('User clicked recommendation button - advancing tour');
           e.preventDefault(); // Prevent default drawer opening
           e.stopPropagation();
 
@@ -516,7 +516,7 @@ export const driverConfig: Config = {
           button.removeEventListener('click', clickHandler, true);
 
           // Dispatch custom event to open drawer in tour mode
-          console.log('📤 Dispatching open-drawer-for-tour event');
+          console.log('Dispatching open-drawer-for-tour event');
           const tourDrawerEvent = new CustomEvent('open-drawer-for-tour');
           window.dispatchEvent(tourDrawerEvent);
 
@@ -527,7 +527,7 @@ export const driverConfig: Config = {
               // Check if drawer is visible (has non-zero height)
               const rect = drawer.getBoundingClientRect();
               if (rect.height > 0) {
-                console.log('✅ Drawer is visible, advancing to step 3');
+                console.log('Drawer is visible, advancing to step 3');
                 options.driver.moveNext();
                 return;
               }
@@ -543,10 +543,10 @@ export const driverConfig: Config = {
 
         // Use capture phase to intercept before the normal click handler
         button.addEventListener('click', clickHandler, true);
-        console.log('👂 Listening for button click on step 2...');
+        console.log('Listening for button click on step 2...');
       } else {
         console.error(
-          '❌ Could not find recommendation button with data-tour-step attribute'
+          'Could not find recommendation button with data-tour-step attribute'
         );
       }
     }
@@ -559,11 +559,11 @@ export const driverConfig: Config = {
     // Step 2 (index 1): Click the Create Recommendation button to open drawer
     if (stepIndex === 1) {
       console.log(
-        '➡️ Next clicked on step 2 - triggering create recommendation button'
+        'Next clicked on step 2 - triggering create recommendation button'
       );
 
       // Dispatch custom event to open drawer in tour mode
-      console.log('📤 Dispatching open-drawer-for-tour event');
+      console.log('Dispatching open-drawer-for-tour event');
       const tourDrawerEvent = new CustomEvent('open-drawer-for-tour');
       window.dispatchEvent(tourDrawerEvent);
 
@@ -573,7 +573,7 @@ export const driverConfig: Config = {
         if (drawer && drawer instanceof HTMLElement) {
           const rect = drawer.getBoundingClientRect();
           if (rect.height > 0) {
-            console.log('✅ Drawer is visible, advancing to step 3');
+            console.log('Drawer is visible, advancing to step 3');
             options.driver.moveNext();
             return;
           }
@@ -589,7 +589,7 @@ export const driverConfig: Config = {
 
     // Step 8 (index 7): Navigate to /browse (after "Great Job!" transitional card)
     if (stepIndex === 7) {
-      console.log('🌟 Navigating to /browse page...');
+      console.log('Navigating to /browse page...');
       // Save next step index to resume after navigation
       useTourStore.getState().setResumeStep(8);
       window.location.href = '/browse';
@@ -598,7 +598,7 @@ export const driverConfig: Config = {
 
     // Step 10 (index 9): Navigate to Daft Punk artist page (Main Search)
     if (stepIndex === 9) {
-      console.log('🔍 Navigating to Daft Punk artist page...');
+      console.log('Navigating to Daft Punk artist page...');
       // Save next step index to resume after navigation (Artist Header = index 10)
       useTourStore.getState().setResumeStep(10);
       window.location.href = `/artists/${DAFT_PUNK_ARTIST_ID}?source=local`;
@@ -607,7 +607,7 @@ export const driverConfig: Config = {
 
     // Step 12 (index 11): Navigate to Random Access Memories album (from Artist Discography)
     if (stepIndex === 11) {
-      console.log('💿 Navigating to Random Access Memories album...');
+      console.log('Navigating to Random Access Memories album...');
       // Save next step index to resume after navigation
       useTourStore.getState().setResumeStep(12);
       window.location.href = `/albums/${RAM_ALBUM_ID}?source=local`;
@@ -616,7 +616,7 @@ export const driverConfig: Config = {
 
     // Step 16 (index 15): Navigate to profile
     if (stepIndex === 15) {
-      console.log('👤 Navigating to profile page...');
+      console.log('Navigating to profile page...');
       // Save next step index to resume after navigation
       useTourStore.getState().setResumeStep(16);
       window.location.href = '/profile';
@@ -628,9 +628,7 @@ export const driverConfig: Config = {
     const totalSteps = tourSteps.length;
     const isLastStep = stepIndex === totalSteps - 1;
     if (isLastStep) {
-      console.log(
-        '🎉 Finish Tour clicked - TourContext will handle completion'
-      );
+      console.log('Finish Tour clicked - TourContext will handle completion');
       // Dispatch event for TourContext to handle completion and call destroy()
       window.dispatchEvent(new CustomEvent('tour-completed'));
       return;
@@ -645,7 +643,7 @@ export const driverConfig: Config = {
     const totalSteps = tourSteps.length;
     const isLastStep = currentStep === totalSteps - 1;
 
-    console.log(`❌ User closed tour at step ${currentStep + 1}/${totalSteps}`);
+    console.log(`User closed tour at step ${currentStep + 1}/${totalSteps}`);
 
     if (!isLastStep) {
       // Early exit - show confirmation modal before destroying
