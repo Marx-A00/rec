@@ -23,7 +23,9 @@ export default function FollowButton({
   ) => void;
   className?: string;
 }) {
-  // Only used during the mutation to show optimistic state
+  // Optimistic override shown while mutation is in-flight.
+  // Once the prop catches up via query refetch, the override is redundant
+  // (override ?? prop yields the same value) so no cleanup needed.
   const [optimisticOverride, setOptimisticOverride] = useState<boolean | null>(
     null
   );
@@ -32,7 +34,6 @@ export default function FollowButton({
   const followMutation = useFollowUserMutation();
   const unfollowMutation = useUnfollowUserMutation();
 
-  // Prop is the source of truth; optimistic override wins while mutation is in-flight
   const displayFollowing = optimisticOverride ?? isFollowing;
 
   const handleToggle = async () => {
@@ -52,8 +53,6 @@ export default function FollowButton({
       } else {
         await followMutation.mutateAsync({ userId });
       }
-      // Mutation succeeded — clear override, let the prop (from refetched query) take over
-      setOptimisticOverride(null);
     } catch {
       // Rollback — clear override and notify parent
       setOptimisticOverride(null);
