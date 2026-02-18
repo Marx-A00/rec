@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 
 import prisma from '@/lib/prisma';
+import { initializeNewUser } from '@/lib/users';
 import {
   userRegistrationSchema,
   validateRequestBody,
@@ -68,27 +69,12 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user with default collections
+    // Create user
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
         username: username || null,
         hashedPassword,
-        // Create default collections for new users
-        collections: {
-          create: [
-            {
-              name: 'My Collection',
-              description: 'My music collection',
-              isPublic: false,
-            },
-            {
-              name: 'Listen Later',
-              description: 'Albums to listen to later',
-              isPublic: false,
-            },
-          ],
-        },
       },
       select: {
         id: true,
@@ -96,6 +82,9 @@ export async function POST(request: Request) {
         username: true,
       },
     });
+
+    // Initialize default collections and settings
+    await initializeNewUser(user.id);
 
     const { response, status } = createSuccessResponse(
       'Account created successfully',

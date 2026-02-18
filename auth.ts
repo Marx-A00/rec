@@ -8,6 +8,7 @@ import type { User } from '@prisma/client';
 import { CredentialsSignin } from 'next-auth';
 
 import prisma from '@/lib/prisma';
+import { initializeNewUser } from '@/lib/users';
 import { AUTH_ERROR_CODES } from '@/types/auth';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -19,41 +20,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: '/signin',
   },
   events: {
-    // Create default collections for new OAuth users
+    // Initialize new OAuth users with default collections and settings
     async createUser({ user }) {
       if (user.id) {
         try {
-          // Check if user already has collections (shouldn't happen, but be safe)
-          const existingCollections = await prisma.collection.findFirst({
-            where: { userId: user.id },
-          });
-
-          if (!existingCollections) {
-            await prisma.collection.createMany({
-              data: [
-                {
-                  userId: user.id,
-                  name: 'My Collection',
-                  description: 'My music collection',
-                  isPublic: false,
-                },
-                {
-                  userId: user.id,
-                  name: 'Listen Later',
-                  description: 'Albums to listen to later',
-                  isPublic: false,
-                },
-              ],
-            });
-            console.log(
-              `[auth] Created default collections for new user: ${user.id}`
-            );
-          }
+          await initializeNewUser(user.id);
+          console.log(`[auth] Initialized new user: ${user.id}`);
         } catch (error) {
-          console.error(
-            `[auth] Failed to create default collections for user ${user.id}:`,
-            error
-          );
+          console.error(`[auth] Failed to initialize user ${user.id}:`, error);
         }
       }
     },
