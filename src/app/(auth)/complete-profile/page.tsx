@@ -4,9 +4,10 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Loader2, User, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import AvatarUpload from '@/components/profile/AvatarUpload';
 import { validateUsernameForRegistration } from '@/lib/validations';
 
 export default function CompleteProfilePage() {
@@ -94,8 +95,8 @@ export default function CompleteProfilePage() {
       // Update the session to reflect the new username
       await update();
 
-      // Redirect to browse page
-      router.replace('/browse');
+      // Redirect to home mosaic so the onboarding tour can auto-start
+      router.replace('/home-mosaic');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -121,11 +122,19 @@ export default function CompleteProfilePage() {
       <div className='w-full max-w-md'>
         {/* Header */}
         <div className='text-center mb-8'>
-          <div className='inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 mb-4'>
-            <User className='w-8 h-8 text-cosmic-latte' />
+          <div className='flex justify-center mb-4'>
+            <AvatarUpload
+              currentImage={session?.user?.image}
+              onUploadSuccess={() => {
+                // Session is updated inside AvatarUpload
+              }}
+            />
           </div>
+          <p className='text-xs text-zinc-500 mb-4'>
+            Tap to change your profile picture
+          </p>
           <h1 className='text-2xl font-bold text-white mb-2'>
-            Choose your username
+            Set up your profile
           </h1>
           <p className='text-zinc-400'>
             Pick a unique username to complete your profile. This is how others

@@ -110,13 +110,18 @@ const RATE_LIMIT_CONFIG = {
     ), // 10 minutes
   },
   // Authentication endpoints (more restrictive)
+  // Note: Only applies to security-sensitive auth routes (sign-in, OAuth callbacks).
+  // Sign-out, session, and CSRF routes use the general API limit.
   auth: {
     windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
-    maxRequests: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '50', 10), // 50 attempts (increased from 10)
+    maxRequests: parseInt(
+      process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '100',
+      10
+    ), // 100 attempts per window
     blockDurationMs: parseInt(
       process.env.AUTH_RATE_LIMIT_BLOCK_DURATION_MS || '300000',
       10
-    ), // 5 minutes (reduced from 30 minutes)
+    ), // 5 minutes
   },
   // Search endpoints (moderate limits)
   search: {
@@ -400,6 +405,14 @@ function getRateLimitConfig(pathname: string) {
   if (pathname === '/api/auth/session') {
     return RATE_LIMIT_CONFIG.api;
   }
+  // Sign-out and CSRF token are not security-sensitive — use general API limits
+  if (
+    pathname === '/api/auth/signout' ||
+    pathname.startsWith('/api/auth/callback/signout') ||
+    pathname === '/api/auth/csrf'
+  ) {
+    return RATE_LIMIT_CONFIG.api;
+  }
   if (pathname.startsWith('/api/auth/')) {
     return RATE_LIMIT_CONFIG.auth;
   }
@@ -456,8 +469,27 @@ function checkRateLimit(
     lastReset: now,
   };
 
+  // Determine which bucket this route falls into (for logging)
+  const bucket =
+    pathname === '/api/auth/session'
+      ? 'api'
+      : pathname === '/api/auth/signout' ||
+          pathname.startsWith('/api/auth/callback/signout') ||
+          pathname === '/api/auth/csrf'
+        ? 'api'
+        : pathname.startsWith('/api/auth/')
+          ? 'auth'
+          : pathname.startsWith('/api/search') ||
+              pathname.startsWith('/api/albums/search')
+            ? 'search'
+            : 'api';
+
   // Check if currently blocked
   if (entry.blockedUntil && now < entry.blockedUntil) {
+    const blockedFor = Math.ceil((entry.blockedUntil - now) / 1000);
+    console.warn(
+      `[RATE LIMIT] BLOCKED | ${key} | ${request.method} ${pathname} | bucket=${bucket} | blocked for ${blockedFor}s more | count=${entry.count}/${config.maxRequests}`
+    );
     return { allowed: false, entry, config };
   }
 
@@ -471,10 +503,21 @@ function checkRateLimit(
     entry.count += 1;
   }
 
+  // Log when approaching the limit (>75% used)
+  const usage = entry.count / config.maxRequests;
+  if (usage > 0.75) {
+    console.warn(
+      `[RATE LIMIT] WARNING | ${key} | ${request.method} ${pathname} | bucket=${bucket} | ${entry.count}/${config.maxRequests} (${Math.round(usage * 100)}%) | window resets ${Math.ceil((config.windowMs - (now - entry.lastReset)) / 1000)}s`
+    );
+  }
+
   // Check if limit exceeded
   if (entry.count > config.maxRequests) {
     entry.blockedUntil = now + config.blockDurationMs;
     rateLimitStore.set(key, entry);
+    console.error(
+      `[RATE LIMIT] EXCEEDED | ${key} | ${request.method} ${pathname} | bucket=${bucket} | ${entry.count}/${config.maxRequests} | blocking for ${config.blockDurationMs / 1000}s`
+    );
     return { allowed: false, entry, config };
   }
 

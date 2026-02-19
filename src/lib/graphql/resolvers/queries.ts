@@ -619,7 +619,7 @@ export const queryResolvers: QueryResolvers = {
   user: async (_, { id }, { prisma }) => {
     try {
       const user = await prisma.user.findUnique({ where: { id } });
-      if (!user) return null;
+      if (!user || user.deletedAt) return null;
       return { id: user.id } as ResolversTypes['User'];
     } catch (error) {
       throw new GraphQLError(`Failed to fetch user: ${error}`);
@@ -802,6 +802,9 @@ export const queryResolvers: QueryResolvers = {
 
       const recommendations = await prisma.recommendation.findMany({
         ...buildCursorPagination(cursor, limit),
+        where: {
+          user: { deletedAt: null },
+        },
         orderBy: { createdAt: 'desc' },
         include: {
           user: true,
@@ -898,6 +901,7 @@ export const queryResolvers: QueryResolvers = {
     try {
       const followers = await prisma.user.findMany({
         where: {
+          deletedAt: null,
           following: {
             some: {
               followedId: userId,
@@ -918,6 +922,7 @@ export const queryResolvers: QueryResolvers = {
     try {
       const following = await prisma.user.findMany({
         where: {
+          deletedAt: null,
           followers: {
             some: {
               followerId: userId,
@@ -2430,7 +2435,7 @@ export const queryResolvers: QueryResolvers = {
   artistRecommendations: async (
     _,
     { artistId, filter, sort = 'NEWEST', limit = 12, offset = 0 },
-    { prisma, session }
+    { prisma, user }
   ) => {
     try {
       // 1. Get all albums by this artist from AlbumArtist junction table
@@ -2537,7 +2542,7 @@ export const queryResolvers: QueryResolvers = {
             basisAlbum: rec.basisAlbum,
             recommendedAlbum: rec.recommendedAlbum,
             user: rec.user,
-            isOwnRecommendation: session?.user?.id === rec.userId,
+            isOwnRecommendation: user?.id === rec.userId,
           };
         }
       );
@@ -3208,5 +3213,414 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
+  // Game Pool queries
+  albumsByGameStatus: async (
+    _,
+    { status, limit = 50, offset = 0 },
+    { prisma }
+  ) => {
+    try {
+      const albums = await prisma.album.findMany({
+        where: {
+          gameStatus: status,
+        },
+        include: {
+          artists: {
+            include: {
+              artist: true,
+            },
+          },
+        },
+        orderBy: {
+          title: 'asc',
+        },
+        take: limit,
+        skip: offset,
+      });
+
+      return albums as ResolversTypes['Album'][];
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch albums by game status:', {
+        error,
+        status,
+      });
+      throw new GraphQLError(`Failed to fetch albums by game status: ${error}`);
+    }
+  },
+
+  gamePoolStats: async (_, __, { prisma }) => {
+    try {
+      const [eligible, excluded, neutral, totalWithCoverArt] =
+        await Promise.all([
+          prisma.album.count({
+            where: { gameStatus: 'ELIGIBLE' },
+          }),
+          prisma.album.count({
+            where: { gameStatus: 'EXCLUDED' },
+          }),
+          prisma.album.count({
+            where: { gameStatus: 'NONE' },
+          }),
+          prisma.album.count({
+            where: {
+              cloudflareImageId: { not: null },
+            },
+          }),
+        ]);
+
+      return {
+        eligibleCount: eligible,
+        excludedCount: excluded,
+        neutralCount: neutral,
+        totalWithCoverArt,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch game pool stats:', { error });
+      throw new GraphQLError(`Failed to fetch game pool stats: ${error}`);
+    }
+  },
+
+  suggestedGameAlbums: async (_, { limit = 50 }, { prisma }) => {
+    try {
+      const albums = await prisma.album.findMany({
+        where: {
+          gameStatus: 'NONE',
+          cloudflareImageId: { not: null },
+          releaseDate: { not: null },
+          artists: {
+            some: {},
+          },
+        },
+        include: {
+          artists: {
+            include: {
+              artist: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: limit,
+      });
+
+      return albums as ResolversTypes['Album'][];
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch suggested game albums:', { error });
+      throw new GraphQLError(`Failed to fetch suggested game albums: ${error}`);
+    }
+  },
+
+  // Daily Challenge queries
+  dailyChallenge: async (
+    _,
+    { date }: { date?: Date | string },
+    { prisma, user }
+  ) => {
+    try {
+      const { toUTCMidnight } = await import(
+        '@/lib/daily-challenge/date-utils'
+      );
+      const { getOrCreateDailyChallenge } = await import(
+        '@/lib/daily-challenge/challenge-service'
+      );
+
+      const targetDate = date
+        ? toUTCMidnight(new Date(date))
+        : toUTCMidnight(new Date());
+
+      // Get or create the challenge (this is safe - doesn't expose answer)
+      const challenge = await getOrCreateDailyChallenge(targetDate);
+
+      // Fetch user's session if authenticated
+      let mySession = null;
+      if (user?.id) {
+        const session = await prisma.uncoverSession.findUnique({
+          where: {
+            challengeId_userId: {
+              challengeId: challenge.id,
+              userId: user.id,
+            },
+          },
+        });
+
+        if (session) {
+          mySession = {
+            id: session.id,
+            status: session.status,
+            attemptCount: session.attemptCount,
+            won: session.won,
+            startedAt: session.startedAt,
+            completedAt: session.completedAt,
+          };
+        }
+      }
+
+      // Return challenge info WITHOUT the album (that's the answer!)
+      return {
+        id: challenge.id,
+        date: challenge.date,
+        maxAttempts: challenge.maxAttempts,
+        totalPlays: challenge.totalPlays,
+        totalWins: challenge.totalWins,
+        avgAttempts: challenge.avgAttempts,
+        mySession,
+        imageUrl: challenge.album.cloudflareImageId
+          ? (() => {
+              const { getImageUrl } = require('@/lib/cloudflare-images');
+              return getImageUrl(challenge.album.cloudflareImageId);
+            })()
+          : null,
+        cloudflareImageId: challenge.album.cloudflareImageId,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch daily challenge:', { error, date });
+      throw new GraphQLError(`Failed to fetch daily challenge: ${error}`);
+    }
+  },
+
+  curatedChallenges: async (
+    _,
+    { limit, offset }: { limit?: number; offset?: number },
+    { prisma, user }
+  ) => {
+    try {
+      // Admin check
+      if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+        throw new GraphQLError('Admin access required');
+      }
+
+      const limitValue = limit ?? 50;
+      const offsetValue = offset ?? 0;
+
+      return prisma.curatedChallenge.findMany({
+        take: limitValue,
+        skip: offsetValue,
+        orderBy: { sequence: 'asc' },
+        include: {
+          album: {
+            include: {
+              artists: {
+                include: { artist: true },
+              },
+            },
+          },
+        },
+      });
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch curated challenges:', { error });
+      throw new GraphQLError(`Failed to fetch curated challenges: ${error}`);
+    }
+  },
+
+  curatedChallengeCount: async (_, __, { prisma, user }) => {
+    try {
+      // Admin check
+      if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+        throw new GraphQLError('Admin access required');
+      }
+
+      return prisma.curatedChallenge.count();
+    } catch (error) {
+      graphqlLogger.error('Failed to count curated challenges:', { error });
+      throw new GraphQLError(`Failed to count curated challenges: ${error}`);
+    }
+  },
+
+  upcomingChallenges: async (
+    _,
+    { days }: { days: number },
+    { prisma, user }
+  ) => {
+    try {
+      // Admin check
+      if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+        throw new GraphQLError('Admin access required');
+      }
+
+      const { toUTCMidnight } = await import(
+        '@/lib/daily-challenge/date-utils'
+      );
+      const { getSelectionInfo } = await import(
+        '@/lib/daily-challenge/selection-service'
+      );
+
+      const results = [];
+      const today = toUTCMidnight(new Date());
+
+      for (let i = 0; i < days; i++) {
+        const date = new Date(today);
+        date.setUTCDate(date.getUTCDate() + i);
+
+        const info = await getSelectionInfo(date);
+
+        let album = null;
+        if (info.albumId) {
+          album = await prisma.album.findUnique({
+            where: { id: info.albumId },
+            include: {
+              artists: {
+                include: { artist: true },
+              },
+            },
+          });
+        }
+
+        results.push({
+          date: info.date,
+          daysSinceEpoch: info.daysSinceEpoch,
+          sequence: info.sequence,
+          isPinned: info.isPinned,
+          album,
+        });
+      }
+
+      return results;
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch upcoming challenges:', {
+        error,
+        days,
+      });
+      throw new GraphQLError(`Failed to fetch upcoming challenges: ${error}`);
+    }
+  },
+
+  myUncoverStats: async (_parent, _args, context) => {
+    // Require authentication
+    if (!context.user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    try {
+      // Dynamic import to avoid circular dependencies (follows existing pattern)
+      const { getPlayerStats } = await import('@/lib/uncover/stats-service');
+
+      const stats = await getPlayerStats(context.user.id, context.prisma);
+
+      // Note: getPlayerStats already returns totalAttempts in PlayerStats type
+      // Fetch lastPlayedDate from database
+      const dbStats = await context.prisma.uncoverPlayerStats.findUnique({
+        where: { userId: context.user.id },
+      });
+
+      return {
+        id: context.user.id,
+        gamesPlayed: stats.gamesPlayed,
+        gamesWon: stats.gamesWon,
+        totalAttempts: stats.totalAttempts,
+        currentStreak: stats.currentStreak,
+        maxStreak: stats.maxStreak,
+        lastPlayedDate: dbStats?.lastPlayedDate ?? null,
+        winDistribution: stats.winDistribution,
+        winRate: stats.winRate,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch player stats:', {
+        error,
+        userId: context.user.id,
+      });
+      throw new GraphQLError(`Failed to fetch player stats: ${error}`);
+    }
+  },
+  myArchiveStats: async (_parent, _args, context) => {
+    // Require authentication
+    if (!context.user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    try {
+      // Dynamic import to avoid circular dependencies
+      const { getArchiveStats } = await import(
+        '@/lib/uncover/archive-stats-service'
+      );
+
+      const stats = await getArchiveStats(context.user.id, context.prisma);
+
+      // Return null if no games played
+      if (stats.gamesPlayed === 0) {
+        return null;
+      }
+
+      return {
+        id: context.user.id,
+        gamesPlayed: stats.gamesPlayed,
+        gamesWon: stats.gamesWon,
+        totalAttempts: stats.totalAttempts,
+        winDistribution: stats.winDistribution,
+        winRate: stats.winRate,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch archive stats:', {
+        error,
+        userId: context.user.id,
+      });
+      throw new GraphQLError(`Failed to fetch archive stats: ${error}`);
+    }
+  },
+
+  myUncoverSessions: async (
+    _parent,
+    { fromDate, toDate }: { fromDate?: Date; toDate?: Date },
+    context
+  ) => {
+    // Require authentication
+    if (!context.user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    try {
+      // Query sessions with optional date filters
+      const where: any = {
+        userId: context.user.id,
+        completedAt: { not: null }, // Only completed sessions
+      };
+
+      // Apply date filters if provided
+      if (fromDate || toDate) {
+        where.challenge = {
+          challengeDate: {
+            ...(fromDate && { gte: new Date(fromDate) }),
+            ...(toDate && { lte: new Date(toDate) }),
+          },
+        };
+      }
+
+      const sessions = await context.prisma.uncoverSession.findMany({
+        where,
+        include: {
+          challenge: {
+            select: {
+              challengeDate: true,
+            },
+          },
+        },
+        orderBy: {
+          challenge: {
+            challengeDate: 'desc',
+          },
+        },
+      });
+
+      return sessions.map(session => ({
+        id: session.id,
+        challengeDate: session.challenge.challengeDate,
+        won: session.won,
+        attemptCount: session.attemptCount,
+        completedAt: session.completedAt,
+      }));
+    } catch (error) {
+      graphqlLogger.error('Failed to fetch session history:', {
+        error,
+        userId: context.user.id,
+      });
+      throw new GraphQLError(`Failed to fetch session history: ${error}`);
+    }
+  },
   // @ts-expect-error - Prisma return types don't match GraphQL types; field resolvers complete the objects
 };

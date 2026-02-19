@@ -291,8 +291,10 @@ export const userProfileUpdateSchema = z.object({
       /^[a-zA-Z0-9\-_.]+$/,
       'Username can only contain letters, numbers, hyphens, underscores, and periods'
     )
-    .transform(val => val.trim()), // Username is required for profile updates
+    .transform(val => val.trim())
+    .optional(),
   bio: z.string().max(500).optional(),
+  image: z.string().url().nullable().optional(),
 });
 
 // ===========================

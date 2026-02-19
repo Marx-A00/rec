@@ -49,6 +49,8 @@ model User {
   recommendationsCount Int              @default(0)
   profileUpdatedAt     DateTime?
   lastActive           DateTime?        @map("last_active")
+  deletedAt            DateTime?        @map("deleted_at")
+  deletedBy            String?          @map("deleted_by")
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   accounts             Account[]
@@ -61,6 +63,9 @@ model User {
   llamaLogs            LlamaLog[]
   activities           Activity[]       @relation("ActivityActor")
   targetedActivities   Activity[]       @relation("ActivityTarget")
+  uncoverSessions    UncoverSession[]
+  uncoverStats       UncoverPlayerStats?
+  uncoverArchiveStats UncoverArchiveStats?
 }
 
 model UserSettings {
@@ -107,7 +112,7 @@ model Recommendation {
   recommendedDiscogsId String?    @map("recommended_discogs_id")
   basisAlbum           Album      @relation("BasisAlbum", fields: [basisAlbumId], references: [id], onDelete: Cascade)
   recommendedAlbum     Album      @relation("RecommendedAlbum", fields: [recommendedAlbumId], references: [id], onDelete: Cascade)
-  user                 User       @relation(fields: [userId], references: [id])
+  user                 User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   activities           Activity[]
 
   @@index([userId])
@@ -286,6 +291,7 @@ model Album {
   enrichmentStatus      EnrichmentStatus?        @default(PENDING) @map("enrichment_status")
   lastEnriched          DateTime?                @map("last_enriched")
   metadata              Json?                    // Sync tracking - see src/types/album-metadata.ts for structure
+  gameStatus            AlbumGameStatus       @default(NONE) @map("game_status")
   createdAt             DateTime                 @default(now()) @map("created_at")
   updatedAt             DateTime                 @updatedAt @map("updated_at")
   collectionAlbums      CollectionAlbum[]
@@ -294,7 +300,10 @@ model Album {
   artists               AlbumArtist[]
   tracks                Track[]
   llamaLogs             LlamaLog[]
+  uncoverChallenges  UncoverChallenge[]
+  uncoverGuesses     UncoverGuess[]
 
+  curatedChallenges CuratedChallenge[]
   @@index([title])
   @@index([releaseDate])
   @@index([musicbrainzId])
@@ -492,6 +501,12 @@ enum EnrichmentEntityType {
   TRACK
 }
 
+enum AlbumGameStatus {
+  ELIGIBLE   // Approved for game pool
+  EXCLUDED   // Explicitly blocked from pool
+  NONE       // Neutral, not yet reviewed (default)
+}
+
 enum UserRole {
   USER
   MODERATOR
@@ -518,6 +533,12 @@ enum SyncJobStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+enum UncoverSessionStatus {
+  IN_PROGRESS
+  WON
+  LOST
 }
 
 model SyncJob {
@@ -556,4 +577,139 @@ model SyncJob {
   @@index([startedAt])
   @@index([jobId])
   @@map("sync_jobs")
+}
+
+// ============================================================================
+// Uncover — Daily Album Art Game
+// ============================================================================
+
+/// Daily challenge - one album per day for all players
+model UncoverChallenge {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  date          DateTime  @unique @db.Date
+  albumId       String    @map("album_id") @db.Uuid
+  album         Album     @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  
+  maxAttempts   Int       @default(6) @map("max_attempts")
+  totalPlays    Int       @default(0) @map("total_plays")
+  totalWins     Int       @default(0) @map("total_wins")
+  avgAttempts   Float?    @map("avg_attempts")
+  
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  sessions      UncoverSession[]
+  
+  @@index([date])
+  @@index([albumId])
+  @@map("uncover_challenges")
+}
+
+/// Player's session for a specific daily challenge
+model UncoverSession {
+  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challengeId     String                @map("challenge_id") @db.Uuid
+  userId          String?               @map("user_id")
+  
+  status          UncoverSessionStatus  @default(IN_PROGRESS)
+  attemptCount    Int                   @default(0) @map("attempt_count")
+  won             Boolean               @default(false)
+  completedAt     DateTime?             @map("completed_at")
+  revealedHints   String[]              @default([]) @map("revealed_hints")
+  
+  startedAt       DateTime              @default(now()) @map("started_at")
+  
+  challenge       UncoverChallenge      @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user            User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guesses         UncoverGuess[]
+  
+  @@unique([challengeId, userId])
+  @@index([userId])
+  @@index([challengeId])
+  @@index([status])
+  @@map("uncover_sessions")
+}
+
+/// Individual guess within a session
+model UncoverGuess {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId       String          @map("session_id") @db.Uuid
+  guessNumber     Int             @map("guess_number")
+  
+  guessedAlbumId  String?         @map("guessed_album_id") @db.Uuid
+  guessedText     String?         @map("guessed_text")
+  isCorrect       Boolean         @default(false) @map("is_correct")
+  
+  guessedAt       DateTime        @default(now()) @map("guessed_at")
+  
+  session         UncoverSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  guessedAlbum    Album?          @relation(fields: [guessedAlbumId], references: [id], onDelete: SetNull)
+  
+  @@unique([sessionId, guessNumber])
+  @@index([sessionId])
+  @@map("uncover_guesses")
+}
+
+/// Player stats aggregate (denormalized for fast lookup)
+model UncoverPlayerStats {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String    @unique @map("user_id")
+  
+  gamesPlayed     Int       @default(0) @map("games_played")
+  gamesWon        Int       @default(0) @map("games_won")
+  totalAttempts   Int       @default(0) @map("total_attempts")
+  
+  currentStreak   Int       @default(0) @map("current_streak")
+  maxStreak       Int       @default(0) @map("max_streak")
+  lastPlayedDate  DateTime? @db.Date @map("last_played_date")
+  
+  winDistribution Int[]     @default([0,0,0,0,0,0]) @map("win_distribution")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([currentStreak(sort: Desc)])
+  @@map("uncover_player_stats")
+}
+
+/// Archive game statistics tracking (separate from daily stats)
+/// Tracks archive game wins/losses without affecting daily streaks
+model UncoverArchiveStats {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String    @unique @map("user_id")
+  
+  gamesPlayed     Int       @default(0) @map("games_played")
+  gamesWon        Int       @default(0) @map("games_won")
+  totalAttempts   Int       @default(0) @map("total_attempts")
+  
+  winDistribution Int[]     @default([0,0,0,0,0,0]) @map("win_distribution")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("uncover_archive_stats")
+}
+
+/// Curated album for daily challenge selection
+/// Admin pre-curates an ordered list; selection uses sequence number
+model CuratedChallenge {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  albumId     String    @map("album_id") @db.Uuid
+  album       Album     @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  
+  sequence    Int       @unique  // Position in ordered list (0, 1, 2, ...)
+  pinnedDate  DateTime? @unique @db.Date @map("pinned_date")  // Optional: Force this album on this date
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  
+  @@index([sequence])
+  @@index([pinnedDate])
+  @@index([albumId])
+  @@map("curated_challenges")
 }

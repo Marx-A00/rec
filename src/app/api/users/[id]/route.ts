@@ -77,7 +77,7 @@ export async function PUT(
       return NextResponse.json(response, { status });
     }
 
-    const { username, bio } = validation.data;
+    const { username, bio, image } = validation.data;
 
     // Check if username is already taken by another user (case-insensitive)
     if (username !== undefined) {
@@ -110,6 +110,7 @@ export async function PUT(
       data: {
         ...(username !== undefined && { username }),
         ...(bio !== undefined && { bio }),
+        ...(image !== undefined && { image }),
         profileUpdatedAt: new Date(),
       },
       select: {
@@ -174,7 +175,7 @@ export async function PATCH(
       return NextResponse.json(response, { status });
     }
 
-    const { username, bio } = validation.data;
+    const { username, bio, image } = validation.data;
 
     // Check if username is already taken by another user (case-insensitive)
     if (username !== undefined) {
@@ -207,6 +208,7 @@ export async function PATCH(
       data: {
         ...(username !== undefined && { username }),
         ...(bio !== undefined && { bio }),
+        ...(image !== undefined && { image }),
         profileUpdatedAt: new Date(),
       },
       select: {

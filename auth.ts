@@ -72,10 +72,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 `[auth] Linked ${account.provider} account to existing user: ${existingUser.id}`
               );
             }
+
+            // Existing user — check if they need to set a username
+            if (!existingUser.username) {
+              console.log(
+                `[auth] OAuth user ${existingUser.id} has no username, redirecting to complete-profile`
+              );
+              return '/complete-profile';
+            }
           }
+          // If no existing user, this is a brand new OAuth sign-up.
+          // The PrismaAdapter creates the user (with no username), then
+          // the createUser event fires. We can't redirect here because
+          // the user record doesn't exist yet. The (main) layout catches
+          // this case and redirects to /complete-profile.
         }
       }
       return true;
+    },
+    async redirect({ url, baseUrl }) {
+      // If the signIn callback already redirected to /complete-profile, honour it
+      if (url.includes('/complete-profile'))
+        return `${baseUrl}/complete-profile`;
+
+      // Default NextAuth redirect behavior
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     },
     async session({ session, token }) {
       if (session.user && token.sub) {

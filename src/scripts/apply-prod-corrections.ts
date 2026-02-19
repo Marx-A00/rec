@@ -15,8 +15,9 @@
  *   --album=ID   Only process a specific album
  */
 
-import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
+
+import { PrismaClient } from '@prisma/client';
 
 interface CorrectionItem {
   albumId: string;

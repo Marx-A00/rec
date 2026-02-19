@@ -1,0 +1,56 @@
+# Game Pool Management Queries and Mutations
+
+query GamePoolStats {
+  gamePoolStats {
+    eligibleCount
+    excludedCount
+    neutralCount
+    totalWithCoverArt
+  }
+}
+
+query AlbumsByGameStatus($status: AlbumGameStatus!, $limit: Int, $offset: Int) {
+  albumsByGameStatus(status: $status, limit: $limit, offset: $offset) {
+    id
+    title
+    releaseDate
+    coverArtUrl
+    cloudflareImageId
+    gameStatus
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+
+query SuggestedGameAlbums($limit: Int) {
+  suggestedGameAlbums(limit: $limit) {
+    id
+    title
+    releaseDate
+    coverArtUrl
+    cloudflareImageId
+    gameStatus
+    artists {
+      artist {
+        id
+        name
+      }
+    }
+  }
+}
+
+mutation UpdateAlbumGameStatus($input: UpdateAlbumGameStatusInput!) {
+  updateAlbumGameStatus(input: $input) {
+    success
+    error
+    album {
+      id
+      title
+      gameStatus
+    }
+  }
+}

@@ -1,0 +1,15 @@
+# Query for player's Uncover game stats
+# Used by StatsModal after game completion
+query MyUncoverStats {
+  myUncoverStats {
+    id
+    gamesPlayed
+    gamesWon
+    totalAttempts
+    currentStreak
+    maxStreak
+    lastPlayedDate
+    winDistribution
+    winRate
+  }
+}

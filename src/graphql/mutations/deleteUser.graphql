@@ -1,0 +1,29 @@
+mutation SoftDeleteUser($userId: String!) {
+  softDeleteUser(userId: $userId) {
+    success
+    message
+    deletedId
+  }
+}
+
+mutation HardDeleteUser($userId: String!) {
+  hardDeleteUser(userId: $userId) {
+    success
+    message
+    deletedId
+  }
+}
+
+mutation RestoreUser($userId: String!) {
+  restoreUser(userId: $userId) {
+    success
+    message
+    user {
+      id
+      username
+      email
+      deletedAt
+      deletedBy
+    }
+  }
+}

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import {
   Search,
   Users,
@@ -18,6 +19,9 @@ import {
   Filter,
   ArrowUpDown,
   X,
+  Trash2,
+  RotateCcw,
+  AlertTriangle,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -44,19 +48,37 @@ import {
   useGetAdminUsersQuery,
   useUpdateUserRoleMutation,
   useAdminUpdateUserShowTourMutation,
+  useSoftDeleteUserMutation,
+  useHardDeleteUserMutation,
+  useRestoreUserMutation,
   UserRole,
   UserSortField,
   SortOrder,
+  GetAdminUsersQuery,
 } from '@/generated/graphql';
 
+type AdminUser = GetAdminUsersQuery['users'][number];
+
 export default function AdminUsersPage() {
+  const { data: session } = useSession();
+  const isOwnerRole = session?.user?.role === 'OWNER';
+
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [roleModalOpen, setRoleModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Delete modal state
+  const [softDeleteModalOpen, setSoftDeleteModalOpen] = useState(false);
+  const [hardDeleteModalOpen, setHardDeleteModalOpen] = useState(false);
+  const [restoreModalOpen, setRestoreModalOpen] = useState(false);
+  const [deleteTargetUser, setDeleteTargetUser] = useState<AdminUser | null>(
+    null
+  );
+  const [hardDeleteConfirmation, setHardDeleteConfirmation] = useState('');
 
   // Filter state
   const [filters, setFilters] = useState({
@@ -87,6 +109,9 @@ export default function AdminUsersPage() {
 
   const updateUserRoleMutation = useUpdateUserRoleMutation();
   const updateShowTourMutation = useAdminUpdateUserShowTourMutation();
+  const softDeleteMutation = useSoftDeleteUserMutation();
+  const hardDeleteMutation = useHardDeleteUserMutation();
+  const restoreMutation = useRestoreUserMutation();
 
   const toggleExpanded = (id: string) => {
     setExpandedRows(prev => {
@@ -162,7 +187,7 @@ export default function AdminUsersPage() {
     });
   };
 
-  const handleOpenRoleModal = (user: any) => {
+  const handleOpenRoleModal = (user: AdminUser) => {
     setSelectedUser(user);
     setSelectedRole(user.role || 'USER');
     setRoleModalOpen(true);
@@ -186,8 +211,10 @@ export default function AdminUsersPage() {
       } else {
         throw new Error('Failed to update role');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update user role');
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : 'Failed to update user role';
+      toast.error(msg);
     }
   };
 
@@ -195,7 +222,7 @@ export default function AdminUsersPage() {
     userId: string,
     currentValue: boolean | undefined | null
   ) => {
-    const newValue = !(currentValue ?? true); // Default to true if undefined/null
+    const newValue = !(currentValue ?? true);
 
     try {
       const result = await updateShowTourMutation.mutateAsync({
@@ -209,8 +236,81 @@ export default function AdminUsersPage() {
       } else {
         throw new Error('Failed to update showOnboardingTour');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update showOnboardingTour');
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : 'Failed to update showOnboardingTour';
+      toast.error(msg);
+    }
+  };
+
+  // Delete handlers
+  const handleSoftDelete = async () => {
+    if (!deleteTargetUser) return;
+    try {
+      const result = await softDeleteMutation.mutateAsync({
+        userId: deleteTargetUser.id,
+      });
+      if (result.softDeleteUser?.success) {
+        toast.success(result.softDeleteUser.message || 'User soft-deleted');
+        setSoftDeleteModalOpen(false);
+        setDeleteTargetUser(null);
+        await refetch();
+      }
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : 'Failed to soft-delete user';
+      toast.error(msg);
+    }
+  };
+
+  const handleHardDelete = async () => {
+    if (!deleteTargetUser) return;
+    const expectedUsername =
+      deleteTargetUser.username ||
+      deleteTargetUser.email ||
+      deleteTargetUser.id;
+    if (hardDeleteConfirmation !== expectedUsername) {
+      toast.error(`Type "${expectedUsername}" to confirm`);
+      return;
+    }
+    try {
+      const result = await hardDeleteMutation.mutateAsync({
+        userId: deleteTargetUser.id,
+      });
+      if (result.hardDeleteUser?.success) {
+        toast.success(
+          result.hardDeleteUser.message || 'User permanently deleted'
+        );
+        setHardDeleteModalOpen(false);
+        setDeleteTargetUser(null);
+        setHardDeleteConfirmation('');
+        await refetch();
+      }
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : 'Failed to hard-delete user';
+      toast.error(msg);
+    }
+  };
+
+  const handleRestore = async () => {
+    if (!deleteTargetUser) return;
+    try {
+      const result = await restoreMutation.mutateAsync({
+        userId: deleteTargetUser.id,
+      });
+      if (result.restoreUser?.success) {
+        toast.success(result.restoreUser.message || 'User restored');
+        setRestoreModalOpen(false);
+        setDeleteTargetUser(null);
+        await refetch();
+      }
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : 'Failed to restore user';
+      toast.error(msg);
     }
   };
 
@@ -220,11 +320,33 @@ export default function AdminUsersPage() {
   };
 
   // Component for expanded user details
-  const UserExpandedContent = ({ user }: { user: any }) => {
+  const UserExpandedContent = ({ user }: { user: AdminUser }) => {
+    const isSoftDeleted = !!user.deletedAt;
+
     return (
       <tr className='hover:bg-transparent'>
         <td colSpan={4} className='p-0 bg-zinc-900/30'>
           <div className='p-6 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200'>
+            {/* Soft-deleted banner */}
+            {isSoftDeleted && (
+              <div className='bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 flex items-center gap-3'>
+                <AlertTriangle className='h-5 w-5 text-orange-400 flex-shrink-0' />
+                <div>
+                  <div className='text-sm font-medium text-orange-300'>
+                    This user is soft-deleted
+                  </div>
+                  <div className='text-xs text-orange-400/70'>
+                    Deleted{' '}
+                    {user.deletedAt &&
+                      formatDistanceToNow(new Date(user.deletedAt), {
+                        addSuffix: true,
+                      })}
+                    {user.deletedBy && ` by ${user.deletedBy}`}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* User Info Grid */}
             <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
               <div>
@@ -316,7 +438,7 @@ export default function AdminUsersPage() {
             )}
 
             {/* Action Buttons */}
-            <div className='pt-4 border-t border-zinc-800 flex gap-2'>
+            <div className='pt-4 border-t border-zinc-800 flex flex-wrap gap-2'>
               <Link
                 href={`/profile/${user.id}`}
                 className='inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-emeraled-green hover:bg-emeraled-green/80 rounded-lg transition-colors'
@@ -326,12 +448,52 @@ export default function AdminUsersPage() {
               </Link>
               <Button
                 onClick={() => handleOpenRoleModal(user)}
-                variant='outline'
-                className='inline-flex items-center px-4 py-2 text-sm font-medium text-white border-zinc-700 hover:bg-zinc-700'
+                className='inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-zinc-700 hover:bg-zinc-600'
               >
                 <Shield className='w-4 h-4 mr-2' />
                 Change Role
               </Button>
+
+              {/* Owner-only delete/restore actions */}
+              {isOwnerRole && user.role !== 'OWNER' && (
+                <>
+                  {isSoftDeleted ? (
+                    <Button
+                      onClick={() => {
+                        setDeleteTargetUser(user);
+                        setRestoreModalOpen(true);
+                      }}
+                      variant='outline'
+                      className='inline-flex items-center px-4 py-2 text-sm font-medium text-emeraled-green border-emeraled-green/30 hover:bg-emeraled-green/10'
+                    >
+                      <RotateCcw className='w-4 h-4 mr-2' />
+                      Restore
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        setDeleteTargetUser(user);
+                        setSoftDeleteModalOpen(true);
+                      }}
+                      className='inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700'
+                    >
+                      <Trash2 className='w-4 h-4 mr-2' />
+                      Soft Delete
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => {
+                      setDeleteTargetUser(user);
+                      setHardDeleteConfirmation('');
+                      setHardDeleteModalOpen(true);
+                    }}
+                    className='inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-700 hover:bg-red-800'
+                  >
+                    <Trash2 className='w-4 h-4 mr-2' />
+                    Hard Delete
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </td>
@@ -350,8 +512,8 @@ export default function AdminUsersPage() {
           <DialogHeader>
             <DialogTitle>Change User Role</DialogTitle>
             <DialogDescription className='text-zinc-400'>
-              Update the role for {selectedUser?.name || 'this user'}. This will
-              affect their permissions across the platform.
+              Update the role for {selectedUser?.username || 'this user'}. This
+              will affect their permissions across the platform.
             </DialogDescription>
           </DialogHeader>
 
@@ -395,9 +557,8 @@ export default function AdminUsersPage() {
 
           <DialogFooter>
             <Button
-              variant='outline'
               onClick={() => setRoleModalOpen(false)}
-              className='text-white border-zinc-700 hover:bg-zinc-700'
+              className='text-white bg-zinc-700 hover:bg-zinc-600'
             >
               Cancel
             </Button>
@@ -406,6 +567,223 @@ export default function AdminUsersPage() {
               className='bg-emeraled-green hover:bg-emeraled-green/80 text-white'
             >
               Update Role
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Soft Delete Confirmation Modal */}
+      <Dialog open={softDeleteModalOpen} onOpenChange={setSoftDeleteModalOpen}>
+        <DialogContent className='bg-zinc-900 border-zinc-800 text-white'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2 text-orange-400'>
+              <AlertTriangle className='h-5 w-5' />
+              Soft Delete User
+            </DialogTitle>
+            <DialogDescription className='text-zinc-400'>
+              This will hide the user from all public queries. Their data will
+              be preserved and can be restored later.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteTargetUser && (
+            <div className='space-y-3 py-4'>
+              <div className='bg-zinc-800/50 p-4 rounded-lg space-y-2'>
+                <div className='text-sm'>
+                  <span className='text-zinc-500'>Username:</span>{' '}
+                  <span className='text-white font-medium'>
+                    {deleteTargetUser.username || 'N/A'}
+                  </span>
+                </div>
+                <div className='text-sm'>
+                  <span className='text-zinc-500'>Email:</span>{' '}
+                  <span className='text-white font-medium'>
+                    {deleteTargetUser.email || 'N/A'}
+                  </span>
+                </div>
+                <div className='text-sm'>
+                  <span className='text-zinc-500'>Content:</span>{' '}
+                  <span className='text-zinc-300'>
+                    {deleteTargetUser._count?.collections || 0} collections,{' '}
+                    {deleteTargetUser._count?.recommendations || 0}{' '}
+                    recommendations
+                  </span>
+                </div>
+              </div>
+              <div className='bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 text-xs text-orange-300'>
+                The user will be hidden from search, feeds, and profiles. Their
+                recommendations will stop appearing in feeds. All data is
+                preserved for restoration.
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              onClick={() => setSoftDeleteModalOpen(false)}
+              className='text-white bg-zinc-700 hover:bg-zinc-600'
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSoftDelete}
+              disabled={softDeleteMutation.isPending}
+              className='bg-orange-500 hover:bg-orange-600 text-white'
+            >
+              {softDeleteMutation.isPending ? 'Deleting...' : 'Soft Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hard Delete Confirmation Modal */}
+      <Dialog open={hardDeleteModalOpen} onOpenChange={setHardDeleteModalOpen}>
+        <DialogContent className='bg-zinc-900 border-zinc-800 text-white'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2 text-red-400'>
+              <Trash2 className='h-5 w-5' />
+              Permanently Delete User
+            </DialogTitle>
+            <DialogDescription className='text-zinc-400'>
+              This action is irreversible. All user data will be permanently
+              destroyed.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteTargetUser && (
+            <div className='space-y-4 py-4'>
+              <div className='bg-red-500/10 border border-red-500/30 rounded-lg p-4 space-y-2'>
+                <div className='text-sm font-medium text-red-300'>
+                  The following will be permanently deleted:
+                </div>
+                <ul className='text-xs text-red-400/80 space-y-1 ml-4 list-disc'>
+                  <li>
+                    {deleteTargetUser._count?.collections || 0} collections and
+                    all their albums
+                  </li>
+                  <li>
+                    {deleteTargetUser._count?.recommendations || 0}{' '}
+                    recommendations
+                  </li>
+                  <li>
+                    {deleteTargetUser.followersCount || 0} follower
+                    relationships
+                  </li>
+                  <li>All activity history and sessions</li>
+                  <li>User settings and OAuth accounts</li>
+                </ul>
+              </div>
+
+              <div className='space-y-2'>
+                <label className='text-sm text-zinc-300'>
+                  Type{' '}
+                  <span className='font-mono text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded'>
+                    {deleteTargetUser.username ||
+                      deleteTargetUser.email ||
+                      deleteTargetUser.id}
+                  </span>{' '}
+                  to confirm:
+                </label>
+                <input
+                  type='text'
+                  value={hardDeleteConfirmation}
+                  onChange={e => setHardDeleteConfirmation(e.target.value)}
+                  className='w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-red-500'
+                  placeholder='Type username to confirm...'
+                  autoComplete='off'
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setHardDeleteModalOpen(false);
+                setHardDeleteConfirmation('');
+              }}
+              className='text-white bg-zinc-700 hover:bg-zinc-600'
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleHardDelete}
+              disabled={
+                hardDeleteMutation.isPending ||
+                hardDeleteConfirmation !==
+                  (deleteTargetUser?.username ||
+                    deleteTargetUser?.email ||
+                    deleteTargetUser?.id)
+              }
+              className='bg-red-600 hover:bg-red-700 text-white disabled:opacity-50'
+            >
+              {hardDeleteMutation.isPending
+                ? 'Deleting...'
+                : 'Permanently Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Restore User Modal */}
+      <Dialog open={restoreModalOpen} onOpenChange={setRestoreModalOpen}>
+        <DialogContent className='bg-zinc-900 border-zinc-800 text-white'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2 text-emeraled-green'>
+              <RotateCcw className='h-5 w-5' />
+              Restore User
+            </DialogTitle>
+            <DialogDescription className='text-zinc-400'>
+              This will restore the user and make them visible again across the
+              platform.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteTargetUser && (
+            <div className='py-4'>
+              <div className='bg-zinc-800/50 p-4 rounded-lg space-y-2'>
+                <div className='text-sm'>
+                  <span className='text-zinc-500'>Username:</span>{' '}
+                  <span className='text-white font-medium'>
+                    {deleteTargetUser.username || 'N/A'}
+                  </span>
+                </div>
+                <div className='text-sm'>
+                  <span className='text-zinc-500'>Email:</span>{' '}
+                  <span className='text-white font-medium'>
+                    {deleteTargetUser.email || 'N/A'}
+                  </span>
+                </div>
+                <div className='text-sm'>
+                  <span className='text-zinc-500'>Deleted:</span>{' '}
+                  <span className='text-zinc-300'>
+                    {deleteTargetUser.deletedAt
+                      ? formatDistanceToNow(
+                          new Date(deleteTargetUser.deletedAt),
+                          {
+                            addSuffix: true,
+                          }
+                        )
+                      : 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              onClick={() => setRestoreModalOpen(false)}
+              className='text-white bg-zinc-700 hover:bg-zinc-600'
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRestore}
+              disabled={restoreMutation.isPending}
+              className='bg-emeraled-green hover:bg-emeraled-green/80 text-white'
+            >
+              {restoreMutation.isPending ? 'Restoring...' : 'Restore User'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -687,7 +1065,9 @@ export default function AdminUsersPage() {
                 users.map(user => (
                   <React.Fragment key={user.id}>
                     <tr
-                      className='hover:bg-zinc-900/50 transition-colors cursor-pointer'
+                      className={`hover:bg-zinc-900/50 transition-colors cursor-pointer ${
+                        user.deletedAt ? 'opacity-60' : ''
+                      }`}
                       onClick={e => {
                         if ((e.target as HTMLElement).closest('a')) {
                           return;
@@ -715,10 +1095,19 @@ export default function AdminUsersPage() {
                           </Avatar>
                           <div className='ml-1'>
                             <div className='text-sm font-medium text-cosmic-latte flex items-center gap-2'>
-                              {user.username || 'Unnamed User'}
+                              <span
+                                className={user.deletedAt ? 'line-through' : ''}
+                              >
+                                {user.username || 'Unnamed User'}
+                              </span>
                               {(user.role === 'ADMIN' ||
                                 user.role === 'OWNER') && (
                                 <Shield className='h-3 w-3 text-emeraled-green' />
+                              )}
+                              {user.deletedAt && (
+                                <span className='inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-500/20 text-orange-400'>
+                                  Deleted
+                                </span>
                               )}
                             </div>
                             <div className='text-xs text-zinc-400'>

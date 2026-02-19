@@ -12,6 +12,7 @@ import FollowButton from '@/components/profile/FollowButton';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import SortableAlbumGrid from '@/components/collections/SortableAlbumGrid';
 import AdminBadge from '@/components/ui/AdminBadge';
+import PluhButton from '@/components/ui/PluhButton';
 import { useNavigation } from '@/hooks/useNavigation';
 import { CollectionAlbum } from '@/types/collection';
 import { useQueryClient } from '@tanstack/react-query';
@@ -418,6 +419,13 @@ export default function ProfileClient({
 
           {/* Collection Section */}
           {/* TODO: add in DnD grid with varying sizes or whatever */}
+
+          {/* Pluh Button - shown on admin/owner profiles, visible to everyone */}
+          {(user.role === 'ADMIN' || user.role === 'OWNER') && (
+            <section className='border-t border-zinc-800 pt-8 flex justify-center'>
+              <PluhButton />
+            </section>
+          )}
 
           {/* Listen Later Section */}
           {showCollections && listenLater.length > 0 && (

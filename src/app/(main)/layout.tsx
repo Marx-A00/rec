@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
+import { auth } from '@/../auth';
 import Sidebar from '@/components/navigation/Sidebar';
 import TopBar from '@/components/navigation/TopBar';
 import { HeaderProvider } from '@/contexts/HeaderContext';
@@ -12,11 +14,16 @@ export const metadata: Metadata = {
   description: 'Share and discover music recommendations',
 };
 
-export default function MainLayout({
+export default async function MainLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Redirect authenticated users without a username to complete their profile
+  const session = await auth();
+  if (session?.user && !session.user.username) {
+    redirect('/complete-profile');
+  }
   return (
     <RecommendationDrawerProvider>
       <ConditionalMosaicProvider>

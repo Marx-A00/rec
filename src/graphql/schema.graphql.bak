@@ -16,6 +16,8 @@ scalar JSON
 type Artist {
   id: UUID!
   musicbrainzId: UUID
+  spotifyId: String
+  discogsId: String
   name: String!
   biography: String
   formedYear: Int
@@ -44,16 +46,19 @@ type Artist {
   listeners: Int
 
   # Enrichment logs
-  enrichmentLogs(limit: Int): [EnrichmentLog!]!
-  latestEnrichmentLog: EnrichmentLog
+  llamaLogs(limit: Int): [LlamaLog!]!
+  latestLlamaLog: LlamaLog
 }
 
 type Album {
   id: UUID!
   musicbrainzId: UUID
+  spotifyId: String
+  discogsId: String
   title: String!
   releaseDate: DateTime
   releaseType: String
+  genres: [String!]
   trackCount: Int
   durationMs: Int
   coverArtUrl: String
@@ -68,6 +73,9 @@ type Album {
   dataQuality: DataQuality
   enrichmentStatus: EnrichmentStatus
   lastEnriched: DateTime
+
+  # Game pool status
+  gameStatus: AlbumGameStatus!
 
   # Relationships
   artists: [ArtistCredit!]!
@@ -84,15 +92,15 @@ type Album {
   needsEnrichment: Boolean!
 
   # Enrichment logs
-  enrichmentLogs(limit: Int): [EnrichmentLog!]!
-  latestEnrichmentLog: EnrichmentLog
+  llamaLogs(limit: Int): [LlamaLog!]!
+  latestLlamaLog: LlamaLog
 }
 
 type Track {
   id: UUID!
   albumId: UUID
   musicbrainzId: UUID
-  isrc: String
+  discogsId: String  isrc: String
   title: String!
   trackNumber: Int!
   discNumber: Int!
@@ -118,8 +126,8 @@ type Track {
   searchArtistName: String
 
   # Enrichment logs
-  enrichmentLogs(limit: Int): [EnrichmentLog!]!
-  latestEnrichmentLog: EnrichmentLog
+  llamaLogs(limit: Int): [LlamaLog!]!
+  latestLlamaLog: LlamaLog
 }
 
 # =============================================
@@ -532,6 +540,64 @@ input CollectionAlbumInput {
   position: Int
 }
 
+"""
+Input for adding an album to a collection with optional album creation.
+Supports both existing albums (by ID) and creating new albums inline.
+"""
+input AddAlbumToCollectionWithCreateInput {
+  """
+  Collection ID to add the album to
+  """
+  collectionId: String!
+  """
+  Position in the collection (0 = beginning)
+  """
+  position: Int
+  """
+  Personal rating (1-10)
+  """
+  personalRating: Int
+  """
+  Personal notes about the album
+  """
+  personalNotes: String
+  """
+  Use existing album by ID (mutually exclusive with albumData)
+  """
+  albumId: UUID
+  """
+  Create new album with this data (mutually exclusive with albumId)
+  """
+  albumData: AlbumInput
+}
+
+"""
+Input for creating a recommendation with optional inline album creation.
+For each album, provide EITHER the ID (for existing) OR album data (to create).
+"""
+input CreateRecommendationWithAlbumsInput {
+  """
+  Existing basis album ID (mutually exclusive with basisAlbumData)
+  """
+  basisAlbumId: UUID
+  """
+  Create basis album with this data (mutually exclusive with basisAlbumId)
+  """
+  basisAlbumData: AlbumInput
+  """
+  Existing recommended album ID (mutually exclusive with recommendedAlbumData)
+  """
+  recommendedAlbumId: UUID
+  """
+  Create recommended album with this data (mutually exclusive with recommendedAlbumId)
+  """
+  recommendedAlbumData: AlbumInput
+  """
+  Recommendation score (1-10)
+  """
+  score: Int!
+}
+
 input AlbumInput {
   title: String!
   releaseDate: String # ISO date string
@@ -571,7 +637,7 @@ input TrackInput {
   previewUrl: String
   isrc: String
   musicbrainzId: UUID
-
+  discogsId: String
   # Artist associations
   artists: [ArtistTrackInput!]!
 }
@@ -591,7 +657,7 @@ input UpdateTrackInput {
   previewUrl: String
   isrc: String
   musicbrainzId: UUID
-}
+  discogsId: String}
 
 input AlertThresholdsInput {
   queueDepth: Int
@@ -657,13 +723,29 @@ enum EnrichmentEntityType {
   TRACK
 }
 
-enum EnrichmentLogStatus {
+enum LlamaLogStatus {
   SUCCESS
   PARTIAL_SUCCESS
   FAILED
   NO_DATA_AVAILABLE
   SKIPPED
   PREVIEW
+}
+
+enum LlamaLogCategory {
+  CREATED
+  ENRICHED
+  CORRECTED
+  CACHED
+  FAILED
+  LINKED
+  USER_ACTION
+}
+
+enum AlbumGameStatus {
+  ELIGIBLE
+  EXCLUDED
+  NONE
 }
 
 # =============================================
@@ -733,6 +815,20 @@ enum ScoringStrategy {
 }
 
 """
+Source for correction data.
+"""
+enum CorrectionSource {
+  """
+  MusicBrainz database
+  """
+  MUSICBRAINZ
+  """
+  Discogs database
+  """
+  DISCOGS
+}
+
+"""
 Confidence tier for tiered scoring strategy.
 """
 enum ConfidenceTier {
@@ -766,6 +862,10 @@ enum ApplyErrorCode {
   Data validation failed
   """
   VALIDATION_ERROR
+  """
+  Resource not found (release group, etc.)
+  """
+  NOT_FOUND
 }
 
 # =============================================
@@ -1588,6 +1688,18 @@ input CorrectionSearchInput {
   Threshold below which results are flagged as low-confidence (0-1)
   """
   lowConfidenceThreshold: Float = 0.5
+  """
+  Data source to search (default: MUSICBRAINZ)
+  """
+  source: CorrectionSource = MUSICBRAINZ
+  """
+  Direct MusicBrainz release group ID lookup (bypasses text search)
+  """
+  releaseGroupMbid: String
+  """
+  Direct Discogs master ID lookup (bypasses text search)
+  """
+  discogsId: String
 }
 
 """
@@ -1599,9 +1711,13 @@ input CorrectionPreviewInput {
   """
   albumId: UUID!
   """
-  Selected release group MBID from search results
+  Selected release group MBID from search results (or Discogs master ID for Discogs source)
   """
   releaseGroupMbid: String!
+  """
+  Data source (default: MUSICBRAINZ)
+  """
+  source: CorrectionSource = MUSICBRAINZ
 }
 
 """
@@ -1712,19 +1828,67 @@ input CorrectionApplyInput {
   Expected album updatedAt timestamp for optimistic locking
   """
   expectedUpdatedAt: DateTime!
+  """
+  Source of correction data (defaults to MusicBrainz)
+  """
+  source: CorrectionSource = MUSICBRAINZ
+}
+
+"""
+Input for applying a manual correction (no external MBID required).
+Admin directly edits album fields without selecting a MusicBrainz source.
+"""
+input ManualCorrectionApplyInput {
+  """
+  Album ID to apply correction to
+  """
+  albumId: UUID!
+  """
+  Title to set (required)
+  """
+  title: String!
+  """
+  Artist names to set
+  """
+  artists: [String!]!
+  """
+  Release date (YYYY, YYYY-MM, or YYYY-MM-DD format)
+  """
+  releaseDate: String
+  """
+  Release type (Album, EP, Single, etc.)
+  """
+  releaseType: String
+  """
+  MusicBrainz release group UUID
+  """
+  musicbrainzId: String
+  """
+  Spotify album ID
+  """
+  spotifyId: String
+  """
+  Discogs master/release ID
+  """
+  discogsId: String
+  """
+  Expected album updatedAt timestamp for optimistic locking
+  """
+  expectedUpdatedAt: DateTime!
 }
 
 # =============================================
-# ENRICHMENT LOGGING TYPES
+# LLAMA LOGGING TYPES
 # =============================================
 
-type EnrichmentLog {
+type LlamaLog {
   id: UUID!
   entityType: EnrichmentEntityType
   entityId: UUID
   operation: String!
   sources: [String!]!
-  status: EnrichmentLogStatus!
+  status: LlamaLogStatus!
+  category: LlamaLogCategory!
   reason: String # Human-readable explanation of why this enrichment occurred/was skipped
   fieldsEnriched: [String!]!
   dataQualityBefore: DataQuality
@@ -1737,9 +1901,18 @@ type EnrichmentLog {
   metadata: JSON
   previewData: JSON # Stores raw API response and field diffs for preview enrichments
   jobId: String
+  parentJobId: String # Links child job to parent job for tree display
+  rootJobId: String # Root job ID for provenance chain queries
   triggeredBy: String
   userId: String # Track which user made manual changes
   createdAt: DateTime!
+  children: [LlamaLog!] # Populated when includeChildren=true
+}
+type LlamaLogChainResponse {
+  logs: [LlamaLog!]!
+  totalCount: Int!
+  cursor: String
+  hasMore: Boolean!
 }
 
 input TimeRangeInput {
@@ -1869,6 +2042,7 @@ type JobRecord {
   attempts: Int!
   startedAt: DateTime
   completedAt: DateTime
+  guesses: [UncoverGuessInfo!]!
   duration: Int
   priority: Int!
 }
@@ -2005,7 +2179,7 @@ type PreviewEnrichmentResult {
   matchedEntity: String
   sources: [String!]!
   fieldsToUpdate: [EnrichmentFieldDiff!]!
-  enrichmentLogId: UUID!
+  llamaLogId: UUID!
   rawData: JSON
 }
 
@@ -2266,14 +2440,29 @@ type Query {
   ): [Artist!]!
 
   # Enrichment Logging queries
-  enrichmentLogs(
+  llamaLogs(
     entityType: EnrichmentEntityType
     entityId: UUID
-    status: EnrichmentLogStatus
+    status: LlamaLogStatus
+    category: [LlamaLogCategory!] # Filter by categories (e.g., CREATED, ENRICHED, LINKED)
     sources: [String!]
     skip: Int
     limit: Int
-  ): [EnrichmentLog!]!
+    parentOnly: Boolean # When true, returns only root logs (parentJobId is null)
+    parentJobId: String # When provided, returns only children of this parent job
+    includeChildren: Boolean # When true, returns root logs with nested children
+  ): [LlamaLog!]!
+
+  # Provenance chain for entity lifecycle tracking
+  llamaLogChain(
+    entityType: EnrichmentEntityType!
+    entityId: UUID!
+    categories: [LlamaLogCategory!]
+    startDate: DateTime
+    endDate: DateTime
+    limit: Int = 20
+    cursor: String
+  ): LlamaLogChainResponse!
 
   enrichmentStats(
     entityType: EnrichmentEntityType
@@ -2289,9 +2478,278 @@ type Query {
   Generate a preview of changes between album and selected MusicBrainz release
   """
   correctionPreview(input: CorrectionPreviewInput!): CorrectionPreview!
+  """
+  Search MusicBrainz or Discogs for artist correction candidates
+  """
+  artistCorrectionSearch(
+    query: String!
+    limit: Int
+    """
+    Data source to search (default: MUSICBRAINZ)
+    """
+    source: CorrectionSource = MUSICBRAINZ
+  ): ArtistCorrectionSearchResponse!
+  """
+  Generate a preview of changes between artist and selected MusicBrainz or Discogs artist
+  """
+  artistCorrectionPreview(
+    artistId: UUID!
+    """
+    Source artist ID (MusicBrainz MBID or Discogs ID)
+    """
+    sourceArtistId: String!
+    """
+    Data source (default: MUSICBRAINZ)
+    """
+    source: CorrectionSource = MUSICBRAINZ
+  ): ArtistCorrectionPreview!
+
+  # Game Pool queries
+  albumsByGameStatus(status: AlbumGameStatus!, limit: Int = 50, offset: Int = 0): [Album!]!
+  gamePoolStats: GamePoolStats!
+  suggestedGameAlbums(limit: Int = 50): [Album!]!
+
+  # Daily Challenge queries
+  """
+  Get the daily challenge for a date (defaults to today).
+  Does NOT expose the answer album - that would spoil the game!
+  """
+  dailyChallenge(date: DateTime): DailyChallengeInfo!
+  
+  """
+  Admin: Get curated challenge list (ordered)
+  """
+  curatedChallenges(limit: Int, offset: Int): [CuratedChallengeEntry!]!
+  
+  """
+  Admin: Get count of curated challenges
+  """
+  curatedChallengeCount: Int!
+  
+  """
+  Admin: Preview upcoming challenges for the next N days
+  """
+  upcomingChallenges(days: Int!): [UpcomingChallenge!]!
+
+
+  # Daily Challenge queries
+  """
+  Get the daily challenge for a date (defaults to today).
+  Does NOT expose the answer album - that would spoil the game!
+  """
+  dailyChallenge(date: DateTime): DailyChallengeInfo!
+  
+  """
+  Admin: Get curated challenge list (ordered)
+  """
+  curatedChallenges(limit: Int, offset: Int): [CuratedChallengeEntry!]!
+  
+  """
+  Admin: Get count of curated challenges
+  """
+  curatedChallengeCount: Int!
+  
+  """
+  Admin: Preview upcoming challenges for the next N days
+  """
+  upcomingChallenges(days: Int!): [UpcomingChallenge!]!
+
 }
 
 # =============================================
+
+
+# =============================================
+# DAILY CHALLENGE TYPES
+# =============================================
+
+"""
+Daily challenge info - does NOT include the answer album
+"""
+type DailyChallengeInfo {
+  id: UUID!
+  date: DateTime!
+  maxAttempts: Int!
+  totalPlays: Int!
+  totalWins: Int!
+  avgAttempts: Float
+  
+  """
+  User's session for this challenge (null if not started or not authenticated)
+  """
+  mySession: UncoverSessionInfo
+}
+
+"""
+User's session info for a daily challenge
+"""
+type UncoverSessionInfo {
+  id: UUID!
+  status: UncoverSessionStatus!
+  attemptCount: Int!
+  won: Boolean!
+  startedAt: DateTime!
+  completedAt: DateTime
+}
+
+enum UncoverSessionStatus {
+  IN_PROGRESS
+  WON
+  LOST
+}
+
+"""
+Album info for guess display (minimal, safe to expose)
+"""
+type UncoverGuessAlbumInfo {
+  id: UUID!
+  title: String!
+  cloudflareImageId: String
+  artistName: String!
+}
+
+"""
+Individual guess within a session
+"""
+type UncoverGuessInfo {
+  id: UUID!
+  guessNumber: Int!
+  guessedAlbum: UncoverGuessAlbumInfo
+  isSkipped: Boolean!
+  isCorrect: Boolean!
+  guessedAt: DateTime!
+}
+
+"""
+Result of starting a new session
+"""
+type StartSessionResult {
+  session: UncoverSessionInfo!
+  challengeId: UUID!
+  imageUrl: String!
+  cloudflareImageId: String
+}
+
+"""
+Result of submitting a guess or skipping
+"""
+type GuessResult {
+  guess: UncoverGuessInfo!
+  session: UncoverSessionInfo!
+  gameOver: Boolean!
+  """
+  Only populated when gameOver is true - the correct answer
+  """
+  correctAlbum: UncoverGuessAlbumInfo
+}
+
+"""
+Curated challenge entry for admin management
+"""
+type CuratedChallengeEntry {
+  id: UUID!
+  sequence: Int!
+  pinnedDate: DateTime
+  album: Album!
+  createdAt: DateTime!
+}
+
+"""
+Upcoming challenge preview for admin
+"""
+type UpcomingChallenge {
+  date: DateTime!
+  daysSinceEpoch: Int!
+  sequence: Int!
+  isPinned: Boolean!
+  album: Album
+}
+
+# =============================================
+# GAME POOL TYPES
+# =============================================
+
+type GamePoolStats {
+  eligibleCount: Int!
+  excludedCount: Int!
+  neutralCount: Int!
+  totalWithCoverArt: Int!
+}
+
+input UpdateAlbumGameStatusInput {
+  albumId: UUID!
+  gameStatus: AlbumGameStatus!
+  reason: String
+}
+
+type UpdateAlbumGameStatusResult {
+  success: Boolean!
+  album: Album
+  error: String
+}
+
+
+# =============================================
+# DAILY CHALLENGE TYPES
+# =============================================
+
+"""
+Daily challenge info - does NOT include the answer album
+"""
+type DailyChallengeInfo {
+  id: UUID!
+  date: DateTime!
+  maxAttempts: Int!
+  totalPlays: Int!
+  totalWins: Int!
+  avgAttempts: Float
+  
+  """
+  User's session for this challenge (null if not started or not authenticated)
+  """
+  mySession: UncoverSessionInfo
+}
+
+"""
+User's session info for a daily challenge
+"""
+type UncoverSessionInfo {
+  id: UUID!
+  status: UncoverSessionStatus!
+  attemptCount: Int!
+  won: Boolean!
+  startedAt: DateTime!
+  completedAt: DateTime
+}
+
+enum UncoverSessionStatus {
+  IN_PROGRESS
+  WON
+  LOST
+}
+
+"""
+Curated challenge entry for admin management
+"""
+type CuratedChallengeEntry {
+  id: UUID!
+  sequence: Int!
+  pinnedDate: DateTime
+  album: Album!
+  createdAt: DateTime!
+}
+
+"""
+Upcoming challenge preview for admin
+"""
+type UpcomingChallenge {
+  date: DateTime!
+  daysSinceEpoch: Int!
+  sequence: Int!
+  isPinned: Boolean!
+  album: Album
+}
+
 # MUTATIONS (Placeholder for future implementation)
 # =============================================
 
@@ -2319,6 +2777,7 @@ type Mutation {
   # Album management
   addAlbum(input: AlbumInput!): Album!
   updateAlbum(id: UUID!, input: AlbumInput!): Album!
+  updateAlbumGameStatus(input: UpdateAlbumGameStatusInput!): UpdateAlbumGameStatusResult!
 
   # Artist management
   addArtist(input: ArtistInput!): Artist!
@@ -2346,6 +2805,14 @@ type Mutation {
     collectionId: String!
     input: CollectionAlbumInput!
   ): AddAlbumToCollectionPayload!
+  """
+  Add album to collection with optional inline album creation.
+  Use albumId for existing albums or albumData to create new album atomically.
+  Provides proper provenance chain for LlamaLog tracking.
+  """
+  addAlbumToCollectionWithCreate(
+    input: AddAlbumToCollectionWithCreateInput!
+  ): AddAlbumToCollectionPayload!
   removeAlbumFromCollection(collectionId: String!, albumId: UUID!): Boolean!
   updateCollectionAlbum(
     id: String!
@@ -2361,10 +2828,18 @@ type Mutation {
   removeFromListenLater(albumId: UUID!): Boolean!
 
   # Recommendation system
+  """
+  Create a recommendation. Supports two modes:
+  1. Legacy: Pass basisAlbumId + recommendedAlbumId (existing albums)
+  2. New: Pass input with optional inline album creation
+  """
   createRecommendation(
-    basisAlbumId: UUID!
-    recommendedAlbumId: UUID!
-    score: Int!
+    # Legacy params (for backwards compatibility)
+    basisAlbumId: UUID
+    recommendedAlbumId: UUID
+    score: Int
+    # New input (preferred - supports inline album creation)
+    input: CreateRecommendationWithAlbumsInput
   ): CreateRecommendationPayload!
   updateRecommendation(id: String!, score: Int!): UpdateRecommendationPayload!
   deleteRecommendation(id: String!): Boolean!
@@ -2406,6 +2881,12 @@ type Mutation {
   previewAlbumEnrichment(id: UUID!): PreviewEnrichmentResult!
   previewArtistEnrichment(id: UUID!): PreviewEnrichmentResult!
 
+  """
+  Apply manual corrections to an album (no external source)
+  """
+  manualCorrectionApply(
+    input: ManualCorrectionApplyInput!
+  ): CorrectionApplyResult!
   batchEnrichment(
     ids: [UUID!]!
     type: EnrichmentType!
@@ -2429,6 +2910,51 @@ type Mutation {
   Apply selected corrections from a preview to an album
   """
   correctionApply(input: CorrectionApplyInput!): CorrectionApplyResult!
+  """
+  Apply selected corrections from a preview to an artist
+  """
+  artistCorrectionApply(
+    input: ArtistCorrectionApplyInput!
+  ): ArtistCorrectionApplyResult!
+
+  # Daily Challenge mutations (Admin)
+  """
+  Admin: Add an album to the curated challenge list
+  """
+  addCuratedChallenge(albumId: UUID!, pinnedDate: DateTime): CuratedChallengeEntry!
+  
+  """
+  Admin: Remove an album from the curated challenge list
+  """
+  removeCuratedChallenge(id: UUID!): Boolean!
+  
+  """
+  Admin: Pin a curated challenge to a specific date
+  """
+  pinCuratedChallenge(id: UUID!, date: DateTime!): CuratedChallengeEntry!
+  
+  """
+  Admin: Unpin a curated challenge (remove date override)
+  """
+  unpinCuratedChallenge(id: UUID!): CuratedChallengeEntry!
+
+  # Uncover Game mutations
+  """
+  Start a new session for today's challenge (requires auth).
+  Returns existing session if already started.
+  """
+  startUncoverSession: StartSessionResult!
+  
+  """
+  Submit a guess for the current session (requires auth).
+  """
+  submitGuess(sessionId: UUID!, albumId: UUID!): GuessResult!
+  
+  """
+  Skip current guess - counts as wrong guess (requires auth).
+  """
+  skipGuess(sessionId: UUID!): GuessResult!
+
 }
 
 type FollowUserPayload {
@@ -2516,6 +3042,28 @@ type JobStatusUpdate {
   status: JobStatus!
   progress: Float
   message: String
+
+  # Daily Challenge mutations (Admin)
+  """
+  Admin: Add an album to the curated challenge list
+  """
+  addCuratedChallenge(albumId: UUID!, pinnedDate: DateTime): CuratedChallengeEntry!
+  
+  """
+  Admin: Remove an album from the curated challenge list
+  """
+  removeCuratedChallenge(id: UUID!): Boolean!
+  
+  """
+  Admin: Pin a curated challenge to a specific date
+  """
+  pinCuratedChallenge(id: UUID!, date: DateTime!): CuratedChallengeEntry!
+  
+  """
+  Admin: Unpin a curated challenge (remove date override)
+  """
+  unpinCuratedChallenge(id: UUID!): CuratedChallengeEntry!
+
   timestamp: DateTime!
 }
 
@@ -2543,4 +3091,287 @@ enum AlertType {
   RATE_LIMIT
   WORKER_FAILURE
   REDIS_CONNECTION
+}
+
+# =============================================
+# ARTIST CORRECTION TYPES
+# =============================================
+
+"""
+A top release for artist disambiguation.
+Helps identify the right artist when multiple share the same name.
+"""
+type ArtistTopRelease {
+  title: String!
+  year: String
+  type: String
+}
+
+"""
+Artist search result from MusicBrainz for correction.
+"""
+type ArtistCorrectionSearchResult {
+  """
+  MusicBrainz artist ID
+  """
+  artistMbid: UUID!
+  """
+  Artist name
+  """
+  name: String!
+  """
+  Sort name (e.g., "Beatles, The")
+  """
+  sortName: String!
+  """
+  Disambiguation comment (e.g., "British rock band")
+  """
+  disambiguation: String
+  """
+  Artist type: Person, Group, Orchestra, Choir, Character, Other
+  """
+  type: String
+  """
+  Country code (ISO 3166-1 alpha-2)
+  """
+  country: String
+  """
+  Area name (city/region)
+  """
+  area: String
+  """
+  Begin date (partial date string)
+  """
+  beginDate: String
+  """
+  End date (partial date string)
+  """
+  endDate: String
+  """
+  Whether the artist has ended
+  """
+  ended: Boolean
+  """
+  Gender (only meaningful for Person type)
+  """
+  gender: String
+  """
+  MusicBrainz search score (0-100)
+  """
+  mbScore: Int!
+  """
+  Top releases for disambiguation
+  """
+  topReleases: [ArtistTopRelease!]
+  """
+  Data source this result came from (musicbrainz or discogs)
+  """
+  source: String
+}
+
+"""
+Response from artist correction search operation.
+"""
+type ArtistCorrectionSearchResponse {
+  """
+  Search results
+  """
+  results: [ArtistCorrectionSearchResult!]!
+  """
+  Whether more results are available
+  """
+  hasMore: Boolean!
+  """
+  The query that was executed
+  """
+  query: String!
+}
+
+"""
+Diff for a single artist field.
+"""
+type ArtistFieldDiff {
+  """
+  Field name
+  """
+  field: String!
+  """
+  Change classification
+  """
+  changeType: ChangeType!
+  """
+  Current value in database
+  """
+  current: String
+  """
+  Value from MusicBrainz source
+  """
+  source: String
+}
+
+"""
+Summary statistics for artist field changes.
+"""
+type ArtistPreviewSummary {
+  """
+  Total number of fields compared
+  """
+  totalFields: Int!
+  """
+  Number of fields that changed
+  """
+  changedFields: Int!
+  """
+  Number of fields added
+  """
+  addedFields: Int!
+  """
+  Number of fields modified
+  """
+  modifiedFields: Int!
+}
+
+"""
+Complete preview of all changes between current artist and external source.
+"""
+type ArtistCorrectionPreview {
+  """
+  Current artist data from database
+  """
+  currentArtist: Artist!
+  """
+  Full MusicBrainz artist data
+  """
+  mbArtistData: JSON
+  """
+  Field-by-field diffs
+  """
+  fieldDiffs: [ArtistFieldDiff!]!
+  """
+  Number of albums by this artist
+  """
+  albumCount: Int!
+  """
+  Summary statistics
+  """
+  summary: ArtistPreviewSummary!
+  """
+  Data source used for this preview
+  """
+  source: CorrectionSource!
+}
+
+"""
+Summary of changes applied to an artist.
+"""
+type ArtistAppliedChanges {
+  """
+  List of metadata field names updated
+  """
+  metadata: [String!]!
+  """
+  List of external ID field names updated
+  """
+  externalIds: [String!]!
+  """
+  Number of albums affected
+  """
+  affectedAlbumCount: Int!
+  """
+  Data quality before correction
+  """
+  dataQualityBefore: DataQuality!
+  """
+  Data quality after correction
+  """
+  dataQualityAfter: DataQuality!
+}
+
+"""
+Result of artist correction apply operation.
+"""
+type ArtistCorrectionApplyResult {
+  success: Boolean!
+  """
+  Updated artist (when success=true)
+  """
+  artist: Artist
+  """
+  Summary of changes applied (when success=true)
+  """
+  changes: ArtistAppliedChanges
+  """
+  Number of affected albums (when success=true)
+  """
+  affectedAlbumCount: Int
+  """
+  Error code (when success=false)
+  """
+  code: ApplyErrorCode
+  """
+  Error message (when success=false)
+  """
+  message: String
+}
+
+# =============================================
+# ARTIST CORRECTION INPUT TYPES
+# =============================================
+
+"""
+Artist metadata field selections.
+"""
+input ArtistMetadataSelectionsInput {
+  name: Boolean
+  disambiguation: Boolean
+  countryCode: Boolean
+  artistType: Boolean
+  area: Boolean
+  beginDate: Boolean
+  endDate: Boolean
+  gender: Boolean
+}
+
+"""
+Artist external ID field selections.
+"""
+input ArtistExternalIdSelectionsInput {
+  musicbrainzId: Boolean
+  discogsId: Boolean
+  ipi: Boolean
+  isni: Boolean
+}
+
+"""
+Complete field selections for artist correction.
+"""
+input ArtistFieldSelectionsInput {
+  metadata: ArtistMetadataSelectionsInput!
+  externalIds: ArtistExternalIdSelectionsInput!
+}
+
+"""
+Input for applying an artist correction.
+"""
+input ArtistCorrectionApplyInput {
+  """
+  Artist ID to apply correction to
+  """
+  artistId: UUID!
+  """
+  Source artist ID (MusicBrainz MBID or Discogs ID)
+  """
+  sourceArtistId: String!
+  """
+  Field selections determining which changes to apply
+  """
+  selections: ArtistFieldSelectionsInput!
+  """
+  Expected artist updatedAt timestamp for optimistic locking
+  """
+  expectedUpdatedAt: DateTime!
+  """
+  Source of correction data (default: MUSICBRAINZ)
+  """
+  source: CorrectionSource = MUSICBRAINZ
 }
