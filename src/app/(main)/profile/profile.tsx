@@ -32,7 +32,6 @@ interface ProfileClientProps {
   isOwnProfile: boolean;
   showCollections?: boolean;
   isFollowingUser?: boolean;
-  isSessionAdmin?: boolean;
 }
 
 export default function ProfileClient({
@@ -43,7 +42,6 @@ export default function ProfileClient({
   isOwnProfile,
   showCollections = true,
   isFollowingUser = false,
-  isSessionAdmin = false,
 }: ProfileClientProps) {
   // Fetch user profile data via React Query
   const { data: profileData, isLoading: isProfileLoading } =
@@ -422,8 +420,8 @@ export default function ProfileClient({
           {/* Collection Section */}
           {/* TODO: add in DnD grid with varying sizes or whatever */}
 
-          {/* Pluh Button - visible to profile owner and admins */}
-          {(isOwnProfile || isSessionAdmin) && (
+          {/* Pluh Button - shown on admin/owner profiles, visible to everyone */}
+          {(user.role === 'ADMIN' || user.role === 'OWNER') && (
             <section className='border-t border-zinc-800 pt-8 flex justify-center'>
               <PluhButton />
             </section>
