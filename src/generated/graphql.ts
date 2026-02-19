@@ -1021,6 +1021,13 @@ export type DeleteArtistPayload = {
   success: Scalars['Boolean']['output'];
 };
 
+export type DeleteUserPayload = {
+  __typename?: 'DeleteUserPayload';
+  deletedId?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export enum EnrichmentEntityType {
   Album = 'ALBUM',
   Artist = 'ARTIST',
@@ -1421,7 +1428,6 @@ export type Mutation = {
   addArtist: Artist;
   /** Admin: Add an album to the curated challenge list */
   addCuratedChallenge: CuratedChallengeEntry;
-  addToListenLater: CollectionAlbum;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
   artistCorrectionApply: ArtistCorrectionApplyResult;
@@ -1444,8 +1450,8 @@ export type Mutation = {
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
   dismissUserSuggestion: Scalars['Boolean']['output'];
-  ensureListenLaterCollection: Collection;
   followUser: FollowUserPayload;
+  hardDeleteUser: DeleteUserPayload;
   /** Apply manual corrections to an album (no external source) */
   manualCorrectionApply: CorrectionApplyResult;
   pauseQueue: Scalars['Boolean']['output'];
@@ -1456,7 +1462,6 @@ export type Mutation = {
   removeAlbumFromCollection: Scalars['Boolean']['output'];
   /** Admin: Remove an album from the curated challenge list */
   removeCuratedChallenge: Scalars['Boolean']['output'];
-  removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
   resetAlbumEnrichment: Album;
   resetArtistEnrichment: Artist;
@@ -1466,12 +1471,14 @@ export type Mutation = {
    */
   resetDailySession: Scalars['Boolean']['output'];
   resetOnboardingStatus: OnboardingStatus;
+  restoreUser: RestoreUserPayload;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
   rollbackSyncJob: RollbackSyncJobResult;
   /** Skip current guess - counts as wrong guess (requires auth). */
   skipGuess: GuessResult;
+  softDeleteUser: DeleteUserPayload;
   /**
    * Start an archive session for a specific date (not today).
    * Used for playing past puzzles.
@@ -1526,11 +1533,6 @@ export type MutationAddArtistArgs = {
 export type MutationAddCuratedChallengeArgs = {
   albumId: Scalars['UUID']['input'];
   pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
-};
-
-export type MutationAddToListenLaterArgs = {
-  albumData?: InputMaybe<AlbumInput>;
-  albumId: Scalars['UUID']['input'];
 };
 
 export type MutationAdminUpdateUserShowTourArgs = {
@@ -1601,6 +1603,10 @@ export type MutationFollowUserArgs = {
   userId: Scalars['String']['input'];
 };
 
+export type MutationHardDeleteUserArgs = {
+  userId: Scalars['String']['input'];
+};
+
 export type MutationManualCorrectionApplyArgs = {
   input: ManualCorrectionApplyInput;
 };
@@ -1627,10 +1633,6 @@ export type MutationRemoveCuratedChallengeArgs = {
   id: Scalars['UUID']['input'];
 };
 
-export type MutationRemoveFromListenLaterArgs = {
-  albumId: Scalars['UUID']['input'];
-};
-
 export type MutationReorderCollectionAlbumsArgs = {
   albumIds: Array<Scalars['UUID']['input']>;
   collectionId: Scalars['String']['input'];
@@ -1642,6 +1644,10 @@ export type MutationResetAlbumEnrichmentArgs = {
 
 export type MutationResetArtistEnrichmentArgs = {
   id: Scalars['UUID']['input'];
+};
+
+export type MutationRestoreUserArgs = {
+  userId: Scalars['String']['input'];
 };
 
 export type MutationRetryJobArgs = {
@@ -1656,6 +1662,10 @@ export type MutationRollbackSyncJobArgs = {
 export type MutationSkipGuessArgs = {
   mode?: InputMaybe<Scalars['String']['input']>;
   sessionId: Scalars['UUID']['input'];
+};
+
+export type MutationSoftDeleteUserArgs = {
+  userId: Scalars['String']['input'];
 };
 
 export type MutationStartArchiveSessionArgs = {
@@ -2293,6 +2303,13 @@ export enum RecommendationSort {
 export type ReorderCollectionAlbumsPayload = {
   __typename?: 'ReorderCollectionAlbumsPayload';
   ids: Array<Scalars['String']['output']>;
+};
+
+export type RestoreUserPayload = {
+  __typename?: 'RestoreUserPayload';
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+  user?: Maybe<User>;
 };
 
 export type RollbackSyncJobResult = {
@@ -2949,6 +2966,8 @@ export type User = {
   bio?: Maybe<Scalars['String']['output']>;
   collections: Array<Collection>;
   createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  deletedBy?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
   emailVerified?: Maybe<Scalars['DateTime']['output']>;
   followers: Array<UserFollow>;
@@ -3149,6 +3168,55 @@ export type DeleteCollectionMutation = {
   deleteCollection: boolean;
 };
 
+export type SoftDeleteUserMutationVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+export type SoftDeleteUserMutation = {
+  __typename?: 'Mutation';
+  softDeleteUser: {
+    __typename?: 'DeleteUserPayload';
+    success: boolean;
+    message?: string | null;
+    deletedId?: string | null;
+  };
+};
+
+export type HardDeleteUserMutationVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+export type HardDeleteUserMutation = {
+  __typename?: 'Mutation';
+  hardDeleteUser: {
+    __typename?: 'DeleteUserPayload';
+    success: boolean;
+    message?: string | null;
+    deletedId?: string | null;
+  };
+};
+
+export type RestoreUserMutationVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+export type RestoreUserMutation = {
+  __typename?: 'Mutation';
+  restoreUser: {
+    __typename?: 'RestoreUserPayload';
+    success: boolean;
+    message?: string | null;
+    user?: {
+      __typename?: 'User';
+      id: string;
+      username?: string | null;
+      email?: string | null;
+      deletedAt?: Date | null;
+      deletedBy?: string | null;
+    } | null;
+  };
+};
+
 export type FollowUserMutationVariables = Exact<{
   userId: Scalars['String']['input'];
 }>;
@@ -3184,39 +3252,6 @@ export type CheckFollowStatusQuery = {
     id: string;
     isFollowing?: boolean | null;
   } | null;
-};
-
-export type EnsureListenLaterMutationVariables = Exact<{
-  [key: string]: never;
-}>;
-
-export type EnsureListenLaterMutation = {
-  __typename?: 'Mutation';
-  ensureListenLaterCollection: {
-    __typename?: 'Collection';
-    id: string;
-    name: string;
-    isPublic: boolean;
-  };
-};
-
-export type AddToListenLaterMutationVariables = Exact<{
-  albumId: Scalars['UUID']['input'];
-  albumData?: InputMaybe<AlbumInput>;
-}>;
-
-export type AddToListenLaterMutation = {
-  __typename?: 'Mutation';
-  addToListenLater: { __typename?: 'CollectionAlbum'; id: string };
-};
-
-export type RemoveFromListenLaterMutationVariables = Exact<{
-  albumId: Scalars['UUID']['input'];
-}>;
-
-export type RemoveFromListenLaterMutation = {
-  __typename?: 'Mutation';
-  removeFromListenLater: boolean;
 };
 
 export type ManualCorrectionApplyMutationVariables = Exact<{
@@ -3377,6 +3412,8 @@ export type GetAdminUsersQuery = {
     recommendationsCount: number;
     profileUpdatedAt?: Date | null;
     lastActive?: Date | null;
+    deletedAt?: Date | null;
+    deletedBy?: string | null;
     createdAt: Date;
     collections: Array<{ __typename?: 'Collection'; id: string; name: string }>;
     settings?: {
@@ -4949,6 +4986,7 @@ export type GetUserProfileQuery = {
     email?: string | null;
     image?: string | null;
     bio?: string | null;
+    role: UserRole;
     followersCount: number;
     followingCount: number;
     recommendationsCount: number;
@@ -6267,7 +6305,7 @@ export const UncoverGuessFieldsFragmentDoc = `
   isCorrect
   guessedAt
 }
-    `;
+    ${UncoverGuessAlbumFieldsFragmentDoc}`;
 export const UncoverSessionFieldsFragmentDoc = `
     fragment UncoverSessionFields on UncoverSessionInfo {
   id
@@ -6280,7 +6318,7 @@ export const UncoverSessionFieldsFragmentDoc = `
     ...UncoverGuessFields
   }
 }
-    `;
+    ${UncoverGuessFieldsFragmentDoc}`;
 export const AdminUpdateUserShowTourDocument = `
     mutation AdminUpdateUserShowTour($userId: String!, $showOnboardingTour: Boolean!) {
   adminUpdateUserShowTour(
@@ -6484,6 +6522,120 @@ export const useDeleteCollectionMutation = <
 
 useDeleteCollectionMutation.getKey = () => ['DeleteCollection'];
 
+export const SoftDeleteUserDocument = `
+    mutation SoftDeleteUser($userId: String!) {
+  softDeleteUser(userId: $userId) {
+    success
+    message
+    deletedId
+  }
+}
+    `;
+
+export const useSoftDeleteUserMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    SoftDeleteUserMutation,
+    TError,
+    SoftDeleteUserMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    SoftDeleteUserMutation,
+    TError,
+    SoftDeleteUserMutationVariables,
+    TContext
+  >({
+    mutationKey: ['SoftDeleteUser'],
+    mutationFn: (variables?: SoftDeleteUserMutationVariables) =>
+      fetcher<SoftDeleteUserMutation, SoftDeleteUserMutationVariables>(
+        SoftDeleteUserDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useSoftDeleteUserMutation.getKey = () => ['SoftDeleteUser'];
+
+export const HardDeleteUserDocument = `
+    mutation HardDeleteUser($userId: String!) {
+  hardDeleteUser(userId: $userId) {
+    success
+    message
+    deletedId
+  }
+}
+    `;
+
+export const useHardDeleteUserMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    HardDeleteUserMutation,
+    TError,
+    HardDeleteUserMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    HardDeleteUserMutation,
+    TError,
+    HardDeleteUserMutationVariables,
+    TContext
+  >({
+    mutationKey: ['HardDeleteUser'],
+    mutationFn: (variables?: HardDeleteUserMutationVariables) =>
+      fetcher<HardDeleteUserMutation, HardDeleteUserMutationVariables>(
+        HardDeleteUserDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useHardDeleteUserMutation.getKey = () => ['HardDeleteUser'];
+
+export const RestoreUserDocument = `
+    mutation RestoreUser($userId: String!) {
+  restoreUser(userId: $userId) {
+    success
+    message
+    user {
+      id
+      username
+      email
+      deletedAt
+      deletedBy
+    }
+  }
+}
+    `;
+
+export const useRestoreUserMutation = <TError = unknown, TContext = unknown>(
+  options?: UseMutationOptions<
+    RestoreUserMutation,
+    TError,
+    RestoreUserMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    RestoreUserMutation,
+    TError,
+    RestoreUserMutationVariables,
+    TContext
+  >({
+    mutationKey: ['RestoreUser'],
+    mutationFn: (variables?: RestoreUserMutationVariables) =>
+      fetcher<RestoreUserMutation, RestoreUserMutationVariables>(
+        RestoreUserDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useRestoreUserMutation.getKey = () => ['RestoreUser'];
+
 export const FollowUserDocument = `
     mutation FollowUser($userId: String!) {
   followUser(userId: $userId) {
@@ -6627,117 +6779,6 @@ export const useInfiniteCheckFollowStatusQuery = <
 useInfiniteCheckFollowStatusQuery.getKey = (
   variables: CheckFollowStatusQueryVariables
 ) => ['CheckFollowStatus.infinite', variables];
-
-export const EnsureListenLaterDocument = `
-    mutation EnsureListenLater {
-  ensureListenLaterCollection {
-    id
-    name
-    isPublic
-  }
-}
-    `;
-
-export const useEnsureListenLaterMutation = <
-  TError = unknown,
-  TContext = unknown,
->(
-  options?: UseMutationOptions<
-    EnsureListenLaterMutation,
-    TError,
-    EnsureListenLaterMutationVariables,
-    TContext
-  >
-) => {
-  return useMutation<
-    EnsureListenLaterMutation,
-    TError,
-    EnsureListenLaterMutationVariables,
-    TContext
-  >({
-    mutationKey: ['EnsureListenLater'],
-    mutationFn: (variables?: EnsureListenLaterMutationVariables) =>
-      fetcher<EnsureListenLaterMutation, EnsureListenLaterMutationVariables>(
-        EnsureListenLaterDocument,
-        variables
-      )(),
-    ...options,
-  });
-};
-
-useEnsureListenLaterMutation.getKey = () => ['EnsureListenLater'];
-
-export const AddToListenLaterDocument = `
-    mutation AddToListenLater($albumId: UUID!, $albumData: AlbumInput) {
-  addToListenLater(albumId: $albumId, albumData: $albumData) {
-    id
-  }
-}
-    `;
-
-export const useAddToListenLaterMutation = <
-  TError = unknown,
-  TContext = unknown,
->(
-  options?: UseMutationOptions<
-    AddToListenLaterMutation,
-    TError,
-    AddToListenLaterMutationVariables,
-    TContext
-  >
-) => {
-  return useMutation<
-    AddToListenLaterMutation,
-    TError,
-    AddToListenLaterMutationVariables,
-    TContext
-  >({
-    mutationKey: ['AddToListenLater'],
-    mutationFn: (variables?: AddToListenLaterMutationVariables) =>
-      fetcher<AddToListenLaterMutation, AddToListenLaterMutationVariables>(
-        AddToListenLaterDocument,
-        variables
-      )(),
-    ...options,
-  });
-};
-
-useAddToListenLaterMutation.getKey = () => ['AddToListenLater'];
-
-export const RemoveFromListenLaterDocument = `
-    mutation RemoveFromListenLater($albumId: UUID!) {
-  removeFromListenLater(albumId: $albumId)
-}
-    `;
-
-export const useRemoveFromListenLaterMutation = <
-  TError = unknown,
-  TContext = unknown,
->(
-  options?: UseMutationOptions<
-    RemoveFromListenLaterMutation,
-    TError,
-    RemoveFromListenLaterMutationVariables,
-    TContext
-  >
-) => {
-  return useMutation<
-    RemoveFromListenLaterMutation,
-    TError,
-    RemoveFromListenLaterMutationVariables,
-    TContext
-  >({
-    mutationKey: ['RemoveFromListenLater'],
-    mutationFn: (variables?: RemoveFromListenLaterMutationVariables) =>
-      fetcher<
-        RemoveFromListenLaterMutation,
-        RemoveFromListenLaterMutationVariables
-      >(RemoveFromListenLaterDocument, variables)(),
-    ...options,
-  });
-};
-
-useRemoveFromListenLaterMutation.getKey = () => ['RemoveFromListenLater'];
 
 export const ManualCorrectionApplyDocument = `
     mutation ManualCorrectionApply($input: ManualCorrectionApplyInput!) {
@@ -7070,6 +7111,8 @@ export const GetAdminUsersDocument = `
     recommendationsCount
     profileUpdatedAt
     lastActive
+    deletedAt
+    deletedBy
     createdAt
     collections {
       id
@@ -11008,6 +11051,7 @@ export const GetUserProfileDocument = `
     email
     image
     bio
+    role
     followersCount
     followingCount
     recommendationsCount
@@ -13347,9 +13391,7 @@ export const StartUncoverSessionDocument = `
     cloudflareImageId
   }
 }
-    ${UncoverSessionFieldsFragmentDoc}
-${UncoverGuessFieldsFragmentDoc}
-${UncoverGuessAlbumFieldsFragmentDoc}`;
+    ${UncoverSessionFieldsFragmentDoc}`;
 
 export const useStartUncoverSessionMutation = <
   TError = unknown,
@@ -13396,8 +13438,8 @@ export const SubmitGuessDocument = `
   }
 }
     ${UncoverGuessFieldsFragmentDoc}
-${UncoverGuessAlbumFieldsFragmentDoc}
-${UncoverSessionFieldsFragmentDoc}`;
+${UncoverSessionFieldsFragmentDoc}
+${UncoverGuessAlbumFieldsFragmentDoc}`;
 
 export const useSubmitGuessMutation = <TError = unknown, TContext = unknown>(
   options?: UseMutationOptions<
@@ -13441,8 +13483,8 @@ export const SkipGuessDocument = `
   }
 }
     ${UncoverGuessFieldsFragmentDoc}
-${UncoverGuessAlbumFieldsFragmentDoc}
-${UncoverSessionFieldsFragmentDoc}`;
+${UncoverSessionFieldsFragmentDoc}
+${UncoverGuessAlbumFieldsFragmentDoc}`;
 
 export const useSkipGuessMutation = <TError = unknown, TContext = unknown>(
   options?: UseMutationOptions<

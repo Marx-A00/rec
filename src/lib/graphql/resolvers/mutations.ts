@@ -30,6 +30,7 @@ import {
 } from '@/lib/logging/activity-logger';
 import { createLlamaLogger } from '@/lib/logging/llama-logger';
 import { isAdmin } from '@/lib/permissions';
+import { requireOwnerNotSelf } from '@/lib/graphql/resolvers/utils';
 
 // Correction system imports
 import { getCorrectionSearchService } from '@/lib/correction/search-service';
@@ -3797,6 +3798,205 @@ export const mutationResolvers: MutationResolvers = {
       throw error instanceof GraphQLError
         ? error
         : new GraphQLError('Failed to reset daily session: ' + String(error));
+    }
+  },
+
+  // =========================================================================
+  // User Deletion (Owner only)
+  // =========================================================================
+
+  softDeleteUser: async (
+    _: unknown,
+    { userId }: { userId: string },
+    context: any
+  ) => {
+    const targetUser = await requireOwnerNotSelf(context, userId);
+    const { prisma } = context;
+
+    if (targetUser.deletedAt) {
+      throw new GraphQLError('User is already soft-deleted', {
+        extensions: { code: 'BAD_REQUEST' },
+      });
+    }
+
+    try {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          deletedAt: new Date(),
+          deletedBy: context.user.id,
+        },
+      });
+
+      console.log(
+        `[ADMIN] Owner ${context.user.id} soft-deleted user ${userId} (${targetUser.username || targetUser.email})`
+      );
+
+      return {
+        success: true,
+        message: `User ${targetUser.username || targetUser.email || userId} has been soft-deleted`,
+        deletedId: userId,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error soft-deleting user:', error);
+      throw new GraphQLError(`Failed to soft-delete user: ${error}`, {
+        extensions: { code: 'INTERNAL_ERROR' },
+      });
+    }
+  },
+
+  hardDeleteUser: async (
+    _: unknown,
+    { userId }: { userId: string },
+    context: any
+  ) => {
+    const targetUser = await requireOwnerNotSelf(context, userId);
+    const { prisma } = context;
+
+    try {
+      const result = await prisma.$transaction(async (tx: any) => {
+        // 1. Delete activities where user is the actor
+        const deletedActorActivities = await tx.activity.deleteMany({
+          where: { userId },
+        });
+
+        // 2. Delete activities where user is the target
+        const deletedTargetActivities = await tx.activity.deleteMany({
+          where: { targetUserId: userId },
+        });
+
+        // 3. Delete user activity tracking entries
+        const deletedUserActivities = await tx.userActivity.deleteMany({
+          where: { userId },
+        });
+
+        // 4. Delete recommendations created by this user
+        const deletedRecommendations = await tx.recommendation.deleteMany({
+          where: { userId },
+        });
+
+        // 5. Find user's collections, then delete their collection albums
+        const collections = await tx.collection.findMany({
+          where: { userId },
+          select: { id: true },
+        });
+        const collectionIds = collections.map((c: { id: string }) => c.id);
+
+        let deletedCollectionAlbums = { count: 0 };
+        if (collectionIds.length > 0) {
+          deletedCollectionAlbums = await tx.collectionAlbum.deleteMany({
+            where: { collectionId: { in: collectionIds } },
+          });
+        }
+
+        // 6. Delete collections
+        const deletedCollections = await tx.collection.deleteMany({
+          where: { userId },
+        });
+
+        // 7. Delete follow relationships (both directions)
+        const deletedFollowers = await tx.userFollow.deleteMany({
+          where: { OR: [{ followerId: userId }, { followedId: userId }] },
+        });
+
+        // 8. Delete user settings
+        await tx.userSettings.deleteMany({
+          where: { userId },
+        });
+
+        // 9. Nullify llama log entries (matches onDelete: SetNull)
+        await tx.llamaLog.updateMany({
+          where: { userId },
+          data: { userId: null },
+        });
+
+        // 10. Delete sessions
+        await tx.session.deleteMany({
+          where: { userId },
+        });
+
+        // 11. Delete OAuth accounts
+        await tx.account.deleteMany({
+          where: { userId },
+        });
+
+        // 12. Delete the user
+        await tx.user.delete({
+          where: { id: userId },
+        });
+
+        return {
+          activities:
+            deletedActorActivities.count + deletedTargetActivities.count,
+          userActivities: deletedUserActivities.count,
+          recommendations: deletedRecommendations.count,
+          collectionAlbums: deletedCollectionAlbums.count,
+          collections: deletedCollections.count,
+          follows: deletedFollowers.count,
+        };
+      });
+
+      console.log(
+        `[ADMIN] Owner ${context.user.id} HARD-DELETED user ${userId} (${targetUser.username || targetUser.email}). ` +
+          `Removed: ${result.collections} collections, ${result.recommendations} recommendations, ` +
+          `${result.follows} follows, ${result.activities} activities`
+      );
+
+      return {
+        success: true,
+        message:
+          `User ${targetUser.username || targetUser.email || userId} permanently deleted. ` +
+          `Removed ${result.collections} collections, ${result.recommendations} recommendations, ${result.follows} follows.`,
+        deletedId: userId,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error hard-deleting user:', error);
+      throw new GraphQLError(`Failed to hard-delete user: ${error}`, {
+        extensions: { code: 'INTERNAL_ERROR' },
+      });
+    }
+  },
+
+  restoreUser: async (
+    _: unknown,
+    { userId }: { userId: string },
+    context: any
+  ) => {
+    const targetUser = await requireOwnerNotSelf(context, userId);
+    const { prisma } = context;
+
+    if (!targetUser.deletedAt) {
+      throw new GraphQLError('User is not soft-deleted', {
+        extensions: { code: 'BAD_REQUEST' },
+      });
+    }
+
+    try {
+      const restoredUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          deletedAt: null,
+          deletedBy: null,
+        },
+      });
+
+      console.log(
+        `[ADMIN] Owner ${context.user.id} restored user ${userId} (${targetUser.username || targetUser.email})`
+      );
+
+      return {
+        success: true,
+        message: `User ${targetUser.username || targetUser.email || userId} has been restored`,
+        user: restoredUser,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      console.error('Error restoring user:', error);
+      throw new GraphQLError(`Failed to restore user: ${error}`, {
+        extensions: { code: 'INTERNAL_ERROR' },
+      });
     }
   },
 };

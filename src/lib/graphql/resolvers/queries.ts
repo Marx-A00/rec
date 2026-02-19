@@ -619,7 +619,7 @@ export const queryResolvers: QueryResolvers = {
   user: async (_, { id }, { prisma }) => {
     try {
       const user = await prisma.user.findUnique({ where: { id } });
-      if (!user) return null;
+      if (!user || user.deletedAt) return null;
       return { id: user.id } as ResolversTypes['User'];
     } catch (error) {
       throw new GraphQLError(`Failed to fetch user: ${error}`);
@@ -802,6 +802,9 @@ export const queryResolvers: QueryResolvers = {
 
       const recommendations = await prisma.recommendation.findMany({
         ...buildCursorPagination(cursor, limit),
+        where: {
+          user: { deletedAt: null },
+        },
         orderBy: { createdAt: 'desc' },
         include: {
           user: true,
@@ -898,6 +901,7 @@ export const queryResolvers: QueryResolvers = {
     try {
       const followers = await prisma.user.findMany({
         where: {
+          deletedAt: null,
           following: {
             some: {
               followedId: userId,
@@ -918,6 +922,7 @@ export const queryResolvers: QueryResolvers = {
     try {
       const following = await prisma.user.findMany({
         where: {
+          deletedAt: null,
           followers: {
             some: {
               followerId: userId,

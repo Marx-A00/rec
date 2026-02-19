@@ -36,6 +36,8 @@ query GetAdminUsers(
     recommendationsCount
     profileUpdatedAt
     lastActive
+    deletedAt
+    deletedBy
     createdAt
     collections {
       id

@@ -248,6 +248,8 @@ type User {
   recommendationsCount: Int!
   profileUpdatedAt: DateTime
   lastActive: DateTime
+  deletedAt: DateTime
+  deletedBy: String
   createdAt: DateTime!
   updatedAt: DateTime!
 
@@ -2958,6 +2960,11 @@ type Mutation {
   ): AdminUpdateUserSettingsPayload!
   deleteAlbum(id: UUID!): DeleteAlbumPayload!
 
+  # User deletion (Owner only)
+  softDeleteUser(userId: String!): DeleteUserPayload!
+  hardDeleteUser(userId: String!): DeleteUserPayload!
+  restoreUser(userId: String!): RestoreUserPayload!
+
   # Correction System mutations (Admin)
   """
   Apply selected corrections from a preview to an album
@@ -3060,6 +3067,18 @@ type DeleteArtistPayload {
   success: Boolean!
   message: String
   deletedId: UUID
+}
+
+type DeleteUserPayload {
+  success: Boolean!
+  message: String
+  deletedId: String
+}
+
+type RestoreUserPayload {
+  success: Boolean!
+  message: String
+  user: User
 }
 
 type CreateRecommendationPayload {

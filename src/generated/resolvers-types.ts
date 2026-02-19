@@ -995,6 +995,13 @@ export type DeleteArtistPayload = {
   success: Scalars['Boolean']['output'];
 };
 
+export type DeleteUserPayload = {
+  __typename?: 'DeleteUserPayload';
+  deletedId?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export enum EnrichmentEntityType {
   Album = 'ALBUM',
   Artist = 'ARTIST',
@@ -1395,7 +1402,6 @@ export type Mutation = {
   addArtist: Artist;
   /** Admin: Add an album to the curated challenge list */
   addCuratedChallenge: CuratedChallengeEntry;
-  addToListenLater: CollectionAlbum;
   adminUpdateUserShowTour: AdminUpdateUserSettingsPayload;
   /** Apply selected corrections from a preview to an artist */
   artistCorrectionApply: ArtistCorrectionApplyResult;
@@ -1418,8 +1424,8 @@ export type Mutation = {
   deleteRecommendation: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
   dismissUserSuggestion: Scalars['Boolean']['output'];
-  ensureListenLaterCollection: Collection;
   followUser: FollowUserPayload;
+  hardDeleteUser: DeleteUserPayload;
   /** Apply manual corrections to an album (no external source) */
   manualCorrectionApply: CorrectionApplyResult;
   pauseQueue: Scalars['Boolean']['output'];
@@ -1430,7 +1436,6 @@ export type Mutation = {
   removeAlbumFromCollection: Scalars['Boolean']['output'];
   /** Admin: Remove an album from the curated challenge list */
   removeCuratedChallenge: Scalars['Boolean']['output'];
-  removeFromListenLater: Scalars['Boolean']['output'];
   reorderCollectionAlbums: ReorderCollectionAlbumsPayload;
   resetAlbumEnrichment: Album;
   resetArtistEnrichment: Artist;
@@ -1440,12 +1445,14 @@ export type Mutation = {
    */
   resetDailySession: Scalars['Boolean']['output'];
   resetOnboardingStatus: OnboardingStatus;
+  restoreUser: RestoreUserPayload;
   resumeQueue: Scalars['Boolean']['output'];
   retryAllFailed: Scalars['Int']['output'];
   retryJob: Scalars['Boolean']['output'];
   rollbackSyncJob: RollbackSyncJobResult;
   /** Skip current guess - counts as wrong guess (requires auth). */
   skipGuess: GuessResult;
+  softDeleteUser: DeleteUserPayload;
   /**
    * Start an archive session for a specific date (not today).
    * Used for playing past puzzles.
@@ -1500,11 +1507,6 @@ export type MutationAddArtistArgs = {
 export type MutationAddCuratedChallengeArgs = {
   albumId: Scalars['UUID']['input'];
   pinnedDate?: InputMaybe<Scalars['DateTime']['input']>;
-};
-
-export type MutationAddToListenLaterArgs = {
-  albumData?: InputMaybe<AlbumInput>;
-  albumId: Scalars['UUID']['input'];
 };
 
 export type MutationAdminUpdateUserShowTourArgs = {
@@ -1575,6 +1577,10 @@ export type MutationFollowUserArgs = {
   userId: Scalars['String']['input'];
 };
 
+export type MutationHardDeleteUserArgs = {
+  userId: Scalars['String']['input'];
+};
+
 export type MutationManualCorrectionApplyArgs = {
   input: ManualCorrectionApplyInput;
 };
@@ -1601,10 +1607,6 @@ export type MutationRemoveCuratedChallengeArgs = {
   id: Scalars['UUID']['input'];
 };
 
-export type MutationRemoveFromListenLaterArgs = {
-  albumId: Scalars['UUID']['input'];
-};
-
 export type MutationReorderCollectionAlbumsArgs = {
   albumIds: Array<Scalars['UUID']['input']>;
   collectionId: Scalars['String']['input'];
@@ -1616,6 +1618,10 @@ export type MutationResetAlbumEnrichmentArgs = {
 
 export type MutationResetArtistEnrichmentArgs = {
   id: Scalars['UUID']['input'];
+};
+
+export type MutationRestoreUserArgs = {
+  userId: Scalars['String']['input'];
 };
 
 export type MutationRetryJobArgs = {
@@ -1630,6 +1636,10 @@ export type MutationRollbackSyncJobArgs = {
 export type MutationSkipGuessArgs = {
   mode?: InputMaybe<Scalars['String']['input']>;
   sessionId: Scalars['UUID']['input'];
+};
+
+export type MutationSoftDeleteUserArgs = {
+  userId: Scalars['String']['input'];
 };
 
 export type MutationStartArchiveSessionArgs = {
@@ -2267,6 +2277,13 @@ export enum RecommendationSort {
 export type ReorderCollectionAlbumsPayload = {
   __typename?: 'ReorderCollectionAlbumsPayload';
   ids: Array<Scalars['String']['output']>;
+};
+
+export type RestoreUserPayload = {
+  __typename?: 'RestoreUserPayload';
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+  user?: Maybe<User>;
 };
 
 export type RollbackSyncJobResult = {
@@ -2923,6 +2940,8 @@ export type User = {
   bio?: Maybe<Scalars['String']['output']>;
   collections: Array<Collection>;
   createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  deletedBy?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
   emailVerified?: Maybe<Scalars['DateTime']['output']>;
   followers: Array<UserFollow>;
@@ -3216,6 +3235,7 @@ export type ResolversTypes = ResolversObject<{
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   DeleteAlbumPayload: ResolverTypeWrapper<DeleteAlbumPayload>;
   DeleteArtistPayload: ResolverTypeWrapper<DeleteArtistPayload>;
+  DeleteUserPayload: ResolverTypeWrapper<DeleteUserPayload>;
   EnrichmentEntityType: EnrichmentEntityType;
   EnrichmentFieldDiff: ResolverTypeWrapper<EnrichmentFieldDiff>;
   EnrichmentPriority: EnrichmentPriority;
@@ -3268,6 +3288,7 @@ export type ResolversTypes = ResolversObject<{
   RecommendationInput: RecommendationInput;
   RecommendationSort: RecommendationSort;
   ReorderCollectionAlbumsPayload: ResolverTypeWrapper<ReorderCollectionAlbumsPayload>;
+  RestoreUserPayload: ResolverTypeWrapper<RestoreUserPayload>;
   RollbackSyncJobResult: ResolverTypeWrapper<RollbackSyncJobResult>;
   ScoreBreakdown: ResolverTypeWrapper<ScoreBreakdown>;
   ScoredSearchResult: ResolverTypeWrapper<ScoredSearchResult>;
@@ -3413,6 +3434,7 @@ export type ResolversParentTypes = ResolversObject<{
   DateTime: Scalars['DateTime']['output'];
   DeleteAlbumPayload: DeleteAlbumPayload;
   DeleteArtistPayload: DeleteArtistPayload;
+  DeleteUserPayload: DeleteUserPayload;
   EnrichmentFieldDiff: EnrichmentFieldDiff;
   EnrichmentResult: EnrichmentResult;
   EnrichmentStats: EnrichmentStats;
@@ -3456,6 +3478,7 @@ export type ResolversParentTypes = ResolversObject<{
   RecommendationFeed: RecommendationFeed;
   RecommendationInput: RecommendationInput;
   ReorderCollectionAlbumsPayload: ReorderCollectionAlbumsPayload;
+  RestoreUserPayload: RestoreUserPayload;
   RollbackSyncJobResult: RollbackSyncJobResult;
   ScoreBreakdown: ScoreBreakdown;
   ScoredSearchResult: ScoredSearchResult;
@@ -4730,6 +4753,21 @@ export type DeleteArtistPayloadResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type DeleteUserPayloadResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['DeleteUserPayload'] = ResolversParentTypes['DeleteUserPayload'],
+> = ResolversObject<{
+  deletedId?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type EnrichmentFieldDiffResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -5185,12 +5223,6 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationAddCuratedChallengeArgs, 'albumId'>
   >;
-  addToListenLater?: Resolver<
-    ResolversTypes['CollectionAlbum'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationAddToListenLaterArgs, 'albumId'>
-  >;
   adminUpdateUserShowTour?: Resolver<
     ResolversTypes['AdminUpdateUserSettingsPayload'],
     ParentType,
@@ -5283,16 +5315,17 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationDismissUserSuggestionArgs, 'userId'>
   >;
-  ensureListenLaterCollection?: Resolver<
-    ResolversTypes['Collection'],
-    ParentType,
-    ContextType
-  >;
   followUser?: Resolver<
     ResolversTypes['FollowUserPayload'],
     ParentType,
     ContextType,
     RequireFields<MutationFollowUserArgs, 'userId'>
+  >;
+  hardDeleteUser?: Resolver<
+    ResolversTypes['DeleteUserPayload'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationHardDeleteUserArgs, 'userId'>
   >;
   manualCorrectionApply?: Resolver<
     ResolversTypes['CorrectionApplyResult'],
@@ -5334,12 +5367,6 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationRemoveCuratedChallengeArgs, 'id'>
   >;
-  removeFromListenLater?: Resolver<
-    ResolversTypes['Boolean'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationRemoveFromListenLaterArgs, 'albumId'>
-  >;
   reorderCollectionAlbums?: Resolver<
     ResolversTypes['ReorderCollectionAlbumsPayload'],
     ParentType,
@@ -5371,6 +5398,12 @@ export type MutationResolvers<
     ParentType,
     ContextType
   >;
+  restoreUser?: Resolver<
+    ResolversTypes['RestoreUserPayload'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationRestoreUserArgs, 'userId'>
+  >;
   resumeQueue?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   retryAllFailed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   retryJob?: Resolver<
@@ -5390,6 +5423,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationSkipGuessArgs, 'sessionId'>
+  >;
+  softDeleteUser?: Resolver<
+    ResolversTypes['DeleteUserPayload'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationSoftDeleteUserArgs, 'userId'>
   >;
   startArchiveSession?: Resolver<
     ResolversTypes['StartSessionResult'],
@@ -6162,6 +6201,17 @@ export type ReorderCollectionAlbumsPayloadResolvers<
     ResolversParentTypes['ReorderCollectionAlbumsPayload'] = ResolversParentTypes['ReorderCollectionAlbumsPayload'],
 > = ResolversObject<{
   ids?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type RestoreUserPayloadResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['RestoreUserPayload'] = ResolversParentTypes['RestoreUserPayload'],
+> = ResolversObject<{
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -7104,6 +7154,16 @@ export type UserResolvers<
     ContextType
   >;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  deletedAt?: Resolver<
+    Maybe<ResolversTypes['DateTime']>,
+    ParentType,
+    ContextType
+  >;
+  deletedBy?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
   email?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   emailVerified?: Resolver<
     Maybe<ResolversTypes['DateTime']>,
@@ -7356,6 +7416,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   DateTime?: GraphQLScalarType;
   DeleteAlbumPayload?: DeleteAlbumPayloadResolvers<ContextType>;
   DeleteArtistPayload?: DeleteArtistPayloadResolvers<ContextType>;
+  DeleteUserPayload?: DeleteUserPayloadResolvers<ContextType>;
   EnrichmentFieldDiff?: EnrichmentFieldDiffResolvers<ContextType>;
   EnrichmentResult?: EnrichmentResultResolvers<ContextType>;
   EnrichmentStats?: EnrichmentStatsResolvers<ContextType>;
@@ -7391,6 +7452,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Recommendation?: RecommendationResolvers<ContextType>;
   RecommendationFeed?: RecommendationFeedResolvers<ContextType>;
   ReorderCollectionAlbumsPayload?: ReorderCollectionAlbumsPayloadResolvers<ContextType>;
+  RestoreUserPayload?: RestoreUserPayloadResolvers<ContextType>;
   RollbackSyncJobResult?: RollbackSyncJobResultResolvers<ContextType>;
   ScoreBreakdown?: ScoreBreakdownResolvers<ContextType>;
   ScoredSearchResult?: ScoredSearchResultResolvers<ContextType>;
