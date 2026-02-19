@@ -44,6 +44,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           });
 
           if (existingUser) {
+            // Block soft-deleted users from signing in
+            if (existingUser.deletedAt) {
+              console.error(
+                `[auth] OAuth sign-in attempt for soft-deleted user: ${existingUser.id}`,
+                new Date().toISOString()
+              );
+              return false;
+            }
+
             // Check if this OAuth account is already linked
             const isLinked = existingUser.accounts.some(
               acc =>
@@ -107,7 +116,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { id: token.sub },
         });
 
-        if (!dbUser) {
+        if (!dbUser || dbUser.deletedAt) {
           return { ...session, user: undefined };
         }
 
@@ -220,6 +229,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!user) {
           console.error(
             `[auth] Sign-in attempt for non-existent user: ${identifier}`,
+            new Date().toISOString()
+          );
+          throw new CredentialsSignin(AUTH_ERROR_CODES.USER_NOT_FOUND);
+        }
+
+        // User is soft-deleted
+        if (user.deletedAt) {
+          console.error(
+            `[auth] Sign-in attempt for soft-deleted user: ${identifier}`,
             new Date().toISOString()
           );
           throw new CredentialsSignin(AUTH_ERROR_CODES.USER_NOT_FOUND);
