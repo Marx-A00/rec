@@ -2,21 +2,24 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { Camera } from 'lucide-react';
+import { Camera, X } from 'lucide-react';
 
 import { getImageUrl } from '@/lib/cloudflare-images';
 
 interface AvatarUploadProps {
   currentImage?: string | null;
   onUploadSuccess?: (url: string) => void;
+  onClear?: () => void;
 }
 
 export default function AvatarUpload({
   currentImage,
   onUploadSuccess,
+  onClear,
 }: AvatarUploadProps) {
   const { data: session, update } = useSession();
   const [uploading, setUploading] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [imageUrl, setImageUrl] = useState(currentImage);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,6 +59,36 @@ export default function AvatarUpload({
     }
   };
 
+  const handleClear = async () => {
+    if (!session?.user?.id) return;
+
+    setClearing(true);
+    try {
+      const response = await fetch(`/api/users/${session.user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: null }),
+      });
+
+      if (response.ok) {
+        setImageUrl(null);
+
+        await update({
+          ...session,
+          user: { ...session?.user, image: null },
+        });
+
+        onClear?.();
+      }
+    } catch (error) {
+      console.error('Clear avatar error:', error);
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  const isBusy = uploading || clearing;
+
   return (
     <div className='relative group'>
       <div className='w-32 h-32 rounded-full overflow-hidden bg-zinc-800'>
@@ -77,13 +110,25 @@ export default function AvatarUpload({
           type='file'
           accept='image/*'
           onChange={handleFileUpload}
-          disabled={uploading}
+          disabled={isBusy}
           className='hidden'
         />
         <Camera className='text-white' size={24} />
       </label>
 
-      {uploading && (
+      {/* Clear button - only show when there's an image */}
+      {imageUrl && !isBusy && (
+        <button
+          type='button'
+          onClick={handleClear}
+          className='absolute -top-1 -right-1 w-8 h-8 rounded-full bg-zinc-700 hover:bg-red-600 flex items-center justify-center transition-colors border-2 border-black'
+          title='Remove profile picture'
+        >
+          <X className='text-white' size={14} />
+        </button>
+      )}
+
+      {isBusy && (
         <div className='absolute inset-0 flex items-center justify-center bg-black/50 rounded-full'>
           <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white'></div>
         </div>
