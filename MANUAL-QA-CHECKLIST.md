@@ -13,8 +13,10 @@ A comprehensive checklist for manually testing the app from a user's perspective
 - [ ] Password strength indicator shows as you type
 - [ ] Show/hide password toggle works
 - [ ] Submit with valid data → account created, redirect to sign-in
+- [ ] after account creation, google sign up leads to change username page
 - [ ] Try existing email → error message
 - [ ] Link to sign-in page works
+- [ ] Tour starts for new users
 
 ### Sign In (`/signin`)
 
