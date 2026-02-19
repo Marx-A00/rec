@@ -95,8 +95,8 @@ export default function CompleteProfilePage() {
       // Update the session to reflect the new username
       await update();
 
-      // Redirect to browse page
-      router.replace('/browse');
+      // Redirect to home mosaic so the onboarding tour can auto-start
+      router.replace('/home-mosaic');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
