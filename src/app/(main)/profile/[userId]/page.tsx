@@ -3,6 +3,7 @@ import { Lock } from 'lucide-react';
 
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
+import { isAdmin } from '@/lib/permissions';
 import { userProfileParamsSchema } from '@/lib/validations/params';
 import type { CollectionAlbum } from '@/types/collection';
 
@@ -271,6 +272,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
       isOwnProfile={isOwnProfile}
       showCollections={showCollections}
       isFollowingUser={!!isFollowingUser}
+      isSessionAdmin={isAdmin(session?.user?.role)}
     />
   );
 }
