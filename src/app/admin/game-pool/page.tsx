@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ExternalLink, Gamepad2 } from 'lucide-react';
+import { ExternalLink, Drama } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GamePoolStats } from '@/components/admin/game-pool/GamePoolStats';
@@ -14,7 +14,7 @@ export default function GamePoolPage() {
       {/* Header */}
       <div className='mb-8'>
         <div className='flex items-center gap-3 mb-2'>
-          <Gamepad2 className='h-8 w-8 text-blue-500' />
+          <Drama className='h-8 w-8 text-blue-500' />
           <h1 className='text-3xl font-bold text-white'>Game Pool</h1>
         </div>
         <p className='text-zinc-400 mt-1'>
