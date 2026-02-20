@@ -2,15 +2,16 @@
 /**
  * Automated scheduler for Spotify sync jobs
  * Handles periodic syncing of new releases using tag:new search API
+ *
+ * Scheduler enabled/disabled state is persisted in the database (AppConfig table)
+ * so it survives Redis clears and worker restarts.
  */
 
+import { getSchedulerEnabled, setSchedulerEnabled } from '../config/app-config';
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
 import type { SpotifySyncNewReleasesJobData } from '../queue/jobs';
-import { createRedisConnection } from '../queue/redis';
 
 import { spotifyMetrics } from './error-handling';
-
-const REDIS_KEY_SPOTIFY_ENABLED = 'scheduler:spotify:enabled';
 
 export interface SpotifyScheduleConfig {
   newReleases: {
@@ -34,20 +35,21 @@ export const DEFAULT_SCHEDULE_CONFIG: SpotifyScheduleConfig = {
     genreTags: undefined, // No genre filtering by default
     year: new Date().getFullYear(), // Current year
     pages: 3, // Default to 3 pages (150 albums)
-    minFollowers: 100000, // Default to 100k+ followers (Task 11)
+    minFollowers: 100000, // Default to 100k+ followers
   },
 };
 
 class SpotifyScheduler {
   private config: SpotifyScheduleConfig;
-  private isRunning = false;
+  isRunning = false;
 
   constructor(config: SpotifyScheduleConfig = DEFAULT_SCHEDULE_CONFIG) {
     this.config = config;
   }
 
   /**
-   * Start the automated scheduler
+   * Start the automated scheduler.
+   * Persists enabled=true to the database.
    */
   async start() {
     if (this.isRunning) {
@@ -58,8 +60,8 @@ class SpotifyScheduler {
     console.log('🚀 Starting Spotify automated scheduler...');
     this.isRunning = true;
 
-    // Persist enabled state to Redis (survives worker restarts)
-    await this.persistEnabledState(true);
+    // Persist enabled state to database (survives Redis clears + worker restarts)
+    await setSchedulerEnabled('spotify', true);
 
     // Remove any existing schedules to prevent duplicates
     await this.removeExistingSchedules();
@@ -74,7 +76,8 @@ class SpotifyScheduler {
   }
 
   /**
-   * Stop the automated scheduler
+   * Stop the automated scheduler.
+   * Persists enabled=false to the database.
    */
   async stop() {
     if (!this.isRunning) {
@@ -84,8 +87,8 @@ class SpotifyScheduler {
 
     console.log('🛑 Stopping Spotify automated scheduler...');
 
-    // Persist disabled state to Redis (survives worker restarts)
-    await this.persistEnabledState(false);
+    // Persist disabled state to database
+    await setSchedulerEnabled('spotify', false);
 
     // Remove repeatable jobs from BullMQ
     await this.removeExistingSchedules();
@@ -146,10 +149,8 @@ class SpotifyScheduler {
       priority: 'medium',
       source: 'scheduled',
       requestId: `scheduled_new_releases_${Date.now()}`,
-      // Tag-based filtering for Spotify Search API
       genreTags: this.config.newReleases.genreTags,
       year: this.config.newReleases.year || new Date().getFullYear(),
-      // Pagination and follower filtering (Task 11)
       pages: this.config.newReleases.pages,
       minFollowers: this.config.newReleases.minFollowers,
     };
@@ -187,7 +188,7 @@ class SpotifyScheduler {
   /**
    * Remove existing repeatable job schedules
    */
-  private async removeExistingSchedules() {
+  async removeExistingSchedules() {
     try {
       const queue = getMusicBrainzQueue();
       const repeatableJobs = await queue.getQueue().getRepeatableJobs();
@@ -201,23 +202,6 @@ class SpotifyScheduler {
       }
     } catch (error) {
       console.warn('⚠️  Failed to remove existing schedules:', error);
-    }
-  }
-
-  /**
-   * Persist scheduler enabled/disabled state to Redis
-   * This allows the toggle to survive worker restarts
-   */
-  private async persistEnabledState(enabled: boolean) {
-    try {
-      const redis = createRedisConnection();
-      await redis.set(REDIS_KEY_SPOTIFY_ENABLED, enabled ? 'true' : 'false');
-      redis.disconnect();
-    } catch (error) {
-      console.warn(
-        '⚠️  Failed to persist Spotify scheduler state to Redis:',
-        error
-      );
     }
   }
 
@@ -244,7 +228,7 @@ class SpotifyScheduler {
         JOB_TYPES.SPOTIFY_SYNC_NEW_RELEASES,
         jobData,
         {
-          priority: 3, // Medium priority for manual jobs
+          priority: 3,
           attempts: 3,
           backoff: { type: 'exponential', delay: 5000 },
           removeOnComplete: 10,
@@ -285,17 +269,16 @@ class SpotifyScheduler {
 
   /**
    * Manually trigger a new releases sync.
-   * Re-reads env config to ensure manual triggers respect current settings
-   * even if the scheduler hasn't been started.
+   * Re-reads env config so manual triggers respect current .env values.
+   * This always works regardless of whether the scheduler is enabled.
    */
   async triggerSync() {
     console.log('🔄 Manually triggering new releases sync...');
 
     // Re-read env config so "Sync Now" always uses current .env values
-    // even if initializeSpotifyScheduler() was never called
     this.config = {
       newReleases: {
-        enabled: process.env.SPOTIFY_SYNC_NEW_RELEASES !== 'false',
+        enabled: true, // Manual trigger always enabled
         intervalMinutes: parseInt(
           process.env.SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES || '10080'
         ),
@@ -326,11 +309,48 @@ class SpotifyScheduler {
 export const spotifyScheduler = new SpotifyScheduler();
 
 /**
- * Initialize Spotify scheduler with environment-based configuration
+ * Read env-based config for the scheduler (limit, pages, country, etc.)
+ * The on/off toggle comes from the database, not env vars.
+ */
+function readSpotifyConfigFromEnv(): SpotifyScheduleConfig {
+  const genreTags = process.env.SPOTIFY_NEW_RELEASES_GENRE_TAGS
+    ? process.env.SPOTIFY_NEW_RELEASES_GENRE_TAGS.split(',').map(t => t.trim())
+    : undefined;
+
+  const year = process.env.SPOTIFY_NEW_RELEASES_YEAR
+    ? parseInt(process.env.SPOTIFY_NEW_RELEASES_YEAR)
+    : new Date().getFullYear();
+
+  const pages = process.env.SPOTIFY_NEW_RELEASES_PAGES
+    ? parseInt(process.env.SPOTIFY_NEW_RELEASES_PAGES)
+    : 3;
+
+  const minFollowers = process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS
+    ? parseInt(process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS)
+    : 100000;
+
+  return {
+    newReleases: {
+      enabled: true, // Populated by caller based on DB state
+      intervalMinutes: parseInt(
+        process.env.SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES || '10080'
+      ),
+      limit: parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '50'),
+      country: process.env.SPOTIFY_COUNTRY || 'US',
+      genreTags,
+      year,
+      pages,
+      minFollowers,
+    },
+  };
+}
+
+/**
+ * Initialize Spotify scheduler on worker boot.
+ * Reads enabled state from database and reconciles with BullMQ.
  */
 export async function initializeSpotifyScheduler() {
   // Check if we have Spotify credentials
-  // Fall back to AUTH_SPOTIFY_* vars (used by NextAuth) if SPOTIFY_CLIENT_* not set
   const spotifyClientId =
     process.env.SPOTIFY_CLIENT_ID || process.env.AUTH_SPOTIFY_ID;
   const spotifyClientSecret =
@@ -341,71 +361,58 @@ export async function initializeSpotifyScheduler() {
     return false;
   }
 
-  // Check Redis for persisted toggle state (admin UI override)
-  // If Redis key exists, it takes priority over env vars
-  let enabledByRedis: boolean | null = null;
+  // Read enabled state from database (source of truth)
+  let dbEnabled = false;
   try {
-    const redis = createRedisConnection();
-    const redisValue = await redis.get(REDIS_KEY_SPOTIFY_ENABLED);
-    redis.disconnect();
-    if (redisValue !== null) {
-      enabledByRedis = redisValue === 'true';
-      console.log(
-        `📡 Spotify scheduler Redis state: ${enabledByRedis ? 'enabled' : 'disabled'}`
-      );
-    }
+    dbEnabled = await getSchedulerEnabled('spotify');
+    console.log(
+      `📡 Spotify scheduler DB state: ${dbEnabled ? 'enabled' : 'disabled'}`
+    );
   } catch (error) {
     console.warn(
-      '⚠️  Failed to read Spotify scheduler state from Redis:',
+      '⚠️  Failed to read Spotify scheduler state from DB, defaulting to disabled:',
       error
     );
-  }
-
-  // If Redis says disabled, don't start the scheduler
-  if (enabledByRedis === false) {
-    console.log('⏸️  Spotify scheduler disabled via admin toggle (Redis)');
     return false;
   }
 
-  // Parse genre tags from comma-separated env var
-  const genreTags = process.env.SPOTIFY_NEW_RELEASES_GENRE_TAGS
-    ? process.env.SPOTIFY_NEW_RELEASES_GENRE_TAGS.split(',').map(t => t.trim())
-    : undefined;
+  // Check BullMQ for existing repeatable jobs
+  let bullmqHasJobs = false;
+  try {
+    const queue = getMusicBrainzQueue();
+    const repeatableJobs = await queue.getQueue().getRepeatableJobs();
+    bullmqHasJobs = repeatableJobs.some(job =>
+      job.key.includes('spotify-new-releases-schedule')
+    );
+  } catch (error) {
+    console.warn('⚠️  Failed to check BullMQ for Spotify jobs:', error);
+  }
 
-  // Parse year from env var (defaults to current year)
-  const year = process.env.SPOTIFY_NEW_RELEASES_YEAR
-    ? parseInt(process.env.SPOTIFY_NEW_RELEASES_YEAR)
-    : new Date().getFullYear();
+  // Reconcile DB state with BullMQ state
+  if (!dbEnabled) {
+    if (bullmqHasJobs) {
+      // DB says off but orphaned jobs exist — clean them up
+      console.log(
+        '🧹 Cleaning up orphaned Spotify BullMQ jobs (DB says disabled)'
+      );
+      await spotifyScheduler.removeExistingSchedules();
+    }
+    console.log('⏸️  Spotify scheduler disabled (DB)');
+    return false;
+  }
 
-  // Parse pagination setting (Task 11)
-  const pages = process.env.SPOTIFY_NEW_RELEASES_PAGES
-    ? parseInt(process.env.SPOTIFY_NEW_RELEASES_PAGES)
-    : 3; // Default to 3 pages
-
-  // Parse follower filter (Task 11)
-  const minFollowers = process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS
-    ? parseInt(process.env.SPOTIFY_NEW_RELEASES_MIN_FOLLOWERS)
-    : 100000; // Default to 100k+ followers
-
-  // Load configuration from environment variables
-  const config: SpotifyScheduleConfig = {
-    newReleases: {
-      enabled: process.env.SPOTIFY_SYNC_NEW_RELEASES !== 'false',
-      intervalMinutes: parseInt(
-        process.env.SPOTIFY_NEW_RELEASES_INTERVAL_MINUTES || '10080' // Default: 7 days
-      ),
-      limit: parseInt(process.env.SPOTIFY_NEW_RELEASES_LIMIT || '50'),
-      country: process.env.SPOTIFY_COUNTRY || 'US',
-      genreTags,
-      year,
-      pages,
-      minFollowers,
-    },
-  };
-
+  // DB says enabled — load config from env vars and start
+  const config = readSpotifyConfigFromEnv();
   await spotifyScheduler.updateConfig(config);
-  await spotifyScheduler.start();
 
+  if (!bullmqHasJobs) {
+    // DB says on but no BullMQ jobs — recreate them (Redis was likely wiped)
+    console.log(
+      '🔄 Recreating Spotify BullMQ jobs (DB says enabled, jobs missing)'
+    );
+  }
+
+  await spotifyScheduler.start();
   return true;
 }
 

@@ -37,7 +37,7 @@ import {
   metricsCollector,
   alertManager,
 } from '@/lib/monitoring';
-import { createRedisConnection } from '@/lib/queue/redis';
+import { setSchedulerEnabled } from '@/lib/config/app-config';
 
 // Load environment variables from .env.local and .env
 dotenv.config({ path: '.env.local' });
@@ -531,10 +531,9 @@ class MusicBrainzWorkerService {
       try {
         switch (action) {
           case 'start': {
-            // Clear the disabled flag so init doesn't bail out
-            const redis = createRedisConnection();
-            await redis.del('scheduler:spotify:enabled');
-            redis.disconnect();
+            // setSchedulerEnabled('spotify', true) is called inside start()
+            // so initializeSpotifyScheduler will see it as enabled
+            await setSchedulerEnabled('spotify', true);
             const started = await initializeSpotifyScheduler();
             res.json({
               success: started,
@@ -601,10 +600,7 @@ class MusicBrainzWorkerService {
       try {
         switch (action) {
           case 'start': {
-            // Clear the disabled flag so init doesn't bail out
-            const mbRedis = createRedisConnection();
-            await mbRedis.del('scheduler:musicbrainz:enabled');
-            mbRedis.disconnect();
+            await setSchedulerEnabled('musicbrainz', true);
             const started = await initializeMusicBrainzScheduler();
             res.json({
               success: started,

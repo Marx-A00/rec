@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { Queue } from 'bullmq';
 
+import { getSchedulerEnabled } from '@/lib/config/app-config';
 import { createRedisConnection } from '@/lib/queue/redis';
 
 interface SpotifyConfig {
@@ -56,16 +57,11 @@ export async function GET() {
       job.key.includes('musicbrainz-new-releases')
     );
 
-    // Check Redis toggle keys for admin-controlled state
-    // These are more reliable than repeatable job presence since
-    // the worker may not have cleaned up jobs yet
-    const spotifyRedisState = await redisConnection.get(
-      'scheduler:spotify:enabled'
-    );
-    const spotifyEnabled =
-      spotifyRedisState !== null
-        ? spotifyRedisState === 'true' // Redis toggle takes priority
-        : !!spotifyJob; // Fall back to checking repeatable jobs
+    // Read scheduler enabled state from database (source of truth)
+    const [spotifyEnabled, musicbrainzEnabled] = await Promise.all([
+      getSchedulerEnabled('spotify'),
+      getSchedulerEnabled('musicbrainz'),
+    ]);
 
     // Get delayed jobs to find next scheduled runs
     const delayedJobs = await queue.getDelayed();
@@ -186,7 +182,7 @@ export async function GET() {
         config: spotifyConfig,
       },
       musicbrainz: {
-        enabled: !!musicbrainzJob,
+        enabled: musicbrainzEnabled,
         nextRunAt: getNextRunTime(musicbrainzJob, nextMusicbrainzJob),
         lastRunAt: lastMusicbrainzSync?.finishedOn
           ? new Date(lastMusicbrainzSync.finishedOn).toISOString()

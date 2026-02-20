@@ -1,6 +1,6 @@
 // src/lib/monitoring/health-check.ts
 import { getMusicBrainzQueue } from '@/lib/queue';
-import { createRedisConnection, redis } from '@/lib/queue/redis';
+import { redis } from '@/lib/queue/redis';
 import { spotifyMetrics } from '@/lib/spotify/error-handling';
 
 import { metricsCollector } from './metrics-collector';
@@ -313,15 +313,13 @@ export class HealthChecker {
       const metrics = spotifyMetrics.getMetrics();
       const successRate = spotifyMetrics.getSuccessRate();
 
-      // Check if scheduler was intentionally disabled via admin toggle
+      // Check if scheduler was intentionally disabled via admin toggle (DB is source of truth)
       let manuallyDisabled = false;
       try {
-        const checkRedis = createRedisConnection();
-        const redisValue = await checkRedis.get('scheduler:spotify:enabled');
-        checkRedis.disconnect();
-        manuallyDisabled = redisValue === 'false';
+        const { getSchedulerEnabled } = await import('../config/app-config');
+        manuallyDisabled = !(await getSchedulerEnabled('spotify'));
       } catch {
-        // Redis check failed, assume not manually disabled
+        // DB check failed, assume not manually disabled
       }
 
       // Check for registered repeatable jobs (the actual schedules)
