@@ -15,13 +15,20 @@ import {
   Users,
   ExternalLink,
   Filter,
+  Undo2,
+  AlertTriangle,
+  Loader2,
+  Ban,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import {
   useGetSyncJobsQuery,
   useGetSyncJobQuery,
+  useRollbackSyncJobMutation,
   SyncJobType,
   SyncJobStatus,
+  type GetSyncJobsQuery,
 } from '@/generated/graphql';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +40,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 // Format duration from ms to human readable
 function formatDuration(ms: number | null | undefined): string {
@@ -43,7 +58,7 @@ function formatDuration(ms: number | null | undefined): string {
 }
 
 // Format date to relative time
-function formatRelativeTime(date: string): string {
+function formatRelativeTime(date: string | Date): string {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
 
   if (seconds < 60) return 'just now';
@@ -87,6 +102,13 @@ function getStatusBadge(status: SyncJobStatus) {
           Pending
         </Badge>
       );
+    case SyncJobStatus.Cancelled:
+      return (
+        <Badge className='bg-orange-500/20 text-orange-400 border-orange-500/30'>
+          <Ban className='h-3 w-3 mr-1' />
+          Rolled Back
+        </Badge>
+      );
     default:
       return <Badge variant='outline'>{status}</Badge>;
   }
@@ -112,9 +134,35 @@ function getJobTypeDisplay(jobType: SyncJobType): string {
   }
 }
 
+// Check if a sync job can be rolled back
+function canRollback(status: SyncJobStatus): boolean {
+  return status === SyncJobStatus.Completed || status === SyncJobStatus.Failed;
+}
+
+type SyncJobItem = GetSyncJobsQuery['syncJobs']['jobs'][number];
+
 // Expandable row component for showing albums
-function SyncJobRow({ job }: { job: any }) {
+function SyncJobRow({
+  job,
+  onRollbackComplete,
+}: {
+  job: SyncJobItem;
+  onRollbackComplete: () => void;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const [rollbackDialogOpen, setRollbackDialogOpen] = useState(false);
+  const [rollbackStep, setRollbackStep] = useState<
+    'preview' | 'confirming' | 'done' | 'error'
+  >('preview');
+  const [dryRunResult, setDryRunResult] = useState<{
+    albumsDeleted: number;
+    artistsDeleted: number;
+    message: string;
+  } | null>(null);
+  const [rollbackError, setRollbackError] = useState<string | null>(null);
+
+  const queryClient = useQueryClient();
+  const rollbackMutation = useRollbackSyncJobMutation();
 
   // Only fetch albums when expanded
   const { data: detailData, isLoading: detailLoading } = useGetSyncJobQuery(
@@ -123,6 +171,56 @@ function SyncJobRow({ job }: { job: any }) {
   );
 
   const albums = detailData?.syncJob?.albums || [];
+
+  const handleRollbackClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRollbackDialogOpen(true);
+    setRollbackStep('preview');
+    setDryRunResult(null);
+    setRollbackError(null);
+
+    // Run dry run to get preview
+    try {
+      const result = await rollbackMutation.mutateAsync({
+        syncJobId: job.id,
+        dryRun: true,
+      });
+      setDryRunResult({
+        albumsDeleted: result.rollbackSyncJob.albumsDeleted ?? 0,
+        artistsDeleted: result.rollbackSyncJob.artistsDeleted ?? 0,
+        message: result.rollbackSyncJob.message ?? '',
+      });
+    } catch (err) {
+      setRollbackError(
+        err instanceof Error ? err.message : 'Failed to preview rollback'
+      );
+      setRollbackStep('error');
+    }
+  };
+
+  const handleConfirmRollback = async () => {
+    setRollbackStep('confirming');
+    try {
+      await rollbackMutation.mutateAsync({
+        syncJobId: job.id,
+        dryRun: false,
+      });
+      setRollbackStep('done');
+      // Invalidate sync jobs queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['GetSyncJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['GetSyncJob'] });
+    } catch (err) {
+      setRollbackError(err instanceof Error ? err.message : 'Rollback failed');
+      setRollbackStep('error');
+    }
+  };
+
+  const handleDialogClose = () => {
+    setRollbackDialogOpen(false);
+    if (rollbackStep === 'done') {
+      onRollbackComplete();
+    }
+  };
 
   return (
     <div className='border-b border-zinc-800 last:border-b-0'>
@@ -175,8 +273,23 @@ function SyncJobRow({ job }: { job: any }) {
           </div>
         </div>
 
-        {/* Triggered By */}
-        <div className='text-zinc-500 text-sm'>{job.triggeredBy || '-'}</div>
+        <div className='flex items-center gap-3'>
+          {/* Rollback button */}
+          {canRollback(job.status) && (
+            <Button
+              onClick={handleRollbackClick}
+              size='sm'
+              variant='outline'
+              className='border-red-800 text-red-400 hover:bg-red-900/30 hover:text-red-300'
+            >
+              <Undo2 className='h-3.5 w-3.5 mr-1.5' />
+              Rollback
+            </Button>
+          )}
+
+          {/* Triggered By */}
+          <div className='text-zinc-500 text-sm'>{job.triggeredBy || '-'}</div>
+        </div>
       </div>
 
       {/* Expanded content - albums */}
@@ -196,7 +309,7 @@ function SyncJobRow({ job }: { job: any }) {
                 Albums created by this sync ({albums.length})
               </div>
               <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3'>
-                {albums.map((album: any) => (
+                {albums.map(album => (
                   <Link
                     key={album.id}
                     href={`/admin/music-database?id=${album.id}`}
@@ -258,6 +371,142 @@ function SyncJobRow({ job }: { job: any }) {
           )}
         </div>
       )}
+
+      {/* Rollback Confirmation Dialog */}
+      <Dialog open={rollbackDialogOpen} onOpenChange={handleDialogClose}>
+        <DialogContent className='bg-zinc-900 border-zinc-700'>
+          <DialogHeader>
+            <DialogTitle className='text-white flex items-center gap-2'>
+              {rollbackStep === 'done' ? (
+                <>
+                  <CheckCircle className='h-5 w-5 text-green-400' />
+                  Rollback Complete
+                </>
+              ) : rollbackStep === 'error' ? (
+                <>
+                  <XCircle className='h-5 w-5 text-red-400' />
+                  Rollback Failed
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className='h-5 w-5 text-orange-400' />
+                  Rollback Sync Job
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription className='text-zinc-400'>
+              {rollbackStep === 'done'
+                ? 'The sync job has been rolled back successfully.'
+                : rollbackStep === 'error'
+                  ? 'An error occurred during the rollback.'
+                  : 'This will permanently delete all albums and orphaned artists created by this sync job.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className='py-2'>
+            {/* Loading state while dry run is fetching */}
+            {rollbackStep === 'preview' && !dryRunResult && !rollbackError && (
+              <div className='flex items-center justify-center gap-2 py-4 text-zinc-400'>
+                <Loader2 className='h-4 w-4 animate-spin' />
+                Calculating impact...
+              </div>
+            )}
+
+            {/* Dry run results */}
+            {rollbackStep === 'preview' && dryRunResult && (
+              <div className='space-y-3'>
+                <div className='bg-zinc-800 rounded-lg p-4 space-y-2'>
+                  <div className='text-sm font-medium text-zinc-300'>
+                    Impact Preview
+                  </div>
+                  <div className='flex items-center gap-2 text-sm text-zinc-400'>
+                    <Music className='h-4 w-4' />
+                    <span>
+                      <strong className='text-white'>
+                        {dryRunResult.albumsDeleted}
+                      </strong>{' '}
+                      albums will be deleted
+                    </span>
+                  </div>
+                  <div className='flex items-center gap-2 text-sm text-zinc-400'>
+                    <Users className='h-4 w-4' />
+                    <span>
+                      <strong className='text-white'>
+                        {dryRunResult.artistsDeleted}
+                      </strong>{' '}
+                      orphaned artists will be removed
+                    </span>
+                  </div>
+                </div>
+                <div className='bg-red-900/20 border border-red-800/50 rounded-lg p-3'>
+                  <p className='text-xs text-red-300'>
+                    This action cannot be undone. Associated recommendations,
+                    collection entries, and tracks will also be removed.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Confirming state */}
+            {rollbackStep === 'confirming' && (
+              <div className='flex items-center justify-center gap-2 py-4 text-zinc-400'>
+                <Loader2 className='h-4 w-4 animate-spin' />
+                Rolling back...
+              </div>
+            )}
+
+            {/* Done state */}
+            {rollbackStep === 'done' && dryRunResult && (
+              <div className='bg-green-900/20 border border-green-800/50 rounded-lg p-4 space-y-1'>
+                <p className='text-sm text-green-300'>
+                  Deleted {dryRunResult.albumsDeleted} albums and{' '}
+                  {dryRunResult.artistsDeleted} orphaned artists.
+                </p>
+                <p className='text-xs text-green-400/70'>
+                  The sync job has been marked as rolled back.
+                </p>
+              </div>
+            )}
+
+            {/* Error state */}
+            {rollbackStep === 'error' && rollbackError && (
+              <div className='bg-red-900/20 border border-red-800/50 rounded-lg p-4'>
+                <p className='text-sm text-red-300'>{rollbackError}</p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            {rollbackStep === 'preview' && dryRunResult && (
+              <>
+                <Button
+                  variant='outline'
+                  onClick={handleDialogClose}
+                  className='border-zinc-700 text-zinc-300 hover:bg-zinc-800'
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmRollback}
+                  className='bg-red-600 text-white hover:bg-red-700'
+                >
+                  <Undo2 className='h-4 w-4 mr-2' />
+                  Confirm Rollback
+                </Button>
+              </>
+            )}
+            {(rollbackStep === 'done' || rollbackStep === 'error') && (
+              <Button
+                onClick={handleDialogClose}
+                variant='outline'
+                className='border-zinc-700 text-zinc-300 hover:bg-zinc-800'
+              >
+                Close
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -267,17 +516,12 @@ export default function WeeklySyncPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Build query input based on filters
-  const queryInput: any = {
+  const queryInput = {
     limit: 50,
     offset: 0,
+    ...(jobTypeFilter !== 'all' && { jobType: jobTypeFilter as SyncJobType }),
+    ...(statusFilter !== 'all' && { status: statusFilter as SyncJobStatus }),
   };
-
-  if (jobTypeFilter !== 'all') {
-    queryInput.jobType = jobTypeFilter as SyncJobType;
-  }
-  if (statusFilter !== 'all') {
-    queryInput.status = statusFilter as SyncJobStatus;
-  }
 
   const { data, isLoading, refetch, isRefetching } = useGetSyncJobsQuery({
     input: queryInput,
@@ -288,17 +532,17 @@ export default function WeeklySyncPage() {
 
   // Calculate stats
   const completedCount = syncJobs.filter(
-    (j: any) => j.status === SyncJobStatus.Completed
+    j => j.status === SyncJobStatus.Completed
   ).length;
   const failedCount = syncJobs.filter(
-    (j: any) => j.status === SyncJobStatus.Failed
+    j => j.status === SyncJobStatus.Failed
   ).length;
   const totalAlbumsCreated = syncJobs.reduce(
-    (sum: number, j: any) => sum + (j.albumsCreated || 0),
+    (sum, j) => sum + (j.albumsCreated || 0),
     0
   );
   const totalArtistsCreated = syncJobs.reduce(
-    (sum: number, j: any) => sum + (j.artistsCreated || 0),
+    (sum, j) => sum + (j.artistsCreated || 0),
     0
   );
 
@@ -443,8 +687,12 @@ export default function WeeklySyncPage() {
             </div>
           ) : (
             <div className='divide-y divide-zinc-800'>
-              {syncJobs.map((job: any) => (
-                <SyncJobRow key={job.id} job={job} />
+              {syncJobs.map(job => (
+                <SyncJobRow
+                  key={job.id}
+                  job={job}
+                  onRollbackComplete={() => refetch()}
+                />
               ))}
             </div>
           )}
