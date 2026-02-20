@@ -2,13 +2,14 @@
 /**
  * Automated scheduler for MusicBrainz new releases sync
  * Handles periodic fetching of newly released albums using date-based search
+ *
+ * Scheduler enabled/disabled state is persisted in the database (AppConfig table)
+ * so it survives Redis clears and worker restarts.
  */
 
+import { getSchedulerEnabled, setSchedulerEnabled } from '../config/app-config';
 import { getMusicBrainzQueue, JOB_TYPES } from '../queue';
 import type { MusicBrainzSyncNewReleasesJobData } from '../queue/jobs';
-import { createRedisConnection } from '../queue/redis';
-
-const REDIS_KEY_MUSICBRAINZ_ENABLED = 'scheduler:musicbrainz:enabled';
 
 export interface MusicBrainzScheduleConfig {
   newReleases: {
@@ -43,14 +44,15 @@ export const DEFAULT_SCHEDULE_CONFIG: MusicBrainzScheduleConfig = {
 
 class MusicBrainzScheduler {
   private config: MusicBrainzScheduleConfig;
-  private isRunning = false;
+  isRunning = false;
 
   constructor(config: MusicBrainzScheduleConfig = DEFAULT_SCHEDULE_CONFIG) {
     this.config = config;
   }
 
   /**
-   * Start the automated scheduler
+   * Start the automated scheduler.
+   * Persists enabled=true to the database.
    */
   async start() {
     if (this.isRunning) {
@@ -61,8 +63,8 @@ class MusicBrainzScheduler {
     console.log('🚀 Starting MusicBrainz automated scheduler...');
     this.isRunning = true;
 
-    // Persist enabled state to Redis (survives worker restarts)
-    await this.persistEnabledState(true);
+    // Persist enabled state to database (survives Redis clears + worker restarts)
+    await setSchedulerEnabled('musicbrainz', true);
 
     // Remove any existing schedules to prevent duplicates
     await this.removeExistingSchedules();
@@ -77,7 +79,8 @@ class MusicBrainzScheduler {
   }
 
   /**
-   * Stop the automated scheduler
+   * Stop the automated scheduler.
+   * Persists enabled=false to the database.
    */
   async stop() {
     if (!this.isRunning) {
@@ -87,8 +90,8 @@ class MusicBrainzScheduler {
 
     console.log('🛑 Stopping MusicBrainz automated scheduler...');
 
-    // Persist disabled state to Redis (survives worker restarts)
-    await this.persistEnabledState(false);
+    // Persist disabled state to database
+    await setSchedulerEnabled('musicbrainz', false);
 
     // Remove repeatable jobs from BullMQ
     await this.removeExistingSchedules();
@@ -171,13 +174,12 @@ class MusicBrainzScheduler {
     };
 
     // Use BullMQ repeatable jobs instead of setInterval
-    // This persists in Redis and survives worker restarts
     await queue.addJob(JOB_TYPES.MUSICBRAINZ_SYNC_NEW_RELEASES, jobData, {
       repeat: {
         every: intervalMs,
       },
-      jobId: 'musicbrainz-new-releases-schedule', // Prevents duplicates
-      priority: 5, // Low priority for scheduled background jobs
+      jobId: 'musicbrainz-new-releases-schedule',
+      priority: 5,
       attempts: 3,
       backoff: { type: 'exponential', delay: 10000 },
       removeOnComplete: 10,
@@ -229,7 +231,7 @@ class MusicBrainzScheduler {
         JOB_TYPES.MUSICBRAINZ_SYNC_NEW_RELEASES,
         jobData,
         {
-          priority: 5, // Low priority for manual jobs
+          priority: 5,
           attempts: 3,
           backoff: { type: 'exponential', delay: 10000 },
           removeOnComplete: 10,
@@ -250,13 +252,11 @@ class MusicBrainzScheduler {
   /**
    * Remove existing repeatable job schedules
    */
-  private async removeExistingSchedules() {
+  async removeExistingSchedules() {
     try {
       const queue = getMusicBrainzQueue();
       const repeatableJobs = await queue.getQueue().getRepeatableJobs();
 
-      // Remove MusicBrainz-related schedules
-      // Check the key field which contains 'musicbrainz-new-releases-schedule'
       for (const job of repeatableJobs) {
         if (job.key.includes('musicbrainz-new-releases-schedule')) {
           await queue.getQueue().removeRepeatableByKey(job.key);
@@ -265,26 +265,6 @@ class MusicBrainzScheduler {
       }
     } catch (error) {
       console.warn('⚠️  Failed to remove existing schedules:', error);
-    }
-  }
-
-  /**
-   * Persist scheduler enabled/disabled state to Redis
-   * This allows the toggle to survive worker restarts
-   */
-  private async persistEnabledState(enabled: boolean) {
-    try {
-      const redis = createRedisConnection();
-      await redis.set(
-        REDIS_KEY_MUSICBRAINZ_ENABLED,
-        enabled ? 'true' : 'false'
-      );
-      redis.disconnect();
-    } catch (error) {
-      console.warn(
-        '⚠️  Failed to persist MusicBrainz scheduler state to Redis:',
-        error
-      );
     }
   }
 
@@ -310,7 +290,8 @@ class MusicBrainzScheduler {
   }
 
   /**
-   * Manually trigger a sync (for testing or immediate needs)
+   * Manually trigger a sync (for testing or immediate needs).
+   * Always works regardless of whether the scheduler is enabled.
    */
   async triggerSync() {
     console.log('🔄 Manually triggering MusicBrainz new releases sync...');
@@ -323,40 +304,15 @@ class MusicBrainzScheduler {
 export const musicBrainzScheduler = new MusicBrainzScheduler();
 
 /**
- * Initialize MusicBrainz scheduler with environment-based configuration
+ * Read env-based config for the scheduler.
+ * The on/off toggle comes from the database, not env vars.
  */
-export async function initializeMusicBrainzScheduler() {
-  // Check Redis for persisted toggle state (admin UI override)
-  let enabledByRedis: boolean | null = null;
-  try {
-    const redis = createRedisConnection();
-    const redisValue = await redis.get(REDIS_KEY_MUSICBRAINZ_ENABLED);
-    redis.disconnect();
-    if (redisValue !== null) {
-      enabledByRedis = redisValue === 'true';
-      console.log(
-        `📡 MusicBrainz scheduler Redis state: ${enabledByRedis ? 'enabled' : 'disabled'}`
-      );
-    }
-  } catch (error) {
-    console.warn(
-      '⚠️  Failed to read MusicBrainz scheduler state from Redis:',
-      error
-    );
-  }
-
-  // If Redis says disabled, don't start the scheduler
-  if (enabledByRedis === false) {
-    console.log('⏸️  MusicBrainz scheduler disabled via admin toggle (Redis)');
-    return false;
-  }
-
-  // Load configuration from environment variables
-  const config: MusicBrainzScheduleConfig = {
+function readMusicBrainzConfigFromEnv(): MusicBrainzScheduleConfig {
+  return {
     newReleases: {
-      enabled: process.env.MUSICBRAINZ_SYNC_NEW_RELEASES !== 'false',
+      enabled: true, // Populated by caller based on DB state
       intervalMinutes: parseInt(
-        process.env.MUSICBRAINZ_NEW_RELEASES_INTERVAL_MINUTES || '10080' // Default: 1 week
+        process.env.MUSICBRAINZ_NEW_RELEASES_INTERVAL_MINUTES || '10080'
       ),
       limit: parseInt(process.env.MUSICBRAINZ_NEW_RELEASES_LIMIT || '50'),
       dateRangeDays: parseInt(
@@ -378,10 +334,63 @@ export async function initializeMusicBrainzScheduler() {
           ],
     },
   };
+}
 
+/**
+ * Initialize MusicBrainz scheduler on worker boot.
+ * Reads enabled state from database and reconciles with BullMQ.
+ */
+export async function initializeMusicBrainzScheduler() {
+  // Read enabled state from database (source of truth)
+  let dbEnabled = false;
+  try {
+    dbEnabled = await getSchedulerEnabled('musicbrainz');
+    console.log(
+      `📡 MusicBrainz scheduler DB state: ${dbEnabled ? 'enabled' : 'disabled'}`
+    );
+  } catch (error) {
+    console.warn(
+      '⚠️  Failed to read MusicBrainz scheduler state from DB, defaulting to disabled:',
+      error
+    );
+    return false;
+  }
+
+  // Check BullMQ for existing repeatable jobs
+  let bullmqHasJobs = false;
+  try {
+    const queue = getMusicBrainzQueue();
+    const repeatableJobs = await queue.getQueue().getRepeatableJobs();
+    bullmqHasJobs = repeatableJobs.some(job =>
+      job.key.includes('musicbrainz-new-releases-schedule')
+    );
+  } catch (error) {
+    console.warn('⚠️  Failed to check BullMQ for MusicBrainz jobs:', error);
+  }
+
+  // Reconcile DB state with BullMQ state
+  if (!dbEnabled) {
+    if (bullmqHasJobs) {
+      console.log(
+        '🧹 Cleaning up orphaned MusicBrainz BullMQ jobs (DB says disabled)'
+      );
+      await musicBrainzScheduler.removeExistingSchedules();
+    }
+    console.log('⏸️  MusicBrainz scheduler disabled (DB)');
+    return false;
+  }
+
+  // DB says enabled — load config from env vars and start
+  const config = readMusicBrainzConfigFromEnv();
   await musicBrainzScheduler.updateConfig(config);
-  await musicBrainzScheduler.start();
 
+  if (!bullmqHasJobs) {
+    console.log(
+      '🔄 Recreating MusicBrainz BullMQ jobs (DB says enabled, jobs missing)'
+    );
+  }
+
+  await musicBrainzScheduler.start();
   return true;
 }
 

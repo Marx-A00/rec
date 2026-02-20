@@ -696,7 +696,18 @@ model UncoverArchiveStats {
   @@map("uncover_archive_stats")
 }
 
-/// Curated album for daily challenge selection
+/// Global app configuration (single row, id = "default")
+/// Used for persistent settings like scheduler toggles that survive Redis clears
+model AppConfig {
+  id                          String   @id @default("default")
+  spotifySchedulerEnabled     Boolean  @default(false) @map("spotify_scheduler_enabled")
+  musicbrainzSchedulerEnabled Boolean  @default(false) @map("musicbrainz_scheduler_enabled")
+  updatedAt                   DateTime @updatedAt @map("updated_at")
+  createdAt                   DateTime @default(now()) @map("created_at")
+
+  @@map("app_config")
+}
+
 /// Admin pre-curates an ordered list; selection uses sequence number
 model CuratedChallenge {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
