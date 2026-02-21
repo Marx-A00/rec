@@ -27,7 +27,7 @@ export default function AccountCreatedSuccess({
       if (onContinue) {
         onContinue();
       } else {
-        window.location.href = '/browse';
+        window.location.href = '/home-mosaic';
       }
     }, 300);
   };

@@ -121,7 +121,6 @@
     "musicbrainz-api": "^0.25.1",
     "next": "15.1.11",
     "next-auth": "5.0.0-beta.29",
-    "nextstepjs": "^2.1.2",
     "pg": "^8.14.1",
     "pino": "^10.1.0",
     "pino-http": "^11.0.0",

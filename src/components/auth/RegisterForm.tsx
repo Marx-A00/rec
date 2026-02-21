@@ -46,13 +46,29 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     // Clear server error when user starts typing
     if (serverError) setServerError('');
 
-    // Real-time validation
+    // Clear field error when user starts correcting
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (!value) return; // Don't validate empty fields on blur
     const validation = validateField(name, value);
     setErrors(prev => ({
       ...prev,
       [name]: validation.isValid ? '' : validation.message || '',
     }));
   };
+
+  const isFormValid =
+    formData.username.length > 0 &&
+    formData.email.length > 0 &&
+    formData.password.length > 0 &&
+    !errors.username &&
+    !errors.email &&
+    !errors.password;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +134,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       if (onSuccess) {
         onSuccess(formData.username);
       } else {
-        window.location.href = '/browse';
+        window.location.href = '/home-mosaic';
       }
     } catch {
       setServerError('Something went wrong. Please try again.');
@@ -156,6 +172,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             required
             value={formData.username}
             onChange={handleInputChange}
+            onBlur={handleBlur}
             className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
             placeholder='Choose a username'
             aria-describedby={errors.username ? 'username-error' : undefined}
@@ -189,6 +206,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             required
             value={formData.email}
             onChange={handleInputChange}
+            onBlur={handleBlur}
             className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
             placeholder='Enter your email address'
             aria-describedby={errors.email ? 'email-error' : undefined}
@@ -224,6 +242,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
               required
               value={formData.password}
               onChange={handleInputChange}
+              onBlur={handleBlur}
               className='block w-full rounded-lg border border-zinc-700/50 bg-black/40 backdrop-blur-sm px-3 min-h-12 pr-12 text-base text-white placeholder-zinc-400 focus:border-cosmic-latte/50 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 transition-all duration-200'
               placeholder='Create a strong password'
               aria-describedby={`password-strength ${errors.password ? 'password-error' : ''}`}
@@ -292,7 +311,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
       <button
         type='submit'
-        disabled={isLoading}
+        disabled={isLoading || !isFormValid}
         className='group relative flex w-full justify-center rounded-lg border border-transparent bg-cosmic-latte py-2.5 px-4 text-sm font-medium text-black hover:bg-cosmic-latte/90 focus:outline-none focus:ring-2 focus:ring-cosmic-latte/50 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200'
         aria-describedby='submit-button-description'
       >

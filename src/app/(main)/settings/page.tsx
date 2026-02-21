@@ -151,7 +151,7 @@ export default function SettingsPage() {
   };
 
   const handleRestartTour = async () => {
-    // TODO: Re-enable when NextStepProvider is properly set up
+    // TODO: Wire up to Driver.js tour restart via TourContext
     showToast('Tour feature temporarily disabled', 'error');
   };
 
