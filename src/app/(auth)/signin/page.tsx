@@ -99,7 +99,7 @@ export default function SignIn() {
           Welcome back
         </h1>
 
-        <p className='text-sm text-zinc-800'>
+        <p className='text-sm text-zinc-400 inline-block bg-black/40 backdrop-blur-sm px-3 py-1 rounded-lg'>
           New around here?{' '}
           <Link
             href='/register'

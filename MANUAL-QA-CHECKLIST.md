@@ -8,10 +8,10 @@ A comprehensive checklist for manually testing the app from a user's perspective
 
 ### Registration (`/register`)
 
-- [ ] Form shows: Name, Email, Password fields
+- [x] Form shows: username, Email, Password fields
 - [ ] Email validation rejects invalid formats
 - [ ] Password strength indicator shows as you type
-- [ ] Show/hide password toggle works
+- [x] Show/hide password toggle works
 - [ ] Submit with valid data → account created, redirect to sign-in
 - [ ] after account creation, google sign up leads to change username page
 - [ ] Try existing email → error message
