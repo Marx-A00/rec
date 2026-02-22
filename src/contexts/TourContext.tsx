@@ -268,7 +268,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     // Only auto-start tour on pages where tour elements exist
     // This prevents the tour from trying to start on admin, settings, or other pages
     const currentPath = window.location.pathname;
-    const tourEnabledPaths = ['/', '/home-mosaic', '/browse'];
+    const tourEnabledPaths = ['/', '/home-mosaic'];
     console.log('🔍 Tour check - currentPath:', currentPath);
     if (!tourEnabledPaths.includes(currentPath)) {
       console.log('🔍 Tour check - not on tour-enabled page, skipping');
