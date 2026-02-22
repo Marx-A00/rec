@@ -27,7 +27,7 @@ export default function SignIn() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     // Redirect to a protected route so the middleware can check for username
-    await signIn('google', { callbackUrl: '/browse' });
+    await signIn('google', { callbackUrl: '/home-mosaic' });
   };
 
   // const handleSpotifySignIn = async () => {
@@ -55,7 +55,7 @@ export default function SignIn() {
       } else if (result?.ok) {
         // Successful sign-in - redirect to a protected route
         // Middleware will redirect to /complete-profile if username is missing
-        router.push('/browse');
+        router.push('/home-mosaic');
         router.refresh();
       } else {
         // Unexpected state

@@ -15,7 +15,7 @@ export default function Register() {
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
-    await signIn('google', { callbackUrl: '/browse' });
+    await signIn('google', { callbackUrl: '/home-mosaic' });
   };
 
   const handleRegistrationSuccess = (name?: string) => {
