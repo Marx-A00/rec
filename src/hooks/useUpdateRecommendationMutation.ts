@@ -2,29 +2,19 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { graphqlClient } from '@/lib/graphql-client';
 import { queryKeys } from '@/lib/queries';
-// Relaxed typing for interim compatibility with GraphQL shape
-type RecommendationLike = any;
 
 interface UpdateRecommendationRequest {
-  score?: number;
-  // Note: GraphQL mutation only updates score, not album details
+  score: number;
+}
+
+interface UpdateRecommendationResponse {
+  updateRecommendation: { id: string };
 }
 
 const UPDATE_RECOMMENDATION_MUTATION = `
   mutation UpdateRecommendation($id: String!, $score: Int!) {
     updateRecommendation(id: $id, score: $score) {
       id
-      score
-      createdAt
-      updatedAt
-      basisAlbum {
-        id
-        title
-      }
-      recommendedAlbum {
-        id
-        title
-      }
     }
   }
 `;
@@ -32,45 +22,26 @@ const UPDATE_RECOMMENDATION_MUTATION = `
 const updateRecommendation = async (
   id: string,
   data: UpdateRecommendationRequest
-): Promise<RecommendationLike> => {
+): Promise<string> => {
   try {
-    const result: any = await graphqlClient.request(
+    const result = await graphqlClient.request<UpdateRecommendationResponse>(
       UPDATE_RECOMMENDATION_MUTATION,
-      {
-        id,
-        score: data.score!,
-      }
+      { id, score: data.score }
     );
-
-    // Transform GraphQL response to match Recommendation type
-    return {
-      id: result.updateRecommendation.id,
-      score: result.updateRecommendation.score,
-      createdAt: result.updateRecommendation.createdAt,
-      updatedAt: result.updateRecommendation.updatedAt,
-      userId: '', // These fields would need to be fetched separately if needed
-      basisAlbumDiscogsId: '',
-      recommendedAlbumDiscogsId: '',
-      basisAlbumTitle: result.updateRecommendation.basisAlbum.title,
-      basisAlbumArtist: '',
-      basisAlbumImageUrl: null,
-      basisAlbumYear: null,
-      recommendedAlbumTitle: result.updateRecommendation.recommendedAlbum.title,
-      recommendedAlbumArtist: '',
-      recommendedAlbumImageUrl: null,
-      recommendedAlbumYear: null,
-      user: undefined,
+    return result.updateRecommendation.id;
+  } catch (error: unknown) {
+    const gqlError = error as {
+      response?: { errors?: Array<{ message: string }> };
     };
-  } catch (error: any) {
-    if (error.response?.errors?.[0]) {
-      throw new Error(error.response.errors[0].message);
+    if (gqlError.response?.errors?.[0]) {
+      throw new Error(gqlError.response.errors[0].message);
     }
     throw new Error('Failed to update recommendation');
   }
 };
 
 interface UseUpdateRecommendationMutationOptions {
-  onSuccess?: (data: RecommendationLike) => void;
+  onSuccess?: () => void;
   onError?: (error: Error) => void;
 }
 
@@ -87,18 +58,15 @@ export const useUpdateRecommendationMutation = (
       id: string;
       data: UpdateRecommendationRequest;
     }) => updateRecommendation(id, data),
-    onSuccess: data => {
-      // Invalidate and refetch recommendation queries
+    onSuccess: updatedId => {
+      // Invalidate to refetch with fresh data
       queryClient.invalidateQueries({ queryKey: queryKeys.recommendations() });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.recommendation(data.id),
+        queryKey: queryKeys.recommendation(updatedId),
       });
 
-      // Optionally update the cache directly for the specific recommendation
-      queryClient.setQueryData(queryKeys.recommendation(data.id), data);
-
       if (options.onSuccess) {
-        options.onSuccess(data);
+        options.onSuccess();
       }
     },
     onError: error => {

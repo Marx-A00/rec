@@ -446,208 +446,229 @@ export default function ProfileClient({
                 </section>
               )}
 
-          {/* Listen Later Section */}
-          {showCollections && listenLater.length > 0 && (
-            <section className='border-t border-zinc-800 pt-8'>
-              <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte flex items-center gap-2'>
-                <span>Listen Later</span>
-                <span className='text-sm font-normal text-zinc-400'>
-                  ({listenLater.length})
-                </span>
-              </h2>
-              <SortableAlbumGrid
-                albums={listenLater.slice(0, 6)}
-                onAlbumClick={albumId => {
-                  const album = listenLater.find(a => a.albumId === albumId);
-                  if (album) {
-                    setSelectedAlbum(album);
-                  }
-                }}
-                isEditable={false}
-                className='mb-8'
-              />
-              {listenLater.length > 6 && (
-                <div className='text-center text-sm text-zinc-400 mb-8'>
-                  +{listenLater.length - 6} more albums
-                </div>
-              )}
-            </section>
-          )}
-
-          {showCollections && (
-            <section className='border-t border-zinc-800 pt-8'>
-              <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
-                Record Collection
-              </h2>
-              {allAlbums.length > 0 ? (
-                <div>
-                  {/* Collection Stats */}
-                  <div className='mb-6 text-sm text-zinc-400'>
-                    <p>{allAlbums.length} albums in collection</p>
-                  </div>
-
-                  {/* Sortable Album Grid */}
-                  <SortableAlbumGrid
-                    albums={displayedAlbums}
-                    onReorder={handleAlbumReorder}
-                    onAlbumClick={albumId => {
-                      const album = sortedAlbums.find(
-                        a => a.albumId === albumId
-                      );
-                      if (album) {
-                        setSelectedAlbum(album);
-                      }
-                    }}
-                    isEditable={isOwnProfile && isCollectionEditorEnabled}
-                    className='mb-2'
-                  />
-
-                  {/* Show expand/collapse link when not in editable mode and collection is truncated */}
-                  {!isCollectionEditorEnabled && sortedAlbums.length > 6 && (
-                    <div className='flex justify-center mb-8 mt-8'>
-                      <button
-                        onClick={() =>
-                          setIsCollectionExpanded(!isCollectionExpanded)
-                        }
-                        className='flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-300 transition-colors'
-                      >
-                        {isCollectionExpanded ? (
-                          <>
-                            <span>Show Less</span>
-                            <svg
-                              className='w-3.5 h-3.5'
-                              fill='none'
-                              stroke='currentColor'
-                              viewBox='0 0 24 24'
-                            >
-                              <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M5 15l7-7 7 7'
-                              />
-                            </svg>
-                          </>
-                        ) : (
-                          <>
-                            <span>See All {sortedAlbums.length} Albums</span>
-                            <svg
-                              className='w-3.5 h-3.5'
-                              fill='none'
-                              stroke='currentColor'
-                              viewBox='0 0 24 24'
-                            >
-                              <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M19 9l-7 7-7-7'
-                              />
-                            </svg>
-                          </>
-                        )}
-                      </button>
+              {/* Listen Later Section */}
+              {showCollections && (
+                <section className='border-t border-zinc-800 pt-8'>
+                  <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte flex items-center gap-2'>
+                    <span>Listen Later</span>
+                    <span className='text-sm font-normal text-zinc-400'>
+                      ({listenLater.length})
+                    </span>
+                  </h2>
+                  {listenLater.length > 0 ? (
+                    <>
+                      <SortableAlbumGrid
+                        albums={listenLater.slice(0, 6)}
+                        onAlbumClick={albumId => {
+                          const album = listenLater.find(
+                            a => a.albumId === albumId
+                          );
+                          if (album) {
+                            setSelectedAlbum(album);
+                          }
+                        }}
+                        isEditable={false}
+                        className='mb-8'
+                      />
+                      {listenLater.length > 6 && (
+                        <div className='text-center text-sm text-zinc-400 mb-8'>
+                          +{listenLater.length - 6} more albums
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className='text-center py-12'>
+                      <p className='text-zinc-400 mb-4'>
+                        No albums in listen later yet.
+                      </p>
+                      <p className='text-sm text-zinc-500'>
+                        This user hasn&apos;t added any albums to their listen
+                        later queue.
+                      </p>
                     </div>
                   )}
-                </div>
-              ) : (
-                <div className='text-center py-12'>
-                  <p className='text-zinc-400 mb-4'>
-                    No albums in collection yet.
-                  </p>
-                  <p className='text-sm text-zinc-500'>
-                    This user hasn&apos;t added any albums to their record
-                    collection.
-                  </p>
-                </div>
+                </section>
               )}
-            </section>
-          )}
 
-          {/* Recommendations Section */}
-          <section className='border-t border-zinc-800 pt-8 mt-8'>
-            <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
-              Music Recommendations
-            </h2>
-            {recommendations.length > 0 ? (
-              <div>
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                  {(isRecommendationsExpanded
-                    ? recommendations
-                    : recommendations.slice(0, 6)
-                  ).map(recommendation => (
-                    <RecommendationCard
-                      key={recommendation.id}
-                      recommendation={recommendation}
-                      currentUserId={user.id}
-                      onAlbumClick={(albumId, _albumType) =>
-                        navigateToAlbum(albumId)
-                      }
-                    />
-                  ))}
-                </div>
+              {showCollections && (
+                <section className='border-t border-zinc-800 pt-8'>
+                  <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
+                    Record Collection
+                  </h2>
+                  {allAlbums.length > 0 ? (
+                    <div>
+                      {/* Collection Stats */}
+                      <div className='mb-6 text-sm text-zinc-400'>
+                        <p>{allAlbums.length} albums in collection</p>
+                      </div>
 
-                {/* Show expand/collapse link when recommendations exceed 6 */}
-                {recommendations.length > 6 && (
-                  <div className='flex justify-center mb-8 mt-8'>
-                    <button
-                      onClick={() =>
-                        setIsRecommendationsExpanded(!isRecommendationsExpanded)
-                      }
-                      className='flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-300 transition-colors'
-                    >
-                      {isRecommendationsExpanded ? (
-                        <>
-                          <span>Show Less</span>
-                          <svg
-                            className='w-3.5 h-3.5'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                          >
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2}
-                              d='M5 15l7-7 7 7'
-                            />
-                          </svg>
-                        </>
-                      ) : (
-                        <>
-                          <span>
-                            See All {recommendations.length} Recommendations
-                          </span>
-                          <svg
-                            className='w-3.5 h-3.5'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                          >
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2}
-                              d='M19 9l-7 7-7-7'
-                            />
-                          </svg>
-                        </>
-                      )}
-                    </button>
+                      {/* Sortable Album Grid */}
+                      <SortableAlbumGrid
+                        albums={displayedAlbums}
+                        onReorder={handleAlbumReorder}
+                        onAlbumClick={albumId => {
+                          const album = sortedAlbums.find(
+                            a => a.albumId === albumId
+                          );
+                          if (album) {
+                            setSelectedAlbum(album);
+                          }
+                        }}
+                        isEditable={isOwnProfile && isCollectionEditorEnabled}
+                        className='mb-2'
+                      />
+
+                      {/* Show expand/collapse link when not in editable mode and collection is truncated */}
+                      {!isCollectionEditorEnabled &&
+                        sortedAlbums.length > 6 && (
+                          <div className='flex justify-center mb-8 mt-8'>
+                            <button
+                              onClick={() =>
+                                setIsCollectionExpanded(!isCollectionExpanded)
+                              }
+                              className='flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-300 transition-colors'
+                            >
+                              {isCollectionExpanded ? (
+                                <>
+                                  <span>Show Less</span>
+                                  <svg
+                                    className='w-3.5 h-3.5'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                  >
+                                    <path
+                                      strokeLinecap='round'
+                                      strokeLinejoin='round'
+                                      strokeWidth={2}
+                                      d='M5 15l7-7 7 7'
+                                    />
+                                  </svg>
+                                </>
+                              ) : (
+                                <>
+                                  <span>
+                                    See All {sortedAlbums.length} Albums
+                                  </span>
+                                  <svg
+                                    className='w-3.5 h-3.5'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                  >
+                                    <path
+                                      strokeLinecap='round'
+                                      strokeLinejoin='round'
+                                      strokeWidth={2}
+                                      d='M19 9l-7 7-7-7'
+                                    />
+                                  </svg>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                    </div>
+                  ) : (
+                    <div className='text-center py-12'>
+                      <p className='text-zinc-400 mb-4'>
+                        No albums in collection yet.
+                      </p>
+                      <p className='text-sm text-zinc-500'>
+                        This user hasn&apos;t added any albums to their record
+                        collection.
+                      </p>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {/* Recommendations Section */}
+              <section className='border-t border-zinc-800 pt-8 mt-8'>
+                <h2 className='text-2xl font-semibold mb-6 text-cosmic-latte'>
+                  Music Recommendations
+                </h2>
+                {recommendations.length > 0 ? (
+                  <div>
+                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+                      {(isRecommendationsExpanded
+                        ? recommendations
+                        : recommendations.slice(0, 6)
+                      ).map(recommendation => (
+                        <RecommendationCard
+                          key={recommendation.id}
+                          recommendation={recommendation}
+                          currentUserId={user.id}
+                          onAlbumClick={(albumId, _albumType) =>
+                            navigateToAlbum(albumId)
+                          }
+                        />
+                      ))}
+                    </div>
+
+                    {/* Show expand/collapse link when recommendations exceed 6 */}
+                    {recommendations.length > 6 && (
+                      <div className='flex justify-center mb-8 mt-8'>
+                        <button
+                          onClick={() =>
+                            setIsRecommendationsExpanded(
+                              !isRecommendationsExpanded
+                            )
+                          }
+                          className='flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-300 transition-colors'
+                        >
+                          {isRecommendationsExpanded ? (
+                            <>
+                              <span>Show Less</span>
+                              <svg
+                                className='w-3.5 h-3.5'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                              >
+                                <path
+                                  strokeLinecap='round'
+                                  strokeLinejoin='round'
+                                  strokeWidth={2}
+                                  d='M5 15l7-7 7 7'
+                                />
+                              </svg>
+                            </>
+                          ) : (
+                            <>
+                              <span>
+                                See All {recommendations.length} Recommendations
+                              </span>
+                              <svg
+                                className='w-3.5 h-3.5'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                              >
+                                <path
+                                  strokeLinecap='round'
+                                  strokeLinejoin='round'
+                                  strokeWidth={2}
+                                  d='M19 9l-7 7-7-7'
+                                />
+                              </svg>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className='text-center py-12'>
+                    <p className='text-zinc-400 mb-4'>
+                      No recommendations created yet.
+                    </p>
+                    <p className='text-sm text-zinc-500'>
+                      This user hasn&apos;t shared any music recommendations.
+                    </p>
                   </div>
                 )}
-              </div>
-            ) : (
-              <div className='text-center py-12'>
-                <p className='text-zinc-400 mb-4'>
-                  No recommendations created yet.
-                </p>
-                <p className='text-sm text-zinc-500'>
-                  This user hasn&apos;t shared any music recommendations.
-                </p>
-              </div>
-            )}
-          </section>
+              </section>
             </>
           )}
         </div>

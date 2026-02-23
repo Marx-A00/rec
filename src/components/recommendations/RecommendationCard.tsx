@@ -6,18 +6,26 @@ import AlbumImage from '@/components/ui/AlbumImage';
 import { useCollectionToastContext } from '@/components/ui/CollectionToastProvider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { RecommendationFieldsFragment } from '@/generated/graphql';
-import { useDeleteRecommendationMutation } from '@/hooks';
+import {
+  useDeleteRecommendationMutation,
+  useUpdateRecommendationMutation,
+} from '@/hooks';
 
 import RecommendationDetailModal from './RecommendationDetailModal';
+import ScoreEditPopover from './ScoreEditPopover';
 
 interface RecommendationCardProps {
   recommendation: RecommendationFieldsFragment;
   currentUserId?: string;
-  onEdit?: (recommendation: RecommendationFieldsFragment) => void;
-  onDetail?: (recommendation: RecommendationFieldsFragment) => void; // Kept for backward compatibility
+  onDetail?: (recommendation: RecommendationFieldsFragment) => void;
   onAlbumClick?: (albumId: string, albumType: 'source' | 'recommended') => void;
-  showDetailModal?: boolean; // New prop to control modal functionality
+  showDetailModal?: boolean;
 }
 
 // Helper function to get color classes based on score
@@ -50,18 +58,31 @@ const getScoreColors = (score: number) => {
 export default function RecommendationCard({
   recommendation,
   currentUserId,
-  onEdit,
   onDetail,
   onAlbumClick,
-  showDetailModal = true, // Default to true for automatic modal behavior
+  showDetailModal = true,
 }: RecommendationCardProps) {
   const [showActions, setShowActions] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showScoreEdit, setShowScoreEdit] = useState(false);
   const [selectedRecommendationId, setSelectedRecommendationId] = useState<
     string | null
   >(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const { showCollectionToast } = useCollectionToastContext();
+
+  const updateMutation = useUpdateRecommendationMutation({
+    onSuccess: () => {
+      setShowScoreEdit(false);
+      showCollectionToast('Score updated', 'success');
+    },
+    onError: error => {
+      showCollectionToast(
+        `Failed to update: ${error instanceof Error ? error.message : 'Please try again'}`,
+        'error'
+      );
+    },
+  });
 
   const deleteMutation = useDeleteRecommendationMutation({
     onSuccess: () => {
@@ -111,10 +132,12 @@ export default function RecommendationCard({
   };
 
   const handleEdit = () => {
-    if (onEdit) {
-      onEdit(recommendation);
-    }
     setShowActions(false);
+    setShowScoreEdit(true);
+  };
+
+  const handleScoreSave = (score: number) => {
+    updateMutation.mutate({ id: recommendation.id, data: { score } });
   };
 
   const handleCardClick = () => {
@@ -194,112 +217,134 @@ export default function RecommendationCard({
             </Link>
           </div>
           {canEdit && (
-            <div className='relative' ref={actionMenuRef}>
-              <Button
-                variant='ghost'
-                size='sm'
-                onClick={e => {
-                  e.stopPropagation();
-                  e.currentTarget.blur();
-                  setShowActions(!showActions);
-                }}
-                onKeyDown={e => {
-                  e.stopPropagation();
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
+            <Popover open={showScoreEdit} onOpenChange={setShowScoreEdit}>
+              <div className='relative' ref={actionMenuRef}>
+                {/* Hidden anchor for the popover to position against */}
+                <PopoverTrigger asChild>
+                  <span
+                    className='absolute right-0 top-0 w-0 h-0'
+                    aria-hidden='true'
+                  />
+                </PopoverTrigger>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={e => {
+                    e.stopPropagation();
                     e.currentTarget.blur();
                     setShowActions(!showActions);
-                  }
-                }}
-                className='p-1.5 h-7 w-7 hover:bg-zinc-800 rounded-full transition-colors focus:outline-none'
-                aria-label='Recommendation actions menu'
-                aria-expanded={showActions}
-                aria-haspopup='menu'
-              >
-                <MoreHorizontal
-                  className='h-3 w-3 text-zinc-400'
-                  aria-hidden='true'
-                />
-              </Button>
-              {showActions && (
-                <div
-                  className='absolute right-0 top-8 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-20 py-2 min-w-[140px] backdrop-blur-sm'
-                  role='menu'
-                  aria-label='Recommendation actions'
-                >
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleEdit();
-                    }}
-                    onKeyDown={e => {
-                      e.stopPropagation();
-                      handleKeyDown(e, handleEdit);
-                    }}
-                    className='flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800'
-                    role='menuitem'
-                    tabIndex={0}
-                    aria-label='Edit this recommendation'
-                  >
-                    <Pencil
-                      className='h-4 w-4 text-zinc-400'
-                      aria-hidden='true'
-                    />
-                    <span className='text-zinc-200'>Edit</span>
-                  </button>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleDelete();
-                    }}
-                    onKeyDown={e => {
-                      e.stopPropagation();
-                      handleKeyDown(e, handleDelete);
-                    }}
-                    className={`flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800 ${
-                      showDeleteConfirm
-                        ? 'text-red-400 bg-red-950'
-                        : 'text-zinc-200'
-                    }`}
-                    disabled={deleteMutation.isPending}
-                    role='menuitem'
-                    tabIndex={0}
-                    aria-label={
-                      showDeleteConfirm
-                        ? 'Confirm deletion of this recommendation'
-                        : 'Delete this recommendation'
+                  }}
+                  onKeyDown={e => {
+                    e.stopPropagation();
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.currentTarget.blur();
+                      setShowActions(!showActions);
                     }
+                  }}
+                  className='p-1.5 h-7 w-7 hover:bg-zinc-800 rounded-full transition-colors focus:outline-none'
+                  aria-label='Recommendation actions menu'
+                  aria-expanded={showActions}
+                  aria-haspopup='menu'
+                >
+                  <MoreHorizontal
+                    className='h-3 w-3 text-zinc-400'
+                    aria-hidden='true'
+                  />
+                </Button>
+                {showActions && !showScoreEdit && (
+                  <div
+                    className='absolute right-0 top-8 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-20 py-2 min-w-[140px] backdrop-blur-sm'
+                    role='menu'
+                    aria-label='Recommendation actions'
                   >
-                    <Trash2 className='h-4 w-4' aria-hidden='true' />
-                    <span>
-                      {showDeleteConfirm
-                        ? deleteMutation.isPending
-                          ? 'Deleting...'
-                          : 'Confirm Delete'
-                        : 'Delete'}
-                    </span>
-                  </button>
-                  {showDeleteConfirm && (
                     <button
                       onClick={e => {
                         e.stopPropagation();
-                        setShowDeleteConfirm(false);
+                        handleEdit();
                       }}
                       onKeyDown={e => {
                         e.stopPropagation();
-                        handleKeyDown(e, () => setShowDeleteConfirm(false));
+                        handleKeyDown(e, handleEdit);
                       }}
-                      className='flex items-center justify-center px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800 w-full transition-colors border-t border-zinc-700 mt-1 focus:outline-none focus:bg-zinc-800'
+                      className='flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800'
                       role='menuitem'
                       tabIndex={0}
-                      aria-label='Cancel deletion'
+                      aria-label='Edit score'
                     >
-                      Cancel
+                      <Pencil
+                        className='h-4 w-4 text-zinc-400'
+                        aria-hidden='true'
+                      />
+                      <span className='text-zinc-200'>Edit Score</span>
                     </button>
-                  )}
-                </div>
-              )}
-            </div>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleDelete();
+                      }}
+                      onKeyDown={e => {
+                        e.stopPropagation();
+                        handleKeyDown(e, handleDelete);
+                      }}
+                      className={`flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-zinc-800 w-full text-left transition-colors focus:outline-none focus:bg-zinc-800 ${
+                        showDeleteConfirm
+                          ? 'text-red-400 bg-red-950'
+                          : 'text-zinc-200'
+                      }`}
+                      disabled={deleteMutation.isPending}
+                      role='menuitem'
+                      tabIndex={0}
+                      aria-label={
+                        showDeleteConfirm
+                          ? 'Confirm deletion of this recommendation'
+                          : 'Delete this recommendation'
+                      }
+                    >
+                      <Trash2 className='h-4 w-4' aria-hidden='true' />
+                      <span>
+                        {showDeleteConfirm
+                          ? deleteMutation.isPending
+                            ? 'Deleting...'
+                            : 'Confirm Delete'
+                          : 'Delete'}
+                      </span>
+                    </button>
+                    {showDeleteConfirm && (
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setShowDeleteConfirm(false);
+                        }}
+                        onKeyDown={e => {
+                          e.stopPropagation();
+                          handleKeyDown(e, () => setShowDeleteConfirm(false));
+                        }}
+                        className='flex items-center justify-center px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800 w-full transition-colors border-t border-zinc-700 mt-1 focus:outline-none focus:bg-zinc-800'
+                        role='menuitem'
+                        tabIndex={0}
+                        aria-label='Cancel deletion'
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              <PopoverContent
+                align='end'
+                side='bottom'
+                className='w-64 bg-zinc-900 border-zinc-700 p-3'
+                onClick={e => e.stopPropagation()}
+              >
+                <ScoreEditPopover
+                  currentScore={recommendation.score}
+                  onSave={handleScoreSave}
+                  isPending={updateMutation.isPending}
+                  onCancel={() => setShowScoreEdit(false)}
+                />
+              </PopoverContent>
+            </Popover>
           )}
         </div>
 

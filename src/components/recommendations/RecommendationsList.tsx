@@ -69,11 +69,6 @@ export default function RecommendationsList({
         page => page.recommendationFeed?.recommendations || []
       ) || [];
 
-  const handleEditRecommendation = (recommendation: any) => {
-    // TODO: Implement edit modal/form
-    console.log('Edit recommendation:', recommendation);
-  };
-
   const handleLoadMore = () => {
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
@@ -134,7 +129,6 @@ export default function RecommendationsList({
             key={recommendation.id}
             recommendation={recommendation}
             currentUserId={session?.user?.id}
-            onEdit={handleEditRecommendation}
           />
         ))}
       </div>
