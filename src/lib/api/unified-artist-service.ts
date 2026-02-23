@@ -321,7 +321,6 @@ class UnifiedArtistService {
         name: mbArtist.name,
         disambiguation: mbArtist.disambiguation || undefined,
         imageUrl: finalImageUrl || undefined,
-        // MusicBrainz artist lookup may not include annotations reliably; omit profile
         country: mbArtist.country || undefined,
         lifeSpan: mbArtist['life-span']
           ? {

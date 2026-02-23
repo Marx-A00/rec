@@ -1112,7 +1112,10 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
           if (mbData.name) fieldsEnriched.push('name');
           if (mbData.country) fieldsEnriched.push('countryCode');
           if (mbData['life-span']?.begin) fieldsEnriched.push('formedYear');
-          if (mbData.disambiguation) fieldsEnriched.push('biography');
+          if (
+            enrichmentResult.fieldChanges.some(fc => fc.field === 'biography')
+          )
+            fieldsEnriched.push('biography');
         }
       } catch (mbError) {
         console.warn(
@@ -1165,7 +1168,12 @@ export async function handleEnrichArtist(job: Job<EnrichArtistJobData>) {
               if (mbData.name) fieldsEnriched.push('name');
               if (mbData.country) fieldsEnriched.push('countryCode');
               if (mbData['life-span']?.begin) fieldsEnriched.push('formedYear');
-              if (mbData.disambiguation) fieldsEnriched.push('biography');
+              if (
+                enrichmentResult.fieldChanges.some(
+                  fc => fc.field === 'biography'
+                )
+              )
+                fieldsEnriched.push('biography');
             }
           }
         }
@@ -1834,6 +1842,7 @@ async function enrichArtistMetadata(
     genres: string[] | null;
     area?: string | null;
     artistType?: string | null;
+    biography?: string | null;
   },
   mbData: MusicBrainzArtistData
 ): Promise<EnrichmentUpdateResult> {
@@ -1939,6 +1948,32 @@ async function enrichArtistMetadata(
           `🔗 Found Discogs ID ${discogsMatch[1]} for "${artist.name}"`
         );
       }
+    }
+  }
+
+  // Enrich artist biography (Wikipedia first, Discogs fallback)
+  if (!artist.biography) {
+    try {
+      const { fetchArtistBiography } = await import(
+        '@/lib/enrichment/fetch-artist-biography'
+      );
+      const discogsIdForBio =
+        (updateData.discogsId as string) || artist.discogsId;
+      const biography = await fetchArtistBiography({
+        relations: mbData.relations,
+        discogsId: discogsIdForBio,
+        artistName: artist.name,
+      });
+      if (biography) {
+        updateData.biography = biography;
+        fieldChanges.push({
+          field: 'biography',
+          before: artist.biography,
+          after: biography,
+        });
+      }
+    } catch (error) {
+      console.warn(`Failed to fetch biography for artist ${artist.id}:`, error);
     }
   }
 

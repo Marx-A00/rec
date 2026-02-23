@@ -44,8 +44,8 @@ A comprehensive checklist for manually testing the app from a user's perspective
 ### View Other User's Profile (`/profile/[userId]`)
 
 - [x] Public profile displays correctly
-- [ ] Follow button works → count increments, button changes to "Unfollow"
-- [ ] Unfollow works → count decrements
+- [x] Follow button works → count increments, button changes to "Unfollow"
+- [x] Unfollow works → count decrements
 - [ ] Private profile shows lock icon and "Profile is Private" message
 - [ ] Private profile hides collections/recommendations
 
@@ -63,60 +63,54 @@ A comprehensive checklist for manually testing the app from a user's perspective
 
 ### Search (`/search`)
 
-- [ ] Search bar in header works
-- [ ] Type album/artist/track name → results appear
-- [ ] Filter tabs: Albums, Artists, Tracks, Users
-- [ ] Results grouped by type (Albums, Singles, EPs, Mixtapes)
-- [ ] "Load More Results" loads more
-- [ ] Click album → album details page
-- [ ] Click artist → artist details page
+- [x] Search bar in header works
+- [x] Type album/artist/track name → results appear
+- [x] Filter tabs: Albums, Artists, Tracks, Users
+- [x] Results grouped by type (Albums, Singles, EPs, Mixtapes)
+- [x] "Load More Results" loads more
+- [x] Click album → album details page
+- [x] Click artist → artist details page
 
 ### Browse (`/browse`)
 
-- [ ] Sections display: Welcome, New Users, Top Artists, Most Recommended Albums, Latest Releases
-- [ ] Click user card → user profile
-- [ ] Click artist/album card → details page
-- [ ] Horizontal scroll on album carousels
+- [x] Sections display: Welcome, New Users, Top Artists, Most Recommended Albums, Latest Releases
+- [x] Click user card → user profile
+- [x] Click artist/album card → details page
+- [x] Horizontal scroll on album carousels
 
 ### Latest Releases (`/latest`)
 
-- [ ] Album grid with cover, title, artist, date
-- [ ] Sort options work: Recently Added, Oldest, Release Date, Title A-Z/Z-A
-- [ ] Click album → album details
+- [x] Album grid with cover, title, artist, date
+- [x] Sort options work: Recently Added, Oldest, Release Date, Title A-Z/Z-A
+- [x] Click album → album details
 
 ---
 
 ## 4. ALBUM DETAILS (`/albums/[id]`)
 
-- [ ] Shows: cover art, title, artist (clickable), year, genre, label
-- [ ] Back button works
-- [ ] Click artist name → artist details
-- [ ] **Tracklist tab**: track number, title, duration, artist(s)
-- [ ] **Recommendations tab**: recs for this album, score, user, other album
-- [ ] "Add to Collection" button → modal with collection list
-- [ ] Select collection → album added, success message
-- [ ] "Add to Listen Later" button works
+- [x] Shows: cover art, title, artist (clickable), year, genre, label
+- [x] Back button works
+- [x] Click artist name → artist details
+- [x] **Tracklist tab**: track number, title, duration, artist(s)
+- [x] **Recommendations tab**: recs for this album, score, user, other album
+- [x] "Add to Collection" button → modal with collection list
+- [x] Select collection → album added, success message
+- [x] "Add to Listen Later" button works
 
 ---
 
 ## 5. ARTIST DETAILS (`/artists/[id]`)
 
-- [ ] Shows: image, name, disambiguation, country, active years, bio, external links, aliases
-- [ ] Back button works
-- [ ] **Discography tab**: albums by type (Studio, EPs, Singles, Mixtapes, Compilations)
-- [ ] Click album → album details
-- [ ] **Recommendations tab**: recs for this artist's albums, filter by role, sort options
+- [x] Shows: image, name, disambiguation, country, active years, bio, external links, aliases
+- [x] Back button works
+- [x] **Discography tab**: albums by type (Studio, EPs, Singles, Mixtapes, Compilations)
+- [x] Click album → album details
+- [x] **Recommendations tab**: recs for this artist's albums, filter by role, sort options
 
 ---
 
 ## 6. COLLECTIONS
 
-### View Collections (`/collections`)
-
-- [ ] "Your Collections" header
-- [ ] "New Collection" button
-- [ ] Collection cards show: name, description, album count, public/private badge
-- [ ] Click collection → collection details
 
 ### Create Collection (`/collections/new`)
 
@@ -153,24 +147,24 @@ A comprehensive checklist for manually testing the app from a user's perspective
 
 ### Create Recommendation (`/recommend`)
 
-- [ ] Shows: search bar, Basis Album card, Recommended Album card, score input
-- [ ] Search and select basis album → appears in card
-- [ ] Search and select recommended album → appears in card
-- [ ] Enter score
-- [ ] Create → success message, recommendation created
+- [x] Shows: search bar, Basis Album card, Recommended Album card, score input
+- [x] Search and select basis album → appears in card
+- [x] Search and select recommended album → appears in card
+- [x] Enter score
+- [x] Create → success message, recommendation created
 
 ### View Recommendations
 
-- [ ] Profile page shows recommendations section
-- [ ] Album details → Recommendations tab shows recs for that album
-- [ ] Artist details → Recommendations tab shows recs for artist's albums
-- [ ] Click recommendation → view details
+- [x] Profile page shows recommendations section
+- [x] Album details → Recommendations tab shows recs for that album
+- [x] Artist details → Recommendations tab shows recs for artist's albums
+- [x] Click recommendation → view details
 
 ### Recommendation Details
 
-- [ ] Shows: basis album, recommended album, score, creator, date
-- [ ] Click album → album details
-- [ ] Click user → user profile
+- [x] Shows: basis album, recommended album, score, creator, date
+- [x] Click album → album details
+- [x] Click user → user profile
 
 ### Edit/Delete Recommendation
 
