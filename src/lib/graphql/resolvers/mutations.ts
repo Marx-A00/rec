@@ -212,7 +212,17 @@ function formatGuessResult(result: GuessServiceResult) {
 
 export const mutationResolvers: MutationResolvers = {
   // Queue Management mutations
-  pauseQueue: async () => {
+  pauseQueue: async (_, __, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const queue = getMusicBrainzQueue();
       await queue.pause();
@@ -222,7 +232,17 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  resumeQueue: async () => {
+  resumeQueue: async (_, __, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const queue = getMusicBrainzQueue();
       await queue.resume();
@@ -232,7 +252,17 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  retryJob: async (_, { jobId }) => {
+  retryJob: async (_, { jobId }, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const queue = getMusicBrainzQueue().getQueue();
       const job = await queue.getJob(jobId);
@@ -248,7 +278,17 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  retryAllFailed: async () => {
+  retryAllFailed: async (_, __, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const queue = getMusicBrainzQueue().getQueue();
       const failed = await queue.getFailed();
@@ -269,7 +309,17 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  cleanQueue: async (_, { olderThan }) => {
+  cleanQueue: async (_, { olderThan }, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const queue = getMusicBrainzQueue();
       await queue.cleanup(olderThan || 86400000); // Default 24 hours
@@ -279,7 +329,17 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  clearFailedJobs: async () => {
+  clearFailedJobs: async (_, __, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const queue = getMusicBrainzQueue().getQueue();
       await queue.clean(0, 1000, 'failed');
@@ -290,7 +350,17 @@ export const mutationResolvers: MutationResolvers = {
   },
 
   // Spotify Sync mutation
-  triggerSpotifySync: async (_, { type }) => {
+  triggerSpotifySync: async (_, { type }, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const queue = getMusicBrainzQueue();
       const results = {
@@ -381,7 +451,21 @@ export const mutationResolvers: MutationResolvers = {
   },
 
   // Sync Job Management - Rollback functionality
-  rollbackSyncJob: async (_, { syncJobId, dryRun = true }, { prisma }) => {
+  rollbackSyncJob: async (
+    _,
+    { syncJobId, dryRun = true },
+    { prisma, user }
+  ) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       // 1. Find the sync job
       const syncJob = await prisma.syncJob.findUnique({
@@ -498,7 +582,17 @@ export const mutationResolvers: MutationResolvers = {
   },
 
   // Alert configuration
-  updateAlertThresholds: async (_, { input }) => {
+  updateAlertThresholds: async (_, { input }, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const thresholds: any = {};
 
@@ -2090,7 +2184,21 @@ export const mutationResolvers: MutationResolvers = {
   },
 
   // Preview Enrichment mutations (dry-run without persisting to album/artist)
-  previewAlbumEnrichment: async (_: unknown, { id }: { id: string }) => {
+  previewAlbumEnrichment: async (
+    _: unknown,
+    { id }: { id: string },
+    { user }
+  ) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const result = await previewAlbumEnrichment(id);
       return result;
@@ -2099,7 +2207,21 @@ export const mutationResolvers: MutationResolvers = {
     }
   },
 
-  previewArtistEnrichment: async (_: unknown, { id }: { id: string }) => {
+  previewArtistEnrichment: async (
+    _: unknown,
+    { id }: { id: string },
+    { user }
+  ) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const result = await previewArtistEnrichment(id);
       return result;

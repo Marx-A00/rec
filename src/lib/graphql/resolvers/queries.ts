@@ -220,7 +220,17 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // System health monitoring
-  systemHealth: async () => {
+  systemHealth: async (_, __, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const health = await healthChecker.checkHealth();
       return health as any;
@@ -230,7 +240,17 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // Queue status monitoring
-  queueStatus: async () => {
+  queueStatus: async (_, __, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const queue = getMusicBrainzQueue();
       const stats = await queue.getStats();
@@ -263,7 +283,17 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // Queue metrics with time range
-  queueMetrics: async (_, { timeRange }) => {
+  queueMetrics: async (_, { timeRange }, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const metrics = metricsCollector.getCurrentMetrics();
       const history = metricsCollector.getMetricsHistory(100);
@@ -352,7 +382,17 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // Job history with optional filtering
-  jobHistory: async (_, { limit = 100, status }) => {
+  jobHistory: async (_, { limit = 100, status }, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const queue = getMusicBrainzQueue().getQueue();
 
@@ -419,7 +459,17 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // Get currently active jobs
-  activeJobs: async () => {
+  activeJobs: async (_, __, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const queue = getMusicBrainzQueue().getQueue();
       const active = await queue.getActive();
@@ -443,7 +493,17 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // Get failed jobs
-  failedJobs: async (_, { limit = 50 }) => {
+  failedJobs: async (_, { limit = 50 }, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const queue = getMusicBrainzQueue().getQueue();
       const failed = await queue.getFailed(0, limit);
@@ -1637,7 +1697,17 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // Music Database queries
-  databaseStats: async (_, __, { prisma }) => {
+  databaseStats: async (_, __, { prisma, user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const [
         totalAlbums,
@@ -2000,7 +2070,17 @@ export const queryResolvers: QueryResolvers = {
   },
 
   // Enrichment log queries
-  llamaLogs: async (_, args, { prisma }) => {
+  llamaLogs: async (_, args, { prisma, user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const {
         includeChildren = false,
@@ -2131,8 +2211,18 @@ export const queryResolvers: QueryResolvers = {
       limit?: number;
       cursor?: string;
     },
-    { prisma }: Context
+    { prisma, user }: Context
   ) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     const {
       entityType,
       entityId,
@@ -2212,7 +2302,17 @@ export const queryResolvers: QueryResolvers = {
     };
   },
 
-  enrichmentStats: async (_, args, { prisma }) => {
+  enrichmentStats: async (_, args, { prisma, user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+    if (!isAdmin(user.role)) {
+      throw new GraphQLError('Admin access required', {
+        extensions: { code: 'FORBIDDEN' },
+      });
+    }
     try {
       const where: Record<string, unknown> = {};
 

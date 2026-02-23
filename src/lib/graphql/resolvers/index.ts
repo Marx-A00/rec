@@ -12,8 +12,11 @@
 
 import chalk from 'chalk';
 
+import { GraphQLError } from 'graphql';
+
 import { Resolvers } from '@/generated/graphql';
 import { graphqlLogger } from '@/lib/logger';
+import { isAdmin } from '@/lib/permissions';
 import {
   SearchOrchestrator,
   SearchSource,
@@ -49,8 +52,18 @@ export const resolvers: Resolvers = {
         lastActiveBefore,
         hasActivity,
       },
-      { prisma }
+      { prisma, user }
     ) => {
+      if (!user) {
+        throw new GraphQLError('Authentication required', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+      if (!isAdmin(user.role)) {
+        throw new GraphQLError('Admin access required', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
       // Build where clause
       const whereConditions: Record<string, unknown>[] = [];
 
@@ -167,8 +180,18 @@ export const resolvers: Resolvers = {
         lastActiveBefore,
         hasActivity,
       },
-      { prisma }
+      { prisma, user }
     ) => {
+      if (!user) {
+        throw new GraphQLError('Authentication required', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+      if (!isAdmin(user.role)) {
+        throw new GraphQLError('Admin access required', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
       // Build where clause (same logic as users query)
       const whereConditions: Record<string, unknown>[] = [];
 
@@ -1237,6 +1260,37 @@ export const resolvers: Resolvers = {
   },
 
   User: {
+    // Redact sensitive fields for anonymous or non-owner requests
+    email: (parent, _, { user }) => {
+      if (user && (user.id === parent.id || isAdmin(user.role))) {
+        return parent.email;
+      }
+      return null;
+    },
+    emailVerified: (parent, _, { user }) => {
+      if (user && (user.id === parent.id || isAdmin(user.role))) {
+        return parent.emailVerified;
+      }
+      return null;
+    },
+    lastActive: (parent, _, { user }) => {
+      if (user && (user.id === parent.id || isAdmin(user.role))) {
+        return parent.lastActive;
+      }
+      return null;
+    },
+    deletedAt: (parent, _, { user }) => {
+      if (user && isAdmin(user.role)) {
+        return parent.deletedAt;
+      }
+      return null;
+    },
+    deletedBy: (parent, _, { user }) => {
+      if (user && isAdmin(user.role)) {
+        return parent.deletedBy;
+      }
+      return null;
+    },
     collections: async (parent, _, { dataloaders }) => {
       return dataloaders.collectionsByUserLoader.load(parent.id);
     },
