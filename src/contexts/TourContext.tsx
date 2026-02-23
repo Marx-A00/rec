@@ -13,6 +13,8 @@ import { driver, DriveStep } from 'driver.js';
 import type { Driver } from 'driver.js';
 import { X } from 'lucide-react';
 
+import { usePathname } from 'next/navigation';
+
 import { driverConfig, tourSteps } from '@/lib/tours/driverConfig';
 import { useTourStore } from '@/stores/useTourStore';
 import { useUserSettingsStore } from '@/stores/useUserSettingsStore';
@@ -35,6 +37,7 @@ interface TourContextType {
 const TourContext = createContext<TourContextType | undefined>(undefined);
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const { data: session, status } = useSession();
   const [driverInstance, setDriverInstance] = useState<Driver | null>(null);
   const [currentStep, setCurrentStep] = useState<number | null>(null);
@@ -267,10 +270,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
     // Only auto-start tour on pages where tour elements exist
     // This prevents the tour from trying to start on admin, settings, or other pages
-    const currentPath = window.location.pathname;
     const tourEnabledPaths = ['/', '/home-mosaic'];
-    console.log('🔍 Tour check - currentPath:', currentPath);
-    if (!tourEnabledPaths.includes(currentPath)) {
+    console.log('🔍 Tour check - currentPath:', pathname);
+    if (!pathname || !tourEnabledPaths.includes(pathname)) {
       console.log('🔍 Tour check - not on tour-enabled page, skipping');
       return;
     }
@@ -279,7 +281,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     if (!shouldCheckOnboarding) {
       setShouldCheckOnboarding(true);
     }
-  }, [session, status, startFromStep, shouldCheckOnboarding]);
+  }, [session, status, startFromStep, shouldCheckOnboarding, pathname]);
 
   // React to settings data to start tour if needed
   useEffect(() => {
