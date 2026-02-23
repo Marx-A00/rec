@@ -298,7 +298,10 @@ function ExpandableLogRow({
       {isExpanded && (
         <TableRow className='border-zinc-800 bg-zinc-900/80 hover:bg-zinc-900/80'>
           <TableCell colSpan={10} className='p-0'>
-            <div className='py-8 px-6 max-h-96 overflow-y-auto custom-scrollbar flex justify-center'>
+            <div
+              className='py-8 px-6 max-h-96 overflow-y-auto custom-scrollbar'
+              style={{ scrollbarGutter: 'stable' }}
+            >
               <div className='max-w-3xl mx-auto'>
                 {loadingChildren ? (
                   <SkeletonTimeline itemCount={3} />

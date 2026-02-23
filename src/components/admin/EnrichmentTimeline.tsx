@@ -190,10 +190,7 @@ function TimelineLogItem({
     <TimelineItem
       status={status}
       error={hasError}
-      className={cn(
-        'outline-none focus:outline-none',
-        isChild && 'ml-4 scale-95'
-      )}
+      className={cn('outline-none focus:outline-none', isChild && 'ml-4')}
     >
       <TimelineIcon color={iconColor}>
         <Icon className={cn('h-4 w-4', compact && 'h-3 w-3')} />
