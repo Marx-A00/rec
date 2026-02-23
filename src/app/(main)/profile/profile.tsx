@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { Pencil, Settings, UserCog } from 'lucide-react';
+import { Lock, Pencil, Settings, UserCog } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,7 @@ interface ProfileClientProps {
   isOwnProfile: boolean;
   showCollections?: boolean;
   isFollowingUser?: boolean;
+  isPrivateProfile?: boolean;
 }
 
 export default function ProfileClient({
@@ -42,6 +43,7 @@ export default function ProfileClient({
   isOwnProfile,
   showCollections = true,
   isFollowingUser = false,
+  isPrivateProfile = false,
 }: ProfileClientProps) {
   // Fetch user profile data via React Query
   const { data: profileData, isLoading: isProfileLoading } =
@@ -71,8 +73,16 @@ export default function ProfileClient({
   // Add state for profile editing
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
-  // State for optimistic follow count updates
+  // State for optimistic follow count updates — reset when server data refreshes
   const [followersCountDelta, setFollowersCountDelta] = useState(0);
+  const serverFollowersCount = user?.followersCount ?? 0;
+  const prevServerCount = useRef(serverFollowersCount);
+  if (prevServerCount.current !== serverFollowersCount) {
+    prevServerCount.current = serverFollowersCount;
+    if (followersCountDelta !== 0) {
+      setFollowersCountDelta(0);
+    }
+  }
 
   // Settings dropdown state
   const [showSettings, setShowSettings] = useState(false);
@@ -199,13 +209,8 @@ export default function ProfileClient({
   const queryClient = useQueryClient();
 
   // Handle follow status changes with optimistic updates
-  const handleFollowChange = (
-    isFollowing: boolean,
-    newCounts?: { followersCount: number; followingCount: number }
-  ) => {
-    if (newCounts) {
-      setFollowersCountDelta(prev => prev + newCounts.followersCount);
-    }
+  const handleFollowChange = (isFollowing: boolean) => {
+    setFollowersCountDelta(prev => prev + (isFollowing ? 1 : -1));
     // Invalidate the user profile cache so follow state + counts refresh
     queryClient.invalidateQueries({
       queryKey: useGetUserProfileQuery.getKey({ userId }),
@@ -417,15 +422,29 @@ export default function ProfileClient({
             </div>
           </div>
 
-          {/* Collection Section */}
-          {/* TODO: add in DnD grid with varying sizes or whatever */}
-
-          {/* Pluh Button - shown on admin/owner profiles, visible to everyone */}
-          {(user.role === 'ADMIN' || user.role === 'OWNER') && (
-            <section className='border-t border-zinc-800 pt-8 flex justify-center'>
-              <PluhButton />
+          {/* Private Profile Message */}
+          {isPrivateProfile ? (
+            <section className='border-t border-zinc-800 pt-12 pb-8'>
+              <div className='flex flex-col items-center justify-center text-center'>
+                <div className='w-14 h-14 bg-zinc-800/60 rounded-full flex items-center justify-center mb-4'>
+                  <Lock className='w-7 h-7 text-zinc-500' />
+                </div>
+                <p className='text-zinc-400 text-lg'>
+                  {user.username || 'This user'}&apos;s profile is private
+                </p>
+              </div>
             </section>
-          )}
+          ) : (
+            <>
+              {/* Collection Section */}
+              {/* TODO: add in DnD grid with varying sizes or whatever */}
+
+              {/* Pluh Button - shown on admin/owner profiles, visible to everyone */}
+              {(user.role === 'ADMIN' || user.role === 'OWNER') && (
+                <section className='border-t border-zinc-800 pt-8 flex justify-center'>
+                  <PluhButton />
+                </section>
+              )}
 
           {/* Listen Later Section */}
           {showCollections && listenLater.length > 0 && (
@@ -629,6 +648,8 @@ export default function ProfileClient({
               </div>
             )}
           </section>
+            </>
+          )}
         </div>
       </div>
 

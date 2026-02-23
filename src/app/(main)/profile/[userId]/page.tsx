@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation';
-import { Lock } from 'lucide-react';
 
 import { auth } from '@/../auth';
 import prisma from '@/lib/prisma';
@@ -219,24 +218,8 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
   }
 
   // Check if profile is private (only block for non-owners)
-  if (!isOwnProfile && userData.settings?.profileVisibility === 'private') {
-    return (
-      <div className='flex flex-col items-center justify-center min-h-[60vh] text-center px-4'>
-        <div className='bg-zinc-900/60 border border-zinc-800 rounded-2xl p-8 max-w-md'>
-          <div className='w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4'>
-            <Lock className='w-8 h-8 text-zinc-500' />
-          </div>
-          <h2 className='text-2xl font-bold text-white mb-2'>
-            This Profile is Private
-          </h2>
-          <p className='text-zinc-400'>
-            {userData.username || 'This user'} has chosen to keep their profile
-            private.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const isPrivateProfile =
+    !isOwnProfile && userData.settings?.profileVisibility === 'private';
 
   // Determine if collections should be shown
   const showCollections =
@@ -255,12 +238,14 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
         })
       : null;
 
-  // Get collections, listen later, and recommendations
-  const [collection, listenLater, recommendations] = await Promise.all([
-    showCollections ? getUserCollections(userId) : Promise.resolve([]),
-    showCollections ? getListenLater(userId) : Promise.resolve([]),
-    getUserRecommendations(userId),
-  ]);
+  // Get collections, listen later, and recommendations (skip for private profiles)
+  const [collection, listenLater, recommendations] = isPrivateProfile
+    ? [[], [], []]
+    : await Promise.all([
+        showCollections ? getUserCollections(userId) : Promise.resolve([]),
+        showCollections ? getListenLater(userId) : Promise.resolve([]),
+        getUserRecommendations(userId),
+      ]);
 
   return (
     <Profile
@@ -271,6 +256,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
       isOwnProfile={isOwnProfile}
       showCollections={showCollections}
       isFollowingUser={!!isFollowingUser}
+      isPrivateProfile={isPrivateProfile}
     />
   );
 }

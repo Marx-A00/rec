@@ -21,14 +21,14 @@ A comprehensive checklist for manually testing the app from a user's perspective
 ### Sign In (`/signin`)
 
 - [ ] Google OAuth flow works
-- [ ] Email/password login works
+- [x] Email/password login works
 - [ ] Invalid credentials show error
 - [ ] Password visibility toggle works
 - [ ] Link to register page works
 
 ### Session
 
-- [ ] Stay logged in after page refresh
+- [x] Stay logged in after page refresh
 - [ ] Sign out works (header menu)
 - [ ] Protected pages redirect to sign-in when logged out
 
@@ -38,12 +38,12 @@ A comprehensive checklist for manually testing the app from a user's perspective
 
 ### View Own Profile
 
-- [ ] Shows: name, avatar, bio, follower/following counts, rec count, collection count
-- [ ] Profile tabs are clickable
+- [x] Shows: name, avatar, bio, follower/following counts, rec count, collection count
+- [x] Profile tabs are clickable
 
 ### View Other User's Profile (`/profile/[userId]`)
 
-- [ ] Public profile displays correctly
+- [x] Public profile displays correctly
 - [ ] Follow button works → count increments, button changes to "Unfollow"
 - [ ] Unfollow works → count decrements
 - [ ] Private profile shows lock icon and "Profile is Private" message
