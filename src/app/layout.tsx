@@ -6,6 +6,7 @@ import 'driver.js/dist/driver.css';
 import '@/styles/driver-custom.css';
 import { Toaster } from 'sonner';
 
+import { auth } from '@/../auth';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { CollectionToastProvider } from '@/components/ui/CollectionToastProvider';
@@ -26,18 +27,20 @@ export const metadata: Metadata = {
   description: 'Share and discover music recommendations',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang='en' className='dark'>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <SessionProvider>
+        <SessionProvider session={session}>
           <QueryProvider>
             <TourProviderWrapper>
               <CollectionToastProvider>{children}</CollectionToastProvider>

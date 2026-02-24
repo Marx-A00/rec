@@ -22,6 +22,7 @@ interface Activity {
   albumArtist?: string;
   artistId?: string;
   albumImage?: string | null;
+  albumCloudflareImageId?: string | null;
   createdAt: string;
   metadata?: CollectionMetadata;
 }
@@ -87,6 +88,7 @@ export default function MobileCollectionCard({
           <div className='relative flex-shrink-0'>
             <AlbumImage
               src={activity.albumImage || '/placeholder-album.png'}
+              cloudflareImageId={activity.albumCloudflareImageId}
               alt={activity.albumTitle || 'Album'}
               width={80}
               height={80}

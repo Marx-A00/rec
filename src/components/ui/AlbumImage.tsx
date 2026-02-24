@@ -5,6 +5,10 @@ import { useState, useEffect } from 'react';
 import { Music } from 'lucide-react';
 
 import { getImageUrl } from '@/lib/cloudflare-images';
+
+const FALLBACK_IMAGE = '/default-album.svg';
+const MAX_RETRIES = 2;
+
 // TODO: Consolidate image handling
 interface AlbumImageProps {
   src: string | null | undefined;
@@ -21,6 +25,46 @@ interface AlbumImageProps {
   style?: React.CSSProperties;
 }
 
+/**
+ * Compute the resolved image URL synchronously from props.
+ * Used for both initial state and effect updates to avoid layout shifts.
+ */
+function resolveImageUrl(
+  src: string | null | undefined,
+  cloudflareImageId: string | null | undefined,
+  width: number,
+  height: number
+): string | null {
+  // Priority 1: Use Cloudflare image ID if available (skip 'none' marker)
+  if (cloudflareImageId && cloudflareImageId !== 'none') {
+    return getImageUrl(cloudflareImageId, { width, height });
+  }
+
+  // Priority 2: Use src URL if available
+  if (
+    src &&
+    src !== 'https://via.placeholder.com/400x400?text=No+Image' &&
+    src !== FALLBACK_IMAGE
+  ) {
+    // Check if it's a Cloudflare Images URL and optimize it
+    if (src.includes('imagedelivery.net') && src.includes('/public')) {
+      const matches = src.match(/imagedelivery\.net\/[^\/]+\/([^\/]+)/);
+      if (matches && matches[1]) {
+        return getImageUrl(matches[1], { width, height });
+      }
+    }
+    return src;
+  }
+
+  // No valid source
+  if (src === null || src === undefined) {
+    return null;
+  }
+
+  // Invalid URL — use fallback
+  return FALLBACK_IMAGE;
+}
+
 export default function AlbumImage({
   src,
   alt,
@@ -35,59 +79,21 @@ export default function AlbumImage({
   fallbackIcon,
   style,
 }: AlbumImageProps) {
-  const [imgSrc, setImgSrc] = useState<string | null>(null);
+  // Initialize synchronously so the first render has the correct URL
+  const [imgSrc, setImgSrc] = useState<string | null>(() =>
+    resolveImageUrl(src, cloudflareImageId, width, height)
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
-  const FALLBACK_IMAGE = '/default-album.svg';
-  const MAX_RETRIES = 2;
-
-  // Update imgSrc when src or cloudflareImageId prop changes
+  // Update imgSrc when props change (subsequent renders only)
   useEffect(() => {
-    // Priority 1: Use Cloudflare image ID if available (skip 'none' marker)
-    if (cloudflareImageId && cloudflareImageId !== 'none') {
-      const optimizedUrl = getImageUrl(cloudflareImageId, { width, height });
-      setImgSrc(optimizedUrl);
-      setIsLoading(true);
-      setHasError(false);
-      setRetryCount(0);
-      return;
-    }
-
-    // Priority 2: Use src URL if available
-    if (
-      src &&
-      src !== 'https://via.placeholder.com/400x400?text=No+Image' &&
-      src !== FALLBACK_IMAGE
-    ) {
-      // Check if it's a Cloudflare Images URL and optimize it
-      if (src.includes('imagedelivery.net') && src.includes('/public')) {
-        // Extract the image ID and rebuild with optimal size
-        const matches = src.match(/imagedelivery\.net\/[^\/]+\/([^\/]+)/);
-        if (matches && matches[1]) {
-          const optimizedUrl = getImageUrl(matches[1], { width, height });
-          setImgSrc(optimizedUrl);
-        } else {
-          setImgSrc(src);
-        }
-      } else {
-        setImgSrc(src);
-      }
-      setIsLoading(true);
-      setHasError(false);
-      setRetryCount(0);
-    } else if (src === null || src === undefined) {
-      // Show loading state when src is null (waiting for URL)
-      setImgSrc(null);
-      setIsLoading(true);
-      setHasError(false);
-    } else {
-      // Show fallback for invalid URLs
-      setImgSrc(FALLBACK_IMAGE);
-      setIsLoading(false);
-      setHasError(false);
-    }
+    const resolved = resolveImageUrl(src, cloudflareImageId, width, height);
+    setImgSrc(resolved);
+    setIsLoading(resolved !== FALLBACK_IMAGE && resolved !== null);
+    setHasError(false);
+    setRetryCount(0);
   }, [src, cloudflareImageId, width, height]);
 
   const handleImageLoad = () => {
@@ -122,9 +128,11 @@ export default function AlbumImage({
   };
 
   // Loading skeleton component
-  const LoadingSkeleton = () => (
+  // When used standalone (no imgSrc), gets sized by className.
+  // When used as overlay inside wrapper, positioned absolute.
+  const LoadingSkeleton = ({ overlay = false }: { overlay?: boolean }) => (
     <div
-      className={`animate-pulse bg-zinc-800 ${fill ? 'absolute inset-0' : ''} ${className}`}
+      className={`animate-pulse bg-zinc-800 ${overlay || fill ? 'absolute inset-0' : ''} ${className}`}
     >
       <div className='w-full h-full flex items-center justify-center'>
         <Music className='h-8 w-8 text-zinc-600' />
@@ -153,9 +161,9 @@ export default function AlbumImage({
     imgSrc.includes('imagedelivery.net');
 
   return (
-    <div className={`relative ${fill ? '' : 'w-full h-full'}`}>
+    <div className={`relative ${className}`}>
       {/* Loading skeleton overlay */}
-      {isLoading && showSkeleton && <LoadingSkeleton />}
+      {isLoading && showSkeleton && <LoadingSkeleton overlay />}
 
       {/* Use native img for Cover Art Archive and Cloudflare Images */}
       {useNativeImg ? (
