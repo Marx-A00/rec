@@ -161,7 +161,7 @@ export default function AlbumImage({
     imgSrc.includes('imagedelivery.net');
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative overflow-hidden ${className}`}>
       {/* Loading skeleton overlay */}
       {isLoading && showSkeleton && <LoadingSkeleton overlay />}
 
@@ -173,7 +173,7 @@ export default function AlbumImage({
           alt={alt}
           width={fill ? undefined : width}
           height={fill ? undefined : height}
-          className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300 ${fill ? 'absolute inset-0 w-full h-full object-cover' : ''}`}
+          className={`w-full h-full object-cover ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300 ${fill ? 'absolute inset-0' : ''}`}
           onLoad={handleImageLoad}
           onError={handleImageError}
           draggable={false}
@@ -189,7 +189,7 @@ export default function AlbumImage({
           fill={fill}
           sizes={sizes}
           priority={priority}
-          className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+          className={`w-full h-full object-cover ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
           onLoad={handleImageLoad}
           onError={handleImageError}
           // Disable drag to prevent issues with fallback logic
