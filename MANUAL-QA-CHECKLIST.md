@@ -168,8 +168,8 @@ A comprehensive checklist for manually testing the app from a user's perspective
 
 ### Edit/Delete Recommendation
 
-- [ ] Own recommendations: edit button → update score → save
-- [ ] Own recommendations: delete button → confirmation → deleted
+- [x] Own recommendations: edit button → update score → save
+- [x] Own recommendations: delete button → confirmation → deleted
 
 ---
 
@@ -177,31 +177,31 @@ A comprehensive checklist for manually testing the app from a user's perspective
 
 ### Follow/Unfollow
 
-- [ ] On user profile: Follow button → changes to Unfollow, counts update
-- [ ] Unfollow → button resets, counts update
+- [x] On user profile: Follow button → changes to Unfollow, counts update
+- [x] Unfollow → button resets, counts update
 
 ### Followers (`/profile/[userId]/followers`)
 
-- [ ] List of followers with avatar, name, counts, follow button
-- [ ] Click follower → their profile
-- [ ] Follow button works
+- [x] List of followers with avatar, name, counts, follow button
+- [x] Click follower → their profile
+- [x] Follow button works
 
 ### Following (`/profile/[userId]/following`)
 
-- [ ] List of users being followed
-- [ ] Click user → their profile
-- [ ] Unfollow button works
+- [x] List of users being followed
+- [x] Click user → their profile
+- [x] Unfollow button works
 
 ---
 
 ## 9. NAVIGATION & HEADER
 
-- [ ] Logo → home
-- [ ] Search bar → `/search?q=query`
-- [ ] User menu dropdown: profile, settings, sign out
+- [x] Logo → home
+- [x] Search bar → `/search?q=query`
+- [x] User menu dropdown: profile, settings, sign out
 - [ ] Mobile: hamburger menu works, all items accessible
-- [ ] Navigation links work: Home, Browse, Search, Collections, Recommend, Profile, Settings
-- [ ] Back button works throughout
+- [x] Navigation links work: Home, Browse, Search, Collections, Recommend, Profile, Settings
+- [x] Back button works throughout
 
 ---
 
@@ -227,14 +227,14 @@ A comprehensive checklist for manually testing the app from a user's perspective
 
 ### Missing Data
 
-- [ ] Album without cover → placeholder image
-- [ ] Artist without bio → page still renders
-- [ ] Empty collection → empty state message
+- [x] Album without cover → placeholder image
+- [x] Artist without bio → page still renders
+- [x] Empty collection → empty state message
 
 ### Access Control
 
-- [ ] Other user's private profile → locked, no data visible
-- [ ] Can't edit/delete other user's collections (buttons hidden)
+- [x] Other user's private profile → locked, no data visible
+- [x] Can't edit/delete other user's collections (buttons hidden)
 
 ### Form Validation
 

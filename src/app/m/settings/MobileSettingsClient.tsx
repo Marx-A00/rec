@@ -15,6 +15,8 @@ import {
   Trash2,
   ChevronDown,
   User,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 
 import { MobileButton } from '@/components/mobile/MobileButton';
@@ -48,14 +50,22 @@ export default function MobileSettingsClient({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Fetch user profile
-  const { data: userData, isLoading: isLoadingUser } = useGetUserProfileQuery(
-    { userId },
-    { enabled: !!userId }
-  );
+  const {
+    data: userData,
+    isLoading: isLoadingUser,
+    isError: isErrorUser,
+    error: errorUser,
+    refetch: refetchUser,
+  } = useGetUserProfileQuery({ userId }, { enabled: !!userId });
 
   // Fetch settings
-  const { data: settingsData, isLoading: isLoadingSettings } =
-    useGetMySettingsQuery();
+  const {
+    data: settingsData,
+    isLoading: isLoadingSettings,
+    isError: isErrorSettings,
+    error: errorSettings,
+    refetch: refetchSettings,
+  } = useGetMySettingsQuery();
 
   const updateMutation = useUpdateUserSettingsMutation();
 
@@ -175,6 +185,52 @@ export default function MobileSettingsClient({
               />
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (isErrorUser || isErrorSettings) {
+    const errorMessage =
+      errorUser instanceof Error
+        ? errorUser.message
+        : errorSettings instanceof Error
+          ? errorSettings.message
+          : 'Could not load your settings';
+
+    return (
+      <div className='min-h-screen bg-black'>
+        {/* Header */}
+        <div className='sticky top-0 z-10 bg-black/95 backdrop-blur-lg border-b border-zinc-800'>
+          <div className='flex items-center gap-3 px-4 py-3'>
+            <button
+              onClick={() => router.back()}
+              className='min-h-[44px] min-w-[44px] flex items-center justify-center -ml-2 text-white'
+              aria-label='Go back'
+            >
+              <ArrowLeft className='h-5 w-5' />
+            </button>
+            <h1 className='text-lg font-semibold text-white'>Settings</h1>
+          </div>
+        </div>
+        <div className='flex flex-col items-center justify-center min-h-[60vh] px-6 text-center'>
+          <div className='w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4'>
+            <AlertCircle className='h-8 w-8 text-zinc-600' />
+          </div>
+          <h2 className='text-xl font-bold text-white mb-2'>
+            Failed to Load Settings
+          </h2>
+          <p className='text-zinc-400 mb-6'>{errorMessage}</p>
+          <MobileButton
+            onClick={() => {
+              refetchUser();
+              refetchSettings();
+            }}
+            leftIcon={<RefreshCw className='h-4 w-4' />}
+          >
+            Try Again
+          </MobileButton>
         </div>
       </div>
     );

@@ -11,11 +11,14 @@ import {
   Building2,
   Trash2,
   Loader2,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 
 import AlbumImage from '@/components/ui/AlbumImage';
 import { AnimatedLoader } from '@/components/ui/AnimatedLoader';
+import { MobileButton } from '@/components/mobile/MobileButton';
 import {
   useUniversalSearch,
   type SearchMode,
@@ -206,16 +209,19 @@ export default function MobileSearchPage() {
   };
 
   // Search hook
-  const { results, isLoading, error } = useUniversalSearch(urlQuery.trim(), {
-    entityTypes: getEntityTypes(),
-    searchType: urlType as 'albums' | 'artists' | 'tracks' | 'users',
-    filters: [],
-    debounceMs: 300,
-    minQueryLength: 2,
-    maxResults: 20,
-    enabled: urlQuery.length >= 2,
-    searchMode,
-  });
+  const { results, isLoading, error, refetch } = useUniversalSearch(
+    urlQuery.trim(),
+    {
+      entityTypes: getEntityTypes(),
+      searchType: urlType as 'albums' | 'artists' | 'tracks' | 'users',
+      filters: [],
+      debounceMs: 300,
+      minQueryLength: 2,
+      maxResults: 20,
+      enabled: urlQuery.length >= 2,
+      searchMode,
+    }
+  );
 
   const hasError = !!error;
   const showResults = urlQuery.length >= 2;
@@ -288,9 +294,21 @@ export default function MobileSearchPage() {
         {/* Error State */}
         {hasError && showResults && (
           <div className='flex flex-col items-center justify-center py-12 text-center'>
-            <div className='text-4xl mb-4'>😔</div>
+            <div className='w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4'>
+              <AlertCircle className='h-8 w-8 text-zinc-600' />
+            </div>
             <p className='text-white font-medium mb-2'>Search failed</p>
-            <p className='text-sm text-zinc-500'>Please try again later</p>
+            <p className='text-sm text-zinc-500 mb-6'>
+              {error instanceof Error
+                ? error.message
+                : 'Please try again later'}
+            </p>
+            <MobileButton
+              onClick={() => refetch()}
+              leftIcon={<RefreshCw className='h-4 w-4' />}
+            >
+              Try Again
+            </MobileButton>
           </div>
         )}
 

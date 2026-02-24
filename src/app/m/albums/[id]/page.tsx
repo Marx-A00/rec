@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 import { getAlbumDetails } from '@/lib/api/albums';
@@ -57,7 +57,9 @@ export default async function MobileAlbumPage({
           </Link>
         </div>
         <div className='flex flex-col items-center justify-center min-h-[60vh] px-6 text-center'>
-          <div className='text-5xl mb-4'>😔</div>
+          <div className='w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4'>
+            <AlertCircle className='h-8 w-8 text-zinc-600' />
+          </div>
           <h2 className='text-xl font-bold text-white mb-2'>Album Not Found</h2>
           <p className='text-zinc-400 mb-6'>
             {error instanceof Error

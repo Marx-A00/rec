@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useInView } from 'react-intersection-observer';
-import { RefreshCw, Users } from 'lucide-react';
+import { RefreshCw, Users, AlertCircle } from 'lucide-react';
 import type { Session } from 'next-auth';
 
 import MobileRecommendationCard from '@/components/mobile/MobileRecommendationCard';
@@ -280,7 +280,9 @@ export default function MobileHomeClient({ session }: MobileHomeClientProps) {
   if (isError) {
     return (
       <div className='flex flex-col items-center justify-center min-h-[60vh] px-6 text-center'>
-        <div className='text-5xl mb-4'>😔</div>
+        <div className='w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4'>
+          <AlertCircle className='h-8 w-8 text-zinc-600' />
+        </div>
         <h2 className='text-xl font-bold text-white mb-2'>
           Something went wrong
         </h2>
