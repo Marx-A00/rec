@@ -7,41 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AlbumImage from '@/components/ui/AlbumImage';
 import TimeAgo from '@/components/mobile/TimeAgo';
 import { cn } from '@/lib/utils';
-
-interface BasisAlbum {
-  id: string;
-  title: string;
-  coverArtUrl?: string;
-  cloudflareImageId?: string;
-  artists?: Array<{
-    artist?: {
-      name?: string;
-    };
-  }>;
-}
-
-interface RecommendationMetadata {
-  score?: number;
-  basisAlbum?: BasisAlbum;
-}
-
-interface Activity {
-  id: string;
-  actorId: string;
-  actorName: string;
-  actorImage: string | null;
-  albumId?: string;
-  albumTitle?: string;
-  albumArtist?: string;
-  artistId?: string;
-  albumImage?: string | null;
-  albumCloudflareImageId?: string | null;
-  createdAt: string;
-  metadata?: RecommendationMetadata;
-}
+import type { TransformedActivity } from '@/utils/transform-activity';
 
 interface MobileRecommendationCardProps {
-  activity: Activity;
+  activity: TransformedActivity;
   className?: string;
 }
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { useInView } from 'react-intersection-observer';
 import { RefreshCw, Users, AlertCircle } from 'lucide-react';
 import type { Session } from 'next-auth';
@@ -10,51 +9,12 @@ import MobileRecommendationCard from '@/components/mobile/MobileRecommendationCa
 import MobileCollectionCard from '@/components/mobile/MobileCollectionCard';
 import MobileFollowCard from '@/components/mobile/MobileFollowCard';
 import { MobileButton } from '@/components/mobile/MobileButton';
-import { groupActivities } from '@/utils/activity-grouping';
-
-interface ActivityMetadata {
-  score?: number;
-  basisAlbum?: {
-    id: string;
-    title: string;
-    coverArtUrl?: string;
-    cloudflareImageId?: string;
-    artists?: Array<{ artist?: { name?: string } }>;
-  };
-  collectionName?: string;
-  personalRating?: number;
-}
-
-interface Activity {
-  id: string;
-  type: 'follow' | 'recommendation' | 'profile_update' | 'collection_add';
-  actorId: string;
-  actorName: string;
-  actorImage: string | null;
-  targetId?: string;
-  targetName?: string;
-  targetImage?: string | null;
-  albumId?: string;
-  albumTitle?: string;
-  albumArtist?: string;
-  artistId?: string;
-  albumImage?: string | null;
-  albumCloudflareImageId?: string | null;
-  createdAt: string;
-  metadata?: ActivityMetadata;
-}
-
-interface GroupedActivity {
-  id: string;
-  type: Activity['type'];
-  actorId: string;
-  actorName: string;
-  actorImage: string | null;
-  createdAt: string;
-  earliestCreatedAt: string;
-  activities: Activity[];
-  isGrouped: boolean;
-}
+import {
+  groupActivities,
+  type GroupedActivity,
+} from '@/utils/activity-grouping';
+import { transformActivity } from '@/utils/transform-activity';
+import { useInfiniteGetSocialFeedQuery } from '@/generated/graphql';
 
 interface MobileHomeClientProps {
   session: Session;
@@ -62,142 +22,6 @@ interface MobileHomeClientProps {
 
 export default function MobileHomeClient({ session }: MobileHomeClientProps) {
   const { ref: sentinelRef, inView } = useInView({ threshold: 0 });
-
-  const fetchActivities = async ({ pageParam }: { pageParam?: string }) => {
-    const query = `
-      query GetSocialFeed($type: ActivityType, $cursor: String, $limit: Int) {
-        socialFeed(type: $type, cursor: $cursor, limit: $limit) {
-          activities {
-            id
-            type
-            createdAt
-            actor {
-              id
-              username
-              image
-            }
-            targetUser {
-              id
-              username
-              image
-            }
-            album {
-              id
-              title
-              coverArtUrl
-              cloudflareImageId
-              artists {
-                artist {
-                  id
-                  name
-                }
-              }
-            }
-            recommendation {
-              id
-              score
-            }
-            collection {
-              id
-              name
-            }
-            metadata {
-              score
-              basisAlbum {
-                id
-                title
-                coverArtUrl
-                cloudflareImageId
-                artists {
-                  artist {
-                    id
-                    name
-                  }
-                }
-              }
-              collectionName
-              personalRating
-              position
-            }
-          }
-          cursor
-          hasMore
-        }
-      }
-    `;
-
-    const response = await fetch('/api/graphql', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        query,
-        variables: {
-          type: null,
-          cursor: pageParam,
-          limit: 15,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch activities');
-    }
-
-    const { data, errors } = await response.json();
-
-    if (errors) {
-      throw new Error(errors[0].message);
-    }
-
-    const activities = data.socialFeed.activities.map(
-      (activity: {
-        id: string;
-        type: string;
-        createdAt: string;
-        actor: { id: string; username: string; image: string | null };
-        targetUser?: { id: string; username: string; image: string | null };
-        album?: {
-          id: string;
-          title: string;
-          coverArtUrl?: string;
-          cloudflareImageId?: string;
-          artists?: Array<{ artist: { id: string; name: string } }>;
-        };
-        metadata?: ActivityMetadata;
-      }) => ({
-        id: activity.id,
-        type: activity.type.toLowerCase().replace('_', '_'),
-        actorId: activity.actor.id,
-        actorName: activity.actor.username,
-        actorImage: activity.actor.image,
-        targetId: activity.targetUser?.id,
-        targetName: activity.targetUser?.username,
-        targetImage: activity.targetUser?.image,
-        albumId: activity.album?.id,
-        albumTitle: activity.album?.title,
-        albumArtist: activity.album?.artists?.[0]?.artist?.name,
-        artistId: activity.album?.artists?.[0]?.artist?.id,
-        albumImage: activity.album?.coverArtUrl,
-        albumCloudflareImageId: activity.album?.cloudflareImageId ?? null,
-        createdAt: activity.createdAt,
-        metadata: activity.metadata
-          ? {
-              score: activity.metadata.score,
-              basisAlbum: activity.metadata.basisAlbum,
-              collectionName: activity.metadata.collectionName,
-              personalRating: activity.metadata.personalRating,
-            }
-          : undefined,
-      })
-    );
-
-    return {
-      activities,
-      nextCursor: data.socialFeed.cursor,
-      hasMore: data.socialFeed.hasMore,
-    };
-  };
 
   const {
     data,
@@ -208,19 +32,30 @@ export default function MobileHomeClient({ session }: MobileHomeClientProps) {
     isLoading,
     isError,
     refetch,
-  } = useInfiniteQuery({
-    queryKey: ['mobile-social-feed'],
-    queryFn: fetchActivities,
-    initialPageParam: undefined,
-    getNextPageParam: lastPage => lastPage.nextCursor,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
+  } = useInfiniteGetSocialFeedQuery(
+    { limit: 15 },
+    {
+      initialPageParam: { cursor: undefined } as {
+        cursor: string | undefined;
+      },
+      getNextPageParam: lastPage =>
+        lastPage?.socialFeed?.cursor
+          ? { cursor: lastPage.socialFeed.cursor }
+          : undefined,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: true,
+      enabled: !!session,
+    }
+  );
 
+  // Flatten, transform, and deduplicate activities from all pages
   const groupedActivities = useMemo(() => {
     const allActivities =
-      data?.pages?.flatMap(page => page.activities || []) || [];
+      data?.pages?.flatMap(page =>
+        page.socialFeed.activities.map(transformActivity)
+      ) || [];
 
     // Deduplicate by activity ID (handles pagination drift and DB duplicates)
     const seen = new Set<string>();

@@ -1,21 +1,8 @@
-interface Activity {
-  id: string;
-  type: 'follow' | 'recommendation' | 'profile_update' | 'collection_add';
-  actorId: string;
-  actorName: string;
-  actorImage: string | null;
-  targetId?: string;
-  targetName?: string;
-  targetImage?: string | null;
-  albumId?: string;
-  albumTitle?: string;
-  albumArtist?: string;
-  albumImage?: string | null;
-  createdAt: string;
-  metadata?: any;
-}
+import type { TransformedActivity } from '@/utils/transform-activity';
 
-interface GroupedActivity {
+type Activity = TransformedActivity;
+
+export interface GroupedActivity {
   id: string;
   type: 'follow' | 'recommendation' | 'profile_update' | 'collection_add';
   actorId: string;

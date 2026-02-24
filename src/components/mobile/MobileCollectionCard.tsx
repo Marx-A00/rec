@@ -6,29 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AlbumImage from '@/components/ui/AlbumImage';
 import TimeAgo from '@/components/mobile/TimeAgo';
 import { cn } from '@/lib/utils';
-
-interface CollectionMetadata {
-  personalRating?: number;
-  collectionName?: string;
-}
-
-interface Activity {
-  id: string;
-  actorId: string;
-  actorName: string;
-  actorImage: string | null;
-  albumId?: string;
-  albumTitle?: string;
-  albumArtist?: string;
-  artistId?: string;
-  albumImage?: string | null;
-  albumCloudflareImageId?: string | null;
-  createdAt: string;
-  metadata?: CollectionMetadata;
-}
+import type { TransformedActivity } from '@/utils/transform-activity';
 
 interface MobileCollectionCardProps {
-  activity: Activity;
+  activity: TransformedActivity;
   className?: string;
 }
 

@@ -5,20 +5,10 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import TimeAgo from '@/components/mobile/TimeAgo';
 import { cn } from '@/lib/utils';
-
-interface Activity {
-  id: string;
-  actorId: string;
-  actorName: string;
-  actorImage: string | null;
-  targetId?: string;
-  targetName?: string;
-  targetImage?: string | null;
-  createdAt: string;
-}
+import type { TransformedActivity } from '@/utils/transform-activity';
 
 interface MobileFollowCardProps {
-  activity: Activity;
+  activity: TransformedActivity;
   className?: string;
 }
 

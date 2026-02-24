@@ -9,7 +9,12 @@ import AlbumImage from '@/components/ui/AlbumImage';
 import {
   formatActivityTimeRange,
   formatTimeAgo,
+  type GroupedActivity,
 } from '@/utils/activity-grouping';
+import type {
+  TransformedActivity,
+  TransformedActivityMetadata,
+} from '@/utils/transform-activity';
 
 // Helper function to get color classes based on score
 const getScoreColors = (score: number) => {
@@ -37,64 +42,6 @@ const getScoreColors = (score: number) => {
     };
   }
 };
-
-interface BasisAlbum {
-  id: string;
-  title: string;
-  coverArtUrl?: string;
-  cloudflareImageId?: string;
-  artists?: Array<{
-    artist?: {
-      name?: string;
-    };
-  }>;
-}
-
-interface CollectionMetadata {
-  personalRating?: number;
-  collectionName?: string;
-}
-
-interface RecommendationMetadata {
-  score?: number;
-  basisAlbum?: BasisAlbum;
-}
-
-type ActivityMetadata =
-  | CollectionMetadata
-  | RecommendationMetadata
-  | Record<string, unknown>;
-
-interface Activity {
-  id: string;
-  type: 'follow' | 'recommendation' | 'profile_update' | 'collection_add';
-  actorId: string;
-  actorName: string;
-  actorImage: string | null;
-  targetId?: string;
-  targetName?: string;
-  targetImage?: string | null;
-  albumId?: string;
-  albumTitle?: string;
-  albumArtist?: string;
-  albumImage?: string | null;
-  albumCloudflareImageId?: string | null;
-  artistId?: string;
-  createdAt: string;
-  metadata?: ActivityMetadata;
-}
-
-interface GroupedActivity {
-  id: string;
-  type: 'follow' | 'recommendation' | 'profile_update' | 'collection_add';
-  actorId: string;
-  actorName: string;
-  actorImage: string | null;
-  createdAt: string;
-  earliestCreatedAt: string;
-  activities: Activity[];
-  isGrouped: boolean;
-}
 
 interface GroupedActivityItemProps {
   group: GroupedActivity;
@@ -218,12 +165,12 @@ export default function GroupedActivityItem({
 
                     {/* Show rating badge for collection adds */}
                     {group.type === 'collection_add' &&
-                      (activity.metadata as CollectionMetadata)
+                      (activity.metadata as TransformedActivityMetadata)
                         ?.personalRating && (
                         <div className='absolute -top-1 -right-1 bg-zinc-900 border border-cosmic-latte/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900'>
                           <span className='text-[10px] text-cosmic-latte font-bold'>
                             {
-                              (activity.metadata as CollectionMetadata)
+                              (activity.metadata as TransformedActivityMetadata)
                                 .personalRating
                             }
                           </span>
@@ -247,15 +194,16 @@ export default function GroupedActivityItem({
 
                     {/* Show score for recommendations */}
                     {group.type === 'recommendation' &&
-                      (activity.metadata as RecommendationMetadata)?.score && (
+                      (activity.metadata as TransformedActivityMetadata)
+                        ?.score && (
                         <div
-                          className={`absolute -top-1 -right-1 bg-zinc-900 border ${getScoreColors((activity.metadata as RecommendationMetadata).score!).borderColor} rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900`}
+                          className={`absolute -top-1 -right-1 bg-zinc-900 border ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).borderColor} rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900`}
                         >
                           <span
-                            className={`text-[10px] font-bold ${getScoreColors((activity.metadata as RecommendationMetadata).score!).textColor}`}
+                            className={`text-[10px] font-bold ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).textColor}`}
                           >
                             {
-                              (activity.metadata as RecommendationMetadata)
+                              (activity.metadata as TransformedActivityMetadata)
                                 .score
                             }
                           </span>
@@ -288,26 +236,29 @@ export default function GroupedActivityItem({
                       {/* Stacked Album Container - smaller version */}
                       <div className='relative w-[140px] h-[130px] transition-all duration-300 ease-out [&:hover]:w-[210px] [&:hover_.rec-album]:left-[100px] [&:hover_.arrow-indicator]:opacity-100'>
                         {/* Basis Album (back) */}
-                        {(activity.metadata as RecommendationMetadata)
+                        {(activity.metadata as TransformedActivityMetadata)
                           ?.basisAlbum && (
                           <Link
-                            href={`/albums/${(activity.metadata as RecommendationMetadata).basisAlbum!.id}?source=local`}
+                            href={`/albums/${(activity.metadata as TransformedActivityMetadata).basisAlbum!.id}?source=local`}
                             className='absolute left-0 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
-                            title={`View ${(activity.metadata as RecommendationMetadata).basisAlbum!.title}`}
+                            title={`View ${(activity.metadata as TransformedActivityMetadata).basisAlbum!.title}`}
                           >
                             <AlbumImage
                               src={
-                                (activity.metadata as RecommendationMetadata)
-                                  .basisAlbum!.coverArtUrl ||
+                                (
+                                  activity.metadata as TransformedActivityMetadata
+                                ).basisAlbum!.coverArtUrl ||
                                 '/placeholder-album.png'
                               }
                               cloudflareImageId={
-                                (activity.metadata as RecommendationMetadata)
-                                  .basisAlbum!.cloudflareImageId
+                                (
+                                  activity.metadata as TransformedActivityMetadata
+                                ).basisAlbum!.cloudflareImageId
                               }
                               alt={
-                                (activity.metadata as RecommendationMetadata)
-                                  .basisAlbum!.title
+                                (
+                                  activity.metadata as TransformedActivityMetadata
+                                ).basisAlbum!.title
                               }
                               width={90}
                               height={90}
@@ -333,23 +284,23 @@ export default function GroupedActivityItem({
                         </Link>
 
                         {/* Score indicator with heart - visible on hover between albums */}
-                        {(activity.metadata as RecommendationMetadata)
+                        {(activity.metadata as TransformedActivityMetadata)
                           ?.score && (
                           <div className='arrow-indicator absolute left-[77px] top-[37px] opacity-0 transition-all duration-300 z-20'>
                             <div className='bg-zinc-900 border-2 border-zinc-800 rounded-full shadow-lg'>
                               <div
-                                className={`flex items-center justify-center w-12 h-12 bg-gradient-to-r ${getScoreColors((activity.metadata as RecommendationMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as RecommendationMetadata).score!).borderColor} shadow-md`}
+                                className={`flex items-center justify-center w-12 h-12 bg-gradient-to-r ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).borderColor} shadow-md`}
                               >
                                 <div className='flex flex-col items-center'>
                                   <Heart
-                                    className={`h-3 w-3 ${getScoreColors((activity.metadata as RecommendationMetadata).score!).heartColor} drop-shadow-sm mb-0.5`}
+                                    className={`h-3 w-3 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).heartColor} drop-shadow-sm mb-0.5`}
                                   />
                                   <span
-                                    className={`text-[10px] font-bold ${getScoreColors((activity.metadata as RecommendationMetadata).score!).textColor} tabular-nums leading-none`}
+                                    className={`text-[10px] font-bold ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).textColor} tabular-nums leading-none`}
                                   >
                                     {
                                       (
-                                        activity.metadata as RecommendationMetadata
+                                        activity.metadata as TransformedActivityMetadata
                                       ).score
                                     }
                                   </span>
@@ -378,12 +329,12 @@ export default function GroupedActivityItem({
                       />
 
                       {/* Show rating badge for collection adds */}
-                      {(activity.metadata as CollectionMetadata)
+                      {(activity.metadata as TransformedActivityMetadata)
                         ?.personalRating && (
                         <div className='absolute -top-1 -right-1 bg-zinc-900 border border-cosmic-latte/50 rounded-full w-6 h-6 flex items-center justify-center ring-2 ring-zinc-900 shadow-md'>
                           <span className='text-[10px] text-cosmic-latte font-bold'>
                             {
-                              (activity.metadata as CollectionMetadata)
+                              (activity.metadata as TransformedActivityMetadata)
                                 .personalRating
                             }
                           </span>
@@ -534,7 +485,7 @@ function SingleActivityDisplay({
   activity,
   className = '',
 }: {
-  activity: Activity;
+  activity: TransformedActivity;
   className?: string;
 }) {
   const getActivityText = () => {
@@ -587,9 +538,15 @@ function SingleActivityDisplay({
             >
               {activity.albumArtist}
             </Link>
-            {(activity.metadata as CollectionMetadata)?.personalRating && (
+            {(activity.metadata as TransformedActivityMetadata)
+              ?.personalRating && (
               <span className='text-yellow-400 text-sm block mt-1'>
-                ★ {(activity.metadata as CollectionMetadata).personalRating}/10
+                ★{' '}
+                {
+                  (activity.metadata as TransformedActivityMetadata)
+                    .personalRating
+                }
+                /10
               </span>
             )}
           </span>
@@ -642,24 +599,25 @@ function SingleActivityDisplay({
             {/* Stacked Album Container */}
             <div className='relative w-[280px] h-[260px] transition-all duration-300 ease-out [&:hover]:w-[420px] [&:hover_.rec-album]:left-[200px] [&:hover_.arrow-indicator]:opacity-100 [&:hover_.basis-text]:opacity-100'>
               {/* Basis Album (back) */}
-              {(activity.metadata as RecommendationMetadata)?.basisAlbum && (
+              {(activity.metadata as TransformedActivityMetadata)
+                ?.basisAlbum && (
                 <Link
-                  href={`/albums/${(activity.metadata as RecommendationMetadata).basisAlbum!.id}?source=local`}
+                  href={`/albums/${(activity.metadata as TransformedActivityMetadata).basisAlbum!.id}?source=local`}
                   className='absolute left-0 top-0 transition-all duration-300 ease-out cursor-pointer hover:scale-105'
-                  title={`View ${(activity.metadata as RecommendationMetadata).basisAlbum!.title}`}
+                  title={`View ${(activity.metadata as TransformedActivityMetadata).basisAlbum!.title}`}
                 >
                   <div className='relative'>
                     <AlbumImage
                       src={
-                        (activity.metadata as RecommendationMetadata)
+                        (activity.metadata as TransformedActivityMetadata)
                           .basisAlbum!.coverArtUrl || '/placeholder-album.png'
                       }
                       cloudflareImageId={
-                        (activity.metadata as RecommendationMetadata)
+                        (activity.metadata as TransformedActivityMetadata)
                           .basisAlbum!.cloudflareImageId
                       }
                       alt={
-                        (activity.metadata as RecommendationMetadata)
+                        (activity.metadata as TransformedActivityMetadata)
                           .basisAlbum!.title
                       }
                       width={180}
@@ -689,20 +647,23 @@ function SingleActivityDisplay({
               </Link>
 
               {/* Score indicator with heart - visible on hover between albums */}
-              {(activity.metadata as RecommendationMetadata)?.score && (
+              {(activity.metadata as TransformedActivityMetadata)?.score && (
                 <div className='arrow-indicator absolute left-[155px] top-[75px] opacity-0 transition-all duration-300 z-20'>
                   <div className='bg-zinc-900 border-2 border-zinc-800 rounded-full shadow-lg'>
                     <div
-                      className={`flex items-center justify-center w-16 h-16 bg-gradient-to-r ${getScoreColors((activity.metadata as RecommendationMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as RecommendationMetadata).score!).borderColor} shadow-md`}
+                      className={`flex items-center justify-center w-16 h-16 bg-gradient-to-r ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).bgGradient} rounded-full border-2 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).borderColor} shadow-md`}
                     >
                       <div className='flex flex-col items-center'>
                         <Heart
-                          className={`h-4 w-4 ${getScoreColors((activity.metadata as RecommendationMetadata).score!).heartColor} drop-shadow-sm mb-0.5`}
+                          className={`h-4 w-4 ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).heartColor} drop-shadow-sm mb-0.5`}
                         />
                         <span
-                          className={`text-xs font-bold ${getScoreColors((activity.metadata as RecommendationMetadata).score!).textColor} tabular-nums leading-none`}
+                          className={`text-xs font-bold ${getScoreColors((activity.metadata as TransformedActivityMetadata).score!).textColor} tabular-nums leading-none`}
                         >
-                          {(activity.metadata as RecommendationMetadata).score}
+                          {
+                            (activity.metadata as TransformedActivityMetadata)
+                              .score
+                          }
                         </span>
                       </div>
                     </div>
@@ -711,20 +672,21 @@ function SingleActivityDisplay({
               )}
 
               {/* Basis album text - shows on hover with the albums */}
-              {(activity.metadata as RecommendationMetadata)?.basisAlbum && (
+              {(activity.metadata as TransformedActivityMetadata)
+                ?.basisAlbum && (
                 <div className='basis-text absolute bottom-0 left-0 w-[420px] opacity-0 transition-opacity duration-300 pointer-events-none'>
                   <p className='text-sm text-zinc-500 text-center w-full px-4 pb-1'>
                     if you like{' '}
                     <span className='text-zinc-400'>
                       {
-                        (activity.metadata as RecommendationMetadata)
+                        (activity.metadata as TransformedActivityMetadata)
                           .basisAlbum!.title
                       }
                     </span>{' '}
                     by{' '}
                     <span className='text-zinc-400'>
                       {
-                        (activity.metadata as RecommendationMetadata)
+                        (activity.metadata as TransformedActivityMetadata)
                           .basisAlbum!.artists?.[0]?.artist?.name
                       }
                     </span>

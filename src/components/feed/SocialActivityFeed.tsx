@@ -7,10 +7,10 @@ import { useInView } from 'react-intersection-observer';
 
 import SignInButton from '@/components/auth/SignInButton';
 import { groupActivities } from '@/utils/activity-grouping';
+import { transformActivity } from '@/utils/transform-activity';
 import {
   useInfiniteGetSocialFeedQuery,
   ActivityType,
-  type ActivityFieldsFragment,
 } from '@/generated/graphql';
 import { ActivityFeedSkeleton } from '@/components/ui/skeletons';
 
@@ -34,42 +34,6 @@ const activityTypeMap: Record<string, ActivityType> = {
   collection_add: ActivityType.CollectionAdd,
   profile_update: ActivityType.ProfileUpdate,
 };
-
-// Transform GraphQL activity to the format expected by ActivityItem/GroupedActivityItem
-function transformActivity(activity: ActivityFieldsFragment) {
-  return {
-    id: activity.id,
-    type: activity.type.toLowerCase().replace('_', '_') as
-      | 'follow'
-      | 'recommendation'
-      | 'collection_add'
-      | 'profile_update',
-    actorId: activity.actor.id,
-    actorName: activity.actor.username || 'Unknown',
-    actorImage: activity.actor.image ?? null,
-    targetId: activity.targetUser?.id,
-    targetName: activity.targetUser?.username ?? undefined,
-    targetImage: activity.targetUser?.image ?? null,
-    albumId: activity.album?.id,
-    albumTitle: activity.album?.title,
-    albumArtist: activity.album?.artists?.[0]?.artist?.name,
-    artistId: activity.album?.artists?.[0]?.artist?.id,
-    albumImage: activity.album?.coverArtUrl ?? null,
-    albumCloudflareImageId: activity.album?.cloudflareImageId ?? null,
-    createdAt:
-      activity.createdAt instanceof Date
-        ? activity.createdAt.toISOString()
-        : activity.createdAt,
-    metadata: activity.metadata
-      ? {
-          score: activity.metadata.score,
-          basisAlbum: activity.metadata.basisAlbum,
-          collectionName: activity.metadata.collectionName,
-          personalRating: activity.metadata.personalRating,
-        }
-      : undefined,
-  };
-}
 
 export default function SocialActivityFeed({
   className = '',
