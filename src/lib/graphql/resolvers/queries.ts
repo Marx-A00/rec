@@ -1480,71 +1480,93 @@ export const queryResolvers: QueryResolvers = {
         ? { type: dbType }
         : { type: { in: ['follow', 'recommendation', 'collection_add'] } };
 
-      const cursorDate = cursor ? new Date(cursor) : null;
+      let cursorDate = cursor ? new Date(cursor) : null;
 
-      // Query Activity table - single query instead of 3 separate queries
-      const activities = await prisma.activity.findMany({
-        where: {
-          userId: { in: followedUserIds },
-          ...typeFilter,
-          deletedAt: null,
-          ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
-        },
-        include: {
-          user: true,
-          targetUser: true,
-          recommendation: {
-            include: {
-              basisAlbum: {
-                include: { artists: { include: { artist: true } } },
+      // Privacy filters can remove items after fetching, so we need to
+      // over-fetch and paginate through DB rows until we have enough
+      // visible activities (or run out of data).
+      const maxBatchSize = limit * 3;
+      const maxPasses = 3;
+      type ActivityRow = Awaited<
+        ReturnType<typeof prisma.activity.findMany>
+      >[number];
+      const collected: ActivityRow[] = [];
+      let exhausted = false;
+      let activities: ActivityRow[] = [];
+
+      for (let pass = 0; pass < maxPasses; pass++) {
+        activities = await prisma.activity.findMany({
+          where: {
+            userId: { in: followedUserIds },
+            ...typeFilter,
+            deletedAt: null,
+            ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
+          },
+          include: {
+            user: true,
+            targetUser: true,
+            recommendation: {
+              include: {
+                basisAlbum: {
+                  include: { artists: { include: { artist: true } } },
+                },
+                recommendedAlbum: {
+                  include: { artists: { include: { artist: true } } },
+                },
               },
-              recommendedAlbum: {
-                include: { artists: { include: { artist: true } } },
+            },
+            collectionAlbum: {
+              include: {
+                collection: true,
+                album: {
+                  include: { artists: { include: { artist: true } } },
+                },
               },
             },
           },
-          collectionAlbum: {
-            include: {
-              collection: true,
-              album: {
-                include: { artists: { include: { artist: true } } },
-              },
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: limit + 1, // Fetch one extra to check if there's more
-      });
+          orderBy: { createdAt: 'desc' },
+          take: maxBatchSize,
+        });
 
-      // Apply privacy filters
-      const filteredActivities = activities.filter(activity => {
-        const settings = getSettings(activity.userId);
-
-        // Check master activity switch
-        if (!settings.showRecentActivity) return false;
-
-        // Check collection-specific privacy settings
-        if (activity.type === 'collection_add' && activity.collectionAlbum) {
-          if (!settings.showCollections) return false;
-
-          const collection = activity.collectionAlbum.collection;
-
-          // Check if it's a private collection (allow only "My Collection")
-          if (!collection.isPublic && collection.name !== 'My Collection')
-            return false;
-
-          // Check specific feed visibility settings
-          const isListenLater = collection.name === 'Listen Later';
-          if (isListenLater && !settings.showListenLaterInFeed) return false;
-          if (!isListenLater && !settings.showCollectionAddsInFeed)
-            return false;
+        if (activities.length === 0) {
+          exhausted = true;
+          break;
         }
 
-        return true;
-      });
+        // Apply privacy filters
+        const visible = activities.filter(activity => {
+          const settings = getSettings(activity.userId);
+          if (!settings.showRecentActivity) return false;
+          if (activity.type === 'collection_add' && activity.collectionAlbum) {
+            if (!settings.showCollections) return false;
+            const collection = activity.collectionAlbum.collection;
+            if (!collection.isPublic && collection.name !== 'My Collection')
+              return false;
+            const isListenLater = collection.name === 'Listen Later';
+            if (isListenLater && !settings.showListenLaterInFeed) return false;
+            if (!isListenLater && !settings.showCollectionAddsInFeed)
+              return false;
+          }
+          return true;
+        });
 
-      const hasMore = filteredActivities.length > limit;
-      const finalActivities = filteredActivities.slice(0, limit);
+        collected.push(...visible);
+
+        // We need limit + 1 to determine hasMore
+        if (collected.length > limit) break;
+
+        // If DB returned fewer than requested, there's no more data
+        if (activities.length < maxBatchSize) {
+          exhausted = true;
+          break;
+        }
+
+        // Move cursor to continue fetching
+        cursorDate = activities[activities.length - 1].createdAt;
+      }
+
+      const hasMore = !exhausted && collected.length > limit;
+      const finalActivities = collected.slice(0, limit);
       const nextCursor =
         hasMore && finalActivities.length > 0
           ? finalActivities[finalActivities.length - 1].createdAt.toISOString()
