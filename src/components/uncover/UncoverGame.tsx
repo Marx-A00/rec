@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   CalendarDays,
@@ -370,6 +370,10 @@ export function UncoverGame() {
 
   const isAdmin = game.user?.role === 'ADMIN' || game.user?.role === 'OWNER';
 
+  // Stable ref to startGame so the effect doesn't re-trigger on function identity changes
+  const startGameRef = useRef(game.startGame);
+  startGameRef.current = game.startGame;
+
   /**
    * Auto-start session on mount if authenticated and no active session.
    * Resume existing session if sessionId in store.
@@ -379,38 +383,36 @@ export function UncoverGame() {
       return;
     }
 
-    // Already initializing - prevent duplicate calls
-    if (isInitializing) {
-      return;
-    }
-
     // Already have image - don't refetch
     if (challengeImageUrl) {
       return;
     }
 
     // Start or resume session (backend returns existing session if already started)
+    let cancelled = false;
     const initializeGame = async () => {
       setIsInitializing(true);
       try {
-        const result = await game.startGame();
-        setChallengeImageUrl(result.imageUrl);
+        const result = await startGameRef.current();
+        if (!cancelled) {
+          setChallengeImageUrl(result.imageUrl);
+        }
       } catch (error) {
         console.error('Failed to start game:', error);
         // Error already set in game.error by useUncoverGame
       } finally {
-        setIsInitializing(false);
+        if (!cancelled) {
+          setIsInitializing(false);
+        }
       }
     };
 
     initializeGame();
-  }, [
-    game.isAuthenticated,
-    game.isAuthLoading,
-    challengeImageUrl,
-    game,
-    isInitializing,
-  ]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [game.isAuthenticated, game.isAuthLoading, challengeImageUrl]);
 
   // Auto-show stats modal once when game ends
   useEffect(() => {

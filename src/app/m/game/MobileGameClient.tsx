@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { CalendarDays } from 'lucide-react';import { signIn } from 'next-auth/react';
+import { CalendarDays } from 'lucide-react';
+import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
 import { useDailyChallengeQuery } from '@/generated/graphql';
@@ -63,6 +64,10 @@ export function MobileGameClient() {
   );
   const [isInitializing, setIsInitializing] = useState(false);
 
+  // Stable ref to startGame so the effect doesn't re-trigger on function identity changes
+  const startGameRef = useRef(game.startGame);
+  startGameRef.current = game.startGame;
+
   /**
    * Auto-start session on mount if authenticated and no active session.
    * Resume existing session if sessionId in store.
@@ -77,33 +82,31 @@ export function MobileGameClient() {
       return;
     }
 
-    // Already initializing - prevent duplicate calls
-    if (isInitializing) {
-      return;
-    }
-
     // Start new session
+    let cancelled = false;
     const initializeGame = async () => {
       setIsInitializing(true);
       try {
-        const result = await game.startGame();
-        setChallengeImageUrl(result.imageUrl);
+        const result = await startGameRef.current();
+        if (!cancelled) {
+          setChallengeImageUrl(result.imageUrl);
+        }
       } catch (error) {
         console.error('Failed to start game:', error);
         // Error already set in game.error by useUncoverGame
       } finally {
-        setIsInitializing(false);
+        if (!cancelled) {
+          setIsInitializing(false);
+        }
       }
     };
 
     initializeGame();
-  }, [
-    game.isAuthenticated,
-    game.isAuthLoading,
-    game.sessionId,
-    game,
-    isInitializing,
-  ]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [game.isAuthenticated, game.isAuthLoading, game.sessionId]);
 
   // AUTH-01: Show login prompt for unauthenticated users with teaser
   if (!game.isAuthenticated) {
@@ -294,13 +297,14 @@ export function MobileGameClient() {
         <div className='text-center'>
           <h2 className='mb-1 text-2xl font-bold text-white'>Daily Uncover</h2>
           <p className='text-sm text-zinc-400'>
-          <Link
-            href="/m/game/archive"
-            className="mt-2 inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
-          >
-            <CalendarDays className="h-3.5 w-3.5" />
-            Archive
-          </Link>            Guess the album from the cover art
+            <Link
+              href='/m/game/archive'
+              className='mt-2 inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors'
+            >
+              <CalendarDays className='h-3.5 w-3.5' />
+              Archive
+            </Link>{' '}
+            Guess the album from the cover art
           </p>
         </div>
 
