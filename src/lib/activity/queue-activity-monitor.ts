@@ -264,7 +264,13 @@ export class QueueActivityMonitor {
           chalk.gray('/') +
           chalk.red(`✗${currentStats.failed}`)
       );
-    } catch (error) {
+    } catch (error: unknown) {
+      const prismaError = error as { code?: string };
+      // P1017 = Server has closed the connection (e.g. laptop sleep)
+      // Skip logging — the outer monitor catch handles the clean message
+      if (prismaError.code === 'P1017') {
+        return;
+      }
       console.error('❌ Failed to log queue status:', error);
     }
   }

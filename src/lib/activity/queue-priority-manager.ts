@@ -232,30 +232,40 @@ export class QueuePriorityManager {
   private async hasRecentUserActivity(): Promise<boolean> {
     const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
 
-    // Check for recent user actions that might trigger MusicBrainz enrichment
-    const recentActions = await (this.prisma as any).userActivity.count({
-      where: {
-        timestamp: { gte: threeMinutesAgo },
-        OR: [
-          // High-priority actions that definitely trigger enrichment
-          { operation: { contains: 'search' } }, // Search queries
-          { operation: { contains: 'collection' } }, // Collection actions
-          { operation: { contains: 'recommendation' } }, // Recommendations
-          { operation: { contains: 'view_album' } }, // Album views
-          { operation: { contains: 'view_artist' } }, // Artist views
+    try {
+      // Check for recent user actions that might trigger MusicBrainz enrichment
+      const recentActions = await (this.prisma as any).userActivity.count({
+        where: {
+          timestamp: { gte: threeMinutesAgo },
+          OR: [
+            // High-priority actions that definitely trigger enrichment
+            { operation: { contains: 'search' } }, // Search queries
+            { operation: { contains: 'collection' } }, // Collection actions
+            { operation: { contains: 'recommendation' } }, // Recommendations
+            { operation: { contains: 'view_album' } }, // Album views
+            { operation: { contains: 'view_artist' } }, // Artist views
 
-          // Browse actions that might trigger enrichment
-          { operation: { contains: 'browse_trending' } }, // Trending browsing
-          { operation: { contains: 'browse_' } }, // General browsing
+            // Browse actions that might trigger enrichment
+            { operation: { contains: 'browse_trending' } }, // Trending browsing
+            { operation: { contains: 'browse_' } }, // General browsing
 
-          // Any GraphQL mutation (creates, updates)
-          { operationType: 'mutation' },
-        ],
-      },
-    });
+            // Any GraphQL mutation (creates, updates)
+            { operationType: 'mutation' },
+          ],
+        },
+      });
 
-    // Pause background jobs if there's been ANY user activity in last 3 minutes
-    return recentActions > 0;
+      // Pause background jobs if there's been ANY user activity in last 3 minutes
+      return recentActions > 0;
+    } catch (error: unknown) {
+      const prismaError = error as { code?: string };
+      // P1017 = Server has closed the connection (e.g. laptop sleep)
+      // Assume no activity — safe default, will retry next interval
+      if (prismaError.code === 'P1017') {
+        return false;
+      }
+      throw error;
+    }
   }
 
   /**

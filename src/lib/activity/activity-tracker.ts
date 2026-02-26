@@ -222,40 +222,24 @@ export class ActivityTracker {
   static async getActiveUserCount(prisma: PrismaClient): Promise<number> {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-    // Retry up to 2 times for connection errors
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const activeUsers = await prisma.userActivity.groupBy({
-          by: ['sessionId'],
-          where: {
-            timestamp: { gte: fiveMinutesAgo },
-          },
-        });
+    try {
+      const activeUsers = await prisma.userActivity.groupBy({
+        by: ['sessionId'],
+        where: {
+          timestamp: { gte: fiveMinutesAgo },
+        },
+      });
 
-        return activeUsers.length;
-      } catch (error: unknown) {
-        const prismaError = error as { code?: string };
-        // P1017 = Server has closed the connection
-        if (prismaError.code === 'P1017') {
-          if (attempt < 2) {
-            console.warn(
-              `⚠️ Database connection closed, retrying getActiveUserCount (attempt ${attempt}/2)...`
-            );
-            // Small delay before retry
-            await new Promise(resolve => setTimeout(resolve, 100));
-            continue;
-          }
-          // On final attempt, return 0 instead of throwing
-          console.warn(
-            '⚠️ Database connection closed after retries, assuming 0 active users'
-          );
-          return 0;
-        }
-        throw error;
+      return activeUsers.length;
+    } catch (error: unknown) {
+      const prismaError = error as { code?: string };
+      // P1017 = Server has closed the connection (e.g. laptop sleep)
+      // Silently return 0 — the monitor will retry on the next interval
+      if (prismaError.code === 'P1017') {
+        return 0;
       }
+      throw error;
     }
-
-    return 0; // Fallback if all retries fail
   }
 
   /**

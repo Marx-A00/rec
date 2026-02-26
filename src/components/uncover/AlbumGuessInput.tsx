@@ -113,7 +113,11 @@ export function AlbumGuessInput({
   return (
     <div className='space-y-3' ref={containerRef}>
       <div className='relative w-full'>
-        <Command shouldFilter={false} onKeyDown={handleKeyDown}>
+        <Command
+          shouldFilter={false}
+          onKeyDown={handleKeyDown}
+          className='rounded-md border border-zinc-700 focus-within:ring-2 focus-within:ring-emerald-500'
+        >
           <CommandInput
             ref={inputRef}
             placeholder='Search for an album...'
@@ -121,7 +125,7 @@ export function AlbumGuessInput({
             onValueChange={setInputValue}
             onFocus={() => setIsOpen(true)}
             disabled={disabled || isSubmitting}
-            className='h-12 min-h-[44px] focus-visible:ring-2 focus-visible:ring-emerald-500'
+            className='h-12 min-h-[44px]'
             aria-label='Search for an album'
           />
           {isOpen && inputValue.length >= 2 && (
