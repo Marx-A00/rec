@@ -401,14 +401,28 @@ function toDeezerAlbumData(albums: DeezerPreviewAlbum[]): DeezerAlbumData[] {
  */
 export async function importDeezerPlaylistAlbums(
   playlistId: string,
-  options?: { jobId?: string; playlistName?: string }
+  options?: {
+    jobId?: string;
+    playlistName?: string;
+    selectedDeezerIds?: string[];
+  }
 ): Promise<DeezerPlaylistImportResult> {
   console.log(`🚀 Importing Deezer playlist: ${playlistId}`);
 
   // Use preview to get the filtered album list
   const preview = await previewDeezerPlaylistAlbums(playlistId);
 
-  if (preview.albums.length === 0) {
+  // If selectedDeezerIds provided, only import those albums
+  let albumsToImport = preview.albums;
+  if (options?.selectedDeezerIds && options.selectedDeezerIds.length > 0) {
+    const selectedSet = new Set(options.selectedDeezerIds);
+    albumsToImport = preview.albums.filter(a => selectedSet.has(a.deezerId));
+    console.log(
+      `🎯 User selected ${albumsToImport.length} of ${preview.albums.length} albums`
+    );
+  }
+
+  if (albumsToImport.length === 0) {
     return {
       success: true,
       playlist: preview.playlist,
@@ -423,7 +437,7 @@ export async function importDeezerPlaylistAlbums(
   }
 
   // Convert to DeezerAlbumData format for the processing pipeline
-  const albumData = toDeezerAlbumData(preview.albums);
+  const albumData = toDeezerAlbumData(albumsToImport);
 
   // Process through the Deezer-native pipeline
   const { processDeezerAlbums } = await import('./mappers');

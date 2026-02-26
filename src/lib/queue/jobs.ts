@@ -234,6 +234,8 @@ export interface DeezerImportPlaylistJobData {
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
   source?: 'admin' | 'graphql' | 'scheduled';
+  /** If provided, only import these specific album Deezer IDs from the playlist */
+  selectedDeezerIds?: string[];
 }
 
 // ============================================================================

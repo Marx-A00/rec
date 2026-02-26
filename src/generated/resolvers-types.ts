@@ -1476,6 +1476,8 @@ export type Mutation = {
    * Admin: Import albums from a Deezer playlist. Enqueues a BullMQ job.
    * No auth required — Deezer's public API is free and unlimited.
    * Albums land with gameStatus: NONE for review.
+   * If selectedDeezerIds is provided, only those albums are imported.
+   * Otherwise all albums from the playlist are imported.
    */
   importDeezerPlaylist: DeezerPlaylistImportResult;
   /** Apply manual corrections to an album (no external source) */
@@ -1639,6 +1641,7 @@ export type MutationHardDeleteUserArgs = {
 
 export type MutationImportDeezerPlaylistArgs = {
   playlistId: Scalars['String']['input'];
+  selectedDeezerIds?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 export type MutationManualCorrectionApplyArgs = {

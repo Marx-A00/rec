@@ -4129,7 +4129,10 @@ export const mutationResolvers: MutationResolvers = {
 
   importDeezerPlaylist: async (
     _: unknown,
-    { playlistId }: { playlistId: string },
+    {
+      playlistId,
+      selectedDeezerIds,
+    }: { playlistId: string; selectedDeezerIds?: string[] | null },
     { user }
   ) => {
     try {
@@ -4159,6 +4162,7 @@ export const mutationResolvers: MutationResolvers = {
         source: 'graphql',
         priority: 'medium',
         requestId: `deezer-playlist-import-${cleanId}-${Date.now()}`,
+        selectedDeezerIds: selectedDeezerIds ?? undefined,
       };
 
       const job = await queue.addJob(

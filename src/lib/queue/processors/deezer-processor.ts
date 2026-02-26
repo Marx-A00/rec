@@ -42,6 +42,7 @@ export async function handleDeezerImportPlaylist(
     const result = await importDeezerPlaylistAlbums(data.playlistId, {
       jobId,
       playlistName: data.playlistName,
+      selectedDeezerIds: data.selectedDeezerIds,
     });
 
     console.log(

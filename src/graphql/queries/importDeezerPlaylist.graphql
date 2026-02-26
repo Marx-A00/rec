@@ -1,5 +1,5 @@
-mutation ImportDeezerPlaylist($playlistId: String!) {
-  importDeezerPlaylist(playlistId: $playlistId) {
+mutation ImportDeezerPlaylist($playlistId: String!, $selectedDeezerIds: [String!]) {
+  importDeezerPlaylist(playlistId: $playlistId, selectedDeezerIds: $selectedDeezerIds) {
     success
     message
     jobId
