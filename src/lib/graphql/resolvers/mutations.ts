@@ -21,6 +21,7 @@ import type {
   CheckTrackEnrichmentJobData,
   SpotifySyncNewReleasesJobData,
   SpotifySyncFeaturedPlaylistsJobData,
+  DeezerImportPlaylistJobData,
 } from '@/lib/queue/jobs';
 import { alertManager } from '@/lib/monitoring';
 import {
@@ -4119,6 +4120,224 @@ export const mutationResolvers: MutationResolvers = {
       throw new GraphQLError(`Failed to restore user: ${error}`, {
         extensions: { code: 'INTERNAL_ERROR' },
       });
+    }
+  },
+
+  // ========================================================================
+  // Deezer Playlist Import Mutations (Admin)
+  // ========================================================================
+
+  importDeezerPlaylist: async (
+    _: unknown,
+    { playlistId }: { playlistId: string },
+    { user }
+  ) => {
+    try {
+      // Admin check
+      if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+        throw new GraphQLError('Admin access required');
+      }
+
+      // Extract clean playlist ID from URL or raw ID
+      const { extractDeezerPlaylistId } = await import(
+        '@/lib/deezer/playlist-import'
+      );
+      const cleanId = extractDeezerPlaylistId(playlistId);
+      if (!cleanId) {
+        return {
+          success: false,
+          message: 'Invalid Deezer playlist ID or URL',
+          jobId: null,
+          playlistName: null,
+        };
+      }
+
+      // Enqueue the import job via BullMQ
+      const queue = getMusicBrainzQueue();
+      const jobData: DeezerImportPlaylistJobData = {
+        playlistId: cleanId,
+        source: 'graphql',
+        priority: 'medium',
+        requestId: `deezer-playlist-import-${cleanId}-${Date.now()}`,
+      };
+
+      const job = await queue.addJob(
+        JOB_TYPES.DEEZER_IMPORT_PLAYLIST,
+        jobData,
+        {
+          priority: PRIORITY_TIERS.ADMIN,
+          attempts: 2,
+          removeOnComplete: 50,
+          removeOnFail: 20,
+        }
+      );
+
+      graphqlLogger.info('Enqueued Deezer playlist import:', {
+        playlistId: cleanId,
+        jobId: job.id,
+      });
+
+      return {
+        success: true,
+        message: `Import job enqueued for Deezer playlist ${cleanId}`,
+        jobId: job.id ?? null,
+        playlistName: null,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to enqueue Deezer playlist import:', {
+        error,
+        playlistId,
+      });
+      if (error instanceof GraphQLError) throw error;
+      throw new GraphQLError(`Failed to import Deezer playlist: ${error}`);
+    }
+  },
+
+  addAlbumToQueue: async (
+    _: unknown,
+    { albumId }: { albumId: string },
+    { prisma, user }
+  ) => {
+    try {
+      // Admin check
+      if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+        throw new GraphQLError('Admin access required');
+      }
+
+      // Fetch album with artist count for eligibility check
+      const album = await prisma.album.findUnique({
+        where: { id: albumId },
+        include: {
+          artists: {
+            include: { artist: true },
+          },
+          _count: {
+            select: { artists: true },
+          },
+        },
+      });
+
+      if (!album) {
+        return {
+          success: false,
+          message: null,
+          error: 'Album not found',
+          album: null,
+          curatedChallenge: null,
+        };
+      }
+
+      // Validate eligibility
+      const { validateEligibility } = await import(
+        '@/lib/game-pool/eligibility'
+      );
+      const eligibility = validateEligibility(album, album._count.artists > 0);
+
+      if (!eligibility.eligible) {
+        return {
+          success: false,
+          message: null,
+          error: eligibility.reason || 'Album not eligible for game pool',
+          album: null,
+          curatedChallenge: null,
+        };
+      }
+
+      // Check if already in curated list
+      const existingCurated = await prisma.curatedChallenge.findFirst({
+        where: { albumId },
+      });
+
+      if (existingCurated) {
+        return {
+          success: false,
+          message: null,
+          error: 'Album is already in the curated challenge queue',
+          album: null,
+          curatedChallenge: null,
+        };
+      }
+
+      // Atomic transaction: set ELIGIBLE + add to curated
+      const { toUTCMidnight } = await import(
+        '@/lib/daily-challenge/date-utils'
+      );
+
+      const result = await prisma.$transaction(async (tx: typeof prisma) => {
+        // 1. Set game status to ELIGIBLE
+        const updatedAlbum = await tx.album.update({
+          where: { id: albumId },
+          data: { gameStatus: 'ELIGIBLE' },
+        });
+
+        // 2. Get next sequence number
+        const maxSeq = await tx.curatedChallenge.aggregate({
+          _max: { sequence: true },
+        });
+        const nextSequence = (maxSeq._max.sequence ?? -1) + 1;
+
+        // 3. Create curated challenge entry
+        const curatedEntry = await tx.curatedChallenge.create({
+          data: {
+            albumId,
+            sequence: nextSequence,
+            pinnedDate: null,
+          },
+          include: {
+            album: {
+              include: {
+                artists: {
+                  include: { artist: true },
+                },
+              },
+            },
+          },
+        });
+
+        return { updatedAlbum, curatedEntry };
+      });
+
+      // Log activity
+      const llamaLogger = createLlamaLogger(prisma);
+      await llamaLogger.logEnrichment({
+        entityType: 'ALBUM',
+        entityId: albumId,
+        albumId,
+        operation: 'game-pool:add-to-queue',
+        category: 'USER_ACTION',
+        sources: ['ADMIN'],
+        status: 'SUCCESS',
+        reason: 'Added to game queue (ELIGIBLE + curated) via addAlbumToQueue',
+        fieldsEnriched: ['gameStatus'],
+        userId: user?.id,
+      });
+
+      graphqlLogger.info('Added album to game queue:', {
+        albumId,
+        gameStatus: 'ELIGIBLE',
+        curatedSequence: result.curatedEntry.sequence,
+      });
+
+      return {
+        success: true,
+        message: 'Album set to ELIGIBLE and added to curated queue',
+        error: null,
+        album: result.updatedAlbum,
+        curatedChallenge: result.curatedEntry,
+      };
+    } catch (error) {
+      graphqlLogger.error('Failed to add album to queue:', {
+        error,
+        albumId,
+      });
+      if (error instanceof GraphQLError) throw error;
+      return {
+        success: false,
+        message: null,
+        error: `Failed to add album to queue: ${error}`,
+        album: null,
+        curatedChallenge: null,
+      };
     }
   },
 };

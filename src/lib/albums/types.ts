@@ -16,6 +16,7 @@ export interface AlbumIdentity {
   title: string;
   musicbrainzId?: string | null;
   spotifyId?: string | null;
+  deezerId?: string | null;
   discogsId?: string | null;
   /** Used for title+artist dedup fallback */
   primaryArtistName?: string | null;
@@ -33,7 +34,7 @@ export interface AlbumFields {
   releaseStatus?: string | null;
   trackCount?: number | null;
   coverArtUrl?: string | null;
-  source?: 'MUSICBRAINZ' | 'SPOTIFY' | 'DISCOGS' | 'USER_SUBMITTED';
+  source?: 'DEEZER' | 'MUSICBRAINZ' | 'SPOTIFY' | 'DISCOGS' | 'USER_SUBMITTED';
   sourceUrl?: string | null;
   spotifyUrl?: string | null;
   secondaryTypes?: string[];
@@ -48,6 +49,7 @@ export interface AlbumArtistInput {
   name: string;
   musicbrainzId?: string | null;
   spotifyId?: string | null;
+  deezerId?: string | null;
   discogsId?: string | null;
   role?: 'PRIMARY' | 'FEATURED';
   position?: number;
@@ -67,6 +69,7 @@ export interface AlbumQueueCheckOptions {
     | 'browse'
     | 'manual'
     | 'spotify_sync'
+    | 'deezer_import'
     | 'admin_manual';
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
@@ -113,6 +116,7 @@ export interface FindOrCreateAlbumOptions {
 export type AlbumDedupMethod =
   | 'musicbrainzId'
   | 'spotifyId'
+  | 'deezerId'
   | 'title+artist+year'
   | 'title+artist'
   | null;

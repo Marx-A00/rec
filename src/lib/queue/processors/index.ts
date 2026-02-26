@@ -23,6 +23,7 @@ import {
   type EnrichTrackJobData,
   type SpotifySyncNewReleasesJobData,
   type SpotifySyncFeaturedPlaylistsJobData,
+  type DeezerImportPlaylistJobData,
   type MusicBrainzSyncNewReleasesJobData,
   type CacheAlbumCoverArtJobData,
   type CacheArtistImageJobData,
@@ -66,6 +67,7 @@ import {
   handleDiscogsSearchAlbum,
   handleDiscogsGetMaster,
 } from './discogs-processor';
+import { handleDeezerImportPlaylist } from './deezer-processor';
 
 // Re-export JOB_TYPES for convenience
 export { JOB_TYPES } from '../jobs';
@@ -213,6 +215,13 @@ export async function processMusicBrainzJob(
       case JOB_TYPES.SPOTIFY_SYNC_FEATURED_PLAYLISTS:
         result = await handleSpotifySyncFeaturedPlaylists(
           job.data as SpotifySyncFeaturedPlaylistsJobData,
+          job.id
+        );
+        break;
+
+      case JOB_TYPES.DEEZER_IMPORT_PLAYLIST:
+        result = await handleDeezerImportPlaylist(
+          job.data as DeezerImportPlaylistJobData,
           job.id
         );
         break;

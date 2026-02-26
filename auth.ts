@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth';
+import NextAuth, { customFetch } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import Google from 'next-auth/providers/google';
 import Spotify from 'next-auth/providers/spotify';
@@ -162,7 +162,45 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
-    Spotify,
+    Spotify({
+      clientId: process.env.SPOTIFY_CLIENT_ID,
+      clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+      authorization: {
+        url: 'https://accounts.spotify.com/authorize',
+        params: {
+          scope:
+            'user-read-email user-read-private playlist-read-private playlist-read-collaborative',
+          redirect_uri: 'http://127.0.0.1:3000/api/auth/callback/spotify',
+        },
+      },
+      // Spotify rejects localhost redirect URIs. Auth.js derives
+      // provider.callbackUrl from the request origin (localhost), but
+      // our Spotify app only has 127.0.0.1 registered. Use customFetch
+      // to intercept the token exchange and rewrite redirect_uri.
+      [customFetch]: async (...args: Parameters<typeof globalThis.fetch>) => {
+        const url =
+          typeof args[0] === 'string'
+            ? args[0]
+            : args[0] instanceof URL
+              ? args[0].href
+              : args[0].url;
+
+        // Only intercept the token endpoint request
+        if (url.includes('accounts.spotify.com/api/token')) {
+          const init = args[1];
+          if (init?.body instanceof URLSearchParams) {
+            const currentUri = init.body.get('redirect_uri');
+            if (currentUri?.includes('localhost')) {
+              init.body.set(
+                'redirect_uri',
+                currentUri.replace('localhost', '127.0.0.1')
+              );
+            }
+          }
+        }
+        return fetch(...args);
+      },
+    }),
     Credentials({
       name: 'credentials',
       credentials: {

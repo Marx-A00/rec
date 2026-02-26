@@ -244,15 +244,16 @@ export default function MobileAlbumDetails({ album }: MobileAlbumDetailsProps) {
 
       {/* Recommendations Section */}
       <section className='px-4 mb-6'>
+        {/* TODO: Decide what the "See all" recommendations experience should be — dedicated page, modal, or expanded inline view */}
         <div className='flex items-center justify-between mb-3'>
           <h3 className='text-lg font-semibold text-white'>Recommendations</h3>
-          <Link
+          {/* <Link
             href={`/m/albums/${album.id}/recommendations`}
             className='text-sm text-emeraled-green flex items-center gap-1'
           >
             See all
             <ChevronRight className='h-4 w-4' />
-          </Link>
+          </Link> */}
         </div>
         <MobileAlbumRecommendations
           albumId={album.id}

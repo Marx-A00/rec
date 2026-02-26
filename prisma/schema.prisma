@@ -233,6 +233,7 @@ model Artist {
   id               String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   musicbrainzId    String?                  @unique @map("musicbrainz_id") @db.Uuid
   spotifyId        String?                  @unique @map("spotify_id")
+  deezerId         String?                  @unique @map("deezer_id")
   discogsId        String?                  @map("discogs_id") @db.VarChar(20)
   name             String                   @db.VarChar(255)
   biography        String?
@@ -283,6 +284,7 @@ model Album {
   searchVector          Unsupported("tsvector")? @map("search_vector")
   spotifyId             String?                  @unique @map("spotify_id") @db.VarChar(50)
   spotifyUrl            String?                  @map("spotify_url")
+  deezerId              String?                  @unique @map("deezer_id")
   discogsId             String?                  @map("discogs_id") @db.VarChar(20)
   source                ContentSource            @default(MUSICBRAINZ)
   sourceUrl             String?                  @map("source_url")
@@ -325,6 +327,7 @@ model Track {
   previewUrl       String?                  @map("preview_url")
   spotifyId        String?                  @unique @map("spotify_id") @db.VarChar(50)
   spotifyUrl       String?                  @map("spotify_url")
+  deezerId         String?                  @unique @map("deezer_id")
   youtubeUrl       String?                  @map("youtube_url")
   discogsReleaseId String?                  @map("discogs_release_id") @db.VarChar(20)
   discogsPosition  String?                  @map("discogs_position") @db.VarChar(10)
@@ -468,6 +471,7 @@ model LlamaLog {
 }
 
 enum ContentSource {
+  DEEZER
   DISCOGS
   MUSICBRAINZ
   SPOTIFY

@@ -1,0 +1,8 @@
+mutation ImportDeezerPlaylist($playlistId: String!) {
+  importDeezerPlaylist(playlistId: $playlistId) {
+    success
+    message
+    jobId
+    playlistName
+  }
+}

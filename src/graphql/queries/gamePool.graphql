@@ -26,8 +26,8 @@ query AlbumsByGameStatus($status: AlbumGameStatus!, $limit: Int, $offset: Int) {
   }
 }
 
-query SuggestedGameAlbums($limit: Int) {
-  suggestedGameAlbums(limit: $limit) {
+query SuggestedGameAlbums($limit: Int, $offset: Int, $syncSource: String, $search: String) {
+  suggestedGameAlbums(limit: $limit, offset: $offset, syncSource: $syncSource, search: $search) {
     id
     title
     releaseDate

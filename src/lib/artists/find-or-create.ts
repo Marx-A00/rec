@@ -24,8 +24,9 @@ import type {
  * Dedup order (first match wins):
  *   1. musicbrainzId (unique index)
  *   2. spotifyId (unique index)
- *   3. discogsId (via findFirst)
- *   4. name (case-insensitive, via findFirst)
+ *   3. deezerId (unique index)
+ *   4. discogsId (via findFirst)
+ *   5. name (case-insensitive, via findFirst)
  *
  * After finding an existing artist, missing external IDs from the caller
  * are backfilled onto the record (unless `backfillExternalIds: false`).
@@ -70,6 +71,13 @@ export async function findOrCreateArtist(
     if (artist) dedupMethod = 'spotifyId';
   }
 
+  if (!artist && identity.deezerId) {
+    artist = await db.artist.findUnique({
+      where: { deezerId: identity.deezerId },
+    });
+    if (artist) dedupMethod = 'deezerId';
+  }
+
   if (!artist && identity.discogsId) {
     artist = await db.artist.findFirst({
       where: { discogsId: identity.discogsId },
@@ -97,6 +105,9 @@ export async function findOrCreateArtist(
       }
       if (identity.spotifyId && !artist.spotifyId) {
         updates.spotifyId = identity.spotifyId;
+      }
+      if (identity.deezerId && !artist.deezerId) {
+        updates.deezerId = identity.deezerId;
       }
       if (identity.discogsId && !artist.discogsId) {
         updates.discogsId = identity.discogsId;
@@ -131,6 +142,7 @@ export async function findOrCreateArtist(
       name: identity.name,
       musicbrainzId: identity.musicbrainzId ?? undefined,
       spotifyId: identity.spotifyId ?? undefined,
+      deezerId: identity.deezerId ?? undefined,
       discogsId: identity.discogsId ?? undefined,
       imageUrl: fields.imageUrl ?? undefined,
       cloudflareImageId: fields.cloudflareImageId ?? undefined,
@@ -304,6 +316,7 @@ export async function runPostCreateSideEffects(
           name: artist.name,
           musicbrainzId: artist.musicbrainzId,
           spotifyId: artist.spotifyId,
+          deezerId: artist.deezerId,
           discogsId: artist.discogsId,
           imageUrl: artist.imageUrl,
           countryCode: artist.countryCode,

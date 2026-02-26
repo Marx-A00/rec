@@ -42,7 +42,7 @@ let pendingTokenRequest: Promise<string> | null = null;
  * Uses a promise lock to prevent concurrent token requests — if a fetch
  * is already in-flight, subsequent callers await the same promise.
  */
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(): Promise<string> {
   // Return cached token if still valid (with 5 min buffer)
   if (cachedAccessToken && Date.now() < tokenExpiry - 300000) {
     return cachedAccessToken;

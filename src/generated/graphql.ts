@@ -125,6 +125,15 @@ export type AddAlbumToCollectionWithCreateInput = {
   position?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type AddAlbumToQueueResult = {
+  __typename?: 'AddAlbumToQueueResult';
+  album?: Maybe<Album>;
+  curatedChallenge?: Maybe<CuratedChallengeEntry>;
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export type AdminUpdateUserSettingsPayload = {
   __typename?: 'AdminUpdateUserSettingsPayload';
   message?: Maybe<Scalars['String']['output']>;
@@ -1007,6 +1016,38 @@ export type DateDiff = {
   source?: Maybe<DateComponents>;
 };
 
+export type DeezerPlaylistImportResult = {
+  __typename?: 'DeezerPlaylistImportResult';
+  jobId?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  playlistName?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+export type DeezerPlaylistPreview = {
+  __typename?: 'DeezerPlaylistPreview';
+  albums: Array<DeezerPreviewAlbum>;
+  creator: Scalars['String']['output'];
+  deezerUrl: Scalars['String']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  image?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  playlistId: Scalars['String']['output'];
+  stats: PlaylistPreviewStats;
+  trackCount: Scalars['Int']['output'];
+};
+
+export type DeezerPreviewAlbum = {
+  __typename?: 'DeezerPreviewAlbum';
+  albumType: Scalars['String']['output'];
+  artist: Scalars['String']['output'];
+  coverUrl?: Maybe<Scalars['String']['output']>;
+  deezerId: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+  totalTracks: Scalars['Int']['output'];
+  year?: Maybe<Scalars['String']['output']>;
+};
+
 export type DeleteAlbumPayload = {
   __typename?: 'DeleteAlbumPayload';
   deletedId?: Maybe<Scalars['UUID']['output']>;
@@ -1425,6 +1466,11 @@ export type Mutation = {
    * Provides proper provenance chain for LlamaLog tracking.
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
+  /**
+   * Admin: Add album to game queue in one shot.
+   * Sets gameStatus to ELIGIBLE and adds to curated rotation atomically.
+   */
+  addAlbumToQueue: AddAlbumToQueueResult;
   addArtist: Artist;
   /** Admin: Add an album to the curated challenge list */
   addCuratedChallenge: CuratedChallengeEntry;
@@ -1452,6 +1498,12 @@ export type Mutation = {
   dismissUserSuggestion: Scalars['Boolean']['output'];
   followUser: FollowUserPayload;
   hardDeleteUser: DeleteUserPayload;
+  /**
+   * Admin: Import albums from a Deezer playlist. Enqueues a BullMQ job.
+   * No auth required — Deezer's public API is free and unlimited.
+   * Albums land with gameStatus: NONE for review.
+   */
+  importDeezerPlaylist: DeezerPlaylistImportResult;
   /** Apply manual corrections to an album (no external source) */
   manualCorrectionApply: CorrectionApplyResult;
   pauseQueue: Scalars['Boolean']['output'];
@@ -1524,6 +1576,10 @@ export type MutationAddAlbumToCollectionArgs = {
 
 export type MutationAddAlbumToCollectionWithCreateArgs = {
   input: AddAlbumToCollectionWithCreateInput;
+};
+
+export type MutationAddAlbumToQueueArgs = {
+  albumId: Scalars['UUID']['input'];
 };
 
 export type MutationAddArtistArgs = {
@@ -1605,6 +1661,10 @@ export type MutationFollowUserArgs = {
 
 export type MutationHardDeleteUserArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationImportDeezerPlaylistArgs = {
+  playlistId: Scalars['String']['input'];
 };
 
 export type MutationManualCorrectionApplyArgs = {
@@ -1801,6 +1861,15 @@ export type PaginationInfo = {
   total: Scalars['Int']['output'];
 };
 
+export type PlaylistPreviewStats = {
+  __typename?: 'PlaylistPreviewStats';
+  albumsAfterFilter: Scalars['Int']['output'];
+  compilationsFiltered: Scalars['Int']['output'];
+  singlesFiltered: Scalars['Int']['output'];
+  totalTracks: Scalars['Int']['output'];
+  uniqueAlbums: Scalars['Int']['output'];
+};
+
 export type PreviewEnrichmentResult = {
   __typename?: 'PreviewEnrichmentResult';
   fieldsToUpdate: Array<EnrichmentFieldDiff>;
@@ -1890,6 +1959,11 @@ export type Query = {
   /** Get current user's Uncover game stats (requires auth) */
   myUncoverStats?: Maybe<UncoverPlayerStats>;
   onboardingStatus: OnboardingStatus;
+  /**
+   * Preview a Deezer playlist's albums (read-only, no DB writes).
+   * No auth required — Deezer's public API is free and unlimited.
+   */
+  previewDeezerPlaylist: DeezerPlaylistPreview;
   publicCollections: Array<Collection>;
   queueMetrics: QueueMetrics;
   queueStatus: QueueStatus;
@@ -2072,6 +2146,10 @@ export type QueryMyUncoverSessionsArgs = {
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
+export type QueryPreviewDeezerPlaylistArgs = {
+  playlistId: Scalars['String']['input'];
+};
+
 export type QueryPublicCollectionsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
@@ -2133,6 +2211,9 @@ export type QuerySocialFeedArgs = {
 
 export type QuerySuggestedGameAlbumsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  syncSource?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QuerySyncJobArgs = {
@@ -3364,6 +3445,31 @@ export type UpdateUserSettingsMutation = {
     autoplayPreviews: boolean;
     createdAt: Date;
     updatedAt: Date;
+  };
+};
+
+export type AddAlbumToQueueMutationVariables = Exact<{
+  albumId: Scalars['UUID']['input'];
+}>;
+
+export type AddAlbumToQueueMutation = {
+  __typename?: 'Mutation';
+  addAlbumToQueue: {
+    __typename?: 'AddAlbumToQueueResult';
+    success: boolean;
+    message?: string | null;
+    error?: string | null;
+    album?: {
+      __typename?: 'Album';
+      id: string;
+      title: string;
+      gameStatus: AlbumGameStatus;
+    } | null;
+    curatedChallenge?: {
+      __typename?: 'CuratedChallengeEntry';
+      id: string;
+      sequence: number;
+    } | null;
   };
 };
 
@@ -4664,6 +4770,9 @@ export type AlbumsByGameStatusQuery = {
 
 export type SuggestedGameAlbumsQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  syncSource?: InputMaybe<Scalars['String']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 export type SuggestedGameAlbumsQuery = {
@@ -4998,6 +5107,21 @@ export type GetUserProfileQuery = {
   } | null;
 };
 
+export type ImportDeezerPlaylistMutationVariables = Exact<{
+  playlistId: Scalars['String']['input'];
+}>;
+
+export type ImportDeezerPlaylistMutation = {
+  __typename?: 'Mutation';
+  importDeezerPlaylist: {
+    __typename?: 'DeezerPlaylistImportResult';
+    success: boolean;
+    message?: string | null;
+    jobId?: string | null;
+    playlistName?: string | null;
+  };
+};
+
 export type AlbumsByJobIdQueryVariables = Exact<{
   jobId: Scalars['String']['input'];
 }>;
@@ -5109,6 +5233,42 @@ export type GetMySettingsQuery = {
     createdAt: Date;
     updatedAt: Date;
   } | null;
+};
+
+export type PreviewDeezerPlaylistQueryVariables = Exact<{
+  playlistId: Scalars['String']['input'];
+}>;
+
+export type PreviewDeezerPlaylistQuery = {
+  __typename?: 'Query';
+  previewDeezerPlaylist: {
+    __typename?: 'DeezerPlaylistPreview';
+    playlistId: string;
+    name: string;
+    description?: string | null;
+    creator: string;
+    image?: string | null;
+    trackCount: number;
+    deezerUrl: string;
+    albums: Array<{
+      __typename?: 'DeezerPreviewAlbum';
+      deezerId: string;
+      title: string;
+      artist: string;
+      year?: string | null;
+      coverUrl?: string | null;
+      totalTracks: number;
+      albumType: string;
+    }>;
+    stats: {
+      __typename?: 'PlaylistPreviewStats';
+      totalTracks: number;
+      uniqueAlbums: number;
+      albumsAfterFilter: number;
+      singlesFiltered: number;
+      compilationsFiltered: number;
+    };
+  };
 };
 
 export type RecommendationFieldsFragment = {
@@ -7047,6 +7207,54 @@ export const useUpdateUserSettingsMutation = <
 };
 
 useUpdateUserSettingsMutation.getKey = () => ['UpdateUserSettings'];
+
+export const AddAlbumToQueueDocument = `
+    mutation AddAlbumToQueue($albumId: UUID!) {
+  addAlbumToQueue(albumId: $albumId) {
+    success
+    message
+    error
+    album {
+      id
+      title
+      gameStatus
+    }
+    curatedChallenge {
+      id
+      sequence
+    }
+  }
+}
+    `;
+
+export const useAddAlbumToQueueMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    AddAlbumToQueueMutation,
+    TError,
+    AddAlbumToQueueMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    AddAlbumToQueueMutation,
+    TError,
+    AddAlbumToQueueMutationVariables,
+    TContext
+  >({
+    mutationKey: ['AddAlbumToQueue'],
+    mutationFn: (variables?: AddAlbumToQueueMutationVariables) =>
+      fetcher<AddAlbumToQueueMutation, AddAlbumToQueueMutationVariables>(
+        AddAlbumToQueueDocument,
+        variables
+      )(),
+    ...options,
+  });
+};
+
+useAddAlbumToQueueMutation.getKey = () => ['AddAlbumToQueue'];
 
 export const DeleteAlbumDocument = `
     mutation DeleteAlbum($id: UUID!) {
@@ -10166,8 +10374,13 @@ useInfiniteAlbumsByGameStatusQuery.getKey = (
 ) => ['AlbumsByGameStatus.infinite', variables];
 
 export const SuggestedGameAlbumsDocument = `
-    query SuggestedGameAlbums($limit: Int) {
-  suggestedGameAlbums(limit: $limit) {
+    query SuggestedGameAlbums($limit: Int, $offset: Int, $syncSource: String, $search: String) {
+  suggestedGameAlbums(
+    limit: $limit
+    offset: $offset
+    syncSource: $syncSource
+    search: $search
+  ) {
     id
     title
     releaseDate
@@ -11126,6 +11339,46 @@ useInfiniteGetUserProfileQuery.getKey = (
   variables: GetUserProfileQueryVariables
 ) => ['GetUserProfile.infinite', variables];
 
+export const ImportDeezerPlaylistDocument = `
+    mutation ImportDeezerPlaylist($playlistId: String!) {
+  importDeezerPlaylist(playlistId: $playlistId) {
+    success
+    message
+    jobId
+    playlistName
+  }
+}
+    `;
+
+export const useImportDeezerPlaylistMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    ImportDeezerPlaylistMutation,
+    TError,
+    ImportDeezerPlaylistMutationVariables,
+    TContext
+  >
+) => {
+  return useMutation<
+    ImportDeezerPlaylistMutation,
+    TError,
+    ImportDeezerPlaylistMutationVariables,
+    TContext
+  >({
+    mutationKey: ['ImportDeezerPlaylist'],
+    mutationFn: (variables?: ImportDeezerPlaylistMutationVariables) =>
+      fetcher<
+        ImportDeezerPlaylistMutation,
+        ImportDeezerPlaylistMutationVariables
+      >(ImportDeezerPlaylistDocument, variables)(),
+    ...options,
+  });
+};
+
+useImportDeezerPlaylistMutation.getKey = () => ['ImportDeezerPlaylist'];
+
 export const AlbumsByJobIdDocument = `
     query AlbumsByJobId($jobId: String!) {
   albumsByJobId(jobId: $jobId) {
@@ -11508,6 +11761,108 @@ useInfiniteGetMySettingsQuery.getKey = (
   variables === undefined
     ? ['GetMySettings.infinite']
     : ['GetMySettings.infinite', variables];
+
+export const PreviewDeezerPlaylistDocument = `
+    query PreviewDeezerPlaylist($playlistId: String!) {
+  previewDeezerPlaylist(playlistId: $playlistId) {
+    playlistId
+    name
+    description
+    creator
+    image
+    trackCount
+    deezerUrl
+    albums {
+      deezerId
+      title
+      artist
+      year
+      coverUrl
+      totalTracks
+      albumType
+    }
+    stats {
+      totalTracks
+      uniqueAlbums
+      albumsAfterFilter
+      singlesFiltered
+      compilationsFiltered
+    }
+  }
+}
+    `;
+
+export const usePreviewDeezerPlaylistQuery = <
+  TData = PreviewDeezerPlaylistQuery,
+  TError = unknown,
+>(
+  variables: PreviewDeezerPlaylistQueryVariables,
+  options?: Omit<
+    UseQueryOptions<PreviewDeezerPlaylistQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseQueryOptions<
+      PreviewDeezerPlaylistQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useQuery<PreviewDeezerPlaylistQuery, TError, TData>({
+    queryKey: ['PreviewDeezerPlaylist', variables],
+    queryFn: fetcher<
+      PreviewDeezerPlaylistQuery,
+      PreviewDeezerPlaylistQueryVariables
+    >(PreviewDeezerPlaylistDocument, variables),
+    ...options,
+  });
+};
+
+usePreviewDeezerPlaylistQuery.getKey = (
+  variables: PreviewDeezerPlaylistQueryVariables
+) => ['PreviewDeezerPlaylist', variables];
+
+export const useInfinitePreviewDeezerPlaylistQuery = <
+  TData = InfiniteData<PreviewDeezerPlaylistQuery>,
+  TError = unknown,
+>(
+  variables: PreviewDeezerPlaylistQueryVariables,
+  options: Omit<
+    UseInfiniteQueryOptions<PreviewDeezerPlaylistQuery, TError, TData>,
+    'queryKey'
+  > & {
+    queryKey?: UseInfiniteQueryOptions<
+      PreviewDeezerPlaylistQuery,
+      TError,
+      TData
+    >['queryKey'];
+  }
+) => {
+  return useInfiniteQuery<PreviewDeezerPlaylistQuery, TError, TData>(
+    (() => {
+      const { queryKey: optionsQueryKey, ...restOptions } = options;
+      return {
+        queryKey: optionsQueryKey ?? [
+          'PreviewDeezerPlaylist.infinite',
+          variables,
+        ],
+        queryFn: metaData =>
+          fetcher<
+            PreviewDeezerPlaylistQuery,
+            PreviewDeezerPlaylistQueryVariables
+          >(PreviewDeezerPlaylistDocument, {
+            ...variables,
+            ...(metaData.pageParam ?? {}),
+          })(),
+        ...restOptions,
+      };
+    })()
+  );
+};
+
+useInfinitePreviewDeezerPlaylistQuery.getKey = (
+  variables: PreviewDeezerPlaylistQueryVariables
+) => ['PreviewDeezerPlaylist.infinite', variables];
 
 export const GetRecommendationFeedDocument = `
     query GetRecommendationFeed($cursor: String, $limit: Int) {

@@ -99,6 +99,15 @@ export type AddAlbumToCollectionWithCreateInput = {
   position?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type AddAlbumToQueueResult = {
+  __typename?: 'AddAlbumToQueueResult';
+  album?: Maybe<Album>;
+  curatedChallenge?: Maybe<CuratedChallengeEntry>;
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export type AdminUpdateUserSettingsPayload = {
   __typename?: 'AdminUpdateUserSettingsPayload';
   message?: Maybe<Scalars['String']['output']>;
@@ -981,6 +990,38 @@ export type DateDiff = {
   source?: Maybe<DateComponents>;
 };
 
+export type DeezerPlaylistImportResult = {
+  __typename?: 'DeezerPlaylistImportResult';
+  jobId?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  playlistName?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+export type DeezerPlaylistPreview = {
+  __typename?: 'DeezerPlaylistPreview';
+  albums: Array<DeezerPreviewAlbum>;
+  creator: Scalars['String']['output'];
+  deezerUrl: Scalars['String']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  image?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  playlistId: Scalars['String']['output'];
+  stats: PlaylistPreviewStats;
+  trackCount: Scalars['Int']['output'];
+};
+
+export type DeezerPreviewAlbum = {
+  __typename?: 'DeezerPreviewAlbum';
+  albumType: Scalars['String']['output'];
+  artist: Scalars['String']['output'];
+  coverUrl?: Maybe<Scalars['String']['output']>;
+  deezerId: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+  totalTracks: Scalars['Int']['output'];
+  year?: Maybe<Scalars['String']['output']>;
+};
+
 export type DeleteAlbumPayload = {
   __typename?: 'DeleteAlbumPayload';
   deletedId?: Maybe<Scalars['UUID']['output']>;
@@ -1399,6 +1440,11 @@ export type Mutation = {
    * Provides proper provenance chain for LlamaLog tracking.
    */
   addAlbumToCollectionWithCreate: AddAlbumToCollectionPayload;
+  /**
+   * Admin: Add album to game queue in one shot.
+   * Sets gameStatus to ELIGIBLE and adds to curated rotation atomically.
+   */
+  addAlbumToQueue: AddAlbumToQueueResult;
   addArtist: Artist;
   /** Admin: Add an album to the curated challenge list */
   addCuratedChallenge: CuratedChallengeEntry;
@@ -1426,6 +1472,12 @@ export type Mutation = {
   dismissUserSuggestion: Scalars['Boolean']['output'];
   followUser: FollowUserPayload;
   hardDeleteUser: DeleteUserPayload;
+  /**
+   * Admin: Import albums from a Deezer playlist. Enqueues a BullMQ job.
+   * No auth required — Deezer's public API is free and unlimited.
+   * Albums land with gameStatus: NONE for review.
+   */
+  importDeezerPlaylist: DeezerPlaylistImportResult;
   /** Apply manual corrections to an album (no external source) */
   manualCorrectionApply: CorrectionApplyResult;
   pauseQueue: Scalars['Boolean']['output'];
@@ -1498,6 +1550,10 @@ export type MutationAddAlbumToCollectionArgs = {
 
 export type MutationAddAlbumToCollectionWithCreateArgs = {
   input: AddAlbumToCollectionWithCreateInput;
+};
+
+export type MutationAddAlbumToQueueArgs = {
+  albumId: Scalars['UUID']['input'];
 };
 
 export type MutationAddArtistArgs = {
@@ -1579,6 +1635,10 @@ export type MutationFollowUserArgs = {
 
 export type MutationHardDeleteUserArgs = {
   userId: Scalars['String']['input'];
+};
+
+export type MutationImportDeezerPlaylistArgs = {
+  playlistId: Scalars['String']['input'];
 };
 
 export type MutationManualCorrectionApplyArgs = {
@@ -1775,6 +1835,15 @@ export type PaginationInfo = {
   total: Scalars['Int']['output'];
 };
 
+export type PlaylistPreviewStats = {
+  __typename?: 'PlaylistPreviewStats';
+  albumsAfterFilter: Scalars['Int']['output'];
+  compilationsFiltered: Scalars['Int']['output'];
+  singlesFiltered: Scalars['Int']['output'];
+  totalTracks: Scalars['Int']['output'];
+  uniqueAlbums: Scalars['Int']['output'];
+};
+
 export type PreviewEnrichmentResult = {
   __typename?: 'PreviewEnrichmentResult';
   fieldsToUpdate: Array<EnrichmentFieldDiff>;
@@ -1864,6 +1933,11 @@ export type Query = {
   /** Get current user's Uncover game stats (requires auth) */
   myUncoverStats?: Maybe<UncoverPlayerStats>;
   onboardingStatus: OnboardingStatus;
+  /**
+   * Preview a Deezer playlist's albums (read-only, no DB writes).
+   * No auth required — Deezer's public API is free and unlimited.
+   */
+  previewDeezerPlaylist: DeezerPlaylistPreview;
   publicCollections: Array<Collection>;
   queueMetrics: QueueMetrics;
   queueStatus: QueueStatus;
@@ -2046,6 +2120,10 @@ export type QueryMyUncoverSessionsArgs = {
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
+export type QueryPreviewDeezerPlaylistArgs = {
+  playlistId: Scalars['String']['input'];
+};
+
 export type QueryPublicCollectionsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
@@ -2107,6 +2185,9 @@ export type QuerySocialFeedArgs = {
 
 export type QuerySuggestedGameAlbumsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  syncSource?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QuerySyncJobArgs = {
@@ -3158,6 +3239,7 @@ export type ResolversTypes = ResolversObject<{
   ActivityType: ActivityType;
   AddAlbumToCollectionPayload: ResolverTypeWrapper<AddAlbumToCollectionPayload>;
   AddAlbumToCollectionWithCreateInput: AddAlbumToCollectionWithCreateInput;
+  AddAlbumToQueueResult: ResolverTypeWrapper<AddAlbumToQueueResult>;
   AdminUpdateUserSettingsPayload: ResolverTypeWrapper<AdminUpdateUserSettingsPayload>;
   Album: ResolverTypeWrapper<Album>;
   AlbumGameStatus: AlbumGameStatus;
@@ -3233,6 +3315,9 @@ export type ResolversTypes = ResolversObject<{
   DateComponents: ResolverTypeWrapper<DateComponents>;
   DateDiff: ResolverTypeWrapper<DateDiff>;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
+  DeezerPlaylistImportResult: ResolverTypeWrapper<DeezerPlaylistImportResult>;
+  DeezerPlaylistPreview: ResolverTypeWrapper<DeezerPlaylistPreview>;
+  DeezerPreviewAlbum: ResolverTypeWrapper<DeezerPreviewAlbum>;
   DeleteAlbumPayload: ResolverTypeWrapper<DeleteAlbumPayload>;
   DeleteArtistPayload: ResolverTypeWrapper<DeleteArtistPayload>;
   DeleteUserPayload: ResolverTypeWrapper<DeleteUserPayload>;
@@ -3276,6 +3361,7 @@ export type ResolversTypes = ResolversObject<{
   OnboardingStatus: ResolverTypeWrapper<OnboardingStatus>;
   OtherAlbumInfo: ResolverTypeWrapper<OtherAlbumInfo>;
   PaginationInfo: ResolverTypeWrapper<PaginationInfo>;
+  PlaylistPreviewStats: ResolverTypeWrapper<PlaylistPreviewStats>;
   PreviewEnrichmentResult: ResolverTypeWrapper<PreviewEnrichmentResult>;
   PreviewSummary: ResolverTypeWrapper<PreviewSummary>;
   Query: ResolverTypeWrapper<{}>;
@@ -3370,6 +3456,7 @@ export type ResolversParentTypes = ResolversObject<{
   ActivityMetadata: ActivityMetadata;
   AddAlbumToCollectionPayload: AddAlbumToCollectionPayload;
   AddAlbumToCollectionWithCreateInput: AddAlbumToCollectionWithCreateInput;
+  AddAlbumToQueueResult: AddAlbumToQueueResult;
   AdminUpdateUserSettingsPayload: AdminUpdateUserSettingsPayload;
   Album: Album;
   AlbumInput: AlbumInput;
@@ -3432,6 +3519,9 @@ export type ResolversParentTypes = ResolversObject<{
   DateComponents: DateComponents;
   DateDiff: DateDiff;
   DateTime: Scalars['DateTime']['output'];
+  DeezerPlaylistImportResult: DeezerPlaylistImportResult;
+  DeezerPlaylistPreview: DeezerPlaylistPreview;
+  DeezerPreviewAlbum: DeezerPreviewAlbum;
   DeleteAlbumPayload: DeleteAlbumPayload;
   DeleteArtistPayload: DeleteArtistPayload;
   DeleteUserPayload: DeleteUserPayload;
@@ -3467,6 +3557,7 @@ export type ResolversParentTypes = ResolversObject<{
   OnboardingStatus: OnboardingStatus;
   OtherAlbumInfo: OtherAlbumInfo;
   PaginationInfo: PaginationInfo;
+  PlaylistPreviewStats: PlaylistPreviewStats;
   PreviewEnrichmentResult: PreviewEnrichmentResult;
   PreviewSummary: PreviewSummary;
   Query: {};
@@ -3615,6 +3706,23 @@ export type AddAlbumToCollectionPayloadResolvers<
     ResolversParentTypes['AddAlbumToCollectionPayload'] = ResolversParentTypes['AddAlbumToCollectionPayload'],
 > = ResolversObject<{
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AddAlbumToQueueResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['AddAlbumToQueueResult'] = ResolversParentTypes['AddAlbumToQueueResult'],
+> = ResolversObject<{
+  album?: Resolver<Maybe<ResolversTypes['Album']>, ParentType, ContextType>;
+  curatedChallenge?: Resolver<
+    Maybe<ResolversTypes['CuratedChallengeEntry']>,
+    ParentType,
+    ContextType
+  >;
+  error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -4731,6 +4839,66 @@ export interface DateTimeScalarConfig
   name: 'DateTime';
 }
 
+export type DeezerPlaylistImportResultResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['DeezerPlaylistImportResult'] = ResolversParentTypes['DeezerPlaylistImportResult'],
+> = ResolversObject<{
+  jobId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  playlistName?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type DeezerPlaylistPreviewResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['DeezerPlaylistPreview'] = ResolversParentTypes['DeezerPlaylistPreview'],
+> = ResolversObject<{
+  albums?: Resolver<
+    Array<ResolversTypes['DeezerPreviewAlbum']>,
+    ParentType,
+    ContextType
+  >;
+  creator?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  deezerUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  description?: Resolver<
+    Maybe<ResolversTypes['String']>,
+    ParentType,
+    ContextType
+  >;
+  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  playlistId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  stats?: Resolver<
+    ResolversTypes['PlaylistPreviewStats'],
+    ParentType,
+    ContextType
+  >;
+  trackCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type DeezerPreviewAlbumResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['DeezerPreviewAlbum'] = ResolversParentTypes['DeezerPreviewAlbum'],
+> = ResolversObject<{
+  albumType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  artist?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  coverUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  deezerId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  totalTracks?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  year?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type DeleteAlbumPayloadResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -5211,6 +5379,12 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationAddAlbumToCollectionWithCreateArgs, 'input'>
   >;
+  addAlbumToQueue?: Resolver<
+    ResolversTypes['AddAlbumToQueueResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationAddAlbumToQueueArgs, 'albumId'>
+  >;
   addArtist?: Resolver<
     ResolversTypes['Artist'],
     ParentType,
@@ -5326,6 +5500,12 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationHardDeleteUserArgs, 'userId'>
+  >;
+  importDeezerPlaylist?: Resolver<
+    ResolversTypes['DeezerPlaylistImportResult'],
+    ParentType,
+    ContextType,
+    RequireFields<MutationImportDeezerPlaylistArgs, 'playlistId'>
   >;
   manualCorrectionApply?: Resolver<
     ResolversTypes['CorrectionApplyResult'],
@@ -5612,6 +5792,23 @@ export type PaginationInfoResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type PlaylistPreviewStatsResolvers<
+  ContextType = GraphQLContext,
+  ParentType extends
+    ResolversParentTypes['PlaylistPreviewStats'] = ResolversParentTypes['PlaylistPreviewStats'],
+> = ResolversObject<{
+  albumsAfterFilter?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  compilationsFiltered?: Resolver<
+    ResolversTypes['Int'],
+    ParentType,
+    ContextType
+  >;
+  singlesFiltered?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalTracks?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  uniqueAlbums?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type PreviewEnrichmentResultResolvers<
   ContextType = GraphQLContext,
   ParentType extends
@@ -5888,6 +6085,12 @@ export type QueryResolvers<
     ParentType,
     ContextType
   >;
+  previewDeezerPlaylist?: Resolver<
+    ResolversTypes['DeezerPlaylistPreview'],
+    ParentType,
+    ContextType,
+    RequireFields<QueryPreviewDeezerPlaylistArgs, 'playlistId'>
+  >;
   publicCollections?: Resolver<
     Array<ResolversTypes['Collection']>,
     ParentType,
@@ -5956,7 +6159,7 @@ export type QueryResolvers<
     Array<ResolversTypes['Album']>,
     ParentType,
     ContextType,
-    RequireFields<QuerySuggestedGameAlbumsArgs, 'limit'>
+    RequireFields<QuerySuggestedGameAlbumsArgs, 'limit' | 'offset'>
   >;
   syncJob?: Resolver<
     Maybe<ResolversTypes['SyncJob']>,
@@ -7367,6 +7570,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   ActivityFeed?: ActivityFeedResolvers<ContextType>;
   ActivityMetadata?: ActivityMetadataResolvers<ContextType>;
   AddAlbumToCollectionPayload?: AddAlbumToCollectionPayloadResolvers<ContextType>;
+  AddAlbumToQueueResult?: AddAlbumToQueueResultResolvers<ContextType>;
   AdminUpdateUserSettingsPayload?: AdminUpdateUserSettingsPayloadResolvers<ContextType>;
   Album?: AlbumResolvers<ContextType>;
   AlbumRecommendation?: AlbumRecommendationResolvers<ContextType>;
@@ -7414,6 +7618,9 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   DateComponents?: DateComponentsResolvers<ContextType>;
   DateDiff?: DateDiffResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
+  DeezerPlaylistImportResult?: DeezerPlaylistImportResultResolvers<ContextType>;
+  DeezerPlaylistPreview?: DeezerPlaylistPreviewResolvers<ContextType>;
+  DeezerPreviewAlbum?: DeezerPreviewAlbumResolvers<ContextType>;
   DeleteAlbumPayload?: DeleteAlbumPayloadResolvers<ContextType>;
   DeleteArtistPayload?: DeleteArtistPayloadResolvers<ContextType>;
   DeleteUserPayload?: DeleteUserPayloadResolvers<ContextType>;
@@ -7442,6 +7649,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   OnboardingStatus?: OnboardingStatusResolvers<ContextType>;
   OtherAlbumInfo?: OtherAlbumInfoResolvers<ContextType>;
   PaginationInfo?: PaginationInfoResolvers<ContextType>;
+  PlaylistPreviewStats?: PlaylistPreviewStatsResolvers<ContextType>;
   PreviewEnrichmentResult?: PreviewEnrichmentResultResolvers<ContextType>;
   PreviewSummary?: PreviewSummaryResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;

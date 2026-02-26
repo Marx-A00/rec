@@ -29,6 +29,7 @@ export const JOB_TYPES = {
   // Spotify Sync Jobs (batch processing)
   SPOTIFY_SYNC_NEW_RELEASES: 'spotify:sync-new-releases',
   SPOTIFY_SYNC_FEATURED_PLAYLISTS: 'spotify:sync-featured-playlists',
+  DEEZER_IMPORT_PLAYLIST: 'deezer:import-playlist',
   // MusicBrainz Sync Jobs (batch processing)
   MUSICBRAINZ_SYNC_NEW_RELEASES: 'musicbrainz:sync-new-releases',
   // Simple Migration Job (one-time use)
@@ -133,6 +134,7 @@ export type EnrichmentSource =
   | 'manual'
   | 'manual_add'
   | 'spotify_sync'
+  | 'deezer_import'
   | 'admin_manual';
 
 export interface CheckAlbumEnrichmentJobData {
@@ -220,6 +222,18 @@ export interface SpotifySyncFeaturedPlaylistsJobData {
   priority?: 'low' | 'medium' | 'high';
   requestId?: string;
   source?: 'scheduled' | 'manual' | 'graphql';
+}
+
+// ============================================================================
+// Deezer Import Job Data Interface
+// ============================================================================
+
+export interface DeezerImportPlaylistJobData {
+  playlistId: string;
+  playlistName?: string; // Optional display name for logging
+  priority?: 'low' | 'medium' | 'high';
+  requestId?: string;
+  source?: 'admin' | 'graphql' | 'scheduled';
 }
 
 // ============================================================================
@@ -343,6 +357,7 @@ export type MusicBrainzJobData =
   | EnrichTrackJobData
   | SpotifySyncNewReleasesJobData
   | SpotifySyncFeaturedPlaylistsJobData
+  | DeezerImportPlaylistJobData
   | MusicBrainzSyncNewReleasesJobData
   | RunDiscogsMigrationJobData
   | CacheAlbumCoverArtJobData

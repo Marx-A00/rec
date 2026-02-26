@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GamePoolStats } from '@/components/admin/game-pool/GamePoolStats';
 import { EligibleAlbumsTable } from '@/components/admin/game-pool/EligibleAlbumsTable';
 import { SuggestedAlbumsTable } from '@/components/admin/game-pool/SuggestedAlbumsTable';
+import { PlaylistImportDialog } from '@/components/admin/game-pool/PlaylistImportDialog';
 
 export default function GamePoolPage() {
   return (
@@ -20,12 +21,15 @@ export default function GamePoolPage() {
         <p className='text-zinc-400 mt-1'>
           Manage albums eligible for the daily Uncover game
         </p>
-        <Link
-          href='/game'
-          className='mt-3 inline-flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300'
-        >
-          Play the game <ExternalLink className='h-3.5 w-3.5' />
-        </Link>
+        <div className='mt-3 flex items-center gap-4'>
+          <Link
+            href='/game'
+            className='inline-flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300'
+          >
+            Play the game <ExternalLink className='h-3.5 w-3.5' />
+          </Link>
+          <PlaylistImportDialog />
+        </div>
       </div>
 
       {/* Stats Overview */}

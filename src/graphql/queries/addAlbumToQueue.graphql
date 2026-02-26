@@ -1,0 +1,16 @@
+mutation AddAlbumToQueue($albumId: UUID!) {
+  addAlbumToQueue(albumId: $albumId) {
+    success
+    message
+    error
+    album {
+      id
+      title
+      gameStatus
+    }
+    curatedChallenge {
+      id
+      sequence
+    }
+  }
+}

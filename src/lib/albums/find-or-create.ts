@@ -4,8 +4,9 @@
 // Dedup order (first match wins):
 //   1. musicbrainzId (unique index)
 //   2. spotifyId (unique index)
-//   3. title + primary artist + release year (±1 year fuzzy)
-//   4. title + primary artist (no year)
+//   3. deezerId (unique index)
+//   4. title + primary artist + release year (±1 year fuzzy)
+//   5. title + primary artist (no year)
 //
 // After finding an existing album, missing external IDs are backfilled.
 // Side effects (enrichment queueing, LlamaLog) only run outside transactions.
@@ -38,8 +39,9 @@ import type {
  * Dedup order (first match wins):
  *   1. musicbrainzId (unique index)
  *   2. spotifyId (unique index)
- *   3. title + primary artist name + release year (±1 year)
- *   4. title + primary artist name (case-insensitive)
+ *   3. deezerId (unique index)
+ *   4. title + primary artist name + release year (±1 year)
+ *   5. title + primary artist name (case-insensitive)
  *
  * After finding an existing album, missing external IDs from the caller
  * are backfilled onto the record (unless `backfillExternalIds: false`).
@@ -89,7 +91,17 @@ export async function findOrCreateAlbum(
   }
 
   // ------------------------------------------------------------------
-  // 3. Dedup: title + primary artist + release year (±1 year)
+  // 3. Dedup: deezerId (unique index)
+  // ------------------------------------------------------------------
+  if (!album && identity.deezerId) {
+    album = await db.album.findUnique({
+      where: { deezerId: identity.deezerId },
+    });
+    if (album) dedupMethod = 'deezerId';
+  }
+
+  // ------------------------------------------------------------------
+  // 4. Dedup: title + primary artist + release year (±1 year)
   // ------------------------------------------------------------------
   if (!album && identity.primaryArtistName && identity.releaseYear) {
     const yearStart = new Date(identity.releaseYear - 1, 0, 1);
@@ -112,7 +124,7 @@ export async function findOrCreateAlbum(
   }
 
   // ------------------------------------------------------------------
-  // 4. Dedup: title + primary artist (no year constraint)
+  // 5. Dedup: title + primary artist (no year constraint)
   // ------------------------------------------------------------------
   if (!album && identity.primaryArtistName) {
     album = await db.album.findFirst({
@@ -142,6 +154,9 @@ export async function findOrCreateAlbum(
       }
       if (identity.spotifyId && !album.spotifyId) {
         updates.spotifyId = identity.spotifyId;
+      }
+      if (identity.deezerId && !album.deezerId) {
+        updates.deezerId = identity.deezerId;
       }
       if (identity.discogsId && !album.discogsId) {
         updates.discogsId = identity.discogsId;
@@ -176,6 +191,7 @@ export async function findOrCreateAlbum(
       title: identity.title,
       musicbrainzId: identity.musicbrainzId ?? undefined,
       spotifyId: identity.spotifyId ?? undefined,
+      deezerId: identity.deezerId ?? undefined,
       discogsId: identity.discogsId ?? undefined,
       releaseDate: fields.releaseDate ?? undefined,
       releaseType: fields.releaseType ?? undefined,
@@ -215,6 +231,7 @@ export async function findOrCreateAlbum(
             name: artistInput.name,
             musicbrainzId: artistInput.musicbrainzId ?? undefined,
             spotifyId: artistInput.spotifyId ?? undefined,
+            deezerId: artistInput.deezerId ?? undefined,
             discogsId: artistInput.discogsId ?? undefined,
           },
           fields: {
@@ -377,6 +394,7 @@ export async function runPostCreateSideEffects(
           title: album.title,
           musicbrainzId: album.musicbrainzId,
           spotifyId: album.spotifyId,
+          deezerId: album.deezerId,
           discogsId: album.discogsId,
           coverArtUrl: album.coverArtUrl,
           releaseDate: album.releaseDate,

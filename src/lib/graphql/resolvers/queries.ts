@@ -3402,17 +3402,58 @@ export const queryResolvers: QueryResolvers = {
     }
   },
 
-  suggestedGameAlbums: async (_, { limit = 50 }, { prisma }) => {
+  suggestedGameAlbums: async (
+    _,
+    {
+      limit = 50,
+      offset = 0,
+      syncSource,
+      search,
+    }: {
+      limit?: number;
+      offset?: number;
+      syncSource?: string;
+      search?: string;
+    },
+    { prisma }
+  ) => {
     try {
-      const albums = await prisma.album.findMany({
-        where: {
-          gameStatus: 'NONE',
-          cloudflareImageId: { not: null },
-          releaseDate: { not: null },
-          artists: {
-            some: {},
-          },
+      // Build where clause with optional filters
+      const where: Record<string, unknown> = {
+        gameStatus: 'NONE',
+        cloudflareImageId: { not: null },
+        releaseDate: { not: null },
+        artists: {
+          some: {},
         },
+      };
+
+      // Filter by sync source via JSON metadata field
+      if (syncSource) {
+        where.metadata = {
+          path: ['syncSource'],
+          equals: syncSource,
+        };
+      }
+
+      // Text search on album title or artist name
+      if (search) {
+        where.OR = [
+          { title: { contains: search, mode: 'insensitive' } },
+          {
+            artists: {
+              some: {
+                artist: {
+                  name: { contains: search, mode: 'insensitive' },
+                },
+              },
+            },
+          },
+        ];
+      }
+
+      const albums = await prisma.album.findMany({
+        where,
         include: {
           artists: {
             include: {
@@ -3424,12 +3465,66 @@ export const queryResolvers: QueryResolvers = {
           createdAt: 'desc',
         },
         take: limit,
+        skip: offset,
       });
 
       return albums as ResolversTypes['Album'][];
     } catch (error) {
       graphqlLogger.error('Failed to fetch suggested game albums:', { error });
       throw new GraphQLError(`Failed to fetch suggested game albums: ${error}`);
+    }
+  },
+
+  // Deezer Playlist Import queries
+  previewDeezerPlaylist: async (
+    _: unknown,
+    { playlistId }: { playlistId: string },
+    { user }: GraphQLContext
+  ) => {
+    // Admin only
+    if (!user?.role || !['ADMIN', 'OWNER'].includes(user.role)) {
+      throw new GraphQLError('Admin access required');
+    }
+
+    try {
+      const { previewDeezerPlaylistAlbums, extractDeezerPlaylistId } =
+        await import('@/lib/deezer/playlist-import');
+
+      // Extract ID from URL or raw ID
+      const resolvedId = extractDeezerPlaylistId(playlistId);
+      if (!resolvedId) {
+        throw new GraphQLError(
+          'Invalid Deezer playlist ID or URL. Expected a numeric ID like "867825522" or a full Deezer URL.'
+        );
+      }
+
+      const result = await previewDeezerPlaylistAlbums(resolvedId);
+
+      return {
+        playlistId: result.playlist.playlistId,
+        name: result.playlist.name,
+        description: result.playlist.description,
+        creator: result.playlist.creator,
+        image: result.playlist.image,
+        trackCount: result.playlist.trackCount,
+        deezerUrl: result.playlist.deezerUrl,
+        albums: result.albums.map(album => ({
+          deezerId: album.deezerId,
+          title: album.title,
+          artist: album.artist,
+          year: album.year,
+          coverUrl: album.coverUrl,
+          totalTracks: album.totalTracks,
+          albumType: album.albumType,
+        })),
+        stats: result.stats,
+      };
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      graphqlLogger.error('Failed to preview Deezer playlist:', { error });
+      throw new GraphQLError(
+        `Failed to preview playlist: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   },
 

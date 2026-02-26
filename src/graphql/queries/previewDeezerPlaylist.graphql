@@ -1,0 +1,27 @@
+query PreviewDeezerPlaylist($playlistId: String!) {
+  previewDeezerPlaylist(playlistId: $playlistId) {
+    playlistId
+    name
+    description
+    creator
+    image
+    trackCount
+    deezerUrl
+    albums {
+      deezerId
+      title
+      artist
+      year
+      coverUrl
+      totalTracks
+      albumType
+    }
+    stats {
+      totalTracks
+      uniqueAlbums
+      albumsAfterFilter
+      singlesFiltered
+      compilationsFiltered
+    }
+  }
+}

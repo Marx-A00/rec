@@ -2514,7 +2514,19 @@ type Query {
     offset: Int = 0
   ): [Album!]!
   gamePoolStats: GamePoolStats!
-  suggestedGameAlbums(limit: Int = 50): [Album!]!
+  suggestedGameAlbums(
+    limit: Int = 50
+    offset: Int = 0
+    syncSource: String
+    search: String
+  ): [Album!]!
+
+  # Deezer Playlist Import queries
+  """
+  Preview a Deezer playlist's albums (read-only, no DB writes).
+  No auth required — Deezer's public API is free and unlimited.
+  """
+  previewDeezerPlaylist(playlistId: String!): DeezerPlaylistPreview!
 
   # Daily Challenge queries
   """
@@ -2738,6 +2750,52 @@ type UpdateAlbumGameStatusResult {
   success: Boolean!
   album: Album
   error: String
+}
+
+type PlaylistPreviewStats {
+  totalTracks: Int!
+  uniqueAlbums: Int!
+  albumsAfterFilter: Int!
+  singlesFiltered: Int!
+  compilationsFiltered: Int!
+}
+
+# Deezer Playlist Import Types
+type DeezerPlaylistPreview {
+  playlistId: String!
+  name: String!
+  description: String
+  creator: String!
+  image: String
+  trackCount: Int!
+  deezerUrl: String!
+  albums: [DeezerPreviewAlbum!]!
+  stats: PlaylistPreviewStats!
+}
+
+type DeezerPreviewAlbum {
+  deezerId: String!
+  title: String!
+  artist: String!
+  year: String
+  coverUrl: String
+  totalTracks: Int!
+  albumType: String!
+}
+
+type DeezerPlaylistImportResult {
+  success: Boolean!
+  message: String
+  jobId: String
+  playlistName: String
+}
+
+type AddAlbumToQueueResult {
+  success: Boolean!
+  message: String
+  error: String
+  album: Album
+  curatedChallenge: CuratedChallengeEntry
 }
 
 # =============================================
@@ -2976,6 +3034,20 @@ type Mutation {
   artistCorrectionApply(
     input: ArtistCorrectionApplyInput!
   ): ArtistCorrectionApplyResult!
+
+  # Deezer Playlist Import mutations (Admin)
+  """
+  Admin: Import albums from a Deezer playlist. Enqueues a BullMQ job.
+  No auth required — Deezer's public API is free and unlimited.
+  Albums land with gameStatus: NONE for review.
+  """
+  importDeezerPlaylist(playlistId: String!): DeezerPlaylistImportResult!
+
+  """
+  Admin: Add album to game queue in one shot.
+  Sets gameStatus to ELIGIBLE and adds to curated rotation atomically.
+  """
+  addAlbumToQueue(albumId: UUID!): AddAlbumToQueueResult!
 
   # Daily Challenge mutations (Admin)
   """

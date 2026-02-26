@@ -24,11 +24,12 @@ export type DbClient = PrismaClient | TransactionClient;
 // Core identity and field types
 // ============================================================================
 
-/** Fields used to deduplicate artists (checked in order: musicbrainzId → spotifyId → discogsId → name) */
+/** Fields used to deduplicate artists (checked in order: musicbrainzId → spotifyId → deezerId → discogsId → name) */
 export interface ArtistIdentity {
   name: string;
   musicbrainzId?: string | null;
   spotifyId?: string | null;
+  deezerId?: string | null;
   discogsId?: string | null;
 }
 
@@ -121,5 +122,11 @@ export interface FindOrCreateArtistResult {
   artist: Artist;
   created: boolean;
   /** Which dedup method matched (null if created new) */
-  dedupMethod: 'musicbrainzId' | 'spotifyId' | 'discogsId' | 'name' | null;
+  dedupMethod:
+    | 'musicbrainzId'
+    | 'spotifyId'
+    | 'deezerId'
+    | 'discogsId'
+    | 'name'
+    | null;
 }
