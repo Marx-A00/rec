@@ -129,7 +129,7 @@ export function AlbumGuessInput({
             aria-label='Search for an album'
           />
           {isOpen && inputValue.length >= 2 && (
-            <CommandList className='absolute left-0 right-0 top-full z-50 mt-1 max-h-[200px] overflow-y-auto rounded-md border border-zinc-700 bg-zinc-900 shadow-lg'>
+            <CommandList className='custom-scrollbar absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto rounded-md border border-zinc-700 bg-zinc-900 shadow-lg'>
               {isLoading ? (
                 <CommandEmpty>Searching...</CommandEmpty>
               ) : results.length === 0 ? (

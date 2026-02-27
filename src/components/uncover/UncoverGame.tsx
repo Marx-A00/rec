@@ -510,7 +510,7 @@ export function UncoverGame() {
 
   // Game board for IN_PROGRESS sessions
   return (
-    <div className='flex h-full flex-col items-center overflow-hidden py-2'>
+    <div className='flex h-full flex-col items-center py-2'>
       {/* Header */}
       <div className='shrink-0 pb-1 text-center'>
         <h2 className='text-lg font-bold text-white md:text-xl'>
