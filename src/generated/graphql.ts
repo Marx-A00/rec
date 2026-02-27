@@ -6471,7 +6471,7 @@ export const UncoverGuessFieldsFragmentDoc = `
   isCorrect
   guessedAt
 }
-    ${UncoverGuessAlbumFieldsFragmentDoc}`;
+    `;
 export const UncoverSessionFieldsFragmentDoc = `
     fragment UncoverSessionFields on UncoverSessionInfo {
   id
@@ -6484,7 +6484,7 @@ export const UncoverSessionFieldsFragmentDoc = `
     ...UncoverGuessFields
   }
 }
-    ${UncoverGuessFieldsFragmentDoc}`;
+    `;
 export const AdminUpdateUserShowTourDocument = `
     mutation AdminUpdateUserShowTour($userId: String!, $showOnboardingTour: Boolean!) {
   adminUpdateUserShowTour(
@@ -13755,7 +13755,9 @@ export const StartUncoverSessionDocument = `
     cloudflareImageId
   }
 }
-    ${UncoverSessionFieldsFragmentDoc}`;
+    ${UncoverSessionFieldsFragmentDoc}
+${UncoverGuessFieldsFragmentDoc}
+${UncoverGuessAlbumFieldsFragmentDoc}`;
 
 export const useStartUncoverSessionMutation = <
   TError = unknown,
@@ -13802,8 +13804,8 @@ export const SubmitGuessDocument = `
   }
 }
     ${UncoverGuessFieldsFragmentDoc}
-${UncoverSessionFieldsFragmentDoc}
-${UncoverGuessAlbumFieldsFragmentDoc}`;
+${UncoverGuessAlbumFieldsFragmentDoc}
+${UncoverSessionFieldsFragmentDoc}`;
 
 export const useSubmitGuessMutation = <TError = unknown, TContext = unknown>(
   options?: UseMutationOptions<
@@ -13847,8 +13849,8 @@ export const SkipGuessDocument = `
   }
 }
     ${UncoverGuessFieldsFragmentDoc}
-${UncoverSessionFieldsFragmentDoc}
-${UncoverGuessAlbumFieldsFragmentDoc}`;
+${UncoverGuessAlbumFieldsFragmentDoc}
+${UncoverSessionFieldsFragmentDoc}`;
 
 export const useSkipGuessMutation = <TError = unknown, TContext = unknown>(
   options?: UseMutationOptions<

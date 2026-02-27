@@ -19,6 +19,7 @@ generates:
       exposeMutationKeys: true
       addInfiniteQuery: true
       reactQueryVersion: 5
+      dedupeFragments: true
       scalars:
         DateTime: 'Date'
         UUID: 'string'
