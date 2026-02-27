@@ -3,14 +3,25 @@
  * Deezer playlist import service for the Uncover game.
  * Supports both preview (read-only) and full import workflows.
  *
- * Deezer's public API requires NO authentication for playlist access,
- * making it ideal for importing editorial/decade playlists that Spotify
- * blocks in Development Mode (since Nov 2024 API changes).
+ * Uses the deezer-ts SDK which provides:
+ * - Built-in rate limiting (50 requests per 5 seconds)
+ * - Automatic retry with exponential backoff on quota errors
+ * - Typed responses and error classes
+ * - Auto-pagination via async iterators
  *
  * Preview: Fetches playlist metadata + album list without DB writes.
  * Import: Fetches albums and processes through processDeezerAlbums() pipeline
  *         (proper DEEZER source, deezerId fields, MusicBrainz enrichment queueing).
  */
+
+import {
+  Client,
+  type Track as DzTrack,
+  DeezerNotFoundError,
+  DeezerErrorResponse,
+} from 'deezer-ts';
+
+import prisma from '@/lib/prisma';
 
 import type { DeezerAlbumData } from './mappers';
 
@@ -37,6 +48,10 @@ export interface DeezerPreviewAlbum {
   coverUrl: string | null;
   totalTracks: number;
   albumType: string;
+  /** Whether this album already exists in the local database */
+  existsInDb?: boolean;
+  /** The local database album ID if it exists */
+  dbAlbumId?: string;
 }
 
 export interface DeezerPlaylistPreviewResult {
@@ -48,6 +63,7 @@ export interface DeezerPlaylistPreviewResult {
     albumsAfterFilter: number;
     singlesFiltered: number;
     compilationsFiltered: number;
+    existingInDb: number;
   };
 }
 
@@ -64,166 +80,111 @@ export interface DeezerPlaylistImportResult {
 }
 
 // ============================================================================
-// Deezer API Types (response shapes)
+// Progress Callback Types
 // ============================================================================
 
-interface DeezerPlaylistResponse {
-  id: number;
-  title: string;
-  description: string;
-  creator: { name: string; id: number };
-  picture_big: string;
-  picture_medium: string;
-  nb_tracks: number;
-  link: string;
-  tracks: {
-    data: DeezerTrackItem[];
-    total: number;
-    next?: string;
-  };
-  error?: { type: string; message: string; code: number };
-}
+export type PreviewProgressEvent =
+  | { phase: 'playlist'; name: string; trackCount: number }
+  | { phase: 'tracks'; current: number; total: number }
+  | { phase: 'albums'; current: number; total: number }
+  | { phase: 'done'; result: DeezerPlaylistPreviewResult }
+  | { phase: 'error'; message: string };
 
-interface DeezerTrackItem {
-  id: number;
-  title: string;
-  artist: {
-    id: number;
-    name: string;
-  };
-  album: {
-    id: number;
-    title: string;
-    cover_big: string;
-    cover_medium: string;
-    type: string;
-  };
-}
-
-interface DeezerAlbumResponse {
-  id: number;
-  title: string;
-  artist: { id: number; name: string };
-  cover_big: string;
-  cover_medium: string;
-  release_date: string;
-  nb_tracks: number;
-  record_type: string; // "album", "single", "ep", "compile"
-  link: string;
-  error?: { type: string; message: string; code: number };
-}
+export type PreviewProgressCallback = (event: PreviewProgressEvent) => void;
 
 // ============================================================================
-// Deezer API Helpers
+// Deezer SDK Client (singleton)
 // ============================================================================
 
-const DEEZER_API_BASE = 'https://api.deezer.com';
-
-/**
- * Fetch from Deezer public API. No auth required.
- */
-async function deezerFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${DEEZER_API_BASE}${path}`);
-
-  if (!res.ok) {
-    throw new Error(`Deezer API error: ${res.status} ${res.statusText}`);
-  }
-
-  const data = (await res.json()) as T & {
-    error?: { type: string; message: string; code: number };
-  };
-
-  // Deezer returns 200 with error object instead of HTTP error codes
-  if (data.error) {
-    throw new Error(
-      `Deezer API error: ${data.error.type} — ${data.error.message} (code: ${data.error.code})`
-    );
-  }
-
-  return data;
-}
+/** Rate-limited Deezer client (50 req/5s, auto-retry with backoff) */
+const deezerClient = new Client();
 
 // ============================================================================
 // Playlist Fetching
 // ============================================================================
 
 /**
- * Fetch playlist metadata and first page of tracks.
+ * Fetch playlist metadata and ALL tracks using the deezer-ts SDK.
+ * Pagination is handled automatically via async iterators.
  */
-async function fetchPlaylistData(
-  playlistId: string
-): Promise<DeezerPlaylistResponse> {
-  return deezerFetch<DeezerPlaylistResponse>(`/playlist/${playlistId}`);
-}
+async function fetchPlaylistWithTracks(
+  playlistId: string,
+  onProgress?: PreviewProgressCallback
+): Promise<{
+  metadata: DeezerPlaylistMetadata;
+  tracks: DzTrack[];
+}> {
+  const playlist = await deezerClient.getPlaylist(Number(playlistId));
 
-/**
- * Fetch ALL tracks from a playlist, handling pagination.
- * Deezer paginates via `next` URL in the response.
- */
-async function fetchAllPlaylistTracks(
-  playlistId: string
-): Promise<DeezerTrackItem[]> {
-  const allTracks: DeezerTrackItem[] = [];
+  const metadata: DeezerPlaylistMetadata = {
+    playlistId: String(playlist.id),
+    name: playlist.title,
+    description: playlist.description || null,
+    creator: playlist.creator?.name ?? 'Unknown',
+    image: playlist.picture_big || playlist.picture_medium || null,
+    trackCount: playlist.nb_tracks,
+    deezerUrl: playlist.link,
+  };
 
-  // First page comes from the playlist endpoint
-  const playlist = await fetchPlaylistData(playlistId);
-  allTracks.push(...playlist.tracks.data);
+  console.log(`📋 Playlist "${metadata.name}" — ${metadata.trackCount} tracks`);
+  onProgress?.({
+    phase: 'playlist',
+    name: metadata.name,
+    trackCount: metadata.trackCount,
+  });
 
-  // Follow pagination
-  let nextUrl = playlist.tracks.next;
-  while (nextUrl) {
-    const res = await fetch(nextUrl);
-    if (!res.ok) break;
-
-    const page = (await res.json()) as {
-      data: DeezerTrackItem[];
-      next?: string;
-    };
-    allTracks.push(...page.data);
-    nextUrl = page.next;
-
-    console.log(
-      `📄 Fetched ${allTracks.length} of ${playlist.nb_tracks} tracks`
-    );
+  // Collect all tracks via auto-paginated iterator
+  const tracks: DzTrack[] = [];
+  const paginatedTracks = await playlist.getTracks();
+  for await (const track of paginatedTracks) {
+    tracks.push(track);
+    // Emit progress every 10 tracks (or on last track)
+    if (tracks.length % 10 === 0 || tracks.length === metadata.trackCount) {
+      onProgress?.({
+        phase: 'tracks',
+        current: tracks.length,
+        total: metadata.trackCount,
+      });
+    }
+    if (tracks.length % 100 === 0) {
+      console.log(
+        `📄 Fetched ${tracks.length} of ${metadata.trackCount} tracks`
+      );
+    }
   }
 
-  return allTracks;
-}
-
-// ============================================================================
-// Album Detail Fetching
-// ============================================================================
-
-/**
- * Fetch album details from Deezer to get release_date and record_type.
- * The playlist endpoint only gives us basic album info (id, title, cover).
- */
-async function fetchAlbumDetails(
-  albumId: number
-): Promise<DeezerAlbumResponse> {
-  return deezerFetch<DeezerAlbumResponse>(`/album/${albumId}`);
+  return { metadata, tracks };
 }
 
 // ============================================================================
 // Album Extraction
 // ============================================================================
 
+interface AlbumFetchFailure {
+  albumId: number;
+  title: string;
+  reason: 'delisted' | 'error';
+  message: string;
+}
+
 /**
- * Extract unique albums from playlist track items.
- * Deduplicates by Deezer album ID. Fetches album details for metadata.
+ * Extract unique albums from playlist tracks.
+ * Deduplicates by Deezer album ID, then fetches full album details
+ * for metadata (release_date, record_type, nb_tracks).
+ *
+ * The SDK handles rate limiting and retries automatically.
+ * Failures are collected and logged as a single summary at the end.
  */
 async function extractUniqueAlbumsWithDetails(
-  tracks: DeezerTrackItem[]
+  tracks: DzTrack[],
+  onProgress?: PreviewProgressCallback
 ): Promise<{
   albums: DeezerPreviewAlbum[];
   singlesFiltered: number;
   compilationsFiltered: number;
 }> {
   // Deduplicate by album ID
-  const albumMap = new Map<
-    number,
-    { track: DeezerTrackItem; artistName: string }
-  >();
+  const albumMap = new Map<number, { track: DzTrack; artistName: string }>();
 
   for (const track of tracks) {
     if (!track.album || albumMap.has(track.album.id)) continue;
@@ -233,83 +194,231 @@ async function extractUniqueAlbumsWithDetails(
     });
   }
 
+  const totalUniqueAlbums = albumMap.size;
   console.log(
-    `📀 Found ${albumMap.size} unique albums from ${tracks.length} tracks`
+    `📀 Found ${totalUniqueAlbums} unique albums from ${tracks.length} tracks`
   );
 
-  // Fetch album details in batches to get release_date and record_type
-  // Deezer has no documented rate limit for public API, but be respectful
-  const entries = Array.from(albumMap.entries());
   const albums: DeezerPreviewAlbum[] = [];
+  const failures: AlbumFetchFailure[] = [];
   let singlesFiltered = 0;
   let compilationsFiltered = 0;
+  let processed = 0;
 
-  // Process in batches of 10 concurrent requests
-  const BATCH_SIZE = 10;
-  for (let i = 0; i < entries.length; i += BATCH_SIZE) {
-    const batch = entries.slice(i, i + BATCH_SIZE);
+  // Fetch album details sequentially — SDK handles rate limiting
+  for (const [albumId, { track, artistName }] of albumMap) {
+    try {
+      const details = await deezerClient.getAlbum(albumId);
 
-    const batchResults = await Promise.allSettled(
-      batch.map(async ([albumId, { track, artistName }]) => {
-        try {
-          const details = await fetchAlbumDetails(albumId);
+      // Filter by record_type
+      const recordType = details.record_type?.toLowerCase();
+      if (recordType === 'single') {
+        singlesFiltered++;
+      } else if (recordType === 'compile') {
+        compilationsFiltered++;
+      } else {
+        // Extract year from Date object
+        const year = details.release_date
+          ? String(details.release_date.getFullYear())
+          : null;
 
-          // Filter by record_type
-          const recordType = details.record_type?.toLowerCase();
-          if (recordType === 'single') {
-            singlesFiltered++;
-            return null;
-          }
-          if (recordType === 'compile') {
-            compilationsFiltered++;
-            return null;
-          }
-
-          return {
-            deezerId: String(details.id),
-            title: details.title,
-            artist: artistName,
-            artistId: String(track.artist.id),
-            year: details.release_date
-              ? details.release_date.split('-')[0]
-              : null,
-            coverUrl: details.cover_big || details.cover_medium || null,
-            totalTracks: details.nb_tracks,
-            albumType: details.record_type || 'album',
-          } satisfies DeezerPreviewAlbum;
-        } catch (err) {
-          // If album detail fetch fails, include it with basic info
-          console.warn(
-            `⚠️  Failed to fetch details for album ${albumId}, using basic info`
-          );
-          return {
-            deezerId: String(albumId),
-            title: track.album.title,
-            artist: artistName,
-            artistId: String(track.artist.id),
-            year: null,
-            coverUrl: track.album.cover_big || track.album.cover_medium || null,
-            totalTracks: 0,
-            albumType: 'album',
-          } satisfies DeezerPreviewAlbum;
-        }
-      })
-    );
-
-    for (const result of batchResults) {
-      if (result.status === 'fulfilled' && result.value !== null) {
-        albums.push(result.value);
+        albums.push({
+          deezerId: String(details.id),
+          title: details.title,
+          artist: artistName,
+          artistId: String(track.artist.id),
+          year,
+          coverUrl: details.cover_big || details.cover_medium || null,
+          totalTracks: details.nb_tracks ?? 0,
+          albumType: details.record_type || 'album',
+        });
       }
+    } catch (err) {
+      // Categorize the failure
+      const isDelisted =
+        err instanceof DeezerNotFoundError ||
+        err instanceof DeezerErrorResponse;
+
+      failures.push({
+        albumId,
+        title: track.album.title,
+        reason: isDelisted ? 'delisted' : 'error',
+        message: err instanceof Error ? err.message : String(err),
+      });
+
+      // Use fallback data from the track listing
+      albums.push({
+        deezerId: String(albumId),
+        title: track.album.title,
+        artist: artistName,
+        artistId: String(track.artist.id),
+        year: null,
+        coverUrl: track.album.cover_big || track.album.cover_medium || null,
+        totalTracks: 0,
+        albumType: 'album',
+      });
     }
 
-    if (i + BATCH_SIZE < entries.length) {
-      console.log(
-        `📀 Processed ${Math.min(i + BATCH_SIZE, entries.length)}/${entries.length} albums...`
-      );
+    processed++;
+    onProgress?.({
+      phase: 'albums',
+      current: processed,
+      total: totalUniqueAlbums,
+    });
+    if (processed % 20 === 0) {
+      console.log(`📀 Processed ${processed}/${totalUniqueAlbums} albums...`);
     }
   }
 
+  // Summary logging for failures (one message, not per-album spam)
+  if (failures.length > 0) {
+    const delisted = failures.filter(f => f.reason === 'delisted');
+    const errors = failures.filter(f => f.reason === 'error');
+
+    const parts = [
+      `⚠️  Failed to fetch details for ${failures.length}/${totalUniqueAlbums} albums (using fallback data)`,
+    ];
+    if (delisted.length > 0) {
+      parts.push(`  Delisted/unavailable: ${delisted.length}`);
+      // Show a few examples
+      const examples = delisted.slice(0, 3).map(f => `"${f.title}"`);
+      parts.push(`  Examples: ${examples.join(', ')}`);
+    }
+    if (errors.length > 0) {
+      parts.push(`  Other errors: ${errors.length}`);
+      const examples = errors
+        .slice(0, 3)
+        .map(f => `"${f.title}" (${f.message})`);
+      parts.push(`  Examples: ${examples.join(', ')}`);
+    }
+
+    console.warn(parts.join('\n'));
+  }
+
   return { albums, singlesFiltered, compilationsFiltered };
+}
+
+// ============================================================================
+// DB Existence Check (Read-Only)
+// ============================================================================
+
+/**
+ * Check which preview albums already exist in the local database.
+ * Uses a 3-level lookup (same priority as findOrCreateAlbum but read-only):
+ *   1. deezerId (unique index — fast batch query)
+ *   2. title + artist + year (±1 year fuzzy)
+ *   3. title + artist (no year)
+ *
+ * Mutates the albums in-place, setting `existsInDb` and `dbAlbumId`.
+ */
+export async function annotateExistingAlbums(
+  albums: DeezerPreviewAlbum[]
+): Promise<{ matched: number }> {
+  if (albums.length === 0) return { matched: 0 };
+
+  let matched = 0;
+
+  // ------------------------------------------------------------------
+  // Pass 1: Batch lookup by deezerId (single query, most efficient)
+  // ------------------------------------------------------------------
+  const deezerIds = albums.map(a => a.deezerId).filter(Boolean);
+  const byDeezerId = new Map<string, string>();
+
+  if (deezerIds.length > 0) {
+    const existing = await prisma.album.findMany({
+      where: { deezerId: { in: deezerIds } },
+      select: { id: true, deezerId: true },
+    });
+    for (const row of existing) {
+      if (row.deezerId) byDeezerId.set(row.deezerId, row.id);
+    }
+  }
+
+  // Apply deezerId matches
+  const unmatched: DeezerPreviewAlbum[] = [];
+  for (const album of albums) {
+    const dbId = byDeezerId.get(album.deezerId);
+    if (dbId) {
+      album.existsInDb = true;
+      album.dbAlbumId = dbId;
+      matched++;
+    } else {
+      unmatched.push(album);
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Pass 2: title + artist fallback for albums without deezerId match
+  // ------------------------------------------------------------------
+  // Batch these into a single query using OR conditions
+  if (unmatched.length > 0) {
+    const orConditions = unmatched.map(album => {
+      const yearNum = album.year ? parseInt(album.year, 10) : null;
+      const baseCondition = {
+        title: { equals: album.title, mode: 'insensitive' as const },
+        artists: {
+          some: {
+            artist: {
+              name: { equals: album.artist, mode: 'insensitive' as const },
+            },
+          },
+        },
+      };
+
+      // If we have a year, add ±1 year constraint
+      if (yearNum && !isNaN(yearNum)) {
+        return {
+          ...baseCondition,
+          releaseDate: {
+            gte: new Date(yearNum - 1, 0, 1),
+            lt: new Date(yearNum + 2, 0, 1),
+          },
+        };
+      }
+
+      return baseCondition;
+    });
+
+    const titleArtistMatches = await prisma.album.findMany({
+      where: { OR: orConditions },
+      select: {
+        id: true,
+        title: true,
+        releaseDate: true,
+        artists: {
+          where: { role: 'PRIMARY' },
+          select: { artist: { select: { name: true } } },
+          take: 1,
+        },
+      },
+    });
+
+    // Match results back to unmatched albums by title+artist (case-insensitive)
+    for (const album of unmatched) {
+      const match = titleArtistMatches.find(db => {
+        const titleMatch = db.title.toLowerCase() === album.title.toLowerCase();
+        const artistMatch = db.artists.some(
+          aa => aa.artist.name.toLowerCase() === album.artist.toLowerCase()
+        );
+        return titleMatch && artistMatch;
+      });
+
+      if (match) {
+        album.existsInDb = true;
+        album.dbAlbumId = match.id;
+        matched++;
+      }
+    }
+  }
+
+  // Default unmatched to existsInDb = false
+  for (const album of albums) {
+    if (album.existsInDb === undefined) {
+      album.existsInDb = false;
+    }
+  }
+
+  return { matched };
 }
 
 // ============================================================================
@@ -321,52 +430,53 @@ async function extractUniqueAlbumsWithDetails(
  * Fetches metadata + tracks, extracts unique albums, filters by type.
  */
 export async function previewDeezerPlaylistAlbums(
-  playlistId: string
+  playlistId: string,
+  options?: { onProgress?: PreviewProgressCallback }
 ): Promise<DeezerPlaylistPreviewResult> {
+  const onProgress = options?.onProgress;
   console.log(`🔍 Previewing Deezer playlist: ${playlistId}`);
 
-  // Fetch playlist metadata
-  const playlistData = await fetchPlaylistData(playlistId);
-
-  const metadata: DeezerPlaylistMetadata = {
-    playlistId: String(playlistData.id),
-    name: playlistData.title,
-    description: playlistData.description || null,
-    creator: playlistData.creator.name,
-    image: playlistData.picture_big || playlistData.picture_medium || null,
-    trackCount: playlistData.nb_tracks,
-    deezerUrl: playlistData.link,
-  };
-
-  console.log(`📋 Playlist "${metadata.name}" — ${metadata.trackCount} tracks`);
-
-  // Fetch all tracks (handles pagination)
-  const allTracks = await fetchAllPlaylistTracks(playlistId);
+  // Fetch playlist + all tracks (SDK handles pagination + rate limiting)
+  const { metadata, tracks } = await fetchPlaylistWithTracks(
+    playlistId,
+    onProgress
+  );
 
   // Extract unique albums with details and filter
   const { albums, singlesFiltered, compilationsFiltered } =
-    await extractUniqueAlbumsWithDetails(allTracks);
+    await extractUniqueAlbumsWithDetails(tracks, onProgress);
 
   // Total unique albums before filtering
   const uniqueAlbumIds = new Set(
-    allTracks.filter(t => t.album).map(t => t.album.id)
+    tracks.filter(t => t.album).map(t => t.album.id)
   );
 
   console.log(
     `📀 ${uniqueAlbumIds.size} unique albums → ${albums.length} after filtering (${singlesFiltered} singles, ${compilationsFiltered} compilations removed)`
   );
 
-  return {
+  // Check which albums already exist in the local database
+  const { matched } = await annotateExistingAlbums(albums);
+  if (matched > 0) {
+    console.log(`🔍 ${matched}/${albums.length} albums already in database`);
+  }
+
+  const result: DeezerPlaylistPreviewResult = {
     playlist: metadata,
     albums,
     stats: {
-      totalTracks: allTracks.length,
+      totalTracks: tracks.length,
       uniqueAlbums: uniqueAlbumIds.size,
       albumsAfterFilter: albums.length,
       singlesFiltered,
       compilationsFiltered,
+      existingInDb: matched,
     },
   };
+
+  onProgress?.({ phase: 'done', result });
+
+  return result;
 }
 
 // ============================================================================

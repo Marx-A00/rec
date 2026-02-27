@@ -3,7 +3,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Music, Loader2, ListMusic, Disc3, Filter } from 'lucide-react';
+import {
+  Music,
+  Loader2,
+  ListMusic,
+  Disc3,
+  Filter,
+  CheckCircle2,
+} from 'lucide-react';
 
 import {
   Dialog,
@@ -24,10 +31,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  usePreviewDeezerPlaylistQuery,
-  useImportDeezerPlaylistMutation,
-} from '@/generated/graphql';
+import { useImportDeezerPlaylistMutation } from '@/generated/graphql';
+import { useDeezerPreviewStream } from '@/hooks/useDeezerPreviewStream';
 
 // ============================================================================
 // Preset Playlists
@@ -53,23 +58,31 @@ export function PlaylistImportDialog() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const {
-    data: deezerPreview,
+    result: previewResult,
+    progress,
     isLoading: isPreviewing,
     error: previewError,
-  } = usePreviewDeezerPlaylistQuery(
-    { playlistId: previewId! },
-    { enabled: !!previewId }
-  );
+    startPreview,
+    reset: resetStream,
+  } = useDeezerPreviewStream();
 
   const { mutateAsync: importDeezer } = useImportDeezerPlaylistMutation();
 
-  const preview = deezerPreview?.previewDeezerPlaylist ?? null;
+  const preview = previewResult
+    ? {
+        ...previewResult.playlist,
+        albums: previewResult.albums,
+        stats: previewResult.stats,
+      }
+    : null;
   const albums = useMemo(() => preview?.albums ?? [], [preview]);
 
-  // Select all albums when preview loads
+  // Select new albums by default (exclude ones already in DB)
   useEffect(() => {
     if (albums.length > 0) {
-      setSelectedIds(new Set(albums.map(a => a.deezerId)));
+      setSelectedIds(
+        new Set(albums.filter(a => !a.existsInDb).map(a => a.deezerId))
+      );
     }
   }, [albums]);
 
@@ -104,6 +117,7 @@ export function PlaylistImportDialog() {
     }
     setPlaylistInput(trimmed);
     setPreviewId(trimmed);
+    startPreview(trimmed);
   };
 
   const handleImport = async () => {
@@ -140,6 +154,7 @@ export function PlaylistImportDialog() {
     setPlaylistInput('');
     setPreviewId(null);
     setSelectedIds(new Set());
+    resetStream();
   };
 
   return (
@@ -165,7 +180,7 @@ export function PlaylistImportDialog() {
         {/* Scrollable Middle */}
         <div className='flex-1 min-h-0 overflow-y-auto custom-scrollbar px-6'>
           {/* Preset Quick-Picks */}
-          {!preview && (
+          {!preview && !isPreviewing && (
             <div className='space-y-2'>
               <p className='text-xs font-medium text-zinc-500 uppercase tracking-wider'>
                 Quick picks
@@ -190,7 +205,7 @@ export function PlaylistImportDialog() {
           )}
 
           {/* Custom URL Input */}
-          {!preview && (
+          {!preview && !isPreviewing && (
             <div className='space-y-2 mt-4'>
               <p className='text-xs font-medium text-zinc-500 uppercase tracking-wider'>
                 Or paste a URL
@@ -206,28 +221,51 @@ export function PlaylistImportDialog() {
                   onKeyDown={e => e.key === 'Enter' && handlePreview()}
                 />
                 <Button onClick={() => handlePreview()} disabled={isPreviewing}>
-                  {isPreviewing ? (
-                    <Loader2 className='h-4 w-4 animate-spin' />
-                  ) : (
-                    'Preview'
-                  )}
+                  Preview
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Loading */}
-          {isPreviewing && (
+          {/* Progress Bar */}
+          {isPreviewing && progress && (
+            <div className='space-y-3 py-8 px-4'>
+              {progress.playlistName && (
+                <p className='text-sm text-white font-medium text-center'>
+                  {progress.playlistName}
+                </p>
+              )}
+              <p className='text-xs text-zinc-400 text-center'>
+                {progress.phase === 'playlist' && 'Loading playlist...'}
+                {progress.phase === 'tracks' &&
+                  `Fetching tracks... ${progress.current}/${progress.total}`}
+                {progress.phase === 'albums' &&
+                  `Fetching album details... ${progress.current}/${progress.total}`}
+              </p>
+              <div className='w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden'>
+                <div
+                  className='h-full bg-emerald-500 rounded-full transition-all duration-200 ease-out'
+                  style={{ width: `${progress.percent}%` }}
+                />
+              </div>
+              <p className='text-xs text-zinc-500 text-center'>
+                {progress.percent}%
+              </p>
+            </div>
+          )}
+
+          {/* Loading without progress (initial connection) */}
+          {isPreviewing && !progress && (
             <div className='flex items-center justify-center py-8 gap-3 text-zinc-400'>
               <Loader2 className='h-5 w-5 animate-spin' />
-              <span className='text-sm'>Loading playlist preview...</span>
+              <span className='text-sm'>Connecting...</span>
             </div>
           )}
 
           {/* Error */}
           {previewError ? (
             <div className='rounded-md bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400'>
-              Failed to load playlist. Check the URL/ID and try again.
+              {previewError}
             </div>
           ) : null}
 
@@ -269,6 +307,12 @@ export function PlaylistImportDialog() {
                   </span>
                   /{albums.length} selected
                 </span>
+                {preview.stats.existingInDb > 0 && (
+                  <span className='inline-flex items-center gap-1 text-emerald-400'>
+                    <CheckCircle2 className='h-3 w-3' />
+                    {preview.stats.existingInDb} already in DB
+                  </span>
+                )}
                 {preview.stats.singlesFiltered +
                   preview.stats.compilationsFiltered >
                   0 && (
@@ -355,7 +399,15 @@ export function PlaylistImportDialog() {
                             )}
                           </TableCell>
                           <TableCell className='font-medium text-white text-sm'>
-                            {album.title}
+                            <span className='inline-flex items-center gap-1.5'>
+                              {album.title}
+                              {album.existsInDb && (
+                                <span className='inline-flex items-center gap-0.5 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400 leading-none'>
+                                  <CheckCircle2 className='h-2.5 w-2.5' />
+                                  In DB
+                                </span>
+                              )}
+                            </span>
                           </TableCell>
                           <TableCell className='text-zinc-400 text-sm'>
                             {album.artist}
