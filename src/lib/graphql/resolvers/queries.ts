@@ -3798,12 +3798,14 @@ export const queryResolvers: QueryResolvers = {
         completedAt: { not: null }, // Only completed sessions
       };
 
-      // Apply date filters if provided
+      // Apply date filters if provided (relation filter requires `is` wrapper)
       if (fromDate || toDate) {
         where.challenge = {
-          challengeDate: {
-            ...(fromDate && { gte: new Date(fromDate) }),
-            ...(toDate && { lte: new Date(toDate) }),
+          is: {
+            challengeDate: {
+              ...(fromDate && { gte: new Date(fromDate) }),
+              ...(toDate && { lte: new Date(toDate) }),
+            },
           },
         };
       }
