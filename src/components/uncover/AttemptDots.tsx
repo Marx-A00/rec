@@ -7,12 +7,12 @@ interface AttemptDotsProps {
  * Visual indicator for attempt progress.
  * Renders dots to show used vs remaining attempts.
  *
- * @param attemptCount - Number of attempts used (0-6)
- * @param maxAttempts - Maximum attempts allowed (default: 6)
+ * @param attemptCount - Number of attempts used (0-4)
+ * @param maxAttempts - Maximum attempts allowed (default: 4)
  */
 export function AttemptDots({
   attemptCount,
-  maxAttempts = 6,
+  maxAttempts = 4,
 }: AttemptDotsProps) {
   const dots = Array.from({ length: maxAttempts }, (_, i) => i < attemptCount);
 

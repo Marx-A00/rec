@@ -99,7 +99,7 @@ export async function getOrCreateDailyChallenge(
       data: {
         date: normalizedDate,
         albumId,
-        maxAttempts: 6,
+        maxAttempts: 4,
       },
       include: {
         album: {

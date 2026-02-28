@@ -5,7 +5,7 @@ import { UncoverHome } from './UncoverHome';
 export const metadata: Metadata = {
   title: 'Uncover | Daily Album Challenge',
   description:
-    'Guess the album from its cover art. 6 attempts. New puzzle daily.',
+    'Guess the album from its cover art. 4 attempts. New puzzle daily.',
 };
 
 /**

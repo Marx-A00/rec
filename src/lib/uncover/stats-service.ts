@@ -114,12 +114,12 @@ export async function updatePlayerStats(
     ? Math.max(currentStreak, existingStats.maxStreak)
     : currentStreak;
 
-  // Update win distribution if won and attemptCount is valid (1-6)
+  // Update win distribution if won and attemptCount is valid (1-4)
   const winDistribution = existingStats
     ? [...existingStats.winDistribution]
-    : [0, 0, 0, 0, 0, 0];
+    : [0, 0, 0, 0];
 
-  if (won && attemptCount >= 1 && attemptCount <= 6) {
+  if (won && attemptCount >= 1 && attemptCount <= 4) {
     const index = attemptCount - 1;
     winDistribution[index] = (winDistribution[index] || 0) + 1;
   }

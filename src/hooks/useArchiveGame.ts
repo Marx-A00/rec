@@ -241,12 +241,12 @@ export function useArchiveGame(challengeDate: Date) {
   /**
    * Calculate reveal stage from attempt count.
    * Stage 1 (most obscured) = 0 attempts
-   * Stage 6 (full reveal) = 5+ attempts OR game over
+   * Stage 4 (full reveal) = 3+ attempts OR game over
    */
   const revealStage =
     gameStore.status === 'WON' || gameStore.status === 'LOST'
-      ? 6 // Full reveal on game over
-      : Math.min(gameStore.attemptCount + 1, 6);
+      ? 4 // Full reveal on game over
+      : Math.min(gameStore.attemptCount + 1, 4);
 
   return {
     // Auth state

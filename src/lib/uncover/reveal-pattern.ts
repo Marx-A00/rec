@@ -87,17 +87,17 @@ export function shuffleTilesWithSeed(tiles: Tile[], seed: string): Tile[] {
 
 /**
  * Returns the tiles that should be revealed at a given stage (cumulative).
- * Stage 1 reveals ~16% of tiles, stage 6 reveals 100%.
+ * Stage 1 reveals ~25% of tiles, stage 4 reveals 100%.
  *
  * @param orderedTiles - Tiles in reveal order (first = revealed first)
  * @param stage - Current stage (1 to totalStages)
- * @param totalStages - Total number of stages (default 6)
+ * @param totalStages - Total number of stages (default 4)
  * @returns Subset of tiles revealed so far at this stage
  */
 export function getTilesForStage(
   orderedTiles: Tile[],
   stage: number,
-  totalStages = 6
+  totalStages = 4
 ): Tile[] {
   const clampedStage = Math.max(1, Math.min(stage, totalStages));
   const count = Math.floor((clampedStage / totalStages) * orderedTiles.length);
@@ -108,10 +108,10 @@ export function getTilesForStage(
  * Divides the grid into horizontal strips for blur-style reveal.
  *
  * @param gridSize - Grid dimension (default 16)
- * @param numStrips - Number of strips to generate (default 6)
+ * @param numStrips - Number of strips to generate (default 4)
  * @returns Array of Strip objects covering all rows
  */
-export function generateStrips(gridSize = 16, numStrips = 6): Strip[] {
+export function generateStrips(gridSize = 16, numStrips = 4): Strip[] {
   const strips: Strip[] = [];
   const rowsPerStrip = Math.floor(gridSize / numStrips);
   let currentRow = 0;
@@ -128,7 +128,7 @@ export function generateStrips(gridSize = 16, numStrips = 6): Strip[] {
 
 /**
  * Returns the strips that should be revealed at a given stage (cumulative).
- * Stage 1 reveals 1 strip, stage 6 reveals all strips.
+ * Stage 1 reveals 1 strip, stage 4 reveals all strips.
  *
  * @param strips - Array of strips in reveal order
  * @param stage - Current stage (1 to total strips)
@@ -145,22 +145,22 @@ export function getStripsForStage(strips: Strip[], stage: number): Strip[] {
  * Regions grow larger with each stage, and are placed at seeded-random
  * positions avoiding heavy overlap with previously revealed areas.
  *
- * Stage 6 always reveals the entire grid.
+ * Stage 4 always reveals the entire grid.
  *
  * @param seed - Seed string for deterministic placement
  * @param gridSize - Grid dimension (default 16)
- * @param totalStages - Number of stages (default 6)
+ * @param totalStages - Number of stages (default 4)
  * @returns Array of RevealRegion[], one per stage (index 0 = stage 1)
  */
 export function generateRegionReveal(
   seed: string,
   gridSize = 16,
-  totalStages = 6
+  totalStages = 4
 ): RevealRegion[][] {
   const rng = createSeededRng(seed);
 
   // Generate one region per stage (stages 1 through totalStages-1).
-  // Stage 6 (last) always reveals the full grid.
+  // Stage 4 (last) always reveals the full grid.
   const stageRegions: RevealRegion[][] = [];
 
   // Track which tiles are already revealed to bias placement toward fresh areas
@@ -252,7 +252,7 @@ export function generateRegionReveal(
     }
   }
 
-  // Stage 6: full grid reveal
+  // Stage 4: full grid reveal
   stageRegions.push([{ x: 0, y: 0, w: gridSize, h: gridSize }]);
 
   return stageRegions;

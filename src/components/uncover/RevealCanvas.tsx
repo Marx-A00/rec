@@ -9,7 +9,7 @@ interface RevealCanvasProps {
   imageUrl: string;
   /** Challenge ID for deterministic reveal order */
   challengeId: string;
-  /** Current reveal stage (1-6) */
+  /** Current reveal stage (1-4) */
   stage: number;
   /** Reveal pattern mode (default: 'scattered') */
   revealMode?: RevealMode;

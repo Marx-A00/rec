@@ -25,9 +25,9 @@ const TOTAL_TILES = PIXEL_GRID * PIXEL_GRID;
 interface UseRevealImageOptions {
   /** Challenge ID used to generate deterministic seed */
   challengeId: string;
-  /** Current reveal stage (1-6) */
+  /** Current reveal stage (1-4) */
   stage: number;
-  /** Total number of stages (default 6) */
+  /** Total number of stages (default 4) */
   totalStages?: number;
   /** Reveal pattern mode (default: 'scattered') */
   mode?: RevealMode;
@@ -93,7 +93,7 @@ function mapCoarseToFineTiles(
 export function useRevealImage({
   challengeId,
   stage,
-  totalStages = 6,
+  totalStages = 4,
   mode = 'scattered',
 }: UseRevealImageOptions): UseRevealImageResult {
   const seed = `uncover-${challengeId}`;

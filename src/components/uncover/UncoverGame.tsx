@@ -129,14 +129,14 @@ function DevTestPanel({
         <input
           type='range'
           min={1}
-          max={6}
+          max={4}
           value={stageOverride ?? 1}
           onChange={e => onStageChange(Number(e.target.value))}
           className='w-full accent-emerald-500'
         />
         <div className='mt-1 flex justify-between text-[10px] text-zinc-500'>
           <span>1 (heavy)</span>
-          <span>6 (clear)</span>
+          <span>4 (clear)</span>
         </div>
       </div>
 
@@ -263,7 +263,7 @@ function GameHome({
             <RevealImage
               imageUrl={challengeImageUrl}
               challengeId={game.challengeId}
-              stage={6}
+              stage={4}
               showToggle={false}
               className='aspect-square w-full overflow-hidden rounded-lg'
             />
@@ -447,7 +447,7 @@ export function UncoverGame() {
               Daily Album Uncover
             </h2>
             <p className='text-zinc-400 mb-4'>
-              Guess the album from its cover art. 6 attempts. New puzzle daily.
+              Guess the album from its cover art. 4 attempts. New puzzle daily.
             </p>
           </div>
           <button

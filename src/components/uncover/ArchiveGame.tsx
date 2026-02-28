@@ -32,11 +32,16 @@ interface ArchiveGameProps {
  *
  * Desktop equivalent: src/components/uncover/UncoverGame.tsx
  */
-export function ArchiveGame({ challengeDate, mobile = false }: ArchiveGameProps) {
+export function ArchiveGame({
+  challengeDate,
+  mobile = false,
+}: ArchiveGameProps) {
   const router = useRouter();
   const game = useArchiveGame(challengeDate);
 
-  const [challengeImageUrl, setChallengeImageUrl] = useState<string | null>(null);
+  const [challengeImageUrl, setChallengeImageUrl] = useState<string | null>(
+    null
+  );
   const [isInitializing, setIsInitializing] = useState(false);
   const [showStats, setShowStats] = useState(false);
 
@@ -75,7 +80,13 @@ export function ArchiveGame({ challengeDate, mobile = false }: ArchiveGameProps)
     };
 
     initializeGame();
-  }, [game.isAuthenticated, game.isAuthLoading, game.sessionId, game, isInitializing]);
+  }, [
+    game.isAuthenticated,
+    game.isAuthLoading,
+    game.sessionId,
+    game,
+    isInitializing,
+  ]);
 
   // Auto-show stats modal when game ends
   useEffect(() => {
@@ -96,13 +107,19 @@ export function ArchiveGame({ challengeDate, mobile = false }: ArchiveGameProps)
       );
     }
 
-    const callbackUrl = mobile ? `/m/game/archive/${format(challengeDate, 'yyyy-MM-dd')}` : `/game/archive/${format(challengeDate, 'yyyy-MM-dd')}`;
+    const callbackUrl = mobile
+      ? `/m/game/archive/${format(challengeDate, 'yyyy-MM-dd')}`
+      : `/game/archive/${format(challengeDate, 'yyyy-MM-dd')}`;
 
     return (
       <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8'>
         <div className='text-center'>
-          <h2 className='mb-2 text-2xl font-bold'>Archive Game - {formattedDate}</h2>
-          <p className='text-muted-foreground mb-4'>Sign in to play past challenges</p>
+          <h2 className='mb-2 text-2xl font-bold'>
+            Archive Game - {formattedDate}
+          </h2>
+          <p className='text-muted-foreground mb-4'>
+            Sign in to play past challenges
+          </p>
         </div>
         <button
           onClick={() => signIn(undefined, { callbackUrl })}
@@ -150,7 +167,9 @@ export function ArchiveGame({ challengeDate, mobile = false }: ArchiveGameProps)
       <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8'>
         {/* Header with date */}
         <div className='text-center'>
-          <div className='text-sm text-muted-foreground mb-2'>{formattedDate}</div>
+          <div className='text-sm text-muted-foreground mb-2'>
+            {formattedDate}
+          </div>
           <h2 className='mb-2 text-3xl font-bold'>
             {game.won ? '🎉 You Won!' : '😔 Game Over'}
           </h2>
@@ -161,13 +180,13 @@ export function ArchiveGame({ challengeDate, mobile = false }: ArchiveGameProps)
           </p>
         </div>
 
-        {/* Full reveal (stage 6) */}
+        {/* Full reveal (stage 4) */}
         {challengeImageUrl && game.challengeId && (
           <div className='w-full max-w-md'>
             <RevealImage
               imageUrl={challengeImageUrl}
               challengeId={game.challengeId}
-              stage={6}
+              stage={4}
               showToggle={false}
               className='aspect-square w-full overflow-hidden rounded-lg'
             />
@@ -225,8 +244,12 @@ export function ArchiveGame({ challengeDate, mobile = false }: ArchiveGameProps)
           Back to Calendar
         </button>
         <div className='text-center'>
-          <div className='text-sm text-muted-foreground mb-1'>{formattedDate}</div>
-          <h2 className='mb-1 text-xl font-bold md:text-2xl'>Archive Challenge</h2>
+          <div className='text-sm text-muted-foreground mb-1'>
+            {formattedDate}
+          </div>
+          <h2 className='mb-1 text-xl font-bold md:text-2xl'>
+            Archive Challenge
+          </h2>
           <p className='text-sm text-muted-foreground'>
             Guess the album from the cover art
           </p>

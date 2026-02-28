@@ -41,10 +41,10 @@ export async function updateArchiveStats(
   });
 
   // Calculate new win distribution
-  const currentDistribution = existingStats?.winDistribution ?? [0, 0, 0, 0, 0, 0];
+  const currentDistribution = existingStats?.winDistribution ?? [0, 0, 0, 0];
   const newDistribution = [...currentDistribution];
 
-  if (won && attemptCount >= 1 && attemptCount <= 6) {
+  if (won && attemptCount >= 1 && attemptCount <= 4) {
     newDistribution[attemptCount - 1] += 1;
   }
 
@@ -85,13 +85,12 @@ export async function getArchiveStats(
       gamesWon: 0,
       totalAttempts: 0,
       winRate: 0,
-      winDistribution: [0, 0, 0, 0, 0, 0],
+      winDistribution: [0, 0, 0, 0],
     };
   }
 
-  const winRate = stats.gamesPlayed > 0 
-    ? (stats.gamesWon / stats.gamesPlayed) * 100 
-    : 0;
+  const winRate =
+    stats.gamesPlayed > 0 ? (stats.gamesWon / stats.gamesPlayed) * 100 : 0;
 
   return {
     gamesPlayed: stats.gamesPlayed,

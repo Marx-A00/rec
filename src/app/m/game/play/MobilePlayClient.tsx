@@ -151,7 +151,7 @@ export function MobilePlayClient() {
             <RevealImage
               imageUrl={challengeImageUrl}
               challengeId={game.challengeId}
-              stage={6}
+              stage={4}
               showToggle={false}
               className='aspect-square w-full overflow-hidden rounded-lg'
             />

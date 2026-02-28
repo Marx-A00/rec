@@ -15,7 +15,7 @@ import { GuessList } from '@/components/uncover/GuessList';
 import { AttemptDots } from '@/components/uncover/AttemptDots';
 import type { RevealMode } from '@/hooks/useRevealImage';
 
-const MAX_ATTEMPTS = 6;
+const MAX_ATTEMPTS = 4;
 
 const CLOUDFLARE_DELIVERY =
   process.env.NEXT_PUBLIC_CLOUDFLARE_IMAGES_DELIVERY_URL ?? '';
@@ -68,7 +68,7 @@ export default function GameTestPage() {
   const albums = data?.albumsByGameStatus ?? [];
 
   // Reveal stage: use slider override, or derive from attempt count
-  const autoStage = isGameOver ? 6 : Math.min(attemptCount + 1, 6);
+  const autoStage = isGameOver ? 4 : Math.min(attemptCount + 1, 4);
   const revealStage = stageOverride ?? autoStage;
 
   const handleSelectAlbum = (album: (typeof albums)[0]) => {
@@ -265,14 +265,14 @@ export default function GameTestPage() {
             <input
               type='range'
               min={1}
-              max={6}
+              max={4}
               value={stageOverride ?? autoStage}
               onChange={e => setStageOverride(Number(e.target.value))}
               className='w-full accent-emerald-500'
             />
             <div className='mt-1 flex justify-between text-[10px] text-zinc-500'>
               <span>1 (heavy)</span>
-              <span>6 (clear)</span>
+              <span>4 (clear)</span>
             </div>
           </div>
 
