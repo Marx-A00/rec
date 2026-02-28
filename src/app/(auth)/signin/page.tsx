@@ -248,12 +248,20 @@ export default function SignIn() {
             </div>
 
             <div>
-              <label
-                htmlFor='password'
-                className='block text-sm font-medium text-zinc-300 mb-2'
-              >
-                Password
-              </label>
+              <div className='flex items-center justify-between mb-2'>
+                <label
+                  htmlFor='password'
+                  className='block text-sm font-medium text-zinc-300'
+                >
+                  Password
+                </label>
+                <Link
+                  href='/forgot-password'
+                  className='text-xs text-zinc-400 hover:text-cosmic-latte/80 transition-colors duration-200'
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className='relative'>
                 <input
                   id='password'

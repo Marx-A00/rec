@@ -45,6 +45,8 @@ function getMobileRoute(pathname: string): string {
   // Auth routes mapping
   if (pathname === '/signin') return '/m/auth/signin';
   if (pathname === '/register') return '/m/auth/register';
+  if (pathname === '/forgot-password') return '/m/auth/forgot-password';
+  if (pathname === '/reset-password') return '/m/auth/reset-password';
   if (pathname === '/signout') return '/signout'; // Keep signout as-is
 
   // Default: just prepend /m
@@ -822,6 +824,8 @@ export const config = {
     '/signin',
     '/register',
     '/signout',
+    '/forgot-password',
+    '/reset-password',
     '/profile/:path*',
     '/albums/:path*',
     '/artists/:path*',
