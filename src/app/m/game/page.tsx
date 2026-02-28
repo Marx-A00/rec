@@ -1,18 +1,19 @@
 import { Metadata } from 'next';
 
-import { MobileGameClient } from './MobileGameClient';
+import { MobileHomeClient } from './MobileHomeClient';
 
 export const metadata: Metadata = {
-  title: 'Daily Challenge | Uncover',
-  description: 'Guess the album from the revealed cover art',
+  title: 'Uncover | Daily Album Challenge',
+  description:
+    'Guess the album from its cover art. 6 attempts. New puzzle daily.',
 };
 
 /**
- * Mobile game route for Uncover daily challenge.
+ * Mobile home/landing page for the Uncover game.
+ * Shows teaser image, play button, and archive link.
  *
- * Server component that renders the MobileGameClient component.
  * Path: /m/game
  */
 export default function MobileGamePage() {
-  return <MobileGameClient />;
+  return <MobileHomeClient />;
 }

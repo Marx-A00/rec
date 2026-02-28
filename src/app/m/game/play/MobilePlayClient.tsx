@@ -8,44 +8,13 @@ import { CalendarDays } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
-import { useDailyChallengeQuery } from '@/generated/graphql';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
 import { AttemptDots } from '@/components/uncover/AttemptDots';
 
 /**
- * Mobile teaser image component for unauthenticated users.
- * Shows stage 1 obscured image to create curiosity.
- */
-function MobileTeaserImage() {
-  const { data, isLoading } = useDailyChallengeQuery();
-
-  if (isLoading) {
-    return (
-      <div className='aspect-square w-full overflow-hidden rounded-lg bg-zinc-900 animate-pulse' />
-    );
-  }
-
-  if (!data?.dailyChallenge?.imageUrl || !data?.dailyChallenge?.id) {
-    return null;
-  }
-
-  return (
-    <div className='w-full'>
-      <RevealImage
-        imageUrl={data.dailyChallenge.imageUrl}
-        challengeId={data.dailyChallenge.id}
-        stage={1}
-        showToggle={false}
-        className='aspect-square w-full overflow-hidden rounded-lg'
-      />
-    </div>
-  );
-}
-
-/**
- * Mobile game client component for Uncover daily challenge.
+ * Mobile game play client component for Uncover daily challenge.
  *
  * Mobile-optimized layout with:
  * - Sticky header with back navigation
@@ -53,9 +22,9 @@ function MobileTeaserImage() {
  * - Full-width layout
  * - Same game logic as desktop UncoverGame
  *
- * Desktop equivalent: src/components/uncover/UncoverGame.tsx
+ * Path: /m/game/play
  */
-export function MobileGameClient() {
+export function MobilePlayClient() {
   const router = useRouter();
   const game = useUncoverGame();
 
@@ -93,7 +62,6 @@ export function MobileGameClient() {
         }
       } catch (error) {
         console.error('Failed to start game:', error);
-        // Error already set in game.error by useUncoverGame
       } finally {
         if (!cancelled) {
           setIsInitializing(false);
@@ -108,7 +76,7 @@ export function MobileGameClient() {
     };
   }, [game.isAuthenticated, game.isAuthLoading, game.sessionId]);
 
-  // AUTH-01: Show login prompt for unauthenticated users with teaser
+  // AUTH: Redirect unauthenticated users to home
   if (!game.isAuthenticated) {
     if (game.isAuthLoading) {
       return (
@@ -143,27 +111,20 @@ export function MobileGameClient() {
           </button>
         </div>
         <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-8'>
-          {/* Mobile teaser image - stage 1 obscured */}
-          <MobileTeaserImage />
-
-          {/* Login CTA overlay */}
-          <div className='relative -mt-8 flex w-full flex-col items-center gap-4 rounded-lg bg-zinc-900/95 p-6 shadow-lg backdrop-blur-sm'>
-            <div className='text-center'>
-              <h2 className='mb-2 text-2xl font-bold text-white'>
-                Daily Album Uncover
-              </h2>
-              <p className='text-zinc-400 mb-4 text-sm'>
-                Guess the album from its cover art. 6 attempts. New puzzle
-                daily.
-              </p>
-            </div>
-            <button
-              onClick={() => signIn(undefined, { callbackUrl: '/m/game' })}
-              className='min-h-[48px] w-full max-w-xs rounded-full bg-emeraled-green px-6 py-3 font-medium text-black transition-transform active:scale-[0.98]'
-            >
-              Sign In to Play
-            </button>
+          <div className='text-center'>
+            <h2 className='mb-2 text-2xl font-bold text-white'>
+              Sign in to play
+            </h2>
+            <p className='text-zinc-400 mb-4 text-sm'>
+              You need to be signed in to play Uncover.
+            </p>
           </div>
+          <button
+            onClick={() => signIn(undefined, { callbackUrl: '/m/game' })}
+            className='min-h-[48px] w-full max-w-xs rounded-full bg-emeraled-green px-6 py-3 font-medium text-black transition-transform active:scale-[0.98]'
+          >
+            Sign In
+          </button>
         </div>
       </div>
     );
@@ -223,24 +184,24 @@ export function MobileGameClient() {
     );
   }
 
-  // DAILY-03 + GAME-07: Show results for completed games (won/lost)
+  // Game over — results screen
   if (game.isGameOver) {
     return (
       <div className='min-h-screen bg-black pb-8'>
         <div className='sticky top-0 z-10 border-b border-zinc-800 bg-black/90 px-4 py-3 backdrop-blur-sm'>
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/m/game')}
             className='flex min-h-[44px] min-w-[44px] items-center gap-2 text-white'
             aria-label='Go back'
           >
             <ArrowLeft className='h-5 w-5' />
-            <span>Back</span>
+            <span>Home</span>
           </button>
         </div>
         <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-8'>
           <div className='text-center'>
             <h2 className='mb-2 text-3xl font-bold text-white'>
-              {game.won ? '🎉 You Won!' : '😔 Game Over'}
+              {game.won ? 'You Won!' : 'Game Over'}
             </h2>
             <p className='text-zinc-400'>
               {game.won
@@ -249,7 +210,6 @@ export function MobileGameClient() {
             </p>
           </div>
 
-          {/* GAME-07: Full reveal (stage 6) on game end */}
           {challengeImageUrl && game.challengeId && (
             <div className='w-full px-4'>
               <RevealImage
@@ -262,7 +222,6 @@ export function MobileGameClient() {
             </div>
           )}
 
-          {/* Previous guesses */}
           {game.guesses.length > 0 && (
             <div className='w-full px-4'>
               <GuessList guesses={game.guesses} />
@@ -277,18 +236,18 @@ export function MobileGameClient() {
     );
   }
 
-  // Game board for IN_PROGRESS sessions
+  // Game board — IN_PROGRESS
   return (
     <div className='min-h-screen bg-black pb-8'>
       {/* Sticky Header */}
       <div className='sticky top-0 z-10 border-b border-zinc-800 bg-black/90 px-4 py-3 backdrop-blur-sm'>
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push('/m/game')}
           className='flex min-h-[44px] min-w-[44px] items-center gap-2 text-white'
           aria-label='Go back'
         >
           <ArrowLeft className='h-5 w-5' />
-          <span>Back</span>
+          <span>Home</span>
         </button>
       </div>
 

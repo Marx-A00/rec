@@ -1,21 +1,23 @@
 import { Metadata } from 'next';
 
-import { UncoverGame } from '@/components/uncover/UncoverGame';
+import { UncoverHome } from './UncoverHome';
 
 export const metadata: Metadata = {
-  title: 'Daily Challenge | Uncover',
-  description: 'Guess the album from the revealed cover art',
+  title: 'Uncover | Daily Album Challenge',
+  description:
+    'Guess the album from its cover art. 6 attempts. New puzzle daily.',
 };
 
 /**
- * Desktop game route for Uncover daily challenge.
+ * Desktop home/landing page for the Uncover game.
+ * Shows teaser image, play button, and archive link.
  *
- * Server component that renders the UncoverGame client component.
+ * Path: /game
  */
 export default function GamePage() {
   return (
     <div className='container mx-auto max-w-4xl py-8'>
-      <UncoverGame />
+      <UncoverHome />
     </div>
   );
 }
