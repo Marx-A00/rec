@@ -29,7 +29,7 @@ export function MobileHomeClient() {
       <div className='text-center'>
         <h1 className='text-3xl font-bold text-white'>Uncover</h1>
         <p className='mt-2 text-sm text-zinc-400'>
-          Guess the album from its cover art. 6 attempts. New puzzle daily.
+          Guess the album from its cover art. 4 attempts. New puzzle daily.
         </p>
       </div>
 
@@ -37,7 +37,7 @@ export function MobileHomeClient() {
       <div className='flex w-full max-w-xs flex-col gap-3'>
         <Link
           href='/m/game/play'
-          className='flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white transition-transform active:scale-[0.98]'
+          className='flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-emeraled-green px-6 py-3.5 text-base font-semibold text-white transition-transform active:scale-[0.98]'
         >
           <Play className='h-5 w-5 fill-current' />
           Play

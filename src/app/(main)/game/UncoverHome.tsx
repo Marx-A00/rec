@@ -22,7 +22,7 @@ export function UncoverHome() {
       <div className='text-center'>
         <h1 className='text-3xl font-bold text-white'>Uncover</h1>
         <p className='mt-2 text-sm text-zinc-400'>
-          Guess the album from its cover art. 6 attempts. New puzzle daily.
+          Guess the album from its cover art. 4 attempts. New puzzle daily.
         </p>
       </div>
 
@@ -30,7 +30,7 @@ export function UncoverHome() {
       <div className='flex w-full max-w-xs flex-col gap-3'>
         <Link
           href='/game/play'
-          className='flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-emerald-500'
+          className='flex items-center justify-center gap-2 rounded-lg bg-emeraled-green px-6 py-3.5 text-base font-semibold text-white transition-colors hover:brightness-110'
         >
           <Play className='h-5 w-5 fill-current' />
           Play
