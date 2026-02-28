@@ -1887,8 +1887,15 @@ export const queryResolvers: QueryResolvers = {
       else if (query) {
         where.OR = [
           { title: { contains: query, mode: 'insensitive' } },
-          { label: { contains: query, mode: 'insensitive' } },
-          { barcode: { contains: query, mode: 'insensitive' } },
+          {
+            artists: {
+              some: {
+                artist: {
+                  name: { contains: query, mode: 'insensitive' },
+                },
+              },
+            },
+          },
         ];
       }
 
