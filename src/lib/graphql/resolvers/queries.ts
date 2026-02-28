@@ -3799,10 +3799,11 @@ export const queryResolvers: QueryResolvers = {
       };
 
       // Apply date filters if provided (relation filter requires `is` wrapper)
+      // Note: Prisma field is `date`, GraphQL exposes it as `challengeDate`
       if (fromDate || toDate) {
         where.challenge = {
           is: {
-            challengeDate: {
+            date: {
               ...(fromDate && { gte: new Date(fromDate) }),
               ...(toDate && { lte: new Date(toDate) }),
             },
@@ -3815,20 +3816,20 @@ export const queryResolvers: QueryResolvers = {
         include: {
           challenge: {
             select: {
-              challengeDate: true,
+              date: true,
             },
           },
         },
         orderBy: {
           challenge: {
-            challengeDate: 'desc',
+            date: 'desc',
           },
         },
       });
 
       return sessions.map(session => ({
         id: session.id,
-        challengeDate: session.challenge.challengeDate,
+        challengeDate: session.challenge.date,
         won: session.won,
         attemptCount: session.attemptCount,
         completedAt: session.completedAt,
