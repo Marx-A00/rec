@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 
 import { auth } from '@/../auth';
 
@@ -10,17 +11,28 @@ export const metadata: Metadata = {
   description: 'Sign in or register for Album Recommendations',
 };
 
+// Auth pages that should be accessible even when logged in
+const BYPASS_AUTH_REDIRECT = ['/forgot-password', '/reset-password'];
+
 export default async function AuthLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Check current path — some auth pages should bypass the redirect
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || '';
+  const shouldBypass = BYPASS_AUTH_REDIRECT.some(path =>
+    pathname.startsWith(path)
+  );
+
   // Check if user is already authenticated
   const session = await auth();
 
   // Redirect authenticated users with username to home mosaic
   // Users without username stay on auth pages to complete their profile
-  if (session?.user) {
+  // Skip redirect for password reset pages (user may be signed in on the device)
+  if (session?.user && !shouldBypass) {
     const hasUsername =
       session.user.username && session.user.username.trim() !== '';
 

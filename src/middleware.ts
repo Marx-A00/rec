@@ -810,7 +810,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. For non-API routes (pages), add security headers and continue
-  const pageResponse = NextResponse.next();
+  const pageResponse = NextResponse.next({
+    headers: { 'x-pathname': pathname },
+  });
   addMiddlewareSecurityHeaders(pageResponse, pathname);
   return pageResponse;
 }
