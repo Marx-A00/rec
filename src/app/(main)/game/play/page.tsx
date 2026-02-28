@@ -11,11 +11,13 @@ export const metadata: Metadata = {
  * Desktop game play route for Uncover daily challenge.
  * This is where the actual gameplay happens.
  *
+ * Uses fixed positioning to escape document flow and fill viewport
+ * below TopBar (h-16 + 1px border = 65px) with sidebar offset (md:ml-16).
  * Path: /game/play
  */
 export default function GamePlayPage() {
   return (
-    <div className='container mx-auto max-w-4xl py-8'>
+    <div className='fixed inset-x-0 bottom-0 top-[65px] overflow-hidden md:left-16'>
       <UncoverGame />
     </div>
   );

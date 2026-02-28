@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { CalendarDays } from 'lucide-react';
 import { signIn } from 'next-auth/react';
@@ -14,18 +12,22 @@ import { GuessList } from '@/components/uncover/GuessList';
 import { AttemptDots } from '@/components/uncover/AttemptDots';
 
 /**
+ * Available height for game content inside the mobile layout.
+ * Mobile layout has: MobileHeader (~56px) + MobileBottomNav (56px + safe-area).
+ * Using CSS calc so it adapts to actual safe-area insets.
+ */
+const MOBILE_CONTENT_HEIGHT =
+  'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom, 0px))';
+
+/**
  * Mobile game play client component for Uncover daily challenge.
  *
- * Mobile-optimized layout with:
- * - Sticky header with back navigation
- * - Touch-friendly controls (44px+ targets)
- * - Full-width layout
- * - Same game logic as desktop UncoverGame
+ * Sits inside mobile layout (MobileHeader + MobileBottomNav already present).
+ * All states fill the available viewport without scrolling.
  *
  * Path: /m/game/play
  */
 export function MobilePlayClient() {
-  const router = useRouter();
   const game = useUncoverGame();
 
   const [challengeImageUrl, setChallengeImageUrl] = useState<string | null>(
@@ -33,204 +35,137 @@ export function MobilePlayClient() {
   );
   const [isInitializing, setIsInitializing] = useState(false);
 
-  // Stable ref to startGame so the effect doesn't re-trigger on function identity changes
   const startGameRef = useRef(game.startGame);
   startGameRef.current = game.startGame;
 
-  /**
-   * Auto-start session on mount if authenticated and no active session.
-   * Resume existing session if sessionId in store.
-   */
   useEffect(() => {
-    if (!game.isAuthenticated || game.isAuthLoading) {
-      return;
-    }
+    if (!game.isAuthenticated || game.isAuthLoading) return;
+    if (game.sessionId) return;
 
-    // Already have session - don't start again
-    if (game.sessionId) {
-      return;
-    }
-
-    // Start new session
     let cancelled = false;
     const initializeGame = async () => {
       setIsInitializing(true);
       try {
         const result = await startGameRef.current();
-        if (!cancelled) {
-          setChallengeImageUrl(result.imageUrl);
-        }
+        if (!cancelled) setChallengeImageUrl(result.imageUrl);
       } catch (error) {
         console.error('Failed to start game:', error);
       } finally {
-        if (!cancelled) {
-          setIsInitializing(false);
-        }
+        if (!cancelled) setIsInitializing(false);
       }
     };
 
     initializeGame();
-
     return () => {
       cancelled = true;
     };
   }, [game.isAuthenticated, game.isAuthLoading, game.sessionId]);
 
-  // AUTH: Redirect unauthenticated users to home
+  // AUTH: Sign-in prompt
   if (!game.isAuthenticated) {
-    if (game.isAuthLoading) {
-      return (
-        <div className='min-h-screen bg-black'>
-          <div className='sticky top-0 z-10 border-b border-zinc-800 bg-black/90 px-4 py-3 backdrop-blur-sm'>
-            <button
-              onClick={() => router.back()}
-              className='flex min-h-[44px] min-w-[44px] items-center gap-2 text-white'
-              aria-label='Go back'
-            >
-              <ArrowLeft className='h-5 w-5' />
-              <span>Back</span>
-            </button>
-          </div>
-          <div className='flex min-h-[400px] items-center justify-center'>
-            <div className='text-zinc-400'>Loading...</div>
-          </div>
-        </div>
-      );
-    }
-
     return (
-      <div className='min-h-screen bg-black'>
-        <div className='sticky top-0 z-10 border-b border-zinc-800 bg-black/90 px-4 py-3 backdrop-blur-sm'>
-          <button
-            onClick={() => router.back()}
-            className='flex min-h-[44px] min-w-[44px] items-center gap-2 text-white'
-            aria-label='Go back'
-          >
-            <ArrowLeft className='h-5 w-5' />
-            <span>Back</span>
-          </button>
-        </div>
-        <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-8'>
-          <div className='text-center'>
-            <h2 className='mb-2 text-2xl font-bold text-white'>
-              Sign in to play
-            </h2>
-            <p className='text-zinc-400 mb-4 text-sm'>
-              You need to be signed in to play Uncover.
-            </p>
-          </div>
-          <button
-            onClick={() => signIn(undefined, { callbackUrl: '/m/game' })}
-            className='min-h-[48px] w-full max-w-xs rounded-full bg-emeraled-green px-6 py-3 font-medium text-black transition-transform active:scale-[0.98]'
-          >
-            Sign In
-          </button>
-        </div>
+      <div
+        className='flex flex-col items-center justify-center gap-6 px-6'
+        style={{ height: MOBILE_CONTENT_HEIGHT }}
+      >
+        {game.isAuthLoading ? (
+          <div className='text-zinc-400'>Loading...</div>
+        ) : (
+          <>
+            <div className='text-center'>
+              <h2 className='mb-2 text-2xl font-bold text-white'>
+                Sign in to play
+              </h2>
+              <p className='text-sm text-zinc-400'>
+                You need to be signed in to play Uncover.
+              </p>
+            </div>
+            <button
+              onClick={() => signIn(undefined, { callbackUrl: '/m/game' })}
+              className='min-h-[48px] w-full max-w-xs rounded-full bg-emeraled-green px-6 py-3 font-medium text-black transition-transform active:scale-[0.98]'
+            >
+              Sign In
+            </button>
+          </>
+        )}
       </div>
     );
   }
 
-  // Loading state during initial session start
+  // Loading
   if (isInitializing || (game.isAuthenticated && !game.sessionId)) {
     return (
-      <div className='min-h-screen bg-black'>
-        <div className='sticky top-0 z-10 border-b border-zinc-800 bg-black/90 px-4 py-3 backdrop-blur-sm'>
-          <button
-            onClick={() => router.back()}
-            className='flex min-h-[44px] min-w-[44px] items-center gap-2 text-white'
-            aria-label='Go back'
-          >
-            <ArrowLeft className='h-5 w-5' />
-            <span>Back</span>
-          </button>
-        </div>
-        <div className='flex min-h-[400px] items-center justify-center'>
-          <div className='text-zinc-400'>Starting game...</div>
-        </div>
+      <div
+        className='flex items-center justify-center'
+        style={{ height: MOBILE_CONTENT_HEIGHT }}
+      >
+        <div className='text-zinc-400'>Starting game...</div>
       </div>
     );
   }
 
-  // Error state
+  // Error
   if (game.error && !game.sessionId) {
     return (
-      <div className='min-h-screen bg-black'>
-        <div className='sticky top-0 z-10 border-b border-zinc-800 bg-black/90 px-4 py-3 backdrop-blur-sm'>
-          <button
-            onClick={() => router.back()}
-            className='flex min-h-[44px] min-w-[44px] items-center gap-2 text-white'
-            aria-label='Go back'
-          >
-            <ArrowLeft className='h-5 w-5' />
-            <span>Back</span>
-          </button>
+      <div
+        className='flex flex-col items-center justify-center gap-4 px-6 text-center'
+        style={{ height: MOBILE_CONTENT_HEIGHT }}
+      >
+        <div>
+          <h2 className='mb-2 text-xl font-bold text-red-500'>Error</h2>
+          <p className='text-zinc-400'>{game.error}</p>
         </div>
-        <div className='flex min-h-[400px] flex-col items-center justify-center gap-4 px-6 text-center'>
-          <div>
-            <h2 className='mb-2 text-xl font-bold text-red-500'>Error</h2>
-            <p className='text-zinc-400'>{game.error}</p>
-          </div>
-          <button
-            onClick={() => {
-              game.clearError();
-              window.location.reload();
-            }}
-            className='min-h-[44px] rounded-full bg-emeraled-green px-6 py-3 font-medium text-black'
-          >
-            Try Again
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            game.clearError();
+            window.location.reload();
+          }}
+          className='min-h-[44px] rounded-full bg-emeraled-green px-6 py-3 font-medium text-black'
+        >
+          Try Again
+        </button>
       </div>
     );
   }
 
-  // Game over — results screen
+  // Game over — results
   if (game.isGameOver) {
     return (
-      <div className='min-h-screen bg-black pb-8'>
-        <div className='sticky top-0 z-10 border-b border-zinc-800 bg-black/90 px-4 py-3 backdrop-blur-sm'>
-          <button
-            onClick={() => router.push('/m/game')}
-            className='flex min-h-[44px] min-w-[44px] items-center gap-2 text-white'
-            aria-label='Go back'
-          >
-            <ArrowLeft className='h-5 w-5' />
-            <span>Home</span>
-          </button>
+      <div
+        className='flex flex-col items-center overflow-y-auto px-4 py-4'
+        style={{ height: MOBILE_CONTENT_HEIGHT }}
+      >
+        <div className='text-center'>
+          <h2 className='mb-1 text-2xl font-bold text-white'>
+            {game.won ? 'You Won!' : 'Game Over'}
+          </h2>
+          <p className='text-sm text-zinc-400'>
+            {game.won
+              ? `You guessed correctly in ${game.attemptCount} ${game.attemptCount === 1 ? 'attempt' : 'attempts'}!`
+              : `You used all ${game.attemptCount} attempts.`}
+          </p>
         </div>
-        <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-8'>
-          <div className='text-center'>
-            <h2 className='mb-2 text-3xl font-bold text-white'>
-              {game.won ? 'You Won!' : 'Game Over'}
-            </h2>
-            <p className='text-zinc-400'>
-              {game.won
-                ? `You guessed correctly in ${game.attemptCount} ${game.attemptCount === 1 ? 'attempt' : 'attempts'}!`
-                : `You used all ${game.attemptCount} attempts.`}
-            </p>
+
+        {challengeImageUrl && game.challengeId && (
+          <div className='my-4 w-full max-w-[200px]'>
+            <RevealImage
+              imageUrl={challengeImageUrl}
+              challengeId={game.challengeId}
+              stage={6}
+              showToggle={false}
+              className='aspect-square w-full overflow-hidden rounded-lg'
+            />
           </div>
+        )}
 
-          {challengeImageUrl && game.challengeId && (
-            <div className='w-full px-4'>
-              <RevealImage
-                imageUrl={challengeImageUrl}
-                challengeId={game.challengeId}
-                stage={6}
-                showToggle={false}
-                className='aspect-square w-full overflow-hidden rounded-lg'
-              />
-            </div>
-          )}
-
-          {game.guesses.length > 0 && (
-            <div className='w-full px-4'>
-              <GuessList guesses={game.guesses} />
-            </div>
-          )}
-
-          <div className='text-center text-sm text-zinc-500'>
-            Come back tomorrow for a new challenge!
+        {game.guesses.length > 0 && (
+          <div className='w-full'>
+            <GuessList guesses={game.guesses} />
           </div>
+        )}
+
+        <div className='mt-4 text-center text-sm text-zinc-500'>
+          Come back tomorrow for a new challenge!
         </div>
       </div>
     );
@@ -238,75 +173,71 @@ export function MobilePlayClient() {
 
   // Game board — IN_PROGRESS
   return (
-    <div className='min-h-screen bg-black pb-8'>
-      {/* Sticky Header */}
-      <div className='sticky top-0 z-10 border-b border-zinc-800 bg-black/90 px-4 py-3 backdrop-blur-sm'>
-        <button
-          onClick={() => router.push('/m/game')}
-          className='flex min-h-[44px] min-w-[44px] items-center gap-2 text-white'
-          aria-label='Go back'
-        >
-          <ArrowLeft className='h-5 w-5' />
-          <span>Home</span>
-        </button>
+    <div
+      className='flex flex-col overflow-hidden px-4 py-2'
+      style={{ height: MOBILE_CONTENT_HEIGHT }}
+    >
+      {/* Header */}
+      <div className='shrink-0 text-center'>
+        <h2 className='text-lg font-bold text-white'>Daily Uncover</h2>
+        <p className='text-xs text-zinc-400'>
+          <Link
+            href='/m/game/archive'
+            className='inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-white transition-colors'
+          >
+            <CalendarDays className='h-3 w-3' />
+            Archive
+          </Link>{' '}
+          Guess the album from the cover art
+        </p>
       </div>
 
-      <div className='flex flex-col gap-6 px-4 py-8'>
-        {/* Header */}
-        <div className='text-center'>
-          <h2 className='mb-1 text-2xl font-bold text-white'>Daily Uncover</h2>
-          <p className='text-sm text-zinc-400'>
-            <Link
-              href='/m/game/archive'
-              className='mt-2 inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors'
-            >
-              <CalendarDays className='h-3.5 w-3.5' />
-              Archive
-            </Link>{' '}
-            Guess the album from the cover art
-          </p>
-        </div>
-
-        {/* Reveal image - full width */}
-        {challengeImageUrl && game.challengeId && (
-          <div className='w-full'>
+      {/* Reveal image — capped height so it doesn't eat the viewport */}
+      {challengeImageUrl && game.challengeId && (
+        <div
+          className='my-2 flex shrink-0 justify-center'
+          style={{ height: '40dvh' }}
+        >
+          <div className='aspect-square h-full'>
             <RevealImage
               imageUrl={challengeImageUrl}
               challengeId={game.challengeId}
               stage={game.revealStage}
               isSubmitting={game.isSubmitting}
-              className='aspect-square w-full overflow-hidden rounded-lg'
+              className='h-full w-full overflow-hidden rounded-lg'
             />
           </div>
-        )}
-
-        {/* Attempt dots indicator */}
-        <AttemptDots attemptCount={game.attemptCount} />
-
-        {/* Search input */}
-        <div className='w-full'>
-          <AlbumGuessInput
-            onGuess={game.submitGuess}
-            onSkip={game.skipGuess}
-            disabled={game.isGameOver}
-            isSubmitting={game.isSubmitting}
-          />
         </div>
+      )}
 
-        {/* Previous guesses */}
-        {game.guesses.length > 0 && (
-          <div className='w-full'>
-            <GuessList guesses={game.guesses} />
-          </div>
-        )}
-
-        {/* Error display */}
-        {game.error && (
-          <div className='w-full rounded-md border border-red-500/50 bg-red-950/20 p-4 text-center text-red-400'>
-            {game.error}
-          </div>
-        )}
+      {/* Attempt dots */}
+      <div className='shrink-0 py-1'>
+        <AttemptDots attemptCount={game.attemptCount} />
       </div>
+
+      {/* Search input */}
+      <div className='w-full shrink-0'>
+        <AlbumGuessInput
+          onGuess={game.submitGuess}
+          onSkip={game.skipGuess}
+          disabled={game.isGameOver}
+          isSubmitting={game.isSubmitting}
+        />
+      </div>
+
+      {/* Previous guesses — scrollable within remaining space */}
+      {game.guesses.length > 0 && (
+        <div className='min-h-0 flex-1 overflow-y-auto pt-2'>
+          <GuessList guesses={game.guesses} />
+        </div>
+      )}
+
+      {/* Error display */}
+      {game.error && (
+        <div className='shrink-0 rounded-md border border-red-500/50 bg-red-950/20 p-3 text-center text-sm text-red-400'>
+          {game.error}
+        </div>
+      )}
     </div>
   );
 }

@@ -8,12 +8,13 @@ import { TeaserImage } from '@/components/uncover/TeaserImage';
 /**
  * Desktop home screen for Uncover game.
  * Shows teaser image and navigation to play or browse archive.
+ * Fills parent container height without scrolling.
  */
 export function UncoverHome() {
   return (
-    <div className='flex flex-col items-center gap-8 px-4 py-12'>
-      {/* Teaser image */}
-      <div className='w-full max-w-sm'>
+    <div className='flex h-full flex-col items-center justify-center gap-6 px-4'>
+      {/* Teaser image — constrained so it doesn't eat all the space */}
+      <div className='w-full max-w-[240px]'>
         <TeaserImage />
       </div>
 
