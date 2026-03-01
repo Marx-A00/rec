@@ -200,7 +200,7 @@ function GameOver({
   const won = game.won;
 
   return (
-    <div className='flex h-full items-center justify-center gap-12 px-10'>
+    <div className='flex h-full items-start gap-12 px-[60px] pt-8'>
       {/* Art Column — full reveal */}
       <div className='flex flex-col items-center gap-4'>
         {challengeImageUrl && game.challengeId && (
@@ -225,61 +225,62 @@ function GameOver({
       </div>
 
       {/* Controls Column — result + actions */}
-      <div className='flex w-[420px] flex-col justify-center'>
+      <div className='flex min-h-0 flex-1 flex-col'>
         {/* Result header */}
-        <div className='space-y-1 pb-6'>
-          <h2 className='text-4xl font-bold text-white'>
-            {won ? 'You got it!' : 'Better luck tomorrow'}
-          </h2>
-          <div className='flex items-center gap-2 pt-2'>
-            {won ? (
-              <>
-                <Zap className='h-4 w-4 text-emerald-400' />
-                <span className='text-sm text-zinc-400'>
-                  Guessed in {game.attemptCount}{' '}
-                  {game.attemptCount === 1 ? 'attempt' : 'attempts'}
-                </span>
-              </>
-            ) : (
-              <>
-                <X className='h-4 w-4 text-red-400' />
-                <span className='text-sm text-zinc-400'>
-                  Used all {game.attemptCount} attempts
-                </span>
-              </>
-            )}
-          </div>
+        <h2 className='pb-1 text-2xl font-bold text-white'>
+          {won ? 'You got it!' : 'Better luck tomorrow'}
+        </h2>
+        <div className='flex items-center gap-2 pb-5'>
+          {won ? (
+            <>
+              <Zap className='h-3.5 w-3.5 text-emerald-400' />
+              <span className='text-xs text-zinc-400'>
+                Guessed in {game.attemptCount}{' '}
+                {game.attemptCount === 1 ? 'attempt' : 'attempts'}
+              </span>
+            </>
+          ) : (
+            <>
+              <X className='h-3.5 w-3.5 text-red-400' />
+              <span className='text-xs text-zinc-400'>
+                Used all {game.attemptCount} attempts
+              </span>
+            </>
+          )}
         </div>
 
         {/* Action buttons */}
-        <div className='flex gap-3 pb-6'>
+        <div className='flex gap-3 pb-5'>
           <button
-            className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-colors ${
+            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-colors ${
               won
                 ? 'bg-emerald-600 hover:bg-emerald-500'
                 : 'bg-red-600 hover:bg-red-500'
             }`}
           >
-            <Share2 className='h-4 w-4' />
+            <Share2 className='h-3.5 w-3.5' />
             Share Result
           </button>
           <Link
             href='/game/archive'
-            className='flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900/50 px-5 py-3 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800'
+            className='flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900/50 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800'
           >
-            <Archive className='h-4 w-4' />
+            <Archive className='h-3.5 w-3.5' />
             Play Archive
           </Link>
         </div>
 
+        {/* Divider */}
+        <div className='h-px w-full bg-zinc-800' />
+
         {/* Next game countdown */}
-        <div className='border-t border-zinc-800 pt-4'>
-          <p className='text-xs text-zinc-500'>Next puzzle drops at midnight</p>
-        </div>
+        <p className='pt-3 text-xs text-zinc-500'>
+          Next puzzle drops at midnight
+        </p>
 
         {/* Today's guesses */}
         {game.guesses.length > 0 && (
-          <div className='mt-6'>
+          <div className='min-h-0 flex-1 overflow-y-auto pt-3'>
             <GuessList guesses={game.guesses} />
           </div>
         )}
