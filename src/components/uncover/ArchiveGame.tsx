@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar } from 'lucide-react';
+import Link from 'next/link';
+import { Calendar, Share2, Zap, X } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
 import { useArchiveGame } from '@/hooks/useArchiveGame';
@@ -141,7 +142,7 @@ export function ArchiveGame({
   // Loading state during initial session start
   if (isInitializing || (game.isAuthenticated && !game.sessionId)) {
     return (
-      <div className='flex min-h-[400px] items-center justify-center'>
+      <div className='flex h-full items-center justify-center'>
         <div className='text-muted-foreground'>Starting game...</div>
       </div>
     );
@@ -171,62 +172,91 @@ export function ArchiveGame({
     );
   }
 
-  // Game over state
+  // Game over state — V2 two-column layout
   if (game.isGameOver) {
+    const won = game.won;
     return (
-      <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8'>
-        {/* Header with date */}
-        <div className='text-center'>
-          <div className='text-sm text-muted-foreground mb-2'>
-            {formattedDate}
-          </div>
-          <h2 className='mb-2 text-3xl font-bold'>
-            {game.won ? '🎉 You Won!' : '😔 Game Over'}
-          </h2>
-          <p className='text-muted-foreground'>
-            {game.won
-              ? `You guessed correctly in ${game.attemptCount} ${game.attemptCount === 1 ? 'attempt' : 'attempts'}!`
-              : `You used all ${game.attemptCount} attempts.`}
-          </p>
+      <div className='flex h-full items-center justify-center gap-12 px-10'>
+        {/* Art Column — full reveal */}
+        <div className='flex flex-col items-center gap-4'>
+          {challengeImageUrl && game.challengeId && (
+            <div
+              className={`overflow-hidden rounded-2xl border ${
+                won
+                  ? 'border-emerald-500/25 shadow-[0_0_48px_rgba(16,185,129,0.07)]'
+                  : 'border-red-500/25 shadow-[0_0_48px_rgba(239,68,68,0.07)]'
+              } bg-zinc-900`}
+            >
+              <div className='h-[500px] w-[500px]'>
+                <RevealImage
+                  imageUrl={challengeImageUrl}
+                  challengeId={game.challengeId}
+                  stage={TOTAL_STAGES}
+                  showToggle={false}
+                  className='h-full w-full'
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Full reveal (game over) */}
-        {challengeImageUrl && game.challengeId && (
-          <div className='w-full max-w-md'>
-            <RevealImage
-              imageUrl={challengeImageUrl}
-              challengeId={game.challengeId}
-              stage={TOTAL_STAGES}
-              showToggle={false}
-              className='aspect-square w-full overflow-hidden rounded-lg'
-            />
+        {/* Controls Column — result + actions */}
+        <div className='flex w-[420px] flex-col justify-center'>
+          {/* Date label */}
+          <p className='pb-2 text-sm text-zinc-500'>{formattedDate}</p>
+
+          {/* Result header */}
+          <div className='space-y-1 pb-6'>
+            <h2 className='text-4xl font-bold text-white'>
+              {won ? 'You got it!' : 'Better luck next time'}
+            </h2>
+            <div className='flex items-center gap-2 pt-2'>
+              {won ? (
+                <>
+                  <Zap className='h-4 w-4 text-emerald-400' />
+                  <span className='text-sm text-zinc-400'>
+                    Guessed in {game.attemptCount}{' '}
+                    {game.attemptCount === 1 ? 'attempt' : 'attempts'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <X className='h-4 w-4 text-red-400' />
+                  <span className='text-sm text-zinc-400'>
+                    Used all {game.attemptCount} attempts
+                  </span>
+                </>
+              )}
+            </div>
           </div>
-        )}
 
-        {/* Previous guesses */}
-        {game.guesses.length > 0 && (
-          <div className='w-full max-w-md'>
-            <GuessList guesses={game.guesses} />
+          {/* Action buttons */}
+          <div className='flex gap-3 pb-6'>
+            <button
+              className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-colors ${
+                won
+                  ? 'bg-emerald-600 hover:bg-emerald-500'
+                  : 'bg-red-600 hover:bg-red-500'
+              }`}
+            >
+              <Share2 className='h-4 w-4' />
+              Share Result
+            </button>
+            <Link
+              href={archiveUrl}
+              className='flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900/50 px-5 py-3 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800'
+            >
+              <Calendar className='h-4 w-4' />
+              Back to Archive
+            </Link>
           </div>
-        )}
 
-        <div className='flex flex-col gap-3 w-full max-w-md'>
-          {/* View Stats button */}
-          <button
-            onClick={() => setShowStats(true)}
-            className='w-full rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90'
-          >
-            View Stats
-          </button>
-
-          {/* Back to Archive Calendar button */}
-          <button
-            onClick={() => router.push(archiveUrl)}
-            className='w-full flex items-center justify-center gap-2 rounded-md border border-zinc-700 bg-zinc-900 px-6 py-3 font-medium text-cosmic-latte transition-colors hover:bg-zinc-800'
-          >
-            <Calendar className='h-4 w-4' />
-            Back to Archive
-          </button>
+          {/* Guesses list */}
+          {game.guesses.length > 0 && (
+            <div className='border-t border-zinc-800 pt-4'>
+              <GuessList guesses={game.guesses} />
+            </div>
+          )}
         </div>
 
         {/* Stats Modal - archive mode */}
@@ -241,70 +271,67 @@ export function ArchiveGame({
     );
   }
 
-  // Game board for IN_PROGRESS sessions
+  // Game board for IN_PROGRESS sessions — V2 two-column layout
   return (
-    <div className='flex min-h-[400px] flex-col items-center gap-6 p-4 md:p-8'>
-      {/* Header with back button and date */}
-      <div className='w-full max-w-md'>
-        <button
-          onClick={() => router.push(archiveUrl)}
-          className='mb-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-cosmic-latte transition-colors'
-        >
-          <ArrowLeft className='h-4 w-4' />
-          Back to Calendar
-        </button>
-        <div className='text-center'>
-          <div className='text-sm text-muted-foreground mb-1'>
-            {formattedDate}
+    <div className='flex h-full items-start gap-12 px-[60px] pt-8'>
+      {/* Art Column */}
+      <div className='flex flex-col items-center gap-4'>
+        {challengeImageUrl && game.challengeId && (
+          <div className='overflow-hidden rounded-2xl border border-emerald-500/25 bg-zinc-900 shadow-[0_0_48px_rgba(16,185,129,0.07)]'>
+            <div className='h-[500px] w-[500px]'>
+              <RevealImage
+                imageUrl={challengeImageUrl}
+                challengeId={game.challengeId}
+                stage={game.revealStage}
+                revealMode='regions'
+                isSubmitting={game.isSubmitting}
+                className='h-full w-full'
+              />
+            </div>
           </div>
-          <h2 className='mb-1 text-xl font-bold md:text-2xl'>
-            Archive Challenge
-          </h2>
-          <p className='text-sm text-muted-foreground'>
-            Guess the album from the cover art
-          </p>
+        )}
+
+        {/* Dots + Attempt label */}
+        <div className='flex items-center gap-3'>
+          <AttemptDots attemptCount={game.attemptCount} />
+          <span className='text-xs text-zinc-500'>
+            Attempt {game.attemptCount + 1} of 4
+          </span>
         </div>
       </div>
 
-      {/* Reveal image */}
-      {challengeImageUrl && game.challengeId && (
-        <div className='w-full max-w-md'>
-          <RevealImage
-            imageUrl={challengeImageUrl}
-            challengeId={game.challengeId}
-            stage={game.revealStage}
+      {/* Controls Column */}
+      <div className='flex min-h-0 flex-1 flex-col'>
+        {/* Date label */}
+        <p className='pb-3 text-sm text-zinc-500'>{formattedDate}</p>
+
+        {/* Search input */}
+        <div className='pb-3'>
+          <AlbumGuessInput
+            onGuess={game.submitGuess}
+            onSkip={game.skipGuess}
+            disabled={game.isGameOver}
             isSubmitting={game.isSubmitting}
-            className='aspect-square w-full overflow-hidden rounded-lg'
           />
         </div>
-      )}
 
-      {/* Attempt dots indicator */}
-      <AttemptDots attemptCount={game.attemptCount} />
+        {/* Divider */}
+        <div className='h-px w-full bg-zinc-800' />
 
-      {/* Search input */}
-      <div className='w-full max-w-md'>
-        <AlbumGuessInput
-          onGuess={game.submitGuess}
-          onSkip={game.skipGuess}
-          disabled={game.isGameOver}
-          isSubmitting={game.isSubmitting}
-        />
+        {/* Previous guesses */}
+        {game.guesses.length > 0 && (
+          <div className='min-h-0 flex-1 overflow-y-auto pt-3'>
+            <GuessList guesses={game.guesses} />
+          </div>
+        )}
+
+        {/* Error display */}
+        {game.error && (
+          <div className='mt-3 rounded-md border border-red-500/50 bg-red-950/20 p-3 text-center text-sm text-red-400'>
+            {game.error}
+          </div>
+        )}
       </div>
-
-      {/* Previous guesses */}
-      {game.guesses.length > 0 && (
-        <div className='w-full max-w-md'>
-          <GuessList guesses={game.guesses} />
-        </div>
-      )}
-
-      {/* Error display */}
-      {game.error && (
-        <div className='w-full max-w-md rounded-md border border-red-500/50 bg-red-950/20 p-4 text-center text-red-400'>
-          {game.error}
-        </div>
-      )}
     </div>
   );
 }
