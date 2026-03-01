@@ -1,4 +1,5 @@
 import { createSeededRng, fisherYatesShuffle } from './seeded-random';
+import { TOTAL_STAGES, STAGE_REVEAL_TARGETS } from './reveal-constants';
 
 /** A rectangular region in the reveal grid */
 export interface RevealRegion {
@@ -87,20 +88,21 @@ export function shuffleTilesWithSeed(tiles: Tile[], seed: string): Tile[] {
 
 /**
  * Returns the tiles that should be revealed at a given stage (cumulative).
- * Stage 1 reveals ~25% of tiles, stage 4 reveals 100%.
+ * Uses STAGE_REVEAL_TARGETS for percentage-based progression.
  *
  * @param orderedTiles - Tiles in reveal order (first = revealed first)
  * @param stage - Current stage (1 to totalStages)
- * @param totalStages - Total number of stages (default 4)
+ * @param totalStages - Total number of stages (default TOTAL_STAGES)
  * @returns Subset of tiles revealed so far at this stage
  */
 export function getTilesForStage(
   orderedTiles: Tile[],
   stage: number,
-  totalStages = 4
+  totalStages = TOTAL_STAGES
 ): Tile[] {
   const clampedStage = Math.max(1, Math.min(stage, totalStages));
-  const count = Math.floor((clampedStage / totalStages) * orderedTiles.length);
+  const target = STAGE_REVEAL_TARGETS[clampedStage - 1] ?? 1.0;
+  const count = Math.floor(target * orderedTiles.length);
   return orderedTiles.slice(0, count);
 }
 
@@ -141,90 +143,57 @@ export function getStripsForStage(strips: Strip[], stage: number): Strip[] {
 
 /**
  * Generates contiguous rectangular reveal regions using seeded randomness.
- * Each stage reveals one new rectangular block of tiles.
- * Regions grow larger with each stage, and are placed at seeded-random
- * positions avoiding heavy overlap with previously revealed areas.
+ * Each stage reveals one new rectangular block of tiles sized to hit a
+ * cumulative percentage target defined in STAGE_REVEAL_TARGETS.
  *
- * Stage 4 always reveals the entire grid.
+ * The last stage always reveals the entire grid (full reveal for game-over).
  *
  * @param seed - Seed string for deterministic placement
  * @param gridSize - Grid dimension (default 16)
- * @param totalStages - Number of stages (default 4)
+ * @param totalStages - Number of stages (default TOTAL_STAGES)
  * @returns Array of RevealRegion[], one per stage (index 0 = stage 1)
  */
 export function generateRegionReveal(
   seed: string,
   gridSize = 16,
-  totalStages = 4
+  totalStages = TOTAL_STAGES
 ): RevealRegion[][] {
   const rng = createSeededRng(seed);
 
-  // Generate one region per stage (stages 1 through totalStages-1).
-  // Stage 4 (last) always reveals the full grid.
   const stageRegions: RevealRegion[][] = [];
+  const totalTiles = gridSize * gridSize;
 
   // Track which tiles are already revealed to bias placement toward fresh areas
   const revealed = new Set<number>();
 
-  // Region sizes scale relative to gridSize.
-  // Each stage reveals a progressively larger rectangle.
-  const unit = gridSize / 8; // Normalize so sizes work at any grid dimension
-  const regionSizes: Array<{
-    minW: number;
-    maxW: number;
-    minH: number;
-    maxH: number;
-  }> = [
-    {
-      minW: Math.max(1, Math.round(1.5 * unit)),
-      maxW: Math.round(2 * unit),
-      minH: Math.max(1, Math.round(1.5 * unit)),
-      maxH: Math.round(2 * unit),
-    },
-    {
-      minW: Math.round(2 * unit),
-      maxW: Math.round(2.5 * unit),
-      minH: Math.round(2 * unit),
-      maxH: Math.round(2.5 * unit),
-    },
-    {
-      minW: Math.round(2 * unit),
-      maxW: Math.round(3 * unit),
-      minH: Math.round(2 * unit),
-      maxH: Math.round(3 * unit),
-    },
-    {
-      minW: Math.round(2.5 * unit),
-      maxW: Math.round(3.5 * unit),
-      minH: Math.round(2.5 * unit),
-      maxH: Math.round(3.5 * unit),
-    },
-    {
-      minW: Math.round(3 * unit),
-      maxW: Math.round(4 * unit),
-      minH: Math.round(3 * unit),
-      maxH: Math.round(4 * unit),
-    },
-  ];
-
+  // Generate one region per stage (except the last, which is always full grid)
   for (let s = 0; s < totalStages - 1; s++) {
-    const size = regionSizes[Math.min(s, regionSizes.length - 1)];
+    const cumulativeTarget = STAGE_REVEAL_TARGETS[s] ?? 1.0;
+    const targetTileCount = Math.floor(cumulativeTarget * totalTiles);
+    // How many NEW tiles this stage needs to add
+    const needed = Math.max(1, targetTileCount - revealed.size);
 
-    // Random dimensions for this region
-    const w = size.minW + Math.floor(rng() * (size.maxW - size.minW + 1));
-    const h = size.minH + Math.floor(rng() * (size.maxH - size.minH + 1));
+    // Compute rectangle dimensions from needed tile count.
+    // Target a roughly square region, with slight random aspect ratio variation.
+    const side = Math.sqrt(needed);
+    const aspectJitter = 0.8 + rng() * 0.4; // 0.8 to 1.2
+    let w = Math.max(1, Math.round(side * aspectJitter));
+    let h = Math.max(1, Math.round(needed / w));
+
+    // Clamp to grid bounds
+    w = Math.min(w, gridSize);
+    h = Math.min(h, gridSize);
 
     // Try several random positions, pick the one with least overlap
     let bestX = 0;
     let bestY = 0;
     let bestOverlap = Infinity;
-    const attempts = 20;
+    const attempts = 30;
 
     for (let a = 0; a < attempts; a++) {
       const cx = Math.floor(rng() * (gridSize - w + 1));
       const cy = Math.floor(rng() * (gridSize - h + 1));
 
-      // Count overlap with already-revealed tiles
       let overlap = 0;
       for (let dy = 0; dy < h; dy++) {
         for (let dx = 0; dx < w; dx++) {
@@ -237,7 +206,7 @@ export function generateRegionReveal(
         bestOverlap = overlap;
         bestX = cx;
         bestY = cy;
-        if (overlap === 0) break; // Perfect — no overlap
+        if (overlap === 0) break;
       }
     }
 
@@ -252,7 +221,7 @@ export function generateRegionReveal(
     }
   }
 
-  // Stage 4: full grid reveal
+  // Last stage: full grid reveal (game-over / post-game)
   stageRegions.push([{ x: 0, y: 0, w: gridSize, h: gridSize }]);
 
   return stageRegions;

@@ -2,24 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import {
-  CalendarDays,
-  Wrench,
-  X,
-  RotateCcw,
-  BarChart3,
-  Archive,
-  Flame,
-  Trophy,
-} from 'lucide-react';
+import { Wrench, X, RotateCcw, Archive, Zap, Share2, Lock } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
+import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 import {
   useDailyChallengeQuery,
   useAlbumsByGameStatusQuery,
   useResetDailySessionMutation,
-  useMyUncoverStatsQuery,
   AlbumGameStatus,
 } from '@/generated/graphql';
 import AlbumImage from '@/components/ui/AlbumImage';
@@ -27,7 +18,6 @@ import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
 import { AttemptDots } from '@/components/uncover/AttemptDots';
-import { StatsModal } from '@/components/uncover/StatsModal';
 
 /**
  * Teaser image component for unauthenticated users.
@@ -38,7 +28,7 @@ function TeaserImage() {
 
   if (isLoading) {
     return (
-      <div className='aspect-square w-full max-w-md overflow-hidden rounded-lg bg-muted animate-pulse' />
+      <div className='aspect-square w-full overflow-hidden rounded-2xl bg-zinc-800/50 animate-pulse' />
     );
   }
 
@@ -47,16 +37,14 @@ function TeaserImage() {
   }
 
   return (
-    <div className='w-full max-w-md'>
-      <RevealImage
-        imageUrl={data.dailyChallenge.imageUrl}
-        challengeId={data.dailyChallenge.id}
-        stage={1}
-        revealMode='regions'
-        showToggle={false}
-        className='aspect-square w-full overflow-hidden rounded-lg'
-      />
-    </div>
+    <RevealImage
+      imageUrl={data.dailyChallenge.imageUrl}
+      challengeId={data.dailyChallenge.id}
+      stage={1}
+      revealMode='regions'
+      showToggle={false}
+      className='aspect-square w-full overflow-hidden rounded-2xl'
+    />
   );
 }
 
@@ -95,7 +83,6 @@ function DevTestPanel({
     setIsResetting(true);
     try {
       await resetMutation.mutateAsync({});
-      // Clear Zustand persisted state and reload
       onReplayGame?.();
       window.location.reload();
     } catch (err) {
@@ -113,7 +100,6 @@ function DevTestPanel({
       className='fixed right-0 top-[65px] z-50 flex w-72 flex-col border-l border-zinc-700 bg-zinc-900/95 shadow-2xl backdrop-blur'
       style={{ height: 'calc(100dvh - 65px)' }}
     >
-      {/* Header */}
       <div className='flex items-center justify-between border-b border-zinc-700 px-4 py-3'>
         <span className='text-sm font-semibold text-zinc-200'>Test Panel</span>
         <button onClick={onClose} className='text-zinc-400 hover:text-white'>
@@ -121,7 +107,6 @@ function DevTestPanel({
         </button>
       </div>
 
-      {/* Stage slider */}
       <div className='border-b border-zinc-800 px-4 py-3'>
         <label className='mb-2 block text-xs font-medium text-zinc-400'>
           Reveal Stage: {stageOverride ?? 'auto'}
@@ -140,7 +125,6 @@ function DevTestPanel({
         </div>
       </div>
 
-      {/* Reset / Replay */}
       <div className='space-y-1.5 border-b border-zinc-800 px-4 py-2'>
         <button
           onClick={onReset}
@@ -161,7 +145,6 @@ function DevTestPanel({
         </button>
       </div>
 
-      {/* Album picker */}
       <div className='flex-1 overflow-y-auto px-3 py-3'>
         <span className='mb-2 block text-xs font-medium text-zinc-400'>
           Pick an album ({albums.length})
@@ -199,30 +182,109 @@ function DevTestPanel({
 }
 
 /**
- * Post-game home screen.
- * Shows today's result, quick stats, and navigation to other game features.
+ * V2 Two-Column Game Over state.
+ * Shows full album reveal on the left, result message + actions on the right.
  */
-function GameHome({
+function GameOver({
   game,
   challengeImageUrl,
-  showStats,
-  setShowStats,
   onResetGame,
 }: {
   game: ReturnType<typeof useUncoverGame>;
   challengeImageUrl: string | null;
-  showStats: boolean;
-  setShowStats: (open: boolean) => void;
   onResetGame: () => void;
 }) {
-  const { data: statsData } = useMyUncoverStatsQuery({}, { enabled: true });
-  const stats = statsData?.myUncoverStats;
-
   const [showDevPanel, setShowDevPanel] = useState(false);
   const isAdmin = game.user?.role === 'ADMIN' || game.user?.role === 'OWNER';
 
+  const won = game.won;
+
   return (
-    <div className='flex h-full flex-col items-center overflow-y-auto py-6'>
+    <div className='flex h-full items-center justify-center gap-12 px-10'>
+      {/* Art Column — full reveal */}
+      <div className='flex flex-col items-center gap-4'>
+        {challengeImageUrl && game.challengeId && (
+          <div
+            className={`overflow-hidden rounded-2xl border ${
+              won
+                ? 'border-emerald-500/25 shadow-[0_0_48px_rgba(16,185,129,0.07)]'
+                : 'border-red-500/25 shadow-[0_0_48px_rgba(239,68,68,0.07)]'
+            } bg-zinc-900`}
+          >
+            <div className='h-[500px] w-[500px]'>
+              <RevealImage
+                imageUrl={challengeImageUrl}
+                challengeId={game.challengeId}
+                stage={TOTAL_STAGES}
+                showToggle={false}
+                className='h-full w-full'
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Controls Column — result + actions */}
+      <div className='flex w-[420px] flex-col justify-center'>
+        {/* Result header */}
+        <div className='space-y-1 pb-6'>
+          <h2 className='text-4xl font-bold text-white'>
+            {won ? 'You got it!' : 'Better luck tomorrow'}
+          </h2>
+          <div className='flex items-center gap-2 pt-2'>
+            {won ? (
+              <>
+                <Zap className='h-4 w-4 text-emerald-400' />
+                <span className='text-sm text-zinc-400'>
+                  Guessed in {game.attemptCount}{' '}
+                  {game.attemptCount === 1 ? 'attempt' : 'attempts'}
+                </span>
+              </>
+            ) : (
+              <>
+                <X className='h-4 w-4 text-red-400' />
+                <span className='text-sm text-zinc-400'>
+                  Used all {game.attemptCount} attempts
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className='flex gap-3 pb-6'>
+          <button
+            className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-colors ${
+              won
+                ? 'bg-emerald-600 hover:bg-emerald-500'
+                : 'bg-red-600 hover:bg-red-500'
+            }`}
+          >
+            <Share2 className='h-4 w-4' />
+            Share Result
+          </button>
+          <Link
+            href='/game/archive'
+            className='flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900/50 px-5 py-3 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800'
+          >
+            <Archive className='h-4 w-4' />
+            Play Archive
+          </Link>
+        </div>
+
+        {/* Next game countdown */}
+        <div className='border-t border-zinc-800 pt-4'>
+          <p className='text-xs text-zinc-500'>Next puzzle drops at midnight</p>
+        </div>
+
+        {/* Today's guesses */}
+        {game.guesses.length > 0 && (
+          <div className='mt-6'>
+            <GuessList guesses={game.guesses} />
+          </div>
+        )}
+      </div>
+
       {/* Admin dev panel toggle */}
       {isAdmin && (
         <button
@@ -233,8 +295,6 @@ function GameHome({
           <Wrench className='h-5 w-5' />
         </button>
       )}
-
-      {/* Admin dev test panel */}
       {isAdmin && showDevPanel && (
         <DevTestPanel
           onSelectImage={() => {}}
@@ -245,113 +305,20 @@ function GameHome({
           onReplayGame={onResetGame}
         />
       )}
-
-      <div className='w-full max-w-md space-y-6 px-4'>
-        {/* Title */}
-        <div className='text-center'>
-          <h2 className='text-2xl font-bold text-white'>Daily Uncover</h2>
-          <p className='mt-1 text-sm text-zinc-400'>
-            {game.won
-              ? `You got it in ${game.attemptCount}!`
-              : 'Better luck tomorrow!'}
-          </p>
-        </div>
-
-        {/* Today's result — revealed album */}
-        {challengeImageUrl && game.challengeId && (
-          <div className='mx-auto w-48'>
-            <RevealImage
-              imageUrl={challengeImageUrl}
-              challengeId={game.challengeId}
-              stage={4}
-              showToggle={false}
-              className='aspect-square w-full overflow-hidden rounded-lg'
-            />
-          </div>
-        )}
-
-        {/* Quick stats row */}
-        {stats && (
-          <div className='grid grid-cols-4 gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center'>
-            <div>
-              <div className='text-xl font-bold text-white'>
-                {stats.gamesPlayed}
-              </div>
-              <div className='text-[10px] text-zinc-500'>Played</div>
-            </div>
-            <div>
-              <div className='text-xl font-bold text-white'>
-                {Math.round(stats.winRate * 100)}%
-              </div>
-              <div className='text-[10px] text-zinc-500'>Win Rate</div>
-            </div>
-            <div>
-              <div className='flex items-center justify-center gap-1 text-xl font-bold text-white'>
-                <Flame className='h-4 w-4 text-orange-500' />
-                {stats.currentStreak}
-              </div>
-              <div className='text-[10px] text-zinc-500'>Streak</div>
-            </div>
-            <div>
-              <div className='flex items-center justify-center gap-1 text-xl font-bold text-white'>
-                <Trophy className='h-4 w-4 text-yellow-500' />
-                {stats.maxStreak}
-              </div>
-              <div className='text-[10px] text-zinc-500'>Best</div>
-            </div>
-          </div>
-        )}
-
-        {/* Navigation links */}
-        <div className='space-y-2'>
-          <button
-            onClick={() => setShowStats(true)}
-            className='flex w-full items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-3 text-left text-sm text-zinc-200 transition-colors hover:bg-zinc-800'
-          >
-            <BarChart3 className='h-4 w-4 text-zinc-400' />
-            Full Stats & Distribution
-          </button>
-
-          <Link
-            href='/game/archive'
-            className='flex w-full items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-3 text-left text-sm text-zinc-200 transition-colors hover:bg-zinc-800'
-          >
-            <Archive className='h-4 w-4 text-zinc-400' />
-            Play Archive Puzzles
-          </Link>
-        </div>
-
-        {/* Guesses from today */}
-        {game.guesses.length > 0 && (
-          <div>
-            <h3 className='mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500'>
-              Today&apos;s Guesses
-            </h3>
-            <GuessList guesses={game.guesses} />
-          </div>
-        )}
-      </div>
-
-      {/* Stats Modal */}
-      <StatsModal
-        open={showStats}
-        onClose={() => setShowStats(false)}
-        won={game.won}
-        attemptCount={game.attemptCount}
-      />
     </div>
   );
 }
 
 /**
  * Main game container component for Uncover daily challenge.
+ * V2: Two-column layout — large album art left, controls right.
  *
  * Handles:
- * - Auth gate (AUTH-01): Show login prompt for unauthenticated users
+ * - Auth gate: Show login prompt for unauthenticated users
  * - Auto-start session on mount for authenticated users
  * - Loading state during session start
- * - Game board for IN_PROGRESS sessions
- * - Results screen for completed sessions (DAILY-03)
+ * - Game board for IN_PROGRESS sessions (two-column)
+ * - Results screen for completed sessions (two-column)
  */
 export function UncoverGame() {
   const game = useUncoverGame();
@@ -360,8 +327,7 @@ export function UncoverGame() {
     null
   );
   const [isInitializing, setIsInitializing] = useState(false);
-  const [showStats, setShowStats] = useState(false);
-  const [hasAutoShownStats, setHasAutoShownStats] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
 
   // Dev test panel state (admin only)
   const [showDevPanel, setShowDevPanel] = useState(false);
@@ -370,25 +336,15 @@ export function UncoverGame() {
 
   const isAdmin = game.user?.role === 'ADMIN' || game.user?.role === 'OWNER';
 
-  // Stable ref to startGame so the effect doesn't re-trigger on function identity changes
   const startGameRef = useRef(game.startGame);
   startGameRef.current = game.startGame;
 
-  /**
-   * Auto-start session on mount if authenticated and no active session.
-   * Resume existing session if sessionId in store.
-   */
+  /** Start session when user clicks play (or if they already have an active session). */
   useEffect(() => {
-    if (!game.isAuthenticated || game.isAuthLoading) {
-      return;
-    }
+    if (!game.isAuthenticated || game.isAuthLoading) return;
+    if (!hasStarted) return;
+    if (challengeImageUrl) return;
 
-    // Already have image - don't refetch
-    if (challengeImageUrl) {
-      return;
-    }
-
-    // Start or resume session (backend returns existing session if already started)
     let cancelled = false;
     const initializeGame = async () => {
       setIsInitializing(true);
@@ -399,81 +355,130 @@ export function UncoverGame() {
         }
       } catch (error) {
         console.error('Failed to start game:', error);
-        // Error already set in game.error by useUncoverGame
       } finally {
-        if (!cancelled) {
-          setIsInitializing(false);
-        }
+        if (!cancelled) setIsInitializing(false);
       }
     };
 
     initializeGame();
-
     return () => {
       cancelled = true;
     };
-  }, [game.isAuthenticated, game.isAuthLoading, challengeImageUrl]);
+  }, [game.isAuthenticated, game.isAuthLoading, hasStarted, challengeImageUrl]);
 
-  // Auto-show stats modal once when game ends
+  /** Auto-start if user already has an active session (e.g. refreshed mid-game). */
   useEffect(() => {
-    if (game.isGameOver && !hasAutoShownStats) {
-      const timer = setTimeout(() => {
-        setShowStats(true);
-        setHasAutoShownStats(true);
-      }, 800);
-      return () => clearTimeout(timer);
+    if (game.sessionId && !hasStarted) {
+      setHasStarted(true);
     }
-  }, [game.isGameOver, hasAutoShownStats]);
+  }, [game.sessionId, hasStarted]);
 
-  // AUTH-01: Show login prompt for unauthenticated users with teaser
+  // ─── Auth loading ─────────────────────────────────────────────
   if (!game.isAuthenticated) {
     if (game.isAuthLoading) {
       return (
-        <div className='flex min-h-[400px] items-center justify-center'>
+        <div className='flex h-full items-center justify-center'>
           <div className='text-zinc-400'>Loading...</div>
         </div>
       );
     }
 
+    // ─── Unauthenticated state ────────────────────────────────────
     return (
-      <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8'>
-        {/* Teaser image - stage 1 obscured */}
-        <TeaserImage />
+      <div className='flex h-full items-center justify-center gap-12 px-10'>
+        {/* Art column — teaser */}
+        <div className='flex flex-col items-center gap-4'>
+          <div className='relative h-[500px] w-[500px] overflow-hidden rounded-2xl border border-emerald-500/25 bg-zinc-900 shadow-[0_0_48px_rgba(16,185,129,0.07)]'>
+            <TeaserImage />
+            {/* Lock overlay */}
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <div className='flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800/80 backdrop-blur'>
+                <Lock className='h-7 w-7 text-zinc-400' />
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {/* Login CTA overlay */}
-        <div className='relative -mt-12 flex flex-col items-center gap-4 rounded-lg bg-background/95 p-6 shadow-lg backdrop-blur-sm'>
-          <div className='text-center'>
-            <h2 className='mb-2 text-2xl font-bold text-white'>
-              Daily Album Uncover
-            </h2>
-            <p className='text-zinc-400 mb-4'>
+        {/* Sign-in card */}
+        <div className='w-[420px] space-y-6'>
+          <div>
+            <h2 className='text-4xl font-bold text-white'>Daily Uncover</h2>
+            <p className='mt-2 text-sm text-zinc-400'>
               Guess the album from its cover art. 4 attempts. New puzzle daily.
             </p>
           </div>
-          <button
-            onClick={() => signIn(undefined, { callbackUrl: '/game' })}
-            className='rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors'
-          >
-            Sign In to Play
-          </button>
+          <div className='space-y-3'>
+            <button
+              onClick={() => signIn('google', { callbackUrl: '/game/play' })}
+              className='flex w-full items-center justify-center gap-3 rounded-xl bg-white px-5 py-3.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100'
+            >
+              Continue with Google
+            </button>
+            <button
+              onClick={() => signIn('spotify', { callbackUrl: '/game/play' })}
+              className='flex w-full items-center justify-center gap-3 rounded-xl bg-[#1DB954] px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#1ed760]'
+            >
+              Continue with Spotify
+            </button>
+            <button
+              onClick={() => signIn('email', { callbackUrl: '/game/play' })}
+              className='flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-700 px-5 py-3.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800'
+            >
+              Continue with Email
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Loading state during initial session start
+  // ─── Pre-game home state ───────────────────────────────────────
+  if (!hasStarted && !isInitializing) {
+    return (
+      <div className='flex h-full flex-col items-center justify-center gap-7 px-4'>
+        {/* Album art teaser */}
+        <div className='relative w-[300px]'>
+          <div className='overflow-hidden rounded-2xl shadow-[0_0_80px_rgba(16,185,129,0.08),0_0_200px_rgba(16,185,129,0.04)]'>
+            <TeaserImage />
+          </div>
+          <div className='absolute inset-0 flex items-center justify-center'>
+            <div className='flex h-14 w-14 items-center justify-center rounded-full bg-zinc-800/80 backdrop-blur'>
+              <Lock className='h-6 w-6 text-zinc-400' />
+            </div>
+          </div>
+        </div>
+
+        {/* Description */}
+        <p className='max-w-[340px] text-center text-sm leading-relaxed text-zinc-500'>
+          Guess today&apos;s album from its cover art.
+          <br />4 attempts. A new mystery every day.
+        </p>
+
+        {/* Start button */}
+        <button
+          onClick={() => setHasStarted(true)}
+          className='flex items-center gap-2.5 rounded-xl bg-white px-8 py-3.5 text-[15px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-100'
+        >
+          Start today&apos;s puzzle
+          <span aria-hidden>→</span>
+        </button>
+      </div>
+    );
+  }
+
+  // ─── Initializing ─────────────────────────────────────────────
   if (isInitializing || (game.isAuthenticated && !game.sessionId)) {
     return (
-      <div className='flex min-h-[400px] items-center justify-center'>
+      <div className='flex h-full items-center justify-center'>
         <div className='text-zinc-400'>Starting game...</div>
       </div>
     );
   }
 
-  // Error state
+  // ─── Error state ──────────────────────────────────────────────
   if (game.error && !game.sessionId) {
     return (
-      <div className='flex min-h-[400px] flex-col items-center justify-center gap-4 p-8'>
+      <div className='flex h-full flex-col items-center justify-center gap-4 p-8'>
         <div className='text-center'>
           <h2 className='mb-2 text-xl font-bold text-red-400'>Error</h2>
           <p className='text-zinc-400'>{game.error}</p>
@@ -483,7 +488,7 @@ export function UncoverGame() {
             game.clearError();
             window.location.reload();
           }}
-          className='rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90'
+          className='rounded-xl bg-zinc-800 px-6 py-3 font-medium text-zinc-200 hover:bg-zinc-700 transition-colors'
         >
           Try Again
         </button>
@@ -491,92 +496,79 @@ export function UncoverGame() {
     );
   }
 
-  // DAILY-03 + GAME-07: Game over → home screen
+  // ─── Game Over → Two-column result ────────────────────────────
   if (game.isGameOver) {
     return (
-      <GameHome
+      <GameOver
         game={game}
         challengeImageUrl={challengeImageUrl}
-        showStats={showStats}
-        setShowStats={setShowStats}
         onResetGame={() => {
           game.resetGame();
           setChallengeImageUrl(null);
-          setHasAutoShownStats(false);
         }}
       />
     );
   }
 
-  // Game board for IN_PROGRESS sessions
+  // ─── V2 Two-Column Game Board ─────────────────────────────────
   return (
-    <div className='flex h-full flex-col items-center py-2'>
-      {/* Header */}
-      <div className='shrink-0 pb-1 text-center'>
-        <h2 className='text-lg font-bold text-white md:text-xl'>
-          Daily Uncover
-        </h2>
-        <div className='flex items-center justify-center gap-3'>
-          <p className='text-xs text-zinc-400'>
-            Guess the album from the cover art
-          </p>
-          <Link
-            href='/game/archive'
-            className='inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-cosmic-latte transition-colors'
-          >
-            <CalendarDays className='h-3 w-3' />
-            Archive
-          </Link>
-        </div>
-      </div>
-
-      {/* Reveal image — capped at 45vh so there's room for guesses */}
-      {challengeImageUrl && game.challengeId && (
-        <div
-          className='flex shrink-0 justify-center'
-          style={{ height: '45dvh' }}
-        >
-          <div className='aspect-square h-full'>
-            <RevealImage
-              imageUrl={devImageOverride || challengeImageUrl}
-              challengeId={game.challengeId}
-              stage={devStageOverride ?? game.revealStage}
-              revealMode='regions'
-              isSubmitting={game.isSubmitting}
-              className='h-full w-full overflow-hidden rounded-lg'
-            />
+    <div className='flex h-full items-start gap-12 px-[60px] pt-8'>
+      {/* Art Column */}
+      <div className='flex flex-col items-center gap-4'>
+        {/* Art Frame */}
+        {challengeImageUrl && game.challengeId && (
+          <div className='overflow-hidden rounded-2xl border border-emerald-500/25 bg-zinc-900 shadow-[0_0_48px_rgba(16,185,129,0.07)]'>
+            <div className='h-[500px] w-[500px]'>
+              <RevealImage
+                imageUrl={devImageOverride || challengeImageUrl}
+                challengeId={game.challengeId}
+                stage={devStageOverride ?? game.revealStage}
+                revealMode='regions'
+                isSubmitting={game.isSubmitting}
+                className='h-full w-full'
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Attempt dots */}
-      <div className='shrink-0 py-1.5'>
-        <AttemptDots attemptCount={game.attemptCount} />
+        {/* Dots + Attempt label */}
+        <div className='flex items-center gap-3'>
+          <AttemptDots attemptCount={game.attemptCount} />
+          <span className='text-xs text-zinc-500'>
+            Attempt {game.attemptCount + 1} of 4
+          </span>
+        </div>
       </div>
 
-      {/* Search input */}
-      <div className='w-full max-w-md shrink-0'>
-        <AlbumGuessInput
-          onGuess={game.submitGuess}
-          onSkip={game.skipGuess}
-          disabled={game.isGameOver}
-          isSubmitting={game.isSubmitting}
-        />
+      {/* Controls Column */}
+      <div className='flex min-h-0 flex-1 flex-col'>
+        {/* Search input */}
+        <div className='pb-3'>
+          <AlbumGuessInput
+            onGuess={game.submitGuess}
+            onSkip={game.skipGuess}
+            disabled={game.isGameOver}
+            isSubmitting={game.isSubmitting}
+          />
+        </div>
+
+        {/* Divider */}
+        <div className='h-px w-full bg-zinc-800' />
+
+        {/* Previous guesses */}
+        {game.guesses.length > 0 && (
+          <div className='min-h-0 flex-1 overflow-y-auto pt-3'>
+            <GuessList guesses={game.guesses} />
+          </div>
+        )}
+
+        {/* Error display */}
+        {game.error && (
+          <div className='mt-3 rounded-lg border border-red-500/50 bg-red-950/20 p-3 text-center text-sm text-red-400'>
+            {game.error}
+          </div>
+        )}
       </div>
-
-      {/* Previous guesses — fills remaining space, scrolls if needed */}
-      {game.guesses.length > 0 && (
-        <div className='w-full max-w-md min-h-0 flex-1 overflow-y-auto pt-2'>
-          <GuessList guesses={game.guesses} />
-        </div>
-      )}
-
-      {/* Error display */}
-      {game.error && (
-        <div className='w-full max-w-md shrink-0 rounded-md border border-red-500/50 bg-red-950/20 p-3 text-center text-sm text-red-400'>
-          {game.error}
-        </div>
-      )}
 
       {/* Admin dev panel toggle */}
       {isAdmin && (
@@ -588,8 +580,6 @@ export function UncoverGame() {
           <Wrench className='h-5 w-5' />
         </button>
       )}
-
-      {/* Admin dev test panel */}
       {isAdmin && showDevPanel && (
         <DevTestPanel
           onSelectImage={setDevImageOverride}

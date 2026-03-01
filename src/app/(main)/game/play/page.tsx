@@ -16,9 +16,5 @@ export const metadata: Metadata = {
  * Path: /game/play
  */
 export default function GamePlayPage() {
-  return (
-    <div className='fixed inset-x-0 bottom-0 top-[65px] overflow-hidden md:left-16'>
-      <UncoverGame />
-    </div>
-  );
+  return <UncoverGame />;
 }

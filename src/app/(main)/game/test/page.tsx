@@ -14,6 +14,7 @@ import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
 import { AttemptDots } from '@/components/uncover/AttemptDots';
 import type { RevealMode } from '@/hooks/useRevealImage';
+import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 
 const MAX_ATTEMPTS = 4;
 
@@ -68,7 +69,9 @@ export default function GameTestPage() {
   const albums = data?.albumsByGameStatus ?? [];
 
   // Reveal stage: use slider override, or derive from attempt count
-  const autoStage = isGameOver ? 4 : Math.min(attemptCount + 1, 4);
+  const autoStage = isGameOver
+    ? TOTAL_STAGES
+    : Math.min(attemptCount + 1, TOTAL_STAGES - 1);
   const revealStage = stageOverride ?? autoStage;
 
   const handleSelectAlbum = (album: (typeof albums)[0]) => {
@@ -265,14 +268,14 @@ export default function GameTestPage() {
             <input
               type='range'
               min={1}
-              max={4}
+              max={TOTAL_STAGES}
               value={stageOverride ?? autoStage}
               onChange={e => setStageOverride(Number(e.target.value))}
               className='w-full accent-emerald-500'
             />
             <div className='mt-1 flex justify-between text-[10px] text-zinc-500'>
               <span>1 (heavy)</span>
-              <span>4 (clear)</span>
+              <span>{TOTAL_STAGES} (clear)</span>
             </div>
           </div>
 

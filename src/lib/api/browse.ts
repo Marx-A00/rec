@@ -5,8 +5,7 @@ import type { Recommendation } from '@/types';
 function getBaseUrl() {
   // In server components, use the internal URL
   if (typeof window === 'undefined') {
-    // Use NEXTAUTH_URL which is already configured
-    return process.env.NEXTAUTH_URL || 'http://127.0.0.1:3002';
+    return process.env.NEXTAUTH_URL || 'http://localhost:3000';
   }
   // In client components, use relative URLs
   return '';

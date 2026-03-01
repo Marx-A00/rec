@@ -6,6 +6,7 @@ import { CalendarDays } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
 import { useUncoverGame } from '@/hooks/useUncoverGame';
+import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
@@ -151,7 +152,7 @@ export function MobilePlayClient() {
             <RevealImage
               imageUrl={challengeImageUrl}
               challengeId={game.challengeId}
-              stage={4}
+              stage={TOTAL_STAGES}
               showToggle={false}
               className='aspect-square w-full overflow-hidden rounded-lg'
             />

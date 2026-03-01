@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar } from '@/components/ui/calendar';
-import { Button } from '@/components/ui/button';
 import { useMyUncoverSessionsQuery } from '@/generated/graphql';
 import { GAME_EPOCH, toUTCMidnight } from '@/lib/daily-challenge/date-utils';
 import {
@@ -13,10 +12,7 @@ import {
   isSameDay,
   startOfMonth,
   endOfMonth,
-  addMonths,
-  subMonths,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ArchiveCalendarProps {
   mobile?: boolean;
@@ -98,7 +94,9 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
     // Past dates go to archive
     if (isBefore(normalizedDate, today)) {
       const dateStr = format(normalizedDate, 'yyyy-MM-dd');
-      router.push(mobile ? `/m/game/archive/${dateStr}` : `/game/archive/${dateStr}`);
+      router.push(
+        mobile ? `/m/game/archive/${dateStr}` : `/game/archive/${dateStr}`
+      );
     }
   };
 
@@ -107,64 +105,16 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
     return isBefore(date, GAME_EPOCH) || isAfter(date, today);
   };
 
-  const handlePreviousMonth = () => {
-    setCurrentMonth((prev) => subMonths(prev, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentMonth((prev) => addMonths(prev, 1));
-  };
-
-  const canGoBack = isAfter(startOfMonth(currentMonth), GAME_EPOCH);
-  const canGoForward = isBefore(endOfMonth(currentMonth), today);
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-cosmic-latte">
-          Archive Calendar
-        </h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => router.push(mobile ? '/m/game' : '/game')}
-        >
-          Today's Game
-        </Button>
-      </div>
-
-      {/* Month Navigation */}
-      <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handlePreviousMonth}
-          disabled={!canGoBack}
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-        <h3 className="text-lg font-semibold text-cosmic-latte">
-          {format(currentMonth, 'MMMM yyyy')}
-        </h3>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleNextMonth}
-          disabled={!canGoForward}
-        >
-          <ChevronRight className="h-5 w-5" />
-        </Button>
-      </div>
-
+    <div className='space-y-6'>
       {/* Calendar */}
       {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <p className="text-zinc-400">Loading calendar...</p>
+        <div className='flex h-64 items-center justify-center'>
+          <p className='text-zinc-400'>Loading calendar...</p>
         </div>
       ) : (
         <Calendar
-          mode="single"
+          mode='single'
           month={currentMonth}
           onMonthChange={setCurrentMonth}
           onSelect={handleDateSelect}
@@ -181,27 +131,27 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
             missed: 'bg-zinc-700/50 text-zinc-500 hover:bg-zinc-700/70',
             today: 'border-2 border-cosmic-latte',
           }}
-          className="rounded-lg border border-zinc-700 bg-zinc-900 p-4"
+          className='rounded-lg border border-zinc-700 bg-zinc-900 p-4'
         />
       )}
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        <div className="flex items-center gap-2">
-          <div className="h-4 w-4 rounded bg-emerald-500/20 border border-emerald-500/40" />
-          <span className="text-zinc-300">Won</span>
+      <div className='flex flex-wrap gap-4 text-sm'>
+        <div className='flex items-center gap-2'>
+          <div className='h-4 w-4 rounded bg-emerald-500/20 border border-emerald-500/40' />
+          <span className='text-zinc-300'>Won</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="h-4 w-4 rounded bg-red-500/20 border border-red-500/40" />
-          <span className="text-zinc-300">Lost</span>
+        <div className='flex items-center gap-2'>
+          <div className='h-4 w-4 rounded bg-red-500/20 border border-red-500/40' />
+          <span className='text-zinc-300'>Lost</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="h-4 w-4 rounded bg-zinc-700/50 border border-zinc-600" />
-          <span className="text-zinc-300">Missed</span>
+        <div className='flex items-center gap-2'>
+          <div className='h-4 w-4 rounded bg-zinc-700/50 border border-zinc-600' />
+          <span className='text-zinc-300'>Missed</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="h-4 w-4 rounded border-2 border-cosmic-latte" />
-          <span className="text-zinc-300">Not Played</span>
+        <div className='flex items-center gap-2'>
+          <div className='h-4 w-4 rounded border-2 border-cosmic-latte' />
+          <span className='text-zinc-300'>Not Played</span>
         </div>
       </div>
     </div>

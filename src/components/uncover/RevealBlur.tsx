@@ -7,7 +7,7 @@ interface RevealBlurProps {
   imageUrl: string;
   /** Challenge ID for deterministic strip order (reserved for future use) */
   challengeId: string;
-  /** Current reveal stage (1-4) */
+  /** Current reveal stage (1 to TOTAL_STAGES) */
   stage: number;
   /** Optional CSS class for sizing */
   className?: string;
@@ -17,12 +17,15 @@ interface RevealBlurProps {
   onError?: () => void;
 }
 
-/** Blur radius in px for each stage (1-4). Stage 1 = heavy, Stage 4 = clear. */
-const BLUR_RADII = [40, 24, 8, 0] as const;
+/**
+ * Blur radius in px for each stage (1-5).
+ * Stages 1-4 are in-game with decreasing blur, stage 5 is full reveal (game-over).
+ */
+const BLUR_RADII = [48, 36, 24, 14, 0] as const;
 
 /**
  * CSS blur-based renderer for the reveal engine.
- * Applies a decreasing blur filter across 4 stages, from frosted glass to clear.
+ * Applies a decreasing blur filter across 5 stages, from frosted glass to clear.
  * GPU-accelerated via CSS filters — no Canvas overhead.
  */
 export default function RevealBlur({
@@ -35,7 +38,7 @@ export default function RevealBlur({
 }: RevealBlurProps) {
   const [isLoading, setIsLoading] = useState(true);
 
-  const clampedStage = Math.max(1, Math.min(stage, 4));
+  const clampedStage = Math.max(1, Math.min(stage, BLUR_RADII.length));
   const blurRadius = BLUR_RADII[clampedStage - 1];
 
   return (

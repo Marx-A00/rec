@@ -11,6 +11,7 @@ import {
   useSkipGuessMutation,
   useMyUncoverSessionsQuery,
 } from '@/generated/graphql';
+import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 
 /**
  * Coordination hook for Archive game (past puzzles).
@@ -240,13 +241,13 @@ export function useArchiveGame(challengeDate: Date) {
 
   /**
    * Calculate reveal stage from attempt count.
-   * Stage 1 (most obscured) = 0 attempts
-   * Stage 4 (full reveal) = 3+ attempts OR game over
+   * Stages 1-4 are in-game (15% → 25% → 35% → 50%).
+   * Stage 5 (full reveal) = game over.
    */
   const revealStage =
     gameStore.status === 'WON' || gameStore.status === 'LOST'
-      ? 4 // Full reveal on game over
-      : Math.min(gameStore.attemptCount + 1, 4);
+      ? TOTAL_STAGES // Full reveal on game over
+      : Math.min(gameStore.attemptCount + 1, TOTAL_STAGES - 1);
 
   return {
     // Auth state

@@ -9,6 +9,7 @@ import {
   getRegionTilesForStage,
   type Tile,
 } from '@/lib/uncover/reveal-pattern';
+import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 
 /** Reveal pattern mode */
 export type RevealMode = 'scattered' | 'regions';
@@ -25,9 +26,9 @@ const TOTAL_TILES = PIXEL_GRID * PIXEL_GRID;
 interface UseRevealImageOptions {
   /** Challenge ID used to generate deterministic seed */
   challengeId: string;
-  /** Current reveal stage (1-4) */
+  /** Current reveal stage (1 to TOTAL_STAGES) */
   stage: number;
-  /** Total number of stages (default 4) */
+  /** Total number of stages (default TOTAL_STAGES) */
   totalStages?: number;
   /** Reveal pattern mode (default: 'scattered') */
   mode?: RevealMode;
@@ -93,7 +94,7 @@ function mapCoarseToFineTiles(
 export function useRevealImage({
   challengeId,
   stage,
-  totalStages = 4,
+  totalStages = TOTAL_STAGES,
   mode = 'scattered',
 }: UseRevealImageOptions): UseRevealImageResult {
   const seed = `uncover-${challengeId}`;

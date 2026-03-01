@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function ArchivePage() {
   return (
-    <div className='mx-auto max-w-lg px-4 py-8'>
+    <div className='flex h-full flex-col items-center px-4 py-8'>
       <ArchiveCalendar />
     </div>
   );

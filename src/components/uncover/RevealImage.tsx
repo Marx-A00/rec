@@ -15,7 +15,7 @@ interface RevealImageProps {
   imageUrl: string;
   /** Challenge ID for deterministic reveal order */
   challengeId: string;
-  /** Current reveal stage (1-4) */
+  /** Current reveal stage (1 to TOTAL_STAGES) */
   stage: number;
   /** Reveal pattern mode (default: 'scattered') */
   revealMode?: RevealMode;

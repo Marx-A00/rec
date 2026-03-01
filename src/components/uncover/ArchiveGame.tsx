@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { signIn } from 'next-auth/react';
 
 import { useArchiveGame } from '@/hooks/useArchiveGame';
+import { TOTAL_STAGES } from '@/lib/uncover/reveal-constants';
 import { RevealImage } from '@/components/uncover/RevealImage';
 import { AlbumGuessInput } from '@/components/uncover/AlbumGuessInput';
 import { GuessList } from '@/components/uncover/GuessList';
@@ -180,13 +181,13 @@ export function ArchiveGame({
           </p>
         </div>
 
-        {/* Full reveal (stage 4) */}
+        {/* Full reveal (game over) */}
         {challengeImageUrl && game.challengeId && (
           <div className='w-full max-w-md'>
             <RevealImage
               imageUrl={challengeImageUrl}
               challengeId={game.challengeId}
-              stage={4}
+              stage={TOTAL_STAGES}
               showToggle={false}
               className='aspect-square w-full overflow-hidden rounded-lg'
             />
