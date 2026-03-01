@@ -52,26 +52,57 @@ export async function selectAlbumForDate(date: Date): Promise<string> {
     return pinned.albumId;
   }
 
-  // 2. Deterministic selection from ordered list
+  // 2. Deterministic selection with recent-duplicate avoidance
   const totalCurated = await prisma.curatedChallenge.count();
 
   if (totalCurated === 0) {
     throw new NoCuratedAlbumsError();
   }
 
-  const daysSinceEpoch = getDaysSinceEpoch(normalizedDate);
-  const sequence = daysSinceEpoch % totalCurated;
+  // Collect album IDs already used in recent challenges (within the last cycle)
+  const recentChallenges = await prisma.uncoverChallenge.findMany({
+    where: {
+      date: { lt: normalizedDate },
+    },
+    orderBy: { date: 'desc' },
+    take: totalCurated - 1, // At most N-1 recent; guarantees at least 1 unused
+    select: { albumId: true },
+  });
+  const recentAlbumIds = new Set(recentChallenges.map(c => c.albumId));
 
-  const challenge = await prisma.curatedChallenge.findUnique({
-    where: { sequence },
+  const daysSinceEpoch = getDaysSinceEpoch(normalizedDate);
+  const startSequence = daysSinceEpoch % totalCurated;
+
+  // Walk through the curated list starting at the deterministic position.
+  // Skip albums already used in recent challenges.
+  for (let offset = 0; offset < totalCurated; offset++) {
+    const seq = (startSequence + offset) % totalCurated;
+    const candidate = await prisma.curatedChallenge.findUnique({
+      where: { sequence: seq },
+      select: { albumId: true },
+    });
+
+    if (!candidate) {
+      continue;
+    }
+
+    if (!recentAlbumIds.has(candidate.albumId)) {
+      return candidate.albumId;
+    }
+  }
+
+  // Fallback: all curated albums were used recently (shouldn't happen
+  // since we take at most totalCurated-1). Use the deterministic pick.
+  const fallback = await prisma.curatedChallenge.findUnique({
+    where: { sequence: startSequence },
     select: { albumId: true },
   });
 
-  if (!challenge) {
-    throw new AlbumNotFoundError(sequence);
+  if (!fallback) {
+    throw new AlbumNotFoundError(startSequence);
   }
 
-  return challenge.albumId;
+  return fallback.albumId;
 }
 
 /**
