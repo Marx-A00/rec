@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -38,10 +38,25 @@ export function useArchiveGame(challengeDate: Date) {
   // Local error state
   const [localError, setLocalError] = useState<string | null>(null);
 
+  // Track whether the store has been reset for this archive instance.
+  // The shared Zustand store may contain stale state from the daily game
+  // (persisted in localStorage), so we must clear it before starting.
+  const hasReset = useRef(false);
+
   // GraphQL mutations
   const startMutation = useStartArchiveSessionMutation();
   const submitMutation = useSubmitGuessMutation();
   const skipMutation = useSkipGuessMutation();
+
+  // Reset shared store on mount so stale daily-game state doesn't interfere
+  useEffect(() => {
+    if (!hasReset.current) {
+      gameStore.resetSession();
+      gameStore.clearGuesses();
+      gameStore.clearError();
+      hasReset.current = true;
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Start an archive session for the specified date.

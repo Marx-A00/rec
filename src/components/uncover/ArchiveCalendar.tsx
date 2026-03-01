@@ -91,9 +91,9 @@ export function ArchiveCalendar({ mobile = false }: ArchiveCalendarProps) {
       return;
     }
 
-    // Past dates go to archive
+    // Past dates go to archive — use ISO substring to avoid local tz shift
     if (isBefore(normalizedDate, today)) {
-      const dateStr = format(normalizedDate, 'yyyy-MM-dd');
+      const dateStr = normalizedDate.toISOString().split('T')[0];
       router.push(
         mobile ? `/m/game/archive/${dateStr}` : `/game/archive/${dateStr}`
       );

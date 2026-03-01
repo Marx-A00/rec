@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
 import { signIn } from 'next-auth/react';
 
 import { useArchiveGame } from '@/hooks/useArchiveGame';
@@ -46,7 +45,13 @@ export function ArchiveGame({
   const [isInitializing, setIsInitializing] = useState(false);
   const [showStats, setShowStats] = useState(false);
 
-  const formattedDate = format(challengeDate, 'MMMM d, yyyy');
+  // Format in UTC to avoid timezone shift displaying wrong date
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(challengeDate);
   const archiveUrl = mobile ? '/m/game/archive' : '/game/archive';
 
   /**
@@ -81,11 +86,11 @@ export function ArchiveGame({
     };
 
     initializeGame();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     game.isAuthenticated,
     game.isAuthLoading,
     game.sessionId,
-    game,
     isInitializing,
   ]);
 
@@ -108,9 +113,10 @@ export function ArchiveGame({
       );
     }
 
+    const dateStr = challengeDate.toISOString().split('T')[0];
     const callbackUrl = mobile
-      ? `/m/game/archive/${format(challengeDate, 'yyyy-MM-dd')}`
-      : `/game/archive/${format(challengeDate, 'yyyy-MM-dd')}`;
+      ? `/m/game/archive/${dateStr}`
+      : `/game/archive/${dateStr}`;
 
     return (
       <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8'>
@@ -141,22 +147,25 @@ export function ArchiveGame({
     );
   }
 
-  // Error state
+  // Error state — no challenge for this date or other failure
   if (game.error && !game.sessionId) {
     return (
-      <div className='flex min-h-[400px] flex-col items-center justify-center gap-4 p-8'>
+      <div className='flex h-full flex-col items-center justify-center gap-5 p-8'>
         <div className='text-center'>
-          <h2 className='mb-2 text-xl font-bold text-red-600'>Error</h2>
-          <p className='text-muted-foreground'>{game.error}</p>
+          <p className='mb-1 text-sm text-zinc-500'>{formattedDate}</p>
+          <h2 className='mb-2 text-xl font-bold text-white'>
+            No challenge available
+          </h2>
+          <p className='text-sm text-zinc-500'>
+            There&apos;s no puzzle for this date yet.
+          </p>
         </div>
         <button
-          onClick={() => {
-            game.clearError();
-            window.location.reload();
-          }}
-          className='rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90'
+          onClick={() => router.push(archiveUrl)}
+          className='flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-5 py-3 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800'
         >
-          Try Again
+          <Calendar className='h-4 w-4' />
+          Back to Archive
         </button>
       </div>
     );
