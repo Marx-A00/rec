@@ -132,7 +132,7 @@ export function ArchiveGame({
   if (isInitializing || (game.isAuthenticated && !game.sessionId)) {
     return (
       <div className='flex h-full items-center justify-center'>
-        <div className='text-muted-foreground'>Starting game...</div>
+        <div className='text-muted-foreground'>Loading game...</div>
       </div>
     );
   }
